@@ -6145,6 +6145,64 @@ def test_share106_categorical_sentences_follow_the_cache():
     assert "the bare lattice is below 1 at 85 % RH only" in text
 
 
+# ── HW.6 the stem's own radio shadow (107, 2026-10-22) ⟷ SUMMARY §«How Deep the Stem Shadows the Node's Radio». The
+# cache's findings are already ranges rounded OUTWARD (`107._span`), so each cell is pinned to equality; the per-DBH and
+# per-standoff sentences are rebuilt from the cached rows with the same outward rounding.
+SHADOW = "radio/stem_radio_shadow.json"
+_SHADOW_ROWS = (("TM — E along the stem", "TM"), ("TE — E horizontal, tangential dipole", "TE"))
+_SHADOW_CELLS = (("front_minus_back_dB", 0), ("front_minus_back_dB", 1), ("deepest_below_front_dB", 0),
+                 ("deepest_below_front_dB", 1), ("deepest_at_deg", 0), ("deepest_at_deg", 1),
+                 ("front_minus_side_dB", 0), ("front_minus_side_dB", 1), ("within_3dB_of_front_to_deg", 0),
+                 ("within_3dB_of_front_to_deg", 1), ("front_field_same_current_dB", 0),
+                 ("front_field_same_current_dB", 1), ("efficiency_2d", 0), ("efficiency_2d", 1))
+
+
+def _shadow_row(label, j):
+    n = [N if j == k else rf"[+{_DASHES}\-]?[\d.]+" for k in range(14)]
+    cells = [f"{n[0]} – {n[1]} dB", f"{n[2]} – {n[3]} dB, {n[4]} – {n[5]}°", f"{n[6]} – {n[7]} dB", f"{n[8]} – {n[9]}°",
+             f"{n[10]} … {n[11]} dB", f"{n[12]} – {n[13]}"]
+    return rf"(?m)^\| {label} \| " + r" \| ".join(cells) + r" \|$"
+
+
+_SHADOW_GROUPS = (("wet throughout (the four homogeneous readings and the red pines' profile under any bark)",
+                   lambda n: not n.startswith("scots_")),
+                  ("6.1 cm of sapwood around a dry heartwood", lambda n: n.startswith("scots_sapwood_6cm_")),
+                  ("2.2 cm of sapwood around a dry heartwood", lambda n: n.startswith("scots_sapwood_2cm_")))
+
+
+def _shadow_group(d, pol, member, end):
+    spans = [v for n, v in d["findings"][pol]["by_reading_front_minus_back_dB"].items() if member(n)]
+    assert spans, "a group with no reading pins nothing"
+    return min(v[0] for v in spans) if end == 0 else max(v[1] for v in spans)
+
+
+def _shadow_group_row(label, j):
+    n = [N if j == k else r"[\d.]+" for k in range(4)]
+    return (rf"(?m)^\| {re.escape(label)} \| {n[0]} – {n[1]} dB \| {n[2]} – {n[3]} dB \|$")
+
+
+CHECKS += [
+    *[(f"shadow {pol} {key}[{end}] → 107", SUMMARY, _shadow_row(label, j), SHADOW,
+       (lambda p, k, e: lambda d: d["findings"][p][k][e])(pol, key, end), 0.0)
+      for label, pol in _SHADOW_ROWS
+      for j, (key, end) in enumerate(_SHADOW_CELLS)],
+    *[(f"shadow group «{label[:24]}» col {j} → 107", SUMMARY, _shadow_group_row(label, j), SHADOW,
+       (lambda pol, m, e: lambda d: _shadow_group(d, pol, m, e))(("TM", "TM", "TE", "TE")[j], member, j % 2), 0.0)
+      for label, member in _SHADOW_GROUPS
+      for j in range(4)],
+    ("shadow TM efficiency at the near standoff → 107", SUMMARY, rf"radiates {N} – [\d.]+ of its input power", SHADOW,
+     lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["12.85"][0], 0.0),
+    ("shadow TM efficiency at the near standoff, top → 107", SUMMARY, rf"radiates [\d.]+ – {N} of its input power", SHADOW,
+     lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["12.85"][1], 0.0),
+    ("shadow TM efficiency at the far standoff → 107", SUMMARY, rf"over the bark and\s+{N} – [\d.]+ at 16\.85 mm", SHADOW,
+     lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["16.85"][0], 0.0),
+    ("shadow TM efficiency at the far standoff, top → 107", SUMMARY, rf"over the bark and\s+[\d.]+ – {N} at 16\.85 mm", SHADOW,
+     lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["16.85"][1], 0.0),
+    ("shadow ionic ε″ at 868 MHz → 107", SUMMARY, rf"as if all of it were ionic \(−j{N}\)", SHADOW,
+     lambda d: round(d["readings"]["permittivity"]["thawed_red_pine_ionic"]["layers_bark_inward"][0][2], 2), 0.0),
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

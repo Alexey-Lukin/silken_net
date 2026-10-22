@@ -6489,3 +6489,78 @@ def test_gyroid_wood_strain_share_invariants():
     up = ", ".join(d["source_day_theta0_large_stem_sf2"]["axial_richardson"]["upper_whisker"]["exceeds"]) or "none"
     assert f"upper whisker exceeds the large-stem threshold for {up} on" in d["verdict"]
     assert f"({len(d['additive_outside_the_pore_ends_interval'])} cell-fields fall outside them)" in d["verdict"]
+
+
+RADIO = CACHE / "radio"
+
+
+def _shadow_direct_homogeneous(eps, a, rho, pol, n_max, f_hz, phi_deg):
+    """The homogeneous stem in its DIRECT closed form — c_n with q = k₁/β (TM) or k₁/(β·ε_r) (TE) — not 107's layered
+    admittance recursion, and not its interior amplitudes: a second road to the same cells. TM's source is an electric
+    line along the stem (H_n, J_n); TE's is a line of dipoles tangential to the bark (H_n′, J_n′)."""
+    from scipy.special import h2vp, hankel2, jv, jvp
+    beta = 2 * math.pi * f_hz / 299_792_458.0
+    k1 = beta * np.sqrt(complex(eps))
+    k1 = k1.conjugate() if k1.imag > 0 else k1          # e^{jωt}: the decaying branch
+    q = k1 / beta if pol == "TM" else k1 / beta / complex(eps)
+    ns = np.arange(-n_max, n_max + 1)
+    alpha, tau = ((hankel2(ns, beta * rho), jv(ns, beta * rho)) if pol == "TM"
+                  else (h2vp(ns, beta * rho), jvp(ns, beta * rho)))
+    num = jvp(ns, beta * a) * jv(ns, k1 * a) - q * jv(ns, beta * a) * jvp(ns, k1 * a)
+    den = h2vp(ns, beta * a) * jv(ns, k1 * a) - q * hankel2(ns, beta * a) * jvp(ns, k1 * a)
+    c = -alpha * num / den
+    p0 = float(np.sum(np.abs(tau) ** 2))
+    p_in = (p0 + float(np.real(np.sum(c * alpha)))) / p0
+    p_rad = float(np.sum(np.abs(tau + c) ** 2)) / p0
+    phi = np.deg2rad(np.asarray(phi_deg, float))
+    F = np.exp(1j * np.outer(phi, ns)) @ ((1j ** ns) * (tau + c))
+    front_free = abs(np.sum((1j ** ns) * tau)) ** 2
+    field = np.abs(F) ** 2 / front_free
+    return p_in, p_rad, 10 * np.log10(field / p_in), 10 * np.log10(field)
+
+
+def test_stem_radio_shadow_invariants():
+    """107 (00_07 HW.6, the trunk-shadow leg): every homogeneous row against the DIRECT closed form computed here, and
+    every row's derived fields against its own powers and gains.
+
+    CAN catch: a wrong matching across the surface (a swapped q between TM and TE, a dropped derivative, a sign in the
+    Hankel term) — the direct form shares no code with the script's recursion; a far-field phase or a normalisation
+    that moved; a reaction term that drifted from P_in; an efficiency, an absorbed share, a front-minus-back, a
+    front-minus-side or a 3-dB sector that does not follow from the cached gains and powers; a cache whose energy
+    balance or truncation control was recorded above its own tolerance; a reading whose layers no longer reach the
+    stem's radius. CANNOT catch: a wrong INPUT (a permittivity, a radius, a standoff — their readings carry their
+    sources), a defect that only a layered row would show beyond the energy balance the script gates at runtime, or
+    anything the two-dimensional idealization drops (the declared ceilings).
+    """
+    pytest.importorskip("scipy")
+    d = json.loads((RADIO / "stem_radio_shadow.json").read_text(encoding="utf-8"))
+    f_hz = d["frequency_Hz"]
+    tol = d["tolerances"]
+    homogeneous = 0
+    for row in d["cases"]:
+        g = row["gain_dB"]
+        assert row["front_minus_back_dB"] == pytest.approx(g["0"] - g["180"], abs=2e-3)
+        assert row["front_minus_side_dB"] == pytest.approx(g["0"] - g["90"], abs=2e-3)
+        assert row["efficiency"] == pytest.approx(row["p_rad_over_p0"] / row["p_in_over_p0"], abs=2e-5)
+        absorbed = sum(row["absorbed_by_layer_axis_out"])
+        assert absorbed == pytest.approx(1 - row["efficiency"], abs=1e-4), "the energy balance does not close"
+        assert abs(row["controls"]["balance_rel_miss"]) <= tol["balance"]
+        assert row["controls"]["truncation_max_dF"] <= tol["truncation"]
+        assert row["gain_dB_min"] <= min(g.values()) + 1e-9, "the fine-grid null must not sit above a report cell"
+        assert row["layers_axis_out"][-1][0] == pytest.approx(row["dbh_m"] / 2, abs=1e-6)
+        assert row["rho_src_m"] == pytest.approx(row["dbh_m"] / 2 + row["standoff_mm"] / 1e3, abs=1e-6)
+        if len(row["layers_axis_out"]) == 1:
+            homogeneous += 1
+            r, e_re, e_im = row["layers_axis_out"][0]
+            p_in, p_rad, gdb, fdb = _shadow_direct_homogeneous(complex(e_re, -e_im), r, row["rho_src_m"],
+                                                               row["polarization"], row["n_max"], f_hz,
+                                                               [int(k) for k in g])
+            assert row["p_in_over_p0"] == pytest.approx(p_in, rel=2e-5)
+            assert row["p_rad_over_p0"] == pytest.approx(p_rad, rel=2e-5)
+            for k, v, w in zip(g, gdb, fdb, strict=True):
+                assert g[k] == pytest.approx(float(v), abs=2e-3), f"{row['polarization']} {k}°"
+                assert row["field_same_current_dB"][k] == pytest.approx(float(w), abs=2e-3)
+    assert homogeneous > 0, "no homogeneous row — the direct closed form checked nothing"
+    c = d["controls"]
+    assert c["free_space_max_abs_F_minus_free"] <= tol["free_space"]
+    assert c["lossless_max_rel_power_miss"] <= tol["lossless"]

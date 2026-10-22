@@ -297,6 +297,9 @@ Anchor mechanics (CPU):
      the bayonet clamp over its fit and temperature) — a change to any of the five re-runs 89
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·
      81's cold edge; tools/cad/cem → 82, the slot clearance) — a change to any of the four caches re-runs 82
+  52 (z_stack_tolerance.json: the RF-deck rows over the flange) · tools/cad/cem (cathode_flange's thickness) ·
+     firmware/common/lora_phy.h (the carrier) · lib DBH_MIN_CM · BARK_DEAD_RIDGE_DBH38_MM → 107 (radio/stem_radio_shadow.json
+     — the stem's radio shadow at 868 MHz; its permittivity readings live in the script); a re-run of 52 re-runs 107
   58 (T_PHLOEM, importlib — never its frozen L_A_INSERT, §When Modifying #37) · 78 (`bark_bracket`, importlib) · 31 · 31b (eis_model.json · cathode_det_rct.json — the
      electrodes' own R_int readings) · tools/cad/cem (anode, lock shank, sleeve, flange at runtime) → 84 (cathode_ionic_path.json —
      the R_Ω requirements; a change to any of them re-runs 84)

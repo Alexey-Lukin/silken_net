@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 338 · 21,959,826 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 340 · 22,215,065 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -53,6 +53,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/104_pad_travel_remedies.py` | `bd5eae1cd82d08635176702af3f7f67035f50eae49db423d59e00bcfa54fdb57` | Prices of the remedies for the anchor's centre contact pad leaving the pogo pins' working window with temperature: for each — a shorter or lower-expansion polymer run, a longer pin stroke, a smaller stack-up residual — the micrometres it gains or removes against the window margin on both spans, with the stem's sway on the seasonal position and without it, and the load it leaves on the bus wire's weld seam, on the wire–liner shear-lag closed form; no solve |
 | `tools/in_silico/scripts/105_printed_part_sway_stress.py` | `caaf6549b3a99d761ab0eb8a24914f3d3683b7f9aa6617d797e122913316350a` | Cyclic stress from stem sway in the titanium parts of the anchor, path by path: an energy lower bound on the ligament stress of a gyroid lattice bonded to the wood, given as the stem surface strain above which it alone reaches the endurance limit, per candidate alloy; the axial force the wood imposes through the anode bond; and the nominal stress in the solid shanks, barbs and the flange disc (an annular Kirchhoff plate on the bark), with the stress-concentration factor and the static mean at which each reaches the safety-factor line; closed forms, no finite elements |
 | `tools/in_silico/scripts/106_gyroid_wood_strain_share.py` | `e829931e0ccd1946b6bdd7fb8ba00c7830a056a1a0ad2c4e8076520cdc32c448` | The share of a living stem's in-plane bending strain that a bonded titanium gyroid lattice takes, from an orthotropic Eshelby solution for a circular cylinder on the measured elastic constants of Scots pine sapwood at four moisture levels, with the lattice's cubic constants read from two voxel finite-element cases and its shear modulus, which a periodic voxel case measures for the infinite lattice and this script does not yet read, swept up to the Voigt bound; the install angle and three readings of the pore filling are swept as well; closed forms checked against three independent solutions, no finite elements |
+| `tools/in_silico/scripts/107_stem_radio_shadow.py` | `7eb3ef028a65d32db20cc7ce66d967f95909e173e7e665dd51436c81dce57526` | Radio shadow of a tree stem at 868 MHz: the exact two-dimensional cylindrical-wave solution for a line source beside a layered lossy circular stem (heartwood, sapwood, bark), giving the azimuthal field against the same source in free space at equal current (the horizontal-plane cut of a short dipole or loop along an infinite stem) and at equal input power (a two-dimensional indicator of the near-field loss), for both polarizations as a bracket of readings, with free-space, lossless, energy-balance and truncation controls |
 | `tools/in_silico/scripts/10_genipin_stability_md.py` | `b56c5791d674b8d4be97c986afa3bc74d9343331ed706dc380dcff25e551bd41` | L2 — full stability MD: GcGDH + FAD + genipin matrix in xylem-like water box. |
 | `tools/in_silico/scripts/11_full_matrix_md.py` | `28c8a0919352ea39c45ea353f1764bf90a12cb12bef5ce397970e4a62d174ac7` | L2-extended — full matrix stability MD: protein + FAD + genipin + chitosan + CNC. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `c4a7ac5844f2e508bb1b87fe49435f205b848cb07452994531359f5399a8732d` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
@@ -145,8 +146,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `56fa0b5e5e7f4388817a94f5b415088e068e2e1ad61920ada56d5521c77aa927` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `99946d861b4aba7079a37031d1f87d07848e542e7ba31dbc1dc0d1984c9327e9` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `c542949dd14012ff7acdd404572626b23ed463541d190092079e98189df8638e` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `699d9a54088e729623569a3399728c6cc477915e393f8717fbe92816d8d6ffab` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `d9a3b811ec6b4421c40f316709e662db65a8ab7d9cd214ded1112cc4597bf421` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -285,6 +286,12 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/wire_liner_shear_lag.json` | `3cca2659bda571d13cc35efee8b2bb8edc5d79cdeefa7ff5b02c37f8c35ef081` | 57,923 |
 | `tools/in_silico/cache/mechanical/wire_under_liner_edges.json` | `bbd8736a2b06587e9ab5978989f90666ac0209b9d145fb2148020aa0ba7a4be9` | 69,047 |
 | `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `e2179db6a6275795c2664c9bee255ad393f321f4c2be0e1d15fce0a5c0b2abfa` | 34,652 |
+
+### `tools/in_silico/cache/radio/`
+
+| File | SHA-256 | Bytes |
+|---|---|---|
+| `tools/in_silico/cache/radio/stem_radio_shadow.json` | `d3b268afbd4544e2a14a88a02045c18a6d18a9e06b4f7871ef791f8d478644bf` | 213,618 |
 
 ### `tools/in_silico/cache/reproduction/`
 

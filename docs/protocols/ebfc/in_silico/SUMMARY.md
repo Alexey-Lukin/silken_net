@@ -1234,6 +1234,91 @@ that switch is cut. Whether an event slips the flange at all is the event-torque
 
 ---
 
+## HW.6 — How Deep the Stem Shadows the Node's Radio (script 107)
+
+The mounting-azimuth verdict (`00_07` HW.6) weighs axes that pull apart: frost ⊥ sun under the flange is computed
+(`79`), while the stem's own shadow towards the gateway had only a field cut planned (`00_07` UNI.10 (b)). `107` is the
+desk model of that axis: the exact two-dimensional cylindrical-wave solution for a source beside a layered lossy stem
+(heartwood · sapwood · bark), the layers matched through one admittance recursion. The board lies on the bark, so the
+booster's ground current runs in the plane tangent to it — along the stem (TM: an electric line along the axis, E
+vertical, co-polar with the gateway's vertical antenna) or across it (TE: a line of dipoles tangential to the bark, E
+horizontal). Which one, canon does not fix: the anchor rotates freely at install (its anti-rotation key is cut, `01_01
+§4.3` C) and there is no layout yet (`00_07` HW.9). A vertical gateway antenna in the horizontal plane receives only the
+vertical field, so the co-polar shadow of the uplink is TM's at ANY clocking — the clocking changes its level, not its
+shape. What the outputs are worth splits in two. The field with the tree against the same source current without it,
+read against the free source's front lobe, is exact in the horizontal plane for a short dipole along an infinite stem —
+the far field at elevation θ selects the axial wavenumber β·cosθ, and at θ = 90° the problem is this two-dimensional
+one — so the SHAPE of the shadow against azimuth is the horizontal cut of the 3-D problem, a gateway low over the
+horizon. The same field at equal INPUT power, and the efficiency, are 2-D indicators of what the near field loses into
+the stem, not the 3-D antenna efficiency (`00_07` HW.17).
+
+Inputs, each a named reading: stems of DBH 38 · 50 · 60 cm (the smallest host, lib `DBH_MIN_CM`, and the two stems
+`01_04 §3.2`'s bark table reads), with dead bark of 13.5 · 17.5 · 22 mm (the thin ends: lib's DBH-38 ridge bracket, then
+that table's single bark less the ≤ 3 mm live phloem — derived); the RF deck — the booster's radiating ground — 12.85 –
+16.85 mm over the bark line, which is the flange's underside (`52`'s rows of the deck over the flange's top face plus the
+flange's 3.0 placeholder thickness; the low end is the named-alternative B2B 6 row — not the CAD's «antenna ↔ Ti 8.0»,
+which measures the room to the cavity top); the carrier 868.2 MHz, read from the firmware's PHY; and thirteen
+permittivity readings. Four are homogeneous, from Mavrovic et al. 2018 (*Geosci. Instrum. Method. Data Syst.* 7:195,
+Table 3 — in situ, an L-band probe centred at 1.4 GHz): red pine thawed, the first 1 cm under the bark, 19.38 − j6.26
+with ε″ carried flat ⊥ scaled to 868 MHz as if all of it were ionic (−j10.09); red spruce thawed, the table's wettest
+conifer, 27.66 − j7.72; red pine frozen, the whole profile's average, 8.80 − j3.17. Nine are layered: a dry, a wet or a
+phloem-dominated bark (proxies: Şahin Kol 2009's dry Scots pine sapwood, El-Rayes & Ulaby 1987's poplar bark side at
+1 GHz, their balsam-fir trunk bark at 0.868 GHz ≈ 19.1 − j4.7, read off the figure), then one of three interiors — the
+red pines' measured radial profile (Supplement Fig. S2, 26 May: 35.2 − j10.27 at 2.5 mm, a plateau of 14.05 − j4.82
+from 6 mm, no dry heartwood within the probe's reach), Scots pine's 6.1 cm of water-conducting sapwood (Bieker & Rust
+2010, *Silva Fennica* 44:267, resistivity tomography at 0.3 m) or the narrowest stem's 2.2 cm (Björklund 1999, *Silva
+Fennica* 33:119, Table 2), each sapwood around a dry heartwood proxy. No source in the tree measures any of them at
+868 MHz.
+
+| polarization | behind the stem (180°), below the front | deepest null below the front, at | at 90° | within 3 dB of the front to | front field against the free front lobe, same current | 2-D efficiency |
+|---|---|---|---|---|---|---|
+| TM — E along the stem | 10.7 – 34.5 dB | 13.4 – 54.4 dB, 138.15 – 180° | 6.1 – 9.4 dB | 54 – 66° | −5.8 … +1.4 dB | 0.14 – 0.7 |
+| TE — E horizontal, tangential dipole | 7.7 – 48 dB | 20.6 – 59.9 dB, 118.15 – 175.7° | 9.2 – 21.1 dB | 38 – 50° | −5.4 … +1.7 dB | 0.15 – 0.54 |
+
+The back's depth by the stem's interior — how much of it is wet:
+
+| interior | TM behind the stem | TE behind the stem |
+|---|---|---|
+| wet throughout (the four homogeneous readings and the red pines' profile under any bark) | 24.9 – 34.5 dB | 20.8 – 48 dB |
+| 6.1 cm of sapwood around a dry heartwood | 22 – 33.6 dB | 13.9 – 21.8 dB |
+| 2.2 cm of sapwood around a dry heartwood | 10.7 – 22.2 dB | 7.7 – 17.4 dB |
+
+**What it says.** Behind its own stem a node is weaker than when it faces the gateway on every reading — by at least
+10.7 dB with its E along the stem, the co-polar case, and by at least 7.7 dB with E horizontal — and already at 90° the
+TM node is 6.1 – 9.4 dB down, staying within 3 dB of its front only to 54 – 66° either side. The horizontal node is not
+the milder one: its free pattern already has a null along the bark, so at 90° it is 9.2 – 21.1 dB down, and behind a wet
+stem it is deeper than TM. The depth behind depends on how much of the stem is wet: a wet interior — the season, the
+868 MHz step and the wettest conifer all fall inside it — puts TM at 24.9 – 34.5 dB; a thin wet shell over a dry core,
+under the wettest bark, brings it to 10.7 dB. The stem is wider than a wavelength (λ = 34.5 cm); the deepest null sits
+up to 42° off the straight line through the stem (at 138.15 – 180°), and on most readings 180° is itself a local
+maximum where the waves creeping round both sides meet in phase. The standoff sets the near-field indicator: a TM node
+radiates 0.14 – 0.65 of its input power with the RF deck 12.85 mm over the bark and 0.18 – 0.7 at 16.85 mm.
+
+⚠️ **Bounds.** The shape against azimuth is exact only in the horizontal plane, for an infinite round stem of uniform
+isotropic layers, a node on a radius and a short dipole along or across the stem: a gateway high above the horizon
+(where a dielectric stem couples TM and TE), a tapering stem, the ground and its reflection are out, and the absolute
+level — G(0), the efficiency — is a 2-D indicator. The node's own body is not in the model, and its heaviest part is the
+ANCHOR: the board's ground — the booster's radiator — is tied through the centre pogo to the Ø1.0 Ti bus, which runs
+about 93 mm RADIALLY into the wet stem to the gyroid (`02_02 §1.2`; canon has no RF choke on that line). A radial
+conductor in lossy wood is no source along or across the axis and no layer: it may move the absolute level and,
+possibly, the front-to-back ratio, and nothing here bounds by how much. The Ti flange and the PEEK radome sit in the
+near field too; the booster's 8 – 10 mm offset from the anchor's axis, the canopy, other stems and the forest's excess
+path loss are out. The permittivities were measured in situ at the probe's 1.4 GHz centre, at the trunk's daily minimum
+(15:00 – 18:00) and mostly at the end of spring; the step to 868 MHz is bracketed (flat ⊥ all-ionic; if Table 3 is a
+1 – 2 GHz average the all-ionic end is ≈ 3 % higher), not measured; bark and heartwood are proxies — no pine bark or
+heartwood primary near 1 GHz is in the tree — and the bark is swept at its thin ends only. Every layer is isotropic,
+while a TM source sees ε along the grain and the in-situ probe read a mixed face (lab spruce puts ε′∥/ε′⊥ at 2.2 –
+2.4), so the longitudinal ε may be higher than every reading here. The S2 profile is transcribed from the page image
+(±0.2 on ε′, ±0.05 on ε″) and smoothed by the probe's 10 mm reach. Controls: free space (the field with every ε_r = 1
+equals the free source's), lossless (P_in = P_rad — which any real admittance satisfies, so it guards the reaction and
+the bookkeeping, not the matching), the energy balance on every row against the power dissipated inside — integrated
+over the interior field, whose amplitudes come from value continuity, not from the exterior coefficients — and the
+series' truncation, all NaN-safe and at round-off; the deepest null is searched on a 0.05° grid. Not guarded at runtime:
+the far field's orientation (a swap of front and back passes every runtime gate and is caught only by the invariants
+test's direct closed form), and the per-layer split of the absorbed power. Cache: `radio/stem_radio_shadow.json`.
+
+---
+
 ## HW.6 — Thermal install: the radial field the 1D estimate could not see (script 58)
 
 ⚖️ **Процедуру ЗНЯТО founder'ом 2026-09-09** — канон [`01_04 §3.5`](../../../01_04_CODIT_and_Xylemointegration.md)
