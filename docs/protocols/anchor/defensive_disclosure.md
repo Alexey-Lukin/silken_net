@@ -9,7 +9,8 @@
 > **Published PDF:** the bepress-rendered file (10 pages, SHA-256 `cd67ac140fe8…b1abf`) carries the text of commit
 > `5bd8636f5` in full — `scripts/disclosure_pdf.rb check` with bepress's cover page, running heads, footers and page
 > numbers ignored leaves 0 of 83 blocks unmatched in both text extractors (checked 2026-10-22). ⚠️ Its bepress cover page
-> reads «Creative Commons Attribution 4.0 License»; the record page and this disclosure's grant are CC BY-SA 4.0.
+> reads «Creative Commons Attribution 4.0 License»: the governing grant is CC BY-SA 4.0 (the licence chosen in the
+> submission form, shown on the record page and stated in this disclosure); the cover misstates it.
 >
 > **What this is:** a deliberate **public technical disclosure** of the inventive core of SilkenNet,
 > published **as prior art**. The goal is the opposite of a patent: to place the invention in the public
