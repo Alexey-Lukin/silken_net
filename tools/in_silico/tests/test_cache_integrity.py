@@ -6427,6 +6427,352 @@ def test_printed_part_sway_stress_invariants():
 
 
 
+def test_gyroid_interface_contact_map_invariants():
+    """108 (00_07 HW.23, the leg on 106's bonded interface, step 1): the validity map rebuilt HERE by another ARITHMETIC,
+    on BOTH of 106's wood groups (Scots pine ⊥ green Pinaceae). σᴵ of every θ = 0 cell is recomputed through 4th-order
+    tensors — Mura's integral by Gauss–Legendre on [0, π], the wood's compliance inverted 9×9, the lattice's cubic tensor
+    on its cube axes, the inclusion solved 9×9 (108 runs 106's Mandel 6×6 machinery). The traction is then projected BY
+    HAND on a ψ grid from the CACHED σᴵ — no Mohr circle, no tangent formula — and every per-cell number is read off that
+    grid by brute force. SHARED with the script, so not independent: the wood sets (106's transcriptions) and the
+    stiff/soft/mean rule, the model (an infinite bonded cylinder, the pore readings), the strains (105's cache) and the
+    p₀ readings (the script's transcription of Bruder 1998, held here only to the number inside its own quoted phrase).
+
+    The STALENESS half (the 2026-10-22 review's CI blind spot): 108 records a sha256 of every 106 and 105 field it read;
+    this test recomputes both from the CURRENT caches, holds every θ = 0 share to 106's current cell, and reds when 106
+    carries a group or a cell block 108 does not map.
+
+    CAN catch: a 108 cache left stale by a 106 or 105 re-run (any field it reads); a 106 group 108 does not read; a σᴵ
+    off the Eshelby solution (a dropped Mandel √2, a wrong per-unit-strain scale, another cell's tensor, another group's
+    wood); a projection or sign error; an opening, open share or friction that does not follow from the traction; a
+    reading whose number is not the one in its quote, or the excluded 2.5 MPa back among the readings; a strain off 105's
+    cache; a group bracket that does not follow from its cells; a consumer cell other than the one 106's consumer blocks
+    name; the off-axis Zener threshold off σ₁ at the angle that sets it; the junction's isotropy; a verdict whose numbers
+    or quantifiers are not the cells'. CANNOT catch: the MODEL and the readings named above — the script's ceilings; the
+    homogenisation (its direction is an argument, and it holds only for a smooth envelope); the compression half over the
+    grid and the grid extremes off θ = 0 other than the one threshold recomputed here.
+    """
+    import importlib.util
+
+    from lib.constants import ALLOY_PROPERTIES
+
+    def load(name, file):
+        spec = importlib.util.spec_from_file_location(name, REPO / "tools/in_silico/scripts" / file)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    s106 = load("s106_t108", "106_gyroid_wood_strain_share.py")
+    s108 = load("s108_t108", "108_gyroid_interface_contact_map.py")
+    d = json.loads((MECHANICAL / "gyroid_interface_contact_map.json").read_text(encoding="utf-8"))
+    d106 = json.loads((MECHANICAL / "gyroid_wood_strain_share.json").read_text(encoding="utf-8"))
+    d105 = json.loads((MECHANICAL / "printed_part_sway_stress.json").read_text(encoding="utf-8"))
+
+    # ── staleness: the fingerprints of what 108 read, recomputed from the CURRENT upstream caches ──
+    fp = d["inputs"]["upstream_fingerprint"]
+    assert fp["106"]["fields"] == list(s108.CONSUMED_106) and fp["105"]["fields"] == list(s108.CONSUMED_105), \
+        "108's consumed-field list moved — re-run 108"
+    assert fp["106"]["sha256"] == s108.fingerprint(d106, s108.CONSUMED_106), "106's cache moved since 108 ran — re-run 108"
+    assert fp["105"]["sha256"] == s108.fingerprint(d105, s108.CONSUMED_105), "105's cache moved since 108 ran — re-run 108"
+    assert s108.control_groups_read(d106) == [] and d["controls"]["groups_unread"] == [], \
+        "106 carries a group or a cell block 108 does not read — extend 108"
+    groups = {"scots_pine": ("cells", "wood_readings"), "green": ("green_cells", "green_wood_readings")}
+    assert dict(s108.GROUPS_READ) == groups
+    for g, (blk, _) in groups.items():
+        assert set(d[blk]) == set(d106[blk]), f"108's {g} cells are not 106's — re-run 108"
+        for k, c in d106[blk].items():
+            assert d[blk][k]["theta0"]["t_L"] == pytest.approx(c["t_L_theta0_any_C44"], rel=1e-12), k
+
+    names = d["inputs"]["p0_list_order"]
+    p0 = [d["inputs"]["p0_readings"][n]["MPa"] for n in names]
+    for n, p in zip(names, p0, strict=True):          # the number is the one inside its own quoted phrase
+        assert f"{p:g}".replace(".", ",") + " MPa" in d["inputs"]["p0_readings"][n]["quote"], n
+    ex = d["inputs"]["p0_excluded"]
+    assert ex["MPa"] not in p0 and all("2,5 MPa" in q for q in ex["quotes"]), "the ambiguous 2.5 MPa is back as a reading"
+
+    def up(x, k=0):
+        return math.ceil(round(x * 10 ** k, 9)) / 10 ** k
+
+    def down(x, k=0):
+        return math.floor(round(x * 10 ** k, 9)) / 10 ** k
+
+    # the scale: 105's source day at the gyroid
+    stem, frac = d105["inputs"]["stem_readings_87"], d105["inputs"]["depth_fraction"]
+    strains = d["inputs"]["strain_at_gyroid_ue"]
+    for k, v in strains.items():
+        rd, pl = k.split("|")
+        assert v == stem[rd]["surface_strain_ue"] * frac[pl], k
+    ends = {e: strains[d["inputs"]["strain_ends"][e]] for e in ("low", "high")}
+    assert ends["low"] == min(strains.values()) and ends["high"] == max(strains.values())
+
+    # ── σᴵ by 4th-order tensors (another arithmetic than the script's Mandel 6×6) ──
+    i3 = np.eye(3)
+    sets_of = {"scots_pine": s106.WOOD, "green": {n: gs["w"] for n, gs in s106.green_sets().items()}}
+    wood_of = {**sets_of["scots_pine"], **sets_of["green"]}
+    assert len(wood_of) == len(sets_of["scots_pine"]) + len(sets_of["green"]), "a set name in both groups"
+
+    def compliance4(w, rd):
+        stiff = {(0, 1): -w["nu_LT"] / w["E_L"], (0, 2): -w["nu_LR"] / w["E_L"], (1, 2): -w["nu_RT"] / w["E_R"]}
+        soft = {(0, 1): -w["nu_TL"] / w["E_T"], (0, 2): -w["nu_RL"] / w["E_R"], (1, 2): -w["nu_TR"] / w["E_T"]} \
+            if rd != "stiff" else stiff
+        cpl = {"stiff": stiff, "soft": soft, "mean": {k: (stiff[k] + soft[k]) / 2 for k in stiff}}[rd]
+        e = {0: w["E_L"], 1: w["E_T"], 2: w["E_R"]}
+        g = {(1, 2): w["G_RT"], (0, 2): w["G_LR"], (0, 1): w["G_LT"]}
+        s = np.zeros((3, 3, 3, 3))
+        for i in range(3):
+            s[i, i, i, i] = 1 / e[i]
+        for (i, j), v in cpl.items():
+            s[i, i, j, j] = s[j, j, i, i] = v
+        for (i, j), gv in g.items():
+            for a, b in ((i, j), (j, i)):
+                for c, dd in ((i, j), (j, i)):
+                    s[a, b, c, dd] = 1 / (4 * gv)
+        return s
+
+    def nine(t):
+        return t.reshape(9, 9)
+
+    def eshelby_gl(c, n=256):
+        """n = 256: the green sets' anisotropy (E_L/G_LT up to ≈ 40) leaves 64 points 6e-7 off; 128 already converge
+        to 1e-12 (measured 2026-10-22 on Davies' Table 2 stiff outerwood)."""
+        x, wts = np.polynomial.legendre.leggauss(n)
+        g = np.zeros((3, 3, 3, 3))
+        for o, wt in zip((x + 1) * math.pi / 2, wts, strict=True):
+            xi = np.array([math.cos(o), math.sin(o), 0.0])
+            kinv = np.linalg.inv(np.einsum("ijkl,j,l->ik", c, xi, xi))
+            g += 2 * wt * math.pi / 2 * np.einsum("ip,j,q->ipjq", kinv, xi, xi)
+        return np.einsum("ipjq,pqmn->ijmn", g + np.einsum("jpiq->ipjq", g), c) / (4 * math.pi)
+
+    def iso4(e, nu):
+        lam, mu = e * nu / ((1 + nu) * (1 - 2 * nu)), e / (2 * (1 + nu))
+        return (lam * np.einsum("ij,kl->ijkl", i3, i3)
+                + mu * (np.einsum("ik,jl->ijkl", i3, i3) + np.einsum("il,jk->ijkl", i3, i3)))
+
+    def cubic4(c11, c12, c44, th):
+        axes = [np.array([math.cos(th), math.sin(th), 0.0]), np.array([-math.sin(th), math.cos(th), 0.0]),
+                np.array([0.0, 0.0, 1.0])]
+        c = (c12 * np.einsum("ij,kl->ijkl", i3, i3)
+             + c44 * (np.einsum("ik,jl->ijkl", i3, i3) + np.einsum("il,jk->ijkl", i3, i3)))
+        for e in axes:
+            c += (c11 - c12 - 2 * c44) * np.einsum("i,j,k,l->ijkl", e, e, e, e)
+        return c
+
+    lat = d106["inputs"]["lattice_reading"]
+    c11, c12, a_v = lat["C11_over_E_s"], lat["C12_over_E_s"], lat["zener_voigt_ceiling"]
+    phi = d106["inputs"]["solid_fraction_105"]
+    memo = {}
+
+    def matrix(g, rd):
+        if (g, rd) not in memo:
+            cm = np.linalg.pinv(nine(compliance4(wood_of[g], rd))).reshape(3, 3, 3, 3)
+            memo[(g, rd)] = (cm, np.linalg.pinv(nine(cm)).reshape(3, 3, 3, 3), eshelby_gl(cm))
+        return memo[(g, rd)]
+
+    def sigma_i(al, g, rd, fill, th_deg, a):
+        """σᴵ per unit remote strain along L, MPa — a 3×3 tensor."""
+        cm, sm, sesh = matrix(g, rd)
+        e_s = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3
+        if fill == "pores_voigt_phase_bound":
+            ci = phi * iso4(e_s, ALLOY_PROPERTIES[al]["nu"]) + (1 - phi) * cm
+        else:
+            ci = e_s * cubic4(c11, c12, a * (c11 - c12) / 2, math.radians(th_deg))
+            if fill == "pores_additive_host_sapwood":
+                ci = ci + (1 - phi) * cm
+        sig = np.zeros((3, 3))
+        sig[0, 0] = 1.0
+        e_inf = np.einsum("ijkl,kl->ij", sm, sig)
+        amat = np.einsum("ik,jl->ijkl", i3, i3) + np.einsum("ijpq,pqrs,rskl->ijkl", sesh, sm, ci - cm)
+        e_i = np.linalg.solve(nine(amat), e_inf.reshape(9)).reshape(3, 3)
+        return np.einsum("ijkl,kl->ij", ci, e_i) / e_inf[0, 0]
+
+    def s1_of(t):
+        return (t[0, 0] + t[1, 1]) / 2 + math.hypot((t[0, 0] - t[1, 1]) / 2, t[0, 1])
+
+    # ── every θ = 0 cell of both groups: σᴵ by the tensor route, then the map by hand from the CACHED σᴵ ──
+    psi = np.linspace(0.0, 2 * math.pi, 7200, endpoint=False)      # holds ψ = 0 and 90°, the θ = 0 principal axes
+    halves = (("tension", 1.0), ("compression", -1.0))
+
+    def traction(sl, ang):
+        cs, ss = np.cos(ang), np.sin(ang)
+        return (sl["LL"] * cs * cs + sl["TT"] * ss * ss + 2 * sl["LT"] * ss * cs,
+                (sl["TT"] - sl["LL"]) * ss * cs + sl["LT"] * (cs * cs - ss * ss))
+
+    def mu_brute(sl, eps, p, sgn):
+        """max over the circle of ε|τ|/(p₀ − s·ε·σ_n): the grid, then a fine grid around its maximum."""
+        sn, tau = traction(sl, psi)
+        k = int(np.argmax(eps * np.abs(tau) / (p - sgn * eps * sn)))
+        sn_f, tau_f = traction(sl, np.linspace(psi[k] - 2 * math.pi / 7200, psi[k] + 2 * math.pi / 7200, 4001))
+        return float(max((eps * np.abs(tau) / (p - sgn * eps * sn)).max(),
+                         (eps * np.abs(tau_f) / (p - sgn * eps * sn_f)).max()))
+
+    all_cells = {**d["cells"], **d["green_cells"]}
+    for key, cell in all_cells.items():
+        al, g, rd, fill = key.split("|")
+        b = cell["theta0"]
+        sl = b["sigma_I_MPa_per_unit_strain"]
+        t = sigma_i(al, g, rd, fill, 0.0, a_v)
+        scale = abs(t).max()
+        for n, (i, j) in (("LL", (0, 0)), ("TT", (1, 1)), ("RR", (2, 2)), ("LT", (0, 1))):
+            assert abs(sl[n] - t[i, j]) <= 1e-8 * scale, (key, n, sl[n], t[i, j])
+        assert abs(t[0, 2]) <= 1e-12 * scale and abs(t[1, 2]) <= 1e-12 * scale, key       # τ_R ≡ 0
+        sn, _ = traction(sl, psi)
+        assert sn.max() == pytest.approx(b["sigma1"], rel=1e-12) and sn.min() == pytest.approx(b["sigma2"], rel=1e-9)
+        for h, sgn in halves:
+            t1 = float((sgn * sn).max())
+            for idx, p in enumerate(p0):
+                on = b["opening_onset_ue"][h][idx]
+                assert (on is None) == (t1 <= 0), (key, h)
+                if on is not None:
+                    assert on == pytest.approx(p / t1 * 1e6, rel=1e-9), (key, h)
+            if t1 > 0:
+                half = mu_brute(sl, 0.5 * p0[0] / t1, p0[0], sgn)
+                assert half == pytest.approx(b["mu_req_max_at_half_onset"][h], rel=1e-6), (key, h)
+            for end, e in ends.items():
+                eps = e * 1e-6
+                for idx, p in enumerate(p0):
+                    cont = p - sgn * eps * sn
+                    assert abs(float((cont <= 0).mean()) - b["at_source_day"][h]["open_share"][end][idx]) <= 2 / 7200
+                    mu = b["at_source_day"][h]["mu_req_max"][end][idx]
+                    assert (mu is None) == bool((cont <= 0).any()), (key, h, end, idx)
+                    if mu is not None:
+                        m = mu_brute(sl, eps, p, sgn)
+                        assert m <= mu * (1 + 1e-9) and m == pytest.approx(mu, rel=1e-6), (key, h, end, idx)
+
+    # ── the brackets follow from the cells, per group ──
+    keys_of = {"scots_pine": list(d["cells"]), "green": list(d["green_cells"])}
+    keys_of["union"] = keys_of["scots_pine"] + keys_of["green"]
+    assert list(d["summary"]) == ["scots_pine", "green", "union"]
+    for grp, keys in keys_of.items():
+        th0 = {k: all_cells[k]["theta0"] for k in keys}
+        sm_ = d["summary"][grp]["theta0"]
+        assert d["summary"][grp]["cells"] == len(keys)
+        bare = [k for k in keys if k.endswith("|pores_carry_nothing")]
+        assert d["summary"][grp]["bare_lattice_cells"] == len(bare)
+        for h, sgn in halves:
+            for idx, n in enumerate(names):
+                col = [b["opening_onset_ue"][h][idx] for b in th0.values()]
+                fin = [x for x in col if x is not None]
+                assert sm_["opening_onset_ue"][h][n] == {"range": [min(fin), max(fin)],
+                                                         "cells_never": len(col) - len(fin)}
+                for end in ("low", "high"):
+                    mus = [b["at_source_day"][h]["mu_req_max"][end][idx] for b in th0.values()]
+                    fm = [x for x in mus if x is not None]
+                    shares = [b["at_source_day"][h]["open_share"][end][idx] for b in th0.values()]
+                    assert sm_["at_source_day"][h][end][n] == {
+                        "cells_open": len(mus) - len(fm), "cells": len(mus),
+                        "bare_lattice_cells_open": sum(th0[k]["at_source_day"][h]["mu_req_max"][end][idx] is None
+                                                       for k in bare),
+                        "open_share": [min(shares), max(shares)],
+                        "mu_req_max_closed": [min(fm), max(fm)] if fm else None}
+            hv = [b["mu_req_max_at_half_onset"][h] for b in th0.values() if b["mu_req_max_at_half_onset"][h] is not None]
+            assert sm_["mu_req_max_at_half_onset"][h] == [min(hv), max(hv)]
+            for ek, e in strains.items():
+                need = [max(0.0, e * 1e-6 * (b["sigma1"] if sgn > 0 else -b["sigma2"])) for b in th0.values()]
+                assert sm_["p0_to_stay_closed_MPa"][h][ek] == pytest.approx([min(need), max(need)], rel=1e-12)
+        ratios = [b["sigma1"] / wood_of[k.split("|")[1]]["E_L"] for k, b in th0.items()]
+        assert sm_["sigma1_over_E_L"] == pytest.approx([min(ratios), max(ratios)], rel=1e-12)
+        lattice = {k: all_cells[k]["grid"] for k in keys if "grid" in all_cells[k]}
+        assert len(lattice) == sum(1 for k in keys if not k.endswith("voigt_phase_bound"))
+        sg_ = d["summary"][grp]["grid"]
+        s1_bot = min(g["sigma1"][0] for g in lattice.values())
+        for idx, n in enumerate(names):
+            assert sg_["opening_onset_tension_ue"][n] == pytest.approx(
+                [p0[idx] / max(g["sigma1"][1] for g in lattice.values()) * 1e6,
+                 p0[idx] / s1_bot * 1e6 if s1_bot > 0 else None], rel=1e-12)
+            for end in ("low", "high"):
+                stars = [g["zener_below_which_tension_half_stays_closed"][end][idx] for g in lattice.values()]
+                fin = [x for x in stars if x is not None]
+                assert sg_["zener_below_which_tension_half_stays_closed"][end][n] == {
+                    "max": max(fin) if fin else None, "cells_never_closed": len(stars) - len(fin)}
+        for k, g in lattice.items():                  # θ = 0 sits on the grid: its σ₁ lies inside the grid's range
+            assert g["sigma1"][0] <= th0[k]["sigma1"] * (1 + 1e-12) and th0[k]["sigma1"] <= g["sigma1"][1] * (1 + 1e-12)
+
+    # the off-axis threshold: at the largest Zener ratio that keeps the tension half closed, the lowest σ₁ over 106's
+    # angles sits exactly at p₀/ε (every other angle at or above it — σ₁ never falls as C44 rises)
+    best = max(((k, end, idx, x) for k in keys_of["union"] if "grid" in all_cells[k] for end in ("low", "high")
+                for idx, x in enumerate(all_cells[k]["grid"]["zener_below_which_tension_half_stays_closed"][end])
+                if x is not None), key=lambda r: r[3])
+    k, end, idx, a_star = best
+    al, g, rd, fill = k.split("|")
+    s1s = [s1_of(sigma_i(al, g, rd, fill, th, a_star)) for th in d106["inputs"]["theta_deg"]]
+    assert min(s1s) == pytest.approx(p0[idx] / (ends[end] * 1e-6), rel=1e-6), best
+    zu = d["summary"]["union"]["grid"]["zener_below_which_tension_half_stays_closed"]
+    assert zu[end][names[idx]]["max"] == a_star
+
+    # ── the consumers, from 106's own consumer blocks ──
+    for grp, (k_share, k_thr) in {
+            "union": ("union_theta0_share", "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share"),
+            "scots_pine": ("theta0_share_over_modelled_set",
+                           "gyroid_binds_above_surface_strain_ue_theta0_lowest_share")}.items():
+        t0s, ba = d106[k_share], d106[k_thr]
+        for al, v in d["consumer_binding_106_theta0"][grp].items():
+            b = all_cells[t0s[al]["lowest_cell"]]["theta0"]
+            assert v["cell"] == t0s[al]["lowest_cell"] and b["t_L"] == pytest.approx(t0s[al]["lowest"], rel=1e-12)
+            thr = {fk: ba[fk][al]["large_stem_limit|near_uniaxial|sf2"] for fk in ("axial_richardson", "radial_richardson")}
+            assert v["threshold_ue_106"] == thr and v["opening_onset_tension_ue"] == b["opening_onset_ue"]["tension"]
+            assert v["threshold_over_onset_min"] == min(thr[fk] / x for fk in thr
+                                                        for x in b["opening_onset_ue"]["tension"])
+            assert v["p0_to_stay_closed_at_threshold_MPa"] == pytest.approx(
+                {fk: thr[fk] * 1e-6 * b["sigma1"] for fk in thr}, rel=1e-12)
+    hi_blocks = {"union": "union_theta0_share", "scots_pine": "theta0_share_over_modelled_set",
+                 "green": "green_theta0_share"}
+    sup_blocks = {"union": "union_junction_share_sup_at_C44_zero", "scots_pine": "junction_share_sup_at_C44_zero",
+                  "green": "green_junction_share_sup_at_C44_zero"}
+    for grp, jn in d["consumer_junction"].items():
+        for al, v in jn["theta0_highest"].items():
+            assert v["cell"] == d106[hi_blocks[grp]][al]["highest_cell"]
+            assert v["opening_onset_tension_ue"] == all_cells[v["cell"]]["theta0"]["opening_onset_ue"]["tension"]
+        sup = jn["sup_C44_zero"]
+        assert sup["t_L"] == pytest.approx(d106[sup_blocks[grp]], rel=1e-12), grp
+        t = sigma_i(*sup["cell"].split("|"), sup["theta_deg"], 0.0)
+        iso = abs(t[0, 0] - t[1, 1]) <= 1e-9 * abs(t[0, 0]) and abs(t[0, 1]) <= 1e-9 * abs(t[0, 0])
+        assert sup["in_plane_stress_isotropic"] == iso and s1_of(t) == pytest.approx(sup["mohr"]["sigma1"], rel=1e-8)
+        for ek, e in strains.items():
+            assert sup["tension_half_open_at"][ek] == [n for n, p in zip(names, p0, strict=True)
+                                                       if e * sup["mohr"]["sigma1"] * 1e-6 >= p]
+    sup106 = d106["consumer_ceiling_junction"]["off_axis_sup_at_C44_zero"]
+    assert (d["consumer_junction"]["union"]["sup_C44_zero"]["cell"],
+            d["consumer_junction"]["union"]["sup_C44_zero"]["theta_deg"]) == (sup106["cell"], sup106["theta_deg"])
+    ax = d["axial_anode_bond_force_105"]
+    assert ax["mean_shear_MPa_range"] == [min(v["mean_shear_MPa"] for v in ax["states"].values()),
+                                          max(v["mean_shear_MPa"] for v in ax["states"].values())]
+    for kk, v in ax["states"].items():
+        assert v["force_N"] == max(r["force_N"] for q, r in d105["zone1_members"].items() if q.endswith("|" + kk))
+        assert v["mean_shear_MPa"] == pytest.approx(v["force_N"] / ax["envelope_mm2"], rel=1e-12)
+
+    # ── the controls the script ran, and the verdict's numbers and quantifiers ──
+    c = d["controls"]
+    assert d["reproduction_of_106"]["worst_relative"] <= 1e-12
+    assert c["isotropic_closed_form_traction_max_error"] < 1e-12 and c["axial_shear_over_stress_worst"] < 1e-12
+    assert c["projection_vs_mohr_circle_worst"] < 1e-12 and c["theta0_sigma_moves_with_C44_worst"] < 1e-9
+    assert c["sigma1_drop_as_C44_rises_worst"] < 1e-12 and c["mu_tangent_vs_brute_force_worst"] < 1e-6
+    assert c["mu_onset_fraction_form_vs_half_map_worst"] < 1e-12
+    v = d["verdict"]
+    assert v.startswith("Read as a SMOOTH contact on the gyroid's envelope") and "neither failing nor holding" in v
+    assert "never holding" not in v and "no friction is needed" not in v, "an unscoped direction or holding claim is back"
+    lo_k = d["inputs"]["strain_ends"]["low"]
+    for grp, lab in (("scots_pine", "the Scots pine group"), ("green", "the green group")):
+        need = d["summary"][grp]["theta0"]["p0_to_stay_closed_MPa"]["tension"][lo_k][0]
+        assert f"{down(need, 2):.2f} MPa ({lab})" in v
+        sd = d["summary"][grp]["theta0"]["at_source_day"]["tension"]
+        counts = [sd[e][n]["cells_open"] for e in ("low", "high") for n in names]
+        m = d["summary"][grp]["cells"]
+        quant = f"every one of its {m} cells" if min(counts) == m else f"at least {min(counts)} of its {m} cells"
+        assert f"{quant} ({lab}; {d['summary'][grp]['bare_lattice_cells']} bare lattice)" in v
+    needs = [d["summary"][g]["theta0"]["p0_to_stay_closed_MPa"]["tension"][lo_k][0] for g in ("scots_pine", "green")]
+    assert f"— {down(min(needs) / max(p0), 1):.1f}× the higher named root reading ({max(p0)} MPa" in v
+    zmax = max(x["max"] for e in ("low", "high") for x in zu[e].values() if x["max"] is not None)
+    assert f"below a Zener ratio of {up(zmax, 3):.3f} on some install angle" in v
+    bu = d["consumer_binding_106_theta0"]["union"]
+    rb = min(x["threshold_over_onset_min"] for x in bu.values())
+    assert f"open at least {down(rb, 1):.1f}× below the binding strain" in v
+    p0b = min(min(x["p0_to_stay_closed_at_threshold_MPa"].values()) for x in bu.values())
+    assert f"only under p₀ ≥ {down(p0b, 1):.1f} MPa" in v
+    sup = d["consumer_junction"]["union"]["sup_C44_zero"]
+    hi_k = d["inputs"]["strain_ends"]["high"]
+    assert f"on {len(sup['tension_half_open_at'][hi_k])} of {len(names)} named readings" in v
+
+
 def test_gyroid_wood_strain_share_invariants():
     """106 (00_07 HW.23, the orthotropic-Eshelby leg): cells recomputed HERE by another ARITHMETIC — Mura's integral by
     Gauss–Legendre on [0, π] (the script: midpoints on [0, 2π]), the wood's compliance built as a 4th-order tensor and

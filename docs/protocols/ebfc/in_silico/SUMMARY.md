@@ -1308,6 +1308,92 @@ quotient rounds to 66.8 %) — ESM 2/3 print none), G_LR and G_RT out of the sha
 
 ---
 
+## HW.23 — Can the Bonded Gyroid's Interface Stand as a Pressed Contact? (script 108)
+
+`106` takes the gyroid's interface as perfectly bonded, and no primary in reach supports a bond there or measures one.
+`108` prices that reading without new mechanics: on `106`'s bonded Eshelby solution the gyroid's stress σᴵ is uniform,
+so the interface traction is exact, t(ψ) = σᴵ·n(ψ) at the angle ψ from the stem's axis — and a contact with no
+adhesion, pressed by a growth pressure p₀ and held by friction, carries that field only where it stays closed (σ_n < p₀,
+tension positive) and sticks (|τ| ≤ μ·(p₀ − σ_n)). `106`'s cache holds no σᴵ, so `108` recomputes it with `106`'s own
+functions and holds them, exactly, to every cell of both of `106`'s wood groups — the dry Scots pine group and the green
+Pinaceae group (⚖️ (Б)); a `106` group it does not read stops the run, and its cache test reds once `106` or `105`
+moves a field `108` read. The stem's bending stress on the infinite cylinder puts normal traction and in-plane shear on
+the interface; its axial shear is zero by the R → −R symmetry the wood, the lattice and the load share. Neither μ nor p₀
+is picked: the map prints the friction needed and the p₀ each statement needs, and sets beside it two named readings of
+ROOT growth pressure in one source, Bruder 1998 (FZKA 6206, doi 10.5445/IR/67698) — no primary was found for a stem
+callus: the turgor of free root cells, 0.5 MPa (p. 15, his ref [27], secondary), and his own first field test, 15 spring
+clamps (5–20 N/mm) on thin poplar roots read after about two years at about 2 mm of growth, «bis zu 0,72 MPa» (p. 100) —
+a compliant restraint, so no stall pressure, and whether it rises further he left open.
+The 2.5 MPa he also prints is not taken: Bruder uses it in two senses — on p. 15 an indirect reading on roots impeded in
+their expansion, open-ended above (his ref [28]), on p. 100 the soil strength at which root growth stops (his ref [86]).
+The strain is the source day's that `105` carries from `87`, 676–1837 µε at the gyroid (its median on a DBH-38 host's
+bark … its upper whisker on a large stem); both halves of the sway occur as the wind turns — tension, the anchor on the
+stem's windward face, and compression.
+
+**Read as a smooth contact on the gyroid's envelope, the bonded field stays closed at the source day's strain at θ = 0
+only under p₀ of at least 5.14 MPa (Scots pine group) ⊥ 1.75 MPa (green group) — 2.4× the clamp reading — and on both
+named readings it is open in every cell of both groups.** With tissue in the macropores — canon's own Phase 2
+(`01_04 §2`) — that is no opening but the demand on an interlocked composite, which needs no adhesion to carry tension
+and for which the map has no direction. The tension half opens the poles facing along the stem; the compression half —
+where the wood's lateral expansion outruns the gyroid's — those facing around it (never in 107 green cells, whose σᴵ
+stays tensile across the stem):
+
+| group | p₀ reading (Bruder 1998) | p₀, MPa | tension half opens above, µε | compression half at the day's two ends, 676 ⊥ 1837 µε: cells open · friction needed where closed, at least |
+|---|---|---|---|---|
+| Scots pine, 180 cells | turgor of free root cells (p. 15) | 0.5 | 29–66 | 108 ⊥ 149 · 1.98–3.46 ⊥ 3.48–8.96 |
+| Scots pine, 180 cells | his spring clamps on poplar roots (p. 100) | 0.72 | 41–95 | 62 ⊥ 114 · 1.57–20.39 ⊥ 2.83–16.21 |
+| green, 468 cells | turgor of free root cells (p. 15) | 0.5 | 44–193 | 17 ⊥ 72 · 0.86–10.11 ⊥ 1.48–10.79 |
+| green, 468 cells | his spring clamps on poplar roots (p. 100) | 0.72 | 62–277 | 0 ⊥ 46 · 0.68–3.94 ⊥ 1.24–73.63 |
+
+Below its onset the tension half needs a friction that rises from zero, and at half the opening strain it already
+needs at least 0.34–0.39 on either reading (that ratio needs no p₀). At the source day's strain the averaged traction
+exceeds p₀ over at least 54 % of the circumference in the tension half. The pole traction is 0.70–1.24× the wood's own
+bending stress E_L·ε, so at θ = 0 the verdict does not hang on which of `106`'s readings holds, and the p₀ it needs
+scales with the wood's E_L.
+
+**Off the cube axis C44 enters**, and the pole traction never falls as C44 rises (asserted on `106`'s grid); at C44's
+Voigt ceiling no install angle opens the tension half later than θ = 0 does. The averaged traction keeps the tension
+half closed at the source day's strain only below a Zener ratio of 0.035 (on the clamp reading at the day's 676 µε),
+against the Voigt ceiling 4.402 — no measured C44 is used. On 12 green lattice cells the pole traction falls to zero or
+below as C44 → 0: the gyroid sits in biaxial compression there, and its tension half does not open at all.
+
+**Both consumers**, read from `106`'s consumer blocks. At the cell behind `106`'s binding claim — the union's lowest
+θ = 0 share, Davies' Table 2 stiff outerwood on the softer-axis reading under the Voigt phase bound, where σᴵ is a bound
+tensor's stress rather than an admissible traction — a smooth envelope would open at least 17.4× below the binding
+strain (Ta: 2562 µε against an opening above 103 ⊥ 148 µε) and would stay closed up to it only under p₀ of at least
+12.5 MPa; the Scots pine group's binding cell, printed beside it as the price, gives 23.6× and 17.0 MPa. Net tension
+across the envelope is carried by any load-bearing composite, bonded or interlocked, so this shows no need for adhesion.
+The junction's adverse end is the highest share: at θ = 0 (the bare lattice on the driest Scots softer-axis reading) the
+tension half opens above 37–46 ⊥ 53–66 µε, below the source day; at the union's C44 → 0 supremum (θ = 45°, Davies'
+stiff outerwood from the raw ESM means, bare lattice) the in-plane stress is isotropic — the bending field puts no
+averaged in-plane shear on the envelope there, which is no holding claim — and the tension half opens above 630 ⊥ 907
+µε: at the day's median on a DBH-38 bark on the turgor reading, at its upper whisker on a large stem on both.
+The anode's axial bond force (`105`'s S2 path, its mature and rigid-sleeve states at the source day) rides the same
+envelope as a mean axial shear of 0.03–1.20 MPa over Ø11 × 40; it is not superposed point by point (its distribution
+along the gyroid is a shear lag), and on a smooth envelope it can only raise the friction needed.
+
+⚠️ **Bounds.** The traction is the homogenised one — the average over the cut lattice on the Ø11 envelope, where one
+lattice cell spans 21–26° of ψ, so the open shares and the friction maxima carry an unquantified O(cell/radius) error.
+Its direction holds only for a smooth contact whose local normal is the envelope's: there full stick needs
+|τ| ≤ μ·(p₀ − σ_n) at every point, so the averaged ratio is a lower bound on the friction needed and an averaged opening
+forces a local one — such a contact can be shown failing, never holding. A contact that is not smooth has no guaranteed
+direction (an inclined facet carries averaged shear with zero friction, an undercut one averaged tension under positive
+pressure), and with tissue in the pores the envelope is crossed by an interlocked composite, for which the traction is a
+demand and neither failing nor holding follows; even the bare-lattice cells are smooth only while no tissue grows into
+the surface relief. p₀ is a root's, read as uniform, sustained and free of shear; the further root figures on Bruder's
+pages — primary growth near the root tip (his ref [85]), up to 1.45 MPa, and a bottle-neck root (his ref [87]) — all
+lie below the lowest p₀ needed. The Ø15 wall (the callus against the drilled old wood) is no interface in `106`'s model
+and is not computed; the finite length — the ends' axial shear — is not modelled. What opening, slip and interlock do to
+the share is the leg's next step and is not computed here (a fully open smooth envelope decouples like `106`'s soft
+ring; an interlock does not decouple in tension). Controls: `106`'s cells of both groups reproduced exactly; the
+projection against the isotropic closed form (Goodier/Muskhelishvili, shear excited) and against the Mohr circle on
+every install-angle row; the tangent maximum against a brute force over the circle; the axial shear zero on every state;
+σᴵ at θ = 0 free of C44; the pole traction never falling as C44 rises; the cache test recomputes every θ = 0 cell by
+another arithmetic and the fingerprint of the `106` and `105` fields read. Cache:
+`mechanical/gyroid_interface_contact_map.json`.
+
+---
+
 ## HW.26 — How Far Can the Bus Wire Twist? (script 101)
 
 Once HW.8.9 makes the Zone-3 shank a fit, an event torque on the flange (the bayonet, a branch, an animal) reacts

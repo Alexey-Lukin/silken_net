@@ -265,6 +265,13 @@ Anchor mechanics (CPU):
      wood's strain the bonded gyroid takes; the Scots pine constants and the green Pinaceae proxies' transcriptions live
      in the script, a separate group from the Scots pine one); a re-run of 105 or the FEA
      sweep re-runs 106
+  106 (importlib: WOOD, green_sets(), the readings, its Eshelby and tensor functions; gyroid_wood_strain_share.json:
+     the lattice reading, the grids, the cells of BOTH groups and the consumer blocks — its shares reproduced before
+     use, its σᴵ recomputed, since the cache holds none; a 106 group 108 does not read stops the run) · 105
+     (printed_part_sway_stress.json: the source day's strain, the depth fractions, the anode's bond force) ·
+     tools/cad/cem (the pine anode's envelope and period) → 108 (gyroid_interface_contact_map.json — 106's bonded
+     interface read as a pressed frictional contact; the growth-pressure readings live in the script; a sha256 of the
+     106 and 105 fields it read, recomputed by its cache test); a re-run of 106 or 105 re-runs 108
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

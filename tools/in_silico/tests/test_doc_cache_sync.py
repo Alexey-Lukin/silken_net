@@ -6525,6 +6525,227 @@ CHECKS += [
      lambda d: _mo106(d, "soft", "rising"), 0.0),
 ]
 
+# ── 108: 106's bonded interface read as a pressed frictional contact, per wood group (Scots pine ⊥ green ⊥ union).
+#    Every number is positive by construction and its ranges are joined by an en dash, so the class is UNSIGNED (a
+#    signed class would read «29–66» as 29 and −66). «opens above» rounds UP, «at least» / «only under p₀ of at least»
+#    DOWN, «only below a Zener ratio» UP (in-silico §When Modifying #43). ──
+CONTACT108 = "mechanical/gyroid_interface_contact_map.json"
+_U = r"([\d.]+)"
+_C108_GROUPS = (("Scots pine", "scots_pine"), ("green", "green"))
+_C108_READ = (("turgor of free root cells (p. 15)", "turgor_free_root_cells"),
+              ("his spring clamps on poplar roots (p. 100)", "spring_clamps_on_poplar_roots"))
+
+
+def _c108_row(glabel, rlabel, j):
+    num = [_U if j == k else r"[\d.]+" for k in range(10)]
+    cells = [f"{re.escape(glabel)}, {num[0]} cells", re.escape(rlabel), num[1], f"{num[2]}–{num[3]}",
+             f"{num[4]} ⊥ {num[5]} · {num[6]}–{num[7]} ⊥ {num[8]}–{num[9]}"]
+    return r"(?m)^\| " + r" \| ".join(cells) + r" \|$"
+
+
+def _c108_cell(d, g, n, j):
+    """Column j of a (group, p₀) row: the group's cell count · the reading · the tension half's opening («opens above» —
+    UP) · the compression half's open cells at the day's two ends · the friction needed where closed («at least» —
+    DOWN)."""
+    s = d["summary"][g]["theta0"]
+    t = s["opening_onset_ue"]["tension"][n]["range"]
+    lo, hi = (s["at_source_day"]["compression"][e][n] for e in ("low", "high"))
+    return [d["summary"][g]["cells"], d["inputs"]["p0_readings"][n]["MPa"], _ceil_n(t[0], 0), _ceil_n(t[1], 0),
+            lo["cells_open"], hi["cells_open"], _floor_n(lo["mu_req_max_closed"][0], 2),
+            _floor_n(lo["mu_req_max_closed"][1], 2), _floor_n(hi["mu_req_max_closed"][0], 2),
+            _floor_n(hi["mu_req_max_closed"][1], 2)][j]
+
+
+def _c108_end(d, end):
+    return d["inputs"]["strain_at_gyroid_ue"][d["inputs"]["strain_ends"][end]]
+
+
+def _c108_need(d, g):
+    return d["summary"][g]["theta0"]["p0_to_stay_closed_MPa"]["tension"][d["inputs"]["strain_ends"]["low"]][0]
+
+
+def _c108_zstar(d):
+    """(value, end, reading) of the largest Zener ratio that keeps the union's tension half closed on some angle."""
+    z = d["summary"]["union"]["grid"]["zener_below_which_tension_half_stays_closed"]
+    return max(((v["max"], e, n) for e in ("low", "high") for n, v in z[e].items() if v["max"] is not None),
+               key=lambda r: r[0])
+
+
+def _c108_bind(d, g):
+    b = d["consumer_binding_106_theta0"][g]
+    return b, min(b, key=lambda al: b[al]["threshold_over_onset_min"])
+
+
+def _c108_jn(d, i, f):
+    return f(_ceil_n(v["opening_onset_tension_ue"][i], 0)
+             for v in d["consumer_junction"]["union"]["theta0_highest"].values())
+
+
+def _c108_further(d):
+    f = d["inputs"]["p0_further_on_the_pages"]
+    return max(f["primary_growth_near_root_tip_ref85_MPa"]["axial_range"][1],
+               f["primary_growth_near_root_tip_ref85_MPa"]["radial_range"][1], f["bottle_neck_root_ref87_MPa"]["range"][1])
+
+
+CHECKS += [
+    *[(f"contact108 {g} {key} col {j} → 108", SUMMARY, _c108_row(glabel, rlabel, j), CONTACT108,
+       (lambda gg, k, jj: lambda d: _c108_cell(d, gg, k, jj))(g, key, j), 0.0)
+      for glabel, g in _C108_GROUPS for rlabel, key in _C108_READ for j in range(10)],
+    ("contact108 strain low → 108", SUMMARY, rf"carries from `87`, {_U}–\d+ µε at the gyroid", CONTACT108,
+     lambda d: round(_c108_end(d, "low")), 0.0),
+    ("contact108 strain high → 108", SUMMARY, rf"carries from `87`, \d+–{_U} µε at the gyroid", CONTACT108,
+     lambda d: round(_c108_end(d, "high")), 0.0),
+    ("contact108 table low end → 108", SUMMARY, rf"two ends, {_U} ⊥ \d+ µε: cells open", CONTACT108,
+     lambda d: round(_c108_end(d, "low")), 0.0),
+    ("contact108 table high end → 108", SUMMARY, rf"two ends, \d+ ⊥ {_U} µε: cells open", CONTACT108,
+     lambda d: round(_c108_end(d, "high")), 0.0),
+    ("contact108 turgor prose → 108", SUMMARY, rf"the turgor of free root cells, {_U} MPa \(p\. 15", CONTACT108,
+     lambda d: d["inputs"]["p0_readings"]["turgor_free_root_cells"]["MPa"], 0.0),
+    ("contact108 excluded → 108", SUMMARY, rf"The {_U} MPa he also prints is not taken", CONTACT108,
+     lambda d: d["inputs"]["p0_excluded"]["MPa"], 0.0),
+    ("contact108 need scots → 108", SUMMARY, rf"p₀ of at least {_U} MPa \(Scots pine group\)", CONTACT108,
+     lambda d: _floor_n(_c108_need(d, "scots_pine"), 2), 0.0),
+    ("contact108 need green → 108", SUMMARY, rf"⊥ {_U} MPa \(green group\) — ", CONTACT108,
+     lambda d: _floor_n(_c108_need(d, "green"), 2), 0.0),
+    ("contact108 need over the clamp reading → 108", SUMMARY, rf"— {_U}× the clamp reading", CONTACT108,
+     lambda d: _floor_n(min(_c108_need(d, g) for g in ("scots_pine", "green"))
+                        / d["inputs"]["p0_readings"]["spring_clamps_on_poplar_roots"]["MPa"], 1), 0.0),
+    ("contact108 green never in compression → 108", SUMMARY, rf"\(never in {_U} green cells, whose", CONTACT108,
+     lambda d: d["summary"]["green"]["theta0"]["opening_onset_ue"]["compression"]["turgor_free_root_cells"]["cells_never"],
+     0.0),
+    ("contact108 half onset low → 108", SUMMARY, rf"needs at least {_U}–[\d.]+ on either reading", CONTACT108,
+     lambda d: _floor_n(d["summary"]["union"]["theta0"]["mu_req_max_at_half_onset"]["tension"][0], 2), 0.0),
+    ("contact108 half onset high → 108", SUMMARY, rf"needs at least [\d.]+–{_U} on either reading", CONTACT108,
+     lambda d: _floor_n(d["summary"]["union"]["theta0"]["mu_req_max_at_half_onset"]["tension"][1], 2), 0.0),
+    ("contact108 open share → 108", SUMMARY, rf"exceeds p₀ over at least {_U} % of the", CONTACT108,
+     lambda d: _floor_n(100 * min(x for e in ("low", "high")
+                                  for v in d["summary"]["union"]["theta0"]["at_source_day"]["tension"][e].values()
+                                  for x in v["open_share"]), 0), 0.0),
+    ("contact108 pole over E_L low → 108", SUMMARY, rf"pole traction is {_U}–[\d.]+× the wood's own", CONTACT108,
+     lambda d: _floor_n(d["summary"]["union"]["theta0"]["sigma1_over_E_L"][0], 2), 0.0),
+    ("contact108 pole over E_L high → 108", SUMMARY, rf"pole traction is [\d.]+–{_U}× the wood's own", CONTACT108,
+     lambda d: _ceil_n(d["summary"]["union"]["theta0"]["sigma1_over_E_L"][1], 2), 0.0),
+    ("contact108 zener → 108", SUMMARY, rf"only below a Zener ratio of {_U} \(on the", CONTACT108,
+     lambda d: _ceil_n(_c108_zstar(d)[0], 3), 0.0),
+    ("contact108 zener strain → 108", SUMMARY, rf"reading at the day's {_U} µε\),", CONTACT108,
+     lambda d: round(_c108_end(d, _c108_zstar(d)[1])), 0.0),
+    ("contact108 voigt ceiling → 108", SUMMARY, rf"against the Voigt ceiling {_U} — no measured", CONTACT108,
+     lambda d: _ceil_n(d["inputs"]["lattice_reading_106"]["zener_voigt_ceiling"], 3), 0.0),
+    ("contact108 green σ₁ ≤ 0 cells → 108", SUMMARY, rf"On {_U} green lattice cells the pole traction", CONTACT108,
+     lambda d: d["summary"]["green"]["grid"]["lattice_cells_with_sigma1_nonpositive_somewhere"], 0.0),
+    ("contact108 binding ratio → 108", SUMMARY, rf"would open at least {_U}× below the binding", CONTACT108,
+     lambda d: _floor_n(min(v["threshold_over_onset_min"] for v in _c108_bind(d, "union")[0].values()), 1), 0.0),
+    ("contact108 binding threshold → 108", SUMMARY, rf"\(Ta: {_U} µε against an opening", CONTACT108,
+     lambda d: min(_c108_bind(d, "union")[0]["Ta"]["threshold_ue_106"].values()), 0.0),
+    *[(f"contact108 binding onset {i} → 108", SUMMARY,
+       r"against an opening above " + " ⊥ ".join(_U if k == i else r"\d+" for k in range(2)) + r" µε\)", CONTACT108,
+       (lambda ii: lambda d: _ceil_n(_c108_bind(d, "union")[0]["Ta"]["opening_onset_tension_ue"][ii], 0))(i), 0.0)
+      for i in range(2)],
+    ("contact108 binding p0 → 108", SUMMARY, rf"(?m)^{_U} MPa; the Scots pine group's binding cell", CONTACT108,
+     lambda d: _floor_n(min(min(v["p0_to_stay_closed_at_threshold_MPa"].values())
+                            for v in _c108_bind(d, "union")[0].values()), 1), 0.0),
+    ("contact108 binding price ratio → 108", SUMMARY, rf"as the price, gives {_U}× and [\d.]+ MPa", CONTACT108,
+     lambda d: _floor_n(min(v["threshold_over_onset_min"] for v in _c108_bind(d, "scots_pine")[0].values()), 1), 0.0),
+    ("contact108 binding price p0 → 108", SUMMARY, rf"as the price, gives [\d.]+× and {_U} MPa", CONTACT108,
+     lambda d: _floor_n(min(min(v["p0_to_stay_closed_at_threshold_MPa"].values())
+                            for v in _c108_bind(d, "scots_pine")[0].values()), 1), 0.0),
+    *[(f"contact108 junction θ0 {i} {f.__name__} → 108", SUMMARY,
+       r"tension half opens above " + " ⊥ ".join(((_U + r"–\d+") if (k == i and f is min) else
+                                                  (r"\d+–" + _U) if (k == i and f is max) else r"\d+–\d+")
+                                                 for k in range(2)) + " µε, below the source day", CONTACT108,
+       (lambda ii, ff: lambda d: _c108_jn(d, ii, ff))(i, f), 0.0)
+      for i in range(2) for f in (min, max)],
+    *[(f"contact108 junction sup {i} → 108", SUMMARY,
+       r"(?m)no holding claim — and the tension half opens above " + " ⊥ ".join(_U if k == i else r"\d+"
+                                                                              for k in range(2)) + "$", CONTACT108,
+       (lambda ii: lambda d: _ceil_n(d["consumer_junction"]["union"]["sup_C44_zero"]["opening_onset_tension_ue"][ii],
+                                     0))(i), 0.0)
+      for i in range(2)],
+    ("contact108 axial low → 108", SUMMARY, rf"mean axial shear of {_U}–[\d.]+ MPa", CONTACT108,
+     lambda d: _floor_n(d["axial_anode_bond_force_105"]["mean_shear_MPa_range"][0], 2), 0.0),
+    ("contact108 axial high → 108", SUMMARY, rf"mean axial shear of [\d.]+–{_U} MPa", CONTACT108,
+     lambda d: _ceil_n(d["axial_anode_bond_force_105"]["mean_shear_MPa_range"][1], 2), 0.0),
+    ("contact108 ψ span low → 108", SUMMARY, rf"lattice cell spans {_U}–\d+° of ψ", CONTACT108,
+     lambda d: round(d["psi_resolution"]["psi_span_of_one_cell_deg"][0]), 0.0),
+    ("contact108 ψ span high → 108", SUMMARY, rf"lattice cell spans \d+–{_U}° of ψ", CONTACT108,
+     lambda d: round(d["psi_resolution"]["psi_span_of_one_cell_deg"][1]), 0.0),
+    ("contact108 further root figure → 108", SUMMARY, rf"up to {_U} MPa, and a bottle-neck root", CONTACT108,
+     _c108_further, 0.0),
+]
+
+
+def test_contact108_categorical_sentences_follow_the_cache():
+    """108's SUMMARY sentences that name SETS, PLACES, QUANTIFIERS or DIRECTIONS, recomposed from the cache (in-silico
+    §When Modifying #5): open in every θ = 0 cell of both groups on both named readings at the source day; the tension
+    half at the poles along the stem (σ₁ = σ_LL) and the compression half at the poles around it (σ₂ = σ_TT), never in
+    the green cells whose σ_TT stays tensile and in every Scots pine cell; the axial shear zero; no install angle opening
+    later than θ = 0 at C44's ceiling; the Zener threshold's reading and end; the σ₁ ≤ 0 lattice cells green only; the
+    binding and junction cells by name, Ta the binding example; the junction supremum isotropic and open on the
+    readings and placements the prose names; the further root figures below every need; the 2.5 MPa out of the
+    readings; the direction claims scoped to a smooth envelope.
+    CAN catch: a re-run that moves a set, a place, a quantifier or a direction while the prose keeps the old one, and
+    an unscoped «never holding» or «no friction is needed» back in the section. CANNOT catch: a sentence this test does
+    not compose (the readings' descriptions, the bounds paragraph beyond the scoped phrases)."""
+    d = json.loads((CACHE / CONTACT108).read_text(encoding="utf-8"))
+    text = " ".join(doc(SUMMARY).split())
+    head = "## HW.23 — Can the Bonded Gyroid's Interface Stand as a Pressed Contact? (script 108)"
+    sec = text[text.index(head):text.index(" --- ", text.index(head))]
+    names = d["inputs"]["p0_list_order"]
+    assert len(names) == 2 and "on both named readings" in sec
+    for rlabel, key in _C108_READ:           # the table's reading labels carry the cache's page
+        assert f"(p. {d['inputs']['p0_readings'][key]['page']})" in rlabel, key
+    for g in ("scots_pine", "green"):
+        sd = d["summary"][g]["theta0"]["at_source_day"]["tension"]
+        assert all(sd[e][n]["cells_open"] == d["summary"][g]["cells"] for e in ("low", "high") for n in names), g
+    assert "on both named readings it is open in every cell of both groups." in sec
+    th0 = {k: v["theta0"] for k, v in {**d["cells"], **d["green_cells"]}.items()}
+    assert all(abs(b["sigma1"] / b["sigma_I_MPa_per_unit_strain"]["LL"] - 1) < 1e-12 for b in th0.values())
+    assert all(abs(b["sigma2"] / b["sigma_I_MPa_per_unit_strain"]["TT"] - 1) < 1e-9 for b in th0.values())
+    assert "The tension half opens the poles facing along the stem; the compression half" in sec
+    comp = d["summary"]["green"]["theta0"]["opening_onset_ue"]["compression"]
+    assert len({comp[n]["cells_never"] for n in names}) == 1
+    assert all(d["summary"]["scots_pine"]["theta0"]["opening_onset_ue"]["compression"][n]["cells_never"] == 0
+               for n in names)
+    never = {k for k, b in d["green_cells"].items() if b["theta0"]["sigma2"] >= 0}
+    assert len(never) == comp[names[0]]["cells_never"] and "green cells, whose σᴵ stays tensile across the stem" in sec
+    assert d["controls"]["axial_shear_over_stress_worst"] < 1e-12 and "its axial shear is zero" in sec
+    g = d["summary"]["union"]["grid"]
+    assert g["theta_of_lowest_sigma1_at_voigt_ceiling"] == [0.0]
+    assert "no install angle opens the tension half later than θ = 0 does" in sec
+    _, _end, n = _c108_zstar(d)
+    assert n == "spring_clamps_on_poplar_roots" and "(on the clamp reading at the day's" in sec
+    assert d["summary"]["scots_pine"]["grid"]["lattice_cells_with_sigma1_nonpositive_somewhere"] == 0
+    assert "green lattice cells the pole traction falls to zero or below as C44 → 0" in sec
+    b, al = _c108_bind(d, "union")
+    assert all(v["cell"].endswith("|davies2016_table2_SO|soft|pores_voigt_phase_bound") for v in b.values()) and al == "Ta"
+    assert "Davies' Table 2 stiff outerwood on the softer-axis reading under the Voigt phase bound" in sec
+    jn = d["consumer_junction"]["union"]
+    assert all(v["cell"].endswith("|rh45|soft|pores_carry_nothing") for v in jn["theta0_highest"].values())
+    assert "(the bare lattice on the driest Scots softer-axis reading)" in sec
+    sup = jn["sup_C44_zero"]
+    assert sup["cell"].endswith("|davies2016_esm_SO|stiff|pores_carry_nothing") and sup["theta_deg"] == 45.0
+    assert "(θ = 45°, Davies' stiff outerwood from the raw ESM means, bare lattice)" in sec
+    assert sup["in_plane_stress_isotropic"] and "the in-plane stress is isotropic" in sec
+    ends = d["inputs"]["strain_ends"]
+    assert sup["tension_half_open_at"][ends["low"]] == ["turgor_free_root_cells"]
+    assert sup["tension_half_open_at"][ends["high"]] == list(names)
+    assert "at the day's median on a DBH-38 bark on the turgor reading, at its upper whisker on a large stem on both" in sec
+    assert _c108_further(d) < min(_c108_need(d, g) for g in ("scots_pine", "green"))
+    assert "all lie below the lowest p₀ needed" in sec
+    assert d["inputs"]["p0_excluded"]["MPa"] not in [d["inputs"]["p0_readings"][n]["MPa"] for n in names]
+    assert "such a contact can be shown failing, never holding" in sec and "no friction is needed" not in sec
+    assert sec.count("never holding") == 1 and "for which the map has no direction" in sec
+    # the PIPELINE_STATUS row's three categorical clauses, from the same fields
+    pipe = " ".join(doc(PIPELINE).split())
+    row = pipe[pipe.index("| 108 | `gyroid_interface_contact_map` |"):]
+    row = row[:row.index("| `mechanical/gyroid_interface_contact_map.json` |")]
+    p0_hi = max(d["inputs"]["p0_readings"][n]["MPa"] for n in names)
+    assert min(_c108_need(d, g) for g in ("scots_pine", "green")) >= 2 * p0_hi
+    assert "only under a p₀ at least twice the higher named reading" in row
+    assert "on both readings it is open in every cell of both groups" in row
+    assert _c108_zstar(d)[0] < 0.05 * d["inputs"]["lattice_reading_106"]["zener_voigt_ceiling"]
+    assert "a Zener ratio that is a small fraction of its Voigt ceiling" in row and "no direction follows" in row
+
 
 # ── 106's green group and the union (⚖️ founder 2026-10-22, HW.23 option (Б)) ⟷ SUMMARY «Green wood». A LOWEST share
 # rounds DOWN, as in the cache's verdict string (it backs a «binds» sentence — the higher threshold; 2026-10-22, one
