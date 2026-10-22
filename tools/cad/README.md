@@ -111,8 +111,9 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
 - **Continuous radial gradient distorts above ~0.8× period ratio:** a spatially-varying
   frequency makes the SDF non-Eikonal (`|∇eq| ∝ f`); the parasitic `∇f·coord` term collapses
   porosity (measured 67→42 % at period 2.5→1.3 mm). Keep continuous gradients gentle — and the
-  ~0.8× is the CROSS-SECTION's bound: Z is scaled by the same 2π/P(r), so the phase gains a
-  z·k′(r) term that grows with height, with no measured bound (`00_07` HW.33). For a
+  ~0.8× is a POROSITY bound (per radial shell over the full height): Z is scaled by the same
+  2π/P(r), so the phase gains a z·k′(r) term that grows with height, and cell shape by height was
+  never measured (`00_07` HW.33). For a
   STRONG pore contrast use `topology: stepped` (µ-LPBF only, not an SLM candidate — `01_01 §5.5`; constant-period zones → distortion only at the
   thin boundary ring). A phase-correct strong continuous gradient needs period-tensor/conformal
   (Noyron/nTop-level), beyond this demo. **Per-shell porosity uses cumulative-diff** (thin rings
@@ -151,7 +152,7 @@ for this sentence, so the claim was circular and lived nowhere.
 answer is open, and on the porosity axis it is BIOLOGY's to give — ⚖️ 2026-09-17, `01_01 §5.5`; the
 generator is unbiased, not opinionated):
 - **continuous cell-size** (`GyroidPeriodRimMm`): gentle only (phase-distortion-limited ~0.8×) —
-  flat porosity, smooth pore taper.
+  flat porosity, smooth radial pore taper (pore size by height unmeasured — `00_07` HW.33).
 - **porosity gradient** (`GyroidWallParamRim`): clean monotone profile (the "softer rim").
 - **stepped heterostructure** (`Topology: stepped`, `ZonedGyroid`): strong ~2× pore contrast at
   constant porosity — µ-LPBF only: ⚖️ 2026-09-17 it is NOT an SLM candidate (`01_01 §5.5`). Own SDF, not LEAP `ImplicitModular` (`FunctionalScaleTrafo` is a hard-coded

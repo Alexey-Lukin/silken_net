@@ -62,12 +62,14 @@
    Separately, a **continuous radial gradient distorts above ~0.8× period ratio** (non-Eikonal
    `|∇eq|∝f`; the `∇f·coord` term collapses porosity 67→42% at 2.5→1.3mm) → keep continuous gentle,
    or use `ZonedGyroid` (stepped — µ-LPBF only) for strong contrast. Per-shell porosity = cumulative-diff
-   (thin rings under-count metal on distorted geometry). ⚠️ That ~0.8× was read in the CROSS-SECTION:
-   `GradedCartesianGyroid` scales Z by the same 2π/P(r), so the phase also gains z·k′(r), growing from
-   z = 0 — along the axis no gentleness bound was ever measured, and the only flat-axial-profile test
-   (`AnchorTests.Axial_Profile_Is_Flat_For_A_Radial_Gradient`) runs on `stepped`, which has no such term
-   (`00_07` HW.33 — measure pore and ligament by height: a distortion can keep porosity per layer and
-   still change both).
+   (thin rings under-count metal on distorted geometry). ⚠️ That ~0.8× is a POROSITY bound — read per
+   radial shell over the full height, the z term inside that volume — and porosity says nothing about
+   cell shape: `GradedCartesianGyroid` scales Z by the same 2π/P(r), so the phase also gains z·k′(r),
+   growing from z = 0. Pore and ligament by height were never measured; `verify` writes a per-z
+   porosity profile that nothing gates, and its only test
+   (`AnchorTests.Axial_Profile_Is_Flat_For_A_Radial_Gradient`) runs on `stepped`, whose zones carry the
+   term only as a jump at the zone boundary (`00_07` HW.33 — a distortion can keep porosity per layer
+   and still change pore and ligament).
 
 6. **Keep `ImplicitUsings` ENABLED for the vendored `src/SilkenCad.Leap`, and the strict knobs ON only for our own code** — vendored LEAP source relies on
    implicit `using System` / `System.Collections.Generic`. Disabling → 200+ CS0246. Strict

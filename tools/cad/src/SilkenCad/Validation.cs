@@ -47,7 +47,7 @@ internal sealed record GeometryMetrics
     // compared at an equal wallParam instead, network reads 1.45 while sitting at 50 % porous, which is a
     // different part, not a different topology.
     public double? SpecificSurfaceMm2PerMm3 { get; init; }
-    public double[]? AxialPorosityProfile { get; init; }    // per-Z porosity; must be ~flat (the radial-gradient axial-uniformity gate)
+    public double[]? AxialPorosityProfile { get; init; }    // per-Z porosity; expected ~flat — a check written to the metrics, gated by nothing (Connectivity.AxialProfile)
 
     // ARCH.25 nice-to-have residual (TopologyCrossChecks.cs, null for non-anchor parts): Euler-χ
     // cross-check against the flood-fill's own b0/b2 (a negative EulerHandles proves one of the two

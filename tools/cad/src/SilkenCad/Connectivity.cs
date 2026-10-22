@@ -84,9 +84,10 @@ internal static class Connectivity
     // opening and the wall scan stand on this grid. Since the welded branch (2026-09-18) that radius is 0 —
     // the part is printed without a core, the bus wire is an assembly part — so the grid is the whole lattice
     // cross-section.
-    // A constant-period gyroid SDF is periodic, so for it the absolute Z origin only shifts the phase. The GRADED one
-    // is not: its z·k′(r) phase term grows from z = 0 (this grid starts there), so the origin decides where the axial
-    // distortion is largest (00_07 HW.33).
+    // A gyroid whose period does not vary with radius (constant period — the graded class too when core and rim periods
+    // are equal) is periodic, so for it the absolute Z origin only shifts the phase. One whose period varies is not: its
+    // z·k′(r) phase term grows from z = 0 (this grid starts there), so the origin decides where that term is largest
+    // (00_07 HW.33).
     public static Grid SampleAnchor(IImplicit sdf, AnchorCem cem, float fStepMm = 0f)
     {
         float fROuter = cem.OuterDiameterMm / 2f;
@@ -197,8 +198,10 @@ internal static class Connectivity
         };
     }
 
-    // Per-bin porosity along the anchor axis. The v2 gradient is RADIAL, so this profile must be
-    // ~FLAT — the axial-uniformity gate (complements the radial per-shell). Bins are ≥ ~2 gyroid
+    // Per-bin porosity along the anchor axis. The v2 gradient is RADIAL, so this profile is expected
+    // ~FLAT — an axial-uniformity CHECK, not a gate: `verify` writes it to the metrics and fails on
+    // nothing, and its one test (AnchorTests) runs on `stepped`; the continuous graded field's phase
+    // drifts with height (00_07 HW.33), and porosity alone cannot show cell shape. Bins are ≥ ~2 gyroid
     // periods thick (fBinMm) so they AVERAGE OUT the cell-scale oscillation and reveal the true
     // axial TREND, not the within-period phase (a thin slice alternates wall↔void → false spread).
     public static double[] AxialProfile(in Grid grid, float fBinMm = 5.0f)

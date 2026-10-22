@@ -66,7 +66,7 @@
   re-check it by `git ls-remote`, never by age; the one that IS behind is `LEAP71_ShapeKernel` — skill
   `dependency-update`). Three CEM-driven axes
   in `Zone1Anode`: `GradedCartesianGyroid` (continuous period+wall taper) + `ZonedGyroid` (stepped
-  zones). Pick by goal — continuous-gentle (≤~0.8× period ratio in the CROSS-SECTION; along the axis the phase's z·k′(r) term has no measured bound — gotcha #5, `00_07` HW.33), `GyroidWallParamRim`
+  zones). Pick by goal — continuous-gentle (≤~0.8× period ratio — a POROSITY bound; cell shape by height, where the phase's z·k′(r) term grows, is unmeasured — gotcha #5, `00_07` HW.33), `GyroidWallParamRim`
   porosity gradient, or `topology: stepped` for a STRONG ~2× pore contrast — ⛔ **µ-LPBF only since ⚖️ 2026-09-17: `stepped` is NOT an SLM pick** (most of its lattice metal sits below the SLM floor BY CONSTRUCTION — share: its golden, `01_02 §6`; revisit trigger: `01_01 §5.5`). **MEASURE** porosity.
 - **Mechanical-lock barbs (`MechanicalLock.cs`, SHIPPED)**: asymmetric ratchet `R(z)` on the Ti shank
   — solid `BaseCylinder().voxConstruct()` + thin barb-ridge `BoolAdd` + a groove-ring `BoolSubtract` ONLY where
