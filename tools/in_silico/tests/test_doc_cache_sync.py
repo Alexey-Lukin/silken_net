@@ -4279,13 +4279,29 @@ CHECKS += [
      lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_oak"]["face_pH_5.5"]["i_anode_uA"][1], 0.05),
     ("face pH: the worst-case draw oak's upper end is held to → 85", SUMMARY, rf"just above the worst-case \*\*{N}\*\* µA",
      FACE_PH, lambda d: d["anchor_anode_sap_gap"]["cold_start_uA"]["worst"], 0.05),
+    ("sap: beech acid-date nitrate, 6 Jul (Q8) → 67", SUMMARY, rf"exactly there, \*\*[\d.]+\*\* · \*\*{N}\*\* · \*\*", SAP,
+     lambda d: d["q8_broadleaf_point"]["summer_acid_dates"]["nitrate_mM"][1], 0.005),
+    # ⊕ 2026-10-22 (review of the application): how much of the read-off error oak's pH-5.5 verdict has — 85's control,
+    # each threshold rounded DOWN (the sentence is «holds while less than X»), pinned exactly
+    ("face pH: oak's margin over the worst-case draw at pH 5.5 → 85", SUMMARY, rf"worst-case \*\*[\d.]+\*\* µA, by \*\*{N}\*\* µA",
+     FACE_PH, lambda d: _down2(d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["point"]["margin_uA"]), 0.0),
+    ("face pH: the Q8 potassium minimum the oak flip moves → 85", SUMMARY, rf"potassium median \(\*\*{N}\*\* mg/L, the point's",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["k_min_mg_l"], 0.0),
+    ("face pH: K-minimum shift that flips oak's verdict → 85", SUMMARY, rf"is read less than \*\*{N}\*\* mg/L lower",
+     FACE_PH, lambda d: _down2(-d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["point"]["k_min_shift_to_flip_mg_l"]), 0.0),
+    ("face pH: the point's malate before the oak flip → 85", SUMMARY, rf"the point's malate steps from \*\*{N}\*\* to",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["point"]["malic_point_mM"], 0.0),
+    ("face pH: the point's malate at the oak flip → 85", SUMMARY, rf"steps from \*\*[\d.]+\*\* to \*\*{N}\*\* mM",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["point"]["malic_point_at_flip_mM"], 0.0),
+    ("face pH: K-minimum shift that flips oak's verdict, KNO3 = 0 → 85", SUMMARY, rf"with KNO₃ = 0, less than \*\*{N}\*\* mg/L",
+     FACE_PH, lambda d: _down2(-d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["kno3_zero"]["k_min_shift_to_flip_mg_l"]), 0.0),
     # 01_02 §2.1 ⊕ — the broadleaf point as canon states it
     ("sap 01_02: beech point Ca (Q8) → 67", METALLURGY, rf"Точка: Ca \*\*{N}\*\* мМ", SAP,
      lambda d: d["q8_broadleaf_point"]["recipe_mM"]["cacl2"], 0.0),
     ("sap 01_02: beech point Mg (Q8) → 67", METALLURGY, rf"· Mg \*\*{N}\*\* мМ · K", SAP,
      lambda d: d["q8_broadleaf_point"]["recipe_mM"]["mgso4"], 0.0),
     ("sap 01_02: beech point K, the geometric mid KOH is solved to (Q8) → 67", METALLURGY,
-     rf"· K \*\*{N}\*\* мМ \(геометрична середина; його дають KOH і KNO₃\)", SAP,
+     rf"· K \*\*{N}\*\* мМ \(геометрична середина; його дає KOH, ⊕ 2026-10-22: і KNO₃\)", SAP,
      lambda d: d["q8_broadleaf_point"]["measured"]["geometric_mid_mM"]["K"], 0.005),
     ("sap 01_02: beech point malic, solved (Q8) → 67", METALLURGY, rf"малат \*\*{N}\*\* мМ \(виведений\)", SAP,
      lambda d: d["q8_broadleaf_point"]["recipe_mM"]["malic"], 0.0),
@@ -4309,6 +4325,22 @@ CHECKS += [
      lambda d: d["q8_broadleaf_point"]["conditions"]["setpoint"]["buffer_capacity_mM_per_pH_25c"], 0.0005),
     ("sap 01_02: beech acid-date nitrate, 25 May (Q8) → 67", METALLURGY, rf"20 липня, \*\*{N} · ", SAP,
      lambda d: d["q8_broadleaf_point"]["summer_acid_dates"]["nitrate_mM"][0], 0.005),
+    ("sap 01_02: beech acid-date nitrate, 6 Jul (Q8) → 67", METALLURGY, rf"20 липня, \*\*[\d.]+ · {N} · ", SAP,
+     lambda d: d["q8_broadleaf_point"]["summer_acid_dates"]["nitrate_mM"][1], 0.005),
+    ("sap 01_02: beech acid-date nitrate, 20 Jul (Q8) → 67", METALLURGY, rf"20 липня, \*\*[\d.]+ · [\d.]+ · {N}\*\* мМ", SAP,
+     lambda d: d["q8_broadleaf_point"]["summer_acid_dates"]["nitrate_mM"][2], 0.005),
+    ("sap 01_02: oak's margin over the worst-case draw at pH 5.5 → 85", METALLURGY, rf"2026-10-22\) на \*\*{N}\*\* мкА: вердикт дуба",
+     FACE_PH, lambda d: _down2(d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["point"]["margin_uA"]), 0.0),
+    ("sap 01_02: the Q8 potassium minimum the oak flip moves → 85", METALLURGY, rf"22 червня 1989 \(\*\*{N}\*\* мг/л, мінімум калію",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["k_min_mg_l"], 0.0),
+    ("sap 01_02: K-minimum shift that flips oak's verdict → 85", METALLURGY, rf"прочитано нижчою менш ніж на \*\*{N}\*\* мг/л",
+     FACE_PH, lambda d: _down2(-d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["point"]["k_min_shift_to_flip_mg_l"]), 0.0),
+    ("sap 01_02: the point's malate before the oak flip → 85", METALLURGY, rf"малат точки сходить із \*\*{N}\*\* на",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["point"]["malic_point_mM"], 0.0),
+    ("sap 01_02: the point's malate at the oak flip → 85", METALLURGY, rf"сходить із \*\*[\d.]+\*\* на \*\*{N}\*\* мМ",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["point"]["malic_point_at_flip_mM"], 0.0),
+    ("sap 01_02: K-minimum shift that flips oak's verdict, no nitrate → 85", METALLURGY, rf"без нітрату — менш ніж на \*\*{N}\*\* мг/л",
+     FACE_PH, lambda d: _down2(-d["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]["kno3_zero"]["k_min_shift_to_flip_mg_l"]), 0.0),
     ("sap 01_02: oak's upper current to pH 5.5 in beech sap → 85", METALLURGY, rf"дуба до pH 5\.5 \(\*\*{N}\*\* мкА\)",
      FACE_PH, lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_oak"]["face_pH_5.5"]["i_anode_uA"][1], 0.05),
     ("sap 01_02: the worst-case cold-start draw → 85", METALLURGY, rf"холодного старту \(\*\*{N}\*\* мкА\)",
@@ -7389,8 +7421,27 @@ def test_anchor_anode_cold_start_words_match_cache():
     named = [datetime.date.fromisoformat(x) for x in acid["dates"]]
     assert f"({named[0].day} May, {named[1].day} and {named[2].day} July)" in text and [x.month for x in named] == [5, 7, 7]
     assert by["anchor_zone1_oak"]["own_sap_reading"]["below_kinetic_edge"] and "oak's own sap stands below the kinetic edge" in text
+
     assert "both as proxies" in text
     assert "load point B" not in text.split("**The anchor's anode")[1].split("**What it says:**")[0]
+
+
+def test_oak_k_min_flip_words_match_cache():
+    """The oak clause of ⊕ 2026-10-22 (SUMMARY §HW.5.IS and 01_02 §2.1 «Ціна», after the review of the nitrate's
+    application): the potassium minimum it names, from 85's control. CAN catch: a rerun whose potassium minimum moves
+    to another date while the texts keep the old one, a margin that is gone (the flag already flipped) or a flip that no
+    longer brings the current below the draw, and a nitrate that stops narrowing the margin. CANNOT catch: which way the
+    read-off errs, nor a second median read off at the same time.
+    """
+    import datetime
+    f = json.loads((CACHE / FACE_PH).read_text(encoding="utf-8"))["anchor_anode_sap_gap"]["oak_verdict_k_min_flip"]
+    day = datetime.date.fromisoformat(f["k_min_date"])
+    en, uk = {6: ("Jun", "червня")}[day.month]   # a minimum in another month fails here, as it should
+    assert f"while the {day.day} {en} {day.year} potassium median" in " ".join((REPO / SUMMARY).read_text(encoding="utf-8").split())
+    assert f"медіану калію {day.day} {uk} {day.year}" in " ".join((REPO / METALLURGY).read_text(encoding="utf-8").split())
+    for k in ("point", "kno3_zero"):
+        assert f[k]["i_upper_at_flip_uA"] < f["cold_start_uA"] < f[k]["i_upper_uA"] and f[k]["margin_uA"] > 0
+    assert f["kno3_zero"]["k_min_shift_to_flip_mg_l"] < f["point"]["k_min_shift_to_flip_mg_l"] < 0   # the nitrate narrowed it
 
 
 def test_a3d_crosscheck_cannot_aggregate_the_exposure_gate_sentinel():

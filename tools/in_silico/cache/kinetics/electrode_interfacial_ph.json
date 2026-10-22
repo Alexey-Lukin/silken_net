@@ -1720,6 +1720,33 @@
           }
         }
       }
+    },
+    "oak_verdict_k_min_flip": {
+      "sku": "anchor_zone1_oak",
+      "edge_pH": 5.5,
+      "cold_start": "worst",
+      "cold_start_uA": 21.429,
+      "k_min_date": "1989-06-22",
+      "k_min_mg_l": 26,
+      "point": {
+        "kno3_mM": 0.05,
+        "malic_point_mM": 0.92,
+        "i_upper_uA": 21.479,
+        "margin_uA": 0.051,
+        "k_min_shift_to_flip_mg_l": -0.3013,
+        "malic_point_at_flip_mM": 0.91,
+        "i_upper_at_flip_uA": 21.278
+      },
+      "kno3_zero": {
+        "kno3_mM": 0.0,
+        "malic_point_mM": 0.95,
+        "i_upper_uA": 22.097,
+        "margin_uA": 0.668,
+        "k_min_shift_to_flip_mg_l": -1.7214,
+        "malic_point_at_flip_mM": 0.91,
+        "i_upper_at_flip_uA": 21.29
+      },
+      "reading": "the verdict holds while the potassium minimum is read less than |k_min_shift_to_flip_mg_l| lower (the bisection's no-flip end, so the true edge lies a hair further); the point moves in steps of 0.01 mM malate, so the flip sits where the solve crosses a rounding edge"
     }
   },
   "not_modelled": [

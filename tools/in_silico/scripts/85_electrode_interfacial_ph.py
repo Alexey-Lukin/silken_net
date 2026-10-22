@@ -410,6 +410,56 @@ def anchor_geometry(zone1_path) -> dict:
             "bottom_cap_over_envelope": r_a / (2.0 * length), "annulus_delta_cm": r_a * math.log(r_b / r_a)}
 
 
+def _anchor_currents(g: dict, totals: dict, ph_b: float, edge: float) -> tuple[dict, list, float, float]:
+    """The envelope current densities (A/cm², per n_H and all together) at which the face reaches `edge`, and the whole
+    anode's current bracket (µA): the envelope alone at the low end, plus the bottom cap at the high end."""
+    j = {n: [F_CONST * -proton_supply(ph_b, edge, sc, d, 1.0, 25.0, totals) * 1e-3 / (n * g["annulus_delta_cm"])
+             for sc in READINGS for d in d_mal(25.0).values()] for n in N_H_ANODE}
+    every = [x for v in j.values() for x in v]
+    lo = min(every) * g["envelope_lateral_area_cm2"] * 1e6
+    hi = max(every) * g["envelope_lateral_area_cm2"] * (1.0 + g["bottom_cap_over_envelope"]) * 1e6
+    return j, every, lo, hi
+
+
+def oak_k_min_flip(edge: float = PH_ANODE_KINETIC_EDGE, cold: str = "worst") -> dict:
+    """Control (review of ⚖️ 2026-10-22, 00_07 HW.3 (А₀)): how much LOWER the Q8 potassium minimum — the 22 Jun 1989
+    median, read off Fig 7 to about ±2 mg/L — must be read before oak's verdict at `edge` against the `cold` cold start
+    flips from «below it in some reading» to «in every reading». The point is re-derived by 67's own rule (the malate
+    re-solved from the shifted geometric mid, two significant figures; Ca, Mg, pH and nitrate untouched) and oak's
+    current bracket recomputed as anchor_anode() computes it — on the point's nitrate and, for comparison, with KNO3 = 0
+    (the point before ⚖️ 2026-10-22). Bisection on the shift: less potassium → less malate → a weaker buffer → a lower
+    current, so the flag is monotone in it (checked at the bracket's ends). CAN show how much of the transcription's own
+    error the verdict has; CANNOT say which way the read-off errs, nor move any other median (each would move the mid)."""
+    g = anchor_geometry(CEM / "anchor_zone1.oak.json")
+    k_min = min(r[2] for r in S67.BEECH_TRUNK_BASE_MEDIANS.values())
+
+    def upper(shift: float, kno3: float) -> tuple[float, float]:
+        malic = S67._sig2(S67.broadleaf_malic_solved(shift, kno3))
+        totals = S67.totals_mm({**S67.BROADLEAF_POINT_MM, "malic": malic, "kno3": kno3})
+        return _anchor_currents(g, totals, S67.BROADLEAF_PH, edge)[3], malic
+
+    out = {}
+    for name, kno3 in (("point", S67.BROADLEAF_POINT_MM["kno3"]), ("kno3_zero", 0.0)):
+        flips = lambda s, kno3=kno3: upper(s, kno3)[0] < COLD_START_UA[cold]   # noqa: E731
+        a, b = -0.5 * k_min, 0.0
+        assert flips(a) and not flips(b), f"{name}: the oak flag does not change across [{a}, {b}] mg/L"
+        while b - a > 1e-4:
+            mid = 0.5 * (a + b)
+            a, b = (mid, b) if flips(mid) else (a, mid)
+        hi0, malic0 = upper(0.0, kno3)
+        hi_flip, malic_flip = upper(a, kno3)
+        out[name] = {"kno3_mM": kno3, "malic_point_mM": malic0, "i_upper_uA": round(hi0, 3),
+                     "margin_uA": round(hi0 - COLD_START_UA[cold], 3),
+                     "k_min_shift_to_flip_mg_l": round(b, 4), "malic_point_at_flip_mM": malic_flip,
+                     "i_upper_at_flip_uA": round(hi_flip, 3)}
+    return {"sku": g["sku"], "edge_pH": edge, "cold_start": cold, "cold_start_uA": round(COLD_START_UA[cold], 3),
+            "k_min_date": min(S67.BEECH_TRUNK_BASE_MEDIANS, key=lambda d: S67.BEECH_TRUNK_BASE_MEDIANS[d][2]),
+            "k_min_mg_l": k_min, **out,
+            "reading": "the verdict holds while the potassium minimum is read less than |k_min_shift_to_flip_mg_l| lower "
+                       "(the bisection's no-flip end, so the true edge lies a hair further); the point moves in steps of "
+                       "0.01 mM malate, so the flip sits where the solve crosses a rounding edge"}
+
+
 def anchor_anode() -> dict:
     """The anchor's anode with its gap FILLED WITH STAGNANT SAP — the state the HW.53 bench SETS by hand (it fills the gap
     with the recipe), so the bench cannot say whether a living stem keeps sap there; this is the answer conditional on that
@@ -455,11 +505,7 @@ def anchor_anode() -> dict:
                                       "minus_stability_edge": [round(lo - PH_ANODE_STABILITY_EDGE, 2),
                                                                round(hi - PH_ANODE_STABILITY_EDGE, 2)]}
         for edge in (PH_ANODE_KINETIC_EDGE, PH_ANODE_STABILITY_EDGE):
-            j = {n: [F_CONST * -proton_supply(ph_b, edge, sc, d, 1.0, 25.0, totals) * 1e-3 / (n * g["annulus_delta_cm"])
-                     for sc in READINGS for d in d_mal(25.0).values()] for n in N_H_ANODE}
-            every = [x for v in j.values() for x in v]
-            lo = min(every) * g["envelope_lateral_area_cm2"] * 1e6
-            hi = max(every) * g["envelope_lateral_area_cm2"] * (1.0 + g["bottom_cap_over_envelope"]) * 1e6
+            j, every, lo, hi = _anchor_currents(g, totals, ph_b, edge)
             per[f"face_pH_{edge}"] = {
                 "j_envelope_uA_cm2": [round(min(every) * 1e6, 2), round(max(every) * 1e6, 2)],
                 "i_anode_uA": [round(lo, 1), round(hi, 1)],
@@ -468,6 +514,7 @@ def anchor_anode() -> dict:
                 "crossed_below_cold_start": {k: {"in_every_reading": hi < v, "in_some_reading": lo < v}
                                              for k, v in COLD_START_UA.items()}}
         out["by_sku"][g["sku"]] = per
+    out["oak_verdict_k_min_flip"] = oak_k_min_flip()
     return out
 
 
@@ -528,6 +575,11 @@ def main() -> int:
             print(f"      summer acid dates: bulk pH medians {a['ph_medians']} — below the kinetic edge "
                   f"{a['medians_below_kinetic_edge']}, {a['medians_minus_stability_edge']} from the stability edge, "
                   f"lowest tree {a['lowest_tree_minus_stability_edge']:+} — before any current")
+    fl = anc["oak_verdict_k_min_flip"]
+    print(f"    control — oak at pH {fl['edge_pH']} vs the {fl['cold_start']} cold start {fl['cold_start_uA']} µA: margin "
+          f"{fl['point']['margin_uA']} µA; flips once the K minimum ({fl['k_min_date']}, {fl['k_min_mg_l']} mg/L) is read "
+          f"{fl['point']['k_min_shift_to_flip_mg_l']} mg/L off (KNO3 = 0: margin {fl['kno3_zero']['margin_uA']} µA, "
+          f"{fl['kno3_zero']['k_min_shift_to_flip_mg_l']} mg/L)")
     out = {"script": Path(__file__).name,
            "question": "pH at the Stage-2 coin electrodes' faces under their own current, in the media the letter allows",
            "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap; the anchor "

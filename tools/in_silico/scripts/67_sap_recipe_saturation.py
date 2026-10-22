@@ -40,8 +40,9 @@ revision is read against.
       wet-test recipe. The same rule as Q7 on European beech sap from the bottom of the stem (Glavac et al. 1990,
       a stand whose methods name no fertilization or liming, medians of five trees on 26 dates read off its
       figures): Ca and Mg at the geometric mid of the dated medians, pH at their median; organic acids are not
-      reported there, and nitrate — printed for the same stand and dates three years later (Glavac & Jochheim 1993,
-      read off its figures) — enters at the geometric mid of its dated values as KNO3 on potassium, as pine's does
+      reported there, and nitrate — printed three years later for what is inferred to be the same stand and dates
+      (Glavac & Jochheim 1993, read off its figures; the identity is inferred, not printed — 01_02 §2.1 ⊕ ⚖️
+      2026-10-22) — enters at the geometric mid of its dated values as KNO3 on potassium, as pine's does
       (⚖️ founder 2026-10-22); malic acid solved from the mid potassium less that nitrate. The summer dates whose sap
       pH falls to ≈ 4.5 — coinciding, the paper says, with its highest nitrate, and the 1993 figures put the three
       highest nitrates on exactly these dates — are returned beside it with their nitrate; the point's malate solve
@@ -902,6 +903,23 @@ def beech_nitrate_mm(reading: int | None = None) -> dict:
             for d, (n1, n2, s1, s2) in BEECH_TRUNK_BASE_NITRATE.items()}
 
 
+def broadleaf_k_total(malic: float, kno3: float) -> float:
+    """Potassium total (mM) of the Q8 point at a malic acid and a KNO3: the KOH to BROADLEAF_PH (selected reading,
+    POINT_SOLVE_T_C) plus the KNO3 — the nitrate on potassium, as in revised_point()."""
+    p = {**BROADLEAF_POINT_MM, "malic": malic, "kno3": kno3}
+    return speciate(model_for(SC["selected"], POINT_SOLVE_T_C), totals_mm(p), BROADLEAF_PH).base_mol_l / MM + kno3
+
+
+def broadleaf_malic_solved(k_min_shift_mg_l: float = 0.0, kno3: float | None = None) -> float:
+    """The Q8 malic solve (mM): the malic acid whose KOH to BROADLEAF_PH, with the KNO3, gives the geometric mid of the
+    dated beech potassium medians. By default the point's own solve; 85's flip control moves the potassium MINIMUM by
+    `k_min_shift_mg_l` (one median's read-off error) and can set the KNO3 (default: the point's)."""
+    k = [r[2] for r in BEECH_TRUNK_BASE_MEDIANS.values()]
+    k_mid = math.sqrt((min(k) + k_min_shift_mg_l) * max(k)) / MOLAR_G["K"]
+    kno3 = BROADLEAF_POINT_MM["kno3"] if kno3 is None else kno3
+    return brentq(lambda x: broadleaf_k_total(x, kno3) - k_mid, 0.01, 5.0, xtol=1e-9)   # no acid: pH 5.95 would need a negative base
+
+
 def broadleaf_point() -> dict:
     """Q8 — the broadleaf point (⚖️ founder 2026-10-18), 85's input for the broadleaf and oak anchor parts. Asserts that
     BROADLEAF_POINT_MM and BROADLEAF_PH ARE their derivation from the beech medians: Ca and Mg at the geometric mid of
@@ -919,6 +937,7 @@ def broadleaf_point() -> dict:
     mids = {ion: math.sqrt(lo * hi) / MOLAR_G[ion] for ion, (lo, hi) in rng.items()}
     assert BROADLEAF_POINT_MM["cacl2"] == _sig2(mids["Ca"]), "cacl2: not the beech trunk-base mid"
     assert BROADLEAF_POINT_MM["mgso4"] == _sig2(mids["Mg"]), "mgso4: not the beech trunk-base mid"
+    assert list(BEECH_TRUNK_BASE_NITRATE) == list(BEECH_TRUNK_BASE_MEDIANS), "nitrate dates are not the Q8 dates"
     no3 = beech_nitrate_mm()
     no3_lo, no3_hi = min(no3, key=no3.get), max(no3, key=no3.get)
     no3_mid = math.sqrt(no3[no3_lo] * no3[no3_hi])
@@ -928,12 +947,7 @@ def broadleaf_point() -> dict:
     assert BROADLEAF_POINT_MM["oxalic"] == 0.0, "oxalate: not measured"
     phs = sorted(r[3] for r in rows if r[3] is not None)
     assert round(float(np.median(phs)), 2) == BROADLEAF_PH, "pH: not the median of the dated medians"
-    m = model_for(SC["selected"], POINT_SOLVE_T_C)
-
-    def k_total(malic: float) -> float:   # KOH plus KNO3 — the nitrate on potassium, as in revised_point()
-        p = {**BROADLEAF_POINT_MM, "malic": malic}
-        return speciate(m, totals_mm(p), BROADLEAF_PH).base_mol_l / MM + p["kno3"]
-    malic_solved = brentq(lambda x: k_total(x) - mids["K"], 0.01, 5.0, xtol=1e-9)   # no acid: pH 5.95 would need a negative base
+    malic_solved = broadleaf_malic_solved()
     assert BROADLEAF_POINT_MM["malic"] == _sig2(malic_solved), (
         f"malic: the solve gives {malic_solved:.4f} mM, the point says {BROADLEAF_POINT_MM['malic']}")
     out = price_point(BROADLEAF_POINT_MM, "85 broadleaf and oak anchor parts (⚖️ founder 2026-10-18) — not a wet-test recipe",
@@ -967,7 +981,7 @@ def broadleaf_point() -> dict:
                           "readings), not a median of per-tree products — the figures give only the medians",
             "charge": "balanced by K, as in the pine point: the malate is solved from the potassium less this nitrate"},
         "source": BEECH_SOURCE, "malic_solved_mM": round(malic_solved, 4),
-        "potassium_total_at_point_mM": round(k_total(BROADLEAF_POINT_MM["malic"]), 4),
+        "potassium_total_at_point_mM": round(broadleaf_k_total(BROADLEAF_POINT_MM["malic"], BROADLEAF_POINT_MM["kno3"]), 4),
         "solve": {"ph": BROADLEAF_PH, "t_c": POINT_SOLVE_T_C, "reading": SC["selected"].key}}
     out["summer_acid_dates"] = {
         "dates": list(BEECH_ACID_DATES), "ph_medians": [r[3] for r in acid.values()],
