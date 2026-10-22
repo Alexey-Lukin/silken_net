@@ -62,10 +62,11 @@ modelled; (4) the canopy, other stems and the forest's excess path loss; (5) the
 in the tree measures it there: the readings are named in READINGS with their sources and derivations, and the frozen
 stem is a reading of its own; each layer is isotropic, while wood is not — a TM source sees ε along the grain and the
 in-situ probe read a mixed face (lab spruce puts ε′∥/ε′⊥ at 2.2–2.4, Reci 2016), so the longitudinal ε a TM node sees
-may be higher than every reading here; and a conifer's trunk bark read off El-Rayes & Ulaby 1987, Fig. A.36 (balsam
-fir, lab, ≈ 19.4 − j4.7 — interpolated between the 0.8 and 0.9 GHz markers, not measured at 868 MHz) is wetter than
-either bark proxy — that such a bark is dominated by its wet phloem is OUR hypothesis (ground: the Franchois 1998
-abstract on two other conifers), the figure's title says only trunk bark; (6) a stem that is not round, a node not on a
+may be higher than every reading here; and the wettest bark swept here is a conifer's trunk bark read off El-Rayes &
+Ulaby 1987, Fig. A.36 (balsam fir, lab, ≈ 19.4 − j4.7 — interpolated between grid markers whose frequencies are inferred
+from a dry branch's figures, not measured at 868 MHz); a wetter bark is not swept, and that this bark is dominated by its
+wet phloem is OUR hypothesis (ground: the Franchois 1998 abstract on two other conifers) — the figure's title says only
+trunk bark; (6) a stem that is not round, a node not on a
 radius, the radial profile inside a layer (each layer is uniform).
 
 Run:  conda activate silken_md
@@ -264,11 +265,19 @@ SCOTS_SAPWOOD_THIN_M = 0.022
 #             differ by 0.10 on ε′, 0.03 on ε″) as 19.4 − j4.7. Interpolated between the 0.8 and 0.9 GHz markers; the
 #             0.8 GHz ε′ marker is depressed in that session (also on A.38/A.40); not measured at 868 MHz. «A bark
 #             dominated by its wet phloem» is OUR hypothesis (ground: the Franchois 1998 abstract on two other conifers)
-#             — the figure's title says only trunk bark. The unrounded mean and the reading that skips the 0.8 GHz
-#             point are CONTROLS in the cache (`controls.phloem_reading`, the floors they give), not readings.
+#             — the figure's title says only trunk bark. The grid's frequencies are NOT printed on A.36: they are
+#             inferred from the same session's expanded-axis A.38/A.39 (a dry BRANCH), and the markers overlap
+#             (±0.1–0.2 on ε′). The unrounded mean, the mean that skips the 0.8 GHz point and the FOUR single-reading
+#             interpolations (two readers × with ⊥ without that point) are CONTROLS in the cache
+#             (`controls.phloem_reading`, the floors each gives, and their span), not readings — the floors the findings
+#             print hold at the mean of the two readings.
 BARK_DRY, BARK_WET, BARK_PHLOEM, HEART_DRY = 2.01 - 0.274j, 7.5 - 1.3j, 19.4 - 4.7j, 2.79 - 0.539j
 BARK_PHLOEM_CONTROLS = {"unrounded_mean_of_the_two_readings": 19.43 - 4.705j,
-                        "skip_the_0p8_GHz_point": 19.63 - 4.68j}
+                        "skip_the_0p8_GHz_point": 19.63 - 4.68j,
+                        "single_reading_0p8_to_0p9_low": 19.38 - 4.72j,
+                        "single_reading_0p8_to_0p9_high": 19.48 - 4.69j,
+                        "single_reading_skip_0p8_low": 19.57 - 4.71j,
+                        "single_reading_skip_0p8_high": 19.69 - 4.64j}
 # Dead bark by stem (thin ends): DBH 38 — lib's ridge bracket; DBH 50 · 60 — 01_04 §3.2's single bark (20.5 · 25 mm)
 # less the ≤ 3 mm live phloem (derived). Thicker bark is the other end and is not swept here.
 BARK_T_M = {DBH_MIN_CM / 100.0: BARK_DEAD_RIDGE_DBH38_MM[0] / 1000.0, 0.50: 0.0175, 0.60: 0.022}
@@ -459,6 +468,12 @@ def main() -> int:
             alt_floors[pol]["floor_moves_raw_dB"] = round(alt_floors[pol]["front_minus_back_dB_floor_raw"]
                                                           - reading_floors[pol]["front_minus_back_dB_floor_raw"], 3)
         phloem_control[alt] = {"eps": [eps.real, -eps.imag], **alt_floors}
+    # The span of the floors over the four single-reading interpolations: the printed floors hold at the MEAN of the
+    # two readings, and a one-sided «at least» quoted without this span would overstate it (in-silico #43).
+    singles = [k for k in BARK_PHLOEM_CONTROLS if k.startswith("single_reading_")]
+    phloem_control["floor_span_over_single_readings"] = {
+        pol: [min(phloem_control[k][pol]["front_minus_back_dB_floor"] for k in singles),
+              max(phloem_control[k][pol]["front_minus_back_dB_floor"] for k in singles)] for pol in POLARIZATIONS}
     controls["phloem_reading"] = phloem_control
     tm, te = findings["TM"], findings["TE"]
     verdict = (

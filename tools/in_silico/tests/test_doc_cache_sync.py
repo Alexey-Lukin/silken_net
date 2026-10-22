@@ -6496,6 +6496,15 @@ CHECKS += [
      _shf("TM", "front_minus_back_dB", 0), 0.0),
     ("shadow 01_04 back of the north face, top → 107", CODIT, rf"до {_SHX}–{N} дБ \(тил\)", SHADOW,
      _shf("TM", "front_minus_back_dB", 1), 0.0),
+    # the floors hold at the MEAN of the two A.36 readings; their span over the four single-reading interpolations is
+    # the qualifier every «at least» site carries (reviewer 2026-10-22, in-silico #43)
+    ("shadow A.36 span TM low → 107", SUMMARY, rf"the floors span {N} – {_SHX} dB \(TM\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][0], 0.0),
+    ("shadow A.36 span TM high → 107", SUMMARY, rf"the floors span {_SHX} – {N} dB \(TM\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][1], 0.0),
+    ("shadow A.36 span TE low → 107", SUMMARY, rf"and {N} – {_SHX} dB \(TE\): the floors", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TE"][0], 0.0),
+    ("shadow A.36 span TE high → 107", SUMMARY, rf"and {_SHX} – {N} dB \(TE\): the floors", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TE"][1], 0.0),
+    ("shadow 01_04 A.36 span TM → 107", CODIT, rf"інтерполяціями TM сягає {N}, TE — {_SHX} дБ\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][0], 0.0),
+    ("shadow 01_04 A.36 span TE → 107", CODIT, rf"інтерполяціями TM сягає {_SHX}, TE — {N} дБ\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TE"][0], 0.0),
+    ("shadow 02_01 A.36 span TM → 107", "docs/02_01_Hardware_Architecture_and_BOM.md", rf"окремими його інтерполяціями — від {N}\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][0], 0.0),
     ("shadow 01_04 verdict ±50° holds 3 dB → 107", CODIT, rf"±{N}° тримає 3 дБ на всіх прочитаннях", SHADOW,
      lambda d: 50.0 if d["findings"]["TM"]["within_3dB_of_front_to_deg"][0] >= 50 else math.nan, 0.0),
     # 02_01 §5.3 — the stem-shadow inset of the link budget

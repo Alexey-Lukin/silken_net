@@ -1258,10 +1258,12 @@ Table 2 is an optimiser's output whose weights the open text does not reproduce,
 whole section, and Jeong's sets are in press, red pine with two constants borrowed and Korean pine with one (ours),
 Korean pine's ν_LR and ν_LT at CVs of 1.64 and 1.37. The lattice reading assumes the
 two FE cases describe one homogeneous cubic body — `VoxelFea` calls its ratios «NOT a material property» — and the
-shipped part is graded, so «cubic» holds at best locally — and the graded generator's phase drifts both across the section
-and, growing with height, along the axis — a volume-keeping shear that, measured since (`01_01 §5.5`, the `cellshape`
-verb), compresses the top cells of the part to 0.42–0.49 of their nominal along one axis (DA 3.3–4.3, the compressed axis
-64–67° off the part axis), so «cubic» fails most at the top (the geometry verdict is open, `00_07` HW.33); Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
+shipped part is graded, so «cubic» holds at best locally — and the graded generator's phase drifts across the section — and, until the
+HW.33 verdict of 2026-10-22, growing with height along the axis: a volume-keeping shear that (`01_01 §5.5`, the `cellshape`
+verb) compressed the top cells of the part to 0.42–0.49 of their nominal along one axis (DA 3.3–4.3, the compressed axis
+64–67° off the part axis). The verdict (option (в): one axial period, the rim's) removed the height term — the shipped part
+reads DA ≤ 1.25 at every height — but this script still reads the FE of the pre-verdict geometry until the part's FE is
+re-run (`00_07` HW.33); Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
 the sweep). C44 is measured for the infinite lattice by the periodic voxel case (`01_01 §5.2`) but not read here; the tissue in the pores
 and the ring are unmeasured: the ring is read as the host's xylem (ours —
 `01_04 §2`'s phases say nothing of it); the interface is perfectly bonded, a reading no primary measures, and its
@@ -1369,9 +1371,12 @@ red pines' measured radial profile (Supplement Fig. S2, 26 May: 35.2 − j10.27 
 from 6 mm, no dry heartwood within the probe's reach), Scots pine's 6.1 cm of water-conducting sapwood (Bieker & Rust
 2010, *Silva Fennica* 44:267, resistivity tomography at 0.3 m) or the narrowest stem's 2.2 cm (Björklund 1999, *Silva
 Fennica* 33:119, Table 2), each sapwood around a dry heartwood proxy. No source in the tree measures any of them at
-868 MHz. The figure's 0.8 GHz ε′ marker is depressed in that session (on A.38 and A.40 too), so a control in the cache
-re-runs the «phloem» rows at the reading that skips it, ≈ 19.63 − j4.68: it lowers the TM floor by 0.08 dB, to 10.5
-at the cache's outward rounding.
+868 MHz. A.36 does not print its grid: the marker frequencies are inferred from the same session's A.38/A.39, which are
+a dry branch, and the markers overlap. The figure's 0.8 GHz ε′ marker is depressed in that session (on A.38 and A.40
+too), so a control in the cache re-runs the «phloem» rows at the reading that skips it, ≈ 19.63 − j4.68:
+it lowers the TM floor by 0.08 dB, to 10.5 at the cache's outward rounding. Over the four single-reading interpolations (two readers,
+each with ⊥ without that marker) the floors span 10.4 – 10.6 dB (TM) and 7.6 – 7.7 dB (TE): the floors printed below
+hold at the mean of the two readings.
 
 | polarization | behind the stem (180°), below the front | deepest null below the front, at | at 90° | within 3 dB of the front to | front field against the free front lobe, same current | 2-D efficiency |
 |---|---|---|---|---|---|---|

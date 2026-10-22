@@ -371,6 +371,112 @@
           ],
           "floor_moves_raw_dB": -0.041
         }
+      },
+      "single_reading_0p8_to_0p9_low": {
+        "eps": [
+          19.38,
+          4.72
+        ],
+        "TM": {
+          "front_minus_back_dB_floor": 10.6,
+          "front_minus_back_dB_floor_raw": 10.653,
+          "within_3dB_of_front_to_deg": [
+            54,
+            66
+          ],
+          "floor_moves_raw_dB": 0.025
+        },
+        "TE": {
+          "front_minus_back_dB_floor": 7.7,
+          "front_minus_back_dB_floor_raw": 7.758,
+          "within_3dB_of_front_to_deg": [
+            38,
+            50
+          ],
+          "floor_moves_raw_dB": 0.014
+        }
+      },
+      "single_reading_0p8_to_0p9_high": {
+        "eps": [
+          19.48,
+          4.69
+        ],
+        "TM": {
+          "front_minus_back_dB_floor": 10.5,
+          "front_minus_back_dB_floor_raw": 10.598,
+          "within_3dB_of_front_to_deg": [
+            54,
+            66
+          ],
+          "floor_moves_raw_dB": -0.03
+        },
+        "TE": {
+          "front_minus_back_dB_floor": 7.7,
+          "front_minus_back_dB_floor_raw": 7.728,
+          "within_3dB_of_front_to_deg": [
+            38,
+            50
+          ],
+          "floor_moves_raw_dB": -0.016
+        }
+      },
+      "single_reading_skip_0p8_low": {
+        "eps": [
+          19.57,
+          4.71
+        ],
+        "TM": {
+          "front_minus_back_dB_floor": 10.5,
+          "front_minus_back_dB_floor_raw": 10.595,
+          "within_3dB_of_front_to_deg": [
+            54,
+            66
+          ],
+          "floor_moves_raw_dB": -0.033
+        },
+        "TE": {
+          "front_minus_back_dB_floor": 7.7,
+          "front_minus_back_dB_floor_raw": 7.728,
+          "within_3dB_of_front_to_deg": [
+            38,
+            50
+          ],
+          "floor_moves_raw_dB": -0.016
+        }
+      },
+      "single_reading_skip_0p8_high": {
+        "eps": [
+          19.69,
+          4.64
+        ],
+        "TM": {
+          "front_minus_back_dB_floor": 10.4,
+          "front_minus_back_dB_floor_raw": 10.495,
+          "within_3dB_of_front_to_deg": [
+            54,
+            66
+          ],
+          "floor_moves_raw_dB": -0.133
+        },
+        "TE": {
+          "front_minus_back_dB_floor": 7.6,
+          "front_minus_back_dB_floor_raw": 7.672,
+          "within_3dB_of_front_to_deg": [
+            38,
+            50
+          ],
+          "floor_moves_raw_dB": -0.072
+        }
+      },
+      "floor_span_over_single_readings": {
+        "TM": [
+          10.4,
+          10.6
+        ],
+        "TE": [
+          7.6,
+          7.7
+        ]
       }
     }
   },
