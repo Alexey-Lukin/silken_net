@@ -575,9 +575,21 @@ internal static class VoxelFea
     internal static int PhaseLockCells(float fStepMm, float fPeriodCoreMm, float fPeriodRimMm, int nMaxCells = 4)
     {
         float fPeriodRim = fPeriodRimMm > 0f ? fPeriodRimMm : fPeriodCoreMm;
-        if (fPeriodRim != fPeriodCoreMm)
-            return 0;
-        double dStepsPerPeriod = fPeriodCoreMm / (double)fStepMm;
+        return fPeriodRim != fPeriodCoreMm ? 0 : RepeatCells(fStepMm, fPeriodCoreMm, nMaxCells);
+    }
+
+    // ⊕ 2026-10-22, HW.33 (в): the graded part is constant-period ALONG z (Zone1Anode.AxialPeriodMm — the rim's) while
+    // its in-plane phase still drifts with radius. No wall staircase, then (PhaseLockCells stays 0, and tonight's d7/d10
+    // fits sampled six walls to six grids), but a step that divides the axial period samples every axial cell at the
+    // same z-phases, so the step's discretization error is coherent along the axis instead of averaging out — the named
+    // likely cause of the post-verdict sweep's non-monotonicity (01_01 §5.2), which the HW.23 Richardson re-sweep
+    // separates with locked ⊥ unlocked step pairs. Same return as above, along z only; 0 when there is no single period.
+    internal static int AxialPhaseLockCells(float fStepMm, float fPeriodAxialMm, int nMaxCells = 4)
+        => fPeriodAxialMm > 0f ? RepeatCells(fStepMm, fPeriodAxialMm, nMaxCells) : 0;
+
+    private static int RepeatCells(float fStepMm, float fPeriodMm, int nMaxCells)
+    {
+        double dStepsPerPeriod = fPeriodMm / (double)fStepMm;
         for (int nCells = 1; nCells <= nMaxCells; nCells++)
         {
             double dSteps = dStepsPerPeriod * nCells;

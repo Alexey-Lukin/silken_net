@@ -277,6 +277,13 @@ internal static class Zone1Anode
         return oPipe.voxConstruct();
     }
 
+    // The one period the shipped field repeats with along z — read by Gyroid() below and by the sampler's phase-lock
+    // check (VoxelFea.AxialPhaseLockCells), so the two cannot disagree: the rim's (⚖️ HW.33 (в)), which on a
+    // constant-period part is the one period. A STEPPED part has two (each zone keeps its own) → 0, no single period.
+    public static float AxialPeriodMm(AnchorCem cem)
+        => cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase) ? 0f
+         : cem.GyroidPeriodRimMm > 0f ? cem.GyroidPeriodRimMm : cem.GyroidPeriodMm;
+
     // Constant (v1) ONLY when there is no Rim taper AND sheet topology — `bGraded` ORs in `bNetwork`, so
     // every shipped anchor takes the graded generator today, taper or not.
     // An ABSENT Rim field means "equals core" (back-compat with v1 manifests). ⚠ Period keeps its `> 0`
@@ -301,7 +308,7 @@ internal static class Zone1Anode
             ? new GradedCartesianGyroid(
                 InnerRadiusMm(cem), cem.OuterDiameterMm / 2f,
                 cem.GyroidPeriodMm, fPeriodRim,
-                cem.GyroidWallParam, fWallRim, bNetwork, fPeriodAxialMm: fPeriodRim)
+                cem.GyroidWallParam, fWallRim, bNetwork, fPeriodAxialMm: AxialPeriodMm(cem))
             : new CartesianGyroid(cem.GyroidPeriodMm, cem.GyroidWallParam);
 
         // ⛔ OFF by default, and that is the whole point of the field existing: every shipped number

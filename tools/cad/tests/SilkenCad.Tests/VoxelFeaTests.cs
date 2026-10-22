@@ -187,7 +187,8 @@ public class VoxelFeaTests
 
     // 🔴 Phase lock is a property of the STEP against a CONSTANT period: a whole number of steps per period locks every
     // cell (the --step-div case), a half-step count locks every second cell, a step taken from the diameter (11/50,
-    // 11/60 at period 2.0) does not repeat within the part, and a graded period (pine, 2.5 → 2.0) never locks.
+    // 11/60 at period 2.0) does not repeat within the part, and a graded period (pine, 2.5 → 2.0) never locks IN-PLANE
+    // (along z it does since HW.33 (в) — the next test).
     // MUTATION: delete the graded-period early return in PhaseLockCells ⇒ the pine row reports a lock and reds.
     [Theory]
     [InlineData(2.0f, 0f, 0.25f, 1)]
@@ -199,6 +200,27 @@ public class VoxelFeaTests
     [InlineData(2.5f, 2.0f, 0.25f, 0)]
     public void Phase_Lock_Is_Read_From_The_Step_Against_A_Constant_Period_Only(float fCore, float fRim, float fStep, int nExpected)
         => Assert.Equal(nExpected, VoxelFea.PhaseLockCells(fStep, fCore, fRim));
+
+    // 🔴 ⊕ HW.33 (в): the graded pine part is constant-period ALONG z, so every step of its pinned sweep (rim/N) locks
+    // the axis every cell while PhaseLockCells stays 0, and a step from the diameter locks neither; the stepped part has
+    // no single axial period. Read through the real manifests and the generator's own rule.
+    // MUTATION: make Zone1Anode.AxialPeriodMm return the CORE period ⇒ /6 reads a two-cell repeat (2.5 / (2.0/6) = 7.5) and reds.
+    [Theory]
+    [InlineData("anchor_zone1.pine.json", 6, 1)]
+    [InlineData("anchor_zone1.pine.json", 8, 1)]
+    [InlineData("anchor_zone1.pine.json", 12, 1)]
+    [InlineData("anchor_zone1.pine.json", 16, 1)]
+    [InlineData("anchor_zone1.pine.json", -50, 0)]
+    [InlineData("anchor_zone1.pine.json", -60, 0)]
+    [InlineData("anchor_zone1.stepped.json", 8, 0)]
+    public void The_Graded_Part_Locks_Along_The_Axis_On_Its_Own_Sweep_Steps(string strCem, int nDiv, int nExpected)
+    {
+        AnchorCem cem = CemFixtures.Anchor(strCem);
+        float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
+        float fStep = nDiv > 0 ? fPeriodMin / nDiv : cem.OuterDiameterMm / -nDiv;      // < 0: a step from the diameter
+        Assert.Equal(nExpected, VoxelFea.AxialPhaseLockCells(fStep, Zone1Anode.AxialPeriodMm(cem)));
+        Assert.Equal(0, VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm));
+    }
 
     // 🔴 The staircase itself, on the shipped constant-period part, read through the real sampler with the wall held
     // uniform as `fea --fit` holds it: on a locked step (/8, /10) walls a few hundredths apart sample to ONE grid — at /8

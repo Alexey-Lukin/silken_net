@@ -1559,6 +1559,8 @@ internal static class Program
             if (nLockCells > 0)
                 Console.WriteLine($"  ⚠ step {fStep:F4}: phase-locked sampling (constant period, the phase repeats every {nLockCells} cell(s)) — " +
                                   "porosity and stiffness here sit on a staircase in the wall level (VoxelFea.PhaseLockCells)");
+            else
+                WarnAxialPhaseLock(fStep, cem);
             Connectivity.Grid gridSolid = VoxelFea.SolidCounterpart(grid);
 
             VoxelFea.FeaResult oAxial = VoxelFea.ApparentAxialModulus(grid, 2);
@@ -1680,6 +1682,8 @@ internal static class Program
         if (nLockCells > 0)
             Console.WriteLine($"  ⚠ phase-locked sampling: constant period, the sampled phase repeats every {nLockCells} cell(s) — " +
                               "a face offset registers only where it crosses a sampled field value (VoxelFea.PhaseLockCells)");
+        else
+            WarnAxialPhaseLock(fStep, cem);
 
         // 🔴 The identity CONTROL runs whatever offsets were asked for: a wrapper that is not the identity at zero would
         //    shift every row by its own defect, and a curve cannot show that.
@@ -2152,6 +2156,8 @@ internal static class Program
         if (nLockCells > 0)
             Console.WriteLine($"  ⚠ phase-locked sampling: constant period, the sampled phase repeats every {nLockCells} cell(s) — " +
                               "a wall level registers only where it crosses a sampled field value (VoxelFea.PhaseLockCells)");
+        else
+            WarnAxialPhaseLock(fStep, cemBase);
 
         // Every wall is SAMPLED before anything is solved: a sweep that collapsed onto one grid is refused in
         // seconds, not after minutes of conjugate gradients spent measuring the same geometry twice.
@@ -2264,5 +2270,14 @@ internal static class Program
     {
         Console.Error.WriteLine(strMsg);
         return 2;
+    }
+
+    // Printed only where the full lock (VoxelFea.PhaseLockCells) is silent — a constant-period part reports that one.
+    private static void WarnAxialPhaseLock(float fStep, AnchorCem cem)
+    {
+        int nCells = VoxelFea.AxialPhaseLockCells(fStep, Zone1Anode.AxialPeriodMm(cem));
+        if (nCells > 0)
+            Console.WriteLine($"  ⚠ step {fStep:F4}: phase-locked ALONG THE AXIS (the z-phase repeats every {nCells} cell(s); graded in-plane, " +
+                              "so no wall staircase) — the step's error is coherent along z, not averaged out (VoxelFea.AxialPhaseLockCells)");
     }
 }
