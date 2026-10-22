@@ -202,7 +202,7 @@
               "0.5": 0.0175,
               "0.6": 0.022
             },
-            19.1,
+            19.4,
             4.7
           ],
           [
@@ -216,7 +216,7 @@
             4.82
           ]
         ],
-        "source": "dead bark by stem (bark phloem proxy) · Mavrovic 2018 Fig. S2: the outer layer, then the plateau carried to the axis"
+        "source": "dead bark by stem (bark phloem proxy: El-Rayes & Ulaby A.36 balsam-fir trunk bark, interpolated to 868 MHz; phloem-dominated is our hypothesis) · Mavrovic 2018 Fig. S2: the outer layer, then the plateau carried to the axis"
       },
       "scots_sapwood_6cm_bark_phloem": {
         "layers_bark_inward": [
@@ -226,7 +226,7 @@
               "0.5": 0.0175,
               "0.6": 0.022
             },
-            19.1,
+            19.4,
             4.7
           ],
           [
@@ -240,7 +240,7 @@
             0.539
           ]
         ],
-        "source": "dead bark by stem (bark phloem proxy) · sapwood 6.1 cm (Bieker & Rust 2010, ERT at 0.3 m) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
+        "source": "dead bark by stem (bark phloem proxy: El-Rayes & Ulaby A.36 balsam-fir trunk bark, interpolated to 868 MHz; phloem-dominated is our hypothesis) · sapwood 6.1 cm (Bieker & Rust 2010, ERT at 0.3 m) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       },
       "scots_sapwood_2cm_bark_phloem": {
         "layers_bark_inward": [
@@ -250,7 +250,7 @@
               "0.5": 0.0175,
               "0.6": 0.022
             },
-            19.1,
+            19.4,
             4.7
           ],
           [
@@ -264,7 +264,7 @@
             0.539
           ]
         ],
-        "source": "dead bark by stem (bark phloem proxy) · sapwood 2.2 cm (Björklund 1999's narrowest stem) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
+        "source": "dead bark by stem (bark phloem proxy: El-Rayes & Ulaby A.36 balsam-fir trunk bark, interpolated to 868 MHz; phloem-dominated is our hypothesis) · sapwood 2.2 cm (Björklund 1999's narrowest stem) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       }
     },
     "geometry": {
@@ -299,7 +299,80 @@
   },
   "controls": {
     "free_space_max_abs_F_minus_free": 2.482534153247273e-16,
-    "lossless_max_rel_power_miss": 3.470897447707584e-15
+    "lossless_max_rel_power_miss": 3.470897447707584e-15,
+    "phloem_reading": {
+      "what": "every *_bark_phloem row re-run with the bark at each alternative reading of A.36, the other rows kept — a control on the figure's interpolation, not a named reading",
+      "reading": {
+        "eps": [
+          19.4,
+          4.7
+        ],
+        "TM": {
+          "front_minus_back_dB_floor": 10.6,
+          "front_minus_back_dB_floor_raw": 10.628,
+          "within_3dB_of_front_to_deg": [
+            54,
+            66
+          ]
+        },
+        "TE": {
+          "front_minus_back_dB_floor": 7.7,
+          "front_minus_back_dB_floor_raw": 7.744,
+          "within_3dB_of_front_to_deg": [
+            38,
+            50
+          ]
+        }
+      },
+      "unrounded_mean_of_the_two_readings": {
+        "eps": [
+          19.43,
+          4.705
+        ],
+        "TM": {
+          "front_minus_back_dB_floor": 10.6,
+          "front_minus_back_dB_floor_raw": 10.625,
+          "within_3dB_of_front_to_deg": [
+            54,
+            66
+          ],
+          "floor_moves_raw_dB": -0.003
+        },
+        "TE": {
+          "front_minus_back_dB_floor": 7.7,
+          "front_minus_back_dB_floor_raw": 7.743,
+          "within_3dB_of_front_to_deg": [
+            38,
+            50
+          ],
+          "floor_moves_raw_dB": -0.001
+        }
+      },
+      "skip_the_0p8_GHz_point": {
+        "eps": [
+          19.63,
+          4.68
+        ],
+        "TM": {
+          "front_minus_back_dB_floor": 10.5,
+          "front_minus_back_dB_floor_raw": 10.55,
+          "within_3dB_of_front_to_deg": [
+            54,
+            66
+          ],
+          "floor_moves_raw_dB": -0.078
+        },
+        "TE": {
+          "front_minus_back_dB_floor": 7.7,
+          "front_minus_back_dB_floor_raw": 7.703,
+          "within_3dB_of_front_to_deg": [
+            38,
+            50
+          ],
+          "floor_moves_raw_dB": -0.041
+        }
+      }
+    }
   },
   "cases": [
     {
@@ -7064,47 +7137,47 @@
         ],
         [
           0.19,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.20285,
       "n_max": 22,
       "field_same_current_dB": {
-        "0": -4.957,
-        "30": -5.757,
-        "60": -8.325,
-        "90": -13.111,
-        "120": -20.27,
-        "150": -27.103,
-        "180": -34.999
+        "0": -4.988,
+        "30": -5.79,
+        "60": -8.361,
+        "90": -13.152,
+        "120": -20.312,
+        "150": -27.146,
+        "180": -35.142
       },
       "gain_dB": {
-        "0": -2.129,
-        "30": -2.929,
-        "60": -5.497,
-        "90": -10.283,
-        "120": -17.443,
-        "150": -24.275,
-        "180": -32.171
+        "0": -2.15,
+        "30": -2.952,
+        "60": -5.524,
+        "90": -10.315,
+        "120": -17.474,
+        "150": -24.308,
+        "180": -32.305
       },
-      "gain_dB_min": -39.775,
-      "phi_min_deg": 167.3,
-      "front_minus_back_dB": 30.043,
-      "front_minus_side_dB": 8.154,
+      "gain_dB_min": -39.82,
+      "phi_min_deg": 167.4,
+      "front_minus_back_dB": 30.154,
+      "front_minus_side_dB": 8.164,
       "within_3dB_of_front_to_deg": 56,
-      "p_in_over_p0": 0.521443,
-      "p_rad_over_p0": 0.1055,
-      "efficiency": 0.20232,
-      "efficiency_dB": -6.94,
+      "p_in_over_p0": 0.520251,
+      "p_rad_over_p0": 0.104678,
+      "efficiency": 0.20121,
+      "efficiency_dB": -6.964,
       "absorbed_by_layer_axis_out": [
-        0.47961,
-        0.13175,
-        0.18632
+        0.48009,
+        0.13228,
+        0.18643
       ],
       "controls": {
-        "truncation_max_dF": 1.6711069443220836e-16,
-        "balance_rel_miss": 2.02267802348267e-15
+        "truncation_max_dF": 2.237726045655905e-16,
+        "balance_rel_miss": 2.0273151925586783e-15
       }
     },
     {
@@ -7125,47 +7198,47 @@
         ],
         [
           0.19,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.20685,
       "n_max": 22,
       "field_same_current_dB": {
-        "0": -3.645,
-        "30": -4.431,
-        "60": -6.97,
-        "90": -11.727,
-        "120": -18.84,
-        "150": -25.9,
-        "180": -33.808
+        "0": -3.669,
+        "30": -4.456,
+        "60": -6.999,
+        "90": -11.762,
+        "120": -18.875,
+        "150": -25.94,
+        "180": -33.924
       },
       "gain_dB": {
-        "0": -0.685,
-        "30": -1.47,
-        "60": -4.01,
-        "90": -8.767,
-        "120": -15.88,
-        "150": -22.94,
-        "180": -30.848
+        "0": -0.696,
+        "30": -1.483,
+        "60": -4.026,
+        "90": -8.788,
+        "120": -15.902,
+        "150": -22.967,
+        "180": -30.951
       },
-      "gain_dB_min": -36.425,
-      "phi_min_deg": 167.65,
-      "front_minus_back_dB": 30.163,
-      "front_minus_side_dB": 8.082,
+      "gain_dB_min": -36.437,
+      "phi_min_deg": 167.7,
+      "front_minus_back_dB": 30.255,
+      "front_minus_side_dB": 8.093,
       "within_3dB_of_front_to_deg": 57,
-      "p_in_over_p0": 0.505802,
-      "p_rad_over_p0": 0.143456,
-      "efficiency": 0.28362,
-      "efficiency_dB": -5.473,
+      "p_in_over_p0": 0.504309,
+      "p_rad_over_p0": 0.14258,
+      "efficiency": 0.28272,
+      "efficiency_dB": -5.486,
       "absorbed_by_layer_axis_out": [
-        0.44071,
-        0.11504,
-        0.16063
+        0.44124,
+        0.11544,
+        0.16059
       ],
       "controls": {
         "truncation_max_dF": 2.2887833992611187e-16,
-        "balance_rel_miss": 1.09748834683937e-16
+        "balance_rel_miss": -3.3022133717122257e-16
       }
     },
     {
@@ -7186,47 +7259,47 @@
         ],
         [
           0.25,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.26285,
       "n_max": 24,
       "field_same_current_dB": {
-        "0": -4.538,
-        "30": -5.359,
-        "60": -8.067,
-        "90": -13.166,
-        "120": -20.78,
-        "150": -29.561,
-        "180": -35.219
+        "0": -4.57,
+        "30": -5.393,
+        "60": -8.105,
+        "90": -13.209,
+        "120": -20.828,
+        "150": -29.612,
+        "180": -35.308
       },
       "gain_dB": {
-        "0": -1.896,
-        "30": -2.717,
-        "60": -5.425,
-        "90": -10.524,
-        "120": -18.138,
-        "150": -26.919,
-        "180": -32.577
+        "0": -1.915,
+        "30": -2.738,
+        "60": -5.45,
+        "90": -10.555,
+        "120": -18.173,
+        "150": -26.958,
+        "180": -32.654
       },
-      "gain_dB_min": -39.342,
+      "gain_dB_min": -39.424,
       "phi_min_deg": 167.1,
-      "front_minus_back_dB": 30.681,
-      "front_minus_side_dB": 8.628,
+      "front_minus_back_dB": 30.738,
+      "front_minus_side_dB": 8.639,
       "within_3dB_of_front_to_deg": 55,
-      "p_in_over_p0": 0.544228,
-      "p_rad_over_p0": 0.113386,
-      "efficiency": 0.20834,
-      "efficiency_dB": -6.812,
+      "p_in_over_p0": 0.542678,
+      "p_rad_over_p0": 0.11248,
+      "efficiency": 0.20727,
+      "efficiency_dB": -6.835,
       "absorbed_by_layer_axis_out": [
-        0.44804,
-        0.11712,
-        0.22651
+        0.44884,
+        0.11764,
+        0.22626
       ],
       "controls": {
-        "truncation_max_dF": 3.6083916265107585e-16,
-        "balance_rel_miss": -2.0399968719421824e-15
+        "truncation_max_dF": 4.494775313252277e-16,
+        "balance_rel_miss": -2.1481154607838508e-15
       }
     },
     {
@@ -7247,108 +7320,108 @@
         ],
         [
           0.25,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.26685,
       "n_max": 24,
       "field_same_current_dB": {
-        "0": -3.331,
-        "30": -4.136,
-        "60": -6.812,
-        "90": -11.89,
-        "120": -19.504,
-        "150": -28.34,
-        "180": -34.192
+        "0": -3.355,
+        "30": -4.162,
+        "60": -6.842,
+        "90": -11.925,
+        "120": -19.545,
+        "150": -28.386,
+        "180": -34.273
       },
       "gain_dB": {
-        "0": -0.57,
-        "30": -1.376,
-        "60": -4.052,
-        "90": -9.129,
-        "120": -16.743,
-        "150": -25.58,
-        "180": -31.432
+        "0": -0.58,
+        "30": -1.387,
+        "60": -4.067,
+        "90": -9.15,
+        "120": -16.769,
+        "150": -25.611,
+        "180": -31.498
       },
-      "gain_dB_min": -37.712,
+      "gain_dB_min": -37.772,
       "phi_min_deg": 167.35,
-      "front_minus_back_dB": 30.861,
-      "front_minus_side_dB": 8.559,
-      "within_3dB_of_front_to_deg": 56,
-      "p_in_over_p0": 0.529597,
-      "p_rad_over_p0": 0.150536,
-      "efficiency": 0.28425,
-      "efficiency_dB": -5.463,
-      "absorbed_by_layer_axis_out": [
-        0.41343,
-        0.10357,
-        0.19875
-      ],
-      "controls": {
-        "truncation_max_dF": 5.159470149275393e-16,
-        "balance_rel_miss": -1.886718550369418e-15
-      }
-    },
-    {
-      "polarization": "TM",
-      "permittivity": "red_pine_profile_bark_phloem",
-      "dbh_m": 0.6,
-      "standoff_mm": 12.85,
-      "layers_axis_out": [
-        [
-          0.27375,
-          14.05,
-          4.82
-        ],
-        [
-          0.278,
-          35.2,
-          10.27
-        ],
-        [
-          0.3,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.31285,
-      "n_max": 25,
-      "field_same_current_dB": {
-        "0": -4.376,
-        "30": -5.184,
-        "60": -7.913,
-        "90": -13.212,
-        "120": -21.375,
-        "150": -31.513,
-        "180": -36.769
-      },
-      "gain_dB": {
-        "0": -2.022,
-        "30": -2.83,
-        "60": -5.559,
-        "90": -10.858,
-        "120": -19.021,
-        "150": -29.159,
-        "180": -34.415
-      },
-      "gain_dB_min": -39.45,
-      "phi_min_deg": 168.55,
-      "front_minus_back_dB": 32.393,
-      "front_minus_side_dB": 8.836,
+      "front_minus_back_dB": 30.918,
+      "front_minus_side_dB": 8.57,
       "within_3dB_of_front_to_deg": 55,
-      "p_in_over_p0": 0.581562,
-      "p_rad_over_p0": 0.11719,
-      "efficiency": 0.20151,
-      "efficiency_dB": -6.957,
+      "p_in_over_p0": 0.527783,
+      "p_rad_over_p0": 0.149589,
+      "efficiency": 0.28343,
+      "efficiency_dB": -5.476,
       "absorbed_by_layer_axis_out": [
-        0.41499,
-        0.1051,
-        0.2784
+        0.41422,
+        0.10397,
+        0.19838
       ],
       "controls": {
-        "truncation_max_dF": 2.5608937202913e-15,
-        "balance_rel_miss": -1.3363261715114105e-14
+        "truncation_max_dF": 4.893219534429775e-16,
+        "balance_rel_miss": -1.8932039486688206e-15
+      }
+    },
+    {
+      "polarization": "TM",
+      "permittivity": "red_pine_profile_bark_phloem",
+      "dbh_m": 0.6,
+      "standoff_mm": 12.85,
+      "layers_axis_out": [
+        [
+          0.27375,
+          14.05,
+          4.82
+        ],
+        [
+          0.278,
+          35.2,
+          10.27
+        ],
+        [
+          0.3,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.31285,
+      "n_max": 25,
+      "field_same_current_dB": {
+        "0": -4.41,
+        "30": -5.219,
+        "60": -7.952,
+        "90": -13.257,
+        "120": -21.428,
+        "150": -31.57,
+        "180": -36.831
+      },
+      "gain_dB": {
+        "0": -2.042,
+        "30": -2.851,
+        "60": -5.584,
+        "90": -10.889,
+        "120": -19.06,
+        "150": -29.202,
+        "180": -34.463
+      },
+      "gain_dB_min": -39.52,
+      "phi_min_deg": 168.5,
+      "front_minus_back_dB": 32.421,
+      "front_minus_side_dB": 8.848,
+      "within_3dB_of_front_to_deg": 55,
+      "p_in_over_p0": 0.579705,
+      "p_rad_over_p0": 0.116202,
+      "efficiency": 0.20045,
+      "efficiency_dB": -6.98,
+      "absorbed_by_layer_axis_out": [
+        0.4162,
+        0.10564,
+        0.27771
+      ],
+      "controls": {
+        "truncation_max_dF": 2.5541162674452484e-15,
+        "balance_rel_miss": -1.2735757266852074e-14
       }
     },
     {
@@ -7369,840 +7442,840 @@
         ],
         [
           0.3,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.31685,
       "n_max": 25,
       "field_same_current_dB": {
-        "0": -3.273,
-        "30": -4.066,
-        "60": -6.767,
-        "90": -12.05,
-        "120": -20.218,
-        "150": -30.345,
-        "180": -35.682
+        "0": -3.299,
+        "30": -4.094,
+        "60": -6.799,
+        "90": -12.088,
+        "120": -20.263,
+        "150": -30.395,
+        "180": -35.74
       },
       "gain_dB": {
-        "0": -0.787,
-        "30": -1.58,
-        "60": -4.28,
-        "90": -9.563,
-        "120": -17.732,
-        "150": -27.858,
-        "180": -33.196
+        "0": -0.796,
+        "30": -1.591,
+        "60": -4.296,
+        "90": -9.586,
+        "120": -17.761,
+        "150": -27.892,
+        "180": -33.238
       },
-      "gain_dB_min": -38.36,
+      "gain_dB_min": -38.421,
       "phi_min_deg": 168.55,
-      "front_minus_back_dB": 32.409,
-      "front_minus_side_dB": 8.777,
-      "within_3dB_of_front_to_deg": 56,
-      "p_in_over_p0": 0.564112,
-      "p_rad_over_p0": 0.151799,
-      "efficiency": 0.26909,
-      "efficiency_dB": -5.701,
+      "front_minus_back_dB": 32.441,
+      "front_minus_side_dB": 8.789,
+      "within_3dB_of_front_to_deg": 55,
+      "p_in_over_p0": 0.562035,
+      "p_rad_over_p0": 0.150783,
+      "efficiency": 0.26828,
+      "efficiency_dB": -5.714,
       "absorbed_by_layer_axis_out": [
-        0.38659,
-        0.09449,
-        0.24982
-      ],
-      "controls": {
-        "truncation_max_dF": 3.4018701390306574e-15,
-        "balance_rel_miss": -1.525268510540287e-14
-      }
-    },
-    {
-      "polarization": "TE",
-      "permittivity": "red_pine_profile_bark_phloem",
-      "dbh_m": 0.38,
-      "standoff_mm": 12.85,
-      "layers_axis_out": [
-        [
-          0.17225,
-          14.05,
-          4.82
-        ],
-        [
-          0.1765,
-          35.2,
-          10.27
-        ],
-        [
-          0.19,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.20285,
-      "n_max": 22,
-      "field_same_current_dB": {
-        "0": -4.551,
-        "30": -6.1,
-        "60": -11.005,
-        "90": -19.138,
-        "120": -27.719,
-        "150": -33.409,
-        "180": -41.21
-      },
-      "gain_dB": {
-        "0": -4.273,
-        "30": -5.821,
-        "60": -10.727,
-        "90": -18.86,
-        "120": -27.441,
-        "150": -33.131,
-        "180": -40.932
-      },
-      "gain_dB_min": -40.976,
-      "phi_min_deg": 175.7,
-      "front_minus_back_dB": 36.66,
-      "front_minus_side_dB": 14.588,
-      "within_3dB_of_front_to_deg": 41,
-      "p_in_over_p0": 0.937935,
-      "p_rad_over_p0": 0.171579,
-      "efficiency": 0.18293,
-      "efficiency_dB": -7.377,
-      "absorbed_by_layer_axis_out": [
-        0.49938,
-        0.10329,
-        0.21439
-      ],
-      "controls": {
-        "truncation_max_dF": 5.613217783960923e-16,
-        "balance_rel_miss": -6.865393845530762e-15
-      }
-    },
-    {
-      "polarization": "TE",
-      "permittivity": "red_pine_profile_bark_phloem",
-      "dbh_m": 0.38,
-      "standoff_mm": 16.85,
-      "layers_axis_out": [
-        [
-          0.17225,
-          14.05,
-          4.82
-        ],
-        [
-          0.1765,
-          35.2,
-          10.27
-        ],
-        [
-          0.19,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.20685,
-      "n_max": 22,
-      "field_same_current_dB": {
-        "0": -3.296,
-        "30": -5.004,
-        "60": -10.712,
-        "90": -21.37,
-        "120": -27.718,
-        "150": -27.654,
-        "180": -30.85
-      },
-      "gain_dB": {
-        "0": -2.652,
-        "30": -4.359,
-        "60": -10.067,
-        "90": -20.726,
-        "120": -27.073,
-        "150": -27.01,
-        "180": -30.206
-      },
-      "gain_dB_min": -35.38,
-      "phi_min_deg": 165.05,
-      "front_minus_back_dB": 27.554,
-      "front_minus_side_dB": 18.074,
-      "within_3dB_of_front_to_deg": 39,
-      "p_in_over_p0": 0.862102,
-      "p_rad_over_p0": 0.215502,
-      "efficiency": 0.24997,
-      "efficiency_dB": -6.021,
-      "absorbed_by_layer_axis_out": [
-        0.47055,
-        0.09677,
-        0.18271
-      ],
-      "controls": {
-        "truncation_max_dF": 8.850031465476364e-16,
-        "balance_rel_miss": 2.5756187480485267e-16
-      }
-    },
-    {
-      "polarization": "TE",
-      "permittivity": "red_pine_profile_bark_phloem",
-      "dbh_m": 0.5,
-      "standoff_mm": 12.85,
-      "layers_axis_out": [
-        [
-          0.22825,
-          14.05,
-          4.82
-        ],
-        [
-          0.2325,
-          35.2,
-          10.27
-        ],
-        [
-          0.25,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.26285,
-      "n_max": 24,
-      "field_same_current_dB": {
-        "0": -4.142,
-        "30": -5.62,
-        "60": -9.992,
-        "90": -16.907,
-        "120": -25.524,
-        "150": -34.195,
-        "180": -36.599
-      },
-      "gain_dB": {
-        "0": -4.25,
-        "30": -5.728,
-        "60": -10.1,
-        "90": -17.015,
-        "120": -25.632,
-        "150": -34.303,
-        "180": -36.708
-      },
-      "gain_dB_min": -41.132,
-      "phi_min_deg": 164.8,
-      "front_minus_back_dB": 32.458,
-      "front_minus_side_dB": 12.765,
-      "within_3dB_of_front_to_deg": 42,
-      "p_in_over_p0": 1.025212,
-      "p_rad_over_p0": 0.19676,
-      "efficiency": 0.19192,
-      "efficiency_dB": -7.169,
-      "absorbed_by_layer_axis_out": [
-        0.46139,
-        0.09394,
-        0.25275
-      ],
-      "controls": {
-        "truncation_max_dF": 1.4652253296072246e-15,
-        "balance_rel_miss": 2.1658403174406354e-16
-      }
-    },
-    {
-      "polarization": "TE",
-      "permittivity": "red_pine_profile_bark_phloem",
-      "dbh_m": 0.5,
-      "standoff_mm": 16.85,
-      "layers_axis_out": [
-        [
-          0.22825,
-          14.05,
-          4.82
-        ],
-        [
-          0.2325,
-          35.2,
-          10.27
-        ],
-        [
-          0.25,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.26685,
-      "n_max": 24,
-      "field_same_current_dB": {
-        "0": -2.967,
-        "30": -4.616,
-        "60": -9.715,
-        "90": -18.269,
-        "120": -28.003,
-        "150": -35.203,
-        "180": -41.242
-      },
-      "gain_dB": {
-        "0": -2.726,
-        "30": -4.375,
-        "60": -9.474,
-        "90": -18.029,
-        "120": -27.763,
-        "150": -34.962,
-        "180": -41.001
-      },
-      "gain_dB_min": -46.985,
-      "phi_min_deg": 168.2,
-      "front_minus_back_dB": 38.275,
-      "front_minus_side_dB": 15.303,
-      "within_3dB_of_front_to_deg": 40,
-      "p_in_over_p0": 0.946115,
-      "p_rad_over_p0": 0.240215,
-      "efficiency": 0.2539,
-      "efficiency_dB": -5.953,
-      "absorbed_by_layer_axis_out": [
-        0.43492,
-        0.0886,
-        0.22258
-      ],
-      "controls": {
-        "truncation_max_dF": 2.173635512124967e-15,
-        "balance_rel_miss": 4.81116279332328e-15
-      }
-    },
-    {
-      "polarization": "TE",
-      "permittivity": "red_pine_profile_bark_phloem",
-      "dbh_m": 0.6,
-      "standoff_mm": 12.85,
-      "layers_axis_out": [
-        [
-          0.27375,
-          14.05,
-          4.82
-        ],
-        [
-          0.278,
-          35.2,
-          10.27
-        ],
-        [
-          0.3,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.31285,
-      "n_max": 25,
-      "field_same_current_dB": {
-        "0": -3.98,
-        "30": -5.358,
-        "60": -9.332,
-        "90": -15.415,
-        "120": -22.831,
-        "150": -29.242,
-        "180": -31.977
-      },
-      "gain_dB": {
-        "0": -4.429,
-        "30": -5.807,
-        "60": -9.782,
-        "90": -15.864,
-        "120": -23.28,
-        "150": -29.692,
-        "180": -32.426
-      },
-      "gain_dB_min": -41.465,
-      "phi_min_deg": 167.1,
-      "front_minus_back_dB": 27.997,
-      "front_minus_side_dB": 11.435,
-      "within_3dB_of_front_to_deg": 44,
-      "p_in_over_p0": 1.108987,
-      "p_rad_over_p0": 0.214279,
-      "efficiency": 0.19322,
-      "efficiency_dB": -7.139,
-      "absorbed_by_layer_axis_out": [
-        0.42104,
-        0.08505,
-        0.30069
-      ],
-      "controls": {
-        "truncation_max_dF": 9.526419197970456e-15,
-        "balance_rel_miss": 1.0011147191446655e-15
-      }
-    },
-    {
-      "polarization": "TE",
-      "permittivity": "red_pine_profile_bark_phloem",
-      "dbh_m": 0.6,
-      "standoff_mm": 16.85,
-      "layers_axis_out": [
-        [
-          0.27375,
-          14.05,
-          4.82
-        ],
-        [
-          0.278,
-          35.2,
-          10.27
-        ],
-        [
-          0.3,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.31685,
-      "n_max": 25,
-      "field_same_current_dB": {
-        "0": -2.893,
-        "30": -4.464,
-        "60": -9.148,
-        "90": -16.471,
-        "120": -25.191,
-        "150": -33.038,
-        "180": -36.871
-      },
-      "gain_dB": {
-        "0": -2.988,
-        "30": -4.559,
-        "60": -9.242,
-        "90": -16.566,
-        "120": -25.285,
-        "150": -33.133,
-        "180": -36.966
-      },
-      "gain_dB_min": -45.666,
-      "phi_min_deg": 167.3,
-      "front_minus_back_dB": 33.978,
-      "front_minus_side_dB": 13.578,
-      "within_3dB_of_front_to_deg": 41,
-      "p_in_over_p0": 1.022078,
-      "p_rad_over_p0": 0.254213,
-      "efficiency": 0.24872,
-      "efficiency_dB": -6.043,
-      "absorbed_by_layer_axis_out": [
-        0.39885,
-        0.08086,
-        0.27156
-      ],
-      "controls": {
-        "truncation_max_dF": 1.3733971298740951e-14,
-        "balance_rel_miss": 2.063857579789108e-15
-      }
-    },
-    {
-      "polarization": "TM",
-      "permittivity": "scots_sapwood_6cm_bark_phloem",
-      "dbh_m": 0.38,
-      "standoff_mm": 12.85,
-      "layers_axis_out": [
-        [
-          0.1155,
-          2.79,
-          0.539
-        ],
-        [
-          0.1765,
-          19.38,
-          6.26
-        ],
-        [
-          0.19,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.20285,
-      "n_max": 22,
-      "field_same_current_dB": {
-        "0": -4.677,
-        "30": -5.329,
-        "60": -7.373,
-        "90": -11.568,
-        "120": -17.611,
-        "150": -26.3,
-        "180": -30.673
-      },
-      "gain_dB": {
-        "0": -2.485,
-        "30": -3.137,
-        "60": -5.182,
-        "90": -9.376,
-        "120": -15.419,
-        "150": -24.108,
-        "180": -28.481
-      },
-      "gain_dB_min": -30.488,
-      "phi_min_deg": 165.3,
-      "front_minus_back_dB": 25.996,
-      "front_minus_side_dB": 6.891,
-      "within_3dB_of_front_to_deg": 63,
-      "p_in_over_p0": 0.603734,
-      "p_rad_over_p0": 0.122741,
-      "efficiency": 0.2033,
-      "efficiency_dB": -6.919,
-      "absorbed_by_layer_axis_out": [
-        0.02827,
-        0.5609,
-        0.20752
-      ],
-      "controls": {
-        "truncation_max_dF": 1.6653345369377348e-16,
-        "balance_rel_miss": 7.3557158229970935e-16
-      }
-    },
-    {
-      "polarization": "TM",
-      "permittivity": "scots_sapwood_6cm_bark_phloem",
-      "dbh_m": 0.38,
-      "standoff_mm": 16.85,
-      "layers_axis_out": [
-        [
-          0.1155,
-          2.79,
-          0.539
-        ],
-        [
-          0.1765,
-          19.38,
-          6.26
-        ],
-        [
-          0.19,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.20685,
-      "n_max": 22,
-      "field_same_current_dB": {
-        "0": -3.612,
-        "30": -4.267,
-        "60": -6.32,
-        "90": -10.454,
-        "120": -16.49,
-        "150": -24.985,
-        "180": -31.512
-      },
-      "gain_dB": {
-        "0": -1.249,
-        "30": -1.904,
-        "60": -3.957,
-        "90": -8.092,
-        "120": -14.127,
-        "150": -22.622,
-        "180": -29.149
-      },
-      "gain_dB_min": -31.695,
-      "phi_min_deg": 166.7,
-      "front_minus_back_dB": 27.9,
-      "front_minus_side_dB": 6.843,
-      "within_3dB_of_front_to_deg": 62,
-      "p_in_over_p0": 0.580393,
-      "p_rad_over_p0": 0.156914,
-      "efficiency": 0.27036,
-      "efficiency_dB": -5.681,
-      "absorbed_by_layer_axis_out": [
-        0.0285,
-        0.51599,
-        0.18515
-      ],
-      "controls": {
-        "truncation_max_dF": 3.3306690738754696e-16,
-        "balance_rel_miss": -6.695080002155438e-16
-      }
-    },
-    {
-      "polarization": "TM",
-      "permittivity": "scots_sapwood_6cm_bark_phloem",
-      "dbh_m": 0.5,
-      "standoff_mm": 12.85,
-      "layers_axis_out": [
-        [
-          0.1715,
-          2.79,
-          0.539
-        ],
-        [
-          0.2325,
-          19.38,
-          6.26
-        ],
-        [
-          0.25,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.26285,
-      "n_max": 24,
-      "field_same_current_dB": {
-        "0": -4.971,
-        "30": -5.704,
-        "60": -7.936,
-        "90": -12.428,
-        "120": -18.317,
-        "150": -23.91,
-        "180": -36.575
-      },
-      "gain_dB": {
-        "0": -2.822,
-        "30": -3.556,
-        "60": -5.787,
-        "90": -10.279,
-        "120": -16.169,
-        "150": -21.761,
-        "180": -34.427
-      },
-      "gain_dB_min": -34.427,
-      "phi_min_deg": 180.0,
-      "front_minus_back_dB": 31.604,
-      "front_minus_side_dB": 7.457,
-      "within_3dB_of_front_to_deg": 60,
-      "p_in_over_p0": 0.609707,
-      "p_rad_over_p0": 0.110738,
-      "efficiency": 0.18163,
-      "efficiency_dB": -7.408,
-      "absorbed_by_layer_axis_out": [
-        0.03475,
-        0.51896,
-        0.26467
-      ],
-      "controls": {
-        "truncation_max_dF": 3.885780586188048e-16,
-        "balance_rel_miss": 9.104559350073757e-17
-      }
-    },
-    {
-      "polarization": "TM",
-      "permittivity": "scots_sapwood_6cm_bark_phloem",
-      "dbh_m": 0.5,
-      "standoff_mm": 16.85,
-      "layers_axis_out": [
-        [
-          0.1715,
-          2.79,
-          0.539
-        ],
-        [
-          0.2325,
-          19.38,
-          6.26
-        ],
-        [
-          0.25,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.26685,
-      "n_max": 24,
-      "field_same_current_dB": {
-        "0": -3.892,
-        "30": -4.628,
-        "60": -6.9,
-        "90": -11.416,
-        "120": -17.447,
-        "150": -23.186,
-        "180": -37.433
-      },
-      "gain_dB": {
-        "0": -1.547,
-        "30": -2.284,
-        "60": -4.555,
-        "90": -9.072,
-        "120": -15.103,
-        "150": -20.841,
-        "180": -35.088
-      },
-      "gain_dB_min": -35.088,
-      "phi_min_deg": 180.0,
-      "front_minus_back_dB": 33.541,
-      "front_minus_side_dB": 7.525,
-      "within_3dB_of_front_to_deg": 59,
-      "p_in_over_p0": 0.582813,
-      "p_rad_over_p0": 0.14118,
-      "efficiency": 0.24224,
-      "efficiency_dB": -6.158,
-      "absorbed_by_layer_axis_out": [
-        0.03528,
-        0.48218,
-        0.24031
-      ],
-      "controls": {
-        "truncation_max_dF": 4.726604209672303e-16,
-        "balance_rel_miss": 7.6197584437549e-16
-      }
-    },
-    {
-      "polarization": "TM",
-      "permittivity": "scots_sapwood_6cm_bark_phloem",
-      "dbh_m": 0.6,
-      "standoff_mm": 12.85,
-      "layers_axis_out": [
-        [
-          0.217,
-          2.79,
-          0.539
-        ],
-        [
-          0.278,
-          19.38,
-          6.26
-        ],
-        [
-          0.3,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.31285,
-      "n_max": 25,
-      "field_same_current_dB": {
-        "0": -5.473,
-        "30": -6.264,
-        "60": -8.716,
-        "90": -13.592,
-        "120": -20.659,
-        "150": -26.548,
-        "180": -33.299
-      },
-      "gain_dB": {
-        "0": -3.253,
-        "30": -4.044,
-        "60": -6.496,
-        "90": -11.372,
-        "120": -18.439,
-        "150": -24.328,
-        "180": -31.079
-      },
-      "gain_dB_min": -31.079,
-      "phi_min_deg": 180.0,
-      "front_minus_back_dB": 27.826,
-      "front_minus_side_dB": 8.119,
-      "within_3dB_of_front_to_deg": 57,
-      "p_in_over_p0": 0.599798,
-      "p_rad_over_p0": 0.094551,
-      "efficiency": 0.15764,
-      "efficiency_dB": -8.023,
-      "absorbed_by_layer_axis_out": [
-        0.03567,
-        0.47816,
-        0.32853
-      ],
-      "controls": {
-        "truncation_max_dF": 2.526367320026781e-15,
-        "balance_rel_miss": -3.70199000976113e-15
-      }
-    },
-    {
-      "polarization": "TM",
-      "permittivity": "scots_sapwood_6cm_bark_phloem",
-      "dbh_m": 0.6,
-      "standoff_mm": 16.85,
-      "layers_axis_out": [
-        [
-          0.217,
-          2.79,
-          0.539
-        ],
-        [
-          0.278,
-          19.38,
-          6.26
-        ],
-        [
-          0.3,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.31685,
-      "n_max": 25,
-      "field_same_current_dB": {
-        "0": -4.305,
-        "30": -5.106,
-        "60": -7.612,
-        "90": -12.586,
-        "120": -19.892,
-        "150": -26.114,
-        "180": -32.15
-      },
-      "gain_dB": {
-        "0": -1.866,
-        "30": -2.667,
-        "60": -5.174,
-        "90": -10.147,
-        "120": -17.453,
-        "150": -23.676,
-        "180": -29.712
-      },
-      "gain_dB_min": -29.712,
-      "phi_min_deg": 180.0,
-      "front_minus_back_dB": 27.845,
-      "front_minus_side_dB": 8.281,
-      "within_3dB_of_front_to_deg": 57,
-      "p_in_over_p0": 0.570361,
-      "p_rad_over_p0": 0.122608,
-      "efficiency": 0.21497,
-      "efficiency_dB": -6.676,
-      "absorbed_by_layer_axis_out": [
-        0.03639,
-        0.44692,
-        0.30172
+        0.38773,
+        0.09493,
+        0.24906
       ],
       "controls": {
         "truncation_max_dF": 3.4552068735847928e-15,
-        "balance_rel_miss": -4.4770145730227364e-15
+        "balance_rel_miss": -1.4716459006892877e-14
       }
     },
     {
       "polarization": "TE",
-      "permittivity": "scots_sapwood_6cm_bark_phloem",
+      "permittivity": "red_pine_profile_bark_phloem",
       "dbh_m": 0.38,
       "standoff_mm": 12.85,
       "layers_axis_out": [
         [
-          0.1155,
-          2.79,
-          0.539
+          0.17225,
+          14.05,
+          4.82
         ],
         [
           0.1765,
-          19.38,
-          6.26
+          35.2,
+          10.27
         ],
         [
           0.19,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.20285,
       "n_max": 22,
       "field_same_current_dB": {
-        "0": -4.082,
-        "30": -5.538,
-        "60": -9.533,
-        "90": -16.12,
-        "120": -21.151,
-        "150": -24.567,
-        "180": -19.231
+        "0": -4.581,
+        "30": -6.135,
+        "60": -11.057,
+        "90": -19.213,
+        "120": -27.723,
+        "150": -33.277,
+        "180": -40.733
       },
       "gain_dB": {
-        "0": -4.514,
-        "30": -5.97,
-        "60": -9.965,
-        "90": -16.552,
-        "120": -21.583,
-        "150": -24.999,
-        "180": -19.663
+        "0": -4.279,
+        "30": -5.833,
+        "60": -10.755,
+        "90": -18.911,
+        "120": -27.422,
+        "150": -32.975,
+        "180": -40.431
       },
-      "gain_dB_min": -25.184,
-      "phi_min_deg": 152.5,
-      "front_minus_back_dB": 15.148,
-      "front_minus_side_dB": 12.037,
-      "within_3dB_of_front_to_deg": 43,
-      "p_in_over_p0": 1.104597,
-      "p_rad_over_p0": 0.209095,
-      "efficiency": 0.1893,
-      "efficiency_dB": -7.229,
+      "gain_dB_min": -40.526,
+      "phi_min_deg": 174.7,
+      "front_minus_back_dB": 36.152,
+      "front_minus_side_dB": 14.632,
+      "within_3dB_of_front_to_deg": 41,
+      "p_in_over_p0": 0.932853,
+      "p_rad_over_p0": 0.170132,
+      "efficiency": 0.18238,
+      "efficiency_dB": -7.39,
       "absorbed_by_layer_axis_out": [
-        0.04447,
-        0.53621,
-        0.23003
+        0.50127,
+        0.10368,
+        0.21268
       ],
       "controls": {
         "truncation_max_dF": 5.661048867003677e-16,
-        "balance_rel_miss": -6.432598255292114e-15
+        "balance_rel_miss": -7.021805594431759e-15
+      }
+    },
+    {
+      "polarization": "TE",
+      "permittivity": "red_pine_profile_bark_phloem",
+      "dbh_m": 0.38,
+      "standoff_mm": 16.85,
+      "layers_axis_out": [
+        [
+          0.17225,
+          14.05,
+          4.82
+        ],
+        [
+          0.1765,
+          35.2,
+          10.27
+        ],
+        [
+          0.19,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.20685,
+      "n_max": 22,
+      "field_same_current_dB": {
+        "0": -3.321,
+        "30": -5.033,
+        "60": -10.761,
+        "90": -21.457,
+        "120": -27.605,
+        "150": -27.581,
+        "180": -30.684
+      },
+      "gain_dB": {
+        "0": -2.654,
+        "30": -4.366,
+        "60": -10.095,
+        "90": -20.79,
+        "120": -26.939,
+        "150": -26.914,
+        "180": -30.017
+      },
+      "gain_dB_min": -35.127,
+      "phi_min_deg": 165.0,
+      "front_minus_back_dB": 27.363,
+      "front_minus_side_dB": 18.136,
+      "within_3dB_of_front_to_deg": 39,
+      "p_in_over_p0": 0.857724,
+      "p_rad_over_p0": 0.214022,
+      "efficiency": 0.24952,
+      "efficiency_dB": -6.029,
+      "absorbed_by_layer_axis_out": [
+        0.472,
+        0.09706,
+        0.18142
+      ],
+      "controls": {
+        "truncation_max_dF": 8.604857954561627e-16,
+        "balance_rel_miss": 0.0
+      }
+    },
+    {
+      "polarization": "TE",
+      "permittivity": "red_pine_profile_bark_phloem",
+      "dbh_m": 0.5,
+      "standoff_mm": 12.85,
+      "layers_axis_out": [
+        [
+          0.22825,
+          14.05,
+          4.82
+        ],
+        [
+          0.2325,
+          35.2,
+          10.27
+        ],
+        [
+          0.25,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.26285,
+      "n_max": 24,
+      "field_same_current_dB": {
+        "0": -4.173,
+        "30": -5.656,
+        "60": -10.044,
+        "90": -16.98,
+        "120": -25.612,
+        "150": -34.327,
+        "180": -36.772
+      },
+      "gain_dB": {
+        "0": -4.259,
+        "30": -5.741,
+        "60": -10.129,
+        "90": -17.065,
+        "120": -25.697,
+        "150": -34.412,
+        "180": -36.857
+      },
+      "gain_dB_min": -41.199,
+      "phi_min_deg": 164.85,
+      "front_minus_back_dB": 32.598,
+      "front_minus_side_dB": 12.807,
+      "within_3dB_of_front_to_deg": 42,
+      "p_in_over_p0": 1.019845,
+      "p_rad_over_p0": 0.195006,
+      "efficiency": 0.19121,
+      "efficiency_dB": -7.185,
+      "absorbed_by_layer_axis_out": [
+        0.46343,
+        0.09435,
+        0.25101
+      ],
+      "controls": {
+        "truncation_max_dF": 1.5029073952766851e-15,
+        "balance_rel_miss": 1.0886189097642692e-16
+      }
+    },
+    {
+      "polarization": "TE",
+      "permittivity": "red_pine_profile_bark_phloem",
+      "dbh_m": 0.5,
+      "standoff_mm": 16.85,
+      "layers_axis_out": [
+        [
+          0.22825,
+          14.05,
+          4.82
+        ],
+        [
+          0.2325,
+          35.2,
+          10.27
+        ],
+        [
+          0.25,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.26685,
+      "n_max": 24,
+      "field_same_current_dB": {
+        "0": -2.992,
+        "30": -4.645,
+        "60": -9.764,
+        "90": -18.35,
+        "120": -28.01,
+        "150": -35.012,
+        "180": -40.849
+      },
+      "gain_dB": {
+        "0": -2.729,
+        "30": -4.383,
+        "60": -9.501,
+        "90": -18.088,
+        "120": -27.747,
+        "150": -34.749,
+        "180": -40.586
+      },
+      "gain_dB_min": -46.677,
+      "phi_min_deg": 168.05,
+      "front_minus_back_dB": 37.857,
+      "front_minus_side_dB": 15.359,
+      "within_3dB_of_front_to_deg": 40,
+      "p_in_over_p0": 0.941302,
+      "p_rad_over_p0": 0.238449,
+      "efficiency": 0.25332,
+      "efficiency_dB": -5.963,
+      "absorbed_by_layer_axis_out": [
+        0.43658,
+        0.08894,
+        0.22116
+      ],
+      "controls": {
+        "truncation_max_dF": 2.2315206618374916e-15,
+        "balance_rel_miss": 4.717819806615894e-15
+      }
+    },
+    {
+      "polarization": "TE",
+      "permittivity": "red_pine_profile_bark_phloem",
+      "dbh_m": 0.6,
+      "standoff_mm": 12.85,
+      "layers_axis_out": [
+        [
+          0.27375,
+          14.05,
+          4.82
+        ],
+        [
+          0.278,
+          35.2,
+          10.27
+        ],
+        [
+          0.3,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.31285,
+      "n_max": 25,
+      "field_same_current_dB": {
+        "0": -4.013,
+        "30": -5.395,
+        "60": -9.383,
+        "90": -15.481,
+        "120": -22.912,
+        "150": -29.35,
+        "180": -32.1
+      },
+      "gain_dB": {
+        "0": -4.441,
+        "30": -5.824,
+        "60": -9.812,
+        "90": -15.909,
+        "120": -23.34,
+        "150": -29.778,
+        "180": -32.528
+      },
+      "gain_dB_min": -41.531,
+      "phi_min_deg": 167.1,
+      "front_minus_back_dB": 28.087,
+      "front_minus_side_dB": 11.467,
+      "within_3dB_of_front_to_deg": 44,
+      "p_in_over_p0": 1.103607,
+      "p_rad_over_p0": 0.212296,
+      "efficiency": 0.19237,
+      "efficiency_dB": -7.159,
+      "absorbed_by_layer_axis_out": [
+        0.42323,
+        0.08549,
+        0.29891
+      ],
+      "controls": {
+        "truncation_max_dF": 9.578247671617842e-15,
+        "balance_rel_miss": 2.011989438440267e-15
+      }
+    },
+    {
+      "polarization": "TE",
+      "permittivity": "red_pine_profile_bark_phloem",
+      "dbh_m": 0.6,
+      "standoff_mm": 16.85,
+      "layers_axis_out": [
+        [
+          0.27375,
+          14.05,
+          4.82
+        ],
+        [
+          0.278,
+          35.2,
+          10.27
+        ],
+        [
+          0.3,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.31685,
+      "n_max": 25,
+      "field_same_current_dB": {
+        "0": -2.919,
+        "30": -4.496,
+        "60": -9.197,
+        "90": -16.544,
+        "120": -25.267,
+        "150": -33.12,
+        "180": -36.98
+      },
+      "gain_dB": {
+        "0": -2.993,
+        "30": -4.569,
+        "60": -9.27,
+        "90": -16.618,
+        "120": -25.34,
+        "150": -33.194,
+        "180": -37.053
+      },
+      "gain_dB_min": -45.719,
+      "phi_min_deg": 167.3,
+      "front_minus_back_dB": 34.06,
+      "front_minus_side_dB": 13.625,
+      "within_3dB_of_front_to_deg": 41,
+      "p_in_over_p0": 1.017087,
+      "p_rad_over_p0": 0.252241,
+      "efficiency": 0.248,
+      "efficiency_dB": -6.055,
+      "absorbed_by_layer_axis_out": [
+        0.40074,
+        0.08125,
+        0.27001
+      ],
+      "controls": {
+        "truncation_max_dF": 1.37634080038005e-14,
+        "balance_rel_miss": 3.165557215879048e-15
+      }
+    },
+    {
+      "polarization": "TM",
+      "permittivity": "scots_sapwood_6cm_bark_phloem",
+      "dbh_m": 0.38,
+      "standoff_mm": 12.85,
+      "layers_axis_out": [
+        [
+          0.1155,
+          2.79,
+          0.539
+        ],
+        [
+          0.1765,
+          19.38,
+          6.26
+        ],
+        [
+          0.19,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.20285,
+      "n_max": 22,
+      "field_same_current_dB": {
+        "0": -4.734,
+        "30": -5.387,
+        "60": -7.432,
+        "90": -11.615,
+        "120": -17.635,
+        "150": -26.194,
+        "180": -30.852
+      },
+      "gain_dB": {
+        "0": -2.534,
+        "30": -3.187,
+        "60": -5.231,
+        "90": -9.415,
+        "120": -15.435,
+        "150": -23.994,
+        "180": -28.652
+      },
+      "gain_dB_min": -30.516,
+      "phi_min_deg": 165.7,
+      "front_minus_back_dB": 26.119,
+      "front_minus_side_dB": 6.881,
+      "within_3dB_of_front_to_deg": 63,
+      "p_in_over_p0": 0.602524,
+      "p_rad_over_p0": 0.121177,
+      "efficiency": 0.20112,
+      "efficiency_dB": -6.966,
+      "absorbed_by_layer_axis_out": [
+        0.02825,
+        0.56296,
+        0.20768
+      ],
+      "controls": {
+        "truncation_max_dF": 1.3548623466035524e-16,
+        "balance_rel_miss": -9.213098705321366e-17
+      }
+    },
+    {
+      "polarization": "TM",
+      "permittivity": "scots_sapwood_6cm_bark_phloem",
+      "dbh_m": 0.38,
+      "standoff_mm": 16.85,
+      "layers_axis_out": [
+        [
+          0.1155,
+          2.79,
+          0.539
+        ],
+        [
+          0.1765,
+          19.38,
+          6.26
+        ],
+        [
+          0.19,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.20685,
+      "n_max": 22,
+      "field_same_current_dB": {
+        "0": -3.659,
+        "30": -4.317,
+        "60": -6.372,
+        "90": -10.498,
+        "120": -16.515,
+        "150": -24.894,
+        "180": -31.741
+      },
+      "gain_dB": {
+        "0": -1.283,
+        "30": -1.941,
+        "60": -3.996,
+        "90": -8.122,
+        "120": -14.138,
+        "150": -22.518,
+        "180": -29.365
+      },
+      "gain_dB_min": -31.751,
+      "phi_min_deg": 167.05,
+      "front_minus_back_dB": 28.082,
+      "front_minus_side_dB": 6.838,
+      "within_3dB_of_front_to_deg": 62,
+      "p_in_over_p0": 0.578627,
+      "p_rad_over_p0": 0.155182,
+      "efficiency": 0.26819,
+      "efficiency_dB": -5.716,
+      "absorbed_by_layer_axis_out": [
+        0.02851,
+        0.51805,
+        0.18525
+      ],
+      "controls": {
+        "truncation_max_dF": 2.2887833992611187e-16,
+        "balance_rel_miss": -1.6309125936339268e-15
+      }
+    },
+    {
+      "polarization": "TM",
+      "permittivity": "scots_sapwood_6cm_bark_phloem",
+      "dbh_m": 0.5,
+      "standoff_mm": 12.85,
+      "layers_axis_out": [
+        [
+          0.1715,
+          2.79,
+          0.539
+        ],
+        [
+          0.2325,
+          19.38,
+          6.26
+        ],
+        [
+          0.25,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.26285,
+      "n_max": 24,
+      "field_same_current_dB": {
+        "0": -5.036,
+        "30": -5.773,
+        "60": -8.012,
+        "90": -12.507,
+        "120": -18.383,
+        "150": -23.928,
+        "180": -36.586
+      },
+      "gain_dB": {
+        "0": -2.868,
+        "30": -3.605,
+        "60": -5.844,
+        "90": -10.339,
+        "120": -16.215,
+        "150": -21.76,
+        "180": -34.418
+      },
+      "gain_dB_min": -34.418,
+      "phi_min_deg": 180.0,
+      "front_minus_back_dB": 31.55,
+      "front_minus_side_dB": 7.471,
+      "within_3dB_of_front_to_deg": 60,
+      "p_in_over_p0": 0.60703,
+      "p_rad_over_p0": 0.108968,
+      "efficiency": 0.17951,
+      "efficiency_dB": -7.459,
+      "absorbed_by_layer_axis_out": [
+        0.03475,
+        0.52128,
+        0.26446
+      ],
+      "controls": {
+        "truncation_max_dF": 4.518280359883027e-16,
+        "balance_rel_miss": -6.401300989141607e-16
+      }
+    },
+    {
+      "polarization": "TM",
+      "permittivity": "scots_sapwood_6cm_bark_phloem",
+      "dbh_m": 0.5,
+      "standoff_mm": 16.85,
+      "layers_axis_out": [
+        [
+          0.1715,
+          2.79,
+          0.539
+        ],
+        [
+          0.2325,
+          19.38,
+          6.26
+        ],
+        [
+          0.25,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.26685,
+      "n_max": 24,
+      "field_same_current_dB": {
+        "0": -3.942,
+        "30": -4.683,
+        "60": -6.965,
+        "90": -11.487,
+        "120": -17.511,
+        "150": -23.209,
+        "180": -37.312
+      },
+      "gain_dB": {
+        "0": -1.574,
+        "30": -2.315,
+        "60": -4.597,
+        "90": -9.119,
+        "120": -15.144,
+        "150": -20.841,
+        "180": -34.944
+      },
+      "gain_dB_min": -34.944,
+      "phi_min_deg": 180.0,
+      "front_minus_back_dB": 33.369,
+      "front_minus_side_dB": 7.545,
+      "within_3dB_of_front_to_deg": 59,
+      "p_in_over_p0": 0.579729,
+      "p_rad_over_p0": 0.139322,
+      "efficiency": 0.24032,
+      "efficiency_dB": -6.192,
+      "absorbed_by_layer_axis_out": [
+        0.03531,
+        0.48437,
+        0.24
+      ],
+      "controls": {
+        "truncation_max_dF": 5.026748538604307e-16,
+        "balance_rel_miss": -1.9150723603784464e-16
+      }
+    },
+    {
+      "polarization": "TM",
+      "permittivity": "scots_sapwood_6cm_bark_phloem",
+      "dbh_m": 0.6,
+      "standoff_mm": 12.85,
+      "layers_axis_out": [
+        [
+          0.217,
+          2.79,
+          0.539
+        ],
+        [
+          0.278,
+          19.38,
+          6.26
+        ],
+        [
+          0.3,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.31285,
+      "n_max": 25,
+      "field_same_current_dB": {
+        "0": -5.527,
+        "30": -6.325,
+        "60": -8.793,
+        "90": -13.694,
+        "120": -20.793,
+        "150": -26.653,
+        "180": -33.231
+      },
+      "gain_dB": {
+        "0": -3.279,
+        "30": -4.076,
+        "60": -6.545,
+        "90": -11.446,
+        "120": -18.545,
+        "150": -24.405,
+        "180": -30.982
+      },
+      "gain_dB_min": -30.982,
+      "phi_min_deg": 180.0,
+      "front_minus_back_dB": 27.704,
+      "front_minus_side_dB": 8.168,
+      "within_3dB_of_front_to_deg": 57,
+      "p_in_over_p0": 0.59593,
+      "p_rad_over_p0": 0.093103,
+      "efficiency": 0.15623,
+      "efficiency_dB": -8.062,
+      "absorbed_by_layer_axis_out": [
+        0.03569,
+        0.48052,
+        0.32756
+      ],
+      "controls": {
+        "truncation_max_dF": 2.5619839662781144e-15,
+        "balance_rel_miss": -2.608214921273118e-15
+      }
+    },
+    {
+      "polarization": "TM",
+      "permittivity": "scots_sapwood_6cm_bark_phloem",
+      "dbh_m": 0.6,
+      "standoff_mm": 16.85,
+      "layers_axis_out": [
+        [
+          0.217,
+          2.79,
+          0.539
+        ],
+        [
+          0.278,
+          19.38,
+          6.26
+        ],
+        [
+          0.3,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.31685,
+      "n_max": 25,
+      "field_same_current_dB": {
+        "0": -4.34,
+        "30": -5.148,
+        "60": -7.672,
+        "90": -12.672,
+        "120": -20.015,
+        "150": -26.224,
+        "180": -32.085
+      },
+      "gain_dB": {
+        "0": -1.871,
+        "30": -2.679,
+        "60": -5.203,
+        "90": -10.203,
+        "120": -17.546,
+        "150": -23.755,
+        "180": -29.616
+      },
+      "gain_dB_min": -29.616,
+      "phi_min_deg": 180.0,
+      "front_minus_back_dB": 27.744,
+      "front_minus_side_dB": 8.332,
+      "within_3dB_of_front_to_deg": 57,
+      "p_in_over_p0": 0.566373,
+      "p_rad_over_p0": 0.12123,
+      "efficiency": 0.21405,
+      "efficiency_dB": -6.695,
+      "absorbed_by_layer_axis_out": [
+        0.03643,
+        0.44896,
+        0.30056
+      ],
+      "controls": {
+        "truncation_max_dF": 3.3879997739887654e-15,
+        "balance_rel_miss": -4.018477813598334e-15
+      }
+    },
+    {
+      "polarization": "TE",
+      "permittivity": "scots_sapwood_6cm_bark_phloem",
+      "dbh_m": 0.38,
+      "standoff_mm": 12.85,
+      "layers_axis_out": [
+        [
+          0.1155,
+          2.79,
+          0.539
+        ],
+        [
+          0.1765,
+          19.38,
+          6.26
+        ],
+        [
+          0.19,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.20285,
+      "n_max": 22,
+      "field_same_current_dB": {
+        "0": -4.136,
+        "30": -5.596,
+        "60": -9.603,
+        "90": -16.187,
+        "120": -21.176,
+        "150": -24.544,
+        "180": -19.273
+      },
+      "gain_dB": {
+        "0": -4.54,
+        "30": -6.0,
+        "60": -10.006,
+        "90": -16.59,
+        "120": -21.579,
+        "150": -24.947,
+        "180": -19.676
+      },
+      "gain_dB_min": -25.132,
+      "phi_min_deg": 152.5,
+      "front_minus_back_dB": 15.136,
+      "front_minus_side_dB": 12.05,
+      "within_3dB_of_front_to_deg": 43,
+      "p_in_over_p0": 1.097356,
+      "p_rad_over_p0": 0.206314,
+      "efficiency": 0.18801,
+      "efficiency_dB": -7.258,
+      "absorbed_by_layer_axis_out": [
+        0.0446,
+        0.53876,
+        0.22863
+      ],
+      "controls": {
+        "truncation_max_dF": 5.558049685633556e-16,
+        "balance_rel_miss": -6.7785577550410096e-15
       }
     },
     {
@@ -8223,47 +8296,47 @@
         ],
         [
           0.19,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.20685,
       "n_max": 22,
       "field_same_current_dB": {
-        "0": -3.058,
-        "30": -4.68,
-        "60": -9.459,
-        "90": -17.551,
-        "120": -21.495,
-        "150": -25.029,
-        "180": -21.472
+        "0": -3.105,
+        "30": -4.732,
+        "60": -9.53,
+        "90": -17.62,
+        "120": -21.461,
+        "150": -24.912,
+        "180": -21.509
       },
       "gain_dB": {
-        "0": -3.077,
-        "30": -4.699,
-        "60": -9.478,
-        "90": -17.57,
-        "120": -21.514,
-        "150": -25.048,
-        "180": -21.491
+        "0": -3.095,
+        "30": -4.722,
+        "60": -9.52,
+        "90": -17.61,
+        "120": -21.451,
+        "150": -24.902,
+        "180": -21.499
       },
-      "gain_dB_min": -25.048,
-      "phi_min_deg": 150.05,
-      "front_minus_back_dB": 18.414,
-      "front_minus_side_dB": 14.493,
+      "gain_dB_min": -24.903,
+      "phi_min_deg": 150.25,
+      "front_minus_back_dB": 18.404,
+      "front_minus_side_dB": 14.515,
       "within_3dB_of_front_to_deg": 40,
-      "p_in_over_p0": 1.00432,
-      "p_rad_over_p0": 0.244028,
-      "efficiency": 0.24298,
-      "efficiency_dB": -6.144,
+      "p_in_over_p0": 0.997793,
+      "p_rad_over_p0": 0.241135,
+      "efficiency": 0.24167,
+      "efficiency_dB": -6.168,
       "absorbed_by_layer_axis_out": [
-        0.04667,
-        0.505,
-        0.20535
+        0.04681,
+        0.50721,
+        0.20431
       ],
       "controls": {
-        "truncation_max_dF": 8.483631417132111e-16,
-        "balance_rel_miss": -6.632687865193969e-16
+        "truncation_max_dF": 8.539351410930557e-16,
+        "balance_rel_miss": -8.901426146001669e-16
       }
     },
     {
@@ -8284,47 +8357,47 @@
         ],
         [
           0.25,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.26285,
       "n_max": 24,
       "field_same_current_dB": {
-        "0": -4.503,
-        "30": -5.859,
-        "60": -9.65,
-        "90": -15.804,
-        "120": -22.721,
-        "150": -24.192,
-        "180": -20.004
+        "0": -4.566,
+        "30": -5.929,
+        "60": -9.738,
+        "90": -15.9,
+        "120": -22.82,
+        "150": -24.28,
+        "180": -20.058
       },
       "gain_dB": {
-        "0": -4.936,
-        "30": -6.292,
-        "60": -10.083,
-        "90": -16.238,
-        "120": -23.155,
-        "150": -24.625,
-        "180": -20.438
+        "0": -4.962,
+        "30": -6.325,
+        "60": -10.134,
+        "90": -16.296,
+        "120": -23.216,
+        "150": -24.676,
+        "180": -20.454
       },
-      "gain_dB_min": -28.294,
-      "phi_min_deg": 159.8,
-      "front_minus_back_dB": 15.501,
-      "front_minus_side_dB": 11.301,
-      "within_3dB_of_front_to_deg": 45,
-      "p_in_over_p0": 1.104888,
-      "p_rad_over_p0": 0.194463,
-      "efficiency": 0.176,
-      "efficiency_dB": -7.545,
+      "gain_dB_min": -28.322,
+      "phi_min_deg": 159.75,
+      "front_minus_back_dB": 15.492,
+      "front_minus_side_dB": 11.334,
+      "within_3dB_of_front_to_deg": 44,
+      "p_in_over_p0": 1.095454,
+      "p_rad_over_p0": 0.191243,
+      "efficiency": 0.17458,
+      "efficiency_dB": -7.58,
       "absorbed_by_layer_axis_out": [
-        0.0496,
-        0.49349,
-        0.28092
+        0.04978,
+        0.4963,
+        0.27934
       ],
       "controls": {
-        "truncation_max_dF": 1.4680516997299786e-15,
-        "balance_rel_miss": -2.5120709535825093e-15
+        "truncation_max_dF": 1.508024561581292e-15,
+        "balance_rel_miss": -2.736400465747019e-15
       }
     },
     {
@@ -8345,47 +8418,47 @@
         ],
         [
           0.25,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.26685,
       "n_max": 24,
       "field_same_current_dB": {
-        "0": -3.445,
-        "30": -5.012,
-        "60": -9.578,
-        "90": -16.874,
-        "120": -23.722,
-        "150": -23.972,
-        "180": -20.553
+        "0": -3.495,
+        "30": -5.072,
+        "60": -9.666,
+        "90": -16.974,
+        "120": -23.754,
+        "150": -23.979,
+        "180": -20.565
       },
       "gain_dB": {
-        "0": -3.466,
-        "30": -5.033,
-        "60": -9.6,
-        "90": -16.896,
-        "120": -23.744,
-        "150": -23.994,
-        "180": -20.575
+        "0": -3.48,
+        "30": -5.056,
+        "60": -9.65,
+        "90": -16.958,
+        "120": -23.739,
+        "150": -23.964,
+        "180": -20.55
       },
-      "gain_dB_min": -27.02,
+      "gain_dB_min": -26.993,
       "phi_min_deg": 159.85,
-      "front_minus_back_dB": 17.108,
-      "front_minus_side_dB": 13.43,
+      "front_minus_back_dB": 17.07,
+      "front_minus_side_dB": 13.478,
       "within_3dB_of_front_to_deg": 41,
-      "p_in_over_p0": 1.004961,
-      "p_rad_over_p0": 0.227771,
-      "efficiency": 0.22665,
-      "efficiency_dB": -6.447,
+      "p_in_over_p0": 0.9964,
+      "p_rad_over_p0": 0.224561,
+      "efficiency": 0.22537,
+      "efficiency_dB": -6.471,
       "absorbed_by_layer_axis_out": [
-        0.05186,
-        0.46502,
-        0.25647
+        0.05205,
+        0.46745,
+        0.25513
       ],
       "controls": {
-        "truncation_max_dF": 2.1932283915156146e-15,
-        "balance_rel_miss": 1.9885365242823843e-15
+        "truncation_max_dF": 2.1801492283790733e-15,
+        "balance_rel_miss": 2.005621207468268e-15
       }
     },
     {
@@ -8406,47 +8479,47 @@
         ],
         [
           0.3,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.31285,
       "n_max": 25,
       "field_same_current_dB": {
-        "0": -5.029,
-        "30": -6.381,
-        "60": -10.014,
-        "90": -15.724,
-        "120": -24.031,
-        "150": -31.217,
-        "180": -23.682
+        "0": -5.082,
+        "30": -6.446,
+        "60": -10.108,
+        "90": -15.837,
+        "120": -24.172,
+        "150": -31.433,
+        "180": -23.776
       },
       "gain_dB": {
-        "0": -5.294,
-        "30": -6.646,
-        "60": -10.279,
-        "90": -15.989,
-        "120": -24.296,
-        "150": -31.482,
-        "180": -23.947
+        "0": -5.307,
+        "30": -6.671,
+        "60": -10.333,
+        "90": -16.062,
+        "120": -24.397,
+        "150": -31.658,
+        "180": -24.001
       },
-      "gain_dB_min": -37.936,
-      "phi_min_deg": 161.5,
-      "front_minus_back_dB": 18.652,
-      "front_minus_side_dB": 10.694,
+      "gain_dB_min": -38.128,
+      "phi_min_deg": 161.45,
+      "front_minus_back_dB": 18.694,
+      "front_minus_side_dB": 10.755,
       "within_3dB_of_front_to_deg": 45,
-      "p_in_over_p0": 1.062939,
-      "p_rad_over_p0": 0.173144,
-      "efficiency": 0.16289,
-      "efficiency_dB": -7.881,
+      "p_in_over_p0": 1.053183,
+      "p_rad_over_p0": 0.170383,
+      "efficiency": 0.16178,
+      "efficiency_dB": -7.911,
       "absorbed_by_layer_axis_out": [
-        0.04933,
-        0.45132,
-        0.33645
+        0.04954,
+        0.45423,
+        0.33445
       ],
       "controls": {
-        "truncation_max_dF": 9.536625545696248e-15,
-        "balance_rel_miss": 4.1779379074367336e-16
+        "truncation_max_dF": 9.549370227968039e-15,
+        "balance_rel_miss": 3.1624784895272454e-16
       }
     },
     {
@@ -8467,47 +8540,47 @@
         ],
         [
           0.3,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.31685,
       "n_max": 25,
       "field_same_current_dB": {
-        "0": -3.88,
-        "30": -5.486,
-        "60": -9.966,
-        "90": -16.663,
-        "120": -24.993,
-        "150": -28.762,
-        "180": -23.012
+        "0": -3.917,
+        "30": -5.536,
+        "60": -10.057,
+        "90": -16.786,
+        "120": -25.098,
+        "150": -28.825,
+        "180": -23.051
       },
       "gain_dB": {
-        "0": -3.736,
-        "30": -5.342,
-        "60": -9.822,
-        "90": -16.519,
-        "120": -24.849,
-        "150": -28.618,
+        "0": -3.733,
+        "30": -5.353,
+        "60": -9.874,
+        "90": -16.602,
+        "120": -24.914,
+        "150": -28.641,
         "180": -22.868
       },
-      "gain_dB_min": -34.669,
+      "gain_dB_min": -34.774,
       "phi_min_deg": 139.2,
-      "front_minus_back_dB": 19.132,
-      "front_minus_side_dB": 12.783,
+      "front_minus_back_dB": 19.134,
+      "front_minus_side_dB": 12.869,
       "within_3dB_of_front_to_deg": 41,
-      "p_in_over_p0": 0.967362,
-      "p_rad_over_p0": 0.205133,
-      "efficiency": 0.21205,
-      "efficiency_dB": -6.736,
+      "p_in_over_p0": 0.958621,
+      "p_rad_over_p0": 0.202565,
+      "efficiency": 0.21131,
+      "efficiency_dB": -6.751,
       "absorbed_by_layer_axis_out": [
-        0.0515,
-        0.42559,
-        0.31085
+        0.05171,
+        0.42802,
+        0.30895
       ],
       "controls": {
-        "truncation_max_dF": 1.3753981722641527e-14,
-        "balance_rel_miss": 1.8362889568194334e-15
+        "truncation_max_dF": 1.3745976845394207e-14,
+        "balance_rel_miss": 1.6214050959984681e-15
       }
     },
     {
@@ -8528,47 +8601,47 @@
         ],
         [
           0.19,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.20285,
       "n_max": 22,
       "field_same_current_dB": {
-        "0": -3.591,
-        "30": -4.043,
-        "60": -5.9,
-        "90": -9.786,
+        "0": -3.649,
+        "30": -4.103,
+        "60": -5.946,
+        "90": -9.826,
         "120": -14.254,
-        "150": -16.331,
-        "180": -15.429
+        "150": -16.329,
+        "180": -15.354
       },
       "gain_dB": {
-        "0": -1.62,
-        "30": -2.072,
-        "60": -3.929,
-        "90": -7.816,
-        "120": -12.283,
+        "0": -1.681,
+        "30": -2.134,
+        "60": -3.978,
+        "90": -7.858,
+        "120": -12.285,
         "150": -14.361,
-        "180": -13.459
+        "180": -13.386
       },
-      "gain_dB_min": -15.092,
-      "phi_min_deg": 138.15,
-      "front_minus_back_dB": 11.838,
-      "front_minus_side_dB": 6.195,
+      "gain_dB_min": -15.088,
+      "phi_min_deg": 138.25,
+      "front_minus_back_dB": 11.705,
+      "front_minus_side_dB": 6.177,
       "within_3dB_of_front_to_deg": 66,
-      "p_in_over_p0": 0.635289,
-      "p_rad_over_p0": 0.175047,
-      "efficiency": 0.27554,
-      "efficiency_dB": -5.598,
+      "p_in_over_p0": 0.635541,
+      "p_rad_over_p0": 0.173077,
+      "efficiency": 0.27233,
+      "efficiency_dB": -5.649,
       "absorbed_by_layer_axis_out": [
-        0.12596,
-        0.38829,
-        0.21021
+        0.12623,
+        0.39074,
+        0.2107
       ],
       "controls": {
-        "truncation_max_dF": 2.0014830212433607e-16,
-        "balance_rel_miss": -5.242764518030121e-16
+        "truncation_max_dF": 2.2887833992611187e-16,
+        "balance_rel_miss": -6.114131816083195e-16
       }
     },
     {
@@ -8589,47 +8662,47 @@
         ],
         [
           0.19,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.20685,
       "n_max": 22,
       "field_same_current_dB": {
-        "0": -2.749,
-        "30": -3.212,
-        "60": -5.033,
-        "90": -8.981,
-        "120": -13.6,
-        "150": -16.123,
-        "180": -15.294
+        "0": -2.803,
+        "30": -3.269,
+        "60": -5.08,
+        "90": -9.022,
+        "120": -13.606,
+        "150": -16.127,
+        "180": -15.215
       },
       "gain_dB": {
-        "0": -0.679,
-        "30": -1.142,
-        "60": -2.963,
-        "90": -6.911,
-        "120": -11.53,
+        "0": -0.73,
+        "30": -1.196,
+        "60": -3.006,
+        "90": -6.949,
+        "120": -11.533,
         "150": -14.053,
-        "180": -13.224
+        "180": -13.141
       },
-      "gain_dB_min": -14.606,
-      "phi_min_deg": 139.4,
-      "front_minus_back_dB": 12.545,
-      "front_minus_side_dB": 6.232,
+      "gain_dB_min": -14.604,
+      "phi_min_deg": 139.5,
+      "front_minus_back_dB": 12.411,
+      "front_minus_side_dB": 6.219,
       "within_3dB_of_front_to_deg": 66,
-      "p_in_over_p0": 0.620882,
-      "p_rad_over_p0": 0.211008,
-      "efficiency": 0.33985,
-      "efficiency_dB": -4.687,
+      "p_in_over_p0": 0.620367,
+      "p_rad_over_p0": 0.208684,
+      "efficiency": 0.33639,
+      "efficiency_dB": -4.732,
       "absorbed_by_layer_axis_out": [
-        0.1243,
-        0.34706,
-        0.18878
+        0.12471,
+        0.34962,
+        0.18929
       ],
       "controls": {
-        "truncation_max_dF": 2.482534153247273e-16,
-        "balance_rel_miss": -1.8775443390528803e-15
+        "truncation_max_dF": 2.2887833992611187e-16,
+        "balance_rel_miss": -1.7001428309014485e-15
       }
     },
     {
@@ -8650,47 +8723,47 @@
         ],
         [
           0.25,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.26285,
       "n_max": 24,
       "field_same_current_dB": {
-        "0": -4.378,
-        "30": -4.933,
-        "60": -6.862,
-        "90": -10.7,
-        "120": -16.386,
-        "150": -20.182,
-        "180": -15.087
+        "0": -4.47,
+        "30": -5.027,
+        "60": -6.961,
+        "90": -10.8,
+        "120": -16.471,
+        "150": -20.191,
+        "180": -15.098
       },
       "gain_dB": {
-        "0": -2.659,
-        "30": -3.214,
-        "60": -5.143,
-        "90": -8.981,
-        "120": -14.667,
-        "150": -18.463,
-        "180": -13.368
+        "0": -2.738,
+        "30": -3.295,
+        "60": -5.229,
+        "90": -9.068,
+        "120": -14.739,
+        "150": -18.459,
+        "180": -13.366
       },
-      "gain_dB_min": -18.67,
-      "phi_min_deg": 153.5,
-      "front_minus_back_dB": 10.709,
-      "front_minus_side_dB": 6.322,
+      "gain_dB_min": -18.672,
+      "phi_min_deg": 153.6,
+      "front_minus_back_dB": 10.628,
+      "front_minus_side_dB": 6.331,
       "within_3dB_of_front_to_deg": 64,
-      "p_in_over_p0": 0.673128,
-      "p_rad_over_p0": 0.140058,
-      "efficiency": 0.20807,
-      "efficiency_dB": -6.818,
+      "p_in_over_p0": 0.671106,
+      "p_rad_over_p0": 0.137076,
+      "efficiency": 0.20425,
+      "efficiency_dB": -6.898,
       "absorbed_by_layer_axis_out": [
-        0.13506,
-        0.36789,
-        0.28899
+        0.1353,
+        0.37115,
+        0.28929
       ],
       "controls": {
-        "truncation_max_dF": 4.440892098500626e-16,
-        "balance_rel_miss": -1.979217436650704e-15
+        "truncation_max_dF": 4.449557262054371e-16,
+        "balance_rel_miss": -2.6469106809728415e-15
       }
     },
     {
@@ -8711,47 +8784,47 @@
         ],
         [
           0.25,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.26685,
       "n_max": 24,
       "field_same_current_dB": {
-        "0": -3.565,
-        "30": -4.143,
-        "60": -6.093,
-        "90": -10.048,
-        "120": -15.972,
-        "150": -20.233,
-        "180": -14.885
+        "0": -3.645,
+        "30": -4.228,
+        "60": -6.185,
+        "90": -10.148,
+        "120": -16.063,
+        "150": -20.254,
+        "180": -14.896
       },
       "gain_dB": {
-        "0": -1.669,
-        "30": -2.247,
-        "60": -4.197,
-        "90": -8.152,
-        "120": -14.076,
-        "150": -18.337,
-        "180": -12.989
+        "0": -1.73,
+        "30": -2.313,
+        "60": -4.271,
+        "90": -8.233,
+        "120": -14.149,
+        "150": -18.339,
+        "180": -12.981
       },
-      "gain_dB_min": -18.668,
-      "phi_min_deg": 154.1,
-      "front_minus_back_dB": 11.32,
-      "front_minus_side_dB": 6.484,
+      "gain_dB_min": -18.679,
+      "phi_min_deg": 154.2,
+      "front_minus_back_dB": 11.25,
+      "front_minus_side_dB": 6.502,
       "within_3dB_of_front_to_deg": 64,
-      "p_in_over_p0": 0.646224,
-      "p_rad_over_p0": 0.166373,
-      "efficiency": 0.25745,
-      "efficiency_dB": -5.893,
+      "p_in_over_p0": 0.643452,
+      "p_rad_over_p0": 0.163107,
+      "efficiency": 0.25349,
+      "efficiency_dB": -5.96,
       "absorbed_by_layer_axis_out": [
-        0.1357,
-        0.33753,
-        0.26932
+        0.1361,
+        0.34077,
+        0.26964
       ],
       "controls": {
-        "truncation_max_dF": 5.157703690291707e-16,
-        "balance_rel_miss": -1.803917701045237e-15
+        "truncation_max_dF": 5.578801654593729e-16,
+        "balance_rel_miss": -2.2430424822418553e-15
       }
     },
     {
@@ -8772,108 +8845,108 @@
         ],
         [
           0.3,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.31285,
       "n_max": 25,
       "field_same_current_dB": {
-        "0": -5.777,
-        "30": -6.415,
-        "60": -8.781,
-        "90": -13.253,
-        "120": -20.303,
-        "150": -24.32,
+        "0": -5.873,
+        "30": -6.522,
+        "60": -8.912,
+        "90": -13.426,
+        "120": -20.563,
+        "150": -24.559,
+        "180": -18.288
+      },
+      "gain_dB": {
+        "0": -4.006,
+        "30": -4.655,
+        "60": -7.045,
+        "90": -11.559,
+        "120": -18.696,
+        "150": -22.693,
+        "180": -16.421
+      },
+      "gain_dB_min": -23.235,
+      "phi_min_deg": 141.7,
+      "front_minus_back_dB": 12.414,
+      "front_minus_side_dB": 7.553,
+      "within_3dB_of_front_to_deg": 59,
+      "p_in_over_p0": 0.650609,
+      "p_rad_over_p0": 0.090742,
+      "efficiency": 0.13947,
+      "efficiency_dB": -8.555,
+      "absorbed_by_layer_axis_out": [
+        0.12643,
+        0.35706,
+        0.37704
+      ],
+      "controls": {
+        "truncation_max_dF": 2.529567086920636e-15,
+        "balance_rel_miss": -1.1945061407086088e-15
+      }
+    },
+    {
+      "polarization": "TM",
+      "permittivity": "scots_sapwood_2cm_bark_phloem",
+      "dbh_m": 0.6,
+      "standoff_mm": 16.85,
+      "layers_axis_out": [
+        [
+          0.256,
+          2.79,
+          0.539
+        ],
+        [
+          0.278,
+          19.38,
+          6.26
+        ],
+        [
+          0.3,
+          19.4,
+          4.7
+        ]
+      ],
+      "rho_src_m": 0.31685,
+      "n_max": 25,
+      "field_same_current_dB": {
+        "0": -4.852,
+        "30": -5.55,
+        "60": -8.003,
+        "90": -12.689,
+        "120": -20.179,
+        "150": -25.1,
         "180": -18.148
       },
       "gain_dB": {
-        "0": -3.942,
-        "30": -4.58,
-        "60": -6.945,
-        "90": -11.418,
-        "120": -18.467,
-        "150": -22.484,
-        "180": -16.313
+        "0": -2.728,
+        "30": -3.427,
+        "60": -5.88,
+        "90": -10.565,
+        "120": -18.055,
+        "150": -22.977,
+        "180": -16.025
       },
-      "gain_dB_min": -22.996,
-      "phi_min_deg": 141.7,
-      "front_minus_back_dB": 12.371,
-      "front_minus_side_dB": 7.476,
-      "within_3dB_of_front_to_deg": 59,
-      "p_in_over_p0": 0.655314,
-      "p_rad_over_p0": 0.093269,
-      "efficiency": 0.14233,
-      "efficiency_dB": -8.467,
+      "gain_dB_min": -23.554,
+      "phi_min_deg": 158.7,
+      "front_minus_back_dB": 13.296,
+      "front_minus_side_dB": 7.837,
+      "within_3dB_of_front_to_deg": 58,
+      "p_in_over_p0": 0.613275,
+      "p_rad_over_p0": 0.112147,
+      "efficiency": 0.18287,
+      "efficiency_dB": -7.379,
       "absorbed_by_layer_axis_out": [
-        0.12633,
-        0.35358,
-        0.37776
+        0.12892,
+        0.33136,
+        0.35686
       ],
       "controls": {
-        "truncation_max_dF": 2.558937633260452e-15,
-        "balance_rel_miss": -3.388370055866319e-15
-      }
-    },
-    {
-      "polarization": "TM",
-      "permittivity": "scots_sapwood_2cm_bark_phloem",
-      "dbh_m": 0.6,
-      "standoff_mm": 16.85,
-      "layers_axis_out": [
-        [
-          0.256,
-          2.79,
-          0.539
-        ],
-        [
-          0.278,
-          19.38,
-          6.26
-        ],
-        [
-          0.3,
-          19.1,
-          4.7
-        ]
-      ],
-      "rho_src_m": 0.31685,
-      "n_max": 25,
-      "field_same_current_dB": {
-        "0": -4.782,
-        "30": -5.469,
-        "60": -7.896,
-        "90": -12.534,
-        "120": -19.926,
-        "150": -24.822,
-        "180": -18.007
-      },
-      "gain_dB": {
-        "0": -2.695,
-        "30": -3.381,
-        "60": -5.808,
-        "90": -10.446,
-        "120": -17.838,
-        "150": -22.734,
-        "180": -15.92
-      },
-      "gain_dB_min": -23.445,
-      "phi_min_deg": 158.9,
-      "front_minus_back_dB": 13.225,
-      "front_minus_side_dB": 7.752,
-      "within_3dB_of_front_to_deg": 59,
-      "p_in_over_p0": 0.618311,
-      "p_rad_over_p0": 0.114613,
-      "efficiency": 0.18536,
-      "efficiency_dB": -7.32,
-      "absorbed_by_layer_axis_out": [
-        0.12872,
-        0.32816,
-        0.35775
-      ],
-      "controls": {
-        "truncation_max_dF": 3.446116273622987e-15,
-        "balance_rel_miss": -3.411588086261358e-15
+        "truncation_max_dF": 3.567651043013452e-15,
+        "balance_rel_miss": -1.810319440456348e-15
       }
     },
     {
@@ -8894,47 +8967,47 @@
         ],
         [
           0.19,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.20285,
       "n_max": 22,
       "field_same_current_dB": {
-        "0": -3.077,
-        "30": -4.31,
-        "60": -7.963,
-        "90": -15.935,
-        "120": -30.866,
-        "150": -22.968,
-        "180": -10.86
+        "0": -3.132,
+        "30": -4.371,
+        "60": -8.021,
+        "90": -15.978,
+        "120": -30.793,
+        "150": -22.973,
+        "180": -10.876
       },
       "gain_dB": {
-        "0": -4.272,
-        "30": -5.505,
-        "60": -9.158,
-        "90": -17.13,
-        "120": -32.061,
-        "150": -24.163,
-        "180": -12.054
+        "0": -4.309,
+        "30": -5.547,
+        "60": -9.198,
+        "90": -17.154,
+        "120": -31.969,
+        "150": -24.149,
+        "180": -12.053
       },
-      "gain_dB_min": -32.729,
-      "phi_min_deg": 121.25,
-      "front_minus_back_dB": 7.782,
-      "front_minus_side_dB": 12.858,
+      "gain_dB_min": -32.582,
+      "phi_min_deg": 121.2,
+      "front_minus_back_dB": 7.744,
+      "front_minus_side_dB": 12.846,
       "within_3dB_of_front_to_deg": 47,
-      "p_in_over_p0": 1.316726,
-      "p_rad_over_p0": 0.283223,
-      "efficiency": 0.2151,
-      "efficiency_dB": -6.674,
+      "p_in_over_p0": 1.31114,
+      "p_rad_over_p0": 0.27962,
+      "efficiency": 0.21326,
+      "efficiency_dB": -6.711,
       "absorbed_by_layer_axis_out": [
-        0.16902,
-        0.3338,
-        0.28209
+        0.16943,
+        0.33652,
+        0.28078
       ],
       "controls": {
-        "truncation_max_dF": 5.830322762800934e-16,
-        "balance_rel_miss": -5.733549911640556e-15
+        "truncation_max_dF": 5.705104386437139e-16,
+        "balance_rel_miss": -6.0966847041855e-15
       }
     },
     {
@@ -8955,47 +9028,47 @@
         ],
         [
           0.19,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.20685,
       "n_max": 22,
       "field_same_current_dB": {
-        "0": -2.23,
-        "30": -3.644,
-        "60": -7.852,
-        "90": -17.239,
-        "120": -29.607,
-        "150": -21.766,
-        "180": -10.844
+        "0": -2.282,
+        "30": -3.703,
+        "60": -7.913,
+        "90": -17.281,
+        "120": -29.384,
+        "150": -21.743,
+        "180": -10.839
       },
       "gain_dB": {
-        "0": -3.01,
-        "30": -4.424,
-        "60": -8.631,
-        "90": -18.018,
-        "120": -30.387,
-        "150": -22.545,
-        "180": -11.624
+        "0": -3.042,
+        "30": -4.462,
+        "60": -8.672,
+        "90": -18.041,
+        "120": -30.143,
+        "150": -22.502,
+        "180": -11.599
       },
-      "gain_dB_min": -31.118,
-      "phi_min_deg": 118.5,
-      "front_minus_back_dB": 8.613,
-      "front_minus_side_dB": 15.008,
-      "within_3dB_of_front_to_deg": 44,
-      "p_in_over_p0": 1.196652,
-      "p_rad_over_p0": 0.321371,
-      "efficiency": 0.26856,
-      "efficiency_dB": -5.71,
+      "gain_dB_min": -30.847,
+      "phi_min_deg": 118.45,
+      "front_minus_back_dB": 8.557,
+      "front_minus_side_dB": 14.999,
+      "within_3dB_of_front_to_deg": 43,
+      "p_in_over_p0": 1.191045,
+      "p_rad_over_p0": 0.317462,
+      "efficiency": 0.26654,
+      "efficiency_dB": -5.742,
       "absorbed_by_layer_axis_out": [
-        0.17003,
-        0.30862,
-        0.25279
+        0.1705,
+        0.31108,
+        0.25188
       ],
       "controls": {
         "truncation_max_dF": 8.95090418262362e-16,
-        "balance_rel_miss": -7.422192093076571e-16
+        "balance_rel_miss": -6.524995393507992e-16
       }
     },
     {
@@ -9016,47 +9089,47 @@
         ],
         [
           0.25,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.26285,
       "n_max": 24,
       "field_same_current_dB": {
-        "0": -3.914,
-        "30": -5.117,
-        "60": -8.388,
-        "90": -14.032,
-        "120": -23.496,
-        "150": -33.594,
-        "180": -14.804
+        "0": -4.002,
+        "30": -5.21,
+        "60": -8.479,
+        "90": -14.107,
+        "120": -23.534,
+        "150": -33.872,
+        "180": -14.84
       },
       "gain_dB": {
-        "0": -5.058,
-        "30": -6.262,
-        "60": -9.532,
-        "90": -15.176,
-        "120": -24.64,
-        "150": -34.738,
-        "180": -15.948
+        "0": -5.107,
+        "30": -6.315,
+        "60": -9.584,
+        "90": -15.212,
+        "120": -24.638,
+        "150": -34.977,
+        "180": -15.945
       },
-      "gain_dB_min": -36.788,
-      "phi_min_deg": 136.5,
-      "front_minus_back_dB": 10.89,
-      "front_minus_side_dB": 10.118,
+      "gain_dB_min": -36.565,
+      "phi_min_deg": 136.55,
+      "front_minus_back_dB": 10.838,
+      "front_minus_side_dB": 10.104,
       "within_3dB_of_front_to_deg": 49,
-      "p_in_over_p0": 1.301455,
-      "p_rad_over_p0": 0.23631,
-      "efficiency": 0.18157,
-      "efficiency_dB": -7.409,
+      "p_in_over_p0": 1.289709,
+      "p_rad_over_p0": 0.23152,
+      "efficiency": 0.17951,
+      "efficiency_dB": -7.459,
       "absorbed_by_layer_axis_out": [
-        0.16435,
-        0.30979,
-        0.34429
+        0.16495,
+        0.31272,
+        0.34282
       ],
       "controls": {
-        "truncation_max_dF": 1.5212011623811866e-15,
-        "balance_rel_miss": -2.9004135000557404e-15
+        "truncation_max_dF": 1.4923363893914111e-15,
+        "balance_rel_miss": -3.271161557628824e-15
       }
     },
     {
@@ -9077,47 +9150,47 @@
         ],
         [
           0.25,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.26685,
       "n_max": 24,
       "field_same_current_dB": {
-        "0": -3.085,
-        "30": -4.504,
-        "60": -8.372,
-        "90": -14.825,
-        "120": -24.695,
-        "150": -29.454,
-        "180": -14.145
+        "0": -3.163,
+        "30": -4.589,
+        "60": -8.467,
+        "90": -14.9,
+        "120": -24.681,
+        "150": -29.648,
+        "180": -14.174
       },
       "gain_dB": {
-        "0": -3.763,
-        "30": -5.181,
-        "60": -9.05,
-        "90": -15.503,
-        "120": -25.373,
-        "150": -30.131,
-        "180": -14.822
+        "0": -3.799,
+        "30": -5.225,
+        "60": -9.102,
+        "90": -15.536,
+        "120": -25.317,
+        "150": -30.284,
+        "180": -14.81
       },
-      "gain_dB_min": -44.213,
-      "phi_min_deg": 132.95,
-      "front_minus_back_dB": 11.06,
-      "front_minus_side_dB": 11.74,
+      "gain_dB_min": -43.994,
+      "phi_min_deg": 133.0,
+      "front_minus_back_dB": 11.011,
+      "front_minus_side_dB": 11.737,
       "within_3dB_of_front_to_deg": 44,
-      "p_in_over_p0": 1.168808,
-      "p_rad_over_p0": 0.264244,
-      "efficiency": 0.22608,
-      "efficiency_dB": -6.457,
+      "p_in_over_p0": 1.157685,
+      "p_rad_over_p0": 0.25922,
+      "efficiency": 0.22391,
+      "efficiency_dB": -6.499,
       "absorbed_by_layer_axis_out": [
-        0.16866,
-        0.28914,
-        0.31612
+        0.16938,
+        0.29176,
+        0.31495
       ],
       "controls": {
-        "truncation_max_dF": 2.1873370376088315e-15,
-        "balance_rel_miss": 1.139851644602992e-15
+        "truncation_max_dF": 2.1915703027304663e-15,
+        "balance_rel_miss": 7.672023204427034e-16
       }
     },
     {
@@ -9138,47 +9211,47 @@
         ],
         [
           0.3,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.31285,
       "n_max": 25,
       "field_same_current_dB": {
-        "0": -5.319,
-        "30": -6.47,
-        "60": -9.63,
-        "90": -14.558,
-        "120": -22.365,
-        "150": -28.256,
-        "180": -18.922
+        "0": -5.411,
+        "30": -6.575,
+        "60": -9.751,
+        "90": -14.665,
+        "120": -22.437,
+        "150": -28.229,
+        "180": -18.935
       },
       "gain_dB": {
-        "0": -5.918,
-        "30": -7.069,
-        "60": -10.229,
-        "90": -15.158,
-        "120": -22.965,
-        "150": -28.856,
-        "180": -19.522
+        "0": -5.956,
+        "30": -7.121,
+        "60": -10.297,
+        "90": -15.211,
+        "120": -22.983,
+        "150": -28.774,
+        "180": -19.481
       },
-      "gain_dB_min": -30.627,
-      "phi_min_deg": 155.3,
-      "front_minus_back_dB": 13.603,
-      "front_minus_side_dB": 9.239,
+      "gain_dB_min": -30.612,
+      "phi_min_deg": 155.4,
+      "front_minus_back_dB": 13.524,
+      "front_minus_side_dB": 9.254,
       "within_3dB_of_front_to_deg": 50,
-      "p_in_over_p0": 1.148039,
-      "p_rad_over_p0": 0.177345,
-      "efficiency": 0.15448,
-      "efficiency_dB": -8.111,
+      "p_in_over_p0": 1.133839,
+      "p_rad_over_p0": 0.173151,
+      "efficiency": 0.15271,
+      "efficiency_dB": -8.161,
       "absorbed_by_layer_axis_out": [
-        0.15493,
-        0.28232,
-        0.40827
+        0.15574,
+        0.28519,
+        0.40636
       ],
       "controls": {
-        "truncation_max_dF": 9.575713812779392e-15,
-        "balance_rel_miss": -1.8374155004342322e-15
+        "truncation_max_dF": 9.521075271660952e-15,
+        "balance_rel_miss": 9.791719731633566e-17
       }
     },
     {
@@ -9199,54 +9272,54 @@
         ],
         [
           0.3,
-          19.1,
+          19.4,
           4.7
         ]
       ],
       "rho_src_m": 0.31685,
       "n_max": 25,
       "field_same_current_dB": {
-        "0": -4.315,
-        "30": -5.771,
-        "60": -9.71,
-        "90": -15.377,
-        "120": -24.337,
-        "150": -32.713,
-        "180": -18.556
+        "0": -4.383,
+        "30": -5.857,
+        "60": -9.832,
+        "90": -15.49,
+        "120": -24.399,
+        "150": -32.752,
+        "180": -18.6
       },
       "gain_dB": {
-        "0": -4.422,
-        "30": -5.878,
-        "60": -9.817,
-        "90": -15.484,
-        "120": -24.444,
-        "150": -32.82,
-        "180": -18.663
+        "0": -4.436,
+        "30": -5.91,
+        "60": -9.884,
+        "90": -15.543,
+        "120": -24.451,
+        "150": -32.805,
+        "180": -18.652
       },
-      "gain_dB_min": -36.483,
+      "gain_dB_min": -36.575,
       "phi_min_deg": 154.95,
-      "front_minus_back_dB": 14.241,
-      "front_minus_side_dB": 11.062,
+      "front_minus_back_dB": 14.217,
+      "front_minus_side_dB": 11.107,
       "within_3dB_of_front_to_deg": 44,
-      "p_in_over_p0": 1.024997,
-      "p_rad_over_p0": 0.200061,
-      "efficiency": 0.19518,
-      "efficiency_dB": -7.096,
+      "p_in_over_p0": 1.012145,
+      "p_rad_over_p0": 0.196052,
+      "efficiency": 0.1937,
+      "efficiency_dB": -7.129,
       "absorbed_by_layer_axis_out": [
-        0.16112,
-        0.2642,
-        0.3795
+        0.16201,
+        0.26663,
+        0.37766
       ],
       "controls": {
-        "truncation_max_dF": 1.3767017317747075e-14,
-        "balance_rel_miss": -6.498888262652518e-16
+        "truncation_max_dF": 1.3741280652820943e-14,
+        "balance_rel_miss": 9.87211036555214e-16
       }
     }
   ],
   "findings": {
     "TM": {
       "front_minus_back_dB": [
-        10.7,
+        10.6,
         34.5
       ],
       "front_minus_side_dB": [
@@ -9258,7 +9331,7 @@
         54.4
       ],
       "deepest_at_deg": [
-        138.15,
+        138.25,
         180.0
       ],
       "within_3dB_of_front_to_deg": [
@@ -9266,11 +9339,11 @@
         66
       ],
       "front_field_same_current_dB": [
-        -5.8,
+        -5.9,
         1.4
       ],
       "efficiency_2d": [
-        0.14,
+        0.13,
         0.7
       ],
       "by_reading_front_minus_back_dB": {
@@ -9315,21 +9388,21 @@
           17.9
         ],
         "red_pine_profile_bark_phloem": [
-          30.0,
+          30.1,
           32.5
         ],
         "scots_sapwood_6cm_bark_phloem": [
-          25.9,
-          33.6
+          26.1,
+          33.4
         ],
         "scots_sapwood_2cm_bark_phloem": [
-          10.7,
+          10.6,
           13.3
         ]
       },
       "by_standoff_efficiency_2d": {
         "12.85": [
-          0.14,
+          0.13,
           0.65
         ],
         "16.85": [
@@ -9348,19 +9421,19 @@
         21.1
       ],
       "deepest_below_front_dB": [
-        20.6,
+        20.5,
         59.9
       ],
       "deepest_at_deg": [
         118.15,
-        175.7
+        174.7
       ],
       "within_3dB_of_front_to_deg": [
         38,
         50
       ],
       "front_field_same_current_dB": [
-        -5.4,
+        -5.5,
         1.7
       ],
       "efficiency_2d": [
@@ -9409,8 +9482,8 @@
           13.7
         ],
         "red_pine_profile_bark_phloem": [
-          27.5,
-          38.3
+          27.3,
+          37.9
         ],
         "scots_sapwood_6cm_bark_phloem": [
           15.1,
@@ -9433,5 +9506,5 @@
       }
     }
   },
-  "verdict": "In the horizontal plane, with the gateway straight behind the stem the field of a short dipole along the stem (TM) is 10.7–34.5 dB below its level with the gateway in front, and its deepest null lies 13.4–54.4 dB below the front at 138.15–180.0° from it; at 90° it is 6.1–9.4 dB down, and it stays within 3 dB of the front only to 54–66°. A dipole tangential to the bark (TE, horizontal E): 7.7–48.0 dB behind, 9.2–21.1 dB at 90°. Ranges span every reading of the stem's permittivity, diameter and the antenna's standoff in this cache. The 2-D efficiency indicator — what the near field loses into the stem — is 0.14–0.70 (TM) and 0.15–0.54 (TE); it is not the 3-D antenna efficiency."
+  "verdict": "In the horizontal plane, with the gateway straight behind the stem the field of a short dipole along the stem (TM) is 10.6–34.5 dB below its level with the gateway in front, and its deepest null lies 13.4–54.4 dB below the front at 138.25–180.0° from it; at 90° it is 6.1–9.4 dB down, and it stays within 3 dB of the front only to 54–66°. A dipole tangential to the bark (TE, horizontal E): 7.7–48.0 dB behind, 9.2–21.1 dB at 90°. Ranges span every reading of the stem's permittivity, diameter and the antenna's standoff in this cache. The 2-D efficiency indicator — what the near field loses into the stem — is 0.13–0.70 (TM) and 0.15–0.54 (TE); it is not the 3-D antenna efficiency."
 }

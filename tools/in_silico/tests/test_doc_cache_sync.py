@@ -6367,6 +6367,124 @@ CHECKS += [
 ]
 
 
+# ⊕ 2026-10-22, the A.36 re-read: the PROSE that prints the same floors, sectors and group spans — SUMMARY's «What it
+# says», 01_04 §3.1's 📡 inset and 02_01 §5.3's — each recomposed from the cache at the cache's own outward rounding.
+# The tables above were pinned and the sentences were not, so one re-run moved the TM floor under nine unpinned copies;
+# a sentence that negates a span («−9.2…−21.1 дБ») is pinned through its sign. ⚠️ The RF bench sheet's §8 copy is NOT
+# pinned: its file is outside this workflow's trigger paths (`test_every_doc_target_triggers_this_guard`).
+def _shf(pol, key, end, sign=1.0):
+    return lambda d: sign * d["findings"][pol][key][end]
+
+
+def _shg(pol, member, end):
+    return lambda d: _shadow_group(d, pol, member, end)
+
+
+def _sh_skip(d):
+    return d["controls"]["phloem_reading"]["skip_the_0p8_GHz_point"]
+
+
+_SH_WET, _SH_6CM, _SH_2CM = (m for _, m in _SHADOW_GROUPS)
+_SHX, _SHD = r"[\d.]+", rf"[{_DASHES}]"
+_SH_PHLOEM = lambda d: d["readings"]["permittivity"]["scots_sapwood_2cm_bark_phloem"]["layers_bark_inward"][0]  # noqa: E731
+CHECKS += [
+    # SUMMARY — the inputs sentence, the A.36 control, «What it says»
+    ("shadow prose «phloem» bark ε′ → 107", SUMMARY, rf"trunk bark of Fig\. A\.36 at ≈ {N} − j{_SHX},", SHADOW,
+     lambda d: _SH_PHLOEM(d)[1], 0.0),
+    ("shadow prose «phloem» bark ε″ → 107", SUMMARY, rf"trunk bark of Fig\. A\.36 at ≈ {_SHX} − j{N},", SHADOW,
+     lambda d: _SH_PHLOEM(d)[2], 0.0),
+    ("shadow prose A.36 skip-0.8 control ε′ → 107", SUMMARY, rf"the reading that skips it, ≈ {N} − j{_SHX}:", SHADOW,
+     lambda d: _sh_skip(d)["eps"][0], 0.0),
+    ("shadow prose A.36 skip-0.8 control ε″ → 107", SUMMARY, rf"the reading that skips it, ≈ {_SHX} − j{N}:", SHADOW,
+     lambda d: _sh_skip(d)["eps"][1], 0.0),
+    ("shadow prose A.36 control lowers the TM floor by → 107", SUMMARY, rf"it lowers the TM floor by {N} dB, to", SHADOW,
+     lambda d: (lambda m: round(-m, 2) if m < 0 else math.nan)(_sh_skip(d)["TM"]["floor_moves_raw_dB"]), 0.0),
+    ("shadow prose A.36 control TM floor → 107", SUMMARY, rf"it lowers the TM floor by {_SHX} dB, to {N}", SHADOW,
+     lambda d: _sh_skip(d)["TM"]["front_minus_back_dB_floor"], 0.0),
+    ("shadow prose TM floor → 107", SUMMARY, rf"(?m)^{N} dB with its E along the stem, the co-polar case", SHADOW,
+     _shf("TM", "front_minus_back_dB", 0), 0.0),
+    ("shadow prose TE floor → 107", SUMMARY, rf"and by at least {N} dB with E horizontal", SHADOW,
+     _shf("TE", "front_minus_back_dB", 0), 0.0),
+    ("shadow prose TM at 90° → 107", SUMMARY, rf"TM node is {N} – {_SHX} dB down, staying", SHADOW,
+     _shf("TM", "front_minus_side_dB", 0), 0.0),
+    ("shadow prose TM at 90°, top → 107", SUMMARY, rf"TM node is {_SHX} – {N} dB down, staying", SHADOW,
+     _shf("TM", "front_minus_side_dB", 1), 0.0),
+    ("shadow prose TM 3-dB sector → 107", SUMMARY, rf"of its front only to {N} – {_SHX}° either side", SHADOW,
+     _shf("TM", "within_3dB_of_front_to_deg", 0), 0.0),
+    ("shadow prose TM 3-dB sector, top → 107", SUMMARY, rf"of its front only to {_SHX} – {N}° either side", SHADOW,
+     _shf("TM", "within_3dB_of_front_to_deg", 1), 0.0),
+    ("shadow prose TE at 90° → 107", SUMMARY, rf"so at 90° it is {N} – {_SHX} dB down; behind", SHADOW,
+     _shf("TE", "front_minus_side_dB", 0), 0.0),
+    ("shadow prose TE at 90°, top → 107", SUMMARY, rf"so at 90° it is {_SHX} – {N} dB down; behind", SHADOW,
+     _shf("TE", "front_minus_side_dB", 1), 0.0),
+    ("shadow prose wet interior TM → 107", SUMMARY, rf"puts TM at {N} – {_SHX} dB; a thin wet shell", SHADOW,
+     _shg("TM", _SH_WET, 0), 0.0),
+    ("shadow prose wet interior TM, top → 107", SUMMARY, rf"puts TM at {_SHX} – {N} dB; a thin wet shell", SHADOW,
+     _shg("TM", _SH_WET, 1), 0.0),
+    ("shadow prose thin shell TM floor → 107", SUMMARY, rf"under the wettest bark, brings it to {N} dB", SHADOW,
+     _shg("TM", _SH_2CM, 0), 0.0),
+    ("shadow prose deepest null off the line, up to → 107", SUMMARY, rf"(?m)^up to {N}° off the straight line", SHADOW,
+     lambda d: math.ceil(180.0 - d["findings"]["TM"]["deepest_at_deg"][0]), 0.0),
+    ("shadow prose deepest null bearing → 107", SUMMARY, rf"through the stem \(at {N} – {_SHX}°\)", SHADOW,
+     _shf("TM", "deepest_at_deg", 0), 0.0),
+    ("shadow prose deepest null bearing, top → 107", SUMMARY, rf"through the stem \(at {_SHX} – {N}°\)", SHADOW,
+     _shf("TM", "deepest_at_deg", 1), 0.0),
+    # 01_04 §3.1 — the 📡 inset under the RATIFIED azimuth verdict (numbers only; the verdict's ±50° is pinned as a
+    # claim: it stands while the TM sector's narrow end is not below it, NaN otherwise)
+    ("shadow 01_04 TM floor → 107", CODIT, rf"щонайменше на {N} дБ \(до {_SHX}\) для E вздовж стовбура", SHADOW,
+     _shf("TM", "front_minus_back_dB", 0), 0.0),
+    ("shadow 01_04 TM top → 107", CODIT, rf"щонайменше на {_SHX} дБ \(до {N}\) для E вздовж стовбура", SHADOW,
+     _shf("TM", "front_minus_back_dB", 1), 0.0),
+    ("shadow 01_04 TE floor → 107", CODIT, rf"щонайменше на {N} дБ \(до {_SHX}\) для E горизонтального", SHADOW,
+     _shf("TE", "front_minus_back_dB", 0), 0.0),
+    ("shadow 01_04 TE top → 107", CODIT, rf"щонайменше на {_SHX} дБ \(до {N}\) для E горизонтального", SHADOW,
+     _shf("TE", "front_minus_back_dB", 1), 0.0),
+    ("shadow 01_04 TE side null → 107", CODIT, rf"нуль збоку, {N}…{_SHD}{_SHX} дБ на 90°", SHADOW,
+     _shf("TE", "front_minus_side_dB", 0, -1.0), 0.0),
+    ("shadow 01_04 TE side null, deep end → 107", CODIT, rf"нуль збоку, {_SHD}{_SHX}…{N} дБ на 90°", SHADOW,
+     _shf("TE", "front_minus_side_dB", 1, -1.0), 0.0),
+    ("shadow 01_04 TM at 90° → 107", CODIT, rf"на 90° до шлюзу втрачає {N}–{_SHX} дБ", SHADOW,
+     _shf("TM", "front_minus_side_dB", 0), 0.0),
+    ("shadow 01_04 TM at 90°, top → 107", CODIT, rf"на 90° до шлюзу втрачає {_SHX}–{N} дБ", SHADOW,
+     _shf("TM", "front_minus_side_dB", 1), 0.0),
+    ("shadow 01_04 TM 3-dB sector → 107", CODIT, rf"тримається лише до {N}–{_SHX}° обабіч", SHADOW,
+     _shf("TM", "within_3dB_of_front_to_deg", 0), 0.0),
+    ("shadow 01_04 TM 3-dB sector, top → 107", CODIT, rf"тримається лише до {_SHX}–{N}° обабіч", SHADOW,
+     _shf("TM", "within_3dB_of_front_to_deg", 1), 0.0),
+    ("shadow 01_04 wet interior TM → 107", CODIT, rf"з мокрим нутром — {N}–{_SHX} дБ", SHADOW,
+     _shg("TM", _SH_WET, 0), 0.0),
+    ("shadow 01_04 wet interior TM, top → 107", CODIT, rf"з мокрим нутром — {_SHX}–{N} дБ", SHADOW,
+     _shg("TM", _SH_WET, 1), 0.0),
+    ("shadow 01_04 thin shell TM floor → 107", CODIT, rf"під найвологішою корою — від {N}\. Стовбур", SHADOW,
+     _shg("TM", _SH_2CM, 0), 0.0),
+    ("shadow 01_04 north-face sector → 107", CODIT, rf"у секторі ±{N}° від північної грані", SHADOW,
+     _shf("TM", "within_3dB_of_front_to_deg", 0), 0.0),
+    ("shadow 01_04 back of the north face → 107", CODIT, rf"до {N}–{_SHX} дБ \(тил\)", SHADOW,
+     _shf("TM", "front_minus_back_dB", 0), 0.0),
+    ("shadow 01_04 back of the north face, top → 107", CODIT, rf"до {_SHX}–{N} дБ \(тил\)", SHADOW,
+     _shf("TM", "front_minus_back_dB", 1), 0.0),
+    ("shadow 01_04 verdict ±50° holds 3 dB → 107", CODIT, rf"±{N}° тримає 3 дБ на всіх прочитаннях", SHADOW,
+     lambda d: 50.0 if d["findings"]["TM"]["within_3dB_of_front_to_deg"][0] >= 50 else math.nan, 0.0),
+    # 02_01 §5.3 — the stem-shadow inset of the link budget
+    ("shadow 02_01 TM floor → 107", HW_BOM, rf"\*\*щонайменше {N} дБ \(до {_SHX}\)\*\*", SHADOW,
+     _shf("TM", "front_minus_back_dB", 0), 0.0),
+    ("shadow 02_01 TM top → 107", HW_BOM, rf"\*\*щонайменше {_SHX} дБ \(до {N}\)\*\*", SHADOW,
+     _shf("TM", "front_minus_back_dB", 1), 0.0),
+    ("shadow 02_01 shadow term → 107", HW_BOM, rf"ще мінус тінь \({N}…{_SHD}{_SHX}\)", SHADOW,
+     _shf("TM", "front_minus_back_dB", 0, -1.0), 0.0),
+    ("shadow 02_01 shadow term, deep end → 107", HW_BOM, rf"ще мінус тінь \({_SHD}{_SHX}…{N}\)", SHADOW,
+     _shf("TM", "front_minus_back_dB", 1, -1.0), 0.0),
+    ("shadow 02_01 near-standoff efficiency → 107", HW_BOM, rf"лишає випроміненими {N}–{_SHX} вхідної потужності", SHADOW,
+     lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["12.85"][0], 0.0),
+    ("shadow 02_01 near-standoff efficiency, top → 107", HW_BOM, rf"лишає випроміненими {_SHX}–{N} вхідної потужності",
+     SHADOW, lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["12.85"][1], 0.0),
+    ("shadow 02_01 far-standoff efficiency → 107", HW_BOM, rf"і {N}–{_SHX} на 16\.85 мм", SHADOW,
+     lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["16.85"][0], 0.0),
+    ("shadow 02_01 far-standoff efficiency, top → 107", HW_BOM, rf"і {_SHX}–{N} на 16\.85 мм", SHADOW,
+     lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["16.85"][1], 0.0),
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

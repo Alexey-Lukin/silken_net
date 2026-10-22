@@ -62,9 +62,11 @@ modelled; (4) the canopy, other stems and the forest's excess path loss; (5) the
 in the tree measures it there: the readings are named in READINGS with their sources and derivations, and the frozen
 stem is a reading of its own; each layer is isotropic, while wood is not — a TM source sees ε along the grain and the
 in-situ probe read a mixed face (lab spruce puts ε′∥/ε′⊥ at 2.2–2.4, Reci 2016), so the longitudinal ε a TM node sees
-may be higher than every reading here; and a conifer bark dominated by its wet phloem (El-Rayes & Ulaby 1987, A.36,
-balsam fir, about 19 − j4.7 at 868 MHz in the lab) is wetter than either bark proxy; (6) a stem that is not round, a node not on a radius, the radial profile inside a layer
-(each layer is uniform).
+may be higher than every reading here; and a conifer's trunk bark read off El-Rayes & Ulaby 1987, Fig. A.36 (balsam
+fir, lab, ≈ 19.4 − j4.7 — interpolated between the 0.8 and 0.9 GHz markers, not measured at 868 MHz) is wetter than
+either bark proxy — that such a bark is dominated by its wet phloem is OUR hypothesis (ground: the Franchois 1998
+abstract on two other conifers), the figure's title says only trunk bark; (6) a stem that is not round, a node not on a
+radius, the radial profile inside a layer (each layer is uniform).
 
 Run:  conda activate silken_md
       python tools/in_silico/scripts/107_stem_radio_shadow.py
@@ -255,24 +257,36 @@ SCOTS_SAPWOOD_THIN_M = 0.022
 #             (2.01 − j0.274) for the dead outer bark, MC 22 % (2.79 − j0.539) for the heartwood (red pine heartwood
 #             holds 32 % green MC, Wood Handbook 2021 Table 4–1 — above that row);
 #   wet end — El-Rayes & Ulaby 1987, NASA-CR-180096, Table 5.11: poplar trunk «bark (side)» at 1 GHz, 7.5 − j1.3.
-#   phloem end — El-Rayes & Ulaby 1987, Appendix A.36: balsam-fir trunk bark (lab, Mg 0.268), ≈ 19.1 − j4.7 at 0.868 GHz,
-#             read off the figure (two independent page-image readings, ≈ 19 − j4.7…5) — a bark dominated by its wet phloem.
-BARK_DRY, BARK_WET, BARK_PHLOEM, HEART_DRY = 2.01 - 0.274j, 7.5 - 1.3j, 19.1 - 4.7j, 2.79 - 0.539j
+#   phloem end — El-Rayes & Ulaby 1987, NASA-CR-180096 (NTRS 19870007960), Fig. A.36 «BALSAM FIR TRUNK (BARK)», PDF
+#             p. 380 (lab, Mg = 0.268, 22 °C, session 11/5/85), re-read on its grid 2026-10-22: two independent
+#             page-image readings, each interpolated between the 0.8 and 0.9 GHz markers to 0.8682 GHz, gave
+#             19.38 − j4.72 and 19.48 − j4.69; their mean 19.43 − j4.705 is carried at the readings' own agreement (they
+#             differ by 0.10 on ε′, 0.03 on ε″) as 19.4 − j4.7. Interpolated between the 0.8 and 0.9 GHz markers; the
+#             0.8 GHz ε′ marker is depressed in that session (also on A.38/A.40); not measured at 868 MHz. «A bark
+#             dominated by its wet phloem» is OUR hypothesis (ground: the Franchois 1998 abstract on two other conifers)
+#             — the figure's title says only trunk bark. The unrounded mean and the reading that skips the 0.8 GHz
+#             point are CONTROLS in the cache (`controls.phloem_reading`, the floors they give), not readings.
+BARK_DRY, BARK_WET, BARK_PHLOEM, HEART_DRY = 2.01 - 0.274j, 7.5 - 1.3j, 19.4 - 4.7j, 2.79 - 0.539j
+BARK_PHLOEM_CONTROLS = {"unrounded_mean_of_the_two_readings": 19.43 - 4.705j,
+                        "skip_the_0p8_GHz_point": 19.63 - 4.68j}
 # Dead bark by stem (thin ends): DBH 38 — lib's ridge bracket; DBH 50 · 60 — 01_04 §3.2's single bark (20.5 · 25 mm)
 # less the ≤ 3 mm live phloem (derived). Thicker bark is the other end and is not swept here.
 BARK_T_M = {DBH_MIN_CM / 100.0: BARK_DEAD_RIDGE_DBH38_MM[0] / 1000.0, 0.50: 0.0175, 0.60: 0.022}
+_BARK_PROXY = {"bark_dry": "bark dry proxy", "bark_wet": "bark wet proxy",
+               "bark_phloem": "bark phloem proxy: El-Rayes & Ulaby A.36 balsam-fir trunk bark, interpolated to 868 MHz; "
+                              "phloem-dominated is our hypothesis"}
 for _bark, _be in (("bark_dry", BARK_DRY), ("bark_wet", BARK_WET), ("bark_phloem", BARK_PHLOEM)):
     PERMITTIVITY[f"red_pine_profile_{_bark}"] = {
         "layers": [(BARK_T_M, _be), (MAV_S2_OUTER_DEPTH_M, MAV_S2_OUTER), (None, MAV_S2_PLATEAU)],
-        "source": f"dead bark by stem ({_bark.replace('_', ' ')} proxy) · Mavrovic 2018 Fig. S2: the outer "
+        "source": f"dead bark by stem ({_BARK_PROXY[_bark]}) · Mavrovic 2018 Fig. S2: the outer "
                   "layer, then the plateau carried to the axis"}
     PERMITTIVITY[f"scots_sapwood_6cm_{_bark}"] = {
         "layers": [(BARK_T_M, _be), (SCOTS_SAPWOOD_ERT_M, MAV_RED_PINE_THAWED), (None, HEART_DRY)],
-        "source": f"dead bark by stem ({_bark.replace('_', ' ')} proxy) · sapwood 6.1 cm (Bieker & Rust "
+        "source": f"dead bark by stem ({_BARK_PROXY[_bark]}) · sapwood 6.1 cm (Bieker & Rust "
                   "2010, ERT at 0.3 m) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"}
     PERMITTIVITY[f"scots_sapwood_2cm_{_bark}"] = {
         "layers": [(BARK_T_M, _be), (SCOTS_SAPWOOD_THIN_M, MAV_RED_PINE_THAWED), (None, HEART_DRY)],
-        "source": f"dead bark by stem ({_bark.replace('_', ' ')} proxy) · sapwood 2.2 cm (Björklund 1999's "
+        "source": f"dead bark by stem ({_BARK_PROXY[_bark]}) · sapwood 2.2 cm (Björklund 1999's "
                   "narrowest stem) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"}
 GEOMETRY: dict = {}              # filled in main() from lib and the CEM (drift-proof), each with its referent
 POLARIZATIONS = ("TM", "TE")
@@ -299,8 +313,8 @@ def stem_layers(dbh_m: float, reading: dict):
     return list(reversed(rows))   # axis outward; the outermost radius is the surface
 
 
-def run_case(dbh_m, standoff_m, reading_name, pol):
-    layers = stem_layers(dbh_m, PERMITTIVITY[reading_name])
+def run_case(dbh_m, standoff_m, reading_name, pol, reading=None):
+    layers = stem_layers(dbh_m, reading or PERMITTIVITY[reading_name])
     a = layers[-1][0]
     rho = a + standoff_m
     beta = 2 * math.pi * F_HZ / C0
@@ -418,6 +432,34 @@ def main() -> int:
                 str(round(s * 1e3, 3)): _span([r["efficiency"] for r in rows if r["standoff_mm"] == round(s * 1e3, 3)], 2)
                 for s in GEOMETRY["standoff_m"]["values"]},
         }
+    # control — the A.36 bark reading's own interpolation (a CONTROL, not a named reading): every *_bark_phloem row
+    # re-run at each alternative, the other rows kept; what each alternative does to the floors the findings print
+    phloem = [n for n in PERMITTIVITY if n.endswith("_bark_phloem")]
+
+    def _floors(rows):
+        out = {}
+        for pol in POLARIZATIONS:
+            fb = [r["front_minus_back_dB"] for r in rows if r["polarization"] == pol]
+            w3 = [r["within_3dB_of_front_to_deg"] for r in rows if r["polarization"] == pol]
+            out[pol] = {"front_minus_back_dB_floor": _span(fb)[0], "front_minus_back_dB_floor_raw": round(min(fb), 3),
+                        "within_3dB_of_front_to_deg": [min(w3), max(w3)]}
+        return out
+
+    reading_floors = _floors(cases)
+    phloem_control = {"what": "every *_bark_phloem row re-run with the bark at each alternative reading of A.36, the "
+                              "other rows kept — a control on the figure's interpolation, not a named reading",
+                      "reading": {"eps": [BARK_PHLOEM.real, -BARK_PHLOEM.imag], **reading_floors}}
+    for alt, eps in BARK_PHLOEM_CONTROLS.items():
+        alt_cases = [run_case(dbh, so, n, pol, {"layers": [(PERMITTIVITY[n]["layers"][0][0], eps),
+                                                           *PERMITTIVITY[n]["layers"][1:]]})
+                     for n in phloem for pol in POLARIZATIONS
+                     for dbh in GEOMETRY["dbh_m"]["values"] for so in GEOMETRY["standoff_m"]["values"]]
+        alt_floors = _floors([r for r in cases if r["permittivity"] not in phloem] + alt_cases)
+        for pol in POLARIZATIONS:
+            alt_floors[pol]["floor_moves_raw_dB"] = round(alt_floors[pol]["front_minus_back_dB_floor_raw"]
+                                                          - reading_floors[pol]["front_minus_back_dB_floor_raw"], 3)
+        phloem_control[alt] = {"eps": [eps.real, -eps.imag], **alt_floors}
+    controls["phloem_reading"] = phloem_control
     tm, te = findings["TM"], findings["TE"]
     verdict = (
         f"In the horizontal plane, with the gateway straight behind the stem the field of a short dipole along the stem "
@@ -467,6 +509,11 @@ def main() -> int:
               f"{r['field_same_current_dB']['0']:6.1f} {g['0']:6.1f} {g['90']:6.1f} {g['180']:6.1f} "
               f"{r['gain_dB_min']:6.1f}@{r['phi_min_deg']:<6.1f} {r['efficiency']:5.2f}")
     print("\n  " + verdict)
+    for alt in BARK_PHLOEM_CONTROLS:
+        c = phloem_control[alt]
+        print(f"  control A.36 {alt} ({c['eps'][0]} − j{c['eps'][1]}): floors TM {c['TM']['front_minus_back_dB_floor']}"
+              f" (raw {c['TM']['floor_moves_raw_dB']:+.3f} dB) · TE {c['TE']['front_minus_back_dB_floor']}"
+              f" (raw {c['TE']['floor_moves_raw_dB']:+.3f} dB)")
     banner(f"✅ saved {OUT.relative_to(REPO_ROOT)}")
     return 0
 
