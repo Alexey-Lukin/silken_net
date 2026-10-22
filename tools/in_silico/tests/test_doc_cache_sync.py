@@ -6715,7 +6715,13 @@ def test_contact108_categorical_sentences_follow_the_cache():
     _, _end, n = _c108_zstar(d)
     assert n == "spring_clamps_on_poplar_roots" and "(on the clamp reading at the day's" in sec
     assert d["summary"]["scots_pine"]["grid"]["lattice_cells_with_sigma1_nonpositive_somewhere"] == 0
-    assert "green lattice cells the pole traction falls to zero or below as C44 → 0" in sec
+    nonpos = [k for k, v in d["green_cells"].items() if "grid" in v and v["grid"]["sigma1"][0] <= 0]
+    assert {k.split("|", 1)[1] for k in nonpos} == {"jeong2026_red_pine_green|stiff|pores_carry_nothing",
+                                                    "jeong2026_korean_pine_green|stiff|pores_carry_nothing"}
+    assert {k.split("|")[0] for k in nonpos} == {k.split("|")[0] for k in d["cells"]}
+    assert all(d["green_cells"][k]["grid"]["sigma1_min_at"] == [45.0, 0.0] for k in nonpos)
+    assert ("green lattice cells the pole traction falls to zero or below as C44 → 0 at θ = 45° — Jeong's two green "
+            "sets, bare lattice, every alloy") in sec
     b, al = _c108_bind(d, "union")
     assert all(v["cell"].endswith("|davies2016_table2_SO|soft|pores_voigt_phase_bound") for v in b.values()) and al == "Ta"
     assert "Davies' Table 2 stiff outerwood on the softer-axis reading under the Voigt phase bound" in sec

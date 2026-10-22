@@ -1355,7 +1355,8 @@ scales with the wood's E_L.
 Voigt ceiling no install angle opens the tension half later than θ = 0 does. The averaged traction keeps the tension
 half closed at the source day's strain only below a Zener ratio of 0.035 (on the clamp reading at the day's 676 µε),
 against the Voigt ceiling 4.402 — no measured C44 is used. On 12 green lattice cells the pole traction falls to zero or
-below as C44 → 0: the gyroid sits in biaxial compression there, and its tension half does not open at all.
+below as C44 → 0 at θ = 45° — Jeong's two green sets, bare lattice, every alloy: the gyroid sits in biaxial compression
+there, and its tension half does not open at all.
 
 **Both consumers**, read from `106`'s consumer blocks. At the cell behind `106`'s binding claim — the union's lowest
 θ = 0 share, Davies' Table 2 stiff outerwood on the softer-axis reading under the Voigt phase bound, where σᴵ is a bound
