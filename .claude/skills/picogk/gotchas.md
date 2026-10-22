@@ -62,9 +62,11 @@
    Separately, a **continuous radial gradient distorts above ~0.8× period ratio** (non-Eikonal
    `|∇eq|∝f`; the `∇f·coord` term collapses porosity 67→42% at 2.5→1.3mm) → keep continuous gentle,
    or use `ZonedGyroid` (stepped — µ-LPBF only) for strong contrast. Per-shell porosity = cumulative-diff
-   (thin rings under-count metal on distorted geometry). ⚠️ That ~0.8× is a POROSITY bound — read per
-   radial shell over the full height, the z term inside that volume — and porosity says nothing about
-   cell shape: `GradedCartesianGyroid` scales Z by the same 2π/P(r), so the phase also gains z·k′(r),
+   (thin rings under-count metal on distorted geometry). ⚠️ That ~0.8× is a POROSITY bound from ONE
+   collapse (67→42 % at 2.5→1.3 mm, ratio 0.52, sheet branch, whole part — the z term inside that
+   volume; at ~0.8 on network the per-shell porosity is flat, and nothing between or stronger was
+   measured on network), and porosity alone cannot show cell
+   shape: `GradedCartesianGyroid` scales Z by the same 2π/P(r), so the phase also gains z·k′(r),
    growing from z = 0. Pore and ligament by height were never measured; `verify` writes a per-z
    porosity profile that nothing gates, and its only test
    (`AnchorTests.Axial_Profile_Is_Flat_For_A_Radial_Gradient`) runs on `stepped`, whose zones carry the
