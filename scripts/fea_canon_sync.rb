@@ -461,11 +461,6 @@ gap_ceil = lambda do |value, quoted|
   # The 1e-9 keeps a value sitting ON a quoted boundary (0.7 → 7.000000000000001 in binary) from rounding a step up.
   format("%.#{digits}f", ((value * (10**digits)) - 1e-9).ceil.fdiv(10**digits))
 end
-# Its mirror for the LOWER end of a quoted range — the largest bound at the quoted precision not above the value.
-gap_floor = lambda do |value, quoted|
-  digits = quoted.include?(".") ? quoted.split(".").last.length : 0
-  format("%.#{digits}f", ((value * (10**digits)) + 1e-9).floor.fdiv(10**digits))
-end
 apostrophe = ->(word) { word.to_s.tr("'’", "ʼʼ") }
 # The cubic through the four walls nearest x0 (Lagrange) — an INTERPOLATION: it passes through every row it reads, which
 # the least-squares cubic over all six that stood here first did not (it missed measured rows by up to 0.95 %).
