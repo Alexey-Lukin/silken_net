@@ -430,8 +430,10 @@ def anchor_anode() -> dict:
            "sap_by_sku": {"pine": "the pine point of 01_02 §2.1 (67 Q7) at pH 5.75 — pine, its topology variants, "
                                   "tropical and mangrove (whose own sap is not modelled)",
                           "beech_q8": f"67 Q8 at pH {S67.BROADLEAF_PH} — broadleaf, and oak as a Fagaceae proxy "
-                                      "(⚖️ founder 2026-10-18); its malate is solved from potassium — a ceiling on that side, "
-                                      "while the buffers the recipe lacks push the other way"},
+                                      "(⚖️ founder 2026-10-18); its malate is solved from the potassium less the beech "
+                                      f"nitrate (KNO3 {S67.BROADLEAF_POINT_MM['kno3']:.3f} mM, Glavac & Jochheim 1993, "
+                                      "⚖️ 2026-10-22) — a ceiling on that side, while the buffers the recipe lacks push "
+                                      "the other way"},
            "by_sku": {}}
     q8 = S67.broadleaf_point()
     acid, oak_own = q8["summer_acid_dates"], q8["oak_own_sap_reading"]

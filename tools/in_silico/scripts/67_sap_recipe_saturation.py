@@ -39,10 +39,13 @@ revision is read against.
   Q8  THE BROADLEAF POINT (⚖️ founder 2026-10-18) — a model input for 85's broadleaf and oak anchor parts, NOT a
       wet-test recipe. The same rule as Q7 on European beech sap from the bottom of the stem (Glavac et al. 1990,
       a stand whose methods name no fertilization or liming, medians of five trees on 26 dates read off its
-      figures): Ca and Mg at the geometric mid of the dated medians, pH at their median, malic acid solved from the
-      mid potassium; nitrate and organic acids are not reported there. The summer dates whose sap pH falls to ≈ 4.5 —
-      coinciding, the paper says, with its highest nitrate (unpublished) — are returned beside it; the point's malate
-      solve does not describe them. Broadleaf (birch/maple) and oak both ride on it as proxies; oak's own trunk sap
+      figures): Ca and Mg at the geometric mid of the dated medians, pH at their median; organic acids are not
+      reported there, and nitrate — printed for the same stand and dates three years later (Glavac & Jochheim 1993,
+      read off its figures) — enters at the geometric mid of its dated values as KNO3 on potassium, as pine's does
+      (⚖️ founder 2026-10-22); malic acid solved from the mid potassium less that nitrate. The summer dates whose sap
+      pH falls to ≈ 4.5 — coinciding, the paper says, with its highest nitrate, and the 1993 figures put the three
+      highest nitrates on exactly these dates — are returned beside it with their nitrate; the point's malate solve
+      does not describe them. Broadleaf (birch/maple) and oak both ride on it as proxies; oak's own trunk sap
       (Q. rubra, one autumn date) is returned as a further reading.
 
 THE CONSTANT THAT DOES NOT EXIST, and why the window does not need it. No open primary gives the calcium or
@@ -171,9 +174,11 @@ RATIFIED_T_C = {"coin": (20.0, 25.0), "accelerated": (40.0,)}
 # Each row is the MEDIAN OF FIVE TREES on one date, READ OFF Figs 2 (Ca), 4 (Mg), 7 (K) and 10 (pH) from the page
 # images (2026-10-18; read-off error about ±2 mg/L for Ca and K, ±0.3 for Mg, ±0.03 pH); pH is not plotted for
 # 27 Oct, 10 Nov and 24 Nov 1988. Nitrate and organic acids are NOT reported there — the paper says its low-pH dates
-# «coincided with the highest nitrate xylem sap concentration» and cites unpublished data — so nitrate stays out of
-# the point and malic acid is solved as for pine. That credits ALL the potassium to malate (on that side the buffer is
-# a ceiling — real sap also balances potassium with nitrate, sulphate, amino acids), while calcium and magnesium sit on
+# «coincided with the highest nitrate xylem sap concentration» and cites unpublished data. The nitrate was printed
+# later (Glavac & Jochheim 1993 — BEECH_TRUNK_BASE_NITRATE below), and the point takes it by the same rule (⚖️ founder
+# 2026-10-22, HW.3 (А₀)): the geometric mid of the dated values, as KNO3 on potassium the way pine's is. Malic acid is
+# solved as for pine, from the potassium less that nitrate — still a ceiling on that side (real sap also balances
+# potassium with other anions — sulphate, amino acids), while calcium and magnesium sit on
 # unbuffered chloride and sulphate and CO2, phosphate and amino-acid buffers are absent (each pushes the other way):
 # the direction of the total buffer is NOT established. Broadleaf (birch, maple) and oak sit on this point as proxies
 # — beech for the diffuse-porous part, Fagaceae for oak, no Q. robur or petraea trunk sap having been found — the move
@@ -194,6 +199,38 @@ BEECH_SOURCE = ("Glavac V., Koenies H., Ebben U. 1990, New Phytol. 116:47-54, do
                 "page images")
 BEECH_ACID_DATES = ("1989-05-25", "1989-07-06", "1989-07-20")   # the paper's own named low-pH dates (p. 52)
 BEECH_LOWEST_TREE_PH = 3.81    # Fig. 10, the lowest whisker (6 Jul 1989), read off
+# Nitrate of the SAME stand on the SAME dates, printed three years later (⚖️ founder 2026-10-22, HW.3 (А₀) — option (А)
+# with convention (а)): Glavac V., Jochheim H. 1993, Trees 7:237–241, doi:10.1007/bf00202080, Figs 1a (total N, mg/L)
+# and 2a (its NO3-N share, %) — the panels of the stand on loess over basalt, the 42-year stand of its Table 1 («Acid
+# brown earth, loess over basalt»); medians of five trees on the 26 month-days of the axis, which are the 26 keys of
+# BEECH_TRUNK_BASE_MEDIANS (the axis prints no year). The identity of stand and dates is INFERRED, not printed: the
+# 1993 paper cites Glavac et al. (1989) for its method, not the 1990 paper; for it — the stand and site of Table 1,
+# «Every 14 days 5 trees in each of the 2 stands», the 26 dates 14 days apart, and its three highest nitrates on
+# exactly the 1990 paper's three low-pH dates (asserted in broadleaf_point()). Segment: «10-110 cm above the ground».
+# Read off the page image of the Springer preview (p. 238, sha256 440470dd…792f), both figures deskewed (1a −0.12°,
+# 2a +0.13°) by a vertical offset linear in x. Two readings that share the scan and the axis calibration — R1 pixel
+# rows, R2 by eye on the deskewed ruler, read after R1 — and a verifier's independent re-read of ten dates (its own
+# slope, calibration on every labelled tick) that agrees with both within 0.15 mg/L and 0.13 %. 12 Oct's share median
+# touches the axis line (0.40 %, ±1 px); 17 Aug's (≈ 1.2 %) is legible, 6 px above it. Nitrate per date is OUR
+# arithmetic — the product of the two MEDIANS (total N × NO3-N share), not a median of per-tree products, which the
+# figures do not give; the transcription is the mean of R1 and R2, and each reading's own point rides beside it.
+BEECH_TRUNK_BASE_NITRATE = {   # date: (total N mg/L · Fig 1a R1, R2; NO3-N share % · Fig 2a R1, R2)
+    "1988-10-27": (9.76, 9.8, 12.24, 12.2), "1988-11-10": (1.36, 1.6, 12.08, 12.1),
+    "1988-11-24": (1.3, 1.5, 12.0, 12.0), "1988-12-08": (1.01, 1.0, 8.58, 8.5), "1988-12-22": (3.4, 3.6, 2.64, 2.6),
+    "1989-01-05": (12.73, 12.7, 0.93, 1.0), "1989-01-19": (1.36, 1.5, 6.18, 6.2), "1989-02-02": (2.94, 3.1, 46.2, 46.2),
+    "1989-02-16": (13.15, 13.0, 19.39, 19.4), "1989-03-02": (8.53, 8.6, 3.43, 3.4), "1989-03-16": (23.32, 23.3, 0.82, 0.85),
+    "1989-03-30": (41.34, 41.3, 0.75, 0.75), "1989-04-13": (109.51, 109.5, 3.02, 3.0), "1989-04-27": (250.47, 250.5, 0.59, 0.6),
+    "1989-05-11": (95.68, 95.7, 1.78, 1.75), "1989-05-25": (51.97, 52.0, 32.22, 32.2), "1989-06-08": (32.25, 32.3, 7.23, 7.2),
+    "1989-06-22": (10.91, 11.0, 19.97, 20.0), "1989-07-06": (30.29, 30.3, 46.71, 46.7), "1989-07-20": (20.41, 20.5, 64.15, 64.1),
+    "1989-08-03": (8.91, 9.0, 22.36, 22.4), "1989-08-17": (2.4, 2.5, 1.16, 1.2), "1989-08-31": (9.91, 10.0, 27.45, 27.5),
+    "1989-09-14": (8.25, 8.3, 2.27, 2.2), "1989-09-28": (16.58, 16.6, 1.65, 1.7), "1989-10-12": (19.5, 19.5, 0.4, 0.4),
+}
+BEECH_NITRATE_SOURCE = ("Glavac V., Jochheim H. 1993, Trees 7:237-241, doi:10.1007/bf00202080, Figs 1a (total N) and 2a "
+                        "(NO3-N share) — Fagus sylvatica, the 42-year stand on loess over basalt, lowest trunk segment, "
+                        "medians of five trees per date, read off the page image of the Springer preview (p. 238, "
+                        "sha256 440470dd…792f), deskewed; two readings (R1 pixel rows, R2 by eye) and a verifier's "
+                        "independent re-read of ten dates")
+MOLAR_G_N = 14.007
 # Oak's OWN trunk sap, found the same day (the founder brought the lead): Quercus rubra, Van Die & Willemse 1975,
 # Acta Bot. Neerl. 24(2):237–239, doi:10.1111/j.1438-8677.1975.tb01013.x, Table 1, read from the page image — two
 # 16–20-year trees in the woods near Lunteren (NL), 27 Oct 1974, about half the leaves down; the stem cut at 1.8 m and
@@ -207,7 +244,7 @@ OAK_RUBRA_VESSEL_SAP = {   # tree: pH range, K · Ca · Mg · Na in mg/ml as pri
 OAK_RUBRA_SOURCE = ("Van Die J., Willemse P.C.M. 1975, Acta Bot. Neerl. 24(2):237-239, doi:10.1111/j.1438-8677.1975.tb01013.x, "
                     "Table 1 — Quercus rubra trunk xylem vessel sap, two trees, 27 Oct 1974, free outflow from the lowest "
                     "stem cut, read from the page image")
-BROADLEAF_POINT_MM = {"malic": 0.95, "oxalic": 0.0, "kno3": 0.0, "cacl2": 0.67, "mgso4": 0.25}
+BROADLEAF_POINT_MM = {"malic": 0.92, "oxalic": 0.0, "kno3": 0.050, "cacl2": 0.67, "mgso4": 0.25}
 BROADLEAF_PH = 5.95            # the median of the dated pH medians
 # Each test in its own band. Temperatures on a 5 °C grid, pH on a 0.5 grid; every band end is a grid point.
 # ⚠️ PRE-VERDICT, like RECIPE_RANGES_MM above: the pH bands below (and their `ph_home` strings) are the two canon
@@ -856,37 +893,59 @@ def revised_point() -> dict:
     return out
 
 
+def beech_nitrate_mm(reading: int | None = None) -> dict:
+    """Dated beech nitrate (mM): total N × its NO3-N share / M_N per date — reading R1 (0) or R2 (1), or by default the
+    transcription, the mean of the two readings of each median."""
+    def pick(a: float, b: float) -> float:
+        return (a + b) / 2 if reading is None else (a, b)[reading]
+    return {d: pick(n1, n2) * pick(s1, s2) / 100.0 / MOLAR_G_N
+            for d, (n1, n2, s1, s2) in BEECH_TRUNK_BASE_NITRATE.items()}
+
+
 def broadleaf_point() -> dict:
     """Q8 — the broadleaf point (⚖️ founder 2026-10-18), 85's input for the broadleaf and oak anchor parts. Asserts that
     BROADLEAF_POINT_MM and BROADLEAF_PH ARE their derivation from the beech medians: Ca and Mg at the geometric mid of
-    the dated medians' range (two significant figures), pH at the median of the dated pH medians, and the malic acid
-    that, titrated to that pH with KOH at POINT_SOLVE_T_C on the selected reading, gives the mid potassium; nitrate and
-    oxalate out (not measured). Also returns the paper's low-pH dates, which the point's single pH hides. CAN catch a
-    typed point drifted from the transcription or the solve; CANNOT make the beech oak, read a figure better than by
-    eye, or say how much of the potassium malate really balances — the solve credits it all (a ceiling on that side,
-    while the buffers the recipe lacks push the other way, so the total's direction is not established)."""
+    the dated medians' range (two significant figures), pH at the median of the dated pH medians, nitrate at the
+    geometric mid of the dated nitrate of the 1993 figures (two significant figures; balanced by K, as pine's), and the
+    malic acid that, titrated to that pH with KOH at POINT_SOLVE_T_C on the selected reading, gives the mid potassium
+    with the KNO3; oxalate out (not measured). Also returns the paper's low-pH dates with their nitrate, which the
+    point's single pH hides. CAN catch a typed point drifted from the transcription or the solve, and acid dates that
+    stop being the three highest nitrates; CANNOT make the beech oak, read a figure better than by eye, prove the 1993
+    stand and dates are the 1990 ones, or say how much of the potassium malate really balances — the solve credits it
+    all but the nitrate (a ceiling on that side, while the buffers the recipe lacks push the other way, so the
+    total's direction is not established)."""
     rows = list(BEECH_TRUNK_BASE_MEDIANS.values())
     rng = {ion: (min(r[i] for r in rows), max(r[i] for r in rows)) for i, ion in enumerate(("Ca", "Mg", "K"))}
     mids = {ion: math.sqrt(lo * hi) / MOLAR_G[ion] for ion, (lo, hi) in rng.items()}
     assert BROADLEAF_POINT_MM["cacl2"] == _sig2(mids["Ca"]), "cacl2: not the beech trunk-base mid"
     assert BROADLEAF_POINT_MM["mgso4"] == _sig2(mids["Mg"]), "mgso4: not the beech trunk-base mid"
-    assert BROADLEAF_POINT_MM["kno3"] == 0.0 and BROADLEAF_POINT_MM["oxalic"] == 0.0, "nitrate and oxalate: not measured"
+    no3 = beech_nitrate_mm()
+    no3_lo, no3_hi = min(no3, key=no3.get), max(no3, key=no3.get)
+    no3_mid = math.sqrt(no3[no3_lo] * no3[no3_hi])
+    assert BROADLEAF_POINT_MM["kno3"] == _sig2(no3_mid), "kno3: not the geometric mid of the dated beech nitrate"
+    by_reading = {name: beech_nitrate_mm(i) for i, name in enumerate(("R1", "R2"))}
+    reading_mid = {name: math.sqrt(min(v.values()) * max(v.values())) for name, v in by_reading.items()}
+    assert BROADLEAF_POINT_MM["oxalic"] == 0.0, "oxalate: not measured"
     phs = sorted(r[3] for r in rows if r[3] is not None)
     assert round(float(np.median(phs)), 2) == BROADLEAF_PH, "pH: not the median of the dated medians"
     m = model_for(SC["selected"], POINT_SOLVE_T_C)
 
-    def k_total(malic: float) -> float:
-        return speciate(m, totals_mm({**BROADLEAF_POINT_MM, "malic": malic}), BROADLEAF_PH).base_mol_l / MM
+    def k_total(malic: float) -> float:   # KOH plus KNO3 — the nitrate on potassium, as in revised_point()
+        p = {**BROADLEAF_POINT_MM, "malic": malic}
+        return speciate(m, totals_mm(p), BROADLEAF_PH).base_mol_l / MM + p["kno3"]
     malic_solved = brentq(lambda x: k_total(x) - mids["K"], 0.01, 5.0, xtol=1e-9)   # no acid: pH 5.95 would need a negative base
     assert BROADLEAF_POINT_MM["malic"] == _sig2(malic_solved), (
         f"malic: the solve gives {malic_solved:.4f} mM, the point says {BROADLEAF_POINT_MM['malic']}")
     out = price_point(BROADLEAF_POINT_MM, "85 broadleaf and oak anchor parts (⚖️ founder 2026-10-18) — not a wet-test recipe",
                       "Ca and Mg at the geometric mid of the beech trunk-base medians (Glavac 1990; no fertilization or liming named), "
-                      "pH at the median of the dated medians, malic acid solved so that KOH to that pH gives the mid "
-                      "potassium; nitrate and oxalate not measured — out; two significant figures",
+                      "pH at the median of the dated medians, nitrate at the geometric mid of the dated beech nitrate "
+                      "(Glavac & Jochheim 1993 — the product of the medians of total N and its NO3-N share) as KNO3, "
+                      "malic acid solved so that KOH to that pH, with the KNO3, gives the mid potassium; oxalate not "
+                      "measured — out; two significant figures",
                       conditions={"setpoint": (BROADLEAF_PH, ["anchor model (85)"], [20.0, 25.0])})
     acid = {d: BEECH_TRUNK_BASE_MEDIANS[d] for d in BEECH_ACID_DATES}
     assert sorted(phs)[:len(acid)] == sorted(r[3] for r in acid.values()), "the named low-pH dates are not the lowest"
+    assert set(sorted(no3, key=no3.get)[-len(acid):]) == set(acid), "the low-pH dates are not the three highest nitrates"
     out["measured"] = {
         "medians_by_date": {d: dict(zip(("Ca_mg_l", "Mg_mg_l", "K_mg_l", "pH"), r, strict=True))
                             for d, r in BEECH_TRUNK_BASE_MEDIANS.items()},
@@ -894,14 +953,31 @@ def broadleaf_point() -> dict:
         "range_of_medians_mM": {ion: [round(lo / MOLAR_G[ion], 4), round(hi / MOLAR_G[ion], 4)] for ion, (lo, hi) in rng.items()},
         "geometric_mid_mM": {ion: round(v, 4) for ion, v in mids.items()},
         "ph_medians_range": [phs[0], phs[-1]], "ph_dates_with_value": len(phs),
+        "nitrate": {
+            "source": BEECH_NITRATE_SOURCE,
+            "medians_by_date": {d: {"total_N_mg_l": list(r[:2]), "no3_n_share_pct": list(r[2:])}
+                                for d, r in BEECH_TRUNK_BASE_NITRATE.items()},
+            "readings": ["R1", "R2"],
+            "by_date_mM": {d: round(v, 4) for d, v in no3.items()},
+            "range_mM": [round(no3[no3_lo], 4), round(no3[no3_hi], 4)], "range_dates": [no3_lo, no3_hi],
+            "geometric_mid_mM": round(no3_mid, 4),
+            "geometric_mid_by_reading_mM": {k: round(v, 4) for k, v in reading_mid.items()},
+            "point_by_reading_mM": {k: _sig2(v) for k, v in reading_mid.items()},
+            "arithmetic": "per date, the product of the medians of total N and of its NO3-N share (the mean of the two "
+                          "readings), not a median of per-tree products — the figures give only the medians",
+            "charge": "balanced by K, as in the pine point: the malate is solved from the potassium less this nitrate"},
         "source": BEECH_SOURCE, "malic_solved_mM": round(malic_solved, 4),
         "potassium_total_at_point_mM": round(k_total(BROADLEAF_POINT_MM["malic"]), 4),
         "solve": {"ph": BROADLEAF_PH, "t_c": POINT_SOLVE_T_C, "reading": SC["selected"].key}}
     out["summer_acid_dates"] = {
         "dates": list(BEECH_ACID_DATES), "ph_medians": [r[3] for r in acid.values()],
+        "nitrate_mM": [round(no3[d], 2) for d in BEECH_ACID_DATES],
         "lowest_tree_ph": BEECH_LOWEST_TREE_PH,
-        "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data) — what "
-               "acidifies the sap there is not reported, and the point's malate solve does not describe these dates"}
+        "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data then); "
+               f"printed in 1993, the nitrate on these dates is {' · '.join(f'{no3[d]:.2f}' for d in BEECH_ACID_DATES)} "
+               f"mM, the {len(acid)} highest of the {len(no3)} dates against the point's {BROADLEAF_POINT_MM['kno3']:.3f} — "
+               "carried beside the point as a reading, as the pH is; the 1990 paper does not report what acidifies "
+               "the sap there, and the point's malate solve does not describe these dates"}
     oak = OAK_RUBRA_VESSEL_SAP.values()
     out["oak_own_sap_reading"] = {
         "source": OAK_RUBRA_SOURCE,
@@ -1152,6 +1228,11 @@ def main() -> int:
           f"K+ ×{q8['against_pine_point']['potassium_total_ratio']}, β ×{q8['against_pine_point']['buffer_capacity_ratio']}")
     print(f"  summer acid dates {q8['summer_acid_dates']['dates']}: pH medians {q8['summer_acid_dates']['ph_medians']}, "
           f"lowest tree {q8['summer_acid_dates']['lowest_tree_ph']} — beside the point, outside its malate solve")
+    n8 = q8["measured"]["nitrate"]
+    print(f"  nitrate (Glavac & Jochheim 1993, product of medians): {n8['range_mM'][0]}–{n8['range_mM'][1]} mM "
+          f"({n8['range_dates'][0]} … {n8['range_dates'][1]}), geometric mid {n8['geometric_mid_mM']} → point "
+          f"{q8['recipe_mM']['kno3']} on K (readings {n8['point_by_reading_mM']['R1']}/{n8['point_by_reading_mM']['R2']}); "
+          f"on the acid dates {q8['summer_acid_dates']['nitrate_mM']} mM — beside the point")
 
     banner("Prices of the two directions")
     loss = []

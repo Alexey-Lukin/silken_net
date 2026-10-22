@@ -2722,14 +2722,14 @@
   },
   "q8_broadleaf_point": {
     "recipe_mM": {
-      "malic": 0.95,
+      "malic": 0.92,
       "oxalic": 0.0,
-      "kno3": 0.0,
+      "kno3": 0.05,
       "cacl2": 0.67,
       "mgso4": 0.25
     },
     "home": "85 broadleaf and oak anchor parts (⚖️ founder 2026-10-18) — not a wet-test recipe",
-    "derivation": "Ca and Mg at the geometric mid of the beech trunk-base medians (Glavac 1990; no fertilization or liming named), pH at the median of the dated medians, malic acid solved so that KOH to that pH gives the mid potassium; nitrate and oxalate not measured — out; two significant figures",
+    "derivation": "Ca and Mg at the geometric mid of the beech trunk-base medians (Glavac 1990; no fertilization or liming named), pH at the median of the dated medians, nitrate at the geometric mid of the dated beech nitrate (Glavac & Jochheim 1993 — the product of the medians of total N and its NO3-N share) as KNO3, malic acid solved so that KOH to that pH, with the KNO3, gives the mid potassium; oxalate not measured — out; two significant figures",
     "readings": [
       "selected",
       "selected_guenzel_apparent",
@@ -2750,20 +2750,20 @@
           25.0
         ],
         "base_koh_mM": [
-          1.804,
-          1.822
+          1.747,
+          1.764
         ],
         "potassium_total_mM": [
-          1.804,
-          1.822
+          1.797,
+          1.814
         ],
         "ionic_strength_mol_l": [
-          0.00488,
-          0.00558
+          0.00486,
+          0.00555
         ],
-        "si_gypsum_max": -2.516,
-        "buffer_capacity_mM_per_pH_25c": 0.2016,
-        "strong_acid_mM_lowering_pH_by_0p1_25c": 0.0222
+        "si_gypsum_max": -2.515,
+        "buffer_capacity_mM_per_pH_25c": 0.1954,
+        "strong_acid_mM_lowering_pH_by_0p1_25c": 0.0215
       }
     },
     "not_covered": "the acid the working anode produces is not modelled — the strong-acid figure is the scale, not a prediction of the drift",
@@ -2964,9 +2964,325 @@
         6.62
       ],
       "ph_dates_with_value": 23,
+      "nitrate": {
+        "source": "Glavac V., Jochheim H. 1993, Trees 7:237-241, doi:10.1007/bf00202080, Figs 1a (total N) and 2a (NO3-N share) — Fagus sylvatica, the 42-year stand on loess over basalt, lowest trunk segment, medians of five trees per date, read off the page image of the Springer preview (p. 238, sha256 440470dd…792f), deskewed; two readings (R1 pixel rows, R2 by eye) and a verifier's independent re-read of ten dates",
+        "medians_by_date": {
+          "1988-10-27": {
+            "total_N_mg_l": [
+              9.76,
+              9.8
+            ],
+            "no3_n_share_pct": [
+              12.24,
+              12.2
+            ]
+          },
+          "1988-11-10": {
+            "total_N_mg_l": [
+              1.36,
+              1.6
+            ],
+            "no3_n_share_pct": [
+              12.08,
+              12.1
+            ]
+          },
+          "1988-11-24": {
+            "total_N_mg_l": [
+              1.3,
+              1.5
+            ],
+            "no3_n_share_pct": [
+              12.0,
+              12.0
+            ]
+          },
+          "1988-12-08": {
+            "total_N_mg_l": [
+              1.01,
+              1.0
+            ],
+            "no3_n_share_pct": [
+              8.58,
+              8.5
+            ]
+          },
+          "1988-12-22": {
+            "total_N_mg_l": [
+              3.4,
+              3.6
+            ],
+            "no3_n_share_pct": [
+              2.64,
+              2.6
+            ]
+          },
+          "1989-01-05": {
+            "total_N_mg_l": [
+              12.73,
+              12.7
+            ],
+            "no3_n_share_pct": [
+              0.93,
+              1.0
+            ]
+          },
+          "1989-01-19": {
+            "total_N_mg_l": [
+              1.36,
+              1.5
+            ],
+            "no3_n_share_pct": [
+              6.18,
+              6.2
+            ]
+          },
+          "1989-02-02": {
+            "total_N_mg_l": [
+              2.94,
+              3.1
+            ],
+            "no3_n_share_pct": [
+              46.2,
+              46.2
+            ]
+          },
+          "1989-02-16": {
+            "total_N_mg_l": [
+              13.15,
+              13.0
+            ],
+            "no3_n_share_pct": [
+              19.39,
+              19.4
+            ]
+          },
+          "1989-03-02": {
+            "total_N_mg_l": [
+              8.53,
+              8.6
+            ],
+            "no3_n_share_pct": [
+              3.43,
+              3.4
+            ]
+          },
+          "1989-03-16": {
+            "total_N_mg_l": [
+              23.32,
+              23.3
+            ],
+            "no3_n_share_pct": [
+              0.82,
+              0.85
+            ]
+          },
+          "1989-03-30": {
+            "total_N_mg_l": [
+              41.34,
+              41.3
+            ],
+            "no3_n_share_pct": [
+              0.75,
+              0.75
+            ]
+          },
+          "1989-04-13": {
+            "total_N_mg_l": [
+              109.51,
+              109.5
+            ],
+            "no3_n_share_pct": [
+              3.02,
+              3.0
+            ]
+          },
+          "1989-04-27": {
+            "total_N_mg_l": [
+              250.47,
+              250.5
+            ],
+            "no3_n_share_pct": [
+              0.59,
+              0.6
+            ]
+          },
+          "1989-05-11": {
+            "total_N_mg_l": [
+              95.68,
+              95.7
+            ],
+            "no3_n_share_pct": [
+              1.78,
+              1.75
+            ]
+          },
+          "1989-05-25": {
+            "total_N_mg_l": [
+              51.97,
+              52.0
+            ],
+            "no3_n_share_pct": [
+              32.22,
+              32.2
+            ]
+          },
+          "1989-06-08": {
+            "total_N_mg_l": [
+              32.25,
+              32.3
+            ],
+            "no3_n_share_pct": [
+              7.23,
+              7.2
+            ]
+          },
+          "1989-06-22": {
+            "total_N_mg_l": [
+              10.91,
+              11.0
+            ],
+            "no3_n_share_pct": [
+              19.97,
+              20.0
+            ]
+          },
+          "1989-07-06": {
+            "total_N_mg_l": [
+              30.29,
+              30.3
+            ],
+            "no3_n_share_pct": [
+              46.71,
+              46.7
+            ]
+          },
+          "1989-07-20": {
+            "total_N_mg_l": [
+              20.41,
+              20.5
+            ],
+            "no3_n_share_pct": [
+              64.15,
+              64.1
+            ]
+          },
+          "1989-08-03": {
+            "total_N_mg_l": [
+              8.91,
+              9.0
+            ],
+            "no3_n_share_pct": [
+              22.36,
+              22.4
+            ]
+          },
+          "1989-08-17": {
+            "total_N_mg_l": [
+              2.4,
+              2.5
+            ],
+            "no3_n_share_pct": [
+              1.16,
+              1.2
+            ]
+          },
+          "1989-08-31": {
+            "total_N_mg_l": [
+              9.91,
+              10.0
+            ],
+            "no3_n_share_pct": [
+              27.45,
+              27.5
+            ]
+          },
+          "1989-09-14": {
+            "total_N_mg_l": [
+              8.25,
+              8.3
+            ],
+            "no3_n_share_pct": [
+              2.27,
+              2.2
+            ]
+          },
+          "1989-09-28": {
+            "total_N_mg_l": [
+              16.58,
+              16.6
+            ],
+            "no3_n_share_pct": [
+              1.65,
+              1.7
+            ]
+          },
+          "1989-10-12": {
+            "total_N_mg_l": [
+              19.5,
+              19.5
+            ],
+            "no3_n_share_pct": [
+              0.4,
+              0.4
+            ]
+          }
+        },
+        "readings": [
+          "R1",
+          "R2"
+        ],
+        "by_date_mM": {
+          "1988-10-27": 0.0853,
+          "1988-11-10": 0.0128,
+          "1988-11-24": 0.012,
+          "1988-12-08": 0.0061,
+          "1988-12-22": 0.0065,
+          "1989-01-05": 0.0088,
+          "1989-01-19": 0.0063,
+          "1989-02-02": 0.0996,
+          "1989-02-16": 0.181,
+          "1989-03-02": 0.0209,
+          "1989-03-16": 0.0139,
+          "1989-03-30": 0.0221,
+          "1989-04-13": 0.2353,
+          "1989-04-27": 0.1064,
+          "1989-05-11": 0.1206,
+          "1989-05-25": 1.1954,
+          "1989-06-08": 0.1662,
+          "1989-06-22": 0.1563,
+          "1989-07-06": 1.0102,
+          "1989-07-20": 0.9364,
+          "1989-08-03": 0.1431,
+          "1989-08-17": 0.0021,
+          "1989-08-31": 0.1953,
+          "1989-09-14": 0.0132,
+          "1989-09-28": 0.0198,
+          "1989-10-12": 0.0056
+        },
+        "range_mM": [
+          0.0021,
+          1.1954
+        ],
+        "range_dates": [
+          "1989-08-17",
+          "1989-05-25"
+        ],
+        "geometric_mid_mM": 0.0497,
+        "geometric_mid_by_reading_mM": {
+          "R1": 0.0487,
+          "R2": 0.0506
+        },
+        "point_by_reading_mM": {
+          "R1": 0.049,
+          "R2": 0.051
+        },
+        "arithmetic": "per date, the product of the medians of total N and of its NO3-N share (the mean of the two readings), not a median of per-tree products — the figures give only the medians",
+        "charge": "balanced by K, as in the pine point: the malate is solved from the potassium less this nitrate"
+      },
       "source": "Glavac V., Koenies H., Ebben U. 1990, New Phytol. 116:47-54, doi:10.1111/j.1469-8137.1990.tb00509.x, Figs 2, 4, 7, 10 — Fagus sylvatica, lowest trunk segment, medians of five trees per date, read off the page images",
-      "malic_solved_mM": 0.9468,
-      "potassium_total_at_point_mM": 1.8038,
+      "malic_solved_mM": 0.9205,
+      "potassium_total_at_point_mM": 1.7967,
       "solve": {
         "ph": 5.95,
         "t_c": 25.0,
@@ -2984,8 +3300,13 @@
         4.52,
         4.58
       ],
+      "nitrate_mM": [
+        1.2,
+        1.01,
+        0.94
+      ],
       "lowest_tree_ph": 3.81,
-      "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data) — what acidifies the sap there is not reported, and the point's malate solve does not describe these dates"
+      "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data then); printed in 1993, the nitrate on these dates is 1.20 · 1.01 · 0.94 mM, the 3 highest of the 26 dates against the point's 0.050 — carried beside the point as a reading, as the pH is; the 1990 paper does not report what acidifies the sap there, and the point's malate solve does not describe these dates"
     },
     "oak_own_sap_reading": {
       "source": "Van Die J., Willemse P.C.M. 1975, Acta Bot. Neerl. 24(2):237-239, doi:10.1111/j.1438-8677.1975.tb01013.x, Table 1 — Quercus rubra trunk xylem vessel sap, two trees, 27 Oct 1974, free outflow from the lowest stem cut, read from the page image",
@@ -3021,9 +3342,9 @@
     "against_pine_point": {
       "ca_ratio": 3.72,
       "mg_ratio": 4.03,
-      "potassium_total_ratio": 2.45,
-      "buffer_capacity_ratio": 1.53,
-      "ionic_strength_ratio": 3.0
+      "potassium_total_ratio": 2.44,
+      "buffer_capacity_ratio": 1.48,
+      "ionic_strength_ratio": 2.98
     }
   },
   "prices": {

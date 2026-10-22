@@ -1221,7 +1221,7 @@
     },
     "sap_by_sku": {
       "pine": "the pine point of 01_02 §2.1 (67 Q7) at pH 5.75 — pine, its topology variants, tropical and mangrove (whose own sap is not modelled)",
-      "beech_q8": "67 Q8 at pH 5.95 — broadleaf, and oak as a Fagaceae proxy (⚖️ founder 2026-10-18); its malate is solved from potassium — a ceiling on that side, while the buffers the recipe lacks push the other way"
+      "beech_q8": "67 Q8 at pH 5.95 — broadleaf, and oak as a Fagaceae proxy (⚖️ founder 2026-10-18); its malate is solved from the potassium less the beech nitrate (KNO3 0.050 mM, Glavac & Jochheim 1993, ⚖️ 2026-10-22) — a ceiling on that side, while the buffers the recipe lacks push the other way"
     },
     "by_sku": {
       "anchor_zone1_broadleaf": {
@@ -1248,8 +1248,13 @@
             4.52,
             4.58
           ],
+          "nitrate_mM": [
+            1.2,
+            1.01,
+            0.94
+          ],
           "lowest_tree_ph": 3.81,
-          "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data) — what acidifies the sap there is not reported, and the point's malate solve does not describe these dates",
+          "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data then); printed in 1993, the nitrate on these dates is 1.20 · 1.01 · 0.94 mM, the 3 highest of the 26 dates against the point's 0.050 — carried beside the point as a reading, as the pH is; the 1990 paper does not report what acidifies the sap there, and the point's malate solve does not describe these dates",
           "medians_below_kinetic_edge": true,
           "medians_minus_stability_edge": [
             0.02,
@@ -1259,16 +1264,16 @@
         },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.29,
-            0.9
+            0.28,
+            0.88
           ],
           "i_anode_uA": [
-            3.4,
-            11.5
+            3.3,
+            11.1
           ],
           "i_anode_uA_n1": [
-            5.1,
-            11.5
+            5.0,
+            11.1
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1283,16 +1288,16 @@
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            2.26,
-            5.62
+            2.21,
+            5.49
           ],
           "i_anode_uA": [
-            26.9,
-            71.6
+            26.4,
+            69.9
           ],
           "i_anode_uA_n1": [
-            40.4,
-            71.6
+            39.7,
+            69.9
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1454,8 +1459,13 @@
             4.52,
             4.58
           ],
+          "nitrate_mM": [
+            1.2,
+            1.01,
+            0.94
+          ],
           "lowest_tree_ph": 3.81,
-          "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data) — what acidifies the sap there is not reported, and the point's malate solve does not describe these dates",
+          "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data then); printed in 1993, the nitrate on these dates is 1.20 · 1.01 · 0.94 mM, the 3 highest of the 26 dates against the point's 0.050 — carried beside the point as a reading, as the pH is; the 1990 paper does not report what acidifies the sap there, and the point's malate solve does not describe these dates",
           "medians_below_kinetic_edge": true,
           "medians_minus_stability_edge": [
             0.02,
@@ -1477,16 +1487,16 @@
         },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.43,
-            1.36
+            0.42,
+            1.33
           ],
           "i_anode_uA": [
-            6.5,
-            22.1
+            6.4,
+            21.5
           ],
           "i_anode_uA_n1": [
-            9.8,
-            22.1
+            9.5,
+            21.5
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1501,16 +1511,16 @@
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            3.41,
-            8.52
+            3.35,
+            8.32
           ],
           "i_anode_uA": [
-            51.5,
-            138.1
+            50.6,
+            134.8
           ],
           "i_anode_uA_n1": [
-            77.2,
-            138.1
+            75.8,
+            134.8
           ],
           "crossed_below_cold_start": {
             "typ": {
