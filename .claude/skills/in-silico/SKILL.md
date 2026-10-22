@@ -252,11 +252,12 @@ Anchor mechanics (CPU):
      closed forms on its own depth grid; the sleeve stiffnesses, the bond bracket, the bearing area, the geometry and
      Zone-3 fit; the air-dry share read raw, not reproduced) · 52 (z_stack_tolerance.json: the applied gland) · 86
      (importlib: soderberg; through it 55's endurance markers, wrought derate and SF line) ·
-     tools/cad/cache/fea/anchor_zone1_pine.json (the voxel-FE ratios, re-measured on the HW.33 geometry 2026-10-22 — 105 still reads the pre-verdict ones until its re-run; both Richardson readings in doubt both ways, the sweep itself not monotone — `00_07` HW.23) · tools/cad/cem (lock, flange, sleeve, pine
+     tools/cad/cache/fea/anchor_zone1_pine.json (the voxel-FE ratios, re-measured on the HW.33 geometry 2026-10-22 and read by 105 since its re-run that evening; both Richardson readings in doubt both ways, the sweep itself not monotone — `00_07` HW.23) · tools/cad/cem (lock, flange, sleeve, pine
      anode) → 105 (printed_part_sway_stress.json — the sway stress in the anchor's titanium parts); a re-run of 87,
      102, 103, 52 or the FEA sweep, or a change to those CEMs, re-runs 105
-  105 (importlib: richardson_p1, rms_factor, NU_SOLID; printed_part_sway_stress.json: the Richardson FE readings — the
-     axial one in doubt from above, the radial neither shown nor excluded; the open leg `00_07` HW.23 re-measures both on a
+  105 (importlib: richardson_p1, rms_factor, NU_SOLID; printed_part_sway_stress.json: the Richardson FE readings — both
+     in doubt both ways, and `fe_reading_lower`, the one a binding claim takes, read never assumed (HW.33 (в) moved it radial
+     → axial); the open leg `00_07` HW.23 re-measures both on a
      finer sweep, then sets how `105`/`106` read them (while they disagree, a bracket of named readings with the consumer's ceiling at
      the adverse one — §When Modifying #11) —, the solid
      fraction, the binds-above cells, the stem readings) · tools/cad/cache/fea/anchor_zone1_pine.json (ν and the rows

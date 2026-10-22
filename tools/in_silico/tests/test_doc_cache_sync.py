@@ -5928,8 +5928,20 @@ def _sway105_disc(label, j):
     return rf"(?m)^\| {re.escape(label)} \| {num[0]} \| {num[1]} \|$"
 
 
-def _sw_g(d, al, cell, fk="radial_richardson"):
-    return d["gyroid_binds_above_surface_strain_ue"][al][cell][fk]
+def _sw_g(d, al, cell, fk=None):
+    """`fk` None = 105's LOWER reading, read from its cache (the radial one before HW.33 (в), the axial one since)."""
+    return d["gyroid_binds_above_surface_strain_ue"][al][cell][fk or d["inputs"]["fe_reading_lower"]]
+
+
+def _sw_hi(d):
+    return next(k for k in d["inputs"]["fe_readings_richardson"] if k != d["inputs"]["fe_reading_lower"])
+
+
+def _sw_rms_both(d):
+    """«≥ X `E_s · ε` on both readings» holds only while the two readings' factors round DOWN to one X; else NaN."""
+    f = d["inputs"]["rms_factor_by_reading"]
+    lo, hi = _floor2(f[d["inputs"]["fe_reading_lower"]]), _floor2(f[_sw_hi(d)])
+    return lo if lo == hi else float("nan")
 
 
 CHECKS += [
@@ -5939,7 +5951,7 @@ CHECKS += [
           (lambda k: lambda d: round(d["alloys"][k]["endurance_printed_MPa"], 1))(key),
           (lambda k: lambda d: d["strain_figure_of_merit_vs_baseline"][k])(key),
           (lambda k: lambda d: _sw_g(d, k, "large_stem_limit|near_uniaxial|sf2"))(key),
-          (lambda k: lambda d: _sw_g(d, k, "large_stem_limit|near_uniaxial|sf2", "axial_richardson"))(key),
+          (lambda k: lambda d: _sw_g(d, k, "large_stem_limit|near_uniaxial|sf2", _sw_hi(d)))(key),
           (lambda k: lambda d: _sw_g(d, k, "dbh_min_sensor_on_bark|near_uniaxial|sf2"))(key),
           (lambda k: lambda d: _sw_g(d, k, "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2"))(key),
           (lambda k: lambda d: _sw_g(d, k, "large_stem_limit|any_state|sf2"))(key)))],
@@ -5948,10 +5960,15 @@ CHECKS += [
       for j, res in enumerate((
           (lambda k: lambda d: round(d["disc_MPa_per_N"][k]["shank_root_MPa_per_N"] * d["zone3_members"][_SW_Z3]["force_N"], 2))(key),
           (lambda k: lambda d: round(d["disc_MPa_per_N"][k]["groove_radial_MPa_per_N"] * d["zone3_members"][_SW_Z3]["force_N"], 2))(key)))],
-    ("sway105 rms low → 105", SUMMARY, rf"RMS stress at ≥ {N}–[\d.]+ `E_s · ε`", SWAY105,
-     lambda d: _floor2(d["inputs"]["rms_factor_by_reading"]["radial_richardson"]), 0.0),
-    ("sway105 rms high → 105", SUMMARY, rf"RMS stress at ≥ [\d.]+–{N} `E_s · ε`", SWAY105,
-     lambda d: _floor2(d["inputs"]["rms_factor_by_reading"]["axial_richardson"]), 0.0),
+    ("sway105 rms both → 105", SUMMARY, rf"RMS stress at ≥ {N} `E_s · ε` on both", SWAY105, _sw_rms_both, 0.0),
+    ("sway105 richardson axial → 105", SUMMARY, rf"\(Richardson {N} axial ⊥", SWAY105,
+     lambda d: round(d["inputs"]["fe_readings_richardson"]["axial_richardson"], 4), 0.0),
+    ("sway105 richardson radial → 105", SUMMARY, rf"axial ⊥ {N} radial of `E_s`", SWAY105,
+     lambda d: round(d["inputs"]["fe_readings_richardson"]["radial_richardson"], 4), 0.0),
+    *[(f"sway105 reading gap {i} → 105", SUMMARY, pat, SWAY105,
+       lambda d: round((max(d["inputs"]["fe_readings_richardson"].values())
+                        / min(d["inputs"]["fe_readings_richardson"].values()) - 1) * 100, 1), 0.0)
+      for i, pat in enumerate((rf"\(the radial one before it\), by {N} %", rf"now {N} % stiffer than the tensor's E\[100\]"))],
     ("sway105 source strain → 105", SUMMARY, rf"one gust of one January day\), {N} µε at", SWAY105,
      lambda d: d["inputs"]["stem_readings_87"]["upper_whisker"]["surface_strain_ue"], 0.0),
     ("sway105 median strain → 105", SUMMARY, rf"and its median \({N} µε\) for Ta only", SWAY105,
@@ -6209,7 +6226,14 @@ CHECKS += [
        0.0)
       for fk, pat in (("axial_richardson", rf"Ta stays below \(×{N} ⊥ ×[\d.]+ of it\)"),
                       ("radial_richardson", rf"Ta stays below \(×[\d.]+ ⊥ ×{N} of it\)"))],
-    ("share106 korean pine nu_LR edge → 106", SUMMARY, rf"at a CV of [\d.]+, is below {N}\. Every", SHARE106,
+    # the edge the sentence leads with is the EARLIER one (a «stays below only while» sentence) — `105`'s radial reading
+    # since the HW.33 (в) geometry; NaN if the readings swap, so the sentence is rewritten, not re-digited
+    ("share106 korean pine nu_LR edge → 106", SUMMARY, rf"is below {N} on `105`'s radial reading \(", SHARE106,
+     lambda d: (lambda e: _floor_n(e["radial_richardson"]["nu_LR_first_exceeds"], 3)
+                if e["radial_richardson"]["nu_LR_first_exceeds"] < e["axial_richardson"]["nu_LR_first_exceeds"]
+                else float("nan"))(d["green_korean_pine_ta_knife_edge"]["per_fe_reading"]), 0.0),
+    ("share106 korean pine nu_LR edge E100 → 106", SUMMARY, rf"radial reading \({N} on this tensor's E\[100\]\)\. Every",
+     SHARE106,
      lambda d: _floor_n(d["green_korean_pine_ta_knife_edge"]["per_fe_reading"]["axial_richardson"]["nu_LR_first_exceeds"], 3),
      0.0),
     ("share106 korean pine nu_LR → 106", SUMMARY, rf"while ν_LR, printed {N} at a CV", SHARE106,
@@ -6223,7 +6247,7 @@ CHECKS += [
      lambda d: round(d["inputs"]["green_transcription"]["checks"]["jeong_korean_pine_e_l_retention_pct"]["computed"], 1), 0.0),
     ("share106 junction published sup → 106", SUMMARY, rf"assembly — it is up to {N}, on Davies'", SHARE106,
      lambda d: _ceil_n(d["consumer_ceiling_junction"]["off_axis_sup_at_C44_zero_published_sets_only"]["share"], 3), 0.0),
-    ("share106 green outside → 106", SUMMARY, rf"\(in {N} more on the green group\)", SHARE106,
+    ("share106 green outside → 106", SUMMARY, rf"\({N} on the green group\)", SHARE106,
      lambda d: len(d["green_additive_outside_the_pore_ends_interval"]), 0.0),
     ("share106 union junction sup → 106", SUMMARY, rf"and up to {N} over the union — on Davies'", SHARE106,
      lambda d: _ceil_n(d["union_junction_share_sup_at_C44_zero"], 3), 0.0),
@@ -6256,8 +6280,10 @@ def test_share106_categorical_sentences_follow_the_cache():
         crossed = sorted(al for al in alloys
                          if d["cells"][f"{al}|{g}|stiff|pores_carry_nothing"]["t_L_theta0_any_C44"] > 1
                          > d["cells"][f"{al}|{g}|stiff|pores_voigt_phase_bound"]["t_L_theta0_any_C44"])
-        assert crossed == [al for al in alloys if al != "Ta"], g
-    assert "on every alloy but Ta on the stiffer-axis reading" in text
+        # HW.33 (в): Ta crosses at 45 and 65 % RH since (its bare lattice above 1 there); before it, in no group
+        assert crossed == (alloys if g in ("rh45", "rh65") else [al for al in alloys if al != "Ta"]), g
+    assert ("Voigt phase bound on every alloy at 45 and 65 % RH, and on every alloy but Ta at 85 and 95 % RH) and on the "
+            "symmetrisation reading") in text
     t0 = d["theta0_share_over_modelled_set"]
     assert all(v["lowest_cell"].endswith("|rh95|stiff|pores_voigt_phase_bound") for v in t0.values())
     assert all(v["highest_cell"].endswith("|rh45|soft|pores_carry_nothing") for v in t0.values())
@@ -6271,8 +6297,8 @@ def test_share106_categorical_sentences_follow_the_cache():
         assert probe == {"pores_carry_nothing": 45.0, "pores_additive_host_sapwood": 45.0, "pores_voigt_phase_bound": 0.0}
     assert "(45° on the bare and additive readings, 0° on the Voigt phase bound," in text
     ta_mean = [d["cells"][f"Ta|{g}|mean|pores_carry_nothing"]["t_L_theta0_any_C44"] for g in ("rh45", "rh65", "rh85", "rh95")]
-    assert [x < 1 for x in ta_mean] == [False, False, True, False], ta_mean
-    assert "the bare lattice is below 1 at 85 % RH only" in text
+    assert not any(x < 1 for x in ta_mean), ta_mean          # HW.33 (в): below 1 at 85 % RH before it, above everywhere since
+    assert "on the mean reading Ta's bare lattice is above 1 in every moisture group" in text
 
 
 def test_share106_green_sentences_follow_the_cache():
@@ -6305,17 +6331,14 @@ def test_share106_green_sentences_follow_the_cache():
     ps = d["green_per_set"]
     binds = {fk: [n for n, v in ps.items() if v["source_day_upper_whisker_exceeds"][fk]] for fk in sd}
     assert all(v["source_day_upper_whisker_exceeds"][fk] in ([], ["Ta"]) for v in ps.values() for fk in sd)
-    assert binds["axial_richardson"] == ["davies2016_table2_NSO", "davies2016_esm_SO", "davies2016_esm_NSC", "liu2019_P4",
-                                         "jeong2026_red_pine_green"], binds
-    assert binds["radial_richardson"] == ["jeong2026_red_pine_green"], binds
-    assert ("Ta binds on this tensor's E[100] on Davies' Table 2 non-stiff outerwood, Davies' raw stiff outerwood and "
-            "non-stiff corewood, Liu P4 and Jeong's red pine, and on `105`'s lower reading on Jeong's red pine only; no "
-            "other alloy binds on any") in text
+    # HW.33 (в) moved both: five sets on E[100] and Jeong's red pine alone on the radial reading before it
+    assert binds["axial_richardson"] == binds["radial_richardson"] == ["liu2019_P4", "jeong2026_red_pine_green"], binds
+    assert "Ta binds on Liu P4 and Jeong's red pine, on both readings; no other alloy binds on any" in text
     kp = ps["jeong2026_korean_pine_green"]
     assert not any(kp["source_day_upper_whisker_exceeds"].values()) and all(m < 1 for m in kp["ta_upper_whisker_margin"].values())
     edge = d["green_korean_pine_ta_knife_edge"]["per_fe_reading"]
-    assert edge["axial_richardson"]["nu_LR_first_exceeds"] < edge["radial_richardson"]["nu_LR_first_exceeds"]
-    assert "On Jeong's Korean pine Ta stays below (" in text and "on a knife-edge: on this tensor's E[100] it stays below" in text
+    assert edge["radial_richardson"]["nu_LR_first_exceeds"] < edge["axial_richardson"]["nu_LR_first_exceeds"]
+    assert "On Jeong's Korean pine Ta stays below (" in text and "of it): it stays below only while ν_LR" in text
     t0 = d["theta0_share_over_modelled_set"]
     below = [n for n, v in ps.items() if all(v["lowest"][al] < t0[al]["lowest"] for al in alloys)]
     above = [n for n, v in ps.items() if all(v["lowest"][al] > t0[al]["lowest"] for al in alloys)]

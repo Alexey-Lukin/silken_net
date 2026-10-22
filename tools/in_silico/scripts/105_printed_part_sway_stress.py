@@ -269,7 +269,9 @@ def main() -> int:
     phi = 1.0 - fine["porosity"]
     fe_readings = {"radial_richardson": richardson_p1(fine, next_fine, "radial_ratio"),
                    "axial_richardson": richardson_p1(fine, next_fine, "axial_ratio")}
-    assert fe_readings["radial_richardson"] < fe_readings["axial_richardson"], "the lower reading is the radial one"
+    # a binding claim takes the LOWER reading — READ from the pair, never assumed: the radial one was lower until the
+    # HW.33 (в) geometry, which put the axial one under it (00_07 HW.33)
+    lo_key, hi_key = sorted(fe_readings, key=fe_readings.get)
     f_read = {k: rms_factor(v, phi) for k, v in fe_readings.items()}
     state_div = {"near_uniaxial": 1.0, "any_state": math.sqrt(3.0 + 2.0 * NU_SOLID)}
 
@@ -472,16 +474,21 @@ def main() -> int:
                  for rd, rv in readings.items()}
 
     # ── Verdict, built from the data ─────────────────────────────────────────────────────────────────────────────────
-    def thr(al, dk, sk, fk="radial_richardson", sf=2.0):
-        return gyroid[al][f"{dk}|{sk}|sf{sf:g}"][fk]
+    def thr(al, dk, sk, fk=None, sf=2.0):
+        return gyroid[al][f"{dk}|{sk}|sf{sf:g}"][fk or lo_key]
 
     def reach(rd, dk, sk, fk):
         return sorted(al for al in alloys if source_day[rd][al][f"{dk}|{sk}|sf2"][fk])
 
-    lo_uni = reach("upper_whisker", "large_stem_limit", "near_uniaxial", "radial_richardson")
-    hi_uni = reach("upper_whisker", "large_stem_limit", "near_uniaxial", "axial_richardson")
-    lo_any = reach("upper_whisker", "large_stem_limit", "any_state", "radial_richardson")
-    md_uni = reach("median", "large_stem_limit", "near_uniaxial", "radial_richardson")
+    lo_uni = reach("upper_whisker", "large_stem_limit", "near_uniaxial", lo_key)
+    hi_uni = reach("upper_whisker", "large_stem_limit", "near_uniaxial", hi_key)
+    lo_any = reach("upper_whisker", "large_stem_limit", "any_state", lo_key)
+    md_uni = reach("median", "large_stem_limit", "near_uniaxial", lo_key)
+    lo_name, hi_name = lo_key.split("_")[0], hi_key.split("_")[0]
+    f_lo, f_hi = down2(f_read[lo_key]), down2(f_read[hi_key])
+    rms_span = (f"{f_lo:.2f} E_s·ε on both FE readings ({lo_name} {fe_readings[lo_key]:.4f} ⊥ {hi_name} "
+                f"{fe_readings[hi_key]:.4f} of E_s)" if f_lo == f_hi else
+                f"{f_lo:.2f}–{f_hi:.2f} E_s·ε on the two FE readings")
     z1_cap = zone1["b_zone3_fit|anode_bond_stiff|state3_rigid_tie_max|upper_whisker"]
     z1_soft = zone1["b_zone3_fit|anode_bond_soft|state3_rigid_tie_max|upper_whisker"]
     z1_rigid = zone1["b_zone3_fit|anode_bond_stiff|rigid_sleeve|upper_whisker"]
@@ -500,9 +507,9 @@ def main() -> int:
     verdict = (
         f"The bonded GYROID is strain-controlled, so its figure of merit is σ_e/E_s, not σ_e (relative to "
         f"{ALLOY_BASELINE}: " + ", ".join(f"{al} {v:.2f}" for al, v in fm.items()) + "). An energy LOWER bound — "
-        f"it can show a ligament binding, never safe — puts the ligaments' RMS stress at ≥ {down2(f_read['radial_richardson']):.2f}"
-        f"–{down2(f_read['axial_richardson']):.2f} E_s·ε on the two FE readings, neither of which is the in-plane traction "
-        f"modulus the bound needs. On the lower reading, at t_L = k_p = 1 with near-uniaxial ligaments, the bound alone "
+        f"it can show a ligament binding, never safe — puts the ligaments' RMS stress at ≥ {rms_span}, neither of which "
+        f"is the in-plane traction modulus the bound needs. On the lower reading (the {lo_name} one), at t_L = k_p = 1 "
+        f"with near-uniaxial ligaments, the bound alone "
         f"reaches SF 2 above a stem surface strain of {alist} µε on a large stem; k_p > 1 lowers these, t_L < 1 (not "
         f"excluded) raises them. The source tree's upper surface strain ({eps_up:.0f} µε, one tree, one gust), placed on a "
         f"large stem, exceeds them for {names(lo_uni)} on the lower reading ({names(hi_uni)} on the higher; any stress "
@@ -555,6 +562,7 @@ def main() -> int:
             "fea_rows_used": {"finest": {k: fine[k] for k in ("step_mm", "axial_ratio", "radial_ratio", "porosity")},
                               "next": {k: next_fine[k] for k in ("step_mm", "axial_ratio", "radial_ratio", "porosity")}},
             "fe_readings_richardson": fe_readings,
+            "fe_reading_lower": lo_key,
             "fe_readings_are": "two kinematic-side readings; neither is the in-plane traction modulus E_z* the bound needs",
             "solid_fraction": phi,
             "rms_factor_by_reading": f_read,
@@ -603,9 +611,10 @@ def main() -> int:
     OUT.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     print(f"  FE readings (Richardson) radial {fe_readings['radial_richardson']:.4f} · axial "
-          f"{fe_readings['axial_richardson']:.4f} · φ {phi:.3f} · RMS factor {f_read['radial_richardson']:.3f}–"
-          f"{f_read['axial_richardson']:.3f}")
-    print("  binds-above surface strain (µε), SF 2, t_L = k_p = 1, lower reading: large stem | bark | xylem thin | thick")
+          f"{fe_readings['axial_richardson']:.4f} · φ {phi:.3f} · RMS factor {f_read[lo_key]:.3f}–"
+          f"{f_read[hi_key]:.3f}")
+    print(f"  binds-above surface strain (µε), SF 2, t_L = k_p = 1, lower ({lo_name}) reading: large stem | bark | "
+          "xylem thin | thick")
     for al in alloys:
         cells = [thr(al, dk, "near_uniaxial") for dk in ("large_stem_limit", "dbh_min_sensor_on_bark",
                                                            "dbh_min_sensor_on_xylem_thin_contact_78",

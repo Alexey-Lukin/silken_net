@@ -46,9 +46,10 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   in-plane strain with the ends held, is C11 + C12 = r_r·E_s/((1 + ν_s)(1 − 2ν_s)) — the solid envelope's same test as
   its normaliser. Two roots; the one outside the Voigt bound φ·C_s (Loewner order) is refused. Both readings sit on the
   kinematic side of a traction modulus (`105`), so this tensor may be stiffer than the finite part under traction — while
-  against the INFINITE lattice of the periodic voxel case (01_01 §5.2) its in-plane dilatational term C11 + C12 is lower
-  on every density-matched pairing, while the sign of its deviatoric term depends on the pairing, so no stiffness ordering
-  between the two is established — an input end, not shown to be the output's. C44, which that periodic case measures
+  against the INFINITE lattice of the periodic voxel case (01_01 §5.2) its in-plane dilatational term C11 + C12 and, on the
+  HW.33 (в) geometry, its deviatoric term C11 − C12 as well are lower on every density-matched pairing (before it the
+  deviatoric sign depended on the pairing) — but those bases are an extrapolation the part's non-monotone step sweep does
+  not prove, so no stiffness ordering between the two is established — an input end, not shown to be the output's. C44, which that periodic case measures
   for the infinite lattice, is not read here: it is swept over (0, φ·μ_s] — Voigt's ceiling (a tighter bound,
   Hashin–Shtrikman's, would narrow it) — as the Zener ratio A* = 2·C44/(C11 − C12) ∈ (0, A*_V]. The cube's rotation θ
   about the anode's axis against L is the anchor's rotation at install, which the model leaves free: swept over 0–45°
@@ -65,8 +66,9 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   r_a·E_s on this tensor for every pore reading (filling the pores leaves the skeleton's energy at a given boundary strain
   at least the bare skeleton's minimum). There the bound alone binds above X/t_L at the LOWEST θ = 0 share over the
   modelled set (the side a binding sentence must take, §When Modifying #45 ⊕), X being `105`'s threshold unrounded and
-  held to `105`'s cache — printed on this tensor's own E[100] (`105`'s axial reading) and on `105`'s lower (radial)
-  reading, which `105`'s own rule takes for a binding claim; rounded UP. Off the axis E_z*(θ) falls with C44 while t_L
+  held to `105`'s cache — printed on this tensor's own E[100] (`105`'s axial reading) and on `105`'s radial reading;
+  `105`'s own rule takes the LOWER of the two for a binding claim, and which one that is is read from `105`'s cache
+  (`fe_reading_lower`: the radial one until the HW.33 (в) geometry, the axial one since); rounded UP. Off the axis E_z*(θ) falls with C44 while t_L
   stays finite, so the threshold has no ceiling as C44 → 0: no binding figure exists there without C44. The junction's
   mismatch (`105`) scales with the HIGHEST share instead; its supremum off the axis is taken at C44 = 0 exactly (t_L is
   non-increasing in C44 — asserted on the grid).
@@ -1091,6 +1093,11 @@ def main() -> int:
     hi_phrase = (f"a green reading sets it for {', '.join(hi_green)}" if hi_green
                  else "no green reading raises the Scots pine group's for any alloy")
     su_a, su_r = source_day_union["axial_richardson"], source_day_union["radial_richardson"]
+    # which reading 105's binding rule takes is READ from its cache, never assumed (HW.33 (в) moved it radial → axial)
+    lower105 = d105["inputs"]["fe_reading_lower"]
+    assert lower105 == ("axial_richardson" if r_a < r_r else "radial_richardson"), "105's lower reading is not its lower"
+    a_label = "this tensor's E[100]" + (" (105's lower reading)" if lower105 == "axial_richardson" else "")
+    r_label = "105's lower reading (the radial one)" if lower105 == "radial_richardson" else "105's radial reading"
     verdict = (
         f"t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) "
         f"it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel "
@@ -1104,14 +1111,14 @@ def main() -> int:
         f"source's moisture groups the share takes no single direction. For 105, the only C44-free binding figure is at "
         f"θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the Scots pine group ({lows}) the source day's "
         f"upper whisker exceeds the large-stem threshold for {', '.join(sd_a['upper_whisker']['exceeds']) or 'none'} on "
-        f"this tensor's E[100] and for {', '.join(sd_r['upper_whisker']['exceeds']) or 'none'} on 105's lower reading, "
+        f"{a_label} and for {', '.join(sd_r['upper_whisker']['exceeds']) or 'none'} on {r_label}, "
         f"and its median for {', '.join(sd_a['median']['exceeds']) or 'none'}; at t_L = 1 on the axial reading the "
         f"upper whisker exceeded it for {', '.join(at_t1['upper_whisker']) or 'none'} and the median for "
         f"{', '.join(at_t1['median']) or 'none'}. Above fibre saturation no open primary gives a full Scots pine set; on "
         f"the separate group of green readings of other Pinaceae ({len(live_green)} live, {len(excluded_green)} not a "
         f"material) the lowest θ = 0 share is {lows_g}, so over the union it is {lows_u} — on {u_where} — and there the "
         f"upper whisker exceeds the threshold for {', '.join(su_a['upper_whisker']['exceeds']) or 'none'} on this "
-        f"tensor's E[100] and for {', '.join(su_r['upper_whisker']['exceeds']) or 'none'} on 105's lower reading, its "
+        f"tensor's E[100] and for {', '.join(su_r['upper_whisker']['exceeds']) or 'none'} on {r_label}, its "
         f"median for {', '.join(su_a['median']['exceeds']) or 'none'}. Of the highest θ = 0 share, {hi_phrase}; off the "
         f"axis at C44 = 0 the union reaches {ceil_to(max(junction_sup, junction_sup_green), 3):.3f} (the Scots pine group "
         f"{ceil_to(junction_sup, 3):.3f}) — on {citation(junction_union_cell)}, our assembly of its raw means; on the "

@@ -6253,7 +6253,11 @@ def test_printed_part_sway_stress_invariants():
 
     # the verdict's alloy lists are the flags, not a hand-typed list; its mass-path bound is an upper bound
     up = d["gyroid_source_day_exceeds"]["upper_whisker"]
-    lo = ", ".join(sorted(al for al in ALLOY_PROPERTIES if up[al]["large_stem_limit|near_uniaxial|sf2"]["radial_richardson"]))
+    # the lower reading is READ, never assumed — HW.33 (в) moved it from the radial to the axial one
+    low = min(inp["fe_readings_richardson"], key=inp["fe_readings_richardson"].get)
+    assert inp["fe_reading_lower"] == low
+    lo = ", ".join(sorted(al for al in ALLOY_PROPERTIES if up[al]["large_stem_limit|near_uniaxial|sf2"][low]))
+    assert f"On the lower reading (the {low.split('_')[0]} one)" in d["verdict"]
     assert f"exceeds them for {lo} on the lower reading" in d["verdict"]
     mmax = max(v["zone3_shank_bending_MPa"] for v in d["mass_path"].values())
     bound = float(re.search(r"mass path stays below ([0-9.]+) MPa", d["verdict"]).group(1))
