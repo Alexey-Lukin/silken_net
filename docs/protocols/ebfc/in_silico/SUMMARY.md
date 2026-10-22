@@ -1053,7 +1053,8 @@ one; 1654 N with a rigid sleeve at `103`'s stiff bond. It loads the Zone 1 shank
 taken, at 26.33 MPa (3.34). The tie reverses the force, so the outward half lands on the barbs' lead flank — the ratchet's
 easy side, which `01_01 §4.3` A says nothing loads in service; a row's ratchet force is not in the tree. The gyroid
 carries the same force axially at its shank end: its own lower bound gives 0.47 of the SF-2 line on 4V (0.87 on CP-Ti,
-1.21 on Ta) at that force — not additive with the in-plane bound, whose cross term has no established sign.
+1.21 on Ta) at that force, on the raw `/16` axial row the script calls its conservative end — the `/32` reading lies above
+it, so that end is not proven (`00_07` HW.23) — not additive with the in-plane bound, whose cross term has no established sign.
 
 **The flange disc** carries the bearing force only in `103`'s state 2 here — with a callus tie and a rigid bark both
 holding, a titanium run between them would carry the wood's own strain, a corner with no physical meaning, so the
@@ -1099,8 +1100,8 @@ radius, bonded in Scots pine sapwood under the stem's bending stress, on the mea
 hold ratios of the E and G rows of 45, 65 and 95 % RH to the printed digit, while the Poisson ratios and the 85 % RH row were read
 off the tables only). Its compliances are not symmetric, so each pair's coupling is read three ways — from the test
 loaded along the pair's stiffer axis, along its softer one, or the mean — and the softer-axis reading is not a material
-at 65 and 95 % RH. The lattice's C11 and C12 come from reading `105`'s two voxel-FE ratios (the axial one in doubt from above — `01_01 §5.2`,
-`00_07` HW.23) as one homogeneous cubic body
+at 65 and 95 % RH. The lattice's C11 and C12 come from reading `105`'s two voxel-FE ratios (the axial one in doubt from above, and for the radial one,
+on which C11 + C12 stands, the doubt neither shown nor excluded — `01_01 §5.2`, `00_07` HW.23) as one homogeneous cubic body
 (ν* 0.261; the other root breaks the Voigt bound) — read as kinematic-side, i.e. possibly stiffer than the finite part under
 traction; against the INFINITE lattice of the periodic case (`01_01 §5.2`) its in-plane dilatational term C11 + C12 is lower on every
 density-matched pairing of basis and rung, while the sign of its deviatoric term depends on the pairing — so no stiffness
