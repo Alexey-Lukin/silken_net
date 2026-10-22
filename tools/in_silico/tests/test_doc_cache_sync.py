@@ -6496,11 +6496,12 @@ def test_sway105_source_day_sentence_follows_the_cache():
                     if span[0] <= c["fe_reading_at_flip"] <= span[1])
     assert inside == [("median", "CP-Ti-Gr4", "near_uniaxial"), ("upper_whisker", "CP-Ti-Gr4", "any_state"),
                       ("upper_whisker", "Ti-15Zr", "near_uniaxial")], f"the flips inside the readings' span: {inside}"
-    assert (f"These {('one', 'two', 'three', 'four')[len(inside) - 1]} are every membership whose flip lies inside the "
-            f"span of the FE readings the tree carries — the two extrapolations and the {len(raw)} raw sweep readings; "
-            "every other cell keeps its side on all of them") in text
-    assert ("Названо кожне членство, чий переворот лежить усередині розмаху FE-прочитань у дереві (два Річардсони й "
-            f"{len(raw)} сирих прочитань розгортки); решта клітинок тримає свій бік на всіх") in tracker
+    assert (f"These {('one', 'two', 'three', 'four')[len(inside) - 1]} are every large-stem SF 2 cell whose flip lies inside "
+            f"the span of the FE readings `105` reads — the two extrapolations and the {len(raw)} raw sweep readings; "
+            "every other such cell keeps its side on all of them") in text
+    assert ("Названо кожну клітинку великого стовбура (SF 2), чий переворот лежить усередині розмаху FE-прочитань, які читає "
+            f"`105` (два Річардсони й {len(raw)} сирих прочитань розгортки); решта таких клітинок тримає свій бік на всіх") in tracker
+    assert f"Так само умовні ще {('одна клітинка', 'дві клітинки', 'три клітинки')[len(inside) - 2]}:" in tracker
     phi = d["inputs"]["solid_fraction"]
 
     def named(rd, al, sk):

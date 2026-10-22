@@ -1051,8 +1051,8 @@ which 4 of the 8 raw sweep readings exceed; in any stress state Ta only, on both
 ×0.989 ⊥ ×0.993 of its 1858 ⊥ 1851 µε on the lower ⊥ higher reading, and stays below while the FE reading is below 0.0823
 of `E_s`, which every raw sweep reading exceeds — inside the readings' own doubt), and its median (918 µε) for Ta only,
 on both (CP-Ti Gr4 misses, ×0.949 ⊥ ×0.952 of its 968 ⊥ 965 µε, and stays below while the FE reading is below 0.0894 of
-`E_s`, which every raw sweep reading exceeds). These three are every membership whose flip lies inside the span of the FE
-readings the tree carries — the two extrapolations and the 8 raw sweep readings; every other cell keeps its side on all
+`E_s`, which every raw sweep reading exceeds). These three are every large-stem SF 2 cell whose flip lies inside the span of the FE
+readings `105` reads — the two extrapolations and the 8 raw sweep readings; every other such cell keeps its side on all
 of them. β-Ti's high figure stands on a yield the tree carries without a source. Whether a host's stem
 crosses these strains often enough is the field histogram's question, not this table's.
 
