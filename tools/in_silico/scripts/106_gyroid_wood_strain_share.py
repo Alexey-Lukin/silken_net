@@ -171,7 +171,8 @@ PRINTED_AGGREGATES = (
 
 # ── GREEN (above fibre saturation) sets of OTHER Pinaceae — a SEPARATE group, never merged with WOOD ───────────────────
 # ⚖️ founder 2026-10-22 (00_07 HW.23, option (Б) by recommendation). Every number below was read in its source on
-# 2026-10-22 (Davies Table 1–2, Liu Table 2 and Jeong Table 2 also on the page image; Davies ESM 1–3 in the .docx XML
+# 2026-10-22 (Davies Table 1–2, Liu Table 2 and Jeong's red-pine rows also on the page image, Jeong's Korean-pine rows on
+# the text layer and then, by a reviewer, on the page image of the hash-pinned copy (p. 6, 200 dpi); Davies ESM 1–3 in the .docx XML
 # text, no OCR) and is typed AS PRINTED — strings, because the printed digit sets the rounding the checks below allow.
 # ν_ij everywhere: load along i, dimensional change along j (Davies p. 2, Liu p. 4). Jeong prints only the specimens'
 # «wider face on the R- or T-plane» and «ν = −εx/εy» (tension, DIC on that face): reading its ν_LR, ν_LT, ν_RT the same
@@ -252,7 +253,7 @@ JEONG_KOREAN_PINE_E_L_RETENTION_PRINTED_PCT = "66.9"       # the text, p. 6: «K
 # The copy read: the accepted manuscript (Article in Press, 19 pp.), whose PDF at the citation address answered 404 by
 # 2026-10-22 — so the copy is pinned by its hash, and Table 2 is to be re-read in the Version of Record once it is out.
 JEONG_PDF_READ = {"sha256": "de111dcf4a24d61bfdcaf69720889edf2bd6e439b67c57635b71c74c2a2d49c4", "bytes": 3058176,
-                  "pages": 19, "read": "2026-10-22, Table 2 on the text layer",
+                  "pages": 19, "read": "2026-10-22, Table 2 on the text layer; red pine rows also on the page image; Korean pine rows on the page image (p. 6, 200 dpi) by the reviewer, all 24 constants and 6 CVs matching",
                   "to_do": "re-read Table 2 in the Version of Record"}
 # The source of every green set: species, position, moisture and loading as printed, and what is OURS.
 GREEN_SOURCES = {
@@ -1006,6 +1007,9 @@ def main() -> int:
                     "cell": junction_pub_cell, "stands_on_borrowed_nu_RT": f"|{jk}|" in junction_pub_cell,
                     "over": "the green group without Davies' raw ESM 2/3 means (our assembly): Davies' Table 2 · Liu P4 · "
                             "Jeong's red and Korean pine"}
+    # the published-only supremum is printed as an «up to» figure too, so it carries the same guard as the union's above
+    assert jeong_c44_zero + nu_rt_off_axis < junction_pub["share"], \
+        "the published-only junction supremum is within reach of Jeong's borrowed ν_RT — it no longer stands on measured sets"
     # the union without Davies' Table 2 — the optimiser's output out, measured means only (the submission's option (В))
     t0_measured = theta0_over({k: v for k, v in cells_union.items() if "|davies2016_table2_" not in k})
     sd_measured = source_day_at(binds_at(t0_measured))
