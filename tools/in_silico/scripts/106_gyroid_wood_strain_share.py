@@ -35,8 +35,9 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   readings (in-silico §When Modifying #11), never merged with the Scots pine group — Davies et al. 2016 (P. radiata, four
   boards: stiff/non-stiff outerwood and corewood) as its Table 2 (stated to be a CI-weighted L1 symmetrisation's output,
   not reproduced from the open text) ⊥ its ESM 2/3 raw means, Liu et al. 2019 (Larix principis-rupprechtii, sapwood P4),
-  both through the same three symmetrisation readings, and Jeong 2026 (P. densiflora, in press) on the stiffer-axis
-  reading only, with its ν_RT and G_RT BORROWED (ours). Every reading carries its doi, table, column, species, moisture
+  both through the same three symmetrisation readings, and Jeong 2026 (P. densiflora and P. koraiensis, in press) on the
+  stiffer-axis reading only, with G_RT BORROWED for both and red pine's ν_RT too (ours; Korean pine prints its own).
+  Every reading carries its doi, table, column, species, moisture
   and loading mode (GREEN_SOURCES). The lowest θ = 0 share and `105`'s thresholds are reported for the Scots pine group
   (every key without a suffix — the record before the green group) and for the union of both groups.
   Lattice: the two Richardson voxel-FE readings `105` caches, read as ONE homogeneous cubic body with its cube axes on
@@ -112,7 +113,7 @@ from lib.utils import banner
 SI_DESCRIPTION = ("The share of a living stem's in-plane bending strain that a bonded titanium gyroid lattice takes, "
                   "from an orthotropic Eshelby solution for a circular cylinder on the measured elastic constants of "
                   "Scots pine sapwood at four moisture levels below fibre saturation and, as a separate group, of green "
-                  "sets of three other Pinaceae, with the lattice's cubic constants read from two voxel "
+                  "sets of four other Pinaceae, with the lattice's cubic constants read from two voxel "
                   "finite-element cases and its shear modulus, which a periodic voxel case measures for the infinite lattice and this script does not yet read, swept up to the Voigt bound; the install "
                   "angle and three readings of the pore filling are swept as well; closed forms checked against three "
                   "independent solutions, no finite elements")
@@ -172,7 +173,9 @@ PRINTED_AGGREGATES = (
 # ⚖️ founder 2026-10-22 (00_07 HW.23, option (Б) by recommendation). Every number below was read in its source on
 # 2026-10-22 (Davies Table 1–2, Liu Table 2 and Jeong Table 2 also on the page image; Davies ESM 1–3 in the .docx XML
 # text, no OCR) and is typed AS PRINTED — strings, because the printed digit sets the rounding the checks below allow.
-# ν_ij everywhere: load along i, dimensional change along j (Davies p. 2, Liu p. 4, Jeong ν = −ε_x/ε_y in tension).
+# ν_ij everywhere: load along i, dimensional change along j (Davies p. 2, Liu p. 4). Jeong prints only the specimens'
+# «wider face on the R- or T-plane» and «ν = −εx/εy» (tension, DIC on that face): reading its ν_LR, ν_LT, ν_RT the same
+# way is OURS — a face «on the R-plane» read as the plane normal to R would swap ν_LR and ν_LT.
 DAVIES_COLUMNS = ("SO", "NSO", "SC", "NSC")    # stiff outerwood · non-stiff outerwood · stiff corewood · non-stiff corewood
 # Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x — Table 2 (p. 3), GPa / –.
 # Its caption: «optimised for the orthotropic assumption» — the paper states (p. 2, Eq. 2, read on the page image) a
@@ -226,10 +229,11 @@ LIU_TABLE2 = {
     "Mean": "7629 0.30 0.22 362 0.04 0.60 773 0.05 0.77 450 428 393",
 }
 # Jeong 2026, J. Wood Sci., Article in Press, doi 10.1186/s10086-026-02311-7 — Table 2 (p. 6 of the accepted manuscript),
-# red pine (P. densiflora), «mean (coefficient of variation)», GPa / –. Only the stiffer-axis-loaded ratios are printed
-# (ν_LR, ν_LT, ν_RT); the green ν_RT is footnote b: «Measured but rejected: red pine green νRT (= 3.20) exceeded the
-# thermodynamic admissibility bound». G_RT is not measured. The 6 % row holds the green E_L to the text's own aggregate
-# («red pine 77.1%, 10.50 → 8.10 GPa»); the 19 % row is the source of the borrowed ν_RT.
+# red pine (P. densiflora) and Korean pine (P. koraiensis), «mean (coefficient of variation)», GPa / –. Only the
+# stiffer-axis-loaded ratios are printed (ν_LR, ν_LT, ν_RT); red pine's green ν_RT is footnote b: «Measured but rejected:
+# red pine green νRT (= 3.20) exceeded the thermodynamic admissibility bound». G_RT is not measured. The 6 % rows hold the
+# green E_L to the text's own aggregate («red pine 77.1%, 10.50 → 8.10 GPa» · «Korean pine 66.9%, 9.37 → 6.26 GPa»); red
+# pine's 19 % row is the source of its borrowed ν_RT. Korean pine prints its green ν_RT (1.12) — nothing borrowed but G_RT.
 JEONG_TABLE2_HEADER = ("E_L", "E_R", "E_T", "G_LR", "G_LT", "nu_LR", "nu_LT", "nu_RT")
 JEONG_TABLE2_RED_PINE = {
     "6": ("10.50", "0.44", "0.36", "0.80", "1.89", "0.44", "0.44", "0.94"),
@@ -238,6 +242,18 @@ JEONG_TABLE2_RED_PINE = {
 }
 JEONG_GREEN_CV = {"E_L": "0.28", "E_R": "0.20", "E_T": "0.54", "nu_LR": "0.80", "nu_LT": "1.11"}   # printed beside the means
 JEONG_E_L_RETENTION_PRINTED_PCT = 77.1                     # the text, p. 6: «red pine 77.1%, 10.50 → 8.10 GPa»
+JEONG_TABLE2_KOREAN_PINE = {
+    "6": ("9.37", "0.33", "0.32", "0.64", "1.60", "0.53", "0.63", "0.81"),
+    "19": ("7.60", "0.30", "0.16", "0.47", "0.95", "0.43", "0.68", "0.83"),
+    "Green": ("6.26", "0.20", "0.09", "1.05", "0.80", "0.30", "0.30", "1.12"),
+}
+JEONG_KOREAN_PINE_GREEN_CV = {"E_L": "0.09", "E_R": "0.44", "E_T": "0.43", "nu_LR": "1.64", "nu_LT": "1.37", "nu_RT": "0.57"}
+JEONG_KOREAN_PINE_E_L_RETENTION_PRINTED_PCT = "66.9"       # the text, p. 6: «Korean pine 66.9%, 9.37 → 6.26 GPa»
+# The copy read: the accepted manuscript (Article in Press, 19 pp.), whose PDF at the citation address answered 404 by
+# 2026-10-22 — so the copy is pinned by its hash, and Table 2 is to be re-read in the Version of Record once it is out.
+JEONG_PDF_READ = {"sha256": "de111dcf4a24d61bfdcaf69720889edf2bd6e439b67c57635b71c74c2a2d49c4", "bytes": 3058176,
+                  "pages": 19, "read": "2026-10-22, Table 2 on the text layer",
+                  "to_do": "re-read Table 2 in the Version of Record"}
 # The source of every green set: species, position, moisture and loading as printed, and what is OURS.
 GREEN_SOURCES = {
     "davies2016": {
@@ -245,8 +261,9 @@ GREEN_SOURCES = {
         "species": "Pinus radiata (Canterbury, NZ; boards from trees ≈ 28 years old)",
         "position": "outerwood ⊥ corewood by ring width and curvature (adjacent to the bark ⊥ the pith, p. 2); sapwood or "
                     "heartwood not reported; one board per type, so type and board are confounded (p. 4)",
-        "moisture": "green, never-dried boards kept sealed with excess water at 5 °C for at most 2 weeks (p. 2); MC not "
-                    "printed — its lower bound ρ_green/ρ_dry − 1 from Table 1 is OUR derivation",
+        "moisture": "green, «never-dried» (p. 1, keywords; p. 4 and p. 5); stored «in sealed bags with excess water at "
+                    "5 °C for a maximum period of 2 weeks» (p. 2); MC not printed — its lower bound ρ_green/ρ_dry − 1 "
+                    "from Table 1 is OUR derivation",
         "loading": "moduli: tension (bone and stick specimens) and compression (30 × 15 × 15 mm) averaged; ν from "
                    "compression (p. 4); DIC on two faces; n = 6 replicates × 4 boards × 3 orientations × 3 tests = 216 "
                    "(p. 2) — the usable n per face, the t-quantile and the CI of the four-face mean are not printed",
@@ -261,7 +278,9 @@ GREEN_SOURCES = {
         "species": "Larix principis-rupprechtii (Chinese larch — Larix, not Pinus); 2 trees, 40 years, DBH 32 and 36 cm",
         "position": "Table 2 row «4»: P4, sapwood, 132 mm from the pith (p. 3)",
         "moisture": "green logs; trees' mean MC 95 % (kiln-dry method on 15-cm discs cut at 1.1 m over the whole cross-section, "
-                    "heartwood included, p. 3 and p. 6); P4 specimen MC not printed; specimens stored sealed at 15 °C / 95 % RH",
+                    "heartwood included, p. 3 and p. 6); P4 specimen MC not printed; specimens stored sealed at 15 °C / 95 % RH. "
+                    "The abstract gives «95% moisture content at four different cross-section sampling positions», the body "
+                    "«the average MC of the sample trees was 95%» (p. 6) — read: the body",
         "loading": "E and ν: compression with strain gauges (p. 4–5); G_LR, G_LT: three-point bending over five spans; "
                    "G_RT: compression of 45° specimens",
         "reciprocity": "the authors check inequality (7) only (Table 4) and state Maxwell consistency; the equality (6) "
@@ -269,26 +288,34 @@ GREEN_SOURCES = {
     },
     "jeong2026": {
         "citation": "Jeong 2026, J. Wood Sci. (Article in Press)", "doi": "10.1186/s10086-026-02311-7",
-        "species": "Pinus densiflora (red pine); sapwood or heartwood not stated",
-        "position": "Table 2, row Red pine / Green",
+        "species": "Pinus densiflora (red pine) and Pinus koraiensis (Korean pine); sapwood or heartwood not stated",
+        "position": "Table 2, rows Red pine / Green and Korean pine / Green",
         "moisture": "«green (saturated)», number not printed, «verified gravimetrically by the oven-dry method on companion "
                     "specimens»; not stated to be never-dried",
         "loading": "uniaxial tension, stereo DIC, 0.5 mm/min; the author: «the transverse moduli are systematically "
                    "underestimated in direct radial and tangential tension»",
+        "nu_convention_ours": "the paper prints only «the wider face on the R- or T-plane» and «ν = −εx/εy»; reading its "
+                              "ν_ij as load along i, dimensional change along j is OURS (a face «on the R-plane» read as "
+                              "the plane normal to R would swap ν_LR and ν_LT — equal, 0.30, in Korean pine's green row)",
         "in_press": "internal contradictions in the accepted manuscript: «three moisture-content (MC) states» (abstract) ⊥ "
                     "«four discrete MC levels—6%, 19%, and green» (text); «three directly measured Poisson's ratios» ⊥ «The "
-                    "four directly measured Poisson’s ratios»; «consistent with the Maxwell reciprocity relations» with no "
-                    "reciprocal ratio measured — re-read Table 2 in the final version",
+                    "four directly measured Poisson’s ratios»; «Seven dogbone configurations» ⊥ «six anatomical loading "
+                    "configurations» (Materials and methods); «6% (oven-dry equivalent)» for a 6 % MC state; «consistent "
+                    "with the Maxwell reciprocity relations» with no reciprocal ratio measured — re-read Table 2 in the "
+                    "Version of Record",
+        "pdf_read": JEONG_PDF_READ,
         "borrowed_ours": {
-            "nu_RT": "0.94 — Jeong's own red pine at 19 % MC (Table 2): the same species and method at the nearest measured "
-                     "MC; the green value 3.20 was measured and rejected by the author",
-            "G_RT": "74 MPa — Güntekin & Akar 2019's 95 % RH group (the target species' wettest); Jeong measures no G_RT",
+            "nu_RT": "red pine: 0.94 — Jeong's own red pine at 19 % MC (Table 2): the same species and method at the nearest "
+                     "measured MC; the green value 3.20 was measured and rejected by the author. Korean pine: none — its "
+                     "green ν_RT 1.12 is printed",
+            "G_RT": "74 MPa, both species — Güntekin & Akar 2019's 95 % RH group (the target species' wettest); Jeong "
+                    "measures no G_RT",
         },
-        "not_read": "Jeong's other green pine row (P. koraiensis, Korean pine) — this pass reads P. densiflora alone",
     },
 }
 # The span of ν_RT over which the borrowed value's sensitivity is measured: every MEASURED ν_RT among the named readings
-# (Güntekin & Akar, Davies Table 2 and ESM 3, Liu P4) and Jeong's own red pine at 6 and 19 % MC (built in main()).
+# (Güntekin & Akar, Davies Table 2 and ESM 3, Liu P4, Jeong's Korean pine green) and Jeong's own red pine at 6 and 19 % MC
+# (built in main()).
 NU_RT_SWEEP_POINTS = 10
 NU_RT_SENSITIVITY_CAP = 0.002            # |Δt_L| at θ = 0 over that span — asserted (00_07 HW.23, the re-run's leg)
 G_PROBE_FACTORS = (0.1, 10.0)            # G_LR and G_RT scaled by these: t_L must not move (the anti-plane block decouples)
@@ -468,6 +495,15 @@ def jeong_red_pine_green(nu_rt: float | None = None) -> dict:
     return w
 
 
+def jeong_korean_pine_green() -> dict:
+    """Jeong's Korean pine, green: the printed constants, its printed ν_RT included; G_RT BORROWED as for red pine (ours).
+    The stiffer-axis reading only, as for red pine."""
+    w = {k: (float(v) if k.startswith("nu_") else _mpa(v))
+         for k, v in zip(JEONG_TABLE2_HEADER, JEONG_TABLE2_KOREAN_PINE["Green"], strict=True)}
+    w["G_RT"] = WOOD["rh95"]["G_RT"]
+    return w
+
+
 def green_sets() -> dict:
     """name → the set's constants, the symmetrisation readings it builds, its source and where in the source it sits."""
     sets = {}
@@ -482,6 +518,8 @@ def green_sets() -> dict:
                           "where": "Table 2, row 4 (P4, sapwood, R = 132 mm)"}
     sets["jeong2026_red_pine_green"] = {"w": jeong_red_pine_green(), "readings": ("stiff",), "source": "jeong2026",
                                         "where": "Table 2, Red pine / Green — ν_RT and G_RT borrowed (ours)"}
+    sets["jeong2026_korean_pine_green"] = {"w": jeong_korean_pine_green(), "readings": ("stiff",), "source": "jeong2026",
+                                           "where": "Table 2, Korean pine / Green — G_RT borrowed (ours), ν_RT printed"}
     return sets
 
 
@@ -496,10 +534,10 @@ def green_transcription_checks() -> dict:
     """Each green transcription held to its source's OWN aggregate. CAN catch: a mistyped extreme of a Davies Table 2 row
     (ESM 1 prints each row's range over the four columns); a Table 2 ν or E slip that breaks its by-construction
     reciprocity beyond the printed rounding; a column or row swap or a misplaced digit in Liu's Table 2 (its printed Mean
-    of the four positions); a mistyped Jeong green E_L (the text's 77.1 % retention). CANNOT catch: an interior Davies
-    column that stays inside both its row's range and the reciprocity rounding; a last-digit slip in one Liu row (it
-    moves the mean by a quarter of a unit); any Jeong constant but E_L; anything in ESM 2/3 — no aggregate is printed
-    (read from the .docx XML text, no OCR)."""
+    of the four positions); a mistyped Jeong green E_L of either species (the text's retentions — Korean pine's within
+    the printed rounding only). CANNOT catch: an interior Davies column that stays inside both its row's range and the
+    reciprocity rounding; a last-digit slip in one Liu row (it moves the mean by a quarter of a unit); any Jeong constant
+    but E_L; anything in ESM 2/3 — no aggregate is printed (read from the .docx XML text, no OCR)."""
     out = {"davies_table2_vs_esm1_range": {}, "davies_table2_reciprocity_within_rounding": {},
            "liu_table2_vs_printed_mean": {}, "jeong_e_l_retention_pct": {}}
     for k, (lo, hi) in DAVIES_ESM1_THIS_WORK.items():
@@ -526,6 +564,17 @@ def green_transcription_checks() -> dict:
     ret = 100.0 * float(JEONG_TABLE2_RED_PINE["Green"][hdr]) / float(JEONG_TABLE2_RED_PINE["6"][hdr])
     out["jeong_e_l_retention_pct"] = {"computed": ret, "printed": JEONG_E_L_RETENTION_PRINTED_PCT}
     assert round(ret, 1) == JEONG_E_L_RETENTION_PRINTED_PCT, f"Jeong's green E_L off the text's retention: {ret}"
+    # Korean pine: the quotient of the printed means rounds to 66.8, the text prints 66.9 — inside the interval the two
+    # printed means span at their rounding, so the source's own rounding, not a transcription slip; held to that interval
+    g_s, d_s, p_s = JEONG_TABLE2_KOREAN_PINE["Green"][hdr], JEONG_TABLE2_KOREAN_PINE["6"][hdr], \
+        JEONG_KOREAN_PINE_E_L_RETENTION_PRINTED_PCT
+    lo = 100.0 * (float(g_s) - _half_unit(g_s)) / (float(d_s) + _half_unit(d_s))
+    hi = 100.0 * (float(g_s) + _half_unit(g_s)) / (float(d_s) - _half_unit(d_s))
+    ok = lo <= float(p_s) + _half_unit(p_s) and float(p_s) - _half_unit(p_s) <= hi
+    out["jeong_korean_pine_e_l_retention_pct"] = {
+        "computed": 100.0 * float(g_s) / float(d_s), "printed": float(p_s),
+        "interval_at_printed_rounding": [lo, hi], "match_within_rounding": ok}
+    assert ok, f"Jeong's Korean pine green E_L off the text's retention: {lo}–{hi} vs {p_s}"
     return out
 
 
@@ -914,7 +963,8 @@ def main() -> int:
     # author's account).
     nu_rt_measured = sorted({w["nu_RT"] for w in WOOD.values()} | {float(v) for v in DAVIES_TABLE2["nu_RT"]}
                             | {float(v) for v in DAVIES_ESM3_COMPRESSION["rt_c"]} | {liu_row("4")["nu_RT"]}
-                            | {float(JEONG_TABLE2_RED_PINE[r][JEONG_TABLE2_HEADER.index("nu_RT")]) for r in ("6", "19")})
+                            | {float(JEONG_TABLE2_RED_PINE[r][JEONG_TABLE2_HEADER.index("nu_RT")]) for r in ("6", "19")}
+                            | {jeong_korean_pine_green()["nu_RT"]})
     jk = "jeong2026_red_pine_green|stiff"
     nu_rt_theta0, nu_rt_off_axis = 0.0, 0.0
     for nu in np.linspace(nu_rt_measured[0], nu_rt_measured[-1], NU_RT_SWEEP_POINTS):
@@ -947,6 +997,15 @@ def main() -> int:
     jeong_c44_zero = max(v["t_L_at_C44_zero_max_over_theta"] for k, v in cells_green.items() if f"|{jk}|" in k)
     assert jeong_c44_zero + nu_rt_off_axis < cells_union[junction_union_cell]["t_L_at_C44_zero_max_over_theta"], \
         "the union's junction supremum is within reach of Jeong's borrowed ν_RT — it no longer stands on measured sets"
+    # beside it (⚖️ founder 2026-10-22, 00_07 HW.23): the same supremum on the published green sets alone — Davies' Table 2,
+    # Liu and Jeong — without OUR assembly of Davies' raw ESM 2/3 means, on which the union's supremum sits
+    published = {k: v for k, v in cells_green.items() if not k.split("|")[1].startswith("davies2016_esm_")}
+    junction_pub_cell = max(published, key=lambda k: published[k]["t_L_at_C44_zero_max_over_theta"])
+    junction_pub = {"share": published[junction_pub_cell]["t_L_at_C44_zero_max_over_theta"],
+                    "theta_deg": published[junction_pub_cell]["theta_of_max_at_C44_zero_deg"],
+                    "cell": junction_pub_cell, "stands_on_borrowed_nu_RT": f"|{jk}|" in junction_pub_cell,
+                    "over": "the green group without Davies' raw ESM 2/3 means (our assembly): Davies' Table 2 · Liu P4 · "
+                            "Jeong's red and Korean pine"}
     # the union without Davies' Table 2 — the optimiser's output out, measured means only (the submission's option (В))
     t0_measured = theta0_over({k: v for k, v in cells_union.items() if "|davies2016_table2_" not in k})
     sd_measured = source_day_at(binds_at(t0_measured))
@@ -967,6 +1026,39 @@ def main() -> int:
                           "source_day_upper_whisker_exceeds": {fk: sdn[fk]["upper_whisker"]["exceeds"] for fk in f_read},
                           "ta_upper_whisker_margin": {fk: sdn[fk]["upper_whisker"]["margin_over_threshold"]["Ta"]
                                                       for fk in f_read}}
+
+    # Korean pine's Ta verdict against its own ν_LR (printed 0.30 at a CV of 1.64): the source day's upper whisker over Ta's
+    # threshold at that set's lowest θ = 0 share, as a function of ν_LR alone — the ν_LR at which it first exceeds, per FE
+    # reading (bisection on a bracket whose ends are asserted; the margin is held non-decreasing on a coarse scan)
+    kp = "jeong2026_korean_pine_green"
+
+    def kp_ta_margin(nu_lr: float, fk: str) -> float:
+        wv2 = build_reading(wood_compliance(gsets[kp]["w"] | {"nu_LR": nu_lr}, "stiff"), f"{kp} ν_LR {nu_lr}", checks=False)
+        assert wv2["positive_definite"], f"Korean pine is not a material at ν_LR {nu_lr}"
+        t_low = min(t_l_on(wv2, "Ta", fill, 0.0, a_voigt) for fill in FILLS)
+        dk, sk, _ = CELL_LS.split("|")
+        thr = up0(d105["alloys"]["Ta"]["endurance_strain_printed_ue"] / 2.0 * d105["inputs"]["stress_state_divisor"][sk]
+                  / (f_read[fk] * d105["inputs"]["depth_fraction"][dk] * t_low))
+        return stem["upper_whisker"]["surface_strain_ue"] / thr
+
+    kp_nu = gsets[kp]["w"]["nu_LR"]
+    kp_edge = {}
+    for fk in f_read:
+        assert abs(kp_ta_margin(kp_nu, fk) - per_set[kp]["ta_upper_whisker_margin"][fk]) < 1e-12, "Korean pine's margin moved"
+        scan = [kp_ta_margin(x, fk) for x in np.linspace(kp_nu, 2 * kp_nu, 11)]
+        assert all(b >= a for a, b in itertools.pairwise(scan)), f"Korean pine's Ta margin is not monotone in ν_LR ({fk})"
+        lo, hi = kp_nu, 2 * kp_nu
+        if scan[0] > 1 or scan[-1] <= 1:
+            kp_edge[fk] = {"margin_at_printed": scan[0], "nu_LR_first_exceeds": None, "scanned_to": hi}
+            continue
+        for _ in range(50):
+            mid = 0.5 * (lo + hi)
+            lo, hi = (mid, hi) if kp_ta_margin(mid, fk) <= 1 else (lo, mid)
+        kp_edge[fk] = {"margin_at_printed": scan[0], "nu_LR_first_exceeds": hi, "scanned_to": 2 * kp_nu}
+    kp_edge_record = {"nu_LR_printed": kp_nu, "nu_LR_cv_printed": float(JEONG_KOREAN_PINE_GREEN_CV["nu_LR"]),
+                      "per_fe_reading": kp_edge,
+                      "is": "the ν_LR above which the source day's upper whisker exceeds Ta's large-stem SF 2 threshold "
+                            "at Korean pine's own lowest θ = 0 share, every other constant as printed (G_RT borrowed)"}
 
     def citation(cell_key: str) -> str:
         _, name, rd, fill = cell_key.split("|")
@@ -1018,7 +1110,9 @@ def main() -> int:
         f"tensor's E[100] and for {', '.join(su_r['upper_whisker']['exceeds']) or 'none'} on 105's lower reading, its "
         f"median for {', '.join(su_a['median']['exceeds']) or 'none'}. Of the highest θ = 0 share, {hi_phrase}; off the "
         f"axis at C44 = 0 the union reaches {ceil_to(max(junction_sup, junction_sup_green), 3):.3f} (the Scots pine group "
-        f"{ceil_to(junction_sup, 3):.3f}) — on {citation(junction_union_cell)}. Off the "
+        f"{ceil_to(junction_sup, 3):.3f}) — on {citation(junction_union_cell)}, our assembly of its raw means; on the "
+        f"published green sets alone it reaches {ceil_to(junction_pub['share'], 3):.3f} — on "
+        f"{citation(junction_pub_cell)}{', whose off-axis cells stand on the borrowed ν_RT' if junction_pub['stands_on_borrowed_nu_RT'] else ''}. Off the "
         f"axis the threshold has no ceiling as C44 falls. The modelled set reads the ring as the host's xylem, its Scots "
         f"pine group stops below fibre saturation and its green readings are other Pinaceae, so its lowest share is not a "
         f"floor."
@@ -1068,13 +1162,16 @@ def main() -> int:
                 "checks": green_transcription, "liu_table2_as_printed": LIU_TABLE2,
                 "jeong_table2_red_pine_as_printed": {r: list(v) for r, v in JEONG_TABLE2_RED_PINE.items()},
                 "jeong_green_cv_as_printed": JEONG_GREEN_CV,
+                "jeong_table2_korean_pine_as_printed": {r: list(v) for r, v in JEONG_TABLE2_KOREAN_PINE.items()},
+                "jeong_korean_pine_green_cv_as_printed": JEONG_KOREAN_PINE_GREEN_CV,
                 "davies_table2_as_printed": {k: list(v) for k, v in DAVIES_TABLE2.items()},
                 "davies_esm2_as_printed": {k: list(v) for k, v in DAVIES_ESM2.items()},
                 "davies_esm3_compression_as_printed": {k: list(v) for k, v in DAVIES_ESM3_COMPRESSION.items()},
                 "davies_table1_density_as_printed": {k: list(v) for k, v in DAVIES_TABLE1_DENSITY.items()},
                 "covers": "Davies Table 2 — each row's extremes (ESM 1) and its reciprocity at the printed rounding; Liu "
-                          "Table 2 — every column through its printed Mean; Jeong — the green E_L through the text's "
-                          "77.1 % retention; ESM 2/3 — no printed aggregate (the .docx XML text, no OCR)"},
+                          "Table 2 — every column through its printed Mean; Jeong — each green E_L through the text's "
+                          "retention (red pine 77.1 %, Korean pine 66.9 % within the printed rounding); ESM 2/3 — no "
+                          "printed aggregate (the .docx XML text, no OCR)"},
         },
         "wood_readings": {k: {kk: vv for kk, vv in v.items() if not kk.startswith("_")} for k, v in wood.items()},
         "wood_readings_excluded_not_a_material": excluded,
@@ -1111,6 +1208,7 @@ def main() -> int:
         "union_source_day_theta0_large_stem_sf2": source_day_union,
         "union_junction_share_sup_at_C44_zero": max(junction_sup, junction_sup_green),
         "green_per_set": per_set,
+        "green_korean_pine_ta_knife_edge": kp_edge_record,
         "union_without_davies_table2": union_without_table2,
         "consumer_ceiling_binding_claim": ceiling,
         "consumer_ceiling_junction": {
@@ -1120,13 +1218,13 @@ def main() -> int:
             "off_axis_sup_at_C44_zero": {"share": cells_union[junction_union_cell]["t_L_at_C44_zero_max_over_theta"],
                                          "theta_deg": cells_union[junction_union_cell]["theta_of_max_at_C44_zero_deg"],
                                          "cell": junction_union_cell, "reading": citation(junction_union_cell)},
-            "jeong_c44_zero_max_plus_its_nu_RT_sensitivity": jeong_c44_zero + nu_rt_off_axis},
+            "jeong_c44_zero_max_plus_its_nu_RT_sensitivity": jeong_c44_zero + nu_rt_off_axis,
+            "off_axis_sup_at_C44_zero_published_sets_only": junction_pub | {"reading": citation(junction_pub_cell)}},
         "not_computed": [
             "C44 read into the share — the periodic voxel case measures it for the infinite lattice; reading it is open (00_07 HW.23)",
             "the stiffness of the tissue in the pores and of the ring — a soft ring drives t_L to 0 in its limit",
             "a green (above fibre saturation) SCOTS PINE set — the green group reads other Pinaceae — and the share's "
             "direction with moisture (across the two groups species and moisture are confounded)",
-            "Jeong's other green pine row (P. koraiensis) — this pass reads P. densiflora alone",
             "S_1212 of an anisotropic matrix against an independent closed form",
             "the finite length, the bending gradient along R, the curved rings, the bark's proximity, S5",
         ],
@@ -1173,6 +1271,10 @@ def main() -> int:
     print(f"  union source day: {su_a['upper_whisker']['exceeds']} ⊥ {su_r['upper_whisker']['exceeds']} (Ta margins "
           f"{su_a['upper_whisker']['margin_over_threshold']['Ta']:.4f} ⊥ {su_r['upper_whisker']['margin_over_threshold']['Ta']:.4f})"
           f" · green junction sup {junction_sup_green:.4f} · crossings {crossings_green}/{lattice_cells_green}")
+    print(f"  junction sup without our raw-ESM assembly: {junction_pub['share']:.4f} at θ {junction_pub['theta_deg']:g}° "
+          f"({junction_pub_cell.split('|', 1)[1]})")
+    print("  Korean pine, Ta: " + " ⊥ ".join(f"×{v['margin_at_printed']:.4f} (exceeds from ν_LR {v['nu_LR_first_exceeds']})"
+                                             for v in kp_edge.values()))
     print(f"  reciprocity (measured sets): L-pairs {min(l_pairs):.3f}–{max(l_pairs):.3f} · R–T {min(rt_pair):.3f}–"
           f"{max(rt_pair):.3f} · Davies Table 2 {min(t2_pairs):.3f}–{max(t2_pairs):.3f}")
     print(f"  → {OUT.relative_to(REPO_ROOT)}")

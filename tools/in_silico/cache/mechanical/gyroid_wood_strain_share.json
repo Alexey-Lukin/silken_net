@@ -256,7 +256,7 @@
         "doi": "10.1186/s40490-016-0075-x",
         "species": "Pinus radiata (Canterbury, NZ; boards from trees ≈ 28 years old)",
         "position": "outerwood ⊥ corewood by ring width and curvature (adjacent to the bark ⊥ the pith, p. 2); sapwood or heartwood not reported; one board per type, so type and board are confounded (p. 4)",
-        "moisture": "green, never-dried boards kept sealed with excess water at 5 °C for at most 2 weeks (p. 2); MC not printed — its lower bound ρ_green/ρ_dry − 1 from Table 1 is OUR derivation",
+        "moisture": "green, «never-dried» (p. 1, keywords; p. 4 and p. 5); stored «in sealed bags with excess water at 5 °C for a maximum period of 2 weeks» (p. 2); MC not printed — its lower bound ρ_green/ρ_dry − 1 from Table 1 is OUR derivation",
         "loading": "moduli: tension (bone and stick specimens) and compression (30 × 15 × 15 mm) averaged; ν from compression (p. 4); DIC on two faces; n = 6 replicates × 4 boards × 3 orientations × 3 tests = 216 (p. 2) — the usable n per face, the t-quantile and the CI of the four-face mean are not printed",
         "table2": "Table 2 (p. 3) — stated (Eq. 2) to be a CI-weighted L1 symmetrisation's output, not reproduced from the open text; symmetric by construction to its printed digits",
         "esm": "Additional files 2 (moduli) and 3 (Poisson ratios) — raw means; read by the paper's p. 4 rule as WE read it: E_R from the rt face and E_T from the tr face, each tension and compression averaged; E_L the mean of its four face-and-mode values; ν from compression"
@@ -266,23 +266,30 @@
         "doi": "10.3390/f10050456",
         "species": "Larix principis-rupprechtii (Chinese larch — Larix, not Pinus); 2 trees, 40 years, DBH 32 and 36 cm",
         "position": "Table 2 row «4»: P4, sapwood, 132 mm from the pith (p. 3)",
-        "moisture": "green logs; trees' mean MC 95 % (kiln-dry method on 15-cm discs cut at 1.1 m over the whole cross-section, heartwood included, p. 3 and p. 6); P4 specimen MC not printed; specimens stored sealed at 15 °C / 95 % RH",
+        "moisture": "green logs; trees' mean MC 95 % (kiln-dry method on 15-cm discs cut at 1.1 m over the whole cross-section, heartwood included, p. 3 and p. 6); P4 specimen MC not printed; specimens stored sealed at 15 °C / 95 % RH. The abstract gives «95% moisture content at four different cross-section sampling positions», the body «the average MC of the sample trees was 95%» (p. 6) — read: the body",
         "loading": "E and ν: compression with strain gauges (p. 4–5); G_LR, G_LT: three-point bending over five spans; G_RT: compression of 45° specimens",
         "reciprocity": "the authors check inequality (7) only (Table 4) and state Maxwell consistency; the equality (6) on P4 is our arithmetic"
       },
       "jeong2026": {
         "citation": "Jeong 2026, J. Wood Sci. (Article in Press)",
         "doi": "10.1186/s10086-026-02311-7",
-        "species": "Pinus densiflora (red pine); sapwood or heartwood not stated",
-        "position": "Table 2, row Red pine / Green",
+        "species": "Pinus densiflora (red pine) and Pinus koraiensis (Korean pine); sapwood or heartwood not stated",
+        "position": "Table 2, rows Red pine / Green and Korean pine / Green",
         "moisture": "«green (saturated)», number not printed, «verified gravimetrically by the oven-dry method on companion specimens»; not stated to be never-dried",
         "loading": "uniaxial tension, stereo DIC, 0.5 mm/min; the author: «the transverse moduli are systematically underestimated in direct radial and tangential tension»",
-        "in_press": "internal contradictions in the accepted manuscript: «three moisture-content (MC) states» (abstract) ⊥ «four discrete MC levels—6%, 19%, and green» (text); «three directly measured Poisson's ratios» ⊥ «The four directly measured Poisson’s ratios»; «consistent with the Maxwell reciprocity relations» with no reciprocal ratio measured — re-read Table 2 in the final version",
-        "borrowed_ours": {
-          "nu_RT": "0.94 — Jeong's own red pine at 19 % MC (Table 2): the same species and method at the nearest measured MC; the green value 3.20 was measured and rejected by the author",
-          "G_RT": "74 MPa — Güntekin & Akar 2019's 95 % RH group (the target species' wettest); Jeong measures no G_RT"
+        "nu_convention_ours": "the paper prints only «the wider face on the R- or T-plane» and «ν = −εx/εy»; reading its ν_ij as load along i, dimensional change along j is OURS (a face «on the R-plane» read as the plane normal to R would swap ν_LR and ν_LT — equal, 0.30, in Korean pine's green row)",
+        "in_press": "internal contradictions in the accepted manuscript: «three moisture-content (MC) states» (abstract) ⊥ «four discrete MC levels—6%, 19%, and green» (text); «three directly measured Poisson's ratios» ⊥ «The four directly measured Poisson’s ratios»; «Seven dogbone configurations» ⊥ «six anatomical loading configurations» (Materials and methods); «6% (oven-dry equivalent)» for a 6 % MC state; «consistent with the Maxwell reciprocity relations» with no reciprocal ratio measured — re-read Table 2 in the Version of Record",
+        "pdf_read": {
+          "sha256": "de111dcf4a24d61bfdcaf69720889edf2bd6e439b67c57635b71c74c2a2d49c4",
+          "bytes": 3058176,
+          "pages": 19,
+          "read": "2026-10-22, Table 2 on the text layer",
+          "to_do": "re-read Table 2 in the Version of Record"
         },
-        "not_read": "Jeong's other green pine row (P. koraiensis, Korean pine) — this pass reads P. densiflora alone"
+        "borrowed_ours": {
+          "nu_RT": "red pine: 0.94 — Jeong's own red pine at 19 % MC (Table 2): the same species and method at the nearest measured MC; the green value 3.20 was measured and rejected by the author. Korean pine: none — its green ν_RT 1.12 is printed",
+          "G_RT": "74 MPa, both species — Güntekin & Akar 2019's 95 % RH group (the target species' wettest); Jeong measures no G_RT"
+        }
       }
     },
     "green_sets": {
@@ -518,6 +525,24 @@
         ],
         "source": "jeong2026",
         "where": "Table 2, Red pine / Green — ν_RT and G_RT borrowed (ours)"
+      },
+      "jeong2026_korean_pine_green": {
+        "constants": {
+          "E_L": 6260.0,
+          "E_R": 200.0,
+          "E_T": 90.0,
+          "G_LR": 1050.0,
+          "G_LT": 800.0,
+          "nu_LR": 0.3,
+          "nu_LT": 0.3,
+          "nu_RT": 1.12,
+          "G_RT": 74.0
+        },
+        "readings": [
+          "stiff"
+        ],
+        "source": "jeong2026",
+        "where": "Table 2, Korean pine / Green — G_RT borrowed (ours), ν_RT printed"
       }
     },
     "green_transcription": {
@@ -735,6 +760,15 @@
         "jeong_e_l_retention_pct": {
           "computed": 77.14285714285714,
           "printed": 77.1
+        },
+        "jeong_korean_pine_e_l_retention_pct": {
+          "computed": 66.80896478121666,
+          "printed": 66.9,
+          "interval_at_printed_rounding": [
+            66.72,
+            66.89802455953017
+          ],
+          "match_within_rounding": true
         }
       },
       "liu_table2_as_printed": {
@@ -782,6 +816,46 @@
         "E_T": "0.54",
         "nu_LR": "0.80",
         "nu_LT": "1.11"
+      },
+      "jeong_table2_korean_pine_as_printed": {
+        "6": [
+          "9.37",
+          "0.33",
+          "0.32",
+          "0.64",
+          "1.60",
+          "0.53",
+          "0.63",
+          "0.81"
+        ],
+        "19": [
+          "7.60",
+          "0.30",
+          "0.16",
+          "0.47",
+          "0.95",
+          "0.43",
+          "0.68",
+          "0.83"
+        ],
+        "Green": [
+          "6.26",
+          "0.20",
+          "0.09",
+          "1.05",
+          "0.80",
+          "0.30",
+          "0.30",
+          "1.12"
+        ]
+      },
+      "jeong_korean_pine_green_cv_as_printed": {
+        "E_L": "0.09",
+        "E_R": "0.44",
+        "E_T": "0.43",
+        "nu_LR": "1.64",
+        "nu_LT": "1.37",
+        "nu_RT": "0.57"
       },
       "davies_table2_as_printed": {
         "E_R": [
@@ -977,7 +1051,7 @@
           "393"
         ]
       },
-      "covers": "Davies Table 2 — each row's extremes (ESM 1) and its reciprocity at the printed rounding; Liu Table 2 — every column through its printed Mean; Jeong — the green E_L through the text's 77.1 % retention; ESM 2/3 — no printed aggregate (the .docx XML text, no OCR)"
+      "covers": "Davies Table 2 — each row's extremes (ESM 1) and its reciprocity at the printed rounding; Liu Table 2 — every column through its printed Mean; Jeong — each green E_L through the text's retention (red pine 77.1 %, Korean pine 66.9 % within the printed rounding); ESM 2/3 — no printed aggregate (the .docx XML text, no OCR)"
     }
   },
   "wood_readings": {
@@ -3670,6 +3744,17 @@
       },
       "covariance_control": 1.582067810090848e-15,
       "quadrature_change_at_2n": 1.6653345369377348e-15
+    },
+    "jeong2026_korean_pine_green|stiff": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 0.00015688613391444625,
+      "hole_control": {
+        "kt_eshelby": 5.194704096429554,
+        "kt_lekhnitskii": 5.194704096429584,
+        "traction_residual": 2.3969507070472966e-18
+      },
+      "covariance_control": 1.7763568394002505e-15,
+      "quadrature_change_at_2n": 3.552713678800501e-15
     }
   },
   "green_wood_readings_excluded_not_a_material": [
@@ -4428,6 +4513,36 @@
       "zener_at_which_t_L_is_1_theta45": null,
       "theta0_independent_of_C44": true
     },
+    "Ti-6Al-4V|jeong2026_korean_pine_green|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.6883498315525869,
+      "t_L_at_voigt_C44_min_over_theta": 0.41379441742426254,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6883498315525869,
+      "t_L_at_C44_zero_max_over_theta": 5.177678370127142,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5185172449664153,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|jeong2026_korean_pine_green|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.5241385707095401,
+      "t_L_at_voigt_C44_min_over_theta": 0.35385907508141,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5241385707095401,
+      "t_L_at_C44_zero_max_over_theta": 1.3992925068165245,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.1600253542861558,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.24801570377946783,
+      "t_L_at_voigt_C44_min_over_theta": 0.24801570377946783,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.24801570377946783,
+      "t_L_at_C44_zero_max_over_theta": 0.24801570377946783,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
     "Ti-6Al-7Nb|davies2016_table2_SO|stiff|pores_carry_nothing": {
       "t_L_theta0_any_C44": 0.5237447311872474,
       "t_L_at_voigt_C44_min_over_theta": 0.310676899208875,
@@ -5174,6 +5289,36 @@
       "theta_of_min_deg": 0.0,
       "t_L_at_voigt_C44_max_over_theta": 0.45328495867541285,
       "t_L_at_C44_zero_max_over_theta": 0.45328495867541285,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|jeong2026_korean_pine_green|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.7239118740335091,
+      "t_L_at_voigt_C44_min_over_theta": 0.43435000925536504,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7239118740335091,
+      "t_L_at_C44_zero_max_over_theta": 5.177691816700025,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5628666679355756,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|jeong2026_korean_pine_green|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.5436055857130433,
+      "t_L_at_voigt_C44_min_over_theta": 0.368102186424463,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5436055857130433,
+      "t_L_at_C44_zero_max_over_theta": 1.3992893885932296,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.1718830770176548,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.253845381138774,
+      "t_L_at_voigt_C44_min_over_theta": 0.253845381138774,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.253845381138774,
+      "t_L_at_C44_zero_max_over_theta": 0.253845381138774,
       "theta_of_max_at_C44_zero_deg": 0.0,
       "zener_at_which_t_L_is_1_theta45": null,
       "theta0_independent_of_C44": true
@@ -5928,6 +6073,36 @@
       "zener_at_which_t_L_is_1_theta45": null,
       "theta0_independent_of_C44": true
     },
+    "CP-Ti-Gr4|jeong2026_korean_pine_green|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.7185797270431726,
+      "t_L_at_voigt_C44_min_over_theta": 0.43126058118038946,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7185797270431726,
+      "t_L_at_C44_zero_max_over_theta": 5.177689789611368,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5560753376967646,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|jeong2026_korean_pine_green|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.5407211217249723,
+      "t_L_at_voigt_C44_min_over_theta": 0.3659779387567371,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5407211217249723,
+      "t_L_at_C44_zero_max_over_theta": 1.3992898582768258,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.17008311581065022,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.2570669439416996,
+      "t_L_at_voigt_C44_min_over_theta": 0.2570669439416996,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.2570669439416996,
+      "t_L_at_C44_zero_max_over_theta": 0.2570669439416996,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
     "beta-Ti-13Nb-13Zr|davies2016_table2_SO|stiff|pores_carry_nothing": {
       "t_L_theta0_any_C44": 0.6429904619623447,
       "t_L_at_voigt_C44_min_over_theta": 0.3752444398874892,
@@ -6674,6 +6849,36 @@
       "theta_of_min_deg": 0.0,
       "t_L_at_voigt_C44_max_over_theta": 0.5045394833174051,
       "t_L_at_C44_zero_max_over_theta": 0.5045394833174051,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|jeong2026_korean_pine_green|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.8768938276314482,
+      "t_L_at_voigt_C44_min_over_theta": 0.5241061127207451,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8768938276314482,
+      "t_L_at_C44_zero_max_over_theta": 5.177751669404904,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.7819523731622869,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|jeong2026_korean_pine_green|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.621549074982839,
+      "t_L_at_voigt_C44_min_over_theta": 0.4273971815610905,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.621549074982839,
+      "t_L_at_C44_zero_max_over_theta": 1.399275583004648,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.22707779111651583,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.2953928129576312,
+      "t_L_at_voigt_C44_min_over_theta": 0.2953928129576312,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.2953928129576312,
+      "t_L_at_C44_zero_max_over_theta": 0.2953928129576312,
       "theta_of_max_at_C44_zero_deg": 0.0,
       "zener_at_which_t_L_is_1_theta45": null,
       "theta0_independent_of_C44": true
@@ -7428,6 +7633,36 @@
       "zener_at_which_t_L_is_1_theta45": null,
       "theta0_independent_of_C44": true
     },
+    "Ta|jeong2026_korean_pine_green|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.4600650784999175,
+      "t_L_at_voigt_C44_min_over_theta": 0.28452887148267486,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4600650784999175,
+      "t_L_at_C44_zero_max_over_theta": 5.177595960156542,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.2789757351692783,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|jeong2026_korean_pine_green|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.3848821747101594,
+      "t_L_at_voigt_C44_min_over_theta": 0.257982169778805,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.3848821747101594,
+      "t_L_at_C44_zero_max_over_theta": 1.399311752397561,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.0914147011851176,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.19356005613069488,
+      "t_L_at_voigt_C44_min_over_theta": 0.19356005613069488,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.19356005613069488,
+      "t_L_at_C44_zero_max_over_theta": 0.19356005613069488,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
     "Ti-15Zr|davies2016_table2_SO|stiff|pores_carry_nothing": {
       "t_L_theta0_any_C44": 0.5363759523848766,
       "t_L_at_voigt_C44_min_over_theta": 0.31747505966552453,
@@ -8177,6 +8412,36 @@
       "theta_of_max_at_C44_zero_deg": 0.0,
       "zener_at_which_t_L_is_1_theta45": null,
       "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|jeong2026_korean_pine_green|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.7404550984323117,
+      "t_L_at_voigt_C44_min_over_theta": 0.44395163832399476,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7404550984323117,
+      "t_L_at_C44_zero_max_over_theta": 5.177698130565707,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5842661378425709,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|jeong2026_korean_pine_green|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.5524790677896408,
+      "t_L_at_voigt_C44_min_over_theta": 0.37466750207800387,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5524790677896408,
+      "t_L_at_C44_zero_max_over_theta": 1.3992879265403695,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.17751794007100669,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.26104615827622024,
+      "t_L_at_voigt_C44_min_over_theta": 0.26104615827622024,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.26104615827622024,
+      "t_L_at_C44_zero_max_over_theta": 0.26104615827622024,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
     }
   },
   "green_additive_outside_the_pore_ends_interval": [
@@ -8251,8 +8516,8 @@
     }
   },
   "green_crossings_theta45": {
-    "cells_crossing_1": 294,
-    "lattice_cells": 300
+    "cells_crossing_1": 306,
+    "lattice_cells": 312
   },
   "green_junction_share_sup_at_C44_zero": 9.83924543005111,
   "green_reciprocity_our_arithmetic": {
@@ -8322,7 +8587,8 @@
         "TL_over_LT": 3.9940898345153664,
         "RT_over_TR": 1.0119617224880382
       },
-      "jeong2026_red_pine_green": null
+      "jeong2026_red_pine_green": null,
+      "jeong2026_korean_pine_green": null
     },
     "measured_sets": [
       "rh45",
@@ -9002,7 +9268,50 @@
         "axial_richardson": 2.0898748577929465,
         "radial_richardson": 1.7511916110581507
       }
+    },
+    "jeong2026_korean_pine_green": {
+      "lowest": {
+        "Ti-6Al-4V": 0.24801570377946783,
+        "Ti-6Al-7Nb": 0.253845381138774,
+        "CP-Ti-Gr4": 0.2570669439416996,
+        "beta-Ti-13Nb-13Zr": 0.2953928129576312,
+        "Ta": 0.19356005613069488,
+        "Ti-15Zr": 0.26104615827622024
+      },
+      "lowest_cell": {
+        "Ti-6Al-4V": "Ti-6Al-4V|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound",
+        "Ti-6Al-7Nb": "Ti-6Al-7Nb|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound",
+        "CP-Ti-Gr4": "CP-Ti-Gr4|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound",
+        "beta-Ti-13Nb-13Zr": "beta-Ti-13Nb-13Zr|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound",
+        "Ta": "Ta|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound",
+        "Ti-15Zr": "Ti-15Zr|jeong2026_korean_pine_green|stiff|pores_voigt_phase_bound"
+      },
+      "source_day_upper_whisker_exceeds": {
+        "axial_richardson": [],
+        "radial_richardson": []
+      },
+      "ta_upper_whisker_margin": {
+        "axial_richardson": 0.9876344086021506,
+        "radial_richardson": 0.8278503830554303
+      }
     }
+  },
+  "green_korean_pine_ta_knife_edge": {
+    "nu_LR_printed": 0.3,
+    "nu_LR_cv_printed": 1.64,
+    "per_fe_reading": {
+      "axial_richardson": {
+        "margin_at_printed": 0.9876344086021506,
+        "nu_LR_first_exceeds": 0.30795635657889825,
+        "scanned_to": 0.6
+      },
+      "radial_richardson": {
+        "margin_at_printed": 0.8278503830554303,
+        "nu_LR_first_exceeds": 0.4276331467357504,
+        "scanned_to": 0.6
+      }
+    },
+    "is": "the ν_LR above which the source day's upper whisker exceeds Ta's large-stem SF 2 threshold at Korean pine's own lowest θ = 0 share, every other constant as printed (G_RT borrowed)"
   },
   "union_without_davies_table2": {
     "lowest": {
@@ -9125,13 +9434,20 @@
       "cell": "beta-Ti-13Nb-13Zr|davies2016_esm_SO|stiff|pores_carry_nothing",
       "reading": "Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Additional files 2–3, stiff outerwood; stiff reading, pores_carry_nothing"
     },
-    "jeong_c44_zero_max_plus_its_nu_RT_sensitivity": 6.245856291471271
+    "jeong_c44_zero_max_plus_its_nu_RT_sensitivity": 6.245856291471271,
+    "off_axis_sup_at_C44_zero_published_sets_only": {
+      "share": 7.152568674068406,
+      "theta_deg": 45.0,
+      "cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_carry_nothing",
+      "stands_on_borrowed_nu_RT": false,
+      "over": "the green group without Davies' raw ESM 2/3 means (our assembly): Davies' Table 2 · Liu P4 · Jeong's red and Korean pine",
+      "reading": "Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Table 2, stiff outerwood; soft reading, pores_carry_nothing"
+    }
   },
   "not_computed": [
     "C44 read into the share — the periodic voxel case measures it for the infinite lattice; reading it is open (00_07 HW.23)",
     "the stiffness of the tissue in the pores and of the ring — a soft ring drives t_L to 0 in its limit",
     "a green (above fibre saturation) SCOTS PINE set — the green group reads other Pinaceae — and the share's direction with moisture (across the two groups species and moisture are confounded)",
-    "Jeong's other green pine row (P. koraiensis) — this pass reads P. densiflora alone",
     "S_1212 of an anisotropic matrix against an independent closed form",
     "the finite length, the bending gradient along R, the curved rings, the bark's proximity, S5"
   ],
@@ -9160,15 +9476,15 @@
       "borrowed": 0.94,
       "swept_span": [
         0.49,
-        0.94
+        1.12
       ],
       "points": 10,
       "span_is": "every measured ν_RT of the named readings and Jeong's own red pine at 6 and 19 % MC",
-      "t_L_change_theta0_worst": 0.0012233547700071234,
+      "t_L_change_theta0_worst": 0.0012713567476940746,
       "cap_theta0": 0.002,
       "t_L_change_off_axis_worst": 0.3553967038140611,
       "off_axis_is": "every θ at the C44 grid's floor and ceiling and at C44 = 0 — reported, not capped: Jeong's off-axis cells stand on the borrowed ν_RT"
     }
   },
-  "verdict": "t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel case, not read here); at the moistest group (95 % RH) it is 0.267–1.641 over the alloys, the material symmetrisation readings and the three pore readings, and which side of 1 it takes depends on the pore reading and on the symmetrisation reading. Off that axis C44 enters too: t_L falls as C44 rises, and at θ = 45° it crosses 1 inside the admissible C44 in 88 of the 120 cells the lattice's C44 enters. The pore readings' stiffness ends do not bracket the share (20 cell-fields fall outside them). Across the source's moisture groups the share takes no single direction. For 105, the only C44-free binding figure is at θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the Scots pine group (Ti-6Al-4V 0.342, Ti-6Al-7Nb 0.350, CP-Ti-Gr4 0.354, beta-Ti-13Nb-13Zr 0.405, Ta 0.267, Ti-15Zr 0.360) the source day's upper whisker exceeds the large-stem threshold for Ta on this tensor's E[100] and for Ta on 105's lower reading, and its median for none; at t_L = 1 on the axial reading the upper whisker exceeded it for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb and the median for CP-Ti-Gr4, Ta. Above fibre saturation no open primary gives a full Scots pine set; on the separate group of green readings of other Pinaceae (25 live, 3 not a material) the lowest θ = 0 share is Ti-6Al-4V 0.188, Ti-6Al-7Nb 0.190, CP-Ti-Gr4 0.195, beta-Ti-13Nb-13Zr 0.221, Ta 0.151, Ti-15Zr 0.197, so over the union it is Ti-6Al-4V 0.188, Ti-6Al-7Nb 0.190, CP-Ti-Gr4 0.195, beta-Ti-13Nb-13Zr 0.221, Ta 0.151, Ti-15Zr 0.197 — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Table 2, stiff outerwood; soft reading, pores_voigt_phase_bound — and there the upper whisker exceeds the threshold for none on this tensor's E[100] and for none on 105's lower reading, its median for none. Of the highest θ = 0 share, no green reading raises the Scots pine group's for any alloy; off the axis at C44 = 0 the union reaches 9.840 (the Scots pine group 6.038) — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Additional files 2–3, stiff outerwood; stiff reading, pores_carry_nothing. Off the axis the threshold has no ceiling as C44 falls. The modelled set reads the ring as the host's xylem, its Scots pine group stops below fibre saturation and its green readings are other Pinaceae, so its lowest share is not a floor."
+  "verdict": "t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel case, not read here); at the moistest group (95 % RH) it is 0.267–1.641 over the alloys, the material symmetrisation readings and the three pore readings, and which side of 1 it takes depends on the pore reading and on the symmetrisation reading. Off that axis C44 enters too: t_L falls as C44 rises, and at θ = 45° it crosses 1 inside the admissible C44 in 88 of the 120 cells the lattice's C44 enters. The pore readings' stiffness ends do not bracket the share (20 cell-fields fall outside them). Across the source's moisture groups the share takes no single direction. For 105, the only C44-free binding figure is at θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the Scots pine group (Ti-6Al-4V 0.342, Ti-6Al-7Nb 0.350, CP-Ti-Gr4 0.354, beta-Ti-13Nb-13Zr 0.405, Ta 0.267, Ti-15Zr 0.360) the source day's upper whisker exceeds the large-stem threshold for Ta on this tensor's E[100] and for Ta on 105's lower reading, and its median for none; at t_L = 1 on the axial reading the upper whisker exceeded it for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb and the median for CP-Ti-Gr4, Ta. Above fibre saturation no open primary gives a full Scots pine set; on the separate group of green readings of other Pinaceae (26 live, 3 not a material) the lowest θ = 0 share is Ti-6Al-4V 0.188, Ti-6Al-7Nb 0.190, CP-Ti-Gr4 0.195, beta-Ti-13Nb-13Zr 0.221, Ta 0.151, Ti-15Zr 0.197, so over the union it is Ti-6Al-4V 0.188, Ti-6Al-7Nb 0.190, CP-Ti-Gr4 0.195, beta-Ti-13Nb-13Zr 0.221, Ta 0.151, Ti-15Zr 0.197 — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Table 2, stiff outerwood; soft reading, pores_voigt_phase_bound — and there the upper whisker exceeds the threshold for none on this tensor's E[100] and for none on 105's lower reading, its median for none. Of the highest θ = 0 share, no green reading raises the Scots pine group's for any alloy; off the axis at C44 = 0 the union reaches 9.840 (the Scots pine group 6.038) — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Additional files 2–3, stiff outerwood; stiff reading, pores_carry_nothing, our assembly of its raw means; on the published green sets alone it reaches 7.153 — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Table 2, stiff outerwood; soft reading, pores_carry_nothing. Off the axis the threshold has no ceiling as C44 falls. The modelled set reads the ring as the host's xylem, its Scots pine group stops below fibre saturation and its green readings are other Pinaceae, so its lowest share is not a floor."
 }

@@ -6532,6 +6532,16 @@ def test_gyroid_wood_strain_share_invariants():
     assert jeong["nu_RT"] == float(s106.JEONG_TABLE2_RED_PINE["19"][hdr.index("nu_RT")])   # borrowed: its own 19 % row
     assert jeong["G_RT"] == wood["rh95"]["G_RT"]                                       # borrowed: G&A's 95 % RH group
     assert not {"nu_RL", "nu_TL", "nu_TR"} & set(jeong) and gsets["jeong2026_red_pine_green"]["readings"] == ["stiff"]
+    kp = gsets["jeong2026_korean_pine_green"]["constants"]                           # Korean pine: ν_RT printed
+    assert tr["jeong_table2_korean_pine_as_printed"] == {r: list(v) for r, v in s106.JEONG_TABLE2_KOREAN_PINE.items()}
+    for k, v in zip(hdr, s106.JEONG_TABLE2_KOREAN_PINE["Green"], strict=True):
+        assert kp[k] == pytest.approx(float(v) * (1 if k.startswith("nu_") else 1000), rel=1e-12), k
+    assert kp["G_RT"] == wood["rh95"]["G_RT"]                                          # borrowed, as for red pine
+    assert not {"nu_RL", "nu_TL", "nu_TR"} & set(kp) and gsets["jeong2026_korean_pine_green"]["readings"] == ["stiff"]
+    kp6, kpg = (float(s106.JEONG_TABLE2_KOREAN_PINE[r][hdr.index("E_L")]) for r in ("6", "Green"))
+    assert (kpg - 0.005) / (kp6 + 0.005) <= 0.6695 and (kpg + 0.005) / (kp6 - 0.005) >= 0.6685   # «66.9%» at its rounding
+    assert round(100 * kpg / kp6, 1) == 66.8                                            # … which the exact quotient misses
+    assert tr["checks"]["jeong_korean_pine_e_l_retention_pct"]["match_within_rounding"] is True
     printed_mean = s106.LIU_TABLE2["Mean"].split()
     for j, k in enumerate(s106.LIU_TABLE2_HEADER):
         half = 0.5 * 10 ** -(len(printed_mean[j].split(".")[1]) if "." in printed_mean[j] else 0)
@@ -6595,7 +6605,8 @@ def test_gyroid_wood_strain_share_invariants():
     cj = d["controls"]["jeong_borrowed_nu_RT"]
     measured = ({w["nu_RT"] for w in wood.values()} | {float(v) for v in s106.DAVIES_TABLE2["nu_RT"]}
                 | {float(v) for v in s106.DAVIES_ESM3_COMPRESSION["rt_c"]} | {liu_rows["4"]["nu_RT"]}
-                | {float(s106.JEONG_TABLE2_RED_PINE[r][hdr.index("nu_RT")]) for r in ("6", "19")})
+                | {float(s106.JEONG_TABLE2_RED_PINE[r][hdr.index("nu_RT")]) for r in ("6", "19")}
+                | {float(s106.JEONG_TABLE2_KOREAN_PINE["Green"][hdr.index("nu_RT")])})
     assert cj["swept_span"] == [min(measured), max(measured)] and cj["borrowed"] == jeong["nu_RT"]
     for nu in cj["swept_span"]:
         allsets[f"probe_nu_{nu}"] = jeong | {"nu_RT": nu}
@@ -6609,7 +6620,7 @@ def test_gyroid_wood_strain_share_invariants():
     for n, ratios in rc["per_set"].items():
         w = allsets[n]
         if ratios is None:
-            assert n == "jeong2026_red_pine_green"
+            assert n in ("jeong2026_red_pine_green", "jeong2026_korean_pine_green")
             continue
         assert ratios == pytest.approx({"RL_over_LR": (w["nu_RL"] / w["E_R"]) / (w["nu_LR"] / w["E_L"]),
                                         "TL_over_LT": (w["nu_TL"] / w["E_T"]) / (w["nu_LT"] / w["E_L"]),
@@ -6662,6 +6673,21 @@ def test_gyroid_wood_strain_share_invariants():
             or gsets[union[al]["lowest_cell"].split("|")[1]]["where"] in d["consumer_ceiling_binding_claim"]["reading_per_alloy"][al]
         assert f"{al} {math.floor(round(union[al]['lowest'] * 1000, 9)) / 1000:.3f}" in d["verdict"]
     assert f"the union reaches {math.ceil(round(d['union_junction_share_sup_at_C44_zero'] * 1000, 9)) / 1000:.3f}" in d["verdict"]
+    # the junction's end on the published sets alone (without our assembly of Davies' raw ESM 2/3 means), recomputed
+    pub = d["consumer_ceiling_junction"]["off_axis_sup_at_C44_zero_published_sets_only"]
+    pk = max((k for k in gcells if not k.split("|")[1].startswith("davies2016_esm_")),
+             key=lambda k: gcells[k]["t_L_at_C44_zero_max_over_theta"])
+    assert pub["cell"] == pk and pub["share"] == gcells[pk]["t_L_at_C44_zero_max_over_theta"]
+    assert f"alone it reaches {math.ceil(round(pub['share'] * 1000, 9)) / 1000:.3f}" in d["verdict"]
+    # Korean pine's knife-edge: Ta's margin straddles 1 across the cached ν_LR edge, through THIS arithmetic
+    for fk, e in d["green_korean_pine_ta_knife_edge"]["per_fe_reading"].items():
+        margins = []
+        for f in (1 - 1e-6, 1 + 1e-6):
+            name = f"probe_kp_{fk}_{f}"
+            allsets[name] = kp | {"nu_LR": e["nu_LR_first_exceeds"] * f}
+            low = {al: min(t_l(al, name, "stiff", fill, 0.0, a_v) for fill in s106.FILLS) for al in ALLOY_PROPERTIES}
+            margins.append(stem["upper_whisker"]["surface_strain_ue"] / binds(fk, low)["Ta"][cell_ls])
+        assert margins[0] <= 1 < margins[1], (fk, margins)
 
 
 RADIO = CACHE / "radio"

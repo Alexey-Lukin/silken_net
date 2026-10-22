@@ -6100,9 +6100,12 @@ CHECKS += [
 ]
 
 
-# ── 106's green group and the union (⚖️ founder 2026-10-22, HW.23 option (Б)) ⟷ SUMMARY «Green wood». Shares are shown to
-# the nearest digit (as the Scots pine table shows the same cells); ranges round OUTWARD; «at most» / «up to» round UP;
-# the MC lower bound rounds DOWN; a margin below the threshold rounds DOWN (in-silico §When Modifying #43).
+# ── 106's green group and the union (⚖️ founder 2026-10-22, HW.23 option (Б)) ⟷ SUMMARY «Green wood». A LOWEST share
+# rounds DOWN, as in the cache's verdict string (it backs a «binds» sentence — the higher threshold; 2026-10-22, one
+# direction for both homes); cell shares show the nearest digit (as the Scots pine table shows the same cells); ranges
+# round OUTWARD; «at most» / «up to» round UP; the MC lower bound rounds DOWN; a margin below 1 backing «binds for none»
+# or «stays below» rounds UP, toward the threshold; a «stays below while X is below Y» edge rounds DOWN (in-silico §When
+# Modifying #43).
 _S106_T2 = "davies2016_table2_"
 _S106_UNION_BA = "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share"
 
@@ -6135,8 +6138,8 @@ CHECKS += [
     *[(f"share106 green {key} col {j} → 106", SUMMARY, _green106_row(label, j), SHARE106, res, 0.0)
       for label, key in _SHARE106_ROWS
       for j, res in enumerate((
-          (lambda k: lambda d: round(d["theta0_share_over_modelled_set"][k]["lowest"], 3))(key),
-          (lambda k: lambda d: round(d["union_theta0_share"][k]["lowest"], 3))(key),
+          (lambda k: lambda d: _floor_n(d["theta0_share_over_modelled_set"][k]["lowest"], 3))(key),
+          (lambda k: lambda d: _floor_n(d["union_theta0_share"][k]["lowest"], 3))(key),
           (lambda k: lambda d: d[_S106_UNION_BA]["axial_richardson"][k][_S106_LS])(key),
           (lambda k: lambda d: d[_S106_UNION_BA]["radial_richardson"][k][_S106_LS])(key)))],
     ("share106 green E_L ratio → 106", SUMMARY, rf"its E_L is ×{N} in stiff outerwood", SHARE106, _e_l_ratio106, 0.0),
@@ -6194,13 +6197,32 @@ CHECKS += [
      lambda d: _ceil_n(d["union_source_day_theta0_large_stem_sf2"]["radial_richardson"]["upper_whisker"]
                         ["margin_over_threshold"]["Ta"], 2), 0.0),
     ("share106 no-T2 Ta share → 106", SUMMARY, rf"outerwood, by alloy \(Ta {N}\)", SHARE106,
-     lambda d: round(d["union_without_davies_table2"]["lowest"]["Ta"], 3), 0.0),
+     lambda d: _floor_n(d["union_without_davies_table2"]["lowest"]["Ta"], 3), 0.0),
     ("share106 no-T2 Ta margin axial → 106", SUMMARY, rf"binds there either \(Ta ×{N} ⊥ ×[\d.]+\)", SHARE106,
      lambda d: _ceil_n(d["union_without_davies_table2"]["ta_upper_whisker_margin"]["axial_richardson"], 2), 0.0),
     ("share106 no-T2 Ta margin radial → 106", SUMMARY, rf"binds there either \(Ta ×[\d.]+ ⊥ ×{N}\)", SHARE106,
      lambda d: _ceil_n(d["union_without_davies_table2"]["ta_upper_whisker_margin"]["radial_richardson"], 2), 0.0),
-    ("share106 jeong Ta lowest → 106", SUMMARY, rf"Jeong's above it \(Ta {N}\)", SHARE106,
-     lambda d: round(d["green_per_set"]["jeong2026_red_pine_green"]["lowest"]["Ta"], 3), 0.0),
+    ("share106 jeong Ta lowest → 106", SUMMARY, rf"Jeong's red pine above it \(Ta {N}\)", SHARE106,
+     lambda d: _floor_n(d["green_per_set"]["jeong2026_red_pine_green"]["lowest"]["Ta"], 3), 0.0),
+    *[(f"share106 korean pine Ta margin {fk} → 106", SUMMARY, pat, SHARE106,
+       (lambda f: lambda d: _ceil_n(d["green_per_set"]["jeong2026_korean_pine_green"]["ta_upper_whisker_margin"][f], 3))(fk),
+       0.0)
+      for fk, pat in (("axial_richardson", rf"Ta stays below \(×{N} ⊥ ×[\d.]+ of it\)"),
+                      ("radial_richardson", rf"Ta stays below \(×[\d.]+ ⊥ ×{N} of it\)"))],
+    ("share106 korean pine nu_LR edge → 106", SUMMARY, rf"at a CV of [\d.]+, is below {N}\. Every", SHARE106,
+     lambda d: _floor_n(d["green_korean_pine_ta_knife_edge"]["per_fe_reading"]["axial_richardson"]["nu_LR_first_exceeds"], 3),
+     0.0),
+    ("share106 korean pine nu_LR → 106", SUMMARY, rf"while ν_LR, printed {N} at a CV", SHARE106,
+     lambda d: d["green_korean_pine_ta_knife_edge"]["nu_LR_printed"], 0.0),
+    ("share106 korean pine nu_LR CV → 106", SUMMARY, rf"printed [\d.]+ at a CV of {N}, is below", SHARE106,
+     lambda d: d["green_korean_pine_ta_knife_edge"]["nu_LR_cv_printed"], 0.0),
+    *[(f"share106 korean pine CV {k} → 106", SUMMARY, pat, SHARE106,
+       (lambda kk: lambda d: float(d["inputs"]["green_transcription"]["jeong_korean_pine_green_cv_as_printed"][kk]))(k), 0.0)
+      for k, pat in (("nu_LR", rf"ν_LR and ν_LT at CVs of {N} and"), ("nu_LT", rf"ν_LR and ν_LT at CVs of [\d.]+ and {N}\."))],
+    ("share106 korean pine retention → 106", SUMMARY, rf"quotient rounds to {N} %\)", SHARE106,
+     lambda d: round(d["inputs"]["green_transcription"]["checks"]["jeong_korean_pine_e_l_retention_pct"]["computed"], 1), 0.0),
+    ("share106 junction published sup → 106", SUMMARY, rf"assembly — it is up to {N}, on Davies'", SHARE106,
+     lambda d: _ceil_n(d["consumer_ceiling_junction"]["off_axis_sup_at_C44_zero_published_sets_only"]["share"], 3), 0.0),
     ("share106 green outside → 106", SUMMARY, rf"\(in {N} more on the green group\)", SHARE106,
      lambda d: len(d["green_additive_outside_the_pore_ends_interval"]), 0.0),
     ("share106 union junction sup → 106", SUMMARY, rf"and up to {N} over the union — on Davies'", SHARE106,
@@ -6287,14 +6309,21 @@ def test_share106_green_sentences_follow_the_cache():
                                          "jeong2026_red_pine_green"], binds
     assert binds["radial_richardson"] == ["jeong2026_red_pine_green"], binds
     assert ("Ta binds on this tensor's E[100] on Davies' Table 2 non-stiff outerwood, Davies' raw stiff outerwood and "
-            "non-stiff corewood, Liu P4 and Jeong, and on `105`'s lower reading on Jeong only; no other alloy binds on "
-            "any") in text
+            "non-stiff corewood, Liu P4 and Jeong's red pine, and on `105`'s lower reading on Jeong's red pine only; no "
+            "other alloy binds on any") in text
+    kp = ps["jeong2026_korean_pine_green"]
+    assert not any(kp["source_day_upper_whisker_exceeds"].values()) and all(m < 1 for m in kp["ta_upper_whisker_margin"].values())
+    edge = d["green_korean_pine_ta_knife_edge"]["per_fe_reading"]
+    assert edge["axial_richardson"]["nu_LR_first_exceeds"] < edge["radial_richardson"]["nu_LR_first_exceeds"]
+    assert "On Jeong's Korean pine Ta stays below (" in text and "on a knife-edge: on this tensor's E[100] it stays below" in text
     t0 = d["theta0_share_over_modelled_set"]
     below = [n for n, v in ps.items() if all(v["lowest"][al] < t0[al]["lowest"] for al in alloys)]
     above = [n for n, v in ps.items() if all(v["lowest"][al] > t0[al]["lowest"] for al in alloys)]
     assert above == ["jeong2026_red_pine_green"] and sorted(below + above) == sorted(ps), (below, above)
-    assert ("Every green set but Jeong's puts the lowest share below the Scots pine group's for every alloy, Jeong's "
-            "above it") in text
+    assert "jeong2026_korean_pine_green" in below
+    assert ("Every green set but Jeong's red pine puts the lowest share below the Scots pine group's for every alloy, "
+            "Jeong's red pine above it") in text
+    assert "the full sets and Jeong's Korean pine lower it, the one set with a borrowed ν_RT raises it" in text
     assert sorted(d["green_wood_readings_excluded_not_a_material"]) == [
         "davies2016_esm_NSC|soft", "davies2016_esm_SC|soft", "davies2016_esm_SO|soft"]
     assert "(Davies' raw softer-axis readings of stiff outerwood and of both corewoods)" in text
@@ -6307,6 +6336,10 @@ def test_share106_green_sentences_follow_the_cache():
     assert jn["off_axis_sup_at_C44_zero"]["theta_deg"] == 45.0
     assert "on Davies' raw stiff outerwood (stiffer-axis reading, bare lattice, θ = 45°), our assembly of its ESM 2/3 means" in text
     assert jn["jeong_c44_zero_max_plus_its_nu_RT_sensitivity"] < jn["off_axis_sup_at_C44_zero"]["share"]
+    pub = jn["off_axis_sup_at_C44_zero_published_sets_only"]
+    assert pub["cell"].split("|", 1)[1] == "davies2016_table2_SO|soft|pores_carry_nothing" and pub["theta_deg"] == 45.0
+    assert not pub["stands_on_borrowed_nu_RT"] and pub["share"] < jn["off_axis_sup_at_C44_zero"]["share"]
+    assert "on Davies' Table 2 stiff outerwood (softer-axis reading, bare lattice, θ = 45°)" in text
 
 
 # ── HW.6 the stem's own radio shadow (107, 2026-10-22) ⟷ SUMMARY §«How Deep the Stem Shadows the Node's Radio». The
