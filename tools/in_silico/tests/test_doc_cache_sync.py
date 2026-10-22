@@ -6913,6 +6913,23 @@ def _sh13(pol, key, end, sign=1.0, member=None):
     return f
 
 
+def _sh13_a36(pol):
+    """The ratified inset's A.36 qualifier as the thirteen-reading RECORD: under each single-reading interpolation the
+    floor over the thirteen, recomposed from their named rows off the «phloem» bark and the control's per-reading
+    floors under it; the least of the four (the qualifier quotes the low end)."""
+    def f(d):
+        pc = d["controls"]["phloem_reading"]
+        rows = [r for r in d["cases"] if r["polarization"] == pol and _sh_ratified_set(r["permittivity"])]
+        if len({r["permittivity"] for r in rows}) != 13:
+            return math.nan
+        others = [r["front_minus_back_dB"] for r in rows if not r["permittivity"].endswith("_bark_phloem")]
+        floors = [math.floor(min(others + [v for n, v in pc[k]["phloem_floor_raw_by_reading"][pol].items()
+                                           if _sh_ratified_set(n)]) * 10) / 10
+                  for k in pc if k.startswith("single_reading_")]
+        return min(floors) if len(floors) == 4 else math.nan
+    return f
+
+
 def _sh_end_is(pol, key, end, prefix, value):
     """`value` when every reading at that end of the span starts with `prefix`, NaN otherwise — a doc sentence that
     names WHICH reading is adverse is pinned through the cache's `ends_by_reading`, not typed."""
@@ -7073,8 +7090,10 @@ CHECKS += [
     ("shadow A.36 span TM high → 107", SUMMARY, rf"the floors span {_SHX} – {N} dB \(TM\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][1], 0.0),
     ("shadow A.36 span TE low → 107", SUMMARY, rf"and {N} – {_SHX} dB \(TE\): the floors", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TE"][0], 0.0),
     ("shadow A.36 span TE high → 107", SUMMARY, rf"and {_SHX} – {N} dB \(TE\): the floors", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TE"][1], 0.0),
-    ("shadow 01_04 A.36 span TM → 107", CODIT, rf"інтерполяціями TM сягає {N}, TE — {_SHX} дБ\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][0], 0.0),
-    ("shadow 01_04 A.36 span TE → 107", CODIT, rf"інтерполяціями TM сягає {_SHX}, TE — {N} дБ\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TE"][0], 0.0),
+    ("shadow 01_04 A.36 span TM (ratified inset — the thirteen readings) → 107", CODIT,
+     rf"інтерполяціями TM сягає {N}, TE — {_SHX} дБ\)", SHADOW, _sh13_a36("TM"), 0.0),
+    ("shadow 01_04 A.36 span TE (ratified inset — the thirteen readings) → 107", CODIT,
+     rf"інтерполяціями TM сягає {_SHX}, TE — {N} дБ\)", SHADOW, _sh13_a36("TE"), 0.0),
     ("shadow 02_01 A.36 span TM → 107", "docs/02_01_Hardware_Architecture_and_BOM.md", rf"окремими його інтерполяціями — від {N}\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][0], 0.0),
     ("shadow 01_04 verdict ±50° holds 3 dB → 107", CODIT, rf"±{N}° тримає 3 дБ на всіх прочитаннях", SHADOW,
      lambda d: 50.0 if _swall("TM", "within_3dB_of_front_to_deg", 0)(d) >= 50 else math.nan, 0.0),

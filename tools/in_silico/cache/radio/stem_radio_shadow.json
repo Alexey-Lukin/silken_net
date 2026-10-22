@@ -463,6 +463,20 @@
             50
           ],
           "floor_moves_raw_dB": -0.001
+        },
+        "phloem_floor_raw_by_reading": {
+          "TM": {
+            "red_pine_profile_bark_phloem": 30.166,
+            "scots_sapwood_6cm_bark_phloem": 26.135,
+            "scots_sapwood_8cm_bark_phloem": 24.73,
+            "scots_sapwood_2cm_bark_phloem": 10.625
+          },
+          "TE": {
+            "red_pine_profile_bark_phloem": 27.343,
+            "scots_sapwood_6cm_bark_phloem": 15.139,
+            "scots_sapwood_8cm_bark_phloem": 17.319,
+            "scots_sapwood_2cm_bark_phloem": 7.743
+          }
         }
       },
       "skip_the_0p8_GHz_point": {
@@ -487,6 +501,20 @@
             50
           ],
           "floor_moves_raw_dB": -0.041
+        },
+        "phloem_floor_raw_by_reading": {
+          "TM": {
+            "red_pine_profile_bark_phloem": 30.241,
+            "scots_sapwood_6cm_bark_phloem": 26.202,
+            "scots_sapwood_8cm_bark_phloem": 24.774,
+            "scots_sapwood_2cm_bark_phloem": 10.55
+          },
+          "TE": {
+            "red_pine_profile_bark_phloem": 27.223,
+            "scots_sapwood_6cm_bark_phloem": 15.113,
+            "scots_sapwood_8cm_bark_phloem": 17.25,
+            "scots_sapwood_2cm_bark_phloem": 7.703
+          }
         }
       },
       "single_reading_0p8_to_0p9_low": {
@@ -511,6 +539,20 @@
             50
           ],
           "floor_moves_raw_dB": 0.014
+        },
+        "phloem_floor_raw_by_reading": {
+          "TM": {
+            "red_pine_profile_bark_phloem": 30.147,
+            "scots_sapwood_6cm_bark_phloem": 26.124,
+            "scots_sapwood_8cm_bark_phloem": 24.723,
+            "scots_sapwood_2cm_bark_phloem": 10.653
+          },
+          "TE": {
+            "red_pine_profile_bark_phloem": 27.371,
+            "scots_sapwood_6cm_bark_phloem": 15.151,
+            "scots_sapwood_8cm_bark_phloem": 17.34,
+            "scots_sapwood_2cm_bark_phloem": 7.758
+          }
         }
       },
       "single_reading_0p8_to_0p9_high": {
@@ -535,6 +577,20 @@
             50
           ],
           "floor_moves_raw_dB": -0.016
+        },
+        "phloem_floor_raw_by_reading": {
+          "TM": {
+            "red_pine_profile_bark_phloem": 30.184,
+            "scots_sapwood_6cm_bark_phloem": 26.145,
+            "scots_sapwood_8cm_bark_phloem": 24.738,
+            "scots_sapwood_2cm_bark_phloem": 10.598
+          },
+          "TE": {
+            "red_pine_profile_bark_phloem": 27.315,
+            "scots_sapwood_6cm_bark_phloem": 15.126,
+            "scots_sapwood_8cm_bark_phloem": 17.298,
+            "scots_sapwood_2cm_bark_phloem": 7.728
+          }
         }
       },
       "single_reading_skip_0p8_low": {
@@ -559,6 +615,20 @@
             50
           ],
           "floor_moves_raw_dB": -0.016
+        },
+        "phloem_floor_raw_by_reading": {
+          "TM": {
+            "red_pine_profile_bark_phloem": 30.218,
+            "scots_sapwood_6cm_bark_phloem": 26.197,
+            "scots_sapwood_8cm_bark_phloem": 24.769,
+            "scots_sapwood_2cm_bark_phloem": 10.595
+          },
+          "TE": {
+            "red_pine_profile_bark_phloem": 27.254,
+            "scots_sapwood_6cm_bark_phloem": 15.137,
+            "scots_sapwood_8cm_bark_phloem": 17.281,
+            "scots_sapwood_2cm_bark_phloem": 7.728
+          }
         }
       },
       "single_reading_skip_0p8_high": {
@@ -583,6 +653,20 @@
             50
           ],
           "floor_moves_raw_dB": -0.072
+        },
+        "phloem_floor_raw_by_reading": {
+          "TM": {
+            "red_pine_profile_bark_phloem": 30.263,
+            "scots_sapwood_6cm_bark_phloem": 26.199,
+            "scots_sapwood_8cm_bark_phloem": 24.775,
+            "scots_sapwood_2cm_bark_phloem": 10.495
+          },
+          "TE": {
+            "red_pine_profile_bark_phloem": 27.195,
+            "scots_sapwood_6cm_bark_phloem": 15.082,
+            "scots_sapwood_8cm_bark_phloem": 17.215,
+            "scots_sapwood_2cm_bark_phloem": 7.672
+          }
         }
       },
       "floor_span_over_single_readings": {

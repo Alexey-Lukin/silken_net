@@ -611,6 +611,10 @@ def main() -> int:
         for pol in POLARIZATIONS:
             alt_floors[pol]["floor_moves_raw_dB"] = round(alt_floors[pol]["front_minus_back_dB_floor_raw"]
                                                           - reading_floors[pol]["front_minus_back_dB_floor_raw"], 3)
+        # per reading, so a sentence written on a SUBSET of the readings (the ratified text's thirteen) can be recomposed
+        alt_floors["phloem_floor_raw_by_reading"] = {
+            pol: {n: min(r["front_minus_back_dB"] for r in alt_cases if r["polarization"] == pol and r["permittivity"] == n)
+                  for n in phloem} for pol in POLARIZATIONS}
         phloem_control[alt] = {"eps": [eps.real, -eps.imag], **alt_floors}
     # The span of the floors over the four single-reading interpolations: the printed floors hold at the MEAN of the
     # two readings, and a one-sided «at least» quoted without this span would overstate it (in-silico #43).
