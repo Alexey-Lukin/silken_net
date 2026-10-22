@@ -29,6 +29,9 @@ internal static class Program
                 "sweep" => Sweep(),
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "converge" => args.Length >= 2 ? Converge(args) : Fail("usage: converge <cem.json> [--divisors 24,32]"),
+                "cellshape" => args.Length >= 2
+                    ? CellShapeCli(args)
+                    : Fail("usage: cellshape <cem.json> [--zbin-mm 5] [--shells 3] [--centres 1500] [--axial-period-mm P]"),
                 // An unknown flag REFUSES: `args.Contains` alone let a mistyped `--vendr` draw the FULL form silently — the one
                 // mistake whose product is the copy that leaves the building (adversary on 3c5824590, 2026-10-15).
                 "draw" => DrawCli(args),
@@ -390,6 +393,269 @@ internal static class Program
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"  {strVerdict}");
         Console.WriteLine($"  → {strOut}");
+        return 0;
+    }
+
+    // Cell SHAPE of an anchor_zone1 SKU by height × radius (CellShape.cs, 00_07 HW.33): the line-intercept fabric of the
+    // shipped field and — for a PERIOD-graded SKU — of the two alternatives the HW.33 geometry verdict weighs, each beside
+    // the first-order phase map's prediction. A probe, like `converge`: no golden, no OK/FAILED.
+    // 🔑 Every stretch is RELATIVE to the nominal of its shell — the same instrument on a constant-period field at that
+    //    shell's mean radius — because the chord is not µCT's local thickness (CellShape header) and only the ratio is
+    //    free of that difference.
+    // ⚠️ The `in_plane_only` axial period is a CHOICE of the experiment, not of the product: the period at the section's
+    //    area-weighted mean radius unless `--axial-period-mm` names another; the verdict that would ship it chooses its own.
+    // 🔴 Three disciplines the first version lacked, each bought by an adversary on 2026-10-22:
+    //    · an UNKNOWN argument refuses — `--centers 300` (US spelling) was silently ignored and re-baselined the
+    //      canon-cited default cache at default settings (`draw`'s rule, picogk gotcha #14's class);
+    //    · every cell gets its own R3 offset, or a constant-period lattice phase-locks between bins (gotcha #16);
+    //    · the CORE shell's rows are reported but kept OUT of the headline measured-vs-predicted gap: the phase is a
+    //      cone about the axis, so a one-period probe there reads a fabric that does not exist (CellShape header).
+    private static int CellShapeCli(string[] args)
+    {
+        string[] aKnown = ["--zbin-mm", "--shells", "--centres", "--axial-period-mm"];
+        for (int i = 2; i < args.Length; i++)
+        {
+            if (!aKnown.Contains(args[i]))
+                return Fail($"cellshape: unknown argument `{args[i]}` — known flags are {string.Join(" ", aKnown)}; "
+                            + "an ignored flag would re-baseline the canon-cited cache at default settings");
+            if (++i >= args.Length || !float.TryParse(args[i], System.Globalization.CultureInfo.InvariantCulture, out _))
+                return Fail($"cellshape: `{args[i - 1]}` needs a numeric value");
+        }
+        string strJson = File.ReadAllText(args[1]);
+        if (Cem.Kind(strJson) != "anchor_zone1")
+            return Fail("cellshape needs an anchor_zone1 CEM");
+        AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
+        float fZBin = ArgFloat(args, "--zbin-mm", 5f);
+        int nShells = ArgInt(args, "--shells", 3);
+        int nCentres = ArgInt(args, "--centres", 1500);
+
+        float fRRim = cem.OuterDiameterMm / 2f, fRCore = Zone1Anode.InnerRadiusMm(cem), fLength = cem.LengthMm;
+        float fPCore = cem.GyroidPeriodMm, fPRim = cem.GyroidPeriodRimMm > 0f ? cem.GyroidPeriodRimMm : cem.GyroidPeriodMm;
+        float fWCore = cem.GyroidWallParam, fWRim = cem.GyroidWallParamRim ?? cem.GyroidWallParam;
+        bool bNetwork = cem.Topology.Equals("network", StringComparison.OrdinalIgnoreCase);
+        bool bStepped = cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase);
+        bool bPeriodGraded = !bStepped && fPRim != fPCore;
+        float fStepMm = MathF.Min(fPCore, fPRim) / 100f;
+        Func<Vector3, bool> fnBody = Zone1Anode.Body(cem);
+
+        float PeriodAt(float fR) => CellShape.PeriodAtMm(cem, fR);
+        // The section's area-weighted mean radius (a full disc since the core left the part: 2/3·R).
+        float fRSectionMean = new CellShape.Cell(0f, 1f, fRCore, fRRim).RMeanMm;
+        float fPAxial = ArgFloat(args, "--axial-period-mm", PeriodAt(fRSectionMean));
+
+        var aVariants = new List<(string Name, IImplicit Field, Func<double, double, double[,]>? Jacobian)>
+        {
+            ("as_built", Zone1Anode.Gyroid(cem),
+                bPeriodGraded ? (r, z) => CellShape.ShiftedJacobian(cem, r, z, 0.0) : null),
+        };
+        if (bPeriodGraded)
+        {
+            aVariants.Add(("z_origin_mid", new CellShape.AxiallyShiftedField(Zone1Anode.Gyroid(cem), fLength / 2f),
+                (r, z) => CellShape.ShiftedJacobian(cem, r, z, fLength / 2f)));
+            aVariants.Add(("in_plane_only",
+                new CellShape.InPlaneGradedGyroid(fRCore, fRRim, fPCore, fPRim, fWCore, fWRim, bNetwork, fPAxial),
+                (r, _) => CellShape.InPlaneJacobian(cem, r, fPAxial)));
+        }
+
+        int nZBins = Math.Max(1, (int)MathF.Round(fLength / fZBin));
+        float fZStep = fLength / nZBins;
+        // Shell edges and the shell a radius falls in — ONE home, `CellShape.ShellEdges`/`ShellOf`, read by the fabric
+        // rows, by the print-floor column and by the cache pin alike (a rule living only here was untestable).
+        float[] aShellEdge = CellShape.ShellEdges(cem, nShells);
+        var aCells = new List<(int Shell, int Bin, CellShape.Cell Cell)>();
+        for (int s = 0; s < nShells; s++)
+            for (int b = 0; b < nZBins; b++)
+                aCells.Add((s, b, new CellShape.Cell(b * fZStep, (b + 1) * fZStep, aShellEdge[s], aShellEdge[s + 1])));
+
+        Console.WriteLine($"cellshape {cem.Name} — {cem.Topology}, period {fPCore:F2}→{fPRim:F2} mm over R {fRRim:F2} mm, "
+                          + $"length {fLength:F1} mm; {nShells} shells × {nZBins} bins, {nCentres} centres × {CellShape.DirectionCount} directions, "
+                          + $"step {fStepMm:F4} mm");
+
+        // The nominal of each shell: a constant-period field at the shell's mean radius (`stepped`: its zone's period on
+        // the sheet formulation it ships with), measured on the bottom bin — it has no z to drift along.
+        var aNominal = new CellShape.Fabric[nShells];
+        for (int s = 0; s < nShells; s++)
+        {
+            CellShape.Cell cellRef = aCells.First(c => c.Shell == s && c.Bin == 0).Cell;
+            float fRMean = cellRef.RMeanMm;
+            IImplicit oNominal = CellShape.Nominal(cem, fRMean);
+            // The nominal is read with the SAME probe cap and its own seed offset — a reference measured by a different
+            // instrument than the cell would turn an instrument difference into a shape reading.
+            aNominal[s] = CellShape.Measure(oNominal, cellRef, fnBody, PeriodAt(fRMean), fStepMm, nCentres,
+                nSeedOffset: (s + 1) * nCentres, bCapProbeAtAxis: true);
+        }
+
+        // The print floor BY CELL: the same morphological opening `verify` reports for the whole part
+        // (TopologyCrossChecks.CheckPrintFidelity — its model, grid and ceilings), binned by height × radius, so a
+        // shape change that thins the top can be read against the floor where it happens rather than diluted by the part.
+        float fPrintStep = TopologyCrossChecks.PrintGridStepMm(cem);
+        float fFloorMm = TopologyCrossChecks.FloorMmFor(cem);
+        (double[,] Fraction, long[,] Solid, long GridSolid, double Whole) SubFloorByCell(IImplicit oField)
+        {
+            Connectivity.Grid gridIntent = Connectivity.SampleAnchor(oField, cem, fPrintStep);
+            (Connectivity.Grid gridOpened, double dWhole) = TopologyCrossChecks.OpenSolid(gridIntent, fFloorMm / 2f);
+            (long[,] aSolid, long[,] aRemoved) = CellShape.BinSolidByCell(gridIntent, gridOpened, aShellEdge, nZBins, fZStep, fRRim);
+            var aFraction = new double[nShells, nZBins];
+            long nGridSolid = 0;
+            for (int s = 0; s < nShells; s++)
+                for (int b = 0; b < nZBins; b++)
+                {
+                    aFraction[s, b] = aSolid[s, b] > 0 ? (double)aRemoved[s, b] / aSolid[s, b] : 0.0;
+                    nGridSolid += aSolid[s, b];
+                }
+            return (aFraction, aSolid, nGridSolid, dWhole);
+        }
+
+        var aVariantOut = new List<Dictionary<string, object?>>();
+        foreach ((string strVariant, IImplicit oField, Func<double, double, double[,]>? fnJ) in aVariants)
+        {
+            (double[,] aSubFloor, long[,] aSubFloorSolid, long nGridSolid, double dSubFloorWhole) = SubFloorByCell(oField);
+            var aRows = new List<Dictionary<string, object?>>();
+            foreach ((int nShell, int nBin, CellShape.Cell cell) in aCells)
+            {
+                float fRMean = cell.RMeanMm;
+                CellShape.Fabric fab = CellShape.Measure(oField, cell, fnBody, PeriodAt(fRMean), fStepMm, nCentres,
+                    nSeedOffset: (((nShell * nZBins) + nBin + nShells + 1) * nCentres), bCapProbeAtAxis: true);
+                CellShape.Fabric nom = aNominal[nShell];
+                double[] aStretch = fab.StretchesAgainst(nom);
+                double[]? aPredicted = fnJ is null ? null
+                    : CellShape.PredictedStretches(fnJ(fRMean, cell.ZMidMm), 2.0 * Math.PI / PeriodAt(fRMean));
+                double dNomSolidChord = 2.0 * nom.SolidFraction / nom.MeanPlPerMm;
+                double dNomPoreChord = 2.0 * (1.0 - nom.SolidFraction) / nom.MeanPlPerMm;
+                aRows.Add(new Dictionary<string, object?>
+                {
+                    ["shell"] = nShell,
+                    ["z_lo_mm"] = cell.ZLoMm,
+                    ["z_hi_mm"] = cell.ZHiMm,
+                    ["r_lo_mm"] = cell.RLoMm,
+                    ["r_hi_mm"] = cell.RHiMm,
+                    ["porosity"] = 1.0 - fab.SolidFraction,
+                    ["stretch_measured"] = aStretch,
+                    ["stretch_predicted"] = aPredicted,
+                    ["degree_of_anisotropy"] = fab.DegreeOfAnisotropy,
+                    ["compressed_axis_tilt_from_z_deg"] = Math.Acos(Math.Min(1.0, Math.Abs(fab.PrincipalAxes[0].Z))) * 180.0 / Math.PI,
+                    ["solid_chord_compressed_mm"] = fab.SolidChordMm(0),
+                    ["pore_chord_compressed_mm"] = fab.PoreChordMm(0),
+                    ["solid_chord_elongated_mm"] = fab.SolidChordMm(2),
+                    ["pore_chord_elongated_mm"] = fab.PoreChordMm(2),
+                    ["nominal_solid_chord_mm"] = dNomSolidChord,
+                    ["nominal_pore_chord_mm"] = dNomPoreChord,
+                    ["fit_residual"] = fab.FitResidual,
+                    ["crossings"] = fab.Crossings,
+                    ["probe_capped_at_axis"] = fab.ProbeCappedAtAxis,
+                    ["specific_surface_per_mm"] = fab.SpecificSurfacePerMm,
+                    ["specific_surface_vs_nominal"] = fab.SpecificSurfacePerMm / nom.SpecificSurfacePerMm,
+                    ["sub_floor_solid_fraction"] = aSubFloor[nShell, nBin],
+                    ["sub_floor_cell_solid_voxels"] = aSubFloorSolid[nShell, nBin],
+                });
+            }
+
+            double dMaxDa = aRows.Max(r => (double)r["degree_of_anisotropy"]!);
+            double dMinStretch = aRows.Min(r => ((double[])r["stretch_measured"]!)[0]);
+            static double Gap(Dictionary<string, object?> r)
+            {
+                double[] m = (double[])r["stretch_measured"]!, p = (double[])r["stretch_predicted"]!;
+                return Enumerable.Range(0, 3).Max(i => Math.Abs(m[i] - p[i]) / p[i]);
+            }
+            // ⛔ The CORE shell is reported but never the headline: the phase is a cone about the axis, so no local
+            //    fabric exists there and its gap measures the probe (CellShape header). Two numbers, never one.
+            double? dWorstModelGap = fnJ is null ? null
+                : aRows.Where(r => (int)r["shell"]! > 0).Max(Gap);
+            double? dWorstModelGapCore = fnJ is null ? null
+                : aRows.Where(r => (int)r["shell"]! == 0).Max(Gap);
+            // The gap's SIGN, outside the core: positive means the measurement reads LESS distortion than the map.
+            double? dSignedDaBias = fnJ is null ? null : aRows.Where(r => (int)r["shell"]! > 0).Max(r =>
+            {
+                double[] m = (double[])r["stretch_measured"]!, p = (double[])r["stretch_predicted"]!;
+                return ((p[2] / p[0]) - (m[2] / m[0])) / (p[2] / p[0]);
+            });
+            // Specific surface, bottom bin → top bin of the OUTER shell: the shear inflates it at constant porosity,
+            // and `verify`'s golden `specific_surface_mm2_per_mm3` (Validation.cs, the EBFC-area proxy) carries it.
+            double dSvBottom = aRows.First(r => (int)r["shell"]! == nShells - 1 && (float)r["z_lo_mm"]! == 0f)
+                .TryGetValue("specific_surface_vs_nominal", out object? oSvB) ? (double)oSvB! : 0.0;
+            double dSvTop = aRows.Last(r => (int)r["shell"]! == nShells - 1)
+                .TryGetValue("specific_surface_vs_nominal", out object? oSvT) ? (double)oSvT! : 0.0;
+            double dPorositySpread = Enumerable.Range(0, nShells).Max(s =>
+            {
+                double[] a = [.. aRows.Where(r => (int)r["shell"]! == s).Select(r => (double)r["porosity"]!)];
+                return a.Max() - a.Min();
+            });
+
+            double dMaxSubFloor = aRows.Max(r => (double)r["sub_floor_solid_fraction"]!);
+            Console.WriteLine($"\n[{strVariant}]  max anisotropy {dMaxDa:F2} · min stretch {dMinStretch:F3}"
+                              + (dWorstModelGap is { } g ? $" · gap to the map ≤ {g:P1} outside the core"
+                                  + (dWorstModelGapCore is { } gc ? $" ({gc:P1} in it, non-local)" : "") : "")
+                              + $" · S_V/nominal {dSvBottom:F2} → {dSvTop:F2} bottom→top"
+                              + $" · porosity spread by height ≤ {dPorositySpread:P2}"
+                              + $" · sub-floor solid (floor {fFloorMm:F2} mm) whole part {dSubFloorWhole:P2}, worst cell {dMaxSubFloor:P2}");
+            Console.WriteLine($"  {"z, mm",11} " + string.Join(" ", Enumerable.Range(0, nShells).Select(s =>
+                $"{$"shell {s} λmin (pred) · DA · φ",30}")));
+            for (int b = 0; b < nZBins; b++)
+            {
+                var aBin = aRows.Where(r => (float)r["z_lo_mm"]! == b * fZStep).ToList();
+                Console.WriteLine($"  {$"{b * fZStep:F1}–{(b + 1) * fZStep:F1}",11} " + string.Join(" ", aBin.Select(r =>
+                {
+                    double[] m = (double[])r["stretch_measured"]!;
+                    double[]? p = (double[]?)r["stretch_predicted"];
+                    return $"{$"{m[0]:F3} ({(p is null ? "  —  " : p[0].ToString("F3"))}) · {(double)r["degree_of_anisotropy"]!:F2} · {(double)r["porosity"]!:P1}",30}";
+                })));
+            }
+
+            aVariantOut.Add(new Dictionary<string, object?>
+            {
+                ["variant"] = strVariant,
+                ["max_degree_of_anisotropy"] = dMaxDa,
+                ["min_stretch"] = dMinStretch,
+                ["worst_relative_gap_to_phase_map_outside_core"] = dWorstModelGap,
+                ["worst_relative_gap_to_phase_map_core_shell"] = dWorstModelGapCore,
+                ["anisotropy_read_below_phase_map_outside_core"] = dSignedDaBias,
+                ["specific_surface_vs_nominal_outer_bottom"] = dSvBottom,
+                ["specific_surface_vs_nominal_outer_top"] = dSvTop,
+                ["porosity_spread_by_height_max_over_shells"] = dPorositySpread,
+                ["sub_floor_solid_fraction_whole_part"] = dSubFloorWhole,
+                ["sub_floor_grid_solid_voxels"] = nGridSolid,
+                ["max_sub_floor_solid_fraction_by_cell"] = dMaxSubFloor,
+                ["rows"] = aRows,
+            });
+        }
+
+        // 🔴 Any non-default flag names its own file (picogk gotcha #14): the default run is the one the canon cites, and a
+        //    probe at another sampling or axial period must never overwrite it under the same name.
+        string strFlags = string.Concat(new[] { "--zbin-mm", "--shells", "--centres", "--axial-period-mm" }
+            .Where(f => ArgStr(args, f, null) is not null)
+            .Select(f => $".{f.TrimStart('-').Replace("-mm", "")}{ArgStr(args, f, null)}"));
+        string strOut = Path.Combine("cache", "topology", $"cellshape.{cem.Name}{strFlags}.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(strOut)!);
+        File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            ["_note"] = "Cell shape by height × radius (CellShape.cs, 00_07 HW.33) — a probe, never a verification: no golden, no "
+                        + "OK/FAILED. stretch_* = the cell's principal stretches relative to the shell's constant-period nominal, "
+                        + "ASCENDING (index 0 = the most compressed axis); predicted = the first-order phase map (CellShape.GradedJacobian). "
+                        + "Chords are stereological mean chords along an axis, NOT µCT local thickness — compare them to the nominal "
+                        + "chord of the same shell, never to a print floor. sub_floor_solid_fraction = the share of the cell's intended "
+                        + "metal that the opening at print_floor_mm deletes — CheckPrintFidelity's model and ceilings, binned by cell: "
+                        + "intended metal below the floor, never a statement of what the machine does with it. "
+                        + "The CORE shell (shell 0) is reported but excluded from the headline gap — the phase is a cone about "
+                        + "the axis, so no local fabric exists there (probe_capped_at_axis marks where the probe was shortened). "
+                        + "specific_surface_* = S_V from the same probe lines (2·⟨P_L⟩), the quantity verify's golden "
+                        + "`specific_surface_mm2_per_mm3` carries.",
+            ["cem"] = cem.Name,
+            ["topology"] = cem.Topology,
+            ["period_core_mm"] = fPCore,
+            ["period_rim_mm"] = fPRim,
+            ["radius_mm"] = fRRim,
+            ["length_mm"] = fLength,
+            ["probe_step_mm"] = fStepMm,
+            ["print_floor_mm"] = fFloorMm,
+            ["print_grid_step_mm"] = fPrintStep,
+            ["centres_per_cell"] = nCentres,
+            ["directions"] = CellShape.DirectionCount,
+            ["in_plane_only_axial_period_mm"] = bPeriodGraded ? fPAxial : null,
+            ["nominal_degree_of_anisotropy_by_shell"] = aNominal.Select(n => n.DegreeOfAnisotropy).ToArray(),
+            ["nominal_fit_residual_by_shell"] = aNominal.Select(n => n.FitResidual).ToArray(),
+            ["variants"] = aVariantOut,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"\n  → {strOut}");
         return 0;
     }
 
@@ -1178,6 +1444,9 @@ internal static class Program
             "  sweep             generate + verify every cem/anchor_zone1.*.json\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
             "  converge <cem.json>   topology-convergence ladder of an anchor_zone1 SKU over step divisors  [--divisors N,M] — a probe: no golden, no OK/FAILED\n" +
+            "  cellshape <cem.json>  cell SHAPE of an anchor_zone1 SKU by height × radius (line-intercept fabric) beside the phase map's\n" +
+            "                    prediction, and the two HW.33 alternatives → cache/topology/cellshape.<name>.json  [--zbin-mm | --shells |\n" +
+            "                    --centres | --axial-period-mm] — a probe: no golden, no OK/FAILED\n" +
             "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)\n" +
             "  build-record <cem.json>...  one batch's build-record JSON → stdout (commit + manifest sha256 + golden metrics; vendor fields EMPTY, filled from the order)\n" +
             "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --step-mm H | --sweep]\n" +

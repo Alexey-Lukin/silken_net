@@ -201,7 +201,8 @@ internal static class Connectivity
     // Per-bin porosity along the anchor axis. The v2 gradient is RADIAL, so this profile is expected
     // ~FLAT — an axial-uniformity CHECK, not a gate: `verify` writes it to the metrics and fails on
     // nothing, and its one test (AnchorTests) runs on `stepped`; the continuous graded field's phase
-    // drifts with height (00_07 HW.33), and porosity alone cannot show cell shape. Bins are ≥ ~2 gyroid
+    // drifts with height (00_07 HW.33), and porosity alone cannot show cell shape — the drift is a
+    // volume-keeping SHEAR, so this profile stays flat under it; its shape is CellShape's (`cellshape`). Bins are ≥ ~2 gyroid
     // periods thick (fBinMm) so they AVERAGE OUT the cell-scale oscillation and reveal the true
     // axial TREND, not the within-period phase (a thin slice alternates wall↔void → false spread).
     public static double[] AxialProfile(in Grid grid, float fBinMm = 5.0f)

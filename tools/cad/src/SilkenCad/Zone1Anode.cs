@@ -166,12 +166,12 @@ internal sealed class DilatedField(IImplicit oInner, Func<Vector3, bool> fnInBod
 // (founder 2026-06-21; the constant-vs-graded fork has a BIOLOGICAL criterion, ⚖️ 2026-09-17 — 01_01 §5.5). Phase uses the LEAP-style
 // coord/period(r): a spatially-varying frequency is not strictly periodic (cells distort slightly
 // across the gradient) but stays bicontinuous → porosity is MEASURED per radial shell, never derived
-// (gotcha #4). ⚠️ «Slightly» was never measured BY HEIGHT: the tree measures this lattice's porosity,
-// sub-floor solid fraction, specific surface and voxel-FE, and by height only porosity, in an ungated
-// profile (Connectivity.AxialProfile), while the phase gains ∇k·coord terms — in-plane up to r·k′(r)
-// and, because Z is scaled by the same 2π/period(r), z·k′(r) along the axis, which grows with height
-// to several times the in-plane one. Pore and ligament by height are unmeasured, and changing the grading is a
-// product-geometry verdict (00_07 HW.33; the factory STL, HW.1, would carry it). Topology: sheet = a wall around the minimal surface (|eq|; stretch-dominated, more
+// (gotcha #4). ⚠️ «Slightly» is FALSE BY HEIGHT — measured 2026-10-22 (`cellshape`, CellShape.cs, 01_01 §5.5): the
+// phase gains ∇k·coord terms — in-plane up to r·k′(r) and, because Z is scaled by the same 2π/period(r), z·k′(r)
+// along the axis — and the axial one SHEARS the cell in the r–z plane by γ = z·|P′|/P while keeping its volume. So
+// the per-layer porosity (Connectivity.AxialProfile) stays flat while the top of every period-graded SKU is
+// compressed to about half its nominal along one axis. Changing the grading is a product-geometry verdict
+// (00_07 HW.33; the factory STL, HW.1, would carry it) — ⛔ not an edit to make here. Topology: sheet = a wall around the minimal surface (|eq|; stretch-dominated, more
 // surface); network = one solid channel (one side of eq; bending-dominated, lower E) — the HW.33 axis.
 internal sealed class GradedCartesianGyroid : IImplicit
 {
