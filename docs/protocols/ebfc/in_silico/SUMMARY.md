@@ -1153,6 +1153,28 @@ raises their threshold — differs between pore readings (45° on the bare and a
 bound, at Ti-6Al-4V's 95 % RH stiffer-axis cell, both at C44's ceiling and at 0.3 of it); the junction's criterion is t_L(θ). The lowest share is the
 lowest of the MODELLED set: the ring is read as the host's xylem, and a soft ring drives the share to 0 in its limit.
 
+**The interface is a further unknown, and the model fixes it at perfect bond** (read 2026-10-22, `00_07` HW.23). `106`
+has one interface — the gyroid's surface, displacement and traction continuous — and, the ring being read as the host's
+xylem, the Ø15 channel wall is no interface at all. No primary in reach MEASURES the bond, or its absence, at either. The
+conifer anatomy shows continuity or cell-scale interlock with the old xylem at a wound: after girdling, column-like
+structures arise 5–6 cells below the wound surface from the parenchyma around axial resin ducts, show «the union zone
+with the pre-wound xylem» and «anchor the healing tissue to the wound surface» (Chano et al. 2015, *Pinus canariensis*
+saplings, ≤ 150 days, Fig. 8 and Conclusion); a pin in the cambium of *P. taeda* left ray parenchyma that grew into
+mature tracheids and lignified early (Kuroda & Shimaji 1984, abstract) — anatomy, not a mechanical test. The beech
+report takes the overgrowing callus as unbonded as the PREMISE of its study — «das im Bereich von Wunden gebildete
+Kallusgewebe ist nicht mit dem überwallten Holz verbunden», the crack whose effect on growth stresses it then studies
+(Götz et al. 2002, FZKA 6717, pp. 3, 35; injuries made in the 51st year of a 67-year-old beech, partly occluded) — and
+measures, qualitatively, only that the occluding tissue presses on the wood («es wirkt gleichsam wie ein Druckverband»,
+p. 176), while its summary still counts overgrowing callus among «rissartige Störungen». Its domain is the cambium's
+occlusion of an exposed surface — in the anchor, the callus over Zone 2's outer edge (`01_04 §3.1`), not the ring
+around Zone 1. None of the primaries on bodies set into living wood measures adhesion, and none is a conifer (Kane 2011
+measured higher J-lag failure loads one to four years after installation, «presumably» from growth over the «J»; Ludwig
+2012 reports an apparent form fit). So the bond is a reading, and its unbonded ends — slip with the normal contact kept,
+and opening, which decouples the gyroid like a soft ring — are not computed. Wang 2009 (*J. Mech. Mater. Struct.*
+4:1595) shows the field inside an anisotropic circular inclusion IS uniform when the interface is homogeneously
+imperfect with equal normal and in-plane tangential compliance — a sufficient condition; slip is not such an interface
+and lies outside this script's uniform-strain solution.
+
 **The junction** (`105`'s first-layer mismatch, priced at t_L = 1) scales with the share the other way, so its adverse
 end is the HIGHEST share: up to 1.932 at θ = 0 over the modelled set, and up to 6.038 off the axis as C44 → 0 — on a
 lattice tensor read from kinematic-side cases, so an input end, not shown to be the output's.
@@ -1171,7 +1193,8 @@ verb), compresses the top cells of the part to 0.42–0.49 of their nominal alon
 64–67° off the part axis), so «cubic» fails most at the top (the geometry verdict is open, `00_07` HW.33); Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
 the sweep). C44 is measured for the infinite lattice by the periodic voxel case (`01_01 §5.2`) but not read here; the tissue in the pores
 and the ring are unmeasured: the ring is read as the host's xylem (ours —
-`01_04 §2`'s phases say nothing of it). An infinite cylinder in an infinite matrix: the 40 mm length on Ø11, the bending
+`01_04 §2`'s phases say nothing of it); the interface is perfectly bonded, a reading no primary supports, and its
+slipping and opening ends are not computed (above). An infinite cylinder in an infinite matrix: the 40 mm length on Ø11, the bending
 gradient along the radius, the curved rings, the bark's proximity and the transverse shear (S5) are not modelled.
 Controls: Mura's tensor against the isotropic cylinder's closed form (seven entries), a hole in every live wood reading
 against Lekhnitskii's K_t (the normal block — S_1212 of an anisotropic matrix has no independent closed-form check
