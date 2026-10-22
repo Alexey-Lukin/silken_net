@@ -1380,6 +1380,204 @@
       }
     }
   },
+  "gyroid_source_day_flip_large_stem_sf2": {
+    "median": {
+      "Ti-6Al-4V": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.5490430622009569,
+            "axial_richardson": 0.5470798569725864
+          },
+          "fe_reading_at_flip": 0.26880282542342926
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.2860704269242755,
+            "axial_richardson": 0.2850931677018634
+          },
+          "fe_reading_at_flip": 0.9902696088599133
+        }
+      },
+      "Ti-6Al-7Nb": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.5321739130434783,
+            "axial_richardson": 0.5303292894280762
+          },
+          "fe_reading_at_flip": 0.28603373516652664
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.2773413897280967,
+            "axial_richardson": 0.2763395544852498
+          },
+          "fe_reading_at_flip": 1.0537482803534843
+        }
+      },
+      "CP-Ti-Gr4": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.9512953367875647,
+            "axial_richardson": 0.9483471074380165
+          },
+          "fe_reading_at_flip": 0.08946839603590469
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.4959481361426256,
+            "axial_richardson": 0.4940796555435953
+          },
+          "fe_reading_at_flip": 0.32960157099627296
+        }
+      },
+      "beta-Ti-13Nb-13Zr": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.39047213951509996,
+            "axial_richardson": 0.3889830508474576
+          },
+          "fe_reading_at_flip": 0.5315680873851996
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.20345744680851063,
+            "axial_richardson": 0.20273851590106007
+          },
+          "fe_reading_at_flip": 1.9582968339270752
+        }
+      },
+      "Ta": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 2.365979381443299,
+            "axial_richardson": 2.359897172236504
+          },
+          "fe_reading_at_flip": 0.014449943768798986
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 1.2338709677419355,
+            "axial_richardson": 1.2289156626506024
+          },
+          "fe_reading_at_flip": 0.05323359284425547
+        }
+      },
+      "Ti-15Zr": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.4624685138539043,
+            "axial_richardson": 0.4606121424987456
+          },
+          "fe_reading_at_flip": 0.3790539842885077
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.2409448818897638,
+            "axial_richardson": 0.24006276150627615
+          },
+          "fe_reading_at_flip": 1.3964348781188622
+        }
+      }
+    },
+    "upper_whisker": {
+      "Ti-6Al-4V": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 1.0986842105263157,
+            "axial_richardson": 1.094755661501788
+          },
+          "fe_reading_at_flip": 0.0671275627353105
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.572452477407292,
+            "axial_richardson": 0.5704968944099379
+          },
+          "fe_reading_at_flip": 0.24729794111688383
+        }
+      },
+      "Ti-6Al-7Nb": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 1.064927536231884,
+            "axial_richardson": 1.0612362796071635
+          },
+          "fe_reading_at_flip": 0.07143060148850891
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.5549848942598188,
+            "axial_richardson": 0.5529801324503312
+          },
+          "fe_reading_at_flip": 0.2631503358836669
+        }
+      },
+      "CP-Ti-Gr4": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 1.9036269430051813,
+            "axial_richardson": 1.8977272727272727
+          },
+          "fe_reading_at_flip": 0.022342753869001274
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.9924365207995678,
+            "axial_richardson": 0.988697524219591
+          },
+          "fe_reading_at_flip": 0.0823107052534007
+        }
+      },
+      "beta-Ti-13Nb-13Zr": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.7813696299447044,
+            "axial_richardson": 0.7783898305084745
+          },
+          "fe_reading_at_flip": 0.13274737747949586
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.407136524822695,
+            "axial_richardson": 0.40569787985865724
+          },
+          "fe_reading_at_flip": 0.48904133863446275
+        }
+      },
+      "Ta": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 4.734536082474227,
+            "axial_richardson": 4.722365038560412
+          },
+          "fe_reading_at_flip": 0.0036085539850029304
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 2.4690860215053765,
+            "axial_richardson": 2.459170013386881
+          },
+          "fe_reading_at_flip": 0.0132939128807508
+        }
+      },
+      "Ti-15Zr": {
+        "large_stem_limit|near_uniaxial|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.9254408060453401,
+            "axial_richardson": 0.921726041144004
+          },
+          "fe_reading_at_flip": 0.09466035213846519
+        },
+        "large_stem_limit|any_state|sf2": {
+          "margin_over_threshold": {
+            "radial_richardson": 0.4821522309711286,
+            "axial_richardson": 0.4803870292887029
+          },
+          "fe_reading_at_flip": 0.3487287372781058
+        }
+      }
+    }
+  },
   "gyroid_axial_term_mature_stiff_bond_upper": {
     "force_N": 746.3247051693479,
     "by_alloy": {

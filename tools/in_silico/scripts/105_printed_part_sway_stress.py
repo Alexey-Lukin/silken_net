@@ -269,8 +269,9 @@ def main() -> int:
     phi = 1.0 - fine["porosity"]
     fe_readings = {"radial_richardson": richardson_p1(fine, next_fine, "radial_ratio"),
                    "axial_richardson": richardson_p1(fine, next_fine, "axial_ratio")}
-    # a binding claim takes the LOWER reading — READ from the pair, never assumed: the radial one was lower until the
-    # HW.33 (в) geometry, which put the axial one under it (00_07 HW.33)
+    # a binding claim takes the LOWER reading — READ from the pair, never assumed. On the HW.33 (в) geometry the pick is
+    # mechanical, not a finding: the two readings coincide within the extrapolation, every raw row has the radial lower,
+    # and the /12 and /16 rows differ in porosity (00_07 HW.23)
     lo_key, hi_key = sorted(fe_readings, key=fe_readings.get)
     f_read = {k: rms_factor(v, phi) for k, v in fe_readings.items()}
     state_div = {"near_uniaxial": 1.0, "any_state": math.sqrt(3.0 + 2.0 * NU_SOLID)}
@@ -443,6 +444,26 @@ def main() -> int:
                     gyroid[al][f"{dk}|{sk}|sf{sf:g}"] = {fk: up0(lim / (fv * frac)) for fk, fv in f_read.items()}
     source_day = {rd: {al: {k: {fk: rv["surface_strain_ue"] > fx for fk, fx in v.items()} for k, v in cells.items()}
                        for al, cells in gyroid.items()} for rd, rv in readings.items()}
+    # how far each large-stem SF 2 cell sits from flipping (in-silico §When Modifying #40): the stem strain over the
+    # cell's threshold per FE reading (as rounded above — `106`'s margin), and the FE reading (of E_s) at which the
+    # unrounded bound meets the stem strain — the bound goes as √(ratio/φ), so that reading is one number for either
+    # axis; a margin inside the readings' own doubt is a knife-edge (00_07 HW.23), not a set membership
+    source_day_flip = {rd: {al: {} for al in alloys} for rd in readings}
+    for rd, rv in readings.items():
+        for al, row in alloys.items():
+            for sk, div in state_div.items():
+                lim = row["endurance_strain_printed_ue"] / 2.0 * div
+                key = f"large_stem_limit|{sk}|sf2"
+                cell = {"margin_over_threshold": {fk: rv["surface_strain_ue"] / gyroid[al][key][fk] for fk in f_read},
+                        "fe_reading_at_flip": phi * (lim / rv["surface_strain_ue"]) ** 2}
+                # controls — CAN catch: the closed form drifting from `rms_factor`, and a flip reading that disagrees
+                # with the flag above outside the rounding sliver (a different cell, SF or reading); CANNOT: the sliver
+                # itself, where `up0` puts the rounded bound at or just above the strain, which the flag decides
+                assert abs(lim / rms_factor(cell["fe_reading_at_flip"], phi) - rv["surface_strain_ue"]) < 1e-6
+                for fk, fx in fe_readings.items():
+                    assert ((fx > cell["fe_reading_at_flip"]) == source_day[rd][al][key][fk]
+                            or abs(gyroid[al][key][fk] - rv["surface_strain_ue"]) <= 1.0), f"flip ⊥ flag: {rd} {al} {key}"
+                source_day_flip[rd][al][key] = cell
 
     # the S2 axial term at the gyroid's shank end — its own lower bound, force-controlled (the higher ratio is its
     # conservative end); mature state, stiff bond, the source day's upper reading
@@ -583,6 +604,7 @@ def main() -> int:
         "strain_figure_of_merit_vs_baseline": fm,
         "gyroid_binds_above_surface_strain_ue": gyroid,
         "gyroid_source_day_exceeds": source_day,
+        "gyroid_source_day_flip_large_stem_sf2": source_day_flip,
         "gyroid_axial_term_mature_stiff_bond_upper": {"force_N": fa_axial, "by_alloy": axial_rms,
                                                       "note": "its own lower bound; not additive with the in-plane one"},
         "junction": junction,

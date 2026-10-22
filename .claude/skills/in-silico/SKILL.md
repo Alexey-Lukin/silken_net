@@ -256,8 +256,8 @@ Anchor mechanics (CPU):
      anode) → 105 (printed_part_sway_stress.json — the sway stress in the anchor's titanium parts); a re-run of 87,
      102, 103, 52 or the FEA sweep, or a change to those CEMs, re-runs 105
   105 (importlib: richardson_p1, rms_factor, NU_SOLID; printed_part_sway_stress.json: the Richardson FE readings — both
-     in doubt both ways, and `fe_reading_lower`, the one a binding claim takes, read never assumed (HW.33 (в) moved it radial
-     → axial); the open leg `00_07` HW.23 re-measures both on a
+     in doubt both ways, and `fe_reading_lower`, the one a binding claim takes, read never assumed (on the HW.33 (в) geometry a mechanical
+     pick — the two coincide within the extrapolation); the open leg `00_07` HW.23 re-measures both on a
      finer sweep, then sets how `105`/`106` read them (while they disagree, a bracket of named readings with the consumer's ceiling at
      the adverse one — §When Modifying #11) —, the solid
      fraction, the binds-above cells, the stem readings) · tools/cad/cache/fea/anchor_zone1_pine.json (ν and the rows

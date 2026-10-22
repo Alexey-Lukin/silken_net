@@ -5929,7 +5929,7 @@ def _sway105_disc(label, j):
 
 
 def _sw_g(d, al, cell, fk=None):
-    """`fk` None = 105's LOWER reading, read from its cache (the radial one before HW.33 (в), the axial one since)."""
+    """`fk` None = 105's LOWER reading, read from its cache (the radial one before HW.33 (в); a mechanical pick since)."""
     return d["gyroid_binds_above_surface_strain_ue"][al][cell][fk or d["inputs"]["fe_reading_lower"]]
 
 
@@ -5968,7 +5968,7 @@ CHECKS += [
     *[(f"sway105 reading gap {i} → 105", SUMMARY, pat, SWAY105,
        lambda d: round((max(d["inputs"]["fe_readings_richardson"].values())
                         / min(d["inputs"]["fe_readings_richardson"].values()) - 1) * 100, 1), 0.0)
-      for i, pat in enumerate((rf"\(the radial one before it\), by {N} %", rf"now {N} % stiffer than the tensor's E\[100\]"))],
+      for i, pat in enumerate((rf"puts the axial one under it, by {N} %", rf"now {N} % stiffer than the tensor's E\[100\]"))],
     ("sway105 source strain → 105", SUMMARY, rf"one gust of one January day\), {N} µε at", SWAY105,
      lambda d: d["inputs"]["stem_readings_87"]["upper_whisker"]["surface_strain_ue"], 0.0),
     ("sway105 median strain → 105", SUMMARY, rf"and its median \({N} µε\) for Ta only", SWAY105,
@@ -6363,6 +6363,74 @@ def test_share106_green_sentences_follow_the_cache():
     assert pub["cell"].split("|", 1)[1] == "davies2016_table2_SO|soft|pores_carry_nothing" and pub["theta_deg"] == 45.0
     assert not pub["stands_on_borrowed_nu_RT"] and pub["share"] < jn["off_axis_sup_at_C44_zero"]["share"]
     assert "on Davies' Table 2 stiff outerwood (softer-axis reading, bare lattice, θ = 45°)" in text
+
+
+_SW105_NAMES = {"CP-Ti-Gr4": "CP-Ti Gr4", "beta-Ti-13Nb-13Zr": "β-Ti-13Nb-13Zr"}
+
+
+def _sw105_list(alloys):
+    shown = [_SW105_NAMES.get(a, a) for a in sorted(alloys)]
+    return shown[0] if len(shown) == 1 else ", ".join(shown[:-1]) + " and " + shown[-1]
+
+
+def test_sway105_source_day_sentence_follows_the_cache():
+    """105's source-day sentence names SETS (in-silico §When Modifying #5 ⊕), so it is recomposed from
+    `gyroid_source_day_exceeds`: whom the upper whisker exceeds near-uniaxially on the lower and on the higher reading
+    («on both readings» only while the two sets are one), whom in any stress state, whom the median exceeds; and its
+    knife-edges from `gyroid_source_day_flip_large_stem_sf2` (§When Modifying #40) — CP-Ti any-state's margin per reading
+    (rounded toward 1), its threshold and the FE reading below which it stays below (rounded down), the FE readings above
+    which 4V and 7Nb bind (rounded up) with every raw sweep row and both readings above them — plus the porosity gap of the
+    two extrapolated rows and its ×3; and 106's Davies ESM NSC knife-edge for Ta. CAN catch: a re-run that moves any of
+    those sets, margins or flip readings while the prose keeps the old one, or a knife-edge that leaves the ≤ 1 % class.
+    CANNOT catch: the before-values 1853 ⊥ 1911 µε — the pre-verdict cache lives in git history, not in the tree."""
+    d = json.loads((CACHE / SWAY105).read_text(encoding="utf-8"))
+    text = " ".join(doc(SUMMARY).split())
+    tracker = " ".join(doc("docs/00_07_Action_Plan_Tracker.md").split())
+    lo, hi = d["inputs"]["fe_reading_lower"], _sw_hi(d)
+    sd = d["gyroid_source_day_exceeds"]
+
+    def reach(rd, sk, fk):
+        return [al for al in sd[rd] if sd[rd][al][f"large_stem_limit|{sk}|sf2"][fk]]
+
+    up = reach("upper_whisker", "near_uniaxial", lo)
+    assert sorted(up) == sorted(reach("upper_whisker", "near_uniaxial", hi)), "the two readings' sets differ"
+    assert f"exceeds the threshold for {_sw105_list(up)} on both readings" in text
+    any_state = reach("upper_whisker", "any_state", lo)
+    assert sorted(any_state) == sorted(reach("upper_whisker", "any_state", hi)) and len(any_state) == 1
+    assert f"in any stress state {_sw105_list(any_state)} only, on both" in text
+    med = reach("median", "near_uniaxial", lo)
+    assert sorted(med) == sorted(reach("median", "near_uniaxial", hi)) and len(med) == 1
+    assert f"and its median ({d['inputs']['stem_readings_87']['median']['surface_strain_ue']:.0f} µε) for {med[0]} only, on both" in text
+    fl = d["gyroid_source_day_flip_large_stem_sf2"]["upper_whisker"]
+    cp = fl["CP-Ti-Gr4"]["large_stem_limit|any_state|sf2"]
+    assert "CP-Ti-Gr4" not in any_state and all(0.98 < m < 1.0 for m in cp["margin_over_threshold"].values())
+    thr = d["gyroid_binds_above_surface_strain_ue"]["CP-Ti-Gr4"]["large_stem_limit|any_state|sf2"]
+    m_lo, m_hi = (_ceil_n(cp["margin_over_threshold"][k], 3) for k in (lo, hi))
+    flip = _floor_n(cp["fe_reading_at_flip"], 4)
+    assert all(v < cp["fe_reading_at_flip"] for v in d["inputs"]["fe_readings_richardson"].values())
+    assert (f"CP-Ti Gr4 misses by a knife-edge, ×{m_lo:.3f} ⊥ ×{m_hi:.3f} of its {thr[lo]:.0f} ⊥ {thr[hi]:.0f} µε on the "
+            f"lower ⊥ higher reading, and stays below only while the FE reading is below {flip:.4f} of `E_s`") in text
+    assert (f"×{m_lo:.3f} ⊥ ×{m_hi:.3f} від свого порогу {thr[lo]:.0f} ⊥ {thr[hi]:.0f} µε на нижчому ⊥ вищому прочитанні, "
+            f"і лише доки FE-прочитання нижче {flip:.4f} `E_s`") in tracker
+    rows = json.loads((REPO / "tools/cad/cache/fea/anchor_zone1_pine.json").read_text(encoding="utf-8"))["rows"]
+    raw_min = min(min(r["axial_ratio"], r["radial_ratio"]) for r in rows)
+    binds = [_ceil_n(fl[al]["large_stem_limit|near_uniaxial|sf2"]["fe_reading_at_flip"], 4) for al in ("Ti-6Al-4V", "Ti-6Al-7Nb")]
+    assert all(b < min(raw_min, *d["inputs"]["fe_readings_richardson"].values()) for b in binds)
+    assert f"now they bind on any FE reading above {binds[0]:.4f} ⊥ {binds[1]:.4f} of `E_s`, which every raw sweep row and both readings exceed" in text
+    assert f"на будь-якому FE-прочитанні вище {binds[0]:.4f} ⊥ {binds[1]:.4f} `E_s`" in tracker
+    fine, nxt = d["inputs"]["fea_rows_used"]["finest"], d["inputs"]["fea_rows_used"]["next"]
+    amp = 1.0 / (nxt["step_mm"] / fine["step_mm"] - 1.0)
+    assert f"differ in porosity, {100 * nxt['porosity']:.3f} ⊥ {100 * fine['porosity']:.3f} %, a gap the p = 1 step from `/12` to `/16` amplifies ×{amp:.0f}" in text
+    assert (f"{100 * nxt['porosity']:.3f} ⊥ {100 * fine['porosity']:.3f} % (Δ {100 * (fine['porosity'] - nxt['porosity']):.3f} в.п., "
+            f"кеш `105` `inputs.fea_rows_used`), а двоточковий крок p = 1 із `/12` на `/16` підсилює різницю рядків ×{amp:.0f}") in tracker
+    s106 = json.loads((CACHE / SHARE106).read_text(encoding="utf-8"))["green_per_set"]["davies2016_esm_NSC"]
+    assert not any(s106["source_day_upper_whisker_exceeds"].values())
+    ta = [s106["ta_upper_whisker_margin"][k] for k in ("axial_richardson", "radial_richardson")]
+    ta_thr = [s106["upper_whisker_flips_above_ue"][k]["Ta"] for k in ("axial_richardson", "radial_richardson")]
+    assert all(0.99 < m < 1.0 for m in ta)
+    assert (f"Ta misses by a knife-edge, ×{_ceil_n(ta[0], 3):.3f} ⊥ ×{_ceil_n(ta[1], 3):.3f} of its {ta_thr[0]:.0f} ⊥ "
+            f"{ta_thr[1]:.0f} µε on this tensor's E[100] ⊥ `105`'s radial reading") in text
+    assert f"×{_ceil_n(ta[0], 3):.3f} ⊥ ×{_ceil_n(ta[1], 3):.3f} від свого порогу {ta_thr[0]:.0f} ⊥ {ta_thr[1]:.0f} µε" in tracker
 
 
 # ── HW.6 the stem's own radio shadow (107, 2026-10-22) ⟷ SUMMARY §«How Deep the Stem Shadows the Node's Radio». The

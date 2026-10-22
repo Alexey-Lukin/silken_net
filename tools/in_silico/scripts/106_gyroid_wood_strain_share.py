@@ -68,7 +68,8 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   modelled set (the side a binding sentence must take, §When Modifying #45 ⊕), X being `105`'s threshold unrounded and
   held to `105`'s cache — printed on this tensor's own E[100] (`105`'s axial reading) and on `105`'s radial reading;
   `105`'s own rule takes the LOWER of the two for a binding claim, and which one that is is read from `105`'s cache
-  (`fe_reading_lower`: the radial one until the HW.33 (в) geometry, the axial one since); rounded UP. Off the axis E_z*(θ) falls with C44 while t_L
+  (`fe_reading_lower` — on the HW.33 (в) geometry a mechanical pick: the two coincide within the extrapolation,
+  00_07 HW.23); rounded UP. Off the axis E_z*(θ) falls with C44 while t_L
   stays finite, so the threshold has no ceiling as C44 → 0: no binding figure exists there without C44. The junction's
   mismatch (`105`) scales with the HIGHEST share instead; its supremum off the axis is taken at C44 = 0 exactly (t_L is
   non-increasing in C44 — asserted on the grid).
@@ -1026,12 +1027,17 @@ def main() -> int:
         sub = {k: v for k, v in cells_green.items() if k.split("|")[1] == n}
         if sub:
             t0n = theta0_over(sub)
-            sdn = source_day_at(binds_at(t0n))
+            ban = binds_at(t0n)
+            sdn = source_day_at(ban)
             per_set[n] = {"lowest": {al: t0n[al]["lowest"] for al in ALLOY_PROPERTIES},
                           "lowest_cell": {al: t0n[al]["lowest_cell"] for al in ALLOY_PROPERTIES},
                           "source_day_upper_whisker_exceeds": {fk: sdn[fk]["upper_whisker"]["exceeds"] for fk in f_read},
                           "ta_upper_whisker_margin": {fk: sdn[fk]["upper_whisker"]["margin_over_threshold"]["Ta"]
-                                                      for fk in f_read}}
+                                                      for fk in f_read},
+                          # the stem strain at which each alloy flips on this set, per FE reading (in-silico §When
+                          # Modifying #40) — the large-stem SF 2 threshold at the set's own lowest share
+                          "upper_whisker_flips_above_ue": {fk: {al: ban[fk][al][CELL_LS] for al in ALLOY_PROPERTIES}
+                                                           for fk in f_read}}
 
     # Korean pine's Ta verdict against its own ν_LR (printed 0.30 at a CV of 1.64): the source day's upper whisker over Ta's
     # threshold at that set's lowest θ = 0 share, as a function of ν_LR alone — the ν_LR at which it first exceeds, per FE

@@ -1015,11 +1015,15 @@ least in uniaxial stress) puts the ligaments' RMS stress at ≥ 0.47 `E_s · ε`
 shipped after the HW.33 (в) geometry (Richardson 0.0805 axial ⊥ 0.0811 radial of `E_s`, before it 0.0942 ⊥ 0.0662;
 both in doubt now, on both sides: the part's step sweep is not monotone on either axis, so the
 two-point extrapolation from `/12` and `/16` proves convergence from neither side, and the `/32` reading that showed the
-axial doubt from above stands on the pre-verdict geometry until it is re-run — `01_01 §5.2`, `00_07` HW.23) — and it
+axial doubt from above stands on the pre-verdict geometry until it is re-run; the two rows also differ in porosity,
+64.406 ⊥ 64.605 %, a gap the p = 1 step from `/12` to `/16` amplifies ×3 — `01_01 §5.2`, `00_07` HW.23) — and it
 is a LOWER bound: it can show a ligament binding, never safe. Neither FE reading is the in-plane traction modulus the
 bound needs (the radial case is a kinematic shell loading, the axial one E[100] of a cubic lattice), so the bound holds
-only while that modulus is at least the reading; a binding claim takes the lower one — the axial one since the HW.33 (в)
-geometry (the radial one before it), by 0.7 %. The table gives the stem's surface
+only while that modulus is at least the reading; a binding claim takes the lower one, read from the pair (the radial
+one before the HW.33 (в) geometry). On that geometry the two coincide within the extrapolation: every raw sweep row has
+the radial one lower, only the two-point extrapolation puts the axial one under it, by 0.7 %, and an adversarial
+reviewer's scratch re-run with `/12` matched to `/16`'s porosity reverses the order again (not a cache in the tree) — so
+the cache's `fe_reading_lower` is a mechanical pick, not a finding about the part. The table gives the stem's surface
 strain above which the bound alone puts the ligaments at SF 2, at a share of the wood's strain t_L = 1 and a peak over
 RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 — the actual state's, of which the periodic case's k_p is only the
 uniaxial-state reading — lowers every cell, a share below 1 raises it (the share
@@ -1038,9 +1042,12 @@ The DBH-38 columns read the gyroid's shallow end (50 mm below the seat) through 
 bark and on the xylem under `103`'s thick bark; they are the field sensor's numbers (`00_07` HW.43), not a transfer from
 another tree. The one stem reading in the tree — `87`'s source pine (DBH 21.5 cm, one gust of one January day), 1837 µε at
 its surface, which `87` refuses to carry to our stems — placed on a large stem exceeds the threshold for CP-Ti Gr4, Ta,
-Ti-6Al-4V and Ti-6Al-7Nb on both readings (before the HW.33 (в) geometry the lower reading put Ti-6Al-4V and Ti-6Al-7Nb
-under it: the baseline alloy now binds on either reading; in any stress state Ta only, on both),
-and its median (918 µε) for Ta only, on both. β-Ti's high figure stands on a yield the tree carries without a source. Whether a host's stem
+Ti-6Al-4V and Ti-6Al-7Nb on both readings (before the HW.33 (в) geometry Ti-6Al-4V and Ti-6Al-7Nb stayed above it on
+the lower reading, 1853 ⊥ 1911 µε, and bound only on the higher; now they bind on any FE reading above 0.0672 ⊥ 0.0715
+of `E_s`, which every raw sweep row and both readings exceed, so the baseline alloy binds on every reading in the tree; in
+any stress state Ta only, on both — but CP-Ti Gr4 misses by a knife-edge, ×0.989 ⊥ ×0.993 of its 1858 ⊥ 1851 µε on the
+lower ⊥ higher reading, and stays below only while the FE reading is below 0.0823 of `E_s`, inside the readings' own
+doubt), and its median (918 µε) for Ta only, on both. β-Ti's high figure stands on a yield the tree carries without a source. Whether a host's stem
 crosses these strains often enough is the field histogram's question, not this table's.
 
 **The junction is a candidate the bound cannot see.** At t_L = 1 the bonded gyroid moves with the wood while the solid
@@ -1144,9 +1151,10 @@ shares in 7 cell-fields (0 on the green group), so the lowest share is the minim
 **For `105`'s binding sentences the only C44-free figure is at θ = 0**, where the same tensor gives E_z* = E[100]
 (filling the pores leaves the skeleton's energy at a given boundary strain at least the bare skeleton's): the bound alone
 binds above `105`'s threshold over t_L, at the Scots pine group's lowest θ = 0 share — the table's right column, on this tensor's own
-E[100] (`105`'s axial reading, since the HW.33 (в) geometry also its lower one, which `105`'s rule takes for a binding claim) and
-on `105`'s radial reading — before that geometry the lower one, a weaker modulus than the tensor's and so the conservative side
-of a binding sentence; now 0.7 % stiffer than the tensor's E[100], so that side is the E[100] column; rounded up
+E[100] (`105`'s axial reading; `105`'s rule takes the lower of its two for a binding claim, and on the HW.33 (в) geometry that
+pick is mechanical — the two coincide within the extrapolation, `00_07` HW.23) and on `105`'s radial reading — before that
+geometry the lower one, a weaker modulus than the tensor's; now 0.7 % stiffer than the tensor's E[100], which makes the E[100]
+column the conservative side of a binding sentence only as far as the extrapolation does; rounded up
 from `105`'s unrounded threshold. On a large stem the source day's upper whisker then exceeds the threshold for Ta only
 on both readings (×1.26 ⊥ ×1.26 over it), and its median for none; at t_L = 1 on the axial reading the upper whisker
 exceeded it for CP-Ti Gr4, Ta, Ti-6Al-4V and Ti-6Al-7Nb and the median for Ta. The column's ratios across
@@ -1204,7 +1212,9 @@ ceiling: there the source day's upper whisker exceeds the large-stem threshold f
 (Ta ×0.72 ⊥ ×0.72 of it) and its median for none — against Ta on both readings on the Scots pine group, the price of
 the choice. That is not a clearance: the bound is a lower one, so it can show «binds», never «safe». Without Davies' Table 2, on measured means only, the lowest moves to Davies' raw stiff corewood or non-stiff
 outerwood, by alloy (Ta 0.173), and no alloy binds there either (Ta ×0.82 ⊥ ×0.83). Set by set, at each green set's
-own lowest share, Ta binds on Liu P4 and Jeong's red pine, on both readings; no other alloy binds on any (before the HW.33
+own lowest share, Ta binds on Liu P4 and Jeong's red pine, on both readings; no other alloy binds on any — but on Davies'
+raw non-stiff corewood (ESM NSC) Ta misses by a knife-edge, ×0.993 ⊥ ×0.997 of its 1851 ⊥ 1844 µε on this tensor's E[100] ⊥
+`105`'s radial reading, inside the FE readings' own doubt (`00_07` HW.23) (before the HW.33
 (в) geometry Ta bound on five sets on this tensor's E[100] and on Jeong's red pine alone on the radial reading). On
 Jeong's Korean pine Ta stays below (×0.915 ⊥ ×0.919 of it): it stays below only
 while ν_LR, printed 0.30 at a CV of 1.64, is below 0.354 on `105`'s radial reading (0.357 on this tensor's E[100]). Every green set but Jeong's red
