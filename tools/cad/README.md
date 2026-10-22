@@ -43,6 +43,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/BuildRecord.cs` | **build-record of ONE batch** (`CAD_REV=$(git rev-parse HEAD) dotnet run --project src/SilkenCad -- build-record cem/<a>.json … > <batch>.json`, schema `silkennet.build_record/2`, `01_02 §6`, `00_07` HW.51): commit (`CAD_REV` — declared, not verified) + each manifest's `cem_sha256` (`Cem.ReadWithSha256`, the bytes-hash the sheet prints) + the committed golden metrics (same grid only, `Golden.SameGrid`) + PicoGK version; the vendor fields are generated EMPTY and typed in from the order — the batch's vendor and number once, and per manifest (= per SKU; in the coin bake-off, per alloy) a list of builds (`vendor.parts[].builds[]`: coupon serial range · build · date · powder lot · certificate), one entry per build × powder lot. STDOUT, not `out/` (gitignored, gate-blind — picogk #17). ⛔ `golden_metrics` is the MODEL's baseline, never the printed batch; every machine-side `null` carries its reason in `absent_because` (picogk #11), a kind with no `*.golden.json` included |
 | `src/SilkenCad/Probe.cs` | falsifiable probes of PicoGK-kernel BELIEFS (`probe <voxel-mm>`; picogk #1 · #9) — probe B can kill the process by design, so A runs first. Permanent on purpose: a belief about someone else's kernel that nothing re-runs survives their next release. Measured 2026-09-12 — the fine-voxel abort is an `int` truncation of the band width (0.34 mm lives, 0.33 dies), and the SDF ctor renders a CLOSED solid at 99.7 % |
 | `src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + 6-connected flood-fill (open/closed-pore, percolation, solid-island, specific-surface); pure-managed, display-less xUnit. Also the MESH SOURCE for `VoxelFea`: `SampleRegion` (with a phase-override hook both FE callers leave null) and `LargestComponentMask` (membership, which `Components` does not keep; `bPeriodic` glues each face to its opposite for the periodic case's torus) |
+| `src/SilkenCad/CellShape.cs` | Cell SHAPE of a lattice by height × radius (`00_07` HW.33) — the line-intercept fabric: crossing density along probe lines through the field, its quadratic-form fit, principal stretches against a constant-period nominal (`Nominal`, `PeriodAtMm` — the generator's own map, one home for both the `cellshape` verb and its pins); `GradedJacobian` is the first-order phase-map prediction; two EXPERIMENT fields for the HW.33 verdict (`AxiallyShiftedField`, `InPlaneGradedGyroid`), never the product generator |
 | `src/SilkenCad/TopologyCrossChecks.cs` | ARCH.25 third phase — Euler-χ / tortuosity / as-printed cross-checks, INFORMATIONAL `verify` lines, not the `VERIFY OK/FAILED` gate (picogk #12); also the home of the lattice-thickness constants (`SheetThicknessPerPeriod` / `NetworkThicknessPerPeriod`, `LatticeThicknessMm`) that `Resolution` reads (picogk #5) |
 | `src/SilkenCad/VoxelFea.cs` | voxel finite-element elasticity (`fea`, `00_07` HW.51/HW.33) — trilinear hexes on the Connectivity grid, matrix-free element-by-element, 8-colour parallel, Jacobi-CG; apparent stiffness in units of `E_solid`. ⛔ The mesh takes only the largest face-connected body (a floating island is a rigid-body mode); what it drops is reported. Two families of cases: a FINITE specimen loaded through its boundary (axial · radial — the part and the cube) ⊥ ONE PERIOD CELL under periodic conditions (`fea --periodic`, `00_07` HW.23) — the lattice's effective tensor, C44 included, and its ligament stress field under a uniaxial macro stress, a MATERIAL property and never the part's. Declared ceilings in the class header (one per family); numbers — `01_01 §5.2`, cache `cache/fea/` |
 | `src/SilkenCad/Resolution.cs` | resolution adequacy (`00_07` HW.51) — does a declared or DERIVED feature (shank↔channel gap, lattice thickness) fit the voxel its own assembly asks for (`2·voxel` represented / `4·voxel` volume-honest); walks the parsed record tree, not the JSON. HARD carrier — `ResolutionTests` + a line in every `verify` reporter |
@@ -108,12 +109,14 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
   holds: the 100–150 µm PERIPHERY is un-printable on both machines (500 µm clears SLM, 300 µm
   clears µ-LPBF). `stepped` is the one SKU still on the sheet formulation, so 1.2 mm is live for
   it. Ground + declared ceilings: `01_01 §5.5`.
-- **Continuous radial gradient distorts above ~0.8× period ratio:** a spatially-varying
+- **A continuous radial gradient keeps POROSITY only up to ~0.8× period ratio — and shears the CELL with height at any ratio:** a spatially-varying
   frequency makes the SDF non-Eikonal (`|∇eq| ∝ f`); the parasitic `∇f·coord` term collapses
   porosity (measured 67→42 % at period 2.5→1.3 mm). Keep continuous gradients gentle — and the
   ~0.8× is a POROSITY bound (from one collapse, read on the whole part): Z is scaled by the same
-  2π/P(r), so the phase gains a z·k′(r) term that grows with height, and cell shape by height was
-  never measured (`00_07` HW.33). For a
+  2π/P(r), so the phase gains a z·k′(r) term that grows with height — a volume-keeping SHEAR of the
+  cell, so the porosity by height stays flat while, measured 2026-10-22 (`cellshape`), the top of every
+  period-graded SKU is compressed to 0.42–0.49 of its nominal along one axis, DA 3.3–4.3, and its specific surface rises to 1.30–1.44 of nominal (`01_01 §5.5`; the
+  geometry verdict is `00_07` HW.33's). For a
   STRONG pore contrast use `topology: stepped` (µ-LPBF only, not an SLM candidate — `01_01 §5.5`; constant-period zones → distortion only at the
   thin boundary ring). A phase-correct strong continuous gradient needs period-tensor/conformal
   (Noyron/nTop-level), beyond this demo. **Per-shell porosity uses cumulative-diff** (thin rings
@@ -151,8 +154,9 @@ for this sentence, so the claim was circular and lived nowhere.
 **v2 graded anode shipped** — three CEM-driven grading strategies, all MEASURED (the "which is best"
 answer is open, and on the porosity axis it is BIOLOGY's to give — ⚖️ 2026-09-17, `01_01 §5.5`; the
 generator is unbiased, not opinionated):
-- **continuous cell-size** (`GyroidPeriodRimMm`): gentle only (phase-distortion-limited ~0.8×) —
-  flat porosity, smooth radial pore taper (pore size by height unmeasured — `00_07` HW.33).
+- **continuous cell-size** (`GyroidPeriodRimMm`): the ~0.8× limit is a POROSITY limit; the declared P(r) is the axial and tangential period, while the radial step is 17–20 % shorter in the outer third at every height —
+  flat porosity, smooth radial pore taper at the bottom — sheared by height, about half the nominal
+  along one axis at the top (`cellshape`, `01_01 §5.5`; ⚖️ `00_07` HW.33).
 - **porosity gradient** (`GyroidWallParamRim`): clean monotone profile (the "softer rim").
 - **stepped heterostructure** (`Topology: stepped`, `ZonedGyroid`): strong ~2× pore contrast at
   constant porosity — µ-LPBF only: ⚖️ 2026-09-17 it is NOT an SLM candidate (`01_01 §5.5`). Own SDF, not LEAP `ImplicitModular` (`FunctionalScaleTrafo` is a hard-coded

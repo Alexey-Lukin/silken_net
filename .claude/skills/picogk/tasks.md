@@ -66,7 +66,7 @@
   re-check it by `git ls-remote`, never by age; the one that IS behind is `LEAP71_ShapeKernel` — skill
   `dependency-update`). Three CEM-driven axes
   in `Zone1Anode`: `GradedCartesianGyroid` (continuous period+wall taper) + `ZonedGyroid` (stepped
-  zones). Pick by goal — continuous-gentle (≤~0.8× period ratio — a POROSITY bound; cell shape by height, where the phase's z·k′(r) term grows, is unmeasured — gotcha #5, `00_07` HW.33), `GyroidWallParamRim`
+  zones). Pick by goal — continuous-gentle (≤~0.8× period ratio — a POROSITY bound only: the phase's z·k′(r) term shears the cell by height, and at that ratio the shipped parts' top cells read about half their nominal along one axis — measure with `cellshape`, gotcha #5, ⚖️ `00_07` HW.33), `GyroidWallParamRim`
   porosity gradient, or `topology: stepped` for a STRONG ~2× pore contrast — ⛔ **µ-LPBF only since ⚖️ 2026-09-17: `stepped` is NOT an SLM pick** (most of its lattice metal sits below the SLM floor BY CONSTRUCTION — share: its golden, `01_02 §6`; revisit trigger: `01_01 §5.5`). **MEASURE** porosity.
 - **Mechanical-lock barbs (`MechanicalLock.cs`, SHIPPED)**: asymmetric ratchet `R(z)` on the Ti shank
   — solid `BaseCylinder().voxConstruct()` + thin barb-ridge `BoolAdd` + a groove-ring `BoolSubtract` ONLY where
@@ -85,6 +85,15 @@
   solid-island (AM + electrical) / closed-pore (trapped-powder) / specific-surface. Pure-managed → fast
   display-less xUnit. Resolution split: gotcha #8. The `verify` gate adds open≥95% · solid-disc≤2% ·
   percolate axial+radial. Topology-agnostic by construction.
+- **Cell shape by height (`cellshape`, SHIPPED 2026-10-22, `00_07` HW.33)**: `cellshape cem/<anchor_zone1.x>.json` reads
+  the line-intercept fabric per height bin × radial shell (`CellShape.cs`) beside the first-order phase map's prediction,
+  for the shipped field and — on a period-graded SKU — the two alternatives the HW.33 verdict weighs, plus the print-floor
+  opening binned by cell → `tools/cad/cache/topology/cellshape.<name>.json`. A probe: no golden, no OK/FAILED. Read the
+  STRETCHES (relative to the shell's nominal); a chord is not µCT's local thickness, so never set one against a print floor —
+  the sub-floor column is that reading. ⛔ A non-default flag writes a SUFFIXED file and never the canon-cited one (gotcha
+  #14's class, closed at birth); a changed instrument reds `CellShapeTests.Every_Committed_Cellshape_Cache_Was_Measured_By_Todays_Instrument`
+  until the seven caches are re-run. The instrument's own floor is SAMPLING, not the lattice's cubic anisotropy (~8 % on one stretch at 400 centres, ~5 % at the caches' 1500, ≤ ~1.3 % at 6000 or on a long probe; the cubic term itself ≤ ~1.5 %, and it runs the other way) —
+  and the near-axis ceiling of the phase map live in the `CellShape.cs` header. Numbers → the caches / `01_01 §5.5`.
 - **Topology-convergence ladder (`converge`, SHIPPED, `00_07` HW.51)**: `dotnet run -- converge
   cem/<anchor_zone1.x>.json --divisors 24,32` samples the same connectivity metrics at each divisor of the finest period
   and writes a committed cache under `tools/cad/cache/topology/`. A probe, never a
