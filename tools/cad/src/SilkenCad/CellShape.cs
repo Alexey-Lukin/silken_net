@@ -6,6 +6,8 @@ namespace SilkenCad;
 
 // Cell SHAPE of a lattice by height and radius — the line-intercept FABRIC (00_07 HW.33).
 //
+// ⚖️ Since 2026-10-22 (HW.33 (в)) the shipped field grades the phase IN PLANE only; the map below is the PRE-VERDICT
+//    field's (`PreVerdictGyroid`), kept as this instrument's sheared reference.
 // 🔴 Why porosity cannot answer this. `GradedCartesianGyroid` scales all three coordinates by 2π/P(r), so its phase map
 //    θ = k(r)·p has the Jacobian J = k·I + p ⊗ k′(r)·r̂, with r̂ = ∇r — in the local frame (r̂, φ̂, ẑ), rows being
 //    θ-space components rotated into it:
@@ -228,8 +230,18 @@ internal static class CellShape
         float fWallRim = cem.GyroidWallParamRim ?? cem.GyroidWallParam;
         float fWall = cem.GyroidWallParam + ((fWallRim - cem.GyroidWallParam) * BlendAt(fRCore, fRRim, fRMm));
         return new GradedCartesianGyroid(fRCore, fRRim, fPeriod, fPeriod, fWall, fWall,
-            cem.Topology.Equals("network", StringComparison.OrdinalIgnoreCase));
+            cem.Topology.Equals("network", StringComparison.OrdinalIgnoreCase), fPeriodAxialMm: fPeriod);
     }
+
+    // The field `Zone1Anode.Gyroid` shipped until the HW.33 verdict (2026-10-22): θz = k(r)·z, the cell sheared with height.
+    // Kept as the instrument's SHEARED REFERENCE — the analytic map `ShiftedJacobian` describes it, so the tests and the
+    // `pre_verdict` / `z_origin_mid` rows of the cache can measure the before against the after on one instrument.
+    // ⛔ Never a product field: the part's geometry is `Zone1Anode.Gyroid`.
+    internal static IImplicit PreVerdictGyroid(AnchorCem cem)
+        => new GradedCartesianGyroid(Zone1Anode.InnerRadiusMm(cem), cem.OuterDiameterMm / 2f, cem.GyroidPeriodMm,
+            cem.GyroidPeriodRimMm > 0f ? cem.GyroidPeriodRimMm : cem.GyroidPeriodMm,
+            cem.GyroidWallParam, cem.GyroidWallParamRim ?? cem.GyroidWallParam,
+            cem.Topology.Equals("network", StringComparison.OrdinalIgnoreCase), fPeriodAxialMm: 0f);
 
     private static float BlendAt(float fRCore, float fRRim, float fRMm)
         => fRRim > fRCore ? Math.Clamp((fRMm - fRCore) / (fRRim - fRCore), 0f, 1f) : 0f;
@@ -346,8 +358,8 @@ internal static class CellShape
 
     // The «grade the phase only in the plane» variant of HW.33: θx = k(r)·x and θy = k(r)·y as the shipped generator,
     // θz = k_ref·z with ONE wavenumber — so no z·k′ term, at the price of an axial period that is P_ref at every radius.
-    // ⛔ An EXPERIMENT for the measurement, not a product generator: the part's geometry is `Zone1Anode.Gyroid`, and
-    //    changing it is the founder's verdict (00_07 HW.33), not a side effect of having this class.
+    // Since the HW.33 verdict (2026-10-22) the PRODUCT is this field at the RIM's axial period (`Zone1Anode.Gyroid`);
+    // the class stays for the experiment at ANOTHER axial period (the `in_plane_only` row: the section's mean radius).
     internal sealed class InPlaneGradedGyroid(
         float fRCoreMm, float fRRimMm, float fPeriodCoreMm, float fPeriodRimMm,
         float fWallCore, float fWallRim, bool bNetwork, float fPeriodAxialMm) : IImplicit

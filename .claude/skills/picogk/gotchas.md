@@ -66,21 +66,25 @@
    collapse (67→42 % at 2.5→1.3 mm, ratio 0.52, sheet branch, whole part — the z term inside that
    volume; at ~0.8 on network the per-shell porosity is flat, and nothing between or stronger was
    measured on network), and porosity alone cannot show cell
-   shape: `GradedCartesianGyroid` scales Z by the same 2π/P(r), so the phase also gains z·k′(r),
+   shape: the field shipped until 2026-10-22 scaled Z by the same 2π/P(r), so the phase also gained z·k′(r),
    growing from z = 0 — a SHEAR of the cell in the r–z plane (γ = z·|P′|/P) that keeps its volume,
    so the per-z porosity profile `verify` writes (gated by nothing; its only test,
    `AnchorTests.Axial_Profile_Is_Flat_For_A_Radial_Gradient`, runs on `stepped`) stays flat under it.
    🔴 Measured 2026-10-22 with `cellshape` (`CellShape.cs`, caches `cache/topology/cellshape.*.json`,
-   numbers in `01_01 §5.5`): at the top of every period-graded network SKU the cell is compressed to
-   0.42–0.49 of its nominal along one axis (DA 3.3–4.3) while the porosity by height stays flat, and
-   the specific surface the goldens carry rises to 1.30–1.44 of nominal. The axial shear is
+   numbers in `01_01 §5.5`): at the top of every period-graded network SKU that field compressed the cell to
+   0.42–0.49 of its nominal along one axis (DA 3.3–4.3) at flat porosity by height, and
+   the specific surface the goldens carried rose to 1.30–1.44 of nominal. The axial shear is
    γ = (L/R)·(P_core/P_rim − 1) — slenderness times period contrast, so the ratio is a FACTOR, and on
    its own it sets the in-plane floor P_core/P_rim = 1.25–1.27 that no variant removes. ⛔ Do not infer
    flat porosity from det J (it fixes cell VOLUME; the flatness comes from the level depending on r
    alone), and do not price the stretches with the pure-shear formula — the measured gap to the
-   first-order map is ONE-SIGNED, 8–14 % less distortion than the map predicts. Before quoting a
-   graded lattice's pore, ligament or surface, run `cellshape`; the product-geometry verdict is
-   `00_07` HW.33's, ⛔ not a generator edit.
+   first-order map is ONE-SIGNED, 8–14 % less distortion than the map predicts. ⚖️ Ratified and applied 2026-10-22
+   (`00_07` HW.33, option (в), canon `01_01 §5.5`): `Zone1Anode.Gyroid` grades the phase IN PLANE only —
+   θz takes ONE wavenumber, the RIM period's (`fPeriodAxialMm`, a rule, not a CEM field) — so the shipped part
+   reads DA ≤ 1.25 at every height and its most anisotropic shell is the CORE (axially compressed: the
+   verdict's named price). The pre-verdict field lives on only as the instrument's sheared reference,
+   `CellShape.PreVerdictGyroid` — ⛔ never a product field. Before quoting a graded lattice's pore,
+   ligament or surface, run `cellshape`.
 
 6. **Keep `ImplicitUsings` ENABLED for the vendored `src/SilkenCad.Leap`, and the strict knobs ON only for our own code** — vendored LEAP source relies on
    implicit `using System` / `System.Collections.Generic`. Disabling → 200+ CS0246. Strict

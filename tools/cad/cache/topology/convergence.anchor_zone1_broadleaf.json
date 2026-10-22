@@ -13,7 +13,7 @@
       "same_grid_as_divisor": null,
       "cells": 12825000,
       "pore_cluster_count": 1,
-      "solid_disconnected_fraction": 0.00017833214165718925,
+      "solid_disconnected_fraction": 9.395391239985784E-05,
       "open_porosity": 1,
       "pore_percolates": [
         true,
@@ -29,7 +29,7 @@
       "same_grid_as_divisor": null,
       "cells": 17681626,
       "pore_cluster_count": 1,
-      "solid_disconnected_fraction": 5.400390010057432E-05,
+      "solid_disconnected_fraction": 4.053510411305972E-05,
       "open_porosity": 1,
       "pore_percolates": [
         true,

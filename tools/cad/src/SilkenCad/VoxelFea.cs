@@ -1346,7 +1346,7 @@ internal static class VoxelFea
         float fExtent = nCells * fPeriodMm;
         float fStep = fPeriodMm / nStepsPerPeriod;
         IImplicit oField = new GradedCartesianGyroid(
-            0f, 0f, fPeriodMm, fPeriodMm, fWallParam, fWallParam, bNetwork);
+            0f, 0f, fPeriodMm, fPeriodMm, fWallParam, fWallParam, bNetwork, fPeriodAxialMm: fPeriodMm);
         return Connectivity.SampleRegion(
             oField, fExtent, fExtent, fExtent, fStep,
             static (_, _, _) => true, static (_, _, _) => (Phase?)null, 0f, 0f, 0f);

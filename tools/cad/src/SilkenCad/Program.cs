@@ -397,8 +397,9 @@ internal static class Program
     }
 
     // Cell SHAPE of an anchor_zone1 SKU by height × radius (CellShape.cs, 00_07 HW.33): the line-intercept fabric of the
-    // shipped field and — for a PERIOD-graded SKU — of the two alternatives the HW.33 geometry verdict weighs, each beside
-    // the first-order phase map's prediction. A probe, like `converge`: no golden, no OK/FAILED.
+    // shipped field and — for a PERIOD-graded SKU — of the field shipped before the HW.33 verdict (2026-10-22) and of the
+    // options that verdict weighed, each beside the first-order phase map's prediction. A probe, like `converge`: no
+    // golden, no OK/FAILED.
     // 🔑 Every stretch is RELATIVE to the nominal of its shell — the same instrument on a constant-period field at that
     //    shell's mean radius — because the chord is not µCT's local thickness (CellShape header) and only the ratio is
     //    free of that difference.
@@ -443,14 +444,19 @@ internal static class Program
         float fRSectionMean = new CellShape.Cell(0f, 1f, fRCore, fRRim).RMeanMm;
         float fPAxial = ArgFloat(args, "--axial-period-mm", PeriodAt(fRSectionMean));
 
+        // ⚖️ HW.33 (в), 2026-10-22: `as_built` IS the in-plane-graded field at the RIM's axial period. The rows after it
+        // keep the whole decision measurable on one instrument: the field shipped before the verdict (`pre_verdict`),
+        // option (б) applied to THAT field (`z_origin_mid`) and option (в) at the experiment's axial period.
         var aVariants = new List<(string Name, IImplicit Field, Func<double, double, double[,]>? Jacobian)>
         {
             ("as_built", Zone1Anode.Gyroid(cem),
-                bPeriodGraded ? (r, z) => CellShape.ShiftedJacobian(cem, r, z, 0.0) : null),
+                bPeriodGraded ? (r, _) => CellShape.InPlaneJacobian(cem, r, fPRim) : null),
         };
         if (bPeriodGraded)
         {
-            aVariants.Add(("z_origin_mid", new CellShape.AxiallyShiftedField(Zone1Anode.Gyroid(cem), fLength / 2f),
+            aVariants.Add(("pre_verdict", CellShape.PreVerdictGyroid(cem),
+                (r, z) => CellShape.ShiftedJacobian(cem, r, z, 0.0)));
+            aVariants.Add(("z_origin_mid", new CellShape.AxiallyShiftedField(CellShape.PreVerdictGyroid(cem), fLength / 2f),
                 (r, z) => CellShape.ShiftedJacobian(cem, r, z, fLength / 2f)));
             aVariants.Add(("in_plane_only",
                 new CellShape.InPlaneGradedGyroid(fRCore, fRRim, fPCore, fPRim, fWCore, fWRim, bNetwork, fPAxial),

@@ -112,11 +112,11 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
 - **A continuous radial gradient keeps POROSITY only up to ~0.8× period ratio — and shears the CELL with height at any ratio:** a spatially-varying
   frequency makes the SDF non-Eikonal (`|∇eq| ∝ f`); the parasitic `∇f·coord` term collapses
   porosity (measured 67→42 % at period 2.5→1.3 mm). Keep continuous gradients gentle — and the
-  ~0.8× is a POROSITY bound (from one collapse, read on the whole part): Z is scaled by the same
-  2π/P(r), so the phase gains a z·k′(r) term that grows with height — a volume-keeping SHEAR of the
-  cell, so the porosity by height stays flat while, measured 2026-10-22 (`cellshape`), the top of every
-  period-graded SKU is compressed to 0.42–0.49 of its nominal along one axis, DA 3.3–4.3, and its specific surface rises to 1.30–1.44 of nominal (`01_01 §5.5`; the
-  geometry verdict is `00_07` HW.33's). For a
+  ~0.8× is a POROSITY bound (from one collapse, read on the whole part): until the HW.33 verdict Z was scaled by the same
+  2π/P(r), so the phase gained a z·k′(r) term that grows with height — a volume-keeping SHEAR of the
+  cell: the porosity by height stayed flat while, measured 2026-10-22 (`cellshape`), the top of every
+  period-graded SKU was compressed to 0.42–0.49 of its nominal along one axis, DA 3.3–4.3, and its specific surface rose to 1.30–1.44 of nominal; ⚖️ ratified and applied the same day (`00_07` HW.33 (в), `01_01 §5.5`):
+  one axial period, the rim's — the shipped part reads DA ≤ 1.25 at every height. For a
   STRONG pore contrast use `topology: stepped` (µ-LPBF only, not an SLM candidate — `01_01 §5.5`; constant-period zones → distortion only at the
   thin boundary ring). A phase-correct strong continuous gradient needs period-tensor/conformal
   (Noyron/nTop-level), beyond this demo. **Per-shell porosity uses cumulative-diff** (thin rings

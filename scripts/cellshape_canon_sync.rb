@@ -19,6 +19,9 @@
 #   2. TRANSCRIPTION — each range canon states, against the min/max over the committed caches: the top-outer
 #      stretches, the degree of anisotropy and its tilt, the chord ratios, specific surface, the print-floor
 #      shares, the two alternatives' figures, the controls, and the two axial-period runs.
+#   ⚖️ Since the HW.33 verdict (2026-10-22) a period-graded cache carries FOUR variants, read here by NAME: `as_built`
+#      (the shipped in-plane-graded field — its own anchor), `pre_verdict` (the field shipped before the verdict —
+#      the measured sentences of §5.5 describe it), `z_origin_mid` and `in_plane_only` (the options it weighed).
 #   3. DERIVATION — the figures canon computes from the MANIFESTS rather than from a cache: the axial shear at
 #      the rim corner, γ = (L/R)·(P_core/P_rim − 1), the in-plane term ε at the outer third, and the
 #      irreducible in-plane anisotropy P_core/P_rim.
@@ -65,12 +68,12 @@ manifests.each do |path|
 end
 
 # ── 1. PROVENANCE ────────────────────────────────────────────────────────────────────────────────
-# A period-graded SKU must carry all three variants (the verdict's closed list is read off them); a
-# period-CONSTANT one must carry only `as_built` — a third variant there would be a copy of the first.
+# A period-graded SKU must carry all four variants (the shipped field, the one shipped before the verdict and the
+# options it weighed); a period-CONSTANT one must carry only `as_built` — another variant there would be a copy.
 caches.each do |name, h|
   cache = h[:cache]
   graded = cache["period_rim_mm"] != cache["period_core_mm"] && cache["topology"] != "stepped"
-  want = graded ? %w[as_built z_origin_mid in_plane_only] : %w[as_built]
+  want = graded ? %w[as_built pre_verdict z_origin_mid in_plane_only] : %w[as_built]
   got = cache["variants"].map { |v| v["variant"] }
   failures << "#{name}: cache carries variants #{got.inspect}, expected #{want.inspect}" if got != want
   failures << "#{name}: cache topology #{cache['topology']} ≠ manifest #{h[:cem]['topology']}" if cache["topology"] != h[:cem]["topology"]
@@ -96,6 +99,8 @@ end
 # The settings canon's sentence names: the top bin is 4.75–5.25 mm and the outer shell is the outer THIRD.
 graded = caches.select { |_, h| h[:cache]["period_rim_mm"] != h[:cache]["period_core_mm"] && h[:cache]["topology"] != "stepped" }
 failures << "fewer than five period-graded SKUs are cached — canon's ranges are stated over five" if graded.size < 5
+
+def variant_named(h, name) = h[:cache]["variants"].find { |v| v["variant"] == name }
 
 def outer_rows(variant, shells = nil)
   shells ||= variant["rows"].map { |r| r["shell"] }.max
@@ -129,9 +134,10 @@ def anchor(failures, canon, label, re, values, digits)
 end
 
 if graded.size >= 5
-  tops = graded.map { |_, h| outer_rows(h[:cache]["variants"][0]).last }
-  bots = graded.map { |_, h| outer_rows(h[:cache]["variants"][0]).first }
-  vars = ->(i) { graded.map { |_, h| h[:cache]["variants"][i] } }
+  # The measured sentences of §5.5 describe the field shipped BEFORE the verdict — read from `pre_verdict`.
+  tops = graded.map { |_, h| outer_rows(variant_named(h, "pre_verdict")).last }
+  bots = graded.map { |_, h| outer_rows(variant_named(h, "pre_verdict")).first }
+  vars = ->(name) { graded.map { |_, h| variant_named(h, name) } }
 
   lam_min = tops.map { |r| r["stretch_measured"][0] }.minmax
   lam_max = tops.map { |r| r["stretch_measured"][2] }.minmax
@@ -140,13 +146,13 @@ if graded.size >= 5
   chord_solid = tops.map { |r| r["solid_chord_compressed_mm"] / r["nominal_solid_chord_mm"] }.minmax
   chord_pore = tops.map { |r| r["pore_chord_compressed_mm"] / r["nominal_pore_chord_mm"] }.minmax
   chord_long = tops.map { |r| r["solid_chord_elongated_mm"] / r["nominal_solid_chord_mm"] }.minmax
-  sv_bot = vars.(0).map { |v| v["specific_surface_vs_nominal_outer_bottom"] }.minmax
-  sv_top = vars.(0).map { |v| v["specific_surface_vs_nominal_outer_top"] }.minmax
+  sv_bot = vars.("pre_verdict").map { |v| v["specific_surface_vs_nominal_outer_bottom"] }.minmax
+  sv_top = vars.("pre_verdict").map { |v| v["specific_surface_vs_nominal_outer_top"] }.minmax
   sub_bot = bots.map { |r| r["sub_floor_solid_fraction"] * 100 }.minmax
   sub_top = tops.map { |r| r["sub_floor_solid_fraction"] * 100 }.minmax
-  sub_whole = vars.(0).map { |v| v["sub_floor_solid_fraction_whole_part"] * 100 }.minmax
-  gap_axis = vars.(0).map { |v| v["worst_relative_gap_to_phase_map_outside_core"] * 100 }.max
-  da_below = vars.(0).map { |v| v["anisotropy_read_below_phase_map_outside_core"] * 100 }.minmax
+  sub_whole = vars.("pre_verdict").map { |v| v["sub_floor_solid_fraction_whole_part"] * 100 }.minmax
+  gap_axis = vars.("pre_verdict").map { |v| v["worst_relative_gap_to_phase_map_outside_core"] * 100 }.max
+  da_below = vars.("pre_verdict").map { |v| v["anisotropy_read_below_phase_map_outside_core"] * 100 }.minmax
 
   anchors_seen += anchor(failures, canon, "top-outer compressed/elongated stretch",
                          /до \*\*([0-9.]+)–([0-9.]+)\*\* номіналу своєї оболонки, і видовжена до \*\*([0-9.]+)–([0-9.]+)\*\*/,
@@ -180,15 +186,26 @@ if graded.size >= 5
   # 🔑 The two ALTERNATIVES' figures live in the tracker's verdict leg, not in canon — the closed list is open
   #    work, and `00_06 §2` keeps open work in `00_07`. So this layer reads THAT file; the gate follows the fact
   #    to its home rather than asking canon to hold a number it must not.
-  [ [ 1, "z_origin_mid", /член уполовину \(DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %\)/ ],
-   [ 2, "in_plane_only", /ОДНИМ осьовим періодом — DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %/ ] ].each do |i, name, re|
-    v = vars.(i)
+  [ [ "z_origin_mid", /член уполовину \(DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %\)/ ],
+   [ "in_plane_only", /ОДНИМ осьовим періодом — DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %/ ] ].each do |name, re|
+    v = vars.(name)
     anchors_seen += anchor(failures, TRACKER_TEXT, "#{name} figures (00_07 HW.33)", re,
                            [ *v.map { |x| x["max_degree_of_anisotropy"] }.minmax,
                             *v.map { |x| x["min_stretch"] }.minmax,
                             *v.map { |x| x["specific_surface_vs_nominal_outer_top"] }.minmax,
                             v.map { |x| x["max_sub_floor_solid_fraction_by_cell"] * 100 }.max ], 2)
   end
+end
+
+# ⚖️ The SHIPPED field after the HW.33 verdict — canon's ⚖️ line in §5.5, same shape as the options' figures.
+if graded.size >= 5
+  v = vars.("as_built")
+  anchors_seen += anchor(failures, canon, "as-built field after the verdict",
+                         /відвантажене поле після присуду \(`as_built`\) — DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %/,
+                         [ *v.map { |x| x["max_degree_of_anisotropy"] }.minmax,
+                          *v.map { |x| x["min_stretch"] }.minmax,
+                          *v.map { |x| x["specific_surface_vs_nominal_outer_top"] }.minmax,
+                          v.map { |x| x["max_sub_floor_solid_fraction_by_cell"] * 100 }.max ], 2)
 end
 
 # The controls, and the one that is NOT clean: `stepped`'s core shell straddles its own zone seam.

@@ -63,7 +63,7 @@ public class CellShapeTests
     [Fact]
     public void An_Affinely_Sheared_Lattice_Reads_The_Exact_Stretches_Of_Its_Map()
     {
-        var oInner = new GradedCartesianGyroid(0f, 5.5f, 2.0f, 2.0f, 0.1f, 0.1f, bNetwork: true);
+        var oInner = new GradedCartesianGyroid(0f, 5.5f, 2.0f, 2.0f, 0.1f, 0.1f, bNetwork: true, fPeriodAxialMm: 2.0f);
         var cell = new CellShape.Cell(10f, 15f, 0f, 4f);
         CellShape.Fabric nominal = CellShape.Measure(oInner, cell, Everywhere, 2.0f, 0.02f, Centres, CellShape.Frame.Cartesian);
         CellShape.Fabric sheared = CellShape.Measure(new ShearedField(oInner, 1f), cell, Everywhere, 2.0f, 0.02f, Centres, CellShape.Frame.Cartesian);
@@ -82,15 +82,15 @@ public class CellShapeTests
         Assert.True(Math.Abs(dProduct - 1.0) < 0.10, $"∏λ {dProduct:F3} — a unimodular map must keep it at 1; {strAll}");
     }
 
-    // THE CLAIM OF HW.33 — the graded part's cell SHEARS with height while its porosity does not: at the top of the rim
-    // shell the most compressed axis is less than half its nominal, at the bottom it is the in-plane term alone, both
+    // THE CLAIM OF HW.33 — the PRE-VERDICT field's cell SHEARS with height while its porosity does not: at the top of the
+    // rim shell the most compressed axis is less than half its nominal, at the bottom it is the in-plane term alone, both
     // within this test's floor of the first-order phase map (CellShape.GradedJacobian), and the porosity of the two cells
-    // agrees. The z-origin-mid variant halves the top's term: its top reads what the as-built reads at mid-height.
+    // agrees. It is the instrument's sheared reference since the verdict moved the product off it (next tests).
     [Fact]
     public void A_Period_Graded_Lattice_Shears_With_Height_At_Constant_Porosity_As_Its_Phase_Map_Predicts()
     {
         AnchorCem cem = PineLike();
-        IImplicit oField = Zone1Anode.Gyroid(cem);
+        IImplicit oField = CellShape.PreVerdictGyroid(cem);
         var cellBottom = new CellShape.Cell(0f, 5f, RimShell.Lo, RimShell.Hi);
         var cellTop = new CellShape.Cell(35f, 40f, RimShell.Lo, RimShell.Hi);
         float fRMean = cellTop.RMeanMm;
@@ -126,7 +126,7 @@ public class CellShapeTests
     public void Shifting_The_Z_Origin_To_Mid_Part_Halves_The_Term_And_Mirrors_It_Onto_The_Tip()
     {
         AnchorCem cem = PineLike();
-        IImplicit oShifted = new CellShape.AxiallyShiftedField(Zone1Anode.Gyroid(cem), cem.LengthMm / 2f);
+        IImplicit oShifted = new CellShape.AxiallyShiftedField(CellShape.PreVerdictGyroid(cem), cem.LengthMm / 2f);
         var cellBottom = new CellShape.Cell(0f, 5f, RimShell.Lo, RimShell.Hi);
         var cellTop = new CellShape.Cell(35f, 40f, RimShell.Lo, RimShell.Hi);
         float fRMean = cellTop.RMeanMm, fPMean = CellShape.PeriodAtMm(cem, fRMean);
@@ -135,7 +135,7 @@ public class CellShapeTests
         CellShape.Fabric nominal = CellShape.Measure(CellShape.Nominal(cem, fRMean), cellBottom, fnBody, fPMean, 0.02f, Centres);
         CellShape.Fabric top = CellShape.Measure(oShifted, cellTop, fnBody, fPMean, 0.02f, Centres);
         CellShape.Fabric tip = CellShape.Measure(oShifted, cellBottom, fnBody, fPMean, 0.02f, Centres);
-        CellShape.Fabric asBuiltTop = CellShape.Measure(Zone1Anode.Gyroid(cem), cellTop, fnBody, fPMean, 0.02f, Centres);
+        CellShape.Fabric preVerdictTop = CellShape.Measure(CellShape.PreVerdictGyroid(cem), cellTop, fnBody, fPMean, 0.02f, Centres);
 
         double dTop = top.StretchesAgainst(nominal)[0], dTip = tip.StretchesAgainst(nominal)[0];
         double dK = 2.0 * Math.PI / fPMean;
@@ -143,8 +143,8 @@ public class CellShapeTests
 
         Assert.True(Math.Abs(dTop - dPredTop) / dPredTop < 0.08, $"shifted top: measured {dTop:F3}, its own phase map {dPredTop:F3}");
         Assert.True(Math.Abs(dTop - dTip) < 0.03, $"the shift must be SYMMETRIC: top {dTop:F3} vs tree-side tip {dTip:F3}");
-        Assert.True(dTop > 1.25 * asBuiltTop.StretchesAgainst(nominal)[0],
-            $"shifted top {dTop:F3} is no gentler than as-built {asBuiltTop.StretchesAgainst(nominal)[0]:F3}");
+        Assert.True(dTop > 1.25 * preVerdictTop.StretchesAgainst(nominal)[0],
+            $"shifted top {dTop:F3} is no gentler than the pre-verdict field {preVerdictTop.StretchesAgainst(nominal)[0]:F3}");
         Assert.True(top.DegreeOfAnisotropy < 2.5 && top.DegreeOfAnisotropy > 1.5,
             $"shifted top DA {top.DegreeOfAnisotropy:F2} — expected the halved term, ~1.8–2.1 on this geometry");
     }
@@ -175,6 +175,33 @@ public class CellShapeTests
         Assert.True(Math.Abs(dTop - dPred) / dPred < 0.08, $"in-plane-only top: measured {dTop:F3}, its own phase map {dPred:F3}");
         // What NO option removes: the in-plane radial term itself, ε = r·|P′|/P ≈ 0.2 at the rim.
         Assert.True(dTop < 0.92, $"in-plane-only still carries the radial term — read {dTop:F3}, expected ≈ 1/(1+ε) ≈ 0.83");
+    }
+
+    // 🔴 THE VERDICT ITSELF (⚖️ founder 2026-10-22, 00_07 HW.33 option (в), canon 01_01 §5.5) — pinned by its FUNCTION in
+    //    the part's own field, never by a parameter (picogk gotcha #15): the SHIPPED period-graded part is flat with height,
+    //    reads its own in-plane map at the RIM's axial period, and is no longer the sheared field. ⛔ Reverting the rule in
+    //    `Zone1Anode.Gyroid` (axial wavenumber back to k(r)) reds all three asserts; an axial period other than the rim's
+    //    reds the map assert.
+    [Fact]
+    public void The_Shipped_Period_Graded_Part_Does_Not_Shear_With_Height()
+    {
+        AnchorCem cem = PineLike();
+        IImplicit oField = Zone1Anode.Gyroid(cem);
+        var cellBottom = new CellShape.Cell(0f, 5f, RimShell.Lo, RimShell.Hi);
+        var cellTop = new CellShape.Cell(35f, 40f, RimShell.Lo, RimShell.Hi);
+        float fRMean = cellTop.RMeanMm, fPMean = CellShape.PeriodAtMm(cem, fRMean);
+        float fPRim = cem.GyroidPeriodRimMm;
+        Func<Vector3, bool> fnBody = Zone1Anode.Body(cem);
+
+        CellShape.Fabric nominal = CellShape.Measure(CellShape.Nominal(cem, fRMean), cellBottom, fnBody, fPMean, 0.02f, Centres);
+        CellShape.Fabric bottom = CellShape.Measure(oField, cellBottom, fnBody, fPMean, 0.02f, Centres);
+        CellShape.Fabric top = CellShape.Measure(oField, cellTop, fnBody, fPMean, 0.02f, Centres);
+        double dBottom = bottom.StretchesAgainst(nominal)[0], dTop = top.StretchesAgainst(nominal)[0];
+        double dPred = CellShape.PredictedStretches(CellShape.InPlaneJacobian(cem, fRMean, fPRim), 2.0 * Math.PI / fPMean)[0];
+
+        Assert.True(Math.Abs(dTop - dBottom) < 0.05, $"shipped part must be FLAT with height: bottom {dBottom:F3}, top {dTop:F3}");
+        Assert.True(top.DegreeOfAnisotropy < 1.5, $"shipped top DA {top.DegreeOfAnisotropy:F2} — the axial shear is back");
+        Assert.True(Math.Abs(dTop - dPred) / dPred < 0.08, $"shipped top: measured {dTop:F3}, the rim-axial map {dPred:F3}");
     }
 
     // 🔴 THE PHASE-LOCK GUARD (picogk gotcha #16's class, on this instrument): with ONE sample sequence for every cell,
@@ -302,7 +329,8 @@ public class CellShapeTests
             IImplicit oField = strVariant switch
             {
                 "as_built" => Zone1Anode.Gyroid(cem),
-                "z_origin_mid" => new CellShape.AxiallyShiftedField(Zone1Anode.Gyroid(cem), cem.LengthMm / 2f),
+                "pre_verdict" => CellShape.PreVerdictGyroid(cem),
+                "z_origin_mid" => new CellShape.AxiallyShiftedField(CellShape.PreVerdictGyroid(cem), cem.LengthMm / 2f),
                 "in_plane_only" => new CellShape.InPlaneGradedGyroid(fRCore, fRRim, cem.GyroidPeriodMm, fPRim,
                     cem.GyroidWallParam, cem.GyroidWallParamRim ?? cem.GyroidWallParam,
                     cem.Topology.Equals("network", StringComparison.OrdinalIgnoreCase), fAxialPeriod!.Value),
@@ -311,7 +339,8 @@ public class CellShapeTests
             double[,]? aJ = strVariant switch
             {
                 "as_built" => fPRim != cem.GyroidPeriodMm && !cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase)
-                    ? CellShape.ShiftedJacobian(cem, fRMean, cellTop.ZMidMm, 0.0) : null,
+                    ? CellShape.InPlaneJacobian(cem, fRMean, fPRim) : null,
+                "pre_verdict" => CellShape.ShiftedJacobian(cem, fRMean, cellTop.ZMidMm, 0.0),
                 "z_origin_mid" => CellShape.ShiftedJacobian(cem, fRMean, cellTop.ZMidMm, cem.LengthMm / 2.0),
                 "in_plane_only" => CellShape.InPlaneJacobian(cem, fRMean, fAxialPeriod!.Value),
                 _ => null,
@@ -415,12 +444,14 @@ public class CellShapeTests
             double dLow = aOuterShares.Take(nHalf).Average(), dHigh = aOuterShares.Skip(nHalf).Average();
             if (fPRim != cem.GyroidPeriodMm && !cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase))
             {
-                if (strVariant == "as_built")
+                // ⚖️ HW.33 (в): the SHIPPED field is in-plane-graded, so it falls in the FLAT branch below; the growth
+                //    with height belongs to the field shipped before the verdict.
+                if (strVariant == "pre_verdict")
                 {
                     Assert.True(aOuterShares[^1] > 1.5 * aOuterShares[0],
-                        $"{cem.Name}: as-built outer-shell sub-floor must grow with the shear — bottom {aOuterShares[0]:P2}, top {aOuterShares[^1]:P2}");
+                        $"{cem.Name}: pre-verdict outer-shell sub-floor must grow with the shear — bottom {aOuterShares[0]:P2}, top {aOuterShares[^1]:P2}");
                     Assert.True(dHigh > 1.3 * dLow,
-                        $"{cem.Name}: as-built outer-shell sub-floor halves {dLow:P2} → {dHigh:P2} — the trend is gone");
+                        $"{cem.Name}: pre-verdict outer-shell sub-floor halves {dLow:P2} → {dHigh:P2} — the trend is gone");
                 }
                 else if (strVariant == "z_origin_mid")
                 {
@@ -433,7 +464,7 @@ public class CellShapeTests
                 else
                 {
                     Assert.True(Math.Abs(dHigh - dLow) < 0.15 * dLow,
-                        $"{cem.Name}: in-plane-only must be FLAT by height — halves {dLow:P2} → {dHigh:P2}");
+                        $"{cem.Name} [{strVariant}]: an in-plane-graded field must be FLAT by height — halves {dLow:P2} → {dHigh:P2}");
                 }
             }
         }

@@ -168,21 +168,23 @@ internal sealed class DilatedField(IImplicit oInner, Func<Vector3, bool> fnInBod
 // across the gradient) but stays bicontinuous → porosity is MEASURED per radial shell, never derived
 // (gotcha #4). ⚠️ «Slightly» is FALSE BY HEIGHT — measured 2026-10-22 (`cellshape`, CellShape.cs, 01_01 §5.5): the
 // phase gains ∇k·coord terms — in-plane up to r·k′(r) and, because Z is scaled by the same 2π/period(r), z·k′(r)
-// along the axis — and the axial one SHEARS the cell in the r–z plane by γ = z·|P′|/P while keeping its volume. So
-// the per-layer porosity (Connectivity.AxialProfile) stays flat while the top of every period-graded SKU is
-// compressed to about half its nominal along one axis. Changing the grading is a product-geometry verdict
-// (00_07 HW.33; the factory STL, HW.1, would carry it) — ⛔ not an edit to make here. Topology: sheet = a wall around the minimal surface (|eq|; stretch-dominated, more
+// along the axis — and the axial one SHEARS the cell in the r–z plane by γ = z·|P′|/P while keeping its volume, so the
+// top of every period-graded SKU read about half its nominal along one axis at flat porosity. ⚖️ founder 2026-10-22
+// (00_07 HW.33, option (в), canon 01_01 §5.5): the phase is graded IN PLANE only — θz takes ONE wavenumber, the RIM
+// period's, chosen by `Zone1Anode.Gyroid` (a rule, not a CEM field). `fPeriodAxialMm` = 0 keeps the pre-verdict field
+// (θz = k(r)·z), which exists only as the instrument's sheared reference (`CellShape.PreVerdictGyroid`). What no
+// variant removes: the in-plane term ε = r·|P′|/P. Topology: sheet = a wall around the minimal surface (|eq|; stretch-dominated, more
 // surface); network = one solid channel (one side of eq; bending-dominated, lower E) — the HW.33 axis.
 internal sealed class GradedCartesianGyroid : IImplicit
 {
-    private readonly float _fRCore, _fRRim, _fPeriodCore, _fPeriodRim, _fWallCore, _fWallRim;
+    private readonly float _fRCore, _fRRim, _fPeriodCore, _fPeriodRim, _fWallCore, _fWallRim, _fKAxial;
     private readonly bool _bNetwork;
 
     public GradedCartesianGyroid(
         float fRCoreMm, float fRRimMm,
         float fPeriodCoreMm, float fPeriodRimMm,
         float fWallCore, float fWallRim,
-        bool bNetwork)
+        bool bNetwork, float fPeriodAxialMm)
     {
         _fRCore = fRCoreMm;
         _fRRim = fRRimMm;
@@ -191,6 +193,7 @@ internal sealed class GradedCartesianGyroid : IImplicit
         _fWallCore = fWallCore;
         _fWallRim = fWallRim;
         _bNetwork = bNetwork;
+        _fKAxial = fPeriodAxialMm > 0f ? 2f * MathF.PI / fPeriodAxialMm : 0f;
     }
 
     public float fSignedDistance(in Vector3 vecPt)
@@ -202,7 +205,7 @@ internal sealed class GradedCartesianGyroid : IImplicit
         float fWall = _fWallCore + ((_fWallRim - _fWallCore) * fT);
         float fFreq = 2f * MathF.PI / fPeriod;
 
-        float fX = fFreq * vecPt.X, fY = fFreq * vecPt.Y, fZ = fFreq * vecPt.Z;
+        float fX = fFreq * vecPt.X, fY = fFreq * vecPt.Y, fZ = (_fKAxial > 0f ? _fKAxial : fFreq) * vecPt.Z;
         double dEq = (Math.Sin(fX) * Math.Cos(fY)) + (Math.Sin(fY) * Math.Cos(fZ)) + (Math.Sin(fZ) * Math.Cos(fX));
 
         // sheet: solid in the band around the minimal surface. network: solid on one side of it,
@@ -292,11 +295,13 @@ internal static class Zone1Anode
 
         bool bGraded = fPeriodRim != cem.GyroidPeriodMm || fWallRim != cem.GyroidWallParam || bNetwork;
 
+        // ⚖️ HW.33 (в), 2026-10-22: ONE axial period, the rim's — so the cell no longer shears with height. On a part
+        // whose period is constant this is the same field as before (the axial wavenumber was already one number).
         IImplicit oField = bGraded
             ? new GradedCartesianGyroid(
                 InnerRadiusMm(cem), cem.OuterDiameterMm / 2f,
                 cem.GyroidPeriodMm, fPeriodRim,
-                cem.GyroidWallParam, fWallRim, bNetwork)
+                cem.GyroidWallParam, fWallRim, bNetwork, fPeriodAxialMm: fPeriodRim)
             : new CartesianGyroid(cem.GyroidPeriodMm, cem.GyroidWallParam);
 
         // ⛔ OFF by default, and that is the whole point of the field existing: every shipped number

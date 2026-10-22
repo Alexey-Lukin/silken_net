@@ -46,8 +46,10 @@ public class AnchorTests
     [Fact]
     public void Graded_Reduces_To_Core_Period_At_The_Core_Radius()
     {
-        // At r = rCore the blend factor is 0 ⇒ the graded gyroid must equal the constant core gyroid.
-        GradedCartesianGyroid oGraded = new(1f, 5f, 2.5f, 1.3f, 1.0f, 1.0f, bNetwork: false);
+        // At r = rCore the blend factor is 0 ⇒ the graded gyroid must equal the constant core gyroid — given the CORE's
+        // axial period. The shipped rule puts the RIM's there (⚖️ HW.33 (в), 01_01 §5.5), so the shipped core cell is
+        // axially compressed by design — the verdict's named price; the verdict itself is pinned in CellShapeTests.
+        GradedCartesianGyroid oGraded = new(1f, 5f, 2.5f, 1.3f, 1.0f, 1.0f, bNetwork: false, fPeriodAxialMm: 2.5f);
         CartesianGyroid oConst = new(2.5f, 1.0f);
         Vector3 vecPt = new(1f, 0f, 0.6f);   // |xy| = 1 = rCore
         Assert.Equal(oConst.fSignedDistance(vecPt), oGraded.fSignedDistance(vecPt), 3);
@@ -100,7 +102,7 @@ public class AnchorTests
     {
         // network (single-sided eq) is bicontinuous: ONE pore + ONE solid network, both percolating.
         // Constant period+wall ⇒ the graded SDF reduces to a uniform network gyroid.
-        GradedCartesianGyroid sdf = new(0f, 5f, 2.5f, 2.5f, 1.0f, 1.0f, bNetwork: true);
+        GradedCartesianGyroid sdf = new(0f, 5f, 2.5f, 2.5f, 1.0f, 1.0f, bNetwork: true, fPeriodAxialMm: 2.5f);
         Connectivity.Grid grid = Connectivity.SampleBox(sdf, fExtentMm: 10f, fStepMm: 0.25f);
         ConnectivityMetrics m = Connectivity.Analyse(grid);
 

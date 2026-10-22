@@ -85,9 +85,9 @@ internal static class Connectivity
     // the part is printed without a core, the bus wire is an assembly part — so the grid is the whole lattice
     // cross-section.
     // A gyroid whose period does not vary with radius (constant period — the graded class too when core and rim periods
-    // are equal) is periodic, so for it the absolute Z origin only shifts the phase. One whose period varies is not: its
-    // z·k′(r) phase term grows from z = 0 (this grid starts there), so the origin decides where that term is largest
-    // (00_07 HW.33).
+    // are equal) is periodic, so for it the absolute Z origin only shifts the phase. The shipped graded field is periodic in
+    // z too since the HW.33 verdict (one axial wavenumber, 2026-10-22); the PRE-verdict field (`CellShape.PreVerdictGyroid`)
+    // is not: its z·k′(r) phase term grows from z = 0 (this grid starts there), so the origin decides where it is largest.
     public static Grid SampleAnchor(IImplicit sdf, AnchorCem cem, float fStepMm = 0f)
     {
         float fROuter = cem.OuterDiameterMm / 2f;
