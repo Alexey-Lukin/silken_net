@@ -8,9 +8,10 @@ namespace SilkenCad;
 //
 // 🔴 WHY THIS EXISTS: the only stiffness number the canon had for this part came from Gibson-Ashby
 // `E_foam/E_solid ≈ C·ρⁿ` quoted at the TEXTBOOK pair C = 1, n = 2 — and a wall_param sweep (verb
-// `fea --fit`) measured that pair wrong: AXIALLY C ≈ 0.98, n ≈ 2.24; RADIALLY, on the shipped part, the
-// exponent stays near 2 and the coefficient is what departs (01_01 §5.2 — which member is wrong is a
-// property of the AXIS, not of the formula).
+// `fea --fit`) measured that pair wrong: AXIALLY C ≈ 0.98, n ≈ 2.24; RADIALLY, on the shipped part after the
+// HW.33 geometry verdict, BOTH members depart (C ≈ 0.55, n ≈ 1.71 at period/10 — before the verdict the
+// exponent stayed near 2, n ≈ 1.93 at C ≈ 0.54, and only the coefficient departed) (01_01 §5.2 — which
+// member is wrong is a property of the AXIS and of the geometry, not of the formula).
 // ⚠️ The domain worry that first motivated this module — 1.50–2.50 cells across the radial wall,
 // 01_01 §5.2 uncertainty (4) — was then MEASURED and costs almost nothing (the cube ladder is flat
 // from one cell to eight). The verdict survived; its GROUND did not. This module measures the

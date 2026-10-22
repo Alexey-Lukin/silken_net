@@ -19,8 +19,9 @@
 # IS the roster; a new layer adds a row to it.
 #   1. TRANSCRIPTION — every cell of the two canon tables against the cached rows.
 #   2. DERIVATION — the figures canon computes FROM those rows (Gibson-Ashby at the measured density,
-#      the two ratios to it, GPa at the reference solid modulus, the single-point readings, the spread).
-#      This is the layer that catches a correct cache quoted into a wrong sentence.
+#      the two ratios to it, GPa at the reference solid modulus, the reduction factors, the gap to the wood's
+#      transverse modulus in §5.1 and §5.2 — and its 00_07 HW.33 mirror while that leg carries it —, the
+#      single-point readings, the spread). This is the layer that catches a correct cache quoted into a wrong sentence.
 #   3. PROVENANCE — that the cache still describes the run canon claims (SKU, topology, rod excluded).
 #   4. THE FITTED TABLE — the measured Gibson-Ashby C/n against the per-resolution `gibson_ashby_fit.*`
 #      family, which layers 1-3 do not read at all, plus that family's own provenance (specimen size);
@@ -217,6 +218,43 @@ if (m = canon.match(/екстраполяція Річардсона опуск�
   anchors += 1
   drops = [ 2, 1 ].map { |o| (1 - (richardson.call("radial_ratio", o) / pair[0]["radial_ratio"])) * 100 }
   m.captures.zip(drops).each { |q, v| flag(failures, "Richardson radial drop", format("%.0f", v), q) if format("%.0f", v) != q }
+end
+
+# The gap to the wood's TRANSVERSE modulus — the live verdict figure of §5.1 ⛔, and it reads the finest RADIAL row. UNPINNED
+# until 2026-10-22: the HW.33 re-measurement moved §5.2 to ~7–20× while §5.1 went on quoting the pre-verdict ~5–15×, and
+# mutating either passed (RA1 review of b8bbf08fb). The wood band is read from the sentence that states it, never typed here;
+# each end of the gap is the GPa over the band's OPPOSITE end. ⛔ The pre-verdict figures beside them are dated record — the
+# sweep they came from is not in the tree, so nothing here holds them.
+wood_gap = ->(gpa, band) { [ gpa / band[1], gpa / band[0] ] }
+radial_gpa = finest["radial_ratio"] * E_SOLID_GPA
+wood_band = nil
+if (m = canon.match(/Розрив із поперечним модулем деревини `E_R`\/`E_T` ≈ (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?) ГПа — \*\*~(\d+)–(\d+)×\*\* проти формульних ~(\d+)–(\d+)×/))
+  anchors += 1
+  wood_band = [ m[1].to_f, m[2].to_f ]
+  want = wood_gap.call(radial_gpa, wood_band) + wood_gap.call(ga_part * E_SOLID_GPA, wood_band)
+  m.captures.drop(2).zip(want).each { |q, v| flag(failures, "§5.2 gap to the wood's transverse modulus", format("%.0f", v), q) if format("%.0f", v) != q }
+end
+if (m = canon.match(/де `E_R`\/`E_T` ≈ (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?) ГПа[^\n]*?звужує розрив до \*\*~(\d+)–(\d+)×\*\* \(до гео-присуду HW\.33 ~\d+–\d+×\)/))
+  anchors += 1
+  m.captures.drop(2).zip(wood_gap.call(radial_gpa, [ m[1].to_f, m[2].to_f ])).each do |q, v|
+    flag(failures, "§5.1 gap to the wood's transverse modulus", format("%.0f", v), q) if format("%.0f", v) != q
+  end
+end
+# The reduction factors of the §5.2 table — the reciprocal of the finest row, unpinned until the same review.
+if (m = canon.match(/\*\*виміряно (\d+(?:\.\d+)?)× осьово · (\d+(?:\.\d+)?)× радіально\*\*/))
+  anchors += 1
+  m.captures.zip([ 1.0 / finest["axial_ratio"], 1.0 / finest["radial_ratio"] ]).each do |q, v|
+    shown = format("%.#{q.include?('.') ? q.split('.').last.length : 0}f", v)
+    flag(failures, "reduction factor (1 / the finest row)", shown, q) if shown != q
+  end
+end
+# Its mirror in the HW.33 leg of 00_07 — held WHEN PRESENT, not counted: a tracker leg is thinned or archived when its item
+# closes, so an absent sentence there is the tracker's normal life, not a disarmed check (declared ceiling).
+tracker_gap = File.read(File.join(ROOT, "docs/00_07_Action_Plan_Tracker.md"))[/розрив із поперечним модулем деревини ширшає \(~\d+–\d+× → ~(\d+)–(\d+)×\)/]
+if tracker_gap && wood_band
+  tracker_gap.scan(/~(\d+)–(\d+)×\)\z/).flatten.zip(wood_gap.call(radial_gpa, wood_band)).each do |q, v|
+    flag(failures, "00_07 HW.33 mirror of the gap to the wood's transverse modulus", format("%.0f", v), q) if format("%.0f", v) != q
+  end
 end
 
 # ── The WITH-ROD run: the RECORD of a branch that no longer exists. ──────────────────────────────
@@ -800,7 +838,7 @@ if dilation_anchors < EXPECTED_DILATION_ANCHORS
               "rewording has DISARMED a comparison; find the reworded sentence, do not lower this number"
 end
 
-EXPECTED_ANCHORS = 10
+EXPECTED_ANCHORS = 13
 if anchors < EXPECTED_ANCHORS
   failures << "only #{anchors} of #{EXPECTED_ANCHORS} derivation anchors matched — a canon rewording has "\
               "DISARMED a comparison; find the reworded sentence, do not lower this number"
@@ -1040,6 +1078,9 @@ if File.exist?(PERIODIC)
     dev_gap = pairs.map { |pt, r| ((pt[:dev] / (r["C11"] - r["C12"])) - 1) * 100 }
     axial_gap = pairs.map { |pt, r| ((pt[:axial] / r["E100"]) - 1) * 100 }
     shift16 = [ 1, 2 ].map { |o| ((rich.call("axial_ratio", o) / two[0]["axial_ratio"]) - 1).abs * 100 }
+    # A raw part row against each density-matched rung, carried to that rung's density by the canonical pair's n (layer 7).
+    raw_gaps = ->(r) { matched.map { |g| (((r["axial_ratio"] * (((1 - g["porosity"]) / (1 - r["porosity"]))**n_pair)) / g["E100"]) - 1) * 100 } }
+    failures << "the canonical pair's cache is missing — the density-matched raw-row comparison has no n" if n_pair.nil?
     mu_s = 1.0 / (2 * (1 + nu))
     field = ->(r, theta) { r["fields"].find { |x| (x["theta_deg"] - theta).abs < 1e-9 } || {} }
     pq = ->(r, theta, q) { field.call(r, theta).dig("principal_over_sigma_w", q) }
@@ -1064,8 +1105,13 @@ if File.exist?(PERIODIC)
       [ re_dil, [ dil_low.min, dil_low.max, bases[0][:nu], finest["nu_star"] ] ],
       [ /Девіаторний член `C11 − C12` знака не міняє: тіло нижче за матеріальний на всіх (\d+) парах \(від (−\d+(?:\.\d+)?) % до (−\d+(?:\.\d+)?) %/,
         [ dev_gap.count(&:negative?), dev_gap.min, dev_gap.max ] ],
-      [ /а сирий рядок деталі на період\/(\d+) \((\d+(?:\.\d+)?)\) лежить ВИЩЕ за всю драбину ґратки \((\d+(?:\.\d+)?)–(\d+(?:\.\d+)?)\)/,
-        ->(md) { row = sweep["rows"].find { |r| r["step_divisor"] == md[1].to_i }; [ md[1].to_i, row && row["axial_ratio"], *per["rows"].map { |r| r["E100"] }.minmax ] } ],
+      [ /а сирий рядок деталі на період\/(\d+) \((\d+(?:\.\d+)?)\), зведений канонним `n` (\d+(?:\.\d+)?) до густини кожного з рунгів рівної густини, лягає проти них від ([−+]\d+(?:\.\d+)?) % до ([−+]\d+(?:\.\d+)?) % — з обома знаками/,
+        lambda do |md|
+          row = sweep["rows"].find { |r| r["step_divisor"] == md[1].to_i }
+          gaps = row && n_pair && raw_gaps.call(row)
+          mixed = gaps && gaps.min.negative? && gaps.max.positive?
+          [ md[1].to_i, row && row["axial_ratio"], n_pair, (gaps.min if mixed), (gaps.max if mixed) ]
+        end ],
       [ /На рунгах рівної густини \(період\/(\d+)–\/(\d+)\) p99 лежить у смузі (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?) на θ = 0 і (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?) на θ = 45°, p99\.9 на θ = 0 — у смузі (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?), а максимум не збігається \(на θ = 0 — (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?)\), тож прочитанням він не є/,
         [ lo_s, hi_s, *band.call(0.0, "p99"), *band.call(45.0, "p99"), *band.call(0.0, "p99.9"), *band.call(0.0, "max") ] ],
       [ /на кожному рунгу драбини він на 45° нижчий, ніж на 0°, а `√E` — вищий, тож добуток `k_p·√E` за p99 від 0° до 45° падає \(на рунгах рівної густини — на (\d+)–(\d+) %\)/,
@@ -1086,11 +1132,13 @@ if File.exist?(PERIODIC)
     failures << "periodic /16 E[100] #{equal16['E100']} is not inside the cube ladder #{lo}–#{hi}, as canon says" unless equal16["E100"].between?(lo, hi)
     failures << "«стійко … нижчий»: the in-plane dilatational term is not lower on every pair; #{dil_low}" unless dil_low.all?(&:positive?)
     failures << "«знака не міняє: тіло нижче на всіх»: the deviatoric gap is not negative on every pair; #{dev_gap}" unless dev_gap.all?(&:negative?) && dev_gap.count(&:negative?) == pairs.size
-    # «не встановлює» holds while the pairs disagree in sign OR a raw part row lies on the far side of the WHOLE material
-    # ladder (the bases are extrapolations a non-monotone sweep does not prove — 2026-10-22, HW.33).
-    e100 = per["rows"].map { |r| r["E100"] }.minmax
-    raw_across = sweep["rows"].any? { |r| axial_gap.max.negative? ? r["axial_ratio"] > e100[1] : r["axial_ratio"] < e100[0] }
-    failures << "«знака розриву драбина не встановлює»: the axial gap keeps ONE sign over the pairs and no raw part row crosses the ladder — canon must say which; #{axial_gap}" unless (axial_gap.min.negative? && axial_gap.max.positive?) || raw_across
+    # «не встановлює» holds while the pairs disagree in sign OR a raw part row, carried to each density-matched rung's
+    # density by the canonical n, reads against some rung with the sign the bases do not have (the bases are extrapolations
+    # a non-monotone sweep does not prove — 2026-10-22, HW.33). DENSITY-MATCHED only: the first form of this check set a raw
+    # row at 63.96 % porosity against the whole ladder at 62.9–64.7 % — the very unmatched comparison the same canon
+    # paragraph refuses for the equal step (RA1 review of b8bbf08fb, 2026-10-22).
+    raw_across = n_pair && sweep["rows"].any? { |r| raw_gaps.call(r).any? { |x| axial_gap.max.negative? ? x.positive? : x.negative? } }
+    failures << "«знака розриву драбина не встановлює»: the axial gap keeps ONE sign over the pairs and no density-matched raw part row reads the other sign — canon must say which; #{axial_gap}" unless (axial_gap.min.negative? && axial_gap.max.positive?) || raw_across
     # ν* is quoted once per tensor and holds for every base and every density-matched rung — the quoted digits decide.
     if (mdil = canon.match(re_dil))
       failures << "canon quotes ν* #{mdil[3]} for the part body; the two bases give #{bases.map { |b| b[:nu] }}" unless bases.all? { |b| render.call(b[:nu], mdil[3]) == mdil[3] }
