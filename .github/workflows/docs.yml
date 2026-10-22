@@ -324,6 +324,19 @@ jobs:
         # rewording that disarms a comparison reds instead of going quietly green.
         run: ruby scripts/fea_canon_sync.rb
 
+      - name: Cell-shape cache↔canon guard (HW.33 — 01_01 §5.5 ↔ tools/cad/cache/topology)
+        # Pure Ruby stdlib (json). Sibling of the FE guard above, one cache directory over: the
+        # `cellshape` measurement landed 2026-10-22 with no machine tie, and the numbers canon quotes
+        # are RANGES over SKUs — arithmetic ABOUT a cache, the class prose cannot hold. Its first run
+        # on a tree believed correct caught two real drifts in that prose (a shell band, and ε quoted
+        # where the shortening ε/(1+ε) was stated). Layers: provenance (a cache per shipped SKU, its
+        # variants, the summary fields against their own rows), transcription (every printed range) and
+        # derivation (γ at the rim corner, the in-plane term, P_core/P_rim — from the MANIFESTS).
+        # ⛔ Declared ceiling in the script header: the instrument-floor and probe-length figures are
+        # NOT in any cache (their carriers are CellShapeTests and the CellShape.cs header), and the
+        # variant figures live in 00_07 HW.33's verdict leg, which this gate reads there.
+        run: ruby scripts/cellshape_canon_sync.rb
+
       - name: 00_07 volatile counter in prose (DOC-T.99 — HARD ⚖️ founder 2026-09-05)
         # Pure Ruby, no Rails — a number + a MOVING-SET noun (ніг · носіїв · ланок ·
         # сайтів · поверхонь) inside `**Стан:**` or a WATCH line. Judges FORM, never
