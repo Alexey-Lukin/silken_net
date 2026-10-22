@@ -339,7 +339,7 @@ public class CellShapeTests
             double[,]? aJ = strVariant switch
             {
                 "as_built" => fPRim != cem.GyroidPeriodMm && !cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase)
-                    ? CellShape.InPlaneJacobian(cem, fRMean, fPRim) : null,
+                    ? CellShape.InPlaneJacobian(cem, fRMean, Zone1Anode.AxialPeriodMm(cem)) : null,
                 "pre_verdict" => CellShape.ShiftedJacobian(cem, fRMean, cellTop.ZMidMm, 0.0),
                 "z_origin_mid" => CellShape.ShiftedJacobian(cem, fRMean, cellTop.ZMidMm, cem.LengthMm / 2.0),
                 "in_plane_only" => CellShape.InPlaneJacobian(cem, fRMean, fAxialPeriod!.Value),

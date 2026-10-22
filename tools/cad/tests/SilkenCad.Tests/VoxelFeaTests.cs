@@ -202,24 +202,63 @@ public class VoxelFeaTests
         => Assert.Equal(nExpected, VoxelFea.PhaseLockCells(fStep, fCore, fRim));
 
     // 🔴 ⊕ HW.33 (в): the graded pine part is constant-period ALONG z, so every step of its pinned sweep (rim/N) locks
-    // the axis every cell while PhaseLockCells stays 0, and a step from the diameter locks neither; the stepped part has
-    // no single axial period. Read through the real manifests and the generator's own rule.
-    // MUTATION: make Zone1Anode.AxialPeriodMm return the CORE period ⇒ /6 reads a two-cell repeat (2.5 / (2.0/6) = 7.5) and reds.
+    // the axis every cell while its full lock stays 0, and a step from the diameter locks neither. The stepped part has
+    // no single axial period, but each of its zones keeps a constant one, so its rim zone (1.3) is locked WHOLE at rim/8.
+    // MUTATION: make Zone1Anode.AxialPeriodMm return the CORE period ⇒ /6 reads a two-cell repeat (2.5 / (2.0/6) = 7.5) and
+    // reds; route the stepped part past the zoned branch of PhaseLockCells (`if (!bZoned || fPeriodRim > 0f) return 0;` — a plain
+    // early return does not compile, CS0162) ⇒ the stepped row reads 0 and reds.
     [Theory]
-    [InlineData("anchor_zone1.pine.json", 6, 1)]
-    [InlineData("anchor_zone1.pine.json", 8, 1)]
-    [InlineData("anchor_zone1.pine.json", 12, 1)]
-    [InlineData("anchor_zone1.pine.json", 16, 1)]
-    [InlineData("anchor_zone1.pine.json", -50, 0)]
-    [InlineData("anchor_zone1.pine.json", -60, 0)]
-    [InlineData("anchor_zone1.stepped.json", 8, 0)]
-    public void The_Graded_Part_Locks_Along_The_Axis_On_Its_Own_Sweep_Steps(string strCem, int nDiv, int nExpected)
+    [InlineData("anchor_zone1.pine.json", 6, 1, 0)]
+    [InlineData("anchor_zone1.pine.json", 8, 1, 0)]
+    [InlineData("anchor_zone1.pine.json", 12, 1, 0)]
+    [InlineData("anchor_zone1.pine.json", 16, 1, 0)]
+    [InlineData("anchor_zone1.pine.json", -50, 0, 0)]
+    [InlineData("anchor_zone1.pine.json", -60, 0, 0)]
+    [InlineData("anchor_zone1.stepped.json", 8, 0, 1)]
+    public void Each_Topology_Locks_As_Its_Periods_Say_On_Its_Own_Sweep_Steps(string strCem, int nDiv, int nAxial, int nFull)
     {
         AnchorCem cem = CemFixtures.Anchor(strCem);
         float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
         float fStep = nDiv > 0 ? fPeriodMin / nDiv : cem.OuterDiameterMm / -nDiv;      // < 0: a step from the diameter
-        Assert.Equal(nExpected, VoxelFea.AxialPhaseLockCells(fStep, Zone1Anode.AxialPeriodMm(cem)));
-        Assert.Equal(0, VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm));
+        bool bZoned = cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(nAxial, VoxelFea.AxialPhaseLockCells(fStep, Zone1Anode.AxialPeriodMm(cem)));
+        Assert.Equal(nFull, VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm, bZoned));
+    }
+
+    // 🔴 The same claims read through the REAL generator and sampler, not the arithmetic: on the shipped pine part at a
+    // sweep step (/8, 0.25 mm) every z-plane repeats cell for cell one rim period (8 planes) later, at a step from the
+    // diameter (11/50) the plane eight steps on differs, and the in-plane drift still resolves walls a few hundredths
+    // apart at /8 — axial lock, no wall staircase (the constant-period part collapses the same walls, the test below).
+    // MUTATION: give the generator the core period on z (`fPeriodAxialMm: cem.GyroidPeriodMm` in Zone1Anode.Gyroid) ⇒
+    // the locked planes stop repeating and this reds.
+    [Fact]
+    public void The_Graded_Part_Repeats_Its_Planes_After_One_Rim_Period_And_Still_Resolves_Close_Walls()
+    {
+        static Connectivity.Grid Slice(float fWall, float fStepMm)
+        {
+            AnchorCem cem = CemFixtures.Anchor("anchor_zone1.pine.json") with { LengthMm = 4.4f, GyroidWallParam = fWall, GyroidWallParamRim = fWall };
+            return VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStepMm);
+        }
+        static int PlanesDiffering(Connectivity.Grid g, int nShift)
+        {
+            int nDiffering = 0;
+            for (int k = 0; k + nShift < g.Nz; k++)
+            {
+                bool bSame = true;
+                for (int i = 0; i < g.Nx && bSame; i++)
+                    for (int j = 0; j < g.Ny && bSame; j++)
+                        bSame = g.Cells[g.Index(i, j, k)] == g.Cells[g.Index(i, j, k + nShift)];
+                nDiffering += bSame ? 0 : 1;
+            }
+            return nDiffering;
+        }
+
+        Connectivity.Grid locked = Slice(0.10f, 2.0f / 8), unlocked = Slice(0.10f, 11f / 50);
+        Assert.True(locked.Nz > 8 && unlocked.Nz > 8);
+        Assert.Equal(0, PlanesDiffering(locked, 8));
+        Assert.Equal(unlocked.Nz - 8, PlanesDiffering(unlocked, 8));
+        Assert.Empty(VoxelFea.IdenticalSweepGrids(
+            [(-0.15f, Slice(-0.15f, 2.0f / 8)), (-0.08f, Slice(-0.08f, 2.0f / 8)), (0.10f, locked)]));
     }
 
     // 🔴 The staircase itself, on the shipped constant-period part, read through the real sampler with the wall held

@@ -450,7 +450,7 @@ internal static class Program
         var aVariants = new List<(string Name, IImplicit Field, Func<double, double, double[,]>? Jacobian)>
         {
             ("as_built", Zone1Anode.Gyroid(cem),
-                bPeriodGraded ? (r, _) => CellShape.InPlaneJacobian(cem, r, fPRim) : null),
+                bPeriodGraded ? (r, _) => CellShape.InPlaneJacobian(cem, r, Zone1Anode.AxialPeriodMm(cem)) : null),
         };
         if (bPeriodGraded)
         {
@@ -1555,12 +1555,7 @@ internal static class Program
                 return Fail($"fea: {(nDivisor > 0 ? $"--step-div {nDivisor}" : $"--step-mm {fStep:0.####}")} puts the radial load centre " +
                             $"{dCentreOffset * 1000.0:F1} µm off the part axis (Ø{cem.OuterDiameterMm:0.##} / step {fStep:F4} is not a whole number) — " +
                             "pick a step that divides the diameter");
-            int nLockCells = VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm);
-            if (nLockCells > 0)
-                Console.WriteLine($"  ⚠ step {fStep:F4}: phase-locked sampling (constant period, the phase repeats every {nLockCells} cell(s)) — " +
-                                  "porosity and stiffness here sit on a staircase in the wall level (VoxelFea.PhaseLockCells)");
-            else
-                WarnAxialPhaseLock(fStep, cem);
+            WarnPhaseLock(fStep, cem, "porosity and stiffness here sit on a staircase in the wall level");
             Connectivity.Grid gridSolid = VoxelFea.SolidCounterpart(grid);
 
             VoxelFea.FeaResult oAxial = VoxelFea.ApparentAxialModulus(grid, 2);
@@ -1678,12 +1673,7 @@ internal static class Program
         if (dCentreOffset > VoxelFea.RadialCentreToleranceMm)
             return Fail($"fea --dilate: step {fStep:F4} mm puts the radial load centre {dCentreOffset * 1000.0:F1} µm off the part axis " +
                         $"(Ø{cem.OuterDiameterMm:0.##} / step is not a whole number) — the sensitivity curve needs its radial column, pick a step that divides the diameter");
-        int nLockCells = VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm);
-        if (nLockCells > 0)
-            Console.WriteLine($"  ⚠ phase-locked sampling: constant period, the sampled phase repeats every {nLockCells} cell(s) — " +
-                              "a face offset registers only where it crosses a sampled field value (VoxelFea.PhaseLockCells)");
-        else
-            WarnAxialPhaseLock(fStep, cem);
+        WarnPhaseLock(fStep, cem, "a face offset registers only where it crosses a sampled field value");
 
         // 🔴 The identity CONTROL runs whatever offsets were asked for: a wrapper that is not the identity at zero would
         //    shift every row by its own defect, and a curve cannot show that.
@@ -2152,12 +2142,7 @@ internal static class Program
 
         Console.WriteLine($"fea --fit {cemBase.Name} — the SHIPPED part (lattice to the axis) swept over wall_param, step {fStep:F4} mm");
         Console.WriteLine("  envelope: the printed part — the gyroid lattice, comparable to the cube");
-        int nLockCells = VoxelFea.PhaseLockCells(fStep, cemBase.GyroidPeriodMm, cemBase.GyroidPeriodRimMm);
-        if (nLockCells > 0)
-            Console.WriteLine($"  ⚠ phase-locked sampling: constant period, the sampled phase repeats every {nLockCells} cell(s) — " +
-                              "a wall level registers only where it crosses a sampled field value (VoxelFea.PhaseLockCells)");
-        else
-            WarnAxialPhaseLock(fStep, cemBase);
+        int nLockCells = WarnPhaseLock(fStep, cemBase, "a wall level registers only where it crosses a sampled field value");
 
         // Every wall is SAMPLED before anything is solved: a sweep that collapsed onto one grid is refused in
         // seconds, not after minutes of conjugate gradients spent measuring the same geometry twice.
@@ -2272,12 +2257,27 @@ internal static class Program
         return 2;
     }
 
-    // Printed only where the full lock (VoxelFea.PhaseLockCells) is silent — a constant-period part reports that one.
-    private static void WarnAxialPhaseLock(float fStep, AnchorCem cem)
+    // The sampler's lock line, one home for every fea verb; returns the FULL lock (0 when only the axis locks). A stepped
+    // part keeps a constant period per zone, so a step dividing one zone's period locks that zone whole while the other may
+    // still resolve every wall; a graded part locks only along z, printed where the full lock is silent.
+    private static int WarnPhaseLock(float fStep, AnchorCem cem, string strConsequence)
     {
-        int nCells = VoxelFea.AxialPhaseLockCells(fStep, Zone1Anode.AxialPeriodMm(cem));
+        bool bZoned = cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase);
+        int nCells = VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm, bZoned);
         if (nCells > 0)
-            Console.WriteLine($"  ⚠ step {fStep:F4}: phase-locked ALONG THE AXIS (the z-phase repeats every {nCells} cell(s); graded in-plane, " +
+        {
+            bool bTwoZones = bZoned && cem.GyroidPeriodRimMm > 0f && cem.GyroidPeriodRimMm != cem.GyroidPeriodMm;
+            bool bRim = VoxelFea.RepeatCells(fStep, cem.GyroidPeriodRimMm) > 0;
+            string strWhere = !bTwoZones || (bRim && VoxelFea.RepeatCells(fStep, cem.GyroidPeriodMm) > 0) ? "constant period"
+                : $"constant period in the {(bRim ? "rim" : "core")} zone only — the other zone may still resolve every wall";
+            Console.WriteLine($"  ⚠ step {fStep:F4}: phase-locked sampling ({strWhere}; the phase repeats every {nCells} cell(s)) — " +
+                              $"{strConsequence} (VoxelFea.PhaseLockCells)");
+            return nCells;
+        }
+        int nAxial = VoxelFea.AxialPhaseLockCells(fStep, Zone1Anode.AxialPeriodMm(cem));
+        if (nAxial > 0)
+            Console.WriteLine($"  ⚠ step {fStep:F4}: phase-locked ALONG THE AXIS (the z-phase repeats every {nAxial} cell(s); graded in-plane, " +
                               "so no wall staircase) — the step's error is coherent along z, not averaged out (VoxelFea.AxialPhaseLockCells)");
+        return 0;
     }
 }

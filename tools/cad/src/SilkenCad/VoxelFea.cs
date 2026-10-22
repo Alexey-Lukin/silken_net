@@ -572,23 +572,36 @@ internal static class VoxelFea
     // The lattice cube is locked by construction; its fits read the staircase as scatter that shrinks with steps per
     // period. Returns how many cells the sampled phase takes to repeat (1 = every cell, the --step-div case), or 0
     // when it does not repeat within nMaxCells — unlocked at the scale of anything sampled here.
-    internal static int PhaseLockCells(float fStepMm, float fPeriodCoreMm, float fPeriodRimMm, int nMaxCells = 4)
+    // ⊕ A STEPPED part (`bZoned`) keeps a constant period in EACH zone, so a step dividing one zone's period locks that
+    // zone whole — in-plane and along z — while the other may still resolve every wall, and IdenticalSweepGrids does not
+    // refuse such a sweep (the unlocked zone differs). Its lock is the tighter of the two zones'. Found by the review of
+    // the axial-lock change, 2026-10-22: before it this returned 0 for every stepped step.
+    internal static int PhaseLockCells(float fStepMm, float fPeriodCoreMm, float fPeriodRimMm, bool bZoned = false, int nMaxCells = 4)
     {
         float fPeriodRim = fPeriodRimMm > 0f ? fPeriodRimMm : fPeriodCoreMm;
-        return fPeriodRim != fPeriodCoreMm ? 0 : RepeatCells(fStepMm, fPeriodCoreMm, nMaxCells);
+        if (fPeriodRim == fPeriodCoreMm)
+            return RepeatCells(fStepMm, fPeriodCoreMm, nMaxCells);
+        if (!bZoned)
+            return 0;
+        int nCore = RepeatCells(fStepMm, fPeriodCoreMm, nMaxCells), nRim = RepeatCells(fStepMm, fPeriodRim, nMaxCells);
+        return nCore == 0 ? nRim : nRim == 0 ? nCore : Math.Min(nCore, nRim);
     }
 
     // ⊕ 2026-10-22, HW.33 (в): the graded part is constant-period ALONG z (Zone1Anode.AxialPeriodMm — the rim's) while
-    // its in-plane phase still drifts with radius. No wall staircase, then (PhaseLockCells stays 0, and tonight's d7/d10
-    // fits sampled six walls to six grids), but a step that divides the axial period samples every axial cell at the
-    // same z-phases, so the step's discretization error is coherent along the axis instead of averaging out — the named
-    // likely cause of the post-verdict sweep's non-monotonicity (01_01 §5.2), which the HW.23 Richardson re-sweep
-    // separates with locked ⊥ unlocked step pairs. Same return as above, along z only; 0 when there is no single period.
+    // its in-plane phase still drifts with radius. No wall staircase, then (PhaseLockCells stays 0, and the sampled pin
+    // in VoxelFeaTests shows close walls resolving on the shipped pine part), but a step that divides the axial period
+    // samples every axial cell at the same z-phases, so the step's discretization error is coherent along the axis
+    // instead of averaging out — the named likely cause of the post-verdict sweep's non-monotonicity (01_01 §5.2), which
+    // the HW.23 Richardson re-sweep separates with locked ⊥ unlocked steps. Same return as above, along z only.
     internal static int AxialPhaseLockCells(float fStepMm, float fPeriodAxialMm, int nMaxCells = 4)
-        => fPeriodAxialMm > 0f ? RepeatCells(fStepMm, fPeriodAxialMm, nMaxCells) : 0;
+        => RepeatCells(fStepMm, fPeriodAxialMm, nMaxCells);
 
-    private static int RepeatCells(float fStepMm, float fPeriodMm, int nMaxCells)
+    // How many cells the sampled phase of ONE constant period takes to repeat; 0 when it does not within nMaxCells, or
+    // when there is no single period (≤ 0).
+    internal static int RepeatCells(float fStepMm, float fPeriodMm, int nMaxCells = 4)
     {
+        if (fPeriodMm <= 0f)
+            return 0;
         double dStepsPerPeriod = fPeriodMm / (double)fStepMm;
         for (int nCells = 1; nCells <= nMaxCells; nCells++)
         {
