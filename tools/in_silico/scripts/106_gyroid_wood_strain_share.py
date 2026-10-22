@@ -1099,7 +1099,8 @@ def main() -> int:
     hi_phrase = (f"a green reading sets it for {', '.join(hi_green)}" if hi_green
                  else "no green reading raises the Scots pine group's for any alloy")
     su_a, su_r = source_day_union["axial_richardson"], source_day_union["radial_richardson"]
-    # which reading 105's binding rule takes is READ from its cache, never assumed (HW.33 (в) moved it radial → axial)
+    # which reading 105's binding rule takes is READ from its cache, never assumed (on the HW.33 (в) geometry a
+    # mechanical pick — 00_07 HW.23)
     lower105 = d105["inputs"]["fe_reading_lower"]
     assert lower105 == ("axial_richardson" if r_a < r_r else "radial_richardson"), "105's lower reading is not its lower"
     a_label = "this tensor's E[100]" + (" (105's lower reading)" if lower105 == "axial_richardson" else "")

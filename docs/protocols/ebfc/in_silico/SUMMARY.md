@@ -1022,7 +1022,8 @@ bound needs (the radial case is a kinematic shell loading, the axial one E[100] 
 only while that modulus is at least the reading; a binding claim takes the lower one, read from the pair (the radial
 one before the HW.33 (в) geometry). On that geometry the two coincide within the extrapolation: every raw sweep row has
 the radial one lower, only the two-point extrapolation puts the axial one under it, by 0.7 %, and an adversarial
-reviewer's scratch re-run with `/12` matched to `/16`'s porosity reverses the order again (not a cache in the tree) — so
+reviewer's scratch rescaling of `/12` to `/16`'s porosity along the part's own `/10` Gibson–Ashby exponents reverses
+the order again (not a cache in the tree) — so
 the cache's `fe_reading_lower` is a mechanical pick, not a finding about the part. The table gives the stem's surface
 strain above which the bound alone puts the ligaments at SF 2, at a share of the wood's strain t_L = 1 and a peak over
 RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 — the actual state's, of which the periodic case's k_p is only the
@@ -1044,10 +1045,15 @@ another tree. The one stem reading in the tree — `87`'s source pine (DBH 21.5 
 its surface, which `87` refuses to carry to our stems — placed on a large stem exceeds the threshold for CP-Ti Gr4, Ta,
 Ti-6Al-4V and Ti-6Al-7Nb on both readings (before the HW.33 (в) geometry Ti-6Al-4V and Ti-6Al-7Nb stayed above it on
 the lower reading, 1853 ⊥ 1911 µε, and bound only on the higher; now they bind on any FE reading above 0.0672 ⊥ 0.0715
-of `E_s`, which every raw sweep row and both readings exceed, so the baseline alloy binds on every reading in the tree; in
-any stress state Ta only, on both — but CP-Ti Gr4 misses by a knife-edge, ×0.989 ⊥ ×0.993 of its 1858 ⊥ 1851 µε on the
-lower ⊥ higher reading, and stays below only while the FE reading is below 0.0823 of `E_s`, inside the readings' own
-doubt), and its median (918 µε) for Ta only, on both. β-Ti's high figure stands on a yield the tree carries without a source. Whether a host's stem
+of `E_s`, which every raw sweep row and both readings exceed, so the baseline alloy binds on every reading in the tree;
+Ti-15Zr misses, ×0.922 ⊥ ×0.926 of its 1993 ⊥ 1985 µε, and stays below while the FE reading is below 0.0946 of `E_s`,
+which 4 of the 8 raw sweep readings exceed; in any stress state Ta only, on both — but CP-Ti Gr4 misses by a knife-edge,
+×0.989 ⊥ ×0.993 of its 1858 ⊥ 1851 µε on the lower ⊥ higher reading, and stays below while the FE reading is below 0.0823
+of `E_s`, which every raw sweep reading exceeds — inside the readings' own doubt), and its median (918 µε) for Ta only,
+on both (CP-Ti Gr4 misses, ×0.949 ⊥ ×0.952 of its 968 ⊥ 965 µε, and stays below while the FE reading is below 0.0894 of
+`E_s`, which every raw sweep reading exceeds). These three are every membership whose flip lies inside the span of the FE
+readings the tree carries — the two extrapolations and the 8 raw sweep readings; every other cell keeps its side on all
+of them. β-Ti's high figure stands on a yield the tree carries without a source. Whether a host's stem
 crosses these strains often enough is the field histogram's question, not this table's.
 
 **The junction is a candidate the bound cannot see.** At t_L = 1 the bonded gyroid moves with the wood while the solid
@@ -1216,7 +1222,7 @@ own lowest share, Ta binds on Liu P4 and Jeong's red pine, on both readings; no 
 raw non-stiff corewood (ESM NSC) Ta misses by a knife-edge, ×0.993 ⊥ ×0.997 of its 1851 ⊥ 1844 µε on this tensor's E[100] ⊥
 `105`'s radial reading, inside the FE readings' own doubt (`00_07` HW.23) (before the HW.33
 (в) geometry Ta bound on five sets on this tensor's E[100] and on Jeong's red pine alone on the radial reading). On
-Jeong's Korean pine Ta stays below (×0.915 ⊥ ×0.919 of it): it stays below only
+Jeong's Korean pine Ta stays below (×0.915 ⊥ ×0.919 of it): it stays below
 while ν_LR, printed 0.30 at a CV of 1.64, is below 0.354 on `105`'s radial reading (0.357 on this tensor's E[100]). Every green set but Jeong's red
 pine puts the lowest share below the Scots pine group's for every alloy, Jeong's red pine above it (Ta 0.409): the
 proxies do not settle the direction a green stem moves the share either — the full sets and Jeong's Korean pine lower

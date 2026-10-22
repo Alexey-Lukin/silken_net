@@ -6292,7 +6292,7 @@ CHECKS += [
        0.0)
       for fk, pat in (("axial_richardson", rf"Ta stays below \(×{N} ⊥ ×[\d.]+ of it\)"),
                       ("radial_richardson", rf"Ta stays below \(×[\d.]+ ⊥ ×{N} of it\)"))],
-    # the edge the sentence leads with is the EARLIER one (a «stays below only while» sentence) — `105`'s radial reading
+    # the edge the sentence leads with is the EARLIER one (a «stays below while» sentence, rounded down) — `105`'s radial reading
     # since the HW.33 (в) geometry; NaN if the readings swap, so the sentence is rewritten, not re-digited
     ("share106 korean pine nu_LR edge → 106", SUMMARY, rf"is below {N} on `105`'s radial reading \(", SHARE106,
      lambda d: (lambda e: _floor_n(e["radial_richardson"]["nu_LR_first_exceeds"], 3)
@@ -6404,7 +6404,7 @@ def test_share106_green_sentences_follow_the_cache():
     assert not any(kp["source_day_upper_whisker_exceeds"].values()) and all(m < 1 for m in kp["ta_upper_whisker_margin"].values())
     edge = d["green_korean_pine_ta_knife_edge"]["per_fe_reading"]
     assert edge["radial_richardson"]["nu_LR_first_exceeds"] < edge["axial_richardson"]["nu_LR_first_exceeds"]
-    assert "On Jeong's Korean pine Ta stays below (" in text and "of it): it stays below only while ν_LR" in text
+    assert "On Jeong's Korean pine Ta stays below (" in text and "of it): it stays below while ν_LR" in text
     t0 = d["theta0_share_over_modelled_set"]
     below = [n for n, v in ps.items() if all(v["lowest"][al] < t0[al]["lowest"] for al in alloys)]
     above = [n for n, v in ps.items() if all(v["lowest"][al] > t0[al]["lowest"] for al in alloys)]
@@ -6439,19 +6439,35 @@ def _sw105_list(alloys):
     return shown[0] if len(shown) == 1 else ", ".join(shown[:-1]) + " and " + shown[-1]
 
 
+_SW105_UK = {"CP-Ti-Gr4": "CP-Ti", "Ti-6Al-4V": "4V", "Ti-6Al-7Nb": "7Nb"}
+
+
+def _sw105_list_uk(alloys):
+    shown = [_SW105_UK.get(a, a) for a in sorted(alloys)]
+    return shown[0] if len(shown) == 1 else ", ".join(shown[:-1]) + " і " + shown[-1]
+
+
 def test_sway105_source_day_sentence_follows_the_cache():
     """105's source-day sentence names SETS (in-silico §When Modifying #5 ⊕), so it is recomposed from
-    `gyroid_source_day_exceeds`: whom the upper whisker exceeds near-uniaxially on the lower and on the higher reading
-    («on both readings» only while the two sets are one), whom in any stress state, whom the median exceeds; and its
-    knife-edges from `gyroid_source_day_flip_large_stem_sf2` (§When Modifying #40) — CP-Ti any-state's margin per reading
-    (rounded toward 1), its threshold and the FE reading below which it stays below (rounded down), the FE readings above
-    which 4V and 7Nb bind (rounded up) with every raw sweep row and both readings above them — plus the porosity gap of the
-    two extrapolated rows and its ×3; and 106's Davies ESM NSC knife-edge for Ta. CAN catch: a re-run that moves any of
-    those sets, margins or flip readings while the prose keeps the old one, or a knife-edge that leaves the ≤ 1 % class.
-    CANNOT catch: the before-values 1853 ⊥ 1911 µε — the pre-verdict cache lives in git history, not in the tree."""
+    `gyroid_source_day_exceeds` in SUMMARY and in the 00_07 HW.23 S-N leg: whom the upper whisker exceeds near-uniaxially
+    on the lower and on the higher reading («on both readings» only while the two sets are one), whom in any stress
+    state, whom the median exceeds. Its conditional memberships come from `gyroid_source_day_flip_large_stem_sf2`
+    (§When Modifying #40) under ONE naming criterion the prose states — every cell whose flip lies inside the span of the
+    FE readings in the tree (the two extrapolations and the eight raw sweep readings) is named; the set is recomputed
+    here. Each named cell carries its margin per reading (rounded toward 1), its threshold, the FE reading below which it
+    stays below (rounded down: the sentence is the sufficient «stays below while», §When Modifying #43) and how many raw
+    sweep readings lie above that flip (the same count on the printed number and with each row's own solid fraction).
+    Also: the FE readings above which 4V and 7Nb bind (rounded up, «bind on any reading above»; both tracker homes), with
+    every raw sweep reading and both extrapolations above them; the porosity gap of the two extrapolated rows and its ×3;
+    the gap of the two extrapolations and «every raw sweep row has the radial one lower» in all four homes; and 106's
+    Davies ESM NSC knife-edge for Ta. The knife-edge bounds: within 2 % of 1 for CP-Ti any-state (its lower reading sits
+    1.13 % short), within 1 % for Ta. CAN catch: a re-run that moves a flip into or out of the span, or any of those sets,
+    margins, flips or counts while the prose keeps the old one. CANNOT catch: the before-values 1853 ⊥ 1911 µε — the
+    pre-verdict cache lives in git history, not in the tree — nor «inside the readings' own doubt», argued, not computed."""
     d = json.loads((CACHE / SWAY105).read_text(encoding="utf-8"))
     text = " ".join(doc(SUMMARY).split())
     tracker = " ".join(doc("docs/00_07_Action_Plan_Tracker.md").split())
+    coaxial = " ".join(doc(COAXIAL).split())
     lo, hi = d["inputs"]["fe_reading_lower"], _sw_hi(d)
     sd = d["gyroid_source_day_exceeds"]
 
@@ -6464,26 +6480,74 @@ def test_sway105_source_day_sentence_follows_the_cache():
     any_state = reach("upper_whisker", "any_state", lo)
     assert sorted(any_state) == sorted(reach("upper_whisker", "any_state", hi)) and len(any_state) == 1
     assert f"in any stress state {_sw105_list(any_state)} only, on both" in text
+    assert (f"і тоді для {_sw105_list_uk(up)}, на обох прочитаннях (у будь-якому стані напружень — лише "
+            f"{_sw105_list_uk(any_state)};") in tracker
     med = reach("median", "near_uniaxial", lo)
     assert sorted(med) == sorted(reach("median", "near_uniaxial", hi)) and len(med) == 1
-    assert f"and its median ({d['inputs']['stem_readings_87']['median']['surface_strain_ue']:.0f} µε) for {med[0]} only, on both" in text
-    fl = d["gyroid_source_day_flip_large_stem_sf2"]["upper_whisker"]
-    cp = fl["CP-Ti-Gr4"]["large_stem_limit|any_state|sf2"]
-    assert "CP-Ti-Gr4" not in any_state and all(0.98 < m < 1.0 for m in cp["margin_over_threshold"].values())
-    thr = d["gyroid_binds_above_surface_strain_ue"]["CP-Ti-Gr4"]["large_stem_limit|any_state|sf2"]
-    m_lo, m_hi = (_ceil_n(cp["margin_over_threshold"][k], 3) for k in (lo, hi))
-    flip = _floor_n(cp["fe_reading_at_flip"], 4)
-    assert all(v < cp["fe_reading_at_flip"] for v in d["inputs"]["fe_readings_richardson"].values())
-    assert (f"CP-Ti Gr4 misses by a knife-edge, ×{m_lo:.3f} ⊥ ×{m_hi:.3f} of its {thr[lo]:.0f} ⊥ {thr[hi]:.0f} µε on the "
-            f"lower ⊥ higher reading, and stays below only while the FE reading is below {flip:.4f} of `E_s`") in text
-    assert (f"×{m_lo:.3f} ⊥ ×{m_hi:.3f} від свого порогу {thr[lo]:.0f} ⊥ {thr[hi]:.0f} µε на нижчому ⊥ вищому прочитанні, "
-            f"і лише доки FE-прочитання нижче {flip:.4f} `E_s`") in tracker
+    med_ue = d["inputs"]["stem_readings_87"]["median"]["surface_strain_ue"]
+    assert f"and its median ({med_ue:.0f} µε) for {med[0]} only, on both" in text
+    assert f"медіана дня-джерела ({med_ue:.0f} µε) звʼязує лише {_sw105_list_uk(med)}" in tracker
     rows = json.loads((REPO / "tools/cad/cache/fea/anchor_zone1_pine.json").read_text(encoding="utf-8"))["rows"]
-    raw_min = min(min(r["axial_ratio"], r["radial_ratio"]) for r in rows)
-    binds = [_ceil_n(fl[al]["large_stem_limit|near_uniaxial|sf2"]["fe_reading_at_flip"], 4) for al in ("Ti-6Al-4V", "Ti-6Al-7Nb")]
-    assert all(b < min(raw_min, *d["inputs"]["fe_readings_richardson"].values()) for b in binds)
-    assert f"now they bind on any FE reading above {binds[0]:.4f} ⊥ {binds[1]:.4f} of `E_s`, which every raw sweep row and both readings exceed" in text
-    assert f"на будь-якому FE-прочитанні вище {binds[0]:.4f} ⊥ {binds[1]:.4f} `E_s`" in tracker
+    rich = d["inputs"]["fe_readings_richardson"]
+    raw = [r[k] for r in rows for k in ("axial_ratio", "radial_ratio")]
+    span = (min(*raw, *rich.values()), max(*raw, *rich.values()))
+    fl = d["gyroid_source_day_flip_large_stem_sf2"]
+    inside = sorted((rd, al, k.split("|")[1]) for rd in fl for al in fl[rd] for k, c in fl[rd][al].items()
+                    if span[0] <= c["fe_reading_at_flip"] <= span[1])
+    assert inside == [("median", "CP-Ti-Gr4", "near_uniaxial"), ("upper_whisker", "CP-Ti-Gr4", "any_state"),
+                      ("upper_whisker", "Ti-15Zr", "near_uniaxial")], f"the flips inside the readings' span: {inside}"
+    assert (f"These {('one', 'two', 'three', 'four')[len(inside) - 1]} are every membership whose flip lies inside the "
+            f"span of the FE readings the tree carries — the two extrapolations and the {len(raw)} raw sweep readings; "
+            "every other cell keeps its side on all of them") in text
+    assert ("Названо кожне членство, чий переворот лежить усередині розмаху FE-прочитань у дереві (два Річардсони й "
+            f"{len(raw)} сирих прочитань розгортки); решта клітинок тримає свій бік на всіх") in tracker
+    phi = d["inputs"]["solid_fraction"]
+
+    def named(rd, al, sk):
+        c, key = fl[rd][al][f"large_stem_limit|{sk}|sf2"], f"large_stem_limit|{sk}|sf2"
+        assert not any(sd[rd][al][key].values()), f"{rd} {al} {sk} is a member now — the sentence says it stays below"
+        thr = d["gyroid_binds_above_surface_strain_ue"][al][key]
+        flip = _floor_n(c["fe_reading_at_flip"], 4)
+        above = sum(v > c["fe_reading_at_flip"] for v in raw)
+        assert above == sum(v > flip for v in raw), "the printed flip counts other readings than the flip"
+        assert above == sum(r[k] > c["fe_reading_at_flip"] * (1.0 - r["porosity"]) / phi
+                            for r in rows for k in ("axial_ratio", "radial_ratio")), "a row's own φ moves the count"
+        n = len(raw)
+        en = "every raw sweep reading exceeds" if above == n else f"{above} of the {n} raw sweep readings exceed"
+        uk = ("кожне сире прочитання розгортки лежить вище" if above == n
+              else f"{above} з {n} сирих прочитань розгортки лежать вище")
+        m = [_ceil_n(c["margin_over_threshold"][k], 3) for k in (lo, hi)]
+        return (f"×{m[0]:.3f} ⊥ ×{m[1]:.3f} of its {thr[lo]:.0f} ⊥ {thr[hi]:.0f} µε",
+                f"(×{m[0]:.3f} ⊥ ×{m[1]:.3f} від свого порогу {thr[lo]:.0f} ⊥ {thr[hi]:.0f} µε)",
+                f"stays below while the FE reading is below {flip:.4f} of `E_s`, which {en}",
+                f"доки FE-прочитання нижче {flip:.4f} `E_s`, а {uk}")
+
+    cp = fl["upper_whisker"]["CP-Ti-Gr4"]["large_stem_limit|any_state|sf2"]
+    assert all(0.98 < m < 1.0 for m in cp["margin_over_threshold"].values()), "CP-Ti any-state left the knife-edge"
+    assert all(v < cp["fe_reading_at_flip"] for v in rich.values())
+    en_m, uk_m, en_f, uk_f = named("upper_whisker", "CP-Ti-Gr4", "any_state")
+    assert f"CP-Ti Gr4 misses by a knife-edge, {en_m} on the lower ⊥ higher reading, and {en_f}" in text
+    assert f"{uk_m[1:-1]} на нижчому ⊥ вищому прочитанні, і не звʼязує, {uk_f}" in tracker
+    en_m, uk_m, en_f, uk_f = named("upper_whisker", "Ti-15Zr", "near_uniaxial")
+    assert f"Ti-15Zr misses, {en_m}, and {en_f}" in text
+    assert f"Ti-15Zr у майже одновісному стані не звʼязує {uk_m}, {uk_f}" in tracker
+    en_m, uk_m, en_f, uk_f = named("median", "CP-Ti-Gr4", "near_uniaxial")
+    assert f"on both (CP-Ti Gr4 misses, {en_m}, and {en_f})" in text
+    assert f"CP-Ti не звʼязує на ній {uk_m}, {uk_f}" in tracker
+    binds = [_ceil_n(fl["upper_whisker"][al]["large_stem_limit|near_uniaxial|sf2"]["fe_reading_at_flip"], 4)
+             for al in ("Ti-6Al-4V", "Ti-6Al-7Nb")]
+    assert all(b < span[0] for b in binds)
+    assert (f"now they bind on any FE reading above {binds[0]:.4f} ⊥ {binds[1]:.4f} of `E_s`, which every raw sweep row "
+            "and both readings exceed") in text
+    assert tracker.count(f"на будь-якому FE-прочитанні вище {binds[0]:.4f} ⊥ {binds[1]:.4f} `E_s`") == 2
+    # the order of the readings — every raw row radial-lower, the extrapolations axial-lower by the gap SUMMARY's CHECKS
+    # pin carries; its three other homes are here
+    assert all(r["radial_ratio"] < r["axial_ratio"] for r in rows), "a raw sweep row has the axial reading lower"
+    gap = round((max(rich.values()) / min(rich.values()) - 1) * 100, 1)
+    assert "every raw sweep row has the radial one lower" in text and "кожен сирий рядок розгортки має нижчим радіальне" in coaxial
+    assert tracker.count("кожен сирий рядок розгортки має нижчим радіальне") == 2
+    assert f"ставить осьове нижче — на {gap:.1f} %" in tracker and f"осьове нижче лише на {gap:.1f} %" in tracker
+    assert f"ставить осьове нижче (на {gap:.1f} %)" in coaxial
     fine, nxt = d["inputs"]["fea_rows_used"]["finest"], d["inputs"]["fea_rows_used"]["next"]
     amp = 1.0 / (nxt["step_mm"] / fine["step_mm"] - 1.0)
     assert f"differ in porosity, {100 * nxt['porosity']:.3f} ⊥ {100 * fine['porosity']:.3f} %, a gap the p = 1 step from `/12` to `/16` amplifies ×{amp:.0f}" in text
