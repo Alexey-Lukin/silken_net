@@ -6303,8 +6303,11 @@ def test_gyroid_wood_strain_share_invariants():
 
     def compliance4(w, rd):
         stiff = {(0, 1): -w["nu_LT"] / w["E_L"], (0, 2): -w["nu_LR"] / w["E_L"], (1, 2): -w["nu_RT"] / w["E_R"]}
-        soft = {(0, 1): -w["nu_TL"] / w["E_T"], (0, 2): -w["nu_RL"] / w["E_R"], (1, 2): -w["nu_TR"] / w["E_T"]}
-        cpl = {"stiff": stiff, "soft": soft, "mean": {k: (stiff[k] + soft[k]) / 2 for k in stiff}}[rd]
+        if rd == "stiff":                                   # a set printing the stiffer-axis ratios only (Jeong) has no soft
+            cpl = stiff
+        else:
+            soft = {(0, 1): -w["nu_TL"] / w["E_T"], (0, 2): -w["nu_RL"] / w["E_R"], (1, 2): -w["nu_TR"] / w["E_T"]}
+            cpl = soft if rd == "soft" else {k: (stiff[k] + soft[k]) / 2 for k in stiff}
         e = {0: w["E_L"], 1: w["E_T"], 2: w["E_R"]}
         g = {(1, 2): w["G_RT"], (0, 2): w["G_LR"], (0, 1): w["G_LT"]}
         s = np.zeros((3, 3, 3, 3))
@@ -6321,7 +6324,9 @@ def test_gyroid_wood_strain_share_invariants():
     def nine(t):
         return t.reshape(9, 9)
 
-    def eshelby_gl(c, n=64):
+    def eshelby_gl(c, n=256):
+        # 256 points: Davies' green sets (shear moduli ~10² below E_L) leave 64 points 6e-7…2e-5 off S (2026-10-22);
+        # at 256 every live reading of both groups agrees with the script's converged midpoint rule to ~1e-15
         x, wts = np.polynomial.legendre.leggauss(n)
         om = (x + 1) * math.pi / 2
         g = np.zeros((3, 3, 3, 3))
@@ -6375,10 +6380,12 @@ def test_gyroid_wood_strain_share_invariants():
     assert d["controls"]["t_L_rise_with_C44_worst"] < 1e-9 and d["controls"]["mirror_45_worst"] < 1e-9
 
     memo = {}
+    gsets = d["inputs"]["green_sets"]
+    allsets = wood | {n: v["constants"] for n, v in gsets.items()}   # both groups' constants, by set name
 
     def matrix(g, rd):
         if (g, rd) not in memo:
-            cm = np.linalg.pinv(nine(compliance4(wood[g], rd))).reshape(3, 3, 3, 3)
+            cm = np.linalg.pinv(nine(compliance4(allsets[g], rd))).reshape(3, 3, 3, 3)
             memo[(g, rd)] = (cm, np.linalg.pinv(nine(cm)).reshape(3, 3, 3, 3), eshelby_gl(cm))
         return memo[(g, rd)]
 
@@ -6489,6 +6496,172 @@ def test_gyroid_wood_strain_share_invariants():
     up = ", ".join(d["source_day_theta0_large_stem_sf2"]["axial_richardson"]["upper_whisker"]["exceeds"]) or "none"
     assert f"upper whisker exceeds the large-stem threshold for {up} on" in d["verdict"]
     assert f"({len(d['additive_outside_the_pore_ends_interval'])} cell-fields fall outside them)" in d["verdict"]
+
+    # ── the GREEN group (⚖️ founder 2026-10-22, HW.23 option (Б)) and the UNION. Its constants rebuilt HERE from the
+    # as-printed figures (not by the script's builder), the sources' own aggregates recomputed, every live green tensor and
+    # the union's adverse cells recomputed by THIS arithmetic. CAN catch, beyond the above: a green constant off its
+    # printed figure or off the paper's p. 4 rule as the script states it; a borrowed constant other than the one named;
+    # a lowest / highest / junction cell off the solution or not the extreme of the cells; a crossing flag; G_LR or G_RT
+    # leaking into the share; a cached ν_RT sensitivity that understates the span's ends; the union's thresholds, source
+    # day, per-set verdicts and the ceiling not built from 105's inputs. CANNOT catch: a figure misread in the PDF (the
+    # transcription checks hold Davies' Table 2, Liu and Jeong's E_L to their own aggregates, ESM 2/3 to nothing).
+    tr = d["inputs"]["green_transcription"]
+    assert tr["davies_table2_as_printed"] == {k: list(v) for k, v in s106.DAVIES_TABLE2.items()}
+    assert tr["liu_table2_as_printed"] == s106.LIU_TABLE2
+    cols, hdr = s106.DAVIES_COLUMNS, s106.JEONG_TABLE2_HEADER
+    for i, col in enumerate(cols):
+        t2c, esm = gsets[f"davies2016_table2_{col}"]["constants"], gsets[f"davies2016_esm_{col}"]["constants"]
+        for k, v in s106.DAVIES_TABLE2.items():
+            assert t2c[k] == pytest.approx(float(v[i]) * (1 if k.startswith("nu_") else 1000), rel=1e-12), (col, k)
+        e2 = {k: float(v[i]) for k, v in s106.DAVIES_ESM2.items()}
+        n3 = {k: float(v[i]) for k, v in s106.DAVIES_ESM3_COMPRESSION.items()}
+        assert esm["E_L"] == pytest.approx(250 * (e2["lr_t"] + e2["lr_c"] + e2["lt_t"] + e2["lt_c"]), rel=1e-12)
+        assert esm["E_R"] == pytest.approx(500 * (e2["rt_t"] + e2["rt_c"]), rel=1e-12)
+        assert esm["E_T"] == pytest.approx(500 * (e2["tr_t"] + e2["tr_c"]), rel=1e-12)
+        assert [esm[f"nu_{p}"] for p in ("RT", "RL", "TR", "TL", "LR", "LT")] == [n3[f"{p.lower()}_c"] for p in
+                                                                             ("RT", "RL", "TR", "TL", "LR", "LT")]
+        assert [esm[g] for g in ("G_LT", "G_LR", "G_RT")] == pytest.approx([1000 * e2[g] for g in ("TL", "LR", "RT")], rel=1e-12)
+    liu_rows = {r: dict(zip(s106.LIU_TABLE2_HEADER, map(float, s106.LIU_TABLE2[r].split()), strict=True))
+                for r in ("1", "2", "3", "4")}
+    assert gsets["liu2019_P4"]["constants"] == liu_rows["4"]
+    jeong = gsets["jeong2026_red_pine_green"]["constants"]
+    for k, v in zip(hdr, s106.JEONG_TABLE2_RED_PINE["Green"], strict=True):
+        if v is not None:
+            assert jeong[k] == pytest.approx(float(v) * (1 if k.startswith("nu_") else 1000), rel=1e-12), k
+    assert s106.JEONG_TABLE2_RED_PINE["Green"][hdr.index("nu_RT")] is None            # rejected by the author
+    assert jeong["nu_RT"] == float(s106.JEONG_TABLE2_RED_PINE["19"][hdr.index("nu_RT")])   # borrowed: its own 19 % row
+    assert jeong["G_RT"] == wood["rh95"]["G_RT"]                                       # borrowed: G&A's 95 % RH group
+    assert not {"nu_RL", "nu_TL", "nu_TR"} & set(jeong) and gsets["jeong2026_red_pine_green"]["readings"] == ["stiff"]
+    printed_mean = s106.LIU_TABLE2["Mean"].split()
+    for j, k in enumerate(s106.LIU_TABLE2_HEADER):
+        half = 0.5 * 10 ** -(len(printed_mean[j].split(".")[1]) if "." in printed_mean[j] else 0)
+        assert abs(sum(r[k] for r in liu_rows.values()) / 4 - float(printed_mean[j])) <= half + 1e-9, k
+    for k, (lo, hi) in s106.DAVIES_ESM1_THIS_WORK.items():
+        vals = [float(v) for v in s106.DAVIES_TABLE2[k]]
+        assert ((min(vals), max(vals)) == (float(lo), float(hi))) == (k != "G_LR"), k   # G_LR: the source's own ×10
+    assert round(100 * jeong["E_L"] / (1000 * float(s106.JEONG_TABLE2_RED_PINE["6"][hdr.index("E_L")])), 1) == 77.1
+
+    for n, v in gsets.items():                         # positive definiteness through the 9×9 tensor
+        for rd in v["readings"]:
+            ev = np.linalg.eigvalsh(nine(compliance4(allsets[n], rd)))
+            assert d["green_wood_readings"][f"{n}|{rd}"]["positive_definite"] == bool(ev[np.argsort(np.abs(ev))[3:]].min() > 0)
+    for v in d["green_wood_readings"].values():
+        if v["positive_definite"]:
+            assert v["covariance_control"] < 1e-10 and v["quadrature_change_at_2n"] < 1e-10
+            assert v["hole_control"]["kt_eshelby"] == pytest.approx(v["hole_control"]["kt_lekhnitskii"], rel=1e-10)
+    gcells, allcells = d["green_cells"], d["cells"] | d["green_cells"]
+    glive = [k for k, v in d["green_wood_readings"].items() if v["positive_definite"]]
+    for k in glive:                                    # every live green tensor, at θ = 0
+        n, rd = k.split("|")
+        assert t_l("Ta", n, rd, "pores_voigt_phase_bound", 0.0, a_v) == pytest.approx(
+            gcells[f"Ta|{k}|pores_voigt_phase_bound"]["t_L_theta0_any_C44"], rel=1e-9), k
+    union = d["union_theta0_share"]
+    for al in ALLOY_PROPERTIES:
+        mine = {k: v["t_L_theta0_any_C44"] for k, v in allcells.items() if k.startswith(f"{al}|")}
+        green = [v["t_L_theta0_any_C44"] for k, v in gcells.items() if k.startswith(f"{al}|")]
+        assert (union[al]["lowest"], union[al]["highest"]) == (min(mine.values()), max(mine.values()))
+        assert (d["green_theta0_share"][al]["lowest"], d["green_theta0_share"][al]["highest"]) == (min(green), max(green))
+        for which in ("lowest_cell", "highest_cell"):
+            _, n, rd, fill = union[al][which].split("|")
+            assert t_l(al, n, rd, fill, 0.0, a_v) == pytest.approx(mine[union[al][which]], rel=1e-9)
+            assert t_l(al, n, rd, fill, 0.0, 1e-2 * a_v) == pytest.approx(mine[union[al][which]], rel=1e-9)
+    assert all(v["theta0_independent_of_C44"] for v in gcells.values())
+    assert d["controls"]["green_t_L_rise_with_C44_worst"] < 1e-9 and d["controls"]["green_mirror_45_worst"] < 1e-9
+    jn = d["consumer_ceiling_junction"]
+    al, n, rd, fill = jn["off_axis_sup_at_C44_zero"]["cell"].split("|")
+    assert t_l(al, n, rd, fill, jn["off_axis_sup_at_C44_zero"]["theta_deg"], 0.0) == pytest.approx(
+        jn["off_axis_sup_at_C44_zero"]["share"], rel=1e-9)
+    assert jn["off_axis_sup_at_C44_zero"]["share"] == d["union_junction_share_sup_at_C44_zero"] == max(
+        v["t_L_at_C44_zero_max_over_theta"] for v in allcells.values())
+    for key, v in gcells.items():                      # the crossing flags behind the green count
+        al, n, rd, fill = key.split("|")
+        if fill == "pores_voigt_phase_bound":
+            assert v["zener_at_which_t_L_is_1_theta45"] is None
+            continue
+        crosses = (t_l(al, n, rd, fill, 45.0, a_floor) - 1) * (t_l(al, n, rd, fill, 45.0, a_v) - 1) <= 0
+        assert (v["zener_at_which_t_L_is_1_theta45"] is not None) == crosses, key
+    assert d["green_crossings_theta45"]["cells_crossing_1"] == sum(
+        1 for v in gcells.values() if v["zener_at_which_t_L_is_1_theta45"] is not None)
+
+    # G_LR and G_RT out of the share, through THIS arithmetic (a 9×9 tensor and a Gauss–Legendre S), off the axis too
+    for base, rd in (("liu2019_P4", "mean"), ("rh95", "stiff"), ("jeong2026_red_pine_green", "stiff")):
+        for key, f in itertools.product(("G_LR", "G_RT"), (0.1, 10.0)):
+            allsets[f"probe_{base}_{key}_{f}"] = allsets[base] | {key: allsets[base][key] * f}
+            for th, a in ((0.0, a_v), (22.5, a_v), (45.0, 0.0)):
+                assert t_l("Ta", f"probe_{base}_{key}_{f}", rd, "pores_carry_nothing", th, a) == pytest.approx(
+                    t_l("Ta", base, rd, "pores_carry_nothing", th, a), abs=1e-12), (base, key, f, th)
+    assert d["controls"]["t_L_change_with_G_LR_or_G_RT_worst"] < 1e-12
+    # Jeong's borrowed ν_RT: the span recomputed HERE, and the θ = 0 change at its ends within the cached worst and cap
+    cj = d["controls"]["jeong_borrowed_nu_RT"]
+    measured = ({w["nu_RT"] for w in wood.values()} | {float(v) for v in s106.DAVIES_TABLE2["nu_RT"]}
+                | {float(v) for v in s106.DAVIES_ESM3_COMPRESSION["rt_c"]} | {liu_rows["4"]["nu_RT"]}
+                | {float(s106.JEONG_TABLE2_RED_PINE[r][hdr.index("nu_RT")]) for r in ("6", "19")})
+    assert cj["swept_span"] == [min(measured), max(measured)] and cj["borrowed"] == jeong["nu_RT"]
+    for nu in cj["swept_span"]:
+        allsets[f"probe_nu_{nu}"] = jeong | {"nu_RT": nu}
+        for al, fill in itertools.product(ALLOY_PROPERTIES, s106.FILLS):
+            dlt = abs(t_l(al, f"probe_nu_{nu}", "stiff", fill, 0.0, a_v)
+                      - t_l(al, "jeong2026_red_pine_green", "stiff", fill, 0.0, a_v))
+            assert dlt <= cj["t_L_change_theta0_worst"] + 1e-9 and dlt <= cj["cap_theta0"], (nu, al, fill)
+
+    # our arithmetic on the sources, recomputed from the constants
+    rc = d["green_reciprocity_our_arithmetic"]
+    for n, ratios in rc["per_set"].items():
+        w = allsets[n]
+        if ratios is None:
+            assert n == "jeong2026_red_pine_green"
+            continue
+        assert ratios == pytest.approx({"RL_over_LR": (w["nu_RL"] / w["E_R"]) / (w["nu_LR"] / w["E_L"]),
+                                        "TL_over_LT": (w["nu_TL"] / w["E_T"]) / (w["nu_LT"] / w["E_L"]),
+                                        "RT_over_TR": (w["nu_RT"] / w["E_R"]) / (w["nu_TR"] / w["E_T"])}, rel=1e-12)
+    meas = rc["measured_sets"]
+    assert sorted(meas) == sorted([*wood, *(n for n in gsets if n.startswith("davies2016_esm_") or n == "liu2019_P4")])
+    lp = [rc["per_set"][s][k] for s in meas for k in ("RL_over_LR", "TL_over_LT")]
+    assert rc["measured_L_pairs_min_max"] == [min(lp), max(lp)] and min(lp) > 1        # the transverse-loaded entry larger
+    assert rc["measured_RT_pair_min_max"] == [min(rc["per_set"][s]["RT_over_TR"] for s in meas),
+                                              max(rc["per_set"][s]["RT_over_TR"] for s in meas)]
+    for k, ratios in d["green_davies_table2_over_esm"].items():
+        assert ratios == pytest.approx([gsets[f"davies2016_table2_{c}"]["constants"][k]
+                                        / gsets[f"davies2016_esm_{c}"]["constants"][k] for c in cols], rel=1e-12)
+    for g, (lo, hi) in d["green_davies_shear_below_liu_x"].items():
+        dv = [v["constants"][g] for n, v in gsets.items() if n.startswith("davies2016_")]
+        assert (lo, hi) == pytest.approx((min(r[g] for r in liu_rows.values()) / max(dv),
+                                          max(r[g] for r in liu_rows.values()) / min(dv)), rel=1e-12)
+
+    # the union's thresholds, source day, per-set verdicts, the reading without Davies' Table 2 and the ceiling
+    def binds(fk, share):
+        ratio = r_a if fk == "axial_richardson" else r_r
+        return {al: {f"{dk}|{sk}|sf{sf}": math.ceil(round(d105["alloys"][al]["endurance_strain_printed_ue"] / sf * div
+                                                          / (math.sqrt(ratio / phi) * frac * share[al]), 9))
+                     for dk, frac in d105["inputs"]["depth_fraction"].items()
+                     for sk, div in d105["inputs"]["stress_state_divisor"].items() for sf in (1, 2)}
+                for al in ALLOY_PROPERTIES}
+
+    def exceeds(fk, share, rd="upper_whisker"):
+        b = binds(fk, share)
+        return sorted(al for al in ALLOY_PROPERTIES if stem[rd]["surface_strain_ue"] > b[al][cell_ls])
+
+    low_u = {al: union[al]["lowest"] for al in ALLOY_PROPERTIES}
+    for fk in ("axial_richardson", "radial_richardson"):
+        assert d["union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share"][fk] == binds(fk, low_u)
+        for rd in ("median", "upper_whisker"):
+            assert d["union_source_day_theta0_large_stem_sf2"][fk][rd]["exceeds"] == exceeds(fk, low_u, rd)
+        assert d["consumer_ceiling_binding_claim"]["source_day_upper_whisker_exceeds"][fk] == exceeds(fk, low_u)
+        assert d["consumer_ceiling_binding_claim"]["price_scots_pine_group"]["source_day_upper_whisker_exceeds"][fk] == \
+            d["source_day_theta0_large_stem_sf2"][fk]["upper_whisker"]["exceeds"]
+        for n, v in d["green_per_set"].items():
+            mine = {al: min(c["t_L_theta0_any_C44"] for k, c in gcells.items() if k.startswith(f"{al}|{n}|"))
+                    for al in ALLOY_PROPERTIES}
+            assert v["lowest"] == mine and v["source_day_upper_whisker_exceeds"][fk] == exceeds(fk, mine), n
+        no_t2 = {al: min(c["t_L_theta0_any_C44"] for k, c in allcells.items()
+                         if k.startswith(f"{al}|") and "|davies2016_table2_" not in k) for al in ALLOY_PROPERTIES}
+        assert d["union_without_davies_table2"]["lowest"] == no_t2
+        assert d["union_without_davies_table2"]["source_day_upper_whisker_exceeds"][fk] == exceeds(fk, no_t2)
+    for al in ALLOY_PROPERTIES:
+        assert f"group {union[al]['lowest_cell'].split('|')[1]}" in d["consumer_ceiling_binding_claim"]["reading_per_alloy"][al] \
+            or gsets[union[al]["lowest_cell"].split("|")[1]]["where"] in d["consumer_ceiling_binding_claim"]["reading_per_alloy"][al]
+        assert f"{al} {math.floor(round(union[al]['lowest'] * 1000, 9)) / 1000:.3f}" in d["verdict"]
+    assert f"the union reaches {math.ceil(round(d['union_junction_share_sup_at_C44_zero'] * 1000, 9)) / 1000:.3f}" in d["verdict"]
 
 
 RADIO = CACHE / "radio"

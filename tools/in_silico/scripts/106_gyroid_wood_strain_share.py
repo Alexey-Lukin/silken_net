@@ -30,6 +30,15 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   symmetrisation is a READING: «stiff» takes each pair's coupling from the test loaded along its stiffer axis (ν_LT,
   ν_LR, ν_RT), «soft» from the one loaded along its softer axis (ν_TL, ν_RL, ν_TR), «mean» averages the two compliance
   entries. A reading whose compliance is not positive definite is not a material and is excluded, by name, in its group.
+  Green wood, a SEPARATE group (⚖️ founder 2026-10-22, 00_07 HW.23, option (Б) by recommendation): no open primary gives
+  a full Scots pine set above fibre saturation, so named green sets of OTHER Pinaceae are read as a bracket of named
+  readings (in-silico §When Modifying #11), never merged with the Scots pine group — Davies et al. 2016 (P. radiata, four
+  boards: stiff/non-stiff outerwood and corewood) as its Table 2 (stated to be a CI-weighted L1 symmetrisation's output,
+  not reproduced from the open text) ⊥ its ESM 2/3 raw means, Liu et al. 2019 (Larix principis-rupprechtii, sapwood P4),
+  both through the same three symmetrisation readings, and Jeong 2026 (P. densiflora, in press) on the stiffer-axis
+  reading only, with its ν_RT and G_RT BORROWED (ours). Every reading carries its doi, table, column, species, moisture
+  and loading mode (GREEN_SOURCES). The lowest θ = 0 share and `105`'s thresholds are reported for the Scots pine group
+  (every key without a suffix — the record before the green group) and for the union of both groups.
   Lattice: the two Richardson voxel-FE readings `105` caches, read as ONE homogeneous cubic body with its cube axes on
   the part's frame (Zone1Anode: [001] on the anode's axis; the shipped part is graded, so «cubic» holds locally): the
   axial case is E[001] = r_a·E_s (uniaxial stress between frictionless platens) and the radial case, an equibiaxial
@@ -61,17 +70,20 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   mismatch (`105`) scales with the HIGHEST share instead; its supremum off the axis is taken at C44 = 0 exactly (t_L is
   non-increasing in C44 — asserted on the grid).
 
-CAN: per alloy, moisture group, symmetrisation reading, pore reading and install angle — t_L over the admissible C44,
-the Zener ratio at which t_L crosses 1 at 45°, how many cells the additive reading leaves the ends' interval, how many
-grid points fall, rise or neither across the measured moisture groups, the θ = 0 share's range and the `105` thresholds
-at its lowest on two readings, the off-axis threshold factor at the C44 grid's ends, the junction's share at θ = 0 and
-at C44 = 0; the lattice's off-axis modulus against `105`'s readings.
+CAN: per alloy, moisture group or green set, symmetrisation reading, pore reading and install angle — t_L over the
+admissible C44, the Zener ratio at which t_L crosses 1 at 45°, how many cells the additive reading leaves the ends'
+interval, how many grid points fall, rise or neither across the measured moisture groups, the θ = 0 share's range and
+the `105` thresholds at its lowest on two readings (the Scots pine group ⊥ the union with the green group), the
+off-axis threshold factor at the C44 grid's ends, the junction's share at θ = 0 and at C44 = 0; the lattice's off-axis
+modulus against `105`'s readings.
 CANNOT: (1) read C44 — the periodic voxel case measures it for the infinite lattice (01_01 §5.2), and reading it into the
 share, with the body it is read on named, is open work (00_07 HW.23); (2) give the stiffness of the tissue in the
 pores or of the ring — a soft ring decouples the gyroid and drives t_L to 0 in its limit (no monotonicity shown); our
 reading of the ring (= the host's xylem) is the only ring modelled, so the lowest share here is the lowest of the
-MODELLED set, not of the admissible one; (3) give a GREEN wood's share or its direction — the source's wettest group is
-below fibre saturation, and across its groups the share takes no single direction; (4) model the finite length, the
+MODELLED set, not of the admissible one; (3) give a green SCOTS PINE share or the share's direction with moisture — the
+Scots pine source's wettest group is below fibre saturation and across its groups the share takes no single
+direction; above it the readings are other Pinaceae (proxies, not Scots pine), so set beside the Scots pine groups
+they confound species with moisture; (4) model the finite length, the
 bending gradient along R, the curved growth rings, the bark's proximity or the stem's transverse shear (S5); (5) say
 whether `105`'s homogeneous reading of the two FE cases is right — the module calls both ratios «NOT a material
 property»; (6) check S_1212 of an ANISOTROPIC matrix against an independent closed form — the isotropic control checks
@@ -99,7 +111,8 @@ from lib.utils import banner
 
 SI_DESCRIPTION = ("The share of a living stem's in-plane bending strain that a bonded titanium gyroid lattice takes, "
                   "from an orthotropic Eshelby solution for a circular cylinder on the measured elastic constants of "
-                  "Scots pine sapwood at four moisture levels, with the lattice's cubic constants read from two voxel "
+                  "Scots pine sapwood at four moisture levels below fibre saturation and, as a separate group, of green "
+                  "sets of three other Pinaceae, with the lattice's cubic constants read from two voxel "
                   "finite-element cases and its shear modulus, which a periodic voxel case measures for the infinite lattice and this script does not yet read, swept up to the Voigt bound; the install "
                   "angle and three readings of the pore filling are swept as well; closed forms checked against three "
                   "independent solutions, no finite elements")
@@ -154,6 +167,132 @@ PRINTED_AGGREGATES = (
     *[(f"decrease {k} %", (lambda key: lambda w: 100.0 * (1.0 - w["rh95"][key] / w["rh45"][key]))(k), 0, v)
       for k, v in (("E_T", 58.0), ("E_R", 47.0), ("E_L", 34.0), ("G_RT", 31.0), ("G_LR", 29.0), ("G_LT", 28.0))],
 )
+
+# ── GREEN (above fibre saturation) sets of OTHER Pinaceae — a SEPARATE group, never merged with WOOD ───────────────────
+# ⚖️ founder 2026-10-22 (00_07 HW.23, option (Б) by recommendation). Every number below was read in its source on
+# 2026-10-22 (Davies Table 1–2, Liu Table 2 and Jeong Table 2 also on the page image; Davies ESM 1–3 in the .docx XML
+# text, no OCR) and is typed AS PRINTED — strings, because the printed digit sets the rounding the checks below allow.
+# ν_ij everywhere: load along i, dimensional change along j (Davies p. 2, Liu p. 4, Jeong ν = −ε_x/ε_y in tension).
+DAVIES_COLUMNS = ("SO", "NSO", "SC", "NSC")    # stiff outerwood · non-stiff outerwood · stiff corewood · non-stiff corewood
+# Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x — Table 2 (p. 3), GPa / –.
+# Its caption: «optimised for the orthotropic assumption» — the paper states (p. 2, Eq. 2, read on the page image) a
+# minimisation of Σ|δ_i − γ_i|/θ_i under the reciprocity equalities (Eq. 1), θ_i the 95 % CI of the mean (99.9 % for the
+# stiff high-density tension sample); with the SEs of ESM 2/3 that output is NOT reproduced from the open text (the
+# usable n per face, the t-quantile and the CI of the four-face mean are not printed), so the mechanism is STATED, not
+# reproduced. Rows «TL», «LR», «RT» are the shear planes.
+DAVIES_TABLE2 = {
+    "E_R": ("0.49", "0.3", "0.26", "0.31"), "E_T": ("0.25", "0.19", "0.24", "0.17"), "E_L": ("4.36", "2.81", "3.5", "2.38"),
+    "G_LT": ("0.11", "0.21", "0.11", "0.13"), "G_LR": ("0.06", "0.03", "0.04", "0.03"), "G_RT": ("0.05", "0.02", "0.02", "0.04"),
+    "nu_RT": ("0.64", "0.54", "0.60", "0.77"), "nu_RL": ("0.03", "0.05", "0.03", "0.06"),
+    "nu_TR": ("0.33", "0.33", "0.55", "0.42"), "nu_TL": ("0.03", "0.01", "0.03", "0.04"),
+    "nu_LR": ("0.29", "0.47", "0.36", "0.44"), "nu_LT": ("0.60", "0.16", "0.37", "0.50"),
+}
+# Its Additional file 1, row «This Work | Static | Pinus radiata»: each constant's range over Table 2's four columns —
+# the paper's own aggregate of Table 2 (the transcription check). Its Glr «0.3-0.6» is ×10 Table 2's and ESM 2's
+# 0.03–0.06 — the source's own discrepancy, kept as printed and named, not checked (G_LR does not enter t_L — asserted).
+DAVIES_ESM1_THIS_WORK = {
+    "E_R": ("0.26", "0.49"), "E_T": ("0.17", "0.25"), "E_L": ("2.38", "4.36"), "G_LT": ("0.11", "0.21"),
+    "G_LR": ("0.3", "0.6"), "G_RT": ("0.02", "0.05"), "nu_RT": ("0.54", "0.77"), "nu_RL": ("0.03", "0.06"),
+    "nu_TR": ("0.33", "0.55"), "nu_TL": ("0.01", "0.04"), "nu_LR": ("0.29", "0.47"), "nu_LT": ("0.16", "0.60"),
+}
+# Its Additional file 2 — «averages of the raw data», «not … optimised for the orthotropic assumption»: E by force
+# direction, recording face and tension (_t) / compression (_c), and the shear planes; GPa, means (their SEs are printed
+# beside them, not used here). The rl/tl faces of E_R/E_T are printed too and not transcribed: the p. 4 rule takes the
+# tangential-radial face «where possible». Additional file 3 — the Poisson ratios, of which the p. 4 rule takes compression.
+DAVIES_ESM2 = {
+    "rt_t": ("0.40", "0.24", "0.13", "0.16"), "rt_c": ("0.58", "0.36", "0.39", "0.47"),
+    "tr_t": ("0.13", "0.22", "0.20", "0.09"), "tr_c": ("0.33", "0.35", "0.29", "0.26"),
+    "lr_t": ("11", "3.8", "3.0", "4.3"), "lr_c": ("3.1", "1.0", "3.8", "4.0"),
+    "lt_t": ("12", "4.7", "3.2", "4.0"), "lt_c": ("7.5", "1.8", "4.7", "5.9"),
+    "TL": ("0.11", "0.21", "0.11", "0.13"), "LR": ("0.06", "0.034", "0.039", "0.030"), "RT": ("0.046", "0.023", "0.023", "0.039"),
+}
+DAVIES_ESM3_COMPRESSION = {
+    "rt_c": ("0.64", "0.52", "0.60", "0.49"), "rl_c": ("0.14", "0.15", "0.22", "0.17"), "tr_c": ("0.47", "0.33", "0.39", "0.42"),
+    "tl_c": ("0.10", "0.08", "0.18", "0.08"), "lr_c": ("0.26", "0.41", "0.36", "0.44"), "lt_c": ("0.41", "0.16", "0.37", "0.42"),
+}
+# Its Table 1 (p. 3), kg/m³: green density (weighed and water-displaced before testing) ⊥ dry density (after 104 °C).
+# MC is not printed; ρ_green/ρ_dry − 1 is a LOWER bound on it (OUR derivation: the green volume is at least the dry one),
+# taken on the type means.
+DAVIES_TABLE1_DENSITY = {"green": ("1143", "1099", "933", "818"), "dry": ("531", "458", "438", "393")}
+# Liu, Zhang, Jiang, Wang & Guan 2019, Forests 10:456, doi 10.3390/f10050456 — Table 2 (p. 7), MPa / –: rows = sampling
+# positions from the pith (R = 13 · 56 · 76 · 132 mm; P1 pith, P2 heartwood, P3 between, P4 sapwood — p. 3) and the
+# printed «Mean» of the four, which the transcription check holds the rows to. Only row «4» is read into the share.
+LIU_TABLE2_HEADER = ("E_L", "nu_LT", "nu_LR", "E_T", "nu_TL", "nu_TR", "E_R", "nu_RL", "nu_RT", "G_RT", "G_LR", "G_LT")
+LIU_TABLE2 = {
+    "1": "5016 0.15 0.13 339 0.04 0.55 628 0.04 0.74 326 538 403",
+    "2": "5996 0.47 0.34 423 0.05 0.66 967 0.03 0.75 535 339 352",
+    "3": "9365 0.21 0.15 402 0.04 0.53 1154 0.06 0.79 383 404 371",
+    "4": "10137 0.36 0.26 282 0.04 0.66 342 0.05 0.81 556 430 446",
+    "Mean": "7629 0.30 0.22 362 0.04 0.60 773 0.05 0.77 450 428 393",
+}
+# Jeong 2026, J. Wood Sci., Article in Press, doi 10.1186/s10086-026-02311-7 — Table 2 (p. 6 of the accepted manuscript),
+# red pine (P. densiflora), «mean (coefficient of variation)», GPa / –. Only the stiffer-axis-loaded ratios are printed
+# (ν_LR, ν_LT, ν_RT); the green ν_RT is footnote b: «Measured but rejected: red pine green νRT (= 3.20) exceeded the
+# thermodynamic admissibility bound». G_RT is not measured. The 6 % row holds the green E_L to the text's own aggregate
+# («red pine 77.1%, 10.50 → 8.10 GPa»); the 19 % row is the source of the borrowed ν_RT.
+JEONG_TABLE2_HEADER = ("E_L", "E_R", "E_T", "G_LR", "G_LT", "nu_LR", "nu_LT", "nu_RT")
+JEONG_TABLE2_RED_PINE = {
+    "6": ("10.50", "0.44", "0.36", "0.80", "1.89", "0.44", "0.44", "0.94"),
+    "19": ("8.38", "0.40", "0.35", "0.59", "1.69", "0.15", "0.29", "0.94"),
+    "Green": ("8.10", "0.25", "0.10", "0.27", "0.60", "0.93", "0.63", None),
+}
+JEONG_GREEN_CV = {"E_L": "0.28", "E_R": "0.20", "E_T": "0.54", "nu_LR": "0.80", "nu_LT": "1.11"}   # printed beside the means
+JEONG_E_L_RETENTION_PRINTED_PCT = 77.1                     # the text, p. 6: «red pine 77.1%, 10.50 → 8.10 GPa»
+# The source of every green set: species, position, moisture and loading as printed, and what is OURS.
+GREEN_SOURCES = {
+    "davies2016": {
+        "citation": "Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19", "doi": "10.1186/s40490-016-0075-x",
+        "species": "Pinus radiata (Canterbury, NZ; boards from trees ≈ 28 years old)",
+        "position": "outerwood ⊥ corewood by ring width and curvature (adjacent to the bark ⊥ the pith, p. 2); sapwood or "
+                    "heartwood not reported; one board per type, so type and board are confounded (p. 4)",
+        "moisture": "green, never-dried boards kept sealed with excess water at 5 °C for at most 2 weeks (p. 2); MC not "
+                    "printed — its lower bound ρ_green/ρ_dry − 1 from Table 1 is OUR derivation",
+        "loading": "moduli: tension (bone and stick specimens) and compression (30 × 15 × 15 mm) averaged; ν from "
+                   "compression (p. 4); DIC on two faces; n = 6 replicates × 4 boards × 3 orientations × 3 tests = 216 "
+                   "(p. 2) — the usable n per face, the t-quantile and the CI of the four-face mean are not printed",
+        "table2": "Table 2 (p. 3) — stated (Eq. 2) to be a CI-weighted L1 symmetrisation's output, not reproduced from the "
+                  "open text; symmetric by construction to its printed digits",
+        "esm": "Additional files 2 (moduli) and 3 (Poisson ratios) — raw means; read by the paper's p. 4 rule as WE read "
+               "it: E_R from the rt face and E_T from the tr face, each tension and compression averaged; E_L the mean of "
+               "its four face-and-mode values; ν from compression",
+    },
+    "liu2019": {
+        "citation": "Liu, Zhang, Jiang, Wang & Guan 2019, Forests 10:456", "doi": "10.3390/f10050456",
+        "species": "Larix principis-rupprechtii (Chinese larch — Larix, not Pinus); 2 trees, 40 years, DBH 32 and 36 cm",
+        "position": "Table 2 row «4»: P4, sapwood, 132 mm from the pith (p. 3)",
+        "moisture": "green logs; trees' mean MC 95 % (kiln-dry method on 15-cm discs cut at 1.1 m over the whole cross-section, "
+                    "heartwood included, p. 3 and p. 6); P4 specimen MC not printed; specimens stored sealed at 15 °C / 95 % RH",
+        "loading": "E and ν: compression with strain gauges (p. 4–5); G_LR, G_LT: three-point bending over five spans; "
+                   "G_RT: compression of 45° specimens",
+        "reciprocity": "the authors check inequality (7) only (Table 4) and state Maxwell consistency; the equality (6) "
+                       "on P4 is our arithmetic",
+    },
+    "jeong2026": {
+        "citation": "Jeong 2026, J. Wood Sci. (Article in Press)", "doi": "10.1186/s10086-026-02311-7",
+        "species": "Pinus densiflora (red pine); sapwood or heartwood not stated",
+        "position": "Table 2, row Red pine / Green",
+        "moisture": "«green (saturated)», number not printed, «verified gravimetrically by the oven-dry method on companion "
+                    "specimens»; not stated to be never-dried",
+        "loading": "uniaxial tension, stereo DIC, 0.5 mm/min; the author: «the transverse moduli are systematically "
+                   "underestimated in direct radial and tangential tension»",
+        "in_press": "internal contradictions in the accepted manuscript: «three moisture-content (MC) states» (abstract) ⊥ "
+                    "«four discrete MC levels—6%, 19%, and green» (text); «three directly measured Poisson's ratios» ⊥ «The "
+                    "four directly measured Poisson’s ratios»; «consistent with the Maxwell reciprocity relations» with no "
+                    "reciprocal ratio measured — re-read Table 2 in the final version",
+        "borrowed_ours": {
+            "nu_RT": "0.94 — Jeong's own red pine at 19 % MC (Table 2): the same species and method at the nearest measured "
+                     "MC; the green value 3.20 was measured and rejected by the author",
+            "G_RT": "74 MPa — Güntekin & Akar 2019's 95 % RH group (the target species' wettest); Jeong measures no G_RT",
+        },
+        "not_read": "Jeong's other green pine row (P. koraiensis, Korean pine) — this pass reads P. densiflora alone",
+    },
+}
+# The span of ν_RT over which the borrowed value's sensitivity is measured: every MEASURED ν_RT among the named readings
+# (Güntekin & Akar, Davies Table 2 and ESM 3, Liu P4) and Jeong's own red pine at 6 and 19 % MC (built in main()).
+NU_RT_SWEEP_POINTS = 10
+NU_RT_SENSITIVITY_CAP = 0.002            # |Δt_L| at θ = 0 over that span — asserted (00_07 HW.23, the re-run's leg)
+G_PROBE_FACTORS = (0.1, 10.0)            # G_LR and G_RT scaled by these: t_L must not move (the anti-plane block decouples)
+
 READINGS = ("stiff", "soft", "mean")
 FILLS = ("pores_carry_nothing", "pores_additive_host_sapwood", "pores_voigt_phase_bound")
 LATTICE_FILLS = ("pores_carry_nothing", "pores_additive_host_sapwood")     # the readings the lattice's C44 enters
@@ -252,10 +391,21 @@ def inclusion_strain(cm: np.ndarray, ci: np.ndarray, s: np.ndarray, eps_inf: np.
 
 
 def wood_compliance(w: dict, reading: str) -> np.ndarray:
-    """Engineering 6×6 compliance (Voigt, γ = 2ε) of one group under one symmetrisation reading."""
-    stiff = {"LT": -w["nu_LT"] / w["E_L"], "LR": -w["nu_LR"] / w["E_L"], "TR": -w["nu_RT"] / w["E_R"]}
-    soft = {"LT": -w["nu_TL"] / w["E_T"], "LR": -w["nu_RL"] / w["E_R"], "TR": -w["nu_TR"] / w["E_T"]}
-    pick = {"stiff": stiff, "soft": soft, "mean": {k: 0.5 * (stiff[k] + soft[k]) for k in stiff}}[reading]
+    """Engineering 6×6 compliance (Voigt, γ = 2ε) of one group under one symmetrisation reading. The softer-axis couplings
+    are built only when the reading needs them — a set that prints the stiffer-axis ratios only (Jeong) has none."""
+    def stiff():
+        return {"LT": -w["nu_LT"] / w["E_L"], "LR": -w["nu_LR"] / w["E_L"], "TR": -w["nu_RT"] / w["E_R"]}
+
+    def soft():
+        return {"LT": -w["nu_TL"] / w["E_T"], "LR": -w["nu_RL"] / w["E_R"], "TR": -w["nu_TR"] / w["E_T"]}
+
+    if reading == "stiff":
+        pick = stiff()
+    elif reading == "soft":
+        pick = soft()
+    else:
+        st, so = stiff(), soft()
+        pick = {k: 0.5 * (st[k] + so[k]) for k in st}
     s = np.zeros((6, 6))
     s[0, 0], s[1, 1], s[2, 2] = 1.0 / w["E_L"], 1.0 / w["E_T"], 1.0 / w["E_R"]
     s[0, 1] = s[1, 0] = pick["LT"]
@@ -273,6 +423,120 @@ def cubic_parts(c11: float, c12: float, theta: float) -> tuple[np.ndarray, np.nd
     shear = np.zeros((6, 6))
     shear[3, 3] = shear[4, 4] = shear[5, 5] = 1.0
     return mandel(rotate(to4(base), theta)), mandel(rotate(to4(shear), theta))
+
+
+# ── The green sets, built from the transcriptions above (MPa / –) ─────────────────────────────────────────────────────
+DAVIES_COLUMN_NAMES = {"SO": "stiff outerwood", "NSO": "non-stiff outerwood", "SC": "stiff corewood", "NSC": "non-stiff corewood"}
+
+
+def _mpa(gpa: str) -> float:
+    """A printed GPa figure in MPa, at its printed digits."""
+    return round(float(gpa) * 1e3, 6)
+
+
+def _half_unit(printed: str) -> float:
+    """Half a unit of the last printed digit — the rounding a printed figure carries."""
+    return 0.5 * 10.0 ** -(len(printed.split(".")[1]) if "." in printed else 0)
+
+
+def davies_set(col: int, which: str) -> dict:
+    """One Davies column: «table2» — Table 2 as printed; «esm» — the raw means of ESM 2/3 by the paper's p. 4 rule as WE
+    read it (E_R from the rt face and E_T from the tr face, tension and compression averaged; E_L the mean of its four
+    face-and-mode values; ν from compression; G from ESM 2)."""
+    if which == "table2":
+        return {k: (float(v[col]) if k.startswith("nu_") else _mpa(v[col])) for k, v in DAVIES_TABLE2.items()}
+    e = {k: float(v[col]) for k, v in DAVIES_ESM2.items()}
+    n = {k: float(v[col]) for k, v in DAVIES_ESM3_COMPRESSION.items()}
+    return {"E_R": round((e["rt_t"] + e["rt_c"]) / 2 * 1e3, 6), "E_T": round((e["tr_t"] + e["tr_c"]) / 2 * 1e3, 6),
+            "E_L": round((e["lr_t"] + e["lr_c"] + e["lt_t"] + e["lt_c"]) / 4 * 1e3, 6),
+            "G_LT": _mpa(DAVIES_ESM2["TL"][col]), "G_LR": _mpa(DAVIES_ESM2["LR"][col]), "G_RT": _mpa(DAVIES_ESM2["RT"][col]),
+            "nu_RT": n["rt_c"], "nu_RL": n["rl_c"], "nu_TR": n["tr_c"], "nu_TL": n["tl_c"], "nu_LR": n["lr_c"], "nu_LT": n["lt_c"]}
+
+
+def liu_row(row: str) -> dict:
+    return dict(zip(LIU_TABLE2_HEADER, (float(x) for x in LIU_TABLE2[row].split()), strict=True))
+
+
+def jeong_red_pine_green(nu_rt: float | None = None) -> dict:
+    """Jeong's red pine, green: the printed constants, with ν_RT and G_RT BORROWED (ours — GREEN_SOURCES); `nu_rt`
+    replaces the borrowed ν_RT for the sensitivity control. The softer-axis ratios are not printed, so it builds the
+    stiffer-axis reading only."""
+    green = dict(zip(JEONG_TABLE2_HEADER, JEONG_TABLE2_RED_PINE["Green"], strict=True))
+    w = {k: (float(v) if k.startswith("nu_") else _mpa(v)) for k, v in green.items() if v is not None}
+    w["nu_RT"] = float(JEONG_TABLE2_RED_PINE["19"][JEONG_TABLE2_HEADER.index("nu_RT")]) if nu_rt is None else nu_rt
+    w["G_RT"] = WOOD["rh95"]["G_RT"]
+    return w
+
+
+def green_sets() -> dict:
+    """name → the set's constants, the symmetrisation readings it builds, its source and where in the source it sits."""
+    sets = {}
+    for which, where in (("table2", "Table 2"), ("esm", "Additional files 2–3")):
+        for i, col in enumerate(DAVIES_COLUMNS):
+            sets[f"davies2016_{which}_{col}"] = {
+                "w": davies_set(i, which), "readings": READINGS, "source": "davies2016",
+                "where": f"{where}, {DAVIES_COLUMN_NAMES[col]}",
+                "mc_lower_bound_pct_ours": 100.0 * (float(DAVIES_TABLE1_DENSITY["green"][i])
+                                                    / float(DAVIES_TABLE1_DENSITY["dry"][i]) - 1.0)}
+    sets["liu2019_P4"] = {"w": liu_row("4"), "readings": READINGS, "source": "liu2019",
+                          "where": "Table 2, row 4 (P4, sapwood, R = 132 mm)"}
+    sets["jeong2026_red_pine_green"] = {"w": jeong_red_pine_green(), "readings": ("stiff",), "source": "jeong2026",
+                                        "where": "Table 2, Red pine / Green — ν_RT and G_RT borrowed (ours)"}
+    return sets
+
+
+def _davies_coupling_interval(col: int, pair: str) -> tuple[float, float]:
+    """The interval ν_ij/E_i spans in one Table 2 column at the printed rounding of ν_ij and E_i (pair = «ij»)."""
+    nu_s, e_s = DAVIES_TABLE2[f"nu_{pair}"][col], DAVIES_TABLE2[f"E_{pair[0]}"][col]
+    nu, e, hn, he = float(nu_s), float(e_s), _half_unit(nu_s), _half_unit(e_s)
+    return (nu - hn) / (e + he), (nu + hn) / (e - he)
+
+
+def green_transcription_checks() -> dict:
+    """Each green transcription held to its source's OWN aggregate. CAN catch: a mistyped extreme of a Davies Table 2 row
+    (ESM 1 prints each row's range over the four columns); a Table 2 ν or E slip that breaks its by-construction
+    reciprocity beyond the printed rounding; a column or row swap or a misplaced digit in Liu's Table 2 (its printed Mean
+    of the four positions); a mistyped Jeong green E_L (the text's 77.1 % retention). CANNOT catch: an interior Davies
+    column that stays inside both its row's range and the reciprocity rounding; a last-digit slip in one Liu row (it
+    moves the mean by a quarter of a unit); any Jeong constant but E_L; anything in ESM 2/3 — no aggregate is printed
+    (read from the .docx XML text, no OCR)."""
+    out = {"davies_table2_vs_esm1_range": {}, "davies_table2_reciprocity_within_rounding": {},
+           "liu_table2_vs_printed_mean": {}, "jeong_e_l_retention_pct": {}}
+    for k, (lo, hi) in DAVIES_ESM1_THIS_WORK.items():
+        vals = [float(v) for v in DAVIES_TABLE2[k]]
+        ok = (min(vals), max(vals)) == (float(lo), float(hi))
+        out["davies_table2_vs_esm1_range"][k] = {"table2_min_max": [min(vals), max(vals)], "esm1": [lo, hi], "match": ok}
+        if k != "G_LR":                                     # the source's own ×10 (named above), not a transcription
+            assert ok, f"Davies Table 2 row {k} off ESM 1's «This Work» range: {vals} vs {lo}–{hi}"
+    assert not out["davies_table2_vs_esm1_range"]["G_LR"]["match"], "ESM 1's G_LR now matches Table 2 — re-read it"
+    for i, col in enumerate(DAVIES_COLUMNS):
+        for a, b in (("TR", "RT"), ("LR", "RL"), ("TL", "LT")):
+            (lo1, hi1), (lo2, hi2) = _davies_coupling_interval(i, a), _davies_coupling_interval(i, b)
+            ok = lo1 <= hi2 and lo2 <= hi1
+            out["davies_table2_reciprocity_within_rounding"][f"{col}|{a}~{b}"] = ok
+            assert ok, f"Davies Table 2 {col}: ν_{a}/E_{a[0]} and ν_{b}/E_{b[0]} disagree beyond the printed rounding"
+    rows = [liu_row(r) for r in ("1", "2", "3", "4")]
+    for j, k in enumerate(LIU_TABLE2_HEADER):
+        printed = LIU_TABLE2["Mean"].split()[j]
+        mean = sum(r[k] for r in rows) / 4.0
+        ok = abs(mean - float(printed)) <= _half_unit(printed) + 1e-9
+        out["liu_table2_vs_printed_mean"][k] = {"mean_of_rows": mean, "printed": float(printed), "match": ok}
+        assert ok, f"Liu Table 2 column {k}: the four rows average {mean}, the printed Mean is {printed}"
+    hdr = JEONG_TABLE2_HEADER.index("E_L")
+    ret = 100.0 * float(JEONG_TABLE2_RED_PINE["Green"][hdr]) / float(JEONG_TABLE2_RED_PINE["6"][hdr])
+    out["jeong_e_l_retention_pct"] = {"computed": ret, "printed": JEONG_E_L_RETENTION_PRINTED_PCT}
+    assert round(ret, 1) == JEONG_E_L_RETENTION_PRINTED_PCT, f"Jeong's green E_L off the text's retention: {ret}"
+    return out
+
+
+def reciprocity(w: dict) -> dict | None:
+    """(ν_ji/E_j)/(ν_ij/E_i) per pair, the transverse-loaded entry over the L-loaded one (and R-loaded over T-loaded for
+    R–T) — our arithmetic; 1 where the measured compliance is symmetric. None where a set prints one side only."""
+    if any(w.get(k) is None for k in ("nu_RL", "nu_TL", "nu_TR")):
+        return None
+    return {"RL_over_LR": (w["nu_RL"] / w["E_R"]) / (w["nu_LR"] / w["E_L"]),
+            "TL_over_LT": (w["nu_TL"] / w["E_T"]) / (w["nu_LT"] / w["E_L"]),
+            "RT_over_TR": (w["nu_RT"] / w["E_R"]) / (w["nu_TR"] / w["E_T"])}
 
 
 # ── Controls — each against an INDEPENDENT closed form (in-silico §When Modifying #8) ───────────────────────────────
@@ -357,6 +621,10 @@ def main() -> int:
         v = f(WOOD)
         transcription[name] = {"computed": v, "printed": printed}
         assert floor_to(v, digits) == printed, f"transcription off the paper's own aggregate {name}: {v} vs {printed}"
+    green_transcription = green_transcription_checks()             # each green source against its own aggregate
+    gsets = green_sets()
+    for name, w in [*WOOD.items(), *((n, gs["w"]) for n, gs in gsets.items())]:
+        assert w["E_L"] > w["E_R"] > w["E_T"], f"{name}: «stiff» names the R-loaded R–T test only while E_R > E_T"
 
     # ── The lattice: 105's Richardson readings, recomputed with 105's own code from the FE cache ──────────────────────
     rows = sorted(fea["rows"], key=lambda r: r["step_mm"])
@@ -395,47 +663,54 @@ def main() -> int:
     ctl_incl = control_isotropic_inclusion()
     assert ctl_iso < 1e-12 and ctl_incl < 1e-12, f"closed-form controls failed: {ctl_iso}, {ctl_incl}"
 
-    # ── The wood readings ─────────────────────────────────────────────────────────────────────────────────────────────
-    wood = {}
-    for g, w in WOOD.items():
-        for rd in READINGS:
-            s66 = wood_compliance(w, rd)
-            ev_min = float(np.linalg.eigvalsh(s66).min())
-            if ev_min <= 0.0:
-                wood[f"{g}|{rd}"] = {"positive_definite": False, "compliance_min_eigenvalue": ev_min}
-                continue
-            cm4 = to4(np.linalg.inv(s66))
-            s_esh = eshelby_cylinder(cm4)
+    # ── The wood readings: the Scots pine group (WOOD) and, apart, the green group (GREEN_SOURCES) ─────────────────────
+    def build_reading(s66: np.ndarray, label: str, checks: bool = True) -> dict:
+        ev_min = float(np.linalg.eigvalsh(s66).min())
+        if ev_min <= 0.0:
+            return {"positive_definite": False, "compliance_min_eigenvalue": ev_min}
+        cm4 = to4(np.linalg.inv(s66))
+        s_esh = eshelby_cylinder(cm4)
+        entry = {"positive_definite": True, "compliance_min_eigenvalue": ev_min}
+        if checks:
             hole = control_orthotropic_hole(s66, s_esh, cm4)
             assert abs(hole["kt_eshelby"] / hole["kt_lekhnitskii"] - 1) < 1e-10 and hole["traction_residual"] < 1e-10, \
-                f"orthotropic hole control failed on {g}|{rd}: {hole}"
+                f"orthotropic hole control failed on {label}: {hole}"
             cov = control_covariance(cm4, s_esh)
-            assert cov < 1e-10, f"S is not covariant under a rotation about its axis on {g}|{rd}: {cov}"
+            assert cov < 1e-10, f"S is not covariant under a rotation about its axis on {label}: {cov}"
             quad = float(np.abs(mandel(eshelby_cylinder(cm4, 2 * N_QUAD)) - mandel(s_esh)).max())
-            assert quad < 1e-10, f"Mura's integral not converged at {N_QUAD} points on {g}|{rd}: {quad}"
-            sig = np.zeros((3, 3))
-            sig[0, 0] = 1.0
-            cm = mandel(cm4)
-            wood[f"{g}|{rd}"] = {"positive_definite": True, "compliance_min_eigenvalue": ev_min, "hole_control": hole,
-                                 "covariance_control": cov, "quadrature_change_at_2n": quad, "_cm": cm,
-                                 "_s": mandel(s_esh), "_eps": np.linalg.solve(cm, strain_vec(sig))}
+            assert quad < 1e-10, f"Mura's integral not converged at {N_QUAD} points on {label}: {quad}"
+            entry |= {"hole_control": hole, "covariance_control": cov, "quadrature_change_at_2n": quad}
+        sig = np.zeros((3, 3))
+        sig[0, 0] = 1.0
+        cm = mandel(cm4)
+        return entry | {"_cm": cm, "_s": mandel(s_esh), "_eps": np.linalg.solve(cm, strain_vec(sig))}
+
+    wood = {f"{g}|{rd}": build_reading(wood_compliance(w, rd), f"{g}|{rd}") for g, w in WOOD.items() for rd in READINGS}
     live = [k for k, v in wood.items() if v["positive_definite"]]
     excluded = [k for k, v in wood.items() if not v["positive_definite"]]
+    wood_green = {f"{n}|{rd}": build_reading(wood_compliance(gs["w"], rd), f"{n}|{rd}")
+                  for n, gs in gsets.items() for rd in gs["readings"]}
+    live_green = [k for k, v in wood_green.items() if v["positive_definite"]]
+    excluded_green = [k for k, v in wood_green.items() if not v["positive_definite"]]
+    assert not wood.keys() & wood_green.keys(), "a green reading's key collides with a Scots pine one"
+    allw = wood | wood_green                                         # disjoint keys: one lookup for both groups
 
     # ── t_L over every cell ───────────────────────────────────────────────────────────────────────────────────────────
     ti_phase = {al: mandel(iso_c(p_["E_GPa"] * 1e3, p_["nu"])) for al, p_ in ALLOY_PROPERTIES.items()}
 
-    def c_incl(wk: str, al: str, fill: str, th: float, a: float) -> np.ndarray:
+    def c_incl(wv: dict, al: str, fill: str, th: float, a: float) -> np.ndarray:
         e_s = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3
         if fill == "pores_voigt_phase_bound":
-            return phi * ti_phase[al] + (1 - phi) * wood[wk]["_cm"]
+            return phi * ti_phase[al] + (1 - phi) * wv["_cm"]
         base, shear = parts[th] if th in parts else cubic_parts(lat["C11"], lat["C12"], math.radians(th))
         ci = e_s * (base + a * q_lat / 2 * shear)
-        return ci + (1 - phi) * wood[wk]["_cm"] if fill == "pores_additive_host_sapwood" else ci
+        return ci + (1 - phi) * wv["_cm"] if fill == "pores_additive_host_sapwood" else ci
+
+    def t_l_on(wv: dict, al, fill, th, a) -> float:
+        return float(inclusion_strain(wv["_cm"], c_incl(wv, al, fill, th, a), wv["_s"], wv["_eps"])[0] / wv["_eps"][0])
 
     def t_l(wk, al, fill, th, a) -> float:
-        wv = wood[wk]
-        return float(inclusion_strain(wv["_cm"], c_incl(wk, al, fill, th, a), wv["_s"], wv["_eps"])[0] / wv["_eps"][0])
+        return t_l_on(allw[wk], al, fill, th, a)
 
     def a_cross(wk, al, fill, th) -> float | None:
         lo, hi = A_FLOOR * a_voigt, a_voigt
@@ -450,44 +725,55 @@ def main() -> int:
                 hi = mid
         return math.sqrt(lo * hi)
 
-    cells, grids, monotone_worst, mirror_worst = {}, {}, 0.0, 0.0
-    for al in ALLOY_PROPERTIES:
-        for wk in live:
-            for fill in FILLS:
-                grid = np.array([[t_l(wk, al, fill, th, a) for a in a_grid] for th in THETA_DEG])
-                grids[(al, wk, fill)] = grid
-                monotone_worst = max(monotone_worst, float(np.diff(grid, axis=1).max()))
-                at_av = grid[:, -1]
-                at_zero = np.array([t_l(wk, al, fill, th, 0.0) for th in THETA_DEG])
-                i_min, i_zero = int(np.argmin(at_av)), int(np.argmax(at_zero))
-                cells[f"{al}|{wk}|{fill}"] = {
-                    "t_L_theta0_any_C44": float(grid[0, -1]),
-                    "t_L_at_voigt_C44_min_over_theta": float(at_av[i_min]), "theta_of_min_deg": THETA_DEG[i_min],
-                    "t_L_at_voigt_C44_max_over_theta": float(at_av.max()),
-                    "t_L_at_C44_zero_max_over_theta": float(at_zero[i_zero]), "theta_of_max_at_C44_zero_deg": THETA_DEG[i_zero],
-                    "zener_at_which_t_L_is_1_theta45": a_cross(wk, al, fill, 45.0),
-                    "theta0_independent_of_C44": bool(np.ptp(grid[0]) < 1e-9),
-                }
-                monotone_worst = max(monotone_worst, float((grid[:, 0] - at_zero).max()))   # C44 = 0 tops the grid
-        # the mirror control: t_L(45° + x) = t_L(45° − x) — cubic 90° periodicity with the matrix's T → −T mirror. It
-        # guards the PERIMETER claim (0–45° covers every install angle); it holds for any proper rotation, so it does not
-        # catch a wrong angle (the E110 closed form at 45° below does), and a non-rotation reds the monotone check first.
-        for x in (10.0, 30.0):
-            for a in (a_grid[0], a_grid[-1]):
-                vals = [t_l(live[0], al, "pores_carry_nothing", th, a) for th in (45 + x, 45 - x)]
-                mirror_worst = max(mirror_worst, abs(vals[0] - vals[1]))
-    assert monotone_worst < 1e-9, f"t_L rises with C44 somewhere ({monotone_worst}) — the threshold form is void"
-    assert mirror_worst < 1e-9, f"the 45° mirror does not hold ({mirror_worst}) — the rotation is wrong"
+    def sweep(keys: list[str]) -> tuple[dict, dict, float, float]:
+        cells_, grids_, monotone_, mirror_ = {}, {}, 0.0, 0.0
+        for al in ALLOY_PROPERTIES:
+            for wk in keys:
+                for fill in FILLS:
+                    grid = np.array([[t_l(wk, al, fill, th, a) for a in a_grid] for th in THETA_DEG])
+                    grids_[(al, wk, fill)] = grid
+                    monotone_ = max(monotone_, float(np.diff(grid, axis=1).max()))
+                    at_av = grid[:, -1]
+                    at_zero = np.array([t_l(wk, al, fill, th, 0.0) for th in THETA_DEG])
+                    i_min, i_zero = int(np.argmin(at_av)), int(np.argmax(at_zero))
+                    cells_[f"{al}|{wk}|{fill}"] = {
+                        "t_L_theta0_any_C44": float(grid[0, -1]),
+                        "t_L_at_voigt_C44_min_over_theta": float(at_av[i_min]), "theta_of_min_deg": THETA_DEG[i_min],
+                        "t_L_at_voigt_C44_max_over_theta": float(at_av.max()),
+                        "t_L_at_C44_zero_max_over_theta": float(at_zero[i_zero]),
+                        "theta_of_max_at_C44_zero_deg": THETA_DEG[i_zero],
+                        "zener_at_which_t_L_is_1_theta45": a_cross(wk, al, fill, 45.0),
+                        "theta0_independent_of_C44": bool(np.ptp(grid[0]) < 1e-9),
+                    }
+                    monotone_ = max(monotone_, float((grid[:, 0] - at_zero).max()))   # C44 = 0 tops the grid
+            # the mirror control: t_L(45° + x) = t_L(45° − x) — cubic 90° periodicity with the matrix's T → −T mirror. It
+            # guards the PERIMETER claim (0–45° covers every install angle); it holds for any proper rotation, so it does
+            # not catch a wrong angle (the E110 closed form at 45° below does), and a non-rotation reds the monotone check.
+            for x in (10.0, 30.0):
+                for a in (a_grid[0], a_grid[-1]):
+                    vals = [t_l(keys[0], al, "pores_carry_nothing", th, a) for th in (45 + x, 45 - x)]
+                    mirror_ = max(mirror_, abs(vals[0] - vals[1]))
+        assert monotone_ < 1e-9, f"t_L rises with C44 somewhere ({monotone_}) — the threshold form is void"
+        assert mirror_ < 1e-9, f"the 45° mirror does not hold ({mirror_}) — the rotation is wrong"
+        return cells_, grids_, monotone_, mirror_
+
+    cells, grids, monotone_worst, mirror_worst = sweep(live)
+    cells_green, _, monotone_green, mirror_green = sweep(live_green)
 
     # ── Do the pore readings' stiffness ends bracket the SHARE? Count the additive reading outside the ends' interval ──
-    outside = []
-    for al, wk in itertools.product(ALLOY_PROPERTIES, live):
-        ends = [cells[f"{al}|{wk}|{f}"] for f in ("pores_carry_nothing", "pores_voigt_phase_bound")]
-        mid = cells[f"{al}|{wk}|pores_additive_host_sapwood"]
-        for field in ("t_L_theta0_any_C44", "t_L_at_voigt_C44_min_over_theta"):
-            lo, hi = sorted(e[field] for e in ends)
-            if not lo - 1e-12 <= mid[field] <= hi + 1e-12:
-                outside.append(f"{al}|{wk}|{field}")
+    def additive_outside(cells_: dict, keys: list[str]) -> list[str]:
+        out = []
+        for al, wk in itertools.product(ALLOY_PROPERTIES, keys):
+            ends = [cells_[f"{al}|{wk}|{f}"] for f in ("pores_carry_nothing", "pores_voigt_phase_bound")]
+            mid = cells_[f"{al}|{wk}|pores_additive_host_sapwood"]
+            for field in ("t_L_theta0_any_C44", "t_L_at_voigt_C44_min_over_theta"):
+                lo, hi = sorted(e[field] for e in ends)
+                if not lo - 1e-12 <= mid[field] <= hi + 1e-12:
+                    out.append(f"{al}|{wk}|{field}")
+        return out
+
+    outside = additive_outside(cells, live)
+    outside_green = additive_outside(cells_green, live_green)
 
     # ── Moisture: across each reading's material groups, how many grid points fall, rise, or neither? ──────────────────
     moisture = {}
@@ -515,28 +801,46 @@ def main() -> int:
                         assert up0(lim0 / sf * div / (fv * frac)) == \
                             d105["gyroid_binds_above_surface_strain_ue"][al][f"{dk}|{sk}|sf{sf:g}"][fk], \
                             f"105's threshold not reproduced ({al} {dk} {sk} sf{sf} {fk}) — re-run 105"
-    theta0 = {}
-    for al in ALLOY_PROPERTIES:
-        ks = [k for k in cells if k.startswith(f"{al}|")]
-        k_lo = min(ks, key=lambda k: cells[k]["t_L_theta0_any_C44"])
-        k_hi = max(ks, key=lambda k: cells[k]["t_L_theta0_any_C44"])
-        theta0[al] = {"lowest": cells[k_lo]["t_L_theta0_any_C44"], "lowest_cell": k_lo,
-                      "highest": cells[k_hi]["t_L_theta0_any_C44"], "highest_cell": k_hi}
-    binds_above = {fk: {al: {f"{dk}|{sk}|sf{sf:g}": up0(d105["alloys"][al]["endurance_strain_printed_ue"] / sf * div
-                                                         / (fv * frac * theta0[al]["lowest"]))
-                             for dk, frac in d105["inputs"]["depth_fraction"].items()
-                             for sk, div in d105["inputs"]["stress_state_divisor"].items() for sf in (1.0, 2.0)}
-                        for al in ALLOY_PROPERTIES}
-                   for fk, fv in f_read.items()}
+    def theta0_over(cells_: dict) -> dict:
+        out = {}
+        for al in ALLOY_PROPERTIES:
+            ks = [k for k in cells_ if k.startswith(f"{al}|")]
+            k_lo = min(ks, key=lambda k: cells_[k]["t_L_theta0_any_C44"])
+            k_hi = max(ks, key=lambda k: cells_[k]["t_L_theta0_any_C44"])
+            out[al] = {"lowest": cells_[k_lo]["t_L_theta0_any_C44"], "lowest_cell": k_lo,
+                       "highest": cells_[k_hi]["t_L_theta0_any_C44"], "highest_cell": k_hi}
+        return out
+
+    def binds_at(t0: dict) -> dict:
+        return {fk: {al: {f"{dk}|{sk}|sf{sf:g}": up0(d105["alloys"][al]["endurance_strain_printed_ue"] / sf * div
+                                                     / (fv * frac * t0[al]["lowest"]))
+                          for dk, frac in d105["inputs"]["depth_fraction"].items()
+                          for sk, div in d105["inputs"]["stress_state_divisor"].items() for sf in (1.0, 2.0)}
+                     for al in ALLOY_PROPERTIES}
+                for fk, fv in f_read.items()}
+
+    stem = d105["inputs"]["stem_readings_87"]
+
+    def source_day_at(ba: dict) -> dict:
+        return {fk: {rd: {"exceeds": sorted(al for al in ALLOY_PROPERTIES
+                                            if stem[rd]["surface_strain_ue"] > ba[fk][al][CELL_LS]),
+                          "margin_over_threshold": {al: stem[rd]["surface_strain_ue"] / ba[fk][al][CELL_LS]
+                                                    for al in ALLOY_PROPERTIES}}
+                     for rd in ("median", "upper_whisker")}
+                for fk in f_read}
+
+    theta0 = theta0_over(cells)
+    binds_above = binds_at(theta0)
     merit = {al: binds_above["axial_richardson"][al][CELL_LS] / binds_above["axial_richardson"][ALLOY_BASELINE][CELL_LS]
              for al in ALLOY_PROPERTIES}
-    stem = d105["inputs"]["stem_readings_87"]
-    source_day = {fk: {rd: {"exceeds": sorted(al for al in ALLOY_PROPERTIES
-                                              if stem[rd]["surface_strain_ue"] > binds_above[fk][al][CELL_LS]),
-                            "margin_over_threshold": {al: stem[rd]["surface_strain_ue"] / binds_above[fk][al][CELL_LS]
-                                                      for al in ALLOY_PROPERTIES}}
-                       for rd in ("median", "upper_whisker")}
-                  for fk in f_read}
+    source_day = source_day_at(binds_above)
+    # the green group alone and the union of both — the consumer's ceiling for a BINDING sentence is the union's lowest
+    # θ = 0 share (the adverse reading for a lower bound's «binds», in-silico §When Modifying #45 ⊕ and #11), cited
+    theta0_green = theta0_over(cells_green)
+    cells_union = cells | cells_green
+    theta0_union = theta0_over(cells_union)
+    binds_union = binds_at(theta0_union)
+    source_day_union = source_day_at(binds_union)
     at_t1 = {rd: sorted(al for al in ALLOY_PROPERTIES
                         if stem[rd]["surface_strain_ue"] > d105["gyroid_binds_above_surface_strain_ue"][al][CELL_LS]["axial_richardson"])
              for rd in ("median", "upper_whisker")}
@@ -585,6 +889,112 @@ def main() -> int:
     lattice_cells = sum(1 for k in cells if k.rsplit("|", 1)[1] in LATTICE_FILLS)
     lows = ", ".join(f"{al} {floor_to(theta0[al]['lowest'], 3):.3f}" for al in ALLOY_PROPERTIES)
     sd_a, sd_r = source_day["axial_richardson"], source_day["radial_richardson"]
+
+    # ── Control: t_L does not depend on G_LR or G_RT. R is a symmetry axis of the matrix and of every inclusion reading,
+    # so the anti-plane shears (LR, TR) decouple from the normal-and-LT block that σ_L excites. CAN catch: an index slip
+    # in to4 / mandel / rotate that couples the anti-plane block in, a rotation about an axis other than R. CANNOT catch:
+    # an error in G_LT or in the normal block — they do enter (the hole control holds the normal block).
+    def constants(wk: str) -> tuple[dict, str]:
+        name, rd = wk.split("|")
+        return (WOOD[name] if name in WOOD else gsets[name]["w"]), rd
+
+    g_probe_worst = 0.0
+    for wk in [*live, *live_green]:
+        w, rd = constants(wk)
+        for key, f in itertools.product(("G_LR", "G_RT"), G_PROBE_FACTORS):
+            wv2 = build_reading(wood_compliance(w | {key: w[key] * f}, rd), f"{wk} {key}×{f:g}", checks=False)
+            for al, fill, th, a in itertools.product(ALLOY_PROPERTIES, FILLS, (0.0, 22.5, 45.0), (a_grid[0], a_voigt, 0.0)):
+                g_probe_worst = max(g_probe_worst, abs(t_l_on(wv2, al, fill, th, a) - t_l(wk, al, fill, th, a)))
+    assert g_probe_worst < 1e-12, f"t_L moves with G_LR or G_RT ({g_probe_worst}) — the anti-plane block leaks in"
+
+    # ── Control: Jeong's borrowed ν_RT, swept over every MEASURED ν_RT of the named readings and Jeong's own red pine at
+    # 6 and 19 % MC. |Δt_L| at θ = 0 — the only cell `105`'s figure stands on — is held to NU_RT_SENSITIVITY_CAP; off the
+    # axis (every θ, at the C44 grid's ends and at C44 = 0) it is reported, not capped. CAN catch: a θ = 0 share that leans
+    # on the borrowed value. CANNOT catch: a ν_RT outside the swept span (the measured green 3.20 is inadmissible by the
+    # author's account).
+    nu_rt_measured = sorted({w["nu_RT"] for w in WOOD.values()} | {float(v) for v in DAVIES_TABLE2["nu_RT"]}
+                            | {float(v) for v in DAVIES_ESM3_COMPRESSION["rt_c"]} | {liu_row("4")["nu_RT"]}
+                            | {float(JEONG_TABLE2_RED_PINE[r][JEONG_TABLE2_HEADER.index("nu_RT")]) for r in ("6", "19")})
+    jk = "jeong2026_red_pine_green|stiff"
+    nu_rt_theta0, nu_rt_off_axis = 0.0, 0.0
+    for nu in np.linspace(nu_rt_measured[0], nu_rt_measured[-1], NU_RT_SWEEP_POINTS):
+        wv2 = build_reading(wood_compliance(jeong_red_pine_green(float(nu)), "stiff"), f"ν_RT {nu:.3f}", checks=False)
+        assert wv2["positive_definite"], f"Jeong's set is not a material at ν_RT {nu}"
+        for al, fill in itertools.product(ALLOY_PROPERTIES, FILLS):
+            nu_rt_theta0 = max(nu_rt_theta0, abs(t_l_on(wv2, al, fill, 0.0, a_voigt) - t_l(jk, al, fill, 0.0, a_voigt)))
+            for th, a in itertools.product(THETA_DEG, (a_grid[0], a_voigt, 0.0)):
+                nu_rt_off_axis = max(nu_rt_off_axis, abs(t_l_on(wv2, al, fill, th, a) - t_l(jk, al, fill, th, a)))
+    assert nu_rt_theta0 <= NU_RT_SENSITIVITY_CAP, f"the θ = 0 share leans on the borrowed ν_RT: {nu_rt_theta0}"
+
+    # ── Our arithmetic on the green sources: reciprocity, Davies Table 2 against its raw means, shear against Liu ────────
+    recip = {g: reciprocity(w) for g, w in WOOD.items()} | {n: reciprocity(gs["w"]) for n, gs in gsets.items()}
+    measured_sets = [*WOOD, *(n for n in gsets if n.startswith("davies2016_esm_") or n == "liu2019_P4")]
+    l_pairs = [recip[s][k] for s in measured_sets for k in ("RL_over_LR", "TL_over_LT")]
+    rt_pair = [recip[s]["RT_over_TR"] for s in measured_sets]
+    t2_pairs = [v for n in gsets if n.startswith("davies2016_table2_") for v in recip[n].values()]
+    t2_vs_esm = {k: [gsets[f"davies2016_table2_{c}"]["w"][k] / gsets[f"davies2016_esm_{c}"]["w"][k] for c in DAVIES_COLUMNS]
+                 for k in ("E_L", "E_R", "E_T", "nu_LR", "nu_LT", "nu_RT", "nu_RL", "nu_TL", "nu_TR")}
+    liu_rows = [liu_row(r) for r in ("1", "2", "3", "4")]
+    davies_g = {k: [gs["w"][k] for n, gs in gsets.items() if n.startswith("davies2016_")] for k in ("G_LR", "G_RT", "G_LT")}
+    shear_below_liu = {k: [min(r[k] for r in liu_rows) / max(v), max(r[k] for r in liu_rows) / min(v)]
+                       for k, v in davies_g.items()}
+
+    # ── The union: the junction's adverse end (the HIGHEST share) and the binding claim's (the LOWEST), cited ────────────
+    junction_sup_green = max(v["t_L_at_C44_zero_max_over_theta"] for v in cells_green.values())
+    crossings_green = sum(1 for v in cells_green.values() if v["zener_at_which_t_L_is_1_theta45"] is not None)
+    lattice_cells_green = sum(1 for k in cells_green if k.rsplit("|", 1)[1] in LATTICE_FILLS)
+    junction_union_cell = max(cells_union, key=lambda k: cells_union[k]["t_L_at_C44_zero_max_over_theta"])
+    jeong_c44_zero = max(v["t_L_at_C44_zero_max_over_theta"] for k, v in cells_green.items() if f"|{jk}|" in k)
+    assert jeong_c44_zero + nu_rt_off_axis < cells_union[junction_union_cell]["t_L_at_C44_zero_max_over_theta"], \
+        "the union's junction supremum is within reach of Jeong's borrowed ν_RT — it no longer stands on measured sets"
+    # the union without Davies' Table 2 — the optimiser's output out, measured means only (the submission's option (В))
+    t0_measured = theta0_over({k: v for k, v in cells_union.items() if "|davies2016_table2_" not in k})
+    sd_measured = source_day_at(binds_at(t0_measured))
+    union_without_table2 = {
+        "lowest": {al: t0_measured[al]["lowest"] for al in ALLOY_PROPERTIES},
+        "lowest_cell": {al: t0_measured[al]["lowest_cell"] for al in ALLOY_PROPERTIES},
+        "source_day_upper_whisker_exceeds": {fk: sd_measured[fk]["upper_whisker"]["exceeds"] for fk in f_read},
+        "ta_upper_whisker_margin": {fk: sd_measured[fk]["upper_whisker"]["margin_over_threshold"]["Ta"] for fk in f_read}}
+    # each named green set on its own: its lowest θ = 0 share and the source day's verdict there (the bracket's price)
+    per_set = {}
+    for n in gsets:
+        sub = {k: v for k, v in cells_green.items() if k.split("|")[1] == n}
+        if sub:
+            t0n = theta0_over(sub)
+            sdn = source_day_at(binds_at(t0n))
+            per_set[n] = {"lowest": {al: t0n[al]["lowest"] for al in ALLOY_PROPERTIES},
+                          "lowest_cell": {al: t0n[al]["lowest_cell"] for al in ALLOY_PROPERTIES},
+                          "source_day_upper_whisker_exceeds": {fk: sdn[fk]["upper_whisker"]["exceeds"] for fk in f_read},
+                          "ta_upper_whisker_margin": {fk: sdn[fk]["upper_whisker"]["margin_over_threshold"]["Ta"]
+                                                      for fk in f_read}}
+
+    def citation(cell_key: str) -> str:
+        _, name, rd, fill = cell_key.split("|")
+        if name in gsets:
+            src = GREEN_SOURCES[gsets[name]["source"]]
+            return f"{src['citation']}, doi {src['doi']}, {gsets[name]['where']}; {rd} reading, {fill}"
+        return f"Güntekin & Akar 2019, doi 10.12841/wood.1644-3985.220.09, group {name}; {rd} reading, {fill}"
+
+    ceiling = {
+        "rule": "a lower bound shows «binds», never «safe»: a binding sentence takes the LOWEST θ = 0 share of the named "
+                "readings (the highest threshold), cited; the Scots pine group's threshold is printed beside it as the "
+                "price of that choice (in-silico §When Modifying #11 and #45 ⊕)",
+        "reading_per_alloy": {al: citation(theta0_union[al]["lowest_cell"]) for al in ALLOY_PROPERTIES},
+        "binds_above_ue_large_stem_sf2": {fk: {al: binds_union[fk][al][CELL_LS] for al in ALLOY_PROPERTIES} for fk in f_read},
+        "source_day_upper_whisker_exceeds": {fk: source_day_union[fk]["upper_whisker"]["exceeds"] for fk in f_read},
+        "price_scots_pine_group": {
+            "binds_above_ue_large_stem_sf2": {fk: {al: binds_above[fk][al][CELL_LS] for al in ALLOY_PROPERTIES}
+                                              for fk in f_read},
+            "source_day_upper_whisker_exceeds": {fk: source_day[fk]["upper_whisker"]["exceeds"] for fk in f_read}},
+    }
+    lows_g = ", ".join(f"{al} {floor_to(theta0_green[al]['lowest'], 3):.3f}" for al in ALLOY_PROPERTIES)
+    lows_u = ", ".join(f"{al} {floor_to(theta0_union[al]['lowest'], 3):.3f}" for al in ALLOY_PROPERTIES)
+    u_where = "; and ".join(citation(f"-|{c}") for c in sorted({theta0_union[al]["lowest_cell"].split("|", 1)[1]
+                                                                for al in ALLOY_PROPERTIES}))
+    hi_green = sorted(al for al in ALLOY_PROPERTIES if theta0_union[al]["highest_cell"] not in cells)
+    hi_phrase = (f"a green reading sets it for {', '.join(hi_green)}" if hi_green
+                 else "no green reading raises the Scots pine group's for any alloy")
+    su_a, su_r = source_day_union["axial_richardson"], source_day_union["radial_richardson"]
     verdict = (
         f"t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) "
         f"it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel "
@@ -596,13 +1006,22 @@ def main() -> int:
         f"inside the admissible C44 in {crossings} of the {lattice_cells} cells the lattice's C44 enters. The pore "
         f"readings' stiffness ends do not bracket the share ({len(outside)} cell-fields fall outside them). Across the "
         f"source's moisture groups the share takes no single direction. For 105, the only C44-free binding figure is at "
-        f"θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the modelled set ({lows}) the source day's "
+        f"θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the Scots pine group ({lows}) the source day's "
         f"upper whisker exceeds the large-stem threshold for {', '.join(sd_a['upper_whisker']['exceeds']) or 'none'} on "
         f"this tensor's E[100] and for {', '.join(sd_r['upper_whisker']['exceeds']) or 'none'} on 105's lower reading, "
         f"and its median for {', '.join(sd_a['median']['exceeds']) or 'none'}; at t_L = 1 on the axial reading the "
         f"upper whisker exceeded it for {', '.join(at_t1['upper_whisker']) or 'none'} and the median for "
-        f"{', '.join(at_t1['median']) or 'none'}. Off the axis the threshold has no ceiling as C44 falls. The modelled set "
-        f"reads the ring as the host's xylem and stops below fibre saturation, so its lowest share is not a floor."
+        f"{', '.join(at_t1['median']) or 'none'}. Above fibre saturation no open primary gives a full Scots pine set; on "
+        f"the separate group of green readings of other Pinaceae ({len(live_green)} live, {len(excluded_green)} not a "
+        f"material) the lowest θ = 0 share is {lows_g}, so over the union it is {lows_u} — on {u_where} — and there the "
+        f"upper whisker exceeds the threshold for {', '.join(su_a['upper_whisker']['exceeds']) or 'none'} on this "
+        f"tensor's E[100] and for {', '.join(su_r['upper_whisker']['exceeds']) or 'none'} on 105's lower reading, its "
+        f"median for {', '.join(su_a['median']['exceeds']) or 'none'}. Of the highest θ = 0 share, {hi_phrase}; off the "
+        f"axis at C44 = 0 the union reaches {ceil_to(max(junction_sup, junction_sup_green), 3):.3f} (the Scots pine group "
+        f"{ceil_to(junction_sup, 3):.3f}) — on {citation(junction_union_cell)}. Off the "
+        f"axis the threshold has no ceiling as C44 falls. The modelled set reads the ring as the host's xylem, its Scots "
+        f"pine group stops below fibre saturation and its green readings are other Pinaceae, so its lowest share is not a "
+        f"floor."
     )
 
     result = {
@@ -635,6 +1054,27 @@ def main() -> int:
                                            "in the pores is no stiffer than the host's sapwood in every direction"},
             "ring": "read as the host's xylem — OUR reading: 01_04 §2's phases say nothing of the ring around Zone 1; "
                     "a soft ring is not modelled",
+            "groups": {"scots_pine": "Güntekin & Akar 2019 — every key without a group suffix (wood_readings, cells, "
+                                     "theta0_share_over_modelled_set, gyroid_binds_above_…, source_day_…, moisture, …)",
+                       "green": "other Pinaceae above fibre saturation — the green_* keys; never merged with the Scots pine "
+                                "group (⚖️ founder 2026-10-22, 00_07 HW.23 option (Б))",
+                       "union": "both groups — the union_* keys and consumer_ceiling_binding_claim"},
+            "green_sources": GREEN_SOURCES,
+            "green_sets": {n: {"constants": gs["w"], "readings": list(gs["readings"]), "source": gs["source"],
+                               "where": gs["where"]} | ({"mc_lower_bound_pct_ours": gs["mc_lower_bound_pct_ours"]}
+                                                        if "mc_lower_bound_pct_ours" in gs else {})
+                           for n, gs in gsets.items()},
+            "green_transcription": {
+                "checks": green_transcription, "liu_table2_as_printed": LIU_TABLE2,
+                "jeong_table2_red_pine_as_printed": {r: list(v) for r, v in JEONG_TABLE2_RED_PINE.items()},
+                "jeong_green_cv_as_printed": JEONG_GREEN_CV,
+                "davies_table2_as_printed": {k: list(v) for k, v in DAVIES_TABLE2.items()},
+                "davies_esm2_as_printed": {k: list(v) for k, v in DAVIES_ESM2.items()},
+                "davies_esm3_compression_as_printed": {k: list(v) for k, v in DAVIES_ESM3_COMPRESSION.items()},
+                "davies_table1_density_as_printed": {k: list(v) for k, v in DAVIES_TABLE1_DENSITY.items()},
+                "covers": "Davies Table 2 — each row's extremes (ESM 1) and its reciprocity at the printed rounding; Liu "
+                          "Table 2 — every column through its printed Mean; Jeong — the green E_L through the text's "
+                          "77.1 % retention; ESM 2/3 — no printed aggregate (the .docx XML text, no OCR)"},
         },
         "wood_readings": {k: {kk: vv for kk, vv in v.items() if not kk.startswith("_")} for k, v in wood.items()},
         "wood_readings_excluded_not_a_material": excluded,
@@ -650,15 +1090,60 @@ def main() -> int:
         "e_z_star_105_premise_theta45": ez45,
         "junction_share_sup_at_C44_zero": junction_sup,
         "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": angle_probe,
+        "green_wood_readings": {k: {kk: vv for kk, vv in v.items() if not kk.startswith("_")} for k, v in wood_green.items()},
+        "green_wood_readings_excluded_not_a_material": excluded_green,
+        "green_cells": cells_green,
+        "green_additive_outside_the_pore_ends_interval": outside_green,
+        "green_theta0_share": theta0_green,
+        "green_crossings_theta45": {"cells_crossing_1": crossings_green, "lattice_cells": lattice_cells_green},
+        "green_junction_share_sup_at_C44_zero": junction_sup_green,
+        "green_reciprocity_our_arithmetic": {
+            "per_set": recip, "measured_sets": measured_sets,
+            "measured_L_pairs_min_max": [min(l_pairs), max(l_pairs)], "measured_RT_pair_min_max": [min(rt_pair), max(rt_pair)],
+            "davies_table2_all_pairs_min_max": [min(t2_pairs), max(t2_pairs)],
+            "is": "(ν_ji/E_j)/(ν_ij/E_i): the transverse-loaded entry over the L-loaded one, and R-loaded over T-loaded for "
+                  "R–T; 1 where the compliance is symmetric. Davies Table 2 is symmetric by construction; the other sets "
+                  "are measured means"},
+        "green_davies_table2_over_esm": t2_vs_esm,
+        "green_davies_shear_below_liu_x": shear_below_liu,
+        "union_theta0_share": theta0_union,
+        "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share": binds_union,
+        "union_source_day_theta0_large_stem_sf2": source_day_union,
+        "union_junction_share_sup_at_C44_zero": max(junction_sup, junction_sup_green),
+        "green_per_set": per_set,
+        "union_without_davies_table2": union_without_table2,
+        "consumer_ceiling_binding_claim": ceiling,
+        "consumer_ceiling_junction": {
+            "rule": "the junction's mismatch scales with the share, so its adverse reading is the HIGHEST share, cited",
+            "theta0_highest_per_alloy": {al: {"share": theta0_union[al]["highest"],
+                                              "reading": citation(theta0_union[al]["highest_cell"])} for al in ALLOY_PROPERTIES},
+            "off_axis_sup_at_C44_zero": {"share": cells_union[junction_union_cell]["t_L_at_C44_zero_max_over_theta"],
+                                         "theta_deg": cells_union[junction_union_cell]["theta_of_max_at_C44_zero_deg"],
+                                         "cell": junction_union_cell, "reading": citation(junction_union_cell)},
+            "jeong_c44_zero_max_plus_its_nu_RT_sensitivity": jeong_c44_zero + nu_rt_off_axis},
         "not_computed": [
             "C44 read into the share — the periodic voxel case measures it for the infinite lattice; reading it is open (00_07 HW.23)",
             "the stiffness of the tissue in the pores and of the ring — a soft ring drives t_L to 0 in its limit",
-            "a green (above fibre saturation) wood set, and the share's direction with moisture",
+            "a green (above fibre saturation) SCOTS PINE set — the green group reads other Pinaceae — and the share's "
+            "direction with moisture (across the two groups species and moisture are confounded)",
+            "Jeong's other green pine row (P. koraiensis) — this pass reads P. densiflora alone",
             "S_1212 of an anisotropic matrix against an independent closed form",
             "the finite length, the bending gradient along R, the curved rings, the bark's proximity, S5",
         ],
         "controls": {"isotropic_cylinder_max_error": ctl_iso, "isotropic_inclusion_max_error": ctl_incl,
-                     "t_L_rise_with_C44_worst": monotone_worst, "mirror_45_worst": mirror_worst},
+                     "t_L_rise_with_C44_worst": monotone_worst, "mirror_45_worst": mirror_worst,
+                     "green_t_L_rise_with_C44_worst": monotone_green, "green_mirror_45_worst": mirror_green,
+                     "t_L_change_with_G_LR_or_G_RT_worst": g_probe_worst,
+                     "g_probe": {"factors": list(G_PROBE_FACTORS), "readings": "every live reading of both groups",
+                                 "theta_deg": [0.0, 22.5, 45.0], "zener": "the grid's floor and ceiling and C44 = 0"},
+                     "jeong_borrowed_nu_RT": {
+                         "borrowed": jeong_red_pine_green()["nu_RT"],
+                         "swept_span": [nu_rt_measured[0], nu_rt_measured[-1]], "points": NU_RT_SWEEP_POINTS,
+                         "span_is": "every measured ν_RT of the named readings and Jeong's own red pine at 6 and 19 % MC",
+                         "t_L_change_theta0_worst": nu_rt_theta0, "cap_theta0": NU_RT_SENSITIVITY_CAP,
+                         "t_L_change_off_axis_worst": nu_rt_off_axis,
+                         "off_axis_is": "every θ at the C44 grid's floor and ceiling and at C44 = 0 — reported, not capped: "
+                                        "Jeong's off-axis cells stand on the borrowed ν_RT"}},
         "verdict": verdict,
     }
     OUT.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -676,6 +1161,20 @@ def main() -> int:
     print(f"  additive outside the pore ends: {len(outside)} · moisture: {moisture}")
     print(f"  source day at θ = 0: {source_day['axial_richardson']['upper_whisker']['exceeds']} ⊥ "
           f"{source_day['radial_richardson']['upper_whisker']['exceeds']} (at t_L = 1: {at_t1}) · junction sup {junction_sup:.4f}")
+    print(f"  GREEN group: {len(live_green)} live, excluded (not positive definite): {', '.join(excluded_green) or 'none'}")
+    print(f"  green controls: monotone in C44 {monotone_green:.1e} · 45° mirror {mirror_green:.1e} · G_LR/G_RT probe "
+          f"{g_probe_worst:.1e} · Jeong ν_RT {nu_rt_measured[0]:.2f}–{nu_rt_measured[-1]:.2f}: θ=0 {nu_rt_theta0:.5f} "
+          f"(cap {NU_RT_SENSITIVITY_CAP}) ⊥ off axis {nu_rt_off_axis:.4f}")
+    for al in ALLOY_PROPERTIES:
+        print(f"  {al:18s} θ=0 lowest: Scots pine {theta0[al]['lowest']:.4f} ⊥ green {theta0_green[al]['lowest']:.4f} "
+              f"({theta0_green[al]['lowest_cell'].split('|', 1)[1]}) · union binds above "
+              f"{binds_union['axial_richardson'][al][CELL_LS]:.0f} ⊥ {binds_union['radial_richardson'][al][CELL_LS]:.0f} µε "
+              f"· green highest {theta0_green[al]['highest']:.4f}")
+    print(f"  union source day: {su_a['upper_whisker']['exceeds']} ⊥ {su_r['upper_whisker']['exceeds']} (Ta margins "
+          f"{su_a['upper_whisker']['margin_over_threshold']['Ta']:.4f} ⊥ {su_r['upper_whisker']['margin_over_threshold']['Ta']:.4f})"
+          f" · green junction sup {junction_sup_green:.4f} · crossings {crossings_green}/{lattice_cells_green}")
+    print(f"  reciprocity (measured sets): L-pairs {min(l_pairs):.3f}–{max(l_pairs):.3f} · R–T {min(rt_pair):.3f}–"
+          f"{max(rt_pair):.3f} · Davies Table 2 {min(t2_pairs):.3f}–{max(t2_pairs):.3f}")
     print(f"  → {OUT.relative_to(REPO_ROOT)}")
     print(f"  {verdict}")
     return 0

@@ -1110,7 +1110,8 @@ yet, so it is swept up to Voigt's ceiling φ·μ_s (a Zener ratio of at most 3.5
 readings: nothing (the bare lattice — the composite's lower stiffness end), Voigt's
 phase bound φ·C_Ti + (1 − φ)·C_wood (its upper stiffness end, if the tissue in the pores — Phase 3's xylem — is no
 stiffer than the host's sapwood in every direction, which nothing measures), and the additive C_lattice + (1 − φ)·C_wood
-— a reading, not a bound.
+— a reading, not a bound. Above fibre saturation `106` reads, as a separate group, green sets of three other Pinaceae
+(«Green wood» below); every sentence before that paragraph is about the Scots pine group.
 
 **The share lies on both sides of 1.** At θ = 0 — a cube axis on the stem's axis — it does not depend on C44, and which
 side of 1 it takes depends on the pore reading (it crosses 1 between the bare lattice and the Voigt phase bound on every
@@ -1119,7 +1120,7 @@ stiffer-axis reading, 1.110 on the mean one) — and for Ta on the mean reading 
 lattice is below 1 at 85 % RH only). Off the axis C44 enters too: the share falls as C44 rises, and at θ = 45°
 it crosses 1 inside the admissible C44 in 88 of the 120 cells the lattice's C44 enters.
 
-| alloy | t_L at θ = 0, 95 % RH, stiffer-axis reading: pores carry nothing ⊥ additive ⊥ Voigt phase bound | highest θ = 0 share over the modelled set | binds above, µε, SF 2, near-uniaxial ligaments, large stem, at the lowest θ = 0 share: this tensor's E[100] ⊥ `105`'s lower reading |
+| alloy | t_L at θ = 0, 95 % RH, stiffer-axis reading: pores carry nothing ⊥ additive ⊥ Voigt phase bound | highest θ = 0 share over the modelled set (no green reading raises it) | binds above, µε, SF 2, near-uniaxial ligaments, large stem, at the Scots pine group's lowest θ = 0 share: this tensor's E[100] ⊥ `105`'s lower reading |
 |---|---|---|---|
 | Ta | 0.679 ⊥ 0.517 ⊥ 0.267 | 1.221 | 1348 ⊥ 1608 |
 | CP-Ti Gr4 | 1.055 ⊥ 0.694 ⊥ 0.355 | 1.679 | 2526 ⊥ 3013 |
@@ -1128,14 +1129,14 @@ it crosses 1 inside the admissible C44 in 88 of the 120 cells the lattice's C44 
 | Ti-15Zr | 1.086 ⊥ 0.707 ⊥ 0.360 | 1.715 | 5120 ⊥ 6108 |
 | β-Ti-13Nb-13Zr | 1.280 ⊥ 0.778 ⊥ 0.405 | 1.932 | 5386 ⊥ 6425 |
 
-The lowest θ = 0 share over the modelled set is, for every alloy, the Voigt-phase-bound cell of the stiffer-axis
+The lowest θ = 0 share over the Scots pine group is, for every alloy, the Voigt-phase-bound cell of the stiffer-axis
 reading at 95 % RH; the highest is the bare lattice on the driest softer-axis
 reading (rounded up). The stiffness ends do NOT bracket the share: the additive reading falls outside the two ends'
-shares in 20 cell-fields, so the lowest share is the minimum of what is computed, never a floor.
+shares in 20 cell-fields (in 31 more on the green group), so the lowest share is the minimum of what is computed, never a floor.
 
 **For `105`'s binding sentences the only C44-free figure is at θ = 0**, where the same tensor gives E_z* = E[100]
 (filling the pores leaves the skeleton's energy at a given boundary strain at least the bare skeleton's): the bound alone
-binds above `105`'s threshold over t_L, at the lowest θ = 0 share — the table's right column, on this tensor's own
+binds above `105`'s threshold over t_L, at the Scots pine group's lowest θ = 0 share — the table's right column, on this tensor's own
 E[100] (`105`'s axial reading) and on `105`'s lower reading, which `105`'s rule takes for a binding claim — a weaker modulus than the
 tensor's, so conservative for a binding sentence; rounded up
 from `105`'s unrounded threshold. On a large stem the source day's upper whisker then exceeds the threshold for Ta only
@@ -1146,8 +1147,61 @@ in the Voigt phase bound) — not σ_e/E_s alone. Off the axis E[110] falls with
 falls and no binding figure exists there without C44; at θ = 45° E[110] falls under `105`'s radial reading below a Zener
 ratio of 0.598 (under the axial one below 1.000, where E[110] = E[100]).
 
+**Green wood — a separate group of other Pinaceae** (⚖️ founder 2026-10-22, `00_07` HW.23, option (Б) by
+recommendation). No open primary gives a full Scots pine set above fibre saturation (the search and its positive
+controls — `00_07` HW.23), so `106` reads named green sets of three other Pinaceae as a bracket of named readings, never
+merged with the Scots pine group; each carries its doi, table, column, species, moisture and loading mode in the script:
+
+- *P. radiata*, Davies et al. 2016 (*N.Z. J. For. Sci.* 46:19): four boards — stiff and non-stiff outerwood and
+  corewood, told apart by ring width and curvature (sapwood or heartwood not reported; one board per type, so type and
+  board are confounded) — each read as its Table 2 ⊥ its ESM 2/3 raw means by the paper's p. 4 rule as we read it. The
+  paper states (Eq. 2) that Table 2 is a CI-weighted L1 symmetrisation's output; the open text does not reproduce it.
+  Table 2 is symmetric by construction to its printed digits; against the raw means its E_L is ×0.52 in stiff outerwood
+  and non-stiff corewood, and its ν_RL and ν_TL are ×0.12–0.50 of theirs in all four columns. MC is not printed;
+  Table 1's densities put it at 108–139 % or more (our lower bound, per board type).
+- *Larix principis-rupprechtii*, Liu et al. 2019 (*Forests* 10:456), Table 2 row P4 (sapwood): compression, all six ν;
+  green logs, the trees' mean MC 95 % (discs over the whole section, heartwood included), P4's own MC not printed.
+- *P. densiflora*, Jeong 2026 (*J. Wood Sci.*, in press, with internal contradictions — re-read on the final version):
+  «green (saturated)», not stated never-dried; tension, which the author says underestimates the transverse moduli. It
+  prints the stiffer-axis ratios only, so it takes that reading alone, with ν_RT (measured, rejected by the author) and
+  G_RT (not measured) borrowed — ours: ν_RT 0.94 from its own 19 % MC row, G_RT 74 MPa from Güntekin & Akar's 95 % RH group.
+
+Through the same symmetrisation readings 25 green readings are materials and 3 are not (Davies' raw softer-axis
+readings of stiff outerwood and of both corewoods). G_LR and G_RT do not enter the share: asserted, it does not move
+(to round-off) with either scaled ×0.1 or ×10 on every live reading of both groups — so neither Davies' shear moduli
+(G_LR ×5.6–18.0 and G_RT ×6.5–27.8 below Liu's; G_LT, which does enter, ×1.6–4.1 below) nor Jeong's missing G_RT moves
+it. Jeong's borrowed ν_RT, swept over every measured ν_RT of the named readings (0.49–0.94), moves its θ = 0 share by
+at most 0.0013 (asserted under 0.002), its off-axis cells by up to 0.356 — those stand on our value. Our arithmetic on
+reciprocity: in Güntekin & Akar's four groups, Davies' raw means and Liu P4 the Poisson pairs with L break the equality,
+the transverse-loaded entry the larger by ×1.89–10.25 (Liu et al. check the inequality only and state Maxwell consistency),
+while the R–T pair deviates less, ×0.63–1.50 as (ν_RT/E_R)/(ν_TR/E_T); Davies' Table 2 meets it within its printed
+rounding (checked).
+
+| alloy | lowest θ = 0 share: Scots pine group ⊥ union | binds above at the union's lowest, µε, SF 2, near-uniaxial ligaments, large stem: this tensor's E[100] ⊥ `105`'s lower reading |
+|---|---|---|
+| Ta | 0.267 ⊥ 0.151 | 2382 ⊥ 2841 |
+| CP-Ti Gr4 | 0.355 ⊥ 0.195 | 4591 ⊥ 5477 |
+| Ti-6Al-4V | 0.343 ⊥ 0.188 | 8257 ⊥ 9850 |
+| Ti-6Al-7Nb | 0.351 ⊥ 0.191 | 8396 ⊥ 10016 |
+| Ti-15Zr | 0.360 ⊥ 0.197 | 9349 ⊥ 11152 |
+| β-Ti-13Nb-13Zr | 0.405 ⊥ 0.222 | 9843 ⊥ 11742 |
+
+Over the union the lowest θ = 0 share is, for every alloy, Davies' Table 2 stiff outerwood on the softer-axis reading
+with the Voigt phase bound — its three symmetrisation readings differ by the printed rounding only (stiffer-axis ⊥
+softer-axis ⊥ mean, Ta: 0.159 ⊥ 0.151 ⊥ 0.155). That is the adverse reading for a binding sentence and the consumer's
+ceiling: there the source day's upper whisker exceeds the large-stem threshold for none of the alloys on either reading
+(Ta ×0.78 ⊥ ×0.65 of it) and its median for none — against Ta on both readings on the Scots pine group, the price of
+the choice. That is not a clearance: the bound is a lower one, so it can show «binds», never «safe». Without Davies' Table 2, on measured means only, the lowest moves to Davies' raw stiff corewood or non-stiff
+outerwood, by alloy (Ta 0.173), and no alloy binds there either (Ta ×0.89 ⊥ ×0.75). Set by set, at each green set's
+own lowest share, Ta binds on this tensor's E[100] on Davies' Table 2 non-stiff outerwood, Davies' raw stiff outerwood
+and non-stiff corewood, Liu P4 and Jeong, and on `105`'s lower reading on Jeong only; no other alloy binds on any. Every
+green set but Jeong's puts the lowest share below the Scots pine group's for every alloy, Jeong's above it (Ta 0.410):
+the proxies do not settle the direction a green stem moves the share either — the full sets lower it, the incomplete one
+raises it.
+
 **What settles the share:** C44 (measured for the infinite lattice by the periodic voxel case, `01_01 §5.2`, not yet read here), the tissue in the pores and the ring, which reading
-of the paper's non-symmetric compliances holds, and a green wood's constants. The install angle becomes a choice only
+of the paper's non-symmetric compliances holds, and a green Scots pine's own constants (the green group above reads other
+Pinaceae). The install angle becomes a choice only
 with C44 AND the tissue in the pores: at one C44 the angle that minimises the ligaments' stress factor √(E_z*(θ))·t_L(θ) — and so
 raises their threshold — differs between pore readings (45° on the bare and additive readings, 0° on the Voigt phase
 bound, at Ti-6Al-4V's 95 % RH stiffer-axis cell, both at C44's ceiling and at 0.3 of it); the junction's criterion is t_L(θ). The lowest share is the
@@ -1175,17 +1229,27 @@ and opening, which decouples the gyroid like a soft ring — are not computed. W
 imperfect with equal normal and in-plane tangential compliance — a sufficient condition; slip is not such an interface
 and lies outside this script's uniform-strain solution.
 
-**The junction** (`105`'s first-layer mismatch, priced at t_L = 1) scales with the share the other way, so its adverse
-end is the HIGHEST share: up to 1.932 at θ = 0 over the modelled set, and up to 6.038 off the axis as C44 → 0 — on a
-lattice tensor read from kinematic-side cases, so an input end, not shown to be the output's.
+**The junction** (`105`'s first-layer mismatch, priced at t_L = 1) grows with the share, as the ligaments' stress does;
+unlike the binding sentence (a lower bound, judged at the lowest share) it is a magnitude to design against, so its adverse
+end is the HIGHEST share: up to 1.932 at θ = 0 over the modelled set (no green reading raises it), and off the axis as
+C44 → 0 up to 6.038 on the Scots pine group and up to 9.840 over the union — on Davies' raw stiff outerwood
+(stiffer-axis reading, bare lattice, θ = 45°), our assembly of its ESM 2/3 means (E over tension and compression, ν from
+compression; one board, whose softer-axis reading is not a material): Jeong's off-axis maximum stays below it with its ν_RT
+anywhere in the swept span (asserted) — on a lattice tensor read from kinematic-side cases, so an input end, not shown
+to be the output's.
 
 **Moisture.** Across the source's groups the share takes no single direction. Over the full grid of angles and C44, on
 the stiffer-axis reading it falls monotonically from 45 to 95 % RH at 2069 of 14022 points, rises at none and does
 neither at 11953; on the mean reading 3669 fall and 10353 do neither; on the softer-axis one (45 → 85 % RH, its only
-material groups) 12453 fall and 1569 rise. A living stem's sapwood is wetter than any group the source measured: a green
-stem's share is not established, in value or in direction.
+material groups) 12453 fall and 1569 rise. A living stem's sapwood is wetter than any group the source measured, and
+above fibre saturation only other Pinaceae have full sets (the green group above): set beside the Scots pine groups
+they confound species with moisture, so a green Scots pine stem's share is bracketed by named proxies, not measured,
+and its direction with moisture is not established.
 
-⚠️ **Bounds.** One source and one stand (Turkey), compression, below fibre saturation. The lattice reading assumes the
+⚠️ **Bounds.** The Scots pine group: one source and one stand (Turkey), compression, below fibre saturation. The green
+group: other Pinaceae, not Scots pine — three species, one board per Davies type, tension in Jeong's set; Davies'
+Table 2 is an optimiser's output whose weights the open text does not reproduce, Liu's 95 % is the trees' mean over the
+whole section, and Jeong's set is in press with two constants borrowed (ours). The lattice reading assumes the
 two FE cases describe one homogeneous cubic body — `VoxelFea` calls its ratios «NOT a material property» — and the
 shipped part is graded, so «cubic» holds at best locally — and the graded generator's phase drifts both across the section
 and, growing with height, along the axis — a volume-keeping shear that, measured since (`01_01 §5.5`, the `cellshape`
@@ -1193,14 +1257,17 @@ verb), compresses the top cells of the part to 0.42–0.49 of their nominal alon
 64–67° off the part axis), so «cubic» fails most at the top (the geometry verdict is open, `00_07` HW.33); Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
 the sweep). C44 is measured for the infinite lattice by the periodic voxel case (`01_01 §5.2`) but not read here; the tissue in the pores
 and the ring are unmeasured: the ring is read as the host's xylem (ours —
-`01_04 §2`'s phases say nothing of it); the interface is perfectly bonded, a reading no primary supports, and its
+`01_04 §2`'s phases say nothing of it); the interface is perfectly bonded, a reading no primary measures, and its
 slipping and opening ends are not computed (above). An infinite cylinder in an infinite matrix: the 40 mm length on Ø11, the bending
 gradient along the radius, the curved rings, the bark's proximity and the transverse shear (S5) are not modelled.
 Controls: Mura's tensor against the isotropic cylinder's closed form (seven entries), a hole in every live wood reading
 against Lekhnitskii's K_t (the normal block — S_1212 of an anisotropic matrix has no independent closed-form check
 here), its covariance under a rotation about the axis, a finite isotropic inclusion against Goodier/Muskhelishvili — each
 to round-off; t_L non-increasing in C44 (asserted on the grid) and mirror-symmetric about 45° (asserted on one wood
-reading at the C44 grid's ends). Cache:
+reading at the C44 grid's ends). The green group runs the same per-reading controls and three more: each transcription
+against its source's own aggregate (Davies' Table 2 rows against the ranges its ESM 1 prints and against reciprocity at
+the printed rounding, Liu's four rows against its printed mean, Jeong's green E_L against the text's 77.1 % retention —
+ESM 2/3 print none), G_LR and G_RT out of the share, and Jeong's ν_RT at θ = 0 (both above). Cache:
 `mechanical/gyroid_wood_strain_share.json`.
 
 ---

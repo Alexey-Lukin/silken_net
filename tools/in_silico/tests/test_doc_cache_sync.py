@@ -6081,7 +6081,7 @@ CHECKS += [
      lambda d: _floor_n(d["e_z_star_105_premise_theta45"]["axial_richardson"]["zener_below_which_E110_falls_under_reading"], 3), 0.0),
     ("share106 junction θ0 → 106", SUMMARY, rf"up to {N} at θ = 0 over the modelled set", SHARE106,
      lambda d: _ceil_n(max(v["highest"] for v in d["theta0_share_over_modelled_set"].values()), 3), 0.0),
-    ("share106 junction sup → 106", SUMMARY, rf"and up to {N} off the axis as C44", SHARE106,
+    ("share106 junction sup → 106", SUMMARY, rf"C44 → 0 up to {N} on the Scots pine group and", SHARE106,
      lambda d: _ceil_n(d["junction_share_sup_at_C44_zero"], 3), 0.0),
     ("share106 moist stiff fall → 106", SUMMARY, rf"from 45 to 95 % RH at {N} of", SHARE106,
      lambda d: _mo106(d, "stiff", "falling"), 0.0),
@@ -6097,6 +6097,114 @@ CHECKS += [
      lambda d: _mo106(d, "soft", "falling"), 0.0),
     ("share106 moist soft rise → 106", SUMMARY, rf"fall and {N} rise\.", SHARE106,
      lambda d: _mo106(d, "soft", "rising"), 0.0),
+]
+
+
+# ── 106's green group and the union (⚖️ founder 2026-10-22, HW.23 option (Б)) ⟷ SUMMARY «Green wood». Shares are shown to
+# the nearest digit (as the Scots pine table shows the same cells); ranges round OUTWARD; «at most» / «up to» round UP;
+# the MC lower bound rounds DOWN; a margin below the threshold rounds DOWN (in-silico §When Modifying #43).
+_S106_T2 = "davies2016_table2_"
+_S106_UNION_BA = "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share"
+
+
+def _green106_row(label, j):
+    num = [N if j == k else r"[\d.]+" for k in range(4)]
+    return rf"(?m)^\| {re.escape(label)} \| {num[0]} ⊥ {num[1]} \| {num[2]} ⊥ {num[3]} \|$"
+
+
+def _e_l_ratio106(d):
+    """Table 2 over the raw four-face mean, stiff outerwood and non-stiff corewood — one figure only while both round to it."""
+    r = d["green_davies_table2_over_esm"]["E_L"]
+    return round(r[0], 2) if round(r[0], 2) == round(r[3], 2) else math.nan
+
+
+def _nu_ratio106(d):
+    r = d["green_davies_table2_over_esm"]
+    return r["nu_RL"] + r["nu_TL"]
+
+
+def _mc106(d):
+    return [v["mc_lower_bound_pct_ours"] for k, v in d["inputs"]["green_sets"].items() if k.startswith(_S106_T2)]
+
+
+def _jeong106(d, k):
+    return d["controls"]["jeong_borrowed_nu_RT"][k]
+
+
+CHECKS += [
+    *[(f"share106 green {key} col {j} → 106", SUMMARY, _green106_row(label, j), SHARE106, res, 0.0)
+      for label, key in _SHARE106_ROWS
+      for j, res in enumerate((
+          (lambda k: lambda d: round(d["theta0_share_over_modelled_set"][k]["lowest"], 3))(key),
+          (lambda k: lambda d: round(d["union_theta0_share"][k]["lowest"], 3))(key),
+          (lambda k: lambda d: d[_S106_UNION_BA]["axial_richardson"][k][_S106_LS])(key),
+          (lambda k: lambda d: d[_S106_UNION_BA]["radial_richardson"][k][_S106_LS])(key)))],
+    ("share106 green E_L ratio → 106", SUMMARY, rf"its E_L is ×{N} in stiff outerwood", SHARE106, _e_l_ratio106, 0.0),
+    ("share106 green nu ratio lo → 106", SUMMARY, rf"ν_RL and ν_TL are ×{N}–[\d.]+ of theirs", SHARE106,
+     lambda d: _floor_n(min(_nu_ratio106(d)), 2), 0.0),
+    ("share106 green nu ratio hi → 106", SUMMARY, rf"ν_RL and ν_TL are ×[\d.]+–{N} of theirs", SHARE106,
+     lambda d: _ceil_n(max(_nu_ratio106(d)), 2), 0.0),
+    ("share106 green MC lo → 106", SUMMARY, rf"densities put it at {N}–[\d]+ % or more", SHARE106,
+     lambda d: math.floor(min(_mc106(d))), 0.0),
+    ("share106 green MC hi → 106", SUMMARY, rf"densities put it at [\d]+–{N} % or more", SHARE106,
+     lambda d: math.floor(max(_mc106(d))), 0.0),
+    ("share106 jeong nu_RT → 106", SUMMARY, rf"ours: ν_RT {N} from its own 19 % MC row", SHARE106,
+     lambda d: _jeong106(d, "borrowed"), 0.0),
+    ("share106 jeong G_RT → 106", SUMMARY, rf"G_RT {N} MPa from Güntekin & Akar's 95 % RH group", SHARE106,
+     lambda d: d["inputs"]["green_sets"]["jeong2026_red_pine_green"]["constants"]["G_RT"], 0.0),
+    ("share106 green live → 106", SUMMARY, rf"symmetrisation readings {N} green readings are materials", SHARE106,
+     lambda d: sum(1 for v in d["green_wood_readings"].values() if v["positive_definite"]), 0.0),
+    ("share106 green excluded → 106", SUMMARY, rf"are materials and {N} are not \(Davies'", SHARE106,
+     lambda d: len(d["green_wood_readings_excluded_not_a_material"]), 0.0),
+    *[(f"share106 green shear {g} {end} → 106", SUMMARY, pat, SHARE106, res, 0.0)
+      for g, lo, hi in (("G_LR", rf"\(G_LR ×{N}–[\d.]+ and G_RT", rf"\(G_LR ×[\d.]+–{N} and G_RT"),
+                        ("G_RT", rf"and G_RT ×{N}–[\d.]+ below Liu's", rf"and G_RT ×[\d.]+–{N} below Liu's"),
+                        ("G_LT", rf"which does enter, ×{N}–[\d.]+ below\)", rf"which does enter, ×[\d.]+–{N} below\)"))
+      for end, pat, res in (
+          ("lo", lo, (lambda gg: lambda d: _floor_n(d["green_davies_shear_below_liu_x"][gg][0], 1))(g)),
+          ("hi", hi, (lambda gg: lambda d: _ceil_n(d["green_davies_shear_below_liu_x"][gg][1], 1))(g)))],
+    ("share106 jeong span lo → 106", SUMMARY, rf"of the named readings \({N}–[\d.]+\), moves", SHARE106,
+     lambda d: _jeong106(d, "swept_span")[0], 0.0),
+    ("share106 jeong span hi → 106", SUMMARY, rf"of the named readings \([\d.]+–{N}\), moves", SHARE106,
+     lambda d: _jeong106(d, "swept_span")[1], 0.0),
+    ("share106 jeong θ0 → 106", SUMMARY, rf"at most {N} \(asserted under", SHARE106,
+     lambda d: _ceil_n(_jeong106(d, "t_L_change_theta0_worst"), 4), 0.0),
+    ("share106 jeong cap → 106", SUMMARY, rf"\(asserted under {N}\), its off-axis", SHARE106,
+     lambda d: _jeong106(d, "cap_theta0"), 0.0),
+    ("share106 jeong off-axis → 106", SUMMARY, rf"its off-axis cells by up to {N} — those stand", SHARE106,
+     lambda d: _ceil_n(_jeong106(d, "t_L_change_off_axis_worst"), 3), 0.0),
+    ("share106 recip L lo → 106", SUMMARY, rf"the larger by ×{N}–[\d.]+ \(Liu", SHARE106,
+     lambda d: _floor_n(d["green_reciprocity_our_arithmetic"]["measured_L_pairs_min_max"][0], 2), 0.0),
+    ("share106 recip L hi → 106", SUMMARY, rf"the larger by ×[\d.]+–{N} \(Liu", SHARE106,
+     lambda d: _ceil_n(d["green_reciprocity_our_arithmetic"]["measured_L_pairs_min_max"][1], 2), 0.0),
+    ("share106 recip RT lo → 106", SUMMARY, rf"deviates less, ×{N}–[\d.]+ as", SHARE106,
+     lambda d: _floor_n(d["green_reciprocity_our_arithmetic"]["measured_RT_pair_min_max"][0], 2), 0.0),
+    ("share106 recip RT hi → 106", SUMMARY, rf"deviates less, ×[\d.]+–{N} as", SHARE106,
+     lambda d: _ceil_n(d["green_reciprocity_our_arithmetic"]["measured_RT_pair_min_max"][1], 2), 0.0),
+    *[(f"share106 T2 SO Ta {rd} → 106", SUMMARY, pat, SHARE106,
+       (lambda r: lambda d: round(d["green_cells"][f"Ta|{_S106_T2}SO|{r}|pores_voigt_phase_bound"]["t_L_theta0_any_C44"], 3))(rd),
+       0.0)
+      for rd, pat in (("stiff", rf"mean, Ta: {N} ⊥ [\d.]+ ⊥ [\d.]+\)"), ("soft", rf"mean, Ta: [\d.]+ ⊥ {N} ⊥ [\d.]+\)"),
+                      ("mean", rf"mean, Ta: [\d.]+ ⊥ [\d.]+ ⊥ {N}\)"))],
+    # a margin BELOW 1 backs «binds for none», so it rounds UP, toward the threshold (in-silico §When Modifying #43)
+    ("share106 union Ta margin axial → 106", SUMMARY, rf"\(Ta ×{N} ⊥ ×[\d.]+ of it\)", SHARE106,
+     lambda d: _ceil_n(d["union_source_day_theta0_large_stem_sf2"]["axial_richardson"]["upper_whisker"]
+                        ["margin_over_threshold"]["Ta"], 2), 0.0),
+    ("share106 union Ta margin radial → 106", SUMMARY, rf"\(Ta ×[\d.]+ ⊥ ×{N} of it\)", SHARE106,
+     lambda d: _ceil_n(d["union_source_day_theta0_large_stem_sf2"]["radial_richardson"]["upper_whisker"]
+                        ["margin_over_threshold"]["Ta"], 2), 0.0),
+    ("share106 no-T2 Ta share → 106", SUMMARY, rf"outerwood, by alloy \(Ta {N}\)", SHARE106,
+     lambda d: round(d["union_without_davies_table2"]["lowest"]["Ta"], 3), 0.0),
+    ("share106 no-T2 Ta margin axial → 106", SUMMARY, rf"binds there either \(Ta ×{N} ⊥ ×[\d.]+\)", SHARE106,
+     lambda d: _ceil_n(d["union_without_davies_table2"]["ta_upper_whisker_margin"]["axial_richardson"], 2), 0.0),
+    ("share106 no-T2 Ta margin radial → 106", SUMMARY, rf"binds there either \(Ta ×[\d.]+ ⊥ ×{N}\)", SHARE106,
+     lambda d: _ceil_n(d["union_without_davies_table2"]["ta_upper_whisker_margin"]["radial_richardson"], 2), 0.0),
+    ("share106 jeong Ta lowest → 106", SUMMARY, rf"Jeong's above it \(Ta {N}\)", SHARE106,
+     lambda d: round(d["green_per_set"]["jeong2026_red_pine_green"]["lowest"]["Ta"], 3), 0.0),
+    ("share106 green outside → 106", SUMMARY, rf"\(in {N} more on the green group\)", SHARE106,
+     lambda d: len(d["green_additive_outside_the_pore_ends_interval"]), 0.0),
+    ("share106 union junction sup → 106", SUMMARY, rf"and up to {N} over the union — on Davies'", SHARE106,
+     lambda d: _ceil_n(d["union_junction_share_sup_at_C44_zero"], 3), 0.0),
 ]
 
 
@@ -6143,6 +6251,62 @@ def test_share106_categorical_sentences_follow_the_cache():
     ta_mean = [d["cells"][f"Ta|{g}|mean|pores_carry_nothing"]["t_L_theta0_any_C44"] for g in ("rh45", "rh65", "rh85", "rh95")]
     assert [x < 1 for x in ta_mean] == [False, False, True, False], ta_mean
     assert "the bare lattice is below 1 at 85 % RH only" in text
+
+
+def test_share106_green_sentences_follow_the_cache():
+    """106's «Green wood» sentences that name SETS or DIRECTIONS, recomposed from the cache (in-silico §When Modifying #5
+    ⊕): where the union's lowest θ = 0 share sits and who binds there (none) against the Scots pine group (Ta on both
+    readings); where the lowest moves without Davies' Table 2 and that none binds there; which green set binds Ta on which
+    reading and that no other alloy binds on any; which sets lower and which raise the lowest share; which readings are not
+    a material; Davies' Table 2 reciprocity at its printed rounding; G_LR/G_RT out of the share; the highest θ = 0 share
+    untouched by the green readings; where the union's off-axis junction end sits and that Jeong's borrowed ν_RT cannot
+    reach it. CAN catch: a re-run that moves any of those sets while the prose keeps the old one. CANNOT catch: the source
+    descriptions (species, position, moisture, loading) — held to the script's GREEN_SOURCES by reading, not by a test."""
+    d = json.loads((CACHE / SHARE106).read_text(encoding="utf-8"))
+    text = " ".join(doc(SUMMARY).split())
+    alloys = sorted({k.split("|")[0] for k in d["cells"]})
+    union = d["union_theta0_share"]
+    assert {union[al]["lowest_cell"].split("|", 1)[1] for al in alloys} == {"davies2016_table2_SO|soft|pores_voigt_phase_bound"}
+    assert ("Over the union the lowest θ = 0 share is, for every alloy, Davies' Table 2 stiff outerwood on the softer-axis "
+            "reading with the Voigt phase bound") in text
+    sdu, sd = d["union_source_day_theta0_large_stem_sf2"], d["source_day_theta0_large_stem_sf2"]
+    assert all(not sdu[fk][rd]["exceeds"] for fk in sdu for rd in ("median", "upper_whisker"))
+    assert "exceeds the large-stem threshold for none of the alloys on either reading" in text
+    assert "of it) and its median for none — against Ta on both readings on the Scots pine group" in text
+    assert all(sd[fk]["upper_whisker"]["exceeds"] == ["Ta"] for fk in sd)
+    w = d["union_without_davies_table2"]
+    assert {c.split("|")[1] for c in w["lowest_cell"].values()} == {"davies2016_esm_SC", "davies2016_esm_NSO"}
+    assert w["lowest_cell"]["Ta"].split("|")[1] == "davies2016_esm_SC"
+    assert not any(w["source_day_upper_whisker_exceeds"].values())
+    assert "the lowest moves to Davies' raw stiff corewood or non-stiff outerwood, by alloy (Ta" in text
+    assert "and no alloy binds there either" in text
+    ps = d["green_per_set"]
+    binds = {fk: [n for n, v in ps.items() if v["source_day_upper_whisker_exceeds"][fk]] for fk in sd}
+    assert all(v["source_day_upper_whisker_exceeds"][fk] in ([], ["Ta"]) for v in ps.values() for fk in sd)
+    assert binds["axial_richardson"] == ["davies2016_table2_NSO", "davies2016_esm_SO", "davies2016_esm_NSC", "liu2019_P4",
+                                         "jeong2026_red_pine_green"], binds
+    assert binds["radial_richardson"] == ["jeong2026_red_pine_green"], binds
+    assert ("Ta binds on this tensor's E[100] on Davies' Table 2 non-stiff outerwood, Davies' raw stiff outerwood and "
+            "non-stiff corewood, Liu P4 and Jeong, and on `105`'s lower reading on Jeong only; no other alloy binds on "
+            "any") in text
+    t0 = d["theta0_share_over_modelled_set"]
+    below = [n for n, v in ps.items() if all(v["lowest"][al] < t0[al]["lowest"] for al in alloys)]
+    above = [n for n, v in ps.items() if all(v["lowest"][al] > t0[al]["lowest"] for al in alloys)]
+    assert above == ["jeong2026_red_pine_green"] and sorted(below + above) == sorted(ps), (below, above)
+    assert ("Every green set but Jeong's puts the lowest share below the Scots pine group's for every alloy, Jeong's "
+            "above it") in text
+    assert sorted(d["green_wood_readings_excluded_not_a_material"]) == [
+        "davies2016_esm_NSC|soft", "davies2016_esm_SC|soft", "davies2016_esm_SO|soft"]
+    assert "(Davies' raw softer-axis readings of stiff outerwood and of both corewoods)" in text
+    assert all(d["inputs"]["green_transcription"]["checks"]["davies_table2_reciprocity_within_rounding"].values())
+    assert "Davies' Table 2 meets it within its printed rounding (checked)" in text
+    assert d["controls"]["t_L_change_with_G_LR_or_G_RT_worst"] < 1e-12 and "G_LR and G_RT do not enter the share" in text
+    assert all(union[al]["highest_cell"] in d["cells"] for al in alloys) and "(no green reading raises it)" in text
+    jn = d["consumer_ceiling_junction"]
+    assert jn["off_axis_sup_at_C44_zero"]["cell"].split("|", 1)[1] == "davies2016_esm_SO|stiff|pores_carry_nothing"
+    assert jn["off_axis_sup_at_C44_zero"]["theta_deg"] == 45.0
+    assert "on Davies' raw stiff outerwood (stiffer-axis reading, bare lattice, θ = 45°), our assembly of its ESM 2/3 means" in text
+    assert jn["jeong_c44_zero_max_plus_its_nu_RT_sensitivity"] < jn["off_axis_sup_at_C44_zero"]["share"]
 
 
 # ── HW.6 the stem's own radio shadow (107, 2026-10-22) ⟷ SUMMARY §«How Deep the Stem Shadows the Node's Radio». The

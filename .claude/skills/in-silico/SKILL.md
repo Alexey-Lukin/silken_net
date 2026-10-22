@@ -261,7 +261,8 @@ Anchor mechanics (CPU):
      the adverse one — §When Modifying #11) —, the solid
      fraction, the binds-above cells, the stem readings) · tools/cad/cache/fea/anchor_zone1_pine.json (ν and the rows
      105's readings are held to) · lib ALLOY_PROPERTIES → 106 (gyroid_wood_strain_share.json — the share t_L of the
-     wood's strain the bonded gyroid takes; the Scots pine constants live in the script); a re-run of 105 or the FEA
+     wood's strain the bonded gyroid takes; the Scots pine constants and the green Pinaceae proxies' transcriptions live
+     in the script, a separate group from the Scots pine one); a re-run of 105 or the FEA
      sweep re-runs 106
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
