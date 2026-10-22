@@ -150,44 +150,44 @@ if graded.size >= 5
 
   anchors_seen += anchor(failures, canon, "top-outer compressed/elongated stretch",
                          /до \*\*([0-9.]+)–([0-9.]+)\*\* номіналу своєї оболонки, і видовжена до \*\*([0-9.]+)–([0-9.]+)\*\*/,
-                         [lam_min[0], lam_min[1], lam_max[0], lam_max[1]], 2)
+                         [ lam_min[0], lam_min[1], lam_max[0], lam_max[1] ], 2)
   anchors_seen += anchor(failures, canon, "top-outer DA and tilt",
                          /нахиленої на ([0-9]+)–([0-9]+)° від осі деталі/,
-                         [tilt[0].floor, tilt[1].ceil], 0)
+                         [ tilt[0].floor, tilt[1].ceil ], 0)
   anchors_seen += anchor(failures, canon, "top-outer DA",
                          /ступінь анізотропії \*\*([0-9.]+)–([0-9.]+)\*\*/,
-                         [da[0], da[1]], 1)
+                         [ da[0], da[1] ], 1)
   anchors_seen += anchor(failures, canon, "chord ratios",
                          /вздовж стиснутої осі — \*\*([0-9.]+)–([0-9.]+)\*\* номінальних, уздовж видовженої \*\*([0-9.]+)–([0-9.]+)\*\*/,
-                         [[chord_solid[0], chord_pore[0]].min, [chord_solid[1], chord_pore[1]].max,
-                          chord_long[0], chord_long[1]], 2)
+                         [ [ chord_solid[0], chord_pore[0] ].min, [ chord_solid[1], chord_pore[1] ].max,
+                          chord_long[0], chord_long[1] ], 2)
   anchors_seen += anchor(failures, canon, "specific surface bottom→top",
                          /питома поверхня S_V росте з ([0-9.]+)–([0-9.]+) номіналу внизу до ([0-9.]+)–([0-9.]+) угорі/,
-                         [sv_bot[0], sv_bot[1], sv_top[0], sv_top[1]], 2)
+                         [ sv_bot[0], sv_bot[1], sv_top[0], sv_top[1] ], 2)
   anchors_seen += anchor(failures, canon, "print-floor share bottom→top",
                          /\*\*([0-9.]+)–([0-9.]+) % у нижній комірці зовнішньої оболонки проти ([0-9.]+)–([0-9.]+) % у верхній\*\*/,
-                         [sub_bot[0], sub_bot[1], sub_top[0], sub_top[1]], 2)
+                         [ sub_bot[0], sub_bot[1], sub_top[0], sub_top[1] ], 2)
   anchors_seen += anchor(failures, canon, "print-floor share, whole part",
                          /на цілу деталь — ([0-9.]+)–([0-9.]+) %/,
-                         [sub_whole[0], sub_whole[1]], 2)
+                         [ sub_whole[0], sub_whole[1] ], 2)
   anchors_seen += anchor(failures, canon, "one-signed gap to the phase map",
                          /на ([0-9]+)–([0-9]+) % МЕНШУ анізотропію, ніж мапа/,
-                         [da_below[0].floor, da_below[1].ceil], 0)
+                         [ da_below[0].floor, da_below[1].ceil ], 0)
   anchors_seen += anchor(failures, canon, "worst single-axis gap outside the core",
                          /розрив ≤ ([0-9.]+) % на окрему вісь/,
-                         [gap_axis.ceil(1)], 1)
+                         [ gap_axis.ceil(1) ], 1)
 
   # 🔑 The two ALTERNATIVES' figures live in the tracker's verdict leg, not in canon — the closed list is open
   #    work, and `00_06 §2` keeps open work in `00_07`. So this layer reads THAT file; the gate follows the fact
   #    to its home rather than asking canon to hold a number it must not.
-  [[1, "z_origin_mid", /член уполовину \(DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %\)/],
-   [2, "in_plane_only", /ОДНИМ осьовим періодом — DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %/]].each do |i, name, re|
+  [ [ 1, "z_origin_mid", /член уполовину \(DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %\)/ ],
+   [ 2, "in_plane_only", /ОДНИМ осьовим періодом — DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %/ ] ].each do |i, name, re|
     v = vars.(i)
     anchors_seen += anchor(failures, TRACKER_TEXT, "#{name} figures (00_07 HW.33)", re,
-                           [*v.map { |x| x["max_degree_of_anisotropy"] }.minmax,
+                           [ *v.map { |x| x["max_degree_of_anisotropy"] }.minmax,
                             *v.map { |x| x["min_stretch"] }.minmax,
                             *v.map { |x| x["specific_surface_vs_nominal_outer_top"] }.minmax,
-                            v.map { |x| x["max_sub_floor_solid_fraction_by_cell"] * 100 }.max], 2)
+                            v.map { |x| x["max_sub_floor_solid_fraction_by_cell"] * 100 }.max ], 2)
   end
 end
 
@@ -195,8 +195,8 @@ end
 if (c = caches["anchor_zone1_graded_porosity"])
   anchors_seen += anchor(failures, canon, "period-constant control",
                          /контроль зі сталим періодом `graded_porosity` читає ([0-9.]+) при номіналах ([0-9.]+)\)/,
-                         [c[:cache]["variants"][0]["max_degree_of_anisotropy"],
-                          c[:cache]["nominal_degree_of_anisotropy_by_shell"].max], 2)
+                         [ c[:cache]["variants"][0]["max_degree_of_anisotropy"],
+                          c[:cache]["nominal_degree_of_anisotropy_by_shell"].max ], 2)
 end
 if (c = caches["anchor_zone1_stepped"])
   v = c[:cache]["variants"][0]
@@ -204,10 +204,10 @@ if (c = caches["anchor_zone1_stepped"])
   clean = v["rows"].reject { |r| r["shell"].zero? }.map { |r| r["degree_of_anisotropy"] }.minmax
   anchors_seen += anchor(failures, canon, "stepped is not a clean control",
                          /ядрова оболонка читає ([0-9]\.[0-9]+) \(шви\), а шовно-чисті оболонки — ([0-9]\.[0-9]+)–([0-9]\.[0-9]+)/,
-                         [core, clean[0], clean[1]], 2)
+                         [ core, clean[0], clean[1] ], 2)
   anchors_seen += anchor(failures, canon, "stepped sub-floor share",
                          /`stepped` під тією самою підлогою втрачає ([0-9.]+) % металу/,
-                         [v["sub_floor_solid_fraction_whole_part"] * 100], 1)
+                         [ v["sub_floor_solid_fraction_whole_part"] * 100 ], 1)
 end
 
 # ── 3. DERIVATION — from the MANIFESTS, the figures canon computes rather than reads ─────────────
@@ -240,7 +240,7 @@ if graded.size >= 5
                          ratios.minmax, 2)
   anchors_seen += anchor(failures, canon, "in-plane term ε in the outer third",
                          /на ([0-9]+)–([0-9]+) % у зовнішній третині/,
-                         [eps.min.floor, eps.max.ceil], 0)
+                         [ eps.min.floor, eps.max.ceil ], 0)
 end
 
 if failures.empty?
