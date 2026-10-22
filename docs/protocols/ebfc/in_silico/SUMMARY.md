@@ -1309,8 +1309,9 @@ The back's depth by the stem's interior — how much of it is wet:
 **What it says.** Behind its own stem a node is weaker than when it faces the gateway on every reading — by at least
 10.7 dB with its E along the stem, the co-polar case, and by at least 7.7 dB with E horizontal — and already at 90° the
 TM node is 6.1 – 9.4 dB down, staying within 3 dB of its front only to 54 – 66° either side. The horizontal node is not
-the milder one: its free pattern already has a null along the bark, so at 90° it is 9.2 – 21.1 dB down, and behind a wet
-stem it is deeper than TM. The depth behind depends on how much of the stem is wet: a wet interior — the season, the
+the milder one: its free pattern already has a null along the bark, so at 90° it is 9.2 – 21.1 dB down; behind a wet
+stem the order of the two flips with the reading, the stem and the standoff (compared pair by pair), and behind
+thin sapwood over a dry core TM is the deeper one nearly everywhere. The depth behind depends on how much of the stem is wet: a wet interior — the season, the
 868 MHz step and the wettest conifer all fall inside it — puts TM at 24.9 – 34.5 dB; a thin wet shell over a dry core,
 under the wettest bark, brings it to 10.7 dB. The stem is wider than a wavelength (λ = 34.5 cm); the deepest null sits
 up to 42° off the straight line through the stem (at 138.15 – 180°), and on most readings 180° is itself a local
