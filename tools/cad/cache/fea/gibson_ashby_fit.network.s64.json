@@ -1,5 +1,5 @@
 {
-  "_note": "Gibson-Ashby C and n fitted to MEASURED (relative density, apparent axial stiffness) pairs of the same lattice in a converged cube. Porosity is measured on the grid, never derived from wall_param. A staircase voxel mesh of fully integrated hexes is stiff-biased, so C is an UPPER bound; compare two steps_per_period before quoting n.",
+  "_note": "Gibson-Ashby C and n fitted to MEASURED (relative density, apparent axial stiffness) pairs of the same lattice in a converged cube. Porosity is measured on the grid, never derived from wall_param. C is a fit\u0027s intercept, which no run\u0027s one-signed element error reaches, and the cube is phase-locked besides (picogk gotcha #16), so a single fit\u0027s C carries no known bias sign; compare several steps_per_period before quoting C or n.",
   "topology": "network",
   "period_mm": 2,
   "cells_per_side": 2,

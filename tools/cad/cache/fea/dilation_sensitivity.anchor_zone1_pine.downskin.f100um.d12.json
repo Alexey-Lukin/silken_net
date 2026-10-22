@@ -1,5 +1,5 @@
 {
-  "_note": "SENSITIVITY of the geometric INTENT to a hypothetical face offset \u2014 NOT the printed body. The lattice is dilated before sampling (DilatedField, Zone1Anode.cs); the printed excess per face orientation is a vendor answer nobody has given (00_07 HW.51). Declared ceilings live in DilatedField and VoxelFea.cs; a single step is an UPPER bound.",
+  "_note": "SENSITIVITY of the geometric INTENT to a hypothetical face offset \u2014 NOT the printed body. The lattice is dilated before sampling (DilatedField, Zone1Anode.cs); the printed excess per face orientation is a vendor answer nobody has given (00_07 HW.51). Declared ceilings live in DilatedField and VoxelFea.cs: a single step carries no known bias sign.",
   "cem": "anchor_zone1_pine",
   "topology": "network",
   "poisson_ratio": 0.342,

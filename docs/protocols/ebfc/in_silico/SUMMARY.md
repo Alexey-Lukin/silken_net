@@ -1011,7 +1011,9 @@ printed, `× 1.0` for the CNC route the flange may take — `01_02 §1.7`), not 
 **The gyroid is strain-controlled.** Bonded to the wood (the callus grows into it — `01_04 §2`), it follows the stem's
 longitudinal strain across its section, so its ligament stress scales with `E_s · ε`, not with a force, and the figure
 of merit of its alloy is `σ_e / E_s`, not `σ_e`. An energy bound (Hill, and the macro energy at a given strain being
-least in uniaxial stress) puts the ligaments' RMS stress at ≥ 0.43–0.51 `E_s · ε` on the two voxel-FE readings — and it
+least in uniaxial stress) puts the ligaments' RMS stress at ≥ 0.43–0.51 `E_s · ε` on the two voxel-FE readings (the axial
+one in doubt from above: a finer `/32` reading of the same part lies over its Richardson band; the radial has no
+`/32` reading, so for it that doubt is neither shown nor excluded — `01_01 §5.2`, `00_07` HW.23) — and it
 is a LOWER bound: it can show a ligament binding, never safe. Neither FE reading is the in-plane traction modulus the
 bound needs (the radial case is a kinematic shell loading, the axial one E[100] of a cubic lattice), so the bound holds
 only while that modulus is at least the reading; a binding claim takes the lower one. The table gives the stem's surface

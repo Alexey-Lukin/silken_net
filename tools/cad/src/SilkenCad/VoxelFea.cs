@@ -31,10 +31,15 @@ namespace SilkenCad;
 //
 // ⚠️ DECLARED CEILING — what this measures and what it does not.
 //   • Linear elastic, small strain, one isotropic solid phase. No plasticity, no contact, no buckling.
-//   • Staircase boundaries. A voxel mesh cannot represent an inclined ligament surface; fully
-//     integrated trilinear hexes are additionally too stiff in bending, and a NETWORK gyroid is
-//     bending-dominated. Both errors push the same way, so a single-resolution number is an UPPER
-//     bound — which is why every result carries a step sweep and nothing is quoted without one.
+//   • Staircase boundaries, and the element's error is one-signed only within ONE run. Fully integrated
+//     trilinear hexes are too stiff in bending (a NETWORK gyroid is bending-dominated), so one run's stiffness
+//     under kinematic loading is never softer than the exact solution of that mesh — a sign that does not reach a
+//     ratio of two runs (the radial column divides by the solid twin), a fit's intercept C or an off-diagonal
+//     tensor term. The staircase changes the BODY — a voxel mesh cannot represent an inclined ligament surface —
+//     and no specimen shows its sign: the phase-locked cube (picogk gotcha #16) moves its density with the step
+//     and its ladders are not monotone, and the part's four-row sweep falls while its fits, read at the nominal
+//     wall, sit above its /16 row at /32 (01_01 §5.2). Hence a number is quoted with its step sweep, or with its
+//     step where it has none.
 //   • It measures the part as MODELLED, i.e. the geometric intent. A face-offset SENSITIVITY exists since
 //     2026-09-14 (`fea <cem> --dilate downskin|iso`): the lattice FIELD is dilated before sampling
 //     (DilatedField, Zone1Anode.cs), so nothing in this class changed — and a dilated row is still intent
@@ -1274,9 +1279,9 @@ internal static class VoxelFea
     ///
     /// ⚠️ DECLARED CEILING. (a) Log-space OLS weights each point equally in ln E, i.e. it minimises
     /// RELATIVE error — appropriate here, and deliberately not the same fit as least-squares on E.
-    /// (b) The exponent is a SLOPE, so any bias that is constant in log space (the staircase mesh is
-    /// stiff by a roughly multiplicative factor at fixed resolution) lands entirely in C and leaves n
-    /// alone — but a bias that VARIES with ligament thickness does move n, and ligament thickness is
+    /// (b) The exponent is a SLOPE, so any bias that is constant in log space lands entirely in C and
+    /// leaves n alone — of either sign: the staircase changes the body and no ladder shows its sign
+    /// (01_01 §5.2) — but a bias that VARIES with ligament thickness does move n, and ligament thickness is
     /// exactly what the sweep varies. That is why nothing here is quoted from one resolution: run the
     /// same sweep at two steps-per-period and read the spread as the instrument's own uncertainty.
     /// (c) R² is reported on the log regression; a high value says the power law describes the points,

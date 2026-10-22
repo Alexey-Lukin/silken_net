@@ -1337,7 +1337,7 @@ internal static class Program
         File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["_note"] = "Voxel-FE apparent stiffness of the part as MODELLED, in units of E_solid. "
-                      + "Declared ceiling lives in VoxelFea.cs; a single row is an UPPER bound, read the sweep.",
+                      + "Declared ceiling lives in VoxelFea.cs: a single row carries no known bias sign, so read the sweep.",
             ["cem"] = cem.Name,
             ["topology"] = cem.Topology,
             ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
@@ -1477,8 +1477,8 @@ internal static class Program
             {
                 ["_note"] = "SENSITIVITY of the geometric INTENT to a hypothetical face offset — NOT the printed body. The lattice is "
                           + "dilated before sampling (DilatedField, Zone1Anode.cs); the printed excess per face orientation is a vendor "
-                          + "answer nobody has given (00_07 HW.51). Declared ceilings live in DilatedField and VoxelFea.cs; a single "
-                          + "step is an UPPER bound.",
+                          + "answer nobody has given (00_07 HW.51). Declared ceilings live in DilatedField and VoxelFea.cs: a single "
+                          + "step carries no known bias sign.",
                 ["cem"] = cem.Name,
                 ["topology"] = cem.Topology,
                 ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
@@ -1811,8 +1811,9 @@ internal static class Program
         {
             ["_note"] = "Gibson-Ashby C and n fitted to MEASURED (relative density, apparent axial stiffness) "
                       + "pairs of the same lattice in a converged cube. Porosity is measured on the grid, never "
-                      + "derived from wall_param. A staircase voxel mesh of fully integrated hexes is stiff-biased, "
-                      + "so C is an UPPER bound; compare two steps_per_period before quoting n.",
+                      + "derived from wall_param. C is a fit's intercept, which no run's one-signed element error "
+                      + "reaches, and the cube is phase-locked besides (picogk gotcha #16), so a single fit's C carries "
+                      + "no known bias sign; compare several steps_per_period before quoting C or n.",
             ["topology"] = bSheet ? "sheet" : "network",
             ["period_mm"] = fPeriod,
             ["cells_per_side"] = nCells,
@@ -1832,9 +1833,11 @@ internal static class Program
     // 0.77 across grid steps, the FITTED exponents agree, and only C differs.
     // ✅ The two specimens were brought to ONE step on 2026-09-16 (part `--step-div 32`, cube
     // `--steps-per-period 64`), and it split the formula in two: the EXPONENT agrees, so it is a property
-    // of the LATTICE rather than of the specimen, while C stays apart — and that residual is an UPPER bound,
-    // because the cube has converged while the part's own ladder still descends. Coefficients do not cross
-    // between geometries; the ground for that is a MEASUREMENT, no longer «not measured alike». The numbers,
+    // of the LATTICE rather than of the specimen, while C stays apart — and that residual is an upper estimate of the
+    // limit gap only under two premises the measurement supports but does not prove: the part's limit not above its
+    // /32 row (its fitted C still descends) and the cube's not below its /32 row (the lowest of its flat band) — 01_01
+    // §5.2. Coefficients do not cross between geometries; the ground for that is a MEASUREMENT, no longer «not
+    // measured alike». The numbers,
     // and which specimen each row was measured on, live in 01_01 §5.2 only.
     private static int FeaFitPart(string[] args)
     {
