@@ -276,7 +276,7 @@
       }
     },
     {
-      "form": "bis-imidazole (operando form)",
+      "form": "bis-imidazole (brush-presented, hypothetical)",
       "source": "34 microsolvation_dmbpy.json",
       "dE_red_III_to_II_eV": -4.9136,
       "E_os_vs_SHE_V": 0.6326,
@@ -371,14 +371,14 @@
     ]
   },
   "shared_shifts": {
-    "note": "what every cell shares — the cells cannot test it. Spin–orbit coupling on Os is the one omitted term of known sign (it lowers E°(Os)), read at two sizes: spin_orbit_os_ref63_bipy (ref 63's [Os(bpy)3] row, the reading taken) and spin_orbit_os (the octahedral value, the upper count); she_abs_4_44 and functional_os_side are alternative choices that lower E°(Os) relative to ours, not errors of known sign. Terms that RAISE E°(Os) or the cascade are not netted here: the Os zero-point energy (both_sided), the waters on the chloride (forms), the protein shift (measured). The continuum has no entry: the waters on the chloride raise E°(Os), the hexa-aqua second shell lowers it.",
+    "note": "what every cell shares — the cells cannot test it. Spin–orbit coupling on Os is the one omitted term of known sign (it lowers E°(Os)), read at two sizes: spin_orbit_os_ref63_bipy (ref 63's [Os(bpy)3] row, the reading taken) and spin_orbit_os (the abstract's octahedral summary — not an upper count: every row of ref 63's Table S2 is set against the cells in ref63_table_s2_rows, and they reach −400 mV); she_abs_4_44, functional_os_side and os_basis_def2 are alternative choices that lower E°(Os) relative to ours, not errors of known sign. Terms that RAISE E°(Os) or the cascade are not netted here: the Os zero-point energy (both_sided), the waters on the chloride (forms), the protein shift (measured), and the cavity radii (cavity_uff, an alternative choice listed here for its size). The continuum's TREATMENT has no single entry — the waters on the chloride raise E°(Os), the hexa-aqua second shell lowers it — but its radii have one (cavity_uff).",
     "terms": {
       "spin_orbit_os": {
         "shift_V": -0.3,
         "applies_to": "every cell",
         "kind": "omitted term, known sign",
         "computed": false,
-        "source": "literature size at its octahedral value, not computed: Srnec et al. 2008 (J. Am. Chem. Soc. 130, 10947), ≈ −300 mV for Os(II/III); lower symmetry quenches it — the upper count",
+        "source": "the abstract's octahedral summary of Srnec et al. 2008 (J. Am. Chem. Soc. 130, 10947), ≈ −300 mV for Os(II/III), not computed; NOT an upper count — the paper's SI Table S2 rows reach −400 mV (`ref63_table_s2_rows`; ⚖️ founder 2026-10-23, П2)",
         "n_cells": 32,
         "n_uphill": 5,
         "uphill": [
@@ -429,7 +429,7 @@
             "chloro, Os(II) relaxed, Os(III) vertical": 0.132419,
             "chloro, both states relaxed (adiabatic)": 0.046264,
             "aqua (methodological reference)": 0.4591,
-            "bis-imidazole (operando form)": 0.5526
+            "bis-imidazole (brush-presented, hypothetical)": 0.5526
           },
           "min_V": 0.0198
         },
@@ -473,7 +473,7 @@
             "chloro, Os(II) relaxed, Os(III) vertical": 0.182419,
             "chloro, both states relaxed (adiabatic)": 0.096264,
             "aqua (methodological reference)": 0.5091,
-            "bis-imidazole (operando form)": 0.6026
+            "bis-imidazole (brush-presented, hypothetical)": 0.6026
           },
           "min_V": 0.0698
         },
@@ -506,6 +506,37 @@
         "n_uphill": 0,
         "uphill": [],
         "min_after_V": 0.080664,
+        "first_flip_at_V": 0.2185,
+        "both_sided_after_V": {}
+      },
+      "cavity_uff": {
+        "shift_V": 0.122435,
+        "applies_to": "chloro (device, programmatic)",
+        "kind": "alternative choice — raises E°(Os); listed with the raising terms, not netted",
+        "computed": true,
+        "source": "UFF radii ×1.1 with a sphere on every hydrogen against PySCF's default cavity on the device couple's ΔE_red — the Os side only (no UFF flavin potential exists); the one acceptor-side candidate that is purely a continuum parameter (self-review round 2, 2026-10-23)",
+        "n_cells": 4,
+        "n_uphill": 0,
+        "uphill": [],
+        "min_after_V": 0.340935,
+        "first_flip_at_V": 0.2185,
+        "both_sided_after_V": {},
+        "device_relaxed_electronic_with_soc_V": {
+          "note": "the device relaxed-electronic cell under the UFF radii, then with the spin–orbit shift: the sign of the device cascade depends on the cavity too",
+          "ref63_bipy": 0.090935,
+          "octahedral": 0.040935
+        }
+      },
+      "os_basis_def2": {
+        "shift_V": -0.065145,
+        "applies_to": "chloro (device, programmatic)",
+        "kind": "alternative choice",
+        "computed": true,
+        "source": "def2-TZVP with its core potential on Os against LANL2DZ on the device couple's ΔE_red — the Os side only (self-review round 2, 2026-10-23)",
+        "n_cells": 4,
+        "n_uphill": 0,
+        "uphill": [],
+        "min_after_V": 0.153355,
         "first_flip_at_V": 0.2185,
         "both_sided_after_V": {}
       }
@@ -669,6 +700,311 @@
           "relaxed_plus_zpe": 0.1873
         }
       }
+    },
+    "ref63_table_s2_rows": {
+      "note": "every Os row of ref 63's SI Table S2 (lib.constants SRNEC_TABLE_S2_OS) set against every cell — the reading taken stays [Os(bipy)3] (⚖️ 2026-10-20); the other rows are the range, not an upper count (⚖️ 2026-10-23, П2)",
+      "device_turns_uphill_against_measured_flavin_past_V": -0.3198,
+      "rows": {
+        "[OsCl6]4-/3-": {
+          "shift_V": -0.4,
+          "t2g_hole_states_cm1": [
+            78.0,
+            194.0
+          ],
+          "n_cells": 32,
+          "n_uphill": 10,
+          "uphill": [
+            {
+              "form": "chloro (device, programmatic)",
+              "level": "mmff_electronic",
+              "cascade_V": 0.2552,
+              "after_V": -0.1448
+            },
+            {
+              "form": "chloro (device, programmatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.2185,
+              "after_V": -0.1815
+            },
+            {
+              "form": "chloro + 1 H₂O on Cl⁻",
+              "level": "mmff_electronic",
+              "cascade_V": 0.3186,
+              "after_V": -0.0814
+            },
+            {
+              "form": "chloro + 1 H₂O on Cl⁻",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.2819,
+              "after_V": -0.1181
+            },
+            {
+              "form": "chloro + 2 H₂O on Cl⁻",
+              "level": "mmff_electronic",
+              "cascade_V": 0.3908,
+              "after_V": -0.0092
+            },
+            {
+              "form": "chloro + 2 H₂O on Cl⁻",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.3541,
+              "after_V": -0.0459
+            },
+            {
+              "form": "chloro, Os(II) relaxed, Os(III) vertical",
+              "level": "mmff_electronic",
+              "cascade_V": 0.367819,
+              "after_V": -0.032181
+            },
+            {
+              "form": "chloro, Os(II) relaxed, Os(III) vertical",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.331119,
+              "after_V": -0.068881
+            },
+            {
+              "form": "chloro, both states relaxed (adiabatic)",
+              "level": "mmff_electronic",
+              "cascade_V": 0.281664,
+              "after_V": -0.118336
+            },
+            {
+              "form": "chloro, both states relaxed (adiabatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.244964,
+              "after_V": -0.155036
+            }
+          ],
+          "min_after_V": -0.1815,
+          "first_flip_at_V": 0.2185,
+          "both_sided_after_V": {
+            "relaxed_electronic": -0.155,
+            "relaxed_plus_zpe": 0.1963
+          },
+          "device_vs_measured_flavin_V": -0.0802
+        },
+        "[Os(NH3)6]2+/3+": {
+          "shift_V": -0.362,
+          "t2g_hole_states_cm1": [
+            610.0,
+            638.0
+          ],
+          "n_cells": 32,
+          "n_uphill": 8,
+          "uphill": [
+            {
+              "form": "chloro (device, programmatic)",
+              "level": "mmff_electronic",
+              "cascade_V": 0.2552,
+              "after_V": -0.1068
+            },
+            {
+              "form": "chloro (device, programmatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.2185,
+              "after_V": -0.1435
+            },
+            {
+              "form": "chloro + 1 H₂O on Cl⁻",
+              "level": "mmff_electronic",
+              "cascade_V": 0.3186,
+              "after_V": -0.0434
+            },
+            {
+              "form": "chloro + 1 H₂O on Cl⁻",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.2819,
+              "after_V": -0.0801
+            },
+            {
+              "form": "chloro + 2 H₂O on Cl⁻",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.3541,
+              "after_V": -0.0079
+            },
+            {
+              "form": "chloro, Os(II) relaxed, Os(III) vertical",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.331119,
+              "after_V": -0.030881
+            },
+            {
+              "form": "chloro, both states relaxed (adiabatic)",
+              "level": "mmff_electronic",
+              "cascade_V": 0.281664,
+              "after_V": -0.080336
+            },
+            {
+              "form": "chloro, both states relaxed (adiabatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.244964,
+              "after_V": -0.117036
+            }
+          ],
+          "min_after_V": -0.1435,
+          "first_flip_at_V": 0.2185,
+          "both_sided_after_V": {
+            "relaxed_electronic": -0.117,
+            "relaxed_plus_zpe": 0.2343
+          },
+          "device_vs_measured_flavin_V": -0.0422
+        },
+        "[Os(CN)6]4-/3-": {
+          "shift_V": -0.333,
+          "t2g_hole_states_cm1": [
+            293.0,
+            305.0
+          ],
+          "n_cells": 32,
+          "n_uphill": 7,
+          "uphill": [
+            {
+              "form": "chloro (device, programmatic)",
+              "level": "mmff_electronic",
+              "cascade_V": 0.2552,
+              "after_V": -0.0778
+            },
+            {
+              "form": "chloro (device, programmatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.2185,
+              "after_V": -0.1145
+            },
+            {
+              "form": "chloro + 1 H₂O on Cl⁻",
+              "level": "mmff_electronic",
+              "cascade_V": 0.3186,
+              "after_V": -0.0144
+            },
+            {
+              "form": "chloro + 1 H₂O on Cl⁻",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.2819,
+              "after_V": -0.0511
+            },
+            {
+              "form": "chloro, Os(II) relaxed, Os(III) vertical",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.331119,
+              "after_V": -0.001881
+            },
+            {
+              "form": "chloro, both states relaxed (adiabatic)",
+              "level": "mmff_electronic",
+              "cascade_V": 0.281664,
+              "after_V": -0.051336
+            },
+            {
+              "form": "chloro, both states relaxed (adiabatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.244964,
+              "after_V": -0.088036
+            }
+          ],
+          "min_after_V": -0.1145,
+          "first_flip_at_V": 0.2185,
+          "both_sided_after_V": {
+            "relaxed_electronic": -0.088,
+            "relaxed_plus_zpe": 0.2633
+          },
+          "device_vs_measured_flavin_V": -0.0132
+        },
+        "[Os(en)3]2+/3+": {
+          "shift_V": -0.292,
+          "t2g_hole_states_cm1": [
+            1609.0,
+            1709.0
+          ],
+          "n_cells": 32,
+          "n_uphill": 5,
+          "uphill": [
+            {
+              "form": "chloro (device, programmatic)",
+              "level": "mmff_electronic",
+              "cascade_V": 0.2552,
+              "after_V": -0.0368
+            },
+            {
+              "form": "chloro (device, programmatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.2185,
+              "after_V": -0.0735
+            },
+            {
+              "form": "chloro + 1 H₂O on Cl⁻",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.2819,
+              "after_V": -0.0101
+            },
+            {
+              "form": "chloro, both states relaxed (adiabatic)",
+              "level": "mmff_electronic",
+              "cascade_V": 0.281664,
+              "after_V": -0.010336
+            },
+            {
+              "form": "chloro, both states relaxed (adiabatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.244964,
+              "after_V": -0.047036
+            }
+          ],
+          "min_after_V": -0.0735,
+          "first_flip_at_V": 0.2185,
+          "both_sided_after_V": {
+            "relaxed_electronic": -0.047,
+            "relaxed_plus_zpe": 0.3043
+          },
+          "device_vs_measured_flavin_V": 0.0278
+        },
+        "[Os(bipy)3]2+/3+": {
+          "shift_V": -0.25,
+          "t2g_hole_states_cm1": [
+            2265.0,
+            2281.0
+          ],
+          "n_cells": 32,
+          "n_uphill": 2,
+          "uphill": [
+            {
+              "form": "chloro (device, programmatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.2185,
+              "after_V": -0.0315
+            },
+            {
+              "form": "chloro, both states relaxed (adiabatic)",
+              "level": "relaxed_electronic",
+              "cascade_V": 0.244964,
+              "after_V": -0.005036
+            }
+          ],
+          "min_after_V": -0.0315,
+          "first_flip_at_V": 0.2185,
+          "both_sided_after_V": {
+            "relaxed_electronic": -0.005,
+            "relaxed_plus_zpe": 0.3463
+          },
+          "device_vs_measured_flavin_V": 0.0698
+        },
+        "[Os(H2O)6]2+/3+": {
+          "shift_V": -0.152,
+          "t2g_hole_states_cm1": [
+            4845.0,
+            6389.0
+          ],
+          "n_cells": 32,
+          "n_uphill": 0,
+          "uphill": [],
+          "min_after_V": 0.0665,
+          "first_flip_at_V": 0.2185,
+          "both_sided_after_V": {
+            "relaxed_electronic": 0.093,
+            "relaxed_plus_zpe": 0.4443
+          },
+          "device_vs_measured_flavin_V": 0.1678
+        }
+      }
     }
   },
   "not_computed": [
@@ -678,5 +1014,5 @@
     "any ωB97X reading (no ωB97X PCET potential of the flavin)",
     "spin–orbit coupling on Os (LANL2DZ is scalar-relativistic) — its literature size is a shared shift"
   ],
-  "verdict": "On one SHE scale at B3LYP/C-PCM the device chloro couple against the flavin couple at 32's protocol gives a downhill cascade of +255 mV against +529 mV measured for the same free couples; of the 274 mV between them +209 mV lie on the acceptor side and +65 mV on the donor side. Relaxing the flavin, then adding its ZPE, then its RRHO free energy moves the donor side to +101 · -210 · -199 mV, and the device cascade to +218 · +529 · +519 mV — the screening donor side (+65 mV) does not survive the zero-point term it omits. Within 50 mV of the measured cascade while each side is ≥ 100 mV off — an agreement by CANCELLATION, not a validation: «chloro (device, programmatic)» at relaxed + ZPE (-0.3 mV = donor -210 + acceptor +209); «chloro (device, programmatic)» at relaxed + RRHO free energy (+10.2 mV = donor -199 + acceptor +209); «chloro, both states relaxed (adiabatic)» at relaxed + ZPE (-26.8 mV = donor -210 + acceptor +183); «chloro, both states relaxed (adiabatic)» at relaxed + RRHO free energy (-16.3 mV = donor -199 + acceptor +183). Every form is downhill at every donor level; the acceptor side is smallest for «chloro + 3 H₂O on Cl⁻» (+7 mV), and «aqua (methodological reference)», «bis-imidazole (operando form)» overshoot the measured mediator. The ZPE and RRHO levels correct the donor of every form and the Os side of «chloro, both states relaxed (adiabatic)» only (96): with both sides relaxed and corrected that form gives +245 · +596 · RRHO not comparable mV (electronic · ZPE · RRHO); every other form's ZPE/RRHO cascade is one-sided. The device cascade (+574 mV) adds the measured protein shift (-45 mV on the donor), which is not computed here. Every cell shares B3LYP, C-PCM, |SHE_abs| = 4.281 V and a scalar-relativistic Os, which the cells cannot test: spin–orbit coupling on Os, the one omitted term of known sign, reverses a cell beyond 218 mV; at the size ref 63 computes for [Os(bipy)₃] itself (-250 mV, its SI, the closest ligand set it treats) it turns 2 of the 32 cells uphill («chloro (device, programmatic)» at relaxed, electronic → -32 mV; «chloro, both states relaxed (adiabatic)» at relaxed, electronic → -5 mV), and at its octahedral literature value (-300 mV) 5, an upper count («chloro (device, programmatic)» at MMFF geometries, electronic (32) → -45 mV; «chloro (device, programmatic)» at relaxed, electronic → -82 mV; «chloro + 1 H₂O on Cl⁻» at relaxed, electronic → -18 mV; «chloro, both states relaxed (adiabatic)» at MMFF geometries, electronic (32) → -18 mV; «chloro, both states relaxed (adiabatic)» at relaxed, electronic → -55 mV); the alternative 4.44 V convention (-159 mV) alone 0, with spin–orbit coupling 10 ⊥ 12 (the [Os(bipy)₃] ⊥ octahedral value); against the measured free flavin the spin–orbit-shifted device couple lies at +70 ⊥ +20 mV — so with spin–orbit coupling at either value the protocol does not determine the sign of the device cascade."
+  "verdict": "On one SHE scale at B3LYP/C-PCM the device chloro couple against the flavin couple at 32's protocol gives a downhill cascade of +255 mV against +529 mV measured for the same free couples; of the 274 mV between them +209 mV lie on the acceptor side and +65 mV on the donor side. Relaxing the flavin, then adding its ZPE, then its RRHO free energy moves the donor side to +101 · -210 · -199 mV, and the device cascade to +218 · +529 · +519 mV — the screening donor side (+65 mV) does not survive the zero-point term it omits. Within 50 mV of the measured cascade while each side is ≥ 100 mV off — an agreement by CANCELLATION, not a validation: «chloro (device, programmatic)» at relaxed + ZPE (-0.3 mV = donor -210 + acceptor +209); «chloro (device, programmatic)» at relaxed + RRHO free energy (+10.2 mV = donor -199 + acceptor +209); «chloro, both states relaxed (adiabatic)» at relaxed + ZPE (-26.8 mV = donor -210 + acceptor +183); «chloro, both states relaxed (adiabatic)» at relaxed + RRHO free energy (-16.3 mV = donor -199 + acceptor +183). Every form is downhill at every donor level; the acceptor side is smallest for «chloro + 3 H₂O on Cl⁻» (+7 mV), and «aqua (methodological reference)», «bis-imidazole (brush-presented, hypothetical)» overshoot the measured mediator. The ZPE and RRHO levels correct the donor of every form and the Os side of «chloro, both states relaxed (adiabatic)» only (96): with both sides relaxed and corrected that form gives +245 · +596 · RRHO not comparable mV (electronic · ZPE · RRHO); every other form's ZPE/RRHO cascade is one-sided. The device cascade (+574 mV) adds the measured protein shift (-45 mV on the donor), which is not computed here. Every cell shares B3LYP, C-PCM, |SHE_abs| = 4.281 V and a scalar-relativistic Os, which the cells cannot test: spin–orbit coupling on Os, the one omitted term of known sign, reverses a cell beyond 218 mV; at the size ref 63 computes for [Os(bipy)₃] itself (-250 mV, its SI, the closest ligand set it treats) it turns 2 of the 32 cells uphill («chloro (device, programmatic)» at relaxed, electronic → -32 mV; «chloro, both states relaxed (adiabatic)» at relaxed, electronic → -5 mV), at the abstract's octahedral summary (-300 mV) 5, and at the larger rows of its Table S2 up to 10 (−400 mV) («chloro (device, programmatic)» at MMFF geometries, electronic (32) → -45 mV; «chloro (device, programmatic)» at relaxed, electronic → -82 mV; «chloro + 1 H₂O on Cl⁻» at relaxed, electronic → -18 mV; «chloro, both states relaxed (adiabatic)» at MMFF geometries, electronic (32) → -18 mV; «chloro, both states relaxed (adiabatic)» at relaxed, electronic → -55 mV); the alternative 4.44 V convention (-159 mV) alone 0, with spin–orbit coupling 10 ⊥ 12 (the [Os(bipy)₃] ⊥ octahedral value); against the measured free flavin the spin–orbit-shifted device couple lies at +70 ⊥ +20 mV and turns uphill past -320 mV — so with spin–orbit coupling at any of those sizes the protocol does not determine the sign of the device cascade."
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-L3b step 1 — build bimetallic ZIF cluster models for hopping integral calculations.
+L3b step 1 — build two-metal ZIF cluster models for hopping integral calculations.
 
 Constructs three minimal bimetallic clusters that represent the DET pathway
 through the nCoCuCeZIF nanozyme cathode:

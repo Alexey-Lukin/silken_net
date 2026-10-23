@@ -1,22 +1,9 @@
 # Abstract — draft (Стаття 1)
 
 > **Draft section** (§2 of [`00_OUTLINE.md`](00_OUTLINE.md); appears first in the assembled paper, drafted
-> last). One paragraph, ~150–200 words, no citations. Voice per [`00_WRITING_GUIDE.md`](00_WRITING_GUIDE.md).
-> A matching **TOC graphic** (the anode→Os→cathode cascade on the 3-zone anchor) is required at submission.
+> last). One paragraph, ≈230 words (ChemRxiv sets no limit; the sleeping journal target does), no citations. Voice per
+> [`00_WRITING_GUIDE.md`](00_WRITING_GUIDE.md). A matching **TOC graphic** (the anode→Os→cathode cascade on the
+> 3-zone anchor) is required at submission. Rewritten 2026-10-23 on the self-review round-2 rulings (П1 · П2 · П3; clusters К5 ·
+> К6 · К7 · К9 · К12 of [`stattia1_self_review_round2`](../../../paper/stattia1_self_review_round2.md)).
 
-Enzymatic biofuel cells are attractive for self-powered sensors, but the electron-transfer steps that set their
-performance are characterised experimentally rather than at the electronic-structure level. We report a first-principles
-account of the electron-transfer energetics of a complete FAD-glucose-dehydrogenase / osmium-mediator / ZIF-nanozyme
-chain, and of where affordable implicit-solvation DFT reaches its limit. A thermodynamic proton reference makes the
-proton-coupled FAD potential computable: 65 mV above experiment at the screening level, ≈210 mV below it with relaxed
-geometries and zero-point energy. A Hammett relationship for the osmium mediator (−0.92 eV per σ unit at B3LYP;
-≈15 % shallower at ωB97X/def2-TZVP over the shared points; its donor pairs move by up to 20.1 mV per substituent when both
-oxidation states are relaxed) gives a design rule predictive in direction. Diabatised couplings with computed
-reorganisation energies make the bimetallic-ZIF cathode's direct electron transfer, for an oriented enzyme–framework
-contact, conditional on λ(Co): below enzymatic turnover at the computed value, straddling it only at an assumed one.
-Compared like for like on one SHE scale — the two-electron, two-proton flavin couple against each one-electron osmium
-couple — the anode→mediator cascade is downhill in every computed case, but spin–orbit coupling on osmium, which the
-protocol omits, reverses it for the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃], so the
-direction rests on the protocol; the gap to experiment
-moves with the protocol by hundreds of millivolts, and near-exact agreements are cancellations. Impedance signatures are
-predicted for the experimental test.
+We ask how far a computed driving force can be read against experiment for the FAD-dehydrogenase→osmium step of an enzymatic biofuel cell, with one affordable B3LYP protocol on component models: lumiflavin, an osmium(III/II) complex and a Cu–Co node of the Co–Cu–Ce framework cathode. The two-electron, two-proton flavin potential lies 65 mV above experiment at a screening level without the flavin's zero-point energy and ≈210 mV below it with that term; no level validates it. A Hammett trend for the mediator (−0.92 eV per σ unit per complex) agrees in direction with three measured series, with mixed donor-side magnitudes and a 1.2- to 3-fold acceptor-side overshoot. Like for like on one SHE scale, the cascade is downhill in all 32 protocol cells (smallest +218.5 mV; measured +529 mV), but spin–orbit coupling on osmium, omitted here, reverses 2 of them at the −250 mV the literature computes for [Os(bpy)₃], more at the larger shifts it computes for other ligand sets, and against the measured flavin the device couple keeps +70 mV at −250 mV and turns uphill past −320 mV, so the protocol does not determine the sign. Its gap to experiment moves by hundreds of millivolts with protocol choices; on our reference convention the closest agreements are cancellations. Cathode direct electron transfer lies below turnover at the computed Co reorganisation energy and straddles it at an assumed one; its charge-transfer resistance is bracketed, not predicted.

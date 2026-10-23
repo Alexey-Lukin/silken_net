@@ -35,7 +35,7 @@ SHARED SHIFTS. Every cell shares one functional, one continuum, one SHE conventi
 the donor level and the Os form tests none of them (in-silico §When Modifying #46). `shared_shifts` sets the nearest size of
 each term that has a known sign against every cell and names the cells it turns uphill: spin–orbit coupling on Os
 at two literature sizes — ref 63's [Os(bpy)₃] row (`OS_SOC_SHIFT_BIPY_V`, the reading taken, ⚖️ 2026-10-20) and its
-octahedral value (`OS_SOC_SHIFT_V`, the upper count) — the 4.44 V convention (`SHE_ABS_ALT_V`), and ωB97X against B3LYP on the device couple's Os
+octahedral value (`OS_SOC_SHIFT_V`, the abstract's summary — not an upper count: every Table S2 row is set against the cells) — the 4.44 V convention (`SHE_ABS_ALT_V`), and ωB97X against B3LYP on the device couple's Os
 side (B1 — the flavin's ωB97X potential is not computed, so that term is half a functional shift, device form only). The
 continuum has no such entry: the explicit waters on the chloride RAISE E°(Os) and the hexa-aqua second shell lowers it, so
 its sign on the device couple is not known.
@@ -59,6 +59,7 @@ from lib.constants import (
     OS_SOC_SHIFT_V,
     REPO_ROOT,
     SHE_ABS_ALT_V,
+    SRNEC_TABLE_S2_OS,
 )
 from lib.utils import banner
 
@@ -102,7 +103,7 @@ def forms() -> list[tuple[str, str, float]]:
              ("chloro, both states relaxed (adiabatic)", "21e os_mediator_series_relaxed_os3.json",
               relaxed3["dE_red_adiabatic_eV"])]
     rows += [("aqua (methodological reference)", "34 microsolvation_dmbpy.json", micro["aqua_meim_h2o"]["dE_red_eV"]),
-             ("bis-imidazole (operando form)", "34 microsolvation_dmbpy.json", micro["bisim_meim2"]["dE_red_eV"])]
+             ("bis-imidazole (brush-presented, hypothetical)", "34 microsolvation_dmbpy.json", micro["bisim_meim2"]["dE_red_eV"])]
     return rows
 
 
@@ -164,8 +165,9 @@ def shared_shifts(rows: list, bs: dict, she_abs: float, e_fad: dict, fad_free_me
     terms = {
         "spin_orbit_os": {"shift_V": OS_SOC_SHIFT_V, "applies_to": "every cell", "kind": "omitted term, known sign",
                           "computed": False,
-                          "source": "literature size at its octahedral value, not computed: Srnec et al. 2008 (J. Am. Chem. "
-                                    "Soc. 130, 10947), ≈ −300 mV for Os(II/III); lower symmetry quenches it — the upper count"},
+                          "source": "the abstract's octahedral summary of Srnec et al. 2008 (J. Am. Chem. Soc. 130, 10947), ≈ −300 mV "
+                                    "for Os(II/III), not computed; NOT an upper count — the paper's SI Table S2 rows reach −400 mV "
+                                    "(`ref63_table_s2_rows`; ⚖️ founder 2026-10-23, П2)"},
         "spin_orbit_os_ref63_bipy": {"shift_V": OS_SOC_SHIFT_BIPY_V, "applies_to": "every cell", "kind": "omitted term, known sign",
                                      "computed": False,
                                      "source": "the size ref 63 computes for [Os(bipy)3]2+/3+ itself, the closest ligand set it "
@@ -181,6 +183,17 @@ def shared_shifts(rows: list, bs: dict, she_abs: float, e_fad: dict, fad_free_me
                                          "only (the flavin's ωB97X potential is not computed); functional_only = ωB97X/6-31G(d) "
                                          "(34b), the rest the basis"},
     }
+    uff = _load("os_mediator_series_uffcavity.json")["complexes"]["dmbpy"]["dE_red_eV"]      # 21e `b3lyp-uffcavity`
+    osd2 = _load("os_mediator_series_osdef2.json")["complexes"]["dmbpy"]["dE_red_eV"]        # 21e `b3lyp-osdef2`
+    terms["cavity_uff"] = {"shift_V": round(rows[0]["dE_red_III_to_II_eV"] - uff, 6), "applies_to": dev,
+                           "kind": "alternative choice — raises E°(Os); listed with the raising terms, not netted", "computed": True,
+                           "source": "UFF radii ×1.1 with a sphere on every hydrogen against PySCF's default cavity on the device "
+                                     "couple's ΔE_red — the Os side only (no UFF flavin potential exists); the one acceptor-side "
+                                     "candidate that is purely a continuum parameter (self-review round 2, 2026-10-23)"}
+    terms["os_basis_def2"] = {"shift_V": round(rows[0]["dE_red_III_to_II_eV"] - osd2, 6), "applies_to": dev,
+                              "kind": "alternative choice", "computed": True,
+                              "source": "def2-TZVP with its core potential on Os against LANL2DZ on the device couple's ΔE_red — "
+                                        "the Os side only (self-review round 2, 2026-10-23)"}
     combos = {"spin_orbit_os + she_abs_4_44": ("spin_orbit_os", "she_abs_4_44"),
               "spin_orbit_os_ref63_bipy + she_abs_4_44": ("spin_orbit_os_ref63_bipy", "she_abs_4_44")}
 
@@ -196,16 +209,31 @@ def shared_shifts(rows: list, bs: dict, she_abs: float, e_fad: dict, fad_free_me
 
     out = {"note": "what every cell shares — the cells cannot test it. Spin–orbit coupling on Os is the one omitted term of "
                    "known sign (it lowers E°(Os)), read at two sizes: spin_orbit_os_ref63_bipy (ref 63's [Os(bpy)3] row, the "
-                   "reading taken) and spin_orbit_os (the octahedral value, the upper count); she_abs_4_44 and functional_os_side are alternative choices that lower E°(Os) relative "
-                   "to ours, not errors of known sign. Terms that RAISE E°(Os) or the cascade are not netted here: the Os "
-                   "zero-point energy (both_sided), the waters on the chloride (forms), the protein shift (measured). The "
-                   "continuum has no entry: the waters on the chloride raise E°(Os), the hexa-aqua second shell lowers it.",
+                   "reading taken) and spin_orbit_os (the abstract's octahedral summary — not an upper count: every row of ref 63's "
+                   "Table S2 is set against the cells in ref63_table_s2_rows, and they reach −400 mV); she_abs_4_44, functional_os_side "
+                   "and os_basis_def2 are alternative choices that lower E°(Os) relative to ours, not errors of known sign. Terms "
+                   "that RAISE E°(Os) or the cascade are not netted here: the Os zero-point energy (both_sided), the waters on the "
+                   "chloride (forms), the protein shift (measured), and the cavity radii (cavity_uff, an alternative choice listed "
+                   "here for its size). The continuum's TREATMENT has no single entry — the waters on the chloride raise E°(Os), "
+                   "the hexa-aqua second shell lowers it — but its radii have one (cavity_uff).",
            "terms": {}, "combined": {}}
     for name, t in terms.items():
         out["terms"][name] = {**t, **flips(t["shift_V"], None if t["applies_to"] == "every cell" else t["applies_to"])}
     for name, parts in combos.items():
         shift = round(sum(terms[p]["shift_V"] for p in parts), 6)
         out["combined"][name] = {"shift_V": shift, **flips(shift, None)}
+    c_dev_rel = next(c for f, k, c in cells if f == dev and k == "relaxed_electronic")
+    out["terms"]["cavity_uff"]["device_relaxed_electronic_with_soc_V"] = {
+        "note": "the device relaxed-electronic cell under the UFF radii, then with the spin–orbit shift: the sign of the device cascade depends on the cavity too",
+        "ref63_bipy": round(c_dev_rel + terms["cavity_uff"]["shift_V"] + OS_SOC_SHIFT_BIPY_V, 6),
+        "octahedral": round(c_dev_rel + terms["cavity_uff"]["shift_V"] + OS_SOC_SHIFT_V, 6)}
+    out["ref63_table_s2_rows"] = {
+        "note": "every Os row of ref 63's SI Table S2 (lib.constants SRNEC_TABLE_S2_OS) set against every cell — the reading taken "
+                "stays [Os(bipy)3] (⚖️ 2026-10-20); the other rows are the range, not an upper count (⚖️ 2026-10-23, П2)",
+        "device_turns_uphill_against_measured_flavin_past_V": round(-(e_os[dev] - fad_free_meas), 6),
+        "rows": {name: {"shift_V": v[2] / 1000.0, "t2g_hole_states_cm1": [v[0], v[1]], **flips(v[2] / 1000.0, None),
+                        "device_vs_measured_flavin_V": round(e_os[dev] + v[2] / 1000.0 - fad_free_meas, 6)}
+                 for name, v in SRNEC_TABLE_S2_OS.items()}}
     for name in ("spin_orbit_os", "spin_orbit_os_ref63_bipy"):
         soc = terms[name]["shift_V"]
         out["terms"][name]["against_measured_flavin"] = {
@@ -320,15 +348,17 @@ def main() -> int:
           f"{bipy['n_cells']} cells uphill"
         + (" (" + "; ".join(f"«{u['form']}» at {LEVELS[u['level']]} → {u['after_V'] * 1000:+.0f} mV" for u in bipy["uphill"]) + ")"
            if bipy["uphill"] else "")
-        + f", and at its octahedral literature value ({soc['shift_V'] * 1000:+.0f} mV) {soc['n_uphill']}, an upper count"
+        + f", at the abstract's octahedral summary ({soc['shift_V'] * 1000:+.0f} mV) {soc['n_uphill']}, and at the larger rows of "
+          f"its Table S2 up to {max(r['n_uphill'] for r in shared['ref63_table_s2_rows']['rows'].values())} (−400 mV)"
         + (" (" + "; ".join(f"«{u['form']}» at {LEVELS[u['level']]} → {u['after_V'] * 1000:+.0f} mV" for u in soc["uphill"]) + ")"
            if soc["uphill"] else "")
         + f"; the alternative {SHE_ABS_ALT_V} V convention ({conv['shift_V'] * 1000:+.0f} mV) alone {conv['n_uphill']}, with "
           f"spin–orbit coupling {both_bipy['n_uphill']} ⊥ {both['n_uphill']} (the [Os(bipy)₃] ⊥ octahedral value); against the "
           f"measured free flavin the spin–orbit-shifted device couple lies at "
           f"{bipy['against_measured_flavin']['by_form_V'][rows[0]['form']] * 1000:+.0f} ⊥ "
-          f"{soc['against_measured_flavin']['by_form_V'][rows[0]['form']] * 1000:+.0f} mV — so with spin–orbit coupling at "
-          f"either value the protocol does not determine the sign of the device cascade."
+          f"{soc['against_measured_flavin']['by_form_V'][rows[0]['form']] * 1000:+.0f} mV and turns uphill past "
+          f"{shared['ref63_table_s2_rows']['device_turns_uphill_against_measured_flavin_past_V'] * 1000:+.0f} mV — so with "
+          f"spin–orbit coupling at any of those sizes the protocol does not determine the sign of the device cascade."
     )
     result = {
         "method": "B3LYP/6-31G(d)+C-PCM(water), LANL2DZ on Os; the flavin at 32b's four levels (MMFF electronic = 32 · relaxed "

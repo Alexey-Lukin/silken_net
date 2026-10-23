@@ -11,8 +11,8 @@ treating each step as a link whose energetics we can compute and test against ex
 
 ## 3.1 Architecture and the burial depth of the flavin
 
-The AlphaFold 3 model places the FAD N5 atom **16.0 Å** below the protein surface (Fig 2; Tyr90 OH as the
-nearest exit). Single-step tunnelling through protein keeps the micro-to-millisecond transfer times a
+The AlphaFold 3 model places the FAD N5 atom **16.0 Å** from the hydroxyl oxygen of Tyr90, the surface atom
+chosen as the nearest exit (Fig 2) — a distance to one chosen atom, read here as the burial depth. Single-step tunnelling through protein keeps the micro-to-millisecond transfer times a
 redox enzyme needs only up to a centre-to-centre distance of ≈20 Å;<sup>48</sup> 16.0 Å is the burial
 depth, not the distance to a docked osmium centre, so it bounds the donor–acceptor separation from below
 and distance alone does not settle feasibility. The electronic coupling from the flavin to a docked mediator is not
@@ -23,14 +23,14 @@ substitutions) preserves this geometry.
 
 ## 3.2 Anode PCET: the FAD redox potential
 
-Treating the FAD/FADH₂ couple with a thermodynamic proton reference (rather than an explicit, and in
-implicit solvent grossly over-stabilised, hydronium ion) gives **E°(FAD/FADH₂) = −155 mV vs NHE** at pH 7 on
+Treating the FAD/FADH₂ couple with a thermodynamic proton reference (rather than an explicit hydronium ion, which
+implicit solvent mis-places by tenths of an eV, §2.4) gives **E°(FAD/FADH₂) = −155 mV vs NHE** at pH 7 on
 MMFF94s geometries at the electronic level — 65 mV positive of the experimental free-flavin value, −220 mV<sup>25</sup>
 (Fig 3a). That proximity does not survive a thermochemically corrected treatment (Table 2, flavin row): with both flavin states relaxed
 (the reduced one a butterfly minimum by its Hessian) the potential moves to −119 mV, and adding the zero-point energy
 takes it to −430 mV — the term the electronic level omits while it pairs the flavin with a proton free energy; the reduced
 state carries two more N–H bonds, and the change in zero-point energy between the states, +0.62 eV for the two-electron
-couple, moves E° by −311 mV; the RRHO free energy gives −419 mV. The thermochemically corrected level thus lies ≈200 mV more
+couple, moves E° by −311 mV; the RRHO free energy gives −419 mV. The thermochemically corrected levels thus lie ≈210 and ≈200 mV more
 negative than the measured value. We do not attribute that overshoot — lumiflavin for FAD, the basis and the functional,
 the protonation state at pH 7, the harmonic treatment of soft modes, the absolute-SHE convention and the missing explicit
 water are all candidates (§3.5) — and read neither level as agreement. The proton reference remains the right frame for the
@@ -48,11 +48,12 @@ electron transfer at other protein redox centres (0.7 eV for azurin Cu(II/I), 0.
 c/b₅ heme pair<sup>48</sup>) — the same order, which is all this estimate can show; no rate reported in this work
 depends on it.
 
-## 3.3 A structure–activity rule for the osmium mediator
+## 3.3 A Hammett trend for the osmium mediator
 
 Varying the 4,4′-bipyridine substituents across the experimental potential range gives a clean **Hammett
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
-≈ **−0.92 eV per σ unit** at B3LYP (r² = 1.00; Fig 3b; Table 4). This is a computed trend; it is
+≈ **−0.92 eV per σ unit** per complex at B3LYP (r² = 1.00; Fig 3b; Table 4) — four substituents per complex, ≈ 0.23 eV per σ
+per substituent, the unit in which the measured series below are read. This is a computed trend; it is
 not triangulated here against Lever's additive E_L parametrisation,<sup>23</sup> but three measured series test it pair
 by pair, per 4,4′-substituent so that the reference electrode and the absolute offset cancel. The closest is the series
 behind the device mediator itself: the formal potentials of the osmium polymers [Os(4,4′-X₂-bpy)₂(PVI)Cl]⁺ — our core
@@ -61,7 +62,7 @@ loading (polymers synthesised in one route).<sup>8</sup> Against it our shifts a
 times for Me (−37.2 against −27.7 mV) and 2.43 times for Cl (+41.9 against +17.2 mV): the measured sensitivity falls
 from the donor to the acceptor side (0.422, 0.163 and 0.075 V per σ unit and substituent over the successive pairs)
 while ours falls much less (0.236, 0.219 and 0.182). The same complex from another source at another polymer loading
-sits 135 mV away — more than replacing all four methyl groups by hydrogen — so the film and its preparation move E°′ by
+sits 135 mV away<sup>8</sup> — more than replacing all four methyl groups by hydrogen — so the film and its preparation move E°′ by
 more than the substituent pairs compared here, and only the equal-loading points of one route are compared. The second series is
 the E½(Os III/II) of homoleptic [Os(4,4′-X₂-bpy)₃]²⁺ in acetonitrile for X = H, Me, tBu and OMe, returned by a search
 of ChemRxiv.<sup>55</sup> Compared per 4,4′-substituent against H —
@@ -91,7 +92,8 @@ against Me, where ours falls about 16 mV per substituent short of experiment, th
 (IEF-PCM)<sup>57</sup> in place of C-PCM moves the pair by +0.1 mV and a second set of radii — UFF<sup>58</sup> scaled
 by 1.1, with a sphere on every hydrogen; the source states none — by −1.1 mV (every pair by at most 0.6 and 4.7 mV).
 Removing the continuum moves the pair by −29.0 mV, so the continuum attenuates it, and neither variant moves it by a
-tenth of the gap. Nor is it the axial N-donor: pyridine in place of our 1-methylimidazole moves the pair by +0.9 mV,
+tenth of the gap — while the UFF radii move every absolute point by +118 to +137 mV (+122 on the device couple), a shift §3.5
+lists among the terms that raise E°(Os). Nor is it the axial N-donor: pyridine in place of our 1-methylimidazole moves the pair by +0.9 mV,
 away from experiment (every pair by at most 3.6 mV). Relaxing the Os(II) geometry of OMe, Me and H with the same
 protocol, Os(III) vertical on it (Cl is read below), closes this pair (−18.2 mV, to −41.9 against −39.8 mV per
 substituent, 1.05 times; the source's optimised B3LYP gives 1.01) and ref 8's (OMe−Me from 0.56 to 0.99 times), and it
@@ -162,21 +164,21 @@ Where ωB97X also exists with the smaller basis (§2.2), the change splits. At t
 functional alone flattens the local slope by ≈9 % and the larger basis restores it, so the two tiers agree
 there by cancellation; over Me, H and NO₂ the slope runs −0.93 (B3LYP) → −0.79 (ωB97X at 6-31G(d)) → −0.79
 eV per σ unit (def2-TZVP), so the shallower slope there is the functional's — on a slope that leans on the NO₂
-point. The robust content of the rule is
+point. The robust content of the trend is
 therefore its direction; its slope is method-dependent, the measured Me shift is 1.3 (ref 8) to 2.5 times (acetonitrile,
 at both tiers) smaller than ours on the programmatic geometry and 1.0 to 1.9 times with both osmium states relaxed (at
-B3LYP), and on the acceptor side, where the rule points, our Cl pairs exceed the
+B3LYP), and on the acceptor side, where the trend points, our Cl pairs exceed the
 measured ones 1.2 to 2.4 times across the two series that reach Cl on the programmatic geometry and 1.4 to 3.0 times
 with both osmium states relaxed, with no measured point beyond Cl.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
-predictive design handle rather than a one-off optimisation. E° is not the whole of it: with naphthoquinone mediators
+trend that orders the mediators rather than a one-off optimisation. E° is not the whole of it: with naphthoquinone mediators
 and glucose oxidase or diaphorase immobilised in modified linear-polyethylenimine films, catalytic activity and reversibility differed
-between polymer matrices even for mediators of similar redox potential,<sup>59</sup> so the rule orders the driving
+between polymer matrices even for mediators of similar redox potential,<sup>59</sup> so the trend orders the driving
 force but does not by itself set the current.
 
-The rule also exposes a practical subtlety. The maximal cascade driving force is reached by strongly
-electron-withdrawing groups, but the strongest (NO₂) is electrochemically **unstable** at the operating
-pH (it reduces to the amine on cycling,<sup>60</sup> taking E°(Os) to the donor end of the series). Among the inert
+The trend also exposes a practical subtlety. The maximal cascade driving force is reached by strongly
+electron-withdrawing groups, but the strongest (NO₂) is electrochemically **unstable** when cycled to negative
+potentials (grafted films, pH 11: it reduces to the amine,<sup>60</sup> taking E°(Os) to the donor end of the series). Among the inert
 high-σ substituents, the Koopmans offset of **SO₂CF₃** lies 5 meV above NO₂'s at B3LYP on the programmatic geometry, without the
 degradation, and CF₃ is a milder inert alternative. Whether that order survives relaxation is not resolved: relaxing NO₂ alone moves
 its own Koopmans offset by +0.10 eV with Os(III) vertical and by −0.20 eV on its own minimum (above), twenty to forty times
@@ -186,7 +188,7 @@ optimum (~+309 mV)<sup>8</sup> balances driving force against overpotential.
 
 ## 3.4 Direct electron transfer through the ZIF cathode
 
-Inter-metal couplings in the bimetallic Cu–Co–Ce nanozyme were computed on clash-free cluster geometries (a
+Inter-metal couplings in the Co–Cu–Ce nanozyme were computed on clash-free cluster geometries (a
 bridging imidazole that had collided with the second metal was deprotonated to the imidazolate, restoring physical
 coordination). For the Cu–Co hop — the bottleneck in every live scenario below (Cu–Ru in the Ru swap) — the coupling is a two-state orbital
 diabatisation (the FO-DFT label of Methods §2.5; no specific published implementation is claimed):
@@ -224,10 +226,11 @@ probed whether Ru's diffuse 4d orbitals additionally raise the coupling: at the 
 both a crude ΔSCF and an FO-DFT diabatisation returned a large t_ij but failed their physicality check —
 the frontier orbitals localise entirely on Ru with no copper partner, so the minimal cluster cannot form
 a clean Cu↔Ru diabatic pair; that coupling advantage is therefore a hypothesis for constrained-DFT, not a
-result, and the Ru lever is justified here by λ alone.) The honest reading is a
+result, and the Ru lever is justified here by λ alone.) The reading supported here is a
 cathode whose kinetics are set by λ(Co) — rate-limiting at the computed value, straddling turnover only at the assumed
-one — and whose three design levers — a low-λ metal, conductive-MOF band transport, or an acid-stable enzyme-free
-single-atom catalyst — are set out and ranked by their viability at the acidic Zone 3 (pH ≈ 4.5).
+one — and whose three levers — a low-λ metal (computed indicatively above), conductive-MOF band transport and an
+acid-stable enzyme-free single-atom catalyst (named, not computed) — are listed; ranking them for the acidic cathode environment
+of the device (xylem sap, pH ≈ 5.75) is left to the experimental programme.
 
 Three model caveats frame this. First, the calculation places the enzyme's electron-entry site
 adjacent to the framework node. That adjacency is what an *oriented* immobilisation would deliver — a
@@ -251,16 +254,16 @@ in-plane family (M–N–C angles, in-plane tilt) remains unquantified. Third, t
 framework is a wide-gap insulator — an assumption that errs on the conservative side, since band
 conduction, if present, would only add to the hopping we model — so charge transport proceeds by the discrete Marcus hops we model rather than band
 conduction, and the 3D framework presents parallel instances of the bottleneck hop — genuine band-like
-transport would require a conductive MOF (one of the levers above). A predicted cathode
-charge-transfer resistance is correspondingly uncertain: with the DET-rate bracket and the unknown
+transport would require a conductive MOF (one of the levers above). The cathode
+charge-transfer resistance is correspondingly bracketed, not predicted: with the DET-rate bracket and the unknown
 nanozyme site coverage, a surface-confined (Laviron<sup>61</sup>) estimate spans ~0.002 Ω to ~7 MΩ — the cathode arc could
-be negligible or exceed the anode's by up to five orders of magnitude, so it cannot be fixed a priori, and the kinetic competition
-(rather than a single R_ct) is the robust description. The cathode EIS of the forthcoming Ti-coin
-experiment is the decisive empirical test.
+be negligible or exceed the anode's by up to five orders of magnitude, so it cannot be fixed a priori — only an arc below ≈ 8 Ω or above ≈ 1.6 kΩ would exclude one λ(Co) branch (§4) — and
+the kinetic competition (rather than a single R_ct) is the robust description. The cathode EIS of the forthcoming Ti-coin
+experiment is the experimental test.
 
 ## 3.5 The cascade like for like
 
-The experimentally verified driving force of the first mediated step is **downhill**: the device osmium polymer sits at
+The measured driving force of the anode→mediator step — the two-electron flavin couple against the mediator — is **downhill**: the device osmium polymer sits at
 **+309 mV vs NHE** — the best-performing of six polymers wired to GcGDH, measured as a film at pH 7.4<sup>8</sup> — and the
 bound FAD-GDH at −265 mV vs SHE<sup>62</sup> (§3.6), a cascade of +574 mV. Against the free flavin (−220 mV at pH 7<sup>25</sup>),
 the species we compute, it is +529 mV; the 45 mV between them is the measured protein shift of the bound cofactor, which we
@@ -271,7 +274,7 @@ one-electron Os(III/II) couple, on one SHE scale and at one tier (B3LYP/6-31G(d)
 flavin enters at four levels — MMFF geometries, relaxed, + its zero-point energy, + its RRHO free energy — and the osmium
 couple in eight forms: the device chloro complex on its programmatic geometry; the same with one to three explicit waters
 on the chloride; with Os(II) relaxed and Os(III) kept vertical; with both states relaxed; the bis-imidazole form that the
-operating polymer brush could present; and the aqua form, a methodological reference only, since aquation is unlikely on
+polymer brush could present (hypothetical, not observed); and the aqua form, a methodological reference only, since aquation is unlikely on
 the substitution-inert Os(II) d⁶ couple. The + ZPE and + RRHO levels correct the flavin only, so those cells are one-sided,
 except one row in which the osmium side carries its own zero-point energy.
 
@@ -279,25 +282,33 @@ except one row in which the osmium side carries its own zero-point energy.
 level. That holds within the protocol: every cell shares one functional, one continuum, one absolute-SHE convention
 (|SHE_abs| = 4.281 V) and a scalar-relativistic osmium, and varying the flavin level and the osmium form tests none of
 them. One term the protocol omits has a known sign: spin–orbit coupling, absent from the LANL2DZ pseudopotential,
-stabilises Os(III) and lowers Os(II/III) potentials — by ≈ 300 mV in octahedral homoleptic complexes,<sup>19,63</sup> by less
+stabilises Os(III) and lowers Os(II/III) potentials — by ≈ 300 mV in the abstract of ref 63 (its Table S2 rows run from −152 to −400 mV),<sup>19,63</sup> by less
 where a lower symmetry quenches it; for [Os(bpy)₃]²⁺/³⁺ itself — homoleptic and D₃, the closest ligand set it treats —
 ref 63 computes −250 mV (its Supporting Information, Table S2, CASSCF/CASPT2/CASSI), while the t2g splitting of the C₁
 device complex, which sets how far it quenches, is not computed here. A shift beyond the smallest margin, 218.5 mV,
 reverses a cell. At the [Os(bpy)₃] value 2 of the 32 cells turn uphill — the device form and the doubly relaxed form,
-both on the relaxed electronic flavin level (to −31.5 and −5.0 mV); at the full octahedral value 5, an upper count —
+both on the relaxed electronic flavin level (to −31.5 and −5.0 mV); at the octahedral summary of ref 63's abstract 5 —
 the device form on both electronic flavin levels (to −44.8 and −81.5 mV), the doubly relaxed form on both (to −18.3 and
-−55.0 mV) and the one-water form on the relaxed level (to −18.1 mV). Which cells flip depends as much on the flavin as
-on the osmium: the five sit on flavin levels 65 and 101 mV above the measured flavin potential (the two at the
-[Os(bpy)₃] value on the 101 mV one), the + ZPE and + RRHO cells, which with the full shift keep at least +218.8 mV, on
-levels about 200 mV below it, and against the measured free flavin the device couple
-lies at +69.8 mV with the [Os(bpy)₃] shift and at +19.8 mV with the full one. With spin–orbit coupling at either value,
-the protocol does not determine the sign of the device cascade. Two
+−55.0 mV) and the one-water form on the relaxed level (to −18.1 mV); and at the larger rows of ref 63's Table S2, 7 at −333 mV
+([Os(CN)₆]), 8 at −362 mV ([Os(NH₃)₆]) and 10 at −400 mV ([OsCl₆]) — the octahedral summary is not an upper count. Which cells
+flip depends as much on the flavin as on the osmium. Every flip sits on the two electronic flavin levels — those that omit
+the flavin's zero-point term (§3.2) and lie 65 and 101 mV above the measured flavin potential; the + ZPE and + RRHO cells
+keep at least +218.8 mV with the full shift, and the doubly relaxed form with zero-point energies on both sides +296.3 mV.
+That margin is, however, largely the ≈ 200 mV by which those levels lie below the measured flavin: against the measured
+free flavin the shifted device couple keeps +69.8 mV at the [Os(bpy)₃] value and +19.8 mV at the full one, turning uphill
+past −320 mV (−13, −42 and −80 mV at the three larger rows) — less than the two larger alternative choices below move it (159 and
+138 mV). With spin–orbit coupling at any of those sizes, the protocol therefore does not determine the sign of the device
+cascade: the thermochemically corrected levels keep it downhill only with their donor excess, and without it the margin
+lies inside choices the protocol fixes. Three
 alternative choices lower E°(Os) relative to ours without being errors of known sign: the other absolute-SHE value in
 common use, 4.44 V, lowers every E°(Os) and every cascade by 159 mV when the proton free energy moves with it (E°(Os) has
 no proton to compensate) — alone it turns no cell uphill, together with the spin–orbit shift 10 of the 32 at the [Os(bpy)₃] size and 12 at the full one —, and
 ωB97X lowers the device couple's E°(Os) by 138 mV (Table 4; 134 mV of it the functional, the rest the basis), with no
-ωB97X flavin potential to say what it does to the cascade. Terms that raise E°(Os) or the cascade are not netted against
-these: the osmium zero-point energy (+41 mV where computed, below), the explicit waters on the chloride (+63 to +72 mV
+ωB97X flavin potential to say what it does to the cascade; def2-TZVP with its core potential on osmium lowers the device
+couple's E°(Os) by 65 mV and alone turns no cell uphill. Terms that raise E°(Os) or the cascade are not netted against
+these: the osmium zero-point energy (+41 mV where computed, below), the cavity radii (UFF ×1.1 with a sphere on every
+hydrogen: +122 mV on the device couple's E°(Os), with no UFF flavin potential; under them the device cell on the relaxed electronic flavin level, −31.5 mV at the [Os(bpy)₃] shift on the default radii, keeps
++91 mV there and +41 mV at −300 mV, so the sign depends on the cavity as well), the explicit waters on the chloride (+63 to +72 mV
 each, unconverged — whereas on the small [Os(H₂O)₆]³⁺/²⁺ couple a second shell lowers E° by 0.98 V, ΔE_red going from
 −4.946 to −3.964 eV between six and eighteen waters) and, for the device rather than the free couples, the protein shift
 of the bound flavin (+45 mV, §3.6). The computed direction therefore agrees with the measured one within the protocol,
@@ -313,13 +324,13 @@ We therefore report the magnitude as method-dependent and attribute the gap to n
 
 **Agreements by cancellation.** Where the computed cascade lands within 50 mV of the measured one while each side is at
 least 100 mV off — thresholds we set — both sides are large and opposite: the device form at the + ZPE level comes within
-0.3 mV of +529 mV only because a −210 mV donor error and a +209 mV acceptor error cancel; the same holds at the RRHO level
+1 mV of the rounded +529 mV only because a −210 mV donor deviation and a +209 mV acceptor deviation cancel; the same holds at the RRHO level
 (+10 mV) and for the doubly relaxed chloro form at both levels (−27 and −16 mV), all four one-sided cells. None of these is
 a validation. That doubly relaxed form is the one with thermochemistry on the osmium side: analytic Hessians of both
 relaxed states move its E°(Os) by +41 mV with the zero-point energy (its Os(III) state carries two small imaginary modes, two
 methyl torsions, at 22.8i and 14.2i cm⁻¹, both left out of the sums, §2.4), and with zero-point energies
-on both sides its cascade reaches +596 mV, 67 mV above the measured value — the remainder of a +142 mV acceptor error and
-a −210 mV donor error, not a near-match. Its RRHO free energy is not compared, because the two osmium states' soft-mode
+on both sides its cascade reaches +596 mV, 67 mV above the measured value — the remainder of a +142 mV acceptor deviation and
+a −210 mV donor deviation, not a near-match. Its RRHO free energy is not compared, because the two osmium states' soft-mode
 censuses differ.
 
 **One-electron readings.** The orbital offset and the ΔSCF energies of the single-electron step FADH₂ → FADH₂•⁺ + e⁻, and
@@ -330,26 +341,29 @@ B3LYP orbital offset is +0.07 eV on the programmatic osmium geometry, its donor 
 relaxing both oxidation states of the mediator (§3.3) moves its ΔE_red(III→II) by −0.026 eV (by coincidence the size of
 closing its chelates onto the target distances, §2.3) and its Koopmans offset by −0.070 eV (+0.098 eV with Os(III) kept vertical on the relaxed Os(II)), so the offset falls to ≈ 0 (−0.003 eV) on Os(III)'s own minimum, inside the 10 meV the
 conda-lock moves this LUMO (§2.7). The ωB97X ΔSCF energy (electronic) is +0.39 eV vertical and +0.05 eV with both flavin
-states relaxed, and the proton-coupled route +0.61 eV; whether the osmium side of the ΔSCF moves alike on relaxation was not
+states relaxed, and the proton-coupled route +0.61 eV at 1 M H⁺ — +0.20 eV at pH 7 by the Nernst term and −0.125 eV with the flavin
+zero-point energies (Table 2b); whether the osmium side of the ΔSCF moves alike on relaxation was not
 computed.
 
 **What limits the magnitude.** Neither side is attributed, and the candidate sources are not ranked. On the acceptor
 side: the continuum treatment of the charge-changing octahedral couple (each explicit water on the chloride moves
-E°(Os) by +63 to +72 mV, the series unconverged); spin–orbit coupling on osmium (−250 mV as ref 63 computes it for
-[Os(bpy)₃], ≈ −300 mV at its octahedral value, not computed here, which would widen the device form's acceptor side from
-+209 to +459 ⊥ +509 mV); the
+E°(Os) by +63 to +72 mV, the series unconverged; its cavity radii move the device couple's E°(Os) by 122 mV between PySCF's
+default set and the UFF set); spin–orbit coupling on osmium (−250 mV as ref 63 computes it for
+[Os(bpy)₃], ≈ −300 mV at its octahedral summary and up to −400 mV at the table's other rows, not computed here, which would widen the device form's acceptor side from
++209 to +459 and +509 mV); the
 functional (138 mV on the osmium side of the device couple); the osmium geometry (up to 113 mV between the programmatic
 and the relaxed forms, Table 2); and the polymer film against one molecule (135 mV between preparations of the measured
 complex, §3.3). On the donor side, none of them sized here: lumiflavin for FAD, the basis and the functional, the
 protonation state at pH 7, the harmonic treatment of soft modes and the missing explicit water (§3.2). For both: the
-absolute-SHE convention (159 mV between 4.281 and 4.44 V). The comparison is made at pH 7, where both potentials were
-measured, not at the sap pH of the device anode. Explicit-water QM/MM of the chloro species and of the reduced
+absolute-SHE convention (159 mV between 4.281 and 4.44 V). The comparison is made at pH 7 and 7.4, where the two potentials were
+measured, not at the sap pH of the device anode (≈ 5.75 for the xylem sap the device runs in, where the proton-referenced flavin
+potential of §3.2 would read −81 mV by its −59 mV per pH unit, against −155 mV at pH 7). Explicit-water QM/MM of the chloro species and of the reduced
 flavin, spin–orbit coupling on osmium and a model of the film are each a step toward the magnitude; the first is the
 named limit of this paper.
 
 ## 3.6 The protein environment on the FAD potential
 
-The bound enzyme potential is **E°(FAD-GDH) = −265 mV vs SHE** (an experimentally verified value<sup>62</sup>); the
+The bound enzyme potential is **E°(FAD-GDH) = −265 mV vs SHE** (a measured value<sup>62</sup>); the
 protein shifts the cofactor from the free-flavin −220 mV (§3.2) to a more negative −265 mV, i.e. makes FAD a
 *better* electron donor and enlarges the cascade driving force — a mechanistic gain, not a gap. An
 active-site cluster (isoalloxazine plus the catalytic His537, the charged Glu61 and the backbone amide
@@ -393,11 +407,11 @@ ceiling.<sup>48</sup> No tunnelling pathway is drawn (§3.1). *A 2D projection f
 **Figure 3. Anode→mediator electron-transfer energetics.** *(a)* Frontier-orbital levels for the
 FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM): the donor HOMO lies 0.07 eV above the
 acceptor LUMO on the programmatic osmium geometry (≈ 0 on Os(III)'s own minimum) — a one-electron orbital offset, not
-like-for-like with the verified two-electron, two-proton driving force (+574 mV, from E°(Os) **+309 mV vs NHE**
-[the device 4,4′-dimethyl-bpy Os-PVI polymer<sup>8</sup>] and the verified bound E°(FAD-GDH) −265 mV vs SHE<sup>62</sup>),
+like-for-like with the measured two-electron, two-proton driving force (+574 mV, from E°(Os) **+309 mV vs NHE**
+[the device 4,4′-dimethyl-bpy Os-PVI polymer<sup>8</sup>] and the measured bound E°(FAD-GDH) −265 mV vs SHE<sup>62</sup>),
 which Table 2 and Fig 5 compare like for like. The proton-referenced flavin potential at pH 7 is −155 mV vs SHE on
 MMFF geometries at the electronic level and −430 mV with relaxed geometries and the zero-point energy, against −220 mV
-for the free flavin<sup>25</sup>; neither level is a validation (§3.2). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
+for the free flavin<sup>25</sup>; neither level is a validation (§3.2). *(b)* Hammett relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
 at constant charge: ΔE_red(III→II) is linear in σ_para (B3LYP slope −0.92 eV/σ, r² = 1.00; fit over the
 OMe→NO₂ regime; the ωB97X cross-check is in Table 4), with donor-resonance saturation at NMe₂/NH₂. Electron-withdrawing substituents raise E°(Os),
 which enters the like-for-like cascade one for one; NO₂ degrades on cycling, and whether the inert SO₂CF₃ (5 meV above NO₂ on the programmatic
@@ -405,7 +419,7 @@ geometry) keeps that order on relaxation is not resolved — SO₂CF₃ was not 
 
 ![Figure 4](figures/fig4_cathode_det.png)
 
-**Figure 4. Direct electron transfer through the bimetallic Cu–Co–Ce ZIF cathode.** *(a)* Inter-metal
+**Figure 4. Direct electron transfer through the Co–Cu–Ce ZIF cathode.** *(a)* Inter-metal
 electronic couplings |t_ij| (log scale) on clash-free cluster geometries: for Cu–Co, the two-state orbital
 diabatisation the margins use (FO-DFT label, Methods §2.5; 0.0055 eV) beside the crude two-solution ΔSCF estimate
 (0.0013 eV), which its SCF tolerance does not resolve; the other two hops carry the crude estimate. *(b)* Marcus k_DET
@@ -423,7 +437,7 @@ the assumed literature λ(Co) of 1.4 eV, ×1.9×10⁻⁵ to ×0.17 at the comput
 + zero-point energy and + RRHO free energy, the last two correcting the flavin only — and, for the doubly relaxed chloro
 form, with the zero-point energy on both sides (star); dashed, the measured +529 mV (free flavin; film-bound mediator).
 Every point is downhill within this protocol, which omits spin–orbit coupling on osmium (−250 mV for [Os(bpy)₃] in ref 63,
-≈ −300 mV at its octahedral value; at either the protocol does not determine the sign of the device cascade, §3.5); how far a point lies from the measured value depends on the protocol. *(b)* The same points as their donor side (computed − measured flavin) and acceptor side (measured −
+≈ −300 mV in its abstract and up to −400 mV at the other rows of its Table S2; at any of them the protocol does not determine the sign of the device cascade, §3.5); how far a point lies from the measured value depends on the protocol. *(b)* The same points as their donor side (computed − measured flavin) and acceptor side (measured −
 computed osmium): the gap is their sum, so a point on the shaded band (|gap| ≤ 50 mV) with both sides at least 100 mV off
-— thresholds we set — is two large errors cancelling, as for the device form at the + ZPE level (0.3 mV from −210 and
+— thresholds we set — is two large deviations cancelling, as for the device form at the + ZPE level (within 1 mV, from −210 and
 +209 mV); none is a validation.

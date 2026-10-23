@@ -289,7 +289,7 @@ def fig5() -> None:
     short = {"chloro (device, programmatic)": "Cl\n(device)", "chloro + 1 H₂O on Cl⁻": "Cl\n+1 H₂O", "chloro + 2 H₂O on Cl⁻": "Cl\n+2 H₂O",
              "chloro + 3 H₂O on Cl⁻": "Cl\n+3 H₂O", "chloro, Os(II) relaxed, Os(III) vertical": "Cl, Os(II)\nrelaxed",
              "chloro, both states relaxed (adiabatic)": "Cl, both\nrelaxed", "aqua (methodological reference)": "aqua\n(ref.)",
-             "bis-imidazole (operando form)": "bis-Im"}
+             "bis-imidazole (brush-presented, hypothetical)": "bis-Im"}
     forms = lfl["forms"]
     meas = lfl["measured"]["cascade_same_couples_V"] * 1000
     _close(meas, 529.0, 0.5, "measured cascade, same free couples")

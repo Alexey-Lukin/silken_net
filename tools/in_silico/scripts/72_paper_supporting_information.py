@@ -188,7 +188,7 @@ def build() -> str:
         "reviewer can check that the artefact they hold is the one the manuscript's numbers came from. "
         "Result numbers themselves live in [`SUMMARY.md`](../SUMMARY.md) (One-Home) and are pinned to these caches "
         "by `tools/in_silico/tests/test_doc_cache_sync.py`; this file carries no number of its own.\n>\n"
-        "> **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 "
+        "> **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 "
         "(PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves "
         "PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches "
         "(S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. "

@@ -59,7 +59,7 @@
 > ⊕ **2026-10-20 — its SI read** (Table S2, page S3, the ACS SI PDF's text layer): per complex the CASSI shift runs from
 > −152 mV ([Os(H₂O)₆]) to −400 mV ([OsCl₆]), and for [Os(bipy)₃] it is −250 mV, with the two excited ²A states of the t2g
 > hole at 2265 and 2281 cm⁻¹ — §3.5 sets that row, the closest ligand set the paper treats, against every cell, the
-> abstract's ≈ −300 mV staying the octahedral upper count (⚖️ founder 2026-10-20; the transcription is
+> abstract's ≈ −300 mV being its octahedral summary, not an upper count — the other rows, to −400 mV, are the range (⚖️ founder 2026-10-20 · 2026-10-23 П2; the transcription is
 > `tools/in_silico/lib/constants.py` `SRNEC_TABLE_S2_OS`).
 
 ## Claims still without a source (`[CITATION NEEDED]` in the text)

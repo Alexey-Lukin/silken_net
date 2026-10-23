@@ -34,7 +34,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, NERNST_SLOPE_V, REPO_ROOT
 from lib.utils import banner
 
 KCAL_TO_EV = 0.0433641153
@@ -48,7 +48,7 @@ SHE_ABS_V = 4.281        # absolute potential of SHE (V)
 
 N_E = 2
 N_H = 2
-NERNST_SLOPE = 0.05916   # V per pH unit at 298 K
+NERNST_SLOPE = NERNST_SLOPE_V   # V per pH unit at 298 K — lib.constants (shared with 61)
 
 # Experimental references for context
 # Free FAD/FADH₂ vs NHE @ pH 7 — the SOURCED reading only (⚖️ founder 2026-10-02, 00_07 HW.5.IS):

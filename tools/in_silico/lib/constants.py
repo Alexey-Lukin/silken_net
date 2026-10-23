@@ -251,7 +251,7 @@ OS3_SOC_SPLIT_CM1 = (4155.0, 5061.0)
 #   TZP/DZ), every Os row — the 2²A and 3²A states of the t2g hole WITHOUT SOC, cm⁻¹ above 1²A, and ΔE0, the SOC shift of
 #   E°, mV — read 2026-10-20 from the SI PDF's text layer (pdf.js, page S3). The abstract's «≈ −300 mV» summarises rows that
 #   spread from −152 to −400 mV; the cascade reads the row of the closest ligand set, [Os(bipy)₃], with the octahedral
-#   value kept as the upper count (`95`), and `94` calibrates its one-hole model on all six.
+#   value kept as the abstract's summary — not an upper count, `95` sets every row against the cells — and `94` calibrates its one-hole model on all six.
 SRNEC_TABLE_S2_OS = {
     "[OsCl6]4-/3-": (78.0, 194.0, -400.0),
     "[Os(NH3)6]2+/3+": (610.0, 638.0, -362.0),
@@ -264,6 +264,9 @@ OS_SOC_SHIFT_BIPY_V = SRNEC_TABLE_S2_OS["[Os(bipy)3]2+/3+"][2] / 1000.0
 # The other absolute-SHE value in common use beside 32's Isse–Gennaro 4.281 V; the flavin's E° does not move with it when
 #   the proton free energy moves consistently, so E°(Os), which has no proton, carries the whole difference.
 SHE_ABS_ALT_V = 4.44
+# Nernst slope, V per pH unit at 298 K — the proton term of the 2e⁻/2H⁺ flavin couple (32) and of the one-electron
+#   proton-coupled route printed at pH 7 beside it (61, Table 2b; self-review round 2 К4, 2026-10-23).
+NERNST_SLOPE_V = 0.05916
 
 # ── Structural alloy candidates — Stage-2 coin bake-off (01_02 §2.5, HW.24) ──
 # Composition (wt%) + mechanical/thermal props feeding the V/Al-release (script 51) + Lamé (script 50)

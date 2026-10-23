@@ -47,7 +47,10 @@ taken from total energies; the shift only steers convergence, since the orbital 
 re-diagonalised without it. The B3LYP osmium couples whose
 Os(III) LUMO is reported (the device mediator and the Hammett series) were converged without a shift, a
 second-order (Newton) solver taking over where DIIS stalled. Heavy-metal `density_fit` was *not* used
-(the auto-generated auxiliary basis is slower for Os/Ce than the exact integrals).
+(the auto-generated auxiliary basis is slower for Os/Ce than the exact integrals). No empirical dispersion correction was
+applied at any tier (B3LYP without a D3 term, ωB97X without its -D tail): a geometry-only term cancels exactly in the vertical
+energy differences and not in the relaxed ones, and the omission is the departure from best-practice reporting<sup>20,21</sup>
+that §1 names.
 
 ## 2.3 Redox energetics: ΔSCF and the FAD→Os cascade
 
@@ -66,7 +69,7 @@ osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by
 of MMFF94s-optimised<sup>45,46</sup> ligands (RDKit<sup>47</sup> cannot embed an octahedral metal centre) onto assumed
 target distances — Os–N(bpy) 2.06 Å at a 78° bite, Os–N(L) and Os–O 2.10 Å, Os–Cl 2.38 Å — for which no primary
 source is used in this work; a shared parameterised builder generated the single-complex reference,
-the 4,4′-substituent **Hammett series**<sup>22</sup> (its σ_para values are the conventional tabulated constants, taken as an ASSUMED input that this work did not check against a primary compilation — the fitted slope, which is the quantitative part of the design rule, inherits whatever error they carry), and the chloro / aqua / bis-imidazole **speciation**
+the 4,4′-substituent **Hammett series**<sup>22</sup> (its σ_para values are the conventional tabulated constants, taken as an ASSUMED input that this work did not check against a primary compilation — the fitted slope, the quantitative part of the trend, inherits whatever error they carry), and the chloro / aqua / bis-imidazole **speciation**
 forms from one source. The monodentate distances are realised as targeted, the rigid chelate is not: the realised
 geometry has Os–N(bpy) 2.091–2.099 Å and a bite angle of 80.1–80.6° across the series. For comparison only — no
 crystal structure of this complex class was found — related osmium centres in the Crystallography Open Database
@@ -95,7 +98,7 @@ recomputed.
 
 The FAD/FADH₂ potential is a 2 e⁻/2 H⁺ process, so the proton was handled by a **thermodynamic
 proton reference** (the experimental aqueous proton free energy<sup>16</sup>) rather than by an explicit
-hydronium ion — implicit solvent over-stabilises small cations such as H₃O⁺ by several eV and is
+hydronium ion — implicit solvent mis-places small cations such as H₃O⁺ by tenths of an eV, cluster-dependent,<sup>17</sup> and is
 unsuitable for proton-transfer corrections. The same reference gives the proton-coupled
 one-electron route of the first anode oxidation, FADH₂ → FADH• + H⁺ + e⁻ (Table 2b), with ωB97X/def2-TZVP energies on
 B3LYP/6-31G(d) geometries.
@@ -117,11 +120,13 @@ no RRHO level. These Hessians, like the flavin's, omit the DFT grid response tha
 one SHE scale (|SHE_abs| = 4.281 V, the convention of the proton reference) as E°(Os) − E°(FAD/FADH₂, pH 7) for each
 osmium form and each flavin level, without a further SCF; its donor side (computed − measured free flavin) and
 acceptor side (measured − computed osmium) are reported separately, and an agreement with the measured cascade
-within 50 mV while each side is at least 100 mV off is flagged as a cancellation (the 50 and 100 mV thresholds are ours). The
+within 50 mV while each side is at least 100 mV off is flagged as a cancellation (the 50 and 100 mV thresholds are ours; an agreement within 50 mV with both sides under 100 mV would have been read as
+agreement, and on our convention no cell meets it). The
 other absolute-SHE value in common use, 4.44 V, lies 159 mV away; the cascade inherits that difference in full when the
 proton free energy moves with it — E°(Os) has no proton to compensate — and the donor/acceptor split moves by it
-otherwise. That shift, the literature size of spin–orbit coupling on osmium and the ωB97X−B3LYP difference on the device
-couple are set against every cell in §3.5, since every cell shares them.
+otherwise. That shift and the literature sizes of spin–orbit coupling on osmium are set against every cell in §3.5, since every cell
+shares them; the ωB97X−B3LYP difference, the cavity radii and the osmium basis, which move the device couple alone, are set
+against its four cells.
 
 ## 2.5 Electron-transfer kinetics
 
@@ -130,10 +135,12 @@ Supporting Information) was run on the AF3 structure, but it measures no couplin
 for close contacts — any pair within 3.5 Å that includes N, O or S counts as a hydrogen-bond step — or a
 distance-only weight, summed along the path, and it starts at atoms outside the isoalloxazine ring.
 
-**Cathode direct electron transfer (DET).** Inter-metal electronic couplings t_ij in the bimetallic
-Cu–Co–Ce ZIF nanozyme were first estimated as half the energy difference of two UKS solutions of each cluster on
+**Cathode direct electron transfer (DET).** Inter-metal electronic couplings t_ij in the Co–Cu–Ce
+ZIF nanozyme were first estimated as half the energy difference of two UKS solutions of each cluster on
 clash-free cluster geometries (a bridging imidazole N–H that collided with the second metal was
-deprotonated to the imidazolate, restoring physical coordination). The two solutions are not charge-localised
+deprotonated to the imidazolate, restoring physical coordination). The clusters were computed as +1 cations in the doublet
+state, the four terminal 2-methylimidazoles protonated and the bridge an imidazolate; the +3 cation of the node's
+Cu(II)/Co(II) ⇄ Cu(I)/Co(III) cycle was not computed (§4). The two solutions are not charge-localised
 states: they start from the same guess and differ only in their SCF settings (level shift 0.3 ⊥ 0.5 E_h, DIIS space, cycle cap), so the estimate is
 read against the SCF tolerance — for Cu–Co the difference is 9.4 times it, which resolves no coupling (Table 3). For
 the rate-limiting Cu–Co hop the coupling the margins use is therefore a two-state orbital diabatisation, labelled FO-DFT in the tables and figures (it is neither the fragment-orbital basis of textbook FO-DFT nor the dipole-based generalised Mulliken–Hush scheme, and no specific published implementation is claimed for it): from one UKS

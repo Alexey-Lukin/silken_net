@@ -33,7 +33,7 @@ something already known. Frame everything around the *insight*, never around "we
 **Revised 2026-10-19 (the like-for-like revision, `00_07` HW.5.IS):** the cascade is framed like for like — direction and table (⚖️ founder 2026-10-16) — not as a decomposed ~1 eV gap; one-electron readings carry no conclusion.
 
 Our honest finding is that the cascade, compared like for like, is downhill in every form within one protocol — whose
-omitted spin–orbit coupling on osmium reverses the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] — while its magnitude is method-dependent and its near-exact agreements are cancellations; the cathode DET margin is
+omitted spin–orbit coupling on osmium reverses the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] and more cells at the larger rows of ref 63's Table S2, so the protocol does not determine the sign — while its magnitude is method-dependent and its near-exact agreements are cancellations; the cathode DET margin is
 conditional on λ(Co) — below turnover at the computed value, straddling it only at an assumed one. A first-timer's instinct is to
 hide this and claim "validation". **Do the opposite — the honesty IS the contribution.** Three real
 insights to sell (all are "new physical insight"):
@@ -42,10 +42,10 @@ insights to sell (all are "new physical insight"):
    against each one-electron osmium form on one SHE scale: the direction holds in every cell, the magnitude moves by
    hundreds of millivolts with the protocol, and agreements within millivolts are shown to be cancellations — a
    transferable lesson for anyone comparing implicit-solvent redox DFT with a measured cascade.
-2. **A predictive design rule.** The Hammett LFER for the Os(III/II) mediator + the cascade-alignment
-   rule gives a *predictive handle* and rationalizes the known experimental optimum — predictive value
-   (in DIRECTION: a ωB97X/def2-TZVP cross-check moves the slope by ≈15 %, so its magnitude is method-dependent)
-   is "especially welcome" at JPCB.
+2. **A Hammett trend read against measurement.** The Hammett LFER for the Os(III/II) mediator agrees in DIRECTION with
+   three measured series and overshoots on the acceptor side; it is consistent with the trade-off behind the known
+   experimental optimum, which it does not locate (a ωB97X/def2-TZVP cross-check moves the slope by ≈15 %, so its
+   magnitude is method-dependent; «predictive» and «design rule» retired ⚖️ 2026-10-23, К9).
 3. **An honest, mechanistic cathode finding.** The λ(Co)-conditional DET (a *finding*, corrected from
    an earlier artifact) + the low-λ-metal / conductive-MOF / enzyme-free design levers.
 
@@ -55,7 +55,7 @@ insights to sell (all are "new physical insight"):
 
 ## 3. Section-by-section how-to
 
-### Abstract (write LAST, ~150–200 words, one paragraph)
+### Abstract (write LAST, ≈230 words — four findings, each with its limit; ChemRxiv sets no cap — one paragraph)
 Formula: **problem → gap → what we did (methods) → 3 headline numbers → the honest limit + what would lift it →
 outlook.** No citations, no abbreviations on first sight. The TOC graphic (required) is a small visual
 of the same story.
@@ -91,7 +91,7 @@ geometries, no spin-orbit on Os, single-shell solvation, QM-cluster vs QM/MM). N
 
 ### Conclusions (short, punchy)
 3–5 sentences: the insight, the design rule, the methods lesson, and the experimental closure (Ti-coin
-EIS predictions). No new information.
+EIS brackets). No new information.
 
 ## 4. Mechanics
 

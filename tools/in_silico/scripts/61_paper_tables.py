@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, HARTREE_TO_EV, PAPER_DIR, REPO_ROOT
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, NERNST_SLOPE_V, PAPER_DIR, REPO_ROOT
 
 SI_DESCRIPTION = "61 — Paper Tables T1–T4, generated from the cache (drift-safe)."  # its row in the paper SI (72): English, no repo jargon
 
@@ -117,6 +117,7 @@ def build() -> str:
     sh = lfl["shared_shifts"]
     soc, conv = sh["terms"]["spin_orbit_os"], sh["terms"]["she_abs_4_44"]
     bipy = sh["terms"]["spin_orbit_os_ref63_bipy"]
+    s2rows = lfl["shared_shifts"]["ref63_table_s2_rows"]
     both = sh["combined"]["spin_orbit_os + she_abs_4_44"]
     both_bipy = sh["combined"]["spin_orbit_os_ref63_bipy + she_abs_4_44"]
     film = _load("os_series_vs_measured.json")["pvi_series"]["loading_control"]["shift_mV"] / 1000.0   # §3.3's 135 mV
@@ -154,12 +155,12 @@ def build() -> str:
               f"absolute-SHE convention ({lfl['conventions']['SHE_abs_V']} V) and a scalar-relativistic osmium, which the cells do "
               f"not test: spin–orbit coupling on osmium, omitted, reverses a cell beyond {mv(soc['first_flip_at_V'])[1:]} mV; at "
               f"the size ref 63 computes for [Os(bpy)₃] ({mv0(bipy['shift_V'])} mV) it turns {bipy['n_uphill']} of the "
-              f"{bipy['n_cells']} cells uphill and at its octahedral literature value ({mv0(soc['shift_V'])} mV) up to "
-              f"{soc['n_uphill']}, while against the measured flavin the device couple stays at "
-              f"{mv(bipy['against_measured_flavin']['by_form_V'][lfl['forms'][0]['form']])} ⊥ "
-              f"{mv(soc['against_measured_flavin']['by_form_V'][lfl['forms'][0]['form']])} mV; the alternative 4.44 V convention "
+              f"{bipy['n_cells']} cells uphill, {soc['n_uphill']} at the octahedral summary of ref 63's abstract ({mv0(soc['shift_V'])} mV) and up to "
+              f"{max(r['n_uphill'] for r in s2rows['rows'].values())} at the larger rows of its Table S2 (−400 mV), while against the measured flavin the device couple keeps "
+              f"{mv(bipy['against_measured_flavin']['by_form_V'][lfl['forms'][0]['form']])} mV at the [Os(bpy)₃] value and turns uphill past "
+              f"{mv(s2rows['device_turns_uphill_against_measured_flavin_past_V'])} mV; the alternative 4.44 V convention "
               f"({mv0(conv['shift_V'])} mV) turns {'none' if not conv['n_uphill'] else conv['n_uphill']}, with spin–orbit coupling "
-              f"{both_bipy['n_uphill']} ⊥ {both['n_uphill']} (§3.5). Agreements by cancellation, not validations — thresholds ours "
+              f"{both_bipy['n_uphill']} and {both['n_uphill']} (§3.5). Agreements by cancellation, not validations — thresholds ours "
               f"(|gap| ≤ {mv0(lfl['cancellations']['gap_max_V'], False)} mV while each side is ≥ "
               f"{mv0(lfl['cancellations']['each_side_min_V'], False)} "
               f"mV off): {canc}.*\n")
@@ -179,14 +180,20 @@ def build() -> str:
     md.append("|---|---|")
     md.append(f"| ΔSCF, vertical | {sg(vert, '+.3f')} |")
     md.append(f"| ΔSCF, adiabatic (FAD side relaxed; Os vertical) | {sg(adia, '+.3f')} |")
-    md.append(f"| Proton-coupled route FADH₂ → FADH• + H⁺ + e⁻ (proton reference; B3LYP/6-31G(d) geometries) | {sg(pcet, '+.3f')} |")
+    md.append(f"| Proton-coupled route FADH₂ → FADH• + H⁺ + e⁻ (proton reference, 1 M H⁺ — pH 0; B3LYP/6-31G(d) geometries) | {sg(pcet, '+.3f')} |")
+    pcet_ph7 = pcet - 7.0 * NERNST_SLOPE_V                                   # the same Nernst term the 2e⁻/2H⁺ couple carries (32)
+    h = pc["minimum_check"]
+    dzpe = (h["FADH_radical"]["harmonic"]["ZPE_Ha"] - h["FADH2"]["harmonic"]["ZPE_Ha"]) * HARTREE_TO_EV
+    md.append(f"| the same route at pH 7 (Nernst term, −{7.0 * NERNST_SLOPE_V:.3f} eV) | {sg(pcet_ph7, '+.3f')} |")
+    md.append(f"| the same route at pH 7 with the flavin zero-point energies (B3LYP harmonic, {sg(dzpe, '+.3f')} eV) ⁴ | {sg(pcet_ph7 + dzpe, '+.3f')} |")
     md.append("\n*Electronic energy differences per electron transferred (the proton-coupled route adds the proton reference). "
               f"The ωB97X Koopmans offset, Δε = ε_HOMO(FADH₂) − ε_LUMO(Os(III)) = {sg(-koop_dm, '+.3f')} eV in Table 4's sign "
               "(> 0 = downhill), is a range-separation artefact and is not used. FADH₂ = the 1,5-dihydro "
               "tautomer; the flavin geometries are minima by their Hessians, the osmium side vertical on its programmatic "
               "geometry. These are "
               "one-electron quantities set against no two-electron value here, and no conclusion is drawn from their sign; the "
-              "B3LYP orbital offset is in Table 4 (Me row).*\n")
+              "B3LYP orbital offset is in Table 4 (Me row). ⁴ Mixed tiers — ωB97X/def2-TZVP electronic energies with the B3LYP/6-31G(d) "
+              "zero-point energies of the two flavin states (script 33's Hessians); the osmium side carries no thermochemistry here.*\n")
 
     # ── Table 3 — DET hops + reorganization energies (cathode) ──
     p = {x["label"].split()[0]: x for x in zif["pairs"]}   # "Cu-Co"/"Co-Ce"/"Ce-graphene"
@@ -308,7 +315,7 @@ def build() -> str:
     undecided = "".join("; " + pair_clause(k, v) for k, v in open_pairs)
     if flipped:
         undecided += ("; relaxing both members reverses " + ", ".join("→".join(lbl[x] for x in f.split("-")) for f in flipped))
-    md.append(f"\n*Design rule: the Koopmans offset rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '+.2f')} "
+    md.append(f"\n*Koopmans trend: the Koopmans offset rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '+.2f')} "
               f"{lbl[ends_casc[0]['name']]} → {m(ends_casc[1]['cascade_delta_eV'], '+.2f')} "
               f"{lbl[ends_casc[1]['name']]}){undecided}; ΔE_red "
               f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so "
