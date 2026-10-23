@@ -6962,12 +6962,25 @@ def _sw(pol, key, end, sign=1.0, bark=None):
     return f
 
 
+def _sweep_ends(d, pol, key):
+    """The extremes of every sweep that ran this polarization — width, DBH, and (TM only) the bark axis; the probe beyond
+    the bark table stands on an assumed bark and is NOT in them."""
+    ends = {"w": d["width_sweep"]["extremes"][pol][key], "d": d["dbh_sweep"]["extremes"][pol][key]}
+    if d["bark_sweep"]["polarization"] == pol:
+        ends["b"] = d["bark_sweep"]["extremes"][key]
+    return ends
+
+
+_floor2 = lambda v: math.floor(v * 100 + 1e-9) / 100  # noqa: E731
+_eff_floor2 = lambda d: _floor2(min(min(x["efficiency"] for x in d["cases"] if x["polarization"] == "TM"), *(e["min"] for e in _sweep_ends(d, "TM", "efficiency").values())))  # noqa: E731
+
+
 def _swall(pol, key, end, sign=1.0):
-    """The extreme over the named readings AND the sweep — «on every reading and the whole width axis»."""
+    """The extreme over the named readings AND all the sweeps — «on every reading and the whole width, stem and bark axes»."""
     def f(d):
-        e = d["width_sweep"]["extremes"][pol][key]
+        ends = list(_sweep_ends(d, pol, key).values())
         rows = [r[key] for r in d["cases"] if r["polarization"] == pol]
-        v = min(min(rows), e["min"]) if end == 0 else max(max(rows), e["max"])
+        v = min(min(rows), *(e["min"] for e in ends)) if end == 0 else max(max(rows), *(e["max"] for e in ends))
         return sign * _sw_out(key, v, end)
     return f
 
@@ -7094,18 +7107,15 @@ CHECKS += [
      rf"інтерполяціями TM сягає {N}, TE — {_SHX} дБ\)", SHADOW, _sh13_a36("TM"), 0.0),
     ("shadow 01_04 A.36 span TE (ratified inset — the thirteen readings) → 107", CODIT,
      rf"інтерполяціями TM сягає {_SHX}, TE — {N} дБ\)", SHADOW, _sh13_a36("TE"), 0.0),
-    ("shadow 02_01 A.36 span TM → 107", "docs/02_01_Hardware_Architecture_and_BOM.md", rf"окремими його інтерполяціями — від {N}\)", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][0], 0.0),
-    ("shadow 01_04 verdict ±50° holds 3 dB → 107", CODIT, rf"±{N}° тримає 3 дБ на всіх прочитаннях", SHADOW,
-     lambda d: 50.0 if _swall("TM", "within_3dB_of_front_to_deg", 0)(d) >= 50 else math.nan, 0.0),
+    ("shadow 02_01 A.36 span TM → 107", "docs/02_01_Hardware_Architecture_and_BOM.md", rf"окремими його інтерполяціями — від {N}; стовбури", SHADOW, lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][0], 0.0),
+    # the RATIFIED sentence was ratified on the named readings — the sweeps' verdict lives in the ⊕ below it (its own pins)
+    ("shadow 01_04 verdict ±50° holds 3 dB (ratified on the named readings) → 107", CODIT, rf"±{N}° тримає 3 дБ на всіх прочитаннях", SHADOW,
+     lambda d: 50.0 if _sh13("TM", "within_3dB_of_front_to_deg", 0)(d) >= 50 else math.nan, 0.0),
     # 02_01 §5.3 — the stem-shadow inset of the link budget
-    ("shadow 02_01 TM floor → 107", HW_BOM, rf"\*\*щонайменше {N} дБ \(до {_SHX}\)\*\*", SHADOW,
+    ("shadow 02_01 TM floor, named readings → 107", HW_BOM, rf"на шістнадцяти названих прочитаннях — {N}, до {_SHX};", SHADOW,
      _shf("TM", "front_minus_back_dB", 0), 0.0),
-    ("shadow 02_01 TM top → 107", HW_BOM, rf"\*\*щонайменше {_SHX} дБ \(до {N}\)\*\*", SHADOW,
+    ("shadow 02_01 TM top, named readings → 107", HW_BOM, rf"на шістнадцяти названих прочитаннях — {_SHX}, до {N};", SHADOW,
      _shf("TM", "front_minus_back_dB", 1), 0.0),
-    ("shadow 02_01 shadow term on the width axis → 107", HW_BOM, rf"ще мінус тінь \({N}…{_SHD}{_SHX} на всій осі ширини\)",
-     SHADOW, _swall("TM", "front_minus_back_dB", 0, -1.0), 0.0),
-    ("shadow 02_01 shadow term on the width axis, deep end → 107", HW_BOM,
-     rf"ще мінус тінь \({_SHD}{_SHX}…{N} на всій осі ширини\)", SHADOW, _swall("TM", "front_minus_back_dB", 1, -1.0), 0.0),
     ("shadow 02_01 near-standoff efficiency → 107", HW_BOM, rf"лишає випроміненими {N}–{_SHX} вхідної потужності", SHADOW,
      lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["12.85"][0], 0.0),
     ("shadow 02_01 near-standoff efficiency, top → 107", HW_BOM, rf"лишає випроміненими {_SHX}–{N} вхідної потужності",
@@ -7143,8 +7153,107 @@ def _sw_bands(pol, key, end, k, bark="bark_phloem"):
     return f
 
 
-_SH_SECTOR = _swall("TM", "within_3dB_of_front_to_deg", 0)
+_SW_SECTOR = _sw("TM", "within_3dB_of_front_to_deg", 0)          # the width sweep alone — the 01_04 width-⊕ record
 _SWD = lambda d: d["width_sweep"]  # noqa: E731
+
+
+# ⊕ 2026-10-23 — the stem's DIAMETER as the second resonant axis (`dbh_sweep`; 00_07 HW.6): the rule's floor and margin, the
+# stems and widths behind it, the per-bark floors, the standoff's refuted monotonicity, the floors and the open deep end on
+# the stem axis, and the probe beyond the bark table — each number from the sweep's fields, never typed.
+_DS = lambda d: d["dbh_sweep"]  # noqa: E731
+_DSR = lambda d: d["dbh_sweep"]["rule"]  # noqa: E731
+_DSB = lambda d: d["dbh_sweep"]["beyond_bark_table"]  # noqa: E731
+
+
+def _swall_at(pol, key, end, field):
+    """A field of the row attaining the extreme over the named readings and all the sweeps — NaN unless ONE sweep holds it
+    alone and every attaining row of that sweep shares the field (`dbh_cm` is the stem in cm)."""
+    def f(d):
+        ends = _sweep_ends(d, pol, key)
+        rows = [x[key] for x in d["cases"] if x["polarization"] == pol]
+        vals = {k: (e["min"] if end == 0 else e["max"]) for k, e in ends.items()}
+        best = min(vals.values()) if end == 0 else max(vals.values())
+        named = min(rows) if end == 0 else max(rows)
+        # NaN unless ONE sweep holds the overall extreme alone — a named reading at or beyond it, or a tie, names no row
+        if (named <= best if end == 0 else named >= best) or list(vals.values()).count(best) != 1:
+            return math.nan
+        at = ends[next(k for k, v in vals.items() if v == best)]["min_at" if end == 0 else "max_at"]
+        got = {round(a["dbh_m"] * 100, 2) if field == "dbh_cm" else a[field] for a in at}
+        return got.pop() if len(got) == 1 else math.nan
+    return f
+
+
+def _swall_ge_top(pol, key):
+    """The top over the named readings and all the sweeps rounded DOWN at one decimal — a «≥» claim about a sampled null."""
+    def f(d):
+        top = max(max(x[key] for x in d["cases"] if x["polarization"] == pol), *(e["max"] for e in _sweep_ends(d, pol, key).values()))
+        return _sw_out(key, top, 0)
+    return f
+
+
+def _ds_floor_stems(k):
+    """The k-th number of «DBH a–b and c–d cm» at the sector's floor: the attaining stems grouped into runs of adjacent grid
+    stems; NaN unless exactly two runs and every attaining row is under the «phloem» bark at one deck."""
+    def f(d):
+        at = _DSR(d)["min_sector_at"]
+        if {a["bark"] for a in at} != {"bark_phloem"} or len({a["standoff_mm"] for a in at}) != 1:
+            return math.nan
+        ss = sorted({round(a["dbh_m"] * 100, 2) for a in at})
+        runs = [[ss[0]]]
+        for s in ss[1:]:
+            (runs[-1].append(s) if s - runs[-1][-1] <= _DS(d)["step_cm"] + 1e-9 else runs.append([s]))
+        return (runs[0][0], runs[0][-1], runs[1][0], runs[1][-1])[k] if len(runs) == 2 else math.nan
+    return f
+
+
+def _ds_bark_at(cm):
+    return lambda d: _DS(d)["bark_mm_by_dbh_cm"][str(float(cm))]
+
+
+def _ds_floor_w(end):
+    return lambda d: (min if end == 0 else max)(a["w_cm"] for a in _DSR(d)["min_sector_at"])
+
+
+def _ds_floor_deck(d):
+    so = {a["standoff_mm"] for a in _DSR(d)["min_sector_at"]}
+    return so.pop() if len(so) == 1 else math.nan
+
+
+def _ds_named_sector(cm):
+    return lambda d: next(v[1] for v in _DS(d)["by_dbh"]["TM"]["within_3dB_of_front_to_deg"] if v[0] == cm)
+
+
+def _ds_bark_floor(d):
+    fl = {b: min(v[1] for v in rows) for b, rows in _DS(d)["tm_sector_floor_by_bark"]["TM"].items()}
+    return fl["bark_dry"] if fl["bark_dry"] == fl["bark_wet"] else math.nan
+
+
+def _ds_ext(pol, key, end, field=None, rounding=None):
+    """An extreme of the DBH sweep (rounded as the sentence rounds it), or a field shared by every row attaining it."""
+    def f(d):
+        e = _DS(d)["extremes"][pol][key]
+        if field is None:
+            v = e["min"] if end == 0 else e["max"]
+            return v if rounding is None else rounding(v)
+        at = e["min_at" if end == 0 else "max_at"]
+        got = {round(a["dbh_m"] * 100, 2) if field == "dbh_cm" else a[field] for a in at}
+        return got.pop() if len(got) == 1 else math.nan
+    return f
+
+
+def _ds_te_field(field, end):
+    """The least (end 0) or greatest field over every row attaining the TE sector's floor (`dbh_cm` = the stem in cm)."""
+    def f(d):
+        at = _DS(d)["extremes"]["TE"]["within_3dB_of_front_to_deg"]["min_at"]
+        vals = sorted({round(a["dbh_m"] * 100, 2) if field == "dbh_cm" else a[field] for a in at})
+        return vals[0] if end == 0 else vals[-1]
+    return f
+
+
+_floor1 = lambda v: math.floor(v * 10 + 1e-9) / 10  # noqa: E731
+_ceil1 = lambda v: math.ceil(v * 10 - 1e-9) / 10  # noqa: E731
+
+
 CHECKS += [
     # SUMMARY — the inputs (the widths and the height through their numeric fields)
     ("shadow staining width → 107", SUMMARY, rf"from staining was {N} cm ± 0\.6 cm", SHADOW,
@@ -7192,16 +7301,10 @@ CHECKS += [
      _sw("TE", "front_minus_back_dB", 0), 0.0),
     ("shadow sweep TE floor, width → 107", SUMMARY, rf"the TE floor stays {_SHX} dB at {N} cm", SHADOW,
      _sw_unique_at("TE", "front_minus_back_dB", 0), 0.0),
-    ("shadow sweep TM back top → 107", SUMMARY, rf"reaches {N} dB \(TM, at {_SHX} cm\)", SHADOW,
-     _sw("TM", "front_minus_back_dB", 1), 0.0),
-    ("shadow sweep TM back top, width → 107", SUMMARY, rf"reaches {_SHX} dB \(TM, at {N} cm\)", SHADOW,
-     _sw_unique_at("TM", "front_minus_back_dB", 1), 0.0),
-    ("shadow sweep TE back top → 107", SUMMARY, rf"and {N} dB \(TE, at {_SHX} cm\), deeper", SHADOW,
-     _sw("TE", "front_minus_back_dB", 1), 0.0),
-    ("shadow sweep TE back top, width → 107", SUMMARY, rf"and {_SHX} dB \(TE, at {N} cm\), deeper", SHADOW,
+    ("shadow sweep TE back top, width → 107", SUMMARY, rf"and ≥ {_SHX} dB \(TE, at {N} cm\) — sampled", SHADOW,
      _sw_unique_at("TE", "front_minus_back_dB", 1), 0.0),
     ("shadow sweep deeper than any named reading (claim) → 107", SUMMARY,
-     rf"\(TE, at {N} cm\), deeper than any named reading", SHADOW,
+     rf"\(TE, at {N} cm\) — sampled nulls — deeper than any named reading", SHADOW,
      lambda d: (_sw_unique_at("TE", "front_minus_back_dB", 1)(d)
                 if all(_SWD(d)["extremes"][p]["front_minus_back_dB"]["max"] > d["findings"][p]["front_minus_back_dB"][1]
                        for p in POLS_SHADOW) else math.nan), 0.0),
@@ -7217,7 +7320,7 @@ CHECKS += [
     ("shadow 01_04 ⊕ axis high → 107", CODIT, rf"прочісує ширину {_SHX}–{N} см кроком", SHADOW, lambda d: _SWD(d)["axis_cm"][1], 0.0),
     ("shadow 01_04 ⊕ step → 107", CODIT, rf"см кроком {N} см під кожною корою", SHADOW, lambda d: _SWD(d)["step_cm"], 0.0),
     ("shadow 01_04 ⊕ TM 3-dB sector on the axis → 107", CODIT, rf"сектор 3 дБ для E вздовж стовбура — \*\*від {N}°\*\*",
-     SHADOW, _SH_SECTOR, 0.0),
+     SHADOW, _SW_SECTOR, 0.0),
     ("shadow 01_04 ⊕ TM 3-dB sector, named readings → 107", CODIT, rf"названих прочитаннях — {N}–{_SHX}°, на тринадцяти",
      SHADOW, _shf("TM", "within_3dB_of_front_to_deg", 0), 0.0),
     ("shadow 01_04 ⊕ TM 3-dB sector, named readings, top → 107", CODIT, rf"названих прочитаннях — {_SHX}–{N}°, на тринадцяти",
@@ -7231,25 +7334,25 @@ CHECKS += [
        + (N if k == 2 else _SHX) + "–" + (N if k == 3 else _SHX) + r" см під «флоемною» корою", SHADOW,
        _sw_bands("TM", "within_3dB_of_front_to_deg", 0, k), 0.0) for k in range(4)],
     ("shadow 01_04 ⊕ ±50° holds on the whole axis → 107", CODIT, rf"\*\*±{N}° тримає 3 дБ і на всій осі ширини", SHADOW,
-     lambda d: 50.0 if _SH_SECTOR(d) >= 50 else math.nan, 0.0),
-    ("shadow 01_04 ⊕ margin now → 107", CODIT, rf"але запас — {N}° замість", SHADOW, lambda d: _SH_SECTOR(d) - 50, 0.0),
+     lambda d: 50.0 if _SW_SECTOR(d) >= 50 else math.nan, 0.0),
+    ("shadow 01_04 ⊕ margin now → 107", CODIT, rf"але запас — {N}° замість", SHADOW, lambda d: _SW_SECTOR(d) - 50, 0.0),
     ("shadow 01_04 ⊕ margin before (thirteen readings) → 107", CODIT, rf"замість {N}°\*\*", SHADOW,
      lambda d: _sh13("TM", "within_3dB_of_front_to_deg", 0)(d) - 50, 0.0),
-    ("shadow 01_04 ⊕ north-face sector → 107", CODIT, rf"сходяться, — ±{N}° від північної грані", SHADOW, _SH_SECTOR, 0.0),
+    ("shadow 01_04 ⊕ north-face sector → 107", CODIT, rf"на цій осі — ±{N}° від північної грані", SHADOW, _SW_SECTOR, 0.0),
     ("shadow 01_04 ⊕ TM at 90° on the axis → 107", CODIT, rf"на 90° E вздовж стовбура втрачає до {N} дБ", SHADOW,
-     _swall("TM", "front_minus_side_dB", 1), 0.0),
+     _sw("TM", "front_minus_side_dB", 1), 0.0),
     ("shadow 01_04 ⊕ TM at 90°, width → 107", CODIT, rf"втрачає до {_SHX} дБ \(на {N} см\)", SHADOW,
      _sw_unique_at("TM", "front_minus_side_dB", 1), 0.0),
     ("shadow 01_04 ⊕ TM back floor on the axis → 107", CODIT, rf"для E вздовж стовбура від {N} дБ \(на", SHADOW,
-     _swall("TM", "front_minus_back_dB", 0), 0.0),
+     _sw("TM", "front_minus_back_dB", 0), 0.0),
     ("shadow 01_04 ⊕ TM back floor, width → 107", CODIT, rf"від {_SHX} дБ \(на {N} см, а не на тонкому кінці\)", SHADOW,
      _sw_unique_at("TM", "front_minus_back_dB", 0), 0.0),
     ("shadow 01_04 ⊕ TM back top on the axis → 107", CODIT, rf"а не на тонкому кінці\) до {N} дБ", SHADOW,
-     _swall("TM", "front_minus_back_dB", 1), 0.0),
+     _sw("TM", "front_minus_back_dB", 1), 0.0),
     ("shadow 01_04 ⊕ TE back floor on the axis → 107", CODIT, rf"E горизонтального від {N} до {_SHX} дБ", SHADOW,
-     _swall("TE", "front_minus_back_dB", 0), 0.0),
+     _sw("TE", "front_minus_back_dB", 0), 0.0),
     ("shadow 01_04 ⊕ TE back top on the axis → 107", CODIT, rf"E горизонтального від {_SHX} до {N} дБ", SHADOW,
-     _swall("TE", "front_minus_back_dB", 1), 0.0),
+     _sw("TE", "front_minus_back_dB", 1), 0.0),
     # 02_01 §5.3 — the widths, the swept axis, the budget's shadow term
     ("shadow 02_01 staining width → 107", HW_BOM, rf"фарбування {N} ⊥ томографія", SHADOW,
      _sh_width_cm("scots_sapwood_8cm_bark_dry"), 0.0),
@@ -7259,18 +7362,34 @@ CHECKS += [
      lambda d: d["readings"]["permittivity"]["scots_sapwood_2cm_bark_dry"]["width_read_at_height_m"][0], 0.0),
     ("shadow 02_01 Björklund's height, top → 107", HW_BOM, rf"Björklund 1999 на {_SHX}–{N} м\);", SHADOW,
      lambda d: d["readings"]["permittivity"]["scots_sapwood_2cm_bark_dry"]["width_read_at_height_m"][1], 0.0),
-    ("shadow 02_01 swept axis → 107", HW_BOM, rf"прочесаній {N}–{_SHX} см \(вихід", SHADOW, lambda d: _SWD(d)["axis_cm"][0], 0.0),
-    ("shadow 02_01 swept axis, top → 107", HW_BOM, rf"прочесаній {_SHX}–{N} см \(вихід", SHADOW, lambda d: _SWD(d)["axis_cm"][1], 0.0),
-    ("shadow 02_01 floor on the axis → 107", HW_BOM, rf"не обмежує\), — від {N} дБ \(на {_SHX} см\)", SHADOW,
+    ("shadow 02_01 swept axis → 107", HW_BOM, rf"ширини заболоні {N}–{_SHX} см \(вихід", SHADOW, lambda d: _SWD(d)["axis_cm"][0], 0.0),
+    ("shadow 02_01 swept axis, top → 107", HW_BOM, rf"ширини заболоні {_SHX}–{N} см \(вихід", SHADOW, lambda d: _SWD(d)["axis_cm"][1], 0.0),
+    ("shadow 02_01 DBH axis → 107", HW_BOM, rf"і діаметра {N}–{_SHX} см \(так само\)", SHADOW, lambda d: _DS(d)["axis_cm"][0], 0.0),
+    ("shadow 02_01 DBH axis, top → 107", HW_BOM, rf"і діаметра {_SHX}–{N} см \(так само\)", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("shadow 02_01 bold floor on the axes → 107", HW_BOM, rf"\*\*щонайменше {N} дБ на прочесаних осях", SHADOW,
      _swall("TM", "front_minus_back_dB", 0), 0.0),
-    ("shadow 02_01 floor on the axis, width → 107", HW_BOM, rf"не обмежує\), — від {_SHX} дБ \(на {N} см\)", SHADOW,
-     _sw_unique_at("TM", "front_minus_back_dB", 0), 0.0),
-    ("shadow 02_01 top on the axis → 107", HW_BOM, rf"см\) до {N}\. Тож", SHADOW, _swall("TM", "front_minus_back_dB", 1), 0.0),
+    ("shadow 02_01 floor on the axes → 107", HW_BOM, rf"\(лише «флоемне» прочитання\) — від {N} дБ \(заболонь", SHADOW,
+     _swall("TM", "front_minus_back_dB", 0), 0.0),
+    ("shadow 02_01 ⊕ 2026-10-23 floor, bark axis → 107", HW_BOM, rf"підлога тилу на осях {N} дБ \(на осі кори\)", SHADOW, lambda d: _sw_out("front_minus_back_dB", d["bark_sweep"]["extremes"]["front_minus_back_dB"]["min"], 0), 0.0),
+    ("shadow 02_01 floor on the axes, width → 107", HW_BOM, rf"від {_SHX} дБ \(заболонь {N} см, DBH", SHADOW,
+     _swall_at("TM", "front_minus_back_dB", 0, "w_cm"), 0.0),
+    ("shadow 02_01 floor on the axes, stem → 107", HW_BOM, rf"\(заболонь {_SHX} см, DBH {N} см, кора {_SHX} мм\) до нулів", SHADOW,
+     _swall_at("TM", "front_minus_back_dB", 0, "dbh_cm"), 0.0),
+    ("shadow 02_01 floor on the axes, bark → 107", HW_BOM, rf"\(заболонь {_SHX} см, DBH {_SHX} см, кора {N} мм\) до нулів", SHADOW,
+     lambda d: round(_swall_at("TM", "front_minus_back_dB", 0, "bark_mm")(d), 1), 0.0),
+    ("shadow 02_01 efficiency floor on the axes → 107", HW_BOM, rf"\(на прочесаних осях — від {N}\)", SHADOW, _eff_floor2, 0.0),
+    ("shadow 02_01 top on the axes (a null, ≥) → 107", HW_BOM, rf"не обмежує \(на сітці ≥ {N} дБ\)\. Тож", SHADOW,
+     _swall_ge_top("TM", "front_minus_back_dB"), 0.0),
+    ("shadow 02_01 budget shadow floor → 107", HW_BOM, rf"мінус тінь \(від −{N} на прочесаних осях", SHADOW,
+     _swall("TM", "front_minus_back_dB", 0), 0.0),
+    ("shadow 02_01 budget top → 107", HW_BOM, rf"від ≈ \+{N} дБ донизу без межі", SHADOW,
+     lambda d: round(47 - _swall("TM", "front_minus_back_dB", 0)(d)), 0.0),
+    ("shadow 02_01 ⊕ 2026-10-23 floor → 107", HW_BOM, rf"підлога тилу на осях {N} дБ \(на осі кори\)", SHADOW, _swall("TM", "front_minus_back_dB", 0), 0.0),
     # the RF bench sheet §8 — the swept range, the named readings beside it
-    ("shadow RF bench §8 TM floor on the axis → 107", RF_BENCH, rf"робить тил вузла на {N}–{_SHX} дБ слабшим", SHADOW,
+    ("shadow RF bench §8 TM floor on the axes → 107", RF_BENCH, rf"робить тил вузла щонайменше на {N} дБ слабшим", SHADOW,
      _swall("TM", "front_minus_back_dB", 0), 0.0),
-    ("shadow RF bench §8 TM top on the axis → 107", RF_BENCH, rf"робить тил вузла на {_SHX}–{N} дБ слабшим", SHADOW,
-     _swall("TM", "front_minus_back_dB", 1), 0.0),
+    ("shadow RF bench §8 TM top on the axes (a null, ≥) → 107", RF_BENCH, rf"а в нулях — на ≥ {N} дБ", SHADOW,
+     _swall_ge_top("TM", "front_minus_back_dB"), 0.0),
     ("shadow RF bench §8 TM floor, named readings → 107", RF_BENCH, rf"названих прочитаннях — {N}–{_SHX} дБ, нижній", SHADOW,
      _shf("TM", "front_minus_back_dB", 0), 0.0),
     ("shadow RF bench §8 TM top, named readings → 107", RF_BENCH, rf"названих прочитаннях — {_SHX}–{N} дБ, нижній", SHADOW,
@@ -7278,6 +7397,343 @@ CHECKS += [
     ("shadow RF bench §8 A.36 span TM → 107", RF_BENCH, rf"окремими його інтерполяціями — від {N}\) \(\[", SHADOW,
      lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][0], 0.0),
 ]
+
+
+TRACKER = "docs/00_07_Action_Plan_Tracker.md"
+_ceil2 = lambda v: math.ceil(v * 100 - 1e-9) / 100  # noqa: E731
+_BS = lambda d: d["bark_sweep"]  # noqa: E731
+_BSR = lambda d: d["bark_sweep"]["rule"]  # noqa: E731
+_BP = lambda d, pol, k: d["dbh_sweep"]["controls"]["standoff_monotone_by_polarization"][pol][k]  # noqa: E731
+_FAIL = lambda d, name: (lambda v: math.nan if v is None else v)(d["dbh_sweep"]["beyond_bark_table"]["first_stem_cm_failing_by_assumption"][name])  # noqa: E731
+_LOSS = lambda d: _BSR(d)["loss_at_rule_deg_dB"]  # noqa: E731
+_DECK = lambda d, off, col: next(row[col] for row in _BS(d)["deck_sensitivity_at_floor_row"]["rows"] if row[0] == off)  # noqa: E731
+_REF = lambda d: _BS(d)["rule_floor_refinement"]  # noqa: E731
+_BT = lambda d: _BS(d)["beyond_thick_end_at_floor_stem"]  # noqa: E731
+_BBF = lambda d: _BS(d)["extremes"]["front_minus_back_dB"]  # noqa: E731
+
+
+def _bs_at(field):
+    """A field shared by every row attaining the bark sweep's crossing floor (`dbh_cm` = the stem in cm)."""
+    def f(d):
+        got = {round(a["dbh_m"] * 100, 2) if field == "dbh_cm" else a[field] for a in _BSR(d)["min_crossing_at"]}
+        return got.pop() if len(got) == 1 else math.nan
+    return f
+
+
+def _bbf_at(field, nd=None):
+    """A field shared by every row attaining the bark sweep's TM back floor."""
+    def f(d):
+        got = {round(a["dbh_m"] * 100, 2) if field == "dbh_cm" else (round(a[field], nd) if nd else a[field]) for a in _BBF(d)["min_at"]}
+        return got.pop() if len(got) == 1 else math.nan
+    return f
+
+
+def _sec49(field, end):
+    """The low/high end of a field over the rows at the bark sweep's SECTOR floor (the rows where the letter falls)."""
+    def f(d):
+        vals = sorted({round(a["dbh_m"] * 100, 2) if field == "dbh_cm" else a[field] for a in _BSR(d)["min_sector_at"]})
+        return vals[0] if end == 0 else vals[-1]
+    return f
+
+
+CHECKS += [
+    # SUMMARY — the DBH paragraph (floors rounded DOWN, tops «≥» rounded down, «up to» rounded up, spans OUTWARD)
+    ("shadow DBH axis low → 107", SUMMARY, rf"\(`dbh_sweep`, 2026-10-23\): every stem of {N} – {_SHX} cm in", SHADOW, lambda d: _DS(d)["axis_cm"][0], 0.0),
+    ("shadow DBH axis high → 107", SUMMARY, rf"\(`dbh_sweep`, 2026-10-23\): every stem of {_SHX} – {N} cm in", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("shadow DBH step → 107", SUMMARY, rf"cm in {N} cm steps —\s+the dead bark", SHADOW, lambda d: _DS(d)["step_cm"], 0.0),
+    *[(f"shadow DBH bark at named stem [{i}] → 107", SUMMARY, r"its three stems \(" + " · ".join(N if j == i else _SHX for j in range(3)) + r" mm;", SHADOW,
+       _ds_bark_at(cm), 0.0) for i, cm in enumerate((38, 50, 60))],
+    ("shadow DBH sector floor → 107", SUMMARY, rf"the TM 3-dB sector's floor is {N}° on the 1° grid", SHADOW, lambda d: _DSR(d)["min_sector_deg"], 0.0),
+    ("shadow DBH crossing grid floor → 107", SUMMARY, rf"\(the −3 dB crossing's grid floor {N}°;", SHADOW, lambda d: _floor2(_DSR(d)["min_crossing_deg"]), 0.0),
+    *[(f"shadow DBH floor stems [{k}] → 107", SUMMARY, r"reached at DBH " + (N if k == 0 else _SHX) + " – " + (N if k == 1 else _SHX) + " and " + (N if k == 2 else _SHX) + " – " + (N if k == 3 else _SHX) + r" cm under the «phloem» bark", SHADOW,
+       _ds_floor_stems(k), 0.0) for k in range(4)],
+    ("shadow DBH floor deck → 107", SUMMARY, rf"«phloem» bark at the {N} mm deck with", SHADOW, _ds_floor_deck, 0.0),
+    ("shadow DBH floor width low → 107", SUMMARY, rf"mm deck with\s+{N} – {_SHX} cm of sapwood; the", SHADOW, _ds_floor_w(0), 0.0),
+    ("shadow DBH floor width high → 107", SUMMARY, rf"mm deck with\s+{_SHX} – {N} cm of sapwood; the", SHADOW, _ds_floor_w(1), 0.0),
+    ("shadow DBH named stem 38 sector → 107", SUMMARY, rf"miss both troughs \({N}° at 38,", SHADOW, _ds_named_sector(38.0), 0.0),
+    ("shadow DBH named stem 50 sector → 107", SUMMARY, rf"° at 38, {N}° at 50,", SHADOW, _ds_named_sector(50.0), 0.0),
+    ("shadow DBH named stem 60 sector → 107", SUMMARY, rf"° at 50, {N}° at 60 cm\)", SHADOW, _ds_named_sector(60.0), 0.0),
+    ("shadow DBH dry/wet bark floor → 107", SUMMARY, rf"under the dry and the wet bark\s+the floor is {N}°", SHADOW, _ds_bark_floor, 0.0),
+    ("shadow DBH margin → 107", SUMMARY, rf"with a margin of {N}° on the crossing \(over", SHADOW, lambda d: _floor2(_DSR(d)["margin_deg_fine"]), 0.0),
+    ("shadow DBH A.36 crossing span low → 107", SUMMARY, rf"the floor rows' crossing spans {N} – {_SHX}°\)", SHADOW, lambda d: _floor2(_DS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
+    ("shadow DBH A.36 crossing span high (outward) → 107", SUMMARY, rf"the floor rows' crossing spans {_SHX} – {N}°\)", SHADOW, lambda d: _ceil2(_DS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
+    ("shadow DBH TE cells → 107", SUMMARY, rf"narrows its −3 dB crossing\s+in every one of the {N} cells", SHADOW, lambda d: _BP(d, "TE", "cells"), 0.0),
+    ("shadow DBH TE sector-narrower count → 107", SUMMARY, rf"and the integer sector in {N} of them", SHADOW, lambda d: _BP(d, "TE", "sector_narrower_at_higher_deck"), 0.0),
+    ("shadow DBH TM standoff violations → 107", SUMMARY, rf"narrower at the higher deck in {N} of the {_SHX} \(stem × width × bark\) cells", SHADOW, lambda d: _BP(d, "TM", "crossing_narrower_at_higher_deck"), 0.0),
+    ("shadow DBH TM standoff cells → 107", SUMMARY, rf"narrower at the higher deck in {_SHX} of the {N} \(stem × width × bark\) cells", SHADOW, lambda d: _BP(d, "TM", "cells"), 0.0),
+    ("shadow DBH TM sector violations → 107", SUMMARY, rf"cells \({N} on the integer sector\), and every TM row", SHADOW, lambda d: _BP(d, "TM", "sector_narrower_at_higher_deck"), 0.0),
+    ("shadow DBH TM back floor → 107", SUMMARY, rf"behind on the stem axis is {N} dB \(DBH", SHADOW, _ds_ext("TM", "front_minus_back_dB", 0, rounding=_floor1), 0.0),
+    ("shadow DBH TM back floor stem → 107", SUMMARY, rf"stem axis is {_SHX} dB \(DBH {N} cm, {_SHX} cm of", SHADOW, _ds_ext("TM", "front_minus_back_dB", 0, "dbh_cm"), 0.0),
+    ("shadow DBH TM back floor width → 107", SUMMARY, rf"stem axis is {_SHX} dB \(DBH {_SHX} cm, {N} cm of", SHADOW, _ds_ext("TM", "front_minus_back_dB", 0, "w_cm"), 0.0),
+    ("shadow DBH TM back floor A.36 low → 107", SUMMARY, rf"«phloem» bark;\s+{N} – {_SHX} dB over the A\.36 readings\); the largest", SHADOW, lambda d: _floor1(_DS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
+    ("shadow DBH TM back floor A.36 high (outward) → 107", SUMMARY, rf"«phloem» bark;\s+{_SHX} – {N} dB over the A\.36 readings\); the largest", SHADOW, lambda d: _ceil1(_DS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
+    ("shadow DBH TM side max → 107", SUMMARY, rf"the largest TM loss at 90° is {N} dB \(DBH", SHADOW, _ds_ext("TM", "front_minus_side_dB", 1, rounding=_ceil1), 0.0),
+    ("shadow DBH TM side max stem → 107", SUMMARY, rf"loss at 90° is {_SHX} dB \(DBH {N} cm, {_SHX} cm\)", SHADOW, _ds_ext("TM", "front_minus_side_dB", 1, "dbh_cm"), 0.0),
+    ("shadow DBH TM side max width → 107", SUMMARY, rf"loss at 90° is {_SHX} dB \(DBH {_SHX} cm, {N} cm\)", SHADOW, _ds_ext("TM", "front_minus_side_dB", 1, "w_cm"), 0.0),
+    ("shadow DBH TE sector min → 107", SUMMARY, rf"the TE sector\s+narrows to {N}° on {_SHX} grid rows", SHADOW, _ds_ext("TE", "within_3dB_of_front_to_deg", 0), 0.0),
+    ("shadow DBH TE sector min rows → 107", SUMMARY, rf"narrows to {_SHX}° on {N} grid rows \({_SHX} cells;", SHADOW, lambda d: len(_DS(d)["extremes"]["TE"]["within_3dB_of_front_to_deg"]["min_at"]), 0.0),
+    ("shadow DBH TE sector min cells → 107", SUMMARY, rf"grid rows \({N} cells; DBH", SHADOW, lambda d: len({(a["dbh_m"], a["w_cm"], a["bark"]) for a in _DS(d)["extremes"]["TE"]["within_3dB_of_front_to_deg"]["min_at"]}), 0.0),
+    ("shadow DBH TE sector min stems low → 107", SUMMARY, rf"cells; DBH {N} – {_SHX} cm, {_SHX} – {_SHX} cm of sapwood", SHADOW, _ds_te_field("dbh_cm", 0), 0.0),
+    ("shadow DBH TE sector min stems high → 107", SUMMARY, rf"cells; DBH {_SHX} – {N} cm, {_SHX} – {_SHX} cm of sapwood", SHADOW, _ds_te_field("dbh_cm", 1), 0.0),
+    ("shadow DBH TE sector min width low → 107", SUMMARY, rf"cells; DBH {_SHX} – {_SHX} cm, {N} – {_SHX} cm of sapwood", SHADOW, _ds_te_field("w_cm", 0), 0.0),
+    ("shadow DBH TE sector min width high → 107", SUMMARY, rf"cells; DBH {_SHX} – {_SHX} cm, {_SHX} – {N} cm of sapwood", SHADOW, _ds_te_field("w_cm", 1), 0.0),
+    ("shadow DBH TM back top (≥) → 107", SUMMARY, rf"the backs reach\s+≥ {N} dB \(TM\)", SHADOW, _ds_ext("TM", "front_minus_back_dB", 1, rounding=_floor1), 0.0),
+    ("shadow DBH TE back top (≥) → 107", SUMMARY, rf"\(TM\) and ≥ {N} dB \(TE\)", SHADOW, _ds_ext("TE", "front_minus_back_dB", 1, rounding=_floor1), 0.0),
+    # SUMMARY — the bark paragraph
+    ("shadow bark step → 107", SUMMARY, rf"thick end in {N} mm steps \(both ends", SHADOW, lambda d: _BS(d)["step_mm"], 0.0),
+    ("shadow bark thick end at 60 → 107", SUMMARY, rf"assumption; {N} mm at DBH 60 is the table's", SHADOW, lambda d: _BS(d)["thick_end_named_stems_mm"]["60.0"], 0.0),
+    ("shadow bark sector floor → 107", SUMMARY, rf"deck, the sector's floor is {N}° on the 1° grid \(crossing", SHADOW, lambda d: _BSR(d)["min_sector_deg"], 0.0),
+    ("shadow bark crossing grid floor → 107", SUMMARY, rf"on the 1° grid \(crossing {N}° on the grid, at DBH", SHADOW, lambda d: _floor2(_BSR(d)["min_crossing_deg"]), 0.0),
+    ("shadow bark floor stem → 107", SUMMARY, rf"on the grid, at DBH {N} cm with", SHADOW, _bs_at("dbh_cm"), 0.0),
+    ("shadow bark floor bark → 107", SUMMARY, rf"cm with {N} mm of bark and {_SHX} cm of\s+sapwood at the", SHADOW, _bs_at("bark_mm"), 0.0),
+    ("shadow bark floor width → 107", SUMMARY, rf"mm of bark and {N} cm of\s+sapwood at the {_SHX} mm deck;", SHADOW, _bs_at("w_cm"), 0.0),
+    ("shadow bark floor deck → 107", SUMMARY, rf"cm of\s+sapwood at the {N} mm deck;", SHADOW, _bs_at("standoff_mm"), 0.0),
+    ("shadow bark A.36 span low → 107", SUMMARY, rf"mm deck; {N} – {_SHX}° over the A\.36 readings\), so", SHADOW, lambda d: _floor2(_BS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
+    ("shadow bark A.36 span high (outward) → 107", SUMMARY, rf"mm deck; {_SHX} – {N}° over the A\.36 readings\), so", SHADOW, lambda d: _ceil2(_BS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
+    ("shadow bark first failing stem → 107", SUMMARY, rf"it fails first at DBH {N} cm, on", SHADOW, lambda d: _BSR(d)["first_stem_cm_failing_on_1deg_grid"], 0.0),
+    ("shadow bark sector-floor rows → 107", SUMMARY, rf"on {N} grid rows at DBH {_SHX} cm \(bark", SHADOW, lambda d: _LOSS(d)["n_sector_floor_rows"], 0.0),
+    ("shadow bark sector-floor stem → 107", SUMMARY, rf"grid rows at DBH {N} cm \(bark", SHADOW, lambda d: (lambda s: s[0] if len(s) == 1 else math.nan)(sorted({round(a["dbh_m"] * 100, 2) for a in _BSR(d)["min_sector_at"]})), 0.0),
+    ("shadow bark sector-floor bark low → 107", SUMMARY, rf"cm \(bark {N} – {_SHX} mm, sapwood", SHADOW, _sec49("bark_mm", 0), 0.0),
+    ("shadow bark sector-floor bark high → 107", SUMMARY, rf"cm \(bark {_SHX} – {N} mm, sapwood", SHADOW, _sec49("bark_mm", 1), 0.0),
+    ("shadow bark sector-floor width low → 107", SUMMARY, rf"mm, sapwood {N} – {_SHX} cm\),", SHADOW, _sec49("w_cm", 0), 0.0),
+    ("shadow bark sector-floor width high → 107", SUMMARY, rf"mm, sapwood {_SHX} – {N} cm\),", SHADOW, _sec49("w_cm", 1), 0.0),
+    ("shadow bark loss at ±50° over the rows, low → 107", SUMMARY, rf"the loss at ±50° is {N} – {_SHX} dB over those rows", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
+    ("shadow bark loss at ±50° over the rows, high → 107", SUMMARY, rf"the loss at ±50° is {_SHX} – {N} dB over those rows", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][1], 0.0),
+    ("shadow bark loss at ±50° on the floor row → 107", SUMMARY, rf"over those rows,\s+{N} on the crossing-floor row \(", SHADOW, lambda d: max(_LOSS(d)["at_crossing_floor"]), 0.0),
+    ("shadow bark loss A.36 low → 107", SUMMARY, rf"crossing-floor row \({N} – {_SHX} over the A\.36 readings\)", SHADOW, lambda d: _BS(d)["loss_at_rule_under_a36_readings"]["span_over_single_readings"][0], 0.0),
+    ("shadow bark loss A.36 high → 107", SUMMARY, rf"crossing-floor row \({_SHX} – {N} over the A\.36 readings\)", SHADOW, lambda d: _BS(d)["loss_at_rule_under_a36_readings"]["span_over_single_readings"][1], 0.0),
+    ("shadow bark refinement crossing → 107", SUMMARY, rf"inside the table\) finds\s+{N}° \(DBH", SHADOW, lambda d: _floor2(_REF(d)["min_crossing_deg"]), 0.0),
+    ("shadow bark refinement stem → 107", SUMMARY, rf"inside the table\) finds\s+{_SHX}° \(DBH {N} cm, {_SHX} mm of bark", SHADOW, lambda d: round(_REF(d)["at"]["dbh_m"] * 100, 1), 0.0),
+    ("shadow bark refinement bark → 107", SUMMARY, rf"\(DBH {_SHX} cm, {N} mm of bark, {_SHX} cm of sapwood\),\s+{_SHX}° below the node", SHADOW, lambda d: _REF(d)["at"]["bark_mm"], 0.0),
+    ("shadow bark refinement width → 107", SUMMARY, rf"\(DBH {_SHX} cm, {_SHX} mm of bark, {N} cm of sapwood\),\s+{_SHX}° below the node", SHADOW, lambda d: _REF(d)["at"]["w_cm"], 0.0),
+    ("shadow bark refinement below node (outward) → 107", SUMMARY, rf"cm of sapwood\), {N}° below the node", SHADOW, lambda d: _ceil2(_REF(d)["below_the_grid_node_deg"]), 0.0),
+    ("shadow bark refinement deepening → 107", SUMMARY, rf"below the node — a one-sided deepening of {N} dB", SHADOW, lambda d: round(_REF(d)["at"]["loss_at_rule_deg_dB"] - max(_LOSS(d)["at_crossing_floor"]), 3), 0.0),
+    ("shadow bark edge deepening → 107", SUMMARY, rf"another\s+one-sided deepening of {N} dB", SHADOW, lambda d: round(min(_BT(d)["rows"], key=lambda r: r[2])[3] - max(_LOSS(d)["at_crossing_floor"]), 3), 0.0),
+    ("shadow bark deck slope → 107", SUMMARY, rf"±1 mm of it moves the crossing by ≈ {N}° and the loss", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["crossing_deg_per_mm_about_the_floor_row"], 1), 0.0),
+    ("shadow bark deck loss slope → 107", SUMMARY, rf"and the loss at ±50° by ≈ {N} dB — more than", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["loss_dB_per_mm_about_the_floor_row"], 2), 0.0),
+    # canon's bark table ↔ the cache (lib.constants carries it; 01_04 §3.2 is its home)
+    ("canon bark table 01_04 §3.2 dead bark DBH 38 thin → 107", CODIT, rf"мертва кора ≈ {N}–[\d.]+ мм при DBH 38 і", SHADOW, lambda d: _BS(d)["bark_mm_by_dbh_cm"]["38.0"][0], 0.0),
+    ("canon bark table 01_04 §3.2 dead bark DBH 38 thick → 107", CODIT, rf"мертва кора ≈ [\d.]+–{N} мм при DBH 38 і", SHADOW, lambda d: _BS(d)["bark_mm_by_dbh_cm"]["38.0"][1], 0.0),
+    ("canon bark table 01_04 §3.2 dead bark DBH 50 thin → 107", CODIT, rf"при DBH 38 і ≈ {N}–[\d.]+ при DBH 50 — по гребенях", SHADOW, lambda d: _BS(d)["bark_mm_by_dbh_cm"]["50.0"][0], 0.0),
+    ("canon bark table 01_04 §3.2 dead bark DBH 50 thick → 107", CODIT, rf"при DBH 38 і ≈ [\d.]+–{N} при DBH 50 — по гребенях", SHADOW, lambda d: _BS(d)["bark_mm_by_dbh_cm"]["50.0"][1], 0.0),
+    *[(f"canon bark table 01_04 §3.2 single bark DBH {cm} {end} → 107", CODIT,
+       rf"по гребенях пластин\*\* — DBH 38 ≈ {N if (cm, end) == (38, 'thin') else _SHX}–{N if (cm, end) == (38, 'thick') else _SHX} мм · DBH 50 ≈ {N if (cm, end) == (50, 'thin') else _SHX}–{N if (cm, end) == (50, 'thick') else _SHX} · DBH 60 ≈ {N if (cm, end) == (60, 'thin') else _SHX}–{N if (cm, end) == (60, 'thick') else _SHX}\.",
+       SHADOW, (lambda d, cm=cm, k=(0 if end == "thin" else 1): _BS(d)["canon_bark_table"]["single_bark_ridge_mm_by_dbh_cm"][f"{cm}.0"][k]), 0.0)
+      for cm in (38, 50, 60) for end in ("thin", "thick")],
+    ("canon bark table 01_04 §3.2 phloem → 107", CODIT, rf"«зрідка досягає {N} мм»", SHADOW, lambda d: _BS(d)["canon_bark_table"]["live_phloem_mm"]["thin_end"], 0.0),
+    ("canon bark table SUMMARY DBH 38 thin → 107", SUMMARY, rf"dead bark runs {N} – [\d.]+ mm at DBH 38 and", SHADOW, lambda d: _BS(d)["bark_mm_by_dbh_cm"]["38.0"][0], 0.0),
+    ("canon bark table SUMMARY DBH 38 thick → 107", SUMMARY, rf"dead bark runs [\d.]+ – {N} mm at DBH 38 and", SHADOW, lambda d: _BS(d)["bark_mm_by_dbh_cm"]["38.0"][1], 0.0),
+    ("canon bark table SUMMARY DBH 50 thin → 107", SUMMARY, rf"mm at DBH 38 and {N} – [\d.]+ at DBH 50 \(`01_04 §3\.2`\)", SHADOW, lambda d: _BS(d)["bark_mm_by_dbh_cm"]["50.0"][0], 0.0),
+    ("canon bark table SUMMARY DBH 50 thick → 107", SUMMARY, rf"mm at DBH 38 and [\d.]+ – {N} at DBH 50 \(`01_04 §3\.2`\)", SHADOW, lambda d: _BS(d)["bark_mm_by_dbh_cm"]["50.0"][1], 0.0),
+    ("canon bark table 01_04 ⊕ DBH 50 thick → 107", CODIT, rf"вилка канону [\d.]+–[\d.]+ мм при DBH 38 і [\d.]+–{N} при DBH 50 — ≪ λ не є", SHADOW, lambda d: _BS(d)["bark_mm_by_dbh_cm"]["50.0"][1], 0.0),
+    ("canon bark table SUMMARY phloem thin end → 107", SUMMARY, rf"is {N} mm at the thin end, as canon says", SHADOW, lambda d: _BS(d)["canon_bark_table"]["live_phloem_mm"]["thin_end"], 0.0),
+    ("canon bark table SUMMARY phloem thick end (our reading) → 107", SUMMARY, rf"and {N} mm at the thick end, OUR reading", SHADOW, lambda d: _BS(d)["canon_bark_table"]["live_phloem_mm"]["thick_end_reading"], 0.0),
+    ("shadow bark beyond thick min crossing → 107", SUMMARY, rf"falls further before it turns\s+\({N}° at {_SHX} mm, the lowest of the probe", SHADOW, lambda d: _floor2(_BT(d)["min_crossing_deg"]), 0.0),
+    ("shadow bark beyond thick min bark → 107", SUMMARY, rf"falls further before it turns\s+\({_SHX}° at {N} mm, the lowest of the probe", SHADOW, lambda d: _BT(d)["min_crossing_at_bark_mm"], 0.0),
+    ("shadow bark beyond thick back above the rule → 107", SUMMARY, rf"back above the rule from {N} mm — canon's ridge", SHADOW, lambda d: next((row[0] for row in _BT(d)["rows"] if row[2] >= _BSR(d)["sector_deg"]), math.nan), 0.0),
+    ("shadow bark deck +1 crossing → 107", SUMMARY, rf"1 mm higher returns the rule \({N}° at {_SHX} mm\) and 1 mm lower", SHADOW, lambda d: _floor2(_DECK(d, 1.0, 3)), 0.0),
+    ("shadow bark deck +1 standoff → 107", SUMMARY, rf"1 mm higher returns the rule \({_SHX}° at {N} mm\) and 1 mm lower", SHADOW, lambda d: _DECK(d, 1.0, 1), 0.0),
+    ("shadow bark deck −1 crossing → 107", SUMMARY, rf"and 1 mm lower takes it to {N}°\.", SHADOW, lambda d: _floor2(_DECK(d, -1.0, 3)), 0.0),
+    ("shadow bark dry/wet thin floor → 107", SUMMARY, rf"the wet proxies the floor is {N}° at the thin end and rises to", SHADOW, _ds_bark_floor, 0.0),
+    ("shadow bark dry/wet thick-end floor → 107", SUMMARY, rf"at the thin end and rises to {N}° at the thick", SHADOW, lambda d: min(v["min_sector_deg"] for v in _BS(d)["thick_end_dry_wet"].values()), 0.0),
+    ("shadow bark TM back floor → 107", SUMMARY, rf"The TM floor behind on the bark axis is {N} dB \(DBH", SHADOW, lambda d: _floor1(_BBF(d)["min"]), 0.0),
+    ("shadow bark TM back floor stem → 107", SUMMARY, rf"on the bark axis is {_SHX} dB \(DBH {N} cm, {_SHX} mm of bark", SHADOW, _bbf_at("dbh_cm"), 0.0),
+    ("shadow bark TM back floor bark → 107", SUMMARY, rf"on the bark axis is {_SHX} dB \(DBH {_SHX} cm, {N} mm of bark, {_SHX} cm of sapwood;", SHADOW, _bbf_at("bark_mm", 1), 0.0),
+    ("shadow bark TM back floor width → 107", SUMMARY, rf"mm of bark, {N} cm of sapwood; {_SHX} – {_SHX} dB\s+over the A\.36", SHADOW, _bbf_at("w_cm"), 0.0),
+    ("shadow bark TM back floor A.36 low → 107", SUMMARY, rf"cm of sapwood; {N} – {_SHX} dB\s+over the A\.36 readings\) — below", SHADOW, lambda d: _floor1(_BS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
+    ("shadow bark TM back floor A.36 high (outward) → 107", SUMMARY, rf"cm of sapwood; {_SHX} – {N} dB\s+over the A\.36 readings\) — below", SHADOW, lambda d: _ceil1(_BS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
+    ("shadow bark TM back floor vs diameter axis → 107", SUMMARY, rf"— below the diameter axis's {N} — and", SHADOW, _ds_ext("TM", "front_minus_back_dB", 0, rounding=_floor1), 0.0),
+    ("shadow bark TM side max → 107", SUMMARY, rf"the largest TM loss at 90° there {N} dB; the 2-D", SHADOW, lambda d: _ceil1(_BS(d)["extremes"]["front_minus_side_dB"]["max"]), 0.0),
+    ("shadow bark efficiency floor → 107", SUMMARY, rf"efficiency indicator\s+falls to {N}\. Canon sets", SHADOW, lambda d: _floor2(_BS(d)["extremes"]["efficiency"]["min"]), 0.0),
+    ("shadow sweeps efficiency floor (named + axes) → 107", SUMMARY, rf"\(on the\s+swept axes down to {N}\)", SHADOW, _eff_floor2, 0.0),
+    ("shadow beyond axis low → 107", SUMMARY, rf"past the bark table, {N} – {_SHX} cm on the TM", SHADOW, lambda d: _DSB(d)["axis_cm"][0], 0.0),
+    ("shadow beyond axis high → 107", SUMMARY, rf"past the bark table, {_SHX} – {N} cm on the TM", SHADOW, lambda d: _DSB(d)["axis_cm"][1], 0.0),
+    # 01_04 §3.1 — the ⊕ of 2026-10-23
+    ("shadow 01_04 DBH ⊕ axis → 107", CODIT, rf"кожен стовбур {N}–{_SHX} см кроком", SHADOW, lambda d: _DS(d)["axis_cm"][0], 0.0),
+    ("shadow 01_04 DBH ⊕ axis, top → 107", CODIT, rf"кожен стовбур {_SHX}–{N} см кроком", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("shadow 01_04 DBH ⊕ sector floor → 107", CODIT, rf"має підлогу {N}° на сітці 1° \(перетин", SHADOW, lambda d: _DSR(d)["min_sector_deg"], 0.0),
+    ("shadow 01_04 DBH ⊕ crossing grid floor → 107", CODIT, rf"\(перетин −3 дБ на сітці {N}°;", SHADOW, lambda d: _floor2(_DSR(d)["min_crossing_deg"]), 0.0),
+    *[(f"shadow 01_04 DBH ⊕ floor stems [{k}] → 107", CODIT, r"— на DBH " + (N if k == 0 else _SHX) + "–" + (N if k == 1 else _SHX) + " і " + (N if k == 2 else _SHX) + "–" + (N if k == 3 else _SHX) + r" см під «флоемною» корою на зазорі", SHADOW,
+       _ds_floor_stems(k), 0.0) for k in range(4)],
+    ("shadow 01_04 DBH ⊕ floor deck → 107", CODIT, rf"корою на зазорі {N} мм при заболоні", SHADOW, _ds_floor_deck, 0.0),
+    ("shadow 01_04 DBH ⊕ floor width low → 107", CODIT, rf"при заболоні {N}–{_SHX} см; названі", SHADOW, _ds_floor_w(0), 0.0),
+    ("shadow 01_04 DBH ⊕ floor width high → 107", CODIT, rf"при заболоні {_SHX}–{N} см; названі", SHADOW, _ds_floor_w(1), 0.0),
+    ("shadow 01_04 DBH ⊕ named 38 → 107", CODIT, rf"не влучають \({N}° на 38,", SHADOW, _ds_named_sector(38.0), 0.0),
+    ("shadow 01_04 DBH ⊕ named 50 → 107", CODIT, rf"° на 38, {N}° на 50,", SHADOW, _ds_named_sector(50.0), 0.0),
+    ("shadow 01_04 DBH ⊕ named 60 → 107", CODIT, rf"° на 50, {N}° на 60 см\)", SHADOW, _ds_named_sector(60.0), 0.0),
+    ("shadow 01_04 DBH ⊕ dry/wet floor → 107", CODIT, rf"під сухою і мокрою корою підлога {N}°\. \*\*На тонкому", SHADOW, _ds_bark_floor, 0.0),
+    ("shadow 01_04 DBH ⊕ margin → 107", CODIT, rf"на всій осі діаметра із запасом {N}° на перетині", SHADOW, lambda d: _floor2(_DSR(d)["margin_deg_fine"]), 0.0),
+    ("shadow 01_04 DBH ⊕ A.36 span low → 107", CODIT, rf"інтерполяціями A\.36 — {N}–{_SHX}°\), і так близько", SHADOW, lambda d: _floor2(_DS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
+    ("shadow 01_04 DBH ⊕ A.36 span high (outward) → 107", CODIT, rf"інтерполяціями A\.36 — {_SHX}–{N}°\), і так близько", SHADOW, lambda d: _ceil2(_DS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
+    ("shadow 01_04 DBH ⊕ TE cells → 107", CODIT, rf"звужує перетин −3 дБ у кожній із {N} клітинок", SHADOW, lambda d: _BP(d, "TE", "cells"), 0.0),
+    ("shadow 01_04 DBH ⊕ TE sector-narrower → 107", CODIT, rf"\(цілий сектор — у {N}; вища дека", SHADOW, lambda d: _BP(d, "TE", "sector_narrower_at_higher_deck"), 0.0),
+    ("shadow 01_04 DBH ⊕ TM violations → 107", CODIT, rf"для E вздовж стовбура у {N} із {_SHX} клітинок", SHADOW, lambda d: _BP(d, "TM", "crossing_narrower_at_higher_deck"), 0.0),
+    ("shadow 01_04 DBH ⊕ TM cells → 107", CODIT, rf"для E вздовж стовбура у {_SHX} із {N} клітинок", SHADOW, lambda d: _BP(d, "TM", "cells"), 0.0),
+    ("shadow 01_04 DBH ⊕ TM sector violations → 107", CODIT, rf"на вищій деці \({N} — на цілому секторі\)", SHADOW, lambda d: _BP(d, "TM", "sector_narrower_at_higher_deck"), 0.0),
+    ("shadow 01_04 DBH ⊕ TM back floor → 107", CODIT, rf"тил на осі діаметра — від {N} дБ \(DBH", SHADOW, _ds_ext("TM", "front_minus_back_dB", 0, rounding=_floor1), 0.0),
+    ("shadow 01_04 DBH ⊕ TM back floor stem → 107", CODIT, rf"осі діаметра — від {_SHX} дБ \(DBH {N} см, заболонь", SHADOW, _ds_ext("TM", "front_minus_back_dB", 0, "dbh_cm"), 0.0),
+    ("shadow 01_04 DBH ⊕ TM back floor width → 107", CODIT, rf"\(DBH {_SHX} см, заболонь {N} см, «флоемна» кора;", SHADOW, _ds_ext("TM", "front_minus_back_dB", 0, "w_cm"), 0.0),
+    ("shadow 01_04 DBH ⊕ TM back floor A.36 low → 107", CODIT, rf"«флоемна» кора; над інтерполяціями A\.36 — {N}–{_SHX}\) до нулів", SHADOW, lambda d: _floor1(_DS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
+    ("shadow 01_04 DBH ⊕ TM back floor A.36 high (outward) → 107", CODIT, rf"«флоемна» кора; над інтерполяціями A\.36 — {_SHX}–{N}\) до нулів", SHADOW, lambda d: _ceil1(_DS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
+    ("shadow 01_04 DBH ⊕ TM back top (≥) → 107", CODIT, rf"не обмежує \(на сітці ≥ {N} дБ\)\. \*\*Мертва кора", SHADOW, _ds_ext("TM", "front_minus_back_dB", 1, rounding=_floor1), 0.0),
+    ("shadow 01_04 bark ⊕ step → 107", CODIT, rf"кінця таблиці кроком {N} мм \(кінці", SHADOW, lambda d: _BS(d)["step_mm"], 0.0),
+    ("shadow 01_04 bark ⊕ thick end at 60 → 107", CODIT, rf"товстий кінець при DBH 60 — {N} мм із 36\)", SHADOW, lambda d: _BS(d)["thick_end_named_stems_mm"]["60.0"], 0.0),
+    ("shadow 01_04 bark ⊕ sector floor → 107", CODIT, rf"вона дає підлогу {N}° \(перетин на сітці", SHADOW, lambda d: _BSR(d)["min_sector_deg"], 0.0),
+    ("shadow 01_04 bark ⊕ crossing grid floor → 107", CODIT, rf"вона дає підлогу {_SHX}° \(перетин на сітці {N}°, DBH", SHADOW, lambda d: _floor2(_BSR(d)["min_crossing_deg"]), 0.0),
+    ("shadow 01_04 bark ⊕ floor stem → 107", CODIT, rf"\(перетин на сітці {_SHX}°, DBH {N} см, кора", SHADOW, _bs_at("dbh_cm"), 0.0),
+    ("shadow 01_04 bark ⊕ floor bark → 107", CODIT, rf"DBH {_SHX} см, кора {N} мм, заболонь {_SHX} см, зазор", SHADOW, _bs_at("bark_mm"), 0.0),
+    ("shadow 01_04 bark ⊕ floor width → 107", CODIT, rf"кора {_SHX} мм, заболонь {N} см, зазор {_SHX} мм;", SHADOW, _bs_at("w_cm"), 0.0),
+    ("shadow 01_04 bark ⊕ floor deck → 107", CODIT, rf"заболонь {_SHX} см, зазор {N} мм; над інтерполяціями", SHADOW, _bs_at("standoff_mm"), 0.0),
+    ("shadow 01_04 bark ⊕ A.36 span low → 107", CODIT, rf"зазор {_SHX} мм; над інтерполяціями A\.36 — {N}–{_SHX}°\),", SHADOW, lambda d: _floor2(_BS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
+    ("shadow 01_04 bark ⊕ A.36 span high (outward) → 107", CODIT, rf"зазор {_SHX} мм; над інтерполяціями A\.36 — {_SHX}–{N}°\),", SHADOW, lambda d: _ceil2(_BS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
+    ("shadow 01_04 bark ⊕ first failing stem → 107", CODIT, rf"— вперше на DBH {N} см, на", SHADOW, lambda d: _BSR(d)["first_stem_cm_failing_on_1deg_grid"], 0.0),
+    ("shadow 01_04 bark ⊕ sector-floor rows → 107", CODIT, rf"на {N} рядках сітки при DBH", SHADOW, lambda d: _LOSS(d)["n_sector_floor_rows"], 0.0),
+    ("shadow 01_04 bark ⊕ loss low → 107", CODIT, rf"втрата на ±50° там {N}–{_SHX} дБ, на рядку підлоги", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
+    ("shadow 01_04 bark ⊕ loss high → 107", CODIT, rf"втрата на ±50° там {_SHX}–{N} дБ, на рядку підлоги", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][1], 0.0),
+    ("shadow 01_04 bark ⊕ loss floor row → 107", CODIT, rf"на рядку підлоги {N} \(над інтерполяціями A\.36 — {_SHX}–{_SHX}\)", SHADOW, lambda d: max(_LOSS(d)["at_crossing_floor"]), 0.0),
+    ("shadow 01_04 bark ⊕ loss A.36 high → 107", CODIT, rf"на рядку підлоги {_SHX} \(над інтерполяціями A\.36 — {_SHX}–{N}\)", SHADOW, lambda d: _BS(d)["loss_at_rule_under_a36_readings"]["span_over_single_readings"][1], 0.0),
+    ("shadow 01_04 bark ⊕ refinement → 107", CODIT, rf"у межах таблиці — дає {N}° при DBH", SHADOW, lambda d: _floor2(_REF(d)["min_crossing_deg"]), 0.0),
+    ("shadow 01_04 bark ⊕ refinement below node (outward) → 107", CODIT, rf"— на {N}° нижче вузла, однобічне", SHADOW, lambda d: _ceil2(_REF(d)["below_the_grid_node_deg"]), 0.0),
+    ("shadow 01_04 bark ⊕ refinement deepening → 107", CODIT, rf"нижче вузла, однобічне поглиблення на {N} дБ\)", SHADOW, lambda d: round(_REF(d)["at"]["loss_at_rule_deg_dB"] - max(_LOSS(d)["at_crossing_floor"]), 3), 0.0),
+    ("shadow 01_04 bark ⊕ edge deepening → 107", CODIT, rf"ще одне однобічне поглиблення на {N} дБ;", SHADOW, lambda d: round(min(_BT(d)["rows"], key=lambda r: r[2])[3] - max(_LOSS(d)["at_crossing_floor"]), 3), 0.0),
+    ("shadow 01_04 bark ⊕ deck slope → 107", CODIT, rf"±1 мм його рухає перетин на ≈ {N}°, а втрату", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["crossing_deg_per_mm_about_the_floor_row"], 1), 0.0),
+    ("shadow 01_04 bark ⊕ deck loss slope → 107", CODIT, rf"а втрату на ±50° на ≈ {N} дБ — більше за сам надлишок", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["loss_dB_per_mm_about_the_floor_row"], 2), 0.0),
+    ("shadow 01_04 bark ⊕ beyond thick min → 107", CODIT, rf"\(найнижче — {N}° при {_SHX} мм; знову над правилом", SHADOW, lambda d: _floor2(_BT(d)["min_crossing_deg"]), 0.0),
+    ("shadow 01_04 bark ⊕ beyond thick back above → 107", CODIT, rf"знову над правилом від {N} мм; SD гребенів у каноні", SHADOW, lambda d: next((row[0] for row in _BT(d)["rows"] if row[2] >= _BSR(d)["sector_deg"]), math.nan), 0.0),
+    ("shadow 01_04 bark ⊕ deck +1 → 107", CODIT, rf"повертає правило — {N}° при {_SHX} мм, на 1 мм нижче", SHADOW, lambda d: _floor2(_DECK(d, 1.0, 3)), 0.0),
+    ("shadow 01_04 bark ⊕ deck −1 → 107", CODIT, rf"на 1 мм нижче — {N}°\)\. ", SHADOW, lambda d: _floor2(_DECK(d, -1.0, 3)), 0.0),
+    ("shadow 01_04 bark ⊕ dry/wet thin → 107", CODIT, rf"Під сухою і мокрою корою підлога {N}° на тонкому кінці й", SHADOW, _ds_bark_floor, 0.0),
+    ("shadow 01_04 bark ⊕ dry/wet thick → 107", CODIT, rf"на тонкому кінці й {N}° на товстому\. Тил на осі кори", SHADOW, lambda d: min(v["min_sector_deg"] for v in _BS(d)["thick_end_dry_wet"].values()), 0.0),
+    ("shadow 01_04 bark ⊕ TM back floor → 107", CODIT, rf"Тил на осі кори — від {N} дБ \(DBH", SHADOW, lambda d: _floor1(_BBF(d)["min"]), 0.0),
+    ("shadow 01_04 bark ⊕ TM back floor bark → 107", CODIT, rf"Тил на осі кори — від {_SHX} дБ \(DBH {_SHX} см, кора {N} мм", SHADOW, _bbf_at("bark_mm", 1), 0.0),
+    ("shadow 01_04 beyond axis → 107", CODIT, rf"проба за таблицею кори, {N}–{_SHX} см на E", SHADOW, lambda d: _DSB(d)["axis_cm"][0], 0.0),
+    ("shadow 01_04 beyond axis, top → 107", CODIT, rf"проба за таблицею кори, {_SHX}–{N} см на E", SHADOW, lambda d: _DSB(d)["axis_cm"][1], 0.0),
+    # 02_01 §5.3 — the bold floor's A.36 note (the bark-axis floor row)
+    ("shadow 02_01 bold floor A.36 low → 107", HW_BOM, rf"\(над чотирма окремими інтерполяціями A\.36 — від {N}\) між", SHADOW, lambda d: _floor1(_BS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
+    # 00_07 HW.6 — the two ⚖️ legs (the Стан carries no number) and the HW.8.10 consumer line
+    ("shadow 00_07 ⚖️ azimuth sector floor → 107", TRACKER, rf"на тонкому кінці кори сектор {N}° із запасом", SHADOW, lambda d: _DSR(d)["min_sector_deg"], 0.0),
+    ("shadow 00_07 ⚖️ azimuth margin → 107", TRACKER, rf"сектор {_SHX}° із запасом {N}° на перетині \(DBH", SHADOW, lambda d: _floor2(_DSR(d)["margin_deg_fine"]), 0.0),
+    *[(f"shadow 00_07 ⚖️ azimuth floor stems [{k}] → 107", TRACKER, r"на перетині \(DBH " + (N if k == 0 else _SHX) + "–" + (N if k == 1 else _SHX) + " і " + (N if k == 2 else _SHX) + "–" + (N if k == 3 else _SHX) + r" см, заболонь", SHADOW,
+       _ds_floor_stems(k), 0.0) for k in range(4)],
+    ("shadow 00_07 ⚖️ azimuth bark-axis sector → 107", TRACKER, rf"на товстому — {N}° \(перетин на сітці", SHADOW, lambda d: _BSR(d)["min_sector_deg"], 0.0),
+    ("shadow 00_07 ⚖️ azimuth bark-axis crossing → 107", TRACKER, rf"на товстому — {_SHX}° \(перетин на сітці {N}°, DBH", SHADOW, lambda d: _floor2(_BSR(d)["min_crossing_deg"]), 0.0),
+    ("shadow 00_07 ⚖️ azimuth bark-axis stem → 107", TRACKER, rf"\(перетин на сітці {_SHX}°, DBH {N} см, кора", SHADOW, _bs_at("dbh_cm"), 0.0),
+    ("shadow 00_07 ⚖️ azimuth bark-axis bark → 107", TRACKER, rf"DBH {_SHX} см, кора {N} мм, заболонь {_SHX} см\), де буква", SHADOW, _bs_at("bark_mm"), 0.0),
+    ("shadow 00_07 ⚖️ azimuth loss low → 107", TRACKER, rf"втрата на ±50° {N}–{_SHX} дБ на {_SHX} рядках сітки", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
+    ("shadow 00_07 ⚖️ azimuth loss high → 107", TRACKER, rf"втрата на ±50° {_SHX}–{N} дБ на {_SHX} рядках сітки", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][1], 0.0),
+    ("shadow 00_07 ⚖️ azimuth loss rows → 107", TRACKER, rf"дБ на {N} рядках сітки при DBH", SHADOW, lambda d: _LOSS(d)["n_sector_floor_rows"], 0.0),
+    ("shadow 00_07 ⚖️ azimuth loss A.36 high → 107", TRACKER, rf"над інтерполяціями A\.36 до {N}\); під сухою", SHADOW, lambda d: _BS(d)["loss_at_rule_under_a36_readings"]["span_over_single_readings"][1], 0.0),
+    ("shadow 00_07 ⚖️ azimuth dry/wet thin → 107", TRACKER, rf"під сухою й мокрою корою — {N}° на тонкому", SHADOW, _ds_bark_floor, 0.0),
+    ("shadow 00_07 ⚖️ azimuth dry/wet thick → 107", TRACKER, rf"на тонкому і {N}° на товстому кінці", SHADOW, lambda d: min(v["min_sector_deg"] for v in _BS(d)["thick_end_dry_wet"].values()), 0.0),
+    ("shadow 00_07 ⚖️ azimuth deck +1 → 107", TRACKER, rf"правило повертається — {N}° при {_SHX} мм\)", SHADOW, lambda d: _floor2(_DECK(d, 1.0, 3)), 0.0),
+    ("shadow 00_07 ⚖️ azimuth refinement → 107", TRACKER, rf"дрібніша сітка в межах таблиці дає {N}°, глибше", SHADOW, lambda d: _floor2(_REF(d)["min_crossing_deg"]), 0.0),
+    ("shadow 00_07 ⚖️ azimuth refinement deepening → 107", TRACKER, rf"в межах таблиці дає {_SHX}°, глибше на {N} дБ\)", SHADOW, lambda d: round(_REF(d)["at"]["loss_at_rule_deg_dB"] - max(_LOSS(d)["at_crossing_floor"]), 3), 0.0),
+    ("shadow 00_07 ⚖️ azimuth edge deepening → 107", TRACKER, rf"мм, глибше на {N} дБ; знову над правилом", SHADOW, lambda d: round(min(_BT(d)["rows"], key=lambda r: r[2])[3] - max(_LOSS(d)["at_crossing_floor"]), 3), 0.0),
+    ("shadow 00_07 ⚖️ azimuth deck slope → 107", TRACKER, rf"±1 мм рухає перетин на ≈ {N}° і втрату", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["crossing_deg_per_mm_about_the_floor_row"], 1), 0.0),
+    ("shadow 00_07 ⚖️ azimuth deck loss slope → 107", TRACKER, rf"і втрату на ±50° на ≈ {N} дБ \(на 1 мм вище", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["loss_dB_per_mm_about_the_floor_row"], 2), 0.0),
+    ("shadow 00_07 ⚖️ azimuth loss in the ground, low → 107", TRACKER, rf"падає на соті децибела \({N}–{_SHX} дБ\), і з трьох", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
+    ("shadow 00_07 ⚖️ azimuth loss in the ground, high → 107", TRACKER, rf"падає на соті децибела \({_SHX}–{N} дБ\), і з трьох", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][1], 0.0),
+    ("shadow 00_07 HW.8.10 consumer deck slope → 107", TRACKER, rf"±1 мм ≈ {N}° перетину −3 дБ — дека рухає вердикт", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["crossing_deg_per_mm_about_the_floor_row"], 1), 0.0),
+    ("shadow 00_07 ⚖️ azimuth beyond thick → 107", TRACKER, rf"перш ніж розвернутись — найнижче {N}° при {_SHX} мм, глибше", SHADOW, lambda d: _floor2(_BT(d)["min_crossing_deg"]), 0.0),
+    ("shadow 00_07 ⚖️ azimuth beyond thick back above → 107", TRACKER, rf"знову над правилом від {N} мм; SD гребенів ±4", SHADOW, lambda d: next((row[0] for row in _BT(d)["rows"] if row[2] >= _BSR(d)["sector_deg"]), math.nan), 0.0),
+    ("shadow 00_07 ⚖️ azimuth deck +1 standoff → 107", TRACKER, rf"правило повертається — {_SHX}° при {N} мм\)", SHADOW, lambda d: _DECK(d, 1.0, 1), 0.0),
+    ("shadow 00_07 ⚖️ azimuth ±45° margin → 107", TRACKER, rf"±45° \(запас ≈ {N}° над усією віссю кори на сітці\)", SHADOW, lambda d: _floor1(_BSR(d)["min_crossing_deg"] - 45), 0.0),
+    ("shadow 00_07 ⚖️ azimuth A.36 span low → 107", TRACKER, rf"перетин підлоги {N}–{_SHX}°\), стовбур", SHADOW, lambda d: _floor2(_BS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
+    ("shadow 00_07 ⚖️ azimuth A.36 span high (outward) → 107", TRACKER, rf"перетин підлоги {_SHX}–{N}°\), стовбур", SHADOW, lambda d: _ceil2(_BS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
+    ("shadow 00_07 ⚖️ max DBH probe axis → 107", TRACKER, rf"проба {N}–{_SHX} см на E вздовж стовбура під «флоемною»", SHADOW, lambda d: _DSB(d)["axis_cm"][0], 0.0),
+    ("shadow 00_07 ⚖️ max DBH probe axis, top → 107", TRACKER, rf"проба {_SHX}–{N} см на E вздовж стовбура під «флоемною»", SHADOW, lambda d: _DSB(d)["axis_cm"][1], 0.0),
+    ("shadow PIPELINE margin → 107", PIPELINE, rf"with a {N}° crossing margin \(the", SHADOW, lambda d: _floor2(_DSR(d)["margin_deg_fine"]), 0.0),
+    ("shadow PIPELINE bark-axis sector → 107", PIPELINE, rf"over the bark axis it (?:holds|FAILS) \(sector {N}° at DBH", SHADOW, lambda d: _BSR(d)["min_sector_deg"], 0.0),
+    ("shadow PIPELINE bark-axis stem → 107", PIPELINE, rf"\(sector {_SHX}° at DBH {N} cm, bark", SHADOW, _bs_at("dbh_cm"), 0.0),
+    ("shadow PIPELINE bark-axis bark → 107", PIPELINE, rf"at DBH {_SHX} cm, bark {N} mm — the letter", SHADOW, _bs_at("bark_mm"), 0.0),
+    ("shadow PIPELINE loss low → 107", PIPELINE, rf"the loss at ±50° {N}–{_SHX} dB, and a deck", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
+    ("shadow PIPELINE loss high → 107", PIPELINE, rf"the loss at ±50° {_SHX}–{N} dB, and a deck", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][1], 0.0),
+    ("shadow PIPELINE TM back floor over the axes → 107", PIPELINE, rf"the TM back floor over the axes is {N} dB \(on the bark axis\)", SHADOW, _swall("TM", "front_minus_back_dB", 0), 0.0),
+    # the width sweep's back tops — sampled nulls, quoted «≥» and rounded DOWN
+    ("shadow sweep TM back top (≥) → 107", SUMMARY, rf"reaches ≥ {N} dB \(TM, at {_SHX} cm\)", SHADOW, lambda d: _sw_out("front_minus_back_dB", d["width_sweep"]["extremes"]["TM"]["front_minus_back_dB"]["max"], 0), 0.0),
+    ("shadow sweep TE back top (≥) → 107", SUMMARY, rf"and ≥ {N} dB \(TE, at {_SHX} cm\)", SHADOW, lambda d: _sw_out("front_minus_back_dB", d["width_sweep"]["extremes"]["TE"]["front_minus_back_dB"]["max"], 0), 0.0),
+]
+
+
+def test_shadow_dbh_sentences_follow_the_cache():
+    """107's DBH-sweep sentences that name a SET or a FLAG, recomposed from the cache (in-silico §When Modifying #5 ⊕):
+    whether every row at the TM sector's floor sits at the low deck, and which barks attain the TE sector's floor.
+    CAN catch: a re-run that moves the floor rows to the high deck or adds a bark while the prose keeps the old set.
+    CANNOT catch: the sentences this test does not compose."""
+    d = json.loads((CACHE / SHADOW).read_text(encoding="utf-8"))
+    text = " ".join(doc(SUMMARY).split())
+    ds = d["dbh_sweep"]
+    if ds["controls"]["sector_floor_rows_all_at_low_standoff"]:
+        assert "and every TM row at the sector's floor is at the low one" in text
+    else:
+        assert "and the sector's floor itself is not confined to the low deck" in text
+    words = {"bark_dry": "dry", "bark_wet": "wet", "bark_phloem": "«phloem»"}
+    barks = sorted({a["bark"] for a in ds["extremes"]["TE"]["within_3dB_of_front_to_deg"]["min_at"]})
+    assert f"cm of sapwood, {' and '.join(words[b] for b in barks)} bark); the backs reach" in text
+    # the polarizations' monotonicity — «TE is monotone in the crossing … in every one of the N cells» is a SET claim, composed
+    bp = ds["controls"]["standoff_monotone_by_polarization"]
+    if bp["TE"]["crossing_narrower_at_higher_deck"] == bp["TE"]["cells"]:
+        assert "TE is monotone in the crossing (the higher deck narrows its −3 dB crossing in every one of the" in text
+    else:
+        assert "TE is monotone in the crossing" not in text
+    assert ("and every TM row at the sector's floor is at the low one" in text) == all(a["standoff_mm"] == min(x["standoff_mm"] for x in ds["rule"]["min_sector_at"]) for a in ds["rule"]["min_sector_at"])
+    # the bark axis' verdict on the rule, the probe's three assumptions and the refinement phrases, composed from the cache
+    bk = d["bark_sweep"]["rule"]
+    assert (f"so **the ratified ±50° rule {'holds' if bk['holds_on_1deg_grid'] else 'FAILS'} on the 1° grid over canon's own bark range**") in text
+    if not bk["holds_on_1deg_grid"]:
+        assert f"it fails first at DBH {bk['first_stem_cm_failing_on_1deg_grid']:g} cm" in text
+        assert "where the LETTER of the rule — 3 dB at ±50° — falls by hundredths of a decibel" in text
+        assert all(3.0 < v < 3.1 for v in bk["loss_at_rule_deg_dB"]["over_sector_floor_rows"]), "«hundredths of a decibel» no longer describes the excess"
+    dry_wet_thin = min(min(v[1] for v in ds["tm_sector_floor_by_bark"]["TM"][b]) for b in ("bark_dry", "bark_wet"))
+    assert ("the rule holds under all three bark readings there" in text) == (dry_wet_thin >= 50 and ds["rule"]["holds_on_1deg_grid"])
+    thick = min(v["min_sector_deg"] for v in d["bark_sweep"]["thick_end_dry_wet"].values())
+    assert ("and rises to" in text) == (thick > dry_wet_thin)
+    assert ("past the thick end the crossing falls further before it turns" in text) == d["bark_sweep"]["beyond_thick_end_at_floor_stem"]["thick_end_is_an_edge_not_an_extremum"]
+    below = ds["rule_floor_refinement"]["below_the_grid_node_deg"]
+    assert ("a finer grid around the floor row (DBH step 0.1 cm, sapwood 0.1 cm) finds no lower node" in text) == (below == 0)
+    fails = ds["beyond_bark_table"]["first_stem_cm_failing_by_assumption"]
+    txt = lambda v: "holds to 90" if v is None else f"{v:g}"  # noqa: E731
+    order = f"{txt(fails['thin_end_held'])} / {txt(fails['thin_end_slope'])} / {txt(fails['thick_end_slope'])}"
+    assert f"first breaks the rule on the 1° grid at DBH {order} cm" in text
+    assert f"the rule first fails at DBH {order} cm" in " ".join(doc(PIPELINE).split())
+    tracker = " ".join(doc(TRACKER).split())
+    uk = lambda v: "тримається до 90" if v is None else f"{v:g}"  # noqa: E731
+    order_uk = f"{uk(fails['thin_end_held'])} / {uk(fails['thin_end_slope'])} / {uk(fails['thick_end_slope'])}"
+    assert f"при DBH {order_uk} см відповідно" in tracker
+    codit = " ".join(doc(CODIT).split())
+    assert f"при DBH {order_uk} см відповідно" in codit
+    assert f"**{'тримається' if bk['holds_on_1deg_grid'] else 'не тримається'} на сітці 1°**" in tracker
+    assert f"**тож ±50° {'тримає' if bk['holds_on_1deg_grid'] else 'ПАДАЄ'} на сітці 1° усередині власної вилки кори канону**" in codit
+    assert f"over the bark axis it {'holds' if bk['holds_on_1deg_grid'] else 'FAILS'} (sector" in " ".join(doc(PIPELINE).split())
+    # the count of named readings is written as a WORD in PIPELINE and the README — composed from the cache
+    words_n = {13: "thirteen", 14: "fourteen", 15: "fifteen", 16: "sixteen", 17: "seventeen", 18: "eighteen"}
+    n_read = len({x["permittivity"] for x in d["cases"]})
+    assert f"Over every one of {words_n[n_read]} permittivity readings" in " ".join(doc(PIPELINE).split())
+    assert f"{words_n[n_read]} permittivity readings (Mavrovic 2018" in " ".join(doc("tools/in_silico/README.md").split())
+    # round-3 direction words: «UPPER bound» (by construction, so the word must stand whenever the refinement ran), TE's adverse
+    # end, EDGE ⊥ extremum, «returns the rule», «hundredths of a decibel» outside SUMMARY, and the ground's «only one exceeds»
+    ref, bt, deck = d["bark_sweep"]["rule_floor_refinement"], d["bark_sweep"]["beyond_thick_end_at_floor_stem"], d["bark_sweep"]["deck_sensitivity_at_floor_row"]
+    assert ("The grid minimum is an UPPER bound on the true floor" in text) == (ref["below_the_grid_node_deg"] >= 0)
+    assert ("мінімум сітки — ВЕРХНЯ межа справжньої підлоги" in codit) == (ref["below_the_grid_node_deg"] >= 0)
+    assert ("the higher deck is TE's adverse end" in text) == (bp["TE"]["crossing_narrower_at_higher_deck"] == bp["TE"]["cells"])
+    assert ("The floor sits on the table's EDGE, not at an extremum" in text) == bt["thick_end_is_an_edge_not_an_extremum"]
+    assert ("підлога стоїть на КРАЮ таблиці, не на екстремумі — за товстим кінцем перетин падає ще, перш ніж розвернутись" in codit) == bt["thick_end_is_an_edge_not_an_extremum"]
+    assert ("а кожен рядок підлиги — на нижній" not in codit) and (("а кожен рядок підлоги — на нижній" in codit) == all(a["standoff_mm"] == min(x["standoff_mm"] for x in ds["rule"]["min_sector_at"]) for a in ds["rule"]["min_sector_at"]))
+    returns = deck["rule_holds_from_offset_mm"] == 1.0
+    assert ("deck 1 mm higher returns the rule" in text) == returns and ("дека на 1 мм вище повертає правило" in codit) == returns and ("на 1 мм вище правило повертається" in tracker) == returns
+    assert ("a deck 1 mm higher returns it" in " ".join(doc(PIPELINE).split())) == returns
+    excess_ok = all(3.0 < v < 3.1 for v in bk["loss_at_rule_deg_dB"]["over_sector_floor_rows"])
+    assert ("падає на соті децибела" in codit) == excess_ok and ("falls by hundredths of a decibel" in " ".join(doc(PIPELINE).split())) == excess_ok
+    assert ("товстої гребеневої кори падає на соті децибела (" in tracker) == excess_ok and ("де буква правила падає на соті децибела: втрата" in tracker) == excess_ok
+    loss_floor = max(bk["loss_at_rule_deg_dB"]["at_crossing_floor"])
+    excess = bk["loss_at_rule_deg_dB"]["over_sector_floor_rows"][1] - 3.0
+    only_deck = (deck["loss_dB_per_mm_about_the_floor_row"] > excess and ref["at"]["loss_at_rule_deg_dB"] - loss_floor < excess
+                 and min(bt["rows"], key=lambda r: r[2])[3] - loss_floor < excess)
+    assert ("and only one of them exceeds the excess" in text) == only_deck and ("і лише одна з них перевищує надлишок" in codit) == only_deck
+    assert ("лише одна перевищує цей надлишок — дека" in tracker) == only_deck
+    # the Стан's words — «з малим запасом» is a claim about the thin-end margin, «не тримається» about the bark axis
+    assert ("±50° тримає з малим запасом" in tracker) == (0 < ds["rule"]["margin_deg_fine"] < 1)
+    assert ("правило на сітці 1° не тримається" in tracker) == (not bk["holds_on_1deg_grid"])
 
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
@@ -7374,7 +7830,9 @@ def test_every_doc_target_triggers_this_guard():
     wf = (REPO / WORKFLOW).read_text(encoding="utf-8")
     lists = {
         "push `paths:`": _quoted_list_after(wf, r"^\s+paths:\s*$"),
-        "`changes` paths-filter": _quoted_list_after(wf, r"^\s+in_silico:\s*$"),
+        # either filter wakes `cache_doc_sync`; `docs_sync` holds the doc-only targets (the tracker) that must not wake
+        # the conda-heavy jobs, so a target is covered by the UNION of the two filters
+        "`changes` paths-filter": _quoted_list_after(wf, r"^\s+in_silico:\s*$") + _quoted_list_after(wf, r"^\s+docs_sync:\s*$"),
     }
     for name, patterns in lists.items():
         assert patterns, f"read no {name} list from {WORKFLOW} — the parser is wrong, not the tree"
@@ -7387,6 +7845,21 @@ def test_every_doc_target_triggers_this_guard():
     assert not missing, (
         f"doc targets outside {WORKFLOW} — their pins cannot fire on a change to the doc alone:\n  "
         + "\n  ".join(missing))
+
+
+def test_docs_sync_filter_is_wired_to_the_cheap_job_only():
+    """The `docs_sync` paths-filter (the tracker) is useful only if it is WIRED: the `changes` job must export it, the
+    `cache_doc_sync` job must wake on it, and the conda-heavy jobs (`lock_sync`, `smoke`) must not — three facts the
+    path-list test above cannot see (removing the output, the `||` in the `if:`, or adding the filter to a heavy job all
+    left it green, adversary 2026-10-23)."""
+    wf = (REPO / WORKFLOW).read_text(encoding="utf-8")
+    jobs = {m.group(1): m.start() for m in re.finditer(r"^  ([a-z_]+):\s*$", wf, re.M)}
+    bounds = sorted(jobs.items(), key=lambda kv: kv[1])
+    block = {name: wf[start:(bounds[i + 1][1] if i + 1 < len(bounds) else len(wf))] for i, (name, start) in enumerate(bounds)}
+    assert re.search(r"^\s+docs_sync:\s*\$\{\{\s*steps\.filter\.outputs\.docs_sync\s*\}\}", block["changes"], re.M), "`changes` does not export docs_sync"
+    assert "needs.changes.outputs.docs_sync == 'true'" in block["cache_doc_sync"], "`cache_doc_sync` does not wake on docs_sync"
+    for heavy in ("lock_sync", "smoke"):
+        assert "docs_sync" not in block[heavy], f"`{heavy}` references docs_sync — a tracker edit would wake a conda-heavy job"
 
 
 # ── generator ⟷ committed artefact: the class that bit THREE times on 2026-09-24 ──

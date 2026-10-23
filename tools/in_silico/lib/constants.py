@@ -402,6 +402,16 @@ DBH_MIN_CM = 38.0               # cm
 # Dead outer bark at DBH 38, RIDGE-referenced (01_04 §3.2 desk input, five Scots-pine models — mirror, edit there);
 # furrow depth has no primary. And the install angle the flange's facing is cut at (01_04 §3.2, ⚖️ 2026-09-30).
 BARK_DEAD_RIDGE_DBH38_MM = (13.5, 21.0)
+# The same table one step up: SINGLE bark on the plate ridges at 1.3 m per named stem (01_04 §3.2 — mirror, edit there),
+# and the live phloem taken off it to reach the dead bark: 3 mm at the thin end as canon says («зрідка досягає 3 мм»,
+# Голяка 2017), 1 mm at the thick end as OUR reading of canon's own pattern (21 = 22 − 1 at 38, 28 = 29 − 1 at 50) —
+# an assumption canon does not state. `107` derives both dead-bark ends from these; the DBH-38 pair above is checked
+# against them at import.
+BARK_SINGLE_RIDGE_MM_BY_DBH_CM = {38: (16.5, 22.0), 50: (20.5, 29.0), 60: (25.0, 36.0)}
+LIVE_PHLOEM_MM_THIN_END = 3.0
+LIVE_PHLOEM_MM_THICK_END_READING = 1.0
+assert (BARK_SINGLE_RIDGE_MM_BY_DBH_CM[38][0] - LIVE_PHLOEM_MM_THIN_END,
+                                    BARK_SINGLE_RIDGE_MM_BY_DBH_CM[38][1] - LIVE_PHLOEM_MM_THICK_END_READING) == BARK_DEAD_RIDGE_DBH38_MM
 INSTALL_ANGLE_DEG = 10.0
 
 # Frozen coaxial geometry (HW.33, 2026-06-20): Ti shaft Ø11 → interface r 5.5 mm;

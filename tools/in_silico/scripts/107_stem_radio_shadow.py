@@ -45,7 +45,10 @@ CONTROLS (runtime gates, NaN-safe; each CAN fail — in-silico §When Modifying 
   truncation — the series at N and at N + 15 must agree (catches a cut-off that clips the source's spectrum);
   width sweep — the sweep's rows at the three NAMED widths must equal the named readings' rows field by field (catches a
     sweep that builds its stem differently from the readings it extends; it CANNOT catch an extreme between two grid
-    widths — the step is the ground there, see WIDTH SWEEP).
+    widths — the step is the ground there, see WIDTH SWEEP);
+  DBH sweep — its rows at the three NAMED stems must equal the width sweep's rows field by field (catches a bark
+    interpolation that misses the table, or a stem built differently); the standoff's monotonicity is COUNTED, not
+    asserted — the count refuted the claim (DBH SWEEP).
 WIDTH SWEEP (00_07 HW.6; the adversarial review of 2026-10-22, F1). The sapwood width acts RESONANTLY: wet sapwood at
 Mavrovic's thawed ε has an in-medium wavelength λ₀/Re√ε ≈ 7.8 cm at the carrier (`width_sweep.sapwood_wavelength_cm`),
 so every output swings up and down as the width grows, about every λ/2 ≈ 3.9 cm. Named widths bracket an output only
@@ -58,6 +61,37 @@ staining width of Bieker & Rust 2010 Fig. 2 (p. 269, read from the page image: 1
 ≈ 3.8–11.6 cm at 0.3 m), carried to 13.6 cm; Björklund's widest stem, 90 mm, lies inside. The sweep's rows skip the
 N + 15 truncation re-solve (the series order depends on βρ′ alone, which the sweep does not change; the named
 readings run it at every stem and standoff) and keep the energy balance.
+DBH SWEEP (00_07 HW.6; the review of the width sweep, F1, 2026-10-22 night). The stem's diameter is the second resonant
+axis: the three named stems are three points, and `run_case` at DBH 54 cm sat on the ratified rule's edge between them.
+So the sweep runs the stem from canon's smallest host (lib DBH_MIN_CM, 38 cm) to the end of 01_04 §3.2's bark table
+(60 cm) in 1 cm steps, under every width of the width axis, every bark, both standoffs and both polarizations — the
+dead bark at each stem DERIVED by linear interpolation between the table's three stems (not a reading); past 60 cm the
+table ends, so a PROBE to 90 cm runs the TM «phloem» stem under THREE bark assumptions, each carried as one (the thin end
+held at 22 mm · the thin end extended by the table's 50→60 slope · the thick end extended likewise), under both standoffs.
+The standoff was EXPECTED monotone (a length ≪ λ, its adverse end at the bottom) and is NOT for TM over the grid: the
+sweep counts, per polarization, the (stem × width × bark) cells whose −3 dB crossing is narrower at the HIGHER deck — a
+minority for TM (every TM row at the sector's floor sits at the low deck), every cell for TE (the higher deck is TE's
+adverse end). What it writes:
+each consumer's extreme over the whole (stem × width × bark × standoff) grid with the rows that attain it, the per-stem
+envelope, the TM 3-dB sector's floor per stem and bark, the −3 dB CROSSING on the 1° report grid interpolated linearly
+(`crossing_3dB_deg` — a smooth output the step grounds; the integer sector is its floor), and whether the ratified ±50°
+rule holds on the 1° grid with its margin. CANNOT catch an extreme between two grid stems or widths (the step is the
+ground), and the probe beyond 60 cm stands on an assumed bark.
+BARK SWEEP (00_07 HW.6; the DBH sweep's review, 2026-10-23 evening). The dead bark is the THIRD resonant length: at the
+«phloem» reading (ε ≈ 19.4) the in-medium wavelength is ≈ 7.8 cm, and canon's dead bark runs 13.5–21 mm at DBH 38 and
+17.5–28 mm at DBH 50 (01_04 §3.2 — single bark on the ridges less the live phloem: ≤ 3 mm at the thin end as canon says,
+and ≈ 1 mm at the thick end as OUR reading of canon's own pattern there — 21 = 22 − 1 at 38, 28 = 29 − 1 at 50 — an
+assumption canon does not state), so the bark is not ≪ λ and the DBH sweep's THIN end was one end of an axis, not the axis. The sweep runs the
+TM «phloem» stem at every stem of the DBH axis, every width of the width axis, both decks and the bark from the thin to
+the thick end in 1 mm steps (both ends per stem derived by linear interpolation between the table's stems; DBH 60's thick
+end 35 mm is the same rule applied to the table's 25–36 mm), the dry and wet proxies at the thick end only (their floors
+stay above the rule at both ends — the DBH sweep's `tm_sector_floor_by_bark` at the thin end,
+`thick_end_dry_wet` at the thick); identity control against the DBH sweep's rows at the thin end; the rule block over the whole bark
+axis; the floor rows re-solved under the four single-reading A.36 interpolations (the crossing's span under the bark
+reading). The probe past the table carries THREE bark assumptions — the thin end held at 22 mm, the thin end extended
+by the table's 50→60 slope, the thick end extended likewise — each labelled an assumption, and the rule is reported per
+assumption. CANNOT catch a bark between two 1 mm steps, a thicker bark than canon's table or a furrow (the table is
+ridge-referenced).
 NOT guarded at runtime: the far field's ORIENTATION (a swap of front and back, (−j)^n for j^n, passes every gate — the
 invariants test's direct closed form catches it) and the per-layer split of the absorbed power. CANNOT catch a wrong
 INPUT — a permittivity, a radius or a standoff — nor anything the 2-D idealization drops.
@@ -97,6 +131,7 @@ Run:  conda activate silken_md
 """
 from __future__ import annotations
 
+import itertools
 import json
 import math
 import re
@@ -108,7 +143,15 @@ from scipy.integrate import quad
 from scipy.special import h2vp, hankel2, jv, jvp, yv, yvp
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import BARK_DEAD_RIDGE_DBH38_MM, CACHE_DIR, DBH_MIN_CM, REPO_ROOT
+from lib.constants import (
+    BARK_DEAD_RIDGE_DBH38_MM,
+    BARK_SINGLE_RIDGE_MM_BY_DBH_CM,
+    CACHE_DIR,
+    DBH_MIN_CM,
+    LIVE_PHLOEM_MM_THICK_END_READING,
+    LIVE_PHLOEM_MM_THIN_END,
+    REPO_ROOT,
+)
 from lib.utils import banner
 
 SI_DESCRIPTION = ("Radio shadow of a tree stem at 868 MHz: the exact two-dimensional cylindrical-wave solution for a "
@@ -127,7 +170,7 @@ F_HZ = float(re.search(r"#define\s+LORA_PHY_FREQ_HZ\s+(\d+)u", PHY_HEADER.read_t
 # ↑ the radio's carrier, read from the firmware's PHY (868.2 MHz, 03_05 §2.1 — «⛔ не повертати 868.0»)
 PHI_DEG = np.arange(0, 181, 1)       # the pattern is symmetric about the node's radius
 PHI_FINE_DEG = np.arange(0.0, 180.0001, 0.05)   # for the deepest null only
-REPORT_DEG = (0, 30, 60, 90, 120, 150, 180)
+REPORT_DEG = (0, 30, 50, 60, 90, 120, 150, 180)   # 50 = the rule angle, so the loss at ±50° is a cache number, not a re-solve
 TOL_FREE = 1e-12                     # |F| − 1 with every ε_r = 1 (measured ~1e-15)
 TOL_LOSSLESS = 1e-10                 # relative P_in − P_rad without loss (measured ~1e-16)
 TOL_BALANCE = 1e-6                   # relative miss of P_in − P_rad − P_abs(volume) (quadrature epsrel 1e-10)
@@ -324,8 +367,9 @@ BARK_PHLOEM_CONTROLS = {"unrounded_mean_of_the_two_readings": 19.43 - 4.705j,
                         "single_reading_skip_0p8_low": 19.57 - 4.71j,
                         "single_reading_skip_0p8_high": 19.69 - 4.64j}
 # Dead bark by stem (thin ends): DBH 38 — lib's ridge bracket; DBH 50 · 60 — 01_04 §3.2's single bark (20.5 · 25 mm)
-# less the ≤ 3 mm live phloem (derived). Thicker bark is the other end and is not swept here.
-BARK_T_M = {DBH_MIN_CM / 100.0: BARK_DEAD_RIDGE_DBH38_MM[0] / 1000.0, 0.50: 0.0175, 0.60: 0.022}
+# less the ≤ 3 mm live phloem (derived). The thick end is BARK_THICK_T_M (BARK SWEEP).
+BARK_T_M = {cm / 100.0: (s[0] - LIVE_PHLOEM_MM_THIN_END) / 1000.0 for cm, s in BARK_SINGLE_RIDGE_MM_BY_DBH_CM.items()}   # lib's table less canon's phloem
+assert BARK_T_M[DBH_MIN_CM / 100.0] == BARK_DEAD_RIDGE_DBH38_MM[0] / 1000.0
 _BARK_PROXY = {"bark_dry": "bark dry proxy", "bark_wet": "bark wet proxy",
                "bark_phloem": "bark phloem proxy: El-Rayes & Ulaby A.36 balsam-fir trunk bark, interpolated to 868 MHz; "
                               "phloem-dominated is our hypothesis"}
@@ -357,8 +401,51 @@ GEOMETRY: dict = {}              # filled in main() from lib and the CEM (drift-
 # per-radius staining width (≈ 13.4 cm) — in steps ≪ λ/2 of the wet sapwood, plus the three named widths
 SWEEP_W_LOW_M, SWEEP_W_HIGH_M, SWEEP_STEP_M = SCOTS_SAPWOOD_THIN_M, 0.136, 0.002
 SWEEP_BARKS = {"bark_dry": BARK_DRY, "bark_wet": BARK_WET, "bark_phloem": BARK_PHLOEM}
-SWEEP_KEYS = ("front_minus_back_dB", "front_minus_side_dB", "within_3dB_of_front_to_deg", "deepest_below_front_dB",
-              "phi_min_deg", "efficiency")
+SWEEP_KEYS = ("front_minus_back_dB", "front_minus_side_dB", "within_3dB_of_front_to_deg", "crossing_3dB_deg",
+              "deepest_below_front_dB", "phi_min_deg", "efficiency")
+# DBH SWEEP (docstring): canon's smallest host to the end of 01_04 §3.2's bark table, 1 cm; the probe beyond it
+DBH_SWEEP_LOW_CM, DBH_SWEEP_HIGH_CM, DBH_SWEEP_STEP_CM = int(DBH_MIN_CM), 60, 1
+DBH_BEYOND_HIGH_CM = 90
+RULE_SECTOR_DEG = 50     # the ratified azimuth rule — the face within ±50° of the gateway's bearing (01_04 §3.1 ⚖️ 2026-10-22)
+# The THICK end of the dead bark per named stem (BARK SWEEP): 01_04 §3.2 gives ≈ 21 mm at DBH 38 and ≈ 28 at DBH 50 (the
+# single bark's ridge maximum less ≈ 1 mm of live phloem at the thick end — the subtraction is OUR reading of canon's
+# pattern, an assumption); DBH 60 — the same rule on the table's 36 mm (DERIVED, canon states no dead-bark figure there).
+# Both ends are ridge-referenced; furrows have no primary.
+BARK_THICK_T_M = {cm / 100.0: (s[1] - LIVE_PHLOEM_MM_THICK_END_READING) / 1000.0 for cm, s in BARK_SINGLE_RIDGE_MM_BY_DBH_CM.items()}
+assert BARK_THICK_T_M[DBH_MIN_CM / 100.0] == BARK_DEAD_RIDGE_DBH38_MM[1] / 1000.0
+BARK_AXIS_STEP_M = 0.001
+
+
+def _interp_table(table: dict, dbh_m: float, extrapolate: bool) -> float:
+    pts = sorted(table.items())
+    if dbh_m in table:
+        return table[dbh_m]
+    if dbh_m <= pts[0][0]:
+        return pts[0][1]
+    for (d0, t0), (d1, t1) in itertools.pairwise(pts):
+        if dbh_m <= d1:
+            return t0 + (t1 - t0) * (dbh_m - d0) / (d1 - d0)
+    if not extrapolate:
+        return pts[-1][1]
+    (d0, t0), (d1, t1) = pts[-2], pts[-1]
+    return t1 + (t1 - t0) * (dbh_m - d1) / (d1 - d0)
+
+
+def bark_by_dbh(dbh_m: float, end: str = "thin", extrapolate: bool = False) -> float:
+    """Dead bark for ANY stem at the THIN or THICK end of canon's table: the table's value at a named stem, linear between
+    them (DERIVED, not a reading); beyond the table HELD at the last stem's value, or extended by the table's last slope
+    when `extrapolate` — both are assumptions the beyond-table probe carries, labelled."""
+    return _interp_table(BARK_T_M if end == "thin" else BARK_THICK_T_M, dbh_m, extrapolate)
+
+
+def bark_axis(dbh_m: float) -> list[float]:
+    """The dead bark from the thin to the thick end at this stem, in BARK_AXIS_STEP_M steps, both ends included — the
+    ends EXACTLY as `bark_by_dbh` gives them (a rounded end solved a stem 0.3 µm off the DBH sweep's and failed its own
+    identity control by 0.001° of crossing, 2026-10-23)."""
+    lo, hi = bark_by_dbh(dbh_m, "thin"), bark_by_dbh(dbh_m, "thick")
+    n_in = int((hi - lo) / BARK_AXIS_STEP_M + 1e-9)
+    inner = [lo + i * BARK_AXIS_STEP_M for i in range(1, n_in + 1) if lo + i * BARK_AXIS_STEP_M < hi - 1e-9]
+    return [lo, *inner, hi]
 POLARIZATIONS = ("TM", "TE")
 Z_STACK = CACHE_DIR / "mechanical" / "z_stack_tolerance.json"   # `52`'s vertical stack: the RF deck over the flange
 # ⛔ Not the CAD's «antenna ↔ Ti 8.0 at the bayonet datum»: that figure takes the cavity top for the antenna plane and
@@ -414,6 +501,13 @@ def run_case(dbh_m, standoff_m, reading_name, pol, reading=None, truncation=True
     i_min = int(np.argmin(g_fine))
     front = float(g_db[0])
     within = [int(d) for d, v in zip(PHI_DEG, g_db, strict=True) if v >= front - 3.0]
+    # the −3 dB crossing on the 1° report grid, linear between the last angle within and the first below (a smooth
+    # output the step grounds; the integer sector below is its floor); 180 when the pattern never falls 3 dB
+    below = [i for i, v in enumerate(g_db) if v < front - 3.0]
+    crossing = 180.0
+    if below:
+        i = below[0]
+        crossing = float(PHI_DEG[i - 1]) + (float(g_db[i - 1]) - (front - 3.0)) / (float(g_db[i - 1]) - float(g_db[i]))
     return {
         "polarization": pol, "permittivity": reading_name, "dbh_m": dbh_m, "standoff_mm": round(standoff_m * 1e3, 3),
         "layers_axis_out": [[round(r, 6), round(e.real, 4), round(-e.imag, 4)] for r, e in layers],
@@ -424,6 +518,7 @@ def run_case(dbh_m, standoff_m, reading_name, pol, reading=None, truncation=True
         "front_minus_back_dB": round(front - float(g_db[180]), 3),
         "front_minus_side_dB": round(front - float(g_db[90]), 3),
         "within_3dB_of_front_to_deg": max(d for d in within if all(dd in within for dd in range(0, d + 1))),
+        "crossing_3dB_deg": round(crossing, 3),
         "p_in_over_p0": round(p_in / p0, 6), "p_rad_over_p0": round(p_rad / p0, 6),
         "efficiency": round(p_rad / p_in, 5), "efficiency_dB": round(db(p_rad / p_in), 3),
         "absorbed_by_layer_axis_out": [round(x / p_in, 5) for x in by_layer],
@@ -465,25 +560,126 @@ def _sweep_fields(r):
             for k in SWEEP_KEYS}
 
 
+def sweep_widths():
+    """The width axis: the grid (docstring WIDTH SWEEP) plus the three named widths."""
+    grid = [round(SWEEP_W_LOW_M + i * SWEEP_STEP_M, 6)
+            for i in range(round((SWEEP_W_HIGH_M - SWEEP_W_LOW_M) / SWEEP_STEP_M) + 1)]
+    return sorted(set(grid) | {SCOTS_SAPWOOD_THIN_M, SCOTS_SAPWOOD_ERT_M, SCOTS_SAPWOOD_STAIN_M})
+
+
+def _sweep_rows(dbhs, widths, standoffs, bark_of, barks=None, pols=None, bark_eps=None):
+    """The three-layer Scots stem at every (stem × width × bark × standoff × polarization): one row per solve, the dead
+    bark thickness(es) at each stem from `bark_of` (a float or a list — the table at a named stem, derived elsewhere);
+    `barks` the proxies to run (default all three), `pols` the polarizations, `bark_eps` an override of the bark's ε
+    (the A.36 alternatives)."""
+    rows = []
+    for bark, be in (barks or SWEEP_BARKS).items():
+        be = bark_eps if bark_eps is not None else be
+        for dbh in dbhs:
+            bts = bark_of(dbh)
+            for bt in (bts if isinstance(bts, list) else [bts]):
+                for w in widths:
+                    reading = {"layers": [(bt, be), (w, MAV_RED_PINE_THAWED), (None, HEART_DRY)]}
+                    for pol in (pols or POLARIZATIONS):
+                        for so in standoffs:
+                            r = run_case(dbh, so, f"sweep_{bark}", pol, reading=reading, truncation=False)
+                            rows.append({"w_cm": round(w * 100, 2), "bark": bark, "bark_mm": round(bt * 1e3, 3),
+                                         "polarization": pol, "dbh_m": dbh, "standoff_mm": r["standoff_mm"],
+                                         **_sweep_fields(r)})
+    return rows
+
+
+def _resolve(a, eps=None, dbh_m=None, w_cm=None, bark_mm=None, standoff_mm=None, tag="resolve"):
+    """A sweep row (`_ROW_AT` fields) re-solved — TM, the row's bark reading unless `eps` overrides it, any coordinate
+    overridden by name; the full `run_case` result (the sweeps keep only `_sweep_fields`)."""
+    eps = SWEEP_BARKS[a["bark"]] if eps is None else eps
+    reading = {"layers": [((bark_mm if bark_mm is not None else a["bark_mm"]) / 1e3, eps),
+                          ((w_cm if w_cm is not None else a["w_cm"]) / 100.0, MAV_RED_PINE_THAWED), (None, HEART_DRY)]}
+    return run_case(dbh_m if dbh_m is not None else a["dbh_m"], (standoff_mm if standoff_mm is not None else a["standoff_mm"]) / 1e3,
+                    tag, "TM", reading=reading, truncation=False)
+
+
+def _loss_at_rule(r):
+    """The loss at the rule angle (±RULE_SECTOR_DEG) below the front, from a `run_case` result — the letter of the rule."""
+    return round(r["gain_dB"]["0"] - r["gain_dB"][str(RULE_SECTOR_DEG)], 3)
+
+
+def _a36_floor_span(rows_at, key="crossing_3dB_deg"):
+    """The floor rows re-solved under each single-reading A.36 interpolation (BARK_PHLOEM_CONTROLS): the span of `key`
+    over the readings — what the bark READING does to a floor the mean reading sets. `key` is a sweep field, or
+    `loss_at_rule_deg_dB` (the MAX over the rows is kept for it — the adverse end of a loss is the high one)."""
+    out = {}
+    for alt, eps in BARK_PHLOEM_CONTROLS.items():
+        vals = []
+        for a in rows_at:
+            if a["bark"] != "bark_phloem":
+                continue
+            r = _resolve(a, eps=eps, tag=f"a36_{alt}")
+            vals.append(_loss_at_rule(r) if key == "loss_at_rule_deg_dB" else _sweep_fields(r)[key])
+        if vals:
+            out[alt] = round(max(vals) if key == "loss_at_rule_deg_dB" else min(vals), 3)
+    singles = [k for k in out if k.startswith("single_reading_")]
+    return {"by_reading": out, "span_over_single_readings": [min(out[k] for k in singles), max(out[k] for k in singles)] if singles else None}
+
+
+def _refine_floor(a, dbh_half_cm=0.5, dbh_step_cm=0.1, w_half_cm=0.2, w_step_cm=0.1, bark_half_mm=None, bark_step_mm=0.25,
+                  bark_of=None, bark_bounds_of=None):
+    """A finer grid around a floor row: the grid minimum is an UPPER bound on the true floor (a finer step can only find a
+    lower crossing between the nodes), so the refinement reports how far below the node the floor lies on a finer step —
+    not the true floor either. `bark_of(dbh_m)` derives the bark per stem (the thin-end sweep); `bark_half_mm` sweeps the
+    bark itself around the row's (the bark axis), clamped per stem to `bark_bounds_of(dbh_m)` = (thin, thick) in mm with
+    both ends added as nodes when they fall inside the half-range — a node past the table's edge would double the
+    edge bound, not refine the floor."""
+    best, n = None, 0
+    dbhs = [round(a["dbh_m"] + i * dbh_step_cm / 100.0, 6) for i in range(-round(dbh_half_cm / dbh_step_cm), round(dbh_half_cm / dbh_step_cm) + 1)]
+    ws = [round(a["w_cm"] + i * w_step_cm, 3) for i in range(-round(w_half_cm / w_step_cm), round(w_half_cm / w_step_cm) + 1)]
+    for d in dbhs:
+        if bark_of is not None:
+            barks = [round(bark_of(d) * 1e3, 3)]
+        else:
+            barks = [round(a["bark_mm"] + i * bark_step_mm, 3) for i in range(-round(bark_half_mm / bark_step_mm), round(bark_half_mm / bark_step_mm) + 1)]
+            if bark_bounds_of is not None:
+                lo_b, hi_b = bark_bounds_of(d)
+                barks = sorted({b for b in barks if lo_b - 1e-9 <= b <= hi_b + 1e-9} | {round(x, 3) for x in (lo_b, hi_b) if abs(x - a["bark_mm"]) <= bark_half_mm + 1e-9})
+        for w in ws:
+            for b in barks:
+                r = _resolve(a, dbh_m=d, w_cm=w, bark_mm=b, tag="refine")
+                n += 1
+                cand = {"dbh_m": d, "w_cm": w, "bark_mm": b, "standoff_mm": a["standoff_mm"], "crossing_3dB_deg": r["crossing_3dB_deg"],
+                        "sector_deg": r["within_3dB_of_front_to_deg"], "loss_at_rule_deg_dB": _loss_at_rule(r)}
+                if best is None or cand["crossing_3dB_deg"] < best["crossing_3dB_deg"]:
+                    best = cand
+    return {"what": "a finer grid around the floor row — the grid minimum is an upper bound on the true floor; this is a lower "
+                    "node on a finer step, not the true floor either",
+            "steps": {"dbh_cm": dbh_step_cm, "w_cm": w_step_cm, "bark_mm": None if bark_of is not None else bark_step_mm},
+            "n_solves": n, "min_crossing_deg": best["crossing_3dB_deg"], "at": best,
+            "below_the_grid_node_deg": round(a["crossing_3dB_deg"] - best["crossing_3dB_deg"], 3) if "crossing_3dB_deg" in a else None}
+
+
+_ROW_AT = ("w_cm", "bark", "bark_mm", "dbh_m", "standoff_mm")
+
+
+def _at(sel, k, v):
+    return [{f: r[f] for f in _ROW_AT} for r in sel if r[k] == v]
+
+
+def _ext(sel):
+    out = {}
+    for k in SWEEP_KEYS:
+        lo, hi = min(r[k] for r in sel), max(r[k] for r in sel)
+        out[k] = {"min": lo, "min_at": _at(sel, k, lo), "max": hi, "max_at": _at(sel, k, hi)}
+    return out
+
+
 def width_sweep(cases):
     """The sapwood width over its measured axis (docstring WIDTH SWEEP): the three-layer Scots stem at every width of the
     grid and the three named widths, under every bark, stem, standoff and polarization the readings run. Returns the
-    sweep's block: each consumer's extreme over the whole axis and per bark, with every row that attains it (width, bark,
-    stem, standoff), the per-width envelope, and the control that the named widths reproduce the readings' rows."""
-    grid = [round(SWEEP_W_LOW_M + i * SWEEP_STEP_M, 6)
-            for i in range(round((SWEEP_W_HIGH_M - SWEEP_W_LOW_M) / SWEEP_STEP_M) + 1)]
+    sweep's block — each consumer's extreme over the whole axis and per bark, with every row that attains it (width, bark,
+    stem, standoff), the per-width envelope, and the control that the named widths reproduce the readings' rows — and
+    its rows (for the DBH sweep's identity control)."""
     named = {SCOTS_SAPWOOD_THIN_M: "2cm", SCOTS_SAPWOOD_ERT_M: "6cm", SCOTS_SAPWOOD_STAIN_M: "8cm"}
-    widths = sorted(set(grid) | set(named))
-    rows = []
-    for bark, be in SWEEP_BARKS.items():
-        for w in widths:
-            reading = {"layers": [(BARK_T_M, be), (w, MAV_RED_PINE_THAWED), (None, HEART_DRY)]}
-            for pol in POLARIZATIONS:
-                for dbh in GEOMETRY["dbh_m"]["values"]:
-                    for so in GEOMETRY["standoff_m"]["values"]:
-                        r = run_case(dbh, so, f"sweep_{bark}", pol, reading=reading, truncation=False)
-                        rows.append({"w_cm": round(w * 100, 2), "bark": bark, "polarization": pol, "dbh_m": dbh,
-                                     "standoff_mm": r["standoff_mm"], **_sweep_fields(r)})
+    widths = sweep_widths()
+    rows = _sweep_rows(GEOMETRY["dbh_m"]["values"], widths, GEOMETRY["standoff_m"]["values"], lambda d: BARK_T_M[d])
     # control — the sweep's rows at the named widths equal the named readings' rows, field by field
     worst = 0.0
     for w, tag in named.items():
@@ -499,16 +695,6 @@ def width_sweep(cases):
                 if not miss <= 0.0:
                     raise RuntimeError(f"width-sweep control: {tag} {bark} {r['polarization']} misses by {miss}")
                 worst = max(worst, miss)
-
-    def _at(sel, k, v):
-        return [{f: r[f] for f in ("w_cm", "bark", "dbh_m", "standoff_mm")} for r in sel if r[k] == v]
-
-    def _ext(sel):
-        out = {}
-        for k in SWEEP_KEYS:
-            lo, hi = min(r[k] for r in sel), max(r[k] for r in sel)
-            out[k] = {"min": lo, "min_at": _at(sel, k, lo), "max": hi, "max_at": _at(sel, k, hi)}
-        return out
 
     extremes, by_bark, by_width = {}, {}, {}
     for pol in POLARIZATIONS:
@@ -532,6 +718,224 @@ def width_sweep(cases):
         "sapwood_wavelength_cm": round(lam_cm, 2), "half_wavelength_cm": round(lam_cm / 2, 2),
         "extremes": extremes, "by_bark": by_bark, "by_width": by_width,
         "controls": {"named_widths_reproduce_the_readings_max_abs_miss": worst},
+    }, rows
+
+
+def _per_dbh(rows, keys):
+    """Per stem: [dbh_cm, min, max] of each key over every width, bark and standoff."""
+    dbhs = sorted({r["dbh_m"] for r in rows})
+    return {k: [[round(d * 100, 2), min(r[k] for r in rows if r["dbh_m"] == d), max(r[k] for r in rows if r["dbh_m"] == d)]
+                for d in dbhs] for k in keys}
+
+
+def _rule(sel):
+    """The ratified ±RULE_SECTOR_DEG rule against the TM rows of a sweep: holds on the 1° grid, the floor of the sector
+    and of the fine crossing, and the rows attaining the floor."""
+    tm = [r for r in sel if r["polarization"] == "TM"]
+    sec = min(r["within_3dB_of_front_to_deg"] for r in tm)
+    cro = min(r["crossing_3dB_deg"] for r in tm)
+    sec_at, cro_at = _at(tm, "within_3dB_of_front_to_deg", sec), _at(tm, "crossing_3dB_deg", cro)
+    loss_sec = [_loss_at_rule(_resolve(a, tag="loss_at_rule")) for a in sec_at]
+    return {"sector_deg": RULE_SECTOR_DEG, "holds_on_1deg_grid": sec >= RULE_SECTOR_DEG, "min_sector_deg": sec,
+            "min_sector_at": sec_at, "min_crossing_deg": cro,
+            "margin_deg_fine": round(cro - RULE_SECTOR_DEG, 3), "min_crossing_at": cro_at,
+            # the LETTER of the rule: the loss at ±RULE_SECTOR_DEG on the crossing-floor row(s) and over the sector-floor rows
+            "loss_at_rule_deg_dB": {"at_crossing_floor": [_loss_at_rule(_resolve(a, tag="loss_at_rule")) for a in cro_at],
+                                    "over_sector_floor_rows": [min(loss_sec), max(loss_sec)], "n_sector_floor_rows": len(sec_at),
+                                    "n_sector_floor_cells": len({(a["dbh_m"], a["w_cm"], a["bark"], a["bark_mm"]) for a in sec_at})},
+            "first_stem_cm_failing_on_1deg_grid": next((round(d * 100, 2) for d in sorted({r["dbh_m"] for r in tm})
+                                                         if min(r["within_3dB_of_front_to_deg"] for r in tm
+                                                                if r["dbh_m"] == d) < RULE_SECTOR_DEG), None)}
+
+
+def dbh_sweep(width_rows):
+    """The stem's diameter over its canon axis (docstring DBH SWEEP): every stem of 38–60 cm in 1 cm steps under every
+    width of the width axis, bark, standoff and polarization, the bark derived per stem (thin end); the identity control
+    against the width sweep's rows at the three named stems; the standoff's monotonicity counted per polarization; the
+    floor rows under the A.36 readings; and the probe beyond the bark table (61–90 cm, TM «phloem», both standoffs, three
+    bark assumptions). Returns (block, rows, beyond_rows)."""
+    widths = sweep_widths()
+    dbhs = [round(c / 100.0, 6) for c in range(DBH_SWEEP_LOW_CM, DBH_SWEEP_HIGH_CM + 1, DBH_SWEEP_STEP_CM)]
+    rows = _sweep_rows(dbhs, widths, GEOMETRY["standoff_m"]["values"], bark_by_dbh)
+    # control — identity: at the three named stems these rows ARE the width sweep's, field by field
+    key = lambda r: (r["w_cm"], r["bark"], r["polarization"], r["dbh_m"], r["standoff_mm"])  # noqa: E731
+    ref = {key(r): r for r in width_rows}
+    matched, worst = 0, 0.0
+    for r in rows:
+        c = ref.get(key(r))
+        if c is None:
+            continue
+        matched += 1
+        miss = max(abs(r[k] - c[k]) for k in SWEEP_KEYS)
+        if not miss <= 0.0:
+            raise RuntimeError(f"DBH-sweep control: {key(r)} misses the width sweep's row by {miss}")
+        worst = max(worst, miss)
+    if matched != len(width_rows):
+        raise RuntimeError(f"DBH-sweep control: {matched} of the width sweep's {len(width_rows)} rows revisited")
+    # count — the standoff's monotonicity for the sector (it was expected never to narrow as the deck rises): the cells
+    # where it does; declared in the cache, and it refuted the expectation (docstring DBH SWEEP)
+    lo_so, hi_so = sorted(GEOMETRY["standoff_m"]["values"])[0], sorted(GEOMETRY["standoff_m"]["values"])[-1]
+    at = {key(r): r for r in rows}
+    violations = [key(r) for r in rows if r["standoff_mm"] == round(lo_so * 1e3, 3)
+                  and at[(r["w_cm"], r["bark"], r["polarization"], r["dbh_m"], round(hi_so * 1e3, 3))]["crossing_3dB_deg"]
+                  < r["crossing_3dB_deg"]]
+    sector_violations = [key(r) for r in rows if r["standoff_mm"] == round(lo_so * 1e3, 3)
+                         and at[(r["w_cm"], r["bark"], r["polarization"], r["dbh_m"], round(hi_so * 1e3, 3))]["within_3dB_of_front_to_deg"]
+                         < r["within_3dB_of_front_to_deg"]]
+    cells_per_pol = len(rows) // len(GEOMETRY["standoff_m"]["values"]) // len(POLARIZATIONS)
+    by_pol = {pol: {"cells": cells_per_pol,
+                    "crossing_narrower_at_higher_deck": sum(1 for v in violations if v[2] == pol),
+                    "sector_narrower_at_higher_deck": sum(1 for v in sector_violations if v[2] == pol)} for pol in POLARIZATIONS}
+    extremes = {pol: _ext([r for r in rows if r["polarization"] == pol]) for pol in POLARIZATIONS}
+    by_dbh = {pol: _per_dbh([r for r in rows if r["polarization"] == pol],
+                            ("within_3dB_of_front_to_deg", "crossing_3dB_deg", "front_minus_back_dB", "front_minus_side_dB"))
+              for pol in POLARIZATIONS}
+    sector_floor = {pol: {b: [[round(d * 100, 2), min(r["within_3dB_of_front_to_deg"] for r in rows
+                                                       if r["polarization"] == pol and r["bark"] == b and r["dbh_m"] == d),
+                               min(r["crossing_3dB_deg"] for r in rows
+                                   if r["polarization"] == pol and r["bark"] == b and r["dbh_m"] == d)] for d in dbhs]
+                          for b in SWEEP_BARKS} for pol in POLARIZATIONS}
+    # the probe beyond the table: THREE bark assumptions, TM on the «phloem» reading (the rule's polarization and the
+    # reading that sets its floor), both standoffs (the standoff is not monotone)
+    beyond_dbhs = [round(c / 100.0, 6) for c in range(DBH_SWEEP_HIGH_CM + 1, DBH_BEYOND_HIGH_CM + 1, DBH_SWEEP_STEP_CM)]
+    held_mm = max(BARK_T_M.items())[1] * 1e3
+    phloem_only = {"bark_phloem": SWEEP_BARKS["bark_phloem"]}
+    assumptions = {
+        "thin_end_held": (lambda d: bark_by_dbh(d, "thin", extrapolate=False),
+                          f"the thin end HELD at the table's last value ({held_mm:g} mm)"),
+        "thin_end_slope": (lambda d: bark_by_dbh(d, "thin", extrapolate=True),
+                           "the thin end extended by the table's 50→60 cm slope"),
+        "thick_end_slope": (lambda d: bark_by_dbh(d, "thick", extrapolate=True),
+                            "the thick end extended by the table's 50→60 cm slope"),
+    }
+    beyond_blocks, beyond = {}, []
+    for name, (fn, what) in assumptions.items():
+        rws = _sweep_rows(beyond_dbhs, widths, GEOMETRY["standoff_m"]["values"], fn, barks=phloem_only, pols=("TM",))
+        beyond += rws
+        beyond_blocks[name] = {"what": what + " — an ASSUMPTION, not a reading", "n_rows": len(rws),
+                               "bark_mm_by_dbh_cm": {str(round(d * 100, 2)): round(fn(d) * 1e3, 3) for d in beyond_dbhs},
+                               "by_dbh": _per_dbh(rws, ("within_3dB_of_front_to_deg", "crossing_3dB_deg", "front_minus_back_dB")),
+                               "rule": _rule(rws)}
+    block = {
+        "what": "the stem's diameter as an AXIS — every stem of the canon range under every width of the width axis, "
+                "bark, standoff and polarization, the dead bark per stem derived by linear interpolation between the "
+                "table's stems (docstring DBH SWEEP); rows skip the N + 15 truncation re-solve and keep the energy balance",
+        "axis_cm": [DBH_SWEEP_LOW_CM, DBH_SWEEP_HIGH_CM], "step_cm": DBH_SWEEP_STEP_CM,
+        "bark_mm_by_dbh_cm": {str(round(d * 100, 2)): round(bark_by_dbh(d) * 1e3, 3) for d in dbhs},
+        "bark_named_stems_cm": sorted(round(d * 100, 2) for d in BARK_T_M),
+        "widths_cm": [round(w * 100, 2) for w in widths], "standoffs_mm": sorted(round(s * 1e3, 3) for s in GEOMETRY["standoff_m"]["values"]),
+        "n_stems": len(dbhs), "n_rows": len(rows),
+        "extremes": extremes, "by_dbh": by_dbh, "tm_sector_floor_by_bark": sector_floor,
+        "rule": _rule(rows),
+        "rule_floor_refinement": _refine_floor(dict(_rule(rows)["min_crossing_at"][0], crossing_3dB_deg=_rule(rows)["min_crossing_deg"]),
+                                               bark_of=lambda d: bark_by_dbh(d, "thin")),
+        "controls": {"named_stems_reproduce_the_width_sweep_max_abs_miss": worst,
+                     "named_stems_rows_revisited": matched,
+                     "standoff_monotone_crossing_violations": len(violations),
+                     "standoff_monotone_cells": len(rows) // len(GEOMETRY["standoff_m"]["values"]),
+                     "standoff_monotone_by_polarization": by_pol,
+                     "standoff_monotone_first_violations": [list(v) for v in violations[:5]],
+                     "sector_floor_rows_all_at_low_standoff": all(a["standoff_mm"] == round(lo_so * 1e3, 3)
+                                                                 for a in _rule(rows)["min_sector_at"])},
+        "rule_floor_under_a36_readings": _a36_floor_span(_rule(rows)["min_crossing_at"]),
+        "tm_back_floor_under_a36_readings": _a36_floor_span(extremes["TM"]["front_minus_back_dB"]["min_at"], "front_minus_back_dB"),
+        "beyond_bark_table": {
+            "what": f"a PROBE past the bark table: stems of {DBH_SWEEP_HIGH_CM + 1}–{DBH_BEYOND_HIGH_CM} cm on the TM "
+                    f"«phloem» stem under both standoffs, the dead bark by THREE assumptions (each labelled, none a reading)",
+            "axis_cm": [DBH_SWEEP_HIGH_CM + 1, DBH_BEYOND_HIGH_CM],
+            "standoffs_mm": sorted(round(s * 1e3, 3) for s in GEOMETRY["standoff_m"]["values"]), "n_rows": len(beyond),
+            "assumptions": beyond_blocks,
+            "first_stem_cm_failing_by_assumption": {k: v["rule"]["first_stem_cm_failing_on_1deg_grid"] for k, v in beyond_blocks.items()},
+            "rule": _rule(beyond),
+        },
+    }
+    return block, rows, beyond
+
+
+def bark_sweep(dbh_rows):
+    """The dead bark as the THIRD resonant axis (docstring BARK SWEEP): the TM «phloem» stem at every stem of the DBH
+    axis and every width, both decks, the bark from the thin to the thick end of canon's table in 1 mm steps (both ends
+    derived per stem); the dry and wet proxies at the thick end only; identity control against the DBH sweep's rows at
+    the thin end; the rule over the whole bark axis and the A.36 reading span of its floor rows."""
+    widths = sweep_widths()
+    dbhs = [round(c / 100.0, 6) for c in range(DBH_SWEEP_LOW_CM, DBH_SWEEP_HIGH_CM + 1, DBH_SWEEP_STEP_CM)]
+    phloem_only = {"bark_phloem": SWEEP_BARKS["bark_phloem"]}
+    rows = _sweep_rows(dbhs, widths, GEOMETRY["standoff_m"]["values"], bark_axis, barks=phloem_only, pols=("TM",))
+    key = lambda r: (r["w_cm"], r["bark"], r["polarization"], r["dbh_m"], r["standoff_mm"], r["bark_mm"])  # noqa: E731
+    ref = {key(r): r for r in dbh_rows if r["polarization"] == "TM" and r["bark"] == "bark_phloem"}
+    matched, worst = 0, 0.0
+    for r in rows:
+        c = ref.get(key(r))
+        if c is None:
+            continue
+        matched += 1
+        miss = max(abs(r[k] - c[k]) for k in SWEEP_KEYS)
+        if not miss <= 0.0:
+            raise RuntimeError(f"bark-sweep control: {key(r)} misses the DBH sweep's row by {miss}")
+        worst = max(worst, miss)
+    if matched != len(ref):
+        raise RuntimeError(f"bark-sweep control: {matched} of the DBH sweep's {len(ref)} thin-end TM phloem rows revisited")
+    thick = {b: SWEEP_BARKS[b] for b in ("bark_dry", "bark_wet")}
+    thick_rows = _sweep_rows(dbhs, widths, GEOMETRY["standoff_m"]["values"], lambda d: bark_by_dbh(d, "thick"), barks=thick, pols=("TM",))
+    rule = _rule(rows)
+    floor = dict(rule["min_crossing_at"][0], crossing_3dB_deg=rule["min_crossing_deg"])
+    # the deck as a 1-D family: the flange-thickness placeholder (00_07 HW.8.10) and `52`'s rows both move it — ±2 mm
+    deck = []
+    for off in (-2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0):
+        r = _resolve(floor, standoff_mm=round(floor["standoff_mm"] + off, 3), tag="deck")
+        deck.append([off, round(floor["standoff_mm"] + off, 3), r["within_3dB_of_front_to_deg"], r["crossing_3dB_deg"], _loss_at_rule(r)])
+    # past the thick end at the floor stem: the floor sits on the table's EDGE, not at an extremum, if the crossing keeps
+    # falling beyond it (canon's own Wilms SD ±4 mm, 01_04 §3.2) — an assumption probe, carried as one
+    beyond_thick = []
+    for k in range(1, 9):
+        r = _resolve(floor, bark_mm=round(floor["bark_mm"] + k, 3), tag="beyond_thick")
+        beyond_thick.append([round(floor["bark_mm"] + k, 3), r["within_3dB_of_front_to_deg"], r["crossing_3dB_deg"], _loss_at_rule(r)])
+    thick_end_is_edge = any(b[2] < rule["min_crossing_deg"] for b in beyond_thick)
+    # the stem × bark floor: for each stem the bark at which the crossing is lowest, and that crossing
+    floor_by_dbh = []
+    for d in dbhs:
+        sel = [r for r in rows if r["dbh_m"] == d]
+        lo = min(sel, key=lambda r: r["crossing_3dB_deg"])
+        floor_by_dbh.append([round(d * 100, 2), lo["bark_mm"], lo["w_cm"], lo["standoff_mm"], lo["within_3dB_of_front_to_deg"], lo["crossing_3dB_deg"]])
+    return {
+        "what": "the dead bark as an AXIS on the TM «phloem» stem — every stem of the DBH axis × every width × both decks × the "
+                "bark from canon's thin to thick end in 1 mm steps, both ends derived per stem (docstring BARK SWEEP); the dry "
+                "and wet proxies at the thick end only; rows skip the N + 15 truncation re-solve and keep the energy balance",
+        "polarization": "TM", "bark_reading": "bark_phloem", "step_mm": BARK_AXIS_STEP_M * 1e3,
+        "bark_mm_by_dbh_cm": {str(round(d * 100, 2)): [round(bark_by_dbh(d, "thin") * 1e3, 3), round(bark_by_dbh(d, "thick") * 1e3, 3)] for d in dbhs},
+        "thick_end_named_stems_mm": {str(round(d * 100, 2)): round(v * 1e3, 3) for d, v in sorted(BARK_THICK_T_M.items())},
+        "n_rows": len(rows), "n_bark_values": sum(len(bark_axis(d)) for d in dbhs),
+        "extremes": _ext(rows),
+        "by_dbh": _per_dbh(rows, ("within_3dB_of_front_to_deg", "crossing_3dB_deg", "front_minus_back_dB", "front_minus_side_dB")),
+        "floor_by_dbh": {"columns": ["dbh_cm", "bark_mm", "w_cm", "standoff_mm", "sector_deg", "crossing_deg"], "rows": floor_by_dbh},
+        "rule": rule,
+        "rule_floor_under_a36_readings": _a36_floor_span(rule["min_crossing_at"]),
+        "loss_at_rule_under_a36_readings": _a36_floor_span(rule["min_crossing_at"], key="loss_at_rule_deg_dB"),
+        "tm_back_floor_under_a36_readings": _a36_floor_span(_ext(rows)["front_minus_back_dB"]["min_at"], key="front_minus_back_dB"),
+        "rule_floor_refinement": _refine_floor(floor, bark_half_mm=0.5, bark_bounds_of=lambda d: (bark_by_dbh(d, "thin") * 1e3, bark_by_dbh(d, "thick") * 1e3)),
+        "canon_bark_table": {"what": "01_04 §3.2 as lib.constants carries it — single bark on the plate ridges at 1.3 m per named stem, and the live "
+                                     "phloem taken off each end to reach the dead bark the sweeps use (the thick-end subtraction is OUR reading)",
+                             "single_bark_ridge_mm_by_dbh_cm": {str(float(cm)): list(s) for cm, s in sorted(BARK_SINGLE_RIDGE_MM_BY_DBH_CM.items())},
+                             "live_phloem_mm": {"thin_end": LIVE_PHLOEM_MM_THIN_END, "thick_end_reading": LIVE_PHLOEM_MM_THICK_END_READING,
+                                                "thick_end_is_our_reading_not_canon": True},
+                             "dead_bark_ridge_dbh38_mm": list(BARK_DEAD_RIDGE_DBH38_MM)},
+        "deck_sensitivity_at_floor_row": {"what": "the floor row re-solved with the deck moved — the flange thickness is a "
+                                                  "placeholder (00_07 HW.8.10) and `52`'s rows move the deck too; offsets in mm",
+                                          "columns": ["offset_mm", "standoff_mm", "sector_deg", "crossing_deg", "loss_at_rule_deg_dB"],
+                                          "rows": deck,
+                                          "rule_holds_from_offset_mm": next((d[0] for d in deck if d[3] >= RULE_SECTOR_DEG and d[0] > 0), None),
+                                          "crossing_deg_per_mm_about_the_floor_row": round((next(d[3] for d in deck if d[0] == 1.0) - next(d[3] for d in deck if d[0] == -1.0)) / 2, 3),
+                                          "loss_dB_per_mm_about_the_floor_row": round((next(d[4] for d in deck if d[0] == -1.0) - next(d[4] for d in deck if d[0] == 1.0)) / 2, 4)},
+        "beyond_thick_end_at_floor_stem": {"what": "the floor row's bark thickened past canon's thick end in 1 mm steps (an "
+                                                   "assumption probe — canon's ridge SD is ±4 mm, 01_04 §3.2)",
+                                           "columns": ["bark_mm", "sector_deg", "crossing_deg", "loss_at_rule_deg_dB"], "rows": beyond_thick,
+                                           "thick_end_is_an_edge_not_an_extremum": thick_end_is_edge,
+                                           "min_crossing_deg": min(b[2] for b in beyond_thick),
+                                           "min_crossing_at_bark_mm": min(beyond_thick, key=lambda b: b[2])[0]},
+        "thick_end_dry_wet": {b: {"min_sector_deg": min(r["within_3dB_of_front_to_deg"] for r in thick_rows if r["bark"] == b),
+                                  "min_crossing_deg": min(r["crossing_3dB_deg"] for r in thick_rows if r["bark"] == b),
+                                  "n_rows": sum(1 for r in thick_rows if r["bark"] == b)} for b in thick},
+        "controls": {"thin_end_rows_reproduce_the_dbh_sweep_max_abs_miss": worst, "thin_end_rows_revisited": matched},
     }
 
 
@@ -623,8 +1027,16 @@ def main() -> int:
         pol: [min(phloem_control[k][pol]["front_minus_back_dB_floor"] for k in singles),
               max(phloem_control[k][pol]["front_minus_back_dB_floor"] for k in singles)] for pol in POLARIZATIONS}
     controls["phloem_reading"] = phloem_control
-    sweep = width_sweep(cases)
+    sweep, sweep_rows_named = width_sweep(cases)
     sx = sweep["extremes"]
+    dbh, dbh_rows, _beyond_rows = dbh_sweep(sweep_rows_named)
+    bark = bark_sweep(dbh_rows)
+    dr, bk = dbh["rule"], bark["rule"]
+    dx = dbh["extremes"]
+    bfail = dbh["beyond_bark_table"]["first_stem_cm_failing_by_assumption"]
+    beyond_phrase = "; ".join(f"{k.replace('_', ' ')}: " + ("holds to 90 cm" if v is None else f"first fails at {v:g} cm")
+                              for k, v in bfail.items())
+    bk_at = bk["min_crossing_at"][0]
     tm, te = findings["TM"], findings["TE"]
     verdict = (
         f"In the horizontal plane, with the gateway straight behind the stem the field of a short dipole along the stem "
@@ -643,7 +1055,26 @@ def main() -> int:
         f"{_span([sx['TM']['front_minus_side_dB']['max']])[1]:.1f} dB, and the back spans "
         f"{_span([sx['TM']['front_minus_back_dB']['min']])[0]:.1f}–{_span([sx['TM']['front_minus_back_dB']['max']])[1]:.1f} "
         f"dB (TM) and {_span([sx['TE']['front_minus_back_dB']['min']])[0]:.1f}–"
-        f"{_span([sx['TE']['front_minus_back_dB']['max']])[1]:.1f} dB (TE). The 2-D efficiency indicator — "
+        f"{_span([sx['TE']['front_minus_back_dB']['max']])[1]:.1f} dB (TE). Over the stem's diameter as an axis too "
+        f"({dbh['axis_cm'][0]}–{dbh['axis_cm'][1]} cm in {dbh['step_cm']} cm steps, the bark derived per stem, every "
+        f"width, bark and standoff) the TM 3-dB sector's floor is {dr['min_sector_deg']}° on the 1° grid (the −3 dB "
+        f"crossing ≥ {dr['min_crossing_deg']:.2f}°), so the ratified ±{dr['sector_deg']}° rule "
+        f"{'holds' if dr['holds_on_1deg_grid'] else 'FAILS'} on that grid with a margin of {dr['margin_deg_fine']:.2f}° "
+        f"on the crossing; the TM floor behind on that grid is {_span([dx['TM']['front_minus_back_dB']['min']])[0]:.1f} dB. "
+        f"The dead bark is the third resonant axis: swept from canon's thin to thick end ({bark['step_mm']:g} mm steps) on the TM "
+        f"«phloem» stem the sector's floor is {bk['min_sector_deg']}° (crossing ≥ {bk['min_crossing_deg']:.2f}°, at DBH "
+        f"{bk_at['dbh_m'] * 100:g} cm, bark {bk_at['bark_mm']:g} mm, sapwood {bk_at['w_cm']:g} cm), so the ±{bk['sector_deg']}° rule "
+        f"{'holds' if bk['holds_on_1deg_grid'] else 'FAILS'} on the 1° grid over the bark axis "
+        f"({'margin ' + format(bk['margin_deg_fine'], '.2f') + '°' if bk['holds_on_1deg_grid'] else 'first failing stem ' + format(bk['first_stem_cm_failing_on_1deg_grid'] or 0, 'g') + ' cm'}); "
+        f"under the dry and wet proxies the floor is {min(min(v[1] for v in dbh['tm_sector_floor_by_bark']['TM'][b]) for b in ('bark_dry', 'bark_wet'))}° "
+        f"at the thin end and {min(v['min_sector_deg'] for v in bark['thick_end_dry_wet'].values())}° at the thick end; the loss at ±{bk['sector_deg']}° on the "
+        f"crossing-floor row is {max(bk['loss_at_rule_deg_dB']['at_crossing_floor']):.3f} dB "
+        f"({bark['loss_at_rule_under_a36_readings']['span_over_single_readings'][0]:.3f}–{bark['loss_at_rule_under_a36_readings']['span_over_single_readings'][1]:.3f} over the A.36 readings), "
+        f"a deck {bark['deck_sensitivity_at_floor_row']['rule_holds_from_offset_mm']} mm higher returns the rule, and past the thick end the crossing "
+        f"{'keeps falling' if bark['beyond_thick_end_at_floor_stem']['thick_end_is_an_edge_not_an_extremum'] else 'rises'} (the floor is an edge of the table). "
+        f"Past the bark table (stems to {dbh['beyond_bark_table']['axis_cm'][1]} cm, three bark assumptions) the rule — "
+        f"{beyond_phrase}. "
+        f"The 2-D efficiency indicator — "
         f"what the near field loses into the stem — is {tm['efficiency_2d'][0]:.2f}–{tm['efficiency_2d'][1]:.2f} (TM) "
         f"and {te['efficiency_2d'][0]:.2f}–{te['efficiency_2d'][1]:.2f} (TE); it is not the 3-D antenna efficiency.")
     result = {
@@ -671,6 +1102,8 @@ def main() -> int:
         "cases": cases,
         "findings": findings,
         "width_sweep": sweep,
+        "dbh_sweep": dbh,
+        "bark_sweep": bark,
         "verdict": verdict,
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -695,6 +1128,25 @@ def main() -> int:
             e = sweep["extremes"][pol][k]
             print(f"    {pol} {k:28s} min {e['min']} at {[a['w_cm'] for a in e['min_at']]} · max {e['max']} at "
                   f"{[a['w_cm'] for a in e['max_at']]}")
+    print(f"  DBH sweep {dbh['axis_cm'][0]}–{dbh['axis_cm'][1]} cm, {dbh['n_stems']} stems, {dbh['n_rows']} rows "
+          f"(named stems reproduce the width sweep: {dbh['controls']['named_stems_rows_revisited']} rows, max miss "
+          f"{dbh['controls']['named_stems_reproduce_the_width_sweep_max_abs_miss']}; standoff monotone violations "
+          f"{dbh['controls']['standoff_monotone_crossing_violations']})")
+    print(f"    rule ±{dr['sector_deg']}°: {'holds' if dr['holds_on_1deg_grid'] else 'FAILS'} on the 1° grid — sector floor "
+          f"{dr['min_sector_deg']}° at {[(a['dbh_m'], a['w_cm'], a['bark'], a['standoff_mm']) for a in dr['min_sector_at']][:6]}, "
+          f"crossing floor {dr['min_crossing_deg']} (margin {dr['margin_deg_fine']}°)")
+    for pol in POLARIZATIONS:
+        for k in ("front_minus_back_dB", "front_minus_side_dB", "within_3dB_of_front_to_deg", "crossing_3dB_deg"):
+            e = dx[pol][k]
+            print(f"    {pol} {k:28s} min {e['min']} at {[(a['dbh_m'], a['w_cm']) for a in e['min_at']][:4]} · max {e['max']}")
+    print(f"    beyond the table ({dbh['beyond_bark_table']['rule']['sector_deg']}° rule) — {beyond_phrase}")
+    print(f"  bark sweep: {bark['n_rows']} rows over {bark['n_bark_values']} (stem, bark) values; thin-end rows reproduce the DBH "
+          f"sweep: {bark['controls']['thin_end_rows_revisited']} rows, max miss {bark['controls']['thin_end_rows_reproduce_the_dbh_sweep_max_abs_miss']}")
+    print(f"    rule ±{bk['sector_deg']}° over the bark axis: {'holds' if bk['holds_on_1deg_grid'] else 'FAILS'} — sector floor "
+          f"{bk['min_sector_deg']}° / crossing floor {bk['min_crossing_deg']} at {[(a['dbh_m'], a['bark_mm'], a['w_cm'], a['standoff_mm']) for a in bk['min_crossing_at']][:4]}; "
+          f"first failing stem {bk['first_stem_cm_failing_on_1deg_grid']}; A.36 span {bark['rule_floor_under_a36_readings']['span_over_single_readings']}; "
+          f"dry/wet thick end {bark['thick_end_dry_wet']}")
+    print(f"    standoff monotonicity by polarization: {dbh['controls']['standoff_monotone_by_polarization']}")
     banner(f"✅ saved {OUT.relative_to(REPO_ROOT)}")
     return 0
 

@@ -6812,6 +6812,208 @@ def test_stem_radio_shadow_invariants():
     assert c["lossless_max_rel_power_miss"] <= tol["lossless"]
 
 
+def test_stem_radio_shadow_dbh_sweep():
+    """107's stem-diameter sweep (00_07 HW.6; the width sweep's review of 2026-10-22 night, F1): the diameter is the
+    second resonant axis, so the sweep over canon's whole DBH range — not the three named stems — carries the sector's
+    floor and the ratified rule's margin.
+
+    CAN catch: an axis that does not start at canon's smallest host or end at the bark table's last stem; a bark per
+    stem that is not the table's value at a named stem or not linear between them; a sweep that skipped a width, bark,
+    standoff or polarization cell; a recorded identity miss above zero or fewer named-stem rows revisited than the
+    width sweep has; a rule block whose flag, floors or attaining rows do not follow from the per-stem envelope; a
+    beyond-table probe whose assumptions are unlabelled, whose per-assumption first failing stem contradicts its own
+    envelope, or whose overall rule is not the worst of them; per-polarization monotonicity counts that do not sum to the
+    total or exceed the cells. CANNOT catch: an extreme between two grid stems or widths (the step is the ground), a wrong
+    input, or what the 2-D model drops."""
+    d = json.loads((RADIO / "stem_radio_shadow.json").read_text(encoding="utf-8"))
+    ds, sw = d["dbh_sweep"], d["width_sweep"]
+    dbh_min_cm = round(d["readings"]["geometry"]["dbh_m"]["values"][0] * 100, 2)
+    named_cm = sorted(round(v * 100, 2) for v in d["readings"]["geometry"]["dbh_m"]["values"])
+    assert ds["axis_cm"][0] == dbh_min_cm and ds["axis_cm"][1] == max(named_cm), "the DBH axis does not span canon's range"
+    assert ds["bark_named_stems_cm"] == named_cm
+    stems = [float(k) for k in ds["bark_mm_by_dbh_cm"]]
+    assert stems == [ds["axis_cm"][0] + i * ds["step_cm"] for i in range(ds["n_stems"])]
+    # the bark per stem: the named readings' own bark at a named stem, linear between the named stems
+    bark_at = {round(r["dbh_m"] * 100, 2): r["layers_axis_out"][-1][0] - r["layers_axis_out"][-2][0]
+               for r in d["cases"] if r["permittivity"].startswith("scots_sapwood_")}
+    for cm, mm in ds["bark_mm_by_dbh_cm"].items():
+        cm = float(cm)
+        if cm in bark_at:
+            assert mm == pytest.approx(bark_at[cm] * 1e3, abs=1e-6), f"bark at the named stem {cm} cm"
+        else:
+            lo = max(x for x in named_cm if x < cm)
+            hi = min(x for x in named_cm if x > cm)
+            want = bark_at[lo] + (bark_at[hi] - bark_at[lo]) * (cm - lo) / (hi - lo)
+            assert mm == pytest.approx(want * 1e3, abs=6e-4), f"bark at {cm} cm is not linear between {lo} and {hi}"  # the cache keeps 3 decimals
+    assert ds["widths_cm"] == [v[0] for v in sw["by_width"]["TM"]["within_3dB_of_front_to_deg"]], "not the width axis"
+    assert ds["n_rows"] == ds["n_stems"] * len(ds["widths_cm"]) * 3 * len(ds["standoffs_mm"]) * 2, "a cell was skipped"
+    c = ds["controls"]
+    assert c["named_stems_reproduce_the_width_sweep_max_abs_miss"] == 0.0 and c["named_stems_rows_revisited"] == sw["n_rows"]
+    assert isinstance(c["standoff_monotone_crossing_violations"], int) and c["standoff_monotone_crossing_violations"] >= 0
+    bp = c["standoff_monotone_by_polarization"]
+    assert set(bp) == {"TM", "TE"}
+    assert sum(v["crossing_narrower_at_higher_deck"] for v in bp.values()) == c["standoff_monotone_crossing_violations"]
+    assert all(0 <= v["sector_narrower_at_higher_deck"] <= v["crossing_narrower_at_higher_deck"] <= v["cells"] for v in bp.values())
+    assert sum(v["cells"] for v in bp.values()) == c["standoff_monotone_cells"]
+    # the rule block follows from the per-stem envelope, and the sector is the crossing's floor everywhere
+    for pol in ("TM", "TE"):
+        env = ds["by_dbh"][pol]
+        assert [v[0] for v in env["within_3dB_of_front_to_deg"]] == stems
+        for sec, cro in zip(env["within_3dB_of_front_to_deg"], env["crossing_3dB_deg"], strict=True):
+            assert sec[1] == math.floor(cro[1] + 1e-9) or sec[1] == math.floor(cro[1]), (pol, sec, cro)
+        for key, e in ds["extremes"][pol].items():
+            if key in env:
+                assert e["min"] == min(v[1] for v in env[key]) and e["max"] == max(v[2] for v in env[key]), (pol, key)
+            assert all(round(a["dbh_m"] * 100, 2) in stems for a in e["min_at"] + e["max_at"])
+    r = ds["rule"]
+    tm = ds["by_dbh"]["TM"]
+    assert r["min_sector_deg"] == min(v[1] for v in tm["within_3dB_of_front_to_deg"])
+    assert r["min_crossing_deg"] == min(v[1] for v in tm["crossing_3dB_deg"])
+    assert r["holds_on_1deg_grid"] == (r["min_sector_deg"] >= r["sector_deg"])
+    assert r["margin_deg_fine"] == pytest.approx(r["min_crossing_deg"] - r["sector_deg"], abs=1e-9)
+    assert {a["dbh_m"] for a in r["min_sector_at"]} == {v[0] / 100 for v in tm["within_3dB_of_front_to_deg"] if v[1] == r["min_sector_deg"]}
+    failing = [v[0] for v in tm["within_3dB_of_front_to_deg"] if v[1] < r["sector_deg"]]
+    assert r["first_stem_cm_failing_on_1deg_grid"] == (failing[0] if failing else None)
+    for rows in ds["tm_sector_floor_by_bark"]["TM"].values():
+        assert [v[0] for v in rows] == stems and min(v[1] for v in rows) >= r["min_sector_deg"]
+    assert min(min(v[1] for v in rows) for rows in ds["tm_sector_floor_by_bark"]["TM"].values()) == r["min_sector_deg"]
+    # the probe beyond the table: three labelled bark assumptions, each with its own rule block; the overall rule the worst
+    b = ds["beyond_bark_table"]
+    assert b["axis_cm"][0] == ds["axis_cm"][1] + ds["step_cm"]
+    assert b["standoffs_mm"] == ds["standoffs_mm"]
+    assert c["standoff_monotone_cells"] == ds["n_rows"] // len(ds["standoffs_mm"])
+    assert c["sector_floor_rows_all_at_low_standoff"] == all(a["standoff_mm"] == min(ds["standoffs_mm"]) for a in r["min_sector_at"])
+    assert set(b["assumptions"]) == {"thin_end_held", "thin_end_slope", "thick_end_slope"}
+    last = str(float(ds["axis_cm"][1]))
+    for name, blk in b["assumptions"].items():
+        assert "ASSUMPTION" in blk["what"], name
+        beyond_stems = [float(k) for k in blk["bark_mm_by_dbh_cm"]]
+        assert beyond_stems == [b["axis_cm"][0] + i * ds["step_cm"] for i in range(len(beyond_stems))]
+        if name == "thin_end_held":
+            assert all(v == pytest.approx(ds["bark_mm_by_dbh_cm"][last], abs=1e-9) for v in blk["bark_mm_by_dbh_cm"].values())
+        btm = blk["by_dbh"]["within_3dB_of_front_to_deg"]
+        assert blk["rule"]["min_sector_deg"] == min(v[1] for v in btm)
+        bfail = [v[0] for v in btm if v[1] < blk["rule"]["sector_deg"]]
+        assert blk["rule"]["first_stem_cm_failing_on_1deg_grid"] == (bfail[0] if bfail else None)
+        assert blk["rule"]["holds_on_1deg_grid"] == (not bfail)
+        assert b["first_stem_cm_failing_by_assumption"][name] == blk["rule"]["first_stem_cm_failing_on_1deg_grid"]
+    assert b["rule"]["min_crossing_deg"] == min(blk["rule"]["min_crossing_deg"] for blk in b["assumptions"].values())
+    assert b["n_rows"] == sum(blk["n_rows"] for blk in b["assumptions"].values())
+    # the A.36 spans: one value per alternative reading, the span the min/max of the single readings
+    for span_key in ("rule_floor_under_a36_readings", "tm_back_floor_under_a36_readings"):
+        sp = ds[span_key]
+        singles = {k: v for k, v in sp["by_reading"].items() if k.startswith("single_reading_")}
+        assert len(singles) == 4 and sp["span_over_single_readings"] == [min(singles.values()), max(singles.values())]
+
+
+def test_stem_radio_shadow_r2_blocks():
+    """The adversary-2 blocks of `107`: the report grid carries the rule angle (50°) so the loss at ±50° is a cache number;
+    the rule blocks carry that loss on the floor rows; the refinements report a node no HIGHER than the grid floor (the grid
+    minimum is an upper bound); the deck rows are a monotone family around the floor row; the probe past the thick end has
+    its eight rows; the bark axis' TM back floor carries an A.36 span that contains the floor."""
+    d = json.loads((RADIO / "stem_radio_shadow.json").read_text(encoding="utf-8"))
+    for row in d["cases"]:
+        assert "50" in row["gain_dB"] and row["gain_dB"]["50"] <= row["gain_dB"]["0"] + 1e-9
+    for blk in (d["dbh_sweep"]["rule"], d["bark_sweep"]["rule"]):
+        loss = blk["loss_at_rule_deg_dB"]
+        assert len(loss["at_crossing_floor"]) == len(blk["min_crossing_at"]) and loss["n_sector_floor_rows"] == len(blk["min_sector_at"])
+        assert loss["n_sector_floor_cells"] <= loss["n_sector_floor_rows"]
+        assert loss["over_sector_floor_rows"][0] <= loss["over_sector_floor_rows"][1]
+        # the letter and the grid agree: a sector below the rule angle means a loss above 3 dB at that angle on every floor row
+        assert all((v > 3.0) == (blk["min_sector_deg"] < blk["sector_deg"]) for v in loss["at_crossing_floor"])
+    for blk in (d["dbh_sweep"]["rule_floor_refinement"], d["bark_sweep"]["rule_floor_refinement"]):
+        assert blk["below_the_grid_node_deg"] >= 0.0, "a finer grid found a HIGHER floor than the node it surrounds — the refinement does not surround the node"
+        assert blk["n_solves"] > 1
+    bs = d["bark_sweep"]
+    deck = bs["deck_sensitivity_at_floor_row"]["rows"]
+    assert [row[0] for row in deck] == sorted(row[0] for row in deck) and any(row[0] == 0.0 for row in deck)
+    at0 = next(row for row in deck if row[0] == 0.0)
+    assert at0[3] == bs["rule"]["min_crossing_deg"], "the deck family's zero row must reproduce the floor row"
+    assert [row[3] for row in deck] == sorted(row[3] for row in deck), "the crossing is expected monotone in the deck on this row — if it stops being, the texts' «±1 mm ≈ 0.2°» need re-reading"
+    bt = bs["beyond_thick_end_at_floor_stem"]
+    floor_cm = str(round(bs["rule"]["min_crossing_at"][0]["dbh_m"] * 100, 2))
+    assert len(bt["rows"]) == 8 and bt["rows"][0][0] > bs["bark_mm_by_dbh_cm"][floor_cm][1] - 1e-9, "the probe past the thick end must start past the FLOOR STEM's thick end"
+    ref = bs["rule_floor_refinement"]["at"]
+    # the table at the refinement's (fractional) stem: linear between the two grid stems around it, as `bark_by_dbh` derives it
+    cm = ref["dbh_m"] * 100
+    lo_cm, hi_cm = math.floor(cm + 1e-9), math.ceil(cm - 1e-9)
+    ends = [bs["bark_mm_by_dbh_cm"][f"{float(s)}"] for s in (lo_cm, hi_cm)]
+    f = 0.0 if hi_cm == lo_cm else (cm - lo_cm) / (hi_cm - lo_cm)
+    lo_b, hi_b = (ends[0][k] + f * (ends[1][k] - ends[0][k]) for k in (0, 1))
+    assert lo_b - 1e-6 <= ref["bark_mm"] <= hi_b + 1e-6, f"the refinement's node ({ref['bark_mm']} mm at DBH {cm:g}) lies outside the bark table ({lo_b:.3f}–{hi_b:.3f})"
+    tab = bs["canon_bark_table"]
+    for cm, (thin, thick) in bs["bark_mm_by_dbh_cm"].items():
+        if cm in tab["single_bark_ridge_mm_by_dbh_cm"]:
+            s = tab["single_bark_ridge_mm_by_dbh_cm"][cm]
+            assert abs(thin - (s[0] - tab["live_phloem_mm"]["thin_end"])) < 1e-6 and abs(thick - (s[1] - tab["live_phloem_mm"]["thick_end_reading"])) < 1e-6
+    assert bt["thick_end_is_an_edge_not_an_extremum"] == any(row[2] < bs["rule"]["min_crossing_deg"] for row in bt["rows"])
+    a36 = bs["tm_back_floor_under_a36_readings"]["span_over_single_readings"]
+    assert a36[0] <= a36[1]
+    la = bs["loss_at_rule_under_a36_readings"]["span_over_single_readings"]
+    assert la[0] <= max(bs["rule"]["loss_at_rule_deg_dB"]["at_crossing_floor"]) + 0.05 and la[0] <= la[1]
+
+
+def test_stem_radio_shadow_bark_sweep():
+    """107's dead-bark sweep (00_07 HW.6; the DBH sweep's review of 2026-10-23): the bark is the third resonant length, so
+    the sweep from canon's thin to thick end — not the thin end alone — carries the rule's floor on the «phloem» reading.
+
+    CAN catch: a bark axis whose ends are not the thin/thick table values at a named stem or not linear between them; a
+    step above 1 mm; a sweep that skipped a stem, width or deck; a recorded identity miss above zero or fewer thin-end
+    rows revisited than the DBH sweep has; a rule block whose floors or attaining rows do not follow from the per-stem
+    envelope or the floor table; a dry/wet thick-end floor whose sector is not its crossing's floor. CANNOT catch: a bark
+    between two 1 mm steps, a bark outside canon's table, a furrow, or what the 2-D model drops."""
+    d = json.loads((RADIO / "stem_radio_shadow.json").read_text(encoding="utf-8"))
+    ds, bs = d["dbh_sweep"], d["bark_sweep"]
+    assert bs["polarization"] == "TM" and bs["bark_reading"] == "bark_phloem" and bs["step_mm"] <= 1.0
+    stems = [float(k) for k in ds["bark_mm_by_dbh_cm"]]
+    assert [float(k) for k in bs["bark_mm_by_dbh_cm"]] == stems
+    named = sorted(float(k) for k in bs["thick_end_named_stems_mm"])
+    assert named == [float(k) for k in ds["bark_named_stems_cm"]]
+    for cm, (thin, thick) in bs["bark_mm_by_dbh_cm"].items():
+        assert thin == pytest.approx(ds["bark_mm_by_dbh_cm"][cm], abs=1e-9), f"thin end at {cm} is not the DBH sweep's bark"
+        assert thick > thin, cm
+        if cm in bs["thick_end_named_stems_mm"]:
+            assert thick == pytest.approx(bs["thick_end_named_stems_mm"][cm], abs=1e-9)
+        else:
+            lo = max(x for x in named if x < float(cm))
+            hi = min(x for x in named if x > float(cm))
+            t_lo, t_hi = bs["thick_end_named_stems_mm"][str(lo)], bs["thick_end_named_stems_mm"][str(hi)]
+            assert thick == pytest.approx(t_lo + (t_hi - t_lo) * (float(cm) - lo) / (hi - lo), abs=6e-4), f"thick end at {cm} not linear"
+    # the axis per stem: the thin end, every full step below the thick end, the thick end — recounted here from the ends
+    def axis_len(thin, thick):
+        inner = [thin + i * bs["step_mm"] for i in range(1, int((thick - thin) / bs["step_mm"] + 1e-9) + 1)]
+        return 2 + sum(1 for x in inner if x < thick - 1e-6)
+    n_bark = sum(axis_len(thin, thick) for thin, thick in bs["bark_mm_by_dbh_cm"].values())
+    assert bs["n_bark_values"] == n_bark
+    assert bs["n_rows"] == n_bark * len(ds["widths_cm"]) * len(ds["standoffs_mm"]), "a (stem, bark) × width × deck cell was skipped"
+    c = bs["controls"]
+    assert c["thin_end_rows_reproduce_the_dbh_sweep_max_abs_miss"] == 0.0
+    assert c["thin_end_rows_revisited"] == ds["n_stems"] * len(ds["widths_cm"]) * len(ds["standoffs_mm"])
+    env = bs["by_dbh"]
+    assert [v[0] for v in env["within_3dB_of_front_to_deg"]] == stems
+    r = bs["rule"]
+    assert r["min_sector_deg"] == min(v[1] for v in env["within_3dB_of_front_to_deg"])
+    assert r["min_crossing_deg"] == min(v[1] for v in env["crossing_3dB_deg"])
+    assert r["holds_on_1deg_grid"] == (r["min_sector_deg"] >= r["sector_deg"])
+    failing = [v[0] for v in env["within_3dB_of_front_to_deg"] if v[1] < r["sector_deg"]]
+    assert r["first_stem_cm_failing_on_1deg_grid"] == (failing[0] if failing else None)
+    fb = bs["floor_by_dbh"]
+    assert fb["columns"] == ["dbh_cm", "bark_mm", "w_cm", "standoff_mm", "sector_deg", "crossing_deg"]
+    assert [row[0] for row in fb["rows"]] == stems
+    assert min(row[5] for row in fb["rows"]) == r["min_crossing_deg"]
+    assert all(row[5] == next(v[1] for v in env["crossing_3dB_deg"] if v[0] == row[0]) for row in fb["rows"])
+    for row in fb["rows"]:
+        thin, thick = bs["bark_mm_by_dbh_cm"][str(row[0])]
+        assert thin - 1e-9 <= row[1] <= thick + 1e-9
+    assert {a["bark_mm"] for a in r["min_crossing_at"]} <= {row[1] for row in fb["rows"]}
+    sp = bs["rule_floor_under_a36_readings"]
+    singles = {k: v for k, v in sp["by_reading"].items() if k.startswith("single_reading_")}
+    assert len(singles) == 4 and sp["span_over_single_readings"] == [min(singles.values()), max(singles.values())]
+    for b, v in bs["thick_end_dry_wet"].items():
+        assert b in ("bark_dry", "bark_wet") and v["n_rows"] == ds["n_stems"] * len(ds["widths_cm"]) * len(ds["standoffs_mm"])
+        assert v["min_sector_deg"] == math.floor(v["min_crossing_deg"] + 1e-9) or v["min_sector_deg"] == math.floor(v["min_crossing_deg"])
+
+
 def test_stem_radio_shadow_width_sweep():
     """107's sapwood-width sweep (00_07 HW.6; the adversarial review of 2026-10-22, F1): the width is a resonant input,
     so the sweep — not the three named widths — carries each consumer's extreme.

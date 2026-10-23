@@ -1447,13 +1447,54 @@ On that axis the narrowest TM 3-dB sector is 52°, at 3.2 – 4.0 and 7.4 – 7.
 staining mean gives 53°, the 6.1 cm tomography mean under the same bark 57°), and the widest is 71°; the largest TM
 loss at 90° is 10.3 dB, at 3.4 cm; the TM floor behind is 10.2 dB at 2.8 cm — inside the axis, not at its thin end
 (under the dry bark 12.8 dB at 4.0 cm, against 20.5 at 2.2) — while the TE floor stays 7.7 dB at 2.2 cm; the back
-reaches 54.9 dB (TM, at 7.4 cm) and 71.1 dB (TE, at 13.0 cm), deeper than any named reading, and the deepest TM null
+reaches ≥ 54.8 dB (TM, at 7.4 cm) and ≥ 71.0 dB (TE, at 13.0 cm) — sampled nulls — deeper than any named reading, and the deepest TM null
 moves up to 52° off the straight line. No width is the conservative one for every consumer, and the mount's height
 gives none of them a direction. The stem is wider than a wavelength (λ = 34.5 cm); on the named readings the deepest
 null sits
 up to 42° off the straight line through the stem (at 138.25 – 180°), and on most readings 180° is itself a local
 maximum where the waves creeping round both sides meet in phase. The standoff sets the near-field indicator: a TM node
-radiates 0.13 – 0.65 of its input power with the RF deck 12.85 mm over the bark and 0.18 – 0.7 at 16.85 mm.
+radiates 0.13 – 0.65 of its input power with the RF deck 12.85 mm over the bark and 0.18 – 0.7 at 16.85 mm (on the
+swept axes down to 0.11).
+
+**The stem's diameter is the second resonant axis** (`dbh_sweep`, 2026-10-23): every stem of 38 – 60 cm in 1 cm steps —
+the dead bark at each stem at the THIN end of canon's table, derived by linear interpolation between its three stems (13.5 · 17.5 · 22 mm;
+22 is the table's 25 mm less 3 mm of live phloem — `01_04 §3.2` names no dead-bark figure at 60) — under every width of the width axis,
+every bark reading and both decks. On that grid the TM 3-dB sector's floor is 50° on the 1° grid (the −3 dB crossing's grid floor 50.35°;
+a finer grid around the floor row (DBH step 0.1 cm, sapwood 0.1 cm) finds no lower node), reached at DBH 43 – 44 and 53 – 55 cm under the «phloem» bark at the 12.85 mm deck with
+3.4 – 4 cm of sapwood; the named stems miss both troughs (54° at 38, 53° at 50, 52° at 60 cm); under the dry and the wet bark
+the floor is 54°. So on the thin end of the bark the ratified ±50° rule holds on the 1° grid with a margin of 0.35° on the crossing (over the
+four single-reading A.36 interpolations of the «phloem» bark the floor rows' crossing spans 50.22 – 50.37°) — the rule holds under all three
+bark readings there, and only the «phloem» one, our hypothesis, brings it that close (the dry and the wet readings leave 4°). The standoff is not the
+monotone axis it was expected to be, and the polarizations differ: TE is monotone in the crossing (the higher deck narrows its −3 dB crossing
+in every one of the 4140 cells, and the integer sector in 4043 of them — the higher deck is TE's adverse end), while for TM the crossing is
+narrower at the higher deck in 658 of the 4140 (stem × width × bark) cells (225 on the integer sector), and every TM row at the sector's
+floor is at the low one. The TM floor behind on the stem axis is 10.2 dB (DBH 41 cm, 2.6 cm of sapwood, «phloem» bark;
+10.1 – 10.3 dB over the A.36 readings); the largest TM loss at 90° is 10.4 dB (DBH 54 cm, 3.6 cm); the TE sector
+narrows to 37° on 35 grid rows (33 cells; DBH 38 – 54 cm, 2.2 – 4.6 cm of sapwood, dry and «phloem» bark); the backs reach
+≥ 61.7 dB (TM) and ≥ 71.7 dB (TE) on the grid — sampled nulls, so the deep end stays open.
+
+**The dead bark is the third resonant axis** (`bark_sweep`): at the «phloem» reading the in-medium wavelength is ≈ 7.8 cm, and canon's
+dead bark runs 13.5 – 21 mm at DBH 38 and 17.5 – 28 at DBH 50 (`01_04 §3.2`), so the thin end above was one end of an axis, not the
+axis. Swept from the thin to the thick end in 1 mm steps (both ends derived per stem — canon states the ends at 38 and 50; the live
+phloem taken off the single-bark figures is 3 mm at the thin end, as canon says, and 1 mm at the thick end, OUR reading of canon's own
+pattern there, an assumption; 35 mm at DBH 60 is the table's 36 mm less that 1 mm) on the TM «phloem» stem over every stem, width and
+deck, the sector's floor is 49° on the 1° grid (crossing 49.85° on the grid, at DBH 54 cm with 30.8 mm of bark and 2.4 cm of
+sapwood at the 12.85 mm deck; 49.72 – 49.88° over the A.36 readings), so **the ratified ±50° rule FAILS on the 1° grid over canon's
+own bark range** — it fails first at DBH 54 cm, on 8 grid rows at DBH 54 cm (bark 27.3 – 30.8 mm, sapwood 2.4 – 2.8 cm),
+where the LETTER of the rule — 3 dB at ±50° — falls by hundredths of a decibel: the loss at ±50° is 3.004 – 3.018 dB over those rows,
+3.018 on the crossing-floor row (3.014 – 3.033 over the A.36 readings). Three things bound that floor, and only one of them exceeds the excess. The grid minimum is an
+UPPER bound on the true floor: a finer grid around the floor row (DBH step 0.1 cm, sapwood 0.1 cm, bark 0.25 mm, inside the table) finds
+49.82° (DBH 53.8 cm, 30.66 mm of bark, 2.5 cm of sapwood), 0.03° below the node — a one-sided deepening of 0.003 dB.
+The floor sits on the table's EDGE, not at an extremum: past the thick end the crossing falls further before it turns
+(49.81° at 31.8 mm, the lowest of the probe; back above the rule from 33.8 mm — canon's ridge SD is ±4 mm, `01_04 §3.2`), another
+one-sided deepening of 0.004 dB. And the deck decides whether the rule passes: it stands on the flange-thickness placeholder
+(`00_07` HW.8.10), and ±1 mm of it moves the crossing by ≈ 0.2° and the loss at ±50° by ≈ 0.02 dB — more than the excess itself — so a
+deck 1 mm higher returns the rule (50.04° at 13.85 mm) and 1 mm lower takes it to 49.66°. Under the dry and the wet proxies the floor is 54° at the thin end and rises to 57° at the thick
+end. The TM floor behind on the bark axis is 9.9 dB (DBH 40 cm, 19.2 mm of bark, 2.2 cm of sapwood; 9.8 – 10.1 dB
+over the A.36 readings) — below the diameter axis's 10.2 — and the largest TM loss at 90° there 10.6 dB; the 2-D efficiency indicator
+falls to 0.11. Canon sets no upper DBH: a probe past the bark table, 61 – 90 cm on the TM «phloem» stem under both decks, with
+the bark by three assumptions — the thin end held at 22 mm, the thin end extended by the table's 50→60 slope, the thick end extended
+likewise — first breaks the rule on the 1° grid at DBH 86 / 76 / holds to 90 cm respectively.
 
 ⚠️ **Bounds.** The shape against azimuth is exact only in the horizontal plane, for an infinite round stem of uniform
 isotropic layers, a node on a radius and a short dipole along or across the stem: a gateway high above the horizon
@@ -1467,7 +1508,7 @@ near field too; the booster's 8 – 10 mm offset from the anchor's axis, the can
 path loss are out. The permittivities were measured in situ at the probe's 1.4 GHz centre, at the trunk's daily minimum
 (15:00 – 18:00) and mostly at the end of spring; the step to 868 MHz is bracketed (flat ⊥ all-ionic; if Table 3 is a
 1 – 2 GHz average the all-ionic end is ≈ 3 % higher), not measured; bark and heartwood are proxies — no pine bark or
-heartwood primary near 1 GHz is in the tree — and the bark is swept at its thin ends only. The sapwood widths are
+heartwood primary near 1 GHz is in the tree — and the bark is swept from canon's thin to thick ridge end on the TM «phloem» stem only (the dry and wet proxies at the two ends); furrows have no primary. The sapwood widths are
 read at their sources' heights (0.3 m; 3.5 – 4.5 m), not at the node's, which canon does not fix. Every layer is isotropic,
 while a TM source sees ε along the grain and the in-situ probe read a mixed face (lab spruce puts ε′∥/ε′⊥ at 2.2 –
 2.4), so the longitudinal ε may be higher than every reading here. The S2 profile is transcribed from the page image

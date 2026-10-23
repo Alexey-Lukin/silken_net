@@ -40,6 +40,7 @@ on:
       - 'docs/protocols/anchor/install_and_log_bench.md'
       - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
       - 'docs/protocols/hardware/rf_mockup_bench_sheet.md'
+      - 'docs/00_07_Action_Plan_Tracker.md'
       - '.github/workflows/in_silico_smoke.yml'
 
 jobs:
@@ -48,6 +49,7 @@ jobs:
     timeout-minutes: 2
     outputs:
       in_silico: ${{ steps.filter.outputs.in_silico }}
+      docs_sync: ${{ steps.filter.outputs.docs_sync }}
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
@@ -77,6 +79,11 @@ jobs:
               - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
               - 'docs/protocols/hardware/rf_mockup_bench_sheet.md'
               - '.github/workflows/in_silico_smoke.yml'
+            docs_sync:
+              # doc targets of the doc↔cache pins that live OUTSIDE the in-silico perimeter — they wake only the
+              # cache_doc_sync job (pytest, seconds), never lock_sync/smoke (3-GB conda installs); 00_07 changes in
+              # most commits, so the heavy jobs stay on `in_silico`
+              - 'docs/00_07_Action_Plan_Tracker.md'
 
   lock_sync:
     needs: changes
@@ -177,7 +184,7 @@ jobs:
 
   cache_doc_sync:
     needs: changes
-    if: ${{ needs.changes.outputs.in_silico == 'true' }}
+    if: ${{ needs.changes.outputs.in_silico == 'true' || needs.changes.outputs.docs_sync == 'true' }}
     # Numeric-drift guard — stdlib-only (no conda env → runs fast, in parallel
     # with the heavy L2 smoke, no lock_sync dependency). test_doc_cache_sync pins
     # every headline number in SUMMARY/L3 to its OWNER cache JSON — the
