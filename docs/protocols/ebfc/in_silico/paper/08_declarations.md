@@ -69,6 +69,48 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 > upload it to the same Zenodo draft and publish [founder's account]. A tag cut before the last SI render, or a
 > publication before step 4, archives under the DOI a tree the SI or the manuscript does not describe.
 
+> *Zenodo metadata — ready to paste at upload* (fields as the Zenodo deposit form and API name them — developers.zenodo.org
+> «Deposit metadata» and help.zenodo.org «Describe records», read 2026-10-23; the licence IDs checked against
+> zenodo.org/api/vocabularies/licenses the same day; the GitHub-tree convention read on a live GitHub-integrated record,
+> ref 47's own, that day). The founder types these into the draft that holds the reserved DOI (step 1 of the recipe
+> above); nothing here is printed in the manuscript.
+> - **Resource type:** Software — the record is the archived tree (scripts, caches, manuscript sources, SI manifest),
+>   not the preprint, which lives on ChemRxiv.
+> - **Title:** `SilkenNet — development tree of the preprint "<paper title>" (snapshot <tag>)`, the paper title copied
+>   at upload from its one home, the title line the manuscript print and the SI generator read (`scripts/disclosure_pdf.rb`,
+>   script 72).
+> - **Creators:** `Lukin, Oleksii` · affiliation `Independent researcher` (the authorship ruling the Author Contributions
+>   note above cites) · ORCID: the founder's iD, the same one attached to the ChemRxiv account (not kept in the repository).
+> - **Description** (paste, with the title and tag filled in): *Development tree of the preprint "<paper title>"
+>   (ChemRxiv, CC BY 4.0), archived at tag <tag>: the scripted DFT/MD pipeline (tools/in_silico), its committed result
+>   caches, the manuscript sources (docs/protocols/ebfc/in_silico/paper) and the generated Supporting Information
+>   manifest (10_supporting_information.md — the SHA-256 of every file the manuscript's numbers come from), with the
+>   recorded computational environment (environment.computed.explicit.txt; PySCF 2.11.0) and the maintained conda-lock.
+>   The committed caches are the reported results; a re-run writes a new cache and is a new measurement. Licences by
+>   zone (NOTICE at the root): code — GNU AGPL-3.0-or-later; Solidity contracts — MIT; hardware design sources —
+>   CERN-OHL-S-2.0; documentation — CC BY-SA 4.0. Not under any of these: the AlphaFold 3 Server outputs
+>   (docs/protocols/ebfc/in_silico/alphafold3/ and dgrGcGDH_AF3.pdb — AlphaFold Server Output Terms of Use,
+>   non-commercial) and the Aggrescan3D output (tools/in_silico/data/chem11_a3d/ and every value quoted onward from
+>   it — its own non-commercial licence); see NOTICE and THIRD_PARTY_NOTICES.*
+> - **Licenses:** a mixed-licence upload, so declare all four standard ones (help.zenodo.org «Licenses», «Mixed license
+>   uploads»): `agpl-3.0-or-later` · `mit` · `cern-ohl-s-2.0` · `cc-by-sa-4.0` — each an ID of Zenodo's vocabulary.
+>   The two third-party exclusions are not licences we grant, so they stay in the description, not in this field.
+> - **Version:** the tag name (for instance `article1-preprint-1`). **Publication date:** the day the record is
+>   published. **Access right:** Open. **Funding:** none (the Funding declaration above). **Files:** the `git archive`
+>   zip of step 6.
+> - **Related works:** (a) `https://github.com/Alexey-Lukin/silken_net/tree/<tag>` — relation *Is supplement to*,
+>   resource type Software, scheme URL — the form the GitHub–Zenodo integration itself writes; (b) the ChemRxiv
+>   preprint DOI — relation *Is supplement to*, resource type Publication / Preprint — entered by editing the
+>   published record once ChemRxiv assigns the DOI: a metadata edit of a published record needs no new version
+>   (help.zenodo.org «Manage versions»: versioning is for changed FILES; title, creators, description «etc.» go through
+>   Edit), while the files of a published record cannot change — which is why step 4 stands before the tag.
+> - **Keywords:** enzymatic biofuel cell · FAD-dependent glucose dehydrogenase · osmium redox polymer · ZIF nanozyme ·
+>   density functional theory · proton-coupled electron transfer · implicit solvation · reorganisation energy · Marcus
+>   theory.
+> - **Which DOI the manuscript cites:** the one reserved in step 1. Whether Zenodo also shows a second, record-level
+>   DOI after publication is not stated on the reserve-DOI help page (read 2026-10-23) — Data Availability keeps the
+>   reserved one.
+
 - **Competing Interests.** *The author is the founder of the
   SilkenNet project, an open-hardware forest-monitoring platform of which the biofuel cell studied here
   is a component and which is intended for commercial deployment. No patent has been or will be filed on
