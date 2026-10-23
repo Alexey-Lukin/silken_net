@@ -154,9 +154,9 @@ for this sentence, so the claim was circular and lived nowhere.
 **v2 graded anode shipped** — three CEM-driven grading strategies, all MEASURED (the "which is best"
 answer is open, and on the porosity axis it is BIOLOGY's to give — ⚖️ 2026-09-17, `01_01 §5.5`; the
 generator is unbiased, not opinionated):
-- **continuous cell-size** (`GyroidPeriodRimMm`): the ~0.8× limit is a POROSITY limit; the declared P(r) is the axial and tangential period, while the radial step is 17–20 % shorter in the outer third at every height —
-  flat porosity, smooth radial pore taper at the bottom — sheared by height, about half the nominal
-  along one axis at the top (`cellshape`, `01_01 §5.5`; ⚖️ `00_07` HW.33).
+- **continuous cell-size** (`GyroidPeriodRimMm`): the ~0.8× limit is a POROSITY limit; the declared P(r) is the tangential period — the axial one is the rim's, one for the whole part (⚖️ HW.33 (в), 2026-10-22) — while the radial step is 16–19 % shorter in the outer third at every height —
+  flat porosity, smooth radial pore taper; the cell no longer shears with height (DA ≤ 1.25 at every height —
+  `cellshape`, `01_01 §5.5`).
 - **porosity gradient** (`GyroidWallParamRim`): clean monotone profile (the "softer rim").
 - **stepped heterostructure** (`Topology: stepped`, `ZonedGyroid`): strong ~2× pore contrast at
   constant porosity — µ-LPBF only: ⚖️ 2026-09-17 it is NOT an SLM candidate (`01_01 §5.5`). Own SDF, not LEAP `ImplicitModular` (`FunctionalScaleTrafo` is a hard-coded

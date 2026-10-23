@@ -20,7 +20,7 @@
 #   1. TRANSCRIPTION — every cell of the two canon tables against the cached rows.
 #   2. DERIVATION — the figures canon computes FROM those rows (Gibson-Ashby at the measured density,
 #      the two ratios to it, GPa at the reference solid modulus, the reduction factors, the gap to the wood's
-#      transverse modulus in §5.1 and §5.2 — and its 00_07 HW.33 mirror while that leg carries it —, the
+#      transverse modulus in §5.1 and §5.2, the
 #      single-point readings, the spread). This is the layer that catches a correct cache quoted into a wrong sentence.
 #   3. PROVENANCE — that the cache still describes the run canon claims (SKU, topology, rod excluded).
 #   4. THE FITTED TABLE — the measured Gibson-Ashby C/n against the per-resolution `gibson_ashby_fit.*`
@@ -227,7 +227,6 @@ end
 # sweep they came from is not in the tree, so nothing here holds them.
 wood_gap = ->(gpa, band) { [ gpa / band[1], gpa / band[0] ] }
 radial_gpa = finest["radial_ratio"] * E_SOLID_GPA
-wood_band = nil
 if (m = canon.match(/Розрив із поперечним модулем деревини `E_R`\/`E_T` ≈ (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?) ГПа — \*\*~(\d+)–(\d+)×\*\* проти формульних ~(\d+)–(\d+)×/))
   anchors += 1
   wood_band = [ m[1].to_f, m[2].to_f ]
@@ -248,15 +247,6 @@ if (m = canon.match(/\*\*виміряно (\d+(?:\.\d+)?)× осьово · (\d+
     flag(failures, "reduction factor (1 / the finest row)", shown, q) if shown != q
   end
 end
-# Its mirror in the HW.33 leg of 00_07 — held WHEN PRESENT, not counted: a tracker leg is thinned or archived when its item
-# closes, so an absent sentence there is the tracker's normal life, not a disarmed check (declared ceiling).
-tracker_gap = File.read(File.join(ROOT, "docs/00_07_Action_Plan_Tracker.md"))[/розрив із поперечним модулем деревини ширшає \(~\d+–\d+× → ~(\d+)–(\d+)×\)/]
-if tracker_gap && wood_band
-  tracker_gap.scan(/~(\d+)–(\d+)×\)\z/).flatten.zip(wood_gap.call(radial_gpa, wood_band)).each do |q, v|
-    flag(failures, "00_07 HW.33 mirror of the gap to the wood's transverse modulus", format("%.0f", v), q) if format("%.0f", v) != q
-  end
-end
-
 # ── The WITH-ROD run: the RECORD of a branch that no longer exists. ──────────────────────────────
 # ⚠️ Pinned rather than left to prose because it is the number a reader reaches for when they say "the
 # part": the printed rod moved the axial figure by ~9 % and the radial by nothing.
@@ -324,12 +314,9 @@ FIT_ROWS = {
       renamed_to: "деталь (ґратка до осі Ø11×40)" }
 }.freeze
 
-# The HW.33 era (geometry verdict (в), 2026-10-22): no fit cache records the generator's phase rule, so a part fit
-# still measured BEFORE the verdict is known by its own fitted C, and its row says so in the specimen cell
-# («… — до присуду HW.33; …»). Two-sided, as `with_bus_rod` was: a marked row over a re-run cache reds, and an
-# unmarked row over the pre-verdict cache reds. ⛔ Delete the entry once no pre-verdict part fit is left in the tree.
-PRE_HW33_MARK = " — до присуду HW.33"
-PRE_HW33_FIT_C = { 32 => 1.0245600581552898 }.freeze
+# ⛔ DECLARED CEILING (geometry eras): no fit cache records the generator's PHASE rule, so a geometry verdict leaves a
+# part fit and its canon row self-consistent and green. The HW.33 (в) verdict (2026-10-22) was bridged by a row
+# marker tied to the pre-verdict fitted C and retired with the last re-run (2026-10-23); the next verdict needs one again.
 
 fit_rows_seen = 0
 # ⚠️ The AXIS cell is part of the KEY, not decoration: the part cache carries a radial fit too (`fit_radial_*`),
@@ -338,8 +325,6 @@ fit_rows_seen = 0
 # axial one there would be the exact substitution this guard exists to prevent.
 canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|$/) do
   specimen, div, axis, c_q, n_q, r2_q = Regexp.last_match.captures
-  pre_hw33 = specimen.include?(PRE_HW33_MARK)
-  specimen = specimen.split(PRE_HW33_MARK).first
   spec = FIT_ROWS[specimen.strip]
   next failures << "fit table names an unknown specimen '#{specimen.strip}' — add it to FIT_ROWS or fix canon" if spec.nil?
   if spec[:renamed_to]
@@ -352,13 +337,6 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
 
   fit_rows_seen += 1
   f = JSON.parse(File.read(path))
-  if specimen.start_with?("деталь")
-    pre_cache = PRE_HW33_FIT_C[div.to_i] == (f["fit_c"] || f["fit_axial_c"])
-    failures << "fit row #{specimen.strip} /#{div}: the cell says «до присуду HW.33», but #{File.basename(path)} is no longer "\
-                "the pre-verdict cache — drop the marker" if pre_hw33 && !pre_cache
-    failures << "fit row #{specimen.strip} /#{div}: #{File.basename(path)} is still the fit measured BEFORE the HW.33 "\
-                "verdict — the cell must say «до присуду HW.33»" if pre_cache && !pre_hw33
-  end
   case axis.strip
   when "осьова"
     c_cached = f["fit_c"] || f["fit_axial_c"]
@@ -440,14 +418,18 @@ end
 # sentences compute from fit caches still in the tree, at the steps the sentence NAMES — a historical figure is looked up
 # by the step it states, never by its position in the table — the equal step too is the one the gap sentence names — so
 # a correct new rung reds nothing that is still true; and the words they stand on (one row for the condition and the
-# gap, one step for both specimens, the band narrower than the gap, the part's C falling, the post-HW.33 sweep
-# not monotone on either axis with the fits read at the nominal wall inside that saw, the pre-verdict /32 row marked, every
-# printed fit command carrying its cache's walls). A one-sided bound («в межах X %») is held to the smallest X at its
+# gap, one step for both specimens, the band narrower than the gap's size, the post-HW.33 sweep
+# not monotone on either axis with the fits read at the nominal wall inside that saw, the part's fitted-C chain non-monotone
+# as canon states it, the gap SIGNED — it changed sign with the HW.33 (в) geometry — and every printed fit command carrying its
+# cache's walls). A one-sided bound («в межах X %») is held to the smallest X at its
 # precision that keeps it true; a range DERIVED from the rows («на X–Y %») is rounded OUTWARD, so it contains the
 # measured one; a range of the table's own cells («у смузі 2.198–2.320») is quoted at the table's precision, as the
 # reader sees the cells — rounding a derived figure to nearest is what let «±0.6 %» stand for +0.69 %.
-# ⛔ DECLARED CEILING: not the retired annulus's figures (1.033, +5.1 %, 2.2387, +8.8 %, the per-step falls of the ⊕) —
-# the re-measurement overwrote their caches, so they stand as dated record; not «40 кроках проти 32» (CEM periods);
+# ⛔ DECLARED CEILING: not the retired annulus's figures (1.033, +5.1 %, 2.2387, +8.8 %, the per-step falls of the ⊕) nor
+# the pre-HW.33 body's (1.025, +4.3 %, 2.2400, 0.0015, 1.155 → 1.046 → 1.025; its «зійшов із +5.1 % до +4.3 %» check was
+# retired with them 2026-10-23) — the re-measurements overwrote their caches, so they stand as dated record; not
+# «40 кроках проти 32» (CEM periods); not the mirrors of §5.2 in SUMMARY, the skills and the tracker — since 2026-10-23
+# they carry the direction in words and no number of their own;
 # not the run times («8 год 20 хв» — no cache records a duration; the COST power is held, from elements × CG
 # iterations); not «той самий прилад» — that the sweep and the part fits share the sampler, the solver and the step
 # rule is a fact of Program.cs this gate cannot read; and the part's E at the nominal wall is READ OFF its fits by a
@@ -471,14 +453,14 @@ cubic_at = lambda do |xs, ys, x0|
   near.sum { |i| ys[i] * near.reduce(1.0) { |acc, j| j == i ? acc : acc * (x0 - xs[j]) / (xs[i] - xs[j]) } }
 end
 fit_ladder = lambda do |specimen|
-  canon.scan(/^\| \*{0,2}#{Regexp.escape(specimen)}(#{Regexp.escape(PRE_HW33_MARK)}[^|*]*)?\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}осьова\*{0,2} \|/)
-       .map { |mark, d| [ d.to_i, !mark.nil? ] }.uniq.sort.filter_map do |div, pre|
+  canon.scan(/^\| \*{0,2}#{Regexp.escape(specimen)}\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}осьова\*{0,2} \|/)
+       .flatten.map(&:to_i).uniq.sort.filter_map do |div|
     path = File.join(ROOT, format(FIT_ROWS[specimen][:glob], n: div))
     next unless File.exist?(path)
 
     f = JSON.parse(File.read(path))
     step = f["step_mm"] || (f["period_mm"] && f["steps_per_period"] && (f["period_mm"].to_f / f["steps_per_period"]))
-    [ div, { c: f["fit_c"] || f["fit_axial_c"], n: f["fit_n"] || f["fit_axial_n"], rc: f["fit_radial_c"], step_mm: step, rows: f["rows"], pre: pre } ]
+    [ div, { c: f["fit_c"] || f["fit_axial_c"], n: f["fit_n"] || f["fit_axial_n"], rc: f["fit_radial_c"], step_mm: step, rows: f["rows"] } ]
   end.to_h
 end
 chain = ->(text) { text.split(" → ").map { |x| x.delete("*") } }
@@ -500,12 +482,79 @@ else
     gap = ((part_fit[eq_div][:c] / cube_fit[eq_div][:c]) - 1) * 100
     band = finest3.map { |d| cube_fit[d][:c] }.minmax
     spread = ((band.max / band.min) - 1) * 100
-    part_c = part_fit.values.reject { |v| v[:pre] }.map { |v| v[:c] }
+    part_c = part_fit.values.map { |v| v[:c] }
     count_word = { 3 => "трьох", 4 => "чотирьох", 5 => "пʼяти", 6 => "шести", 7 => "семи", 8 => "восьми" }
     failures << "«при рівному кроці»: the part's /#{eq_div} step is #{part_fit[eq_div][:step_mm]} mm, the cube's /#{eq_div} #{cube_fit[eq_div][:step_mm]} mm" unless part_fit[eq_div][:step_mm] && cube_fit[eq_div][:step_mm] && (part_fit[eq_div][:step_mm] - cube_fit[eq_div][:step_mm]).abs < 1e-6
-    failures << "«Перша умова … найнижчий у смузі, тож проти будь-якого з трьох розрив не більший»: the band's lowest row is /#{low_div}, the gap is taken at /#{eq_div} — the condition and the gap must name ONE row" unless low_div == eq_div
-    failures << "«руху на пʼять відсотків там немає — на незбіжність куба залишок не списується»: the cube's three finest rows spread #{spread} % against a #{gap} % gap" unless spread < 5 && spread < gap
-    failures << "«драбинка підігнаного C СПАДНА»: the part's fitted C does not fall at every finer step #{part_c}" unless part_c.each_cons(2).all? { |x, y| y < x }
+    failures << "«Перша умова … найнижчий у смузі, тож проти будь-якого з трьох розрив не менший»: the band's lowest row is /#{low_div}, the gap is taken at /#{eq_div} — the condition and the gap must name ONE row" unless low_div == eq_div
+    # The gap is SIGNED (it changed sign with the HW.33 (в) geometry, 2026-10-23); the band is compared to its size.
+    # The sentence is the carrier: its words name the comparison (the band against the gap's SIZE, no literal threshold).
+    if canon.include?("і руху на величину розриву там немає — на незбіжність куба залишок не списується")
+      gap_anchors += 1
+      failures << "«руху на величину розриву там немає — на незбіжність куба залишок не списується»: the cube's three finest rows spread #{spread} % against a #{gap} % gap" unless spread < gap.abs
+    else
+      failures << "size-gap: «і руху на величину розриву там немає — на незбіжність куба залишок не списується» is gone or reworded — fix its shape"
+    end
+    # ── Every SIGN, DIRECTION and SHAPE word is a CAPTURE derived from the caches (guard-craft #186): a flip reds as a
+    #    wrong word («canon says X, cache gives Y»), never as «gone or reworded». The facts the words stand on:
+    incs = part_c.each_cons(2).map { |x, y| y - x }
+    falling = incs.all?(&:negative?)
+    rising = incs.all?(&:positive?)
+    shape = falling ? "СПАДНА" : rising ? "ЗРОСТАЄ" : "НЕ монотонна"
+    band_narrow = spread < gap.abs
+    cond2 = falling ? "підтримує" : rising ? "спростовує" : "не судить"
+    supports_word = if band_narrow && falling then "обидві"
+    elsif band_narrow then "лише першу"
+    elsif falling then "лише другу"
+    else "жодної"
+    end
+    # The flip sentence quotes the PRE-verdict C and gap (a dated record): the gap is re-derived from that C against the
+    # cube row that IS in the tree, so the record cannot be edited into a coherent falsehood; the signs decide the verb.
+    old_gap = nil
+    if (sm = canon.match(/і знак розриву гео-присуд (ПЕРЕВЕРНУВ|ЗБЕРІГ):\*\* на тілі до присуду деталь була (жорсткішою|мʼякшою) за куб у підігнаному `C` \((\d+\.\d+), ([+−]\d+\.\d+) %;/))
+      gap_anchors += 1
+      old_c = sm[3].to_f
+      old_gap = sm[4].tr("−", "-").to_f
+      flag(failures, "size-gap: the quoted pre-verdict gap against the quoted pre-verdict C and the cube's /#{eq_div}", gap_render.call(((old_c / cube_fit[eq_div][:c]) - 1) * 100, sm[4]), sm[4]) if gap_render.call(((old_c / cube_fit[eq_div][:c]) - 1) * 100, sm[4]) != sm[4]
+      verb = old_gap.negative? == gap.negative? ? "ЗБЕРІГ" : "ПЕРЕВЕРНУВ"
+      was = old_gap.positive? ? "жорсткішою" : "мʼякшою"
+      flag(failures, "size-gap «ПЕРЕВЕРНУВ/ЗБЕРІГ»", verb, sm[1]) if sm[1] != verb
+      flag(failures, "size-gap «була жорсткішою/мʼякшою»", was, sm[2]) if sm[2] != was
+    else
+      failures << "size-gap: the sign-flip sentence «і знак розриву гео-присуд … на тілі до присуду деталь була … (C, ±gap %;» is gone or reworded — fix its shape"
+    end
+    prev_div = part_fit.keys.select { |d| d < eq_div }.max
+    step_dir = prev_div && (part_fit[eq_div][:c] > part_fit[prev_div][:c] ? "угору" : "вниз")
+    closer = prev_div && ((part_fit[eq_div][:c] - cube_fit[eq_div][:c]).abs < (part_fit[prev_div][:c] - cube_fit[eq_div][:c]).abs ? "ближче до куба" : "далі від куба")
+    was_under = prev_div && part_fit[prev_div][:c] < cube_fit[eq_div][:c]
+    is_under = part_fit[eq_div][:c] < cube_fit[eq_div][:c]
+    stands = is_under ? (was_under ? "але й далі під ним" : "і вже під ним") : (was_under ? "і вже над ним" : "але й далі над ним")
+    word_checks = {
+      "«тож проти будь-якого з трьох розрив не менший/не більший»" => [ /найнижчий у смузі, тож проти будь-якого з трьох розрив (не менший|не більший)/, gap.negative? ? "не менший" : "не більший" ],
+      "«межа під смугою зменшила б/підняла б розрив»" => [ /а межа під смугою (зменшила б|підняла б) розрив/, gap.negative? ? "зменшила б" : "підняла б" ],
+      "«на відвантажуваній — мʼякша/жорсткіша»" => [ /на відвантажуваній — (мʼякша|жорсткіша), і її `C`/, gap.negative? ? "мʼякша" : "жорсткіша" ],
+      "«тобто нижня/верхня оцінка його величини»" => [ /ПІДПИСАНОГО розриву, тобто (нижня|верхня) оцінка його величини/, gap.negative? ? "нижня" : "верхня" ],
+      "«і вимір підтримує лише першу/лише другу/обидві/жодної»" => [ /оцінка його величини, і вимір підтримує (лише першу|лише другу|обидві|жодної)\*\*/, supports_word ],
+      "«зміряно відʼємним/додатним»" => [ /рівнокроковий розрив нової геометрії зміряно (відʼємним|додатним) — \*\*/, gap.negative? ? "відʼємним" : "додатним" ],
+      "«протилежного/того самого знака до тіла до присуду»" => [ /при рівному кроці виміряно [+−]\d+(?:\.\d+)? %, (протилежного|того самого) знака до тіла до присуду/, old_gap && (old_gap.negative? == gap.negative? ? "того самого" : "протилежного") ],
+      "«нижньою/верхньою оцінкою величини розриву»" => [ /знака до тіла до присуду; (нижньою|верхньою) оцінкою величини розриву/, gap.negative? ? "нижньою" : "верхньою" ],
+      "«вимір підтримує/не підтримує (1)»" => [ /з яких вимір (підтримує|не підтримує) \(1\) і/, band_narrow ? "підтримує" : "не підтримує" ],
+      "«і підтримує/не судить/спростовує (2)»" => [ /\(1\) і (підтримує|не судить|спростовує) \(2\)/, cond2 ],
+      "«драбинка підігнаного C НЕ монотонна/СПАДНА/ЗРОСТАЄ»" => [ /драбинка підігнаного `C` (НЕ монотонна|СПАДНА|ЗРОСТАЄ):\*\* після гео-присуду/, shape ],
+      "«спад/підйом на першому кроці»" => [ /\(прирости [^)]*\) — (спад|підйом) на першому кроці й/, incs[0] && (incs[0].negative? ? "спад" : "підйом") ],
+      "«й спад/підйом на другому»" => [ /на першому кроці й (спад|підйом) на другому, менший за ширину смуги куба/, incs[1] && (incs[1].negative? ? "спад" : "підйом") ],
+      "«повернув його … угору/вниз»" => [ /повернув його на \d+\.\d+ % (угору|вниз), до/, step_dir ],
+      "«ближче до куба/далі від куба»" => [ /, до \d+\.\d+ — (ближче до куба|далі від куба), /, closer ],
+      "«але й далі під ним/і вже над ним/…»" => [ /— (?:ближче до куба|далі від куба), (але й далі під ним|і вже над ним|але й далі над ним|і вже під ним):/, stands ]
+    }
+    word_checks.each do |label, (re, want)|
+      sm = canon.match(re)
+      next failures << "size-gap: #{label} is gone or reworded — fix its shape" if sm.nil?
+
+      gap_anchors += 1
+      next failures << "size-gap: #{label} cannot be derived (a fact it stands on is missing from the caches or the flip sentence)" if want.nil?
+
+      flag(failures, "size-gap #{label}", want, sm[1]) if sm[1] != want
+    end
     # The ratified pair's confirming row — a ONE-SIDED bound, both steps read from the sentence.
     if (m = canon.match(/Канонна пара — ґратка · осьова · `\/(\d+)`: [^(]*\(РАТИФІКОВАНО founder 2026-09-18, [^;]*; рядок `\/(\d+)` підтверджує її в межах (\d+(?:\.\d+)?) % по `C`\)/))
       gap_anchors += 1
@@ -525,7 +574,7 @@ else
     single_c = ->(d, w) { r = cube_fit.dig(d, :rows)&.find { |x| (x["wall_param"] - w).abs < 1e-6 }; r && (r["axial_ratio"] / (r["relative_density"]**2)) }
     # The table as the reader SEES it: a band of its cells must not contradict them at face value («2.20» beside a cell
     # «2.198»), so each band end is held to the displayed cell of its extreme row, not merely to the value at some precision.
-    shown = canon.scan(/^\| \*{0,2}(ґратка \(куб 2 комірки\)|деталь \(ґратка до осі Ø11×40\))(?: — до присуду HW\.33[^|*]*)?\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}осьова\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|/)
+    shown = canon.scan(/^\| \*{0,2}(ґратка \(куб 2 комірки\)|деталь \(ґратка до осі Ø11×40\))\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}осьова\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|/)
                  .to_h { |sp, d, c, n| [ [ sp.start_with?("ґратка") ? :cube : :part, d.to_i ], { c: c, n: n } ] }
     n_lo_cell, n_hi_cell = (cube_fit.map { |d, v| [ [ :cube, d ], v[:n] ] } + part_fit.map { |d, v| [ [ :part, d ], v[:n] ] })
                            .minmax_by(&:last).map { |key, _| shown.dig(key, :n) }
@@ -535,13 +584,26 @@ else
     checks = [
       [ /На найдрібніших рядках обох зразків `n` розходиться лише на \*\*(\d+(?:\.\d+)?)\*\* \((\d+(?:\.\d+)?) деталь · (\d+(?:\.\d+)?) куб;/,
         [ (part_fit[finest_part][:n] - cube_fit[finest_cube][:n]).abs, part_fit[finest_part][:n], cube_fit[finest_cube][:n] ] ],
-      [ /`C` же не зійшовся: при рівному кроці (\d+(?:\.\d+)?) мм деталь дає \*\*(\d+(?:\.\d+)?)\*\* проти (\d+(?:\.\d+)?) у куба — \*\*(\+\d+(?:\.\d+)?) %\*\*/,
+      [ /`C` же не зійшовся: при рівному кроці (\d+(?:\.\d+)?) мм деталь дає \*\*(\d+(?:\.\d+)?)\*\* проти (\d+(?:\.\d+)?) у куба — \*\*([+−]\d+(?:\.\d+)?) %\*\*/,
         [ part_fit[eq_div][:step_mm], part_fit[eq_div][:c], cube_fit[eq_div][:c], gap ] ],
-      [ /⚠️ \*\*(\+\d+(?:\.\d+)?) % — верхня оцінка залишку лише за двох умов, які вимір підтримує, але не доводить\*\*/, [ gap ] ],
+      [ /⚠️ \*\*([+−]\d+(?:\.\d+)?) % — за двох умов це верхня оцінка ПІДПИСАНОГО розриву, тобто (?:нижня|верхня) оцінка його величини, і вимір підтримує (?:лише першу|лише другу|обидві|жодної)\*\*/, [ gap ] ],
+      [ /рівнокроковий розрив нової геометрії зміряно (?:відʼємним|додатним) — \*\*([+−]\d+(?:\.\d+)?) %\*\*/, [ gap ] ],
+      # The last rung against the one before it, both against the cube's row at the equal step (the words — above).
+      [ /а крок куба \(`\/(\d+)`, 2026-10-23\) повернув його на (\d+\.\d+) % (?:угору|вниз), до (\d+\.\d+) —/,
+        ->(md) { d = md[1].to_i; prev = part_fit.keys.select { |k| k < d }.max; [ (d if d == eq_div), (prev && ((part_fit[d][:c] / part_fit[prev][:c]) - 1).abs * 100), part_fit.dig(d, :c) ] } ],
+      # The between-geometry shifts: the OLD values are a dated record quoted at four decimals, the NEW ones are the
+      # tree's, and each percentage is re-derived from the quoted old value and the cache.
+      [ /рушив на (\d+\.\d+) % \((\d+\.\d+) → (\d+\.\d+)\), `C` — на (\d+\.\d+) % \((\d+\.\d+) → (\d+\.\d+)\)/,
+        ->(md) { on, oc = md[2].to_f, md[5].to_f; f = part_fit[finest_part]; [ ((f[:n] / on) - 1).abs * 100, on, f[:n], ((f[:c] / oc) - 1).abs * 100, oc, f[:c] ] } ],
+      # «32 кроки на обідний період»: the rim period of the pine manifest over the finest part fit's step.
+      [ /\((\d+) кроки на обідний період\)/,
+        ->(_md) { rim = JSON.parse(File.read(File.join(ROOT, "tools/cad/cem/anchor_zone1.pine.json")))["gyroid_period_rim_mm"]; [ (rim / part_fit[finest_part][:step_mm]).round ] } ],
+      # The part's /32 C against the whole cube table — the «нижче за всі чотири рядки куба» clause, at the table's precision.
+      [ /її `C` на `\/(\d+)` лежить нижче за всі чотири рядки куба \((\d+\.\d+)–(\d+\.\d+)\)/,
+        ->(md) { cs = cube_fit.values.map { |v| v[:c] }; ok = cube_fit.size == 4 && part_fit.dig(md[1].to_i, :c).to_f < cs.min; [ (md[1].to_i if ok), cs.min, cs.max ] } ],
       [ /\*\*Перша умова — межа куба не нижча за його рядок `\/(\d+)`\*\*, найнижчий у смузі/, [ low_div ] ],
-      [ /\*\*Друга умова — межа деталі не вища за її рядок `\/(\d+)`\*\*: на спадну драбину вона спирається/, [ eq_div ] ],
-      [ /🔑 \*\*Отже чесне прочитання: при рівному кроці виміряно (\+\d+(?:\.\d+)?) %; верхньою оцінкою межі він є лише за умов \(1\) і \(2\)/, [ gap ] ],
-      [ /тож розрив при рівному кроці зійшов із \+\d+(?:\.\d+)? % до (\+\d+(?:\.\d+)?) %/, [ gap ] ],
+      [ /\*\*Друга умова — межа деталі не вища за її рядок `\/(\d+)`\*\* — її підтримала б спадна драбинка/, [ eq_div ] ],
+      [ /🔑 \*\*Отже чесне прочитання: при рівному кроці виміряно ([+−]\d+(?:\.\d+)?) %, (?:протилежного|того самого) знака до тіла до присуду; (?:нижньою|верхньою) оцінкою величини розриву він є лише за умов \(1\) і \(2\)/, [ gap ] ],
       [ /Найдрібніший рядок виміряно на \*\*КУБІ\*\* \(`\/(\d+)` — матеріальний масштаб, який формула й описує\), найдрібніший рядок деталі — на кроці куба `\/(\d+)`/,
         [ finest_cube, finest_part ] ],
       [ /одноточковий `C` того самого куба при `wall_param` (\d+(?:\.\d+)?) читається \*\*(\d+(?:\.\d+)?) · (\d+(?:\.\d+)?) · (\d+(?:\.\d+)?)\*\* на (\d+) · (\d+) · (\d+) кроках/,
@@ -598,17 +660,24 @@ else
     else
       failures << "size-gap: the cube chain «його `C` на N кроках … тримає три найдрібніші рядки в смузі …» is gone or reworded — fix its shape"
     end
-    # ⛔ DECLARED CEILING (2026-10-22): «(зварне тіло: 1.155 → 1.046 → 1.025, …)» is the PRE-HW.33 chain — its /7 and /10
-    # caches were re-run on the new geometry, so it stands as dated record; the live chain is the post-verdict one.
-    if (m = canon.match(/після нього `\/(\d+)` → `\/(\d+)` дають (\d+(?:\.\d+)?) → (\d+(?:\.\d+)?) \(приріст (−\d+(?:\.\d+)?)\)/))
+    # ⛔ DECLARED CEILING: «(зварне тіло: 1.155 → 1.046 → 1.025, …)», «+4.3 %» and the ⊕ welded-branch falls are the
+    # PRE-HW.33 body's figures — every cache they came from was re-run on the (в) geometry, so they stand as dated
+    # record. The live chain is the part's whole axial fit table in step order; its length is canon's, as the cube's —
+    # the shape word and the per-step words are derived above (word_checks); here the numbers, and that the last step
+    # is smaller than the cube's band.
+    if (m = canon.match(/драбинка підігнаного `C` (?:НЕ монотонна|СПАДНА|ЗРОСТАЄ):\*\* після гео-присуду HW\.33 ((?:`\/\d+`(?: → )?)+) дають ((?:\d+\.\d+(?: → )?)+) \(прирости ((?:[+−]\d+\.\d+)(?: і [+−]\d+\.\d+)*)\) — (?:спад|підйом) на першому кроці й (?:спад|підйом) на другому, менший за ширину смуги куба/))
       gap_anchors += 1
-      post = part_fit.reject { |_, v| v[:pre] }
-      failures << "size-gap: the post-verdict part chain names /#{m[1]} → /#{m[2]}, the table's post-verdict rows are #{post.keys}" unless post.keys == [ m[1].to_i, m[2].to_i ]
-      [ [ part_c[0], m[3] ], [ part_c[1], m[4] ], [ part_c[1] && part_c[0] && (part_c[1] - part_c[0]), m[5] ] ].each do |value, q|
-        flag(failures, "size-gap post-verdict part chain", value && gap_render.call(value, q), q) if value.nil? || gap_render.call(value, q) != q
-      end
+      named = m[1].scan(/\d+/).map(&:to_i)
+      values_q = m[2].split(" → ")
+      incs_q = m[3].split(" і ")
+      failures << "size-gap: the part chain names #{named}, the table's part axial rows are #{part_fit.keys}" unless named == part_fit.keys
+      failures << "size-gap: the part chain quotes #{values_q.size} values and #{incs_q.size} increments for #{part_c.size} rungs" unless values_q.size == part_c.size && incs_q.size == part_c.size - 1
+      values_q.zip(part_c).each { |q, v| flag(failures, "size-gap part chain", v && gap_render.call(v, q), q) if v.nil? || gap_render.call(v, q) != q }
+      incs_q.zip(incs).each { |q, v| flag(failures, "size-gap part chain increment", v && gap_render.call(v, q), q) if v.nil? || gap_render.call(v, q) != q }
+      last_step = part_c.size >= 2 && ((part_c[-1] / part_c[-2]) - 1).abs * 100
+      failures << "«… на другому, менший за ширину смуги куба»: the part's last step is #{last_step} % against the cube band's #{spread} %" unless last_step && last_step < spread
     else
-      failures << "size-gap: the post-verdict part chain «після нього `/7` → `/10` дають … (приріст …)» is gone or reworded — fix its shape"
+      failures << "size-gap: the part's fitted-C chain «драбинка підігнаного `C` …: після гео-присуду HW.33 … дають … (прирости …)» is gone or reworded — fix its shape"
     end
     # The fit COMMAND canon prints: its walls are the cube caches' walls, its cache list is the table's cube rungs —
     # a command that omits --walls overwrites a pinned cache with another sweep (picogk gotcha #14).
@@ -655,7 +724,7 @@ else
     mb = canon.match(caveat_b)
     if ma && mb
       gap_anchors += 1
-      post = part_fit.reject { |_, v| v[:pre] }
+      post = part_fit
       rows_named = %i[c6 c8].map { |k| swept.call(ma[k].to_i) } + %i[lo7 hi7 u10 ra rb rich_a rich_b].map { |k| swept.call(mb[k].to_i) }
       if rows_named.any?(&:nil?) || %i[f7 f10 fr].any? { |k| !post.key?(mb[k].to_i) }
         failures << "size-gap: the Richardson caveat names a sweep step the cache lacks, or a fit that is not a post-HW.33 part row"
@@ -686,6 +755,27 @@ else
       end
     else
       failures << "size-gap: the Richardson caveat under the sweep table (the non-monotone sweep, then the fits read at the nominal wall) is gone or reworded — fix its shape"
+    end
+    # The «доказ зверху» after the re-run: the /32 fit read at the nominal wall against the two sweep rows the sentence
+    # names — the same cubic interpolation as the caveat, held with the same ceiling (a reading, not a measurement).
+    if (m = canon.match(/фіт `\/(\d+)`, перепрогнаний 2026-10-23 і прочитаний на тій самій номінальній стінці, дає (\d+\.\d+) — вище за `\/(\d+)` розгортки \((\d+\.\d+)\) і нижче за `\/(\d+)` \((\d+\.\d+)\), тобто (\S+) крок осьової драбини/))
+      gap_anchors += 1
+      e_fit = part_fit.key?(m[1].to_i) ? at_wall.call(m[1].to_i, "axial_ratio") : nil
+      lo, hi = swept.call(m[3].to_i), swept.call(m[5].to_i)
+      if e_fit.nil? || lo.nil? || hi.nil?
+        failures << "size-gap: the «доказ зверху» sentence names a fit or a sweep step the caches lack"
+      else
+        [ [ e_fit, m[2] ], [ lo["axial_ratio"], m[4] ], [ hi["axial_ratio"], m[6] ] ].each { |value, q| flag(failures, "size-gap «доказ зверху»", gap_render.call(value, q), q) if gap_render.call(value, q) != q }
+            failures << "«фіт /#{m[1]} … вище за /#{m[3]} і нижче за /#{m[5]}»: it reads #{e_fit}, the sweep #{[ lo['axial_ratio'], hi['axial_ratio'] ]}" unless e_fit > lo["axial_ratio"] && e_fit < hi["axial_ratio"]
+        # «Зверху» is a claim about the STEP too: the fit must be finer than both rows it is set between.
+        failures << "«доказ зверху»: the /#{m[1]} fit (#{part_fit.dig(m[1].to_i, :step_mm)} mm) is not finer than both /#{m[3]} and /#{m[5]}" unless part_fit.dig(m[1].to_i, :step_mm) < [ lo["step_mm"], hi["step_mm"] ].min
+        ordinal = { 5 => "пʼятий", 6 => "шостий", 7 => "сьомий", 8 => "восьмий", 9 => "девʼятий", 10 => "десятий" }
+        steps_desc = (post.map { |_, v| v[:step_mm] } + sweep["rows"].map { |r| r["step_mm"] }).uniq.sort.reverse
+        position = steps_desc.index(part_fit.dig(m[1].to_i, :step_mm))
+        failures << "«#{m[7]} крок осьової драбини»: the /#{m[1]} fit is step #{position && position + 1} of #{steps_desc.size} from the coarsest («#{position && ordinal[position + 1]}»)" unless position && apostrophe.call(m[7]) == apostrophe.call(ordinal[position + 1])
+      end
+    else
+      failures << "size-gap: the «доказ зверху» sentence (the re-run /32 fit at the nominal wall against the sweep) is gone or reworded — fix its shape"
     end
     # «наступний рядок деталі (`/64`) коштує ~16× … росте як N⁴»: the power is the sweep's own — elements × axial CG
     # iterations between its two finest rows — and the factor is that power of the step ratio to the finest part row.

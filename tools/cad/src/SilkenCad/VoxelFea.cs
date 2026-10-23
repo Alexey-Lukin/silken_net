@@ -38,9 +38,9 @@ namespace SilkenCad;
 //     ratio of two runs (the radial column divides by the solid twin), a fit's intercept C or an off-diagonal
 //     tensor term. The staircase changes the BODY — a voxel mesh cannot represent an inclined ligament surface —
 //     and no specimen shows its sign: the phase-locked cube (picogk gotcha #16) moves its density with the step
-//     and its ladders are not monotone, and the part's four-row sweep falls while its fits, read at the nominal
-//     wall, sit above its /16 row at /32 (01_01 §5.2). Hence a number is quoted with its step sweep, or with its
-//     step where it has none.
+//     and its ladders are not monotone, and on the HW.33 (в) geometry the part's own four-row sweep is not monotone
+//     either (/6 below /8 on both axes) while its /32 fit, read at the nominal wall, sits above its /16 row
+//     (01_01 §5.2). Hence a number is quoted with its step sweep, or with its step where it has none.
 //   • It measures the part as MODELLED, i.e. the geometric intent. A face-offset SENSITIVITY exists since
 //     2026-09-14 (`fea <cem> --dilate downskin|iso`): the lattice FIELD is dilated before sampling
 //     (DilatedField, Zone1Anode.cs), so nothing in this class changed — and a dilated row is still intent

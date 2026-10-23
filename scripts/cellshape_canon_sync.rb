@@ -44,13 +44,11 @@ require "json"
 
 ROOT = File.expand_path("..", __dir__)
 CANON = File.join(ROOT, "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md")
-TRACKER = File.join(ROOT, "docs/00_07_Action_Plan_Tracker.md")
 CEM_DIR = File.join(ROOT, "tools/cad/cem")
 CACHE_DIR = File.join(ROOT, "tools/cad/cache/topology")
 
 failures = []
 canon = File.read(CANON)
-TRACKER_TEXT = File.read(TRACKER)
 
 manifests = Dir[File.join(CEM_DIR, "anchor_zone1.*.json")].reject { |p| p.include?(".golden.") }.sort
 failures << "no anchor_zone1 manifests found — the gate would be vacuous" if manifests.empty?
@@ -183,13 +181,14 @@ if graded.size >= 5
                          /розрив ≤ ([0-9.]+) % на окрему вісь/,
                          [ gap_axis.ceil(1) ], 1)
 
-  # 🔑 The two ALTERNATIVES' figures live in the tracker's verdict leg, not in canon — the closed list is open
-  #    work, and `00_06 §2` keeps open work in `00_07`. So this layer reads THAT file; the gate follows the fact
-  #    to its home rather than asking canon to hold a number it must not.
+  # 🔑 The two ALTERNATIVES' figures are the submission's estimates. While the verdict was OPEN they lived in the
+  #    tracker leg (`00_06 §2`: open work in `00_07`) and this layer read that file; the application closed 2026-10-23,
+  #    the verdict's full form migrated to canon (`00_05 §5`, third half) and the figures are a dated record in §5.5 —
+  #    the gate follows the fact to its home. ⚠️ A verdict's figures move house TWICE (leg → canon); re-aim, never drop.
   [ [ "z_origin_mid", /член уполовину \(DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %\)/ ],
    [ "in_plane_only", /ОДНИМ осьовим періодом — DA ([0-9.]+)–([0-9.]+), λmin ([0-9.]+)–([0-9.]+), S_V пласка ([0-9.]+)–([0-9.]+), найгірша комірка підлоги ≤ ([0-9.]+) %/ ] ].each do |name, re|
     v = vars.(name)
-    anchors_seen += anchor(failures, TRACKER_TEXT, "#{name} figures (00_07 HW.33)", re,
+    anchors_seen += anchor(failures, canon, "#{name} figures (§5.5 verdict record)", re,
                            [ *v.map { |x| x["max_degree_of_anisotropy"] }.minmax,
                             *v.map { |x| x["min_stretch"] }.minmax,
                             *v.map { |x| x["specific_surface_vs_nominal_outer_top"] }.minmax,
@@ -206,6 +205,24 @@ if graded.size >= 5
                           *v.map { |x| x["min_stretch"] }.minmax,
                           *v.map { |x| x["specific_surface_vs_nominal_outer_top"] }.minmax,
                           v.map { |x| x["max_sub_floor_solid_fraction_by_cell"] * 100 }.max ], 2)
+end
+
+# ⊕ The verdict's third consequence (§5.5): the pine golden's specific surface — the NEW value from the golden in the tree,
+#   the OLD one a dated record quoted at three decimals, the fall re-derived from the two.
+golden_path = File.join(CEM_DIR, "anchor_zone1.pine.golden.json")
+if (m = canon.match(/питома поверхня `specific_surface_mm2_per_mm3` впала з (\d+\.\d+) до (\d+\.\d+) мм²\/мм³ \((−\d+\.\d+) %/))
+  anchors_seen += 1
+  if File.exist?(golden_path)
+    now = JSON.parse(File.read(golden_path))["specific_surface_mm2_per_mm3"]
+    was = m[1].to_f
+    fall = format("%.1f", ((now / was) - 1) * 100).sub(/\A-/, "−")
+    failures << "§5.5 specific surface: canon says #{m[2]}, the pine golden gives #{format('%.3f', now)}" if format("%.3f", now) != m[2]
+    failures << "§5.5 specific surface fall: canon says #{m[3]}, #{m[1]} → #{format('%.3f', now)} gives #{fall}" if fall != m[3]
+  else
+    failures << "§5.5 specific surface: the pine golden is not committed"
+  end
+else
+  failures << "the «питома поверхня … впала з X до Y мм²/мм³ (−Z %» sentence of §5.5 is gone or reworded — fix its shape here, do not drop the check"
 end
 
 # The controls, and the one that is NOT clean: `stepped`'s core shell straddles its own zone seam.

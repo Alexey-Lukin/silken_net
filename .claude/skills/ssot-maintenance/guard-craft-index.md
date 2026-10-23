@@ -263,6 +263,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 181. ГЕЙТ, ЧИЯ ЄДИНА ЗАЯВА ПРО ТЕ, ЩО ВІН ГЕЙТ, ЖИВЕ У ВЛАСНІЙ ШАПЦІ — невидимий ОБОМ напрямкам реєстр-звірки за побудовою
 184. A new guard must prove it is ALIVE before it is allowed to silence anything — a first resident, two reviewers with different lenses, two read-only checks before a false-positive class is muted, and a state machine that resets at the section boundary
 185. A restructure's cut SURFACES stale claims about gates, and they are INVERTED — the canon describes a gate as WEAKER than it is, so a registry read before a restructure overstates the debt
+186. ГЕЙТ, ЩО ЗАШИВ ЗНАК АБО НАПРЯМОК ВИМІРЯНОЇ ВЕЛИЧИНИ У ВЛАСНИЙ ШАБЛОН, читає переворот знака як «речення зникло», а не як «вимір змінився» — і шле автора лагодити ФОРМУ там, де рушив СВІТ
 
 <!-- /GUARD-CRAFT-INDEX -->
 

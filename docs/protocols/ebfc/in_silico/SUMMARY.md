@@ -1018,8 +1018,7 @@ of merit of its alloy is `σ_e / E_s`, not `σ_e`. An energy bound (Hill, and th
 least in uniaxial stress) puts the ligaments' RMS stress at ≥ 0.47 `E_s · ε` on both voxel-FE readings of the part as
 shipped after the HW.33 (в) geometry (Richardson 0.0805 axial ⊥ 0.0811 radial of `E_s`, before it 0.0942 ⊥ 0.0662;
 both in doubt now, on both sides: the part's step sweep is not monotone on either axis, so the
-two-point extrapolation from `/12` and `/16` proves convergence from neither side, and the `/32` reading that showed the
-axial doubt from above stands on the pre-verdict geometry until it is re-run; the two rows also differ in porosity,
+two-point extrapolation from `/12` and `/16` proves convergence from neither side, and the `/32` fit, re-run on the (в) geometry 2026-10-23, reads above `/16` at the nominal wall; the two rows also differ in porosity,
 64.406 ⊥ 64.605 %, a gap the p = 1 step from `/12` to `/16` amplifies ×3 — `01_01 §5.2`, `00_07` HW.23) — and it
 is a LOWER bound: it can show a ligament binding, never safe. Neither FE reading is the in-plane traction modulus the
 bound needs (the radial case is a kinematic shell loading, the axial one E[100] of a cubic lattice), so the bound holds
@@ -1074,8 +1073,8 @@ taken, at 26.33 MPa (3.34). The tie reverses the force, so the outward half land
 easy side, which `01_01 §4.3` A says nothing loads in service; a row's ratchet force is not in the tree. The gyroid
 carries the same force axially at its shank end: its own lower bound gives 0.49 of the SF-2 line on 4V (0.90 on CP-Ti,
 1.25 on Ta) at that force, on the raw `/16` axial row the script calls its conservative end — not proven: the part's sweep
-is not monotone in the step (`/8` lies above `/16`), and the `/32` reading that lay above it stands on the pre-verdict
-geometry (`01_01 §5.2`, `00_07` HW.23) — not additive with the in-plane bound, whose cross term has no established sign.
+is not monotone in the step (`/8` lies above `/16`), and the `/32` fit re-run on the (в) geometry reads above `/16` at the nominal wall (`01_01 §5.2`,
+`00_07` HW.23) — not additive with the in-plane bound, whose cross term has no established sign.
 
 **The flange disc** carries the bearing force only in `103`'s state 2 here — with a callus tie and a rigid bark both
 holding, a titanium run between them would carry the wood's own strain, a corner with no physical meaning, so the
@@ -1290,8 +1289,8 @@ shipped part is graded, so «cubic» holds at best locally — and the graded ge
 HW.33 verdict of 2026-10-22, growing with height along the axis: a volume-keeping shear that (`01_01 §5.5`, the `cellshape`
 verb) compressed the top cells of the part to 0.42–0.49 of their nominal along one axis (DA 3.3–4.3, the compressed axis
 64–67° off the part axis). The verdict (option (в): one axial period, the rim's) removed the height term — the shipped part
-reads DA ≤ 1.25 at every height — and this script reads the FE re-run on that geometry (2026-10-22; of the part's caches
-only the `/32` fit, which neither `105` nor `106` reads, is still pre-verdict — `00_07` HW.33); Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
+reads DA ≤ 1.25 at every height — and this script reads the FE re-run on that geometry (2026-10-22; the `/32` fit,
+which neither `105` nor `106` reads, followed 2026-10-23 — `01_01 §5.2`); Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
 the sweep). C44 is measured for the infinite lattice by the periodic voxel case (`01_01 §5.2`) but not read here; the tissue in the pores
 and the ring are unmeasured: the ring is read as the host's xylem (ours —
 `01_04 §2`'s phases say nothing of it); the interface is perfectly bonded, a reading no primary measures, and its
