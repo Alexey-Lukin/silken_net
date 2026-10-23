@@ -37,8 +37,26 @@ __pycache__/
 # Downloaded PDBs / one-off staging
 downloads/
 
-# MD run artefacts (trajectories, checkpoints) — large, regenerable
-cache/runs/
+# MD run artefacts (trajectories, checkpoints) — large, regenerable. Exception (⚖️ founder 2026-10-23, Стаття 1 self-review
+# round 2 П5): the Hessians (`.npy`) and the relaxed / saddle geometries (`.xyz`) of the thermochemistry runs 21g · 29b ·
+# 32b · 33 · 96 — ≈ 1.6 MB — are committed, because Methods §2.7 promises committed coordinates and the caches store only
+# the energies. Git cannot re-include a file under an ignored DIRECTORY, so the directory is kept and its contents ignored.
+cache/runs/*
+!cache/runs/21g/
+!cache/runs/29b/
+!cache/runs/32b/
+!cache/runs/33/
+!cache/runs/96/
+cache/runs/*/*
+!cache/runs/*/*.npy
+!cache/runs/*/*.xyz
+# …and 32b's first, superseded run (the saddle the relaxed start converged to), kept as a record with its README.
+# ⚠️ A new tag in the five directories surfaces as untracked: review it before adding (never `git add -A` here).
+!cache/runs/32b/run1_2026-10-16/
+cache/runs/32b/run1_2026-10-16/*
+!cache/runs/32b/run1_2026-10-16/*.npy
+!cache/runs/32b/run1_2026-10-16/*.xyz
+!cache/runs/32b/run1_2026-10-16/README.txt
 
 # Keep small deterministic caches (e.g. GAFF parameter cache) under cache/
 

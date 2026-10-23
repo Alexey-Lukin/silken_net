@@ -1,9 +1,11 @@
 # Defensive Disclosure — SilkenNet self-powered tree-health monitor (prior art)
 
 > **Author / discloser:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
-> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-10-04
-> **First published on 2026-10-04:** §2.1 and §3.1 in full, and every passage or table entry marked
-> «added 2026-10-04» or «corrected 2026-10-04».
+> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-10-23
+> **First published on 2026-10-04:** §2.1 and §3.1 as they then stood, and every passage or table entry marked
+> «added 2026-10-04» or «corrected 2026-10-04». One passage in §2.1 marked «corrected 2026-10-23» post-dates the
+> Technical Disclosure Commons print and is not re-issued there: what was disclosed stays disclosed, and the correction
+> serves the next reader of this repository.
 > **Status:** published on Technical Disclosure Commons on 2026-10-06 (submitted 2026-10-04, printed from
 > commit `5bd8636f5` of this file) — https://www.tdcommons.org/dpubs_series/12006, under CC BY-SA 4.0.
 > **Published PDF:** the bepress-rendered file (10 pages, SHA-256 `cd67ac140fe8…b1abf`) carries the text of commit
@@ -245,7 +247,10 @@ gives a 584-residue mature chain, or the provider's own leader — provided that
 declared and its cleavage confirmed by intact-mass mass spectrometry. A further variant, in which Lys109
 and Lys262 at the electron exit are replaced by Arg so that the genipin cross-linker of the protective
 matrix cannot knot at them and block mediator docking, is disclosed, not practised (it is not in the frozen
-sequence). ⚠️ The rate benefit of deglycosylation was measured on enzymatically deglycosylated enzyme; its
+sequence). ⚠️ **corrected 2026-10-23:** «at the electron exit» is the surface end of a contact-graph shortest-path route (repository
+script 28; Article 1 §2.5 and §3.1) whose sources are the first FAD atoms of the structure file — the phosphate/ribose end,
+not the flavin N5 — and whose steps are summed constant weights, not Beratan–Onuchic decay factors; it is neither a pathway
+analysis nor a measured exit, and the variant stands as disclosed on that placement. ⚠️ The rate benefit of deglycosylation was measured on enzymatically deglycosylated enzyme; its
 transfer to this gene-level construct is an assumption, not a measurement. *Practised* (the frozen
 sequence of the reference design; not yet expressed;
 [`L1_protein_architecture.md`](../ebfc/in_silico/L1_protein_architecture.md) §2 ·

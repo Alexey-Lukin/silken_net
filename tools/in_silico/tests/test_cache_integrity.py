@@ -3973,7 +3973,7 @@ def test_flavin_chain_stands_on_minima():
     contaminated its <S²> · 33's FADH₂ more than 1e-5 Ha off 32b's minimum.
     CANNOT catch: a minimum that is not the lowest one (another conformer), nor a second minimum within 1e-5 Ha of 32b's ·
     that 21g's def2-SVP minimum is the same fold as 32b's 6-31G(d) one — these caches keep no minimum geometry (lib records
-    it from the next run; the fold, 21.1°, was read from a gitignored checkpoint, against 32b's cached 24.3°) · the DFT grid
+    it from the next run; the fold, 21.1°, was read from a checkpoint under `cache/runs/32b/` — committed since 2026-10-23 — against 32b's cached 24.3°) · the DFT grid
     response the Hessian omits (32b CANNOT 4)."""
     from lib.constants import S2_MAX_DOUBLET
     chain = {"delta_scf_corrections.json": {"FADH2": False, "FADH2_cation": True},
@@ -3997,7 +3997,7 @@ def test_flavin_chain_stands_on_minima():
 
 
 def test_no_cache_records_a_machine_path():
-    """A cache points at its side files (Hessians under the gitignored `cache/runs/`) relative to the repo root, never by
+    """A cache points at its side files (Hessians under `cache/runs/`, whose `.npy`/`.xyz` are committed and whose logs are not) relative to the repo root, never by
     this machine's absolute path (lib `repo_relative`). Two committed caches — 32b's and 96's — carried the home
     directory into the paper-SI bundle until 2026-10-19, and the three chain caches would have on their first commit.
     CAN catch: in any COMMITTED cache JSON, a POSIX path under a machine root (/Users · /home · /private · /tmp · /var ·

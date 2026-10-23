@@ -47,7 +47,7 @@ Hamiltonian of the energies it corrects, not a better one; (5) anharmonicity —
 is the reading robust to them; (6) explicit solvation, the polymer film.
 
 Writes `cache/dft/os_couple_thermo.json` (its own cache); the Hessians, `os_couple_thermo.partial.json` after each step
-and `os_couple_thermo.unconverged.json` on a refusal go to the gitignored `cache/runs/96/`, never beside the cache.
+and `os_couple_thermo.unconverged.json` on a refusal go to `cache/runs/96/` (its `.npy` committed since 2026-10-23, the rest ignored), never beside the cache.
 Os(II) first (RKS, the cheaper Hessian), then Os(III). Wall time ≈ 18–30 h estimated (adversary 2026-10-16: the Hessian ≈
 13–19× 32b's flavin one for Os(II), × 1.5–2 for the UKS Os(III)); measured 2026-10-17→18: 32.3 h end to end — Hessians
 12.7 h Os(II) and 17.3 h Os(III), the Os(III) control SCF 2.1 h — part of it beside a 79 run (no second DFT).

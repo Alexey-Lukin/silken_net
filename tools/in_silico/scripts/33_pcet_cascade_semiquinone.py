@@ -57,7 +57,7 @@ G_STAR_H_AQ_EV = -11.72          # G*(H⁺,aq,1M); reviewer's no-1M-corr value =
 EXP_CASCADE_EV = -0.574          # verified downhill: E°(Os +309) − E°(FAD-GDH −265 mV SHE); was −0.14 (Cosnier, withdrawn)
 
 OUT_JSON = DFT_CACHE / "pcet_cascade.json"
-RUNS = CACHE_DIR / "runs" / "33"   # Hessians and optimisation checkpoints (gitignored)
+RUNS = CACHE_DIR / "runs" / "33"   # Hessians and optimisation checkpoints (the .npy/.xyz committed since 2026-10-23, the rest ignored)
 # 33's FADH₂ repeats 32b's reduced flavin — same builder, protocol and escape — so its minimum is 32b's (a free control)
 THERMO_32B = DFT_CACHE / "pcet_redox_potential_thermo.json"
 

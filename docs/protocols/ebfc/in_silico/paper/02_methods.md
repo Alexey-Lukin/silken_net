@@ -234,7 +234,13 @@ series share one cavity convention. The lock is, moreover, not one environment a
 above ran on osx-arm64, whereas on linux-64 the same lock resolves RDKit 2025.03.6 against the 2025.09.5 of the
 recorded environment and of the osx-arm64 lock, and under that version the geometry builder places the CF₃ member of
 the substituent series (Table 4) in a different rotamer, while the other members tested reproduce the committed
-geometry; the energetic effect of that rotamer was not computed. The reference geometry of every complex is
-therefore the committed coordinates in the Supporting Information, not a re-embedding. The committed caches — the recorded-environment numbers — are what the paper
+geometry; the energetic effect of that rotamer was not computed. The reference geometry of every osmium complex
+and flavin species is therefore the committed coordinates in the Supporting Information, not a re-embedding: the ligand and
+cluster geometries under `ligands/`; the flavin minima, saddle points and Hessians of the thermochemistry runs under
+`cache/runs/` (a checkpoint `.xyz` is the lowest-energy step of its optimisation, an `_escapeN` file the minimum reached after
+a saddle, and the Hessian-point geometry is in the cache JSON where one is recorded); and the relaxed osmium geometries inside
+the series caches that report them (`os_mediator_series_relaxed_os2` and `_os3`), with their Hessians under `cache/runs/96/`.
+The [M(H₂O)₆] and [Co(NH₃)₆] models behind the reorganisation energies of §2.5 are built in script 35, and their relaxed
+geometries were not written out — only the metal–ligand distances are cached; a re-run of 35 regenerates them. The committed caches — the recorded-environment numbers — are what the paper
 quotes. Every figure/number traces to a numbered script under `tools/in_silico/`. The scripts and golden
 reference outputs are provided as Supporting Information.

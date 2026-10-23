@@ -52,7 +52,7 @@ from lib.utils import banner
 
 LIT_LAMBDA_TOTAL_EV = 0.7        # comparison constant — TOTAL λ of OTHER protein ET centres (ref 48); no flavin primary; consumed by no rate
 OUT_JSON = DFT_CACHE / "semiquinone_lambda.json"
-RUNS = CACHE_DIR / "runs" / "29b"   # Hessians and optimisation checkpoints (gitignored)
+RUNS = CACHE_DIR / "runs" / "29b"   # Hessians and optimisation checkpoints (the .npy/.xyz committed since 2026-10-23, the rest ignored)
 
 
 def build_fadh2():

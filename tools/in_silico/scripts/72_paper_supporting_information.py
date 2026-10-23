@@ -11,7 +11,8 @@ Supporting Information») and 08_declarations «Data Availability»:
   S2  every script, shared-library module and test of the pipeline — sha256 + the module's SI line
       (in English since 2026-10-02: its `SI_DESCRIPTION` if it declares one, else the first docstring line); a line carrying repo
       jargon — Cyrillic, a live 00_07 tracker ID, an ISO date, a status glyph — is REFUSED, not rendered
-  S3  every COMMITTED reference output under cache/ (the JSON/PNG the docs pin; trajectories are never committed)
+  S3  every COMMITTED reference output under cache/ (the JSON/PNG the docs pin, and the `.npy`/`.xyz` Hessians and
+      optimisation checkpoints of five thermochemistry runs under cache/runs/; trajectories are never committed)
   S4  committed input data (ERA5 · NASA POWER · CHEM.11 alignments)
   S5  coordinates — the AF3 model, its raw AF3 outputs, the ligand / cluster geometries, the deglycosylation script
   S6  the paper figures and the script that renders each
@@ -233,8 +234,11 @@ def build() -> str:
     parts.append("## S3. Reference outputs — the committed caches\n")
     parts.append(
         "Every JSON is written by exactly one owner script (in-silico rule «one cache per model»); the PNGs beside "
-        "them are the scripts' own diagnostic plots. Trajectories (`cache/runs/`) are not committed — only their "
-        "JSON summaries are. `test_cache_integrity.py` pins the internal consistency of these files; "
+        "them are the scripts' own diagnostic plots. Trajectories under `cache/runs/` are not committed — only their "
+        "JSON summaries are — except the Hessians (`.npy`) and the relaxed / saddle geometries (`.xyz`) of the thermochemistry "
+        "runs (`21g`, `29b`, `32b`, `33`, `96`), listed below — a checkpoint `.xyz` is the lowest-energy step of its "
+        "optimisation, an `_escapeN` file the minimum reached after a saddle, and the Hessian-point geometry is in the cache "
+        "JSON where one is recorded. `test_cache_integrity.py` pins the internal consistency of these files; "
         "`test_doc_cache_sync.py` pins every headline number in SUMMARY / L3 / the paper to them.\n")
     by_dir: dict[str, list[str]] = {}
     for c in caches:
@@ -259,7 +263,8 @@ def build() -> str:
         "Methods §2.1); `alphafold3/` holds the raw AlphaFold 3 job outputs it was derived from; `ligands/` holds "
         "the RDKit/MMFF94s ligand geometries, the Os-mediator octahedra (speciation and Hammett series), the "
         "lumiflavin redox pair and the ZIF cluster models (`*.xyz`, `*.sdf`); `deglycosylate.rb` is the sequon "
-        "mutation script. ⚠️ **Licence carve-out:** the AlphaFold 3 outputs are distributed under the AlphaFold 3 "
+        "mutation script; the flavin minima, saddle points and Hessians of the thermochemistry runs are under `cache/runs/` "
+        "(S3). ⚠️ **Licence carve-out:** the AlphaFold 3 outputs are distributed under the AlphaFold 3 "
         "Output Terms of Use (`alphafold3/terms_of_use.md`, mirrored in the repository `/NOTICE`) and are "
         "EXCLUDED from the CC-BY-SA licence that covers the rest of this documentation.\n")
     parts.append(table(file_rows(coords), ("File", "SHA-256", "Bytes")) + "\n")

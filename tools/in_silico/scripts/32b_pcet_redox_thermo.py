@@ -42,7 +42,7 @@ the proton with 0 K + ZPE flavins.
 Writes `cache/dft/pcet_redox_potential_thermo.json` (its own cache — 32's is never touched), the relaxed geometries
 `ligands/lumiflavin_ox_opt.xyz` · `ligands/lumiflavin_red_opt.xyz` (after their checks), a `<cache>.partial.json` after
 each species and on any failure, the Hessians (a saddle's as `hessian_<tag>_saddle<n>.npy`) and optimisation
-checkpoints under the gitignored `cache/runs/32b/`. An unconverged optimisation, a mode beyond IMAG_TOL_CM left after
+checkpoints under `cache/runs/32b/` (its `.npy`/`.xyz` committed since 2026-10-23, the logs ignored). An unconverged optimisation, a mode beyond IMAG_TOL_CM left after
 SADDLE_ESCAPES escapes, or an escape that did not descend writes `<cache>.unconverged.json` and no cache.
 
 Run (in-silico §When Modifying #21a · #34 — sequential, nothing heavy alongside):

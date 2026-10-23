@@ -56,7 +56,7 @@ from lib.utils import banner
 SI_DESCRIPTION = "L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade."  # its row in the paper SI (72): English, no repo jargon
 
 OUT = DFT_CACHE / "delta_scf_corrections.json"
-RUNS = CACHE_DIR / "runs" / "21g"     # Hessians and optimisation checkpoints (gitignored)
+RUNS = CACHE_DIR / "runs" / "21g"     # Hessians and optimisation checkpoints (the .npy/.xyz committed since 2026-10-23, the rest ignored)
 GEOMOPT_BASIS = "def2-svp"     # geometry optimization tier (composite ωB97X//B3LYP)
 SP_BASIS = "def2-tzvp"         # single-point tier
 

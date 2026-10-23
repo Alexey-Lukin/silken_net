@@ -13,10 +13,13 @@
 This study used artificial-intelligence tools, disclosed here for transparency:
 
 - **Structure prediction.** The enzyme model was generated with **AlphaFold 3** (cited in Methods §2.1);
-  predicted geometries were assessed by pLDDT and a molecular-dynamics ensemble before use.
-- **Computational pipeline & analysis.** The DFT/MD pipeline was implemented with the assistance of an
-  LLM coding agent — **Claude (Anthropic), used through Claude Code**; the model behind a change is recorded in the
-  `Co-Authored-By` trailer of nearly every commit in the repository. The reported calculations are scripted; every result cache
+  predicted geometries were assessed by pLDDT before use.
+- **Computational pipeline & analysis.** The DFT/MD pipeline was written and run by an LLM coding agent — **Claude
+  (Anthropic), used through Claude Code**; the agent transcribed literature values into the code and the reference index,
+  drafted the manuscript text, ran both adversarial self-review rounds and made delegated analysis choices that the author
+  ratified; the author set the questions, ruled on every choice and reviewed every claim. The model behind a change is recorded
+  in the `Co-Authored-By` trailer of every commit but one that touches `tools/in_silico` or `docs/protocols/ebfc/in_silico/paper/` (609 of 610 at commit
+  778207a99; re-counted at deposit). The reported calculations are scripted; every result cache
   outside `cache/reproduction/` was computed in one recorded version-exact environment (§2.7), and the records in that
   directory — the re-runs under the later conda-lock, the attribution of §2.7 and the chelate-closing sensitivity of
   §2.3, which ran under the lock — are named as such where they are reported; the molecular dynamics are not seeded and are stochastic. Many of the computed numbers in the
@@ -25,7 +28,8 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   DOI against its registry record (Crossref; DataCite for the one software DOI, ref 47) were carried out with the same agent
   (Claude, through Claude Code). [finalise — the author confirms that he checked the citations, and names any value
   taken from an abstract rather than a full text]
-- **Manuscript preparation.** Claude (Anthropic, through Claude Code) assisted with drafting and editing.
+- **Manuscript preparation.** The same agent drafted the manuscript text and ran both self-review rounds; the author ruled
+  on every choice and reviewed every claim, as stated above.
 - **Other tools.** Google Gemini may also have been used outside the repository over the project's development;
   that use is not recorded. [finalise — the author confirms this sentence and states the method of use at deposit:
   ChemRxiv requires the name of every AI tool and how it was used (chemrxiv.org FAQ, read 2026-10-11); the author's
@@ -33,7 +37,8 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 
 **All scientific content,
   interpretations, claims, and citations were reviewed, verified, and are the sole responsibility of the
-  author.** Apart from the AlphaFold 3 structure model declared above, AI tools did not generate data or results.
+  author.** No number in this work was produced by a generative model: every number is the output of a scripted calculation
+  or a literature value transcribed by the agent; the AlphaFold 3 structure model is the one exception, declared above.
 
 ## Other required declarations
 
@@ -131,8 +136,9 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 
 > Funding — draft (2026-09-30).
 
-- **Author Contributions (CRediT).** *Conceptualization, Methodology, Software, Investigation, Data
-  curation, Validation, Visualization, Writing – original draft, Writing – review & editing: the author.*
+- **Author Contributions (CRediT).** *Conceptualization, Methodology, Investigation, Data curation, Validation,
+  Visualization, Writing – review & editing: the author; Software, Writing – original draft: the agent under the author's
+  direction.*
   The AI-use disclosure above is part of this statement.
 
 > Author Contributions — draft (2026-09-30, from [`00_OUTLINE.md`](00_OUTLINE.md) §0; the
