@@ -487,7 +487,8 @@ rb_dark() {
 # `project_foundation_redeal_2026_08` (присуди — канон 00_06 §4 · 00_01 §4, класи — плейбук і guard-craft #185, інстанси — log_foundation_redeal).
 # Опускання робить втрату git-видимою.
 # 2026-10-17: 177 → 178 — журнал `log_skill_tier` (DOC-T.123: прилад тригера скілів і його пастки); підлога за ним, щоб і він охоронявся.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-178}
+# 2026-10-23: 178 → 179 — журнал `log_ebfc_q1_paper_program` (хроніка Статті 1, виселена з роутера `project_ebfc_q1_paper_program`); підлога за ним.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-179}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
