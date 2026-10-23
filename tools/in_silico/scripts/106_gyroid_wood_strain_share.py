@@ -40,7 +40,8 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   Every reading carries its doi, table, column, species, moisture
   and loading mode (GREEN_SOURCES). The lowest θ = 0 share and `105`'s thresholds are reported for the Scots pine group
   (every key without a suffix — the record before the green group) and for the union of both groups.
-  Lattice: the two Richardson voxel-FE readings `105` caches, read as ONE homogeneous cubic body with its cube axes on
+  Lattice: the two voxel-FE readings `105` caches (per axis the adverse end of its finest-step bracket, the finest
+  unlocked step ⊥ the finest locked one — HW.23, 2026-10-23), read as ONE homogeneous cubic body with its cube axes on
   the part's frame (Zone1Anode: [001] on the anode's axis; the shipped part is graded, so «cubic» holds locally): the
   axial case is E[001] = r_a·E_s (uniaxial stress between frictionless platens) and the radial case, an equibiaxial
   in-plane strain with the ends held, is C11 + C12 = r_r·E_s/((1 + ν_s)(1 − 2ν_s)) — the solid envelope's same test as
@@ -68,7 +69,7 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   modelled set (the side a binding sentence must take, §When Modifying #45 ⊕), X being `105`'s threshold unrounded and
   held to `105`'s cache — printed on this tensor's own E[100] (`105`'s axial reading) and on `105`'s radial reading;
   `105`'s own rule takes the LOWER of the two for a binding claim, and which one that is is read from `105`'s cache
-  (`fe_reading_lower` — on the HW.33 (в) geometry a mechanical pick: the two coincide within the extrapolation,
+  (`fe_reading_lower` — a finding of the caches since the HW.23 re-sweep replaced the two-point Richardson pair,
   00_07 HW.23); rounded UP. Off the axis E_z*(θ) falls with C44 while t_L
   stays finite, so the threshold has no ceiling as C44 → 0: no binding figure exists there without C44. The junction's
   mismatch (`105`) scales with the HIGHEST share instead; its supremum off the axis is taken at C44 = 0 exactly (t_L is
@@ -679,14 +680,14 @@ def main() -> int:
     for name, w in [*WOOD.items(), *((n, gs["w"]) for n, gs in gsets.items())]:
         assert w["E_L"] > w["E_R"] > w["E_T"], f"{name}: «stiff» names the R-loaded R–T test only while E_R > E_T"
 
-    # ── The lattice: 105's Richardson readings, recomputed with 105's own code from the FE cache ──────────────────────
-    rows = sorted(fea["rows"], key=lambda r: r["step_mm"])
-    for key, field in (("radial_richardson", "radial_ratio"), ("axial_richardson", "axial_ratio")):
-        assert abs(s105.richardson_p1(rows[0], rows[1], field) - d105["inputs"]["fe_readings_richardson"][key]) < 1e-12, \
-            f"105's cache disagrees with its own Richardson on the FE cache ({key}) — re-run 105"
+    # ── The lattice: 105's two FE readings, re-read with 105's own rule (ONE home) from the same caches ──────────────
+    fe_now = s105.read_fe()
+    for key in ("radial_reading", "axial_reading"):
+        assert abs(fe_now["readings"][key] - d105["inputs"]["fe_readings"][key]) < 1e-12, \
+            f"105's cache disagrees with its own reading rule on the FE caches ({key}) — re-run 105"
     assert abs(fea["poisson_ratio"] - s105.NU_SOLID) < 1e-12, "the FE's ν moved — re-read it"
-    r_r = d105["inputs"]["fe_readings_richardson"]["radial_richardson"]
-    r_a = d105["inputs"]["fe_readings_richardson"]["axial_richardson"]
+    r_r = d105["inputs"]["fe_readings"]["radial_reading"]
+    r_a = d105["inputs"]["fe_readings"]["axial_reading"]
     phi = d105["inputs"]["solid_fraction"]
     nu_s = fea["poisson_ratio"]
     c11_s, c12_s = (1 - nu_s) / ((1 + nu_s) * (1 - 2 * nu_s)), nu_s / ((1 + nu_s) * (1 - 2 * nu_s))
@@ -844,7 +845,7 @@ def main() -> int:
         moisture[rd] = counts
 
     # ── For 105 at θ = 0: E_z* = E[100] and t_L both free of C44 — one cell, one tensor ───────────────────────────────
-    f_read = {"axial_richardson": s105.rms_factor(r_a, phi), "radial_richardson": s105.rms_factor(r_r, phi)}
+    f_read = {"axial_reading": s105.rms_factor(r_a, phi), "radial_reading": s105.rms_factor(r_r, phi)}
     for al in ALLOY_PROPERTIES:                                    # 105's cached cells, reproduced with its own formula
         lim0 = d105["alloys"][al]["endurance_strain_printed_ue"]
         for dk, frac in d105["inputs"]["depth_fraction"].items():
@@ -884,7 +885,7 @@ def main() -> int:
 
     theta0 = theta0_over(cells)
     binds_above = binds_at(theta0)
-    merit = {al: binds_above["axial_richardson"][al][CELL_LS] / binds_above["axial_richardson"][ALLOY_BASELINE][CELL_LS]
+    merit = {al: binds_above["axial_reading"][al][CELL_LS] / binds_above["axial_reading"][ALLOY_BASELINE][CELL_LS]
              for al in ALLOY_PROPERTIES}
     source_day = source_day_at(binds_above)
     # the green group alone and the union of both — the consumer's ceiling for a BINDING sentence is the union's lowest
@@ -894,15 +895,17 @@ def main() -> int:
     theta0_union = theta0_over(cells_union)
     binds_union = binds_at(theta0_union)
     source_day_union = source_day_at(binds_union)
-    at_t1 = {rd: sorted(al for al in ALLOY_PROPERTIES
-                        if stem[rd]["surface_strain_ue"] > d105["gyroid_binds_above_surface_strain_ue"][al][CELL_LS]["axial_richardson"])
-             for rd in ("median", "upper_whisker")}
+    # at t_L = 1 on EACH of 105's readings (the binding one is its lower — read from its cache below, never assumed)
+    at_t1 = {fk: {rd: sorted(al for al in ALLOY_PROPERTIES
+                             if stem[rd]["surface_strain_ue"] > d105["gyroid_binds_above_surface_strain_ue"][al][CELL_LS][fk])
+                  for rd in ("median", "upper_whisker")}
+             for fk in ("axial_reading", "radial_reading")}
 
     # ── Off the axis: the lattice's own E_z*(45°) and the threshold factor √(r_a/E_z*)/t_L at the C44 grid's ends ───────
     s11 = (lat["C11"] + lat["C12"]) / ((lat["C11"] - lat["C12"]) * (lat["C11"] + 2 * lat["C12"]))
     s12 = -lat["C12"] / ((lat["C11"] - lat["C12"]) * (lat["C11"] + 2 * lat["C12"]))
     ez45 = {}
-    for fk, reading in (("radial_richardson", r_r), ("axial_richardson", r_a)):
+    for fk, reading in (("radial_reading", r_r), ("axial_reading", r_a)):
         need = 1.0 / reading - (s11 + s12) / 2                         # 1/E110 = (s11 + s12)/2 + 1/(4·C44)
         a_needed = (2.0 * (1.0 / (4.0 * need)) / q_lat) if need > 0 else 0.0
         ez45[fk] = {"zener_below_which_E110_falls_under_reading": a_needed}
@@ -941,7 +944,7 @@ def main() -> int:
     crossings = sum(1 for k in cells if cells[k]["zener_at_which_t_L_is_1_theta45"] is not None)
     lattice_cells = sum(1 for k in cells if k.rsplit("|", 1)[1] in LATTICE_FILLS)
     lows = ", ".join(f"{al} {floor_to(theta0[al]['lowest'], 3):.3f}" for al in ALLOY_PROPERTIES)
-    sd_a, sd_r = source_day["axial_richardson"], source_day["radial_richardson"]
+    sd_a, sd_r = source_day["axial_reading"], source_day["radial_reading"]
 
     # ── Control: t_L does not depend on G_LR or G_RT. R is a symmetry axis of the matrix and of every inclusion reading,
     # so the anti-plane shears (LR, TR) decouple from the normal-and-LT block that σ_L excites. CAN catch: an index slip
@@ -1098,13 +1101,20 @@ def main() -> int:
     hi_green = sorted(al for al in ALLOY_PROPERTIES if theta0_union[al]["highest_cell"] not in cells)
     hi_phrase = (f"a green reading sets it for {', '.join(hi_green)}" if hi_green
                  else "no green reading raises the Scots pine group's for any alloy")
-    su_a, su_r = source_day_union["axial_richardson"], source_day_union["radial_richardson"]
-    # which reading 105's binding rule takes is READ from its cache, never assumed (on the HW.33 (в) geometry a
-    # mechanical pick — 00_07 HW.23)
+    su_a, su_r = source_day_union["axial_reading"], source_day_union["radial_reading"]
+    # which reading 105's binding rule takes is READ from its cache, never assumed (the radial one since the HW.23
+    # re-sweep of 2026-10-23; on the HW.33 (в) geometry's two-point readings the two had coincided within the
+    # extrapolation — 00_07 HW.23)
     lower105 = d105["inputs"]["fe_reading_lower"]
-    assert lower105 == ("axial_richardson" if r_a < r_r else "radial_richardson"), "105's lower reading is not its lower"
-    a_label = "this tensor's E[100]" + (" (105's lower reading)" if lower105 == "axial_richardson" else "")
-    r_label = "105's lower reading (the radial one)" if lower105 == "radial_richardson" else "105's radial reading"
+    assert lower105 == ("axial_reading" if r_a < r_r else "radial_reading"), "105's lower reading is not its lower"
+    a_label = "this tensor's E[100]" + (" (105's lower reading)" if lower105 == "axial_reading" else "")
+    r_label = "105's lower reading (the radial one)" if lower105 == "radial_reading" else "105's radial reading"
+    t1a, t1r = at_t1["axial_reading"], at_t1["radial_reading"]
+    t1_phrase = (f"at t_L = 1 on both readings the upper whisker exceeded it for {', '.join(t1a['upper_whisker']) or 'none'} "
+                 f"and the median for {', '.join(t1a['median']) or 'none'}" if t1a == t1r else
+                 f"at t_L = 1 the upper whisker exceeded it for {', '.join(t1a['upper_whisker']) or 'none'} on this tensor's "
+                 f"E[100] and for {', '.join(t1r['upper_whisker']) or 'none'} on 105's radial reading, the median for "
+                 f"{', '.join(t1a['median']) or 'none'} on E[100] and for {', '.join(t1r['median']) or 'none'} on the radial one")
     verdict = (
         f"t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) "
         f"it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel "
@@ -1119,9 +1129,7 @@ def main() -> int:
         f"θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the Scots pine group ({lows}) the source day's "
         f"upper whisker exceeds the large-stem threshold for {', '.join(sd_a['upper_whisker']['exceeds']) or 'none'} on "
         f"{a_label} and for {', '.join(sd_r['upper_whisker']['exceeds']) or 'none'} on {r_label}, "
-        f"and its median for {', '.join(sd_a['median']['exceeds']) or 'none'}; at t_L = 1 on the axial reading the "
-        f"upper whisker exceeded it for {', '.join(at_t1['upper_whisker']) or 'none'} and the median for "
-        f"{', '.join(at_t1['median']) or 'none'}. Above fibre saturation no open primary gives a full Scots pine set; on "
+        f"and its median for {', '.join(sd_a['median']['exceeds']) or 'none'}; {t1_phrase}. Above fibre saturation no open primary gives a full Scots pine set; on "
         f"the separate group of green readings of other Pinaceae ({len(live_green)} live, {len(excluded_green)} not a "
         f"material) the lowest θ = 0 share is {lows_g}, so over the union it is {lows_u} — on {u_where} — and there the "
         f"upper whisker exceeds the threshold for {', '.join(su_a['upper_whisker']['exceeds']) or 'none'} on this "
@@ -1149,7 +1157,7 @@ def main() -> int:
             "symmetrisation_readings": {"stiff": "each pair's coupling from the test loaded along its stiffer axis",
                                         "soft": "from the test loaded along its softer axis",
                                         "mean": "the two compliance entries averaged"},
-            "fe_readings_richardson_105": {"radial_richardson": r_r, "axial_richardson": r_a},
+            "fe_readings_105": {"radial_reading": r_r, "axial_reading": r_a},
             "solid_fraction_105": phi,
             "solid_poisson_fe": nu_s,
             "lattice_roots": roots,
@@ -1200,7 +1208,7 @@ def main() -> int:
         "gyroid_binds_above_surface_strain_ue_theta0_lowest_share": binds_above,
         "threshold_ratio_vs_baseline_theta0_lowest_share": merit,
         "source_day_theta0_large_stem_sf2": source_day,
-        "source_day_at_t1_axial_reading_105": at_t1,
+        "source_day_at_t1_105": at_t1,
         "off_axis_threshold_factor_theta45": off_axis,
         "e_z_star_105_premise_theta45": ez45,
         "junction_share_sup_at_C44_zero": junction_sup,
@@ -1273,10 +1281,10 @@ def main() -> int:
         c95 = [round(cells[f"{al}|rh95|stiff|{fill}"]["t_L_theta0_any_C44"], 3) for fill in FILLS]
         print(f"  {al:18s} θ=0 rh95 stiff {' ⊥ '.join(map(str, c95))} · θ=0 over set "
               f"{theta0[al]['lowest']:.3f}–{theta0[al]['highest']:.3f} · binds above (large stem, SF 2) "
-              f"{binds_above['axial_richardson'][al][CELL_LS]:.0f} ⊥ {binds_above['radial_richardson'][al][CELL_LS]:.0f} µε")
+              f"{binds_above['axial_reading'][al][CELL_LS]:.0f} ⊥ {binds_above['radial_reading'][al][CELL_LS]:.0f} µε")
     print(f"  additive outside the pore ends: {len(outside)} · moisture: {moisture}")
-    print(f"  source day at θ = 0: {source_day['axial_richardson']['upper_whisker']['exceeds']} ⊥ "
-          f"{source_day['radial_richardson']['upper_whisker']['exceeds']} (at t_L = 1: {at_t1}) · junction sup {junction_sup:.4f}")
+    print(f"  source day at θ = 0: {source_day['axial_reading']['upper_whisker']['exceeds']} ⊥ "
+          f"{source_day['radial_reading']['upper_whisker']['exceeds']} (at t_L = 1: {at_t1}) · junction sup {junction_sup:.4f}")
     print(f"  GREEN group: {len(live_green)} live, excluded (not positive definite): {', '.join(excluded_green) or 'none'}")
     print(f"  green controls: monotone in C44 {monotone_green:.1e} · 45° mirror {mirror_green:.1e} · G_LR/G_RT probe "
           f"{g_probe_worst:.1e} · Jeong ν_RT {nu_rt_measured[0]:.2f}–{nu_rt_measured[-1]:.2f}: θ=0 {nu_rt_theta0:.5f} "
@@ -1284,7 +1292,7 @@ def main() -> int:
     for al in ALLOY_PROPERTIES:
         print(f"  {al:18s} θ=0 lowest: Scots pine {theta0[al]['lowest']:.4f} ⊥ green {theta0_green[al]['lowest']:.4f} "
               f"({theta0_green[al]['lowest_cell'].split('|', 1)[1]}) · union binds above "
-              f"{binds_union['axial_richardson'][al][CELL_LS]:.0f} ⊥ {binds_union['radial_richardson'][al][CELL_LS]:.0f} µε "
+              f"{binds_union['axial_reading'][al][CELL_LS]:.0f} ⊥ {binds_union['radial_reading'][al][CELL_LS]:.0f} µε "
               f"· green highest {theta0_green[al]['highest']:.4f}")
     print(f"  union source day: {su_a['upper_whisker']['exceeds']} ⊥ {su_r['upper_whisker']['exceeds']} (Ta margins "
           f"{su_a['upper_whisker']['margin_over_threshold']['Ta']:.4f} ⊥ {su_r['upper_whisker']['margin_over_threshold']['Ta']:.4f})"

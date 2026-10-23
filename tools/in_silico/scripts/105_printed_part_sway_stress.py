@@ -51,8 +51,14 @@ MODEL.
   readings («near_uniaxial» ⊥ «any_state»). E_z* is the gyroid's uniaxial in-plane modulus under traction conditions,
   which NO row of the voxel-FE cache measures: the radial case is a kinematic shell loading ∝ (C11+C12), the axial one
   is E[100] of a cubic lattice and an in-plane direction can be off-axis, and both sit on the kinematic side of a
-  traction-BC modulus for a finite part. The two Richardson-extrapolated FE ratios are therefore READINGS, not ends:
-  the bound holds only while E_z* is at least the reading. A binding claim takes the LOWER reading. The output is the
+  traction-BC modulus for a finite part. The two FE ratios — per axis the LOWER end of the finest-step
+  bracket, the finest UNLOCKED step (one whose sampled phase does not repeat within four axial cells — the mirror of
+  VoxelFea.RepeatCells, picogk gotcha #16) against the finest LOCKED one, over the pinned sweep and the HW.23 re-sweep
+  together (2026-10-23; the /12→/16 Richardson pair they replace extrapolated a phase-locked error) — are therefore
+  READINGS, not ends: the bound holds only while E_z* is at least the reading. A binding claim takes the LOWER reading —
+  the end adverse to the CLAIM (the higher threshold, the kinder one to the part). φ is the finest unlocked row's on
+  both axes; where the radial reading comes from the locked row its φ differs by 0.0004, −0.05 % on the threshold,
+  toward the claim-adverse side. The output is the
   stem's SURFACE strain above which the bound alone puts the ligaments at σ_e/S at t_L = 1 and k_p = 1 (t_L the share
   of the wood's in-plane strain the gyroid takes — `106`: on both sides of 1, decided by the tissue in the pores, the
   wood reading and, off the cube axis, the lattice's C44; k_p ≥ 1 its peak over RMS stress), rounded UP (a «binds above X» sentence). k_p > 1 lowers X, t_L < 1
@@ -129,7 +135,9 @@ SI_DESCRIPTION = ("Cyclic stress from stem sway in the titanium parts of the anc
 
 MECH = CACHE_DIR / "mechanical"
 CEM = REPO_ROOT / "tools/cad/cem"
-FEA = REPO_ROOT / "tools/cad/cache/fea/anchor_zone1_pine.json"
+FEA_DIR = REPO_ROOT / "tools/cad/cache/fea"
+FEA = FEA_DIR / "anchor_zone1_pine.json"                       # the pinned `--sweep` (steps = axial period / N)
+FEA_FINE = sorted(FEA_DIR.glob("anchor_zone1_pine.h*um.json"))  # the HW.23 re-sweep (`--step-mm` rows, one per file)
 OUT = MECH / "printed_part_sway_stress.json"
 G_STD = 9.80665            # m/s² — standard gravity, the literal `87` uses
 SF_LINES = (1.0, 2.0)      # 1 = σ_e itself · 2 = `55`'s INFINITE_LIFE_SF (asserted below)
@@ -167,8 +175,75 @@ def series(*k: float) -> float:
     return 1.0 / sum(1.0 / x for x in k)
 
 
-def richardson_p1(fine: dict, coarse: dict, key: str) -> float:
-    return fine[key] + (fine[key] - coarse[key]) / (coarse["step_mm"] / fine["step_mm"] - 1.0)
+def fe_ladder(sweep: dict, fine_files, axial_period_mm: float) -> list[dict]:
+    """Every part row of the pinned sweep and the HW.23 re-sweep, one per step, coarse → fine, each tagged `locked`:
+    the step divides the part's axial period (since HW.33 (в) the rim's, one for the whole part — picogk gotcha #16), so
+    every cell is sampled at the same phases and the step's error is coherent along z. A step both families carry (the
+    re-sweep's /8 identity control) must agree field for field, or the re-sweep is not the sweep's instrument."""
+    rows: dict[float, dict] = {}
+    for r in sweep["rows"]:
+        rows[round(r["step_mm"], 9)] = dict(r, source="sweep")
+    for f in fine_files:
+        d = json.loads(f.read_text(encoding="utf-8"))
+        assert d["cem"] == sweep["cem"] and d["topology"] == sweep["topology"], f"{f.name}: not the sweep's specimen"
+        assert abs(d["poisson_ratio"] - sweep["poisson_ratio"]) < 1e-12, f"{f.name}: the FE's ν differs from the sweep's"
+        for r in d["rows"]:
+            k = round(r["step_mm"], 9)
+            if k in rows:
+                for key in ("elements", "porosity", "axial_ratio", "radial_ratio"):
+                    assert abs(rows[k][key] - r[key]) <= 1e-9 * max(1.0, abs(r[key])), \
+                        f"{f.name}: the step {k} mm row disagrees with the pinned sweep on {key} — not the same instrument"
+                continue
+            rows[k] = dict(r, source=f.name)
+    ladder = []
+    for step in sorted(rows, reverse=True):
+        r = rows[step]
+        r["locked"] = axial_lock_cells(step, axial_period_mm) > 0
+        assert r["converged"] and abs(r["solid_calibration_axial"] - 1.0) < 1e-5, f"FE row {step} mm not valid"
+        ladder.append(r)
+    return ladder
+
+
+def axial_lock_cells(step_mm: float, period_mm: float, max_cells: int = 4) -> int:
+    """The mirror of VoxelFea.RepeatCells (tools/cad/src/SilkenCad/VoxelFea.cs — the ONE home of the rule): how many
+    axial cells the sampled phase of a constant period takes to repeat at this step, 0 when it does not within max_cells.
+    Its tolerance 1e-4·cells is the FE's own; the steps are stored as float32 (`/24` = 0.083333336 mm sits 7.7e-7 off
+    an integer count, and `/21`–`/48` divisors reach 2e-6), so a 1e-6 tolerance would call a dividing step unlocked."""
+    if period_mm <= 0:
+        return 0
+    steps_per_period = period_mm / step_mm
+    for cells in range(1, max_cells + 1):
+        steps = steps_per_period * cells
+        if abs(steps - round(steps)) < 1e-4 * cells:
+            return cells
+    return 0
+
+
+def fe_readings_from_ladder(ladder: list[dict]):
+    """Per axis the two finest-step readings — the finest UNLOCKED row (the two finest unlocked steps agree to ≤ 0.03 %,
+    the coarsest sits 0.5 % under them axially — HW.23 2026-10-23; three points bound no convergence order) and the
+    finest LOCKED row — a bracket of NAMED readings (in-silico §When Modifying #11); the reading a binding claim takes is
+    the bracket's LOWER end, adverse to the claim. Returns (readings, bracket, finest_unlocked_row, finest_locked_row)."""
+    unlocked = [r for r in ladder if not r["locked"]]
+    locked = [r for r in ladder if r["locked"]]
+    assert unlocked and locked, "the ladder needs at least one unlocked and one locked step"
+    fu, fl = unlocked[-1], locked[-1]
+    bracket = {ax: {"unlocked": fu[f"{ax}_ratio"], "locked": fl[f"{ax}_ratio"],
+                    "unlocked_step_mm": fu["step_mm"], "locked_step_mm": fl["step_mm"],
+                    "adverse": "unlocked" if fu[f"{ax}_ratio"] <= fl[f"{ax}_ratio"] else "locked"}
+               for ax in ("radial", "axial")}
+    readings = {f"{ax}_reading": min(bracket[ax]["unlocked"], bracket[ax]["locked"]) for ax in ("radial", "axial")}
+    return readings, bracket, fu, fl
+
+
+def read_fe():
+    """ONE home of 105's FE reading rule — 106 and the cache tests call this instead of re-deriving it."""
+    sweep = json.loads(FEA.read_text(encoding="utf-8"))
+    pine = json.loads((CEM / "anchor_zone1.pine.json").read_text(encoding="utf-8"))
+    ladder = fe_ladder(sweep, FEA_FINE, pine["gyroid_period_rim_mm"])
+    readings, bracket, fu, fl = fe_readings_from_ladder(ladder)
+    return {"sweep": sweep, "ladder": ladder, "readings": readings, "bracket": bracket,
+            "finest_unlocked": fu, "finest_locked": fl}
 
 
 def rms_factor(ratio: float, phi: float) -> float:
@@ -262,16 +337,12 @@ def main() -> int:
     depth_fraction["large_stem_limit"] = 1.0
 
     # ── The gyroid: the energy bound ────────────────────────────────────────────────────────────────────────────────
-    rows = sorted(fea["rows"], key=lambda r: r["step_mm"])
-    fine, next_fine = rows[0], rows[1]
-    assert all(r["converged"] and abs(r["solid_calibration_axial"] - 1.0) < 1e-5 for r in rows), "FEA rows not valid"
     assert abs(fea["poisson_ratio"] - NU_SOLID) < 1e-9, "the FE's ν moved — re-read it"
-    phi = 1.0 - fine["porosity"]
-    fe_readings = {"radial_richardson": richardson_p1(fine, next_fine, "radial_ratio"),
-                   "axial_richardson": richardson_p1(fine, next_fine, "axial_ratio")}
-    # a binding claim takes the LOWER reading — READ from the pair, never assumed. On the HW.33 (в) geometry the pick is
-    # mechanical, not a finding: the two readings coincide within the extrapolation, every raw row has the radial lower,
-    # and the /12 and /16 rows differ in porosity (00_07 HW.23)
+    ladder = fe_ladder(fea, FEA_FINE, pine["gyroid_period_rim_mm"])
+    fe_readings, fe_bracket, fine, fine_locked = fe_readings_from_ladder(ladder)
+    phi = 1.0 - fine["porosity"]                                   # the converged (finest unlocked) row's own φ
+    # a binding claim takes the LOWER reading — READ from the pair, never assumed. Since the HW.23 re-sweep (2026-10-23)
+    # each axis is the adverse end of its own [unlocked ⊥ locked] bracket; which axis is lower is a finding of the caches.
     lo_key, hi_key = sorted(fe_readings, key=fe_readings.get)
     f_read = {k: rms_factor(v, phi) for k, v in fe_readings.items()}
     state_div = {"near_uniaxial": 1.0, "any_state": math.sqrt(3.0 + 2.0 * NU_SOLID)}
@@ -468,8 +539,9 @@ def main() -> int:
     # the S2 axial term at the gyroid's shank end — its own lower bound, force-controlled (the higher ratio is its
     # conservative end); mature state, stiff bond, the source day's upper reading
     fa_axial = f_newton(forces["b_zone3_fit"]["anode_bond_stiff"]["state3_bond_per_mm_max_over_ties"], "upper_whisker")
-    axial_rms = {al: {"rms_MPa": fa_axial / a_shank1 * math.sqrt(1.0 / (fine["axial_ratio"] * phi)),
-                      "over_sf2_line": fa_axial / a_shank1 * math.sqrt(1.0 / (fine["axial_ratio"] * phi))
+    axial_hi = max(fe_bracket["axial"]["unlocked"], fe_bracket["axial"]["locked"])   # the HIGHER end: conservative for a force
+    axial_rms = {al: {"rms_MPa": fa_axial / a_shank1 * math.sqrt(1.0 / (axial_hi * phi)),
+                      "over_sf2_line": fa_axial / a_shank1 * math.sqrt(1.0 / (axial_hi * phi))
                                        / (row["endurance_printed_MPa"] / s55.INFINITE_LIFE_SF)}
                  for al, row in alloys.items()}
 
@@ -580,10 +652,15 @@ def main() -> int:
             "gyroid_span_below_seat_mm": list(lattice_span),
             "host_radius_mm_dbh_min": r_host,
             "depth_fraction": depth_fraction,
-            "fea_rows_used": {"finest": {k: fine[k] for k in ("step_mm", "axial_ratio", "radial_ratio", "porosity")},
-                              "next": {k: next_fine[k] for k in ("step_mm", "axial_ratio", "radial_ratio", "porosity")}},
-            "fe_readings_richardson": fe_readings,
+            "fea_rows_used": {"finest_unlocked": {k: fine[k] for k in ("step_mm", "axial_ratio", "radial_ratio", "porosity", "source")},
+                              "finest_locked": {k: fine_locked[k] for k in ("step_mm", "axial_ratio", "radial_ratio", "porosity", "source")}},
+            "fe_ladder": [{k: r[k] for k in ("step_mm", "locked", "axial_ratio", "radial_ratio", "porosity", "source")} for r in ladder],
+            "fe_bracket": fe_bracket,
+            "fe_readings": fe_readings,
             "fe_reading_lower": lo_key,
+            "fe_reading_rule": "per axis the LOWER end of the [finest unlocked ⊥ finest locked] finest-step bracket over the "
+                               "pinned sweep and the HW.23 re-sweep (a step is locked when its sampled phase repeats within four "
+                               "axial cells — axial_lock_cells, the mirror of VoxelFea.RepeatCells)",
             "fe_readings_are": "two kinematic-side readings; neither is the in-plane traction modulus E_z* the bound needs",
             "solid_fraction": phi,
             "rms_factor_by_reading": f_read,
@@ -632,9 +709,10 @@ def main() -> int:
     }
     OUT.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    print(f"  FE readings (Richardson) radial {fe_readings['radial_richardson']:.4f} · axial "
-          f"{fe_readings['axial_richardson']:.4f} · φ {phi:.3f} · RMS factor {f_read[lo_key]:.3f}–"
-          f"{f_read[hi_key]:.3f}")
+    print(f"  FE readings (adverse end of the finest-step bracket) radial {fe_readings['radial_reading']:.4f} "
+          f"[unlocked {fe_bracket['radial']['unlocked']:.5f} ⊥ locked {fe_bracket['radial']['locked']:.5f}] · axial "
+          f"{fe_readings['axial_reading']:.4f} [unlocked {fe_bracket['axial']['unlocked']:.5f} ⊥ locked "
+          f"{fe_bracket['axial']['locked']:.5f}] · φ {phi:.3f} · RMS factor {f_read[lo_key]:.3f}–{f_read[hi_key]:.3f}")
     print(f"  binds-above surface strain (µε), SF 2, t_L = k_p = 1, lower ({lo_name}) reading: large stem | bark | "
           "xylem thin | thick")
     for al in alloys:

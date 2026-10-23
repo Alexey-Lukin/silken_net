@@ -6059,7 +6059,8 @@ def test_printed_part_sway_stress_invariants():
     `87`'s, `102`'s, `103`'s and `52`'s caches, the lib's alloys and `55`'s markers — not from the script's algebra; the
     disc by an independent finite-difference solve of the plate, at the shank root and across the groove.
 
-    CAN catch: a stale FEA row, a wrong solid fraction or Richardson step, an RMS factor off √(ratio/φ); a binds-above
+    CAN catch: a stale FEA row, a reading that is not the adverse end of 105's [finest unlocked ⊥ finest locked] bracket
+    (re-read through 105's own `read_fe`, ONE home), a wrong solid fraction, an RMS factor off √(ratio/φ); a binds-above
     threshold off ε_e/(SF·f·r/R) (× √(3+2ν) on the any-state reading) or rounded DOWN; a depth fraction off the CEM depth,
     the host radius or `103`'s bark; a source-day flag that does not follow; a force off `103`'s closed forms (state 2
     k_s·k_A/(k_A+k_s), state 3 series(k_A, k_lower)·(1−d/dv) over `103`'s grid, the rigid-sleeve k_A) or off `102`'s
@@ -6089,15 +6090,46 @@ def test_printed_part_sway_stress_invariants():
     s55 = importlib.util.module_from_spec(spec)
     sys.modules["s55_105"] = s55
     spec.loader.exec_module(s55)
+    spec105 = importlib.util.spec_from_file_location("s105_t", REPO / "tools/in_silico/scripts/105_printed_part_sway_stress.py")
+    s105 = importlib.util.module_from_spec(spec105)
+    sys.modules["s105_t"] = s105
+    spec105.loader.exec_module(s105)
     inp = d["inputs"]
     g = d103["geometry"]
 
-    # the gyroid's energy bound
-    rows = sorted(fea["rows"], key=lambda r: r["step_mm"])
-    phi = 1 - rows[0]["porosity"]
-    rich = {k: rows[0][f"{k}_ratio"] + (rows[0][f"{k}_ratio"] - rows[1][f"{k}_ratio"]) / (rows[1]["step_mm"] / rows[0]["step_mm"] - 1)
-            for k in ("radial", "axial")}
-    f = {"radial_richardson": math.sqrt(rich["radial"] / phi), "axial_richardson": math.sqrt(rich["axial"] / phi)}
+    # the gyroid's energy bound — the readings re-read through 105's own rule from the same caches (ONE home), and the
+    # rule itself checked here: per axis the LOWER of the finest unlocked and the finest locked row, φ the finest
+    # unlocked row's own
+    fe = s105.read_fe()
+    assert inp["fe_readings"] == pytest.approx(fe["readings"], abs=1e-12)
+    for ax in ("radial", "axial"):
+        br = inp["fe_bracket"][ax]
+        assert br == pytest.approx(fe["bracket"][ax]) if isinstance(fe["bracket"][ax], float) else \
+            all(br[k] == pytest.approx(fe["bracket"][ax][k], abs=1e-12) for k in ("unlocked", "locked", "unlocked_step_mm", "locked_step_mm"))
+        assert inp["fe_readings"][f"{ax}_reading"] == pytest.approx(min(br["unlocked"], br["locked"]), abs=1e-12)
+        assert br["adverse"] == ("unlocked" if br["unlocked"] <= br["locked"] else "locked")
+        # both ends are the FINEST of their class over the merged ladder
+        assert br["unlocked_step_mm"] == min(r["step_mm"] for r in inp["fe_ladder"] if not r["locked"])
+        assert br["locked_step_mm"] == min(r["step_mm"] for r in inp["fe_ladder"] if r["locked"])
+    rim = pine["gyroid_period_rim_mm"]
+    for r in inp["fe_ladder"]:
+        # the flag follows the ONE home of the lock rule (105's mirror of VoxelFea.RepeatCells) …
+        assert r["locked"] == (s105.axial_lock_cells(r["step_mm"], rim) > 0), f"ladder row {r['step_mm']} mm: the lock flag does not follow the axial period"
+        # … and, independently of that rule's tolerance, the ladder's structure: a locked row is a period/N step at
+        # float32 precision, an unlocked one a diameter step 11/(2k) with k not a multiple of 11 (picogk gotcha #16)
+        if r["locked"]:
+            assert abs(rim / round(rim / r["step_mm"]) - r["step_mm"]) < 5e-7, f"{r['step_mm']} mm is flagged locked but is not period/N"
+        else:
+            k = round(11 / (2 * r["step_mm"]))
+            assert abs(11 / (2 * k) - r["step_mm"]) < 5e-7 and k % 11, f"{r['step_mm']} mm is flagged unlocked but is not 11/(2k) with 11 ∤ k"
+    assert not fe["finest_unlocked"]["locked"] and fe["finest_locked"]["locked"]
+    # the cached ladder IS the re-read one, row for row (a hand-edited cache row would otherwise pass every check above)
+    keys = ("step_mm", "locked", "axial_ratio", "radial_ratio", "porosity", "source")
+    assert inp["fe_ladder"] == [{k: r[k] for k in keys} for r in fe["ladder"]]
+    assert all(r["step_mm"] >= fe["finest_unlocked"]["step_mm"] for r in fe["ladder"] if not r["locked"])
+    assert all(r["step_mm"] >= fe["finest_locked"]["step_mm"] for r in fe["ladder"] if r["locked"])
+    phi = 1 - fe["finest_unlocked"]["porosity"]
+    f = {k: math.sqrt(v / phi) for k, v in fe["readings"].items()}
     assert inp["solid_fraction"] == pytest.approx(phi, abs=1e-12)
     assert inp["rms_factor_by_reading"] == pytest.approx(f, abs=1e-12)
     div = {"near_uniaxial": 1.0, "any_state": math.sqrt(3 + 2 * fea["poisson_ratio"])}
@@ -6238,8 +6270,9 @@ def test_printed_part_sway_stress_invariants():
     fr_b = frac["dbh_min_sensor_on_bark"]
     assert d["junction"]["layer_over_wood_strain"] == pytest.approx(lock1["shank_diameter_mm"] / 2 / pine["gyroid_period_rim_mm"], rel=1e-12)
     fa = d["forces_N_per_mm_of_shift"]["b_zone3_fit"]["anode_bond_stiff"]["state3_bond_per_mm_max_over_ties"] * shift["upper_whisker"]
+    axial_hi = max(fe["bracket"]["axial"]["unlocked"], fe["bracket"]["axial"]["locked"])   # 105's conservative end for a force
     for al in ALLOY_PROPERTIES:
-        rms = fa / a1 * math.sqrt(1 / (rows[0]["axial_ratio"] * phi))
+        rms = fa / a1 * math.sqrt(1 / (axial_hi * phi))
         got = d["gyroid_axial_term_mature_stiff_bond_upper"]["by_alloy"][al]
         assert got["rms_MPa"] == pytest.approx(rms, rel=1e-12)
         assert got["over_sf2_line"] == pytest.approx(rms / (d["alloys"][al]["endurance_printed_MPa"] / 2), rel=1e-12)
@@ -6253,8 +6286,8 @@ def test_printed_part_sway_stress_invariants():
 
     # the verdict's alloy lists are the flags, not a hand-typed list; its mass-path bound is an upper bound
     up = d["gyroid_source_day_exceeds"]["upper_whisker"]
-    # the lower reading is READ, never assumed — HW.33 (в) moved it from the radial to the axial one
-    low = min(inp["fe_readings_richardson"], key=inp["fe_readings_richardson"].get)
+    # the lower reading is READ, never assumed — HW.33 (в) moved it from the radial to the axial one, the HW.23 re-sweep back
+    low = min(inp["fe_readings"], key=inp["fe_readings"].get)
     assert inp["fe_reading_lower"] == low
     lo = ", ".join(sorted(al for al in ALLOY_PROPERTIES if up[al]["large_stem_limit|near_uniaxial|sf2"][low]))
     assert f"On the lower reading (the {low.split('_')[0]} one)" in d["verdict"]
@@ -6355,8 +6388,8 @@ def test_gyroid_wood_strain_share_invariants():
         return c
 
     # the lattice reading: both roots of the two cached FE ratios, the Voigt gap computed HERE
-    r_r = d105["inputs"]["fe_readings_richardson"]["radial_richardson"]
-    r_a = d105["inputs"]["fe_readings_richardson"]["axial_richardson"]
+    r_r = d105["inputs"]["fe_readings"]["radial_reading"]
+    r_a = d105["inputs"]["fe_readings"]["axial_reading"]
     phi, nu_s = d105["inputs"]["solid_fraction"], fea["poisson_ratio"]
     pp = r_r / ((1 + nu_s) * (1 - 2 * nu_s))
     solid = phi * nine(iso4(1.0, nu_s))
@@ -6447,7 +6480,7 @@ def test_gyroid_wood_strain_share_invariants():
     s11 = (c11 + c12) / ((c11 - c12) * (c11 + 2 * c12))
     s12 = -c12 / ((c11 - c12) * (c11 + 2 * c12))
     ez = d["e_z_star_105_premise_theta45"]
-    for fk, reading in (("radial_richardson", r_r), ("axial_richardson", r_a)):
+    for fk, reading in (("radial_reading", r_r), ("axial_reading", r_a)):
         a_need = 2 / (4 * (1 / reading - (s11 + s12) / 2)) / (c11 - c12)
         assert ez[fk]["zener_below_which_E110_falls_under_reading"] == pytest.approx(a_need, rel=1e-9)
     e110_v = 1 / ((s11 + s12) / 2 + 1 / (4 * a_v * (c11 - c12) / 2))
@@ -6472,7 +6505,7 @@ def test_gyroid_wood_strain_share_invariants():
     # 105's thresholds at θ = 0 from 105's own inputs, each reading and the lowest θ = 0 share (rounded UP)
     stem = d105["inputs"]["stem_readings_87"]
     cell_ls = "large_stem_limit|near_uniaxial|sf2"
-    for fk, ratio in (("axial_richardson", r_a), ("radial_richardson", r_r)):
+    for fk, ratio in (("axial_reading", r_a), ("radial_reading", r_r)):
         f_read = math.sqrt(ratio / phi)
         ba = d["gyroid_binds_above_surface_strain_ue_theta0_lowest_share"][fk]
         for al in ALLOY_PROPERTIES:
@@ -6485,11 +6518,21 @@ def test_gyroid_wood_strain_share_invariants():
             eps = stem[rd]["surface_strain_ue"]
             assert d["source_day_theta0_large_stem_sf2"][fk][rd]["exceeds"] == sorted(
                 al for al in ALLOY_PROPERTIES if eps > ba[al][cell_ls])
-    for rd in ("median", "upper_whisker"):
-        assert d["source_day_at_t1_axial_reading_105"][rd] == sorted(
-            al for al in ALLOY_PROPERTIES
-            if stem[rd]["surface_strain_ue"] > d105["gyroid_binds_above_surface_strain_ue"][al][cell_ls]["axial_richardson"])
-    ba_a = d["gyroid_binds_above_surface_strain_ue_theta0_lowest_share"]["axial_richardson"]
+    for fk in ("axial_reading", "radial_reading"):
+        for rd in ("median", "upper_whisker"):
+            assert d["source_day_at_t1_105"][fk][rd] == sorted(
+                al for al in ALLOY_PROPERTIES
+                if stem[rd]["surface_strain_ue"] > d105["gyroid_binds_above_surface_strain_ue"][al][cell_ls][fk])
+    # the verdict's t_L = 1 clause is composed from those sets (in-silico §When Modifying #5), in either branch
+    t1a, t1r = d["source_day_at_t1_105"]["axial_reading"], d["source_day_at_t1_105"]["radial_reading"]
+    j = lambda xs: ", ".join(xs) or "none"  # noqa: E731 — the script's own joiner
+    if t1a == t1r:
+        assert f"at t_L = 1 on both readings the upper whisker exceeded it for {j(t1a['upper_whisker'])} and the median for {j(t1a['median'])}." in d["verdict"]
+    else:
+        assert (f"at t_L = 1 the upper whisker exceeded it for {j(t1a['upper_whisker'])} on this tensor's E[100] and for "
+                f"{j(t1r['upper_whisker'])} on 105's radial reading, the median for {j(t1a['median'])} on E[100] and for "
+                f"{j(t1r['median'])} on the radial one.") in d["verdict"]
+    ba_a = d["gyroid_binds_above_surface_strain_ue_theta0_lowest_share"]["axial_reading"]
     for al in ALLOY_PROPERTIES:
         assert d["threshold_ratio_vs_baseline_theta0_lowest_share"][al] == pytest.approx(
             ba_a[al][cell_ls] / ba_a[ALLOY_BASELINE][cell_ls], rel=1e-12)
@@ -6497,7 +6540,7 @@ def test_gyroid_wood_strain_share_invariants():
     # the verdict's numbers are the cells'
     for al in ALLOY_PROPERTIES:
         assert f"{al} {math.floor(round(t0[al]['lowest'] * 1000, 9)) / 1000:.3f}" in d["verdict"]
-    up = ", ".join(d["source_day_theta0_large_stem_sf2"]["axial_richardson"]["upper_whisker"]["exceeds"]) or "none"
+    up = ", ".join(d["source_day_theta0_large_stem_sf2"]["axial_reading"]["upper_whisker"]["exceeds"]) or "none"
     assert f"upper whisker exceeds the large-stem threshold for {up} on" in d["verdict"]
     assert f"({len(d['additive_outside_the_pore_ends_interval'])} cell-fields fall outside them)" in d["verdict"]
 
@@ -6645,7 +6688,7 @@ def test_gyroid_wood_strain_share_invariants():
 
     # the union's thresholds, source day, per-set verdicts, the reading without Davies' Table 2 and the ceiling
     def binds(fk, share):
-        ratio = r_a if fk == "axial_richardson" else r_r
+        ratio = r_a if fk == "axial_reading" else r_r
         return {al: {f"{dk}|{sk}|sf{sf}": math.ceil(round(d105["alloys"][al]["endurance_strain_printed_ue"] / sf * div
                                                           / (math.sqrt(ratio / phi) * frac * share[al]), 9))
                      for dk, frac in d105["inputs"]["depth_fraction"].items()
@@ -6657,7 +6700,7 @@ def test_gyroid_wood_strain_share_invariants():
         return sorted(al for al in ALLOY_PROPERTIES if stem[rd]["surface_strain_ue"] > b[al][cell_ls])
 
     low_u = {al: union[al]["lowest"] for al in ALLOY_PROPERTIES}
-    for fk in ("axial_richardson", "radial_richardson"):
+    for fk in ("axial_reading", "radial_reading"):
         assert d["union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share"][fk] == binds(fk, low_u)
         for rd in ("median", "upper_whisker"):
             assert d["union_source_day_theta0_large_stem_sf2"][fk][rd]["exceeds"] == exceeds(fk, low_u, rd)

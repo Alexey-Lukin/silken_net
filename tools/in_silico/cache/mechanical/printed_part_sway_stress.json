@@ -48,29 +48,138 @@
       "large_stem_limit": 1.0
     },
     "fea_rows_used": {
-      "finest": {
-        "step_mm": 0.125,
-        "axial_ratio": 0.09230977606989114,
-        "radial_ratio": 0.09077823936405036,
-        "porosity": 0.6460521996060407
+      "finest_unlocked": {
+        "step_mm": 0.06111111,
+        "axial_ratio": 0.09402843418995756,
+        "radial_ratio": 0.09141824879149797,
+        "porosity": 0.6453393358946609,
+        "source": "anchor_zone1_pine.h61um.json"
       },
-      "next": {
-        "step_mm": 0.16666667,
-        "axial_ratio": 0.09624835959626916,
-        "radial_ratio": 0.09400932220422893,
-        "porosity": 0.6440628637951106
+      "finest_locked": {
+        "step_mm": 0.0625,
+        "axial_ratio": 0.09407187284645274,
+        "radial_ratio": 0.09095003962327584,
+        "porosity": 0.6456915076610253,
+        "source": "anchor_zone1_pine.h62um.json"
       }
     },
-    "fe_readings_richardson": {
-      "radial_richardson": 0.08108499161897445,
-      "axial_richardson": 0.08049402643601705
+    "fe_ladder": [
+      {
+        "step_mm": 0.33333334,
+        "locked": true,
+        "axial_ratio": 0.09607107241962931,
+        "radial_ratio": 0.09302879358169786,
+        "porosity": 0.6502129307007356,
+        "source": "sweep"
+      },
+      {
+        "step_mm": 0.25,
+        "locked": true,
+        "axial_ratio": 0.10334162892170398,
+        "radial_ratio": 0.10241699098626338,
+        "porosity": 0.6395615183246073,
+        "source": "sweep"
+      },
+      {
+        "step_mm": 0.2,
+        "locked": true,
+        "axial_ratio": 0.09480895627071989,
+        "radial_ratio": 0.09279481742206817,
+        "porosity": 0.645561632309634,
+        "source": "anchor_zone1_pine.h200um.json"
+      },
+      {
+        "step_mm": 0.16666667,
+        "locked": true,
+        "axial_ratio": 0.09624835959626916,
+        "radial_ratio": 0.09400932220422893,
+        "porosity": 0.6440628637951106,
+        "source": "sweep"
+      },
+      {
+        "step_mm": 0.125,
+        "locked": true,
+        "axial_ratio": 0.09230977606989114,
+        "radial_ratio": 0.09077823936405036,
+        "porosity": 0.6460521996060407,
+        "source": "sweep"
+      },
+      {
+        "step_mm": 0.1,
+        "locked": true,
+        "axial_ratio": 0.09178158557172851,
+        "radial_ratio": 0.09058596975814968,
+        "porosity": 0.6456947368421052,
+        "source": "anchor_zone1_pine.h100um.json"
+      },
+      {
+        "step_mm": 0.09166667,
+        "locked": false,
+        "axial_ratio": 0.0935937906577246,
+        "radial_ratio": 0.09160441558060631,
+        "porosity": 0.6450894845347468,
+        "source": "anchor_zone1_pine.h92um.json"
+      },
+      {
+        "step_mm": 0.083333336,
+        "locked": true,
+        "axial_ratio": 0.09481511255584534,
+        "radial_ratio": 0.09211732849835713,
+        "porosity": 0.6451436057551855,
+        "source": "anchor_zone1_pine.h83um.json"
+      },
+      {
+        "step_mm": 0.07857143,
+        "locked": false,
+        "axial_ratio": 0.09403895236291847,
+        "radial_ratio": 0.09144228889607171,
+        "porosity": 0.6451843494224738,
+        "source": "anchor_zone1_pine.h79um.json"
+      },
+      {
+        "step_mm": 0.0625,
+        "locked": true,
+        "axial_ratio": 0.09407187284645274,
+        "radial_ratio": 0.09095003962327584,
+        "porosity": 0.6456915076610253,
+        "source": "anchor_zone1_pine.h62um.json"
+      },
+      {
+        "step_mm": 0.06111111,
+        "locked": false,
+        "axial_ratio": 0.09402843418995756,
+        "radial_ratio": 0.09141824879149797,
+        "porosity": 0.6453393358946609,
+        "source": "anchor_zone1_pine.h61um.json"
+      }
+    ],
+    "fe_bracket": {
+      "radial": {
+        "unlocked": 0.09141824879149797,
+        "locked": 0.09095003962327584,
+        "unlocked_step_mm": 0.06111111,
+        "locked_step_mm": 0.0625,
+        "adverse": "locked"
+      },
+      "axial": {
+        "unlocked": 0.09402843418995756,
+        "locked": 0.09407187284645274,
+        "unlocked_step_mm": 0.06111111,
+        "locked_step_mm": 0.0625,
+        "adverse": "unlocked"
+      }
     },
-    "fe_reading_lower": "axial_richardson",
+    "fe_readings": {
+      "radial_reading": 0.09095003962327584,
+      "axial_reading": 0.09402843418995756
+    },
+    "fe_reading_lower": "radial_reading",
+    "fe_reading_rule": "per axis the LOWER end of the [finest unlocked ⊥ finest locked] finest-step bracket over the pinned sweep and the HW.23 re-sweep (a step is locked when its sampled phase repeats within four axial cells — axial_lock_cells, the mirror of VoxelFea.RepeatCells)",
     "fe_readings_are": "two kinematic-side readings; neither is the in-plane traction modulus E_z* the bound needs",
-    "solid_fraction": 0.35394780039395934,
+    "solid_fraction": 0.35466066410533914,
     "rms_factor_by_reading": {
-      "radial_richardson": 0.4786307857575797,
-      "axial_richardson": 0.47688341311427507
+      "radial_reading": 0.5064014433314687,
+      "axial_reading": 0.5149002356172853
     },
     "stress_state_divisor": {
       "near_uniaxial": 1.0,
@@ -187,398 +296,398 @@
   "gyroid_binds_above_surface_strain_ue": {
     "Ti-6Al-4V": {
       "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-        "radial_richardson": 4537.0,
-        "axial_richardson": 4554.0
+        "radial_reading": 4288.0,
+        "axial_reading": 4218.0
       },
       "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-        "radial_richardson": 2269.0,
-        "axial_richardson": 2277.0
+        "radial_reading": 2144.0,
+        "axial_reading": 2109.0
       },
       "dbh_min_sensor_on_bark|any_state|sf1": {
-        "radial_richardson": 8708.0,
-        "axial_richardson": 8740.0
+        "radial_reading": 8231.0,
+        "axial_reading": 8095.0
       },
       "dbh_min_sensor_on_bark|any_state|sf2": {
-        "radial_richardson": 4354.0,
-        "axial_richardson": 4370.0
+        "radial_reading": 4116.0,
+        "axial_reading": 4048.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-        "radial_richardson": 4267.0,
-        "axial_richardson": 4282.0
+        "radial_reading": 4033.0,
+        "axial_reading": 3966.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-        "radial_richardson": 2134.0,
-        "axial_richardson": 2141.0
+        "radial_reading": 2017.0,
+        "axial_reading": 1983.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-        "radial_richardson": 8189.0,
-        "axial_richardson": 8219.0
+        "radial_reading": 7740.0,
+        "axial_reading": 7612.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-        "radial_richardson": 4095.0,
-        "axial_richardson": 4110.0
+        "radial_reading": 3870.0,
+        "axial_reading": 3806.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-        "radial_richardson": 3964.0,
-        "axial_richardson": 3979.0
+        "radial_reading": 3747.0,
+        "axial_reading": 3685.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-        "radial_richardson": 1982.0,
-        "axial_richardson": 1990.0
+        "radial_reading": 1874.0,
+        "axial_reading": 1843.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-        "radial_richardson": 7608.0,
-        "axial_richardson": 7636.0
+        "radial_reading": 7191.0,
+        "axial_reading": 7072.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-        "radial_richardson": 3804.0,
-        "axial_richardson": 3818.0
+        "radial_reading": 3596.0,
+        "axial_reading": 3536.0
       },
       "large_stem_limit|near_uniaxial|sf1": {
-        "radial_richardson": 3343.0,
-        "axial_richardson": 3356.0
+        "radial_reading": 3160.0,
+        "axial_reading": 3108.0
       },
       "large_stem_limit|near_uniaxial|sf2": {
-        "radial_richardson": 1672.0,
-        "axial_richardson": 1678.0
+        "radial_reading": 1580.0,
+        "axial_reading": 1554.0
       },
       "large_stem_limit|any_state|sf1": {
-        "radial_richardson": 6417.0,
-        "axial_richardson": 6440.0
+        "radial_reading": 6065.0,
+        "axial_reading": 5965.0
       },
       "large_stem_limit|any_state|sf2": {
-        "radial_richardson": 3209.0,
-        "axial_richardson": 3220.0
+        "radial_reading": 3033.0,
+        "axial_reading": 2983.0
       }
     },
     "Ti-6Al-7Nb": {
       "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-        "radial_richardson": 4680.0,
-        "axial_richardson": 4698.0
+        "radial_reading": 4424.0,
+        "axial_reading": 4351.0
       },
       "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-        "radial_richardson": 2340.0,
-        "axial_richardson": 2349.0
+        "radial_reading": 2212.0,
+        "axial_reading": 2176.0
       },
       "dbh_min_sensor_on_bark|any_state|sf1": {
-        "radial_richardson": 8983.0,
-        "axial_richardson": 9016.0
+        "radial_reading": 8490.0,
+        "axial_reading": 8350.0
       },
       "dbh_min_sensor_on_bark|any_state|sf2": {
-        "radial_richardson": 4492.0,
-        "axial_richardson": 4508.0
+        "radial_reading": 4245.0,
+        "axial_reading": 4175.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-        "radial_richardson": 4401.0,
-        "axial_richardson": 4418.0
+        "radial_reading": 4160.0,
+        "axial_reading": 4091.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-        "radial_richardson": 2201.0,
-        "axial_richardson": 2209.0
+        "radial_reading": 2080.0,
+        "axial_reading": 2046.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-        "radial_richardson": 8448.0,
-        "axial_richardson": 8479.0
+        "radial_reading": 7984.0,
+        "axial_reading": 7853.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-        "radial_richardson": 4224.0,
-        "axial_richardson": 4240.0
+        "radial_reading": 3992.0,
+        "axial_reading": 3927.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-        "radial_richardson": 4089.0,
-        "axial_richardson": 4104.0
+        "radial_reading": 3865.0,
+        "axial_reading": 3801.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-        "radial_richardson": 2045.0,
-        "axial_richardson": 2052.0
+        "radial_reading": 1933.0,
+        "axial_reading": 1901.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-        "radial_richardson": 7848.0,
-        "axial_richardson": 7877.0
+        "radial_reading": 7418.0,
+        "axial_reading": 7296.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-        "radial_richardson": 3924.0,
-        "axial_richardson": 3939.0
+        "radial_reading": 3709.0,
+        "axial_reading": 3648.0
       },
       "large_stem_limit|near_uniaxial|sf1": {
-        "radial_richardson": 3449.0,
-        "axial_richardson": 3461.0
+        "radial_reading": 3260.0,
+        "axial_reading": 3206.0
       },
       "large_stem_limit|near_uniaxial|sf2": {
-        "radial_richardson": 1725.0,
-        "axial_richardson": 1731.0
+        "radial_reading": 1630.0,
+        "axial_reading": 1603.0
       },
       "large_stem_limit|any_state|sf1": {
-        "radial_richardson": 6619.0,
-        "axial_richardson": 6643.0
+        "radial_reading": 6256.0,
+        "axial_reading": 6153.0
       },
       "large_stem_limit|any_state|sf2": {
-        "radial_richardson": 3310.0,
-        "axial_richardson": 3322.0
+        "radial_reading": 3128.0,
+        "axial_reading": 3077.0
       }
     },
     "CP-Ti-Gr4": {
       "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-        "radial_richardson": 2618.0,
-        "axial_richardson": 2627.0
+        "radial_reading": 2474.0,
+        "axial_reading": 2433.0
       },
       "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-        "radial_richardson": 1309.0,
-        "axial_richardson": 1314.0
+        "radial_reading": 1237.0,
+        "axial_reading": 1217.0
       },
       "dbh_min_sensor_on_bark|any_state|sf1": {
-        "radial_richardson": 5024.0,
-        "axial_richardson": 5043.0
+        "radial_reading": 4749.0,
+        "axial_reading": 4670.0
       },
       "dbh_min_sensor_on_bark|any_state|sf2": {
-        "radial_richardson": 2512.0,
-        "axial_richardson": 2522.0
+        "radial_reading": 2375.0,
+        "axial_reading": 2335.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-        "radial_richardson": 2462.0,
-        "axial_richardson": 2471.0
+        "radial_reading": 2327.0,
+        "axial_reading": 2288.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-        "radial_richardson": 1231.0,
-        "axial_richardson": 1236.0
+        "radial_reading": 1164.0,
+        "axial_reading": 1144.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-        "radial_richardson": 4725.0,
-        "axial_richardson": 4742.0
+        "radial_reading": 4466.0,
+        "axial_reading": 4392.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-        "radial_richardson": 2363.0,
-        "axial_richardson": 2371.0
+        "radial_reading": 2233.0,
+        "axial_reading": 2196.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-        "radial_richardson": 2287.0,
-        "axial_richardson": 2296.0
+        "radial_reading": 2162.0,
+        "axial_reading": 2126.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-        "radial_richardson": 1144.0,
-        "axial_richardson": 1148.0
+        "radial_reading": 1081.0,
+        "axial_reading": 1063.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-        "radial_richardson": 4390.0,
-        "axial_richardson": 4406.0
+        "radial_reading": 4149.0,
+        "axial_reading": 4080.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-        "radial_richardson": 2195.0,
-        "axial_richardson": 2203.0
+        "radial_reading": 2075.0,
+        "axial_reading": 2040.0
       },
       "large_stem_limit|near_uniaxial|sf1": {
-        "radial_richardson": 1929.0,
-        "axial_richardson": 1936.0
+        "radial_reading": 1823.0,
+        "axial_reading": 1793.0
       },
       "large_stem_limit|near_uniaxial|sf2": {
-        "radial_richardson": 965.0,
-        "axial_richardson": 968.0
+        "radial_reading": 912.0,
+        "axial_reading": 897.0
       },
       "large_stem_limit|any_state|sf1": {
-        "radial_richardson": 3702.0,
-        "axial_richardson": 3716.0
+        "radial_reading": 3499.0,
+        "axial_reading": 3441.0
       },
       "large_stem_limit|any_state|sf2": {
-        "radial_richardson": 1851.0,
-        "axial_richardson": 1858.0
+        "radial_reading": 1750.0,
+        "axial_reading": 1721.0
       }
     },
     "beta-Ti-13Nb-13Zr": {
       "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-        "radial_richardson": 6380.0,
-        "axial_richardson": 6404.0
+        "radial_reading": 6030.0,
+        "axial_reading": 5931.0
       },
       "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-        "radial_richardson": 3190.0,
-        "axial_richardson": 3202.0
+        "radial_reading": 3015.0,
+        "axial_reading": 2966.0
       },
       "dbh_min_sensor_on_bark|any_state|sf1": {
-        "radial_richardson": 12246.0,
-        "axial_richardson": 12291.0
+        "radial_reading": 11574.0,
+        "axial_reading": 11383.0
       },
       "dbh_min_sensor_on_bark|any_state|sf2": {
-        "radial_richardson": 6123.0,
-        "axial_richardson": 6146.0
+        "radial_reading": 5787.0,
+        "axial_reading": 5692.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-        "radial_richardson": 6000.0,
-        "axial_richardson": 6022.0
+        "radial_reading": 5671.0,
+        "axial_reading": 5577.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-        "radial_richardson": 3000.0,
-        "axial_richardson": 3011.0
+        "radial_reading": 2836.0,
+        "axial_reading": 2789.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-        "radial_richardson": 11516.0,
-        "axial_richardson": 11558.0
+        "radial_reading": 10884.0,
+        "axial_reading": 10705.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-        "radial_richardson": 5758.0,
-        "axial_richardson": 5779.0
+        "radial_reading": 5442.0,
+        "axial_reading": 5353.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-        "radial_richardson": 5574.0,
-        "axial_richardson": 5595.0
+        "radial_reading": 5269.0,
+        "axial_reading": 5182.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-        "radial_richardson": 2787.0,
-        "axial_richardson": 2798.0
+        "radial_reading": 2635.0,
+        "axial_reading": 2591.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-        "radial_richardson": 10699.0,
-        "axial_richardson": 10738.0
+        "radial_reading": 10112.0,
+        "axial_reading": 9945.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-        "radial_richardson": 5350.0,
-        "axial_richardson": 5369.0
+        "radial_reading": 5056.0,
+        "axial_reading": 4973.0
       },
       "large_stem_limit|near_uniaxial|sf1": {
-        "radial_richardson": 4701.0,
-        "axial_richardson": 4719.0
+        "radial_reading": 4444.0,
+        "axial_reading": 4370.0
       },
       "large_stem_limit|near_uniaxial|sf2": {
-        "radial_richardson": 2351.0,
-        "axial_richardson": 2360.0
+        "radial_reading": 2222.0,
+        "axial_reading": 2185.0
       },
       "large_stem_limit|any_state|sf1": {
-        "radial_richardson": 9023.0,
-        "axial_richardson": 9056.0
+        "radial_reading": 8529.0,
+        "axial_reading": 8388.0
       },
       "large_stem_limit|any_state|sf2": {
-        "radial_richardson": 4512.0,
-        "axial_richardson": 4528.0
+        "radial_reading": 4265.0,
+        "axial_reading": 4194.0
       }
     },
     "Ta": {
       "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-        "radial_richardson": 1052.0,
-        "axial_richardson": 1056.0
+        "radial_reading": 995.0,
+        "axial_reading": 978.0
       },
       "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-        "radial_richardson": 526.0,
-        "axial_richardson": 528.0
+        "radial_reading": 498.0,
+        "axial_reading": 489.0
       },
       "dbh_min_sensor_on_bark|any_state|sf1": {
-        "radial_richardson": 2019.0,
-        "axial_richardson": 2027.0
+        "radial_reading": 1909.0,
+        "axial_reading": 1877.0
       },
       "dbh_min_sensor_on_bark|any_state|sf2": {
-        "radial_richardson": 1010.0,
-        "axial_richardson": 1014.0
+        "radial_reading": 955.0,
+        "axial_reading": 939.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-        "radial_richardson": 990.0,
-        "axial_richardson": 993.0
+        "radial_reading": 935.0,
+        "axial_reading": 920.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-        "radial_richardson": 495.0,
-        "axial_richardson": 497.0
+        "radial_reading": 468.0,
+        "axial_reading": 460.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-        "radial_richardson": 1899.0,
-        "axial_richardson": 1906.0
+        "radial_reading": 1795.0,
+        "axial_reading": 1765.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-        "radial_richardson": 950.0,
-        "axial_richardson": 953.0
+        "radial_reading": 898.0,
+        "axial_reading": 883.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-        "radial_richardson": 920.0,
-        "axial_richardson": 923.0
+        "radial_reading": 869.0,
+        "axial_reading": 855.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-        "radial_richardson": 460.0,
-        "axial_richardson": 462.0
+        "radial_reading": 435.0,
+        "axial_reading": 428.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-        "radial_richardson": 1764.0,
-        "axial_richardson": 1771.0
+        "radial_reading": 1668.0,
+        "axial_reading": 1640.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-        "radial_richardson": 882.0,
-        "axial_richardson": 886.0
+        "radial_reading": 834.0,
+        "axial_reading": 820.0
       },
       "large_stem_limit|near_uniaxial|sf1": {
-        "radial_richardson": 776.0,
-        "axial_richardson": 778.0
+        "radial_reading": 733.0,
+        "axial_reading": 721.0
       },
       "large_stem_limit|near_uniaxial|sf2": {
-        "radial_richardson": 388.0,
-        "axial_richardson": 389.0
+        "radial_reading": 367.0,
+        "axial_reading": 361.0
       },
       "large_stem_limit|any_state|sf1": {
-        "radial_richardson": 1488.0,
-        "axial_richardson": 1494.0
+        "radial_reading": 1407.0,
+        "axial_reading": 1383.0
       },
       "large_stem_limit|any_state|sf2": {
-        "radial_richardson": 744.0,
-        "axial_richardson": 747.0
+        "radial_reading": 704.0,
+        "axial_reading": 692.0
       }
     },
     "Ti-15Zr": {
       "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-        "radial_richardson": 5388.0,
-        "axial_richardson": 5408.0
+        "radial_reading": 5092.0,
+        "axial_reading": 5008.0
       },
       "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-        "radial_richardson": 2694.0,
-        "axial_richardson": 2704.0
+        "radial_reading": 2546.0,
+        "axial_reading": 2504.0
       },
       "dbh_min_sensor_on_bark|any_state|sf1": {
-        "radial_richardson": 10341.0,
-        "axial_richardson": 10379.0
+        "radial_reading": 9774.0,
+        "axial_reading": 9613.0
       },
       "dbh_min_sensor_on_bark|any_state|sf2": {
-        "radial_richardson": 5171.0,
-        "axial_richardson": 5190.0
+        "radial_reading": 4887.0,
+        "axial_reading": 4807.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-        "radial_richardson": 5067.0,
-        "axial_richardson": 5085.0
+        "radial_reading": 4789.0,
+        "axial_reading": 4710.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-        "radial_richardson": 2534.0,
-        "axial_richardson": 2543.0
+        "radial_reading": 2395.0,
+        "axial_reading": 2355.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-        "radial_richardson": 9725.0,
-        "axial_richardson": 9760.0
+        "radial_reading": 9191.0,
+        "axial_reading": 9040.0
       },
       "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-        "radial_richardson": 4863.0,
-        "axial_richardson": 4880.0
+        "radial_reading": 4596.0,
+        "axial_reading": 4520.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-        "radial_richardson": 4707.0,
-        "axial_richardson": 4725.0
+        "radial_reading": 4449.0,
+        "axial_reading": 4376.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-        "radial_richardson": 2354.0,
-        "axial_richardson": 2363.0
+        "radial_reading": 2225.0,
+        "axial_reading": 2188.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-        "radial_richardson": 9035.0,
-        "axial_richardson": 9068.0
+        "radial_reading": 8539.0,
+        "axial_reading": 8398.0
       },
       "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-        "radial_richardson": 4518.0,
-        "axial_richardson": 4534.0
+        "radial_reading": 4270.0,
+        "axial_reading": 4199.0
       },
       "large_stem_limit|near_uniaxial|sf1": {
-        "radial_richardson": 3970.0,
-        "axial_richardson": 3985.0
+        "radial_reading": 3752.0,
+        "axial_reading": 3691.0
       },
       "large_stem_limit|near_uniaxial|sf2": {
-        "radial_richardson": 1985.0,
-        "axial_richardson": 1993.0
+        "radial_reading": 1876.0,
+        "axial_reading": 1846.0
       },
       "large_stem_limit|any_state|sf1": {
-        "radial_richardson": 7620.0,
-        "axial_richardson": 7648.0
+        "radial_reading": 7202.0,
+        "axial_reading": 7083.0
       },
       "large_stem_limit|any_state|sf2": {
-        "radial_richardson": 3810.0,
-        "axial_richardson": 3824.0
+        "radial_reading": 3601.0,
+        "axial_reading": 3542.0
       }
     }
   },
@@ -586,796 +695,796 @@
     "median": {
       "Ti-6Al-4V": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         }
       },
       "Ti-6Al-7Nb": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         }
       },
       "CP-Ti-Gr4": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         }
       },
       "beta-Ti-13Nb-13Zr": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         }
       },
       "Ta": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         }
       },
       "Ti-15Zr": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         }
       }
     },
     "upper_whisker": {
       "Ti-6Al-4V": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         }
       },
       "Ti-6Al-7Nb": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         }
       },
       "CP-Ti-Gr4": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": true,
+          "axial_reading": true
         }
       },
       "beta-Ti-13Nb-13Zr": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         }
       },
       "Ta": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": true,
-          "axial_richardson": true
+          "radial_reading": true,
+          "axial_reading": true
         }
       },
       "Ti-15Zr": {
         "dbh_min_sensor_on_bark|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_bark|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|near_uniaxial|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf1": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         },
         "large_stem_limit|any_state|sf2": {
-          "radial_richardson": false,
-          "axial_richardson": false
+          "radial_reading": false,
+          "axial_reading": false
         }
       }
     }
@@ -1385,97 +1494,97 @@
       "Ti-6Al-4V": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.5490430622009569,
-            "axial_richardson": 0.5470798569725864
+            "radial_reading": 0.5810126582278481,
+            "axial_reading": 0.5907335907335908
           },
-          "fe_reading_at_flip": 0.26880282542342926
+          "fe_reading_at_flip": 0.2693442040661202
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.2860704269242755,
-            "axial_richardson": 0.2850931677018634
+            "radial_reading": 0.3026706231454006,
+            "axial_reading": 0.3077438819979886
           },
-          "fe_reading_at_flip": 0.9902696088599133
+          "fe_reading_at_flip": 0.9922640477795867
         }
       },
       "Ti-6Al-7Nb": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.5321739130434783,
-            "axial_richardson": 0.5303292894280762
+            "radial_reading": 0.5631901840490797,
+            "axial_reading": 0.5726762320648784
           },
-          "fe_reading_at_flip": 0.28603373516652664
+          "fe_reading_at_flip": 0.28660981748658537
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.2773413897280967,
-            "axial_richardson": 0.2763395544852498
+            "radial_reading": 0.29347826086956524,
+            "axial_reading": 0.2983425414364641
           },
-          "fe_reading_at_flip": 1.0537482803534843
+          "fe_reading_at_flip": 1.0558705676205808
         }
       },
       "CP-Ti-Gr4": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.9512953367875647,
-            "axial_richardson": 0.9483471074380165
+            "radial_reading": 1.006578947368421,
+            "axial_reading": 1.0234113712374582
           },
-          "fe_reading_at_flip": 0.08946839603590469
+          "fe_reading_at_flip": 0.08964858863147489
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.4959481361426256,
-            "axial_richardson": 0.4940796555435953
+            "radial_reading": 0.5245714285714286,
+            "axial_reading": 0.5334108076699593
           },
-          "fe_reading_at_flip": 0.32960157099627296
+          "fe_reading_at_flip": 0.3302654005183536
         }
       },
       "beta-Ti-13Nb-13Zr": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.39047213951509996,
-            "axial_richardson": 0.3889830508474576
+            "radial_reading": 0.41314131413141314,
+            "axial_reading": 0.42013729977116704
           },
-          "fe_reading_at_flip": 0.5315680873851996
+          "fe_reading_at_flip": 0.532638684798724
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.20345744680851063,
-            "axial_richardson": 0.20273851590106007
+            "radial_reading": 0.21524032825322392,
+            "axial_reading": 0.21888412017167383
           },
-          "fe_reading_at_flip": 1.9582968339270752
+          "fe_reading_at_flip": 1.9622409147984998
         }
       },
       "Ta": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 2.365979381443299,
-            "axial_richardson": 2.359897172236504
+            "radial_reading": 2.5013623978201633,
+            "axial_reading": 2.542936288088643
           },
-          "fe_reading_at_flip": 0.014449943768798986
+          "fe_reading_at_flip": 0.014479046479799845
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 1.2338709677419355,
-            "axial_richardson": 1.2289156626506024
+            "radial_reading": 1.3039772727272727,
+            "axial_reading": 1.3265895953757225
           },
-          "fe_reading_at_flip": 0.05323359284425547
+          "fe_reading_at_flip": 0.05334080723158264
         }
       },
       "Ti-15Zr": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.4624685138539043,
-            "axial_richardson": 0.4606121424987456
+            "radial_reading": 0.48933901918976547,
+            "axial_reading": 0.49729144095341277
           },
-          "fe_reading_at_flip": 0.3790539842885077
+          "fe_reading_at_flip": 0.37981741276511477
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.2409448818897638,
-            "axial_richardson": 0.24006276150627615
+            "radial_reading": 0.2549291863371286,
+            "axial_reading": 0.25917560700169395
           },
-          "fe_reading_at_flip": 1.3964348781188622
+          "fe_reading_at_flip": 1.399247348626683
         }
       }
     },
@@ -1483,97 +1592,97 @@
       "Ti-6Al-4V": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 1.0986842105263157,
-            "axial_richardson": 1.094755661501788
+            "radial_reading": 1.1626582278481012,
+            "axial_reading": 1.1821106821106822
           },
-          "fe_reading_at_flip": 0.0671275627353105
+          "fe_reading_at_flip": 0.06726276008207777
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.572452477407292,
-            "axial_richardson": 0.5704968944099379
+            "radial_reading": 0.6056709528519617,
+            "axial_reading": 0.6158229969829031
           },
-          "fe_reading_at_flip": 0.24729794111688383
+          "fe_reading_at_flip": 0.24779600814237443
         }
       },
       "Ti-6Al-7Nb": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 1.064927536231884,
-            "axial_richardson": 1.0612362796071635
+            "radial_reading": 1.1269938650306748,
+            "axial_reading": 1.1459762944479102
           },
-          "fe_reading_at_flip": 0.07143060148850891
+          "fe_reading_at_flip": 0.07157446531144132
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.5549848942598188,
-            "axial_richardson": 0.5529801324503312
+            "radial_reading": 0.5872762148337596,
+            "axial_reading": 0.5970100747481313
           },
-          "fe_reading_at_flip": 0.2631503358836669
+          "fe_reading_at_flip": 0.2636803302073498
         }
       },
       "CP-Ti-Gr4": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 1.9036269430051813,
-            "axial_richardson": 1.8977272727272727
+            "radial_reading": 2.0142543859649122,
+            "axial_reading": 2.0479375696767
           },
-          "fe_reading_at_flip": 0.022342753869001274
+          "fe_reading_at_flip": 0.02238775298589866
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.9924365207995678,
-            "axial_richardson": 0.988697524219591
+            "radial_reading": 1.0497142857142858,
+            "axial_reading": 1.0674026728646135
           },
-          "fe_reading_at_flip": 0.0823107052534007
+          "fe_reading_at_flip": 0.08247648200005067
         }
       },
       "beta-Ti-13Nb-13Zr": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.7813696299447044,
-            "axial_richardson": 0.7783898305084745
+            "radial_reading": 0.8267326732673267,
+            "axial_reading": 0.8407322654462243
           },
-          "fe_reading_at_flip": 0.13274737747949586
+          "fe_reading_at_flip": 0.13301473551387447
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.407136524822695,
-            "axial_richardson": 0.40569787985865724
+            "radial_reading": 0.43071512309495896,
+            "axial_reading": 0.4380066762041011
           },
-          "fe_reading_at_flip": 0.48904133863446275
+          "fe_reading_at_flip": 0.4900262856331136
         }
       },
       "Ta": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 4.734536082474227,
-            "axial_richardson": 4.722365038560412
+            "radial_reading": 5.005449591280654,
+            "axial_reading": 5.088642659279778
           },
-          "fe_reading_at_flip": 0.0036085539850029304
+          "fe_reading_at_flip": 0.0036158217436486977
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 2.4690860215053765,
-            "axial_richardson": 2.459170013386881
+            "radial_reading": 2.609375,
+            "axial_reading": 2.6546242774566475
           },
-          "fe_reading_at_flip": 0.0132939128807508
+          "fe_reading_at_flip": 0.013320687303601808
         }
       },
       "Ti-15Zr": {
         "large_stem_limit|near_uniaxial|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.9254408060453401,
-            "axial_richardson": 0.921726041144004
+            "radial_reading": 0.9792110874200426,
+            "axial_reading": 0.995124593716143
           },
-          "fe_reading_at_flip": 0.09466035213846519
+          "fe_reading_at_flip": 0.09485100152199247
         },
         "large_stem_limit|any_state|sf2": {
           "margin_over_threshold": {
-            "radial_richardson": 0.4821522309711286,
-            "axial_richardson": 0.4803870292887029
+            "radial_reading": 0.5101360733129686,
+            "axial_reading": 0.5186335403726708
           },
-          "fe_reading_at_flip": 0.3487287372781058
+          "fe_reading_at_flip": 0.3494310896070203
         }
       }
     }
@@ -1582,28 +1691,28 @@
     "force_N": 746.3247051693479,
     "by_alloy": {
       "Ti-6Al-4V": {
-        "rms_MPa": 43.44693145740954,
-        "over_sf2_line": 0.4937151301978357
+        "rms_MPa": 42.99482243971515,
+        "over_sf2_line": 0.4885775277240358
       },
       "Ti-6Al-7Nb": {
-        "rms_MPa": 43.44693145740954,
-        "over_sf2_line": 0.5111403700871711
+        "rms_MPa": 42.99482243971515,
+        "over_sf2_line": 0.5058214404672371
       },
       "CP-Ti-Gr4": {
-        "rms_MPa": 43.44693145740954,
-        "over_sf2_line": 0.9051444053626988
+        "rms_MPa": 42.99482243971515,
+        "over_sf2_line": 0.8957254674940657
       },
       "beta-Ti-13Nb-13Zr": {
-        "rms_MPa": 43.44693145740954,
-        "over_sf2_line": 0.482743682860106
+        "rms_MPa": 42.99482243971515,
+        "over_sf2_line": 0.4777202493301683
       },
       "Ta": {
-        "rms_MPa": 43.44693145740954,
-        "over_sf2_line": 1.259331346591581
+        "rms_MPa": 42.99482243971515,
+        "over_sf2_line": 1.2462267373830478
       },
       "Ti-15Zr": {
-        "rms_MPa": 43.44693145740954,
-        "over_sf2_line": 0.45733612060431095
+        "rms_MPa": 42.99482243971515,
+        "over_sf2_line": 0.45257707831279104
       }
     },
     "note": "its own lower bound; not additive with the in-plane one"
@@ -11206,5 +11315,5 @@
       }
     }
   },
-  "verdict": "The bonded GYROID is strain-controlled, so its figure of merit is σ_e/E_s, not σ_e (relative to Ti-6Al-4V: Ti-6Al-4V 1.00, Ti-6Al-7Nb 1.03, CP-Ti-Gr4 0.58, beta-Ti-13Nb-13Zr 1.41, Ta 0.23, Ti-15Zr 1.19). An energy LOWER bound — it can show a ligament binding, never safe — puts the ligaments' RMS stress at ≥ 0.47 E_s·ε on both FE readings (axial 0.0805 ⊥ radial 0.0811 of E_s), neither of which is the in-plane traction modulus the bound needs. On the lower reading (the axial one), at t_L = k_p = 1 with near-uniaxial ligaments, the bound alone reaches SF 2 above a stem surface strain of Ti-6Al-4V 1678, Ti-6Al-7Nb 1731, CP-Ti-Gr4 968, beta-Ti-13Nb-13Zr 2360, Ta 389, Ti-15Zr 1993 µε on a large stem; k_p > 1 lowers these, t_L < 1 (not excluded) raises them. The source tree's upper surface strain (1837 µε, one tree, one gust), placed on a large stem, exceeds them for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb on the lower reading (CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb on the higher; any stress state: Ta); its median for Ta. The gyroid⊥shank junction is a candidate the bound cannot see: at t_L = 1 its first layer absorbs 7.4 µm of radial mismatch, 2.75× the wood's strain over one rim period. The anode's bond force in the mature state is 746 N on a stiff bond and 103 N on a soft one (1654 N with a rigid sleeve at `103`'s stiff bond): the Zone 1 shank carries 7.9 MPa, and the tie reverses the force onto the barbs' easy flank — which 01_01 §4.3 A says nothing loads in service. The FLANGE DISC in state 2 on a rigid bark (673 N, Zone-3 fit) carries a worst nominal 97.1 MPa (disc_shank_root|b_pull_at_shank|rim_only_dished_seat): one-sided (a bearing without preload) it reaches SF 2 at K_f 1.51 on the printed route ⊥ 2.58 on the CNC route — the same number is its un-notched SF when a preload ≥ F carries both halves. On the air-dry bark reading the force is 66 N; the mature-state disc force is not bounded. The mass path stays below 0.33 MPa. Not computed: E_z* and k_p (the infinite lattice's come from `fea --periodic`, not read here; the finite part's — no traction case), the junction (a junction model), t_L (`106` — conditional), the count of host-stem cycles above the threshold (the field sensor), any K_t, a barb row's ratchet force, the static means, ice, the collar and lug root."
+  "verdict": "The bonded GYROID is strain-controlled, so its figure of merit is σ_e/E_s, not σ_e (relative to Ti-6Al-4V: Ti-6Al-4V 1.00, Ti-6Al-7Nb 1.03, CP-Ti-Gr4 0.58, beta-Ti-13Nb-13Zr 1.41, Ta 0.23, Ti-15Zr 1.19). An energy LOWER bound — it can show a ligament binding, never safe — puts the ligaments' RMS stress at ≥ 0.50–0.51 E_s·ε on the two FE readings, neither of which is the in-plane traction modulus the bound needs. On the lower reading (the radial one), at t_L = k_p = 1 with near-uniaxial ligaments, the bound alone reaches SF 2 above a stem surface strain of Ti-6Al-4V 1580, Ti-6Al-7Nb 1630, CP-Ti-Gr4 912, beta-Ti-13Nb-13Zr 2222, Ta 367, Ti-15Zr 1876 µε on a large stem; k_p > 1 lowers these, t_L < 1 (not excluded) raises them. The source tree's upper surface strain (1837 µε, one tree, one gust), placed on a large stem, exceeds them for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb on the lower reading (CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb on the higher; any stress state: CP-Ti-Gr4, Ta); its median for CP-Ti-Gr4, Ta. The gyroid⊥shank junction is a candidate the bound cannot see: at t_L = 1 its first layer absorbs 7.4 µm of radial mismatch, 2.75× the wood's strain over one rim period. The anode's bond force in the mature state is 746 N on a stiff bond and 103 N on a soft one (1654 N with a rigid sleeve at `103`'s stiff bond): the Zone 1 shank carries 7.9 MPa, and the tie reverses the force onto the barbs' easy flank — which 01_01 §4.3 A says nothing loads in service. The FLANGE DISC in state 2 on a rigid bark (673 N, Zone-3 fit) carries a worst nominal 97.1 MPa (disc_shank_root|b_pull_at_shank|rim_only_dished_seat): one-sided (a bearing without preload) it reaches SF 2 at K_f 1.51 on the printed route ⊥ 2.58 on the CNC route — the same number is its un-notched SF when a preload ≥ F carries both halves. On the air-dry bark reading the force is 66 N; the mature-state disc force is not bounded. The mass path stays below 0.33 MPa. Not computed: E_z* and k_p (the infinite lattice's come from `fea --periodic`, not read here; the finite part's — no traction case), the junction (a junction model), t_L (`106` — conditional), the count of host-stem cycles above the threshold (the field sensor), any K_t, a barb row's ratchet force, the static means, ice, the collar and lug root."
 }

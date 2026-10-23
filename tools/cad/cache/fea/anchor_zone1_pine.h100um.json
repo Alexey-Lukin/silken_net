@@ -1,0 +1,24 @@
+{
+  "_note": "Voxel-FE apparent stiffness of the part as MODELLED, in units of E_solid. Declared ceiling lives in VoxelFea.cs: a single row carries no known bias sign, so read the sweep.",
+  "cem": "anchor_zone1_pine",
+  "topology": "network",
+  "poisson_ratio": 0.342,
+  "rows": [
+    {
+      "step_mm": 0.1,
+      "step_divisor": null,
+      "elements": 1346237,
+      "dofs": 5520828,
+      "porosity": 0.6456947368421052,
+      "axial_ratio": 0.09178158557172851,
+      "radial_ratio": 0.09058596975814968,
+      "solid_calibration_axial": 1.000000078343814,
+      "discarded_island_fraction": 9.135743783239558E-05,
+      "axial_iterations": 10844,
+      "axial_residual": 9.973178231507415E-09,
+      "radial_iterations": 1507,
+      "radial_residual": 9.846308771475967E-09,
+      "converged": true
+    }
+  ]
+}

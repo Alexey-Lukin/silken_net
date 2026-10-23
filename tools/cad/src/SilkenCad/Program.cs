@@ -1534,6 +1534,15 @@ internal static class Program
         // every aligned divisor is phase-locked (VoxelFea.PhaseLockCells); divisor 0 marks that row below.
         float fStepMmArg = ArgFloat(args, "--step-mm", 0f);
         int[] aDivs = fStepMmArg > 0f ? [0] : args.Contains("--sweep") ? [6, 8, 12, 16] : [nDiv];
+        string strOut = Path.Combine("cache", "fea",
+            $"{cem.Name}{(fStepMmArg > 0f ? $".h{MathF.Round(fStepMmArg * 1000f):0}um" : "")}.json");
+        // An `--step-mm` row is named by its step at 1 µm resolution, and the committed rows of the HW.23 re-sweep live
+        // under these names: a second step rounding to the same name (11/178 → h62um, the /32 row's) would overwrite a
+        // canon-pinned row silently (picogk gotcha #14's shape). Refuse BEFORE the solve — a full row is tens of minutes —
+        // and let the caller delete a row deliberately.
+        if (fStepMmArg > 0f && File.Exists(strOut))
+            throw new InvalidOperationException(
+                $"{strOut} exists — an --step-mm row is named by its step at 1 µm resolution, and a committed row is not overwritten; delete it first if you mean to");
         Console.WriteLine($"fea {cem.Name} — apparent stiffness / E_solid, ν = {VoxelFea.SolidPoissonRatio}");
         Console.WriteLine("  envelope: the printed part — the gyroid lattice to the axis. The bus wire is WELDED "
                           + "on (01_01 §3 step 1b), not printed, so it is not part of this measurement.");
@@ -1604,8 +1613,6 @@ internal static class Program
         }
 
         Directory.CreateDirectory(Path.Combine("cache", "fea"));
-        string strOut = Path.Combine("cache", "fea",
-            $"{cem.Name}{(fStepMmArg > 0f ? $".h{MathF.Round(fStepMmArg * 1000f):0}um" : "")}.json");
         File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["_note"] = "Voxel-FE apparent stiffness of the part as MODELLED, in units of E_solid. "

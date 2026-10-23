@@ -610,8 +610,11 @@ internal static class VoxelFea
     // its in-plane phase still drifts with radius. No wall staircase, then (PhaseLockCells stays 0, and the sampled pin
     // in VoxelFeaTests shows close walls resolving on the shipped pine part), but a step that divides the axial period
     // samples every axial cell at the same z-phases, so the step's discretization error is coherent along the axis
-    // instead of averaging out — the named likely cause of the post-verdict sweep's non-monotonicity (01_01 §5.2), which
-    // the HW.23 Richardson re-sweep separates with locked ⊥ unlocked steps. Same return as above, along z only.
+    // instead of averaging out — the MEASURED cause of the post-verdict sweep's non-monotonicity (HW.23 re-sweep,
+    // 2026-10-23, 01_01 §5.2: the two finest unlocked 11/(2k) steps agree to ≤ 0.03 % while the locked ones scatter
+    // around them in both directions — the step-ladder table). The rule
+    // below is mirrored by `axial_lock_cells` in tools/in_silico/scripts/105 and by scripts/fea_canon_sync.rb — this is
+    // its one home. Same return as above, along z only.
     internal static int AxialPhaseLockCells(float fStepMm, float fPeriodAxialMm, int nMaxCells = 4)
         => RepeatCells(fStepMm, fPeriodAxialMm, nMaxCells);
 

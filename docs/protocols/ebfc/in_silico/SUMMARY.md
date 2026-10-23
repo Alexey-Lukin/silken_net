@@ -1015,48 +1015,44 @@ printed, `× 1.0` for the CNC route the flange may take — `01_02 §1.7`), not 
 **The gyroid is strain-controlled.** Bonded to the wood (the callus grows into it — `01_04 §2`), it follows the stem's
 longitudinal strain across its section, so its ligament stress scales with `E_s · ε`, not with a force, and the figure
 of merit of its alloy is `σ_e / E_s`, not `σ_e`. An energy bound (Hill, and the macro energy at a given strain being
-least in uniaxial stress) puts the ligaments' RMS stress at ≥ 0.47 `E_s · ε` on both voxel-FE readings of the part as
-shipped after the HW.33 (в) geometry (Richardson 0.0805 axial ⊥ 0.0811 radial of `E_s`, before it 0.0942 ⊥ 0.0662;
-both in doubt now, on both sides: the part's step sweep is not monotone on either axis, so the
-two-point extrapolation from `/12` and `/16` proves convergence from neither side, and the `/32` fit, re-run on the (в) geometry 2026-10-23, reads above `/16` at the nominal wall; the two rows also differ in porosity,
-64.406 ⊥ 64.605 %, a gap the p = 1 step from `/12` to `/16` amplifies ×3 — `01_01 §5.2`, `00_07` HW.23) — and it
+least in uniaxial stress) puts the ligaments' RMS stress at ≥ 0.50–0.51 `E_s · ε` on the two voxel-FE readings of the part
+as shipped after the HW.33 (в) geometry (finest-step readings 0.0940 axial ⊥ 0.0910 radial of `E_s` — per axis the adverse
+end of the bracket [finest unlocked step 11/180 ⊥ finest locked step `/32`] over the pinned step sweep and the HW.23
+re-sweep of 2026-10-23; the two-point Richardson pair they replace — 0.0805 ⊥ 0.0811 on this geometry, 0.0942 ⊥ 0.0662
+before it — extrapolated a phase-locked error: the re-sweep's two finest unlocked steps agree to a few hundredths of a percent (the coarsest sits 0.5 % under them axially) while
+the locked `/16` and `/20` rows sit 1.8–2.4 % under them axially (0.7–0.9 % radially) — `01_01 §5.2`, `00_07` HW.23) — and it
 is a LOWER bound: it can show a ligament binding, never safe. Neither FE reading is the in-plane traction modulus the
 bound needs (the radial case is a kinematic shell loading, the axial one E[100] of a cubic lattice), so the bound holds
-only while that modulus is at least the reading; a binding claim takes the lower one, read from the pair (the radial
-one before the HW.33 (в) geometry). On that geometry the two coincide within the extrapolation: every raw sweep row has
-the radial one lower, only the two-point extrapolation puts the axial one under it, by 0.7 %, and an adversarial
-reviewer's scratch rescaling of `/12` to `/16`'s porosity along the part's own `/10` Gibson–Ashby exponents reverses
-the order again (not a cache in the tree) — so
-the cache's `fe_reading_lower` is a mechanical pick, not a finding about the part. The table gives the stem's surface
+only while that modulus is at least the reading; a binding claim takes the lower one, read from the pair:
+the radial reading is the lower, the axial above it by 3.4 % (the locked `/32` row — 0.5 % under its unlocked neighbour, which the radial case's slower step
+convergence leaves inside the bracket; the axial bracket closes to 0.05 %) — a finding of the caches, not a pick; every raw row of the step ladder has the radial one lower too. The table gives the stem's surface
 strain above which the bound alone puts the ligaments at SF 2, at a share of the wood's strain t_L = 1 and a peak over
 RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 — the actual state's, of which the periodic case's k_p is only the
 uniaxial-state reading — lowers every cell, a share below 1 raises it (the share
 itself — `106`, the next section: it lies on both sides of 1). No cell is a strain below which the gyroid is safe.
 
-| alloy | σ_e printed, MPa | σ_e/E_s vs Ti-6Al-4V | binds above, µε: large stem (lower ⊥ higher reading: axial ⊥ radial) | DBH 38, sensor on bark ⊥ on xylem (thick bark), lower reading | any stress state, large stem, lower reading |
+| alloy | σ_e printed, MPa | σ_e/E_s vs Ti-6Al-4V | binds above, µε: large stem (lower ⊥ higher reading: radial ⊥ axial) | DBH 38, sensor on bark ⊥ on xylem (thick bark), lower reading | any stress state, large stem, lower reading |
 |---|---|---|---|---|---|
-| Ta | 69.0 | 0.23 | 389 ⊥ 388 | 528 ⊥ 462 | 747 |
-| CP-Ti Gr4 | 96.0 | 0.58 | 968 ⊥ 965 | 1314 ⊥ 1148 | 1858 |
-| Ti-6Al-4V | 176.0 | 1.00 | 1678 ⊥ 1672 | 2277 ⊥ 1990 | 3220 |
-| Ti-6Al-7Nb | 170.0 | 1.03 | 1731 ⊥ 1725 | 2349 ⊥ 2052 | 3322 |
-| Ti-15Zr | 190.0 | 1.19 | 1993 ⊥ 1985 | 2704 ⊥ 2363 | 3824 |
-| β-Ti-13Nb-13Zr | 180.0 | 1.41 | 2360 ⊥ 2351 | 3202 ⊥ 2798 | 4528 |
+| Ta | 69.0 | 0.23 | 367 ⊥ 361 | 498 ⊥ 435 | 704 |
+| CP-Ti Gr4 | 96.0 | 0.58 | 912 ⊥ 897 | 1237 ⊥ 1081 | 1750 |
+| Ti-6Al-4V | 176.0 | 1.00 | 1580 ⊥ 1554 | 2144 ⊥ 1874 | 3033 |
+| Ti-6Al-7Nb | 170.0 | 1.03 | 1630 ⊥ 1603 | 2212 ⊥ 1933 | 3128 |
+| Ti-15Zr | 190.0 | 1.19 | 1876 ⊥ 1846 | 2546 ⊥ 2225 | 3601 |
+| β-Ti-13Nb-13Zr | 180.0 | 1.41 | 2222 ⊥ 2185 | 3015 ⊥ 2635 | 4265 |
 
 The DBH-38 columns read the gyroid's shallow end (50 mm below the seat) through linear bending, against a sensor on the
 bark and on the xylem under `103`'s thick bark; they are the field sensor's numbers (`00_07` HW.43), not a transfer from
 another tree. The one stem reading in the tree — `87`'s source pine (DBH 21.5 cm, one gust of one January day), 1837 µε at
 its surface, which `87` refuses to carry to our stems — placed on a large stem exceeds the threshold for CP-Ti Gr4, Ta,
 Ti-6Al-4V and Ti-6Al-7Nb on both readings (before the HW.33 (в) geometry Ti-6Al-4V and Ti-6Al-7Nb stayed above it on
-the lower reading, 1853 ⊥ 1911 µε, and bound only on the higher; now they bind on any FE reading above 0.0672 ⊥ 0.0715
-of `E_s`, which every raw sweep row and both readings exceed, so the baseline alloy binds on every reading in the tree;
-Ti-15Zr misses, ×0.922 ⊥ ×0.926 of its 1993 ⊥ 1985 µε, and stays below while the FE reading is below 0.0946 of `E_s`,
-which 4 of the 8 raw sweep readings exceed; in any stress state Ta only, on both — but CP-Ti Gr4 misses by a knife-edge,
-×0.989 ⊥ ×0.993 of its 1858 ⊥ 1851 µε on the lower ⊥ higher reading, and stays below while the FE reading is below 0.0823
-of `E_s`, which every raw sweep reading exceeds — inside the readings' own doubt), and its median (918 µε) for Ta only,
-on both (CP-Ti Gr4 misses, ×0.949 ⊥ ×0.952 of its 968 ⊥ 965 µε, and stays below while the FE reading is below 0.0894 of
-`E_s`, which every raw sweep reading exceeds). These three are every large-stem SF 2 cell whose flip lies inside the span of the FE
-readings `105` reads — the two extrapolations and the 8 raw sweep readings; every other such cell keeps its side on all
-of them. β-Ti's high figure stands on a yield the tree carries without a source. Whether a host's stem
+the lower reading, 1853 ⊥ 1911 µε, and bound only on the higher; now they bind on any FE reading above 0.0673 ⊥ 0.0716
+of `E_s`, which every raw reading and both finest-step readings exceed, so the baseline alloy binds on every reading in
+the tree; Ti-15Zr misses on the upper whisker, ×0.980 ⊥ ×0.996 of its 1876 ⊥ 1846 µε, and stays below while the FE
+reading is below 0.09485 of `E_s`, which 4 of the 22 raw readings exceed; in any stress state CP-Ti Gr4 and Ta only, on
+both — on the two-point readings CP-Ti Gr4 had missed that cell by a knife-edge, and the re-sweep's readings
+carry it over), and its median (918 µε) for CP-Ti Gr4 and Ta only, on both (CP-Ti Gr4's median threshold sits just under
+it). This one is every large-stem SF 2 cell whose flip lies inside the span of the FE readings `105` reads — the two
+finest-step readings and the 22 raw readings of the step ladder; every other such cell keeps its side on all of them. β-Ti's high figure stands on a yield the tree carries without a source. Whether a host's stem
 crosses these strains often enough is the field histogram's question, not this table's.
 
 **The junction is a candidate the bound cannot see.** At t_L = 1 the bonded gyroid moves with the wood while the solid
@@ -1071,10 +1067,10 @@ one; 1654 N with a rigid sleeve at `103`'s stiff bond. It loads the Zone 1 shank
 4V: 11.20 reversed — the tie carries both halves), the DIN-471 groove root at 8.62 (10.20), and a barb root, equal rows
 taken, at 26.33 MPa (3.34). The tie reverses the force, so the outward half lands on the barbs' lead flank — the ratchet's
 easy side, which `01_01 §4.3` A says nothing loads in service; a row's ratchet force is not in the tree. The gyroid
-carries the same force axially at its shank end: its own lower bound gives 0.49 of the SF-2 line on 4V (0.90 on CP-Ti,
-1.25 on Ta) at that force, on the raw `/16` axial row the script calls its conservative end — not proven: the part's sweep
-is not monotone in the step (`/8` lies above `/16`), and the `/32` fit re-run on the (в) geometry reads above `/16` at the nominal wall (`01_01 §5.2`,
-`00_07` HW.23) — not additive with the in-plane bound, whose cross term has no established sign.
+carries the same force axially at its shank end: its own lower bound gives 0.48 of the SF-2 line on 4V (0.89 on CP-Ti,
+1.24 on Ta) at that force, on the higher end of the axial bracket — the locked `/32` row, 0.05 % over
+the converged unlocked one (`01_01 §5.2`, `00_07` HW.23) — which the script calls its conservative end; not additive
+with the in-plane bound, whose cross term has no established sign.
 
 **The flange disc** carries the bearing force only in `103`'s state 2 here — with a callus tie and a rigid bark both
 holding, a titanium run between them would carry the wood's own strain, a corner with no physical meaning, so the
@@ -1121,13 +1117,14 @@ hold ratios of the E and G rows of 45, 65 and 95 % RH to the printed digit, whil
 off the tables only). Its compliances are not symmetric, so each pair's coupling is read three ways — from the test
 loaded along the pair's stiffer axis, along its softer one, or the mean — and the softer-axis reading is not a material
 at 65 and 95 % RH. The lattice's C11 and C12 come from reading `105`'s two voxel-FE ratios of the part as shipped after the
-HW.33 (в) geometry (both in doubt, on both sides — previous section, `01_01 §5.2`, `00_07` HW.23) as one homogeneous cubic body
-(ν* 0.343; the other root breaks the Voigt bound) — read as kinematic-side, i.e. possibly stiffer than the finite part under
-traction; against the INFINITE lattice of the periodic case (`01_01 §5.2`) both its in-plane dilatational term C11 + C12 and,
-since that geometry, its deviatoric term C11 − C12 are lower on every density-matched pairing of basis and rung — but those
-bases are an extrapolation the part's step sweep does not prove, so no stiffness ordering between the two is established.
+HW.33 (в) geometry (per axis the claim-adverse end of the finest-step bracket — previous section, `01_01 §5.2`) as one homogeneous cubic body
+(ν* 0.336; the other root breaks the Voigt bound) — read as kinematic-side, i.e. possibly stiffer than the finite part under
+traction; against the INFINITE lattice of the periodic case (`01_01 §5.2`), on the two finest-step rows as bases, its in-plane
+dilatational term C11 + C12 is higher on every density-matched pairing of basis and rung (by 3–4 %) and its deviatoric term
+C11 − C12 lower (by 4–7 %) — but the cube's rungs are phase-locked and scatter by the order of the smallest gap, so no
+stiffness ordering between the two is established.
 C44 the periodic case measures for the infinite lattice; this script does not read it
-yet, so it is swept up to Voigt's ceiling φ·μ_s (a Zener ratio of at most 4.402). The cube's angle θ to the stem's axis is the anchor's rotation at install, swept 0–45°. The pores take three
+yet, so it is swept up to Voigt's ceiling φ·μ_s (a Zener ratio of at most 3.755). The cube's angle θ to the stem's axis is the anchor's rotation at install, swept 0–45°. The pores take three
 readings: nothing (the bare lattice — the composite's lower stiffness end), Voigt's
 phase bound φ·C_Ti + (1 − φ)·C_wood (its upper stiffness end, if the tissue in the pores — Phase 3's xylem — is no
 stiffer than the host's sapwood in every direction, which nothing measures), and the additive C_lattice + (1 − φ)·C_wood
@@ -1136,41 +1133,42 @@ stiffer than the host's sapwood in every direction, which nothing measures), and
 
 **The share lies on both sides of 1.** At θ = 0 — a cube axis on the stem's axis — it does not depend on C44, and which
 side of 1 it takes depends on the pore reading (on the stiffer-axis reading it crosses 1 between the bare lattice and the
-Voigt phase bound on every alloy at 45 and 65 % RH, and on every alloy but Ta at 85 and 95 % RH) and on the symmetrisation
-reading (Ta, 95 % RH, bare lattice: 0.764 on the stiffer-axis reading, 1.327 on the mean one) — and for Ta on the
-stiffer-axis reading the moisture group as well; on the mean reading Ta's bare lattice is above 1 in every moisture group.
-Before the HW.33 (в) geometry the moisture group moved Ta's side on the mean reading instead (below 1 at 85 % RH only), and
-Ta crossed 1 in no group. Off the axis C44 enters too: the share falls as C44 rises, and at θ = 45°
-it crosses 1 inside the admissible C44 in 88 of the 120 cells the lattice's C44 enters.
+Voigt phase bound on every alloy but Ta in every moisture group) and on the symmetrisation
+reading (Ta, 95 % RH, bare lattice: 0.683 on the stiffer-axis reading, 1.242 on the mean one) — for Ta the symmetrisation
+reading alone decides it on the re-sweep's readings: its bare lattice is below 1 in every moisture group on the stiffer-axis
+reading, and on the mean reading Ta's bare lattice is above 1 in every moisture group. On the two-point readings after the HW.33 (в) geometry Ta's bare
+lattice rose above 1 at 45 and 65 % RH on the stiffer-axis reading, and before that geometry the moisture group moved its
+side on the mean reading instead (below 1 at 85 % RH only) — both dated records. Off the axis C44 enters too: the share falls as C44 rises, and at θ = 45°
+it crosses 1 inside the admissible C44 in 90 of the 120 cells the lattice's C44 enters.
 
-| alloy | t_L at θ = 0, 95 % RH, stiffer-axis reading: pores carry nothing ⊥ additive ⊥ Voigt phase bound | highest θ = 0 share over the modelled set (no green reading raises it) | binds above, µε, SF 2, near-uniaxial ligaments, large stem, at the Scots pine group's lowest θ = 0 share: this tensor's E[100] (`105`'s lower reading) ⊥ `105`'s radial reading |
+| alloy | t_L at θ = 0, 95 % RH, stiffer-axis reading: pores carry nothing ⊥ additive ⊥ Voigt phase bound | highest θ = 0 share over the modelled set (no green reading raises it) | binds above, µε, SF 2, near-uniaxial ligaments, large stem, at the Scots pine group's lowest θ = 0 share: this tensor's E[100] (`105`'s axial reading) ⊥ `105`'s radial reading (its lower one) |
 |---|---|---|---|
-| Ta | 0.764 ⊥ 0.568 ⊥ 0.267 | 1.411 | 1455 ⊥ 1450 |
-| CP-Ti Gr4 | 1.169 ⊥ 0.746 ⊥ 0.355 | 1.885 | 2726 ⊥ 2717 |
-| Ti-6Al-4V | 1.123 ⊥ 0.728 ⊥ 0.343 | 1.833 | 4891 ⊥ 4873 |
-| Ti-6Al-7Nb | 1.177 ⊥ 0.749 ⊥ 0.351 | 1.894 | 4928 ⊥ 4910 |
-| Ti-15Zr | 1.203 ⊥ 0.758 ⊥ 0.361 | 1.922 | 5526 ⊥ 5506 |
-| β-Ti-13Nb-13Zr | 1.409 ⊥ 0.829 ⊥ 0.406 | 2.141 | 5813 ⊥ 5792 |
+| Ta | 0.683 ⊥ 0.525 ⊥ 0.267 | 1.301 | 1349 ⊥ 1371 |
+| CP-Ti Gr4 | 1.046 ⊥ 0.697 ⊥ 0.355 | 1.739 | 2527 ⊥ 2570 |
+| Ti-6Al-4V | 1.004 ⊥ 0.679 ⊥ 0.343 | 1.691 | 4534 ⊥ 4610 |
+| Ti-6Al-7Nb | 1.053 ⊥ 0.700 ⊥ 0.351 | 1.748 | 4568 ⊥ 4645 |
+| Ti-15Zr | 1.076 ⊥ 0.709 ⊥ 0.360 | 1.774 | 5123 ⊥ 5209 |
+| β-Ti-13Nb-13Zr | 1.265 ⊥ 0.780 ⊥ 0.405 | 1.982 | 5389 ⊥ 5479 |
 
 The lowest θ = 0 share over the Scots pine group is, for every alloy, the Voigt-phase-bound cell of the stiffer-axis
 reading at 95 % RH; the highest is the bare lattice on the driest softer-axis
 reading (rounded up). The stiffness ends do NOT bracket the share: the additive reading falls outside the two ends'
-shares in 7 cell-fields (0 on the green group), so the lowest share is the minimum of what is computed, never a floor.
+shares in 9 cell-fields (2 on the green group), so the lowest share is the minimum of what is computed, never a floor.
 
 **For `105`'s binding sentences the only C44-free figure is at θ = 0**, where the same tensor gives E_z* = E[100]
 (filling the pores leaves the skeleton's energy at a given boundary strain at least the bare skeleton's): the bound alone
 binds above `105`'s threshold over t_L, at the Scots pine group's lowest θ = 0 share — the table's right column, on this tensor's own
-E[100] (`105`'s axial reading; `105`'s rule takes the lower of its two for a binding claim, and on the HW.33 (в) geometry that
-pick is mechanical — the two coincide within the extrapolation, `00_07` HW.23) and on `105`'s radial reading — before that
-geometry the lower one, a weaker modulus than the tensor's; now 0.7 % stiffer than the tensor's E[100], which makes the E[100]
-column the conservative side of a binding sentence only as far as the extrapolation does; rounded up
-from `105`'s unrounded threshold. On a large stem the source day's upper whisker then exceeds the threshold for Ta only
-on both readings (×1.26 ⊥ ×1.26 over it), and its median for none; at t_L = 1 on the axial reading the upper whisker
-exceeded it for CP-Ti Gr4, Ta, Ti-6Al-4V and Ti-6Al-7Nb and the median for Ta. The column's ratios across
+E[100] (`105`'s axial reading) and on `105`'s radial reading (`105`'s rule takes the lower of its two for a binding claim,
+and since the HW.23 re-sweep that is the radial one — the tensor's E[100] sits above it by 3.4 %, so the radial column is the
+conservative side of a binding sentence; it was the lower one before the HW.33 (в) geometry too, and on that geometry's
+two-point readings the two had coincided within the extrapolation — `00_07` HW.23); rounded up from `105`'s unrounded
+threshold. On a large stem the source day's upper whisker then exceeds the threshold for Ta only
+on both readings (×1.36 ⊥ ×1.33 over it), and its median for none; at t_L = 1 on both readings the upper whisker
+exceeded it for CP-Ti Gr4, Ta, Ti-6Al-4V and Ti-6Al-7Nb and the median for CP-Ti Gr4 and Ta. The column's ratios across
 alloys are the gyroid's figure of merit with the share — σ_e/(E_s·t_L), with t_L depending on the alloy (its E_s, and its ν
 in the Voigt phase bound) — not σ_e/E_s alone. Off the axis E[110] falls with C44 while the share stays finite, so the threshold has no ceiling as C44
 falls and no binding figure exists there without C44; at θ = 45° E[110] falls under `105`'s radial reading below a Zener
-ratio of 1.010 (under the axial one below 1.000, where E[110] = E[100]).
+ratio of 0.951 (under the axial one below 1.000, where E[110] = E[100]).
 
 **Green wood — a separate group of other Pinaceae** (⚖️ founder 2026-10-22, `00_07` HW.23, option (Б) by
 recommendation). No open primary gives a full Scots pine set above fibre saturation (the search and its positive
@@ -1199,34 +1197,35 @@ readings of stiff outerwood and of both corewoods). G_LR and G_RT do not enter t
 (to round-off) with either scaled ×0.1 or ×10 on every live reading of both groups — so neither Davies' shear moduli
 (G_LR ×5.6–18.0 and G_RT ×6.5–27.8 below Liu's; G_LT, which does enter, ×1.6–4.1 below) nor Jeong's missing G_RT moves
 it. Jeong's borrowed ν_RT, swept over every measured ν_RT of the named readings (0.49–1.12), moves its θ = 0 share by
-at most 0.0014 (asserted under 0.002), its off-axis cells by up to 0.347 — those stand on our value. Our arithmetic on
+at most 0.0014 (asserted under 0.002), its off-axis cells by up to 0.351 — those stand on our value. Our arithmetic on
 reciprocity: in Güntekin & Akar's four groups, Davies' raw means and Liu P4 the Poisson pairs with L break the equality,
 the transverse-loaded entry the larger by ×1.89–10.25 (Liu et al. check the inequality only and state Maxwell consistency),
 while the R–T pair deviates less, ×0.63–1.50 as (ν_RT/E_R)/(ν_TR/E_T); Davies' Table 2 meets it within its printed
 rounding (checked).
 
-| alloy | lowest θ = 0 share, rounded down: Scots pine group ⊥ union | binds above at the union's lowest, µε, SF 2, near-uniaxial ligaments, large stem: this tensor's E[100] (`105`'s lower reading) ⊥ `105`'s radial reading |
+| alloy | lowest θ = 0 share, rounded down: Scots pine group ⊥ union | binds above at the union's lowest, µε, SF 2, near-uniaxial ligaments, large stem: this tensor's E[100] (`105`'s axial reading) ⊥ `105`'s radial reading (its lower one) |
 |---|---|---|
-| Ta | 0.267 ⊥ 0.151 | 2571 ⊥ 2562 |
-| CP-Ti Gr4 | 0.355 ⊥ 0.195 | 4955 ⊥ 4937 |
-| Ti-6Al-4V | 0.343 ⊥ 0.188 | 8912 ⊥ 8879 |
-| Ti-6Al-7Nb | 0.351 ⊥ 0.190 | 9061 ⊥ 9028 |
-| Ti-15Zr | 0.360 ⊥ 0.197 | 10089 ⊥ 10052 |
-| β-Ti-13Nb-13Zr | 0.405 ⊥ 0.222 | 10623 ⊥ 10584 |
+| Ta | 0.267 ⊥ 0.151 | 2383 ⊥ 2423 |
+| CP-Ti Gr4 | 0.354 ⊥ 0.195 | 4594 ⊥ 4671 |
+| Ti-6Al-4V | 0.342 ⊥ 0.188 | 8261 ⊥ 8400 |
+| Ti-6Al-7Nb | 0.350 ⊥ 0.190 | 8400 ⊥ 8541 |
+| Ti-15Zr | 0.360 ⊥ 0.197 | 9353 ⊥ 9510 |
+| β-Ti-13Nb-13Zr | 0.405 ⊥ 0.221 | 9848 ⊥ 10013 |
 
 Over the union the lowest θ = 0 share is, for every alloy, Davies' Table 2 stiff outerwood on the softer-axis reading
 with the Voigt phase bound — its three symmetrisation readings differ by the printed rounding only (stiffer-axis ⊥
 softer-axis ⊥ mean, Ta: 0.159 ⊥ 0.151 ⊥ 0.155). That is the adverse reading for a binding sentence and the consumer's
 ceiling: there the source day's upper whisker exceeds the large-stem threshold for none of the alloys on either reading
-(Ta ×0.72 ⊥ ×0.72 of it) and its median for none — against Ta on both readings on the Scots pine group, the price of
+(Ta ×0.78 ⊥ ×0.76 of it) and its median for none — against Ta on both readings on the Scots pine group, the price of
 the choice. That is not a clearance: the bound is a lower one, so it can show «binds», never «safe». Without Davies' Table 2, on measured means only, the lowest moves to Davies' raw stiff corewood or non-stiff
-outerwood, by alloy (Ta 0.173), and no alloy binds there either (Ta ×0.82 ⊥ ×0.83). Set by set, at each green set's
-own lowest share, Ta binds on Liu P4 and Jeong's red pine, on both readings; no other alloy binds on any — but on Davies'
-raw non-stiff corewood (ESM NSC) Ta misses by a knife-edge, ×0.993 ⊥ ×0.997 of its 1851 ⊥ 1844 µε on this tensor's E[100] ⊥
-`105`'s radial reading, inside the FE readings' own doubt (`00_07` HW.23) (before the HW.33
-(в) geometry Ta bound on five sets on this tensor's E[100] and on Jeong's red pine alone on the radial reading). On
-Jeong's Korean pine Ta stays below (×0.915 ⊥ ×0.919 of it): it stays below
-while ν_LR, printed 0.30 at a CV of 1.64, is below 0.354 on `105`'s radial reading (0.357 on this tensor's E[100]). Every green set but Jeong's red
+outerwood, by alloy (Ta 0.173), and no alloy binds there either (Ta ×0.89 ⊥ ×0.87). Set by set, at each green set's
+own lowest share, Ta binds on Davies' Table 2 non-stiff outerwood, Davies' raw non-stiff corewood (ESM NSC), Liu P4 and
+Jeong's red pine on both readings, and on Davies' raw stiff outerwood (ESM SO) on this tensor's E[100] only; no other alloy
+binds on any (on the two-point readings after the HW.33 (в) geometry Ta bound on Liu P4 and Jeong's red pine only and missed
+ESM NSC by a knife-edge; before that geometry it bound on five sets on this tensor's E[100] and on Jeong's red pine alone on
+the radial reading — the readings of the HW.23 re-sweep moved the knife-edges, `00_07` HW.23). On
+Jeong's Korean pine Ta stays below (×0.988 ⊥ ×0.971 of it): it stays below
+while ν_LR, printed 0.30 at a CV of 1.64, is below 0.308 on this tensor's E[100] (0.318 on `105`'s radial reading). Every green set but Jeong's red
 pine puts the lowest share below the Scots pine group's for every alloy, Jeong's red pine above it (Ta 0.409): the
 proxies do not settle the direction a green stem moves the share either — the full sets and Jeong's Korean pine lower
 it, the one set with a borrowed ν_RT raises it.
@@ -1263,18 +1262,18 @@ and lies outside this script's uniform-strain solution.
 
 **The junction** (`105`'s first-layer mismatch, priced at t_L = 1) grows with the share, as the ligaments' stress does;
 unlike the binding sentence (a lower bound, judged at the lowest share) it is a magnitude to design against, so its adverse
-end is the HIGHEST share: up to 2.141 at θ = 0 over the modelled set (no green reading raises it), and off the axis as
-C44 → 0 up to 6.040 on the Scots pine group and up to 9.841 over the union — on Davies' raw stiff outerwood
+end is the HIGHEST share: up to 1.982 at θ = 0 over the modelled set (no green reading raises it), and off the axis as
+C44 → 0 up to 6.040 on the Scots pine group and up to 9.840 over the union — on Davies' raw stiff outerwood
 (stiffer-axis reading, bare lattice, θ = 45°), our assembly of its ESM 2/3 means (E over tension and compression, ν from
 compression; one board, whose softer-axis reading is not a material): Jeong's off-axis maximum stays below it with its ν_RT
 anywhere in the swept span (asserted). On the published green sets alone — Davies' Table 2, Liu and Jeong, without that
-assembly — it is up to 7.157, on Davies' Table 2 stiff outerwood (softer-axis reading, bare lattice, θ = 45°). Both stand
+assembly — it is up to 7.155, on Davies' Table 2 stiff outerwood (softer-axis reading, bare lattice, θ = 45°). Both stand
 on a lattice tensor read from kinematic-side cases, so an input end, not shown to be the output's.
 
 **Moisture.** Across the source's groups the share takes no single direction. Over the full grid of angles and C44, on
-the stiffer-axis reading it falls monotonically from 45 to 95 % RH at 620 of 14022 points, rises at none and does
-neither at 13402; on the mean reading 2997 fall and 11025 do neither; on the softer-axis one (45 → 85 % RH, its only
-material groups) 12451 fall and 1571 rise. A living stem's sapwood is wetter than any group the source measured, and
+the stiffer-axis reading it falls monotonically from 45 to 95 % RH at 486 of 14022 points, rises at none and does
+neither at 13536; on the mean reading 2830 fall and 11192 do neither; on the softer-axis one (45 → 85 % RH, its only
+material groups) 12396 fall and 1626 rise. A living stem's sapwood is wetter than any group the source measured, and
 above fibre saturation only other Pinaceae have full sets (the green group above): set beside the Scots pine groups
 they confound species with moisture, so a green Scots pine stem's share is bracketed by named proxies, not measured,
 and its direction with moisture is not established.

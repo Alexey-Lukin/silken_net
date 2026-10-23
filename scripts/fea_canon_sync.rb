@@ -67,6 +67,46 @@ sweep = JSON.parse(File.read(SWEEP))
 ladder = JSON.parse(File.read(LADDER))
 canon = File.read(CANON)
 
+# ── The merged STEP LADDER: the pinned sweep (steps = axial period / N) + the HW.23 re-sweep (`--step-mm` rows, one file
+#    each, 2026-10-23), one row per step, coarse → fine, each flagged LOCKED when its step divides the part's axial period
+#    (since HW.33 (в) the rim's, one for the whole part — picogk gotcha #16). The same rule 105's `read_fe` applies; the
+#    headline reading of §5.2 is the finest UNLOCKED row (the converged one), the finest LOCKED row the bracket's other end.
+RIM_PERIOD_MM = JSON.parse(File.read(File.join(ROOT, "tools/cad/cem/anchor_zone1.pine.json")))["gyroid_period_rim_mm"]
+fine_files = Dir[File.join(ROOT, "tools/cad/cache/fea/anchor_zone1_pine.h*um.json")].sort
+h_rows = fine_files.flat_map do |f|
+  d = JSON.parse(File.read(f))
+  failures << "#{File.basename(f)} is not the sweep's specimen (#{d['cem']} · #{d['topology']})" unless d["cem"] == sweep["cem"] && d["topology"] == sweep["topology"]
+  failures << "#{File.basename(f)}: the FE's ν differs from the sweep's" unless (d["poisson_ratio"] - sweep["poisson_ratio"]).abs < 1e-12
+  d["rows"].map { |r| r.merge("source" => File.basename(f)) }
+end
+step_ladder = (sweep["rows"].map { |r| r.merge("source" => "sweep") } + h_rows).group_by { |r| r["step_mm"].round(9) }.map do |step, rs|
+  # the identity control: a step both families carry (the re-sweep's /8) must agree field for field, or the re-sweep is
+  # not the sweep's instrument
+  rs.drop(1).each do |r|
+    %w[elements porosity axial_ratio radial_ratio].each do |k|
+      failures << "step #{step} mm: #{r['source']} disagrees with the pinned sweep on #{k} (#{r[k]} vs #{rs.first[k]})" if (r[k] - rs.first[k]).abs > 1e-9 * [ 1.0, r[k].abs ].max
+    end
+  end
+  rs.first
+end.sort_by { |r| -r["step_mm"] }
+# the mirror of VoxelFea.RepeatCells (its ONE home; 105's `axial_lock_cells` is the other mirror): the sampled phase repeats
+# within ≤ 4 axial cells at tolerance 1e-4·cells — the steps are float32, so `/24` sits 7.7e-7 off an integer count
+axial_lock_cells = lambda do |step_mm|
+  per = RIM_PERIOD_MM / step_mm
+  (1..4).find { |cells| ((per * cells) - (per * cells).round).abs < 1e-4 * cells } || 0
+end
+step_ladder.each do |r|
+  r["locked"] = axial_lock_cells.call(r["step_mm"]).positive?
+  failures << "step #{r['step_mm']} mm (#{r['source']}) did not converge — canon must not quote it" unless r["converged"]
+end
+unlocked_rows = step_ladder.reject { |r| r["locked"] }
+locked_rows = step_ladder.select { |r| r["locked"] }
+failures << "the step ladder has no unlocked step — the HW.23 re-sweep (`anchor_zone1_pine.h*um.json`) is not in cache/fea" if unlocked_rows.empty?
+finest_unlocked = unlocked_rows.last || sweep["rows"].min_by { |r| r["step_mm"] }
+finest_locked = locked_rows.last
+# per axis the ADVERSE (lower) end of the [finest unlocked ⊥ finest locked] bracket — 105's binding reading
+part_reading = %w[radial axial].to_h { |ax| [ ax, [ finest_unlocked["#{ax}_ratio"], finest_locked["#{ax}_ratio"] ].min ] }
+
 # ── 3. PROVENANCE ────────────────────────────────────────────────────────────────────────────────
 failures << "sweep cache is not the pine SKU (#{sweep['cem']})" unless sweep["cem"] == "anchor_zone1_pine"
 failures << "sweep cache is not the network branch (#{sweep['topology']})" unless sweep["topology"] == "network"
@@ -143,7 +183,9 @@ else
 end
 
 # ── 2. DERIVATION ────────────────────────────────────────────────────────────────────────────────
-finest = sweep["rows"].min_by { |r| r["step_mm"] }
+# `finest` is the CONVERGED reading — the finest UNLOCKED row of the merged step ladder (HW.23, 2026-10-23), not the
+# pinned sweep's /16, which is phase-locked and sits under it (layer 8 reads that row as `two[0]` where a sentence names it).
+finest = finest_unlocked
 rho_part = 1.0 - finest["porosity"]
 ga_part = rho_part**2
 
@@ -204,20 +246,30 @@ if (m = canon[/повний розкид по всіх шести рунгах (
   flag(failures, "ladder full spread", spread_pct.round(2), m.to_f) if (m.to_f - spread_pct).abs > 0.01
 end
 
-# The Richardson row of the sweep table and the one sentence that derives from it — UNPINNED until 2026-10-21, and
-# stale from the welded re-measurement of 2026-09-18 until then: the row still carried the printed-core era's band, so
-# a correct cache stood under a wrong extrapolation for a month with every layer green.
-pair = sweep["rows"].sort_by { |r| r["step_mm"] }.first(2)
-richardson = ->(key, order) { pair[0][key] + ((pair[0][key] - pair[1][key]) / (((pair[1]["step_mm"] / pair[0]["step_mm"])**order) - 1.0)) }
-if (m = canon.match(/\| екстраполяція Річардсона \(1-й ⊥ 2-й порядок\) \| ([0-9.]+)–([0-9.]+) \| ([0-9.]+)–([0-9.]+) \|/))
+# The converged-reading row of the sweep table (it replaced the Richardson row 2026-10-23: the two-point extrapolation
+# from /12 and /16 extrapolated a phase-locked error — HW.23) — the finest unlocked step, its 11/(2k) label and its
+# step, the finest locked divisor, and both axes' bracket ends at the table's precision.
+if (m = canon.match(/\| дужка найдрібніших кроків HW\.23 \(незамкнений 11\/(\d+) · ([0-9.]+) мм ⊥ замкнений `\/(\d+)`; збіжне прочитання — перший член, прочитання `105` — нижчий\) \| ([0-9.]+) ⊥ ([0-9.]+) \| ([0-9.]+) ⊥ ([0-9.]+) \|/))
   anchors += 1
-  want = [ richardson.call("axial_ratio", 1), richardson.call("axial_ratio", 2), richardson.call("radial_ratio", 1), richardson.call("radial_ratio", 2) ]
-  m.captures.zip(want).each { |q, v| flag(failures, "Richardson row of the sweep table", format("%.3f", v), q) if format("%.3f", v) != q }
+  want = [ (11.0 / finest_unlocked["step_mm"]).round, finest_unlocked["step_mm"], (RIM_PERIOD_MM / finest_locked["step_mm"]).round,
+           finest_unlocked["axial_ratio"], finest_locked["axial_ratio"], finest_unlocked["radial_ratio"], finest_locked["radial_ratio"] ]
+  m.captures.zip(want).each_with_index do |(q, v), i|
+    rendered = i < 3 && !q.include?(".") ? v.round.to_s : format("%.#{q.include?('.') ? q.split('.').last.length : 0}f", v)
+    flag(failures, "converged-reading row of the sweep table [#{i}]", rendered, q) if rendered != q
+  end
+else
+  failures << "the sweep table's «дужка найдрібніших кроків HW.23 (…)» row is gone or reworded — fix its shape, do not drop it"
 end
-if (m = canon.match(/екстраполяція Річардсона опускає радіальну на ≈ (\d+)–(\d+) %/))
+# The lock cost at the finest locked step — the alloy table's limit (3) — both axes, from the bracket.
+if (m = canon.match(/замкнений `\/(\d+)` лежить на ([0-9.]+) % нижче радіально й на ([0-9.]+) % вище осьово/))
   anchors += 1
-  drops = [ 2, 1 ].map { |o| (1 - (richardson.call("radial_ratio", o) / pair[0]["radial_ratio"])) * 100 }
-  m.captures.zip(drops).each { |q, v| flag(failures, "Richardson radial drop", format("%.0f", v), q) if format("%.0f", v) != q }
+  want = [ (RIM_PERIOD_MM / finest_locked["step_mm"]).round, (1 - (finest_locked["radial_ratio"] / finest_unlocked["radial_ratio"])) * 100,
+           ((finest_locked["axial_ratio"] / finest_unlocked["axial_ratio"]) - 1) * 100 ]
+  failures << "limit (3): canon names /#{m[1]}, the finest locked step is /#{want[0]}" if m[1].to_i != want[0]
+  failures << "limit (3): the locked row is not under the unlocked one radially and over it axially (#{want[1]} · #{want[2]})" unless want[1].positive? && want[2].positive?
+  [ [ want[1], m[2] ], [ want[2], m[3] ] ].each { |v, q| flag(failures, "limit (3) lock cost", format("%.#{q.split('.').last.length}f", v), q) if format("%.#{q.split('.').last.length}f", v) != q }
+else
+  failures << "the alloy table's limit (3) «замкнений `/N` лежить на X % нижче радіально й на Y % вище осьово» is gone or reworded — fix its shape"
 end
 
 # The gap to the wood's TRANSVERSE modulus — the live verdict figure of §5.1 ⛔, and it reads the finest RADIAL row. UNPINNED
@@ -805,6 +857,133 @@ else
   end
 end
 
+# ── 9. THE STEP LADDER (§5.2, HW.23 — the re-sweep of 2026-10-23) ──────────────────────────────────────────────────
+#
+# The table under the sweep's caveat lists every step of the merged ladder with its lock flag; the sentences under it
+# derive the unlocked chain's convergence, the locked rows' cost against the converged (finest unlocked) row, the
+# retired Richardson's error and the two readings `105` takes. Held: every cell, every derived figure at its quoted
+# precision, every direction word, the row count (a step added or dropped without the table following reds), and the
+# identity control's presence. ⛔ DECLARED CEILING: it does not re-run the FE and cannot tell a lock from any other
+# coherent error — «замикання» is the reading canon gives the saw, held by the convergence of the unlocked steps.
+ladder_rows_seen = 0
+ladder_steps_matched = []
+canon.scan(/^\| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}(період\/\d+|11\/\d+)\*{0,2} \| \*{0,2}(замкнений|незамкнений)\*{0,2} \| \*{0,2}([0-9.]+) %\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|$/) do
+  step_q, label_q, lock_q, por_q, ax_q, rad_q = Regexp.last_match.captures
+  row = step_ladder.min_by { |r| (r["step_mm"] - step_q.to_f).abs }
+  next failures << "step-ladder row #{step_q} mm: no cached step within rounding" if row.nil? || (row["step_mm"] - step_q.to_f).abs > 5e-5
+
+  ladder_rows_seen += 1
+  ladder_steps_matched << row["step_mm"]
+  want_label = row["locked"] ? "період/#{(RIM_PERIOD_MM / row['step_mm']).round}" : "11/#{(11.0 / row['step_mm']).round}"
+  failures << "step-ladder row #{step_q} mm: canon labels it #{label_q}, the cache's step is #{want_label}" if label_q != want_label
+  failures << "step-ladder row #{step_q} mm: canon says #{lock_q}, the step #{row['locked'] ? 'divides' : 'does not divide'} the axial period" if lock_q != (row["locked"] ? "замкнений" : "незамкнений")
+  { "porosity %" => [ row["porosity"] * 100, por_q ], "axial" => [ row["axial_ratio"], ax_q ], "radial" => [ row["radial_ratio"], rad_q ] }.each do |cell, (v, q)|
+    rendered = format("%.#{q.include?('.') ? q.split('.').last.length : 0}f", v)
+    flag(failures, "step-ladder #{step_q} mm #{cell}", rendered, q) if rendered != q
+  end
+end
+failures << "the step-ladder table has #{ladder_rows_seen} rows against #{step_ladder.size} cached steps — a step was added or dropped and the table did not follow" if ladder_rows_seen != step_ladder.size
+failures << "the step-ladder table matches #{ladder_steps_matched.uniq.size} DISTINCT cached steps of #{step_ladder.size} — a row stands on another row's step" if ladder_steps_matched.uniq.size != step_ladder.size
+ladder_anchors = 0
+r4 = ->(v) { format("%.4f", v) }
+at_q = ->(v, q) { format("%.#{q.include?('.') ? q.split('.').last.length : 0}f", v) }
+if (m = canon.match(/осьова ([0-9.]+) → ([0-9.]+) → ([0-9.]+), радіальна ([0-9.]+) → ([0-9.]+) → ([0-9.]+) \(останній крок ([−+]?[0-9.]+) % і ([−+]?[0-9.]+) %[;)]/))
+  ladder_anchors += 1
+  failures << "the unlocked-chain sentence names three steps, the ladder has #{unlocked_rows.size}" unless unlocked_rows.size == 3
+  if unlocked_rows.size == 3
+    (unlocked_rows.map { |r| r["axial_ratio"] } + unlocked_rows.map { |r| r["radial_ratio"] }).zip(m.captures.first(6)).each { |v, q| flag(failures, "unlocked chain", r4.call(v), q) if r4.call(v) != q }
+    last = %w[axial_ratio radial_ratio].map { |k| ((unlocked_rows[2][k] / unlocked_rows[1][k]) - 1) * 100 }
+    last.zip(m.captures.last(2)).each { |v, q| flag(failures, "unlocked chain last step", gap_render.call(v, q), q) if gap_render.call(v, q) != q }
+  end
+else
+  failures << "the unlocked-chain sentence «осьова A → B → C, радіальна … (останній крок X % і Y %)» is gone or reworded — fix its shape"
+end
+cost = ->(div, key) { r = locked_rows.find { |x| (RIM_PERIOD_MM / x["step_mm"]).round == div }; r && ((r[key] / finest_unlocked[key]) - 1) * 100 }
+if (m = canon.match(/`\/(\d+)` і `\/(\d+)` лежать на ([0-9.]+) і ([0-9.]+) % НИЖЧЕ збіжного осьово \(([0-9.]+) і ([0-9.]+) % радіально\), `\/(\d+)` — на ([0-9.]+) % вище, і лише `\/(\d+)` сходить із замиканням осьово \(\+([0-9.]+) %\), радіально ж лишається на ([0-9.]+) % нижче/))
+  ladder_anchors += 1
+  a, b, c, d = m[1].to_i, m[2].to_i, m[7].to_i, m[9].to_i
+  vals = { "/#{a} axial under" => [ cost.call(a, "axial_ratio"), m[3], :neg ], "/#{b} axial under" => [ cost.call(b, "axial_ratio"), m[4], :neg ],
+           "/#{a} radial under" => [ cost.call(a, "radial_ratio"), m[5], :neg ], "/#{b} radial under" => [ cost.call(b, "radial_ratio"), m[6], :neg ],
+           "/#{c} axial over" => [ cost.call(c, "axial_ratio"), m[8], :pos ], "/#{d} axial over" => [ cost.call(d, "axial_ratio"), m[10], :pos ],
+           "/#{d} radial under" => [ cost.call(d, "radial_ratio"), m[11], :neg ] }
+  vals.each do |label, (v, q, sign)|
+    next failures << "lock cost #{label}: the ladder has no such locked step" if v.nil?
+
+    failures << "lock cost #{label}: canon gives it the sign of «#{sign == :neg ? 'нижче' : 'вище'}», the cache gives #{v}" unless sign == :neg ? v.negative? : v.positive?
+    flag(failures, "lock cost #{label}", at_q.call(v.abs, q), q) if at_q.call(v.abs, q) != q
+  end
+  failures << "lock cost: canon names /#{d} as the finest locked step, the ladder's is /#{(RIM_PERIOD_MM / finest_locked['step_mm']).round}" unless d == (RIM_PERIOD_MM / finest_locked["step_mm"]).round
+else
+  failures << "the lock-cost sentence «`/16` і `/20` лежать на … НИЖЧЕ збіжного осьово (…), `/24` — на … вище, і лише `/32` …» is gone or reworded — fix its shape"
+end
+pair2 = sweep["rows"].sort_by { |r| r["step_mm"] }.first(2)
+richardson = ->(key, order) { pair2[0][key] + ((pair2[0][key] - pair2[1][key]) / (((pair2[1]["step_mm"] / pair2[0]["step_mm"])**order) - 1.0)) }
+if (m = canon.match(/двоточковий Річардсон із замкненої пари `\/(\d+)`→`\/(\d+)` \(([0-9.]+)–([0-9.]+) осьово, ([0-9.]+)–([0-9.]+) радіально, рядок знято\) екстраполював похибку замикання — на (\d+)–(\d+) % нижче збіжного осьово, на (\d+)–(\d+) % радіально/))
+  ladder_anchors += 1
+  failures << "retired Richardson: canon names /#{m[1]}→/#{m[2]}, the sweep's two finest rows are /#{pair2[1]['step_divisor']}→/#{pair2[0]['step_divisor']}" unless m[1].to_i == pair2[1]["step_divisor"] && m[2].to_i == pair2[0]["step_divisor"]
+  ax = [ richardson.call("axial_ratio", 1), richardson.call("axial_ratio", 2) ].minmax
+  rd = [ richardson.call("radial_ratio", 1), richardson.call("radial_ratio", 2) ].minmax
+  [ *ax, *rd ].zip(m.captures[2, 4]).each { |v, q| flag(failures, "retired Richardson band", format("%.3f", v), q) if format("%.3f", v) != q }
+  under_ax = ax.map { |v| (1 - (v / finest_unlocked["axial_ratio"])) * 100 }.minmax
+  under_rd = rd.map { |v| (1 - (v / finest_unlocked["radial_ratio"])) * 100 }.minmax
+  [ *under_ax, *under_rd ].zip(m.captures[6, 4]).each { |v, q| flag(failures, "retired Richardson under the converged reading", format("%.0f", v), q) if format("%.0f", v) != q }
+else
+  failures << "the retired-Richardson sentence «двоточковий Річардсон із замкненої пари … екстраполював похибку замикання — на …» is gone or reworded — fix its shape"
+end
+if (m = canon.match(/Збіжне прочитання деталі — найдрібніший незамкнений крок: осьова ([0-9.]+), радіальна ([0-9.]+)\*\*; найдрібніший замкнений \(`\/(\d+)`\) — другий кінець дужки, і `105` бере по осі несприятливий для твердження \(нижчий\) із двох — це \*\*прочитання `105`\*\*, не збіжне: осьову ([0-9.]+) \((незамкнений|замкнений)\), радіальну ([0-9.]+) \((незамкнений|замкнений)\); кожен сирий рядок драбини має нижчим радіальне, збіжне прочитання теж \(осьова вища за радіальну на ([0-9.]+) %\), і прочитання `105` — осьове вище за радіальне на ([0-9.]+) %/))
+  ladder_anchors += 1
+  flag(failures, "converged reading axial", r4.call(finest_unlocked["axial_ratio"]), m[1]) if r4.call(finest_unlocked["axial_ratio"]) != m[1]
+  flag(failures, "converged reading radial", r4.call(finest_unlocked["radial_ratio"]), m[2]) if r4.call(finest_unlocked["radial_ratio"]) != m[2]
+  failures << "the converged-reading sentence names /#{m[3]} as the finest locked step, the ladder's is /#{(RIM_PERIOD_MM / finest_locked['step_mm']).round}" unless m[3].to_i == (RIM_PERIOD_MM / finest_locked["step_mm"]).round
+  { "axial" => [ m[4], m[5] ], "radial" => [ m[6], m[7] ] }.each do |ax, (q, which_q)|
+    which = finest_unlocked["#{ax}_ratio"] <= finest_locked["#{ax}_ratio"] ? "незамкнений" : "замкнений"
+    flag(failures, "105's #{ax} reading (the adverse end)", r4.call(part_reading[ax]), q) if r4.call(part_reading[ax]) != q
+    flag(failures, "105's #{ax} reading — which end", which, which_q) if which != which_q
+  end
+  failures << "«кожен сирий рядок драбини має нижчим радіальне»: a ladder row has the axial reading lower" unless step_ladder.all? { |r| r["radial_ratio"] < r["axial_ratio"] }
+  failures << "«осьове вище за радіальне»: 105's radial reading is not below its axial one" unless part_reading["radial"] < part_reading["axial"]
+  gap_conv = ((finest_unlocked["axial_ratio"] / finest_unlocked["radial_ratio"]) - 1) * 100
+  flag(failures, "the converged pair's gap", at_q.call(gap_conv, m[8]), m[8]) if at_q.call(gap_conv, m[8]) != m[8]
+  gap_rd = ((part_reading["axial"] / part_reading["radial"]) - 1) * 100
+  flag(failures, "105's readings' gap", at_q.call(gap_rd, m[9]), m[9]) if at_q.call(gap_rd, m[9]) != m[9]
+  # every copy of 105's gap in canon (the banner carries one too), not the first — two homes, one number
+  gap_copies = canon.scan(/прочитання `105` — осьове вище за радіальне на ([0-9.]+) %/).flatten
+  failures << "105's gap «осьове вище за радіальне на …» is quoted #{gap_copies.size}× in canon — expected at least twice (the banner and the ladder paragraph)" if gap_copies.size < 2
+  gap_copies.each { |q| flag(failures, "105's readings' gap (a copy)", at_q.call(gap_rd, q), q) if at_q.call(gap_rd, q) != q }
+else
+  failures << "the converged-reading sentence «Збіжне прочитання деталі — найдрібніший незамкнений крок: …» is gone or reworded — fix its shape"
+end
+if canon.include?("Контроль ідентичності: рядок `/8`, прогнаний перевиміром через `--step-mm`, відтворює запінений `/8` побітово.")
+  ladder_anchors += 1
+  failures << "the identity-control sentence stands, but the re-sweep's /8 row (anchor_zone1_pine.h250um.json) is not in cache/fea" unless fine_files.any? { |f| f.end_with?("anchor_zone1_pine.h250um.json") }
+else
+  failures << "the identity-control sentence of the step ladder is gone or reworded — fix its shape"
+end
+# The headline stiffness — every «≈X (ГПа) осьово» / «≈Y (ГПа) радіально» in canon and in 02_06 is the converged (finest
+# unlocked) row × E_solid 110 GPa at one decimal; «до присуду ≈10.9 · ≈7.7» carries no axis word and is not scanned.
+gpa = { "осьово" => finest_unlocked["axial_ratio"] * 110, "радіально" => finest_unlocked["radial_ratio"] * 110 }
+[ [ "01_01", canon ], [ "02_06", File.read(File.join(ROOT, "docs/02_06_Unit_Economics_and_BOM.md")) ] ].each do |name, doc|
+  gpa.each do |axis, v|
+    hits = doc.scan(/≈(\d+\.\d)(?: ГПа)?\*{0,2} #{axis}/).flatten
+    failures << "#{name}: no «≈X #{axis}» headline stiffness found — the sentence shape moved" if hits.empty?
+    hits.each { |q| flag(failures, "#{name} headline stiffness #{axis}", format("%.1f", v), q) if format("%.1f", v) != q }
+  end
+end
+if (m = canon.match(/збіжна радіальна — ([0-9.]+) осьової/))
+  ladder_anchors += 1
+  flag(failures, "«збіжна радіальна — X осьової»", format("%.2f", finest_unlocked["radial_ratio"] / finest_unlocked["axial_ratio"]), m[1]) if format("%.2f", finest_unlocked["radial_ratio"] / finest_unlocked["axial_ratio"]) != m[1]
+else
+  failures << "«збіжна радіальна — X осьової» is gone or reworded — fix its shape"
+end
+if (m = canon.match(/Збіжне прочитання перевиміру HW\.23 \(незамкнений крок 11\/(\d+)\)/))
+  ladder_anchors += 1
+  failures << "limit (3) names the converged step 11/#{m[1]}; the finest unlocked step is 11/#{(11.0 / finest_unlocked['step_mm']).round}" if m[1].to_i != (11.0 / finest_unlocked["step_mm"]).round
+else
+  failures << "limit (3) «Збіжне прочитання перевиміру HW.23 (незамкнений крок 11/N)» is gone or reworded — fix its shape"
+end
+EXPECTED_LADDER_ANCHORS = 7
+failures << "only #{ladder_anchors} of #{EXPECTED_LADDER_ANCHORS} step-ladder derivation anchors matched — a canon rewording has DISARMED a comparison; fix the sentence shape, do not lower this number" if ladder_anchors < EXPECTED_LADDER_ANCHORS
+
 # ── 5. THE FACE-OFFSET SENSITIVITY TABLE (HW.51) ─────────────────────────────────────────────────────
 #
 # 🔴 Added 2026-09-14 with `fea --dilate`, for the same reason layer 4 exists: the rows live in a file family
@@ -1131,23 +1310,26 @@ if File.exist?(PERIODIC)
   # the differences, so a sign read off one rung was the defect two adversary rounds of 2026-10-21/22 found in turn.
   nu = sweep["poisson_ratio"]
   two = sweep["rows"].sort_by { |r| r["step_mm"] }.first(2)
-  rich = ->(key, order) { two[0][key] + ((two[0][key] - two[1][key]) / (((two[1]["step_mm"] / two[0]["step_mm"])**order) - 1.0)) }
+  # The part's two READINGS per axis since HW.23 (2026-10-23): the finest unlocked row (converged) and the finest locked
+  # one — no extrapolation; `105` takes per axis the lower of the two.
+  reading_of = ->(row, key) { row[key] }
   body = lambda do |radial, axial|
     bulk = radial / ((1 + nu) * (1 - (2 * nu)))
     dev = ((3 * bulk) - Math.sqrt((9 * bulk * bulk) - (8 * bulk * axial))) / 2
     { axial:, bulk:, dev:, nu: (bulk - dev) / 2 / bulk }
   end
-  # The part readings `105` takes (its first-order Richardson) are held to 105's OWN cache, not to this reimplementation.
+  # The part readings `105` takes (per axis the adverse end of the finest-step bracket) are held to 105's OWN cache.
   if File.exist?(CACHE_105)
-    r105 = JSON.parse(File.read(CACHE_105)).dig("inputs", "fe_readings_richardson") || {}
-    { "radial_richardson" => rich.call("radial_ratio", 1), "axial_richardson" => rich.call("axial_ratio", 1) }.each do |key, mine|
-      failures << "105's cached #{key} #{r105[key].inspect} is not this layer's first-order Richardson #{mine} — the rule moved" unless r105[key] && (r105[key] - mine).abs < 1e-12
+    r105 = JSON.parse(File.read(CACHE_105)).dig("inputs", "fe_readings") || {}
+    { "radial_reading" => part_reading["radial"], "axial_reading" => part_reading["axial"] }.each do |key, mine|
+      failures << "105's cached #{key} #{r105[key].inspect} is not this layer's finest-step reading #{mine} — the rule moved" unless r105[key] && (r105[key] - mine).abs < 1e-12
     end
   else
     failures << "105's cache is not committed — the part readings `105` takes have nothing to be held to"
   end
   equal16 = rung.call(16)
-  matched = per["rows"].select { |r| (r["porosity"] - two[0]["porosity"]).abs < 0.005 }.sort_by { |r| r["steps_per_period"] }
+  # density-matched to the CONVERGED part row (the finest unlocked), not to the locked /16 of the pinned sweep
+  matched = per["rows"].select { |r| (r["porosity"] - finest_unlocked["porosity"]).abs < 0.005 }.sort_by { |r| r["steps_per_period"] }
   if matched.empty?
     failures << "no periodic rung sits within half a point of the part's porosity — canon's density-matched pairs have no rung"
   else
@@ -1156,13 +1338,15 @@ if File.exist?(PERIODIC)
     hi_s = matched.last["steps_per_period"]
     inside = per["rows"].map { |r| r["steps_per_period"] }.select { |st| st.between?(lo_s, hi_s) }.sort
     failures << "the density-matched rungs #{matched.map { |r| r['steps_per_period'] }} are not one run of the ladder (#{inside}) — canon quotes them as a range" unless inside == matched.map { |r| r["steps_per_period"] }
-    failures << "canon refuses /16 for its density; /16 is #{equal16['porosity']} against the part's #{two[0]['porosity']}" if (equal16["porosity"] - two[0]["porosity"]).abs < 0.005
-    bases = [ body.call(rich.call("radial_ratio", 1), rich.call("axial_ratio", 1)), body.call(rich.call("radial_ratio", 2), rich.call("axial_ratio", 2)) ]
+    failures << "canon refuses /16 for its density; /16 is #{equal16['porosity']} against the part's #{finest_unlocked['porosity']}" if (equal16["porosity"] - finest_unlocked["porosity"]).abs < 0.005
+    bases = [ body.call(reading_of.call(finest_unlocked, "radial_ratio"), reading_of.call(finest_unlocked, "axial_ratio")),
+              body.call(reading_of.call(finest_locked, "radial_ratio"), reading_of.call(finest_locked, "axial_ratio")) ]
     pairs = bases.product(matched)
     dil_low = pairs.map { |pt, r| (1 - (pt[:bulk] / (r["C11"] + r["C12"]))) * 100 }
     dev_gap = pairs.map { |pt, r| ((pt[:dev] / (r["C11"] - r["C12"])) - 1) * 100 }
     axial_gap = pairs.map { |pt, r| ((pt[:axial] / r["E100"]) - 1) * 100 }
-    shift16 = [ 1, 2 ].map { |o| ((rich.call("axial_ratio", o) / two[0]["axial_ratio"]) - 1).abs * 100 }
+    # the lock cost of the sweep's /16 against the converged reading — what the retired extrapolation used to misread
+    lock16 = (1 - (two[0]["axial_ratio"] / finest_unlocked["axial_ratio"])) * 100
     # A raw part row against each density-matched rung, carried to that rung's density by the canonical pair's n (layer 7).
     raw_gaps = ->(r) { matched.map { |g| (((r["axial_ratio"] * (((1 - g["porosity"]) / (1 - r["porosity"]))**n_pair)) / g["E100"]) - 1) * 100 } }
     failures << "the canonical pair's cache is missing — the density-matched raw-row comparison has no n" if n_pair.nil?
@@ -1174,7 +1358,54 @@ if File.exist?(PERIODIC)
     plateau_rows = ladder["rows"].select { |r| r["cells_per_side"] >= 6 }
     plateau = plateau_rows.map { |r| r["axial_ratio"] }
     kp_fall = ->(r) { (1 - ((pq.call(r, 45.0, "p99") * Math.sqrt(field.call(r, 45.0)["modulus_ratio"])) / (pq.call(r, 0.0, "p99") * Math.sqrt(field.call(r, 0.0)["modulus_ratio"])))) * 100 }
-    re_dil = /рівновісний розтяг у площині `C11 \+ C12` на всіх парах «база × рунг» рівної густини нижчий за матеріальний на (\d+)–(\d+) % \(до присуду — на \d+–\d+ %, звідки тоді й `ν\*` \d+(?:\.\d+)?\), а `ν\*` тіла тепер (\d+(?:\.\d+)?) проти (\d+(?:\.\d+)?)\./
+    re_dil = /рівновісний розтяг у площині `C11 \+ C12` на всіх парах «база × рунг» рівної густини (?:вищий|нижчий) за матеріальний на (\d+)–(\d+) % \(до присуду HW\.33 — нижчий на \d+–\d+ %, звідки тоді й `ν\*` \d+(?:\.\d+)?\), а `ν\*` тіла тепер (\d+(?:\.\d+)?) проти (\d+(?:\.\d+)?)\./
+    # every direction word is a CAPTURE derived from the pairs (guard-craft #186): one sign over all pairs, or the sentence
+    # is wrong — the dilatational term, the deviatoric term, the conclusion's two words and the Hue clause's two
+    want_dil = dil_low.all?(&:negative?) ? "вищий" : dil_low.all?(&:positive?) ? "нижчий" : nil
+    want_dev = dev_gap.all?(&:positive?) ? "вищий" : dev_gap.all?(&:negative?) ? "нижчий" : nil
+    failures << "the in-plane dilatational term has no one sign over the density-matched pairs: #{dil_low}" if want_dil.nil?
+    failures << "the deviatoric term has no one sign over the density-matched pairs: #{dev_gap}" if want_dev.nil?
+    if (dm = canon.match(/рівної густини (вищий|нижчий) за матеріальний на \d+–\d+ % \(до присуду HW\.33/))
+      flag(failures, "periodic (3) «вищий/нижчий» for C11 + C12", want_dil, dm[1]) if want_dil && dm[1] != want_dil
+    end
+    if (dm = canon.match(/Девіаторний член `C11 − C12` — (вищий|нижчий) за матеріальний на всіх/))
+      flag(failures, "periodic (3) «вищий/нижчий» for C11 − C12", want_dev, dm[1]) if want_dev && dm[1] != want_dev
+    else
+      failures << "periodic (3) «Девіаторний член `C11 − C12` — вищий/нижчий за матеріальний на всіх …» is gone or reworded — fix its shape"
+    end
+    softer = ->(want) { want == "нижчий" ? "мʼякше" : "жорсткіше" }
+    if (dm = canon.match(/тож тіло `106` (мʼякше|жорсткіше) за матеріал на зсув у площині й (мʼякше|жорсткіше) на рівновісний розтяг/))
+      flag(failures, "periodic (3) conclusion — shear", softer.call(want_dev), dm[1]) if want_dev && dm[1] != softer.call(want_dev)
+      flag(failures, "periodic (3) conclusion — dilatation", softer.call(want_dil), dm[2]) if want_dil && dm[2] != softer.call(want_dil)
+    else
+      failures << "periodic (3) conclusion «тож тіло `106` … за матеріал на зсув у площині й … на рівновісний розтяг» is gone or reworded — fix its shape"
+    end
+    if (dm = canon.match(/ні (вищий|нижчий) рівновісний, ні (вищий|нижчий) девіаторний член йому не суперечить/))
+      flag(failures, "periodic (3) Hue clause — dilatational", want_dil, dm[1]) if want_dil && dm[1] != want_dil
+      flag(failures, "periodic (3) Hue clause — deviatoric", want_dev, dm[2]) if want_dev && dm[2] != want_dev
+    else
+      failures << "periodic (3) Hue clause «ні … рівновісний, ні … девіаторний член йому не суперечить» is gone or reworded — fix its shape"
+    end
+    tracker = File.read(File.join(ROOT, "docs/00_07_Action_Plan_Tracker.md"))
+    up = ->(want) { want == "вищий" ? "вище" : "нижче" }
+    if (tm = tracker.match(/і в різні боки — (вище|нижче) на рівновісний, (вище|нижче) на девіаторний/))
+      flag(failures, "00_07 HW.23 Стан — dilatational direction", up.call(want_dil), tm[1]) if want_dil && tm[1] != up.call(want_dil)
+      flag(failures, "00_07 HW.23 Стан — deviatoric direction", up.call(want_dev), tm[2]) if want_dev && tm[2] != up.call(want_dev)
+    else
+      failures << "00_07 HW.23 Стан «і в різні боки — … на рівновісний, … на девіаторний» is gone or reworded — fix its shape"
+    end
+    # SUMMARY §106 carries the same comparison in English — direction words derived, ranges held (two homes, one measurement)
+    summary = File.read(File.join(ROOT, "docs/protocols/ebfc/in_silico/SUMMARY.md"))
+    en = ->(want) { want == "вищий" ? "higher" : "lower" }
+    if (sm = summary.match(/its in-plane\s+dilatational term C11 \+ C12 is (higher|lower) on every density-matched pairing of basis and rung \(by (\d+)–(\d+) %\) and its deviatoric term\s+C11 − C12 (higher|lower) \(by (\d+)–(\d+) %\)/))
+      flag(failures, "SUMMARY §106 C11 + C12 direction", en.call(want_dil), sm[1]) if want_dil && sm[1] != en.call(want_dil)
+      flag(failures, "SUMMARY §106 C11 − C12 direction", en.call(want_dev), sm[4]) if want_dev && sm[4] != en.call(want_dev)
+      [ [ sm[2], dil_low.map(&:abs).min ], [ sm[3], dil_low.map(&:abs).max ], [ sm[5], dev_gap.map(&:abs).min ], [ sm[6], dev_gap.map(&:abs).max ] ].each do |q, v|
+        flag(failures, "SUMMARY §106 lattice-vs-material range", format("%.0f", v), q) if format("%.0f", v) != q
+      end
+    else
+      failures << "SUMMARY §106 «its in-plane dilatational term C11 + C12 is higher/lower on every density-matched pairing … (by X–Y %) and its deviatoric term C11 − C12 … (by X–Y %)» is gone or reworded — fix its shape"
+    end
     checks = [
       [ /порозність (\d+(?:\.\d+)?) % проти (\d+(?:\.\d+)?) % у деталі pine на період\/16/,
         [ finest["porosity"] * 100, two[0]["porosity"] * 100 ] ],
@@ -1184,11 +1415,11 @@ if File.exist?(PERIODIC)
       [ /її `E\[100\]` \((\d+(?:\.\d+)?)\) лежить усередині драбини з плитами без тертя на тому самому кроці \((\d+(?:\.\d+)?)–(\d+(?:\.\d+)?)\), на (\d+(?:\.\d+)?) % нижче її плато (\d+)–(\d+) комірок/,
         [ equal16["E100"], ladder["rows"].map { |r| r["axial_ratio"] }.min, ladder["rows"].map { |r| r["axial_ratio"] }.max,
           (1 - (equal16["E100"] / (plateau.sum / plateau.size))) * 100, *plateau_rows.map { |r| r["cells_per_side"] }.minmax ] ],
-      [ /Осьове читання ДЕТАЛІ відносно `E\[100\]` ґратки — на всіх парах «база × рунг» рівної густини \(Річардсон 1-го й 2-го порядку деталі проти рунгів період\/(\d+)–\/(\d+)\) — від (−\d+(?:\.\d+)?) % до ([−+]\d+(?:\.\d+)?) %: деталь нижча на (\d+) парах із (\d+), але знака розриву драбина не встановлює\. Рівний крок базою не є: сира деталь на період\/16 ще не збіглась \(екстраполяція зсуває її осьове читання на (\d+)–(\d+) %\), а фазово-замкнений куб там на іншій густині \((\d+(?:\.\d+)?) % проти (\d+(?:\.\d+)?) %\)/,
-        [ lo_s, hi_s, axial_gap.min, axial_gap.max, axial_gap.count(&:negative?), pairs.size, shift16.min, shift16.max,
+      [ /Осьове читання ДЕТАЛІ відносно `E\[100\]` ґратки — на всіх парах «база × рунг» рівної густини \(незамкнене й замкнене найдрібніші прочитання деталі проти рунгів період\/(\d+)–\/(\d+)\) — від (−\d+(?:\.\d+)?) % до ([−+]\d+(?:\.\d+)?) %: деталь нижча на (\d+) парах із (\d+), але знака розриву драбина не встановлює\. Рівний крок базою не є: сира деталь на період\/16 замкнена й лежить на (\d+(?:\.\d+)?) % нижче збіжного прочитання, а фазово-замкнений куб там на іншій густині \((\d+(?:\.\d+)?) % проти (\d+(?:\.\d+)?) % у деталі на тому ж кроці\)/,
+        [ lo_s, hi_s, axial_gap.min, axial_gap.max, axial_gap.count(&:negative?), pairs.size, lock16,
           equal16["porosity"] * 100, two[0]["porosity"] * 100 ] ],
-      [ re_dil, [ dil_low.min, dil_low.max, bases[0][:nu], finest["nu_star"] ] ],
-      [ /Девіаторний член `C11 − C12` знака не міняє: тіло нижче за матеріальний на всіх (\d+) парах \(від (−\d+(?:\.\d+)?) % до (−\d+(?:\.\d+)?) %/,
+      [ re_dil, [ dil_low.map(&:abs).min, dil_low.map(&:abs).max, bases[0][:nu], finest["nu_star"] ] ],
+      [ /Девіаторний член `C11 − C12` — (?:вищий|нижчий) за матеріальний на всіх (\d+) парах \(від ([−+]\d+(?:\.\d+)?) % до ([−+]\d+(?:\.\d+)?) %/,
         [ dev_gap.count(&:negative?), dev_gap.min, dev_gap.max ] ],
       [ /а сирий рядок деталі на період\/(\d+) \((\d+(?:\.\d+)?)\), зведений канонним `n` (\d+(?:\.\d+)?) до густини кожного з рунгів рівної густини, лягає проти них від ([−+]\d+(?:\.\d+)?) % до ([−+]\d+(?:\.\d+)?) % — з обома знаками/,
         lambda do |md|
@@ -1215,8 +1446,7 @@ if File.exist?(PERIODIC)
     # The words the numbers stand under, held to the numbers — each word in a regex above, each claim here:
     lo, hi = ladder["rows"].map { |r| r["axial_ratio"] }.minmax
     failures << "periodic /16 E[100] #{equal16['E100']} is not inside the cube ladder #{lo}–#{hi}, as canon says" unless equal16["E100"].between?(lo, hi)
-    failures << "«стійко … нижчий»: the in-plane dilatational term is not lower on every pair; #{dil_low}" unless dil_low.all?(&:positive?)
-    failures << "«знака не міняє: тіло нижче на всіх»: the deviatoric gap is not negative on every pair; #{dev_gap}" unless dev_gap.all?(&:negative?) && dev_gap.count(&:negative?) == pairs.size
+    failures << "«на всіх N парах»: the deviatoric gap does not keep one sign over every pair; #{dev_gap}" unless dev_gap.all?(&:negative?) || dev_gap.all?(&:positive?)
     # «не встановлює» holds while the pairs disagree in sign OR a raw part row, carried to each density-matched rung's
     # density by the canonical n, reads against some rung with the sign the bases do not have (the bases are extrapolations
     # a non-monotone sweep does not prove — 2026-10-22, HW.33). DENSITY-MATCHED only: the first form of this check set a raw

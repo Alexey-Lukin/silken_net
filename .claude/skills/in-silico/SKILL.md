@@ -253,14 +253,13 @@ Anchor mechanics (CPU):
      closed forms on its own depth grid; the sleeve stiffnesses, the bond bracket, the bearing area, the geometry and
      Zone-3 fit; the air-dry share read raw, not reproduced) · 52 (z_stack_tolerance.json: the applied gland) · 86
      (importlib: soderberg; through it 55's endurance markers, wrought derate and SF line) ·
-     tools/cad/cache/fea/anchor_zone1_pine.json (the voxel-FE ratios, re-measured on the HW.33 geometry 2026-10-22 and read by 105 since its re-run that evening; both Richardson readings in doubt both ways, the sweep itself not monotone — `00_07` HW.23) · tools/cad/cem (lock, flange, sleeve, pine
+     tools/cad/cache/fea/anchor_zone1_pine.json + anchor_zone1_pine.h*um.json (the voxel-FE step ladder: the pinned sweep and the HW.23 re-sweep of 2026-10-23, read by 105 as one ladder with lock flags; the sweep's saw is the sampler's phase lock, measured — `00_07` HW.23, `01_01 §5.2`) · tools/cad/cem (lock, flange, sleeve, pine
      anode) → 105 (printed_part_sway_stress.json — the sway stress in the anchor's titanium parts); a re-run of 87,
      102, 103, 52 or the FEA sweep, or a change to those CEMs, re-runs 105
-  105 (importlib: richardson_p1, rms_factor, NU_SOLID; printed_part_sway_stress.json: the Richardson FE readings — both
-     in doubt both ways, and `fe_reading_lower`, the one a binding claim takes, read never assumed (on the HW.33 (в) geometry a mechanical
-     pick — the two coincide within the extrapolation); the open leg `00_07` HW.23 re-measures both on a
-     finer sweep, then sets how `105`/`106` read them (while they disagree, a bracket of named readings with the consumer's ceiling at
-     the adverse one — §When Modifying #11) —, the solid
+  105 (importlib: read_fe — ONE home of the FE reading rule — rms_factor, NU_SOLID; printed_part_sway_stress.json: the two FE readings,
+     per axis the ADVERSE end of the [finest unlocked ⊥ finest locked] finest-step bracket over the merged ladder (§When Modifying #11; the
+     two-point Richardson pair they replaced extrapolated a phase-locked error — HW.23, 2026-10-23), and `fe_reading_lower`, the one a
+     binding claim takes, read never assumed (the radial one since the re-sweep — a finding of the caches) —, the solid
      fraction, the binds-above cells, the stem readings) · tools/cad/cache/fea/anchor_zone1_pine.json (ν and the rows
      105's readings are held to) · lib ALLOY_PROPERTIES → 106 (gyroid_wood_strain_share.json — the share t_L of the
      wood's strain the bonded gyroid takes; the Scots pine constants and the green Pinaceae proxies' transcriptions live
