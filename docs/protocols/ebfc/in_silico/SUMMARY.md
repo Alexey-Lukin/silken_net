@@ -207,11 +207,11 @@ Measured, free flavin against the film-bound mediator: **+529** mV (Os +309 vs N
 | H | 0.00 | −4.530 | −4.228 | +0.210 |
 | Cl | +0.23 | −4.697 | −4.385 | +0.367 |
 | COOH | +0.45 | −4.936 | −4.595 | +0.577 |
-| **CF₃** (inert) | +0.54 | −4.957 | −4.635 | +0.617 |
+| **CF₃** (assumed inert, not tested) | +0.54 | −4.957 | −4.635 | +0.617 |
 | NO₂ (unstable) | +0.78 | −5.262 | −4.905 | +0.887 |
-| **SO₂CF₃** (inert) | +0.96 | −5.256 | −4.910 | **+0.892** |
+| **SO₂CF₃** (assumed inert, not tested) | +0.96 | −5.256 | −4.910 | **+0.892** |
 
-**Koopmans trend (✅ cascade monotonic with σ on the programmatic geometry; with relaxation the NO₂→SO₂CF₃ step is not decided):** electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment — cascade Δ rises −0.38 (NMe₂) → +0.89 eV. **SO₂CF₃ — the strongest inert candidate, not a computed optimum** (σ 0.96, cascade +0.892 ≈ NO₂'s +0.887 on the programmatic geometry; with NO₂ relaxed the order is not decided and SO₂CF₃ is not relaxed — ⚖️ founder 2026-10-15, limit (3)) — same alignment there but **electrochemically inert**, whereas NO₂ degrades (NO₂→NHOH→NH₂ on Os cycling at pH 4.5) → would relax the cascade to the donor-saturated −0.38 worst case (CHEM.23). CF₃ (+0.617) = milder inert option. *Caveat:* max cascade-Δ ≠ optimal EBFC mediator — higher E°(Os) lowers OCV → optimum balances driving-force vs cell-voltage (exp Os opt ~+309 mV).
+**Koopmans trend (✅ cascade monotonic with σ on the programmatic geometry; with relaxation the NO₂→SO₂CF₃ step is not decided):** electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment — cascade Δ rises −0.38 (NMe₂) → +0.89 eV. **SO₂CF₃ — the strongest candidate assumed inert (not tested), not a computed optimum** (σ 0.96, cascade +0.892 ≈ NO₂'s +0.887 on the programmatic geometry; with NO₂ relaxed the order is not decided and SO₂CF₃ is not relaxed — ⚖️ founder 2026-10-15, limit (3)) — same alignment there but **assumed electrochemically inert (not tested)**, whereas NO₂ degrades (NO₂→NHOH→NH₂ on Os cycling at pH 4.5) → would relax the cascade to the donor-saturated −0.38 worst case (CHEM.23). CF₃ (+0.617) = milder option, assumed inert. *Caveat:* max cascade-Δ ≠ optimal EBFC mediator — higher E°(Os) lowers OCV → optimum balances driving-force vs cell-voltage (exp Os opt ~+309 mV).
 
 **E° LFER:** ΔE_red linear in σ over OMe→NO₂ (B3LYP slope ≈ −0.92 eV/σ, r²=1.00; the ωB97X reading ↓) with **donor-saturation at NMe₂/NH₂** (plateau ~−3.91 eV, σ_para⁻ regime) — strict E°-monotonicity breaks at two pairs: that 4-meV donor pair (expected resonance saturation, not error) and, at B3LYP, the NO₂/SO₂CF₃ acceptor pair (6 meV, which ωB97X puts back in σ order ↓).
 

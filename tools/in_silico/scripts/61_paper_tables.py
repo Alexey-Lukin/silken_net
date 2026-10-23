@@ -213,7 +213,7 @@ def build() -> str:
     md.append("|---|---|---|---|---|---|")
     md.append(f"| **Cu–Co** (T1↔node, bottleneck) | **{fodft['t_ij_eV']:.5f}** (FO-DFT) | {p['Cu-Co']['t_ij_eV']:.5f} | {res['Cu-Co']:.1f} | {_hop_band(lam_lit['Co'])} | {_hop_band(lam_comp['Co'])} |")
     md.append(f"| Co–Ce (node↔vacancy) | {p['Co-Ce']['t_ij_eV']:.5f} (crude) | {p['Co-Ce']['t_ij_eV']:.5f} | {res['Co-Ce']:.0f} | {(lam_lit['Co']+lam_lit['Ce'])/2:.2f} | {(lam_comp['Co']+lam_comp['Ce'])/2:.2f} |")
-    md.append(f"| Ce–graphene (vacancy↔MWCNT) | {p['Ce-graphene']['t_ij_eV']:.5f} (crude) | {p['Ce-graphene']['t_ij_eV']:.5f} | {res['Ce-graphene']:.0f} | — | — |")
+    md.append(f"| Ce–graphene (vacancy↔MWCNT, multi-walled carbon nanotube) | {p['Ce-graphene']['t_ij_eV']:.5f} (crude) | {p['Ce-graphene']['t_ij_eV']:.5f} | {res['Ce-graphene']:.0f} | — | — |")
     md.append("\n**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario, on the FO-DFT coupling** — "
               "each a bracket over the sign of the computed site-energy gap and the λ(Cu) reading; the consumer "
               "reading is the ADVERSE corner:\n")
@@ -263,8 +263,8 @@ def build() -> str:
     lbl = {"nme2": "NMe₂", "nh2": "NH₂", "ome": "OMe", "dmbpy": "Me", "bpy": "H",
            "cl": "Cl", "dcbpy": "COOH", "cf3": "CF₃", "no2": "NO₂", "so2cf3": "SO₂CF₃"}
     # ⚖️ founder 2026-10-15: SO₂CF₃ is not relaxed, so it is not printed as the optimum (PIPELINE_STATUS, note under D)
-    note = {"nme2": "donor saturation", "bpy": "reference", "cf3": "inert option",
-            "no2": "unstable on cycling", "so2cf3": "inert; order vs NO₂ open"}
+    note = {"nme2": "donor saturation", "bpy": "reference", "cf3": "assumed inert (not tested)",
+            "no2": "unstable on cycling", "so2cf3": "assumed inert (not tested); order vs NO₂ open"}
     vs = series_wb["vs_b3lyp"]
     omega = {p["name"]: p["omega_minus_b3_eV"] for p in vs["points"]}
     for c in sorted(series["complexes"], key=lambda x: x["sigma_para"]):

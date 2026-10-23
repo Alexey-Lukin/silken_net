@@ -118,7 +118,8 @@ saddle, and the couple's RRHO free energy is not used when the soft-mode censuse
 real modes below 50 cm⁻¹) differ — in this form Os(III) carries two small imaginary modes, both methyl torsions, at
 22.8i cm⁻¹ and at 14.2i cm⁻¹ under the 20i tolerance, both left out of the sums, so the couple has a zero-point level but
 no RRHO level. These Hessians, like the flavin's, omit the DFT grid response that the optimisation gradient includes. The cascade is then assembled on
-one SHE scale (|SHE_abs| = 4.281 V, the convention of the proton reference) as E°(Os) − E°(FAD/FADH₂, pH 7) for each
+one SHE scale (|SHE_abs| = 4.281 V, the convention of the proton reference; NHE and SHE are taken as identical here — zero offset by
+convention — and each value is quoted on the scale its source prints) as E°(Os) − E°(FAD/FADH₂, pH 7) for each
 osmium form and each flavin level, without a further SCF; its donor side (computed − measured free flavin) and
 acceptor side (measured − computed osmium) are reported separately, and an agreement with the measured cascade
 within 50 mV while each side is at least 100 mV off is flagged as a cancellation (the 50 and 100 mV thresholds are ours; an agreement within 50 mV with both sides under 100 mV would have been read as
@@ -210,8 +211,8 @@ couple (script 21f), converged on the same geometry in both environments (identi
 The cause is a change of the cavity, not of the numerics. PySCF 2.13.0 fixed a bug in which its PCM module
 assigned incorrect radii to ECP atoms (PySCF 2.13.0 release notes; pull request 3159 of the PySCF repository): up
 to 2.12 the switching function of each atomic sphere took its radius at the core-reduced nuclear charge, so
-osmium under the LANL2DZ ECP (effective charge 16) was switched with the radius of sulfur while its surface
-points sat on its own. The fixed build reached conda-forge for osx-arm64 on 2026-05-27. Emulating the fix in the
+osmium under the LANL2DZ ECP (effective charge 16) was switched with the radius of sulfur, and cerium under the Stuttgart RSC
+pseudopotential (effective charge 30) with the radius of zinc, while their surface points sat on their own. The fixed build reached conda-forge for osx-arm64 on 2026-05-27. Emulating the fix in the
 recorded environment (script 75; record `cache/reproduction/pcm_ecp_radius_attribution.json`) reproduces the lock
 values of the device couple to 5.4 × 10⁻¹⁰ Ha in both oxidation states, and those of the closed-shell
 [Os(H₂O)₆]²⁺ to 2.1 × 10⁻¹² Ha; for the open-shell [Os(H₂O)₆]³⁺ the emulated and lock runs meet as well
@@ -220,7 +221,9 @@ far beyond a change of cavity — which points to a different SCF solution rathe
 is not attributed (2.13.0 also changed SCF defaults). The bug acts on every calculation with an ECP metal in the
 continuum — both tiers of the osmium couples, the Hammett, speciation and micro-solvation series and the Co/Ce/Ru
 reorganisation energies — and on the quantities derived from them (the Koopmans offset, the adiabatic ΔSCF and
-the PCET route of Table 2b, every E°(Os) of the like-for-like Table 2, the cathode λ); the flavin chain (no ECP) and the gas-phase ZIF couplings lie outside it
+the PCET route of Table 2b, every E°(Os) of the like-for-like Table 2, the cathode λ — the emulation above was run for
+osmium only, so the cavities of Co, Ce and Ru, which enter λ(Co), λ(Ce) and λ(Ru) and through them the λ_hop of Table 3, are
+not attributed); the flavin chain (no ECP) and the gas-phase ZIF couplings lie outside it
 by construction, which is why scripts 20, 32 and 24b reproduced exactly. Of the committed caches in that class only
 the B3LYP device couple was re-run under the lock; for the others the size of the gap is bounded by this argument
 and by the device and closed-shell measurements above, not measured.
@@ -234,8 +237,9 @@ no conclusion here rests on; it changes no conclusion drawn here, and the points
 series share one cavity convention. The lock is, moreover, not one environment across platforms: the reproductions
 above ran on osx-arm64, whereas on linux-64 the same lock resolves RDKit 2025.03.6 against the 2025.09.5 of the
 recorded environment and of the osx-arm64 lock, and under that version the geometry builder places the CF₃ member of
-the substituent series (Table 4) in a different rotamer, while the other members tested reproduce the committed
-geometry; the energetic effect of that rotamer was not computed. The reference geometry of every osmium complex
+the substituent series (Table 4) in a different rotamer (observed in two continuous-integration runs of the geometry-builder regression test under the
+linux-64 lock; the coordinates were not saved), while the other members tested reproduce the committed geometry; the energetic effect of that rotamer was not
+computed. The reference geometry of every osmium complex
 and flavin species is therefore the committed coordinates in the Supporting Information, not a re-embedding: the ligand and
 cluster geometries under `ligands/`; the flavin minima, saddle points and Hessians of the thermochemistry runs under
 `cache/runs/` (a checkpoint `.xyz` is the lowest-energy step of its optimisation, an `_escapeN` file the minimum reached after
@@ -243,5 +247,6 @@ a saddle, and the Hessian-point geometry is in the cache JSON where one is recor
 the series caches that report them (`os_mediator_series_relaxed_os2` and `_os3`), with their Hessians under `cache/runs/96/`.
 The [M(H₂O)₆] and [Co(NH₃)₆] models behind the reorganisation energies of §2.5 are built in script 35, and their relaxed
 geometries were not written out — only the metal–ligand distances are cached; a re-run of 35 regenerates them. The committed caches — the recorded-environment numbers — are what the paper
-quotes. Every figure/number traces to a numbered script under `tools/in_silico/`. The scripts and golden
+quotes; most caches carry no version stamp of their own, so the environment list of the Supporting Information is the record
+of the versions. Every figure/number traces to a numbered script under `tools/in_silico/`. The scripts and golden
 reference outputs are provided as Supporting Information.

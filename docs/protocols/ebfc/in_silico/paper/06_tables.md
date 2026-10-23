@@ -52,7 +52,7 @@
 |---|---|---|---|---|---|
 | **Cu–Co** (T1↔node, bottleneck) | **0.00546** (FO-DFT) | 0.00128 | 9.4 | 1.70–1.90 | 2.55–2.75 |
 | Co–Ce (node↔vacancy) | 0.00687 (crude) | 0.00687 | 50 | 1.20 | 1.98 |
-| Ce–graphene (vacancy↔MWCNT) | 0.11294 (crude) | 0.11294 | 830 | — | — |
+| Ce–graphene (vacancy↔MWCNT, multi-walled carbon nanotube) | 0.11294 (crude) | 0.11294 | 830 | — | — |
 
 **Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario, on the FO-DFT coupling** — each a bracket over the sign of the computed site-energy gap and the λ(Cu) reading; the consumer reading is the ADVERSE corner:
 
@@ -77,9 +77,9 @@ cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge; B3LYP/6-31G(d)+
 | H | +0.00 | -4.530 | -4.228 | +0.2097 | reference | +0.137 |
 | Cl | +0.23 | -4.697 | -4.385 | +0.3674 |  | — |
 | COOH | +0.45 | -4.936 | -4.595 | +0.5766 |  | — |
-| CF₃ | +0.54 | -4.957 | -4.635 | +0.6167 | inert option | — |
+| CF₃ | +0.54 | -4.957 | -4.635 | +0.6167 | assumed inert (not tested) | — |
 | NO₂ | +0.78 | -5.262 | -4.905 | +0.8871 | unstable on cycling | +0.263 |
-| SO₂CF₃ | +0.96 | -5.256 | -4.910 | +0.8921 | inert; order vs NO₂ open | +0.184 |
+| SO₂CF₃ | +0.96 | -5.256 | -4.910 | +0.8921 | assumed inert (not tested); order vs NO₂ open | +0.184 |
 
 *Koopmans trend: the Koopmans offset rises with σ (−0.38 NMe₂ → +0.89 SO₂CF₃); the order of NO₂→SO₂CF₃ (+5.0 meV) is not decided — relaxing NO₂ alone moves NO₂'s own Koopmans offset by −198 meV with Os(III) on its own minimum and +102 meV with Os(III) vertical, and SO₂CF₃ was not relaxed; ΔE_red LFER slope ≈ −0.92 eV/σ over OMe→NO₂ (Fig 2). Higher E°(Os) lowers OCV, so the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: over Me, H, NO₂ the slope is −0.79 against −0.93 eV/σ at B3LYP (×0.85, resting on the one acceptor point of that set, NO₂; outside the fit, SO₂CF₃ carries ω−B3 +0.184); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs −0.876 → −0.800 → −0.878 eV/σ, i.e. the functional and the basis change pull opposite ways; with ωB97X also at 6-31G(d) on every point of Me, H, NO₂, the slope runs −0.931 → −0.789 → −0.791 eV/σ — functional ×0.85, basis ×1.00.*
 

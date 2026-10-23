@@ -27,7 +27,7 @@ mediator and an oxygen-reducing cathode.<sup>5,6</sup> FAD-GDH is the
 enzyme of choice for the anode because, unlike the classical glucose oxidase, it does not react with oxygen,
 while remaining glucose-specific<sup>7</sup>; but its catalytic flavin sits roughly 1.6 nm below the protein surface — too
 far for efficient direct electron transfer — so an electron relay is required. The osmium
-poly(vinylimidazole) polymer fills that role, its redox potential tuned empirically across a wide range
+poly(vinylimidazole) (PVI) redox polymer fills that role, its redox potential tuned empirically across a wide range
 (≈ +15 to +489 mV vs NHE, optimum near +0.3 V) to balance the driving force handed to the cascade
 against the open-circuit voltage it costs the cell.<sup>8</sup> On the cathode side, a
 Co–Cu–Ce zeolitic-imidazolate-framework (ZIF) nanozyme that mimics the multicopper centres of laccase can
@@ -42,7 +42,7 @@ environment governs that motion.<sup>12</sup>
 ## The gap: an electronic-structure account is missing
 
 Despite that, the EBFC literature addresses these questions almost entirely at the experimental and
-macro-kinetic level — cyclic voltammetry, electrochemical impedance spectroscopy, and
+macro-kinetic level — cyclic voltammetry, electrochemical impedance spectroscopy (EIS), and
 reaction–diffusion modelling — and only rarely at the level of electronic structure. The toolbox to do
 so is mature and was built for exactly this purpose: Marcus theory relates electron-transfer rates to a
 driving force and a reorganization energy<sup>13</sup>; the Beratan–Onuchic pathway model

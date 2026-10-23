@@ -24,7 +24,7 @@ substitutions) preserves this geometry.
 ## 3.2 Anode PCET: the FAD redox potential
 
 Treating the FAD/FADH₂ couple with a thermodynamic proton reference (rather than an explicit hydronium ion, which
-implicit solvent mis-places by tenths of an eV, §2.4) gives **E°(FAD/FADH₂) = −155 mV vs NHE** at pH 7 on
+implicit solvent mis-places by tenths of an eV, §2.4) gives **E°(FAD/FADH₂) = −155 mV vs SHE** at pH 7 on
 MMFF94s geometries at the electronic level — 65 mV positive of the experimental free-flavin value, −220 mV<sup>25</sup>
 (Fig S1). That proximity does not survive a thermochemically corrected treatment (Table 2, flavin row): with both flavin states relaxed
 (the reduced one a butterfly minimum by its Hessian) the potential moves to −119 mV, and adding the zero-point energy
@@ -50,7 +50,7 @@ depends on it.
 
 ## 3.3 A Hammett trend for the osmium mediator
 
-Varying the 4,4′-bipyridine substituents across the experimental potential range gives a clean **Hammett
+Varying the 4,4′-bipyridine substituents across the experimental potential range gives a **Hammett
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
 ≈ **−0.92 eV per σ unit** per complex at B3LYP (r² = 1.00; Fig 2; Table 4) — four substituents per complex, ≈ 0.23 eV per σ
 per substituent, the unit in which the measured series below are read. This is a computed trend; it is
@@ -178,11 +178,11 @@ force but does not by itself set the current.
 
 The trend also exposes a practical subtlety. The maximal cascade driving force is reached by strongly
 electron-withdrawing groups, but the strongest (NO₂) is electrochemically **unstable** when cycled to negative
-potentials (grafted films, pH 11: it reduces to the amine,<sup>60</sup> taking E°(Os) to the donor end of the series). Among the inert
-high-σ substituents, the Koopmans offset of **SO₂CF₃** lies 5 meV above NO₂'s at B3LYP on the programmatic geometry, without the
-degradation, and CF₃ is a milder inert alternative. Whether that order survives relaxation is not resolved: relaxing NO₂ alone moves
+potentials (grafted films, pH 11: it reduces to the amine,<sup>60</sup> taking E°(Os) to the donor end of the series). Among the high-σ substituents
+taken as electrochemically inert (an assumption of this work, not tested here), the Koopmans offset of **SO₂CF₃** lies 5 meV above NO₂'s at B3LYP on the programmatic geometry, without the
+degradation, and CF₃ is a milder alternative. Whether that order survives relaxation is not resolved: relaxing NO₂ alone moves
 its own Koopmans offset by +0.10 eV with Os(III) vertical and by −0.20 eV on its own minimum (above), twenty to forty times
-that gap, and SO₂CF₃ was not relaxed — so it is the strongest inert candidate we computed, not a computed optimum. Crucially, the cascade-thermodynamic
+that gap, and SO₂CF₃ was not relaxed — so it is the strongest candidate of that class we computed, not a computed optimum. Crucially, the cascade-thermodynamic
 optimum is *not* the cell optimum: a higher E°(Os) lowers the open-circuit voltage, so the experimental
 optimum (~+309 mV)<sup>8</sup> balances driving force against overpotential.
 
@@ -372,7 +372,7 @@ active-site cluster (isoalloxazine plus the catalytic His537, the charged Glu61 
 contacts within ~5 Å) is defined from the AF3 structure; the rigorous QM-cluster potential, sensitive
 to His/Glu protonation, is reserved for the explicit-solvent QM/MM capstone.
 
-## 3.7 Thermal robustness (brief)
+## 3.7 Thermal ensemble of the flavin (no result reported)
 
 The flavin energetics above are single-geometry, and their thermal robustness is not established here: the fragment script 27 cuts from the trajectory is not the closed isoalloxazine ring — its HOMO–LUMO gaps of 0.14–0.24 eV, against ≈ 3.4 eV for lumiflavin at B3LYP/6-31G(d) in C-PCM (script 20; the fragments were computed in the gas phase), are those of broken bonds — and three of its five snapshots are the same frame (4.9 ns; the 6, 8 and 10 ns targets lie beyond the trajectory).
 No frontier-orbital spread over a molecular-dynamics ensemble is therefore reported. The osmium mediator

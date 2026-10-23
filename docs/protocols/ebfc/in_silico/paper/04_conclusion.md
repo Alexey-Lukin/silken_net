@@ -52,7 +52,7 @@ the proton-coupled route — are not like-for-like with that driving force and c
 magnitude takes explicit-water QM/MM of the chloro species and of the reduced flavin, spin–orbit coupling on osmium
 and a model of the mediator film.
 
-The immediate experimental test is the impedance (EIS) of the forthcoming Ti-coin half-cell, for which
+The immediate experimental test is the EIS of the forthcoming Ti-coin half-cell, for which
 the present work supplies the bracket the measurement must narrow — the cathode charge-transfer resistance spans ≈ 9.6 decades
 (0.002 Ω to 7 MΩ) over λ(Co), the sign of the site-energy gap, the λ(Cu) reading and the unknown coverage, and the two λ(Co)
 branches overlap between ≈ 8 Ω and ≈ 1.6 kΩ, so only an arc outside that window excludes one of them; the QM/MM treatment of the cascade with spin–orbit coupling on osmium,
