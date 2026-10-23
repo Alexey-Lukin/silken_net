@@ -13,7 +13,7 @@ path was rejected 2026-06-07; no claims draft exists, and one must not be re-inv
      it is NOT a health oracle — ratified 2026-09-04, canon 01_03 §4 / 03_04 §4.3, proof 05_05 §8.1)
   B) one gyroid = xylem-integration + a smaller modulus gap (NOT an isoelastic match) + metal-xylem EBFC electrode
 
-    mamba run -n silken_md python tools/in_silico/scripts/fig1_graphical_abstract_draft.py
+    mamba run -n silken_md python tools/in_silico/scripts/toc_graphic_draft.py
 """
 import sys
 from pathlib import Path

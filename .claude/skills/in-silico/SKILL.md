@@ -5,22 +5,6 @@ description: "Use when working on the silken_net in-silico surface — the EBFC 
 
 # In-Silico Pipeline (EBFC Gen 2.0 Zero-Lab Proof)
 
-## SSOT Documents — Read These First
-
-| Document | What it covers |
-|----------|---------------|
-| `docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §3.4` | Pipeline spec, TRL gate, L1-L4 definitions, artifact table |
-| `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md` | Live status: running/queued/completed scripts, decision matrix |
-| `docs/protocols/ebfc/in_silico/SUMMARY.md` | All L1-L4 results in one page |
-| `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md` | DFT details, cascade methods comparison, ΔSCF, L3b cathode |
-| `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | AlphaFold 3 results, d_FAD distance; §2 = the CHEM.11 freeze design (N→Q sequons, the 600 aa invariant, compensating substitutions) |
-| `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §2.1` | Synthetic xylem sap — the RATIFIED recipe point and pH setpoint; owner-script `67`, doc↔cache pinned, and every salt concentration in `docs/protocols/` held to the live point by `test_sap_recipe_mirrors_match_the_live_point` — a moved point reds every letter that still carries the old one |
-| `docs/00_02_Academic_Integration_and_IP.md` §1 | Partner registry: DFT-redox is self-owned (Стаття 1 goes WITHOUT an external collaborator — ⚖️ founder 2026-09-23, explicit-water QM/MM is its named limit; a collaborator is a follow-up option only) · in-vitro EBFC enzymology = profile biochemist/electrochemist, TBD · xylem-sap composition — no partner: the recipe point is ratified (pH from a primary source; the ions re-anchored ⚖️ 2026-10-18 on measured conifer sap — Norway spruce, not Scots pine — `01_02 §2.1`; our pine's own sap comes from the log-day logs, `00_07` HW.3) |
-| `docs/00_02_Academic_Integration_and_IP.md` §2 | Publication plan — Стаття 1 |
-| `docs/00_07_Action_Plan_Tracker.md` | HW.5.IS section — operational task status |
-| `01_01 §1.4` / `01_01 §4.2` · `02_02 §2.2` / `02_02 §3.5` · `01_02 §2.2` · `00_07` HW.3 / HW.33 / HW.34 / HW.43 | Anchor-mechanics canon (ratified verdicts live THERE) + the open-work items: `50`/`51`/`56` → the Zone1↔2 band window (§4.2, HW.3) · `55`/`68` → the bus wire and its liner (§1.4, HW.34) · `52` → the Z-stack and the O-ring gland (`02_02 §3.5`, HW.33) · `59` → contact-part endurance (`02_02 §2.2` + `01_02 §2.2`, HW.43) |
-| `tools/in_silico/README.md` | Setup, quickstart, GPU notes, GAFF explanation |
-
 ## Critical Rules
 
 **Bodies live in `rules.md` — open it before running or changing DFT/MD, declaring an anchor dimension,
@@ -137,8 +121,25 @@ append-only since — cite `in-silico §When Modifying #N`.
 46. A sign claim over N cells that share one functional, one continuum, one reference convention and one relativistic treatment is ONE claim, not N — set its smallest margin against every shared term of known sign, the ones your own limits paragraph names included, before calling the sign robust
 47. A design or precision table's degrees of freedom are an analysis READING, not a given — estimate the spread per contrast (robust if the arms differ) ⊥ pooled over the arms that measure the SAME quantity (licensed by a one-spread assumption the model already makes): publish both, and pool only across one quantity
 48. A bound is about PHASES and bounds stiffness, not response
+49. A physicality flag certifies only what it was written to test — record the window, the picks and ⟨S²⟩ beside t_ij, or the flag IS the record
 
 <!-- /INSILICO-MODIFYING-INDEX -->
+
+## SSOT Documents — Read These First
+
+| Document | What it covers |
+|----------|---------------|
+| `docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §3.4` | Pipeline spec, TRL gate, L1-L4 definitions, artifact table |
+| `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md` | Live status: running/queued/completed scripts, decision matrix |
+| `docs/protocols/ebfc/in_silico/SUMMARY.md` | All L1-L4 results in one page |
+| `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md` | DFT details, cascade methods comparison, ΔSCF, L3b cathode |
+| `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | AlphaFold 3 results, d_FAD distance; §2 = the CHEM.11 freeze design (N→Q sequons, the 600 aa invariant, compensating substitutions) |
+| `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §2.1` | Synthetic xylem sap — the RATIFIED recipe point and pH setpoint; owner-script `67`, doc↔cache pinned, and every salt concentration in `docs/protocols/` held to the live point by `test_sap_recipe_mirrors_match_the_live_point` — a moved point reds every letter that still carries the old one |
+| `docs/00_02_Academic_Integration_and_IP.md` §1 | Partner registry: DFT-redox is self-owned (Стаття 1 goes WITHOUT an external collaborator — ⚖️ founder 2026-09-23, explicit-water QM/MM is its named limit; a collaborator is a follow-up option only) · in-vitro EBFC enzymology = profile biochemist/electrochemist, TBD · xylem-sap composition — no partner: the recipe point is ratified (pH from a primary source; the ions re-anchored ⚖️ 2026-10-18 on measured conifer sap — Norway spruce, not Scots pine — `01_02 §2.1`; our pine's own sap comes from the log-day logs, `00_07` HW.3) |
+| `docs/00_02_Academic_Integration_and_IP.md` §2 | Publication plan — Стаття 1 |
+| `docs/00_07_Action_Plan_Tracker.md` | HW.5.IS section — operational task status |
+| `01_01 §1.4` / `01_01 §4.2` · `02_02 §2.2` / `02_02 §3.5` · `01_02 §2.2` · `00_07` HW.3 / HW.33 / HW.34 / HW.43 | Anchor-mechanics canon (ratified verdicts live THERE) + the open-work items: `50`/`51`/`56` → the Zone1↔2 band window (§4.2, HW.3) · `55`/`68` → the bus wire and its liner (§1.4, HW.34) · `52` → the Z-stack and the O-ring gland (`02_02 §3.5`, HW.33) · `59` → contact-part endurance (`02_02 §2.2` + `01_02 §2.2`, HW.43) |
+| `tools/in_silico/README.md` | Setup, quickstart, GPU notes, GAFF explanation |
 
 ## Cascade Verdict Summary
 

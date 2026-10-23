@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 372 · 24,393,263 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 372 · 24,393,251 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -145,7 +145,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/98_field_strain_campaign.py` | `c8eed84df9fd9275d08d1a4088d4ec872e76f923ce6062209cac5fd89e5a7b8a` | How long a field campaign of stem-strain sensors must run to collect strong-wind hours, replayed over 30 years of hourly reanalysis wind at the site for each start month, and how many battery trips that costs. |
 | `tools/in_silico/scripts/99_coating_cluster_cost.py` | `2603422d38565f96a319d8bc0da5d3f4b55e7d9d61d1584dcc3b0f9e43df59db` | The basis size of model coating clusters (Zn-substituted hydroxyapatite and PEDOT:PSS on a TiO2 cluster) at the pipeline's tiers, and the cost of one SCF and of a relaxation extrapolated from the pipeline's own timed series. |
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
-| `tools/in_silico/scripts/toc_graphic_draft.py` | `aa2be246bc4d80d28f7a2d27fc9a2f621c102d851c170294e1a8ffe7746fb79c` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
+| `tools/in_silico/scripts/toc_graphic_draft.py` | `9c5eea7eec17126b08f1303fa8f2dd367061fb687053efff90edde97364c607a` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `a80b72b1ce69f1334bfd6303fd8a7339dc502397143101055c2b4c0573d166db` | Verify integrity of committed in-silico cache and ligand files. |
 | `tools/in_silico/tests/test_doc_cache_sync.py` | `fb1e4c05bad6418f73044a4f8c427bd960bb689aba40818b046d2a8d92d2a1ef` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
