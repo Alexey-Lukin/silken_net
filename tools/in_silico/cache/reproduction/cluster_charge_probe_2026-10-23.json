@@ -1,0 +1,218 @@
+{
+ "probe": "\u041f4(\u0431\u2032) stage 1 \u2014 cluster charge; NOT a cache",
+ "rehearse": false,
+ "deposited_xyz": "cu_co_zif.xyz",
+ "n_atoms_deposited": 61,
+ "nh_protons_stripped_for_imidazolate_variant": [
+  24,
+  36,
+  48,
+  60
+ ],
+ "runs": [
+  {
+   "charge": 3,
+   "spin_2S": 2,
+   "n_atoms": 61,
+   "n_electrons": 252,
+   "E_Ha": -1667.4951566827472,
+   "converged": true,
+   "newton_rescue": false,
+   "S2": 3.0038653208902986,
+   "multiplicity": 3.6076947325904936,
+   "wall_s": 2032.3,
+   "nocc_alpha": 127,
+   "window": [
+    121,
+    131
+   ],
+   "picked_MOs": [
+    121,
+    129
+   ],
+   "picked_rel_HOMO": [
+    -5,
+    3
+   ],
+   "pick_at_window_edge": true,
+   "eps_picked_eV": [
+    -15.710104782149953,
+    -7.879199278470883
+   ],
+   "pop_cu_picked": [
+    0.4830500724594379,
+    0.08600026135672768
+   ],
+   "pop_co_picked": [
+    0.003092188929325851,
+    0.6823173628744403
+   ],
+   "t_ij_eV": 0.01984959089211724,
+   "site_energy_gap_eV": 7.830804874501525,
+   "loc_pop_cu": [
+    0.08599771022714546,
+    0.48305262358902024
+   ],
+   "loc_pop_co": [
+    0.6823297900891295,
+    0.003079761714637744
+   ],
+   "localised": true,
+   "physically_reasonable": true,
+   "variant": "protonated+3"
+  },
+  {
+   "charge": 3,
+   "spin_2S": 4,
+   "n_atoms": 61,
+   "n_electrons": 252,
+   "E_Ha": -1667.4877246938445,
+   "converged": true,
+   "newton_rescue": false,
+   "S2": 6.0087814576880305,
+   "multiplicity": 5.003511350117248,
+   "wall_s": 1477.7,
+   "nocc_alpha": 128,
+   "window": [
+    122,
+    132
+   ],
+   "picked_MOs": [
+    122,
+    130
+   ],
+   "picked_rel_HOMO": [
+    -5,
+    3
+   ],
+   "pick_at_window_edge": true,
+   "eps_picked_eV": [
+    -15.853692982566818,
+    -7.8091858558585905
+   ],
+   "pop_cu_picked": [
+    0.38729872728083375,
+    0.07526697379096858
+   ],
+   "pop_co_picked": [
+    0.006888404798891221,
+    0.6900477901104126
+   ],
+   "t_ij_eV": 0.02874874544303342,
+   "site_energy_gap_eV": 8.044301644655137,
+   "loc_pop_cu": [
+    0.0752629885522138,
+    0.3873027125195882
+   ],
+   "loc_pop_co": [
+    0.6900979485929869,
+    0.006838246316317539
+   ],
+   "localised": true,
+   "physically_reasonable": true,
+   "variant": "protonated+3"
+  },
+  {
+   "charge": -1,
+   "spin_2S": 2,
+   "n_atoms": 57,
+   "n_electrons": 252,
+   "E_Ha": -1665.9036408132938,
+   "converged": true,
+   "newton_rescue": false,
+   "S2": 2.9087841602469524,
+   "multiplicity": 3.554593737825437,
+   "wall_s": 2714.5,
+   "nocc_alpha": 127,
+   "window": [
+    121,
+    131
+   ],
+   "picked_MOs": [
+    129,
+    130
+   ],
+   "picked_rel_HOMO": [
+    3,
+    4
+   ],
+   "pick_at_window_edge": true,
+   "eps_picked_eV": [
+    2.532900837017258,
+    2.646411713649615
+   ],
+   "pop_cu_picked": [
+    0.32674941910328165,
+    0.6831794212215383
+   ],
+   "pop_co_picked": [
+    0.633142372574976,
+    0.2231241923173101
+   ],
+   "t_ij_eV": 0.01089984289526406,
+   "site_energy_gap_eV": 0.11139790309193633,
+   "loc_pop_cu": [
+    0.32336907197562387,
+    0.6865597683491962
+   ],
+   "loc_pop_co": [
+    0.6364207829093159,
+    0.2198457819829713
+   ],
+   "localised": true,
+   "physically_reasonable": true,
+   "variant": "imidazolate-1"
+  },
+  {
+   "charge": -1,
+   "spin_2S": 4,
+   "n_atoms": 57,
+   "n_electrons": 252,
+   "E_Ha": -1665.9340854485367,
+   "converged": true,
+   "newton_rescue": false,
+   "S2": 6.010566237415304,
+   "multiplicity": 5.004224710148538,
+   "wall_s": 1113.2,
+   "nocc_alpha": 128,
+   "window": [
+    122,
+    132
+   ],
+   "picked_MOs": [
+    129,
+    131
+   ],
+   "picked_rel_HOMO": [
+    2,
+    4
+   ],
+   "pick_at_window_edge": true,
+   "eps_picked_eV": [
+    2.4422821259749594,
+    2.8013481228363624
+   ],
+   "pop_cu_picked": [
+    0.27159975166418077,
+    0.5544490825524698
+   ],
+   "pop_co_picked": [
+    0.6784381199121468,
+    0.4042150812663873
+   ],
+   "t_ij_eV": 0.029205367219584128,
+   "site_energy_gap_eV": 0.35428318645449425,
+   "loc_pop_cu": [
+    0.26969052371450286,
+    0.5563583105021478
+   ],
+   "loc_pop_co": [
+    0.6800722787434096,
+    0.4025809224351246
+   ],
+   "localised": true,
+   "physically_reasonable": true,
+   "variant": "imidazolate-1"
+  }
+ ]
+}

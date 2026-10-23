@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 370 · 24,381,603 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 372 · 24,393,263 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -75,6 +75,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/24b_fodft_coupling.py` | `219e51b97145f8efdc29f95aa871d910a338da4f52ebc263dd9f5a50f9aa653e` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
 | `tools/in_silico/scripts/24c_cu_ru_coupling.py` | `eb68eeed348a769a8fb516382d09e3f844cda32baaf792f2a79683cdb2f3fa1c` | 24c — Cu–Ru direct-electron-transfer coupling: does a Ru node also raise the Cu–node coupling? (energy-splitting estimate) |
 | `tools/in_silico/scripts/24d_fodft_cu_ru.py` | `0fafade3ceca12a44a243a96a3f4e69c3542bdaa7ac8368d7675ce5844bd3c27` | 24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (rigour check of 24c). |
+| `tools/in_silico/scripts/24e_cluster_charge_probe.py` | `a55f7785c7c6288c74edab6239ebb73bd0587f3cfa45df2f6c0ff12c6726f558` | Charge probe of the deposited Cu–Co cluster: the two-orbital diabatisation of script 24b repeated at the cluster's physical charge (+3) and on its imidazolate form (−1), two spin states each, in the gas phase; a record of why no variant yields a readable diabatic pair, not a cache the manuscript quotes. |
 | `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `d9cc254c288abe232e83fe6e869ff5de2588d9d6b3361267342c231b4a689f13` | ③ Cathode DET k_ET vs reorganization energy λ — margin analysis with its brackets. |
 | `tools/in_silico/scripts/27_md_dft_ensemble.py` | `f3019d5817827988e29625ecffabe5ddf50dfda5ac9cdf354000bc7ed2d63f63` | MD-to-DFT bridge: frontier orbital of a flavin fragment over molecular-dynamics snapshots — withdrawn as a flavin measure (the fragment is not the closed isoalloxazine ring; three of the five snapshots are one frame); kept as a record. |
 | `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | `3e262532435d44044f24a7a434b46b78abb8eca464988fc147db1da53e811fce` | L3 — contact-graph shortest path from FAD to the protein surface (NOT a Beratan–Onuchic pathway analysis). |
@@ -297,6 +298,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 
 | File | SHA-256 | Bytes |
 |---|---|---|
+| `tools/in_silico/cache/reproduction/cluster_charge_probe_2026-10-23.json` | `b2e9f4dc3489dac7ffc6f894274c03981e2b2e5ec02d589efa09d948f0cf70da` | 4,128 |
 | `tools/in_silico/cache/reproduction/flavin_chain_run_2026-10-15.json` | `7e02b317b50a1823eaee820464cde9346268086eb4fff6de6fa230b9ae89e378` | 16,135 |
 | `tools/in_silico/cache/reproduction/lock_rerun_2026-09-30.json` | `7781ff2b7afd9ea503699ba17b504c93901a50d2d7360d55a9f33ab96ae0aee2` | 6,877 |
 | `tools/in_silico/cache/reproduction/lock_rerun_2026-10-01.json` | `a878fc9e65d9f4912a89cc68b2fa9eb23f04443c47a3363e7378cad41997bf4c` | 7,402 |

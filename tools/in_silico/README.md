@@ -50,6 +50,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 24b | `24b_fodft_coupling.py` | L3b: FO-DFT two-state coupling t_ij for the Cu-Co hop (rigor upgrade of 24; loads zif_hopping cache for comparison) | ~hours |
 | 24c | `24c_cu_ru_coupling.py` | L3b CHEM.32: Cu-Ru crude ΔSCF (Co→Ru @identical geom) + Cu-Co control; t_ij non-physical (see 24d) | ~2 h |
 | 24d | `24d_fodft_cu_ru.py` | L3b CHEM.32: Cu-Ru FO-DFT diabatisation → t_ij NON-PHYSICAL (frontier all-Ru, no Cu-d partner); coupling-boost CDFT-pending | ~15 min |
+| 24e | `24e_cluster_charge_probe.py` | L3b К8′ (self-review round 2): the deposited Cu–Co cluster at its physical charge (+3) and its imidazolate form (−1), two spins each, 24b's diabatisation verbatim — a RECORD under `cache/reproduction/` (no variant yields a readable diabatic pair; stage 2 not started) | ~2 h |
 | 25 | `25_cathode_ket_lambda.py` | L3b ③: Marcus k_ET vs **computed** λ — honest DET margin bracket — gap sign × λ(Cu) reading (reads 24 t_ij + 35 λ) | ~1 s |
 | 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD-fragment HOMO across MD snapshots — ⛔ withdrawn as a flavin measure 2026-10-15 (the fragment is not the isoalloxazine; three of five snapshots one frame); record only | ~30 min |
 | 28 | `28_electron_tunneling_pathway.py` | L3: contact-graph shortest path from the first FAD atoms (NOT a Beratan–Onuchic pathway — self-review cluster 6), single snapshot | < 1 s |
