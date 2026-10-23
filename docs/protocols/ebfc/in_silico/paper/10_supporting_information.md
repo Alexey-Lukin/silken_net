@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 369 · 24,373,524 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 370 · 24,381,538 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -103,8 +103,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `c499587651ab9c61db0d8fafea1f711708622ee75808a73f57304504f29ba8d2` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `019c603112ff0c5363a0a6a44ecacc40868d69a9f5420bec569780db0b903a26` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `34b9e1e9088f8b208b1290734388b3810f035bd6b3fe9f756a44e59e303fef97` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
-| `tools/in_silico/scripts/60_paper_figures.py` | `1d051f29105218925e2f009b2421f8e13e462954c8887010435cd6d704ffe5ce` | Publication figures, rendered entirely from the cached DFT results. |
-| `tools/in_silico/scripts/61_paper_tables.py` | `f5c41d27d81c994505419d2ed01e4e3017680fd56ab2bf6d59b09276190a9cde` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
+| `tools/in_silico/scripts/60_paper_figures.py` | `a05b0c26a76a7366d3d4447a1c482a73020fe3c520beabbf6e989d6b12412cef` | Publication figures, rendered entirely from the cached DFT results. |
+| `tools/in_silico/scripts/61_paper_tables.py` | `b2dbc08fd91c13a6e4e668aa3061507b8d9aa2a7d82b521d23dcbb18e0a7d7ce` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `008a9f5f92299c409237fb5cab21b64d514c9b1623794ee00c0be32922ae4980` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
 | `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `fa78a1f9da90d9584498ef7f8d8e2cdf1ee1a76ecc0461e3a527a3ee3b55e008` | Does a second power source on the same BQ25570 rail contaminate the recharge-interval signal delta_t? |
 | `tools/in_silico/scripts/64_teg_across_peek_break.py` | `04a03c4ee245c785f7d17cf19b5f68619f37a609a5e6f9315fc40e09f639fbc1` | Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark? |
@@ -115,7 +115,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `6b65e7cdc27978d3b5a0b32e1d6fa1018495c1b61ec3290e408e6d414239ca1f` | Compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `52ae6cba0c7f388d165dd9c0e0bf0f9c09ee0359648fb2302c55b7bb19760e71` | Residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `95788659543a9322202c77c2e066f2a21bd65181640da0dd7c4ca6b611ce76a1` | Thermal envelope of the sensor capsule under its PEEK radome, against the operating rating of its EDLC. |
-| `tools/in_silico/scripts/72_paper_supporting_information.py` | `189eaa54e5c2d331a6177ba7f21f9c5c4a0084ed0deb950bc8cb1cda3390938f` | Supporting Information manifest, generated from the committed tree (no compute). |
+| `tools/in_silico/scripts/72_paper_supporting_information.py` | `865daf567b1a68d52852c3362a9800a1be0fbf46c7155fcfbfcc6269a44ee225` | Supporting Information manifest, generated from the committed tree (no compute). |
 | `tools/in_silico/scripts/73_collar_wall_inversion.py` | `4b48830d5a5735abb31d2b498477d10d4b5984d7cc7d70ab1d29aa2969b4b918` | Bayonet-collar wall of the sensor capsule, judged by inversion: the force at which the wall would start to limit (axial retention, lug-root shear, trapped ice) against a generous bound. |
 | `tools/in_silico/scripts/74_site_rain_dew.py` | `f84a7ae776cd977554e8e9541bd5fecb228509b9b43b81ec1ea52c45fd08aaa8` | Site climate of the Cherkasy grid point, 1991–2020, for two open legs that each asked a number of the |
 | `tools/in_silico/scripts/75_pcm_ecp_radius_attribution.py` | `6f503e7289f65122cb4b2092c4671645de811c052915721b479ab9e5b44d5760` | Attribution of the conda-lock gap on metal-in-PCM couples to the PySCF 2.13.0 PCM ECP-radius fix. |
@@ -143,8 +143,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/97_wire_under_liner_edges.py` | `fd666e26dc7c06238fc7f6f84bcc5bd729bb91f585cf948e8f4aec1ef62ce4e6` | The bus wire under the liner's edges: the mouth and exit contact pressure carried through the PEEK layer onto the Ti surface (layer on an elastic half-space), added to the wire's nominal bending along the drag cycle, and the weld knockdown below which the welded root stays the critical section |
 | `tools/in_silico/scripts/98_field_strain_campaign.py` | `c8eed84df9fd9275d08d1a4088d4ec872e76f923ce6062209cac5fd89e5a7b8a` | How long a field campaign of stem-strain sensors must run to collect strong-wind hours, replayed over 30 years of hourly reanalysis wind at the site for each start month, and how many battery trips that costs. |
 | `tools/in_silico/scripts/99_coating_cluster_cost.py` | `2603422d38565f96a319d8bc0da5d3f4b55e7d9d61d1584dcc3b0f9e43df59db` | The basis size of model coating clusters (Zn-substituted hydroxyapatite and PEDOT:PSS on a TiO2 cluster) at the pipeline's tiers, and the cost of one SCF and of a relaxation extrapolated from the pipeline's own timed series. |
-| `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `56fa0b5e5e7f4388817a94f5b415088e068e2e1ad61920ada56d5521c77aa927` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
-| `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
+| `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
+| `tools/in_silico/scripts/toc_graphic_draft.py` | `aa2be246bc4d80d28f7a2d27fc9a2f621c102d851c170294e1a8ffe7746fb79c` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `a80b72b1ce69f1334bfd6303fd8a7339dc502397143101055c2b4c0573d166db` | Verify integrity of committed in-silico cache and ligand files. |
 | `tools/in_silico/tests/test_doc_cache_sync.py` | `fb1e4c05bad6418f73044a4f8c427bd960bb689aba40818b046d2a8d92d2a1ef` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
@@ -473,16 +473,21 @@ External records the desk models read at run time (climate reanalysis, wind, hom
 
 ## S6. Figures
 
-Rendered from the committed caches (and the PDB for Fig 2) by the scripts named; a figure whose renderer no longer names it prints «—». PNG bytes are not portable across matplotlib builds, so the pin here is the SHA of the COMMITTED file, not a re-render.
+Rendered from the committed caches by the scripts named (Fig S2 and Fig 1 from the PDB — Fig 1 by the PyMOL script, run outside the recorded environment); a figure whose renderer no longer names it prints «—». PNG bytes are not portable across matplotlib builds, so the pin here is the SHA of the COMMITTED file, not a re-render.
 
 | File | SHA-256 | Rendered by |
 |---|---|---|
-| `docs/protocols/ebfc/in_silico/paper/figures/fig1_graphical_abstract_draft.png` | `0e16b5ec4809d3aba5bde03d634fe2c58db7282627f282e5a84bb10ef1ae4eaa` | `fig1_graphical_abstract_draft.py` |
-| `docs/protocols/ebfc/in_silico/paper/figures/fig2_structure_path.png` | `d8a3a42e55f5fa8fd5dd8093b871d31794b0f33c5b4f0f6c11801904b6de0089` | `60_paper_figures.py` |
-| `docs/protocols/ebfc/in_silico/paper/figures/fig2_structure_path_pymol.png` | `bd32b1809d7d7a0beef816a699c9a806bdc27cb2ae5febcfdb0a0c27b8e1d727` | `fig2_pymol_cartoon.py` |
-| `docs/protocols/ebfc/in_silico/paper/figures/fig3_cascade_lfer.png` | `e963cf1266e12217f86178de851368db2b12bf2619b1cf01cdca1acb680d0e90` | `60_paper_figures.py` |
-| `docs/protocols/ebfc/in_silico/paper/figures/fig4_cathode_det.png` | `fc0a6fa7760fcf5553dc17e6c21506e3fd1cf4f4017e8743d45259075ef4d061` | `60_paper_figures.py` |
-| `docs/protocols/ebfc/in_silico/paper/figures/fig5_cascade_like_for_like.png` | `cdf28c7ff38e2cc7ea15e6a2141a7ec093a69bf8ccf9dd6d08ff4116fbc6c1cc` | `60_paper_figures.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/fig1_structure.png` | `135413367dfb15b9610c31ae2877cd56cb762050b03677635134752a92b98325` | `60_paper_figures.py` · `fig1_pymol_cartoon.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/fig2_hammett.png` | `534076a1d5ba6c83da596dbf54dcbacdbc6fd1339c54c0d618950cc52b81cbad` | `60_paper_figures.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/fig3_cathode_det.png` | `8cb36b0802030dea1d47bf79794a10de61c6c01db975585a5acd79c6aadcba8d` | `60_paper_figures.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/fig4_cascade_like_for_like.png` | `6ec6bbdec799faeb4b7b8b69b2a39cf6c92980305a73ba13a4cbd760b799db37` | `60_paper_figures.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/figS1_frontier_levels.png` | `33527e7d84721902546e446226d7fe323db52dfb523fa8f0f2a9f016a3a2cb74` | `60_paper_figures.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/figS2_structure_pca.png` | `beacaee0e1c1ae208ead760ce0f9067d07902b00f6a668bc6c4c915138db9ff4` | `60_paper_figures.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/toc_graphic_draft.png` | `211d06798b34702468c64876b06703d9b983e87f291a179c76d11951e66c2c47` | `toc_graphic_draft.py` |
+
+**Figure S1. Frontier-orbital levels of the FADH₂→Os(III) step (one-electron).** B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM: the donor HOMO against the acceptor LUMO on the programmatic osmium geometry — a Koopmans offset, not like-for-like with the two-electron, two-proton driving force (manuscript §3.5, Table 2b); no conclusion is drawn from its sign. The upper box restates the measured driving force (+574 mV, > 0 = downhill) beside the offset; the lower box the flavin potentials of §3.2 against the measured free-flavin value — neither level is a validation.
+
+**Figure S2. The AF3 model as a 2D PCA projection** of the Cα envelope with the FAD cofactor and the N5 → Tyr90 OH distance (16.0 Å) read as the burial depth (manuscript §3.1) — the companion of Fig 1, drawn from the same PDB. A 2D projection flattens the burial depth, and the exit marker lies inside the Cα cloud only by projection.
 
 ## S7. Reproduction recipe
 

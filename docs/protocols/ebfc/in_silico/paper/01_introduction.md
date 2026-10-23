@@ -86,8 +86,7 @@ compute a Hammett<sup>22</sup> trend for the osmium mediator whose direction agr
 alone covers the acceptors beyond Cl, where its magnitude is unvalidated (its slope moves by ≈15 % between two method tiers on three shared points, one of them an acceptor) — ligand-additive and Hammett rules for such potentials are established practice,<sup>23,24</sup> and the empirical optimum is ref 8's own<sup>8</sup>; (iii) compute the
 Co–Cu–Ce-ZIF cathode direct-electron-transfer kinetics with first-principles reorganization energies,
 finding a margin conditional on the Co reorganisation energy — below enzymatic turnover at the computed λ(Co),
-straddling it only at an assumed literature value; a corrected finding, not the orders-of-magnitude artefact an
-earlier geometry-and-λ error had implied — together with the levers it suggests (a low-reorganization metal, computed indicatively;
+straddling it only at an assumed literature value — together with the levers it suggests (a low-reorganization metal, computed indicatively;
 conductive-MOF band transport and an acid-stable enzyme-free catalyst, named but not computed); and (iv) compare the anode→mediator
 cascade like for like — the two-electron, two-proton flavin couple against each one-electron osmium couple on one
 SHE scale — finding it downhill in every osmium form at every level of the flavin treatment within one protocol, a direction

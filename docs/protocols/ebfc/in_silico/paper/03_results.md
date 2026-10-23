@@ -12,7 +12,7 @@ treating each step as a link whose energetics we can compute and test against ex
 ## 3.1 Architecture and the burial depth of the flavin
 
 The AlphaFold 3 model places the FAD N5 atom **16.0 Å** from the hydroxyl oxygen of Tyr90, the surface atom
-chosen as the nearest exit (Fig 2) — a distance to one chosen atom, read here as the burial depth. Single-step tunnelling through protein keeps the micro-to-millisecond transfer times a
+chosen as the nearest exit (Fig 1; its 2D projection is Fig S2) — a distance to one chosen atom, read here as the burial depth. Single-step tunnelling through protein keeps the micro-to-millisecond transfer times a
 redox enzyme needs only up to a centre-to-centre distance of ≈20 Å;<sup>48</sup> 16.0 Å is the burial
 depth, not the distance to a docked osmium centre, so it bounds the donor–acceptor separation from below
 and distance alone does not settle feasibility. The electronic coupling from the flavin to a docked mediator is not
@@ -26,7 +26,7 @@ substitutions) preserves this geometry.
 Treating the FAD/FADH₂ couple with a thermodynamic proton reference (rather than an explicit hydronium ion, which
 implicit solvent mis-places by tenths of an eV, §2.4) gives **E°(FAD/FADH₂) = −155 mV vs NHE** at pH 7 on
 MMFF94s geometries at the electronic level — 65 mV positive of the experimental free-flavin value, −220 mV<sup>25</sup>
-(Fig 3a). That proximity does not survive a thermochemically corrected treatment (Table 2, flavin row): with both flavin states relaxed
+(Fig S1). That proximity does not survive a thermochemically corrected treatment (Table 2, flavin row): with both flavin states relaxed
 (the reduced one a butterfly minimum by its Hessian) the potential moves to −119 mV, and adding the zero-point energy
 takes it to −430 mV — the term the electronic level omits while it pairs the flavin with a proton free energy; the reduced
 state carries two more N–H bonds, and the change in zero-point energy between the states, +0.62 eV for the two-electron
@@ -52,7 +52,7 @@ depends on it.
 
 Varying the 4,4′-bipyridine substituents across the experimental potential range gives a clean **Hammett
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
-≈ **−0.92 eV per σ unit** per complex at B3LYP (r² = 1.00; Fig 3b; Table 4) — four substituents per complex, ≈ 0.23 eV per σ
+≈ **−0.92 eV per σ unit** per complex at B3LYP (r² = 1.00; Fig 2; Table 4) — four substituents per complex, ≈ 0.23 eV per σ
 per substituent, the unit in which the measured series below are read. This is a computed trend; it is
 not triangulated here against Lever's additive E_L parametrisation,<sup>23</sup> but three measured series test it pair
 by pair, per 4,4′-substituent so that the reference electrode and the absolute offset cancel. The closest is the series
@@ -195,7 +195,7 @@ diabatisation (the FO-DFT label of Methods §2.5; no specific published implemen
 **t_ij(Cu–Co) = 0.0055 eV**, with a **0.183 eV** site-energy gap. A cruder estimate, half the energy difference of two
 SCF solutions of the same cluster (0.0013 eV), is not used: the two solutions were unconstrained, started from the
 same guess and differ only in their SCF settings, and their difference is 9.4 times the tolerance both were converged
-to, so it does not resolve a coupling (Table 3 prints it beside that ratio). The other two hops carry that crude
+to, so it does not resolve a coupling (Table 3 prints it beside that ratio; Fig 3a). The other two hops carry that crude
 estimate — their differences lie 50 and 830 times above the tolerance, but they are not charge-localised states or a
 diabatic coupling either; on those couplings and at zero driving force on those hops (no gap was computed for them)
 they are not rate-limiting in any live scenario.
@@ -207,14 +207,13 @@ which the diabatisation does not fix, and the λ(Cu) reading — and we quote it
 is conditional on λ(Co).** At the computed λ(Co) = 3.09 eV the Cu–Co hop runs at **×1.9×10⁻⁵ to ×0.17** of
 enzymatic turnover (×0.0054 at zero driving force): below turnover at every corner — ×0.17 at the kindest, ×1.9×10⁻⁵ at the adverse. At the
 literature λ(Co) = 1.4 eV — an assumption, with no primary source in our tree — the bracket is **×0.081 to ×730**
-(×25 at zero driving force): rate-limiting at its adverse corner, above turnover at its favourable one. Reaching
+(×25 at zero driving force; Fig 3b): rate-limiting at its adverse corner, above turnover at its favourable one. Reaching
 turnover at zero driving force needs **λ(Co) ≲ 2.0 eV** (on the 2.0 eV λ(Cu) reading), and at the adverse corner
 **λ(Co) ≲ 0.9 eV**. We have no benchmark that places the computed value above or below the true one: it is the
 [Co(NH₃)₆]³⁺/²⁺ couple — an N-donor field, the closer analogue of the ZIF node — with the low-spin Co(III) /
 high-spin Co(II) pair imposed, and a spin-state change of that kind carries a large inner-sphere λ. Both λ(Cu)
 readings are for unconstrained solution couples; a framework-held Cu–N₄ site can lie below both (0.7 eV in
-azurin<sup>48</sup>), so the bracket bounds the readings, not the site. The ×10⁵ margin that an earlier geometry
-and an assumed λ = 0.7 eV had implied is withdrawn (Table 3).
+azurin<sup>48</sup>), so the bracket bounds the readings, not the site.
 
 This is a finding, not a failure, and we present it with its sensitivity. A low-λ metal removes the dependence on
 λ(Co): replacing Co by **Ru** (computed λ 0.78 eV) gives ×76 to ×570 across the λ(Cu) readings — an indicative
@@ -269,8 +268,11 @@ bound FAD-GDH at −265 mV vs SHE<sup>62</sup> (§3.6), a cascade of +574 mV. Ag
 the species we compute, it is +529 mV; the 45 mV between them is the measured protein shift of the bound cofactor, which we
 do not compute, while the mediator stays the film-bound one, whose preparation alone moves its E°′ by 135 mV (§3.3).
 
-We compare like with like (Table 2, Fig 5): the two-electron, two-proton FAD/FADH₂ potential at pH 7 (§3.2) against each
-one-electron Os(III/II) couple, on one SHE scale and at one tier (B3LYP/6-31G(d), LANL2DZ on Os, C-PCM water; §2.4). The
+We compare like with like (Table 2, Fig 4): the two-electron, two-proton FAD/FADH₂ potential at pH 7 (§3.2) against each
+one-electron Os(III/II) couple, on one SHE scale and at one tier (B3LYP/6-31G(d), LANL2DZ on Os, C-PCM water; §2.4). Signs: the donor side is the computed
+minus the measured flavin potential and the acceptor side the measured minus the computed osmium potential, so each side is
+positive where the computed value puts the cascade below the measured one, and the measured minus the computed cascade is
+their sum. The
 flavin enters at four levels — MMFF geometries, relaxed, + its zero-point energy, + its RRHO free energy — and the osmium
 couple in eight forms: the device chloro complex on its programmatic geometry; the same with one to three explicit waters
 on the chloride; with Os(II) relaxed and Os(III) kept vertical; with both states relaxed; the bis-imidazole form that the
@@ -315,7 +317,7 @@ of the bound flavin (+45 mV, §3.6). The computed direction therefore agrees wit
 and the protocol does not establish it.
 
 **Magnitude.** How far the computed cascade lies from the measured +529 mV, and on which side the difference sits, moves
-with the protocol by hundreds of millivolts (Fig 5b). The donor side — computed minus measured flavin — runs +65, +101,
+with the protocol by hundreds of millivolts (Fig 4b). The donor side — computed minus measured flavin — runs +65, +101,
 −210 and −199 mV over the four levels; the acceptor side — measured minus computed osmium — runs from +209 mV for the
 device chloro form, through +7 mV with three waters on the chloride (one point on an unconverged, near-linear series of
 +63, +72 and +67 mV per water, not a closure), to −230 and −324 mV for the aqua and bis-imidazole forms, which lie above
@@ -389,50 +391,33 @@ single fixed geometry (§2.3) is not tested this way.
 > [`tools/in_silico/scripts/60_paper_figures.py`](../../../../tools/in_silico/scripts/60_paper_figures.py)
 > (reads `cache/dft/*.json` only — no DFT recompute; every headline number is asserted against
 > [`SUMMARY.md`](../SUMMARY.md) at build time). Re-run: `mamba run -n silken_md python tools/in_silico/scripts/60_paper_figures.py`.
-> **Fig 2** has a **DRAFT** below (a 2D PCA projection of the AF3 coordinates, generated by the same
-> script); a *publication cartoon* still wants PyMOL/ChimeraX on `dgrGcGDH_AF3.pdb`. **Still pending
-> (not cache-derivable → illustration pass):** **Fig 1** graphical abstract (cascade over the 3-zone
-> gyroid anchor — new art).
+> **Fig 1** is the PyMOL render of `dgrGcGDH_AF3.pdb` (`fig1_pymol_cartoon.py`, run outside the recorded environment); its 2D PCA
+> companion is Fig S2 (Supporting Information, drawn by `60`), and the frontier-orbital levels are Fig S1. The journal TOC graphic
+> (`figures/toc_graphic_draft.png`, the cascade over the 3-zone anchor) is not a numbered figure and is still a draft.
 
-![Figure 2 (DRAFT)](figures/fig2_structure_path.png)
+![Figure 1](figures/fig1_structure.png)
 
-**Figure 2 (DRAFT). AF3 architecture and the burial depth of the flavin.** 2D PCA projection of the 600-Cα
-envelope (grey) with the FAD cofactor (orange); Tyr90 OH marks the nearest surface exit, and the dotted line the
-**16.0 Å** burial depth of N5 — a lower bound on the separation from a docked mediator, against a ≈20 Å single-step
-ceiling.<sup>48</sup> No tunnelling pathway is drawn (§3.1). *A 2D projection flattens the burial depth; the publication-grade cartoon
-(PyMOL) is the companion to this draft.*
+**Figure 1. AF3 architecture and the burial depth of the flavin.** Cartoon of the aglycosylated FAD-GDH model (grey) with the FAD cofactor (sticks, carbon in yellow, phosphorus in magenta; N5 labelled) and Tyr90 (orange, labelled); the red dashed line, labelled with its length, is the **16.0 Å** distance from N5 to the hydroxyl oxygen of Tyr90, the surface atom chosen as the nearest exit — read as the burial depth, a lower bound on the separation from a docked mediator, against a ≈20 Å single-step ceiling.<sup>48</sup> No tunnelling pathway is drawn (§3.1). *A 2D PCA projection of the same model is Fig S2.*
 
-![Figure 3](figures/fig3_cascade_lfer.png)
+![Figure 2](figures/fig2_hammett.png)
 
-**Figure 3. Anode→mediator electron-transfer energetics.** *(a)* Frontier-orbital levels for the
-FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM): the donor HOMO lies 0.07 eV above the
-acceptor LUMO on the programmatic osmium geometry (≈ 0 on Os(III)'s own minimum) — a one-electron orbital offset, not
-like-for-like with the measured two-electron, two-proton driving force (+574 mV, from E°(Os) **+309 mV vs NHE**
-[the device 4,4′-dimethyl-bpy Os-PVI polymer<sup>8</sup>] and the measured bound E°(FAD-GDH) −265 mV vs SHE<sup>62</sup>),
-which Table 2 and Fig 5 compare like for like. The proton-referenced flavin potential at pH 7 is −155 mV vs SHE on
-MMFF geometries at the electronic level and −430 mV with relaxed geometries and the zero-point energy, against −220 mV
-for the free flavin<sup>25</sup>; neither level is a validation (§3.2). *(b)* Hammett relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
-at constant charge: ΔE_red(III→II) is linear in σ_para (B3LYP slope −0.92 eV/σ, r² = 1.00; fit over the
-OMe→NO₂ regime; the ωB97X cross-check is in Table 4), with donor-resonance saturation at NMe₂/NH₂. Electron-withdrawing substituents raise E°(Os),
-which enters the like-for-like cascade one for one; NO₂ degrades on cycling, and whether the inert SO₂CF₃ (5 meV above NO₂ on the programmatic
-geometry) keeps that order on relaxation is not resolved — SO₂CF₃ was not relaxed.
+**Figure 2. The osmium-mediator Hammett trend.** ΔE_red(III→II) of cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge against σ_para (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM; slope −0.92 eV per σ unit per complex, r² = 1.00, fitted over OMe, Me, H, COOH and NO₂ — Cl, CF₃, SO₂CF₃, NMe₂ and NH₂ are drawn but not fitted, §3.3; the ωB97X cross-check is in Table 4), with donor-resonance saturation at NMe₂/NH₂ (shaded band); the squares are the Koopmans offsets of the same complexes, a one-electron reading, and the open rings mark NO₂, which degrades on cycling. Electron-withdrawing substituents raise E°(Os), which enters the like-for-like cascade one for one; NO₂ degrades on cycling, and whether SO₂CF₃ (taken as electrochemically inert; 5 meV above NO₂ on the programmatic geometry) keeps that order on relaxation is not resolved — SO₂CF₃ was not relaxed. The frontier-orbital levels of the anode→mediator step are Fig S1.
 
-![Figure 4](figures/fig4_cathode_det.png)
+![Figure 3](figures/fig3_cathode_det.png)
 
-**Figure 4. Direct electron transfer through the Co–Cu–Ce ZIF cathode.** *(a)* Inter-metal
+**Figure 3. Direct electron transfer through the Co–Cu–Ce ZIF cathode.** *(a)* Inter-metal
 electronic couplings |t_ij| (log scale) on clash-free cluster geometries: for Cu–Co, the two-state orbital
 diabatisation the margins use (FO-DFT label, Methods §2.5; 0.0055 eV) beside the crude two-solution ΔSCF estimate
 (0.0013 eV), which its SCF tolerance does not resolve; the other two hops carry the crude estimate. *(b)* Marcus k_DET
 margin of the Cu–Co bottleneck relative to enzymatic turnover (10³ s⁻¹, dashed) on the diabatised coupling, across
 reorganisation-energy scenarios: bars at ΔG = 0 on the 2.0 eV λ(Cu) reading, whiskers spanning each scenario's adverse
 and favourable corners over the sign of the computed site-energy gap and the two λ(Cu) readings — ×0.081 to ×730 at
-the assumed literature λ(Co) of 1.4 eV, ×1.9×10⁻⁵ to ×0.17 at the computed λ(Co) of 3.09 eV. The earlier ×10⁵ margin
-(broken geometry + assumed λ = 0.7 eV — "canon λ=0.7") is withdrawn. A low-λ metal (Co→Ru, computed λ 0.78 eV) reads
+the assumed literature λ(Co) of 1.4 eV, ×1.9×10⁻⁵ to ×0.17 at the computed λ(Co) of 3.09 eV. A low-λ metal (Co→Ru, computed λ 0.78 eV) reads
 ×76–570 — indicative: a ΔG = 0 figure on the borrowed Cu–Co coupling, with one negative Nelsen half in its λ (§3.4).
 
-![Figure 5](figures/fig5_cascade_like_for_like.png)
+![Figure 4](figures/fig4_cascade_like_for_like.png)
 
-**Figure 5. The cascade like for like.** *(a)* The cascade E°(Os) − E°(FAD/FADH₂, pH 7) for each osmium form
+**Figure 4. The cascade like for like.** *(a)* The cascade E°(Os) − E°(FAD/FADH₂, pH 7) for each osmium form
 (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM, one SHE scale) at the four levels of the flavin — MMFF electronic, relaxed electronic,
 + zero-point energy and + RRHO free energy, the last two correcting the flavin only — and, for the doubly relaxed chloro
 form, with the zero-point energy on both sides (star); dashed, the measured +529 mV (free flavin; film-bound mediator).

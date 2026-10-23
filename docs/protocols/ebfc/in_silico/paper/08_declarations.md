@@ -50,7 +50,9 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 - **Data Availability.** Scripts, golden reference outputs, and result caches provided as Supporting
   Information / repository; the SI itself is the generated manifest
   [`10_supporting_information.md`](10_supporting_information.md) (script 72 — sha256 of every committed
-  file it lists). The manuscript and its computations are developed openly in a public repository — the development tree of this preprint, whose history predates it. [finalise — repository DOI; in a later journal version also the ChemRxiv preprint DOI
+  file it lists). Superseded records stay in the caches and are not reported: an earlier cathode margin on a broken cluster
+  geometry with an assumed λ = 0.7 eV, and the margins on the crude two-solution coupling (the cache `cathode_ket_lambda`
+  keeps both scenarios beside the reported ones). The manuscript and its computations are developed openly in a public repository — the development tree of this preprint, whose history predates it. [finalise — repository DOI; in a later journal version also the ChemRxiv preprint DOI
   beside it — ⚖️ 2026-10-03]
 
 > Data Availability — provenance: publish-to-protect, `00_01 §8`.

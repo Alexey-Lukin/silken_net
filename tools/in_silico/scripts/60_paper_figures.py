@@ -6,13 +6,15 @@
 This script *reads the JSON caches only* (no PySCF, no DFT) and renders the
 data-driven paper figures into `docs/protocols/ebfc/in_silico/paper/figures/`:
 
-  * fig3_cascade_lfer.png   — (a) FADH₂→Os Marcus/MO cascade + PCET anchor (④)
-                              (b) mediator Hammett LFER design rule (①)
-  * fig4_cathode_det.png    — (a) ZIF Cu-Co-Ce coupling ladder; (b) k_DET margin
+  * fig1_structure.png       — NOT from this script: the PyMOL render of the AF3 model (`fig1_pymol_cartoon.py`, `pymol_tmp` env)
+  * fig2_hammett.png         — the osmium-mediator Hammett trend (①), ΔE_red and the Koopmans offset vs σ_para
+  * fig3_cathode_det.png    — (a) ZIF Cu-Co-Ce coupling ladder; (b) k_DET margin
                               vs reorganization-energy scenario (③, conditional on λ(Co))
-  * fig5_cascade_like_for_like.png — (a) the cascade like for like per Os form and donor level (95);
+  * fig4_cascade_like_for_like.png — (a) the cascade like for like per Os form and donor level (95);
                               (b) its gap split into the donor and acceptor sides (cancellations named)
-  * figS1_betad_ensemble.png — WITHDRAWN 2026-10-15 (cluster 6): no longer generated, `figS1()` kept as the record
+  * figS1_frontier_levels.png — SI: the one-electron frontier levels of the FADH₂→Os(III) step (old Fig 3a; К15, 2026-10-23)
+  * figS2_structure_pca.png   — SI: the 2D PCA projection of the AF3 model (the companion of Fig 1; reads the PDB)
+  * (the β·d ensemble figure was WITHDRAWN 2026-10-15, cluster 6: no longer generated, `figS_betad_withdrawn()` kept as the record)
 
 Every headline number is cross-checked against the SUMMARY.md canon with an
 assert — if a cache drifts (someone re-runs a DFT script), the figure build
@@ -82,9 +84,11 @@ def _close(a: float, b: float, tol: float, what: str) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fig 3 — (a) cascade + PCET anchor (④) · (b) mediator LFER (①)
+# Fig 2 — the mediator Hammett trend (①) · Fig S1 — the one-electron frontier levels (old Fig 3a)
 # ─────────────────────────────────────────────────────────────────────────────
-def fig3() -> None:
+def fig2_and_figS1() -> None:
+    """Fig 2 — the mediator Hammett trend (①); Fig S1 — the one-electron frontier levels of the FADH₂→Os(III) step, moved
+    to the SI (К15, ⚖️ 2026-10-23): a reading from which no conclusion is drawn is not a main panel."""
     osc = _load("os_complex.json")
     pcet = _load("pcet_redox_potential.json")
     series = _load("os_mediator_series.json")
@@ -103,9 +107,10 @@ def fig3() -> None:
     e_zpe = _load("pcet_redox_potential_thermo.json")["E_vs_SHE_mV"]["relaxed_plus_zpe"]["pH_7.0"]
     _close(e_zpe, -429.5, 1.0, "PCET E° pH7, relaxed + ZPE (32b)")
 
-    fig, (axa, axb) = plt.subplots(1, 2, figsize=(9.6, 4.3))
+    figa, axa = plt.subplots(figsize=(4.9, 4.3))
+    figb, axb = plt.subplots(figsize=(5.4, 4.3))
 
-    # ---- (a) MO / Marcus cascade ladder ----
+    # ---- Fig S1: the frontier-orbital levels (one-electron) ----
     bw = 0.30
     for x, e, col in [(0, fadh2_homo, C["blue"]), (1, os3_lumo, C["red"])]:
         axa.hlines(e, x - bw, x + bw, colors=col, linewidth=3.4, zorder=3)
@@ -119,8 +124,8 @@ def fig3() -> None:
              va="bottom", fontsize=7.3, color=C["purple"])
 
     axa.text(0.02, 0.97,
-             "Exp-anchored: +574 mV (−0.574 eV) downhill\n"
-             "[E°(Os)+309 − E°(FAD-GDH)−265 mV vs SHE]\n"
+             "Measured: +574 mV (> 0 = downhill)\n"
+             "[E°(Os) +309 − E°(FAD-GDH) −265 mV vs NHE/SHE]\n"
              f"raw Δε {raw_delta:+.2f} eV (B3LYP Koopmans, one-electron — not like-for-like with it; → §3.5)",
              transform=axa.transAxes, fontsize=6.4, va="top", ha="left",
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eef6ff", "ec": C["blue"], "alpha": 0.92})
@@ -133,10 +138,10 @@ def fig3() -> None:
     axa.set_ylim(lo - 0.55, hi + 0.6)
     axa.set_xticks([])
     axa.set_ylabel("Orbital energy (eV)")
-    axa.set_title("(a) Frontier-orbital levels (one-electron)")
+    axa.set_title("Frontier-orbital levels of the FADH₂→Os(III) step (one-electron;\nno conclusion from the sign — §3.5, Table 2b)", fontsize=8.5)
     axa.grid(True, axis="y", alpha=0.25)
 
-    # ---- (b) Hammett LFER ----
+    # ---- Fig 2: the Hammett trend ----
     cx = series["complexes"]
     lbl = {"nme2": "NMe₂", "nh2": "NH₂", "ome": "OMe", "dmbpy": "Me", "bpy": "H",
            "cl": "Cl", "dcbpy": "COOH", "no2": "NO₂", "cf3": "CF₃", "so2cf3": "SO₂CF₃"}
@@ -171,8 +176,8 @@ def fig3() -> None:
     ann = {
         "nme2": ("donor saturation", (2, 8)),
         "bpy": ("H (ref)", (5, -11)),
-        "cf3": ("CF₃ inert", (6, -14)),
-        "so2cf3": ("SO₂CF₃ inert", (4, -13)),   # just under its own square; not «optimum» — its order vs NO₂ is open (⚖️ 2026-10-15)
+        "cf3": ("CF₃ (assumed inert)", (6, -14)),
+        "so2cf3": ("SO₂CF₃ (assumed inert)", (4, -13)),   # just under its own square; not «optimum» — its order vs NO₂ is open (⚖️ 2026-10-15)
         "no2": ("NO₂ unstable", (-4, 9)),
     }
     for n, (txt, off) in ann.items():
@@ -189,18 +194,19 @@ def fig3() -> None:
     axb.set_ylim(min(dered.min(), casc.min()) - 0.4, casc.max() + 0.5)   # every point on the axes
     axb.set_xlabel("Hammett σ$_{para}$ (4,4′-bpy substituent)")
     axb.set_ylabel("Energy (eV)")
-    axb.set_title("(b) Mediator structure–activity (Hammett LFER)")
+    axb.set_title("Osmium-mediator Hammett trend: ΔE_red(III→II) vs σ_para\n(fit over OMe, Me, H, COOH, NO₂; the others drawn, not fitted)", fontsize=8.5)
     axb.legend(loc="center left", frameon=True, framealpha=0.9)
 
-    fig.tight_layout()
-    out = PAPER_FIG_DIR / "fig3_cascade_lfer.png"
-    fig.savefig(out)
-    plt.close(fig)
-    print(f"  ✓ {out.relative_to(REPO_ROOT)}  (slope {slope:.3f} eV/σ)")
+    for fg, name in ((figb, "fig2_hammett.png"), (figa, "figS1_frontier_levels.png")):
+        fg.tight_layout()
+        out = PAPER_FIG_DIR / name
+        fg.savefig(out)
+        plt.close(fg)
+        print(f"  ✓ {out.relative_to(REPO_ROOT)}  (slope {slope:.3f} eV/σ)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fig 4 — cathode DET (③): (a) coupling ladder · (b) k_DET margin vs λ
+# Fig 3 — cathode DET (③): (a) coupling ladder · (b) k_DET margin vs λ
 # ─────────────────────────────────────────────────────────────────────────────
 def fig4() -> None:
     ket = _load("cathode_ket_lambda.json")
@@ -223,7 +229,7 @@ def fig4() -> None:
         ("Cu–Co\n(crude ΔSCF,\nunresolved)", ket["t_ij_crude_dscf_eV"]["Cu-Co"], C["grey"]),
         ("Cu–Co\n(FO-DFT)", fo["t_ij_eV"], C["red"]),
         ("Co–Ce", t["Co-Ce"], C["blue"]),
-        ("Ce–C", t["Ce-C"], C["green"]),
+        ("Ce–graphene", t["Ce-C"], C["green"]),
     ]
     xs = np.arange(len(bars))
     axa.bar(xs, [b[1] for b in bars], color=[b[2] for b in bars], width=0.62, zorder=3)
@@ -239,15 +245,14 @@ def fig4() -> None:
                  fontsize=7, arrowprops={"arrowstyle": "->", "color": "k", "lw": 0.8})
 
     # ---- (b) k_DET margin vs turnover ----
-    order = ["canon λ=0.7 (old assumption)", "literature λ", "computed λ (B3LYP)", "Ru-swap (Co→Ru, computed)"]
+    order = ["literature λ", "computed λ (B3LYP)", "Ru-swap (Co→Ru, computed)"]   # the withdrawn λ=0.7 scenario stays in the cache, not in the figure (К15)
     lam_lit, lam_c = ket["lambda_lit_eV"], ket["lambda_computed_eV"]
-    disp = ["canon λ=0.7\n(withdrawn)",
-            f"literature λ\nλ(Co) {lam_lit['Co']:.1f}, assumed",
+    disp = [f"literature λ\nλ(Co) {lam_lit['Co']:.1f}, assumed",
             f"computed λ\nλ(Co) {lam_c['Co']:.2f}", "Ru-swap\n(indicative)"]
     margins = [sc[k]["margin_vs_turnover_at_dG0"] for k in order]
     lows = [sc[k]["margin_vs_turnover_adverse"] for k in order]
     highs = [sc[k]["margin_vs_turnover_favourable"] for k in order]
-    cols = [C["grey"], C["orange"], C["red"], C["green"]]
+    cols = [C["orange"], C["red"], C["green"]]
     xs = np.arange(len(order))
     axb.bar(xs, margins, color=cols, width=0.6, zorder=3)
     axb.errorbar(xs - 0.12, margins, yerr=[np.subtract(margins, lows), np.subtract(highs, margins)],
@@ -259,27 +264,27 @@ def fig4() -> None:
 
 
     axb.axhline(1.0, color="k", lw=1.1, ls="--", zorder=2)
-    axb.text(2.0, 1.25, "enzymatic turnover (10³ s⁻¹)", ha="center", va="bottom", fontsize=7)
+    axb.text(1.0, 1.25, "enzymatic turnover (10³ s⁻¹)", ha="center", va="bottom", fontsize=7)
     axb.set_yscale("log")
     axb.set_xticks(xs)
     axb.set_xticklabels(disp, fontsize=7)
     axb.set_ylabel("k$_{DET}$ margin vs turnover  (×)")
     axb.set_title("(b) DET margin (FO-DFT t) — conditional on λ(Co)")
-    axb.set_ylim(3e-7, 3e7)
+    axb.set_ylim(3e-7, 1e5)
     axb.legend(loc="upper right", frameon=False)
 
     fig.tight_layout()
-    out = PAPER_FIG_DIR / "fig4_cathode_det.png"
+    out = PAPER_FIG_DIR / "fig3_cathode_det.png"
     fig.savefig(out)
     plt.close(fig)
     print(f"  ✓ {out.relative_to(REPO_ROOT)}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fig 5 — the cascade like for like (`95`): (a) every Os form at the four flavin levels · (b) donor and acceptor sides
+# Fig 4 — the cascade like for like (`95`): (a) every Os form at the four flavin levels · (b) donor and acceptor sides
 # ─────────────────────────────────────────────────────────────────────────────
 def fig5() -> None:
-    """Fig 5 — the cascade like for like (`95`; ⚖️ founder 2026-10-16 «напрямок + таблиця»): (a) every Os form at the four
+    """Fig 4 — the cascade like for like (`95`; ⚖️ founder 2026-10-16 «напрямок + таблиця»): (a) every Os form at the four
     donor levels against the measured cascade for the same free couples; (b) each (form, level) as its donor and acceptor
     side — the gap is their sum, so a point on the anti-diagonal band is two errors cancelling (95 names them), never a
     validation. Signs are kept: no abs() anywhere (in-silico §When Modifying #5)."""
@@ -299,7 +304,7 @@ def fig5() -> None:
     vals = [f["by_donor_level"][k]["cascade_V"] * 1000 for f in forms for k, *_ in levels]
     vals.append(bs["relaxed_plus_zpe"]["cascade_V"] * 1000)
     if min(vals) <= 0:   # panel (a)'s title is read from the points, never typed
-        sys.exit(f"CANON DRIFT [Fig 5]: a like-for-like cascade is not downhill (min {min(vals):+.1f} mV) — rewrite §3.5")
+        sys.exit(f"CANON DRIFT [Fig 4]: a like-for-like cascade is not downhill (min {min(vals):+.1f} mV) — rewrite §3.5")
 
     fig, (axa, axb) = plt.subplots(1, 2, figsize=(10.6, 4.5))
 
@@ -317,7 +322,7 @@ def fig5() -> None:
     axa.set_xticklabels([short[f["form"]] for f in forms], fontsize=6.4)
     axa.set_ylabel("cascade E°(Os) − E°(FAD/FADH₂), mV   (> 0 = downhill)")
     axa.set_ylim(min(0.0, min(vals)) - 40, max(vals) + 160)
-    axa.set_title(f"(a) Downhill in every form at every donor level\n(smallest {min(vals):+.0f} mV; one SHE scale, B3LYP/C-PCM)")
+    axa.set_title(f"(a) Downhill in every form at every donor level — within one protocol\n(B3LYP/C-PCM, one SHE scale; smallest {min(vals):+.0f} mV)")
     axa.legend(fontsize=6.0, loc="upper left", frameon=False, ncol=2)
 
     # ---- (b) the gap split into its two sides ----
@@ -348,21 +353,20 @@ def fig5() -> None:
     axb.legend(fontsize=5.8, loc="lower left", frameon=False)
 
     fig.tight_layout()
-    out = PAPER_FIG_DIR / "fig5_cascade_like_for_like.png"
+    out = PAPER_FIG_DIR / "fig4_cascade_like_for_like.png"
     fig.savefig(out)
     plt.close(fig)
     print(f"  ✓ {out.relative_to(REPO_ROOT)}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fig 2 — AF3 structure + the burial depth of the flavin (DRAFT: 2D PCA projection). No tunnelling route is drawn:
+# Fig S2 — the AF3 model as a 2D PCA projection (the companion of Fig 1). No tunnelling route is drawn:
 # script 28 is a contact-graph search from the phosphate/ribose end of FAD, not a pathway (self-review cluster 6)
 # ─────────────────────────────────────────────────────────────────────────────
-def fig2() -> None:
-    """DRAFT structure figure from the AF3 PDB (mdtraj) — a 2D PCA projection of the
-    Cα envelope with the FAD cofactor and the N5 → Tyr90 OH burial depth (no tunnelling path — §3.1). NOT a
-    publication cartoon (that needs PyMOL/ChimeraX on `dgrGcGDH_AF3.pdb`); this
-    conveys the §3.1 architecture (buried FAD, exit path, depth) from the real coords."""
+def figS2() -> None:
+    """Fig S2 — the AF3 model as a 2D PCA projection of the Cα envelope with the FAD cofactor and the N5 → Tyr90 OH
+    distance (no tunnelling path — §3.1): the companion of Fig 1, the PyMOL render of the same PDB (`fig1_pymol_cartoon.py`,
+    run outside the recorded environment)."""
     import mdtraj as md  # local import — only Fig 2 needs it
 
     from lib.constants import AF3_PDB
@@ -385,7 +389,7 @@ def fig2() -> None:
     tyr_oh = top.select("resSeq 90 and name OH")
     d_fad = float(np.linalg.norm(xyz[n5[0]] - xyz[tyr_oh[0]])) if len(n5) and len(tyr_oh) else None
     if d_fad:
-        _close(d_fad, 16.0, 0.5, "Fig2 d_FAD (N5→Tyr90 OH)")
+        _close(d_fad, 16.0, 0.5, "Fig S2 d_FAD (N5→Tyr90 OH)")
 
     fig, ax = plt.subplots(figsize=(6.6, 5.8))
     pc = proj(ca_xyz)
@@ -404,20 +408,20 @@ def fig2() -> None:
             bbox={"boxstyle": "round,pad=0.4", "fc": "#f5f5f5", "ec": "#888888", "alpha": 0.95})
     ax.set_xlabel("PC1 (Å)")
     ax.set_ylabel("PC2 (Å)")
-    ax.set_title("(DRAFT) AF3 structure + FAD burial depth\n2D PCA projection — publication cartoon → PyMOL")
+    ax.set_title("AF3 model, 2D PCA projection of the Cα envelope\n(the companion of Fig 1)")
     ax.legend(loc="upper right", fontsize=6.5, frameon=True, framealpha=0.9)
     ax.set_aspect("equal")
     fig.tight_layout()
-    out = PAPER_FIG_DIR / "fig2_structure_path.png"
+    out = PAPER_FIG_DIR / "figS2_structure_pca.png"
     fig.savefig(out)
     plt.close(fig)
-    print(f"  ✓ {out.relative_to(REPO_ROOT)}  (DRAFT, d_FAD {d_fad:.1f} Å)")
+    print(f"  ✓ {out.relative_to(REPO_ROOT)}  (d_FAD {d_fad:.1f} Å)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Fig S1 — tunneling β·d ensemble robustness (SI)
 # ─────────────────────────────────────────────────────────────────────────────
-def figS1() -> None:
+def figS_betad_withdrawn() -> None:
     te = _load("tunneling_ensemble.json")
     mean, std = te["beta_d_mean"], te["beta_d_std"]
     single = te["beta_d_single_snapshot_AF3"]
@@ -435,7 +439,7 @@ def figS1() -> None:
     ax.set_title("The script-28 route persists over the MD ensemble\n(a connectivity heuristic — no coupling or gating derived)")
     ax.legend(loc="upper right", frameon=False, fontsize=7)
     fig.tight_layout()
-    out = PAPER_FIG_DIR / "figS1_betad_ensemble.png"
+    out = PAPER_FIG_DIR / "figS_betad_ensemble_withdrawn.png"
     fig.savefig(out)
     plt.close(fig)
     print(f"  ✓ {out.relative_to(REPO_ROOT)}")
@@ -444,11 +448,11 @@ def figS1() -> None:
 def main() -> int:
     PAPER_FIG_DIR.mkdir(parents=True, exist_ok=True)
     print("Building Стаття 1 figures from cache (no DFT) …")
-    fig2()
-    fig3()
+    figS2()
+    fig2_and_figS1()
     fig4()
     fig5()
-    # figS1() — withdrawn 2026-10-15 (self-review round 1, cluster 6): 28 and 28b start from different atoms and
+    # figS_betad_withdrawn() — withdrawn 2026-10-15 (self-review round 1, cluster 6): 28 and 28b start from different atoms and
     # measure no coupling, so the figure compared nothing; the function stays as the record of what it drew.
     print("Done — all canon cross-checks passed.")
     return 0

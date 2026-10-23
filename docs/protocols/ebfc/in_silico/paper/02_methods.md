@@ -14,7 +14,8 @@ to glutamine to give the aglycosylated variant used throughout. (The gene ordere
 carries three further surface substitutions chosen after this modelling; the structure and every
 number below stand on the eleven-substitution sequence as modelled.) The FAD cofactor was
 placed from the AF3 complex prediction; the cofactor-to-surface depth and the electron-exit
-region were measured in ChimeraX.<sup>28,29</sup> The flavin redox and proton-coupled energetics (§2.3,
+region were measured in ChimeraX;<sup>28,29</sup> the model is drawn in Fig 1 with open-source PyMOL (3.1.0, conda-forge; the
+render script is in the Supporting Information). The flavin redox and proton-coupled energetics (§2.3,
 §2.4) were computed on **lumiflavin** (7,8,10-trimethylisoalloxazine), the canonical truncation of the
 isoalloxazine redox core, in the continuum of §2.2 — without protein residues. An active-site cluster
 (isoalloxazine ring plus the H-bonding and charged residues within ≈5 Å, retaining backbone amide caps)
@@ -23,7 +24,7 @@ reported here is computed on it.
 
 ## 2.2 Electronic-structure setup
 
-All density-functional calculations used **PySCF**<sup>30,31</sup> (version 2.11.0, with geomeTRIC 1.1 for
+All density-functional calculations (Table 1) used **PySCF**<sup>30,31</sup> (version 2.11.0, with geomeTRIC 1.1 for
 geometry optimisation; §2.7). Two functionals were employed: **B3LYP**<sup>32–34</sup> (the PySCF/libxc `B3LYP`, i.e. with the VWN RPA local-correlation
 term<sup>35</sup> of the Gaussian convention, not the VWN5 variant) for the orbital-resolved and ΔSCF
 energetics, and the range-separated hybrid **ωB97X**<sup>36</sup> for cross-checks (the one-electron ΔSCF readings, §2.3; six members of the
@@ -141,7 +142,7 @@ clash-free cluster geometries (a bridging imidazole N–H that collided with the
 deprotonated to the imidazolate, restoring physical coordination). The clusters were computed as +1 cations in the doublet
 state, the four terminal 2-methylimidazoles protonated and the bridge an imidazolate; the +3 cation of the node's
 Cu(II)/Co(II) ⇄ Cu(I)/Co(III) cycle was not computed (§4). The two solutions are not charge-localised
-states: they start from the same guess and differ only in their SCF settings (level shift 0.3 ⊥ 0.5 E_h, DIIS space, cycle cap), so the estimate is
+states: they start from the same guess and differ only in their SCF settings (level shift 0.3 and 0.5 E_h, DIIS space, cycle cap), so the estimate is
 read against the SCF tolerance — for Cu–Co the difference is 9.4 times it, which resolves no coupling (Table 3). For
 the rate-limiting Cu–Co hop the coupling the margins use is therefore a two-state orbital diabatisation, labelled FO-DFT in the tables and figures (it is neither the fragment-orbital basis of textbook FO-DFT nor the dipole-based generalised Mulliken–Hush scheme, and no specific published implementation is claimed for it): from one UKS
 SCF of the Cu–Co cluster, the two frontier orbitals with the largest combined Cu-d + Co-d character were
@@ -227,7 +228,7 @@ and by the device and closed-shell measurements above, not measured.
 What moves is the third decimal of ΔE_red and the second decimal of the Os(III) LUMO and of the orbital offset
 built on it: on the device couple (identical to the Me row of Table 4), ΔE_red −4.381 eV, LUMO −4.086 eV and
 offset +0.0676 eV in the recorded environment read −4.384, −4.096 and +0.0779 eV under the lock, so the Koopmans
-offset of §3.5 and Fig 3 becomes +0.08 eV. The shift (10 meV) is far below the protocol dependence of the like-for-like cascade
+offset of §3.5 and Fig S1 becomes +0.08 eV. The shift (10 meV) is far below the protocol dependence of the like-for-like cascade
 (§3.5, hundreds of millivolts), though larger than the Koopmans offset on Os(III)'s own minimum (−0.003 eV), whose sign
 no conclusion here rests on; it changes no conclusion drawn here, and the points of each
 series share one cavity convention. The lock is, moreover, not one environment across platforms: the reproductions

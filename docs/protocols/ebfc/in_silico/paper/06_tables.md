@@ -6,13 +6,13 @@
 
 | Tier | Functional | Basis / ECP | Solvent | Used for |
 |---|---|---|---|---|
-| Cascade like for like · series · speciation | B3LYP | 6-31G(d); LANL2DZ (Os, Cu, Co); stuttgart_rsc (Ce) | C-PCM (water) | frontier orbitals, ΔSCF redox, the like-for-like cascade (Table 2), mediator series (①), speciation (②) |
+| Cascade like for like · series · speciation | B3LYP | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | frontier orbitals, ΔSCF redox, the like-for-like cascade (Table 2), mediator series (①), speciation (②) |
 | Thermochemistry | B3LYP + analytic C-PCM Hessian; RRHO at 298.15 K | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | the flavin E° at four levels (32b); the Os couple's zero-point energy, one form (96) |
 | ωB97X one-electron readings | ωB97X single points (FAD geometries B3LYP/def2-SVP for the ΔSCF, B3LYP/6-31G(d) for the proton-coupled route) | def2-TZVP; LANL2DZ (Os) | C-PCM (water) | vertical and adiabatic ΔSCF of the first oxidation; the proton-coupled one-electron route with the proton reference (Table 2b) |
 | Publication — speciation | ωB97X | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | speciation functional-robustness (②) |
 | PCET | B3LYP + thermodynamic proton reference (Isse–Gennaro) | 6-31G(d) | C-PCM (water) | the 2e⁻/2H⁺ FAD E° (32, 32b) |
-| Reorganisation λ | B3LYP/def2-SVP (29b), 6-31G(d)+LANL2DZ/stuttgart_rsc (35); Nelsen 4-point | C-PCM | inner-sphere λ_i; + Marcus two-sphere outer-sphere λ_o (29c, analytical) |
-| DET coupling | ΔSCF-UKS energy-splitting (24); two-state orbital diabatisation, FO-DFT label (24b) | none (gas phase) | ZIF inter-metal t_ij |
+| Reorganisation λ | B3LYP; Nelsen 4-point (29b, 35) | def2-SVP (29b, flavin); 6-31G(d) + LANL2DZ (Co, Ru) / stuttgart_rsc (Ce) (35) | C-PCM (water) | inner-sphere λ_i of the flavin semiquinone couple and of Co, Ce and Ru; + Marcus two-sphere outer-sphere λ_o for the flavin (29c, analytical) |
+| DET coupling | B3LYP; ΔSCF-UKS energy-splitting (24); two-state orbital diabatisation, FO-DFT label (24b; the Ru swap 24c/24d) | 6-31G(d); LANL2DZ (Cu, Co, Ru); stuttgart_rsc (Ce) | none (gas phase) | ZIF inter-metal t_ij and the site-energy gap |
 
 *Reproducibility: scripted, fixed-seed DFT in `tools/in_silico`; every DFT cache behind these tables computed with PySCF 2.11.0 (the recorded environment — §2.7; the lock re-runs are separate records, SI S3).*
 
@@ -58,11 +58,9 @@
 
 | λ scenario | adverse corner | ΔG = 0 (default, not a measurement) | favourable corner |
 |---|---|---|---|
-| canon λ=0.7 (old, withdrawn) | ×1.2e+04 | ×6.6e+05 | ×1e+06 |
 | **literature λ** (Cu 2.0–2.4 / Co 1.4, assumed / Ce 1.0) | **×0.081** | ×25 | ×7.3e+02 |
 | **computed λ** (B3LYP: Co 3.09; Cu literature) | **×1.9e-05** | ×0.0054 | ×0.17 |
 | Ru-swap (Co→Ru, computed λ 0.78) — *indicative: λ(Ru) sums Nelsen halves -0.26 and +1.04 eV; the Cu–Ru coupling and gap are not obtainable from the minimal cluster, so it borrows the Cu–Co coupling and every column is ΔG = 0* | ×76 | ×5.7e+02 | ×5.7e+02 |
-| crude ΔSCF coupling, literature λ — *superseded record* | ×0.0045 | ×1.4 | ×40 |
 
 *Inner-sphere λ via Nelsen 4-point (35) on [Co(NH₃)₆] for Co and on [M(H₂O)₆] for Ce and Ru; λ(Cu) is a literature bracket of two solution readings — 2.0 eV (textbook value, source not found) and 2.4 eV (Cu(phen)₂²⁺/⁺ self-exchange, Gray & Winkler) — a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. Both readings are unconstrained solution couples; a framework-held Cu–N₄ site can lie below both (0.7 eV in azurin, same source), so the favourable corner is no floor. The adverse corner is the uphill gap sign at the higher λ(Cu). The crude ΔSCF couplings are half the energy difference of two unconstrained SCF solutions from one start; for Cu–Co that difference is a single-digit multiple of the SCF tolerance, so the margins use the two-state diabatisation (FO-DFT label, Methods §2.5). The verdict is conditional on λ(Co): turnover needs λ(Co) ≲ 2.0 eV at ΔG = 0 on the 2.0 eV λ(Cu) reading and ≲ 0.9 eV at the adverse corner; the computed 3.09 eV puts the cathode below turnover at every corner, the assumed 1.4 eV (no primary) across it.*
 
@@ -83,5 +81,5 @@ cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge; B3LYP/6-31G(d)+
 | NO₂ | +0.78 | -5.262 | -4.905 | +0.8871 | unstable on cycling | +0.263 |
 | SO₂CF₃ | +0.96 | -5.256 | -4.910 | +0.8921 | inert; order vs NO₂ open | +0.184 |
 
-*Koopmans trend: the Koopmans offset rises with σ (−0.38 NMe₂ → +0.89 SO₂CF₃); the order of NO₂→SO₂CF₃ (+5.0 meV) is not decided — relaxing NO₂ alone moves NO₂'s own Koopmans offset by −198 meV with Os(III) on its own minimum and +102 meV with Os(III) vertical, and SO₂CF₃ was not relaxed; ΔE_red LFER slope ≈ −0.92 eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: over Me, H, NO₂ the slope is −0.79 against −0.93 eV/σ at B3LYP (×0.85, resting on the one acceptor point of that set, NO₂; outside the fit, SO₂CF₃ carries ω−B3 +0.184); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs −0.876 → −0.800 → −0.878 eV/σ, i.e. the functional and the basis change pull opposite ways; with ωB97X also at 6-31G(d) on every point of Me, H, NO₂, the slope runs −0.931 → −0.789 → −0.791 eV/σ — functional ×0.85, basis ×1.00.*
+*Koopmans trend: the Koopmans offset rises with σ (−0.38 NMe₂ → +0.89 SO₂CF₃); the order of NO₂→SO₂CF₃ (+5.0 meV) is not decided — relaxing NO₂ alone moves NO₂'s own Koopmans offset by −198 meV with Os(III) on its own minimum and +102 meV with Os(III) vertical, and SO₂CF₃ was not relaxed; ΔE_red LFER slope ≈ −0.92 eV/σ over OMe→NO₂ (Fig 2). Higher E°(Os) lowers OCV, so the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: over Me, H, NO₂ the slope is −0.79 against −0.93 eV/σ at B3LYP (×0.85, resting on the one acceptor point of that set, NO₂; outside the fit, SO₂CF₃ carries ω−B3 +0.184); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs −0.876 → −0.800 → −0.878 eV/σ, i.e. the functional and the basis change pull opposite ways; with ωB97X also at 6-31G(d) on every point of Me, H, NO₂, the slope runs −0.931 → −0.789 → −0.791 eV/σ — functional ×0.85, basis ×1.00.*
 

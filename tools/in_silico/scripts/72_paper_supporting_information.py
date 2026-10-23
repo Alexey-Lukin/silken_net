@@ -271,11 +271,21 @@ def build() -> str:
 
     parts.append("## S6. Figures\n")
     parts.append(
-        "Rendered from the committed caches (and the PDB for Fig 2) by the scripts named; a figure whose renderer "
+        "Rendered from the committed caches by the scripts named (Fig S2 and Fig 1 from the PDB — Fig 1 by the PyMOL script, run "
+        "outside the recorded environment); a figure whose renderer "
         "no longer names it prints «—». PNG bytes are not portable across matplotlib builds, so the pin here is "
         "the SHA of the COMMITTED file, not a re-render.\n")
     parts.append(table([(f"`{f}`", f"`{sha256(f)}`", figure_generators(f, scripts)) for f in figs],
                        ("File", "SHA-256", "Rendered by")) + "\n")
+    parts.append(
+        "**Figure S1. Frontier-orbital levels of the FADH₂→Os(III) step (one-electron).** B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM: the "
+        "donor HOMO against the acceptor LUMO on the programmatic osmium geometry — a Koopmans offset, not like-for-like with the "
+        "two-electron, two-proton driving force (manuscript §3.5, Table 2b); no conclusion is drawn from its sign. The upper box "
+        "restates the measured driving force (+574 mV, > 0 = downhill) beside the offset; the lower box the flavin potentials of "
+        "§3.2 against the measured free-flavin value — neither level is a validation.\n\n"
+        "**Figure S2. The AF3 model as a 2D PCA projection** of the Cα envelope with the FAD cofactor and the N5 → Tyr90 OH "
+        "distance (16.0 Å) read as the burial depth (manuscript §3.1) — the companion of Fig 1, drawn from the same PDB. A 2D "
+        "projection flattens the burial depth, and the exit marker lies inside the Cα cloud only by projection.\n")
 
     parts.append("## S7. Reproduction recipe\n")
     parts.append(

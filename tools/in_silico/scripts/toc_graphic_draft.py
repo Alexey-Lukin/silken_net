@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender).
+"""TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender).
 
 NOT the final art: a matplotlib block diagram that fixes the LAYOUT, the elements,
 the arrows and the canon numbers (cascade +574 mV; E°(Os) +309, E°(FAD-GDH) −265
@@ -24,7 +24,7 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import PAPER_DIR, REPO_ROOT
 
-OUT = PAPER_DIR / "figures" / "fig1_graphical_abstract_draft.png"
+OUT = PAPER_DIR / "figures" / "toc_graphic_draft.png"
 
 C = {"anode": "#c44", "med": "#e8a", "cath": "#48a", "ti": "#aaa",
      "xylem": "#6b4", "elec": "#fc3", "box": "#f4f4f4"}
@@ -70,7 +70,7 @@ def main() -> int:
     box(ax, 8.55, yc, 1.45, 0.8, "ZIF cathode\nO₂ → H₂O", "#b7c7e7", 8)
     for x1, x2 in [(4.65, 5.05), (6.4, 6.8), (8.15, 8.55)]:
         arrow(ax, x1, yc + 0.4, x2, yc + 0.4, C["elec"], 2.5)
-    ax.text(6.7, yc + 1.05, "cascade  +574 mV / −0.574 eV (downhill, verified E°s)",
+    ax.text(6.7, yc + 1.05, "cascade  +574 mV (> 0 = downhill; measured E°s)",
             ha="center", fontsize=8, color="#a40", weight="bold")
     ax.text(6.7, yc - 0.3, "e⁻  (FAD → Os mediator)",
             ha="center", fontsize=7.5, style="italic")

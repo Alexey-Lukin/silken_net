@@ -81,13 +81,13 @@ def build() -> str:
     md.append("## Table 1. Levels of theory\n")
     md.append("| Tier | Functional | Basis / ECP | Solvent | Used for |")
     md.append("|---|---|---|---|---|")
-    md.append("| Cascade like for like · series · speciation | B3LYP | 6-31G(d); LANL2DZ (Os, Cu, Co); stuttgart_rsc (Ce) | C-PCM (water) | frontier orbitals, ΔSCF redox, the like-for-like cascade (Table 2), mediator series (①), speciation (②) |")
+    md.append("| Cascade like for like · series · speciation | B3LYP | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | frontier orbitals, ΔSCF redox, the like-for-like cascade (Table 2), mediator series (①), speciation (②) |")
     md.append("| Thermochemistry | B3LYP + analytic C-PCM Hessian; RRHO at 298.15 K | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | the flavin E° at four levels (32b); the Os couple's zero-point energy, one form (96) |")
     md.append("| ωB97X one-electron readings | ωB97X single points (FAD geometries B3LYP/def2-SVP for the ΔSCF, B3LYP/6-31G(d) for the proton-coupled route) | def2-TZVP; LANL2DZ (Os) | C-PCM (water) | vertical and adiabatic ΔSCF of the first oxidation; the proton-coupled one-electron route with the proton reference (Table 2b) |")
     md.append("| Publication — speciation | ωB97X | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | speciation functional-robustness (②) |")
     md.append("| PCET | B3LYP + thermodynamic proton reference (Isse–Gennaro) | 6-31G(d) | C-PCM (water) | the 2e⁻/2H⁺ FAD E° (32, 32b) |")
-    md.append("| Reorganisation λ | B3LYP/def2-SVP (29b), 6-31G(d)+LANL2DZ/stuttgart_rsc (35); Nelsen 4-point | C-PCM | inner-sphere λ_i; + Marcus two-sphere outer-sphere λ_o (29c, analytical) |")
-    md.append("| DET coupling | ΔSCF-UKS energy-splitting (24); two-state orbital diabatisation, FO-DFT label (24b) | none (gas phase) | ZIF inter-metal t_ij |")
+    md.append("| Reorganisation λ | B3LYP; Nelsen 4-point (29b, 35) | def2-SVP (29b, flavin); 6-31G(d) + LANL2DZ (Co, Ru) / stuttgart_rsc (Ce) (35) | C-PCM (water) | inner-sphere λ_i of the flavin semiquinone couple and of Co, Ce and Ru; + Marcus two-sphere outer-sphere λ_o for the flavin (29c, analytical) |")
+    md.append("| DET coupling | B3LYP; ΔSCF-UKS energy-splitting (24); two-state orbital diabatisation, FO-DFT label (24b; the Ru swap 24c/24d) | 6-31G(d); LANL2DZ (Cu, Co, Ru); stuttgart_rsc (Ce) | none (gas phase) | ZIF inter-metal t_ij and the site-energy gap |")
     md.append("\n*Reproducibility: scripted, fixed-seed DFT in `tools/in_silico`; every DFT cache behind these tables computed with PySCF 2.11.0 "
               "(the recorded environment — §2.7; the lock re-runs are separate records, SI S3).*\n")
 
@@ -227,7 +227,6 @@ def build() -> str:
         cell = (lambda v: f"**×{v:.2g}**") if bold else (lambda v: f"×{v:.2g}")
         return f"| {label} | {cell(a)} | ×{z:.2g} | ×{f:.2g} |"
 
-    md.append(_row("canon λ=0.7 (old, withdrawn)", sc["canon λ=0.7 (old assumption)"]))
     md.append(_row(f"**literature λ** (Cu {cu_lo:.1f}–{cu_hi:.1f} / Co {lam_lit['Co']:.1f}, assumed / Ce {lam_lit['Ce']:.1f})",
                    sc["literature λ"], bold=True))
     md.append(_row(f"**computed λ** (B3LYP: Co {lam_comp['Co']:.2f}; Cu literature)", sc["computed λ (B3LYP)"], bold=True))
@@ -236,7 +235,6 @@ def build() -> str:
                    f"{ru_half['lambda_1_eV']:+.2f} and {ru_half['lambda_2_eV']:+.2f} eV; the Cu–Ru coupling and gap are not "
                    "obtainable from the minimal cluster, so it borrows the Cu–Co coupling and every column is ΔG = 0*",
                    sc["Ru-swap (Co→Ru, computed)"]))
-    md.append(_row("crude ΔSCF coupling, literature λ — *superseded record*", ket["scenarios_crude_dscf"]["literature λ"]))
     lit, comp = sc["literature λ"], sc["computed λ (B3LYP)"]
     co = ket["cobalt_lambda_condition"]
     co_dg0 = co["lambda_co_at_turnover_eV"][f"fodft|{ket['lambda_cu_base_reading']}|dG=0"]
@@ -318,7 +316,7 @@ def build() -> str:
     md.append(f"\n*Koopmans trend: the Koopmans offset rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '+.2f')} "
               f"{lbl[ends_casc[0]['name']]} → {m(ends_casc[1]['cascade_delta_eV'], '+.2f')} "
               f"{lbl[ends_casc[1]['name']]}){undecided}; ΔE_red "
-              f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so "
+              f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 2). Higher E°(Os) lowers OCV, so "
               f"the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: "
               f"over {sub} the slope is {m(vs['slope_wb97x_eV_per_sigma'], '.2f')} against "
               f"{m(vs['slope_b3lyp_eV_per_sigma'], '.2f')} eV/σ at B3LYP (×{vs['slope_ratio_wb97x_over_b3lyp']:.2f}, "
