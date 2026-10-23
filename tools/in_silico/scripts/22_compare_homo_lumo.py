@@ -78,8 +78,8 @@ def main() -> int:
     delta = donor - acceptor
     favorable = delta > 0
 
-    verdict = "✅ DOWNHILL — electron transfer FAD → Os is energetically favorable" if favorable else \
-              "❌ UPHILL — electron transfer FAD → Os is NOT favorable at this level of theory"
+    verdict = "Koopmans offset > 0 (an orbital sign only — no conclusion is drawn from it, ⚖️ D 2026-10-19)" if favorable else \
+              "Koopmans offset < 0 (an orbital sign only — no conclusion is drawn from it, ⚖️ D 2026-10-19)"
 
     print("=" * 72)
     print("L3 frontier-orbital comparison — FAD vs Os mediator")

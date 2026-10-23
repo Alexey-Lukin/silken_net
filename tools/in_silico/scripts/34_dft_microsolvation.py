@@ -9,7 +9,7 @@ the minimum (downhill from the planar saddle until 2026-10-19; comparison.json �
 uses these forms in the like-for-like cascade (95) as forms and decomposes no gap into them (00_07 HW.5.IS). The verified experimental driving force is −0.574 eV (lib.constants CASCADE_DRIVING_FORCE_MV). ⛔ The older −0.14 eV / +140 mV
 Cosnier figure is WITHDRAWN: it rested on a mis-valued E°(FAD)=+60 mV and on glucose *oxidase*, not
 GcGDH — so the ~1 eV residual quoted below is measured against −0.574, not against −0.14. Script 32 already shows the *flavin* PCET potential is reproduced to
-65 mV (free-flavin −220 mV), so the flavin solvation is NOT the culprit — the ~1 eV residual lives on
+65 mV (free-flavin −220 mV), so the flavin solvation was read as NOT the culprit (⊕ withdrawn 2026-10-19: the 65 mV was a cancellation the ZPE removes, and the ~1 eV a 4a,5 artefact) — the residual was placed on
 the charge-changing **Os(III)²⁺/Os(II)⁺** couple. This is the textbook failure of
 implicit (PCM) solvation for group-8 octahedral M(III/II): the ~1 V error is
 pinned on the *directionality of 2nd-shell H-bonds* that a continuum cannot model
@@ -22,7 +22,7 @@ gap-closing direction, on TWO systems:
   • aquo   — [Os(H₂O)₆]³⁺/²⁺ benchmark. n=0 (bare ion) → n=6 (inner shell). Same
              metal + basis as the Os mediator complexes below, so the recovered
              PCM error transfers directly. (⛔ 'the real mediator' is NOT a name
-             for anything computed in this file — see the mediator bullet.) Validates the protocol vs a known group-8 case.
+             for anything computed in this file — see the mediator bullet.) Sets the protocol against the hexa-aqua second-shell case (⊕ withdrawn as a benchmark 2026-10-19).
              ⊕ 2026-10-19: it validates nothing — the second shell LOWERS this couple's E° by 0.98 eV, the
              opposite of the chloride waters, which raise the device couple's; it sizes the continuum-error class on
              a small +2/+3 couple and is no benchmark the device couple is read against (SUMMARY, the ② banner).

@@ -51,7 +51,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 24c | `24c_cu_ru_coupling.py` | L3b CHEM.32: Cu-Ru crude ΔSCF (Co→Ru @identical geom) + Cu-Co control; t_ij non-physical (see 24d) | ~2 h |
 | 24d | `24d_fodft_cu_ru.py` | L3b CHEM.32: Cu-Ru FO-DFT diabatisation → t_ij NON-PHYSICAL (frontier all-Ru, no Cu-d partner); coupling-boost CDFT-pending | ~15 min |
 | 25 | `25_cathode_ket_lambda.py` | L3b ③: Marcus k_ET vs **computed** λ — honest DET margin bracket — gap sign × λ(Cu) reading (reads 24 t_ij + 35 λ) | ~1 s |
-| 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO across 5 MD snapshots (thermal-robustness check) | ~30 min |
+| 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD-fragment HOMO across MD snapshots — ⛔ withdrawn as a flavin measure 2026-10-15 (the fragment is not the isoalloxazine; three of five snapshots one frame); record only | ~30 min |
 | 28 | `28_electron_tunneling_pathway.py` | L3: contact-graph shortest path from the first FAD atoms (NOT a Beratan–Onuchic pathway — self-review cluster 6), single snapshot | < 1 s |
 | 28b | `28b_tunneling_ensemble.py` | L3 (CHEM.16): a contact-graph cost over MD frames from script 27's GAFF-prefix sources (not 28's start; no path recorded — cluster 6; image_molecules PBC unwrap) | ~few min |
 | 29 | `29_dft_reorganization_energy.py` | L3: Nelsen λ for FADH₂/FADH₂•⁺ — radical-cation pathological in PCM on the 4a,5-dihydro tautomer it ran on (superseded by 29b) | ~1-2 h |

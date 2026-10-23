@@ -1,7 +1,7 @@
 # In Silico Pipeline Summary — EBFC Gen 2.0 Zero-Lab Proof
 
 > **Date:** 2026-05-28 | **TRL Gate 3→4:** ✅ PASSED (2026-05-25)
-> **Purpose:** Computational proof that EBFC Gen 2.0 is thermodynamically viable, mechanically stable, and kinetically functional — BEFORE ordering any Ti-coin prototypes.
+> **Purpose:** Computational account of whether EBFC Gen 2.0 is thermodynamically viable, mechanically stable and kinetically functional — with the named caveats of the table below (L3b conditional on λ(Co); L4 recharge model) — BEFORE ordering any Ti-coin prototypes.
 >
 > 🟢 **CANONICAL SOURCE (SSOT).** This file + [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md) are the **single source of truth** for in-silico results (this = results, PIPELINE_STATUS = per-script/operational status). All other docs (01_03, 00_02, 00_01, READMEs) must **link here, not duplicate numbers**. When a result changes, update here + PIPELINE_STATUS only. Volatile counts (script/test totals) live in PIPELINE_STATUS exclusively.
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in silico:
+The 4-level Zero-Lab pipeline examines the Gen 2.0 EBFC design entirely in silico (no level is a validation — bottom line below):
 
 | Level | Question | Method | Verdict |
 |-------|----------|--------|---------|
@@ -238,7 +238,7 @@ Measured, free flavin against the film-bound mediator: **+529** mV (Os +309 vs N
 
 > ⊕ **2026-10-19 (the like-for-like revision) — how to read this block now.** Its «bracket» (lower/upper), «group-8 PCM bias» and «gap closed» vocabulary belongs to the withdrawn decomposition of a one-electron gap. What stands is each form's ΔE_red, which enters the like-for-like cascade (block above) as an Os form. The hexa-aqua second shell (a) LOWERS E° by 0.98 V, the opposite of the waters on the chloride (b), which raise it — so (a) is the size of the continuum-error class on a small +2/+3 couple, not a benchmark the device couple is read against or bracketed by; the «±0.15 V» in (a) is not a sourced convention uncertainty (the like-for-like cascade uses the 159 mV between 4.281 and 4.44 V); «functional-robust» below means only that the ORDER chloro < {aqua, bis-Im} of E°(Os) holds at both functionals.
 
-Tests whether the raw cascade gap (above) is the implicit-solvation (PCM) limit, by
+⊕ (2026-10-23: the decomposition this block set out to test is withdrawn — the banner above; the block stays as the record.) Tests whether the raw cascade gap (above) is the implicit-solvation (PCM) limit, by
 adding explicit waters / probing speciation on the charge-changing **Os(III/II)**
 couple (the flavin couple is already within 65 mV of exp — script 32 — so it is not
 the culprit [⊕ 2026-10-16: at the MMFF level only — with the ZPE on `32b`'s minimum the donor sits −210 mV off, the same order as the acceptor side, so this conclusion does not survive it either; ⊕ 2026-10-19 — withdrawn, Conclusion above]). Recomputed on the **real 4,4'-dimethyl-bpy mediator** (Zafar +309 mV vs
@@ -276,7 +276,7 @@ its cascade Δ +0.065 = the k0 baseline; the 4,4'-dimethyl **substituent** axis 
 
 ~0.07 eV/water, monotonic. Crucially this **+1/+2** chloro couple carries a **~5× smaller**
 differential-solvation error than the +2/+3 benchmark (a): Cl⁻ lowers the couple charge, so
-even the full chloro shell stays well below the +0.98 eV group-8 figure. This is the **lower bracket**.
+even the full chloro shell stays well below the +0.98 eV group-8 figure. This is the **lower bracket** ⊕ (withdrawn as a bracket 2026-10-19: the +0.98 eV is the hexa-aqua second-shell shift, not a benchmark for the device couple).
 
 **(c) Operando speciation — the PVI-brush 6th ligand (upper bracket).** The polymer is
 *synthesised* as chloro (Zafar), but in the operating poly(vinylimidazole) brush the 6th
@@ -291,7 +291,7 @@ bis-Im) — the strong σ-donor 2nd imidazole plus the 4,4'-dimethyl donors. **T
 aqua↔bis-Im flip is functional-sensitive, though** — the ωB97X cross-check (B4, §below) keeps
 aqua > bis-Im (within 0.15 eV). What *is* functional-robust is the chloro(+1/+2) ↔ {aqua,
 bis-Im}(+2/+3) bracket — both +2/+3 forms sit above chloro at both functionals, and both
-carry the larger group-8 PCM bias (benchmark a).
+carry the larger group-8 PCM bias (benchmark a) ⊕ (record; the «benchmark» reading withdrawn 2026-10-19).
 
 **Verdict (chloro-anchored bracket):** ⊕ 2026-10-19 — the reading below was written for the 4a,5-dihydro numbers; its shifts stand (they enter the like-for-like cascade as Os forms), its gap and attribution are withdrawn (Conclusion above). The real mediator is **chloro** (Zafar +309 mV), so
 the raw-DFT↔exp gap is differential PCM solvation **bracketed** between the as-synthesised

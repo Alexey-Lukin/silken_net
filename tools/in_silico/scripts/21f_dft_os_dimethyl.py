@@ -6,7 +6,7 @@ The verified device mediator is [Os(4,4'-dimethyl-2,2'-bipyridine)₂(PVI)Cl]⁺
 Table 1; the +21 mV vs Ag/AgCl 0.1 M KCl reading is the other Zafar 2012, Anal. Bioanal. Chem.), NOT the plain-bpy model that scripts
 21b/21d computed. The 4,4'-dimethyl groups are weak donors (σ_para = −0.17) → they raise the
 Os(III) LUMO → make the raw cascade slightly less favourable (the "substituent" axis the ② gap
-decomposition did not separate). This script recomputes the Os(II)/Os(III) couple on the
+decomposition — withdrawn 2026-10-19 — did not separate). This script recomputes the Os(II)/Os(III) couple on the
 dimethyl complex at two tiers, replacing the plain-bpy numbers in the canon (founder: full
 dimethyl swap):
 

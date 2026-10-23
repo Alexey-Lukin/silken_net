@@ -276,7 +276,7 @@ def fig4() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fig 5 — solvation / PCM limit (②): (a) explicit waters · (b) speciation + benchmark
+# Fig 5 — the cascade like for like (`95`): (a) every Os form at the four flavin levels · (b) donor and acceptor sides
 # ─────────────────────────────────────────────────────────────────────────────
 def fig5() -> None:
     """Fig 5 — the cascade like for like (`95`; ⚖️ founder 2026-10-16 «напрямок + таблиця»): (a) every Os form at the four

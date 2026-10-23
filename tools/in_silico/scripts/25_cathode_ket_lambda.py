@@ -52,7 +52,7 @@ LAMBDA_CU_READING_SOURCES = {
                 "(PMC553296); species read from the inline formula image, not the text layer",
 }
 LAMBDA_CU_BASE = "unsourced"   # the reading `lambda_lit_eV` and the single-λ fields carry
-LAMBDA_LIT = {"Cu": LAMBDA_CU_READINGS[LAMBDA_CU_BASE], "Co": 1.4, "Ce": 1.0, "Ru": 0.8}
+LAMBDA_LIT = {"Cu": LAMBDA_CU_READINGS[LAMBDA_CU_BASE], "Co": 1.4, "Ce": 1.0, "Ru": 0.8}   # assumed, no primary (paper §2.5); script 35's own `lit` marker for its Co rows is 1.3 — the paper prints this 1.4
 
 
 def _load_tij() -> dict[str, float]:

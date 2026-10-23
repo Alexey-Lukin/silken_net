@@ -8,7 +8,7 @@ frames (2, 4, 6, 8, 10 ns) and computes B3LYP HOMO/LUMO at each.
 Shows how thermal "breathing" of the protein modulates the redox
 properties of the cofactor.
 
-If HOMO spread < 0.3 eV → thermally robust cascade.
+If HOMO spread < 0.3 eV → thermally robust cascade. ⛔ Withdrawn as a flavin measure 2026-10-15 (Стаття 1 self-review cluster 7): the fragment cut here is not the closed isoalloxazine (its 0.14–0.24 eV gaps are broken bonds) and three of the five snapshots are one frame — kept as the record.
 """
 from __future__ import annotations
 
@@ -24,6 +24,9 @@ from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, RUNS_DIR
 from lib.utils import banner
 
 OUT_JSON = DFT_CACHE / "md_dft_ensemble.json"
+SI_DESCRIPTION = ("MD-to-DFT bridge: frontier orbital of a flavin fragment over molecular-dynamics snapshots — withdrawn as a "
+                  "flavin measure (the fragment is not the closed isoalloxazine ring; three of the five snapshots are one frame); "
+                  "kept as a record.")  # its row in the paper SI (72): English, no repo jargon
 
 SAMPLE_TIMES_NS = [2, 4, 6, 8, 10]
 
@@ -226,7 +229,7 @@ def main() -> int:
     print(f"  HOMO range: {np.min(homos):.3f} to {np.max(homos):.3f} eV (spread {np.max(homos)-np.min(homos):.3f})")
 
     robust = bool(np.std(homos) < 0.3)  # cast np.bool_ → Python bool (JSON-safe)
-    print(f"  Thermally robust (σ < 0.3 eV): {'✅ YES' if robust else '❌ NO'}")
+    print(f"  HOMO spread σ < 0.3 eV: {'yes' if robust else 'no'}   (⛔ not a flavin measure — the fragment is not the isoalloxazine; withdrawn 2026-10-15)")
 
     output = {
         "method": "B3LYP/6-31G(d) SP on MD snapshots (no PCM, vacuum)",
