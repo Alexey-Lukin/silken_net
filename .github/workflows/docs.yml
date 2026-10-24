@@ -534,13 +534,14 @@ jobs:
         # 2026-08-16/2026-08-20). A rotten detector is therefore either blocked work
         # or a dark carrier whose silence reads as safety. The battery pins BOTH
         # arms of rule E (the laundered forms must deny in each of its two
-        # subject-paired vocabularies — repo gates and the memory audit, OPS.40; the
-        # clean-&& house idiom, gate names inside heredoc/-m message text and the
+        # subject-paired vocabularies — repo gates and the memory audit, OPS.40 —
+        # including a git step fed by a pipe, `printf … | git commit -F -`, OPS.43; the
+        # clean-&& house idiom, gate names inside heredoc/-m/printf message text and the
         # cross-subject pairs must stay silent) plus smoke
-        # over the standing deny/warn rules. The two anti-false-positive cases are
-        # mutation-calibrated: with the heredoc/-m strips disabled they flip to a
-        # false deny — their first drafts did not, i.e. were vacuous, and only the
-        # mutants exposed that.
+        # over the standing deny/warn rules. The anti-false-positive cases are
+        # mutation-calibrated: with their strip disabled (heredoc · -m · printf/echo
+        # payload) each flips to a false deny — the first drafts of the heredoc/-m
+        # pair did not, i.e. were vacuous, and only the mutants exposed that.
         run: bash .claude/hooks/bash_verify_guard.sh --selftest
 
       - name: Docs · ssot-hint hook self-test

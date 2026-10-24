@@ -154,6 +154,21 @@ if [[ "${1:-}" == "--selftest" ]]; then
     'M=/x/memory; ruby scripts/docs_band.rb >/dev/null 2>&1; echo "B=$?"; cd "$M" && git add a.md && git commit -q -m msg'
   t "E/mem: memory audit before git -C <non-corpus> push stays silent" silent \
     'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; git -C /Users/x/silken_net push origin main'
+  # OPS.43 — a git step fed by a PIPE. The two positives are the 2026-10-23 incident and
+  # its corpus sibling; the plain pipe is the negative control. The last two are
+  # MUTATION-CALIBRATED against the printf/echo payload strip: with it disabled, a `;`
+  # inside the message splits off a gate name (the first) or the git step (the second,
+  # the one false deny the replay over 3,100 recorded calls found) and both flip to deny.
+  t "E: ;-laundered, printf | git commit (10-23)" deny-e \
+    $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git add docs/x.md && printf \'%s\\n\' \'docs: x\' \'\' \'body\' | git commit -q -s -F -'
+  t "E/mem: ;-laundered --audit, printf | git -C commit" deny-e \
+    $'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; M=/x/memory; git -C $M add a.md && printf \'%s\\n\' msg | git -C $M commit -q -F -'
+  t "E: printf | git commit, no gate, stays silent" silent \
+    $'git add docs/x.md && printf \'%s\\n\' \'docs: x\' \'\' \'body\' | git commit -q -s -F -'
+  t "E: gate named after ; in a printf message" silent \
+    $'git add docs/x.md && printf \'%s\\n\' \'docs: x\' \'\' \'зелено; ruby scripts/docs_band.rb 0 FAIL\' | git commit -q -s -F -'
+  t "E: ; in a printf message, clean && gate" silent \
+    $'ruby scripts/docs_band.rb > /tmp/b.log 2>&1 && printf \'%s\\n\' "fix: x" "" "кожен знімає лише свій; подія інша" > /tmp/m.txt && git add docs/x.md && git commit -s -F /tmp/m.txt'
   # F — the SAME text in both contexts, which is the whole point of the rule.
   # The negative arm is not decoration: it is the pin that keeps rule F from
   # degenerating into "a gate followed by echo is suspicious", which would
@@ -707,6 +722,13 @@ fi
 # 42 denies — 16 memory, 26 repo laundered below a heredoc — to the 64 the block
 # already gave, with no regression, and every one of the 42 discards a verdict
 # before a commit or push of the same tree.
+# [OPS.43] Measured 2026-10-23 on a live call: a git step fed by a PIPE (`printf … |
+# git commit -F -`) was not a git step here at all, so a `;`-laundered gate before it
+# passed while the same call with `-F <file>` denied. Now counted, with printf/echo
+# payloads stripped like `-m`. Over 3,100 unique recorded commit/push calls (200
+# transcripts) the prefix siblings — `env … git`, `VAR=x git`, `command git` — occur
+# ZERO times, so they stay out (declared ceiling, this file's stance); payload strip
+# ceilings: an escaped quote inside '…' and a message built from a variable.
 if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?(commit|push)\b'; then
   # Heredoc BODIES are cut, the lines after each terminator are KEPT [OPS.40 fix-forward]:
   # the body is where a commit message names a gate, but the call goes on after it.
@@ -716,6 +738,11 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:
       if (match($0, "<<-?~?[ \t]*[\"" q "]?[A-Za-z_][A-Za-z0-9_]*")) {
         w = substr($0, RSTART, RLENGTH); sub("^<<-?~?[ \t]*[\"" q "]?", "", w); term = w; skip = 1 } }')
   ecmd=$(printf '%s' "$ecmd" | sed -E "s/-m[[:space:]]+\"[^\"]*\"/-m MSG/g; s/-m[[:space:]]+'[^']*'/-m MSG/g")
+  # [OPS.43] The quoted arguments of printf/echo are payload too: a message piped into
+  # `git commit -F -` lives there, and the moment a PIPED git step counts (below), a `;`
+  # inside that message would put a gate name at a statement start and deny a clean
+  # commit. perl -0777, not sed: such a message routinely spans lines.
+  ecmd=$(printf '%s' "$ecmd" | perl -0777 -pe 's/\b(printf|echo)((?:[ \t]+-{1,2}[A-Za-z]*)*)((?:(?:[ \t]|\\\n)+\$?(?:'"'"'[^'"'"']*'"'"'|"(?:[^"\\]|\\.)*"))+)/$1$2 MSG/g')
   egate="((env[[:space:]]+[^[:space:]]+[[:space:]]+)?([A-Z_]+=[^[:space:]]+[[:space:]]+)*)?(${gate}|ruby[[:space:]]+scripts/(docs_band|docs_check|model_doc_sync)\.rb)"
   mgate='(([A-Z_]+=[^[:space:]]+[[:space:]]+)*)(bash[[:space:]]+)?[^[:space:]]*memory_gate\.sh[[:space:]]+--audit'
   # The SUBJECT of a git step is the tree it writes: `-C <dir>`, else the last `cd` of the
@@ -724,6 +751,11 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:
   mvars=$(printf '%s' "$ecmd" | grep -oE "(^|[;&|[:space:]])[A-Za-z_][A-Za-z0-9_]*=[\"']?[^[:space:];&|\"']*/memory([\"'/[:space:];&|]|$)" \
             | sed -E 's/^[;&|[:space:]]*//; s/=.*//' | sort -u | paste -sd'|' -)
   is_mem() { [[ "$1" == */memory* ]] || { [[ -n "$mvars" ]] && printf '%s' "$1" | grep -qE "^[\"']?\\\$\{?(${mvars})\}?[\"']?$"; }; }
+  # A git step is a link that STARTS with git, or the receiving end of a pipe inside
+  # the link [OPS.43]: `git add f && printf '%s\n' … | git commit -F -` (the house idiom,
+  # since a backtick in `-m` is substituted silently) used to hide its commit here.
+  re_gitc='(^|\|&?)[[:space:]]*git[[:space:]]+-C[[:space:]]+([^[:space:]]+)[[:space:]]+(commit|push)([[:space:]]|$)'
+  re_git='(^|\|&?)[[:space:]]*git[[:space:]]+(commit|push)([[:space:]]|$)'
   # launder <gate-re> <subject: repo|mem> → prints the laundered form, or nothing
   launder() {
     local g=$1 want=$2 verdict="" gate_seen="" st lk links st_gate st_git st_piped cwdm=0 tgt mem
@@ -740,10 +772,10 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:
           is_mem "${BASH_REMATCH[1]}" && cwdm=1 || cwdm=0
         fi
         mem=""
-        if [[ "$lk" =~ ^[[:space:]]*git[[:space:]]+-C[[:space:]]+([^[:space:]]+)[[:space:]]+(commit|push)([[:space:]]|$) ]]; then
-          tgt=${BASH_REMATCH[1]}
+        if [[ "$lk" =~ $re_gitc ]]; then
+          tgt=${BASH_REMATCH[2]}
           if is_mem "$tgt"; then mem=mem; elif [[ "$tgt" == "." || "$tgt" == "./" ]]; then mem=repo; fi
-        elif [[ "$lk" =~ ^[[:space:]]*git[[:space:]]+(commit|push)([[:space:]]|$) ]]; then
+        elif [[ "$lk" =~ $re_git ]]; then
           (( cwdm )) && mem=mem || mem=repo
         fi
         [[ "$mem" == "$want" ]] && st_git=1
