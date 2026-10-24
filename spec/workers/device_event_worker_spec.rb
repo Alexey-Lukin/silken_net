@@ -69,6 +69,15 @@ RSpec.describe DeviceEventWorker do
     expect { perform(payload) }.not_to change(EwsAlert, :count)
   end
 
+  # 🔴 [SEC.39, ⚖️ founder 2026-10-24] Збій сховища ≠ повтор: доти failsafe Solid Cache давав
+  # `:replay`, і підписаний tamper-батч губився без ретраю. Тепер raise → Sidekiq-ретрай.
+  it "raises on a nonce-store failure so Sidekiq retries the signed batch" do
+    allow(ReplayNonce).to receive(:claim!).and_raise(ActiveRecord::StatementTimeout)
+
+    expect { perform(valid_payload) }.to raise_error(ActiveRecord::StatementTimeout)
+    expect(EwsAlert.count).to eq(0)
+  end
+
   it "dedups a replayed envelope via the signature nonce" do
     payload = valid_payload
     expect { perform(payload) }.to change(EwsAlert, :count).by(1)

@@ -8,5 +8,6 @@ lt:
     invalid_timestamp: Neteisingas laiko žymos formatas (reikalingas ISO 8601).
     no_public_key: Šiam įrenginiui neregistruotas Ed25519 viešasis raktas.
     no_users_in_organization: Organizacijoje nėra naudotojų žetonui išduoti.
+    nonce_store_unavailable: Pakartojimo apsaugos saugykla laikinai nepasiekiama — pakartokite užklausą vėliau.
     replay_detected: Aptikta pakartojimo ataka.
     timestamp_expired: Laiko žyma pasibaigusi. Sinchronizuokite įrenginio laikrodį.

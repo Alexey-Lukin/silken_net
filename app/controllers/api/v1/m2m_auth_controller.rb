@@ -31,6 +31,9 @@ module Api
       # відкриття браузерного.
       skip_forgery_protection only: :create
 
+      # [SEC.39] Скоуп фолбеку nonce у `ReplayNonce` — коли Redis-шлях недоступний.
+      M2M_FALLBACK_SCOPE = "m2m_fallback"
+
       # POST /api/v1/auth/m2m_token
       def create
         did = params.require(:did)
@@ -99,22 +102,26 @@ module Api
             return
           end
         rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
-          # [S6.1]: Graceful degradation — fallback to Solid Cache (DB-backed)
-          # when Redis is unavailable. Gateways remain operational instead of 503.
-          # [ARCH.105] `write` із `unless_exist: true` замінив пару exist?/write,
-          # що стояла тут із нотою «прийнятний компроміс». ⚠️ Але на Solid Cache
-          # це НЕ SET NX первинного шляху (виміряно 2026-09-28, 00_07 SEC.39): два
-          # конкурентні перші записи обидва дістають `true`, тож одночасний
-          # повтор підпису в degraded mode проходить; а транзієнтна помилка бази
-          # кешу дає `false` — запит відхиляється як повтор (401, шлюз повторить).
+          # [S6.1]: Graceful degradation — фолбек у Postgres, коли Redis недоступний:
+          # шлюзи працюють далі замість 503. ⚖️ [SEC.39, founder 2026-10-24] Субстрат —
+          # `ReplayNonce` (атомарна unique-вставка), не Solid Cache: там `unless_exist:`
+          # не був SET NX первинного шляху — одночасний повтор підпису проходив, а збій
+          # бази кешу відхилявся як «повтор». Тепер збій уже й Postgres — 503 з
+          # поясненням: сховище впало, а не підпис бачили, тож шлюз повторить пізніше.
           # [S6.19]: Counter живить Grafana-алерт sn-alert-m2m-nonce-fallback
           # (escalation-семантика multi-zone Upstash — дім: 04_03 §5.15).
           SilkenNet::Metrics::M2M_NONCE_FALLBACK_TOTAL.increment
           Rails.logger.warn "⚠️ [M2M Auth] Redis unavailable, falling back to DB-based nonce check: #{e.message}"
 
-          fallback_key = "m2m_nonce_fallback:#{nonce_digest}"
+          begin
+            fresh = ReplayNonce.claim!(scope: M2M_FALLBACK_SCOPE, digest: nonce_digest, ttl: 10.minutes)
+          rescue ActiveRecord::ActiveRecordError => db_error
+            Rails.logger.error "🚨 [M2M Auth] Nonce store unavailable (Redis + Postgres) for #{did}: #{db_error.message}"
+            render json: { error: I18n.t("m2m_auth.nonce_store_unavailable") }, status: :service_unavailable
+            return
+          end
 
-          unless Rails.cache.write(fallback_key, true, expires_in: 10.minutes, unless_exist: true)
+          unless fresh
             Rails.logger.warn "⚠️ [M2M Replay] Blocked duplicate M2M auth for #{did} (DB fallback, signature reuse)"
             render json: { error: I18n.t("m2m_auth.replay_detected") }, status: :unauthorized
             return

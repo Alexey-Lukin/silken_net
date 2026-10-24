@@ -8,5 +8,6 @@ en:
     invalid_timestamp: Invalid timestamp format (ISO 8601 required).
     no_public_key: Ed25519 public key not registered for this device.
     no_users_in_organization: Organization has no users to issue a token to.
+    nonce_store_unavailable: The anti-replay store is temporarily unavailable — retry the request later.
     replay_detected: Replay attack detected.
     timestamp_expired: Timestamp expired. Synchronize the device clock.

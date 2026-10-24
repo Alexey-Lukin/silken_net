@@ -208,6 +208,19 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
         expect(response.parsed_body["device_uid"]).to eq(gateway.uid)
       end
 
+      # 🔴 [SEC.39, ⚖️ founder 2026-10-24] Упав і Postgres-фолбек — відмова 503 з поясненням,
+      # а не «replay»: доти збій бази кешу відхилявся як повтор підпису.
+      it "refuses with 503 when the Postgres fallback is down too — not as a replay" do
+        allow(ReplayNonce).to receive(:claim!).and_raise(ActiveRecord::ConnectionNotEstablished)
+
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: timestamp, signature: signature },
+             as: :json
+
+        expect(response).to have_http_status(:service_unavailable)
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.nonce_store_unavailable"))
+      end
+
       it "still blocks replay attacks via DB fallback" do
         # First request — succeeds via DB fallback
         post "/api/v1/auth/m2m_token",

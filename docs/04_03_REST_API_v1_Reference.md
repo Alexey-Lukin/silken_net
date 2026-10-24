@@ -164,7 +164,7 @@ POST /api/v1/auth/m2m_token
 
 - Ed25519 public key реєструється під час provisioning (поле `ed25519_public_key`) і зберігається в `hardware_keys.ed25519_public_key_hex`.
 - Бекенд перевіряє підпис та timestamp (±5 хвилин) перед видачею токена.
-- **Replay-захист (nonce):** SHA256-дайджест підпису зберігається в Redis із TTL 10 хв (`SET NX`). Повторне використання тієї ж `signature` повертає `401 Unauthorized` із повідомленням `"Replay attack detected"`. **[S6.1]** При Redis outage: fallback на Solid Cache (DB) — шлюзи не отримують `503`.
+- **Replay-захист (nonce):** SHA256-дайджест підпису зберігається в Redis із TTL 10 хв (`SET NX`). Повторне використання тієї ж `signature` повертає `401 Unauthorized` із повідомленням `"Replay attack detected"`. **[S6.1]** При Redis outage: fallback на Postgres (`ReplayNonce`, атомарна unique-вставка — SEC.39) — шлюзи не отримують `503`; `503` — лише коли впав і Postgres.
 - Токен дійсний 30 днів. Для оновлення: `POST /api/v1/auth/m2m_token/refresh` з поточним Bearer token (§5.15.1), або повторний `POST /api/v1/auth/m2m_token` з Ed25519-підписом.
 - ✅ **[SEC.16] Scope звужено 2026-08-15.** Доти виданий токен був `:api_access` першого org-admin'а — **нерозрізнимий від людського** admin-Bearer, тобто компрометована польова Королева відкривала повний admin-API організації (2-га ланка cross-tenant-takeover з аудиту §04). Тепер видається окремий purpose **`:m2m_access`**, а `BaseController::M2M_ALLOWED_ACTIONS` тримає стелю поверхні: `m2m_auth#refresh` + `telemetry#gateway_uplink` — і це **весь** Bearer-периметр машини, бо решта машинних маршрутів автентифікується не токеном (`m2m_auth#create` — Ed25519 у тілі; `oracle_callbacks` і `helium_sos` — HMAC). Поза allowlist'ом — **403 `code: "m2m_scope"`, свідомо не 401**: токен валідний, просто не для цих дверей, а 401 послав би прошивку крутити Ed25519-цикл перевидачі проти дверей, які не відчиняться ніколи.
   🔴 **Purpose мусить перевидаватись ТОЙ САМИЙ, інакше звуження живе рівно один refresh-цикл:** `refresh` стоїть у машинному allowlist'і, тож видача звідти `:api_access` дозволила б машині **підвищити саму себе** до повного scope одним запитом. Форма — **allowlist, ніколи denylist**: нових admin-екшенів зʼявляється більше, ніж машинних, тож denylist роздавав би доступ кожному, кого забули дописати; тут забудькуватість коштує гучного 403 на машинному шляху.
@@ -176,7 +176,7 @@ POST /api/v1/auth/m2m_token
 > Конвенції/методологія написання цих спек — [`04_06`](04_06_Testing_Guide_and_Coverage) (Testing Guide). Нижче — security-специфічний інвентар (One-Home: біля API-безпеки; example-counts навмисно не фіксуються — volatile).
 
 - `spec/initializers/rack_attack_spec.rb` — throttle правила `m2m_auth/ip` та `oracle_callbacks/ip`
-- `spec/requests/api/v1/m2m_auth_controller_spec.rb` — некоректний Ed25519 підпис → 401; nonce replay → 401; Redis unavailable → DB fallback (Solid Cache)
+- `spec/requests/api/v1/m2m_auth_controller_spec.rb` — некоректний Ed25519 підпис → 401; nonce replay → 401; Redis unavailable → DB fallback (Postgres `ReplayNonce`, SEC.39); падає й він → 503
 - `spec/requests/api/v1/oracle_callbacks_controller_spec.rb` — replay callback → 409 Conflict; state machine guard
 - `spec/requests/api/v1/actuators_controller_spec.rb` — відсутній `Idempotency-Key` → 400; ідемпотентний повтор → 202; `command_status` 404 для cross-org команди; forester-guard
 - `spec/requests/api/v1/account_security_controller_spec.rb` — **MFA disable step-up** (wrong password / missing password); **[S6.21] MFA enable через toggle → 409 у setup-флоу** (прапорець не піднімається, коди не генеруються — сліпого увімкнення не існує); **session revocation на password change** (keeps current IP+UA / fallback на newest row); **[SEC.16] salt-bound cookie** (stale cookie після чужого password-change → 401; ініціатор зміни лишається залогіненим)
@@ -1478,7 +1478,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 **Replay-захист:**
 
-SHA256-дайджест значення `signature` зберігається в Redis як nonce (`SET NX`, TTL 10 хв). Перший запит проходить — всі наступні з тією ж підписом повертають `401 Unauthorized` (`"Replay attack detected"`). **[S6.1]** Якщо Redis недоступний — fallback на Solid Cache (DB-backed): nonce зберігається в БД з TTL 10 хв. Шлюзи залишаються активними замість отримання `503 Service Unavailable`.
+SHA256-дайджест значення `signature` зберігається в Redis як nonce (`SET NX`, TTL 10 хв). Перший запит проходить — всі наступні з тією ж підписом повертають `401 Unauthorized` (`"Replay attack detected"`). **[S6.1]** Якщо Redis недоступний — fallback на Postgres (`ReplayNonce`, атомарна unique-вставка — SEC.39): nonce зберігається в БД з TTL 10 хв. Шлюзи залишаються активними замість отримання `503 Service Unavailable`; `503` — лише коли впав і Postgres. ⚠️ Ключ, узятий фолбеком, первинний Redis-шлях не бачить: той самий підпис, повторений у межах ~10 хв після кінця аварії, пройде Redis-шляхом — щілина старша за SEC.39.
 
 **TTL = 10 хв — обґрунтування:**
 - **Timestamp validity window**: ±5 хв (компенсує clock drift gateway RTC vs server).
@@ -1486,7 +1486,7 @@ SHA256-дайджест значення `signature` зберігається в
 - **Чому не 5 хв (рівно window):** підпис, створений на trailing edge timestamp window (наприклад, 5 хвилин тому, ще валідний за timestamp check), й одразу повторно надісланий — пройде nonce check якщо TTL == window. 10 хв = window + margin гарантує покриття всього періоду, протягом якого підпис вважається валідним.
 - **Чому не 15+ хв:** довший TTL збільшує Redis memory footprint per gateway (індивідуально незначно, але на 100k+ пристроях та burst auth flows накопичується) без додаткової security користі — timestamps старші 5 хв вже відхиляються timestamp check'ом.
 
-**Спостережуваність:** Prometheus counter `silkennet_m2m_nonce_fallback_total` інкрементується щоразу, коли запит падає з Redis на DB-backed fallback. Grafana-алерт `sn-alert-m2m-nonce-fallback` (p2-info): `increase[1h] > 0` — M2M-auth надто рідкісний (~1/30 днів на шлюз) для відсоткового порогу, тому фіксується БУДЬ-ЯКИЙ fallback; разове спрацювання = зафіксований Redis-blip, повторюваність день-у-день → escalate до multi-zone Upstash (Global DB) — ⚖️ рішення за прод-даними. Парний `sn-alert-qatt-nonce-fallback` окремо покриває QATT-батч-nonce (той самий S6.1-патерн; окремий counter, щоб щогодинний батч-стрім не маскував рідкісний auth-сигнал). Парність метрика↔алерт стереже `spec/deploy/grafana_alerts_spec.rb`.
+**Спостережуваність:** Prometheus counter `silkennet_m2m_nonce_fallback_total` інкрементується щоразу, коли запит падає з Redis на DB-backed fallback (Postgres `ReplayNonce`, атомарна unique-вставка — SEC.39). Grafana-алерт `sn-alert-m2m-nonce-fallback` (p2-info): `increase[1h] > 0` — M2M-auth надто рідкісний (~1/30 днів на шлюз) для відсоткового порогу, тому фіксується БУДЬ-ЯКИЙ fallback; разове спрацювання = зафіксований Redis-blip, повторюваність день-у-день → escalate до multi-zone Upstash (Global DB) — ⚖️ рішення за прод-даними. Парний `sn-alert-qatt-nonce-fallback` окремо покриває QATT-батч-nonce (той самий S6.1-патерн; окремий counter, щоб щогодинний батч-стрім не маскував рідкісний auth-сигнал). Парність метрика↔алерт стереже `spec/deploy/grafana_alerts_spec.rb`.
 
 **Підпис на прошивці (псевдокод):**
 
@@ -1516,7 +1516,7 @@ ed25519_sign(sig, message, strlen(message), private_key);
 | 422 Unprocessable | Ed25519 public key не зареєстровано для пристрою |
 | 400 Bad Request | Невалідний формат `timestamp` |
 | 401 Unauthorized | `timestamp` прострочено (>5 хв) або підпис не валідний або повтор nonce (Replay attack) |
-| 503 Service Unavailable | Redis недоступний ТА Solid Cache fallback також відмовив |
+| 503 Service Unavailable | Redis недоступний ТА Postgres-фолбек (`ReplayNonce`) також відмовив — ⊕ SEC.39, 2026-10-24: доти код цей рядок не виконував і віддавав 401 «replay» |
 
 ---
 

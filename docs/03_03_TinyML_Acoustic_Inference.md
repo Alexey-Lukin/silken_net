@@ -651,7 +651,7 @@ lora_payload[7] = (uint8_t)(acoustic_events & 0xFF); // Byte 7: Acoustic Events
 - **DID** дерева у байтах 0..3; **`0xFF`** — маркер паніки у байті 7 (максимальна тривога);
 - **[FW.29]** `PANIC_FLAG_BIT` у StatusByte (байт 10) — однозначна детекція паніки на бекенді;
 - **[FW.18b]** байт 11 = `Ttl_Byte_Pack(PANIC_TTL, tinyml_threshold_invalid_count)` (історія; з HW.30 — `Ttl_Byte_Pack(5, 0u)`, лічильник знято разом із порогами) — підвищений TTL (5 проти `DEFAULT_TTL` 3) для глибшого mesh-проникнення + спакований invalid-counter;
-- **[SEC.10]** `panic_frame_counter` (saturating @ 0xFFFF) у байтах 14..15 (BE) — anti-replay nonce (сервер рубає повтори `Rails.cache` SET-NX — Solid Cache, не Redis), персиститься у DR0 негайно;
+- **[SEC.10]** `panic_frame_counter` (saturating @ 0xFFFF) у байтах 14..15 (BE) — anti-replay nonce (сервер рубає повтори атомарною unique-вставкою в Postgres — `ReplayNonce`, SEC.39), персиститься у DR0 негайно;
 - шифрування AES-128 (ECB-ера) **або** CCM-потік (`#if FW2_CCM_ENABLED`, той самий anti-replay FC у нонсі) → негайний `Radio.Send` → `Radio.Sleep`. Гілка `ARCH26_CAD_ENABLED` подовжує преамбулу («останній зойк» поза зоною Королеви).
 
 > **Дім бітової розкладки panic-кадру:** [`03_01 §8`](03_01_Firmware_Lifecycle_and_DMA) (binary packet format) + StatusByte [`03_04 §4.4`](03_04_mruby_Lorenz_Attractor). Тут — лише ілюстрація реакції; байтові offset'и не дублюємо, щоб копія не старіла.

@@ -1320,7 +1320,7 @@ end
   end
 
   # [SEC.10] Frame Counter anti-replay для panic packets. Сторожовий пес
-  # панічного каналу — Redis SETNX по nonce-ключу; replay повторює тот
+  # панічного каналу — атомарна unique-вставка nonce у Postgres (SEC.39); replay повторює той
   # самий counter, ми його рубаємо у логах ДО створення TelemetryLog.
   describe "panic frame counter anti-replay [SEC.10]" do
     # build_panic_chunk is provided by TelemetryChunkHelper
@@ -1401,22 +1401,25 @@ end
       expect(log.firmware_version_id).to eq(0x0042)
     end
 
-    it "writes nonce key with TTL ≈ 25 hours (replay window guard)" do
-      allow(Rails.cache).to receive(:write).with(
-        "silken:panic:nonce:#{extracted_did}:42",
-        "1",
-        hash_including(expires_in: TelemetryUnpackerService::PANIC_NONCE_TTL,
-                       unless_exist: true)
-      ).and_call_original
+    it "stores the nonce in Postgres with TTL ≈ 25 hours (replay window guard) [SEC.39]" do
+      freeze_time do
+        described_class.call(build_panic_chunk(did_hex, 42))
 
-      described_class.call(build_panic_chunk(did_hex, 42))
+        nonce = ReplayNonce.find_by!(scope: TelemetryUnpackerService::PANIC_NONCE_SCOPE, digest: "#{extracted_did}:42")
+        expect(nonce.expires_at).to be_within(1.second).of(TelemetryUnpackerService::PANIC_NONCE_TTL.from_now)
+      end
+    end
 
-      expect(Rails.cache).to have_received(:write).with(
-        "silken:panic:nonce:#{extracted_did}:42",
-        "1",
-        hash_including(expires_in: TelemetryUnpackerService::PANIC_NONCE_TTL,
-                       unless_exist: true)
-      )
+    # 🔴 [SEC.39, ⚖️ founder 2026-10-24] Збій сховища ≠ повтор: доти failsafe Solid Cache давав
+    # `false`, метод читав це як replay, і алерт кликав на «атаку». Тепер — гучна втрата кадру
+    # в лозі чанка, без лічильника повторів.
+    it "treats a nonce-store failure as a loud chunk loss, not as a replay" do
+      allow(ReplayNonce).to receive(:claim!).and_raise(ActiveRecord::StatementTimeout)
+      allow(Rails.logger).to receive(:error)
+
+      expect { described_class.call(build_panic_chunk(did_hex, 42)) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+      expect(Rails.logger).to have_received(:error).with(/Telemetry Error/)
     end
   end
 

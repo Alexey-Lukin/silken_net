@@ -1263,6 +1263,40 @@ ALTER SEQUENCE public.qatt_envelopes_id_seq OWNED BY public.qatt_envelopes.id;
 
 
 --
+-- Name: replay_nonces; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.replay_nonces (
+    id bigint NOT NULL,
+    scope character varying NOT NULL,
+    digest character varying NOT NULL,
+    owner character varying,
+    expires_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: replay_nonces_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.replay_nonces_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: replay_nonces_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.replay_nonces_id_seq OWNED BY public.replay_nonces.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2108,6 +2142,13 @@ ALTER TABLE ONLY public.qatt_envelopes ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: replay_nonces id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.replay_nonces ALTER COLUMN id SET DEFAULT nextval('public.replay_nonces_id_seq'::regclass);
+
+
+--
 -- Name: sessions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2416,6 +2457,14 @@ ALTER TABLE ONLY public.provisioning_sessions
 
 ALTER TABLE ONLY public.qatt_envelopes
     ADD CONSTRAINT qatt_envelopes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: replay_nonces replay_nonces_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.replay_nonces
+    ADD CONSTRAINT replay_nonces_pkey PRIMARY KEY (id);
 
 
 --
@@ -3515,6 +3564,20 @@ CREATE INDEX index_qatt_envelopes_on_gateway_id ON public.qatt_envelopes USING b
 --
 
 CREATE UNIQUE INDEX index_qatt_envelopes_on_sha256 ON public.qatt_envelopes USING btree (sha256);
+
+
+--
+-- Name: index_replay_nonces_on_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_replay_nonces_on_expires_at ON public.replay_nonces USING btree (expires_at);
+
+
+--
+-- Name: index_replay_nonces_on_scope_and_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_replay_nonces_on_scope_and_digest ON public.replay_nonces USING btree (scope, digest);
 
 
 --
@@ -4917,6 +4980,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261024120000'),
 ('20261011160000'),
 ('20261011140000'),
 ('20261011090000'),

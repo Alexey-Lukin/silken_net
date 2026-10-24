@@ -275,3 +275,9 @@
     iotex_backfill:
       cron: '7 * * * *' # Щогодини о :07 — поза `*/5`-сіткою решти свіперів
       class: IotexBackfillWorker
+
+    # [SEC.39] Прибиральник прострочених ключів анти-повтору: коректність від нього не
+    # залежить (`ReplayNonce.claim!` перезахоплює прострочене сам), лише розмір таблиці.
+    replay_nonce_purge:
+      cron: '15 4 * * *' # 04:15 UTC щодня — поза нічними циклами
+      class: ReplayNoncePurgeWorker

@@ -144,7 +144,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    Format: "N n c C n C C a4" (unpack)                              ║
 ║    [SEC.10] panic? = (status_byte & 0x80); якщо panic +              ║
 ║      panic_counter = pad_data[2..3].unpack1("n") > 0:                 ║
-║      Rails.cache.write(unless_exist:) silken:panic:nonce:DID:CTR    ║
+║      ReplayNonce.claim!(panic, DID:CTR) [SEC.39: Postgres]          ║
 ║      → replay → log+metric+RETURN (no log, no AlertDispatch)         ║
 ║    DeviceCalibration: normalize ADC → фізичні одиниці               ║
 ║    SilkenNet::Attractor.calculate_z_from_state(x_prev,y_prev,z_prev, ║

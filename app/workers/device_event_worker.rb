@@ -14,7 +14,7 @@
 # неможливий (64B у 16B кадр, 05_02 trust-ladder) → L1 Queen-attest = правильний рівень
 # назавжди. Wire-дім: firmware/common/device_event.h (§Шар 2), канон 03_05 §2.2а.
 #
-# Anti-replay: SHA256(Королевин sig) SETNX — кожен Королевин flush несе свіжий
+# Anti-replay: SHA256(Королевин sig), атомарна unique-вставка — кожен Королевин flush несе свіжий
 # підпис (свіжий unix_ts+count), тож справжня повторна канарка НЕ глушиться
 # (на відміну від Солдатового per-boot seq). Дедуп реальних подій = EwsAlert
 # uniqueness [tree,type,status] (один активний canary/дерево).
@@ -26,11 +26,12 @@
 # tamper-кодом зникає мовчки на весь TTL. Розрізняє «мій краш» від ЧУЖОГО
 # реплею owner-токен: Sidekiq зберігає той самий `jid` на ретраях, тож власна
 # спроба резюмується, а стороння отримує `:replay`. Дім патерну —
-# `UnpackTelemetryWorker#claim_qatt_nonce`; тут його Solid-Cache-половина
-# (Redis цьому тракту не потрібен). ⚠️ `unless_exist: true` на Solid Cache НЕ
-# атомарний (виміряно 2026-09-28, 00_07 SEC.39): два конкурентні перші записи
-# обидва дістають `true`, а транзієнтна помилка бази кешу дає `write` = false і
-# `read` = nil, тобто `:replay` — і справжній батч губиться без Sidekiq-retry.
+# `UnpackTelemetryWorker#claim_qatt_nonce`; тут він лежить на Postgres (Redis цьому
+# тракту не потрібен). ⚖️ [SEC.39, founder 2026-10-24] Субстрат — `ReplayNonce`
+# (атомарна unique-вставка), не Solid Cache: там два конкурентні перші записи
+# обидва вигравали, а збій бази кешу читався як `:replay`, і підписаний tamper-батч
+# губився без ретраю. Тепер збій БД летить raise → Sidekiq-ретрай: не губить і не
+# приймає, лише затримує.
 class DeviceEventWorker
   include Sidekiq::Worker
   sidekiq_options queue: "uplink", retry: 2
@@ -42,7 +43,7 @@ class DeviceEventWorker
   DEVENV_DOMAIN_TAG = "SLKN-QEVT1".b.freeze
   EVT_CANARY_TRIP   = 0x02
   NONCE_TTL         = 25.hours
-  NONCE_PREFIX      = "silken:devevt:nonce"
+  NONCE_SCOPE       = "device_event"
   NONCE_DONE        = "done"
 
   def perform(encoded_payload, gateway_uid)
@@ -92,17 +93,17 @@ class DeviceEventWorker
   # Фаза 1 — claim. `:acquired` = ми перші · `:resumed` = наш власний ретрай
   # (той самий `jid`) · `:replay` = хтось інший уже обробив або обробляє.
   def claim_nonce(signature)
-    @nonce_key = "#{NONCE_PREFIX}:#{Digest::SHA256.hexdigest(signature)}"
-    return :acquired if Rails.cache.write(@nonce_key, nonce_owner_token,
-                                          expires_in: NONCE_TTL, unless_exist: true)
+    @nonce_digest = Digest::SHA256.hexdigest(signature)
+    return :acquired if ReplayNonce.claim!(scope: NONCE_SCOPE, digest: @nonce_digest,
+                                           owner: nonce_owner_token, ttl: NONCE_TTL)
 
-    Rails.cache.read(@nonce_key) == nonce_owner_token ? :resumed : :replay
+    ReplayNonce.owner_of(scope: NONCE_SCOPE, digest: @nonce_digest) == nonce_owner_token ? :resumed : :replay
   end
 
   # Фаза 2 — робота завершена, токен замінюється термінальним маркером: відтепер
   # навіть наш власний `jid` не зможе резюмувати цей батч.
   def finalize_nonce!
-    Rails.cache.write(@nonce_key, NONCE_DONE, expires_in: NONCE_TTL)
+    ReplayNonce.finalize!(scope: NONCE_SCOPE, digest: @nonce_digest, owner: NONCE_DONE, ttl: NONCE_TTL)
   end
 
   # `jid` переживає ретраї того самого джоба — саме це й робить «мій краш»

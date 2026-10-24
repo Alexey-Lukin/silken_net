@@ -52,6 +52,8 @@ class UnpackTelemetryWorker
   # закрито назавжди — розпакований конверт лежить у `qatt_envelopes` (`verify_qatt_envelope`);
   # лишається для heartbeat, який не зберігається.
   QATT_NONCE_TTL  = 30.days
+  # [SEC.39] Скоуп фолбеку в `ReplayNonce` — коли Redis-шлях недоступний.
+  QATT_FALLBACK_SCOPE = "qatt_fallback"
   # Finalize-маркер двофазного nonce: батч розпаковано, будь-який повтор
   # (свій чи чужий) = replay. Колізія з owner-token структурно неможлива:
   # jid = 24 hex-символи, random-token = 16.
@@ -311,8 +313,8 @@ class UnpackTelemetryWorker
   # TelemetryUnpackerService + Sidekiq-retry спалював би nonce і губив
   # атестований батч назавжди (Королева кеш уже звільнила по ACK 2.04).
   #
-  # Фаза 1 (claim): Redis SET NX (атомарно, патерн M2M/S6.1) → Solid-Cache
-  # fallback при Redis-аутеджі (свідоме TOCTOU-вікно у degraded mode).
+  # Фаза 1 (claim): Redis SET NX (атомарно, патерн M2M/S6.1) → фолбек у Postgres
+  # (`ReplayNonce`, атомарна unique-вставка — SEC.39) при Redis-аутеджі.
   # Ключ зайнятий → GET: наш token = crash-retry цього ж джоба (:resumed);
   # будь-що інше ("done" / чужий jid / легасі "1") = :replay.
   def claim_qatt_nonce(signature, gateway)
@@ -330,7 +332,7 @@ class UnpackTelemetryWorker
         end
       rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
         SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL.increment
-        Rails.logger.warn "⚠️ [L1 QATT] Redis недоступний, nonce через Solid Cache: #{e.message}"
+        Rails.logger.warn "⚠️ [L1 QATT] Redis недоступний, nonce через Postgres: #{e.message}"
         claim_qatt_nonce_fallback(digest)
       end
 
@@ -342,18 +344,16 @@ class UnpackTelemetryWorker
     status
   end
 
-  # Дзеркало claim у degraded mode. [ARCH.105] `unless_exist: true` замінив пару
-  # read-then-write, що мала ВІКНО між перевіркою й записом рівно там, де фолбек і
-  # потрібен — під час аварії, коли ретраї щільніші за звичайні. ⚠️ Але на Solid
-  # Cache це НЕ SET NX Redis-шляху (виміряно 2026-09-28, 00_07 SEC.39): два
-  # конкурентні перші записи обидва дістають `true`, а транзієнтна помилка бази
-  # кешу дає `write` = false і `read` = nil → `:replay`, тобто справжній батч губиться.
+  # Дзеркало claim у degraded mode. ⚖️ [SEC.39, founder 2026-10-24] Субстрат — Postgres
+  # (`ReplayNonce`), не Solid Cache: там `unless_exist:` не був SET NX Redis-шляху — два
+  # конкурентні перші записи обидва вигравали, а збій бази кешу давав `:replay`, і справжній
+  # батч губився. Тепер збій Postgres летить raise → Sidekiq-ретрай (Королева кеш звільнила по
+  # ACK, тож губити батч не можна, а приймати без nonce — означало б пустити повтор).
   def claim_qatt_nonce_fallback(digest)
-    fallback_key = "qatt_nonce_fallback:#{digest}"
-    return :acquired if Rails.cache.write(fallback_key, qatt_owner_token,
-                                          expires_in: QATT_NONCE_TTL, unless_exist: true)
+    return :acquired if ReplayNonce.claim!(scope: QATT_FALLBACK_SCOPE, digest:,
+                                           owner: qatt_owner_token, ttl: QATT_NONCE_TTL)
 
-    Rails.cache.read(fallback_key) == qatt_owner_token ? :resumed : :replay
+    ReplayNonce.owner_of(scope: QATT_FALLBACK_SCOPE, digest:) == qatt_owner_token ? :resumed : :replay
   end
 
   # [L1 QATT] Фаза 2 (finalize): після успішного unpack і чужі replay, і
@@ -365,8 +365,17 @@ class UnpackTelemetryWorker
     nonce_key = Kredis.namespaced_key("qatt_nonce:#{@qatt_nonce_digest}")
     Kredis.redis(config: :shared).set(nonce_key, QATT_NONCE_DONE, ex: QATT_NONCE_TTL.to_i)
   rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
-    Rails.logger.warn "⚠️ [L1 QATT] Redis недоступний на finalize, done-маркер у Solid Cache: #{e.message}"
-    Rails.cache.write("qatt_nonce_fallback:#{@qatt_nonce_digest}", QATT_NONCE_DONE, expires_in: QATT_NONCE_TTL)
+    Rails.logger.warn "⚠️ [L1 QATT] Redis недоступний на finalize, done-маркер у Postgres: #{e.message}"
+    finalize_qatt_nonce_fallback!
+  end
+
+  # Фаза 2 фолбеку. ⛔ Raise тут заборонений тією ж підставою, що й rescue вище: батч уже
+  # розпаковано, а ретрай дав би resume → подвійний unpack. Тож збій Postgres лише логується —
+  # owner-токен доживає TTL, і чужий повтор його однаково не перехопить.
+  def finalize_qatt_nonce_fallback!
+    ReplayNonce.finalize!(scope: QATT_FALLBACK_SCOPE, digest: @qatt_nonce_digest, owner: QATT_NONCE_DONE, ttl: QATT_NONCE_TTL)
+  rescue ActiveRecord::ActiveRecordError => e
+    Rails.logger.error "🚨 [L1 QATT] done-маркер фолбеку не записано (#{e.class}): #{e.message}"
   end
 
   # Owner-token: jid стабільний крізь Sidekiq-retry (retry re-push'ить той

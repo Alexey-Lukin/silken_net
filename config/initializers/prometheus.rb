@@ -182,7 +182,7 @@ module SilkenNet
     # Grafana alert при різкому стрибку → можливий attacker injection.
     PANIC_REPLAY_REJECTED_TOTAL = REGISTRY.counter(
       :silkennet_panic_replay_rejected_total,
-      docstring: "Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce"
+      docstring: "Panic packets rejected as replay via SEC.10 Frame Counter nonce (Postgres unique-insert, SEC.39)"
     )
 
     # [FW.2] AES-128-CCM packet decrypted and MIC verified successfully.
@@ -775,24 +775,24 @@ module SilkenNet
     )
 
     # [S6.19]: M2M nonce Redis → DB fallback counter.
-    # `Api::V1::M2mAuthController#create` падає з Redis SET NX на DB-backed
-    # nonce cache коли Redis недоступний (Upstash outage / network blip).
-    # Fallback path має малий TOCTOU window (acceptable у degraded mode).
+    # `Api::V1::M2mAuthController#create` падає з Redis SET NX на Postgres-nonce
+    # (`ReplayNonce`, атомарна unique-вставка — SEC.39) коли Redis недоступний
+    # (Upstash outage / network blip); падає й Postgres — 503.
     # Counter дозволяє виміряти actual outage frequency; alert-правило
     # sn-alert-m2m-nonce-fallback (семантика — 04_03 §5.15).
     M2M_NONCE_FALLBACK_TOTAL = REGISTRY.counter(
       :silkennet_m2m_nonce_fallback_total,
-      docstring: "Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator)"
+      docstring: "Total M2M nonce checks falling back from Redis to the Postgres nonce table (Redis outage indicator; SEC.39)"
     )
 
     # [L1 QATT]: Queen-attestation batch nonce Redis → DB fallback counter.
-    # `UnpackTelemetryWorker#qatt_nonce_unique?` падає з Redis SET NX на
-    # Solid-Cache nonce коли Redis недоступний — той самий S6.1/S6.19 патерн,
+    # `UnpackTelemetryWorker#claim_qatt_nonce` падає з Redis SET NX на
+    # Postgres-nonce (`ReplayNonce`, SEC.39) коли Redis недоступний — той самий S6.1/S6.19 патерн,
     # що й M2M, але окремий counter: змішування шляхів зробило б M2M-алерт
     # сліпим до батч-стріму (різні частоти: auth ~1/30д vs батчі щогодини).
     QATT_NONCE_FALLBACK_TOTAL = REGISTRY.counter(
       :silkennet_qatt_nonce_fallback_total,
-      docstring: "Total Queen-attestation batch nonce checks falling back from Redis to DB-backed cache (Redis outage indicator)"
+      docstring: "Total Queen-attestation batch nonce checks falling back from Redis to the Postgres nonce table (Redis outage indicator; SEC.39)"
     )
 
     # 🔴 [INF.22] Rate-limit store failures. The two nonce counters above exist

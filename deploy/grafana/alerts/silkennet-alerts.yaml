@@ -439,8 +439,8 @@ groups:
         execErrState: Error
         for: 2m
         annotations:
-          summary: "Panic replay rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можливий forged panic packet injection — або збій бази кешу, що глушить справжні панічні кадри (SEC.39)."
-          description: "SEC.10 Frame Counter nonce (Rails.cache на Solid Cache) відхиляє дублікати. Різкий стрибок означає одне з ТРЬОХ: attacker (replay forged panic-кадрів; з HW.30 у Солдата немає писача паніки, тож будь-який panic-кадр — аномалія прошивки або підробка, алерту він не піднімає), LoRa mesh duplicate storm — або транзієнтний збій бази кешу: Solid Cache на помилці повертає «не записано», і справжні панічні кадри читаються як повтор і ВІДКИДАЮТЬСЯ (00_07 SEC.39). Спершу звір логи `SolidCacheStore: … failed`, тоді DID pattern."
+          summary: "Panic replay rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можливий forged panic packet injection."
+          description: "SEC.10 Frame Counter nonce (атомарна unique-вставка в Postgres, SEC.39) відхиляє дублікати. Різкий стрибок означає одне з ДВОХ: attacker (replay forged panic-кадрів; з HW.30 у Солдата немає писача паніки, тож будь-який panic-кадр — аномалія прошивки або підробка, алерту він не піднімає) або LoRa mesh duplicate storm. Збій сховища сюди більше не потрапляє — він гучна втрата кадру в лозі чанка (00_07 SEC.39). Звір DID pattern."
           runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md#21-soldier--queen-lora-uplink-aes-128-ecb-transitional--aes-128-ccm-target"
         labels:
           severity: critical
@@ -2601,7 +2601,7 @@ groups:
         for: 0m
         annotations:
           summary: "M2M auth впав на DB-nonce fallback ({{ $values.B.Value | printf \"%.0f\" }}× за 1h) — Redis був недоступний."
-          description: "Graceful degradation ПРАЦЮЄ (шлюзи автентифікуються через Solid Cache nonce) — це фіксація Redis-outage, не інцидент. Дія: разова подія = звірити Upstash status; повторюваність день-у-день → escalate до multi-zone Upstash (Global DB). 04_03 §5.15 (S6.1)."
+          description: "Graceful degradation ПРАЦЮЄ (шлюзи автентифікуються через Postgres nonce `ReplayNonce`, SEC.39) — це фіксація Redis-outage, не інцидент. Дія: разова подія = звірити Upstash status; повторюваність день-у-день → escalate до multi-zone Upstash (Global DB). 04_03 §5.15 (S6.1)."
           runbook_url: "docs/04_03_REST_API_v1_Reference.md"
         labels:
           severity: info
@@ -2911,7 +2911,7 @@ groups:
         for: 0m
         annotations:
           summary: "QATT batch-nonce впав на DB fallback ({{ $values.B.Value | printf \"%.0f\" }}× за 1h) — Redis був недоступний під час unpack."
-          description: "Replay-захист Queen-attestation батчів працює через Solid Cache (degraded). Той самий Redis-outage клас, що sn-alert-m2m-nonce-fallback, але окремий сигнал: батчі щогодинні, тож тут видно ТРИВАЛІСТЬ outage. Повторюваність → multi-zone Upstash. 03_02 §7 / 04_03 §5.15."
+          description: "Replay-захист Queen-attestation батчів працює через Postgres `ReplayNonce` (degraded, SEC.39). Той самий Redis-outage клас, що sn-alert-m2m-nonce-fallback, але окремий сигнал: батчі щогодинні, тож тут видно ТРИВАЛІСТЬ outage. Повторюваність → multi-zone Upstash. 03_02 §7 / 04_03 §5.15."
         labels:
           severity: info
           component: redis

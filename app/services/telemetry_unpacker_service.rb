@@ -37,7 +37,7 @@ class TelemetryUnpackerService < ApplicationService
   # тримають firmware_version_id (FW.22).
   PANIC_FLAG_BIT             = 0x80
   PANIC_NONCE_TTL            = 25.hours       # Трохи довше за 24h replay-вікно
-  PANIC_NONCE_KEY_PREFIX     = "silken:panic:nonce"
+  PANIC_NONCE_SCOPE          = "panic"
   # [ARCH.102] Поля, яких panic-кадр НЕ міряє: vcap/temp/dt — legacy-нулі обох
   # збирачів `Trigger_Emergency_LoRa_TX`, акустичний байт — код паніки 0xFF, не лічба;
   # EMA-delta_t CCM-кадру паніки — літерал 0 (`wire_ema_delta_t_s` пише лише Фаза 3).
@@ -287,8 +287,8 @@ class TelemetryUnpackerService < ApplicationService
     # [SEC.10] Frame Counter anti-replay для panic packets.
     # Соломонова сторожа панічного каналу: panic_frame_counter (BE у байтах
     # 14..15 = pad_data[2..3]) інкрементується soldier'ом перед кожним
-    # emergency TX. Тут ми ловимо повторюваний nonce через Rails.cache SET NX
-    # (`panic_replayed?`; у проді Solid Cache, НЕ Redis). [HW.30] Писача паніки в
+    # emergency TX. Тут ми ловимо повторюваний nonce атомарною unique-вставкою
+    # у Postgres (`panic_replayed?` → `ReplayNonce`, SEC.39). [HW.30] Писача паніки в
     # Солдата більше немає, тож БУДЬ-ЯКИЙ panic-кадр — аномалія прошивки або
     # підробка; сторожа лишається tripwire'ом, а сплеск відмов видає шторм
     # повторів (`sn-alert-panic-replay`). Поза-panic пакети нічого не платять
@@ -647,26 +647,16 @@ class TelemetryUnpackerService < ApplicationService
     ccm_enabled? ? CCM_CHUNK_SIZE : ECB_CHUNK_SIZE
   end
 
-  # [SEC.10] Panic Frame Counter anti-replay через Rails.cache (Solid Cache /
-  # PostgreSQL у production — НЕ Redis). ⚠️ `unless_exist: true` там НЕ справжній
-  # SET NX (виміряно 2026-09-28 на Postgres, 00_07 SEC.39): послідовний повтор
-  # ловить, але два КОНКУРЕНТНІ перші записи обидва дістають `true`
-  # (`SELECT … FOR UPDATE` не лочить відсутній рядок), а транзієнтна помилка
-  # бази кешу (failsafe гема) повертає `false`. Тож `true` тут = nonce-ключ уже
-  # існує (replay від уже-баченого counter'а) АБО запис упав на збої бази кешу;
-  # `false` = ключ свіжий і ми його щойно встановили. TTL 25h гарантує, що nonce переживає 24-годинне replay-вікно
-  # і ще трохи. Cold-boot вузла не зламає цей захист — firmware пересіє
-  # panic_frame_counter з HRNG (range 0x0001..0xFFFF), тож імовірність
-  # зіткнення з живим nonce попереднього втілення ≈ 1/65535.
+  # [SEC.10 · SEC.39, ⚖️ founder 2026-10-24] Panic Frame Counter anti-replay — атомарна
+  # unique-вставка в Postgres (`ReplayNonce`). Доти nonce лежав у Solid Cache, чий
+  # `unless_exist:` не є SET NX: два конкурентні перші записи обидва вигравали, а збій бази
+  # кешу повертав `false`, і метод читав його як ПОВТОР — тобто будив `sn-alert-panic-replay`
+  # («атака») на аварії сховища. Тепер збій БД летить raise у чанковий `rescue` нижче:
+  # гучна втрата кадру в лозі чанка, без лічильника повторів. TTL 25h переживає 24-годинне
+  # replay-вікно. Cold-boot вузла захисту не ламає — прошивка пересіває panic_frame_counter
+  # з HRNG (0x0001..0xFFFF), тож зіткнення з живим nonce попереднього втілення ≈ 1/65535.
   def panic_replayed?(hex_did, counter)
-    nonce_key = "#{PANIC_NONCE_KEY_PREFIX}:#{hex_did}:#{counter}"
-    # write returns false if `unless_exist: true` and the key already exists — and
-    # ALSO when Solid Cache swallows a transient DB error (failsafe → false), which
-    # this method reads as a replay. Rails.cache is Solid Cache (PostgreSQL) in
-    # production, not Redis, and its `unless_exist:` is NOT atomic for two concurrent
-    # first writers (measured 2026-09-28, 00_07 SEC.39).
-    inserted = Rails.cache.write(nonce_key, "1", expires_in: PANIC_NONCE_TTL, unless_exist: true)
-    !inserted
+    !ReplayNonce.claim!(scope: PANIC_NONCE_SCOPE, digest: "#{hex_did}:#{counter}", ttl: PANIC_NONCE_TTL)
   end
 
   # [SEC.11] Single K_seed-derived path. The tree MUST have a

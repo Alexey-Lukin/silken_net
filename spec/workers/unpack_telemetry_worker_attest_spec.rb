@@ -238,7 +238,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       end
     end
 
-    it "блокує replay через Solid-Cache fallback при відмові Redis" do
+    it "блокує replay через Postgres-фолбек при відмові Redis [SEC.39]" do
       allow(Kredis).to receive(:redis).and_raise(Redis::BaseConnectionError, "Connection refused")
       allow(SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL).to receive(:increment)
 
@@ -247,6 +247,29 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
 
       expect(TelemetryUnpackerService).to have_received(:call).once
       expect(SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL).to have_received(:increment).twice
+    end
+
+    # 🔴 [SEC.39, ⚖️ founder 2026-10-24] Упали обидва сховища — ретрай, не «повтор»: батч,
+    # який Королева вже звільнила з кешу, губити не можна, а приймати без nonce — пустити повтор.
+    it "retries the batch when Redis and the Postgres fallback are both down" do
+      allow(Kredis).to receive(:redis).and_raise(Redis::BaseConnectionError, "Connection refused")
+      allow(SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL).to receive(:increment)
+      allow(ReplayNonce).to receive(:claim!).and_raise(ActiveRecord::ConnectionNotEstablished)
+
+      expect { described_class.new.perform(encoded, "10.0.0.1", gateway.uid) }
+        .to raise_error(ActiveRecord::ConnectionNotEstablished)
+      expect(TelemetryUnpackerService).not_to have_received(:call)
+    end
+
+    # ⛔ Дзеркало: ПІСЛЯ успішного unpack raise заборонений — ретрай дав би resume → подвійний
+    # unpack. Тож збій done-маркера фолбеку лише логується.
+    it "does not raise when the fallback done-marker fails after a successful unpack" do
+      allow(Kredis).to receive(:redis).and_raise(Redis::BaseConnectionError, "Connection refused")
+      allow(SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL).to receive(:increment)
+      allow(ReplayNonce).to receive(:finalize!).and_raise(ActiveRecord::ConnectionNotEstablished)
+
+      expect { described_class.new.perform(encoded, "10.0.0.1", gateway.uid) }.not_to raise_error
+      expect(TelemetryUnpackerService).to have_received(:call).once
     end
 
     it "відкидає конверт невідомої/retired версії (чесний drop, гучна метрика)" do
@@ -367,7 +390,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         expect(QattEnvelope.sole.unpacked_at).to be_present
       end
 
-      it "[S8b] те саме, коли ретрай іде через Solid Cache, бо Redis упав між спробами" do
+      it "[S8b] те саме, коли ретрай іде через Postgres-фолбек, бо Redis упав між спробами" do
         unpacker_raises_once!
         expect { perform_with_jid(worker_jid) }.to raise_error(ActiveRecord::ConnectionTimeoutError)
         allow(Kredis).to receive(:redis).and_raise(Redis::BaseConnectionError, "Connection refused")
@@ -409,13 +432,13 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
           .to have_received(:increment).with(labels: { status: "attest_replay" })
       end
 
-      context "when Redis лежить (degraded mode → Solid-Cache fallback)" do
+      context "when Redis лежить (degraded mode → Postgres-фолбек)" do
         before do
           allow(Kredis).to receive(:redis).and_raise(Redis::BaseConnectionError, "Connection refused")
           allow(SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL).to receive(:increment)
         end
 
-        it "crash-retry тим самим jid → resume через Solid Cache" do
+        it "crash-retry тим самим jid → resume через Postgres-фолбек" do
           unpacker_raises_once!
 
           expect { perform_with_jid(worker_jid) }.to raise_error(ActiveRecord::ConnectionTimeoutError)
@@ -424,7 +447,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
           expect(TelemetryUnpackerService).to have_received(:call).twice
         end
 
-        it "post-success retry → done-маркер у Solid Cache → reject" do
+        it "post-success retry → done-маркер у Postgres-фолбеку → reject" do
           allow(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL).to receive(:increment)
 
           perform_with_jid(worker_jid)

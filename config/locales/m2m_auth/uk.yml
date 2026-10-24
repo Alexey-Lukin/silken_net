@@ -8,5 +8,6 @@ uk:
     invalid_timestamp: Невалідний формат timestamp (ISO 8601).
     no_public_key: Ed25519 public key не зареєстровано для пристрою.
     no_users_in_organization: Організація не має користувачів для видачі токена.
+    nonce_store_unavailable: Сховище анти-повтору тимчасово недоступне — повторіть запит пізніше.
     replay_detected: Виявлено replay-атаку.
     timestamp_expired: Timestamp прострочено. Синхронізуйте годинник пристрою.
