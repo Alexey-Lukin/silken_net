@@ -186,8 +186,8 @@ if [[ "${1:-}" == "--selftest" ]]; then
     'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; git --git-dir=/x/memory/.git commit -q -m msg'
   t "E: git commit inside \"\$( )\" is code" deny-e \
     'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; echo "$(printf msg | git commit -F -)"'
-  t "E: bash -c \"…\" body is code" deny-e \
-    'bash -c "cd /x && ruby scripts/docs_check.rb 2>&1 | tail -1 && git push origin main"'
+  t "E: bash -c \"…\" body is code (gate inside, push outside)" deny-e \
+    'bash -c "cd /x && ruby scripts/docs_check.rb 2>&1 | tail -1"; git push origin main'
   t "E: quoted 'git add|git commit' is a pattern" silent \
     $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; rg -c \'git add|git commit -F\' transcripts/'
   t "E: quoted '| git commit' is a pattern" silent \
@@ -218,6 +218,25 @@ if [[ "${1:-}" == "--selftest" ]]; then
     $'ruby scripts/docs_band.rb > /tmp/band.log 2>&1; echo "BAND_EXIT=$?"; git add -A && git commit -s -F - <<\'EOF\'\nmsg\nEOF' false noawk
   t "E: sed fails → the raw call is judged" deny-e \
     'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git push origin main' false nosed
+  # Round 3 of the adversary attacked the mask itself: a STRAY quote pairs with the next one
+  # anywhere and blanks a real separator with the git step or the gate. A3 · J3 · Q1 deny only
+  # because a blanked token holding `; git push` stays code; C2 only because `-m "…\"…"` is
+  # stripped escape-aware; H1 stays silent only because an ESCAPED backtick is not code. The
+  # last case is J1 — the one stray quote the mask still loses (declared above) — padded past
+  # 8 KB: there the call is split unmasked and denies exactly as before the mask.
+  t "E: A3 comment пам'ять, then push; echo 'ok'" deny-e \
+    $'ruby scripts/docs_band.rb >/dev/null 2>&1; echo "B=$?"  # пам\'ять\ngit push origin main; echo \'ok\''
+  t "E: J3 two comment apostrophes around a push" deny-e \
+    $'ruby scripts/docs_band.rb >/dev/null 2>&1  # it\'s\ngit push origin main  # don\'t'
+  t "E: C2 -m \"…\\\"q\\\"…\"; gate; push" deny-e \
+    'git commit -q -m "fix \"q\" x"; ruby scripts/docs_band.rb >/dev/null 2>&1; echo "B=$?"; git push origin main'
+  t "E: Q1 bash -o pipefail -c '… | tail && push'" deny-e \
+    "bash -o pipefail -c 'cd /x && ruby scripts/docs_check.rb 2>&1 | tail -1 && git push origin main'"
+  t "E: H1 escaped backtick is text, not code" silent \
+    $'git add f && printf \'%s\\n\' "fix: \\`band\\` зелений; ruby scripts/docs_band.rb 0 FAIL" | git commit -F -'
+  pad8k=$(head -c 8300 /dev/zero | tr '\0' x)
+  t "E: past 8 KB the call is split unmasked" deny-e \
+    $'# don\'t panic\n# '"$pad8k"$'\nruby scripts/docs_band.rb >/dev/null 2>&1; echo \'B\'\ngit push origin main'
   # F — the SAME text in both contexts, which is the whole point of the rule.
   # The negative arm is not decoration: it is the pin that keeps rule F from
   # degenerating into "a gate followed by echo is suspicious", which would
@@ -776,19 +795,30 @@ fi
 # Measured 2026-10-23 on a live call: `gate; echo; git add f && printf … | git commit -F -`
 # passed while the same call with `-F <file>` denied — the link starts with printf. The
 # split and the git-step search now run on a MASKED copy: a quoted token whose content
-# holds `;`, `&`, `|` or a newline is blanked (`'…'`, `$'…'`; `"…"` only without `$(` or a
-# backtick — there the code runs), so `rg 'git add|git commit'` names no git step and a
-# `;` inside a message splits nothing; tokens without those stay whole, so `git -C "$M"`
-# still names its tree. sed/tr only, one pass over the text. ⛔ Not a hand-written shell
-# lexer (built 2026-10-24 and withdrawn the same day — it lost the incident class itself
-# and went quadratic) and not a printf/echo strip by WORD (lost real denies). Ceilings,
-# declared, not cured: a heredoc opener inside multi-line QUOTED text still cuts the
-# lines after it; an apostrophe in a `#` comment opens a quote for the mask; a
-# `bash -c` / `eval` body is read as code (as before) — so a `;` in a message INSIDE it
-# still splits; `| xargs git …` and `env …`/`VAR=x`/`command` before
-# git (ZERO real calls in 3,100 recorded commit/push calls, 200 transcripts); `||` is a
-# plain link separator, so `gate || true && git commit` passes; `;` inside `$( )` or a
-# `for … done` splits like any other. Rules A/B can warn and exit BEFORE this deny.
+# holds `;`, `&`, `|` or a newline is blanked (`'…'`, `$'…'`; `"…"` only without an
+# UNESCAPED `$(` or backtick — there the code runs), so `rg 'git add|git commit'` names no
+# git step and a `;` inside a message splits nothing; tokens without those stay whole, so
+# `git -C "$M"` still names its tree. The mask pairs quotes by regex, not as the shell does,
+# so a STRAY quote (an apostrophe in a `#` comment, a heredoc body the cutter missed, quotes
+# nested in `"$( )"`) pairs with the next quote anywhere: a blanked token that holds a
+# separator and then `git … commit|push` is therefore kept as code (fail-closed), and the
+# `-m "…"` strip reads `\"` as escaped. sed/tr only; BSD sed is quadratic on dense `\"`, so
+# past 8 KB the mask is skipped and the call is split unmasked (the 2,358 recorded
+# commit/push calls of 2026-10-24 all sit under 7.6 KB). ⛔ Not a hand-written shell lexer
+# (built 2026-10-24 and withdrawn the same day — it lost the incident class itself and went
+# quadratic) and not a printf/echo strip by WORD (lost real denies).
+# Ceilings, declared, not cured — a laundered call that passes: an apostrophe in a `#`
+# comment BEFORE the gate pairs with a later quote and blanks the gate itself; the
+# heredoc cutter takes `<<WORD` anywhere on a line as an opener (`$((1<<N))`, `<<<`, a
+# `<<` operator, quoted text) and cuts the lines after it; a `-c` body behind other flags
+# (`bash -e -c`, `-c --`, `--norc -c`, `-lc`, `zsh -f -c`) or under `ssh host '…'` is text
+# unless it holds a git step after a separator, and `bash <<'SH'` bodies are cut;
+# `| xargs git`, `env`/`VAR=x`/`command`/`time`/`/usr/bin/git` before git (ZERO real calls
+# in 3,100 recorded commit/push calls); `if … then git`, `gate & git`, `(cd $M && git …)`;
+# `gate || true && git commit` (`||` is a plain link separator); `for … do gate; done;
+# git push`; `;` inside `$( )` splits like any other. A clean call that DENIES: a
+# `\`-continued `&&` chain, `find -exec … \;`, a `;` inside a quoted message within a
+# `-c`/`eval` body (read as code). Rules A/B can warn and exit BEFORE this deny.
 rgit='git(([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)|([[:space:]]+-[Pp])|([[:space:]]+--(git-dir|work-tree)[[:space:]]+[^[:space:]]+)|([[:space:]]+--[a-z-]+(=[^[:space:]]+)?))*[[:space:]]+(commit|push)'
 if printf '%s' "$cmd" | grep -qE "${rgit}\b"; then
   # Heredoc BODIES are cut, the lines after each terminator are KEPT [OPS.40 fix-forward]:
@@ -798,24 +828,30 @@ if printf '%s' "$cmd" | grep -qE "${rgit}\b"; then
     { print
       if (match($0, "<<-?~?[ \t]*[\"" q "]?[A-Za-z_][A-Za-z0-9_]*")) {
         w = substr($0, RSTART, RLENGTH); sub("^<<-?~?[ \t]*[\"" q "]?", "", w); term = w; skip = 1 } }')
-  ecmd=$(printf '%s' "$ecmd" | sed -E "s/-m[[:space:]]+\"[^\"]*\"/-m MSG/g; s/-m[[:space:]]+'[^']*'/-m MSG/g")
+  ecmd=$(printf '%s' "$ecmd" | sed -E "s/-m[[:space:]]+\"([^\"\\\\]|\\\\.)*\"/-m MSG/g; s/-m[[:space:]]+'[^']*'/-m MSG/g")
   [[ -z "$ecmd" ]] && ecmd=$cmd  # [OPS.43] awk or sed failed: judge the raw call, never nothing
   # [OPS.43] The masked copy: every quoted token wrapped (\001…\002, leftmost first, so a
   # quote inside another kind never opens one; `\\.` keeps an escaped quote out), the body
-  # of `bash|sh|zsh -c` / `eval` and a "…" holding code unwrapped — both RUN, as the
-  # unmasked split always read them — the rest blanked when a separator sits inside; newlines ride
+  # of `bash|sh|zsh -c` / `eval` and a "…" holding an unescaped `$(`/backtick unwrapped — both
+  # RUN, as the unmasked split always read them — and so is a token holding a separator then
+  # `git … commit|push` (a stray quote may have opened it); the rest blanked when a separator
+  # sits inside; newlines ride
   # as \003 so a token can span them. Empty output (sed failed) → the unmasked call.
   read -r -d '' mask_sed <<'SED'
 s/(\\.|\$'([^'\\]|\\.)*'|'[^']*'|"([^"\\]|\\.)*")/<SO>\1<SC>/g
 s/((bash|sh|zsh)[[:space:]]+-[a-z]*c[[:space:]]+|eval[[:space:]]+)<SO>([^<SC>]*)<SC>/\1\3/g
-s/<SO>("[^<SC>]*(\$\(|`)[^<SC>]*")<SC>/\1/g
+s/<SO>("([^<SC>\\]|\\.)*(\$\(|`)[^<SC>]*")<SC>/\1/g
+s/<SO>([^<SC>]*[;&<NL>][[:space:]]*git[[:space:]][^<SC>;&|<NL>]*(commit|push)[^<SC>]*)<SC>/\1/g
 s/<SO>\$'[^<SC>]*[;&|<NL>][^<SC>]*'<SC>/$'_'/g
 s/<SO>'[^<SC>]*[;&|<NL>][^<SC>]*'<SC>/'_'/g
 s/<SO>"[^<SC>]*[;&|<NL>][^<SC>]*"<SC>/"_"/g
 s/[<SO><SC>]//g
 SED
   mask_sed=${mask_sed//<SO>/$'\001'}; mask_sed=${mask_sed//<SC>/$'\002'}; mask_sed=${mask_sed//<NL>/$'\003'}
-  mcmd=$(printf '%s' "$ecmd" | LC_ALL=C tr '\n' '\003' | LC_ALL=C sed -E "$mask_sed" | LC_ALL=C tr '\003' '\n')
+  mcmd=$ecmd  # past 8 KB the mask is skipped: BSD sed is quadratic on dense \" and the hook has 5 s
+  if (( ${#ecmd} <= 8192 )); then
+    mcmd=$(printf '%s' "$ecmd" | LC_ALL=C tr '\n' '\003' | LC_ALL=C sed -E "$mask_sed" | LC_ALL=C tr '\003' '\n')
+  fi
   [[ -z "$mcmd" ]] && mcmd=$ecmd
   egate="((env[[:space:]]+[^[:space:]]+[[:space:]]+)?([A-Z_]+=[^[:space:]]+[[:space:]]+)*)?(${gate}|ruby[[:space:]]+scripts/(docs_band|docs_check|model_doc_sync)\.rb)"
   mgate='(([A-Z_]+=[^[:space:]]+[[:space:]]+)*)(bash[[:space:]]+)?[^[:space:]]*memory_gate\.sh[[:space:]]+--audit'
