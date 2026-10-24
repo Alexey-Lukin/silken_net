@@ -359,7 +359,8 @@ class TelemetryUnpackerService < ApplicationService
     # 4.1 DUAL COMPUTATION INTEGRITY (Z Divergence Check)
     # Device повідомляє bio_status з власного Lorenz (Float, mruby).
     # Server розраховує Z (Float, ідентично). Порівнюємо статуси:
-    # якщо device каже "homeostasis" а server Z поза межами породи — fraud flag.
+    # якщо device каже "homeostasis", а server Z поза ЗАВОДСЬКОЮ смугою пристрою
+    # (або навпаки) — лічимо `DCI_CATEGORICAL_MISMATCH_TOTAL`, не fraud.
     step_lorenz_and_judge!(tree, log_attributes, status_byte)
 
     # 5. ФІКСАЦІЯ ТА ЕКОНОМІЧНИЙ ВІДГУК
