@@ -26,16 +26,10 @@ OVERRIDES = {
   "HW.11"       => { p: "P2" }, # conformal coating: decided (Parylene C), only choose+verify left
   "HW.14"       => { p: "P2" }, # winter energy: Queen Phase 3 (Starlink Mini) future, not 2.5
   "HW.16"       => { p: "P2" }, # thermal IP67: budget+backend done, minor hw charge-protect left
-  "HW.26"       => { p: "P1" }, # PEEK creep lock — P1 з 2026-09-20 (блокер несе P того, що блокує: HW.34 G1 · HW.43 FEA)
-  "FW.8"        => { p: "P2" }, # per-species Z OTA: production-dispatch deferred (all trees default)
-  "FW.42"       => { p: "P2" }, # fauna Vcap guard: fauna pathway post-TRL7/Mongabay, gated
-  "ARCH.40"     => { p: "P2" }, # fauna session: same fauna-future gating
+  "HW.26"       => { p: "P1" }, # PEEK creep lock — P1 свідомо при P0-нозі HW.1 (прецедент 📬, ⚖️ 2026-10-24; підстава — Стан HW.26)
   "E.60"        => { p: "P2" }, # Merkle CID: leaf done, per-tree follow-on founder-deferred
   "E.64"        => { p: "P2" }, # bio->economy audit done; real-signal activation ground-truth-gated
-  "PUMA-IPV6-1" => { p: "P2" }, # post-deploy IPv6 bind verification (minor verify task)
-  "ARCH.35"     => { p: "P2" }, # Queen flash ring: scale-tier (100 Soldiers), gated on board-freeze
-  # P2 -> P1 promotion:
-  "S6.20"       => { p: "P1" }  # real reliability bug: dead entropy alerts + stuck insurance payouts
+  "ARCH.35"     => { p: "P2" }  # Queen flash ring: scale-tier (100 Soldiers), gated on board-freeze
 }
 
 # - **P1** · 🤖+👤 · 🟢 · → `ref`
