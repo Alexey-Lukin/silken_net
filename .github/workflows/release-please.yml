@@ -3,12 +3,19 @@ name: Ops · Release
 # release-please reads the Conventional Commit history (chore/fix/feat/…, which
 # this repo already uses) and keeps an open "release PR": it bumps the version in
 # .release-please-manifest.json, updates CHANGELOG.md, and — when that PR is merged
-# (gated by `CI passed`) — creates tag vX.Y.Z + a GitHub Release. The published
-# release then fans out to Deploy · Production and Deploy · GHCR Mirror (semver tag).
+# (gated by `CI passed`) — creates tag vX.Y.Z + a GitHub Release. ⚠️ That release does
+# NOT fan out to Deploy · Production / Deploy · GHCR Mirror: GITHUB_TOKEN events trigger
+# no other workflow (06_07 §1, 00_07 DEPLOY-1).
+#
+# Hourly, not on every push (⚖️ founder 2026-10-24, 00_07 OPS.44): each pass backfills the
+# file list commit-by-commit since the last tag, on the installation-wide API budget, so
+# push-triggered passes at a ~1780-commit distance starved every `changes` job in the repo
+# for an hour. The schedule bounds how OFTEN a pass runs, not how LONG one is (06_07 §1).
 
 on:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
 
 # Top-level least-privilege floor; the job elevates the writes release-please needs.
 permissions: {}
