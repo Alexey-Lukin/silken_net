@@ -165,7 +165,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # the positives deny only through the piece they name, the negatives stay silent only
   # because a quoted token holding a separator is blanked. The three «as 61bcc2771» pins
   # are the regressions of the shell lexer withdrawn 2026-10-24 — they must keep the
-  # verdict the unmasked split gave.
+  # verdict the unmasked split gave. `docs_check.rb` below is a gate NAME in the input, not the lane (`docs_band.rb`).
   t "E: ;-laundered, printf | git commit (10-23)" deny-e \
     $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git add docs/x.md && printf \'%s\\n\' \'docs: x\' \'\' \'body\' | git commit -q -s -F -'
   t "E: |& into git commit" deny-e \
@@ -174,6 +174,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
     $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; printf msg|git commit -F -'
   t "E/mem: ;-laundered --audit, printf | git -C commit" deny-e \
     $'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; M=/x/memory; git -C $M add a.md && printf \'%s\\n\' msg | git -C $M commit -q -F -'
+  # (`docs_check.rb` in these fixtures is a gate NAME in the input, not the lane — the band is `ruby scripts/docs_band.rb`; CHECK F, OPS.25)
   t "E: git -c k=v commit" deny-e \
     'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git -c user.name=x commit -m MSG'
   t "E: git --no-pager push" deny-e \
@@ -184,6 +185,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
     'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; git --git-dir /x/memory/.git commit -q -m msg'
   t "E/mem: git --git-dir=<corpus> commit" deny-e \
     'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; git --git-dir=/x/memory/.git commit -q -m msg'
+  # (`docs_check.rb` in these fixtures is a gate NAME in the input, not the lane — the band is `ruby scripts/docs_band.rb`; CHECK F, OPS.25)
   t "E: git commit inside \"\$( )\" is code" deny-e \
     'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; echo "$(printf msg | git commit -F -)"'
   t "E: bash -c \"…\" body is code (gate inside, push outside)" deny-e \
