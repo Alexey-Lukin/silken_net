@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
-ruby "4.0.7"
-gem "rails", "~> 8.1.3"
+ruby "4.0.9"
+gem "rails", "~> 8.1.4"
 
 gem "aasm"
 gem "active_storage_validations"

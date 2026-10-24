@@ -41,7 +41,7 @@ jobs:
       - name: Set up Ruby
         # stdlib-only script (rake + tmpdir + fileutils + the pure normalizer) → a
         # plain pinned Ruby, no bundler-cache; decoupled from the app's Ruby/Gemfile.
-        uses: ruby/setup-ruby@bec3f19a76460dbe12f60def7d1a77585f07516c # v1
+        uses: ruby/setup-ruby@26e5b7d197ebf60545ee9667bcbace0be11ccaec # v1
         with:
           ruby-version: "3.3"
 
