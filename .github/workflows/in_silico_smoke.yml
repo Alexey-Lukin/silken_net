@@ -41,6 +41,8 @@ on:
       - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
       - 'docs/protocols/hardware/rf_mockup_bench_sheet.md'
       - 'docs/00_07_Action_Plan_Tracker.md'
+      - 'docs/protocols/anchor/field_strain_sensor_sheet.md'
+      - 'docs/protocols/outreach/forest_access_application.md'
       # The CAD inputs the scripts read at runtime (CEM manifests, the voxel-FE caches): a change there
       # stales the caches built on them, and only the cache test in `smoke` can see it.
       - 'tools/cad/cem/**'
@@ -90,6 +92,8 @@ jobs:
               # cache_doc_sync job (pytest, seconds), never lock_sync/smoke (3-GB conda installs); 00_07 changes in
               # most commits, so the heavy jobs stay on `in_silico`
               - 'docs/00_07_Action_Plan_Tracker.md'
+              - 'docs/protocols/anchor/field_strain_sensor_sheet.md'
+              - 'docs/protocols/outreach/forest_access_application.md'
 
   lock_sync:
     needs: changes

@@ -947,7 +947,7 @@ def main() -> int:
     rf_rows = [r["rf_deck_top_over_flange_mm"] for r in json.loads(Z_STACK.read_text(encoding="utf-8"))
                ["vertical_stack_budget"]["rows"] if r["fr4_is_bom"]]
     GEOMETRY.update({
-        "dbh_m": {"values": [DBH_MIN_CM / 100.0, 0.50, 0.60],
+        "dbh_m": {"values": [cm / 100.0 for cm in sorted(BARK_SINGLE_RIDGE_MM_BY_DBH_CM)],   # the table's named stems
                   "referent": "the stem's diameter at breast height: the smallest host (lib DBH_MIN_CM — the CODIT rule, "
                               "01_01 §1) and the two larger stems 01_04 §3.2's bark table reads",
                   "source": "lib.constants DBH_MIN_CM; 01_04 §3.2"},
