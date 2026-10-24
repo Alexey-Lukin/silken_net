@@ -54,5 +54,9 @@ dependencies:
   # silken_net_audio_model.h). Verified: the librosa≡stdlib parity gate stays
   # green alongside TF's numpy 2.x / librosa 0.11.
   # NB: TF 2.21 pins h5py<3.15 → h5py stays 3.14.x (transitive; 3.16 awaits a TF release relaxing it).
+  # [OPS.22] What lags in this env is TF's side tail (keras · absl-py · grpcio): it sits OUTSIDE
+  # the log-mel parity contract, so a bump with no named gain costs a full parity run for nothing.
+  # ⚠️ numba does NOT belong to that tail — librosa (the oracle) pulls it, so a numba bump IS a
+  # parity event and goes through the same hand check as a librosa floor move (header above).
   - pip:
       - tensorflow>=2.20
