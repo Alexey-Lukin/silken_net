@@ -530,18 +530,19 @@ jobs:
       - name: Docs · bash-guard hook self-test
         # The PreToolUse hook DENIES real shell work (backtick-in-commit, rg -rn,
         # unsplit scalars, and rule E: a verify-gate laundered past git commit/push
-        # with `;` or a pipe — the shape that pushed a red docs band to main twice,
+        # with `;`, a pipe or `|| true` — the shape that pushed a red docs band to main twice,
         # 2026-08-16/2026-08-20). A rotten detector is therefore either blocked work
         # or a dark carrier whose silence reads as safety. The battery pins BOTH
         # arms of rule E (the laundered forms must deny in each of its two
         # subject-paired vocabularies — repo gates and the memory audit, OPS.40 —
-        # including a git step fed by a pipe, `printf … | git commit -F -`, OPS.43; the
-        # clean-&& house idiom, gate names inside heredoc/-m/printf message text and the
-        # cross-subject pairs must stay silent) plus smoke
+        # including a git step fed by a pipe and a failing awk, OPS.43; the clean-&&
+        # house idiom, gate names or a `|`/`;` inside heredoc bodies or any quoted
+        # text, and the cross-subject pairs must stay silent) plus smoke
         # over the standing deny/warn rules. The anti-false-positive cases are
-        # mutation-calibrated: with their strip disabled (heredoc · -m · printf/echo
-        # payload) each flips to a false deny — the first drafts of the heredoc/-m
-        # pair did not, i.e. were vacuous, and only the mutants exposed that.
+        # mutation-calibrated: disable the piece of rule E's lexer that reads them
+        # (heredoc cut · '…' · "…" · $'…' · comment · continuation) and each flips to
+        # a false deny — the first drafts of the heredoc/-m pair did not, i.e. were
+        # vacuous, and only the mutants exposed that.
         run: bash .claude/hooks/bash_verify_guard.sh --selftest
 
       - name: Docs · ssot-hint hook self-test

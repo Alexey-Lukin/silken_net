@@ -51,9 +51,10 @@ set -uo pipefail
 # This hook DENIES real work, so a rotten detector here is either blocked work
 # (false positives) or a dark carrier whose silence reads as safety (false
 # negatives) — the same reason zsh_split_scan.rb carries a battery. Cases pin
-# BOTH arms of rule E (laundered forms must deny; the clean-`&&` house idiom,
-# gate names inside heredoc bodies / -m strings, and each half alone must stay
-# silent) plus smoke over the standing deny/warn rules, so a refactor cannot
+# BOTH arms of rule E (laundered forms must deny, a pipe-fed git step and a failing
+# awk included; the clean-`&&` house idiom, gate names and `|`/`;` inside heredoc
+# bodies or any QUOTED text, and each half alone must stay silent) plus smoke
+# over the standing deny/warn rules, so a refactor cannot
 # silently disable a neighbour. Each case runs with a fresh session id: the
 # warn() markers are per-session, and a shared id would let case N suppress
 # case N+1's expected warning.
@@ -76,11 +77,19 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # rule F is the one detector whose verdict turns on CONTEXT, not on text: the
   # SAME command must stay silent in the foreground and warn in the background,
   # so a battery that could only send one context could not pin it at all.
+  # 5th arg `noawk` runs the hook with an `awk` that fails (exit 127) — rule E's lexer
+  # must then fail CLOSED and say so [OPS.43].
   t() {
-    local name=$1 expect=$2 cmdstr=$3 bgflag=${4:-false} out got
+    local name=$1 expect=$2 cmdstr=$3 bgflag=${4:-false} env=${5:-} out got
     n=$((n + 1))
-    out=$(jq -nc --arg c "$cmdstr" --arg s "selftest-$$-$n" --argjson b "$bgflag" \
-            '{tool_input:{command:$c,run_in_background:$b},session_id:$s}' | bash "$self")
+    if [[ "$env" == noawk ]]; then
+      out=$(jq -nc --arg c "$cmdstr" --arg s "selftest-$$-$n" --argjson b "$bgflag" \
+              '{tool_input:{command:$c,run_in_background:$b},session_id:$s}' |
+            bash -c 'awk() { return 127; }; export -f awk; exec bash "$0"' "$self")
+    else
+      out=$(jq -nc --arg c "$cmdstr" --arg s "selftest-$$-$n" --argjson b "$bgflag" \
+              '{tool_input:{command:$c,run_in_background:$b},session_id:$s}' | bash "$self")
+    fi
     got="silent"
     if [[ "$out" == *'"permissionDecision":"deny"'* ]]; then
       got="deny"
@@ -111,8 +120,9 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # E-negatives — the exempt idiom and every half alone
   t "E: clean && chain stays silent" silent \
     $'source ~/.rvm/scripts/rvm && rvm use "$(cat .ruby-version)@silken_net" >/dev/null && ruby scripts/docs_band.rb >/dev/null && git add docs/ && git commit -s -F - <<\'MSG\'\nx\nMSG'
-  # Both anti-false-positive cases are MUTATION-CALIBRATED: with the strips
-  # disabled these exact texts flip to a false deny (a heredoc line STARTING
+  # Both anti-false-positive cases are MUTATION-CALIBRATED: with the heredoc cut or
+  # the lexer's quote reading disabled [OPS.43 — the `-m` sed it replaced] these exact
+  # texts flip to a false deny (a heredoc line STARTING
   # with a gate call + a git push after the heredoc; a `-m` string whose `;`
   # puts a gate call at a statement start). Weaker texts — a gate merely
   # mentioned mid-sentence — stayed green even without the strips, because the
@@ -154,21 +164,69 @@ if [[ "${1:-}" == "--selftest" ]]; then
     'M=/x/memory; ruby scripts/docs_band.rb >/dev/null 2>&1; echo "B=$?"; cd "$M" && git add a.md && git commit -q -m msg'
   t "E/mem: memory audit before git -C <non-corpus> push stays silent" silent \
     'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; git -C /Users/x/silken_net push origin main'
-  # OPS.43 — a git step fed by a PIPE. The two positives are the 2026-10-23 incident and
-  # its corpus sibling; the plain pipe is the negative control. The last two are
-  # MUTATION-CALIBRATED against the printf/echo payload strip: with it disabled, a `;`
-  # inside the message splits off a gate name (the first) or the git step (the second,
-  # the one false deny the replay over 3,100 recorded calls found) and both flip to deny.
+  # OPS.43 — the call is read by a LEXER. Positives: the 2026-10-23 incident (a git step
+  # fed by a pipe) and every sibling form its adversary built — `|&`, no spaces, a search
+  # string that merely says `echo`/`printf`, a gate inside `"$( )"` or `( )`, a heredoc
+  # opener INSIDE a quoted message (it must not cut the commit away), `|| true`, git's
+  # global flags, an unclosed quote (re-read quote-blind) and a failing awk (pure-bash
+  # split). Negatives: each one is a quoted text that names a gate or a `| git commit`,
+  # or a structure the lexer reads as one statement; every one is mutation-calibrated —
+  # disable the lexer piece that reads it and it flips to a false deny.
   t "E: ;-laundered, printf | git commit (10-23)" deny-e \
     $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git add docs/x.md && printf \'%s\\n\' \'docs: x\' \'\' \'body\' | git commit -q -s -F -'
   t "E/mem: ;-laundered --audit, printf | git -C commit" deny-e \
     $'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; M=/x/memory; git -C $M add a.md && printf \'%s\\n\' msg | git -C $M commit -q -F -'
-  t "E: printf | git commit, no gate, stays silent" silent \
-    $'git add docs/x.md && printf \'%s\\n\' \'docs: x\' \'\' \'body\' | git commit -q -s -F -'
+  t "E: |& into git commit" deny-e \
+    $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; printf \'%s\\n\' msg |& git commit -F -'
+  t "E: pipe without spaces (msg|git commit)" deny-e \
+    $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; printf msg|git commit -F -'
+  t "E: a search string saying \"echo \" hides nothing" deny-e \
+    'grep -c "echo " .claude/hooks/x.sh; ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git push origin main'
+  t "E: 'printf ' search, then the incident form" deny-e \
+    $'rg -n \'printf \' a.sh; ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git add f && printf \'%s\\n\' msg | git commit -F -'
+  t "E: gate inside \"\$( )\", then ; push" deny-e \
+    'echo "band: $(ruby scripts/docs_band.rb >/dev/null 2>&1 && echo GREEN || echo RED)"; git push origin main'
+  t "E: <<EOF inside a quoted message cuts nothing" deny-e \
+    $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git add f && printf \'%s\\n\' \'docs: x\n\nприклад: cat <<EOF\nкінець\' | git commit -F -'
+  t "E: gate || true && git commit" deny-e \
+    'ruby scripts/docs_check.rb || true && git commit -s -m MSG'
+  t "E: (gate) in a subshell; push" deny-e \
+    '(ruby scripts/docs_check.rb >/dev/null 2>&1); git push origin main'
+  t "E: git -c k=v commit" deny-e \
+    'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git -c user.name=x commit -m MSG'
+  t "E: git --no-pager push" deny-e \
+    'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; git --no-pager push origin main'
+  t "E: unclosed quote → re-read quote-blind" deny-e \
+    'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?; git push origin main'
+  t "E: awk fails → still denies (fail-closed)" deny-e \
+    $'ruby scripts/docs_band.rb > /tmp/band.log 2>&1; echo "BAND_EXIT=$?"; git add -A && git commit -s -F - <<\'EOF\'\nmsg\nEOF' false noawk
+  t "E: awk fails → says so (lexer-dark)" warn 'git push origin main' false noawk
+  t "E: clean && gate, then printf | git commit" silent \
+    $'ruby scripts/docs_check.rb >/dev/null && git add f && printf \'%s\\n\' msg | git commit -F -'
+  t "E: gate || exit 1 && push is not laundering" silent \
+    'ruby scripts/docs_check.rb >/dev/null 2>&1 || exit 1 && git push origin main'
+  t "E: quoted 'git add|git commit' is a pattern" silent \
+    $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; rg -c \'git add|git commit -F\' transcripts/'
+  t "E: quoted '| git commit' is a pattern" silent \
+    $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"; grep -c \'| git commit -F\' ~/x.jsonl'
+  t "E: gate after ; in a \"…\" printf argument" silent \
+    $'git add f && printf \'%s %s\\n\' fix: "x; ruby scripts/docs_band.rb green" | git commit -F -'
+  t "E: gate after ; inside \$'…' with \\'" silent \
+    $'git add f && printf $\'fix: it\\\'s; ruby scripts/docs_band.rb ok\\n\' | git commit -F -'
+  t "E: gate after ; across a '\\'' join" silent \
+    $'git add f && printf \'%s\\n\' \'it\'\\\'\'s; ruby scripts/docs_band.rb ok\' | git commit -F -'
   t "E: gate named after ; in a printf message" silent \
     $'git add docs/x.md && printf \'%s\\n\' \'docs: x\' \'\' \'зелено; ruby scripts/docs_band.rb 0 FAIL\' | git commit -q -s -F -'
+  t "E: multi-line '…' message naming a gate" silent \
+    $'git add f && printf \'%s\\n\' \'fix: x\n\nзелено; ruby scripts/docs_band.rb 0 FAIL\' | git commit -F -'
+  t "E: multi-line echo \"…\" naming a gate" silent \
+    $'git add f && echo "fix: x\n\nзелено; bin/rspec 0 failures" | git commit -F -'
   t "E: ; in a printf message, clean && gate" silent \
     $'ruby scripts/docs_band.rb > /tmp/b.log 2>&1 && printf \'%s\\n\' "fix: x" "" "кожен знімає лише свій; подія інша" > /tmp/m.txt && git add docs/x.md && git commit -s -F /tmp/m.txt'
+  t "E: | git commit inside a # comment" silent \
+    $'ruby scripts/docs_check.rb >/dev/null 2>&1; echo "C=$?"  # then | git commit -F -'
+  t "E: \\-continuation keeps one statement" silent \
+    $'ruby scripts/docs_check.rb >/dev/null \\\n  && git push origin main'
   # F — the SAME text in both contexts, which is the whole point of the rule.
   # The negative arm is not decoration: it is the pin that keeps rule F from
   # degenerating into "a gate followed by echo is suspicious", which would
@@ -691,15 +749,14 @@ fi
 # 17 combos join gate→git with a clean unpiped `&&`: mechanically honest (a red
 # gate STOPS the chain), the house campaign idiom — ⚖️ founder 2026-08-20: they
 # stay SILENT; deny the laundered forms only.
-# Heredoc bodies and `-m "…"` payloads are stripped FIRST: commit messages here
-# routinely NAME gates («повна сюїта bin/rspec 8403/0»), and without the strip
-# every such message would read as a gate invocation.
+# Heredoc bodies are cut and quoted text is read AS text FIRST: commit messages here
+# routinely NAME gates («повна сюїта bin/rspec 8403/0»), and without that every
+# such message would read as a gate invocation (the lexer below — [OPS.43]).
 # Declared ceilings (bias to false negatives, per this file's stance): a
 # statement carrying its own clean gate exempts its git step even when an
 # EARLIER gate in the call was laundered (half-gated, 1 measured); a gate that
 # runs AFTER the git step in the same && chain is a post-hoc check, not this
-# class (2 measured); an unterminated heredoc swallows the rest of the call, and
-# only the first heredoc opener on a line is honoured.
+# class (2 measured); an unterminated heredoc swallows the rest of the call.
 #
 # 🔑 [OPS.40] TWO vocabularies, paired by SUBJECT — a verdict gates only the git
 # step of the tree it judged: repo gates ↔ a git step on the repo, and
@@ -722,68 +779,164 @@ fi
 # 42 denies — 16 memory, 26 repo laundered below a heredoc — to the 64 the block
 # already gave, with no regression, and every one of the 42 discards a verdict
 # before a commit or push of the same tree.
-# [OPS.43] Measured 2026-10-23 on a live call: a git step fed by a PIPE (`printf … |
-# git commit -F -`) was not a git step here at all, so a `;`-laundered gate before it
-# passed while the same call with `-F <file>` denied. Now counted, with printf/echo
-# payloads stripped like `-m`. Over 3,100 unique recorded commit/push calls (200
-# transcripts) the prefix siblings — `env … git`, `VAR=x git`, `command git` — occur
-# ZERO times, so they stay out (declared ceiling, this file's stance); payload strip
-# ceilings: an escaped quote inside '…' and a message built from a variable.
-if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?(commit|push)\b'; then
-  # Heredoc BODIES are cut, the lines after each terminator are KEPT [OPS.40 fix-forward]:
-  # the body is where a commit message names a gate, but the call goes on after it.
-  ecmd=$(printf '%s\n' "$cmd" | awk -v q="'" '
-    skip { t = $0; sub(/^[ \t]+/, "", t); sub(/[ \t]+$/, "", t); if (t == term) skip = 0; next }
-    { print
-      if (match($0, "<<-?~?[ \t]*[\"" q "]?[A-Za-z_][A-Za-z0-9_]*")) {
-        w = substr($0, RSTART, RLENGTH); sub("^<<-?~?[ \t]*[\"" q "]?", "", w); term = w; skip = 1 } }')
-  ecmd=$(printf '%s' "$ecmd" | sed -E "s/-m[[:space:]]+\"[^\"]*\"/-m MSG/g; s/-m[[:space:]]+'[^']*'/-m MSG/g")
-  # [OPS.43] The quoted arguments of printf/echo are payload too: a message piped into
-  # `git commit -F -` lives there, and the moment a PIPED git step counts (below), a `;`
-  # inside that message would put a gate name at a statement start and deny a clean
-  # commit. perl -0777, not sed: such a message routinely spans lines.
-  ecmd=$(printf '%s' "$ecmd" | perl -0777 -pe 's/\b(printf|echo)((?:[ \t]+-{1,2}[A-Za-z]*)*)((?:(?:[ \t]|\\\n)+\$?(?:'"'"'[^'"'"']*'"'"'|"(?:[^"\\]|\\.)*"))+)/$1$2 MSG/g')
+# 🔑 [OPS.43] The call is split by a LEXER, not by raw characters. Measured 2026-10-23
+# on a live call: a git step fed by a PIPE (`printf … | git commit -F -`) was not a git
+# step here at all, so a `;`-laundered gate before it passed while the same call with
+# `-F <file>` denied. ⛔ Do not strip printf/echo arguments by WORD instead (built and
+# broken both ways 2026-10-24): `grep -c "echo " x` loses a real deny, a quoted
+# `| git commit` in a grep pattern draws a false one, and a perl strip makes the block
+# go dark without perl. So one awk pass (no perl) reads quotes — `'…'`, `"…"`, `$'…'` — as
+# text; reads `$( )`, `( )`, `<( )`, `>( )` and backticks as CODE that opens a link;
+# cuts heredoc bodies only from an opener OUTSIDE quotes (every opener on a line);
+# honours `#` comments and `\` continuations. A git step is the start of a link or of
+# any pipe element in it, global flags allowed (`-C`/`-c <v>`, `--long[=v]`); and a
+# gate whose `&&` chain reaches `||` — unless that branch is `exit`/`return`/`false` —
+# is laundered too (`gate || true && git commit`). Fail-CLOSED: quotes or parens that
+# do not close → the same lexer re-runs quote-blind; awk itself failing → a
+# quote-blind split in pure bash, plus a once-per-session warning at the end of file.
+# Ceilings: `| xargs git …` and `env …`/`VAR=x`/`command` before git (ZERO real calls
+# in 3,100 unique recorded commit/push calls, 200 transcripts); a `case` pattern
+# inside `"$( )"` (falls to quote-blind); a message built from a variable. A replay of
+# that corpus, old ⊥ new, sees only forms the corpus HAS — the battery pins the rest.
+rgit='git(([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)|([[:space:]]+--[a-z-]+(=[^[:space:]]+)?))*[[:space:]]+(commit|push)'
+if printf '%s' "$cmd" | grep -qE "${rgit}\b"; then
+  # One line out per STATEMENT; links joined by \037 (&&) or \034 (||), pipe elements by
+  # \035. Quoted text is kept verbatim — the detectors below anchor at the START of a
+  # link or element, which a quote can never be — so `git -C "$M"` still names its tree.
+  read -r -d '' lex_awk <<'AWK'
+function push(r, k) { sp++; ret[sp] = r; kind[sp] = k }
+BEGIN { AND = sprintf("%c", 31); OR = sprintf("%c", 28); PIPE = sprintf("%c", 29); mode = "N"; sp = 0; nh = 0 }
+{
+  line = $0
+  if (mode == "H") {
+    t = line; sub(/^[ \t]+/, "", t); sub(/[ \t]+$/, "", t)
+    if (t == hd[hk] && ++hk > nh) { mode = "N"; nh = 0 }
+    next
+  }
+  n = length(line); out = ""; i = 1; ws = 1; cont = 0
+  while (i <= n) {
+    c = substr(line, i, 1); c2 = substr(line, i, 2)
+    if (mode == "S") { if (c == "'") mode = "N"; out = out c; i++; continue }
+    if (mode == "A") {
+      if (c == "\\") { out = out c2; i += 2; continue }
+      if (c == "'") mode = "N"
+      out = out c; i++; continue
+    }
+    if (mode == "D") {
+      if (c == "\\") { out = out c2; i += 2; continue }
+      if (c == "\"") { mode = "N"; out = out c; i++; continue }
+      if (c2 == "$(") { push("D", "P"); mode = "N"; out = out c2 AND; i += 2; ws = 1; continue }
+      if (c == "`") { push("D", "B"); mode = "N"; out = out c AND; i++; ws = 1; continue }
+      out = out c; i++; continue
+    }
+    if (c == "\\") { if (i == n) { cont = 1; i++; continue } out = out c2; i += 2; ws = 0; continue }
+    if (!blind) {
+      if (c == "'") { mode = "S"; out = out c; i++; ws = 0; continue }
+      if (c2 == "$'") { mode = "A"; out = out c2; i += 2; ws = 0; continue }
+      if (c == "\"") { mode = "D"; out = out c; i++; ws = 0; continue }
+      if (c == "#" && ws) break
+    }
+    if (c2 == "$(" || c2 == "<(" || c2 == ">(") { push("N", "P"); out = out c2 AND; i += 2; ws = 1; continue }
+    if (c == "(") { push("N", "P"); out = out c AND; i++; ws = 1; continue }
+    if (c == ")") { if (sp > 0 && kind[sp] == "P") { mode = ret[sp]; sp-- } out = out c; i++; ws = 0; continue }
+    if (c == "`") {
+      if (sp > 0 && kind[sp] == "B") { mode = ret[sp]; sp--; out = out c; ws = 0 }
+      else { push("N", "B"); out = out c AND; ws = 1 }
+      i++; continue
+    }
+    if (substr(line, i, 3) == "<<<") { out = out "<<<"; i += 3; ws = 1; continue }
+    if (c2 == "<<") {
+      j = i + 2
+      if (substr(line, j, 1) == "-") j++
+      if (substr(line, j, 1) == "~") j++
+      while (substr(line, j, 1) ~ /[ \t]/) j++
+      q = substr(line, j, 1)
+      if (q == "'" || q == "\"" || q == "\\") j++; else q = ""
+      w = ""
+      while (substr(line, j, 1) ~ /[A-Za-z0-9_]/) { w = w substr(line, j, 1); j++ }
+      if (w != "" && w !~ /^[0-9]/) {
+        if ((q == "'" || q == "\"") && substr(line, j, 1) == q) j++
+        hd[++nh] = w; out = out substr(line, i, j - i); i = j; ws = 0; continue
+      }
+      out = out c2; i += 2; ws = 0; continue
+    }
+    if (c2 == "&&") { out = out AND; i += 2; ws = 1; continue }
+    if (c2 == "||") { out = out OR; i += 2; ws = 1; continue }
+    if (c2 == "|&") { out = out PIPE; i += 2; ws = 1; continue }
+    if (c == "|") { out = out PIPE; i++; ws = 1; continue }
+    if (c == ";") { out = out "\n"; i++; ws = 1; continue }
+    out = out c; ws = (c == " " || c == "\t" || c == "&"); i++
+  }
+  if (mode == "S" || mode == "A" || mode == "D" || cont) printf "%s ", out
+  else printf "%s\n", out
+  if (nh > 0 && mode == "N") { mode = "H"; hk = 1 }
+}
+END { if (!blind && (mode == "S" || mode == "A" || mode == "D" || sp > 0)) exit 3 }
+AWK
+  ecmd=$(printf '%s\n' "$cmd" | LC_ALL=C awk "$lex_awk"); lrc=$?
+  if (( lrc == 3 )); then ecmd=$(printf '%s\n' "$cmd" | LC_ALL=C awk -v blind=1 "$lex_awk"); lrc=$?; fi
+  if (( lrc != 0 )) || [[ -z "$ecmd" ]]; then
+    lexdark=1
+    ecmd=${cmd//&&/$'\037'}; ecmd=${ecmd//||/$'\034'}; ecmd=${ecmd//|&/$'\035'}; ecmd=${ecmd//|/$'\035'}
+    ecmd=${ecmd//;/$'\n'}; ecmd=${ecmd//(/($'\037'}; ecmd=${ecmd//\`/\`$'\037'}
+  fi
   egate="((env[[:space:]]+[^[:space:]]+[[:space:]]+)?([A-Z_]+=[^[:space:]]+[[:space:]]+)*)?(${gate}|ruby[[:space:]]+scripts/(docs_band|docs_check|model_doc_sync)\.rb)"
   mgate='(([A-Z_]+=[^[:space:]]+[[:space:]]+)*)(bash[[:space:]]+)?[^[:space:]]*memory_gate\.sh[[:space:]]+--audit'
   # The SUBJECT of a git step is the tree it writes: `-C <dir>`, else the last `cd` of the
   # call. A dir is the memory corpus when it carries `/memory` or is a variable this call
   # assigns such a path (`M=…/memory`) — the corpus is never written any other way here.
-  mvars=$(printf '%s' "$ecmd" | grep -oE "(^|[;&|[:space:]])[A-Za-z_][A-Za-z0-9_]*=[\"']?[^[:space:];&|\"']*/memory([\"'/[:space:];&|]|$)" \
+  mvars=$(printf '%s' "$ecmd" | LC_ALL=C tr '\037\034\035' ';;;' | grep -oE "(^|[;&|[:space:]])[A-Za-z_][A-Za-z0-9_]*=[\"']?[^[:space:];&|\"']*/memory([\"'/[:space:];&|]|$)" \
             | sed -E 's/^[;&|[:space:]]*//; s/=.*//' | sort -u | paste -sd'|' -)
   is_mem() { [[ "$1" == */memory* ]] || { [[ -n "$mvars" ]] && printf '%s' "$1" | grep -qE "^[\"']?\\\$\{?(${mvars})\}?[\"']?$"; }; }
-  # A git step is a link that STARTS with git, or the receiving end of a pipe inside
-  # the link [OPS.43]: `git add f && printf '%s\n' … | git commit -F -` (the house idiom,
-  # since a backtick in `-m` is substituted silently) used to hide its commit here.
-  re_gitc='(^|\|&?)[[:space:]]*git[[:space:]]+-C[[:space:]]+([^[:space:]]+)[[:space:]]+(commit|push)([[:space:]]|$)'
-  re_git='(^|\|&?)[[:space:]]*git[[:space:]]+(commit|push)([[:space:]]|$)'
+  # A git step starts a link or ANY pipe element of it [OPS.43]: `git add f && printf
+  # '%s\n' … | git commit -F -` is the house idiom (a backtick in `-m` is substituted
+  # silently), and it used to hide its commit here.
+  re_gitstep="^[[:space:]]*${rgit}([[:space:]]|\$)"
   # launder <gate-re> <subject: repo|mem> → prints the laundered form, or nothing
   launder() {
-    local g=$1 want=$2 verdict="" gate_seen="" st lk links st_gate st_git st_piped cwdm=0 tgt mem
+    local g=$1 want=$2 verdict="" gate_seen="" st lk el nl j k x st_gate st_git st_piped st_or st_orgit cwdm=0 tgt mem
+    local -a L O w
     while IFS= read -r st; do
-      links=${st//&&/$'\n'}
-      links=${links//||/$'\n'}
-      st_gate=""; st_git=""; st_piped=""
-      while IFS= read -r lk; do
-        if printf '%s' "$lk" | grep -qE "^[[:space:]]*${g}"; then
+      st_gate=""; st_git=""; st_piped=""; st_or=""; st_orgit=""; L=(); O=(); k=0
+      nl=${st//$'\037'/$'\037\n'}; nl=${nl//$'\034'/$'\034\n'}
+      while IFS= read -r lk; do                     # each link with the operator that ends it
+        O[k]=""
+        case $lk in *$'\037') O[k]=and; lk=${lk%?} ;; *$'\034') O[k]=or; lk=${lk%?} ;; esac
+        L[k]=$lk; k=$((k + 1))
+      done <<< "$nl"
+      for ((j = 0; j < k; j++)); do
+        lk=${L[j]}
+        if printf '%s' "${lk%%$'\035'*}" | grep -qE "^[[:space:]]*${g}"; then
           st_gate=1
-          printf '%s' "$lk" | grep -q '|' && st_piped=1
+          if [[ "$lk" == *$'\035'* ]]; then st_piped=1
+          else  # its failure runs down the && chain to the first ||, and that branch goes on
+            x=$j
+            while (( x < k - 1 )) && [[ "${O[x]}" == and ]]; do x=$((x + 1)); done
+            if [[ "${O[x]}" == or ]] && (( x < k - 1 )) &&
+               ! [[ "${L[x+1]}" =~ ^[[:space:]]*(exit|return|false)([[:space:]]|$) ]]; then st_or=1; fi
+          fi
         fi
-        if [[ "$lk" =~ ^[[:space:]]*cd[[:space:]]+([^[:space:]]+) ]]; then
+        if [[ "${lk%%$'\035'*}" =~ ^[[:space:]]*cd[[:space:]]+([^[:space:]]+) ]]; then
           is_mem "${BASH_REMATCH[1]}" && cwdm=1 || cwdm=0
         fi
-        mem=""
-        if [[ "$lk" =~ $re_gitc ]]; then
-          tgt=${BASH_REMATCH[2]}
-          if is_mem "$tgt"; then mem=mem; elif [[ "$tgt" == "." || "$tgt" == "./" ]]; then mem=repo; fi
-        elif [[ "$lk" =~ $re_git ]]; then
-          (( cwdm )) && mem=mem || mem=repo
-        fi
-        [[ "$mem" == "$want" ]] && st_git=1
-      done <<< "$links"
+        while IFS= read -r el; do
+          [[ "$el" =~ $re_gitstep ]] || continue
+          tgt=""; mem=""
+          read -ra w <<< "${BASH_REMATCH[0]}"
+          for ((x = 0; x < ${#w[@]} - 1; x++)); do [[ "${w[x]}" == -C ]] && tgt=${w[x+1]}; done
+          if [[ -n "$tgt" ]]; then
+            if is_mem "$tgt"; then mem=mem; elif [[ "$tgt" == "." || "$tgt" == "./" ]]; then mem=repo; fi
+          else
+            (( cwdm )) && mem=mem || mem=repo
+          fi
+          if [[ "$mem" == "$want" ]]; then st_git=1; [[ -n "$st_or" ]] && st_orgit=1; fi
+        done <<< "${lk//$'\035'/$'\n'}"
+      done
       if [[ -n "$st_git" && -z "$st_gate" && -n "$gate_seen" && "$verdict" != "piped" ]]; then verdict="semicolon"; fi
       if [[ -n "$st_gate" && -n "$st_git" && -n "$st_piped" ]]; then verdict="piped"; fi
+      if [[ -n "$st_orgit" && -z "$verdict" ]]; then verdict="or-swallowed"; fi
       [[ -n "$st_gate" ]] && gate_seen=1
-    done < <(printf '%s\n' "$ecmd" | tr ';' '\n')
+    done <<< "$ecmd"
     printf '%s' "$verdict"
   }
   verdict=""; pair="a repo gate before a repo git step"
@@ -792,7 +945,7 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:
     verdict=$(launder "$mgate" mem); pair="memory_gate.sh --audit before a commit/push of the memory corpus"
   fi
   if [[ -n "$verdict" ]]; then
-    jq -nc --arg r "A verdict-emitting gate and git commit/push share this call (${pair}), but the verdict does NOT gate the git step (${verdict} form): they are joined by \`;\`/newline, or the gate is piped so tail/grep's exit replaces its own. The verdict arrives only AFTER the whole call has run — reading it then is a report about a consequence, not verification, and this exact shape pushed a red docs band to main twice (2026-08-16, 2026-08-20) and committed the memory corpus over a red audit (2026-09-23). Run the gate in its OWN call and read the verdict first; or use the sanctioned single-call form — every step joined by a clean unpiped \`&&\`, so a red gate mechanically STOPS the chain. [OPS.31 · OPS.40]" \
+    jq -nc --arg r "A verdict-emitting gate and git commit/push share this call (${pair}), but the verdict does NOT gate the git step (${verdict} form): they are joined by \`;\`/newline, or the gate is piped so tail/grep's exit replaces its own, or its failure is swallowed by \`||\`. The verdict arrives only AFTER the whole call has run — reading it then is a report about a consequence, not verification, and this exact shape pushed a red docs band to main twice (2026-08-16, 2026-08-20) and committed the memory corpus over a red audit (2026-09-23). Run the gate in its OWN call and read the verdict first; or use the sanctioned single-call form — every step joined by a clean unpiped \`&&\`, so a red gate mechanically STOPS the chain. [OPS.31 · OPS.40 · OPS.43]" \
       '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
     exit 0
   fi
@@ -890,6 +1043,12 @@ if printf '%s' "$cmd" | grep -qF '00_07_Action_Plan_Tracker' &&
       fi
     fi
   fi
+fi
+
+# [OPS.43] Rule E fails CLOSED when its awk lexer fails (a quote-blind split, above); it
+# says so here, at the end, because warn() exits and would otherwise skip rules G–I.
+if [[ -n "${lexdark:-}" ]]; then
+  warn lexer-dark '[bash-guard] Rule E could not run its quote-aware lexer (awk failed), so git commit/push calls are judged QUOTE-BLIND: a gate name or a `|`/`;` inside quoted text can now draw a false deny, and heredoc bodies are not cut. Check `awk` on PATH. (Fires once per session.)'
 fi
 
 exit 0
