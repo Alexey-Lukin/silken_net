@@ -8,7 +8,7 @@ appdirs==1.4.4 \
     --hash=sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41 \
     --hash=sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128
     # via ensureconda
-backports-zstd==1.6.0 ; python_full_version < '3.14' \
+backports-zstd==1.6.0 \
     --hash=sha256:0308990ffc998df3c7ed35276bde049728b5c3956203cae40d80893576a41459 \
     --hash=sha256:03b7c59c71f7a597e2bcb3f8368371e9a660a1bdf1c37afc1f1ad1496a013c19 \
     --hash=sha256:0466b14723f3b7697669c00ee66fe16e30e25636b286b0a923fa86fa3d8a753c \
@@ -104,7 +104,7 @@ build==1.5.0 \
     --hash=sha256:13f3eecb844759ab66efec90ca17639bbf14dc06cb2fdf37a9010322d9c50a6f \
     --hash=sha256:302c22c3ba2a0fd5f3911918651341ebb3896176cbdec15bd421f80b1afc7647
     # via conda-lock
-cachecontrol==0.14.4 \
+cachecontrol[filecache]==0.14.4 \
     --hash=sha256:b7ac014ff72ee199b5f8af1de29d60239954f223e948196fa3d84adaffc71d2b \
     --hash=sha256:e6220afafa4c22a47dd0badb319f84475d79108100d04e26e8542ef7d3ab05a1
     # via conda-lock
@@ -112,7 +112,7 @@ certifi==2026.10.19 \
     --hash=sha256:035c1e85572b141bf1c3a3eff0e33a8eb74917522f2559075ff8d2fea780a1ae \
     --hash=sha256:42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b
     # via requests
-cffi==2.1.0 ; (platform_python_implementation != 'PyPy' and sys_platform == 'linux') or sys_platform == 'darwin' \
+cffi==2.1.0 \
     --hash=sha256:02cb7ff33ded4f1532476731f89ede53e2e488a8e6205515a82144246ffa7dcc \
     --hash=sha256:03e9810d18c646077e501f661b682fbf5dee4676048527ca3cffe66faa9960dd \
     --hash=sha256:0520e1f4c35f44e209cbbb421b67eec42e6a157f59444dfb6058874ff3610e5d \
@@ -213,9 +213,7 @@ cffi==2.1.0 ; (platform_python_implementation != 'PyPy' and sys_platform == 'lin
     --hash=sha256:f9912624a0c0b834b7520d7769b3644453aabc0a7e1c839da7359f050750e9bc \
     --hash=sha256:fb62edb5bb52cca65fab91a63afa7561607120d26090a7e8fda6fb9f064726da \
     --hash=sha256:ff067a8d8d880e7809e4ac88eb009bb848870115317b306666502ccad30b147f
-    # via
-    #   cryptography
-    #   xattr
+    # via cryptography
 charset-normalizer==3.4.9 \
     --hash=sha256:0327fcd59a935777d83410750c50600ee9571af2846f71ce40f25b13da1ef380 \
     --hash=sha256:03d07803992c6c7bbc976327f34b18b6160327fc81cb82c9d504720ac0be3b62 \
@@ -324,16 +322,10 @@ click-default-group==1.2.4 \
     --hash=sha256:9b60486923720e7fc61731bdb32b617039aba820e22e1c88766b1125592eaa5f \
     --hash=sha256:eb3f3c99ec0d456ca6cd2a7f08f7d4e91771bef51b01bdd9580cc6450fe1251e
     # via conda-lock
-colorama==0.4.6 ; os_name == 'nt' or sys_platform == 'win32' \
-    --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
-    --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
-    # via
-    #   build
-    #   click
 conda-lock==4.0.3 \
     --hash=sha256:455efdfddb8e03cb44f2c4b7921e0ddc9d30e949c90611569dbe5aa652eb3079 \
     --hash=sha256:c8b0719832a2a971feffebe702bb7ce6265494d610ca9d8813a6c12a26f9ae52
-    # via -r tools/in_silico/requirements-conda-lock.in
+    # via -r requirements-conda-lock.in
 conda-package-streaming==0.13.0 \
     --hash=sha256:806ea3f2f7ac272873242e6253d543ac8aaf224e5c76d794e5fee9c63776fb5c \
     --hash=sha256:b2599426dee4a81bfe6aa40d5fb0a22ae5ff842a0a7f9df59f013bfbcd369f72
@@ -342,7 +334,7 @@ crashtest==0.4.1 \
     --hash=sha256:80d7b1f316ebfbd429f648076d6275c877ba30ba48979de4191714a75266f0ce \
     --hash=sha256:8d23eac5fa660409f57472e3851dab7ac18aba459a8d19cbbba86d3d5aecd2a5
     # via conda-lock
-cryptography==50.0.0 ; sys_platform == 'linux' \
+cryptography==50.0.0 \
     --hash=sha256:031e2d5dd4bb9caa3ca9c82e5a197fd8ae680232cee62603d1a813f3f07e3d03 \
     --hash=sha256:06a32a980526a6ab9a4b9bf8f7385800791e2bb960903cb6b530e4817509a3b7 \
     --hash=sha256:07479a1cb08219ab719147e742e76090c9c773321959bb94946fffdd397a6437 \
@@ -471,7 +463,7 @@ jaraco-functools==4.6.0 \
     --hash=sha256:880c577ec9720b3a052d5bc611fb9f2269b3d87902ef42440df443b88e443280 \
     --hash=sha256:99e3dc0060c5cbe8fcd1cdb36258e2a65ca40f1566b2033b12abb1bb44dd3c30
     # via keyring
-jeepney==0.9.0 ; sys_platform == 'linux' \
+jeepney==0.9.0 \
     --hash=sha256:97e5714520c16fc0a45695e5365a2e11b81ea79bba796e26f9f1d178cb182683 \
     --hash=sha256:cf0e9e845622b81e4a28df94c40345400256ec608d0e55bb8a3feaa9163f5732
     # via
@@ -667,7 +659,7 @@ platformdirs==4.10.0 \
     # via
     #   conda-lock
     #   virtualenv
-pycparser==3.0 ; (implementation_name != 'PyPy' and platform_python_implementation != 'PyPy' and sys_platform == 'linux') or (implementation_name != 'PyPy' and sys_platform == 'darwin') \
+pycparser==3.0 \
     --hash=sha256:600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29 \
     --hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992
     # via cffi
@@ -803,10 +795,6 @@ pyproject-hooks==1.2.0 \
     # via
     #   build
     #   conda-lock
-pywin32-ctypes==0.2.3 ; sys_platform == 'win32' \
-    --hash=sha256:8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8 \
-    --hash=sha256:d162dc04946d704503b2edc4d55f3dba5c1d539ead017afa00142c38b9885755
-    # via keyring
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
     --hash=sha256:0150219816b6a1fa26fb4699fb7daa9caf09eb1999f3b70fb6e786805e80375a \
@@ -899,17 +887,13 @@ ruamel-yaml==0.19.1 \
     --hash=sha256:27592957fedf6e0b62f281e96effd28043345e0e66001f97683aa9a40c667c93 \
     --hash=sha256:53eb66cd27849eff968ebf8f0bf61f46cdac2da1d1f3576dd4ccee9b25c31993
     # via conda-lock
-secretstorage==3.5.0 ; sys_platform == 'linux' \
+secretstorage==3.5.0 \
     --hash=sha256:0ce65888c0725fcb2c5bc0fdb8e5438eece02c523557ea40ce0703c266248137 \
     --hash=sha256:f04b8e4689cbce351744d5537bf6b1329c6fc68f91fa666f60a380edddcd11be
     # via keyring
 semver==3.0.4 \
     --hash=sha256:9c824d87ba7f7ab4a1890799cec8596f15c1241cb473404ea1cb0c55e4b04746 \
     --hash=sha256:afc7d8c584a5ed0a11033af086e8af226a9c0b206f313e0301f8dd7b6b589602
-    # via conda-lock
-setuptools==83.0.0 \
-    --hash=sha256:025bccbbf0fa05b6192bc64ae1e7b16e001fd6d6d4d5de03c97b1c1ade523bef \
-    --hash=sha256:29b23c360f22f414dc7336bb39178cc7bcbf6021ed2733cde173f09dba19abb3
     # via conda-lock
 shellingham==1.5.4 \
     --hash=sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686 \
@@ -948,58 +932,6 @@ urllib3==2.8.0 \
 virtualenv==20.39.1 \
     --hash=sha256:a00332e0b089ba64edefbf94ef34e6db33f45fe5184df0652cf0b754dcd36190 \
     --hash=sha256:c551ea1072d7717a273dd9a4a0adad8f45571af134b0f63a12430e85f6ac1c08
-    # via conda-lock
-xattr==1.3.0 ; sys_platform == 'darwin' \
-    --hash=sha256:03712f84e056dcd23c36db03a1f45417a26eef2c73d47c2c7d425bf932601587 \
-    --hash=sha256:05f8e068409742d246babba60cff8310b2c577745491f498b08bf068e0c867a3 \
-    --hash=sha256:196360f068b74fa0132a8c6001ce1333f095364b8f43b6fd8cdaf2f18741ef89 \
-    --hash=sha256:1e0dabb39596d8d7b83d6f9f7fa30be68cf15bfb135cb633e2aad9887d308a32 \
-    --hash=sha256:1e6c216927b16fd4b72df655d5124b69b2a406cb3132b5231179021182f0f0d1 \
-    --hash=sha256:1fd185b3f01121bd172c98b943f9341ca3b9ea6c6d3eb7fe7074723614d959ff \
-    --hash=sha256:2aaa5d66af6523332189108f34e966ca120ff816dfa077ca34b31e6263f8a236 \
-    --hash=sha256:2c5e7ba0e893042deef4e8638db7a497680f587ac7bd6d68925f29af633dfa6b \
-    --hash=sha256:2c69999ed70411ac2859f1f8c918eb48a6fd2a71ef41dc03ee846f69e2200bb2 \
-    --hash=sha256:2fea070768d7d2d25797817bea93bf0a6fda6449e88cfee8bb3d75de9ed11c7b \
-    --hash=sha256:30439fabd7de0787b27e9a6e1d569c5959854cb322f64ce7380fedbfa5035036 \
-    --hash=sha256:31fefcf20d040e79ec3bf6e7dc0fdcfd972f70f740d5a69ed67b20c699bb9cea \
-    --hash=sha256:331a51bf8f20c27822f44054b0d760588462d3ed472d5e52ba135cf0bea510e8 \
-    --hash=sha256:405d2e4911d37f2b9400fa501acd920fe0c97fe2b2ec252cb23df4b59c000811 \
-    --hash=sha256:45f85233a51c71659969ce364abe6bd0c9048a302b7fcdbea675dc63071e47ff \
-    --hash=sha256:4a04ada131e9bdfd32db3ab1efa9f852646f4f7c9d6fde0596c3825c67161be3 \
-    --hash=sha256:4ae3a66ae1effd40994f64defeeaa97da369406485e60bfb421f2d781be3b75d \
-    --hash=sha256:50c12d92f5214b0416cf4b4fafcd02dca5434166657553b74b8ba6abc66cb4b4 \
-    --hash=sha256:51cdaa359f5cd2861178ae01ea3647b56dbdfd98e724a8aa3c04f77123b78217 \
-    --hash=sha256:5eeaa944516b7507ec51456751334b4880e421de169bbd067c4f32242670d606 \
-    --hash=sha256:630c85020282bd0bcb72c3d031491c4e91d7f29bb4c094ebdfb9db51375c5b07 \
-    --hash=sha256:64f1fb511f8463851e0d97294eb0e0fde54b059150da90582327fb43baa1bb92 \
-    --hash=sha256:69bca34be2d7a928389aff4e32f27857e1c62d04c91ec7c1519b1636870bd58f \
-    --hash=sha256:69cd3bfe779f7ba87abe6473fdfa428460cf9e78aeb7e390cfd737b784edf1b5 \
-    --hash=sha256:6c42ef5bdac3febbe28d3db14d3a8a159d84ba5daca2b13deae6f9f1fc0d4092 \
-    --hash=sha256:726b4d0b66724759132cacdcd84a5b19e00b0cdf704f4c2cf96d0c08dc5eaeb5 \
-    --hash=sha256:78df56bfe3dd4912548561ed880225437d6d49ef082fe6ccd45670810fa53cfe \
-    --hash=sha256:864c34c14728f21c3ef89a9f276d75ae5e31dd34f48064e0d37e4bf0f671fc6e \
-    --hash=sha256:88557c0769f64b1d014aada916c9630cfefa38b0be6c247eae20740d2d8f7b47 \
-    --hash=sha256:928c49ceb0c70fc04732e46fa236d7c8281bfc3db1b40875e5f548bb14d2668c \
-    --hash=sha256:937d8c91f6f372788aff8cc0984c4be3f0928584839aaa15ff1c95d64562071c \
-    --hash=sha256:95f1e14a4d9ca160b4b78c527bf2bac6addbeb0fd9882c405fc0b5e3073a8752 \
-    --hash=sha256:995843ef374af73e3370b0c107319611f3cdcdb6d151d629449efecad36be4c4 \
-    --hash=sha256:9e68a02adde8a5f8675be5e8edc837eb6fdbe214a6ee089956fae11d633c0e51 \
-    --hash=sha256:a80c4617e08670cdc3ba71f1dbb275c1627744c5c3641280879cb3bc95a07237 \
-    --hash=sha256:b3cf29da6840eb94b881eab692ae83b1421c9c15a0cd92ffb97a0696ceac8cac \
-    --hash=sha256:b4345387087fffcd28f709eb45aae113d911e1a1f4f0f70d46b43ba81e69ccdd \
-    --hash=sha256:b8589744116d2c37928b771c50383cb281675cd6dcfd740abfab6883e3d4af85 \
-    --hash=sha256:bbd06987102bc11f5cbd08b15d1029832b862cf5bc61780573fc0828812f01ca \
-    --hash=sha256:c0d9ab346cdd20539afddf2f9e123efee0fe8d54254d9fc580b4e2b4e6d77351 \
-    --hash=sha256:c5742ca61761a99ae0c522f90a39d5fb8139280f27b254e3128482296d1df2db \
-    --hash=sha256:c6992eb5da32c0a1375a9eeacfab15c66eebc8bd34be63ebd1eae80cc2f8bf03 \
-    --hash=sha256:da5954424099ca9d402933eaf6112c29ddde26e6da59b32f0bf5a4e35eec0b28 \
-    --hash=sha256:dd4e63614722d183e81842cb237fd1cc978d43384166f9fe22368bfcb187ebe5 \
-    --hash=sha256:e470b3f15e9c3e263662506ff26e73b3027e1c9beac2cbe9ab89cad9c70c0495 \
-    --hash=sha256:f2238b2a973fcbf5fefa1137db97c296d27f4721f7b7243a1fac51514565e9ec \
-    --hash=sha256:f32bb00395371f4a3bed87080ae315b19171ba114e8a5aa403a2c8508998ce78 \
-    --hash=sha256:f3bef26fd2d5d7b17488f4cc4424a69894c5a8ed71dd5f657fbbf69f77f68a51 \
-    --hash=sha256:fa23a25220e29d956cedf75746e3df6cc824cc1553326d6516479967c540e386 \
-    --hash=sha256:fe92bb05eb849ab468fe13e942be0f8d7123f15d074f3aba5223fad0c4b484de
     # via conda-lock
 zstandard==0.25.0 \
     --hash=sha256:011d388c76b11a0c165374ce660ce2c8efa8e5d87f34996aa80f9c0816698b64 \
