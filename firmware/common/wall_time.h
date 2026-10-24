@@ -148,6 +148,53 @@ static inline uint8_t Silken_Beacon_Commit(const SilkenCalendarOps *ops, uint32_
 }
 
 /*
+ * [SEC.42] Маяк часу Королеви на дроті (16 Б ECB-плейнтексту, дзеркало Queen):
+ * [0x9C][unix_ts_be:u32][TDMA:4][auth|TTL][магія 'B'][padding:5].
+ */
+#define SILKEN_BEACON_MARKER          0x9Cu
+#define SILKEN_BEACON_MAGIC_BYTE      0x42u   /* 'B' */
+#define SILKEN_BEACON_PLAINTEXT_SIZE  16u
+#define SILKEN_BEACON_AUTH_FLAG       0x80u   /* біт 7 байту 9: пряма трансляція Королеви */
+
+typedef struct {
+    uint8_t  is_beacon;      /* кадр — маяк часу (довжина, маркер, магія) */
+    uint8_t  committed;      /* календар поставлено, і запис ліг (Silken_Beacon_Commit) */
+    uint8_t  authoritative;  /* біт авторитетності */
+    uint32_t beacon_ts;      /* 0 — Королева ще не знала часу: розібрано, не застосовано */
+} SilkenBeaconRx;
+
+/*
+ * [SEC.42] RX-гілка маяка ЦІЛКОМ — розбір і застосування — одна функція для main.c і host-тестів.
+ * Доти розбір жив у main.c, а тест носив його ручну копію, тож дисципліну гілки тримав лише
+ * текстовий носій (`check_sec42_calendar.py`), і п'ять раундів адверсара над ним щоразу
+ * знаходили нові форми. Тепер носій пінить один виклик із тим самим станом.
+ * `applying` стоїть увесь коміт — від запису календаря до зсуву бази (init-режим RTC:
+ * мілісекунди, на збої RTCCLK — до таймаутів HAL): база в RAM тоді неузгоджена з
+ * календарем, і PVD-рятівник під прапорцем пише в DR1 нуль — сентинел «не виміряно».
+ */
+static inline SilkenBeaconRx Silken_Beacon_Receive(const SilkenCalendarOps *ops, const uint8_t *plain,
+                                                   uint16_t size, volatile uint32_t *sync_mark,
+                                                   uint32_t *wake_base, uint16_t *watchdog_wakeups,
+                                                   volatile uint8_t *applying)
+{
+    SilkenBeaconRx rx = { 0u, 0u, 0u, 0u };
+    if (size != SILKEN_BEACON_PLAINTEXT_SIZE || plain[0] != SILKEN_BEACON_MARKER ||
+        plain[10] != SILKEN_BEACON_MAGIC_BYTE) {
+        return rx;
+    }
+    rx.is_beacon     = 1u;
+    rx.authoritative = (plain[9] & SILKEN_BEACON_AUTH_FLAG) ? 1u : 0u;
+    rx.beacon_ts     = ((uint32_t)plain[1] << 24) | ((uint32_t)plain[2] << 16) |
+                       ((uint32_t)plain[3] << 8)  | (uint32_t)plain[4];
+    if (rx.beacon_ts != 0u) {
+        *applying    = 1u;
+        rx.committed = Silken_Beacon_Commit(ops, rx.beacon_ts, sync_mark, wake_base, watchdog_wakeups);
+        *applying    = 0u;
+    }
+    return rx;
+}
+
+/*
  * [FW.49 S1] Чи несе wall-значення справжній UTC? Незсинхований календар
  * біжить від RTC-default 2000-01-01 (946684800) — щоб перетнути цей поріг
  * (2020-09) без time-sync, вузол мусив би пропрацювати ~20 років. Дельтам

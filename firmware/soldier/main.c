@@ -380,13 +380,14 @@ static inline float uint32_to_float(uint32_t u) {
 // OTA (0x99), телеметрії (починається з DID, ніколи не 0x9C) та текстового
 // CMD:. Маяк споживаємо локально (дрейф RTC); Провідник може понести його
 // далі — mesh-relay з anti-storm журналом (FW.20-S2, гейт нижче).
-#define BEACON_MARKER             0x9C
-#define BEACON_MAGIC_BYTE         0x42  // 'B'
-#define BEACON_PLAINTEXT_SIZE     16
+// [SEC.42] Дім розкладки — wall_time.h (там і розбір маяка); тут лише імена relay-гілки.
+#define BEACON_MARKER             SILKEN_BEACON_MARKER
+#define BEACON_MAGIC_BYTE         SILKEN_BEACON_MAGIC_BYTE
+#define BEACON_PLAINTEXT_SIZE     SILKEN_BEACON_PLAINTEXT_SIZE
 // [FW.20-S2] Біт 7 байту 9: 1 = маяк прямо від Королеви (authoritative),
 // 0 = relay-маяк через Провідника або легасі-формат. TTL фактично займає
 // нижні 7 біт (max 127); Королева транслює TTL=2 (1 relay-хоп).
-#define BEACON_AUTH_FLAG          0x80
+#define BEACON_AUTH_FLAG          SILKEN_BEACON_AUTH_FLAG
 #define BEACON_TTL_MASK           0x7F
 
 // [FW.20-S1] Солдатські UTC-секунди як єдине джерело істини + локальний tick
@@ -730,6 +731,9 @@ static void FW17_Restore_Key_Version(uint32_t did)
 // правильно: cold-boot перезапускає grace). Сатуруються, не обертаються.
 uint16_t wakeups_since_boot         = 0; // [ARCH.41-C] grace-вікно cold-boot
 uint16_t wakeups_since_sync         = 0; // тиша від останнього beacon'а (drift-watchdog)
+// [SEC.42] Коміт маяка триває: база в RAM неузгоджена з календарем — рятівник пише в DR1 нуль.
+// Група B інвентаря (03_01 §2.3.1): після скиду застосування не триває за побудовою.
+static volatile uint8_t soldier_beacon_applying = 0;
 uint16_t wakeups_since_sync_request = 0; // cooldown зойків 0x56
 uint8_t  sync_request_ever          = 0; // 0 = ще не просили (перший зойк без cooldown)
 
@@ -2345,39 +2349,25 @@ int main(void)
                 HAL_CRYP_Decrypt(&hcryp, (uint32_t*)incoming_lora_payload, blocks, (uint32_t*)decrypted_rx_payload, 1000);
 
                 // Сценарій 0: [FW.20-S1] Маяк синхронізації часу від Королеви (0x9C).
-                // 16-байтний ECB-пакет з відкритим текстом [0x9C][ts_be:4][...].
-                // Оновлюємо soldier_unix_ts/local_tick — cold-start derivation
-                // тоді точно обчислить epoch_day (дзеркало бекенду HKDF input).
-                if (incoming_lora_size == BEACON_PLAINTEXT_SIZE &&
-                    decrypted_rx_payload[0] == BEACON_MARKER &&
-                    decrypted_rx_payload[10] == BEACON_MAGIC_BYTE) {
+                // [SEC.42] Розбір і застосування — одна функція (wall_time.h), спільна з host-тестами:
+                // маяк без MAC і FC, тож повтор старого ставив би годинник назад і вкорочував наступний
+                // delta_t; назад календар іде не далі за дрейф від синку, база delta_t — за ФАКТИЧНИМ
+                // кроком, мітка синку й сторож — лише за записом, що ліг. [FW.49 S1] UTC у RTC-календар:
+                // delta_t/epoch_day переживають STOP2 без tick-екстраполяції.
+                // 🔒 Поки коміт триває, `soldier_beacon_applying` стоїть, і PVD-рятівник пише в DR1 нуль
+                // (див. HAL_PWR_PVDCallback) — не нескориговану базу й не пропуск запису.
+                const SilkenBeaconRx beacon = Silken_Beacon_Receive(&soldier_calendar_ops, decrypted_rx_payload,
+                                                                    incoming_lora_size, &soldier_unix_ts,
+                                                                    &last_wakeup_timestamp, &wakeups_since_sync,
+                                                                    &soldier_beacon_applying);
 
-                    uint32_t beacon_ts = ((uint32_t)decrypted_rx_payload[1] << 24) |
-                                         ((uint32_t)decrypted_rx_payload[2] << 16) |
-                                         ((uint32_t)decrypted_rx_payload[3] << 8)  |
-                                         (uint32_t)decrypted_rx_payload[4];
+                if (beacon.is_beacon) {
+                    if (beacon.committed) soldier_unix_ts_local_tick = HAL_GetTick();
 
-                    if (beacon_ts != 0) {
-                        // [SEC.42] Маяк без MAC і FC: повтор старого ставив би годинник назад і вкорочував
-                        // наступний delta_t, тобто піднімав бали. Застосування — одна функція (wall_time.h):
-                        // назад календар іде не далі за дрейф від останнього синку, база delta_t — за
-                        // ФАКТИЧНИМ кроком календаря, а мітка синку й сторож дрейфу — лише за записом, що ліг.
-                        // [FW.49 S1] UTC у RTC-календар: wall-clock стає абсолютним — delta_t/epoch_day
-                        // переживають STOP2 без tick-екстраполяції (вона лишається фолбеком).
-                        if (Silken_Beacon_Commit(&soldier_calendar_ops, beacon_ts, &soldier_unix_ts,
-                                                 &last_wakeup_timestamp, &wakeups_since_sync)) {
-                            soldier_unix_ts_local_tick = HAL_GetTick();
-                        }
-                    }
-
-                    // [FW.20-S2] Зчитуємо authoritativeness прапорець з байту 9
-                    // (біт 7). 1 = пряма трансляція від Королеви; 0 = relay
-                    // або легасі-маяк (попередня прошивка слала TTL=1 чисто).
-                    // Логіки арбітражу між двома маяками ще НЕ додано —
-                    // це повний FW.20-S2; зараз лише фіксуємо у RAM, щоб
-                    // upper layers (CAD relay) могли консультуватись.
-                    time_source_authoritative =
-                        (decrypted_rx_payload[9] & BEACON_AUTH_FLAG) ? 1 : 0;
+                    // [FW.20-S2] Біт 7 байту 9: 1 = пряма трансляція від Королеви; 0 = relay
+                    // або легасі-маяк. Арбітражу між двома маяками ще НЕМАЄ (повний FW.20-S2) —
+                    // лише фіксуємо у RAM, щоб upper layers (CAD relay) могли консультуватись.
+                    time_source_authoritative = beacon.authoritative;
 
 #if ARCH26_TDMA_ENABLED
                     // [ARCH.26 L2] Байти 5..8 — слот-розкладка синхронних
@@ -2394,7 +2384,7 @@ int main(void)
                     // порога, а роль PROV — еліта з надлишком (ARCH.27).
                     // Mark — RAM одразу після TX; запис 0x20 у Flash — у
                     // КЕНОЗИСІ (program не сміє лягати під RX-вікно).
-                    if (beacon_ts != 0) {
+                    if (beacon.beacon_ts != 0) {
                         uint8_t  relay_plain[BEACON_PLAINTEXT_SIZE];
                         uint32_t relay_now = HAL_GetTick();
                         BeaconRelayResult rr = Soldier_Try_Relay_Time_Beacon(
@@ -2410,7 +2400,7 @@ int main(void)
                             HAL_Delay(Lora_Phy_Send(encrypted_payload, BEACON_PLAINTEXT_SIZE,
                                                     LORA_PHY_PREAMBLE_SYMBOLS));
                             Beacon_Dedup_Mark(&beacon_dedup,
-                                              Beacon_Dedup_Gen(beacon_ts));
+                                              Beacon_Dedup_Gen(beacon.beacon_ts));
                         }
                     }
 #endif
@@ -2901,7 +2891,12 @@ void HAL_PWR_PVDCallback(void)
 
     // 2. [ARCH.21] Зберігаємо timestamp пробудження, щоб delta_t після
     //    відновлення живлення не стрибнув на гігантське значення.
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
+    //    [SEC.42] Посеред коміту маяка база неузгоджена з календарем — і нуль тут не «пропуск», а
+    //    сентинел «не виміряно» (ARCH.102): пропуск лишив би в DR1 базу ПОПЕРЕДНЬОГО пробудження
+    //    (DR1 пишуть лише Фаза 5 і рятівник), і після скиду delta_t двічі лічив би вже зарахований
+    //    інтервал. Маска IRQ на час коміту гірша: init-режим RTC — мілісекунди, а рятує цей
+    //    обробник і DR0, і стан Лоренца.
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, soldier_beacon_applying ? 0u : last_wakeup_timestamp);
 
     // 3. [ARCH.21] Зберігаємо стан Лоренца (DR16-DR19) симетрично до
     //    Phase 5. Без цього rescue брауноут = втрата траєкторії =

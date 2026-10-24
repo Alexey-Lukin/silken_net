@@ -72,6 +72,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 24. On the cycle the radio sleeps in ONE place — the first statement of Phase 5 (`phase5_kenosis:`; the PVD callback is the only other site) — and every path into low power must pass it; a `goto` past it or a TX after it leaves the radio in STDBY_RC, 0.7 mA against 140 nA of sleep, and `Set_Sleep` is accepted only from Standby, so a live receiver ignores it
 25. A byte of the CCM plaintext has MORE THAN ONE WRITER — the panic path packs its own literals into the same 14 bytes the telemetry path fills, so re-homing a byte is an audit of every call site of `Soldier_Build_CCM_LoRa_Packet` and of every backend reader of that byte, not an edit of one `Pack_*` helper
 26. Sleeping from INSIDE an interrupt with WFI wakes only on an interrupt that can PREEMPT it — at the highest priority nothing can, so the board sleeps until reset
+27. Mid-commit, the PVD rescuer writes DR1 = 0
 
 <!-- /FIRMWARE-GOTCHAS-INDEX -->
 
