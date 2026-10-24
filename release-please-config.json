@@ -3,6 +3,7 @@
   "release-type": "simple",
   "bootstrap-sha": "f3685d912b4f4350678d0a592da94f5d664d43d8",
   "include-component-in-tag": false,
+  "commit-search-depth": 5000,
   "packages": {
     ".": {
       "package-name": "silken_net",

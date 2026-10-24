@@ -308,6 +308,10 @@
 27. **Deploy/release ланцюг: Canopy = continuous push у `main` після CI; Production = GitHub Release**
   (release-please: semver+CHANGELOG); GHCR-mirror пушить SLSA provenance+SBOM. `main` branch-protected
   (required-контексти — `:required` у `scripts/workflow_gate_perimeter.rb`; прямий push власника їх обходить). Діаграма/гейти → `06_07 §1`/`§2`.
+  🔴 **Але «Production = GitHub Release» — це ЗАДУМ, а не діючий ланцюг** (виміряно 2026-10-24): реліз створює
+  `GITHUB_TOKEN` release-please, а подія від нього інших воркфлоу не тригерить, тож `deploy-production.yml`
+  і `mirror-ghcr.yml` на реліз не стартують (сім релізів — нуль прогонів). Мердж release-PR сьогодні нічого
+  не деплоїть; лік і його ⛔ порядок (гард зупиненого стеку ПЕРШИМ) — `00_07` DEPLOY-1, механіка — `06_07 §1`.
 28. **GH Environment `production` = дім money-п'ятірки (INF.22) — environment-scoped, НЕ repo-level**;
   Canopy ПРОДОВІ money-ключі не споживає структурно: з 2026-09-02 (OPS.37) його власна `job`-роль
   читає repo-level testnet-двійники `CANOPY_*` через overlay `.kamal/secrets.canopy` (B4), а RHS
