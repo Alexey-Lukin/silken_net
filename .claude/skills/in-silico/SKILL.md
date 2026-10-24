@@ -271,7 +271,8 @@ Anchor mechanics (CPU):
      (printed_part_sway_stress.json: the source day's strain, the depth fractions, the anode's bond force) ·
      tools/cad/cem (the pine anode's envelope and period) → 108 (gyroid_interface_contact_map.json — 106's bonded
      interface read as a pressed frictional contact; the growth-pressure readings live in the script; a sha256 of the
-     106 and 105 fields it read, recomputed by its cache test); a re-run of 106 or 105 re-runs 108
+     106, 105 and CEM fields it read, recomputed by its cache test); a re-run of 106 or 105, or a change to the pine
+     anode's CEM, re-runs 108
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

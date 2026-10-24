@@ -41,6 +41,10 @@ on:
       - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
       - 'docs/protocols/hardware/rf_mockup_bench_sheet.md'
       - 'docs/00_07_Action_Plan_Tracker.md'
+      # The CAD inputs the scripts read at runtime (CEM manifests, the voxel-FE caches): a change there
+      # stales the caches built on them, and only the cache test in `smoke` can see it.
+      - 'tools/cad/cem/**'
+      - 'tools/cad/cache/fea/**'
       - '.github/workflows/in_silico_smoke.yml'
 
 jobs:
@@ -78,6 +82,8 @@ jobs:
               - 'docs/protocols/anchor/install_and_log_bench.md'
               - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
               - 'docs/protocols/hardware/rf_mockup_bench_sheet.md'
+              - 'tools/cad/cem/**'
+              - 'tools/cad/cache/fea/**'
               - '.github/workflows/in_silico_smoke.yml'
             docs_sync:
               # doc targets of the doc↔cache pins that live OUTSIDE the in-silico perimeter — they wake only the

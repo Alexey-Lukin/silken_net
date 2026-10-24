@@ -1255,7 +1255,8 @@ occlusion of an exposed surface — in the anchor, the callus over Zone 2's oute
 around Zone 1. None of the primaries on bodies set into living wood measures adhesion, and none is a conifer (Kane 2011
 measured higher J-lag failure loads one to four years after installation, «presumably» from growth over the «J»; Ludwig
 2012 reports an apparent form fit). So the bond is a reading, and its unbonded ends — slip with the normal contact kept,
-and opening, which decouples the gyroid like a soft ring — are not computed. Wang 2009 (*J. Mech. Mater. Struct.*
+and opening of a smooth envelope, which decouples the gyroid like a soft ring (an interlock does not decouple in
+tension — `108`) — are not computed. Wang 2009 (*J. Mech. Mater. Struct.*
 4:1595) shows the field inside an anisotropic circular inclusion IS uniform when the interface is homogeneously
 imperfect with equal normal and in-plane tangential compliance — a sufficient condition; slip is not such an interface
 and lies outside this script's uniform-strain solution.
@@ -1330,51 +1331,65 @@ The strain is the source day's that `105` carries from `87`, 676–1837 µε at 
 bark … its upper whisker on a large stem); both halves of the sway occur as the wind turns — tension, the anchor on the
 stem's windward face, and compression.
 
-**Read as a smooth contact on the gyroid's envelope, the bonded field stays closed at the source day's strain at θ = 0
-only under p₀ of at least 5.14 MPa (Scots pine group) ⊥ 1.75 MPa (green group) — 2.4× the clamp reading — and on both
-named readings it is open in every cell of both groups.** With tissue in the macropores — canon's own Phase 2
-(`01_04 §2`) — that is no opening but the demand on an interlocked composite, which needs no adhesion to carry tension
-and for which the map has no direction. The tension half opens the poles facing along the stem; the compression half —
-where the wood's lateral expansion outruns the gyroid's — those facing around it (never in 107 green cells, whose σᴵ
-stays tensile across the stem):
+**Read as a smooth contact on the gyroid's envelope — a reading consistent only with the bare-lattice cells, 60 ⊥ 156 —
+the bonded field stays closed at the source day's strain at θ = 0 only under p₀ of at least 5.39 MPa (Scots pine group)
+⊥ 1.77 MPa (green group) — 7.4× ⊥ 2.4× the clamp reading — and on both named readings it is open in every bare-lattice
+cell of both groups.** On the cells with tissue in the macropores — canon's own Phase 2 (`01_04 §2`), `106`'s additive
+and Voigt pore readings — the same averaged traction exceeds p₀ in every cell too, but that is no opening: it is the
+demand on an interlocked composite, which needs no adhesion to carry tension and for which the map has no direction.
+The green headline stands on excluding Bruder's 2.5 MPa: had it been taken, at the day's 676 µε the averaged tension
+traction would stay below it in 167 of the green group's 468 cells (59 of its 156 bare-lattice cells) and in 0 of the
+Scots pine group's 180 — a fact about the averaged traction, no holding claim. The tension half opens the poles facing
+along the stem; the compression half — where the wood's lateral expansion outruns the gyroid's — those facing around it
+(in 107 green cells σᴵ stays tensile across the stem, so the averaged compression-half traction never reaches p₀ there —
+no holding claim; a local opening is not excluded). The table is the smooth contact, so its cells are the bare lattice:
 
 | group | p₀ reading (Bruder 1998) | p₀, MPa | tension half opens above, µε | compression half at the day's two ends, 676 ⊥ 1837 µε: cells open · friction needed where closed, at least |
 |---|---|---|---|---|
-| Scots pine, 180 cells | turgor of free root cells (p. 15) | 0.5 | 29–66 | 108 ⊥ 149 · 1.98–3.46 ⊥ 3.48–8.96 |
-| Scots pine, 180 cells | his spring clamps on poplar roots (p. 100) | 0.72 | 41–95 | 62 ⊥ 114 · 1.57–20.39 ⊥ 2.83–16.21 |
-| green, 468 cells | turgor of free root cells (p. 15) | 0.5 | 44–193 | 17 ⊥ 72 · 0.86–10.11 ⊥ 1.48–10.79 |
-| green, 468 cells | his spring clamps on poplar roots (p. 100) | 0.72 | 62–277 | 0 ⊥ 46 · 0.68–3.94 ⊥ 1.24–73.63 |
+| Scots pine, 60 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 33–63 | 36 ⊥ 53 · 2.00–3.54 ⊥ 3.91–7.93 |
+| Scots pine, 60 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 47–91 | 19 ⊥ 43 · 1.58–13.06 ⊥ 3.00–24.29 |
+| green, 156 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 47–191 | 5 ⊥ 24 · 0.87–61.55 ⊥ 1.49–7.46 |
+| green, 156 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 67–275 | 0 ⊥ 16 · 0.68–3.25 ⊥ 1.24–56.55 |
 
-Below its onset the tension half needs a friction that rises from zero, and at half the opening strain it already
-needs at least 0.34–0.39 on either reading (that ratio needs no p₀). At the source day's strain the averaged traction
-exceeds p₀ over at least 54 % of the circumference in the tension half. The pole traction is 0.70–1.24× the wood's own
-bending stress E_L·ε, so at θ = 0 the verdict does not hang on which of `106`'s readings holds, and the p₀ it needs
-scales with the wood's E_L.
+On a smooth envelope the friction needed below the onset rises from zero with the strain, and at half the opening
+strain it is already at least 0.34–0.39 on either reading (a lower bound; that ratio needs no p₀). At the source day's
+strain the averaged traction exceeds p₀ over at least 55 % of the circumference in the tension half. The pole traction
+is 0.74–1.24× the wood's own bending stress E_L·ε, so at θ = 0 the size of the demand does not hang on which of `106`'s
+readings holds — its direction does — and the p₀ it needs scales with the wood's E_L.
 
 **Off the cube axis C44 enters**, and the pole traction never falls as C44 rises (asserted on `106`'s grid); at C44's
-Voigt ceiling no install angle opens the tension half later than θ = 0 does. The averaged traction keeps the tension
-half closed at the source day's strain only below a Zener ratio of 0.035 (on the clamp reading at the day's 676 µε),
-against the Voigt ceiling 4.402 — no measured C44 is used. On 12 green lattice cells the pole traction falls to zero or
-below as C44 → 0 at θ = 45° — Jeong's two green sets, bare lattice, every alloy: the gyroid sits in biaxial compression
-there, and its tension half does not open at all.
+Voigt ceiling no install angle opens the tension half later than θ = 0 does. On a bare-lattice cell the averaged traction
+keeps the tension half closed at the source day's strain only below a Zener ratio of 0.030 (on the clamp reading at the
+day's 676 µε), against the Voigt ceiling 3.755 — no measured C44 is used. On 12 green lattice cells the pole traction
+falls to zero or below as C44 → 0 at θ = 45° — Jeong's two green sets, bare lattice, every alloy: the averaged traction
+there is compressive all around, which is no holding claim — a local opening is not excluded.
 
 **Both consumers**, read from `106`'s consumer blocks. At the cell behind `106`'s binding claim — the union's lowest
-θ = 0 share, Davies' Table 2 stiff outerwood on the softer-axis reading under the Voigt phase bound, where σᴵ is a bound
-tensor's stress rather than an admissible traction — a smooth envelope would open at least 17.4× below the binding
-strain (Ta: 2562 µε against an opening above 103 ⊥ 148 µε) and would stay closed up to it only under p₀ of at least
-12.5 MPa; the Scots pine group's binding cell, printed beside it as the price, gives 23.6× and 17.0 MPa. Net tension
+θ = 0 share, Davies' Table 2 stiff outerwood on the softer-axis reading under the Voigt phase bound, which puts tissue in
+the pores, so the envelope is no contact surface there and σᴵ is a bound tensor's stress rather than an admissible
+traction — the averaged envelope traction reaches p₀ 16.1× below the binding strain (Ta: 2383 µε against p₀ reached
+above 103 ⊥ 148 µε), and a p₀ of 11.6 MPa would offset it up to that strain: a demand on the interlocked composite, with
+no direction; the Scots pine group's binding cell, printed beside it as the price, gives 22.0× and 15.8 MPa. Net tension
 across the envelope is carried by any load-bearing composite, bonded or interlocked, so this shows no need for adhesion.
 The junction's adverse end is the highest share: at θ = 0 (the bare lattice on the driest Scots softer-axis reading) the
-tension half opens above 37–46 ⊥ 53–66 µε, below the source day; at the union's C44 → 0 supremum (θ = 45°, Davies'
+tension half opens above 36–44 ⊥ 51–63 µε, below the source day; at the union's C44 → 0 supremum (θ = 45°, Davies'
 stiff outerwood from the raw ESM means, bare lattice) the in-plane stress is isotropic — the bending field puts no
-averaged in-plane shear on the envelope there, which is no holding claim — and the tension half opens above 630 ⊥ 907
-µε: at the day's median on a DBH-38 bark on the turgor reading, at its upper whisker on a large stem on both.
+averaged in-plane shear on the envelope there, which is no holding claim — and the tension half opens above 628 ⊥ 905
+µε: at the day's median on a DBH-38 bark on the turgor reading, at its upper whisker on a large stem on both. That
+supremum stands on Davies' raw ESM means, which are our assembly; over the published sets only — the companion ratified
+beside it (⚖️ 2026-10-22; Davies' Table 2 stiff outerwood, softer-axis reading, bare lattice, θ = 45°) — the tension
+half opens above 748 ⊥ 1076 µε: at the day's median only on a large stem on the turgor reading, at its upper whisker on
+both readings at both placements. So «at the day's median on a DBH-38 bark» holds only on our ESM assembly.
 The anode's axial bond force (`105`'s S2 path, its mature and rigid-sleeve states at the source day) rides the same
 envelope as a mean axial shear of 0.03–1.20 MPa over Ø11 × 40; it is not superposed point by point (its distribution
-along the gyroid is a shear lag), and on a smooth envelope it can only raise the friction needed.
+along the gyroid is a shear lag), and its effect on the friction needed has no direction here: at a fixed normal
+pressure it adds axial shear, but it also moves the normal pressure through the gyroid's Poisson strain, with a sign that
+alternates with the sway — not computed.
 
 ⚠️ **Bounds.** The traction is the homogenised one — the average over the cut lattice on the Ø11 envelope, where one
-lattice cell spans 21–26° of ψ, so the open shares and the friction maxima carry an unquantified O(cell/radius) error.
+lattice cell spans 21–26° of ψ, so the open shares and the friction maxima carry an O(cell/radius) error that is not
+quantified. Taking it as C·(cell/radius), the tightest bare-lattice margin — the green group's need over the clamp
+reading, 2.4 at the day's 676 µε — keeps «open in every bare-lattice cell» while C stays below 1.3.
 Its direction holds only for a smooth contact whose local normal is the envelope's: there full stick needs
 |τ| ≤ μ·(p₀ − σ_n) at every point, so the averaged ratio is a lower bound on the friction needed and an averaged opening
 forces a local one — such a contact can be shown failing, never holding. A contact that is not smooth has no guaranteed
@@ -1389,9 +1404,9 @@ the share is the leg's next step and is not computed here (a fully open smooth e
 ring; an interlock does not decouple in tension). Controls: `106`'s cells of both groups reproduced exactly; the
 projection against the isotropic closed form (Goodier/Muskhelishvili, shear excited) and against the Mohr circle on
 every install-angle row; the tangent maximum against a brute force over the circle; the axial shear zero on every state;
-σᴵ at θ = 0 free of C44; the pole traction never falling as C44 rises; the cache test recomputes every θ = 0 cell by
-another arithmetic and the fingerprint of the `106` and `105` fields read. Cache:
-`mechanical/gyroid_interface_contact_map.json`.
+σᴵ at θ = 0 free of C44; the pole traction never falling as C44 rises; the binding thresholds read from `106`'s consumer
+block and held to its group derivation; the cache test recomputes every θ = 0 cell by another arithmetic and the
+fingerprint of the `106`, `105` and CEM fields read. Cache: `mechanical/gyroid_interface_contact_map.json`.
 
 ---
 

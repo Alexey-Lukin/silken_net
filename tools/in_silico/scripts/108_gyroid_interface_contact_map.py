@@ -48,11 +48,15 @@ callus INTO the macropores (01_04 §2, Phase 2) — an interlock with the lattic
 surface: there the envelope traction is the DEMAND on the interlocked composite, and neither failing nor holding follows
 from it. Even the bare-lattice cells are a smooth envelope only while no tissue grows into the surface relief. On a Voigt
 cell σᴵ is the stress of a bound tensor, which breaks traction continuity at the internal Ti–tissue faces: it is not
-the average of any admissible local traction field.
+the average of any admissible local traction field. So the smooth-contact statements — an opening, a friction lower
+bound — are taken over the BARE-lattice cells only (`summary_bare_lattice`); on the additive and Voigt cells, which
+put tissue in the pores, the same numbers are the demand (the 2026-10-22 review, finding 3). Field names say «opens»
+for the averaged traction reaching p₀ on every cell; on a cell with tissue in the pores that is a demand, not an opening.
   p₀. No primary found in reach (2026-10-22) measures a stem callus' growth pressure on an inclusion, so p₀ takes NAMED
 readings of ROOT growth pressure in one primary, Bruder 1998 (FZKA 6206, doi 10.5445/IR/67698), as the leg allows
 (00_07 HW.23 step (1)): 0.72 MPa — his own first field test, 15 spring clamps (5, 10 and 20 N/mm) on thin poplar roots
-(< 10 mm), read after about 2 years at about 2 mm of radial growth, the largest over the clamps («bis zu»; p. 100); a
+(< 10 mm), read after about 2 years at about 2 mm of thickness growth («Dickenzuwachs» — a diameter for a root), the
+largest over the clamps («bis zu»; p. 100); a
 spring clamp is a compliant restraint, so the reading is no stall pressure against rigid titanium, and Bruder left open
 whether it rises further — and the turgor of free root cells, about 0.5 MPa (p. 15, his ref [27]; p. 100 repeats it),
 secondary. ⛔ 2.5 MPa is NOT taken: Bruder uses it twice in two senses — p. 15 «bis 2,5 MPa und darüber» (roots impeded in
@@ -67,20 +71,27 @@ at the gyroid are its median on the DBH-38 bark and its upper whisker on a large
   Axial. The infinite cylinder's τ_R is zero, but the same interface carries the anode's axial bond force (`105`'s S2
 path, read from `105`'s cache) — its mean over the envelope (the CEM's Ø × length) is printed for scale only. It is not
 superposed point by point (its distribution along the gyroid is a shear lag no script computes) and never paired with a
-`106` cell (`105`'s bond states are not `106`'s cells — in-silico §When Modifying #45 ⊕); on a smooth envelope
-|τ| = √(τ_ψ² + τ_R²) ≥ |τ_ψ| at every point, so it can only raise the friction that contact needs.
-  Consumers (the leg's two ends, in-silico §When Modifying #48), read from `106`'s consumer blocks (#4): the binding claim
-on the union's lowest θ = 0 share (`106`'s `consumer_ceiling_binding_claim`), the Scots pine group's lowest printed
-beside it as the price; the junction on the highest share — the union's θ = 0 highest per alloy and its C44 → 0
-supremum (`consumer_ceiling_junction`), the Scots pine group's beside it.
+`106` cell (`105`'s bond states are not `106`'s cells — in-silico §When Modifying #45 ⊕). Its effect on the friction
+needed has NO direction here: it adds axial shear (|τ| = √(τ_ψ² + τ_R²) ≥ |τ_ψ| at a FIXED σ_n), but the same force
+also moves σ_n through the gyroid's Poisson strain, with a sign that alternates with the sway (`105`'s S2 force follows
+the stem's strain), so in the push half it can add contact pressure — not computed (the 2026-10-22 review, finding 4).
+  Consumers (the leg's two ends, in-silico §When Modifying #48), read from `106`'s consumer blocks (#4): the binding
+claim's thresholds and its Scots pine price from `106`'s `consumer_ceiling_binding_claim`, its cell — the union's lowest
+θ = 0 share — held to that block's named reading; the junction on the highest share — the union's θ = 0 highest per
+alloy and its C44 → 0 supremum, with the founder-ratified companion over the PUBLISHED sets only beside it
+(`consumer_ceiling_junction`, ⚖️ 2026-10-22), the Scots pine group's beside them. The binding cell sits under the Voigt
+phase bound — tissue in the pores — so there the envelope traction is a DEMAND with no direction, and the consumer
+prints the demand, never an opening (the 2026-10-22 review, finding 1).
 
 CAN: per cell of each group (alloy · wood set · symmetrisation reading · pore reading) at θ = 0 — σᴵ per unit strain, its
 Mohr circle, the strain at which each half opens on each named p₀ reading, the growth pressure that keeps each half
 closed at the source day's strains, and at the source day's two ends the open share and the friction needed where
 closed; over `106`'s grid (install angle × Zener ratio, C44 → 0 included) the principal stresses' extremes, the Zener
 ratio below which some install angle keeps the tension half closed, and the compression half's friction; summaries per
-group (Scots pine ⊥ green ⊥ union); both consumers' cells; the mean axial shear of the anode's bond force; a fingerprint
-of every `106` and `105` field read, which the cache test recomputes from the CURRENT caches.
+group (Scots pine ⊥ green ⊥ union), over all cells and over the bare-lattice cells alone; what excluding Bruder's 2.5 MPa
+costs the «every cell» headline; the verdict's smallest margin against the homogenisation error; both consumers' cells;
+the mean axial shear of the anode's bond force; a fingerprint of every `106`, `105` and CEM field read, which the cache
+test recomputes from the CURRENT inputs.
 CANNOT: (1) say what the contact DOES once it opens or slips, or what an interlock carries — the unbonded and the
 interlocked ends are the leg's step (2): a slipping interface keeps no uniform field inside a circular inclusion in an
 anisotropic matrix (Wang 2009), so it lies outside this uniform-strain solution, and what partial slip, opening or
@@ -91,7 +102,8 @@ ring as the host's xylem, so that wall is no interface in the model, and its tra
 r/a = 15/11) is not uniform and not computed; (4) give p₀ for a conifer's stem callus, its distribution around the gyroid
 or its relaxation; (5) the finite length — at the ends a finite gyroid carries its axial mismatch by axial shear (the
 infinite model's σᴵ_RR is its scale), and the anode's bond-force distribution; (6) everything `106` cannot (C44, the
-tissue's stiffness, the bark, S5).
+tissue's stiffness, the bark, S5); (7) the change of σ_n the anode's axial force makes through the gyroid's Poisson
+strain (Axial, above).
 
 Run:  conda activate silken_md
       python tools/in_silico/scripts/108_gyroid_interface_contact_map.py
@@ -144,7 +156,8 @@ P0_READINGS = {                      # ascending p₀; the leg's main reading is
     "spring_clamps_on_poplar_roots": {
         "MPa": 0.72, "page": 100, "quote": "bis zu 0,72 MPa bei etwa 2 mm Dickenzuwachs",
         "is": "Bruder's own first field test («in einem ersten Feldversuch»): 15 spring clamps (5, 10 and 20 N/mm) on thin "
-              "poplar roots (< 10 mm), read after about 2 years at about 2 mm of radial growth — the largest over the "
+              "poplar roots (< 10 mm), read after about 2 years at about 2 mm of thickness growth («Dickenzuwachs» — a "
+              "diameter for a root) — the largest over the "
               "clamps («bis zu»); compliance-limited, not a stall pressure against a rigid body, and whether it rises "
               "further Bruder left open; a broadleaf's root, not a conifer's stem callus"},
 }
@@ -177,8 +190,13 @@ CONSUMED_106 = ("inputs.lattice_reading", "inputs.solid_fraction_105", "inputs.t
                 "gyroid_binds_above_surface_strain_ue_theta0_lowest_share",
                 "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share", "junction_share_sup_at_C44_zero",
                 "green_junction_share_sup_at_C44_zero", "union_junction_share_sup_at_C44_zero",
-                "consumer_ceiling_junction")
+                "consumer_ceiling_binding_claim", "consumer_ceiling_junction")
 CONSUMED_105 = ("inputs.stem_readings_87", "inputs.depth_fraction", "inputs.solid_fraction", "zone1_members")
+# the pine anode's CEM fields read — the ψ resolution and the axial envelope (the 2026-10-22 review: a CEM edit left the
+# cache test green)
+CONSUMED_CEM = ("outer_diameter_mm", "gyroid_period_rim_mm", "gyroid_period_mm", "length_mm")
+FE_READINGS = ("axial_reading", "radial_reading")       # `105`'s two FE readings, as `106`'s threshold blocks key them
+BARE = "pores_carry_nothing"                            # the one pore reading a smooth envelope is consistent with
 PSI_ID = 720                # ψ points of the Mohr-identity control on [0, 2π)
 PSI_BRUTE = 40000           # ψ points of the brute-force μ_max control on [0, π)
 BISECT = 55                 # Zener-ratio bisection steps inside a bracket of adjacent grid points (ratio ≈ 1.19): ≪ 1e-12
@@ -637,23 +655,40 @@ def main() -> int:
     keys_of = {grp: [k for k in cells if group_of[k] == grp] for grp in GROUPS_READ}
     keys_of[UNION] = list(cells)
     summary = {grp: summarise(keys_of[grp]) for grp in GROUP_ORDER}
+    # a smooth envelope is consistent only with the bare lattice: its statements (an opening, a friction lower bound)
+    # are taken over these cells alone; the additive and Voigt cells give the demand (the 2026-10-22 review, finding 3)
+    summary_bare = {grp: summarise([k for k in keys_of[grp] if k.endswith(f"|{BARE}")]) for grp in GROUP_ORDER}
 
-    # ── Consumers, from 106's consumer blocks (#4): the binding claim on the union's lowest θ = 0 share, the Scots pine
-    #    group's beside it as the price; the junction on the highest share and the C44 → 0 supremum ─────────────────────
+    # ── Consumers, from 106's consumer blocks (#4): the binding claim's thresholds and price from
+    #    `consumer_ceiling_binding_claim`, its cell the union's lowest θ = 0 share; the junction on the highest share,
+    #    the C44 → 0 supremum and its published-sets-only companion ────────────────────────────────────────────────────
     th0_all = {k: v["theta0"] for k, v in out_cells.items()}
-    blocks_bind = {UNION: ("union_theta0_share", "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share"),
+    cbc = d106["consumer_ceiling_binding_claim"]
+    blocks_bind = {UNION: ("union_theta0_share", "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share",
+                           cbc["binds_above_ue_large_stem_sf2"]),
                    "scots_pine": ("theta0_share_over_modelled_set",
-                                  "gyroid_binds_above_surface_strain_ue_theta0_lowest_share")}
+                                  "gyroid_binds_above_surface_strain_ue_theta0_lowest_share",
+                                  cbc["price_scots_pine_group"]["binds_above_ue_large_stem_sf2"])}
     binding = {}
-    for grp, (k_share, k_thr) in blocks_bind.items():
+    for grp, (k_share, k_thr, consumer) in blocks_bind.items():
         t0s, ba = d106[k_share], d106[k_thr]
         binding[grp] = {}
         for al in ALLOY_PROPERTIES:
-            b = th0_all[t0s[al]["lowest_cell"]]
+            cell = t0s[al]["lowest_cell"]
+            b = th0_all[cell]
             assert abs(b["t_L"] / t0s[al]["lowest"] - 1.0) < CAP_106, f"106's lowest θ = 0 share not this cell's: {al}"
-            thr = {fk: ba[fk][al][s106.CELL_LS] for fk in ("axial_richardson", "radial_richardson")}
+            thr = {fk: consumer[fk][al] for fk in FE_READINGS}
+            # the consumer block is what 108 reads; the group derivation it summarises must name the same thresholds,
+            # and the block's named reading must be this cell's (the 2026-10-22 review: they were tied by nothing)
+            assert thr == {fk: ba[fk][al][s106.CELL_LS] for fk in FE_READINGS}, \
+                f"106's consumer block and its {grp} threshold block disagree: {al}"
+            _, _, rd, fill = cell.split("|")
+            if grp == UNION:
+                assert cbc["reading_per_alloy"][al].endswith(f"; {rd} reading, {fill}"), \
+                    f"106's binding reading is not the union's lowest cell: {al}"
             binding[grp][al] = {
-                "cell": t0s[al]["lowest_cell"], "threshold_ue_106": thr,
+                "cell": cell, "pore_reading": fill, "smooth_envelope_consistent": fill == BARE,
+                "threshold_ue_106": thr,
                 "opening_onset_tension_ue": b["opening_onset_ue"]["tension"],
                 "threshold_over_onset_min": min(thr[fk] / x for fk in thr for x in b["opening_onset_ue"]["tension"]),
                 "p0_to_stay_closed_at_threshold_MPa": {fk: thr[fk] * 1e-6 * b["sigma1"] for fk in thr}}
@@ -661,6 +696,20 @@ def main() -> int:
                  "green": "green_theta0_share"}
     blocks_sup = {UNION: "union_junction_share_sup_at_C44_zero", "scots_pine": "junction_share_sup_at_C44_zero",
                   "green": "green_junction_share_sup_at_C44_zero"}
+    def sup_block(key: str, th_deg: float, t_l: float, sig: np.ndarray) -> dict:
+        """A C44 → 0 junction cell: its Mohr circle, where its tension half's averaged traction reaches each p₀, and
+        on which readings it does so at each of the source day's strains. A supremum cell is bare lattice (asserted
+        where it is built), so a smooth envelope is consistent with it."""
+        c_s, r_s, _ = mohr(sig)
+        s1 = c_s + r_s
+        return {"cell": key, "theta_deg": th_deg, "t_L": t_l, "zener": 0.0,
+                "mohr": {"centre": c_s, "radius": r_s, "sigma1": s1, "sigma2": c_s - r_s},
+                "in_plane_stress_isotropic": r_s <= 1e-9 * abs(c_s),
+                "opening_onset_tension_ue": [p0v[n] / s1 * 1e6 for n in P0_NAMES],
+                "p0_to_stay_closed_MPa": {ek: e * 1e-6 * s1 for ek, e in strains.items()},
+                "tension_half_open_at": {ek: [n for n in P0_NAMES if e * s1 * 1e-6 >= p0v[n]]
+                                         for ek, e in strains.items()}}
+
     junction = {}
     for grp in GROUP_ORDER:
         t0s = d106[blocks_hi[grp]]
@@ -668,31 +717,38 @@ def main() -> int:
         sup_th = theta[int(np.argmax(tl[sup_key][:, 0]))]
         t_sup, s_sup = tl[sup_key][theta.index(sup_th), 0], sg[sup_key][theta.index(sup_th), 0]
         assert abs(t_sup / d106[blocks_sup[grp]] - 1.0) < CAP_106, f"106's junction supremum not reproduced: {grp}"
-        c_s, r_s, _ = mohr(s_sup)
+        assert sup_key.endswith(f"|{BARE}"), f"the junction supremum is not a bare-lattice cell: {grp}"
         junction[grp] = {
             "theta0_highest": {al: {"cell": t0s[al]["highest_cell"], "t_L": t0s[al]["highest"],
                                     "opening_onset_tension_ue": th0_all[t0s[al]["highest_cell"]]["opening_onset_ue"][
                                         "tension"]}
                                for al in ALLOY_PROPERTIES},
-            "sup_C44_zero": {"cell": sup_key, "theta_deg": sup_th, "t_L": t_sup, "zener": 0.0,
-                             "mohr": {"centre": c_s, "radius": r_s, "sigma1": c_s + r_s, "sigma2": c_s - r_s},
-                             "in_plane_stress_isotropic": r_s <= 1e-9 * abs(c_s),
-                             "opening_onset_tension_ue": [p0v[n] / (c_s + r_s) * 1e6 for n in P0_NAMES],
-                             "p0_to_stay_closed_MPa": {ek: e * 1e-6 * (c_s + r_s) for ek, e in strains.items()},
-                             "tension_half_open_at": {ek: [n for n in P0_NAMES if e * (c_s + r_s) * 1e-6 >= p0v[n]]
-                                                      for ek, e in strains.items()}}}
-    sup_106 = d106["consumer_ceiling_junction"]["off_axis_sup_at_C44_zero"]
+            "sup_C44_zero": sup_block(sup_key, sup_th, t_sup, s_sup)}
+    cj = d106["consumer_ceiling_junction"]
+    sup_106 = cj["off_axis_sup_at_C44_zero"]
     assert (junction[UNION]["sup_C44_zero"]["cell"], junction[UNION]["sup_C44_zero"]["theta_deg"]) == \
         (sup_106["cell"], sup_106["theta_deg"]), "106's junction ceiling names another cell — re-run 106 or 108"
+    # the founder-ratified companion (⚖️ 2026-10-22, «поруч із 9.840 … супремум поза віссю лише на опублікованих
+    # наборах»): the union's supremum without Davies' raw ESM means, which are OUR assembly — read from 106's consumer
+    # block and recomputed here (the 2026-10-22 review: the consumer had dropped it)
+    pub = cj["off_axis_sup_at_C44_zero_published_sets_only"]
+    al_p, g_p, rd_p, fill_p = pub["cell"].split("|")
+    assert pub["cell"] in group_of and fill_p == BARE, f"106's published-sets supremum is not a bare cell 108 maps: {pub}"
+    t_pub, s_pub = state(f"{g_p}|{rd_p}", al_p, fill_p, pub["theta_deg"], 0.0)
+    assert abs(t_pub / pub["share"] - 1.0) < CAP_106, "106's published-sets junction supremum not reproduced"
+    junction[UNION]["sup_C44_zero_published_sets_only"] = {
+        **sup_block(pub["cell"], pub["theta_deg"], t_pub, s_pub), "over": pub["over"]}
 
-    # ── Axial: the anode's bond force (105's S2 path) through the same envelope — on a smooth envelope it only ADDS
-    #    shear (|τ| ≥ |τ_ψ| at every point); its mean is printed for scale, never paired with a 106 cell (105's bond
-    #    states are not 106's cells — in-silico §When Modifying #45 ⊕) ──────────────────────────────────────────────────
+    # ── Axial: the anode's bond force (105's S2 path) through the same envelope — its mean printed for scale, never
+    #    paired with a 106 cell (105's bond states are not 106's cells — in-silico §When Modifying #45 ⊕); its effect on
+    #    the friction needed has no direction here (the docstring's Axial) ────────────────────────────────────────────
     area = math.pi * cem["outer_diameter_mm"] * cem["length_mm"]
     z1 = d105["zone1_members"]
     axial = {"envelope_mm2": area, "envelope": f"π × {cem['outer_diameter_mm']} × {cem['length_mm']} mm (the CEM)",
-             "adds_to": "on a smooth envelope |τ| = √(τ_ψ² + τ_R²) ≥ |τ_ψ| at every point: the bond force can only raise "
-                        "the friction that contact needs",
+             "effect_on_friction_needed": "no direction: the force adds axial shear (|τ| = √(τ_ψ² + τ_R²) ≥ |τ_ψ| at a "
+                                          "FIXED σ_n), and it also moves σ_n through the gyroid's Poisson strain, with a "
+                                          "sign that alternates with the sway — not computed (the 2026-10-22 review, "
+                                          "finding 4)",
              "states": {}}
     for bond in ("anode_bond_stiff", "anode_bond_soft"):
         for kind in ("state3_rigid_tie_max", "rigid_sleeve"):
@@ -703,74 +759,127 @@ def main() -> int:
                 axial["states"][f"{bond}|{kind}|{rd}"] = {"force_N": f, "mean_shear_MPa": f / area}
     axial["mean_shear_MPa_range"] = rng(v["mean_shear_MPa"] for v in axial["states"].values())
 
+    # ── What excluding Bruder's 2.5 MPa costs: the cells whose averaged tension traction at each of the source day's
+    #    ends stays BELOW it — a fact about the averaged traction, no holding claim (the 2026-10-22 review) ────────────
+    excl = P0_EXCLUDED["MPa"]
+    excluded_price = {"MPa": excl, "is": "cells (θ = 0) whose averaged tension traction ε·σ₁ stays below the excluded "
+                                         "2.5 MPa at each of the source day's two ends — what the «every cell» headline "
+                                         "stands on; a fact about the averaged traction, no holding claim"}
+    for grp in GROUP_ORDER:
+        bare_k = [k for k in keys_of[grp] if k.endswith(f"|{BARE}")]
+        excluded_price[grp] = {end: {"cells_below": sum(strains[ek] * 1e-6 * th0_all[k]["sigma1"] < excl
+                                                        for k in keys_of[grp]),
+                                     "cells": len(keys_of[grp]),
+                                     "bare_lattice_cells_below": sum(strains[ek] * 1e-6 * th0_all[k]["sigma1"] < excl
+                                                                     for k in bare_k),
+                                     "bare_lattice_cells": len(bare_k)}
+                               for end, ek in (("low", LOW_END), ("high", HIGH_END))}
+
+    # ── The verdict's smallest margin against the homogenisation error: if the patch average differs from the
+    #    homogenised traction by C·(cell/radius), the «every bare cell opens» verdict holds while C stays below
+    #    (1 − p₀/need)/(cell/radius) at the tightest cell, reading and end (the 2026-10-22 review) ─────────────────────
+    need_bare = min(summary_bare[g]["theta0"]["p0_to_stay_closed_MPa"]["tension"][LOW_END][0] for g in GROUPS_READ)
+    margin = need_bare / p0_hi
+    span_rad = max(p / radius for p in periods)
+    psi_resolution["smallest_margin_need_over_higher_p0_bare_lattice"] = margin
+    psi_resolution["largest_cell_over_radius_rad"] = span_rad
+    psi_resolution["constant_below_which_every_bare_cell_still_opens"] = (1.0 - 1.0 / margin) / span_rad
+
     # ── The verdict, built from the numbers ──────────────────────────────────────────────────────────────────────────
     lo_n, hi_n = min(P0_NAMES, key=p0v.get), max(P0_NAMES, key=p0v.get)
     label = {"scots_pine": "the Scots pine group", "green": "the green group", UNION: "the union"}
+    sb = summary_bare
 
-    def open_clause(grp: str) -> str:
-        """How many θ = 0 cells the tension half's averaged traction opens at the day's two ends on the named readings."""
-        sd = summary[grp]["theta0"]["at_source_day"]["tension"]
+    def open_clause(grp: str, summ: dict, what: str) -> str:
+        """How many θ = 0 cells the tension half's averaged traction exceeds p₀ in, at the day's two ends on the named
+        readings."""
+        sd = summ[grp]["theta0"]["at_source_day"]["tension"]
         counts = [sd[end][n]["cells_open"] for end in ("low", "high") for n in P0_NAMES]
-        m = summary[grp]["cells"]
-        return f"every one of its {m} cells" if min(counts) == m else f"at least {min(counts)} of its {m} cells"
+        m = summ[grp]["cells"]
+        return f"every one of its {m} {what}" if min(counts) == m else f"at least {min(counts)} of its {m} {what}"
 
-    need = {grp: summary[grp]["theta0"]["p0_to_stay_closed_MPa"]["tension"] for grp in GROUP_ORDER}
+    need = {grp: sb[grp]["theta0"]["p0_to_stay_closed_MPa"]["tension"] for grp in GROUP_ORDER}
     need_min = {grp: need[grp][LOW_END][0] for grp in GROUP_ORDER}
-    half_t = summary[UNION]["theta0"]["mu_req_max_at_half_onset"]["tension"]
-    on_c = summary[UNION]["theta0"]["opening_onset_ue"]["compression"]
-    comp_mu = [summary[UNION]["theta0"]["at_source_day"]["compression"][end][n]["mu_req_max_closed"]
+    half_t = sb[UNION]["theta0"]["mu_req_max_at_half_onset"]["tension"]
+    on_c = sb[UNION]["theta0"]["opening_onset_ue"]["compression"]
+    comp_mu = [sb[UNION]["theta0"]["at_source_day"]["compression"][end][n]["mu_req_max_closed"]
                for end in ("low", "high") for n in P0_NAMES]
     comp_mu = [x for x in comp_mu if x is not None]
-    zstar = [summary[UNION]["grid"]["zener_below_which_tension_half_stays_closed"][end][n]["max"]
+    zstar = [sb[UNION]["grid"]["zener_below_which_tension_half_stays_closed"][end][n]["max"]
              for end in ("low", "high") for n in P0_NAMES]
     zstar_fin = [z for z in zstar if z is not None]
     bind_u = binding[UNION]
     ratio_bind = min(v["threshold_over_onset_min"] for v in bind_u.values())
     al_bind = min(bind_u, key=lambda al: bind_u[al]["threshold_over_onset_min"])
     p0_bind = min(min(v["p0_to_stay_closed_at_threshold_MPa"].values()) for v in bind_u.values())
+    fill_bind = bind_u[al_bind]["pore_reading"]
     sup = junction[UNION]["sup_C44_zero"]
-    below_excl = [g for g in GROUPS_READ if need_min[g] < P0_EXCLUDED["MPa"]]
-    excl_clause = ("" if not below_excl else
-                   "; " + " and ".join(label[g] for g in below_excl) + "'s lowest need lies below it")
+    sup_pub = junction[UNION]["sup_C44_zero_published_sets_only"]
+    ep = excluded_price
+    excl_clause = (f" — had it been taken, the averaged tension traction at the day's {strains[LOW_END]:.0f} µε would "
+                   f"stay below it in "
+                   + " and ".join(f"{ep[g]['low']['cells_below']} of {ep[g]['low']['cells']} cells ({label[g]}; "
+                                  f"{ep[g]['low']['bare_lattice_cells_below']} of {ep[g]['low']['bare_lattice_cells']} "
+                                  f"bare lattice)" for g in GROUPS_READ)
+                   + ", a fact about the averaged traction and no holding claim —")
     further_max = max(P0_FURTHER_ON_THE_PAGES["primary_growth_near_root_tip_ref85_MPa"]["axial_range"][1],
                       P0_FURTHER_ON_THE_PAGES["primary_growth_near_root_tip_ref85_MPa"]["radial_range"][1],
                       P0_FURTHER_ON_THE_PAGES["bottle_neck_root_ref87_MPa"]["range"][1])
+    if fill_bind == BARE:
+        bind_clause = (f"a bare-lattice cell, so a smooth envelope opens there at least {down(ratio_bind, 1):.1f}× below "
+                       f"the binding strain ({al_bind}), and would stay closed up to it only under p₀ ≥ "
+                       f"{down(p0_bind, 1):.1f} MPa")
+    else:
+        bind_clause = (f"the {fill_bind} reading, which puts tissue in the pores: the envelope is no contact surface "
+                       f"there and σᴵ a bound tensor's stress) the averaged envelope traction reaches p₀ "
+                       f"{down(ratio_bind, 1):.1f}× below the binding strain ({al_bind}), and a p₀ of "
+                       f"{down(p0_bind, 1):.1f} MPa would offset it up to that strain — a demand on the interlocked "
+                       f"composite, with no direction")
+
+    def jn_clause(s: dict) -> str:
+        return (f"at the source day's upper whisker on a large stem on {len(s['tension_half_open_at'][HIGH_END])} of "
+                f"{len(P0_NAMES)} named readings and at its median on a DBH-38 bark on "
+                f"{len(s['tension_half_open_at'][LOW_END])}")
+
     verdict = (
-        f"Read as a SMOOTH contact on the gyroid's envelope — its local normal the envelope's, pressed by a growth pressure "
-        f"p₀ and held by friction, with no adhesion — the bonded field of 106 is carried around the interface by normal "
-        f"traction and in-plane shear; the infinite cylinder's axial shear is zero. With a cube axis on the stem's axis "
-        f"(θ = 0, free of C44) the tension half stays closed at the source day's strain ({strains[LOW_END]:.0f}–"
-        f"{strains[HIGH_END]:.0f} µε at the gyroid) only under p₀ of at least "
-        + " ⊥ ".join(f"{down(need[g][LOW_END][0], 2):.2f} MPa ({label[g]})" for g in GROUPS_READ)
-        + f" — {down(min(need_min.values()) / p0_hi, 1):.1f}× the higher named root reading ({p0_hi} MPa, Bruder's "
-        f"clamps; the turgor reading is {p0v[lo_n]} MPa); the {P0_EXCLUDED['MPa']} MPa Bruder uses in two senses is not "
-        f"taken{excl_clause}, and the highest further root figure on his pages ({further_max} MPa) "
+        "Read as a SMOOTH contact on the gyroid's envelope — its local normal the envelope's, pressed by a growth pressure "
+        "p₀ and held by friction, with no adhesion; consistent only with the bare-lattice cells ("
+        + " ⊥ ".join(str(sb[g]["cells"]) for g in GROUPS_READ)
+        + "), the cells with tissue in the pores giving the demand on an interlocked composite — the bonded field of 106 "
+        f"is carried around the interface by normal traction and in-plane shear; the infinite cylinder's axial shear is "
+        f"zero. With a cube axis on the stem's axis (θ = 0, free of C44) the tension half of a bare-lattice cell stays "
+        f"closed at the source day's strain ({strains[LOW_END]:.0f}–{strains[HIGH_END]:.0f} µε at the gyroid) only "
+        f"under p₀ of at least "
+        + " ⊥ ".join(f"{down(need_min[g], 2):.2f} MPa ({label[g]})" for g in GROUPS_READ)
+        + " — " + " ⊥ ".join(f"{down(need_min[g] / p0_hi, 1):.1f}×" for g in GROUPS_READ)
+        + f" the higher named root reading ({p0_hi} MPa, Bruder's clamps; the turgor reading is {p0v[lo_n]} MPa); the "
+        f"{P0_EXCLUDED['MPa']} MPa Bruder uses in two senses is not taken{excl_clause} and the highest further root "
+        f"figure on his pages ({further_max} MPa) "
         f"{'stays below' if further_max < min(need_min.values()) else 'reaches'} the lowest p₀ needed. On both named "
         f"readings the tension half's averaged traction exceeds p₀ at both ends of the day in "
-        + " and ".join(f"{open_clause(g)} ({label[g]}; {summary[g]['bare_lattice_cells']} bare lattice)"
-                       for g in GROUPS_READ)
-        + " — an opening only where the envelope is a smooth contact; with tissue in the pores, a tension that only "
-        "adhesion or the interlock could carry"
-        + "; it opens the poles facing along the stem above "
-        + " ⊥ ".join(f"{up(summary[g]['theta0']['opening_onset_ue']['tension'][lo_n]['range'][0]):.0f}–"
-                      f"{up(summary[g]['theta0']['opening_onset_ue']['tension'][hi_n]['range'][1]):.0f} µε ({label[g]})"
+        + " and ".join(f"{open_clause(g, sb, 'bare-lattice cells')} ({label[g]})" for g in GROUPS_READ)
+        + " — an opening on a smooth envelope — and, as a demand, in "
+        + " and ".join(f"{open_clause(g, summary, 'cells')} ({label[g]})" for g in GROUPS_READ)
+        + "; on a bare-lattice cell it opens the poles facing along the stem above "
+        + " ⊥ ".join(f"{up(sb[g]['theta0']['opening_onset_ue']['tension'][lo_n]['range'][0]):.0f}–"
+                      f"{up(sb[g]['theta0']['opening_onset_ue']['tension'][hi_n]['range'][1]):.0f} µε ({label[g]})"
                       for g in GROUPS_READ)
         + f", and at half that strain the friction needed is already at least {down(half_t[0], 2):.2f}–"
-        f"{down(half_t[1], 2):.2f} (no p₀). In the compression half the poles facing around the stem open above "
-        f"{up(on_c[lo_n]['range'][0]):.0f} µε at the earliest, and where they stay closed at the source day's strain the "
-        f"friction needed is at least {down(min(x[0] for x in comp_mu), 2):.2f}–{down(max(x[1] for x in comp_mu), 2):.2f}. "
-        f"Off the axis the pole traction falls as C44 falls: the tension half stays closed at the source day's strain only "
-        f"below a Zener ratio of {f'{up(max(zstar_fin), 3):.3f}' if zstar_fin else 'none'} on some install angle, "
-        f"against the Voigt ceiling {up(a_voigt, 3):.3f}; no measured C44 is used. At 106's binding cell (the union's "
-        f"lowest θ = 0 share, a Voigt phase-bound cell whose σᴵ is a bound tensor's stress) such a contact would open at "
-        f"least {down(ratio_bind, 1):.1f}× below the binding strain ({al_bind}), and would stay closed up to it only "
-        f"under p₀ ≥ {down(p0_bind, 1):.1f} MPa. At the union's C44 → 0 supremum the in-plane stress is "
+        f"{down(half_t[1], 2):.2f} (no p₀). In the compression half the averaged traction at the poles facing around the "
+        f"stem first reaches p₀ at {down(on_c[lo_n]['range'][0]):.0f} µε on a bare-lattice cell, and where it stays "
+        f"below p₀ at the source day's strain the friction a bare-lattice cell needs is at least "
+        f"{down(min(x[0] for x in comp_mu), 2):.2f}–{down(max(x[1] for x in comp_mu), 2):.2f}. "
+        f"Off the axis the pole traction falls as C44 falls: on a bare-lattice cell the tension half stays closed at the "
+        f"source day's strain only below a Zener ratio of {f'{up(max(zstar_fin), 3):.3f}' if zstar_fin else 'none'} on "
+        f"some install angle, against the Voigt ceiling {up(a_voigt, 3):.3f}; no measured C44 is used. At 106's binding "
+        f"cell (the union's lowest θ = 0 share, {bind_clause}. At the union's C44 → 0 supremum, a bare-lattice cell, the "
+        f"in-plane stress is "
         f"{'isotropic — the bending field puts no averaged in-plane shear there, which is no holding claim' if sup['in_plane_stress_isotropic'] else 'anisotropic'}"
-        f"; its tension half opens at the source day's upper whisker on a large stem on "
-        f"{len(sup['tension_half_open_at'][HIGH_END])} of {len(P0_NAMES)} named readings and at its median on a "
-        f"DBH-38 bark on {len(sup['tension_half_open_at'][LOW_END])}. With tissue in the macropores (01_04 §2, Phase 2) "
-        f"the lattice interlocks with it: the envelope traction is then the demand on that composite, and neither failing "
-        f"nor holding follows from it; what opening, slip and interlock do to the share is not computed."
+        f"; its tension half opens {jn_clause(sup)}; on the published sets only (the founder-ratified companion) it opens "
+        f"{jn_clause(sup_pub)}. With tissue in the macropores (01_04 §2, Phase 2) the lattice interlocks with it: the "
+        f"envelope traction is then the demand on that composite, and neither failing nor holding follows from it; the "
+        f"anode's axial bond force also moves σ_n through the gyroid's Poisson strain, with a sign that alternates with "
+        f"the sway, and what that, opening, slip and interlock do to the share is not computed."
     )
 
     result = {
@@ -786,7 +895,9 @@ def main() -> int:
                        "union": "both groups; the binding claim and the junction ceiling as 106's consumer blocks name "
                                 "them"},
             "upstream_fingerprint": {"106": {"sha256": fingerprint(d106, CONSUMED_106), "fields": list(CONSUMED_106)},
-                                     "105": {"sha256": fingerprint(d105, CONSUMED_105), "fields": list(CONSUMED_105)}},
+                                     "105": {"sha256": fingerprint(d105, CONSUMED_105), "fields": list(CONSUMED_105)},
+                                     "cem_anode": {"sha256": fingerprint(cem, CONSUMED_CEM), "fields": list(CONSUMED_CEM),
+                                                   "file": str(CEM_ANODE.relative_to(REPO_ROOT))}},
             "lattice_reading_106": {"C11_over_E_s": c11, "C12_over_E_s": c12, "zener_voigt_ceiling": a_voigt},
             "solid_fraction_105": phi,
             "theta_deg_106": list(theta),
@@ -823,6 +934,8 @@ def main() -> int:
         "cells": {k: out_cells[k] for k in keys_of["scots_pine"]},
         "green_cells": {k: out_cells[k] for k in keys_of["green"]},
         "summary": summary,
+        "summary_bare_lattice": summary_bare,
+        "p0_excluded_price": excluded_price,
         "consumer_binding_106_theta0": binding,
         "consumer_junction": junction,
         "axial_anode_bond_force_105": axial,
@@ -835,7 +948,9 @@ def main() -> int:
                           "undercut one averaged tension under positive pressure), and with tissue in the macropores "
                           "(01_04 §2, Phase 2) the envelope is crossed by an interlocked composite: the traction is its "
                           "demand, and neither failing nor holding follows. On a Voigt cell σᴵ is a bound tensor's "
-                          "stress, not the average of an admissible local traction",
+                          "stress, not the average of an admissible local traction. So the smooth-contact statements "
+                          "are taken over the bare-lattice cells (`summary_bare_lattice`); `summary` over all cells is "
+                          "the demand, and a field named «opens» there means the averaged traction reaches p₀",
         "not_computed": [
             "the unbonded and the interlocked ends — slip with the normal contact kept, opening, and the internal Ti–tissue "
             "faces of an interlock — and what each does to t_L (the leg's step 2: a slipping interface keeps no uniform "
@@ -846,6 +961,8 @@ def main() -> int:
             "p₀ for a conifer's stem callus, its distribution around the gyroid and its relaxation",
             "the finite length: the ends' axial shear and the anode bond force's distribution along the gyroid",
             "C44, the tissue's stiffness, the bark and S5 — as in 106",
+            "the change of σ_n the anode's axial bond force makes through the gyroid's Poisson strain (its sign alternates "
+            "with the sway), so the axial force's net effect on the friction needed",
         ],
         "verdict": verdict,
     }
@@ -894,6 +1011,17 @@ def main() -> int:
         sp = jn["sup_C44_zero"]
         print(f"  junction sup {grp:10s} {sp['cell']} θ {sp['theta_deg']}: t_L {sp['t_L']:.3f} · σ₁ "
               f"{sp['mohr']['sigma1']:.1f} σ₂ {sp['mohr']['sigma2']:.1f} · open at {sp['tension_half_open_at']}")
+    sp = junction[UNION]["sup_C44_zero_published_sets_only"]
+    print(f"  junction sup union, published sets only: {sp['cell']} θ {sp['theta_deg']}: t_L {sp['t_L']:.3f} · σ₁ "
+          f"{sp['mohr']['sigma1']:.1f} · onset {sp['opening_onset_tension_ue']} · open at {sp['tension_half_open_at']}")
+    for grp in GROUP_ORDER:
+        sm = summary_bare[grp]
+        print(f"  bare {grp:10s} ({sm['cells']} cells): need {sm['theta0']['p0_to_stay_closed_MPa']['tension'][LOW_END]}"
+              " · tension onset " + " · ".join(f"{n} {v['range']}" for n, v in
+                                               sm["theta0"]["opening_onset_ue"]["tension"].items()))
+        print(f"    excluded {excl} MPa: {excluded_price[grp]}")
+    print(f"  ψ margin: {margin:.3f} · cell/radius {span_rad:.3f} rad · constant below "
+          f"{psi_resolution['constant_below_which_every_bare_cell_still_opens']:.3f}")
     for k, v in axial["states"].items():
         print(f"  axial {k:45s} {v['force_N']:7.1f} N · τ̄_R over the envelope {v['mean_shear_MPa']:.3f} MPa")
     print(f"  → {OUT.relative_to(REPO_ROOT)}")
