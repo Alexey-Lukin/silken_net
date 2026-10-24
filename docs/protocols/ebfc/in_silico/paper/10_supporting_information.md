@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 372 · 26,058,013 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 372 · 26,094,108 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -111,7 +111,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/64_teg_across_peek_break.py` | `04a03c4ee245c785f7d17cf19b5f68619f37a609a5e6f9315fc40e09f639fbc1` | Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark? |
 | `tools/in_silico/scripts/65_zif_radiosensitization.py` | `1893e0838191293f9f2ecfc0c248bed1d136ff5f94b5141828975e3502bae755` | Does the ZIF nanozyme radiosensitise the enzyme stack under Co-60 gamma sterilisation? A desk verdict. |
 | `tools/in_silico/scripts/66_gyroid_ligament_thickness.py` | `ff178d89d69f927e64dda03acef57aff480dec8bbb163d053727623022743abc` | The thinnest printed feature of a gyroid lattice, per topology, at fixed porosity. |
-| `tools/in_silico/scripts/67_sap_recipe_saturation.py` | `a0ee469e84403b2bbc68fc1a2e034ec84c2499a89482f07569f7003d91fea31f` | Does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible recipe window. |
+| `tools/in_silico/scripts/67_sap_recipe_saturation.py` | `f66a7546b5821bdc84f6159c46abe40b4be7cc408a2d346014a131267a928e98` | Does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible recipe window. |
 | `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `00545e0d358b802b9be31d7e041cd4642fb8c13c7805ac3bb003d621bd5278e6` | Where the bus rod meets the cathode channel, solved as a unilateral contact problem. |
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `6b65e7cdc27978d3b5a0b32e1d6fa1018495c1b61ec3290e408e6d414239ca1f` | Compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `52ae6cba0c7f388d165dd9c0e0bf0f9c09ee0359648fb2302c55b7bb19760e71` | Residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
@@ -147,8 +147,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `9c5eea7eec17126b08f1303fa8f2dd367061fb687053efff90edde97364c607a` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `de970bb72cf44d73352fb88d02b790d730ac59f97c72ae9727a93d0b7061c97a` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `3ed5e44397d1cb305c04442d91e79747ee3a6cedb82ad93b0d545dd82230745d` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `6a57d8bfafc08c059308d7d8a2c90a2d747d09f9c45bc0e4cf7ceb77b0c13c5f` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `f47871795294c6c403cf9a4e320511b7dcbdebfef8c541e4c52f255780024662` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -171,7 +171,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/chemistry/chem11_ratified_gene.json` | `52f0a412f89c13d2395f849cf96e1d181290d11d97b3775dd37390e4058d7b40` | 8,128 |
 | `tools/in_silico/cache/chemistry/chem11_site_conservation.json` | `e0f4e5fedf4304374d698902740de691bf1c04feb3dd45989ddd5e0e0da50bbd` | 45,931 |
 | `tools/in_silico/cache/chemistry/malate_metal_chelation.json` | `eaf67904cc947d917a90f1bfabf88e99db3c5bacb143c355aafab984371b9efa` | 62,553 |
-| `tools/in_silico/cache/chemistry/sap_recipe_saturation.json` | `f24fa27482c7dda119ca702becd8dc69f91d3f83c8e52541311cee165fd95758` | 94,714 |
+| `tools/in_silico/cache/chemistry/sap_recipe_saturation.json` | `2734bd49d1ca6a039a418aa2b89102cdf135bd26369418da045503df210c99f7` | 106,491 |
 | `tools/in_silico/cache/chemistry/sap_recipe_saturation.png` | `fe988357c76cf4b3cc73083423110be394312d6b18f2a4c5f5678889bb4e1daa` | 101,307 |
 
 ### `tools/in_silico/cache/dft/`

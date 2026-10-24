@@ -3459,6 +3459,63 @@ def test_sap_recipe_saturation():
     assert (CHEMISTRY / "sap_recipe_saturation.png").stat().st_size > 10_000
 
 
+def test_sap_recipe_q8_crown_twig_readings():
+    """Script 67, Q8: the two crown-twig readings beside the broadleaf point (00_07 HW.3 (А)) — Soper 2018 and
+    Schneider 1996 — re-derived from what the cache itself carries: the Soper means (µg/mL) and Q8's dated medians.
+
+    CAN catch: a hand-edited mM, mid or ratio; a month counted inside or outside the dated beech range against the
+    numbers; an «upper arm only» label on a bar that does not reach the axis; a Schneider flag that disagrees with the
+    dated nitrate the cache prints. CANNOT catch a mis-read figure — the means and SDs are a transcription of Soper's
+    Fig. 1 vectors, held only by the verifier's independent extraction in the scratch tree — and it does not judge
+    whether crown twigs may stand for the trunk base (the script's prose says they may not)."""
+    path = CHEMISTRY / "sap_recipe_saturation.json"
+    if not path.exists():
+        pytest.skip("sap_recipe_saturation.json not computed")
+    q8 = json.loads(path.read_text(encoding="utf-8"))["q8_broadleaf_point"]
+    cr, med = q8["crown_twig_readings"], q8["measured"]["medians_by_date"]
+    molar = {"K": 39.098, "Ca": 40.078, "Mg": 24.305}
+    beech = {ion: (min(r[f"{ion}_mg_l"] for r in med.values()) / molar[ion], max(r[f"{ion}_mg_l"] for r in med.values()) / molar[ion])
+             for ion in molar}
+    s = cr["soper_2018"]
+    months, upper = s["months"], {tuple(c) for c in s["sd_upper_arm_only"]}
+    assert set(s["by_species"]) == {"Quercus rubra", "Quercus prinus", "Acer saccharum"}
+    oak_in = oak_n = with_sd = 0
+    shares, oak_within = [], []
+    for sp, ions in s["means_ug_ml"].items():
+        for ion, means in ions.items():
+            mm = [v / molar[ion] for v in means]
+            p = s["by_species"][sp][ion]
+            assert p["monthly_mM"] == {m: round(x, 4) for m, x in zip(months, mm, strict=True)}, (sp, ion)
+            mid = math.sqrt(min(mm) * max(mm))
+            q8_mid = math.sqrt(beech[ion][0] * beech[ion][1])
+            assert abs(p["q8_rule_mid_mM"] - mid) < 1e-4 and abs(p["over_q8_mid"] - mid / q8_mid) < 1e-3, (sp, ion)
+            out = [m for m, x in zip(months, mm, strict=True) if not beech[ion][0] <= x <= beech[ion][1]]
+            assert p["months_outside_dated_beech_range"] == out, (sp, ion)
+            if sp.startswith("Quercus"):
+                oak_n += len(months)
+                oak_in += len(months) - len(out)
+            for m, v, sd in zip(months, means, s["sd_ug_ml"][sp][ion], strict=True):
+                within = None if sd is None else (v - sd) / molar[ion] <= q8_mid <= (v + sd) / molar[ion]
+                assert p["q8_mid_within_one_sd"][m] == within, (sp, ion, m)
+                if sd is not None:
+                    with_sd += 1
+                    shares.append(sd / v)
+                    assert ((sp, ion, m) in upper) == (sd >= v), f"{sp} {ion} {m}: an upper-arm-only SD is one that reaches the mean"
+                    if sp.startswith("Quercus"):
+                        oak_within.append(within)
+    assert s["oak_cells_inside_dated_beech_range"] == [oak_in, oak_n]
+    assert s["oak_cells_q8_mid_within_one_sd"] == [sum(oak_within), len(oak_within)]
+    assert s["sd_over_mean_range"] == [round(min(shares), 3), round(max(shares), 3)]
+    assert s["cells_with_sd"] == [with_sd, 3 * 3 * len(months)]
+    n = cr["schneider_1996"]
+    no3 = q8["measured"]["nitrate"]
+    lo, hi = no3["range_mM"]
+    assert n["dated_beech_nitrate_range_mM"] == [lo, hi] and n["dated_beech_nitrate_mid_mM"] == no3["geometric_mid_mM"]
+    assert n["inside_dated_beech_range"] == (lo <= n["nitrate_mM"][0] and n["nitrate_mM"][1] <= hi)
+    assert n["below_point_mid"] == (n["nitrate_mM"][1] < no3["geometric_mid_mM"])
+    assert ("no evidence against the point" in n["why_a_reading_not_a_point"]) == n["inside_dated_beech_range"]
+
+
 def test_chem11_aggregation_compensation():
     """Script 69 (CHEM.11): compensating surface-polar mutations for the aglycosylated dgrFAD-GDH.
 

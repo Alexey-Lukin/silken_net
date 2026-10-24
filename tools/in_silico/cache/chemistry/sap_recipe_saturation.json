@@ -3339,6 +3339,443 @@
       ],
       "why_a_reading_not_a_point": "one autumn date and two trees of red oak; no organic acid measured, so no buffer to solve — it says where the bulk pH stands, not what a current does to it"
     },
+    "crown_twig_readings": {
+      "soper_2018": {
+        "source": "Soper F.M., Chamberlain S.D., Crumsey J.M., Gregor S., Derry L.A., Sparks J.P. 2018, J. Geophys. Res. Biogeosci. 123(10):3204-3215, doi:10.1029/2018JG004639, Fig. 1 (p. 3208) — 2014 monthly means ± 1 SD of eight trees per species, sap of canopy branches up to 1 cm (pressure chamber, ICP-OES), read off the figure's vector coordinates; original data in Supporting Information S1 and Tables S1-S3, not opened",
+        "months": [
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep"
+        ],
+        "means_ug_ml": {
+          "Quercus rubra": {
+            "K": [
+              136.46,
+              128.54,
+              75.0,
+              115.42
+            ],
+            "Ca": [
+              22.46,
+              28.64,
+              15.69,
+              31.79
+            ],
+            "Mg": [
+              7.28,
+              9.12,
+              2.1,
+              5.03
+            ]
+          },
+          "Quercus prinus": {
+            "K": [
+              98.96,
+              95.2,
+              82.08,
+              80.42
+            ],
+            "Ca": [
+              12.89,
+              26.78,
+              27.83,
+              26.08
+            ],
+            "Mg": [
+              4.27,
+              6.77,
+              4.82,
+              2.63
+            ]
+          },
+          "Acer saccharum": {
+            "K": [
+              85.62,
+              71.87,
+              96.25,
+              21.88
+            ],
+            "Ca": [
+              29.29,
+              38.79,
+              34.71,
+              4.43
+            ],
+            "Mg": [
+              6.02,
+              5.3,
+              4.8,
+              0.67
+            ]
+          }
+        },
+        "sd_ug_ml": {
+          "Quercus rubra": {
+            "K": [
+              52.39,
+              105.1,
+              21.04,
+              81.77
+            ],
+            "Ca": [
+              10.62,
+              25.2,
+              6.88,
+              27.59
+            ],
+            "Mg": [
+              4.91,
+              10.37,
+              1.42,
+              5.77
+            ]
+          },
+          "Quercus prinus": {
+            "K": [
+              27.92,
+              92.4,
+              37.19,
+              21.24
+            ],
+            "Ca": [
+              5.51,
+              null,
+              27.74,
+              13.77
+            ],
+            "Mg": [
+              1.99,
+              7.02,
+              4.65,
+              0.87
+            ]
+          },
+          "Acer saccharum": {
+            "K": [
+              79.48,
+              38.44,
+              27.39,
+              8.13
+            ],
+            "Ca": [
+              28.29,
+              20.21,
+              13.94,
+              null
+            ],
+            "Mg": [
+              5.99,
+              2.77,
+              1.93,
+              null
+            ]
+          }
+        },
+        "sd_upper_arm_only": [
+          [
+            "Quercus rubra",
+            "Mg",
+            "Jul"
+          ],
+          [
+            "Quercus rubra",
+            "Mg",
+            "Sep"
+          ],
+          [
+            "Quercus prinus",
+            "Mg",
+            "Jul"
+          ]
+        ],
+        "by_species": {
+          "Quercus rubra": {
+            "K": {
+              "monthly_mM": {
+                "Jun": 3.4902,
+                "Jul": 3.2876,
+                "Aug": 1.9183,
+                "Sep": 2.9521
+              },
+              "q8_rule_mid_mM": 2.5875,
+              "over_q8_mid": 1.439,
+              "months_outside_dated_beech_range": [],
+              "sd_over_mean": {
+                "Jun": 0.384,
+                "Jul": 0.818,
+                "Aug": 0.281,
+                "Sep": 0.708
+              },
+              "q8_mid_within_one_sd": {
+                "Jun": false,
+                "Jul": true,
+                "Aug": true,
+                "Sep": true
+              }
+            },
+            "Ca": {
+              "monthly_mM": {
+                "Jun": 0.5604,
+                "Jul": 0.7146,
+                "Aug": 0.3915,
+                "Sep": 0.7932
+              },
+              "q8_rule_mid_mM": 0.5573,
+              "over_q8_mid": 0.837,
+              "months_outside_dated_beech_range": [],
+              "sd_over_mean": {
+                "Jun": 0.473,
+                "Jul": 0.88,
+                "Aug": 0.438,
+                "Sep": 0.868
+              },
+              "q8_mid_within_one_sd": {
+                "Jun": true,
+                "Jul": true,
+                "Aug": false,
+                "Sep": true
+              }
+            },
+            "Mg": {
+              "monthly_mM": {
+                "Jun": 0.2995,
+                "Jul": 0.3752,
+                "Aug": 0.0864,
+                "Sep": 0.207
+              },
+              "q8_rule_mid_mM": 0.1801,
+              "over_q8_mid": 0.723,
+              "months_outside_dated_beech_range": [],
+              "sd_over_mean": {
+                "Jun": 0.674,
+                "Jul": 1.137,
+                "Aug": 0.676,
+                "Sep": 1.147
+              },
+              "q8_mid_within_one_sd": {
+                "Jun": true,
+                "Jul": true,
+                "Aug": false,
+                "Sep": true
+              }
+            }
+          },
+          "Quercus prinus": {
+            "K": {
+              "monthly_mM": {
+                "Jun": 2.5311,
+                "Jul": 2.4349,
+                "Aug": 2.0993,
+                "Sep": 2.0569
+              },
+              "q8_rule_mid_mM": 2.2817,
+              "over_q8_mid": 1.269,
+              "months_outside_dated_beech_range": [],
+              "sd_over_mean": {
+                "Jun": 0.282,
+                "Jul": 0.971,
+                "Aug": 0.453,
+                "Sep": 0.264
+              },
+              "q8_mid_within_one_sd": {
+                "Jun": false,
+                "Jul": true,
+                "Aug": true,
+                "Sep": true
+              }
+            },
+            "Ca": {
+              "monthly_mM": {
+                "Jun": 0.3216,
+                "Jul": 0.6682,
+                "Aug": 0.6944,
+                "Sep": 0.6507
+              },
+              "q8_rule_mid_mM": 0.4726,
+              "over_q8_mid": 0.71,
+              "months_outside_dated_beech_range": [],
+              "sd_over_mean": {
+                "Jun": 0.427,
+                "Jul": null,
+                "Aug": 0.997,
+                "Sep": 0.528
+              },
+              "q8_mid_within_one_sd": {
+                "Jun": false,
+                "Jul": null,
+                "Aug": true,
+                "Sep": true
+              }
+            },
+            "Mg": {
+              "monthly_mM": {
+                "Jun": 0.1757,
+                "Jul": 0.2785,
+                "Aug": 0.1983,
+                "Sep": 0.1082
+              },
+              "q8_rule_mid_mM": 0.1736,
+              "over_q8_mid": 0.697,
+              "months_outside_dated_beech_range": [],
+              "sd_over_mean": {
+                "Jun": 0.466,
+                "Jul": 1.037,
+                "Aug": 0.965,
+                "Sep": 0.331
+              },
+              "q8_mid_within_one_sd": {
+                "Jun": true,
+                "Jul": true,
+                "Aug": true,
+                "Sep": false
+              }
+            }
+          },
+          "Acer saccharum": {
+            "K": {
+              "monthly_mM": {
+                "Jun": 2.1899,
+                "Jul": 1.8382,
+                "Aug": 2.4618,
+                "Sep": 0.5596
+              },
+              "q8_rule_mid_mM": 1.1737,
+              "over_q8_mid": 0.653,
+              "months_outside_dated_beech_range": [
+                "Sep"
+              ],
+              "sd_over_mean": {
+                "Jun": 0.928,
+                "Jul": 0.535,
+                "Aug": 0.285,
+                "Sep": 0.372
+              },
+              "q8_mid_within_one_sd": {
+                "Jun": true,
+                "Jul": true,
+                "Aug": true,
+                "Sep": false
+              }
+            },
+            "Ca": {
+              "monthly_mM": {
+                "Jun": 0.7308,
+                "Jul": 0.9679,
+                "Aug": 0.8661,
+                "Sep": 0.1105
+              },
+              "q8_rule_mid_mM": 0.3271,
+              "over_q8_mid": 0.491,
+              "months_outside_dated_beech_range": [
+                "Sep"
+              ],
+              "sd_over_mean": {
+                "Jun": 0.966,
+                "Jul": 0.521,
+                "Aug": 0.402,
+                "Sep": null
+              },
+              "q8_mid_within_one_sd": {
+                "Jun": true,
+                "Jul": true,
+                "Aug": true,
+                "Sep": null
+              }
+            },
+            "Mg": {
+              "monthly_mM": {
+                "Jun": 0.2477,
+                "Jul": 0.2181,
+                "Aug": 0.1975,
+                "Sep": 0.0276
+              },
+              "q8_rule_mid_mM": 0.0826,
+              "over_q8_mid": 0.332,
+              "months_outside_dated_beech_range": [
+                "Sep"
+              ],
+              "sd_over_mean": {
+                "Jun": 0.995,
+                "Jul": 0.523,
+                "Aug": 0.402,
+                "Sep": null
+              },
+              "q8_mid_within_one_sd": {
+                "Jun": true,
+                "Jul": true,
+                "Aug": true,
+                "Sep": null
+              }
+            }
+          }
+        },
+        "q8_mid_mM": {
+          "Ca": 0.6658,
+          "Mg": 0.2491,
+          "K": 1.7977
+        },
+        "dated_beech_range_mM": {
+          "Ca": [
+            0.1996,
+            2.2207
+          ],
+          "Mg": [
+            0.0782,
+            0.7941
+          ],
+          "K": [
+            0.665,
+            4.8596
+          ]
+        },
+        "oak_cells_inside_dated_beech_range": [
+          24,
+          24
+        ],
+        "cells_outside_dated_beech_range": {
+          "Acer saccharum K": [
+            "Sep"
+          ],
+          "Acer saccharum Ca": [
+            "Sep"
+          ],
+          "Acer saccharum Mg": [
+            "Sep"
+          ]
+        },
+        "sd_over_mean_range": [
+          0.264,
+          1.147
+        ],
+        "oak_cells_q8_mid_within_one_sd": [
+          17,
+          23
+        ],
+        "cells_with_sd": [
+          33,
+          36
+        ],
+        "not_measured": "nitrate, pH, organic acids",
+        "why_a_reading_not_a_point": "sap of crown branches up to 1 cm, not the trunk base; one season's monthly means of eight trees, not dated medians; no organic acid, so no malate to solve and no buffer"
+      },
+      "schneider_1996": {
+        "source": "Schneider S., Gessler A., Weber P., von Sengbusch D., Hanemann U., Rennenberg H. 1996, New Phytol. 134(1):103-114, doi:10.1111/j.1469-8137.1996.tb01150.x, pp. 109 and 112 — nitrate in the sap of sun-crown twigs of beech and Norway spruce together, Hoeglwald 1994, read from the page images",
+        "nitrate_mM": [
+          0.01,
+          0.025
+        ],
+        "species": "beech and Norway spruce together — no beech-only number printed",
+        "dated_beech_nitrate_range_mM": [
+          0.0021,
+          1.1954
+        ],
+        "dated_beech_nitrate_mid_mM": 0.0497,
+        "inside_dated_beech_range": true,
+        "below_point_mid": true,
+        "why_a_reading_not_a_point": "sun-crown twigs of a site under high N deposition, two species pooled, one year; the range lies inside the dated trunk-base range the point is taken from, below its mid, so it is no evidence against the point"
+      }
+    },
     "against_pine_point": {
       "ca_ratio": 3.72,
       "mg_ratio": 4.03,
