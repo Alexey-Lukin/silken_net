@@ -32,7 +32,7 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
 | [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Матем. верифікація числової стабільності |
 | `firmware/bio_contracts/bio_contract.rb` · `app/services/silken_net/attractor.rb` · `seed_derivation.rb` | mruby + Rails-дзеркало (Float parity); SEC.11 entry-point |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.66 реалізація гілки (Б) (FW.31 numeric-DCI під (Б) — ⚫, у §🗄️ з 2026-10-24); ARCH.18 int-Lorenz — ⚫ 2026-10-13, у §🗄️ з 2026-10-24: обидва мотиви (zkVM · залізо без FPU) стояли на Лоренці пристрою, а (Б) його знімає (§8) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.66 реалізація гілки (Б); ARCH.18 int-Lorenz — ⚫ 2026-10-13, у §🗄️ з 2026-10-24: обидва мотиви (zkVM · залізо без FPU) стояли на Лоренці пристрою, а (Б) його знімає (§8) |
 
 ## 📑 Зміст
 
@@ -739,7 +739,7 @@ if (mrb) {
 
 > ⚫ **2026-10-05 — поглинуто гілкою (Б) FW.66:** у CCM-ері z на пристрої немає, тож числовій DCI нічого порівнювати; гейти D/C/P/G нижче не виконуються, код знімається в реалізації (Б). Розділ лишається історією рішення.
 > ⊕ **2026-10-10 — код знято (FW.66 (Б), S2).** ENV-прапорців `DCI_NUMERIC_TOLERANCE` / `DCI_NUMERIC_EPSILON`, константи `DEFAULT_DCI_EPSILON`, числової гілки `check_z_divergence!` (з предикатом `numeric_dci_tolerance_enabled?` — ⊕ дописано 2026-10-24 при архівації FW.31), метрик `silkennet_dci_numeric_mismatch_total` і `silkennet_telemetry_ccm_device_z_total` і спекової групи нижче більше немає; CCM-шлях бекенду не читає `device_z` і не судить DCI. Прилад Gate L (`tools/firmware/dci_epsilon_sweep.sh`) лишається свідком паритету mruby-VM ⟷ CRuby.
-> ⊕ **2026-10-24 — пункт FW.31 у §🗄️; умова перегляду тут, а не лише в трекері.** Числова DCI повертається лише з поверненням z на пристрій (розворот (Б)) — і тоді з ε ≥ q/2 та дрейфом від СИРОГО z (нота під «Висновком Gate L»), не з `z_value`. Носії в мить дії — коментар над `TelemetryUnpackerService#check_z_divergence!` і §6 `CLAUDE.md` («DCI = категоричний homeostasis-match»). Заголовок розділу до цієї дати: «(deferred, code-staged; `00_07 FW.31`)».
+> ⊕ **2026-10-24 — пункт FW.31 у §🗄️; умова перегляду тут, а не лише в трекері.** Числова DCI повертається лише з поверненням z на пристрій (розворот (Б)) — і тоді з ε > q/2 (перевірка `|z − device_z| < ε` строга) та дрейфом від СИРОГО z (нота під «Висновком Gate L»), не з `z_value`. Носії в мить дії — коментар над `TelemetryUnpackerService#check_z_divergence!` і §6 `CLAUDE.md` («DCI = категоричний homeostasis-match»). Заголовок розділу до цієї дати: «(deferred, code-staged; `00_07 FW.31`)».
 
 
 **Контекст:** SEC.11 закрив BLOCKER-2 і відкрив технічну можливість використовувати **числовий** DCI-перевірний крок (`|z − device_z| < ε`, z — сирий; нота під «Висновком Gate L») замість суто **категоричного** enum-match'у. Числова перевірка значно потужніша: дозволяє ловити replay-атаки з правильним StatusByte, але неправильною Z-magnitude (наприклад, attacker викликав легітимний enum через clamp-логіку, але справжня траєкторія розійшлася). Категорична перевірка пропускає такі сценарії.
