@@ -330,9 +330,9 @@ colorama==0.4.6 ; os_name == 'nt' or sys_platform == 'win32' \
     # via
     #   build
     #   click
-conda-lock==4.0.2 \
-    --hash=sha256:b431125b78958ad62fb1a3925d98f8a77c383c5c592f29caaf328c5928059cd9 \
-    --hash=sha256:c4ebc4404ea760b1dd0035d6403fa27e291050269a5fd1b629b89fcbc75ef32a
+conda-lock==4.0.3 \
+    --hash=sha256:455efdfddb8e03cb44f2c4b7921e0ddc9d30e949c90611569dbe5aa652eb3079 \
+    --hash=sha256:c8b0719832a2a971feffebe702bb7ce6265494d610ca9d8813a6c12a26f9ae52
     # via -r tools/in_silico/requirements-conda-lock.in
 conda-package-streaming==0.13.0 \
     --hash=sha256:806ea3f2f7ac272873242e6253d543ac8aaf224e5c76d794e5fee9c63776fb5c \
