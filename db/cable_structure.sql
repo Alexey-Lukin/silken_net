@@ -99,13 +99,6 @@ ALTER TABLE ONLY public.solid_cable_messages
 
 
 --
--- Name: index_solid_cable_messages_on_channel; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_solid_cable_messages_on_channel ON public.solid_cable_messages USING btree (channel);
-
-
---
 -- Name: index_solid_cable_messages_on_channel_hash; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -124,4 +117,7 @@ CREATE INDEX index_solid_cable_messages_on_created_at ON public.solid_cable_mess
 --
 
 SET search_path TO "$user", public;
+
+INSERT INTO "schema_migrations" (version) VALUES
+('20261024093000');
 

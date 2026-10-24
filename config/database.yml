@@ -29,7 +29,10 @@ default: &default
   #      навмисно: io-marked запити біжать ПОНАД max_threads і
   #      still check out DB connections; a pool sized without them starves
   #      under burst (ConnectionTimeoutError). [INF.22]
-  #   3. ActionCable / Solid Cable ....... +2 headroom (polling + broadcast)
+  #   3. ActionCable / Solid Cable ....... +2 headroom (listener polling + the
+  #      batched writer thread). ⊕ Since solid_cable 4.1.0 request threads no longer
+  #      write the cable DB at all — one writer thread per process does — so the cable
+  #      pool really serves listener + writer + the one-thread autotrim pool [OPS.22].
   #
   # Formula: pool = RAILS_MAX_THREADS + PUMA_MAX_IO_THREADS + Cable headroom
   #        default: 3 + 16 + 2 = 21
