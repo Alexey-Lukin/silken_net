@@ -4622,26 +4622,6 @@ CHECKS += [
     ("sap 01_02: oak cells whose ±1 SD covers Q8's mid, read-off high → 67", METALLURGY,
      rf"середнього в \*\*[\d.]+\*\* \(\*\*[\d.]+–{N}\*\* у межах", SAP,
      lambda d: _crown(d)["oak_cells_q8_mid_within_one_sd_under_read_off"][1], 0.0),
-    ("sap 01_02: ±1 SD coverage of a normal spread, % → 67", METALLURGY, rf"типове дерево в ≈ \*\*{N} %\*\*", SAP,
-     lambda d: 100 * _crown(d)["one_sd_coverage_if_normal"], 0.5),
-    ("sap 01_02: oak cells a typical tree would cover → 67", METALLURGY, rf"тобто ≈ \*\*{N}\*\* з 23", SAP,
-     lambda d: _crown(d)["oak_expected_within_if_typical"], 0.05),
-    ("sap 01_02: red oak K without August (Soper 2018) → 67", METALLURGY, rf"дає серпень, і без нього K \*\*{N}\*\*", SAP,
-     lambda d: _crown(d)["by_species"]["Quercus rubra"]["K"]["q8_rule_mid_without_lowest_month_mM"], 0.005),
-    ("sap 01_02: red oak Ca without August (Soper 2018) → 67", METALLURGY,
-     rf"дає серпень, і без нього K \*\*[\d.]+\*\* · Ca \*\*{N}\*\*", SAP,
-     lambda d: _crown(d)["by_species"]["Quercus rubra"]["Ca"]["q8_rule_mid_without_lowest_month_mM"], 0.0005),
-    ("sap 01_02: red oak Mg without August (Soper 2018) → 67", METALLURGY,
-     rf"дає серпень, і без нього K \*\*[\d.]+\*\* · Ca \*\*[\d.]+\*\* · Mg \*\*{N}\*\*", SAP,
-     lambda d: _crown(d)["by_species"]["Quercus rubra"]["Mg"]["q8_rule_mid_without_lowest_month_mM"], 0.0005),
-    ("sap 01_02: sugar maple K without September (Soper 2018) → 67", METALLURGY, rf"без вересня K \*\*{N}\*\*", SAP,
-     lambda d: _crown(d)["by_species"]["Acer saccharum"]["K"]["q8_rule_mid_without_lowest_month_mM"], 0.005),
-    ("sap 01_02: sugar maple Ca without September (Soper 2018) → 67", METALLURGY,
-     rf"без вересня K \*\*[\d.]+\*\* · Ca \*\*{N}\*\*", SAP,
-     lambda d: _crown(d)["by_species"]["Acer saccharum"]["Ca"]["q8_rule_mid_without_lowest_month_mM"], 0.0005),
-    ("sap 01_02: sugar maple Mg without September (Soper 2018) → 67", METALLURGY,
-     rf"без вересня K \*\*[\d.]+\*\* · Ca \*\*[\d.]+\*\* · Mg \*\*{N}\*\*", SAP,
-     lambda d: _crown(d)["by_species"]["Acer saccharum"]["Mg"]["q8_rule_mid_without_lowest_month_mM"], 0.0005),
     ("sap 01_02: maple cells whose ±1 SD covers Q8's mid → 67", METALLURGY,
      rf"середину Q8 у \*\*{N}\*\* \(\*\*", SAP,
      lambda d: _crown(d)["tally_by_species"]["Acer saccharum"]["cells_q8_mid_within_one_sd"][0], 0.0),
@@ -4653,6 +4633,74 @@ CHECKS += [
      lambda d: _crown(d)["tally_by_species"]["Acer saccharum"]["cells_q8_mid_within_one_sd_under_read_off"][1], 0.0),
     ("sap 01_02: maple cells with an attributable SD → 67", METALLURGY, rf"\) з \*\*{N}\*\* його клітинок", SAP,
      lambda d: _crown(d)["tally_by_species"]["Acer saccharum"]["cells_q8_mid_within_one_sd"][1], 0.0),
+    ("sap 01_02: red oak K leave-one-month-out, low (Soper 2018) → 67", METALLURGY,
+     rf"виключеннях\): червоний дуб K \*\*{N}–", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus rubra"]["K"]["leave_one_month_out_mM"][0], 0.005),
+    ("sap 01_02: red oak K leave-one-month-out, high (Soper 2018) → 67", METALLURGY,
+     rf"виключеннях\): червоний дуб K \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus rubra"]["K"]["leave_one_month_out_mM"][1], 0.005),
+    ("sap 01_02: red oak Ca leave-one-month-out, low (Soper 2018) → 67", METALLURGY,
+     rf"виключеннях\): червоний дуб K \*\*[\d.–]+\*\* · Ca \*\*{N}–", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus rubra"]["Ca"]["leave_one_month_out_mM"][0], 0.0005),
+    ("sap 01_02: red oak Ca leave-one-month-out, high (Soper 2018) → 67", METALLURGY,
+     rf"виключеннях\): червоний дуб K \*\*[\d.–]+\*\* · Ca \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus rubra"]["Ca"]["leave_one_month_out_mM"][1], 0.0005),
+    ("sap 01_02: red oak Mg leave-one-month-out, low (Soper 2018) → 67", METALLURGY,
+     rf"виключеннях\): червоний дуб K \*\*[\d.–]+\*\* · Ca \*\*[\d.–]+\*\* · Mg \*\*{N}–", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus rubra"]["Mg"]["leave_one_month_out_mM"][0], 0.0005),
+    ("sap 01_02: red oak Mg leave-one-month-out, high (Soper 2018) → 67", METALLURGY,
+     rf"виключеннях\): червоний дуб K \*\*[\d.–]+\*\* · Ca \*\*[\d.–]+\*\* · Mg \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus rubra"]["Mg"]["leave_one_month_out_mM"][1], 0.0005),
+    ("sap 01_02: chestnut oak K leave-one-month-out, low (Soper 2018) → 67", METALLURGY,
+     rf"мМ, каштановий — K \*\*{N}–", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus prinus"]["K"]["leave_one_month_out_mM"][0], 0.005),
+    ("sap 01_02: chestnut oak K leave-one-month-out, high (Soper 2018) → 67", METALLURGY,
+     rf"мМ, каштановий — K \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus prinus"]["K"]["leave_one_month_out_mM"][1], 0.005),
+    ("sap 01_02: chestnut oak Ca leave-one-month-out, low (Soper 2018) → 67", METALLURGY,
+     rf"мМ, каштановий — K \*\*[\d.–]+\*\* · Ca \*\*{N}–", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus prinus"]["Ca"]["leave_one_month_out_mM"][0], 0.0005),
+    ("sap 01_02: chestnut oak Ca leave-one-month-out, high (Soper 2018) → 67", METALLURGY,
+     rf"мМ, каштановий — K \*\*[\d.–]+\*\* · Ca \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus prinus"]["Ca"]["leave_one_month_out_mM"][1], 0.0005),
+    ("sap 01_02: chestnut oak Mg leave-one-month-out, low (Soper 2018) → 67", METALLURGY,
+     rf"мМ, каштановий — K \*\*[\d.–]+\*\* · Ca \*\*[\d.–]+\*\* · Mg \*\*{N}–", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus prinus"]["Mg"]["leave_one_month_out_mM"][0], 0.0005),
+    ("sap 01_02: chestnut oak Mg leave-one-month-out, high (Soper 2018) → 67", METALLURGY,
+     rf"мМ, каштановий — K \*\*[\d.–]+\*\* · Ca \*\*[\d.–]+\*\* · Mg \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: _crown(d)["by_species"]["Quercus prinus"]["Mg"]["leave_one_month_out_mM"][1], 0.0005),
+    ("sap 01_02: sugar maple K leave-one-month-out, low (Soper 2018) → 67", METALLURGY,
+     rf"вилка без одного місяця — K \*\*{N}–", SAP,
+     lambda d: _crown(d)["by_species"]["Acer saccharum"]["K"]["leave_one_month_out_mM"][0], 0.005),
+    ("sap 01_02: sugar maple K leave-one-month-out, high (Soper 2018) → 67", METALLURGY,
+     rf"вилка без одного місяця — K \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: _crown(d)["by_species"]["Acer saccharum"]["K"]["leave_one_month_out_mM"][1], 0.005),
+    ("sap 01_02: sugar maple Ca leave-one-month-out, low (Soper 2018) → 67", METALLURGY,
+     rf"вилка без одного місяця — K \*\*[\d.–]+\*\* · Ca \*\*{N}–", SAP,
+     lambda d: _crown(d)["by_species"]["Acer saccharum"]["Ca"]["leave_one_month_out_mM"][0], 0.0005),
+    ("sap 01_02: sugar maple Ca leave-one-month-out, high (Soper 2018) → 67", METALLURGY,
+     rf"вилка без одного місяця — K \*\*[\d.–]+\*\* · Ca \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: _crown(d)["by_species"]["Acer saccharum"]["Ca"]["leave_one_month_out_mM"][1], 0.0005),
+    ("sap 01_02: sugar maple Mg leave-one-month-out, low (Soper 2018) → 67", METALLURGY,
+     rf"вилка без одного місяця — K \*\*[\d.–]+\*\* · Ca \*\*[\d.–]+\*\* · Mg \*\*{N}–", SAP,
+     lambda d: _crown(d)["by_species"]["Acer saccharum"]["Mg"]["leave_one_month_out_mM"][0], 5e-05),
+    ("sap 01_02: sugar maple Mg leave-one-month-out, high (Soper 2018) → 67", METALLURGY,
+     rf"вилка без одного місяця — K \*\*[\d.–]+\*\* · Ca \*\*[\d.–]+\*\* · Mg \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: _crown(d)["by_species"]["Acer saccharum"]["Mg"]["leave_one_month_out_mM"][1], 0.0005),
+    ("sap 01_02: ±1 SD coverage of a new tree, sample band of eight (t₇), % → 67", METALLURGY,
+     rf"з імовірністю ≈ \*\*{N} %\*\* \(t із", SAP, lambda d: 100 * _crown(d)["one_sd_coverage_new_tree_t"], 0.5),
+    ("sap 01_02: oak cells a new tree would cover, t₇ (rounded) → 67", METALLURGY, rf"ступенями свободи; ≈ \*\*{N}\*\* з 23", SAP,
+     lambda d: _crown(d)["oak_expected_within_new_tree_t"], 0.5),
+    ("sap 01_02: ±1 SD coverage of a normal population, % → 67", METALLURGY, rf"генеральна ±1 SD — ≈ \*\*{N} %\*\*", SAP,
+     lambda d: 100 * _crown(d)["one_sd_coverage_if_normal"], 0.5),
+    ("sap 01_02: oak cells the population band would cover (rounded) → 67", METALLURGY, rf"%\*\* \(≈ \*\*{N}\*\* з 23\); у", SAP,
+     lambda d: _crown(d)["oak_expected_within_if_normal"], 0.5),
+    ("sap 01_02: cells whose SD reaches the mean → 67", METALLURGY, rf"у \*\*{N}\*\* клітинках SD сягає середнього", SAP,
+     lambda d: _crown(d)["cells_with_sd_at_or_above_mean"], 0.0),
+    ("sap 01_02: beech Ca and K read-off error the crown readings are judged under → 67", METALLURGY,
+     rf"\(±{N} мг/л Ca і K, ±", SAP, lambda d: _crown(d)["read_off_error_mg_l"]["Ca_mg_l"], 0.0),
+    ("sap 01_02: beech Mg read-off error the crown readings are judged under → 67", METALLURGY,
+     rf"мг/л Ca і K, ±{N} мг/л Mg;", SAP, lambda d: _crown(d)["read_off_error_mg_l"]["Mg_mg_l"], 0.0),
     ("sap: oak's own trunk sap pH, low (Van Die 1975) → 67", SUMMARY, rf"late October\): pH \*\*{N}\*\*–",
      SAP, lambda d: d["q8_broadleaf_point"]["oak_own_sap_reading"]["ph_range"][0], 0.0),
     ("sap: beech September–October pH, low (Q8) → 67", SUMMARY, rf"September–October stands at \*\*{N}\*\*–",
@@ -8674,13 +8722,14 @@ def test_crown_twig_readings_words_match_cache():
     pins cannot hold, each recomposed from 67's crown-twig block, where every «under any reading» is the whole envelope
     of the beech medians' read-off error (`*_under_read_off`), never the nominal medians alone. CAN catch: the oak cell
     the text names as flipping no longer being the one that flips; a ±1 SD count turned back into a test of agreement
-    (the text must carry the normal-spread benchmark beside it, and no «does not hold»); maple's September cells
-    moving inside the range under some reading, or joined by another month; maple's or red oak's mid without its low
-    month changing side of the point under some reading while the text names the side; a low month that stops being
-    the same in every ion; a September SD of maple becoming attributable; a Schneider range leaving the dated range or
-    rising above its mid while the text says it is no evidence against the point. CANNOT catch a misread figure (the
-    transcription is held only by the verifier's independent extraction, and three Mg SDs not even by that) nor
-    whether crown twigs may stand for the trunk base."""
+    (the text must carry both benchmarks beside it — the sample band of eight below the population one — and no «does
+    not hold»); maple's September cells moving inside the range under some reading, or joined by another month; a
+    leave-one-month-out bracket changing side of the point under some reading while the text names the side; a
+    one-sided «without the lowest month» coming back; a September SD of maple becoming attributable; one read-off
+    error printed for Ca and K that the cache splits; a Schneider range leaving the dated range or rising above its
+    mid while the text says it is no evidence against the point. CANNOT catch a misread figure (the transcription is
+    held only by the verifier's independent extraction, and three Mg SDs not even by that) nor whether crown twigs may
+    stand for the trunk base."""
     q8 = json.loads((CACHE / SAP).read_text(encoding="utf-8"))["q8_broadleaf_point"]
     s, n = q8["crown_twig_readings"]["soper_2018"], q8["crown_twig_readings"]["schneider_1996"]
     canon = " ".join((REPO / METALLURGY).read_text(encoding="utf-8").split())
@@ -8692,25 +8741,25 @@ def test_crown_twig_readings_words_match_cache():
     flips = {sp: t["cells_that_flip_under_read_off"]["inside"] for sp, t in tally.items()}
     assert flips == {"Quercus rubra": ["Mg Aug"], "Quercus prinus": [], "Acer saccharum": []}, flips
     assert "(перекидається Mg серпня червоного дуба)" in canon
+    assert s["read_off_error_mg_l"]["Ca_mg_l"] == s["read_off_error_mg_l"]["K_mg_l"] and "мг/л Ca і K, ±" in canon
     # the ±1 SD count is a number beside its benchmark, not a verdict
     assert "не тримається" not in canon.split("Ще два прочитання поруч із Q8")[1].split("Schneider et al. 1996")[0]
-    assert "для нормального розкиду між деревами смуга ±1 SD накриває типове дерево" in canon
-    assert "місяці — ті самі вісім дерев, тож клітинки не незалежні" in canon
-    # red oak's low end is one month; without it K and Mg sit above the point under any reading, Ca straddles it
-    rubra = by["Quercus rubra"]
-    assert tally["Quercus rubra"]["lowest_month_same_in_every_ion"] == "Aug"
-    assert all(rubra[i]["over_q8_mid_without_lowest_month_under_read_off"][0] > 1.0 for i in ("K", "Mg"))
-    lo_ca, hi_ca = rubra["Ca"]["over_q8_mid_without_lowest_month_under_read_off"]
-    assert lo_ca < 1.0 < hi_ca
-    assert "у червоного дуба нижній кінець усіх трьох іонів дає серпень" in canon
-    assert "K і Mg вище точки за будь-якого читання медіан бука, Ca — обабіч неї" in canon
-    # maple: below the point in every ion under any reading, but set by September alone
+    assert "Це число, а не перевірка згоди" in canon and "за скошеного покриття вище" in canon
+    assert s["one_sd_coverage_new_tree_t"] < s["one_sd_coverage_if_normal"], "the sample band of eight must cover less"
+    assert "місяці — ті самі вісім дерев, а три іони одного місяця — ті самі проби соку, тож клітинки не незалежні" in canon
+    # the leave-one-month-out brackets: their side of the point under every reading, as the canon names it
+    sides = {sp: {i: by[sp][i]["leave_one_month_out_side_under_read_off"] for i in ions} for sp in by}
+    assert sides == {"Quercus rubra": {"K": "above", "Ca": "straddles", "Mg": "straddles"},
+                     "Quercus prinus": {"K": "above", "Ca": "straddles", "Mg": "below"},
+                     "Acer saccharum": {"K": "straddles", "Ca": "straddles", "Mg": "below"}}, sides
+    assert "K обох дубів лежить вище точки, Mg каштанового — нижче, а Ca обох і Mg червоного — обабіч неї" in canon
+    assert "K і Ca обабіч точки, Mg нижче, за будь-якого читання" in canon
+    para = canon.split("Ще два прочитання поруч із Q8")[1].split("**Хто готує середовище")[0]
+    one_sided = re.findall(r"[Бб]ез (?:червня|липня|серпня|вересня)", para)
+    assert not one_sided and "визначає один" not in para, f"a one-sided exclusion came back: {one_sided}"
+    # maple: the rule's mid below the point in every ion under any reading
     maple = by["Acer saccharum"]
-    assert all(maple[i]["over_q8_mid_under_read_off"][1] < 1.0 for i in ions) and "нижче точки в усіх трьох за будь-якого читання" in canon
-    assert tally["Acer saccharum"]["lowest_month_same_in_every_ion"] == "Sep" and "цю середину визначає один вересень" in canon
-    assert all(maple[i]["over_q8_mid_without_lowest_month_under_read_off"][0] > 1.0 for i in ("K", "Ca"))
-    assert maple["Mg"]["over_q8_mid_without_lowest_month_under_read_off"][1] < 1.0
-    assert "K і Ca вище точки, Mg нижче, за будь-якого читання" in canon
+    assert all(maple[i]["side_under_read_off"] == "below" for i in ions) and "нижче точки в усіх трьох за будь-якого читання" in canon
     assert [maple[i]["sd_over_mean"]["Sep"] for i in ions] == [maple["K"]["sd_over_mean"]["Sep"], None, None]
     assert maple["K"]["sd_over_mean"]["Sep"] is not None and "SD вересня для Ca і Mg не приписується" in canon
     # maple's September below the range under every reading — below its LOWEST end

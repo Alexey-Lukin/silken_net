@@ -3513,9 +3513,14 @@ def test_sap_recipe_q8_crown_twig_readings():
     assert s["oak_cells_q8_mid_within_one_sd"] == [sum(oak_within), len(oak_within)]
     assert s["sd_over_mean_range"] == [round(min(shares), 3), round(max(shares), 3)]
     assert s["cells_with_sd"] == [with_sd, 3 * 3 * len(months)]
+    from scipy.stats import t as student_t
     cov = math.erf(1.0 / math.sqrt(2.0))
-    assert s["one_sd_coverage_if_normal"] == round(cov, 3)
-    assert s["oak_expected_within_if_typical"] == round(cov * len(oak_within), 1)
+    n_tr = s["trees_per_species"]
+    cov_t = 2.0 * student_t.cdf(1.0 / math.sqrt(1.0 + 1.0 / n_tr), n_tr - 1) - 1.0   # new tree in the SAMPLE mean ± SD
+    assert n_tr == 8 and s["one_sd_coverage_if_normal"] == round(cov, 3) and s["one_sd_coverage_new_tree_t"] == round(cov_t, 3)
+    assert s["oak_expected_within_if_normal"] == round(cov * len(oak_within), 1)
+    assert s["oak_expected_within_new_tree_t"] == round(cov_t * len(oak_within), 1)
+    assert s["cells_with_sd_at_or_above_mean"] == len(upper)
     # the read-off envelope, rebuilt from the cache's medians and error
     err = s["read_off_error_mg_l"]
     ends = {ion: [((min(r[f"{ion}_mg_l"] for r in med.values()) + a) / molar[ion],
@@ -3553,20 +3558,26 @@ def test_sap_recipe_q8_crown_twig_readings():
         assert t["cells_that_flip_under_read_off"] == {
             "inside": sorted({c for x in tallies for c in x[sp][0] ^ nominal[sp][0]}),
             "within_one_sd": sorted({c for x in tallies for c in x[sp][1] ^ nominal[sp][1]})}, sp
-        lows = {s["by_species"][sp][ion]["lowest_month"] for ion in molar}
-        assert t["lowest_month_same_in_every_ion"] == (lows.pop() if len(lows) == 1 else None), sp
+
+    def side(lo_r, hi_r):
+        return "above" if lo_r > 1.0 else "below" if hi_r < 1.0 else "straddles"
     for sp, ions in s["means_ug_ml"].items():
         for ion, means in ions.items():
             p, mm = s["by_species"][sp][ion], [v / molar[ion] for v in means]
-            low = months[mm.index(min(mm))]
-            rest = [x for m, x in zip(months, mm, strict=True) if m != low]
-            mid_rest = math.sqrt(min(rest) * max(rest))
             q8s = [math.sqrt(r[ion][0] * r[ion][1]) for r in readings]
-            assert p["lowest_month"] == low and abs(p["q8_rule_mid_without_lowest_month_mM"] - mid_rest) < 1e-4, (sp, ion)
-            assert p["over_q8_mid_without_lowest_month_under_read_off"] == [round(mid_rest / max(q8s), 3),
-                                                                             round(mid_rest / min(q8s), 3)], (sp, ion)
+            loo = {}
+            for out_m in months:   # every exclusion — a «lowest month only» would lift the mid one-sidedly
+                rest = [x for m, x in zip(months, mm, strict=True) if m != out_m]
+                loo[out_m] = math.sqrt(min(rest) * max(rest))
+            assert p["q8_rule_mid_leave_one_month_out_mM"] == {m: round(v, 5) for m, v in loo.items()}, (sp, ion)
+            assert p["leave_one_month_out_mM"] == [round(min(loo.values()), 5), round(max(loo.values()), 5)], (sp, ion)
+            r_loo = (min(loo.values()) / max(q8s), max(loo.values()) / min(q8s))
+            assert p["over_q8_mid_leave_one_month_out_under_read_off"] == [round(r_loo[0], 3), round(r_loo[1], 3)], (sp, ion)
+            assert p["leave_one_month_out_side_under_read_off"] == side(*r_loo), (sp, ion)
             mid = math.sqrt(min(mm) * max(mm))
-            assert p["over_q8_mid_under_read_off"] == [round(mid / max(q8s), 3), round(mid / min(q8s), 3)], (sp, ion)
+            r_mid = (mid / max(q8s), mid / min(q8s))
+            assert p["over_q8_mid_under_read_off"] == [round(r_mid[0], 3), round(r_mid[1], 3)], (sp, ion)
+            assert p["side_under_read_off"] == side(*r_mid), (sp, ion)
     n = cr["schneider_1996"]
     no3 = q8["measured"]["nitrate"]
     lo, hi = no3["range_mM"]

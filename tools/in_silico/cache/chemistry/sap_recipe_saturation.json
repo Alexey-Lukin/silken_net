@@ -3512,12 +3512,22 @@
                 1.38,
                 1.506
               ],
-              "lowest_month": "Aug",
-              "q8_rule_mid_without_lowest_month_mM": 3.2099,
-              "over_q8_mid_without_lowest_month_under_read_off": [
-                1.712,
+              "side_under_read_off": "above",
+              "q8_rule_mid_leave_one_month_out_mM": {
+                "Jun": 2.51128,
+                "Jul": 2.58749,
+                "Aug": 3.20988,
+                "Sep": 2.58749
+              },
+              "leave_one_month_out_mM": [
+                2.51128,
+                3.20988
+              ],
+              "over_q8_mid_leave_one_month_out_under_read_off": [
+                1.339,
                 1.868
               ],
+              "leave_one_month_out_side_under_read_off": "above",
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.384,
@@ -3545,12 +3555,22 @@
                 0.74,
                 0.978
               ],
-              "lowest_month": "Aug",
-              "q8_rule_mid_without_lowest_month_mM": 0.6667,
-              "over_q8_mid_without_lowest_month_under_read_off": [
-                0.886,
+              "side_under_read_off": "below",
+              "q8_rule_mid_leave_one_month_out_mM": {
+                "Jun": 0.55725,
+                "Jul": 0.55725,
+                "Aug": 0.66672,
+                "Sep": 0.52892
+              },
+              "leave_one_month_out_mM": [
+                0.52892,
+                0.66672
+              ],
+              "over_q8_mid_leave_one_month_out_under_read_off": [
+                0.703,
                 1.17
               ],
+              "leave_one_month_out_side_under_read_off": "straddles",
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.473,
@@ -3578,12 +3598,22 @@
                 0.666,
                 0.794
               ],
-              "lowest_month": "Aug",
-              "q8_rule_mid_without_lowest_month_mM": 0.2787,
-              "over_q8_mid_without_lowest_month_under_read_off": [
-                1.031,
+              "side_under_read_off": "below",
+              "q8_rule_mid_leave_one_month_out_mM": {
+                "Jun": 0.18006,
+                "Jul": 0.16087,
+                "Aug": 0.27867,
+                "Sep": 0.18006
+              },
+              "leave_one_month_out_mM": [
+                0.16087,
+                0.27867
+              ],
+              "over_q8_mid_leave_one_month_out_under_read_off": [
+                0.595,
                 1.228
               ],
+              "leave_one_month_out_side_under_read_off": "straddles",
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.674,
@@ -3613,12 +3643,22 @@
                 1.217,
                 1.328
               ],
-              "lowest_month": "Sep",
-              "q8_rule_mid_without_lowest_month_mM": 2.3051,
-              "over_q8_mid_without_lowest_month_under_read_off": [
-                1.229,
+              "side_under_read_off": "above",
+              "q8_rule_mid_leave_one_month_out_mM": {
+                "Jun": 2.23793,
+                "Jul": 2.28169,
+                "Aug": 2.28169,
+                "Sep": 2.30512
+              },
+              "leave_one_month_out_mM": [
+                2.23793,
+                2.30512
+              ],
+              "over_q8_mid_leave_one_month_out_under_read_off": [
+                1.193,
                 1.342
               ],
+              "leave_one_month_out_side_under_read_off": "above",
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.282,
@@ -3646,12 +3686,22 @@
                 0.628,
                 0.829
               ],
-              "lowest_month": "Jun",
-              "q8_rule_mid_without_lowest_month_mM": 0.6722,
-              "over_q8_mid_without_lowest_month_under_read_off": [
-                0.893,
+              "side_under_read_off": "below",
+              "q8_rule_mid_leave_one_month_out_mM": {
+                "Jun": 0.67221,
+                "Jul": 0.47258,
+                "Aug": 0.46358,
+                "Sep": 0.47258
+              },
+              "leave_one_month_out_mM": [
+                0.46358,
+                0.67221
+              ],
+              "over_q8_mid_leave_one_month_out_under_read_off": [
+                0.616,
                 1.179
               ],
+              "leave_one_month_out_side_under_read_off": "straddles",
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.427,
@@ -3679,12 +3729,22 @@
                 0.643,
                 0.765
               ],
-              "lowest_month": "Sep",
-              "q8_rule_mid_without_lowest_month_mM": 0.2212,
-              "over_q8_mid_without_lowest_month_under_read_off": [
-                0.819,
+              "side_under_read_off": "below",
+              "q8_rule_mid_leave_one_month_out_mM": {
+                "Jun": 0.17361,
+                "Jul": 0.14649,
+                "Aug": 0.17361,
+                "Sep": 0.22121
+              },
+              "leave_one_month_out_mM": [
+                0.14649,
+                0.22121
+              ],
+              "over_q8_mid_leave_one_month_out_under_read_off": [
+                0.542,
                 0.975
               ],
+              "leave_one_month_out_side_under_read_off": "below",
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.466,
@@ -3714,12 +3774,22 @@
                 0.626,
                 0.683
               ],
-              "lowest_month": "Sep",
-              "q8_rule_mid_without_lowest_month_mM": 2.1273,
-              "over_q8_mid_without_lowest_month_under_read_off": [
-                1.134,
+              "side_under_read_off": "below",
+              "q8_rule_mid_leave_one_month_out_mM": {
+                "Jun": 1.17373,
+                "Jul": 1.17373,
+                "Aug": 1.10702,
+                "Sep": 2.12726
+              },
+              "leave_one_month_out_mM": [
+                1.10702,
+                2.12726
+              ],
+              "over_q8_mid_leave_one_month_out_under_read_off": [
+                0.59,
                 1.238
               ],
+              "leave_one_month_out_side_under_read_off": "straddles",
               "months_outside_dated_beech_range": [
                 "Sep"
               ],
@@ -3749,12 +3819,22 @@
                 0.435,
                 0.574
               ],
-              "lowest_month": "Sep",
-              "q8_rule_mid_without_lowest_month_mM": 0.841,
-              "over_q8_mid_without_lowest_month_under_read_off": [
-                1.117,
+              "side_under_read_off": "below",
+              "q8_rule_mid_leave_one_month_out_mM": {
+                "Jun": 0.32708,
+                "Jul": 0.3094,
+                "Aug": 0.32708,
+                "Sep": 0.84103
+              },
+              "leave_one_month_out_mM": [
+                0.3094,
+                0.84103
+              ],
+              "over_q8_mid_leave_one_month_out_under_read_off": [
+                0.411,
                 1.475
               ],
+              "leave_one_month_out_side_under_read_off": "straddles",
               "months_outside_dated_beech_range": [
                 "Sep"
               ],
@@ -3784,12 +3864,22 @@
                 0.306,
                 0.364
               ],
-              "lowest_month": "Sep",
-              "q8_rule_mid_without_lowest_month_mM": 0.2212,
-              "over_q8_mid_without_lowest_month_under_read_off": [
-                0.819,
+              "side_under_read_off": "below",
+              "q8_rule_mid_leave_one_month_out_mM": {
+                "Jun": 0.07753,
+                "Jul": 0.08263,
+                "Aug": 0.08263,
+                "Sep": 0.22117
+              },
+              "leave_one_month_out_mM": [
+                0.07753,
+                0.22117
+              ],
+              "over_q8_mid_leave_one_month_out_under_read_off": [
+                0.287,
                 0.975
               ],
+              "leave_one_month_out_side_under_read_off": "below",
               "months_outside_dated_beech_range": [
                 "Sep"
               ],
@@ -3826,14 +3916,14 @@
               9,
               9
             ],
-            "expected_within_if_typical": 8.2,
+            "expected_within_new_tree_t": 7.5,
+            "expected_within_if_normal_population": 8.2,
             "cells_that_flip_under_read_off": {
               "inside": [
                 "Mg Aug"
               ],
               "within_one_sd": []
-            },
-            "lowest_month_same_in_every_ion": "Aug"
+            }
           },
           "Quercus prinus": {
             "cells_inside_dated_beech_range": [
@@ -3852,15 +3942,15 @@
               7,
               9
             ],
-            "expected_within_if_typical": 7.5,
+            "expected_within_new_tree_t": 6.9,
+            "expected_within_if_normal_population": 7.5,
             "cells_that_flip_under_read_off": {
               "inside": [],
               "within_one_sd": [
                 "K Jun",
                 "Mg Jun"
               ]
-            },
-            "lowest_month_same_in_every_ion": null
+            }
           },
           "Acer saccharum": {
             "cells_inside_dated_beech_range": [
@@ -3879,14 +3969,14 @@
               8,
               9
             ],
-            "expected_within_if_typical": 6.8,
+            "expected_within_new_tree_t": 6.2,
+            "expected_within_if_normal_population": 6.8,
             "cells_that_flip_under_read_off": {
               "inside": [],
               "within_one_sd": [
                 "K Aug"
               ]
-            },
-            "lowest_month_same_in_every_ion": "Sep"
+            }
           }
         },
         "q8_mid_mM": {
@@ -3945,8 +4035,12 @@
           16,
           18
         ],
+        "trees_per_species": 8,
+        "one_sd_coverage_new_tree_t": 0.623,
         "one_sd_coverage_if_normal": 0.683,
-        "oak_expected_within_if_typical": 15.7,
+        "oak_expected_within_new_tree_t": 14.3,
+        "oak_expected_within_if_normal": 15.7,
+        "cells_with_sd_at_or_above_mean": 3,
         "cells_with_sd": [
           33,
           36
