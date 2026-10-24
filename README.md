@@ -82,7 +82,7 @@ brew install postgis                                                            
 
 The extension is enabled by `structure.sql` (`CREATE EXTENSION IF NOT EXISTS postgis`), so a normal `db:prepare` needs no manual step.
 
-**A C toolchain** — `rumale` pulls `numo-narray-alt`, which compiles a native extension:
+**A C toolchain** — several gems compile native extensions on install (e.g. `rbsecp256k1` builds libsecp256k1; `ed25519`, `keccak`, `oj`, `pg_query`, `puma`):
 
 ```bash
 sudo apt-get install -y build-essential ruby-dev   # Ubuntu / Debian

@@ -44,7 +44,6 @@ gem "rqrcode"
 # просто не існує. Active Storage требує його при буті, щоб вимкнути unfuzzed-лоадери
 # libvips — потрібні libvips ≥ 8.13 (Dockerfile, CI) та ruby-vips ≥ 2.2.1.
 gem "ruby-vips", require: false
-gem "rumale"
 gem "sentry-rails"
 gem "sentry-ruby"
 gem "sentry-sidekiq"
