@@ -429,7 +429,8 @@ jobs:
 
       - name: Run Aderyn (JSON gate + SARIF report)
         run: |
-          aderyn . --skip-update-check -o aderyn-report.json
+          set -o pipefail   # `run:` defaults to `bash -e` WITHOUT pipefail — tee would eat aderyn's exit
+          aderyn . --skip-update-check -o aderyn-report.json 2>&1 | tee aderyn.log
           aderyn . --skip-update-check -o aderyn-report.sarif
 
       # Gate on high-severity only (baseline = 0 high; Low centralization-risk on role gates
@@ -437,6 +438,17 @@ jobs:
       - name: Fail on high-severity findings
         run: |
           python3 -c "import json,sys; r=json.load(open('aderyn-report.json')); n=len(r['high_issues']['issues']); print(f'Aderyn high-severity findings: {n}'); sys.exit(1 if n>0 else 0)"
+
+      # [E.32] Scope floor: `high_issues == 0` is the same green on an EMPTY scope («Ingesting 0
+      # compiled files») as on a clean one, so «analysed the deployable contracts» is part of the
+      # verdict. Floor = the root `*.sol` (the deployable set, `aderyn.toml` src); a floor, not an
+      # equality, because aderyn's own file rule is not ours (it skips `script/Deploy.s.sol`).
+      - name: Scope floor — Aderyn ingested every deployable contract
+        run: |
+          floor=$(find . -maxdepth 1 -name '*.sol' | wc -l)
+          n=$(sed -nE 's/^Ingesting ([0-9]+) compiled files.*/\1/p' aderyn.log | head -1)
+          echo "Aderyn ingested ${n:-NO} compiled files; floor (root *.sol) = $floor"
+          [ "${n:-0}" -ge "$floor" ]
 
       - name: Upload Aderyn SARIF to Security tab
         if: always()
