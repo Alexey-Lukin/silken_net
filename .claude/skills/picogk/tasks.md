@@ -14,9 +14,15 @@
   ground in `tools/cad/cem/_provenance.json` (gotcha #13 — HARD in `docs.yml`); `dotnet run -- verify`. A new anchor
   SKU also needs its baseline (`verify --write-golden` — without a golden it passes unpinned) and meets the
   `AnchorTests` shipped-manifest pins (topology · bus-rod field · coating restriction · tolerance block).
+  🔴 **An anchor SKU whose core or rim period is below 1.3 mm** (the smallest period ever measured — `stepped`'s rim)
+  re-runs the raw ⊥ normalised porosity A/B of `01_02 §6`, bullet «Контракт поля SDF», BEFORE it ships — recipe
+  «Change anchor geometry»; that period is one of the two events the «do not switch to normalisation» verdict names.
 - **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, period, wallParam — and `bus_rod_diameter_mm`, which declares the WELDED WIRE, an assembly part: the anode is printed with NO core and `Zone1Anode.InnerRadiusMm` returns 0 for every manifest, pinned by `AnchorTests.The_Printed_Part_Carries_No_Core`. The wire field still has to BE there — `Every_Shipped_Anchor_Cem_Declares_Its_Bus_Rod_And_No_Bore` reds on a manifest that omits it or carries a bore key, which would otherwise evaporate on parse).
   Geometry numbers and the founder decisions on them are owned in canon (`01_01 §5`); the open anchor-geometry legs live in `00_07` HW.33; **MEASURE
-  porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
+  porosity after** (gotcha #4). 🔴 A core or rim period below 1.3 mm (below every period ever measured) also re-runs
+  the raw ⊥ normalised A/B — `normalise_field` true ⊥ false over voxels 0.1–0.4 mm — against `01_02 §6` «Контракт поля
+  SDF»: that verdict stands on a zero set the clamp does not move, and a period that small is the event its ground
+  names (gotcha #4; the item is archived, `00_07` §🗄️ HW.49). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
   ⚖️ **Topology = `network`** — every shipped `anchor_zone1.*` but `stepped` declares it; `stepped` is a
   separate, already-decided THIRD branch (`ZonedGyroid`).
   🔴 **The live rule is that `wallParam` NEVER carries across a topology flip, and it is not cosmetic:**
