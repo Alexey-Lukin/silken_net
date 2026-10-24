@@ -32,7 +32,7 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
 | [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Матем. верифікація числової стабільності |
 | `firmware/bio_contracts/bio_contract.rb` · `app/services/silken_net/attractor.rb` · `seed_derivation.rb` | mruby + Rails-дзеркало (Float parity); SEC.11 entry-point |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.66 реалізація гілки (Б) (FW.31 numeric-DCI під (Б) — ⚫); ARCH.18 int-Lorenz — ⚫ 2026-10-13: обидва мотиви (zkVM · залізо без FPU) стояли на Лоренці пристрою, а (Б) його знімає (§8) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.66 реалізація гілки (Б) (FW.31 numeric-DCI під (Б) — ⚫, у §🗄️ з 2026-10-24); ARCH.18 int-Lorenz — ⚫ 2026-10-13, у §🗄️ з 2026-10-24: обидва мотиви (zkVM · залізо без FPU) стояли на Лоренці пристрою, а (Б) його знімає (§8) |
 
 ## 📑 Зміст
 
@@ -95,7 +95,7 @@ dz/dt = x · y - β · z
 >
 > Третій рівень hardening — **fixed-point Q-формат:** вхідні дані × 10⁶, всі арифметичні операції у `int64_t`/Ruby `Integer` (немає overflow до 2⁶³ ≈ 9.2·10¹⁸). Тоді результат **бітово ідентичний на будь-якому процесорі**, від AVR до zkVM.
 >
-> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, усього parity-корпусу (§4.2 — sweep + Ruby/C-мірор), плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. ⊕ **⚫ 2026-10-13:** під гілкою (Б) (§8) Лоренца на пристрої немає, тож обидва мотиви цього абзацу — ZK-circuit і HW без FPU — предмета не мають, і пункт закрито. Зафіксовано було як **ARCH.18** (int-Lorenz, 🌿 deferred until zkVM-Lorenz milestone; `FW.45` = історичний firmware-тег, злитий у ARCH.18 → §🗄️) у [`00_07`](00_07_Action_Plan_Tracker).
+> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, усього parity-корпусу (§4.2 — sweep + Ruby/C-мірор), плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. ⊕ **⚫ 2026-10-13:** під гілкою (Б) (§8) Лоренца на пристрої немає, тож обидва мотиви цього абзацу — ZK-circuit і HW без FPU — предмета не мають, і пункт закрито. Зафіксовано було як **ARCH.18** (int-Lorenz, 🌿 deferred until zkVM-Lorenz milestone; `FW.45` = історичний firmware-тег, злитий у ARCH.18 → §🗄️) у [`00_07`](00_07_Action_Plan_Tracker). ⊕ **2026-10-24 — ARCH.18 у §🗄️.** IoTeX W3bstream цієї ноги не закривав і не закриває: його ZK доводить цілісність pipeline і прив'язку до peaq DID ([`05_01`](05_01_Multichain_Architecture)), а `z_value` у його payload ([`05_02`](05_02_Proof_of_Growth_Pipeline), Крок B) — дані, не обчислення Лоренца в circuit. Повернути пункт може лише новий споживач Лоренца з грошовим ефектом; носій у мить дії — гоча `telemetry-pipeline` #16.
 
 ### 1.3 Класичний Атрактор Лоренца (Метелик)
 
