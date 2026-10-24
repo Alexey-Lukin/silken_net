@@ -169,7 +169,7 @@ jobs:
         with:
           scan-type: image
           image-ref: ${{ steps.img.outputs.ref }}
-          version: v0.74.0
+          version: v0.76.1
           format: sarif
           output: trivy-image.sarif
           ignore-unfixed: true # без апстрім-фіксу дія неможлива — це шум, не робота
