@@ -290,7 +290,7 @@ namespace :docs do
                      # Exempt by CLASS (the worktree directory convention), not by file: any
                      # future glob branch that starts recursing under `.claude/` inherits this
                      # for free, instead of rotting the same way a second time.
-                     .reject { |f| f.include?("/.claude/worktrees/") }
+                     .reject { |f| f.delete_prefix("#{root_dir}/").start_with?(".claude/worktrees/") }
     # Heading-slug sets, computed once and shared by BOTH anchor dialects: the in-docs
     # `](DocName#frag)` form below (DocsGraph.dangling_anchors) and the path form
     # `docs/NN_NN_Name.md#frag` used OUTSIDE docs/ [OPS.32]. One engine, two readers —

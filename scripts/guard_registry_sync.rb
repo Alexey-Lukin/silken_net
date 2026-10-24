@@ -474,7 +474,7 @@ if FAST_ALIAS.empty? || BAND_ALIAS.empty?
 else
   # guard-craft #157: `.claude/**` йде файловою системою, тож нею матчить і
   # вкладена копія в `.claude/worktrees/agent-*` — виняток по КЛАСУ, не по файлу.
-  claim_files = Dir[File.join(ROOT, ".claude/**/*.{md,sh}")].reject { |f| f.include?("/.claude/worktrees/") } +
+  claim_files = Dir[File.join(ROOT, ".claude/**/*.{md,sh}")].reject { |f| f.delete_prefix("#{ROOT}/").start_with?(".claude/worktrees/") } +
                 [ REGISTRY_DOC, DOCS_WORKFLOW ]
   claim_files.each do |path|
     next unless File.file?(path)
