@@ -906,11 +906,11 @@ telemetry_log.update!(
 ## 📌 Статус пайплайну
 
 > **One-Home:** відкриті блокери живуть у [`00_07`](00_07_Action_Plan_Tracker), не в каноні (00_06 §1). Для цього пайплайну:
-> - **FW.8** — ⚫ 2026-10-06, поглинуто гілкою (Б) ([`00_07`](00_07_Action_Plan_Tracker) FW.66): блокером більше не є — пороги переїжджають на сервер, де їх судять прямі сигнали (нога E.64), а пристрій перестане класифікувати з реалізацією (Б). Історія: `CRITICAL_Z_MIN/MAX` firmware-hardcoded vs server per-species (раніше тут «BLOCKER-03» — невідповідність `bio_status`/`growth_points` firmware↔backend для не-сосни). OTA-дизайн — §4а вище; трекер — [`00_07` — FW.8](00_07_Action_Plan_Tracker) (Rails-сторона ✅, firmware-парсер host-tested+gated, persist Flash-KV; bench-residual).
 > - **SEC.9** — master seed key може ще містити FIPS-197 тест-вектор → crypto-random перед польовим деплоєм ([`00_07`](00_07_Action_Plan_Tracker)).
 
 **Закриті** (design-rationale у канон-домах + git-історії):
 - AES-ключ hardcoded у прошивках → ✅ **FW.1** (per-device HKDF-LoRa-ключ у Protected Flash — [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security); SEC.9 — залишковий хвіст вище).
 - Lorenz Float↔BigDecimal divergence + DID-as-seed антипатерн → ✅ **FW.7** (Float-as-numeric-mirror) + **SEC.11** (K_seed-derived cold start) — дизайн у секції «SEC.11» вище.
+- `CRITICAL_Z_MIN/MAX` firmware-hardcoded vs server per-species (раніше тут «BLOCKER-03» — невідповідність `bio_status`/`growth_points` firmware↔backend для не-сосни) → ⚫ **FW.8** — поглинуто гілкою (Б) 2026-10-06 ([`00_07`](00_07_Action_Plan_Tracker) FW.66): пороги переїжджають на сервер, де їх судять прямі сигнали (нога E.64); пристроєву машинерію (видачу смуги, firmware-парсер, Flash-KV) знято 2026-10-10, пункт у §🗄️ з 2026-10-24. OTA-дизайн — ⚫-нота «FW.8 — per-species пороги Лоренца на пристрої» вище (історія).
 
-**Висновок:** пайплайн повністю реалізовано та покрито RSpec; backend-шар готовий до Mainnet, залишкові блокери — firmware-bench (SEC.9; FW.8 — ⚫ 2026-10-06), трекаються в [`00_07`](00_07_Action_Plan_Tracker).
+**Висновок:** пайплайн повністю реалізовано та покрито RSpec; backend-шар готовий до Mainnet, залишкові блокери — firmware-bench (SEC.9), трекаються в [`00_07`](00_07_Action_Plan_Tracker).
