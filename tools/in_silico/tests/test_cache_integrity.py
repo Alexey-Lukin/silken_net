@@ -3461,13 +3461,19 @@ def test_sap_recipe_saturation():
 
 def test_sap_recipe_q8_crown_twig_readings():
     """Script 67, Q8: the two crown-twig readings beside the broadleaf point (00_07 HW.3 (А)) — Soper 2018 and
-    Schneider 1996 — re-derived from what the cache itself carries: the Soper means (µg/mL) and Q8's dated medians.
+    Schneider 1996 — re-derived from what the cache itself carries: the Soper means (µg/mL), Q8's dated medians and
+    their read-off error. The read-off envelope is rebuilt HERE, independently of the script's: each end of each ion's
+    range moved by −e, 0 or +e (the end itself, not one date — so a «re-take the extremes» rule would red here).
 
     CAN catch: a hand-edited mM, mid or ratio; a month counted inside or outside the dated beech range against the
-    numbers; an «upper arm only» label on a bar that does not reach the axis; a Schneider flag that disagrees with the
-    dated nitrate the cache prints. CANNOT catch a mis-read figure — the means and SDs are a transcription of Soper's
-    Fig. 1 vectors, held only by the verifier's independent extraction in the scratch tree — and it does not judge
-    whether crown twigs may stand for the trunk base (the script's prose says they may not)."""
+    numbers; a count or a flip list that holds only on the nominal medians; a low month or a mid without it that
+    disagrees with the means; a ±1 SD benchmark that is not erf(1/√2); an «upper arm only» label on a bar that does not
+    reach the axis; a Schneider flag that disagrees with the dated nitrate the cache prints. CANNOT catch a mis-read
+    figure — the means and the symmetric SDs are a transcription of Soper's Fig. 1 vectors, held only by the verifier's
+    independent extraction in the scratch tree, and the three upper-arm-only Mg SDs not even by that (it checked them
+    only as a share of the mean) — and it does not judge whether crown twigs may stand for the trunk base (the
+    script's prose says they may not)."""
+    import itertools
     path = CHEMISTRY / "sap_recipe_saturation.json"
     if not path.exists():
         pytest.skip("sap_recipe_saturation.json not computed")
@@ -3507,6 +3513,60 @@ def test_sap_recipe_q8_crown_twig_readings():
     assert s["oak_cells_q8_mid_within_one_sd"] == [sum(oak_within), len(oak_within)]
     assert s["sd_over_mean_range"] == [round(min(shares), 3), round(max(shares), 3)]
     assert s["cells_with_sd"] == [with_sd, 3 * 3 * len(months)]
+    cov = math.erf(1.0 / math.sqrt(2.0))
+    assert s["one_sd_coverage_if_normal"] == round(cov, 3)
+    assert s["oak_expected_within_if_typical"] == round(cov * len(oak_within), 1)
+    # the read-off envelope, rebuilt from the cache's medians and error
+    err = s["read_off_error_mg_l"]
+    ends = {ion: [((min(r[f"{ion}_mg_l"] for r in med.values()) + a) / molar[ion],
+                   (max(r[f"{ion}_mg_l"] for r in med.values()) + b) / molar[ion])
+                  for a, b in itertools.product((-err[f"{ion}_mg_l"], 0.0, err[f"{ion}_mg_l"]), repeat=2)] for ion in molar}
+    readings = [dict(zip(ends, c, strict=True)) for c in itertools.product(*ends.values())]
+    assert s["read_off_readings"] == len(readings) == 9 ** 3
+
+    def tally(rng):
+        out = {}
+        for sp, ions in s["means_ug_ml"].items():
+            ins, wit = set(), set()
+            for ion, means in ions.items():
+                lo_, hi_ = rng[ion]
+                mid_ = math.sqrt(lo_ * hi_)
+                for m, v, sd in zip(months, means, s["sd_ug_ml"][sp][ion], strict=True):
+                    if lo_ <= v / molar[ion] <= hi_:
+                        ins.add(f"{ion} {m}")
+                    if sd is not None and (v - sd) / molar[ion] <= mid_ <= (v + sd) / molar[ion]:
+                        wit.add(f"{ion} {m}")
+            out[sp] = (ins, wit)
+        return out
+    nominal, tallies = tally(beech), [tally(r) for r in readings]
+    oaks = ("Quercus rubra", "Quercus prinus")
+    oak_i = [sum(len(t[sp][0]) for sp in oaks) for t in tallies]
+    oak_w = [sum(len(t[sp][1]) for sp in oaks) for t in tallies]
+    assert s["oak_cells_inside_under_read_off"] == [min(oak_i), max(oak_i)]
+    assert s["oak_cells_q8_mid_within_one_sd_under_read_off"] == [min(oak_w), max(oak_w)]
+    for sp, t in s["tally_by_species"].items():
+        ins, wit = [len(x[sp][0]) for x in tallies], [len(x[sp][1]) for x in tallies]
+        assert t["cells_inside_dated_beech_range"][0] == len(nominal[sp][0]), sp
+        assert t["cells_inside_under_read_off"] == [min(ins), max(ins)], sp
+        assert t["cells_q8_mid_within_one_sd"][0] == len(nominal[sp][1]), sp
+        assert t["cells_q8_mid_within_one_sd_under_read_off"] == [min(wit), max(wit)], sp
+        assert t["cells_that_flip_under_read_off"] == {
+            "inside": sorted({c for x in tallies for c in x[sp][0] ^ nominal[sp][0]}),
+            "within_one_sd": sorted({c for x in tallies for c in x[sp][1] ^ nominal[sp][1]})}, sp
+        lows = {s["by_species"][sp][ion]["lowest_month"] for ion in molar}
+        assert t["lowest_month_same_in_every_ion"] == (lows.pop() if len(lows) == 1 else None), sp
+    for sp, ions in s["means_ug_ml"].items():
+        for ion, means in ions.items():
+            p, mm = s["by_species"][sp][ion], [v / molar[ion] for v in means]
+            low = months[mm.index(min(mm))]
+            rest = [x for m, x in zip(months, mm, strict=True) if m != low]
+            mid_rest = math.sqrt(min(rest) * max(rest))
+            q8s = [math.sqrt(r[ion][0] * r[ion][1]) for r in readings]
+            assert p["lowest_month"] == low and abs(p["q8_rule_mid_without_lowest_month_mM"] - mid_rest) < 1e-4, (sp, ion)
+            assert p["over_q8_mid_without_lowest_month_under_read_off"] == [round(mid_rest / max(q8s), 3),
+                                                                             round(mid_rest / min(q8s), 3)], (sp, ion)
+            mid = math.sqrt(min(mm) * max(mm))
+            assert p["over_q8_mid_under_read_off"] == [round(mid / max(q8s), 3), round(mid / min(q8s), 3)], (sp, ion)
     n = cr["schneider_1996"]
     no3 = q8["measured"]["nitrate"]
     lo, hi = no3["range_mM"]

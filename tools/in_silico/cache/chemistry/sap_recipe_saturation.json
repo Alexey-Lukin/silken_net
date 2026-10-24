@@ -3339,6 +3339,13 @@
       ],
       "why_a_reading_not_a_point": "one autumn date and two trees of red oak; no organic acid measured, so no buffer to solve — it says where the bulk pH stands, not what a current does to it"
     },
+    "against_pine_point": {
+      "ca_ratio": 3.72,
+      "mg_ratio": 4.03,
+      "potassium_total_ratio": 2.44,
+      "buffer_capacity_ratio": 1.48,
+      "ionic_strength_ratio": 2.98
+    },
     "crown_twig_readings": {
       "soper_2018": {
         "source": "Soper F.M., Chamberlain S.D., Crumsey J.M., Gregor S., Derry L.A., Sparks J.P. 2018, J. Geophys. Res. Biogeosci. 123(10):3204-3215, doi:10.1029/2018JG004639, Fig. 1 (p. 3208) — 2014 monthly means ± 1 SD of eight trees per species, sap of canopy branches up to 1 cm (pressure chamber, ICP-OES), read off the figure's vector coordinates; original data in Supporting Information S1 and Tables S1-S3, not opened",
@@ -3489,6 +3496,7 @@
             "Jul"
           ]
         ],
+        "sd_upper_arm_only_provenance": "first extraction only — the independent extraction left these bars unattributed and checked them only as a share of the mean",
         "by_species": {
           "Quercus rubra": {
             "K": {
@@ -3500,6 +3508,16 @@
               },
               "q8_rule_mid_mM": 2.5875,
               "over_q8_mid": 1.439,
+              "over_q8_mid_under_read_off": [
+                1.38,
+                1.506
+              ],
+              "lowest_month": "Aug",
+              "q8_rule_mid_without_lowest_month_mM": 3.2099,
+              "over_q8_mid_without_lowest_month_under_read_off": [
+                1.712,
+                1.868
+              ],
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.384,
@@ -3523,6 +3541,16 @@
               },
               "q8_rule_mid_mM": 0.5573,
               "over_q8_mid": 0.837,
+              "over_q8_mid_under_read_off": [
+                0.74,
+                0.978
+              ],
+              "lowest_month": "Aug",
+              "q8_rule_mid_without_lowest_month_mM": 0.6667,
+              "over_q8_mid_without_lowest_month_under_read_off": [
+                0.886,
+                1.17
+              ],
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.473,
@@ -3546,6 +3574,16 @@
               },
               "q8_rule_mid_mM": 0.1801,
               "over_q8_mid": 0.723,
+              "over_q8_mid_under_read_off": [
+                0.666,
+                0.794
+              ],
+              "lowest_month": "Aug",
+              "q8_rule_mid_without_lowest_month_mM": 0.2787,
+              "over_q8_mid_without_lowest_month_under_read_off": [
+                1.031,
+                1.228
+              ],
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.674,
@@ -3571,6 +3609,16 @@
               },
               "q8_rule_mid_mM": 2.2817,
               "over_q8_mid": 1.269,
+              "over_q8_mid_under_read_off": [
+                1.217,
+                1.328
+              ],
+              "lowest_month": "Sep",
+              "q8_rule_mid_without_lowest_month_mM": 2.3051,
+              "over_q8_mid_without_lowest_month_under_read_off": [
+                1.229,
+                1.342
+              ],
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.282,
@@ -3594,6 +3642,16 @@
               },
               "q8_rule_mid_mM": 0.4726,
               "over_q8_mid": 0.71,
+              "over_q8_mid_under_read_off": [
+                0.628,
+                0.829
+              ],
+              "lowest_month": "Jun",
+              "q8_rule_mid_without_lowest_month_mM": 0.6722,
+              "over_q8_mid_without_lowest_month_under_read_off": [
+                0.893,
+                1.179
+              ],
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.427,
@@ -3617,6 +3675,16 @@
               },
               "q8_rule_mid_mM": 0.1736,
               "over_q8_mid": 0.697,
+              "over_q8_mid_under_read_off": [
+                0.643,
+                0.765
+              ],
+              "lowest_month": "Sep",
+              "q8_rule_mid_without_lowest_month_mM": 0.2212,
+              "over_q8_mid_without_lowest_month_under_read_off": [
+                0.819,
+                0.975
+              ],
               "months_outside_dated_beech_range": [],
               "sd_over_mean": {
                 "Jun": 0.466,
@@ -3642,6 +3710,16 @@
               },
               "q8_rule_mid_mM": 1.1737,
               "over_q8_mid": 0.653,
+              "over_q8_mid_under_read_off": [
+                0.626,
+                0.683
+              ],
+              "lowest_month": "Sep",
+              "q8_rule_mid_without_lowest_month_mM": 2.1273,
+              "over_q8_mid_without_lowest_month_under_read_off": [
+                1.134,
+                1.238
+              ],
               "months_outside_dated_beech_range": [
                 "Sep"
               ],
@@ -3667,6 +3745,16 @@
               },
               "q8_rule_mid_mM": 0.3271,
               "over_q8_mid": 0.491,
+              "over_q8_mid_under_read_off": [
+                0.435,
+                0.574
+              ],
+              "lowest_month": "Sep",
+              "q8_rule_mid_without_lowest_month_mM": 0.841,
+              "over_q8_mid_without_lowest_month_under_read_off": [
+                1.117,
+                1.475
+              ],
               "months_outside_dated_beech_range": [
                 "Sep"
               ],
@@ -3692,6 +3780,16 @@
               },
               "q8_rule_mid_mM": 0.0826,
               "over_q8_mid": 0.332,
+              "over_q8_mid_under_read_off": [
+                0.306,
+                0.364
+              ],
+              "lowest_month": "Sep",
+              "q8_rule_mid_without_lowest_month_mM": 0.2212,
+              "over_q8_mid_without_lowest_month_under_read_off": [
+                0.819,
+                0.975
+              ],
               "months_outside_dated_beech_range": [
                 "Sep"
               ],
@@ -3708,6 +3806,87 @@
                 "Sep": null
               }
             }
+          }
+        },
+        "tally_by_species": {
+          "Quercus rubra": {
+            "cells_inside_dated_beech_range": [
+              12,
+              12
+            ],
+            "cells_inside_under_read_off": [
+              11,
+              12
+            ],
+            "cells_q8_mid_within_one_sd": [
+              9,
+              12
+            ],
+            "cells_q8_mid_within_one_sd_under_read_off": [
+              9,
+              9
+            ],
+            "expected_within_if_typical": 8.2,
+            "cells_that_flip_under_read_off": {
+              "inside": [
+                "Mg Aug"
+              ],
+              "within_one_sd": []
+            },
+            "lowest_month_same_in_every_ion": "Aug"
+          },
+          "Quercus prinus": {
+            "cells_inside_dated_beech_range": [
+              12,
+              12
+            ],
+            "cells_inside_under_read_off": [
+              12,
+              12
+            ],
+            "cells_q8_mid_within_one_sd": [
+              8,
+              11
+            ],
+            "cells_q8_mid_within_one_sd_under_read_off": [
+              7,
+              9
+            ],
+            "expected_within_if_typical": 7.5,
+            "cells_that_flip_under_read_off": {
+              "inside": [],
+              "within_one_sd": [
+                "K Jun",
+                "Mg Jun"
+              ]
+            },
+            "lowest_month_same_in_every_ion": null
+          },
+          "Acer saccharum": {
+            "cells_inside_dated_beech_range": [
+              9,
+              12
+            ],
+            "cells_inside_under_read_off": [
+              9,
+              9
+            ],
+            "cells_q8_mid_within_one_sd": [
+              9,
+              10
+            ],
+            "cells_q8_mid_within_one_sd_under_read_off": [
+              8,
+              9
+            ],
+            "expected_within_if_typical": 6.8,
+            "cells_that_flip_under_read_off": {
+              "inside": [],
+              "within_one_sd": [
+                "K Aug"
+              ]
+            },
+            "lowest_month_same_in_every_ion": "Sep"
           }
         },
         "q8_mid_mM": {
@@ -3729,8 +3908,18 @@
             4.8596
           ]
         },
+        "read_off_error_mg_l": {
+          "Ca_mg_l": 2.0,
+          "Mg_mg_l": 0.3,
+          "K_mg_l": 2.0
+        },
+        "read_off_readings": 729,
         "oak_cells_inside_dated_beech_range": [
           24,
+          24
+        ],
+        "oak_cells_inside_under_read_off": [
+          23,
           24
         ],
         "cells_outside_dated_beech_range": {
@@ -3752,20 +3941,26 @@
           17,
           23
         ],
+        "oak_cells_q8_mid_within_one_sd_under_read_off": [
+          16,
+          18
+        ],
+        "one_sd_coverage_if_normal": 0.683,
+        "oak_expected_within_if_typical": 15.7,
         "cells_with_sd": [
           33,
           36
         ],
         "not_measured": "nitrate, pH, organic acids",
-        "why_a_reading_not_a_point": "sap of crown branches up to 1 cm, not the trunk base; one season's monthly means of eight trees, not dated medians; no organic acid, so no malate to solve and no buffer"
+        "why_a_reading_not_a_point": "sap of crown branches up to 1 cm, not the trunk base; one season's monthly MEANS of eight trees, not dated medians, and the authors find no significant change of these ions with time; no organic acid, so no malate to solve and no buffer"
       },
       "schneider_1996": {
-        "source": "Schneider S., Gessler A., Weber P., von Sengbusch D., Hanemann U., Rennenberg H. 1996, New Phytol. 134(1):103-114, doi:10.1111/j.1469-8137.1996.tb01150.x, pp. 109 and 112 — nitrate in the sap of sun-crown twigs of beech and Norway spruce together, Hoeglwald 1994, read from the page images",
+        "source": "Schneider S., Gessler A., Weber P., von Sengbusch D., Hanemann U., Rennenberg H. 1996, New Phytol. 134(1):103-114, doi:10.1111/j.1469-8137.1996.tb01150.x, pp. 109 and 112 — nitrate in the twig sap of beech (sun crown) and Norway spruce (7th whorl) together, Hoeglwald 1994, read from the page images",
         "nitrate_mM": [
           0.01,
           0.025
         ],
-        "species": "beech and Norway spruce together — no beech-only number printed",
+        "species": "beech (sun crown) and Norway spruce (7th whorl) together — no beech-only number printed",
         "dated_beech_nitrate_range_mM": [
           0.0021,
           1.1954
@@ -3773,15 +3968,8 @@
         "dated_beech_nitrate_mid_mM": 0.0497,
         "inside_dated_beech_range": true,
         "below_point_mid": true,
-        "why_a_reading_not_a_point": "sun-crown twigs of a site under high N deposition, two species pooled, one year; the range lies inside the dated trunk-base range the point is taken from, below its mid, so it is no evidence against the point"
+        "why_a_reading_not_a_point": "twigs of a site under high N deposition, two species pooled, one year; the range lies inside the dated trunk-base range the point is taken from, below its mid, so it is no evidence against the point"
       }
-    },
-    "against_pine_point": {
-      "ca_ratio": 3.72,
-      "mg_ratio": 4.03,
-      "potassium_total_ratio": 2.44,
-      "buffer_capacity_ratio": 1.48,
-      "ionic_strength_ratio": 2.98
     }
   },
   "prices": {

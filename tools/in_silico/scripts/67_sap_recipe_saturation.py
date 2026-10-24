@@ -252,14 +252,18 @@ OAK_RUBRA_SOURCE = ("Van Die J., Willemse P.C.M. 1975, Acta Bot. Neerl. 24(2):23
                     "stem cut, read from the page image")
 # Two CROWN-TWIG readings beside Q8 (00_07 HW.3 (А)) — read 2026-10-22 from the publishers' PDFs with the founder's
 # approval and kept OUT of the tree (every margin prints the downloading account); an independent verifier re-read
-# both. Neither is a point: crown twigs, not the trunk base, and no organic acid measured, so no malate to solve. They
-# are set against the DATED range behind Q8 by crown_twig_readings(), never by eye.
+# their numbers (exceptions named below). Neither is a point: crown twigs, not the trunk base, and no organic acid
+# measured, so no malate to solve. They are set against the DATED range behind Q8 — under its read-off error — by
+# crown_twig_readings(), never by eye.
 # Soper F.M., Chamberlain S.D., Crumsey J.M., Gregor S., Derry L.A., Sparks J.P. 2018, J. Geophys. Res. Biogeosci.
 # 123(10):3204–3215, doi:10.1029/2018JG004639 — eight trees per species with DBH > 25 cm; sap of canopy branches up
 # to 1 cm in diameter in a PMS pressure chamber, 0.45 µm nylon filter, frozen, ICP-OES (pp. 3206–3207). The values
-# stand only in Fig. 1 (p. 3208): 2014, June to September, monthly mean ± 1 SD in µg/mL, taken from the figure's
-# VECTOR coordinates (axis ticks calibrated, ±0.01 µg/mL) and matched by an independent extraction; the paper sends
-# its original data to Supporting Information S1 and Tables S1–S3, not opened. Nitrate, pH and organic acids are not
+# stand only in Fig. 1 (p. 3208): 2014, June to September, monthly MEANS (not medians) ± 1 SD in µg/mL, the SD being
+# the spread between the trees of a species and month (§3.1, p. 3208: sap «more variable (within a given species and
+# month)» than foliage). The authors find no significant change of the sap concentrations with time except Al and Sr
+# (§3.1, p. 3208), so a month's extreme is no seasonal signal they report. Means taken from the figure's VECTOR
+# coordinates (axis ticks calibrated, ±0.01 µg/mL) and matched by an independent extraction; the paper sends its
+# original data to Supporting Information S1 and Tables S1–S3, not opened. Nitrate, pH and organic acids are not
 # measured. ⚠️ The abstract swaps the common names; §2.2 (p. 3206) and the figure's Latin legend give Q. rubra = red
 # oak, Q. prinus = chestnut oak. Sugar maple rides beside the oaks: the `broadleaf` SKU names maple among the trees
 # on Q8, so the same figure's maple cells are carried, not left out.
@@ -269,8 +273,10 @@ SOPER_2018_CROWN_SAP_UG_ML = {   # species: ion: monthly means (Jun, Jul, Aug, S
     "Quercus prinus": {"K": (98.96, 95.20, 82.08, 80.42), "Ca": (12.89, 26.78, 27.83, 26.08), "Mg": (4.27, 6.77, 4.82, 2.63)},
     "Acer saccharum": {"K": (85.62, 71.87, 96.25, 21.88), "Ca": (29.29, 38.79, 34.71, 4.43), "Mg": (6.02, 5.30, 4.80, 0.67)},
 }
-# ± 1 SD in µg/mL, same shape: half the bar where the figure draws one round its mean; None where no bar can be
-# attributed to the cell. Three magnesium bars reach the axis, so only their UPPER arm is the SD — named below.
+# ± 1 SD in µg/mL, same shape: half the bar where the figure draws one round its mean (the independent extraction's
+# values); None where no bar can be attributed to the cell. Three magnesium bars reach the axis, so only their UPPER
+# arm is the SD — named below — and those three come from the FIRST extraction only: the independent one left them
+# unattributed and checked them only as a share of the mean (114 / 115 / 104 %), not as values.
 SOPER_2018_CROWN_SAP_SD_UG_ML = {
     "Quercus rubra": {"K": (52.39, 105.10, 21.04, 81.77), "Ca": (10.62, 25.20, 6.88, 27.59), "Mg": (4.91, 10.37, 1.42, 5.77)},
     "Quercus prinus": {"K": (27.92, 92.40, 37.19, 21.24), "Ca": (5.51, None, 27.74, 13.77), "Mg": (1.99, 7.02, 4.65, 0.87)},
@@ -282,17 +288,21 @@ SOPER_2018_SOURCE = ("Soper F.M., Chamberlain S.D., Crumsey J.M., Gregor S., Der
                      "of eight trees per species, sap of canopy branches up to 1 cm (pressure chamber, ICP-OES), read off the "
                      "figure's vector coordinates; original data in Supporting Information S1 and Tables S1-S3, not opened")
 # Schneider S., Geßler A., Weber P., von Sengbusch D., Hanemann U., Rennenberg H. 1996, New Phytol. 134(1):103–114,
-# doi:10.1111/j.1469-8137.1996.tb01150.x — Höglwald, 50 km WNW of Munich: beech of 94 and Norway spruce of 87 years in
-# 1994, on a site under high N deposition (throughfall NH4+ 26 · NO3- 44 kg/ha/yr, p. 104); sap of sun-crown twigs (3–4-year sections, Scholander
-# chamber, first exudate discarded, then +0.6 MPa for 2 min, p. 105), nitrate by ion chromatography (p. 106), three
-# trees, four campaigns in 1994. Nitrate c. 0.01 µmol/ml (p. 109), 0.01–0.025 µmol/ml through the year without seasonal
-# variation (p. 112) — for BOTH species together: the text prints no beech-only number and the «Ni» bars of Fig. 2
-# cannot be read. µmol/ml = mM, and molar NO3- = molar NO3-N. Read from the page images (the text layer is an OCR'd
-# scan); the authors set the result against Glavac & Jochheim 1993 (p. 112) — the source of Q8's nitrate.
+# doi:10.1111/j.1469-8137.1996.tb01150.x — Höglwald, a site under high N deposition (throughfall NH4+ 26 · NO3- 44
+# kg/ha/yr, p. 104); twig sap (3–4-year sections, Scholander chamber, first exudate discarded, then +0.6 MPa for 2
+# min, p. 105), nitrate by ion chromatography (p. 106), three trees, four campaigns in 1994. Nitrate c. 0.01 µmol/ml
+# (p. 109), 0.01–0.025 µmol/ml through the year without seasonal variation (p. 112) — for BOTH species together: the
+# text prints no beech-only number and the «Ni» bars of Fig. 2 cannot be read. µmol/ml = mM, and molar NO3- = molar
+# NO3-N. Read from the page images (the text layer is an OCR'd scan) and re-read by the verifier; the authors set the
+# result against Glavac & Jochheim 1993 (p. 112) — the source of Q8's nitrate. ⊕ Read from the page images on
+# 2026-10-24 when this was entered, NOT re-read by the verifier: the twigs come from the 7th whorl of spruce and the
+# sun crown of beech (p. 105); the site lies 50 km WNW of Munich, its spruce had reached 87 years in 1994 and its beech
+# was approaching 94 (p. 104).
 SCHNEIDER_1996_CROWN_NITRATE_MM = (0.010, 0.025)
 SCHNEIDER_1996_SOURCE = ("Schneider S., Gessler A., Weber P., von Sengbusch D., Hanemann U., Rennenberg H. 1996, New Phytol. "
-                         "134(1):103-114, doi:10.1111/j.1469-8137.1996.tb01150.x, pp. 109 and 112 — nitrate in the sap of "
-                         "sun-crown twigs of beech and Norway spruce together, Hoeglwald 1994, read from the page images")
+                         "134(1):103-114, doi:10.1111/j.1469-8137.1996.tb01150.x, pp. 109 and 112 — nitrate in the twig "
+                         "sap of beech (sun crown) and Norway spruce (7th whorl) together, Hoeglwald 1994, read from the "
+                         "page images")
 BROADLEAF_POINT_MM = {"malic": 0.92, "oxalic": 0.0, "kno3": 0.050, "cacl2": 0.67, "mgso4": 0.25}
 BROADLEAF_PH = 5.95            # the median of the dated pH medians
 # Each test in its own band. Temperatures on a 5 °C grid, pH on a 0.5 grid; every band end is a grid point.
@@ -993,15 +1003,52 @@ def broadleaf_rederived(shift: dict | None = None, kno3: float | None = None, ro
     return {**BROADLEAF_POINT_MM, "malic": malic, "kno3": kno3, "cacl2": cacl2}, ph
 
 
+def beech_range_readings() -> list[dict]:
+    """Every reading of the dated beech range behind Q8 within its read-off error (BEECH_READ_OFF_ERROR): the END of
+    each ion's range — its lowest and its highest dated median — moved by −e, 0 or +e, independently over the three
+    ions, 3⁶ readings of {ion: (lo, hi)} in mM. The END moves, not the one date that carries it: with every dated
+    median read within ±e, the true extreme lies within ±e of the read one, so this envelope also holds 85's flip
+    control, which moves one median at a time and re-takes the extremes (one move there can stop at the next date)."""
+    per_ion = {}
+    for i, ion in enumerate(("Ca", "Mg", "K")):
+        vals = [r[i] for r in BEECH_TRUNK_BASE_MEDIANS.values()]
+        e = BEECH_READ_OFF_ERROR[f"{ion}_mg_l"]
+        per_ion[ion] = [((min(vals) + a) / MOLAR_G[ion], (max(vals) + b) / MOLAR_G[ion])
+                        for a, b in itertools.product((-e, 0.0, e), repeat=2)]
+    return [dict(zip(per_ion, combo, strict=True)) for combo in itertools.product(*per_ion.values())]
+
+
+def _soper_tally(beech: dict) -> dict:
+    """Soper's cells against ONE reading of the dated beech range ({ion: (lo, hi)} in mM): per species, the (ion, month)
+    cells whose mean lies inside the range, and those whose mean ± 1 SD covers the range's geometric mid (Q8's rule)."""
+    out = {}
+    for sp, ions in SOPER_2018_CROWN_SAP_UG_ML.items():
+        inside, within = set(), set()
+        for ion, means in ions.items():
+            lo, hi = beech[ion]
+            mid = math.sqrt(lo * hi)
+            for m, v, s in zip(SOPER_2018_MONTHS, means, SOPER_2018_CROWN_SAP_SD_UG_ML[sp][ion], strict=True):
+                if lo <= v / MOLAR_G[ion] <= hi:
+                    inside.add((ion, m))
+                if s is not None and (v - s) / MOLAR_G[ion] <= mid <= (v + s) / MOLAR_G[ion]:
+                    within.add((ion, m))
+        out[sp] = (inside, within)
+    return out
+
+
 def crown_twig_readings() -> dict:
     """Soper 2018 and Schneider 1996 — two crown-twig readings BESIDE Q8 (00_07 HW.3 (А)), set against the dated
-    trunk-base range behind the point: per Soper species and ion, each monthly mean in mM, the Q8 rule's geometric mid
-    of the extreme months against Q8's own mid, which months fall outside the range of the dated beech medians, and the
-    SD as a share of the mean; for Schneider, where its nitrate range lies against the dated beech nitrate and its mid.
-    CAN catch a re-transcribed mean that crosses the beech range or the point's mid, and an SD labelled «upper arm
-    only» on a bar that does not reach the axis (or a bar that does, left unlabelled); CANNOT make crown twigs the trunk
-    base, one season's monthly means a series of dated medians, or the beech-and-spruce nitrate a beech number — and
-    the range is judged on the means, whose spread the `sd_over_mean` block prints beside them."""
+    trunk-base range behind the point, nominally AND under its read-off error (beech_range_readings()): per Soper
+    species and ion, each monthly mean in mM, the Q8 rule's geometric mid of the extreme months against Q8's own mid
+    (and without the month that sets the low end), which months fall outside the range of the dated beech medians, and
+    whether the month's ± 1 SD covers Q8's mid; for Schneider, where its nitrate range lies against the dated beech
+    nitrate and its mid. Built in main(), never inside broadleaf_point(), so none of its asserts sits on 85's path.
+    CAN catch a re-transcribed mean that crosses the beech range or the point's mid, an SD labelled «upper arm only»
+    on a bar that does not reach the axis (or a bar that does, left unlabelled), and a count that holds only on the
+    nominal medians; CANNOT make crown twigs the trunk base, one season's monthly MEANS a series of dated medians, or
+    the beech-and-spruce nitrate a beech number. The ± 1 SD count is no test of agreement: the SD is the spread between
+    trees, and a normal spread's ± 1 SD covers a typical tree in ≈ 68 % of cells — printed beside the count — while the
+    four months are the same eight trees, so the cells are not independent."""
     rows = list(BEECH_TRUNK_BASE_MEDIANS.values())
     beech = {ion: (min(r[i] for r in rows) / MOLAR_G[ion], max(r[i] for r in rows) / MOLAR_G[ion])
              for i, ion in enumerate(("Ca", "Mg", "K"))}
@@ -1012,32 +1059,54 @@ def crown_twig_readings() -> dict:
                     if s is not None and s >= v}
     assert reaches_axis == set(SOPER_2018_SD_UPPER_ARM_ONLY), (
         f"Soper: the upper-arm-only cells must be exactly those whose SD reaches the mean — {sorted(reaches_axis)}")
-    species, shares, outside = {}, [], {}
+    readings = beech_range_readings()
+    i_nominal = readings.index(beech)   # the zero shift on every end — raises if the envelope lost the nominal reading
+    tallies = [_soper_tally(r) for r in readings]
+    nominal = tallies[i_nominal]
+    coverage = math.erf(1.0 / math.sqrt(2.0))   # ± 1 SD of a normal spread
+    species, tally, shares = {}, {}, []
     for sp, ions in SOPER_2018_CROWN_SAP_UG_ML.items():
         per = {}
         for ion, means in ions.items():
             mm = [v / MOLAR_G[ion] for v in means]   # µg/mL = mg/L, so mg/L ÷ g/mol = mM
-            lo, hi = beech[ion]
-            mid = math.sqrt(min(mm) * max(mm))
             sds = SOPER_2018_CROWN_SAP_SD_UG_ML[sp][ion]
             sd_share = [None if s is None else s / v for s, v in zip(sds, means, strict=True)]
             shares += [x for x in sd_share if x is not None]
-            out_months = [m for m, x in zip(SOPER_2018_MONTHS, mm, strict=True) if not lo <= x <= hi]
-            outside[(sp, ion)] = out_months
-            # whether Q8's mid lies inside the month's mean ± 1 SD — the spread question asked per cell, not of the range
-            within = [None if s is None else (v - s) / MOLAR_G[ion] <= q8_mid[ion] <= (v + s) / MOLAR_G[ion]
-                      for v, s in zip(means, sds, strict=True)]
+            mid = math.sqrt(min(mm) * max(mm))
+            low_m = SOPER_2018_MONTHS[mm.index(min(mm))]
+            rest = [x for m, x in zip(SOPER_2018_MONTHS, mm, strict=True) if m != low_m]
+            mid_rest = math.sqrt(min(rest) * max(rest))
+            q8_mids = [math.sqrt(r[ion][0] * r[ion][1]) for r in readings]
             per[ion] = {"monthly_mM": dict(zip(SOPER_2018_MONTHS, (round(x, 4) for x in mm), strict=True)),
                         "q8_rule_mid_mM": round(mid, 4), "over_q8_mid": round(mid / q8_mid[ion], 3),
-                        "months_outside_dated_beech_range": out_months,
+                        "over_q8_mid_under_read_off": [round(mid / max(q8_mids), 3), round(mid / min(q8_mids), 3)],
+                        "lowest_month": low_m, "q8_rule_mid_without_lowest_month_mM": round(mid_rest, 4),
+                        "over_q8_mid_without_lowest_month_under_read_off": [round(mid_rest / max(q8_mids), 3),
+                                                                             round(mid_rest / min(q8_mids), 3)],
+                        "months_outside_dated_beech_range": [m for m in SOPER_2018_MONTHS if (ion, m) not in nominal[sp][0]],
                         "sd_over_mean": dict(zip(SOPER_2018_MONTHS, (None if x is None else round(x, 3) for x in sd_share), strict=True)),
-                        "q8_mid_within_one_sd": dict(zip(SOPER_2018_MONTHS, within, strict=True))}
+                        "q8_mid_within_one_sd": {m: None if s is None else (ion, m) in nominal[sp][1]
+                                                 for m, s in zip(SOPER_2018_MONTHS, sds, strict=True)}}
         species[sp] = per
+        n_sd = sum(s is not None for ion_sds in SOPER_2018_CROWN_SAP_SD_UG_ML[sp].values() for s in ion_sds)
+        lows = {p["lowest_month"] for p in per.values()}
+        inside_n, within_n = [len(t[sp][0]) for t in tallies], [len(t[sp][1]) for t in tallies]
+        tally[sp] = {
+            "cells_inside_dated_beech_range": [len(nominal[sp][0]), len(ions) * len(SOPER_2018_MONTHS)],
+            "cells_inside_under_read_off": [min(inside_n), max(inside_n)],
+            "cells_q8_mid_within_one_sd": [len(nominal[sp][1]), n_sd],
+            "cells_q8_mid_within_one_sd_under_read_off": [min(within_n), max(within_n)],
+            "expected_within_if_typical": round(coverage * n_sd, 1),
+            "cells_that_flip_under_read_off": {
+                "inside": sorted({f"{ion} {m}" for t in tallies for ion, m in t[sp][0] ^ nominal[sp][0]}),
+                "within_one_sd": sorted({f"{ion} {m}" for t in tallies for ion, m in t[sp][1] ^ nominal[sp][1]})},
+            "lowest_month_same_in_every_ion": lows.pop() if len(lows) == 1 else None}
     oaks = [sp for sp in species if sp.startswith("Quercus")]
-    oak_cells = [(sp, ion) for sp in oaks for ion in species[sp]]
-    n_oak = len(oak_cells) * len(SOPER_2018_MONTHS)
-    n_oak_out = sum(len(outside[c]) for c in oak_cells)
-    oak_within = [w for sp, ion in oak_cells for w in species[sp][ion]["q8_mid_within_one_sd"].values() if w is not None]
+    oak_inside = [sum(len(t[sp][0]) for sp in oaks) for t in tallies]
+    oak_within = [sum(len(t[sp][1]) for sp in oaks) for t in tallies]
+    oak_n_sd = sum(tally[sp]["cells_q8_mid_within_one_sd"][1] for sp in oaks)
+    outside = {f"{sp} {ion}": p["months_outside_dated_beech_range"] for sp, per in species.items()
+               for ion, p in per.items() if p["months_outside_dated_beech_range"]}
     no3 = beech_nitrate_mm()
     no3_lo, no3_hi = min(no3.values()), max(no3.values())
     no3_mid = math.sqrt(no3_lo * no3_hi)
@@ -1051,25 +1120,34 @@ def crown_twig_readings() -> dict:
         "soper_2018": {
             "source": SOPER_2018_SOURCE, "months": list(SOPER_2018_MONTHS), "means_ug_ml": SOPER_2018_CROWN_SAP_UG_ML,
             "sd_ug_ml": SOPER_2018_CROWN_SAP_SD_UG_ML, "sd_upper_arm_only": [list(c) for c in SOPER_2018_SD_UPPER_ARM_ONLY],
-            "by_species": species,
+            "sd_upper_arm_only_provenance": "first extraction only — the independent extraction left these bars "
+                                            "unattributed and checked them only as a share of the mean",
+            "by_species": species, "tally_by_species": tally,
             "q8_mid_mM": {ion: round(v, 4) for ion, v in q8_mid.items()},
             "dated_beech_range_mM": {ion: [round(lo, 4), round(hi, 4)] for ion, (lo, hi) in beech.items()},
-            "oak_cells_inside_dated_beech_range": [n_oak - n_oak_out, n_oak],
-            "cells_outside_dated_beech_range": {f"{sp} {ion}": m for (sp, ion), m in outside.items() if m},
+            "read_off_error_mg_l": {k: v for k, v in BEECH_READ_OFF_ERROR.items() if k != "pH"},
+            "read_off_readings": len(readings),
+            "oak_cells_inside_dated_beech_range": [oak_inside[i_nominal], sum(tally[sp]["cells_inside_dated_beech_range"][1] for sp in oaks)],
+            "oak_cells_inside_under_read_off": [min(oak_inside), max(oak_inside)],
+            "cells_outside_dated_beech_range": outside,
             "sd_over_mean_range": [round(min(shares), 3), round(max(shares), 3)],
-            "oak_cells_q8_mid_within_one_sd": [sum(oak_within), len(oak_within)],
+            "oak_cells_q8_mid_within_one_sd": [oak_within[i_nominal], oak_n_sd],
+            "oak_cells_q8_mid_within_one_sd_under_read_off": [min(oak_within), max(oak_within)],
+            "one_sd_coverage_if_normal": round(coverage, 3),
+            "oak_expected_within_if_typical": round(coverage * oak_n_sd, 1),
             "cells_with_sd": [len(shares), len(species) * 3 * len(SOPER_2018_MONTHS)],
             "not_measured": "nitrate, pH, organic acids",
             "why_a_reading_not_a_point": "sap of crown branches up to 1 cm, not the trunk base; one season's monthly "
-                                         "means of eight trees, not dated medians; no organic acid, so no malate to "
-                                         "solve and no buffer"},
+                                         "MEANS of eight trees, not dated medians, and the authors find no significant "
+                                         "change of these ions with time; no organic acid, so no malate to solve and no "
+                                         "buffer"},
         "schneider_1996": {
             "source": SCHNEIDER_1996_SOURCE, "nitrate_mM": list(SCHNEIDER_1996_CROWN_NITRATE_MM),
-            "species": "beech and Norway spruce together — no beech-only number printed",
+            "species": "beech (sun crown) and Norway spruce (7th whorl) together — no beech-only number printed",
             "dated_beech_nitrate_range_mM": [round(no3_lo, 4), round(no3_hi, 4)], "dated_beech_nitrate_mid_mM": round(no3_mid, 4),
             "inside_dated_beech_range": s_inside, "below_point_mid": s_below,
-            "why_a_reading_not_a_point": "sun-crown twigs of a site under high N deposition, two species pooled, one "
-                                         f"year; the range lies {s_where}"},
+            "why_a_reading_not_a_point": "twigs of a site under high N deposition, two species pooled, one year; the "
+                                         f"range lies {s_where}"},
     }
 
 
@@ -1156,7 +1234,6 @@ def broadleaf_point() -> dict:
                                        if d[5:7] in ("09", "10") and r[3] is not None),
         "why_a_reading_not_a_point": "one autumn date and two trees of red oak; no organic acid measured, so no buffer to "
                                      "solve — it says where the bulk pH stands, not what a current does to it"}
-    out["crown_twig_readings"] = crown_twig_readings()
     pine = revised_point()["conditions"]["setpoint"]
     new = out["conditions"]["setpoint"]
     out["against_pine_point"] = {
@@ -1388,6 +1465,7 @@ def main() -> int:
           f"K+ ×{q7['against_point_2026_09_17_setpoint']['potassium_total_ratio']}; malic solved "
           f"{q7['measured']['malic_solved_mM']} mM")
     q8 = broadleaf_point()
+    q8["crown_twig_readings"] = crown_twig_readings()   # built here, off 85's path through broadleaf_point()
     banner("Q8 — the broadleaf point (⚖️ 2026-10-18; beech trunk base — 85's broadleaf and oak parts, no wet test)")
     c8 = q8["conditions"]["setpoint"]
     print(f"  recipe {q8['recipe_mM']} at pH {c8['ph']}: KOH {c8['base_koh_mM'][0]:.3f}–{c8['base_koh_mM'][1]:.3f} mM; "
@@ -1405,12 +1483,18 @@ def main() -> int:
     for sp, per in cr["soper_2018"]["by_species"].items():
         print(f"  Soper 2018 crown twigs, {sp}, Q8 rule: " + " · ".join(
             f"{ion} {p['q8_rule_mid_mM']:.3g} mM (×{p['over_q8_mid']:.2f} of Q8's)" for ion, p in per.items()))
-    oak_in = cr["soper_2018"]["oak_cells_inside_dated_beech_range"]
-    oak_sd = cr["soper_2018"]["oak_cells_q8_mid_within_one_sd"]
-    print(f"  oak cells inside the dated beech range {oak_in[0]}/{oak_in[1]}; outside: "
-          f"{cr['soper_2018']['cells_outside_dated_beech_range'] or 'none'}; SD/mean "
-          f"{cr['soper_2018']['sd_over_mean_range'][0]:.0%}–{cr['soper_2018']['sd_over_mean_range'][1]:.0%}; "
-          f"Q8's mid inside the month's ±1 SD in {oak_sd[0]} of the {oak_sd[1]} oak cells with an SD")
+    so = cr["soper_2018"]
+    oak_in, oak_in_r = so["oak_cells_inside_dated_beech_range"], so["oak_cells_inside_under_read_off"]
+    oak_sd, oak_sd_r = so["oak_cells_q8_mid_within_one_sd"], so["oak_cells_q8_mid_within_one_sd_under_read_off"]
+    print(f"  oak cells inside the dated beech range {oak_in[0]}/{oak_in[1]} ({oak_in_r[0]}–{oak_in_r[1]} under the "
+          f"read-off error, {so['read_off_readings']} readings); outside: {so['cells_outside_dated_beech_range'] or 'none'}; "
+          f"SD/mean {so['sd_over_mean_range'][0]:.0%}–{so['sd_over_mean_range'][1]:.0%}; Q8's mid inside the month's "
+          f"±1 SD in {oak_sd[0]} ({oak_sd_r[0]}–{oak_sd_r[1]}) of the {oak_sd[1]} oak cells with an SD — a typical tree "
+          f"would be in ≈ {so['oak_expected_within_if_typical']} ({so['one_sd_coverage_if_normal']:.0%})")
+    for sp, t in so["tally_by_species"].items():
+        print(f"    {sp}: inside {t['cells_inside_dated_beech_range']} ({t['cells_inside_under_read_off']}), within ±1 SD "
+              f"{t['cells_q8_mid_within_one_sd']} ({t['cells_q8_mid_within_one_sd_under_read_off']}); flips "
+              f"{t['cells_that_flip_under_read_off']}; lowest month in every ion: {t['lowest_month_same_in_every_ion']}")
     sch = cr["schneider_1996"]
     print(f"  Schneider 1996 crown-twig nitrate {sch['nitrate_mM'][0]}–{sch['nitrate_mM'][1]} mM (beech + spruce): "
           f"inside the dated beech range {sch['dated_beech_nitrate_range_mM']} {sch['inside_dated_beech_range']}, "
