@@ -300,5 +300,22 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       expect(response).to have_http_status(:ok)
       expect(other_record.reload.photos.count).to eq(0)
     end
+
+    # 🔒 [SEC.37] Під підписом кадр незнищенний на БУДЬ-ЯКОМУ типі — і `inspection`,
+    # який без підпису лишається вільним, тут найдискримінантніший: замок ставить
+    # ПІДПИС, не тип. Повідомлення — власне: «додайте виправлений кадр» тут неправда.
+    it "refuses deleting a photo of an attested record, whatever its type" do
+      Prosopite.pause do
+        record.photos.attach(io: StringIO.new("signed"), filename: "signed.jpg", content_type: "image/jpeg")
+        record.attest!(create(:user, :forester, organization: organization))
+      end
+      photo = record.photos.first
+
+      delete "/maintenance_records/#{record.id}/photos/#{photo.id}", headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to eq(I18n.t("flash.maintenance.photo_attested_locked"))
+      expect(record.reload.photos.count).to eq(1)
+    end
   end
 end

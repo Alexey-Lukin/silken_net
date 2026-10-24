@@ -178,6 +178,16 @@ class MaintenanceRecord < ApplicationRecord
   # якого гейт і будувався. `action_type` клієнт-керований (`maintenance_params`),
   # `attr_readonly` на ньому немає, політики теж — тож єдиний носій правила тут.
   validate :biomass_claim_is_one_way
+  # 🔒 [SEC.37, ⚖️ founder 2026-10-24] Засвідчений запис НЕЗМІННИЙ: помилку виправляє
+  # НОВИЙ запис, не правка під чужим підписом. Форма fail-closed — перелічено те, що
+  # після підпису ще ПИШЕТЬСЯ, тож нова колонка замерзає сама. Писачі винятку —
+  # системні, не людські: Puro-воркери (паспорт → CORC) і `verify` (пульс вузла,
+  # `#hardware_pulse_confirmed?`). Фото — ті самі двері: кадр, доданий після підпису,
+  # підписаним не є. ⚠️ Звʼязку «цей запис виправляє N» немає — новий стоїть поруч.
+  WRITABLE_AFTER_ATTESTATION = %w[
+    biomass_passport_tx_hash biomass_passport_status puro_earth_corc_ref hardware_verified
+  ].freeze
+  validate :attested_record_is_frozen, on: :update
 
   # Тип вкладень — тільки зображення, max 20 МБ кожне, max 10 фото на запис
   # [I18N.4] `message:` тут СВІДОМО немає: `active_storage_validations` везе власні
@@ -297,8 +307,10 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
   # ⚠️ Власного `system_generated`-гарда тут НЕ ТРЕБА: `evidence_backed?` уже його
   # несе, а biomass-заявка системною бути не може за побудовою (валідація нижче не
   # має винятку). Додати його означало б завести гілку, якої ніщо не досягає.
+  # ⊕ [SEC.37] І будь-який ЗАСВІДЧЕНИЙ запис: знищити кадр під підписом — те саме,
+  # що переписати свідчення, на якому підпис стоїть.
   def evidence_locked?
-    evidence_backed? || action_type_biomass_extraction?
+    evidence_backed? || action_type_biomass_extraction? || attested?
   end
 
   # [E.20] «Атестатор ≠ бенефіціар» у машинній частині. ⚖️ founder 2026-08-24:
@@ -306,6 +318,10 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
   # що підписав НЕ той, хто написав. Це слабший інваріант, ніж «інша організація»,
   # і канон каже це прямо, замість вдавати сильніший ([`04_01 §7`]).
   class SelfAttestation < StandardError; end
+  # [SEC.37] Другий засвідчувач на засвідченому записі — відмова, не перезапис: «хто й
+  # коли підписав» і є доказом, а застаріла вкладка (сторінка на Turbo не підписана)
+  # доти мовчки його підміняла.
+  class AlreadyAttested < StandardError; end
 
   # Ідемпотентно: повтор тим самим атестатором не зсуває `attested_at` — інакше
   # другий клік переписував би ЧАС засвідчення, тобто саме те, що робить запис
@@ -327,7 +343,16 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
     # тож незворотне тут ставить незалежний свідок, не автор заявки.
     # Смерть і підпис — в ОДНІЙ транзакції: заатестована заявка, що не змінила
     # статус дерева, стверджувала б виконану дію, якої не сталося.
-    transaction do
+    # 🔒 [SEC.37] `with_lock`, не голий `transaction`: «чи вже засвідчено» мусить читати
+    # рядок ПІД замком, інакше двоє, що клікнули разом, обидва пройшли б перевірку, і
+    # другий переписав би підпис першого. Перевірку автора підпису повторено під замком:
+    # подвійний клік ТОГО САМОГО засвідчувача проходить ранній вихід на застарілому
+    # рядку, і без цього рядка дістав би 409 «засвідчено іншою особою» на власний підпис.
+    # ⚠️ `lock!` перечитує рядок, тож незбережених змін інстанс тут мати не сміє.
+    with_lock do
+      return true if attested_by_id == actor.id
+      raise AlreadyAttested if attested?
+
       update!(attested_by_id: actor.id, attested_at: Time.current)
       maintainable.declare_deceased! if action_type_biomass_extraction? && !maintainable.deceased?
     end
@@ -472,5 +497,12 @@ end
     return unless action_type_was == "biomass_extraction"
 
     errors.add(:action_type, :biomass_claim_is_final)
+  end
+
+  def attested_record_is_frozen
+    return if attested_by_id_in_database.nil?
+    return if (changed - WRITABLE_AFTER_ATTESTATION).empty? && !attachment_changes.key?("photos")
+
+    errors.add(:base, :attested_record_frozen)
   end
 end

@@ -608,11 +608,10 @@ class EwsAlert < ApplicationRecord
     # AASM state transition з валідацією (only from :active)
     mark_resolved!
 
-    # [SELF-HEALING]: Атомарно закриваємо MaintenanceRecord
-    # ⛔ [SLASH-1] Але не під доказом Кат-A: записи, привʼязані до нього, належать
-    # звинуваченій організації (ремонт, заперечення), і `update_all` нижче переписав би
-    # їхні `notes`/`performed_at` у мить, коли платформа закриває доказ.
-    close_associated_maintenance! unless category_a_evidence?
+    # ⛔ [SEC.37, 2026-10-24] Привʼязані записи обслуговування тут НЕ «закриваються»:
+    # запис — факт виконаної роботи, стану в нього немає, і колишній `update_all`
+    # переписував нотатки лісника й `performed_at` (момент, із яким `verify` звіряє
+    # пульс) — під підписом засвідчувача теж. Закриття тривоги живе на самій тривозі.
 
     true
   end
@@ -815,16 +814,6 @@ class EwsAlert < ApplicationRecord
 
     silence_key = "ews_silence:#{tree_id}:#{alert_type}"
     Rails.cache.delete(silence_key)
-  end
-
-  # [ВИПРАВЛЕНО]: MaintenanceRecord не має колонки status.
-  # Використовуємо update_all для швидкодії — MaintenanceRecord не несе
-  # фінансових зобов'язань та не має after_update колбеків, тому update_all безпечний.
-  def close_associated_maintenance!
-    MaintenanceRecord.where(ews_alert_id: id).update_all(
-      performed_at: Time.current,
-      notes: "Автозакрито через EWS Recovery Protocol"
-    )
   end
 
   # Real-time broadcast для всіх операторів організації.

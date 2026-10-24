@@ -32,11 +32,13 @@ en:
       target_type_mismatch: target_type does not match the firmware hardware type (%{expected}).
       uploaded: New evolution v%{version} uploaded to the Ocean.
     maintenance:
+      already_attested: This record has already been attested by someone else — a signature is never overwritten.
       attested: Attested by a second pair of eyes.
       hardware_pulse_missing: No pulse from the unit after this maintenance yet — verification needs the hardware to report in first.
       hardware_verified: Hardware state verified. STM32 pulse acknowledged.
       idempotency_required: Idempotency-Key header is required for JSON maintenance-record submissions.
       invalid_date: 'Invalid ISO8601 date: %{value}.'
+      photo_attested_locked: This record is attested, so its photos are part of the signed testimony and cannot be deleted. Correct a mistake with a new record.
       photo_deleted: Photo removed from the Evidence Matrix.
       photo_evidence_locked: This photo is evidence for a repair or installation record and cannot be deleted. Add a corrected frame instead.
       photo_not_found: Photo not found.

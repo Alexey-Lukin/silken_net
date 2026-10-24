@@ -518,6 +518,19 @@ RSpec.describe Maintenance::Show do
       expect(out).to include(verify_path, edit_path)
     end
 
+    # 🔒 [SEC.37] Під підписом запис замерз, тож посилання на правку вело б у форму, що
+    # гарантовано відмовить; `verify` лишається — пульс вузла пише система, не людина.
+    it "прибирає правку з засвідченого запису, лишаючи verify" do
+      attested = build_record(mutable: true)
+      attested.attestor = build_user.tap { |u| u.id = 22 }
+      attested.attested_at = Time.zone.local(2026, 10, 24, 12, 0, 0)
+
+      out = render_component(record: attested, photos: [], pagy_photos: mock_pagy_photos)
+
+      expect(out).to include(verify_path)
+      expect(out).not_to include(edit_path)
+    end
+
     it "ховає їх від глядача, якому запис не підвладний" do
       out = render_component(record: build_record(mutable: false), photos: [], pagy_photos: mock_pagy_photos)
 

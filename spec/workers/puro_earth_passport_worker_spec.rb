@@ -267,13 +267,17 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
       end
 
       # Дзеркало «легітимний актор не зачеплений»: без нього «нуль заявок»
-      # не відрізнити від «нуль тракту».
-      it "anchors again once the evidence is restored" do
+      # не відрізнити від «нуль тракту». 🔒 [SEC.37, 2026-10-24] Доти дзеркалом було
+      # «доказ повернули в ТОЙ САМИЙ запис» — під підписом це заборонено: кадр, доданий
+      # після підпису, підписаним не є. Вихід — нова заявка з фото й новим підписом.
+      it "refuses restoring evidence on the signed claim — a fresh attested claim anchors" do
         record.photos.attach(io: StringIO.new("evidence"), filename: "e.jpg", content_type: "image/jpeg")
+        expect(record.reload.photos).to be_empty
 
-        described_class.new.perform(record.id)
+        fresh = create(:maintenance_record, :biomass_extraction, :with_evidence, :attested, maintainable: tree)
+        described_class.new.perform(fresh.id)
 
-        expect(record.reload.biomass_passport_tx_hash).to be_present
+        expect(fresh.reload.biomass_passport_tx_hash).to be_present
       end
     end
 

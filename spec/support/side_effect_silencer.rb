@@ -49,7 +49,6 @@ module SideEffectSilencer
   SIDE_EFFECTS = {
     actuator_dispatch: [ "ActuatorCommand", :dispatch_to_edge! ],
     satellite_verification: [ "EwsAlert", :schedule_satellite_verification! ],
-    maintenance_cascade: [ "EwsAlert", :close_associated_maintenance! ],
     cluster_health_recalc: [ "Cluster", :recalculate_health_index! ],
     naas_health_check: [ "NaasContract", :check_cluster_health! ]
   }.freeze

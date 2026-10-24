@@ -68,7 +68,8 @@ module Api
       def guard_evidence_purge!
         return unless @record.evidence_locked?
 
-        message = I18n.t("flash.maintenance.photo_evidence_locked")
+        # [SEC.37] Під підписом «додайте виправлений кадр» — неправда: запис замерз цілком.
+        message = I18n.t(@record.attested? ? "flash.maintenance.photo_attested_locked" : "flash.maintenance.photo_evidence_locked")
         respond_to do |format|
           format.json { render json: { error: message }, status: :unprocessable_content }
           format.html do

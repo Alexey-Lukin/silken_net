@@ -997,6 +997,56 @@ end
       expect(foreign.reload).not_to be_attested
     end
 
+    # 🔴 [SEC.37] Застаріла вкладка: кнопку ховає сторінка, а вона на Turbo не
+    # підписана — тож відмову мусить дати сервер, і саме 409: права є, бракує стану.
+    it "refuses a second attester with 409 and keeps the first signature" do
+      # Фікстурне засвідчення — поза детектором N+1: валідатор фото питає вкладення на
+      # кожен save, і два save-и з одного рядка моделі він читає як N+1. Запит — під ним.
+      Prosopite.pause { record.attest!(auditor) }
+      second = create(:user, :forester, organization: organization)
+
+      patch "/maintenance_records/#{record.id}/attest",
+            headers: { "Authorization" => "Bearer #{second.generate_token_for(:api_access)}" }, as: :json
+
+      expect(response).to have_http_status(:conflict)
+      expect(response.parsed_body["error"]).to eq(I18n.t("flash.maintenance.already_attested"))
+      expect(record.reload.attestor).to eq(auditor)
+    end
+
+    # 🔒 [SEC.37, ⚖️ founder 2026-10-24] Після підпису запис незмінний — помилку
+    # виправляє новий запис. Пін REQUEST-рівня: двері правки — `update`, не модель.
+    it "refuses editing the record once it is attested" do
+      Prosopite.pause { record.attest!(auditor) }
+
+      patch "/maintenance_records/#{record.id}",
+            params: { maintenance_record: { notes: "Rewritten after the signature was given." } },
+            headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(record.reload.notes).to eq("Routine inspection for attestation test.")
+    end
+
+    it "refuses a photo added through the edit form once the record is attested" do
+      Prosopite.pause { record.attest!(auditor) }
+      blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("late"), filename: "late.jpg",
+                                                    content_type: "image/jpeg")
+
+      patch "/maintenance_records/#{record.id}",
+            params: { maintenance_record: { photos: [ "", blob.signed_id ] } },
+            headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(record.reload.photos).to be_empty
+    end
+
+    it "does not open the edit form of an attested record" do
+      Prosopite.pause { record.attest!(auditor) }
+
+      get "/maintenance_records/#{record.id}/edit", headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to redirect_to("/maintenance_records/#{record.id}")
+    end
+
     # Увесь контролер стоїть за `authorize_forester!`, тож subscriber не засвідчує.
     it "does not let an subscriber attest" do
       subscriber = create(:user, :subscriber, organization: organization)
@@ -1008,4 +1058,41 @@ end
       expect(record.reload).not_to be_attested
     end
   end
+
+# [SEC.37] Форма правки шле прихований порожній `photos[]` (`file_field multiple:` за
+# `load_defaults 8.1`), а присвоєння `has_many_attached` ЗАМІНЮЄ набір цілком — тож
+# збереження правки стирало фото, а з файлом замінювало старі кадри, повз
+# `guard_evidence_purge!` і повз слід в `AuditLog`, який пише лише кнопка «×».
+describe "PATCH /maintenance_records/:id — фото при правці форми (HTML)" do
+  let(:html_headers) { headers.merge("Accept" => "text/html") }
+  let!(:inspection) do
+    MaintenanceRecord.create!(
+      maintainable: own_tree, user: forester, action_type: :inspection,
+      performed_at: 1.hour.ago, notes: "Inspection with one photo attached.",
+      photos: [ { io: StringIO.new("before"), filename: "before.jpg", content_type: "image/jpeg" } ]
+    )
+  end
+
+  it "правка без файлів лишає наявні фото" do
+    patch "/maintenance_records/#{inspection.id}",
+          params: { maintenance_record: { notes: "Inspection notes corrected by the author.", photos: [ "" ] } },
+          headers: html_headers
+
+    expect(response).to have_http_status(:see_other)
+    expect(inspection.reload.photos.blobs.pluck(:filename)).to eq([ "before.jpg" ])
+  end
+
+  it "правка з файлом ДОДАЄ кадр, а не замінює наявний" do
+    blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("after"), filename: "after.jpg",
+                                                  content_type: "image/jpeg")
+
+    patch "/maintenance_records/#{inspection.id}",
+          params: { maintenance_record: { notes: "Inspection notes corrected by the author.",
+                                          photos: [ "", blob.signed_id ] } },
+          headers: html_headers
+
+    expect(response).to have_http_status(:see_other)
+    expect(inspection.reload.photos.blobs.pluck(:filename)).to contain_exactly("before.jpg", "after.jpg")
+  end
+end
 end

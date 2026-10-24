@@ -25,6 +25,8 @@ uk:
           attributes:
             action_type:
               biomass_claim_is_final: не можна змінити після подання заявки на вилучення біомаси — разом із ним спав би замок доказу
+            base:
+              attested_record_frozen: Засвідчений запис не змінюється — помилку виправляйте новим записом.
             photos:
               required_for_action_type: обов'язкові для типів 'repair' та 'installation' (Trust Protocol)
               required_for_biomass_claim: обовʼязкові для заявки на вилучення біомаси — вона незворотно виходить у зовнішній реєстр (Trust Protocol)

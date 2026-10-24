@@ -567,8 +567,9 @@ RSpec.describe EwsAlert, type: :model do
       end
 
       # Записи, привʼязані до доказу, належать звинуваченій організації — закриття доказу
-      # платформою не сміє переписати її ремонт чи заперечення. Позитивний контроль нижче
-      # доводить, що на звичайній тривозі той самий крок їх таки переписує.
+      # платформою не сміє переписати її ремонт чи заперечення. ⊕ [SEC.37] З 2026-10-24 не
+      # переписує їх жодне закриття (пін нижче); цей лишається на випадок повернення
+      # каскаду з винятком лише для Кат-A.
       it "leaves the accused organization's linked records untouched when the platform closes it" do
         record = create(:maintenance_record, maintainable: tree, ews_alert: alert, notes: "Заперечення лісника")
 
@@ -590,14 +591,19 @@ RSpec.describe EwsAlert, type: :model do
         expect { ordinary.ignore! }.to change { ordinary.reload.status }.to("ignored")
       end
 
-      it "(positive control) an ordinary alert still auto-closes its linked records" do
+      # 🔒 [SEC.37, 2026-10-24] І звичайна тривога: запис обслуговування — факт виконаної
+      # роботи без стану, тож «закривати» в ньому нічого, а колишній `update_all` переписував
+      # нотатки лісника й `performed_at` — момент, із яким `verify` звіряє пульс вузла.
+      it "leaves the linked records untouched on an ordinary alert too" do
         ordinary = create(:ews_alert, cluster: tree.cluster, tree: tree, severity: :critical,
                                       alert_type: :fire_detected, status: :active)
         record = create(:maintenance_record, maintainable: tree, ews_alert: ordinary, notes: "Звіт лісника")
+        performed_at = record.performed_at
 
         ordinary.resolve!(user: create(:user, :forester))
 
-        expect(record.reload.notes).not_to eq("Звіт лісника")
+        expect(record.reload.notes).to eq("Звіт лісника")
+        expect(record.performed_at).to eq(performed_at)
       end
     end
 
@@ -609,18 +615,6 @@ RSpec.describe EwsAlert, type: :model do
       alert.resolve!
 
       expect(Rails.cache.exist?(silence_key)).to be false
-    end
-
-    it "closes associated maintenance records" do
-      alert = create(:ews_alert, :fire)
-
-      allow(MaintenanceRecord).to receive(:where)
-        .with(ews_alert_id: alert.id)
-        .and_return(instance_double(ActiveRecord::Relation, update_all: 0))
-
-      alert.resolve!
-
-      expect(MaintenanceRecord).to have_received(:where).with(ews_alert_id: alert.id)
     end
   end
 

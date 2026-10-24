@@ -106,8 +106,10 @@ class PuroEarthPassportWorker
   # джобу в чергу, однією транзакцією). Тобто ескалація
   # прожила б хвилини й зникла. Cluster-level теж хибний: він входить у
   # `dark_cluster_ids` і осліпив би per-tree dead-man switch на весь кластер.
-  # Тому — гучний провал: 5 ретраїв (фото ще можуть додати) → DeadSet + Sentry,
-  # де вже стоїть алерт `sn-alert-sidekiq-deadset`. Заявка не подається.
+  # Тому — гучний провал: 5 ретраїв → DeadSet + Sentry, де вже стоїть алерт
+  # `sn-alert-sidekiq-deadset`. Заявка не подається. ⊕ [SEC.37] Ретраї лишились від
+  # доби, коли фото ще могли додати: пускач — `attest!`, тож запис тут засвідчений
+  # і замерз, а вихід для нього — НОВА заявка з фото й новим підписом.
   #
   # ⚖️ [E.20, 2026-08-25] Стеля ЗНЯТА: гейт більше не стереже саму лише останню
   # ланку. `declare_deceased!` і звʼязаний із ним `trigger_slashing_protocol`
@@ -118,8 +120,9 @@ class PuroEarthPassportWorker
   def require_evidence!(record)
     unless record.photos.any?
       Rails.logger.error "🌿 [Puro.earth] Record ##{record.id} (biomass_extraction) БЕЗ фотодоказу — " \
-                         "заявку на CORC не подано. Дія: додати фото до запису й " \
-                         "re-enqueue PuroEarthPassportWorker з консолі."
+                         "заявку на CORC не подано. Дія: засвідчений запис незмінний (SEC.37) — нова " \
+                         "заявка з фото й підпис іншого форестера (її attest! поставить паспорт сам); " \
+                         "незасвідчений — додати фото, далі «Засвідчити»."
       raise MissingEvidence, "MaintenanceRecord ##{record.id}: biomass passport requires photo evidence"
     end
 

@@ -7,7 +7,6 @@ RSpec.describe Api::V1::AlertsController, type: :request do
   before do
     allow(AlertNotificationWorker).to receive(:perform_async)
     silence_broadcasts!(:alert_notify)
-    silence_side_effects!(:maintenance_cascade)
     silence_broadcasts!(:alert_update)
   end
 

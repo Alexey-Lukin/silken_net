@@ -48,6 +48,12 @@ module Maintenance
       @record.mutable_by?(@current_user)
     end
 
+    # [SEC.37] Правка — ще й «чи не засвідчено»: під підписом запис замерз (модель,
+    # `attested_record_is_frozen`), тож посилання вело б у форму, що гарантовано відмовить.
+    def editable?
+      mutable? && !@record.attested?
+    end
+
     # =========================================================================
     # HEADER
     # =========================================================================
@@ -212,7 +218,7 @@ module Maintenance
             t(".evidence.trust_protocol", action_type: @record.action_type_label)
           end
         end
-        if mutable?
+        if editable?
           a(
             href: edit_maintenance_record_path(@record),
             class: "inline-block mt-4 px-4 py-2 border border-gaia-border text-gaia-primary-strong " \
@@ -307,7 +313,7 @@ module Maintenance
           meta_row(t(".metadata.updated"), @record.updated_at&.strftime("%d.%m.%Y %H:%M"))
         end
 
-        if mutable?
+        if editable?
           div(class: "pt-4 border-t border-gaia-border") do
             a(
               href: edit_maintenance_record_path(@record),

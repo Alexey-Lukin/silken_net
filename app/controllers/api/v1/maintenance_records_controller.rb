@@ -169,6 +169,13 @@ module Api
       # --- ФОРМА РЕДАГУВАННЯ ---
       # GET /maintenance_records/:id/edit
       def edit
+        # [SEC.37] Під підписом форма гарантовано відмовить на збереженні — тож і не
+        # відкривається (застаріла вкладка чи прямий URL), а причина та сама, що в моделі.
+        if @record.attested?
+          return redirect_to maintenance_record_path(@record), status: :see_other,
+                             error: I18n.t("activerecord.errors.models.maintenance_record.attributes.base.attested_record_frozen")
+        end
+
         render_dashboard(
           title: I18n.t("maintenance.edit_title", id: @record.id),
           component: Maintenance::Form.new(
@@ -200,8 +207,16 @@ module Api
         # `ews_alert_id` пермітяться і тут, а `set_record` скоупить ЗАПИС, не нову
         # ціль — без гарда власний запис можна було переприв'язати до чужого
         # дерева (→ EcosystemHealingWorker/slashing на чужому) або чужої тривоги.
-        @record.assign_attributes(maintenance_params)
+        #
+        # 🔴 [SEC.37] Фото ДОДАЮТЬСЯ, ніколи не замінюються: присвоєння `has_many_attached`
+        # заміняє набір цілком, а форма шле прихований порожній `photos[]` на кожен save —
+        # тож правка без файлів стирала доказ, а з файлом підміняла старі кадри повз
+        # `guard_evidence_purge!` і повз слід в `AuditLog`. Знімає кадр лише кнопка «×».
+        attrs = maintenance_params
+        new_photos = Array(attrs.delete(:photos)).compact_blank
+        @record.assign_attributes(attrs)
         verify_maintainable_within_organization!(@record)
+        @record.photos.attach(new_photos) if new_photos.any?
 
         if @record.save
           respond_to do |format|
@@ -221,7 +236,10 @@ module Api
                 title: I18n.t("maintenance.edit_title", id: @record.id),
                 component: Maintenance::Form.new(
                   record: @record,
-                  existing_photos: @record.photos.limit(6).to_a,
+                  # [SEC.37] `photos_attachments`, не `photos`: після відхиленого `attach` у
+                  # записі висять незбережені вкладення, і `photos` делегує вже не в SQL, а
+                  # в масив — `limit` там немає, тож кожна невдала правка з фото давала 500.
+                  existing_photos: @record.photos_attachments.limit(6).to_a,
                   current_user: current_user
                 ),
                 status: :unprocessable_content
@@ -297,6 +315,14 @@ module Api
 
         respond_to do |format|
           format.json { render json: { error: message }, status: :forbidden }
+          format.html { redirect_to maintenance_record_path(@record), status: :see_other, error: message }
+        end
+      rescue MaintenanceRecord::AlreadyAttested
+        # [SEC.37] 409, не 403: права в людини є — бракує стану, і підпис уже стоїть чужий.
+        message = I18n.t("flash.maintenance.already_attested")
+
+        respond_to do |format|
+          format.json { render json: { error: message }, status: :conflict }
           format.html { redirect_to maintenance_record_path(@record), status: :see_other, error: message }
         end
       end

@@ -25,6 +25,8 @@ lv:
           attributes:
             action_type:
               biomass_claim_is_final: nevar mainīt pēc biomasas izņemšanas pieteikuma iesniegšanas — līdz ar to nokristu pierādījumu slēdzene
+            base:
+              attested_record_frozen: Apstiprinātu ierakstu nevar mainīt — kļūdu labojiet ar jaunu ierakstu.
             photos:
               required_for_action_type: nepieciešamas 'repair' un 'installation' darbību veidiem (Uzticības protokols)
               required_for_biomass_claim: nepieciešamas biomasas izņemšanas pieteikumam — tas neatgriezeniski aiziet uz ārēju reģistru (Uzticības protokols)

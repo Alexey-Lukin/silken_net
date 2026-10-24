@@ -32,11 +32,13 @@ lt:
       target_type_mismatch: target_type neatitinka mikroprograminės įrangos aparatūros tipo (%{expected}).
       uploaded: Nauja evoliucija v%{version} įkelta į Vandenyną.
     maintenance:
+      already_attested: Šį įrašą jau patvirtino kitas asmuo — parašas neperrašomas.
       attested: Patvirtinta antrąja akių pora.
       hardware_pulse_missing: Mazgas po šios priežiūros dar nepranešė — patikrinimui pirmiausia reikia impulso iš aparatūros.
       hardware_verified: Aparatūros būsena patikrinta. STM32 impulsas patvirtintas.
       idempotency_required: JSON priežiūros įrašų teikimui reikalinga Idempotency-Key antraštė.
       invalid_date: 'Neteisinga ISO8601 data: %{value}.'
+      photo_attested_locked: Įrašas patvirtintas, todėl jo nuotraukos yra pasirašyto liudijimo dalis ir jų ištrinti negalima. Klaidą taisykite nauju įrašu.
       photo_deleted: Nuotrauka pašalinta iš įrodymų matricos.
       photo_evidence_locked: Ši nuotrauka yra remonto arba įrengimo įrašo įrodymas, todėl jos ištrinti negalima. Vietoj to pridėkite pataisytą kadrą.
       photo_not_found: Nuotrauka nerasta.

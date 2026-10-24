@@ -723,6 +723,16 @@ RSpec.describe MaintenanceRecord, type: :model do
 
     # Дзеркало `EwsAlert#claim!`: повтор не сміє зсувати ЧАС засвідчення — саме
     # штамп робить запис доказом.
+    # 🔴 [SEC.37] Подвійний клік ТОГО САМОГО засвідчувача: другий запит несе застарілий
+    # рядок, минає ранній вихід і під замком бачить уже засвідчене — це не «інша особа».
+    it "treats the same auditor's stale double-click as a no-op, not a conflict" do
+      stale = described_class.find(record.id)
+      record.attest!(auditor)
+
+      expect(stale.attest!(auditor)).to be true
+      expect(record.reload.attestor).to eq(auditor)
+    end
+
     it "is a no-op on re-attestation by the same auditor" do
       record.attest!(auditor)
       original = record.reload.attested_at
@@ -792,6 +802,65 @@ RSpec.describe MaintenanceRecord, type: :model do
 
       expect(biomass.reload).not_to be_attested
       expect(tree.reload.status).to eq("active")
+    end
+
+    # 🔴 [SEC.37] «Хто й коли підписав» і є доказом: другий засвідчувач на вже
+    # засвідченому записі дістає відмову, а не перезаписує першого.
+    it "refuses a second attester and keeps the first signature" do
+      record.attest!(auditor)
+      first_at = record.reload.attested_at
+      second = create(:user, :forester, organization: organization)
+
+      travel 20.minutes do
+        expect { record.attest!(second) }.to raise_error(described_class::AlreadyAttested)
+      end
+      expect(record.reload.attestor).to eq(auditor)
+      expect(record.attested_at).to eq(first_at)
+    end
+  end
+
+  # 🔒 [SEC.37, ⚖️ founder 2026-10-24] Засвідчений запис незмінний: помилку виправляє
+  # новий запис. Пише після підпису лише СИСТЕМА — Puro-тракт і `verify`.
+  describe "attested record is frozen" do
+    let(:author) { create(:user, :forester) }
+    let(:auditor) { create(:user, :forester, organization: author.organization) }
+    let(:record) { create(:maintenance_record, user: author).tap { |r| r.attest!(auditor) } }
+
+    it "refuses editing the testimony under the signature" do
+      expect(record.update(notes: "Rewritten after the auditor signed it.")).to be false
+      expect(record.errors[:base]).to include(
+        I18n.t("activerecord.errors.models.maintenance_record.attributes.base.attested_record_frozen")
+      )
+      expect(record.reload.notes).not_to eq("Rewritten after the auditor signed it.")
+    end
+
+    # Fail-closed: присуд поіменно назвав свідчення, а колонка поза переліком
+    # писачів замерзає сама — і саме це несе форма «перелічено те, що пишеться».
+    it "freezes a column the verdict did not name" do
+      expect(record.update(labor_hours: 3)).to be false
+    end
+
+    it "refuses a photo added after the signature" do
+      record.photos.attach(io: StringIO.new("late"), filename: "late.jpg", content_type: "image/jpeg")
+
+      expect(record.reload.photos).to be_empty
+    end
+
+    it "keeps the system writers open — Puro passport fields and the hardware pulse flag" do
+      expect(record.update(biomass_passport_tx_hash: "0xabc", biomass_passport_status: :sent,
+                           puro_earth_corc_ref: "CORC-1", hardware_verified: true)).to be true
+    end
+
+    it "locks the photos of any attested record, not only of the evidence types" do
+      expect(record.action_type).to eq("inspection")
+      expect(record).to be_evidence_locked
+    end
+
+    # Дзеркало: до підпису запис правиться — замок ставить ПІДПИС, не створення.
+    it "leaves an unattested record editable" do
+      draft = create(:maintenance_record, user: author)
+
+      expect(draft.update(notes: "Corrected by the author before any signature.")).to be true
     end
   end
 
