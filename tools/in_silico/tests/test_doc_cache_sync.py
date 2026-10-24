@@ -8011,7 +8011,7 @@ CHECKS += [
     ("shadow bark TM back floor A.36 high (outward) → 107", SUMMARY, rf"cm of sapwood; {_SHX} – {N} dB\s+over the A\.36 readings\) — below", SHADOW, lambda d: _ceil1(_BS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
     ("shadow bark TM back floor vs diameter axis → 107", SUMMARY, rf"— below the diameter axis's {N} — and", SHADOW, _ds_ext("TM", "front_minus_back_dB", 0, rounding=_floor1), 0.0),
     ("shadow bark TM side max → 107", SUMMARY, rf"the largest TM loss at 90° there {N} dB; the 2-D", SHADOW, lambda d: _ceil1(_BS(d)["extremes"]["front_minus_side_dB"]["max"]), 0.0),
-    ("shadow bark efficiency floor → 107", SUMMARY, rf"efficiency indicator\s+falls to {N}\. Canon sets", SHADOW, lambda d: _floor2(_BS(d)["extremes"]["efficiency"]["min"]), 0.0),
+    ("shadow bark efficiency floor → 107", SUMMARY, rf"efficiency indicator\s+falls to {N}\. Canon's largest host", SHADOW, lambda d: _floor2(_BS(d)["extremes"]["efficiency"]["min"]), 0.0),
     ("shadow sweeps efficiency floor (named + axes) → 107", SUMMARY, rf"\(on the\s+swept axes down to {N}\)", SHADOW, _eff_floor2, 0.0),
     ("shadow beyond axis low → 107", SUMMARY, rf"past the bark table, {N} – {_SHX} cm on the TM", SHADOW, lambda d: _DSB(d)["axis_cm"][0], 0.0),
     ("shadow beyond axis high → 107", SUMMARY, rf"past the bark table, {_SHX} – {N} cm on the TM", SHADOW, lambda d: _DSB(d)["axis_cm"][1], 0.0),
@@ -8077,15 +8077,19 @@ CHECKS += [
     ("shadow 01_04 beyond axis, top → 107", CODIT, rf"проба за таблицею кори, {_SHX}–{N} см на E", SHADOW, lambda d: _DSB(d)["axis_cm"][1], 0.0),
     # 02_01 §5.3 — the bold floor's A.36 note (the bark-axis floor row)
     ("shadow 02_01 bold floor A.36 low → 107", HW_BOM, rf"\(над чотирма окремими інтерполяціями A\.36 — від {N}\) між", SHADOW, lambda d: _floor1(_BS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
-    # 00_07 HW.6 — the azimuth ⚖️ was applied 2026-10-24 (its full form moved to 01_04 §3.1 ⊕ 2026-10-24; every number
-    # the leg carried is pinned on the 10-23 ⊕ above), so only the max-DBH leg and the HW.8.10 consumer line stay here
+    # 00_07 HW.6 — both ⚖️ legs were applied 2026-10-24 (the azimuth's full form → 01_04 §3.1 ⊕ 2026-10-24, the max DBH's →
+    # 01_04 §3.2 ⊕; every number the legs carried is pinned in CODIT), so only the HW.8.10 consumer line stays here
     ("shadow 00_07 HW.8.10 consumer deck slope → 107", TRACKER, rf"±1 мм ≈ {N}° перетину −3 дБ — дека рухає вердикт", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["crossing_deg_per_mm_about_the_floor_row"], 1), 0.0),
+    # the largest host stem (⚖️ 2026-10-24): lib DBH_MAX_CM read back through the cache that consumed it (the DBH axis's
+    # top), against its mirror home 01_01 §1, the verdict's home 01_04 §3.2 and the log-day sheet's two places
+    ("lib mirror · largest host stem DBH (01_01 §1) → 107", COAXIAL, rf"\*\*DBH ≤ {N} см\*\*, з іншої підстави", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("max DBH verdict home (01_04 §3.2 ⊕) → 107", CODIT, rf"Максимум DBH господаря — DBH ≤ {N} см, РАТИФІКОВАНО", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("max DBH · log-day sheet §A.0 → 107", BENCH, rf"\| Діаметр \| DBH 38–{N} см \(того ж класу", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("max DBH · log-day sheet §B → 107", BENCH, rf"сосна DBH 38–{N} см \(", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
     # 01_04 §3.1 — the ⊕ of 2026-10-24 (the ratified re-pricing): what it carries that the 10-23 ⊕ does not
     ("shadow 01_04 ⊕ 10-24 loss in the ground, low → 107", CODIT, rf"гребеневої кори вона падає на соті децибела \({N}–{_SHX} дБ", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
     ("shadow 01_04 ⊕ 10-24 loss in the ground, high → 107", CODIT, rf"гребеневої кори вона падає на соті децибела \({_SHX}–{N} дБ", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][1], 0.0),
     ("shadow 01_04 ⊕ 10-24 ±45° margin → 107", CODIT, rf"вужчий сектор ±45°\*\* \(запас ≈ {N}° над усією віссю кори на сітці\)", SHADOW, lambda d: _floor1(_BSR(d)["min_crossing_deg"] - 45), 0.0),
-    ("shadow 00_07 ⚖️ max DBH probe axis → 107", TRACKER, rf"проба {N}–{_SHX} см на E вздовж стовбура під «флоемною»", SHADOW, lambda d: _DSB(d)["axis_cm"][0], 0.0),
-    ("shadow 00_07 ⚖️ max DBH probe axis, top → 107", TRACKER, rf"проба {_SHX}–{N} см на E вздовж стовбура під «флоемною»", SHADOW, lambda d: _DSB(d)["axis_cm"][1], 0.0),
     ("shadow PIPELINE margin → 107", PIPELINE, rf"with a {N}° crossing margin \(the", SHADOW, lambda d: _floor2(_DSR(d)["margin_deg_fine"]), 0.0),
     ("shadow PIPELINE bark-axis sector → 107", PIPELINE, rf"over the bark axis it (?:holds|FAILS) \(sector {N}° at DBH", SHADOW, lambda d: _BSR(d)["min_sector_deg"], 0.0),
     ("shadow PIPELINE bark-axis stem → 107", PIPELINE, rf"\(sector {_SHX}° at DBH {N} cm, bark", SHADOW, _bs_at("dbh_cm"), 0.0),
@@ -8143,7 +8147,6 @@ def test_shadow_dbh_sentences_follow_the_cache():
     tracker = " ".join(doc(TRACKER).split())
     uk = lambda v: "тримається до 90" if v is None else f"{v:g}"  # noqa: E731
     order_uk = f"{uk(fails['thin_end_held'])} / {uk(fails['thin_end_slope'])} / {uk(fails['thick_end_slope'])}"
-    assert f"при DBH {order_uk} см відповідно" in tracker
     codit = " ".join(doc(CODIT).split())
     assert f"при DBH {order_uk} см відповідно" in codit
     assert f"**тож ±50° {'тримає' if bk['holds_on_1deg_grid'] else 'ПАДАЄ'} на сітці 1° усередині власної вилки кори канону**" in codit

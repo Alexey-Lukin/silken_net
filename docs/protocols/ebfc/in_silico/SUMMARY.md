@@ -1601,7 +1601,7 @@ one-sided deepening of 0.004 dB. And the deck decides whether the rule passes: i
 deck 1 mm higher returns the rule (50.04° at 13.85 mm) and 1 mm lower takes it to 49.66°. Under the dry and the wet proxies the floor is 54° at the thin end and rises to 57° at the thick
 end. The TM floor behind on the bark axis is 9.9 dB (DBH 40 cm, 19.2 mm of bark, 2.2 cm of sapwood; 9.8 – 10.1 dB
 over the A.36 readings) — below the diameter axis's 10.2 — and the largest TM loss at 90° there 10.6 dB; the 2-D efficiency indicator
-falls to 0.11. Canon sets no upper DBH: a probe past the bark table, 61 – 90 cm on the TM «phloem» stem under both decks, with
+falls to 0.11. Canon's largest host — DBH 60 cm, ratified 2026-10-24 (`01_04 §3.2`) — is where the bark table ends; a probe past the bark table, 61 – 90 cm on the TM «phloem» stem under both decks, with
 the bark by three assumptions — the thin end held at 22 mm, the thin end extended by the table's 50→60 slope, the thick end extended
 likewise — first breaks the rule on the 1° grid at DBH 86 / 76 / holds to 90 cm respectively.
 

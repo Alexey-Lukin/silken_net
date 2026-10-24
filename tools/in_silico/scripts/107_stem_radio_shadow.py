@@ -63,8 +63,9 @@ N + 15 truncation re-solve (the series order depends on βρ′ alone, which the
 readings run it at every stem and standoff) and keep the energy balance.
 DBH SWEEP (00_07 HW.6; the review of the width sweep, F1, 2026-10-22 night). The stem's diameter is the second resonant
 axis: the three named stems are three points, and `run_case` at DBH 54 cm sat on the ratified rule's edge between them.
-So the sweep runs the stem from canon's smallest host (lib DBH_MIN_CM, 38 cm) to the end of 01_04 §3.2's bark table
-(60 cm) in 1 cm steps, under every width of the width axis, every bark, both standoffs and both polarizations — the
+So the sweep runs the stem from canon's smallest host (lib DBH_MIN_CM, 38 cm) to its largest (lib DBH_MAX_CM, 60 cm —
+the end of 01_04 §3.2's bark table, ⚖️ 2026-10-24) in 1 cm steps, under every width of the width axis, every bark,
+both standoffs and both polarizations — the
 dead bark at each stem DERIVED by linear interpolation between the table's three stems (not a reading); past 60 cm the
 table ends, so a PROBE to 90 cm runs the TM «phloem» stem under THREE bark assumptions, each carried as one (the thin end
 held at 22 mm · the thin end extended by the table's 50→60 slope · the thick end extended likewise), under both standoffs.
@@ -147,6 +148,7 @@ from lib.constants import (
     BARK_DEAD_RIDGE_DBH38_MM,
     BARK_SINGLE_RIDGE_MM_BY_DBH_CM,
     CACHE_DIR,
+    DBH_MAX_CM,
     DBH_MIN_CM,
     LIVE_PHLOEM_MM_THICK_END_READING,
     LIVE_PHLOEM_MM_THIN_END,
@@ -403,8 +405,8 @@ SWEEP_W_LOW_M, SWEEP_W_HIGH_M, SWEEP_STEP_M = SCOTS_SAPWOOD_THIN_M, 0.136, 0.002
 SWEEP_BARKS = {"bark_dry": BARK_DRY, "bark_wet": BARK_WET, "bark_phloem": BARK_PHLOEM}
 SWEEP_KEYS = ("front_minus_back_dB", "front_minus_side_dB", "within_3dB_of_front_to_deg", "crossing_3dB_deg",
               "deepest_below_front_dB", "phi_min_deg", "efficiency")
-# DBH SWEEP (docstring): canon's smallest host to the end of 01_04 §3.2's bark table, 1 cm; the probe beyond it
-DBH_SWEEP_LOW_CM, DBH_SWEEP_HIGH_CM, DBH_SWEEP_STEP_CM = int(DBH_MIN_CM), 60, 1
+# DBH SWEEP (docstring): canon's smallest host to its largest (the end of 01_04 §3.2's bark table), 1 cm; the probe beyond
+DBH_SWEEP_LOW_CM, DBH_SWEEP_HIGH_CM, DBH_SWEEP_STEP_CM = int(DBH_MIN_CM), int(DBH_MAX_CM), 1
 DBH_BEYOND_HIGH_CM = 90
 RULE_SECTOR_DEG = 50     # the ratified azimuth rule — the face within ±50° of the gateway's bearing (01_04 §3.1 ⚖️ 2026-10-22)
 # The THICK end of the dead bark per named stem (BARK SWEEP): 01_04 §3.2 gives ≈ 21 mm at DBH 38 and ≈ 28 at DBH 50 (the
