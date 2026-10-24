@@ -6698,23 +6698,23 @@ def test_gyroid_interface_contact_map_invariants():
                     [p0[idx] / max(g["sigma1"][1] for g in lattice.values()) * 1e6,
                      p0[idx] / s1_bot * 1e6 if s1_bot > 0 else None], rel=1e-12)
                 for end in ("low", "high"):
-                    stars = [g["zener_below_which_tension_half_stays_closed"][end][idx] for g in lattice.values()]
+                    stars = [g["zener_above_which_tension_half_opens_on_every_angle"][end][idx] for g in lattice.values()]
                     fin = [x for x in stars if x is not None]
-                    assert sg_["zener_below_which_tension_half_stays_closed"][end][n] == {
-                        "max": max(fin) if fin else None, "cells_never_closed": len(stars) - len(fin)}
+                    assert sg_["zener_above_which_tension_half_opens_on_every_angle"][end][n] == {
+                        "max": max(fin) if fin else None, "cells_opening_at_every_ratio": len(stars) - len(fin)}
             for k, g in lattice.items():                  # θ = 0 sits on the grid: its σ₁ lies inside the grid's range
                 assert g["sigma1"][0] <= th0[k]["sigma1"] * (1 + 1e-12) and th0[k]["sigma1"] <= g["sigma1"][1] * (1 + 1e-12)
 
     # the off-axis threshold: at the largest Zener ratio that keeps the tension half closed, the lowest σ₁ over 106's
     # angles sits exactly at p₀/ε (every other angle at or above it — σ₁ never falls as C44 rises)
     best = max(((k, end, idx, x) for k in keys_all["union"] if "grid" in all_cells[k] for end in ("low", "high")
-                for idx, x in enumerate(all_cells[k]["grid"]["zener_below_which_tension_half_stays_closed"][end])
+                for idx, x in enumerate(all_cells[k]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][end])
                 if x is not None), key=lambda r: r[3])
     k, end, idx, a_star = best
     al, g, rd, fill = k.split("|")
     s1s = [s1_of(sigma_i(al, g, rd, fill, th, a_star)) for th in d106["inputs"]["theta_deg"]]
     assert min(s1s) == pytest.approx(p0[idx] / (ends[end] * 1e-6), rel=1e-6), best
-    zu = d["summary"]["union"]["grid"]["zener_below_which_tension_half_stays_closed"]
+    zu = d["summary"]["union"]["grid"]["zener_above_which_tension_half_opens_on_every_angle"]
     assert zu[end][names[idx]]["max"] == a_star
 
     # ── the consumers, from 106's own consumer blocks ──
@@ -6805,11 +6805,12 @@ def test_gyroid_interface_contact_map_invariants():
         patch = {k: ends["low"] * 1e-6 * (0.5 * (all_cells[k]["theta0"]["sigma1"] + all_cells[k]["theta0"]["sigma2"])
                                           + 0.5 * (all_cells[k]["theta0"]["sigma1"] - all_cells[k]["theta0"]["sigma2"])
                                           * avg_cos) for k in bare_all}
-        k_min = min(patch, key=patch.get)
-        m = patch[k_min] / max(p0)
+        # relative to the POLE traction ε·σ₁ (the review's З1): C < (patch − p₀)/(Δ·ε·σ₁), smallest over the cells
+        const = {k: (patch[k] - max(p0)) / (arc * ends["low"] * 1e-6 * all_cells[k]["theta0"]["sigma1"]) for k in bare_all}
+        k_min = min(const, key=const.get)
         assert mg[tag]["tightest_bare_cell"] == k_min and mg[tag]["period_mm"] == per, tag
         assert mg[tag]["patch_need_MPa"] == pytest.approx(patch[k_min], rel=1e-8), tag
-        assert mg[tag]["constant_below_which_every_bare_cell_still_opens"] == pytest.approx((1 - 1 / m) / arc, rel=1e-8)
+        assert mg[tag]["constant_below_which_every_bare_cell_still_opens"] == pytest.approx(const[k_min], rel=1e-8)
     ax = d["axial_anode_bond_force_105"]
     assert ax["mean_shear_MPa_range"] == [min(v["mean_shear_MPa"] for v in ax["states"].values()),
                                           max(v["mean_shear_MPa"] for v in ax["states"].values())]
@@ -6849,7 +6850,7 @@ def test_gyroid_interface_contact_map_invariants():
     needs = [sb[g]["theta0"]["p0_to_stay_closed_MPa"]["tension"][lo_k][0] for g in ("scots_pine", "green")]
     assert (" — " + " ⊥ ".join(f"{down(x / max(p0), 1):.1f}×" for x in needs)
             + f" the higher named root reading ({max(p0)} MPa") in v
-    zb = sb["union"]["grid"]["zener_below_which_tension_half_stays_closed"]
+    zb = sb["union"]["grid"]["zener_above_which_tension_half_opens_on_every_angle"]
     zmax = max(x["max"] for e in ("low", "high") for x in zb[e].values() if x["max"] is not None)
     assert f"on every install angle once the Zener ratio exceeds {up(zmax, 3):.3f}" in v
     lo_n, hi_n = min(names, key=lambda n: p0[names.index(n)]), max(names, key=lambda n: p0[names.index(n)])
@@ -6891,6 +6892,7 @@ def test_gyroid_interface_contact_map_invariants():
         assert (f"at the source day's upper whisker on a large stem on {len(sp['tension_half_open_at'][hi_k])} of "
                 f"{len(names)} named readings and at its median on a DBH-38 bark on "
                 f"{len(sp['tension_half_open_at'][lo_k])}") in v, key
+    assert "(below p₀ elsewhere — no holding claim). With" in v, "the companion clause lost its no-holding scope"
 
 
 def test_gyroid_wood_strain_share_invariants():

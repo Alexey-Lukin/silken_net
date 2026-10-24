@@ -6573,8 +6573,8 @@ def _c108_clamp(d):
 
 
 def _c108_zstar(d):
-    """(value, end, reading) of the largest Zener ratio that keeps a bare-lattice cell's tension half closed."""
-    z = d["summary_bare_lattice"]["union"]["grid"]["zener_below_which_tension_half_stays_closed"]
+    """(value, end, reading) of the Zener ratio above which a bare-lattice cell's tension half opens on every angle."""
+    z = d["summary_bare_lattice"]["union"]["grid"]["zener_above_which_tension_half_opens_on_every_angle"]
     return max(((v["max"], e, n) for e in ("low", "high") for n, v in z[e].items() if v["max"] is not None),
                key=lambda r: r[0])
 
@@ -6791,6 +6791,7 @@ def test_contact108_categorical_sentences_follow_the_cache():
             "claim — a local opening is not excluded") in sec
     b, al = _c108_bind(d, "union")
     assert all(v["cell"].endswith("|davies2016_table2_SO|soft|pores_voigt_phase_bound") for v in b.values()) and al == "Ta"
+    assert _c108_bind(d, "scots_pine")[1] == al, "the price sentence would quote another alloy than the binding example"
     assert not any(v["smooth_envelope_consistent"] for v in b.values())
     assert "Davies' Table 2 stiff outerwood on the softer-axis reading under the Voigt phase bound, which puts" in sec
     assert "a demand on the interlocked composite, with no direction" in sec
@@ -6838,7 +6839,8 @@ def test_contact108_categorical_sentences_follow_the_cache():
     assert "on both readings it is open in every bare-lattice cell of both groups" in row
     assert "the green group's headline standing on excluding the ambiguous 2.5 MPa" in row
     assert _c108_zstar(d)[0] < 0.05 * d["inputs"]["lattice_reading_106"]["zener_voigt_ceiling"]
-    assert "a Zener ratio that is a small fraction of its Voigt ceiling" in row and "no direction follows" in row
+    assert "once the Zener ratio exceeds a small fraction of its Voigt ceiling" in row and "no direction follows" in row
+    assert "stays closed only below a Zener ratio" not in row
     assert "published-sets-only companion" in row
 
 

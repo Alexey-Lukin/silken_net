@@ -1256,7 +1256,7 @@ around Zone 1. None of the primaries on bodies set into living wood measures adh
 measured higher J-lag failure loads one to four years after installation, «presumably» from growth over the «J»; Ludwig
 2012 reports an apparent form fit). So the bond is a reading, and its unbonded ends — slip with the normal contact kept,
 and opening of a smooth envelope, which decouples the gyroid like a soft ring (what an interlock does in tension is not computed —
-`108`, the leg's step 2) — are not computed. Wang 2009 (*J. Mech. Mater. Struct.*
+the leg's step (2), after `108`) — are not computed. Wang 2009 (*J. Mech. Mater. Struct.*
 4:1595) shows the field inside an anisotropic circular inclusion IS uniform when the interface is homogeneously
 imperfect with equal normal and in-plane tangential compliance — a sufficient condition; slip is not such an interface
 and lies outside this script's uniform-strain solution.

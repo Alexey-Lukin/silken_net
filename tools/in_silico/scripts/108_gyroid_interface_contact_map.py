@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """108 — `106`'s bonded gyroid interface read as a contact pressed by a growth pressure and held by friction: the exact
 interface traction split into its normal and shear parts, the friction the bonded field needs, where the interface
-opens and the growth pressure each statement NEEDS to stay closed — a lower bound on a smooth envelope, a demand
-elsewhere, never a pressure that keeps it closed (00_07 HW.23, the leg «межа гіроїд ⊥ тканина ⊥ стара деревина
+opens and the growth pressure NEEDED to keep it closed — a lower bound on a smooth envelope, a demand elsewhere,
+never a pressure that keeps it closed (00_07 HW.23, the leg «межа гіроїд ⊥ тканина ⊥ стара деревина
 в `106` — засновок ідеального зчеплення НЕ ПІДТРИМАНИЙ…», step (1): a validity map, no new mechanics).
 
 WHY. `106` computes the share t_L of the wood's strain the gyroid takes on a PERFECTLY BONDED interface, and no primary in
@@ -130,8 +130,8 @@ from lib.utils import banner
 SI_DESCRIPTION = ("Where the perfectly bonded interface between a titanium gyroid lattice and the wood of a living stem "
                   "could stand instead as a contact pressed by a growth pressure and held by friction: on the bonded "
                   "orthotropic Eshelby solution the interface traction is exact, so it is split into its normal and "
-                  "shear parts, and the friction it needs, the sectors where it opens and the growth pressure each "
-                  "statement needs to stay closed are computed over every modelled cell of both wood groups, dry Scots pine and "
+                  "shear parts, and the friction it needs, the sectors where it opens and the growth pressure needed "
+                  "to keep it closed (a lower bound on a smooth envelope, a demand elsewhere) are computed over every modelled cell of both wood groups, dry Scots pine and "
                   "green Pinaceae, against two named readings of root growth pressure at the stem strain of one "
                   "measured sway day; the direction of the homogenised verdict holds only for a smooth contact on the "
                   "lattice's envelope; the projection is checked against the closed-form solution for an isotropic "
@@ -564,7 +564,7 @@ def main() -> int:
                 "sigma2": [float(s2.min()), float(s2.max())], "sigma2_max_at": [theta[i2], a_list[j2]],
                 "sigma1_min_over_theta_at_voigt_ceiling": float(s1[:, -1].min()),
                 "theta_of_that_min_deg": theta[int(np.argmin(s1[:, -1]))],
-                "zener_below_which_tension_half_stays_closed": {}}
+                "zener_above_which_tension_half_opens_on_every_angle": {}}
         comp_states[key] = {}
         for end, ek in (("low", LOW_END), ("high", HIGH_END)):
             e = strains[ek] * 1e-6
@@ -578,7 +578,7 @@ def main() -> int:
                 mus = q[closed] / np.sqrt(p[closed] ** 2 - q[closed] ** 2) if closed.any() else np.array([])
                 comp_states[key][end].append({"open": int((~closed).sum()), "states": int(closed.size),
                                               "mu": [float(mus.min()), float(mus.max())] if mus.size else None})
-            grid["zener_below_which_tension_half_stays_closed"][end] = stars_n
+            grid["zener_above_which_tension_half_opens_on_every_angle"][end] = stars_n
         out_cells[key]["grid"] = grid
 
     # ── Summaries per group: Scots pine ⊥ green ⊥ union ─────────────────────────────────────────────────────────────
@@ -594,7 +594,7 @@ def main() -> int:
                 "theta0": {"opening_onset_ue": {}, "mu_req_max_at_half_onset": {}, "p0_to_stay_closed_MPa": {},
                            "at_source_day": {}},
                 "grid": {"opening_onset_tension_ue": {}, "opening_onset_tension_at_voigt_ceiling_ue": {},
-                         "zener_below_which_tension_half_stays_closed": {}, "compression_half": {}}}
+                         "zener_above_which_tension_half_opens_on_every_angle": {}, "compression_half": {}}}
         for h, s in HALVES:
             cols = list(zip(*(b["opening_onset_ue"][h] for b in th0.values()), strict=True))
             summ["theta0"]["opening_onset_ue"][h] = {
@@ -633,13 +633,13 @@ def main() -> int:
             summ["grid"]["opening_onset_tension_at_voigt_ceiling_ue"][n] = (
                 p0v[n] / s1_bot_v * 1e6 if s1_bot_v > 0.0 else None)
         for end in ("low", "high"):
-            summ["grid"]["zener_below_which_tension_half_stays_closed"][end] = {}
+            summ["grid"]["zener_above_which_tension_half_opens_on_every_angle"][end] = {}
             summ["grid"]["compression_half"][end] = {}
             for idx, n in enumerate(P0_NAMES):
-                stars = [g["zener_below_which_tension_half_stays_closed"][end][idx] for g in lattice.values()]
+                stars = [g["zener_above_which_tension_half_opens_on_every_angle"][end][idx] for g in lattice.values()]
                 fin = [x for x in stars if x is not None]
-                summ["grid"]["zener_below_which_tension_half_stays_closed"][end][n] = {
-                    "max": max(fin) if fin else None, "cells_never_closed": sum(x is None for x in stars)}
+                summ["grid"]["zener_above_which_tension_half_opens_on_every_angle"][end][n] = {
+                    "max": max(fin) if fin else None, "cells_opening_at_every_ratio": sum(x is None for x in stars)}
                 cs = [comp_states[k][end][idx] for k in lattice]
                 mus = [x for c in cs if c["mu"] for x in c["mu"]]
                 summ["grid"]["compression_half"][end][n] = {
@@ -792,8 +792,9 @@ def main() -> int:
     # ── The verdict's smallest margin against the homogenisation error. A smooth envelope opens wherever a patch average
     #    of the local traction reaches p₀. The patch average of the HOMOGENISED field over one cell's arc Δ centred on
     #    the pole is exact — σ_n = c + r·cos 2ψ averages to c + r·sin Δ/Δ — so only what homogenisation leaves out is
-    #    unknown; taken relative to the pole traction as C·Δ, the «every bare cell opens» verdict holds while
-    #    C < (1 − p₀/patch)/Δ at the tightest bare cell, the higher reading and the day's low end. Δ on BOTH periods: the
+    #    unknown; taken relative to the pole traction ε·σ₁ as C·Δ·ε·σ₁, the «every bare cell opens» verdict holds while
+    #    C < (patch − p₀)/(Δ·ε·σ₁) at the tightest bare cell, the higher reading and the day's low end — the cell picked
+    #    by that constant, not by the patch margin (the 2026-10-24 review, З1). Δ on BOTH periods: the
     #    rim's (the cell actually on the envelope) and the core's (the conservative end) — the 2026-10-22 review (F6) ──
     eps_lo = strains[LOW_END] * 1e-6
     bare_union = [k for k in keys_of[UNION] if k.endswith(f"|{BARE}")]
@@ -803,16 +804,18 @@ def main() -> int:
         sinc = math.sin(arc) / arc
         patch = {k: eps_lo * (0.5 * (th0_all[k]["sigma1"] + th0_all[k]["sigma2"])
                               + 0.5 * (th0_all[k]["sigma1"] - th0_all[k]["sigma2"]) * sinc) for k in bare_union}
-        k_min = min(patch, key=patch.get)
-        m = patch[k_min] / p0_hi
+        const = {k: (patch[k] - p0_hi) / (arc * eps_lo * th0_all[k]["sigma1"]) for k in bare_union}
+        k_min = min(const, key=const.get)
         margin_rows[tag] = {"period_mm": per, "cell_arc_rad": arc, "curvature_factor_sin_arc_over_arc": sinc,
-                            "tightest_bare_cell": k_min, "patch_need_MPa": patch[k_min], "margin_over_higher_p0": m,
-                            "constant_below_which_every_bare_cell_still_opens": (1.0 - 1.0 / m) / arc}
+                            "tightest_bare_cell": k_min, "patch_need_MPa": patch[k_min],
+                            "pole_need_MPa": eps_lo * th0_all[k_min]["sigma1"],
+                            "margin_over_higher_p0": patch[k_min] / p0_hi,
+                            "constant_below_which_every_bare_cell_still_opens": const[k_min]}
     psi_resolution["margin_vs_homogenisation_error"] = {
         "is": "the patch average of the homogenised traction over one cell's arc at the pole, exact (c + r·sin Δ/Δ), "
-              "against the higher named p₀ at the day's low end, on the tightest bare-lattice cell; the remaining "
-              "error, relative to the pole traction, is C·Δ with C unknown — the verdict holds while C stays below the "
-              "printed constant", **margin_rows}
+              "against the higher named p₀ at the day's low end; the remaining error, relative to the pole traction "
+              "ε·σ₁, is C·Δ·ε·σ₁ with C unknown — the verdict holds while C < (patch − p₀)/(Δ·ε·σ₁), printed at the "
+              "bare-lattice cell where that constant is smallest", **margin_rows}
 
     # ── The verdict, built from the numbers ──────────────────────────────────────────────────────────────────────────
     lo_n, hi_n = min(P0_NAMES, key=p0v.get), max(P0_NAMES, key=p0v.get)
@@ -834,7 +837,7 @@ def main() -> int:
     comp_mu = [sb[UNION]["theta0"]["at_source_day"]["compression"][end][n]["mu_req_max_closed"]
                for end in ("low", "high") for n in P0_NAMES]
     comp_mu = [x for x in comp_mu if x is not None]
-    zstar = [sb[UNION]["grid"]["zener_below_which_tension_half_stays_closed"][end][n]["max"]
+    zstar = [sb[UNION]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][end][n]["max"]
              for end in ("low", "high") for n in P0_NAMES]
     zstar_fin = [z for z in zstar if z is not None]
     bind_u = binding[UNION]
@@ -915,7 +918,7 @@ def main() -> int:
     result = {
         "script": "108",
         "question": "00_07 HW.23 — 106's bonded interface read as a pressed frictional contact: the friction it needs, "
-                    "where it opens and the growth pressure each statement needs to stay closed (step 1, a validity map)",
+                    "where it opens and the growth pressure needed to keep it closed (step 1, a validity map)",
         "inputs": {
             "share_106": "mechanical/gyroid_wood_strain_share.json — its lattice reading, grids and the cells of both its "
                          "groups; σᴵ is not in it, so it is recomputed here with 106's functions (importlib, no main()) "
@@ -1023,9 +1026,9 @@ def main() -> int:
             for n, v in sm["grid"]["opening_onset_tension_ue"].items())
               + f" (lowest σ₁ at {sm['grid']['sigma1_min_cell']})")
         for end in ("low", "high"):
-            print(f"    grid ({end} end): Zener below which the tension half stays closed: " + " · ".join(
-                f"{n} {v['max'] if v['max'] is None else round(v['max'], 4)} ({v['cells_never_closed']} never)"
-                for n, v in sm["grid"]["zener_below_which_tension_half_stays_closed"][end].items()))
+            print(f"    grid ({end} end): Zener above which the tension half opens on every angle: " + " · ".join(
+                f"{n} {v['max'] if v['max'] is None else round(v['max'], 4)} ({v['cells_opening_at_every_ratio']} never)"
+                for n, v in sm["grid"]["zener_above_which_tension_half_opens_on_every_angle"][end].items()))
             print(f"    grid ({end} end): compression half " + " · ".join(
                 f"{n} open {v['states_open']}/{v['states']} μ {v['mu_req_max_closed']}"
                 for n, v in sm["grid"]["compression_half"][end].items()))

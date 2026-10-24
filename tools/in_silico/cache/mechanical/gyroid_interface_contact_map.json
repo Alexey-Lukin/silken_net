@@ -1,6 +1,6 @@
 {
   "script": "108",
-  "question": "00_07 HW.23 — 106's bonded interface read as a pressed frictional contact: the friction it needs, where it opens and the growth pressure each statement needs to stay closed (step 1, a validity map)",
+  "question": "00_07 HW.23 — 106's bonded interface read as a pressed frictional contact: the friction it needs, where it opens and the growth pressure needed to keep it closed (step 1, a validity map)",
   "inputs": {
     "share_106": "mechanical/gyroid_wood_strain_share.json — its lattice reading, grids and the cells of both its groups; σᴵ is not in it, so it is recomputed here with 106's functions (importlib, no main()) and the shares held to every cached cell of both groups",
     "groups": {
@@ -153,7 +153,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 14178.482910387216,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -208,7 +208,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 16038.131042475607,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -306,7 +306,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12693.767297277234,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -361,7 +361,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 16014.483526774346,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -459,7 +459,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13402.74360127274,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -514,7 +514,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15680.498466847213,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -612,7 +612,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13496.49384539608,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 1.5487728927735923e-05],
           "high": [null, null]
         }
@@ -667,7 +667,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15283.384747630967,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -765,7 +765,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12884.549711820353,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -820,7 +820,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15106.452850807013,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -918,7 +918,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12229.480727188786,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003157681689054357, 0.007232329813023523],
           "high": [null, null]
         }
@@ -973,7 +973,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13476.814032537659,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -1071,7 +1071,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11006.548936459567,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004371666205208909, 0.010398866245971812],
           "high": [null, null]
         }
@@ -1126,7 +1126,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13600.481914559918,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -1224,7 +1224,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11495.392179900742,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00391631067391021, 0.008767720989473312],
           "high": [null, null]
         }
@@ -1279,7 +1279,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13049.736205381978,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -1377,7 +1377,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10104.79095585332,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0028948238481195984, 0.007185799482412901],
           "high": [null, null]
         }
@@ -1432,7 +1432,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10833.678455908594,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -1530,7 +1530,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8572.94227275537,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.008286302198585747, 0.015581606079776315],
           "high": [null, 0.0010321167588593656]
         }
@@ -1585,7 +1585,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10605.176672790392,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -1683,7 +1683,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13964.701800757157,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -1738,7 +1738,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15971.110910554882,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -1836,7 +1836,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12475.84137134841,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -1891,7 +1891,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15988.832135765235,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -1989,7 +1989,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13191.432573061544,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -2044,7 +2044,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15630.250456334375,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -2142,7 +2142,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13296.516788390709,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 8.097518408760391e-05],
           "high": [null, null]
         }
@@ -2197,7 +2197,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15222.207134545126,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -2295,7 +2295,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12683.170003619878,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -2350,7 +2350,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15061.125162829965,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -2448,7 +2448,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12072.236097458364,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003397288131844209, 0.007758241626266055],
           "high": [null, null]
         }
@@ -2503,7 +2503,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13422.644148629348,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -2601,7 +2601,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10841.859748848221,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004705406179220351, 0.0111548575865189],
           "high": [null, null]
         }
@@ -2656,7 +2656,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13586.553387974458,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -2754,7 +2754,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11340.525428139452,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004211572659467578, 0.009403389284861428],
           "high": [null, null]
         }
@@ -2809,7 +2809,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13009.93883889395,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -2907,7 +2907,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9994.083221959256,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0031158136707036127, 0.007707937734088167],
           "high": [null, null]
         }
@@ -2962,7 +2962,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10787.845627161134,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3060,7 +3060,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8457.099581723194,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.008882492686836517, 0.016688005023940522],
           "high": [null, 0.001122942764721832]
         }
@@ -3115,7 +3115,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10600.38738378318,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3213,7 +3213,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13996.595114074762,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3268,7 +3268,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15980.926592283504,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3366,7 +3366,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12508.287456715758,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3421,7 +3421,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15992.595781252712,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3519,7 +3519,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13222.936295091607,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3574,7 +3574,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15637.593987152568,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3672,7 +3672,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13326.360907742652,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 7.056739792112832e-05],
           "high": [null, null]
         }
@@ -3727,7 +3727,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15231.169813887864,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3825,7 +3825,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12713.197832984566,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3880,7 +3880,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15067.749066797263,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -3978,7 +3978,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12095.743467895189,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003360883680848226, 0.007678501099368608],
           "high": [null, null]
         }
@@ -4033,7 +4033,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13430.600678352323,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -4131,7 +4131,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10866.434339899733,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004654686083547584, 0.011040234288501621],
           "high": [null, null]
         }
@@ -4186,7 +4186,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13588.602280328014,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -4284,7 +4284,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11363.665040485012,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00416672625796124, 0.00930702178833773],
           "high": [null, null]
         }
@@ -4339,7 +4339,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13015.769248146855,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -4437,7 +4437,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10010.659562082668,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003082227591064646, 0.00762877140193749],
           "high": [null, null]
         }
@@ -4492,7 +4492,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10794.601009517915,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -4590,7 +4590,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8474.40658928589,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.008792144051323364, 0.01652044815309632],
           "high": [null, 0.0011090535805477549]
         }
@@ -4645,7 +4645,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10601.102098633663,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -4743,7 +4743,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13073.162491355326,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -4798,7 +4798,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15720.129235158382,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -4896,7 +4896,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11578.023480864797,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -4951,7 +4951,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15891.11509718421,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -5049,7 +5049,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12313.7577454288,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -5104,7 +5104,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15444.280981874703,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -5202,7 +5202,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12460.817115741966,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.00047573484971193694],
           "high": [null, null]
         }
@@ -5257,7 +5257,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 14992.740037137773,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -5355,7 +5355,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11845.947160828473,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -5410,7 +5410,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 14893.37254008314,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -5508,7 +5508,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11408.138628269275,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004518477135546033, 0.010187563594013363],
           "high": [null, null]
         }
@@ -5563,7 +5563,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13216.466171220636,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -5661,7 +5661,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10154.176539687356,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006269635424820896, 0.014646387036659832],
           "high": [null, null]
         }
@@ -5716,7 +5716,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13532.619526596667,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -5814,7 +5814,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10688.59541176392,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005590457994876022, 0.012336838583849204],
           "high": [null, null]
         }
@@ -5869,7 +5869,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12860.67275534557,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -5967,7 +5967,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9521.971479612417,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004151882267122689, 0.01011948588711566],
           "high": [null, null]
         }
@@ -6022,7 +6022,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10609.90303365651,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6120,7 +6120,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 7969.749187855874,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.011627206902739256, 0.02176029392328014],
           "high": [null, 0.0015652516852080883]
         }
@@ -6175,7 +6175,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10580.239348640242,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6273,7 +6273,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15613.401473853683,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6328,7 +6328,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 16576.401908675038,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6426,7 +6426,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 14183.819663364337,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6481,7 +6481,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 16221.708225179551,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6579,7 +6579,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 14829.759404677956,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6634,7 +6634,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 16093.47125132033,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6732,7 +6732,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 14834.595599341415,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6787,7 +6787,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15773.080044788176,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6885,7 +6885,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 14242.535790614771,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -6940,7 +6940,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15479.797713604636,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -7038,7 +7038,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13265.476260168722,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0017834594417961828, 0.004161762509741205],
           "high": [null, null]
         }
@@ -7093,7 +7093,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13899.140912319297,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -7191,7 +7191,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12109.862232189857,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0024621748216884596, 0.0059842723021480485],
           "high": [null, null]
         }
@@ -7246,7 +7246,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13710.62689930432,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -7344,7 +7344,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12520.568007401123,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.002218281791687912, 0.005051543325286376],
           "high": [null, null]
         }
@@ -7399,7 +7399,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13368.268228995172,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -7497,7 +7497,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10824.094614807364,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0016306458140873253, 0.004136461663844234],
           "high": [null, null]
         }
@@ -7552,7 +7552,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11178.753254690911,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -7650,7 +7650,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9340.505007883774,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004789594594934929, 0.009055795667171879],
           "high": [null, 0.0005409128478479125]
         }
@@ -7705,7 +7705,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10637.991376889391,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -7803,7 +7803,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13866.109691280035,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -7858,7 +7858,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15941.160971488483,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -7956,7 +7956,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12375.685315836614,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -8011,7 +8011,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15977.330432437306,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -8109,7 +8109,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13094.091494861485,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -8164,7 +8164,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15607.8768105944,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -8262,7 +8262,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13204.236789001956,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.00011461775232139159],
           "high": [null, null]
         }
@@ -8317,7 +8317,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15194.85428909832,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -8415,7 +8415,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12590.378697735896,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -8470,7 +8470,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 15040.944810158944,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -8568,7 +8568,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11999.459481683285,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0035113271980699275, 0.008007662125283161],
           "high": [null, null]
         }
@@ -8623,7 +8623,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13398.31803454316,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -8721,7 +8721,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10765.880670072082,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004864320365725323, 0.011513381608950785],
           "high": [null, null]
         }
@@ -8776,7 +8776,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 13580.280245364414,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -8874,7 +8874,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11268.914697061475,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004352024669021725, 0.009704783784312727],
           "high": [null, null]
         }
@@ -8929,7 +8929,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 12992.145289822809,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -9027,7 +9027,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9942.706244702353,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003221047166988333, 0.007955557766504053],
           "high": [null, null]
         }
@@ -9082,7 +9082,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10767.141474497237,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -9180,7 +9180,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8403.543095603996,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.009164985517273891, 0.017211653353514843],
           "high": [null, 0.0011666549165667743]
         }
@@ -9235,7 +9235,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10598.17684755851,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -9335,7 +9335,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4663.371601697399,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008332784496544057, 0.00481237623678071],
           "high": [null, null]
         }
@@ -9390,7 +9390,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4722.806417257574,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -9488,7 +9488,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4674.3616800403615,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0007286854070132451, 0.004667753869347655],
           "high": [null, null]
         }
@@ -9543,7 +9543,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4732.765320403061,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -9641,7 +9641,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4668.813706460395,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0007809235721934244, 0.004739971687222106],
           "high": [null, null]
         }
@@ -9696,7 +9696,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4727.724598559262,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -9794,7 +9794,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3208.352957563825,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0059512964795150145, 0.012923208666197242],
           "high": [null, 0.0002121315584836937]
         }
@@ -9849,7 +9849,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3244.239456620707,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -9947,7 +9947,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3210.626982229802,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006030767078968428, 0.012979283411146531],
           "high": [null, 0.00030964680577350267]
         }
@@ -10002,7 +10002,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3246.482845261649,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -10100,7 +10100,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3209.485864785576,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005991733573416688, 0.012951881026506476],
           "high": [null, 0.00026164792297736695]
         }
@@ -10155,7 +10155,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3245.3569309970617,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -10253,7 +10253,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3811.717037882048,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008170624374755978, 0.005597100626300918],
           "high": [null, null]
         }
@@ -10308,7 +10308,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3851.155667133756,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -10406,7 +10406,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3797.42018642137,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0009747935608368091, 0.005829338032897117],
           "high": [null, null]
         }
@@ -10461,7 +10461,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3838.17904183905,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -10559,7 +10559,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3804.5015934666035,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008956924059892347, 0.005712841407473156],
           "high": [null, null]
         }
@@ -10614,7 +10614,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3844.591738753178,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -10712,7 +10712,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2674.7455558030574,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0055486458050401175, 0.013483977606056123],
           "high": [null, null]
         }
@@ -10767,7 +10767,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2695.0808133620585,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -10865,7 +10865,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2667.131403887209,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005736082738749187, 0.013795807069099792],
           "high": [null, null]
         }
@@ -10920,7 +10920,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2687.8821588573987,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -11018,7 +11018,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2670.890034817959,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005642154903391103, 0.013639574365885542],
           "high": [null, null]
         }
@@ -11073,7 +11073,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2691.4295734463344,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -11171,7 +11171,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8558.812526243308,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0019995927738947266],
           "high": [null, null]
         }
@@ -11226,7 +11226,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8783.440494711394,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -11324,7 +11324,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8160.12336658662,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.002318236337482819],
           "high": [null, null]
         }
@@ -11379,7 +11379,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8579.894561458259,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -11477,7 +11477,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3242.250673301805,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0022524146576038528, 0.009157592427053017],
           "high": [null, null]
         }
@@ -11532,7 +11532,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3277.277744215173,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -11630,7 +11630,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2937.6028835040765,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.010138716481214425, 0.0209219703220239],
           "high": [null, 0.001499286533304756]
         }
@@ -11685,7 +11685,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3012.056368151383,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -11783,7 +11783,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3075.4721720248613,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005664491632995894, 0.014185666795846513],
           "high": [null, null]
         }
@@ -11838,7 +11838,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3125.0003940092383,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -11936,7 +11936,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3986.3053818265,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0004250944387038117, 0.004996422256855548],
           "high": [null, null]
         }
@@ -11991,7 +11991,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4029.9136640171896,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -12089,7 +12089,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3695.3341757193843,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005106542856956699, 0.01202583505551064],
           "high": [null, null]
         }
@@ -12144,7 +12144,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3862.3739193349807,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -12242,7 +12242,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4845.677985807155,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0034590028149105263, 0.007494827605492273],
           "high": [null, null]
         }
@@ -12297,7 +12297,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4921.548144807545,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -12395,7 +12395,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4552.996627941487,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004874447303443797, 0.010096888122970205],
           "high": [null, 0.0001528998452966995]
         }
@@ -12450,7 +12450,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4695.18417991092,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -12548,7 +12548,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10212.25190354023,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -12603,7 +12603,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10809.120599266282,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -12701,7 +12701,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9245.216563830745,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0028162992890310894],
           "high": [null, null]
         }
@@ -12756,7 +12756,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10306.267970698824,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -12854,7 +12854,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9675.585753650086,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0006933746563189819],
           "high": [null, null]
         }
@@ -12909,7 +12909,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10421.58012366431,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -13007,7 +13007,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 7918.824524680694,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.012853016188556238, 0.0177496452815933],
           "high": [0.006478255642953561, 0.008045211074052129]
         }
@@ -13062,7 +13062,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8435.904285170385,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -13160,7 +13160,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 6840.572111839213,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.011145316709227172, 0.016462811317797026],
           "high": [0.004348338778572292, 0.006006105601761184]
         }
@@ -13215,7 +13215,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 7120.366974302872,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -13313,7 +13313,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4646.774943265478,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008980717188052025, 0.005152006372683517],
           "high": [null, null]
         }
@@ -13368,7 +13368,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4712.563821263239,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -13466,7 +13466,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4657.771546426666,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0007863834751466285, 0.004997555977051168],
           "high": [null, null]
         }
@@ -13521,7 +13521,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4722.463375024643,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -13619,7 +13619,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4652.220800156126,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008421651923577978, 0.005074681355462546],
           "high": [null, null]
         }
@@ -13674,7 +13674,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4717.451999418299,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -13772,7 +13772,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3196.540202422238,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006370080156734159, 0.013827873466671827],
           "high": [null, 0.0002335637482098212]
         }
@@ -13827,7 +13827,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3236.0368371789414,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -13925,7 +13925,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3198.81122212528,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006454800133769771, 0.013887545937753706],
           "high": [null, 0.00033759933037243156]
         }
@@ -13980,7 +13980,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3238.2756020363367,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -14078,7 +14078,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3197.6716844292478,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006413188494481699, 0.013858386342360564],
           "high": [null, 0.00028639100114038286]
         }
@@ -14133,7 +14133,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3237.1520510342975,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -14231,7 +14231,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3799.623207642037,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008826153998131333, 0.0059935401303909085],
           "high": [null, null]
         }
@@ -14286,7 +14286,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3843.191139874133,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -14384,7 +14384,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3785.3227581156007,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.001051066704015766, 0.0062416020704233605],
           "high": [null, null]
         }
@@ -14439,7 +14439,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3830.291349482851,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -14537,7 +14537,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3792.406601527439,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0009665892548849342, 0.006117167179659199],
           "high": [null, null]
         }
@@ -14592,7 +14592,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3836.6654094471164,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -14690,7 +14690,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2667.20881369722,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005938006574855336, 0.014424444156850295],
           "high": [null, null]
         }
@@ -14745,7 +14745,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2689.6323544452607,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -14843,7 +14843,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2659.5834847806964,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006138211153218677, 0.014757586718222547],
           "high": [null, null]
         }
@@ -14898,7 +14898,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2682.454501136582,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -14996,7 +14996,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2663.3480513107806,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006037885241670543, 0.014590675925587718],
           "high": [null, null]
         }
@@ -15051,7 +15051,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2685.9915112690396,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -15149,7 +15149,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8516.93439268488,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0021433145442378686],
           "high": [null, null]
         }
@@ -15204,7 +15204,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8764.417431080943,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -15302,7 +15302,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8116.336507111537,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.002485469528405903],
           "high": [null, null]
         }
@@ -15357,7 +15357,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8569.885021934007,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -15455,7 +15455,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3230.2546796143156,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.002424992365404087, 0.009812919335051146],
           "high": [null, null]
         }
@@ -15510,7 +15510,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3268.8640442655724,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -15608,7 +15608,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2924.712924905865,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.010849195756466177, 0.022384268002011543],
           "high": [null, 0.0016115425145494509]
         }
@@ -15663,7 +15663,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3005.411606046739,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -15761,7 +15761,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3063.364919781194,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006069417588591608, 0.015185253344912508],
           "high": [null, null]
         }
@@ -15816,7 +15816,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3117.41098120378,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -15914,7 +15914,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3973.338290974194,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00046394249033936407, 0.005351648240439093],
           "high": [null, null]
         }
@@ -15969,7 +15969,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4021.508931133746,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -16067,7 +16067,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3680.6253604641543,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005464647633617608, 0.012861850876041667],
           "high": [null, null]
         }
@@ -16122,7 +16122,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3859.617846555631,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -16220,7 +16220,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4826.836258209759,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0037008443856371186, 0.008015267052070937],
           "high": [null, null]
         }
@@ -16275,7 +16275,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4910.411389197645,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -16373,7 +16373,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4533.267904418272,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005214055105334495, 0.010796956899824302],
           "high": [null, 0.00016776042446809558]
         }
@@ -16428,7 +16428,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4687.315951240238,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -16526,7 +16526,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10115.493894660636,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -16581,7 +16581,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10768.025475845203,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -16679,7 +16679,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9148.802045119706,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0030490737384179832],
           "high": [null, null]
         }
@@ -16734,7 +16734,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10286.161961314772,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -16832,7 +16832,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9580.926634553642,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0007795211982655861],
           "high": [null, null]
         }
@@ -16887,7 +16887,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10388.84442071774,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -16985,7 +16985,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 7844.816889846586,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.013734330856439294, 0.018971296612540593],
           "high": [0.006918741097036911, 0.008593819862268866]
         }
@@ -17040,7 +17040,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8405.404976899077,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -17138,7 +17138,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 6779.713097662519,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.011917043032196473, 0.017606764488488226],
           "high": [0.004647328429416094, 0.0064200786707376955]
         }
@@ -17193,7 +17193,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 7086.745115829645,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -17291,7 +17291,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4649.275063026301,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008882151046700787, 0.005100586130534258],
           "high": [null, null]
         }
@@ -17346,7 +17346,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4714.091017524034,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -17444,7 +17444,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4660.270705000378,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0007775988313746237, 0.004947620732341073],
           "high": [null, null]
         }
@@ -17499,7 +17499,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4723.999510887506,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -17597,7 +17597,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4654.720365698649,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008328451757948954, 0.005024004588040115],
           "high": [null, null]
         }
@@ -17652,7 +17652,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4718.983716240974,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -17750,7 +17750,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3198.3196052918097,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006306685702063962, 0.013690963871043762],
           "high": [null, 0.00023026839308763172]
         }
@@ -17805,7 +17805,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3237.263718460969,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -17903,7 +17903,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3200.5910830251705,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006390613732865565, 0.013750094461283745],
           "high": [null, 0.00033331962574988523]
         }
@@ -17958,7 +17958,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3239.5031818874927,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -18056,7 +18056,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3199.451304726644,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006349391041510215, 0.01372119952487822],
           "high": [null, 0.0002825958142086931]
         }
@@ -18111,7 +18111,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3238.3792740149984,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -18209,7 +18209,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3801.445596670975,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008726288228343786, 0.005933507606492304],
           "high": [null, null]
         }
@@ -18264,7 +18264,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3844.3810251866107,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -18362,7 +18362,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3787.1456677262463,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0010394603151796323, 0.006179178140909743],
           "high": [null, null]
         }
@@ -18417,7 +18417,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3831.469679865934,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -18515,7 +18515,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3794.2291549977817,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0009557952219305305, 0.0060559428838833414],
           "high": [null, null]
         }
@@ -18570,7 +18570,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3837.8495519699404,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -18668,7 +18668,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2668.3448799649377,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00587907454918998, 0.014282143641782326],
           "high": [null, null]
         }
@@ -18723,7 +18723,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2690.4483758950214,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -18821,7 +18821,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2660.7212233206947,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006077349714801422, 0.014612064836664766],
           "high": [null, null]
         }
@@ -18876,7 +18876,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2683.267349023484,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -18974,7 +18974,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2664.4849014821416,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005977990663570992, 0.014446767981392421],
           "high": [null, null]
         }
@@ -19029,7 +19029,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2686.80594729493,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -19127,7 +19127,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8523.235873448679,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.002121534641223893],
           "high": [null, null]
         }
@@ -19182,7 +19182,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8767.234461576034,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -19280,7 +19280,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8122.922236330488,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0024601219928421696],
           "high": [null, null]
         }
@@ -19335,7 +19335,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8571.358537838401,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -19433,7 +19433,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3232.0615803060678,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.002398757460532432, 0.009713631075978689],
           "high": [null, null]
         }
@@ -19488,7 +19488,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3270.122463548755,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -19586,7 +19586,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2926.6533952392338,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.010741668736436796, 0.02216298643585233],
           "high": [null, 0.0015944967364401917]
         }
@@ -19641,7 +19641,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3006.4024056993194,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -19739,7 +19739,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3065.1882247354574,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0060080713745186125, 0.015033927017873382],
           "high": [null, null]
         }
@@ -19794,7 +19794,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3118.5450414581037,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -19892,7 +19892,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3975.2921317233563,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00045799155192390327, 0.005297846259800143],
           "high": [null, null]
         }
@@ -19947,7 +19947,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4022.764076959097,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -20045,7 +20045,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3682.840238556165,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005410448386756745, 0.012735377068867865],
           "high": [null, null]
         }
@@ -20100,7 +20100,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3860.0266380804287,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -20198,7 +20198,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4829.673926978726,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003664247323310466, 0.00793653883606181],
           "high": [null, null]
         }
@@ -20253,7 +20253,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4912.071130635335,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -20351,7 +20351,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4536.237978349781,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005162672893587267, 0.01069106414262052],
           "high": [null, 0.00016547868697293372]
         }
@@ -20406,7 +20406,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4688.48449652556,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -20504,7 +20504,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10129.997636909851,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -20559,7 +20559,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10774.087979003156,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -20657,7 +20657,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9163.241720509664,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.003013568494534622],
           "high": [null, null]
         }
@@ -20712,7 +20712,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10289.113844574533,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -20810,7 +20810,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9595.111675056536,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0007661901731487468],
           "high": [null, null]
         }
@@ -20865,7 +20865,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10393.665828780431,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -20963,7 +20963,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 7855.914190541055,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.013601102001829287, 0.018786581850538484],
           "high": [0.006852182489320343, 0.008510910767967457]
         }
@@ -21018,7 +21018,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8409.912574576663,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -21116,7 +21116,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 6788.841977818406,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.011800320658014632, 0.01743371083221111],
           "high": [0.0046021234731958936, 0.006357481128844591]
         }
@@ -21171,7 +21171,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 7091.730405951711,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -21269,7 +21269,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4573.24964285079,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.001203695693677874, 0.006706319581739567],
           "high": [null, null]
         }
@@ -21324,7 +21324,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4669.994887508444,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -21422,7 +21422,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4584.271070075198,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0010599730897299965, 0.006507468959975211],
           "high": [null, null]
         }
@@ -21477,7 +21477,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4679.632275563972,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -21575,7 +21575,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4578.710053800179,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0011317535666564953, 0.0066067651241263035],
           "high": [null, null]
         }
@@ -21630,7 +21630,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4674.75032153292,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -21728,7 +21728,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3144.221435964217,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.008284751911282803, 0.017956968547698487],
           "high": [null, 0.0003414476254766674]
         }
@@ -21783,7 +21783,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3201.2845650898958,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -21881,7 +21881,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3146.4781369677225,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.008392949442588862, 0.01803255898572019],
           "high": [null, 0.00047477324572321185]
         }
@@ -21936,7 +21936,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3203.502487620495,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -22034,7 +22034,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3145.3460911480342,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.008339807564931835, 0.017995626222225787],
           "high": [null, 0.0004091477241820101]
         }
@@ -22089,7 +22089,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3202.389558402167,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -22187,7 +22187,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3745.9376803047035,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0011946193205382345, 0.007810042119506956],
           "high": [null, null]
         }
@@ -22242,7 +22242,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3809.687824051901,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -22340,7 +22340,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3731.625332793335,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.001411503679228856, 0.00812966222685494],
           "high": [null, null]
         }
@@ -22395,7 +22395,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3797.12452983842,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -22493,7 +22493,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3738.7179188241826,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0013027361917619376, 0.007969330295611261],
           "high": [null, null]
         }
@@ -22548,7 +22548,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3803.329099820197,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -22646,7 +22646,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2633.682025626168,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.007716520143104191, 0.018711664227980297],
           "high": [null, null]
         }
@@ -22701,7 +22701,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2666.358477851256,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -22799,7 +22799,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2626.0093454750227,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00797445275828269, 0.019141286619766516],
           "high": [null, null]
         }
@@ -22854,7 +22854,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2659.2798079061236,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -22952,7 +22952,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2629.799115012826,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.007845198393047832, 0.01892603871243447],
           "high": [null, null]
         }
@@ -23007,7 +23007,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2662.767074295973,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -23105,7 +23105,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8332.724587623436,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.002804998459614392],
           "high": [null, null]
         }
@@ -23160,7 +23160,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8688.515502422535,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -23258,7 +23258,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 7924.279332398348,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0032563021183060906],
           "high": [null, null]
         }
@@ -23313,7 +23313,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8531.260989406392,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -23411,7 +23411,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3177.143858965082,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0032354649458234, 0.012825888814667615],
           "high": [null, null]
         }
@@ -23466,7 +23466,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3233.222985876033,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -23564,7 +23564,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2867.847239136492,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.014092894589960325, 0.02905485988032657],
           "high": [null, 0.0021349962639006003]
         }
@@ -23619,7 +23619,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2977.787806673063,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -23717,7 +23717,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3009.8279640825667,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.007930333679634138, 0.0197575859847222],
           "high": [null, null]
         }
@@ -23772,7 +23772,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3085.449396326033,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -23870,7 +23870,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3915.8022577976444,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0006551885522830115, 0.006981324421247893],
           "high": [null, null]
         }
@@ -23925,7 +23925,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3986.2407856871278,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -24023,7 +24023,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3615.6242115033583,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.007099992287870081, 0.016668528272930694],
           "high": [null, null]
         }
@@ -24078,7 +24078,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3848.490354604729,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -24176,7 +24176,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4743.486810206844,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.004804144018758604, 0.010384100790281674],
           "high": [null, null]
         }
@@ -24231,7 +24231,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4864.256827745051,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -24329,7 +24329,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4446.215747533706,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0067615297252033545, 0.013981749452462451],
           "high": [null, 0.00024194793962698842]
         }
@@ -24384,7 +24384,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4655.380577487571,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -24482,7 +24482,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9700.010616995483,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -24537,7 +24537,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10607.632613266529,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -24635,7 +24635,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8737.026277212002,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0041652336089637535],
           "high": [null, null]
         }
@@ -24690,7 +24690,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10209.732890198338,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -24788,7 +24788,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9175.183041247194,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0012295799481595441],
           "high": [null, null]
         }
@@ -24843,7 +24843,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10262.293679859476,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -24941,7 +24941,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 7526.351684264593,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.017728230640022102, 0.02451470876910833],
           "high": [0.008909128370087269, 0.011075244080091844]
         }
@@ -24996,7 +24996,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8285.120566437128,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -25094,7 +25094,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 6517.256477510688,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.015425948289758153, 0.022814464507040243],
           "high": [0.006003530566100002, 0.008299384771309676]
         }
@@ -25149,7 +25149,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 6951.582344061344,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -25247,7 +25247,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4765.722215794063,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00046558446500003604, 0.002804133740625986],
           "high": [null, null]
         }
@@ -25302,7 +25302,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4791.910174646794,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -25400,7 +25400,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4776.664555193175,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0004036848839401479, 0.002718602370888114],
           "high": [null, null]
         }
@@ -25455,7 +25455,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4802.233051018352,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -25553,7 +25553,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4771.137380318374,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00043460043822121343, 0.002761313200568165],
           "high": [null, null]
         }
@@ -25608,7 +25608,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4797.01180097214,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -25706,7 +25706,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3281.225454752993,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003471840886247483, 0.007554963208382507],
           "high": [null, 0.00010204364542309684]
         }
@@ -25761,7 +25761,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3298.0396468629783,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -25859,7 +25859,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3283.5161529313336,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003519345620065952, 0.0075888369972953625],
           "high": [null, 0.0001600711603390539]
         }
@@ -25914,7 +25914,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3300.310758229139,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -26012,7 +26012,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3282.3662041587827,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00349601210010038, 0.007572280648658492],
           "high": [null, 0.0001315089414575429]
         }
@@ -26067,7 +26067,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3299.170607499951,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -26165,7 +26165,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3886.100893025824,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00044979171731839273, 0.0032566465651026654],
           "high": [null, null]
         }
@@ -26220,7 +26220,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3903.938352816833,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -26318,7 +26318,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3871.8335983582456,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0005430715076259396, 0.003393853035205439],
           "high": [null, null]
         }
@@ -26373,7 +26373,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3890.4820512018327,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -26471,7 +26471,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3878.8962420009907,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0004962929256284907, 0.00332502734544686],
           "high": [null, null]
         }
@@ -26526,7 +26526,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3897.135271502753,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -26624,7 +26624,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2720.972708917772,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00324059293119674, 0.007894316776273402],
           "high": [null, null]
         }
@@ -26679,7 +26679,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2730.397496392166,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -26777,7 +26777,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2713.431391251415,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003351344962149454, 0.008078328870198923],
           "high": [null, null]
         }
@@ -26832,7 +26832,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2723.086008692186,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -26930,7 +26930,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2717.1514458643783,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0032958452104821156, 0.007986134548608317],
           "high": [null, null]
         }
@@ -26985,7 +26985,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2726.6895602709333,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -27083,7 +27083,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8819.52645014501,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0011564608816017215],
           "high": [null, null]
         }
@@ -27138,7 +27138,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8920.277767365253,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -27236,7 +27236,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8433.766630745871,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0013387141879466768],
           "high": [null, null]
         }
@@ -27291,7 +27291,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8656.372678379192,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -27389,7 +27389,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3316.2897258520516,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0012670412087709927, 0.005306022342584751],
           "high": [null, null]
         }
@@ -27444,7 +27444,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3332.4768000757845,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -27542,7 +27542,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3017.5361797342134,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005924517205511787, 0.012238664762985945],
           "high": [null, 0.0008520695374454447]
         }
@@ -27597,7 +27597,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3056.86406225831,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -27695,7 +27695,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3150.3205876204224,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0032834050649927756, 0.008271144844239568],
           "high": [null, null]
         }
@@ -27750,7 +27750,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3175.2073839053155,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -27848,7 +27848,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4066.1076516955104,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00021820075293046184, 0.0029027008359477488],
           "high": [null, null]
         }
@@ -27903,7 +27903,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4085.8154125623687,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -28001,7 +28001,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3786.3396986618795,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.002983134825936324, 0.007049685339447892],
           "high": [null, null]
         }
@@ -28056,7 +28056,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3882.0141083673298,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -28154,7 +28154,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4962.097858828319,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.002023101682991681, 0.0043955148024616],
           "high": [null, null]
         }
@@ -28209,7 +28209,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4997.006521029083,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -28307,7 +28307,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4675.308161360226,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.002854954073248259, 0.0059250726312234745],
           "high": [null, 7.551494790442213e-05]
         }
@@ -28362,7 +28362,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4750.247286503066,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -28460,7 +28460,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10834.828709886186,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -28515,7 +28515,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 11115.8959429579,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -28613,7 +28613,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9870.344873538925,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0015269763406151032],
           "high": [null, null]
         }
@@ -28668,7 +28668,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10464.294868911145,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -28766,7 +28766,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10286.19639646033,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.00027936605789227064],
           "high": [null, null]
         }
@@ -28821,7 +28821,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10669.843134697334,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -28919,7 +28919,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 8393.601124515684,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00757514423820266, 0.010445794478354607],
           "high": [0.0038305046545379917, 0.004751740957836915]
         }
@@ -28974,7 +28974,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8659.443945809002,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -29072,7 +29072,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 7229.809399521666,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006543565344381629, 0.009652162717893722],
           "high": [0.002559968660680519, 0.0035326053608061266]
         }
@@ -29127,7 +29127,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 7359.246079309504,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -29225,7 +29225,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4638.991905865004,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0009289762849267419, 0.005312672020994839],
           "high": [null, null]
         }
@@ -29280,7 +29280,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4707.844697278509,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -29378,7 +29378,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4649.991451961818,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008139437379136008, 0.005153588449237656],
           "high": [null, null]
         }
@@ -29433,7 +29433,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4717.716425860895,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -29531,7 +29531,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4644.439463089797,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0008713956946116322, 0.0052330273685536575],
           "high": [null, null]
         }
@@ -29586,7 +29586,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4712.718802055764,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -29684,7 +29684,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3191.000963322315,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006568137815930405, 0.014255525088655577],
           "high": [null, 0.0002439755523280069]
         }
@@ -29739,7 +29739,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3232.2371269628106,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -29837,7 +29837,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3193.270544975715,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00665532585509669, 0.014316884267845977],
           "high": [null, 0.00035108032513048187]
         }
@@ -29892,7 +29892,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3234.4737125953066,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -29990,7 +29990,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3192.1317622583733,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006612502082211338, 0.014286900888605375],
           "high": [null, 0.0002983612749953635]
         }
@@ -30045,7 +30045,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3233.351274481575,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -30143,7 +30143,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3793.9486838934813,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.000913960163332238, 0.006181141200048715],
           "high": [null, null]
         }
@@ -30198,7 +30198,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3839.5090916145123,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -30296,7 +30296,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3779.646662478121,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0010874652902849668, 0.00643666509394405],
           "high": [null, null]
         }
@@ -30351,7 +30351,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3826.645227258254,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -30449,7 +30449,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3786.731589860018,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0010004532823388226, 0.0063084869558754],
           "high": [null, null]
         }
@@ -30504,7 +30504,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3833.0012127399864,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -30602,7 +30602,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2663.6705008741255,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0061221033677936396, 0.014868872729313292],
           "high": [null, null]
         }
@@ -30657,7 +30657,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2687.102670989295,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -30755,7 +30755,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2656.039992080245,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0063283282525668835, 0.015212068196939165],
           "high": [null, null]
         }
@@ -30810,7 +30810,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2679.934786160681,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -30908,7 +30908,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2659.8073110282585,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006224985467061472, 0.015040120799686727],
           "high": [null, null]
         }
@@ -30963,7 +30963,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2683.4668061084085,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -31061,7 +31061,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8497.333422997222,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0022114135501346355],
           "high": [null, null]
         }
@@ -31116,7 +31116,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8755.755006647714,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -31214,7 +31214,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8095.858072934736,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0025647340426938996],
           "high": [null, null]
         }
@@ -31269,7 +31269,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8565.37266037917,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -31367,7 +31367,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3224.630076676426,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0025072080282401866, 0.010123314365338861],
           "high": [null, null]
         }
@@ -31422,7 +31422,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3264.966733029534,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -31520,7 +31520,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 2918.6749994911024,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.011185078911074717, 0.023075421534627903],
           "high": [null, 0.0016649174652183974]
         }
@@ -31575,7 +31575,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3002.349871783582,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -31673,7 +31673,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3057.690056616766,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.006261189101646568, 0.01565805477820694],
           "high": [null, null]
         }
@@ -31728,7 +31728,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3113.901204169589,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -31826,7 +31826,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3967.2547680903563,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.0004826947864899599, 0.005519802627105046],
           "high": [null, null]
         }
@@ -31881,7 +31881,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4017.6260609346527,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -31979,7 +31979,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3673.7322440412527,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.00563395516881977, 0.013256798587859664],
           "high": [null, null]
         }
@@ -32034,7 +32034,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 3858.3592492224116,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -32132,7 +32132,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4818.0038800663515,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.003815153182163312, 0.00826110587730966],
           "high": [null, null]
         }
@@ -32187,7 +32187,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4905.284409689131,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -32285,7 +32285,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4524.02608823348,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.005374522797717033, 0.011127601132017051],
           "high": [null, 0.00017496251174376403]
         }
@@ -32340,7 +32340,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 4683.715254181527,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -32438,7 +32438,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10070.504645829089,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -32493,7 +32493,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10749.433088917078,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -32591,7 +32591,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9104.039699034362,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0031606116959623162],
           "high": [null, null]
         }
@@ -32646,7 +32646,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10277.139279489298,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -32744,7 +32744,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 9536.935125135431,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, 0.0008218324049512873],
           "high": [null, null]
         }
@@ -32799,7 +32799,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 10374.07528965657,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -32897,7 +32897,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 7810.385638526147,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.014150149310827215, 0.01954789155058479],
           "high": [0.007126407929035213, 0.008852530313433561]
         }
@@ -32952,7 +32952,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 8391.563409006747,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -33050,7 +33050,7 @@
         "sigma2_max_at": [45.0, 3.7547202062397482],
         "sigma1_min_over_theta_at_voigt_ceiling": 6751.382038925406,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [0.012281480567584806, 0.01814715739402381],
           "high": [0.004788431756450367, 0.006615489644502429]
         }
@@ -33105,7 +33105,7 @@
         "sigma2_max_at": [45.0, 0.0],
         "sigma1_min_over_theta_at_voigt_ceiling": 7071.401304390814,
         "theta_of_that_min_deg": 0.0,
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": [null, null],
           "high": [null, null]
         }
@@ -33281,25 +33281,25 @@
           "turgor_free_root_cells": 62.737231525665685,
           "spring_clamps_on_poplar_roots": 90.34161339695858
         },
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": {
             "turgor_free_root_cells": {
               "max": 0.011627206902739256,
-              "cells_never_closed": 90
+              "cells_opening_at_every_ratio": 90
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.02176029392328014,
-              "cells_never_closed": 85
+              "cells_opening_at_every_ratio": 85
             }
           },
           "high": {
             "turgor_free_root_cells": {
               "max": null,
-              "cells_never_closed": 120
+              "cells_opening_at_every_ratio": 120
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.0015652516852080883,
-              "cells_never_closed": 114
+              "cells_opening_at_every_ratio": 114
             }
           }
         },
@@ -33464,25 +33464,25 @@
           "turgor_free_root_cells": 190.4029781392702,
           "spring_clamps_on_poplar_roots": 274.1802885205491
         },
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": {
             "turgor_free_root_cells": {
               "max": 0.017728230640022102,
-              "cells_never_closed": 186
+              "cells_opening_at_every_ratio": 186
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.02905485988032657,
-              "cells_never_closed": 162
+              "cells_opening_at_every_ratio": 162
             }
           },
           "high": {
             "turgor_free_root_cells": {
               "max": 0.008909128370087269,
-              "cells_never_closed": 300
+              "cells_opening_at_every_ratio": 300
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.011075244080091844,
-              "cells_never_closed": 270
+              "cells_opening_at_every_ratio": 270
             }
           }
         },
@@ -33647,25 +33647,25 @@
           "turgor_free_root_cells": 190.4029781392702,
           "spring_clamps_on_poplar_roots": 274.1802885205491
         },
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": {
             "turgor_free_root_cells": {
               "max": 0.017728230640022102,
-              "cells_never_closed": 276
+              "cells_opening_at_every_ratio": 276
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.02905485988032657,
-              "cells_never_closed": 247
+              "cells_opening_at_every_ratio": 247
             }
           },
           "high": {
             "turgor_free_root_cells": {
               "max": 0.008909128370087269,
-              "cells_never_closed": 420
+              "cells_opening_at_every_ratio": 420
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.011075244080091844,
-              "cells_never_closed": 384
+              "cells_opening_at_every_ratio": 384
             }
           }
         },
@@ -33832,25 +33832,25 @@
           "turgor_free_root_cells": 62.737231525665685,
           "spring_clamps_on_poplar_roots": 90.34161339695858
         },
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": {
             "turgor_free_root_cells": {
               "max": 0.011627206902739256,
-              "cells_never_closed": 30
+              "cells_opening_at_every_ratio": 30
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.02176029392328014,
-              "cells_never_closed": 25
+              "cells_opening_at_every_ratio": 25
             }
           },
           "high": {
             "turgor_free_root_cells": {
               "max": null,
-              "cells_never_closed": 60
+              "cells_opening_at_every_ratio": 60
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.0015652516852080883,
-              "cells_never_closed": 54
+              "cells_opening_at_every_ratio": 54
             }
           }
         },
@@ -34015,25 +34015,25 @@
           "turgor_free_root_cells": 190.4029781392702,
           "spring_clamps_on_poplar_roots": 274.1802885205491
         },
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": {
             "turgor_free_root_cells": {
               "max": 0.017728230640022102,
-              "cells_never_closed": 30
+              "cells_opening_at_every_ratio": 30
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.02905485988032657,
-              "cells_never_closed": 6
+              "cells_opening_at_every_ratio": 6
             }
           },
           "high": {
             "turgor_free_root_cells": {
               "max": 0.008909128370087269,
-              "cells_never_closed": 144
+              "cells_opening_at_every_ratio": 144
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.011075244080091844,
-              "cells_never_closed": 114
+              "cells_opening_at_every_ratio": 114
             }
           }
         },
@@ -34198,25 +34198,25 @@
           "turgor_free_root_cells": 190.4029781392702,
           "spring_clamps_on_poplar_roots": 274.1802885205491
         },
-        "zener_below_which_tension_half_stays_closed": {
+        "zener_above_which_tension_half_opens_on_every_angle": {
           "low": {
             "turgor_free_root_cells": {
               "max": 0.017728230640022102,
-              "cells_never_closed": 60
+              "cells_opening_at_every_ratio": 60
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.02905485988032657,
-              "cells_never_closed": 31
+              "cells_opening_at_every_ratio": 31
             }
           },
           "high": {
             "turgor_free_root_cells": {
               "max": 0.008909128370087269,
-              "cells_never_closed": 204
+              "cells_opening_at_every_ratio": 204
             },
             "spring_clamps_on_poplar_roots": {
               "max": 0.011075244080091844,
-              "cells_never_closed": 168
+              "cells_opening_at_every_ratio": 168
             }
           }
         },
@@ -34745,15 +34745,16 @@
     "psi_span_of_one_cell_deg": [20.834828913848117, 26.043536142310145],
     "is": "a one-cell patch of the envelope spans this arc of ψ; the homogenised traction equals the patch average only to leading order in cell/radius, so the ψ-resolved open shares and μ maxima carry an unquantified O(cell/radius) error",
     "margin_vs_homogenisation_error": {
-      "is": "the patch average of the homogenised traction over one cell's arc at the pole, exact (c + r·sin Δ/Δ), against the higher named p₀ at the day's low end, on the tightest bare-lattice cell; the remaining error, relative to the pole traction, is C·Δ with C unknown — the verdict holds while C stays below the printed constant",
+      "is": "the patch average of the homogenised traction over one cell's arc at the pole, exact (c + r·sin Δ/Δ), against the higher named p₀ at the day's low end; the remaining error, relative to the pole traction ε·σ₁, is C·Δ·ε·σ₁ with C unknown — the verdict holds while C < (patch − p₀)/(Δ·ε·σ₁), printed at the bare-lattice cell where that constant is smallest",
       "rim": {
         "period_mm": 2.0,
         "cell_arc_rad": 0.36363636363636365,
         "curvature_factor_sin_arc_over_arc": 0.9781066841384634,
         "tightest_bare_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|soft|pores_carry_nothing",
         "patch_need_MPa": 1.7564439076202976,
+        "pole_need_MPa": 1.7762880056865786,
         "margin_over_higher_p0": 2.4395054272504133,
-        "constant_below_which_every_bare_cell_still_opens": 1.6227223275335985
+        "constant_below_which_every_bare_cell_still_opens": 1.604593814083735
       },
       "core": {
         "period_mm": 2.5,
@@ -34761,8 +34762,9 @@
         "curvature_factor_sin_arc_over_arc": 0.9659187294978336,
         "tightest_bare_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|soft|pores_carry_nothing",
         "patch_need_MPa": 1.7453967474438463,
+        "pole_need_MPa": 1.7762880056865786,
         "margin_over_higher_p0": 2.4241621492275645,
-        "constant_below_which_every_bare_cell_still_opens": 1.2924699485547992
+        "constant_below_which_every_bare_cell_still_opens": 1.2699927248028184
       }
     }
   },
