@@ -283,7 +283,7 @@ The claims above are backed by enforced, automated evidence — not by assertion
 - **Static analysis (SAST).** Brakeman (Rails) and cppcheck (firmware C) run in `ci.yml`, whose
   `CI passed` aggregate is a merge-required branch-protection check on `main` — a finding blocks the
   merge; cppcheck's MISRA C:2012 addon is opt-in and advisory, not part of the gate. Slither + Aderyn
-  (Solidity, fail-on-high), **Halmos** symbolic proofs (`test/symbolic/`) and **Foundry + Medusa**
+  (Solidity, fail-on-high), **Halmos + hevm** symbolic proofs (`test/symbolic/`; seven of the nine carry both engines) and **Foundry + Medusa**
   property-fuzzing (`test/invariant/`, `test/medusa/`) add depth on the token/governance contracts; they
   run in the separate `solidity_audit.yml`, whose **`Solidity passed` aggregate is a merge-required
   branch-protection check on `main`** (OPS.15, landed 2026-07-19) — each job also fails on its own

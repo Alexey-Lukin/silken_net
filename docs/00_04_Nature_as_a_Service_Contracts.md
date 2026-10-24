@@ -340,7 +340,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | Аспект | Поточний стан |
 |---|---|
 | **Бізнес-логіка (код)** | ✅ Реалізована: lifecycle, slashing, early exit. Insurance-механіка (oracle/payout) є, але **INERT** — kill-switch off, без prod creation-path полісів |
-| **On-chain механіка** | 🟡 Контракти **code-complete + CI-audited** (Slither/Aderyn/Halmos/Medusa), але на MAINNET **ще не задеплоєно** (testnet-двійники Amoy/Sepolia живі з 2026-09-01/02 — DEPLOY-1 Фаза 2t, адреси в [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)); mainnet-deploy gated на SEC.1 (Safe/Timelock) + BIZ.22 (securities-**висновок** юриста перед першим live-mint; напрямок ратифіковано 2026-08-28, гейтом лишається консультація) |
+| **On-chain механіка** | 🟡 Контракти **code-complete + CI-audited** (Slither/Aderyn/Halmos+hevm/Medusa), але на MAINNET **ще не задеплоєно** (testnet-двійники Amoy/Sepolia живі з 2026-09-01/02 — DEPLOY-1 Фаза 2t, адреси в [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)); mainnet-deploy gated на SEC.1 (Safe/Timelock) + BIZ.22 (securities-**висновок** юриста перед першим live-mint; напрямок ратифіковано 2026-08-28, гейтом лишається консультація) |
 | **D-MRV підкріплення** | peaq DID + IoTeX ZK + The Graph (живі); Chainlink oracle PATH 1 = **latent** (unwired local-marker, ARCH.53) |
 | **B2B продажі** | 🔴 Заблоковано: MSA, SLA, KYC відсутні |
 | **B2C онбординг** | 🔴 Заблоковано: ToS, Privacy Policy відсутні |

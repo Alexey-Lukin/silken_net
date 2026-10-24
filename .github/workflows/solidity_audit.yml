@@ -1,7 +1,7 @@
 name: CI · Solidity
 
 # Runs on every PR (no pull_request paths-filter): a `changes` job (dorny/paths-filter)
-# gates the 5 audit jobs to contracts-relevant diffs, and the always-on `solidity-ok`
+# gates the 6 audit jobs to contracts-relevant diffs, and the always-on `solidity-ok`
 # aggregate emits a status on every PR — that's what lets it become a required
 # branch-protection check without hanging unrelated PRs ("waiting for status").
 # Same shape as docs.yml's docs-ok / ci.yml's ci-ok.
@@ -85,8 +85,8 @@ jobs:
 # 🔒 [OPS.21] Пін замість `stable`. SHA-пін тримає ОБГОРТКУ дії, а `stable`
 # тягне свіжий `forge` на КОЖЕН прогін — рівно той клас, яким апстрим-реліз
 # slither на три дні заблокував мердж money-path контрактів. Периметр тут
-# найгустіший: цей вхід стоїть у чотирьох джобах (`foundry-tests` · slither ·
-# halmos · medusa), тобто на всьому грошовому шляху.
+# найгустіший: цей вхід стоїть у пʼяти джобах (`foundry-tests` · slither ·
+# halmos · hevm · medusa), тобто на всьому грошовому шляху.
 # v1.8.5 узято разом із solc 0.8.37 одним проходом (OPS.22): дефолт isolate з 1.8.0
 # вимкнено в `foundry.toml`, тож `.gas-snapshot` міряє те, на чому відкалібровано
 # толеранс. ⚠️ Дев-середовище паритет НЕ отримує саме: локальний forge
@@ -384,10 +384,85 @@ jobs:
       - name: Build contracts
         run: forge build
 
-      # Symbolic proof of the money-path invariants (test/symbolic/*, check_-prefixed).
+      # Symbolic proof of the money-path invariants (test/symbolic/*): `prove_` (shared with the
+      # hevm job) + `check_` (halmos-only, named in the test files) — E.32, canon 05_03.
       # --solver-threads 1 → deterministic CI; --loop 3 bounds ERC20Votes/Governor loops.
+      # An empty match exits 1 (measured 2026-10-24), so this job needs no scope floor of its own.
       - name: Run Halmos symbolic proofs
-        run: halmos --function "^check_" --solver-threads 1 --loop 3 --statistics
+        run: halmos --function "^(check|prove)_" --solver-threads 1 --loop 3 --statistics
+
+  hevm:
+    needs: changes
+    if: ${{ needs.changes.outputs.sol == 'true' || github.event_name == 'workflow_dispatch' }}
+    name: hevm Symbolic Proofs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: contracts
+
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
+        with:
+          # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
+          version: v1.8.5
+
+      - name: Install contract dependencies
+        run: npm ci
+
+      # [E.32] Second symbolic engine (⚖️ founder 2026-10-24; canon 05_03). hevm and bitwuzla are
+      # static release binaries pinned by sha256 = the GitHub release digest (checked 2026-10-24);
+      # bitwuzla 0.8.2 is the solver hevm's own CI pins at release/0.58.0. No bumper exists
+      # (dependency-update #43) — a bump re-reads both digests by hand.
+      - name: Install hevm + bitwuzla (release binaries + sha256 verify)
+        run: |
+          hevm_ver=release/0.58.0
+          hevm_sha=7d6da60cfaa5cfe326cef8e4dffc1fb66595c60a325d86921f393bbf5cea275c
+          bwz_ver=0.8.2
+          bwz_sha=aa09f2b45f96695f9f755e8371c1b362915a870cc0f3bc3585ed7e236e088b7b
+          curl -sSfL "https://github.com/argotorg/hevm/releases/download/$hevm_ver/hevm-x86_64-linux" -o hevm
+          echo "$hevm_sha  hevm" | sha256sum -c -
+          curl -sSfL "https://github.com/bitwuzla/bitwuzla/releases/download/$bwz_ver/Bitwuzla-Linux-x86_64-static.zip" -o bitwuzla.zip
+          echo "$bwz_sha  bitwuzla.zip" | sha256sum -c -
+          unzip -q bitwuzla.zip
+          sudo install -m 0755 hevm /usr/local/bin/hevm
+          sudo install -m 0755 Bitwuzla-Linux-x86_64-static/bin/bitwuzla /usr/local/bin/bitwuzla
+          hevm version
+          bitwuzla --version
+
+      - name: Build contracts (with AST — hevm reads it)
+        run: forge build --ast
+
+      # `prove_` = the proofs BOTH engines carry; `check_` = halmos-only, named in the test files.
+      # --max-iterations 32: at the default 5, two SCC proofs FAIL «all branches reverted» because
+      # hevm reads the branch point that several separate token calls return to as a loop.
+      # --num-solvers 1 mirrors halmos's --solver-threads 1 (deterministic CI).
+      - name: Run hevm symbolic proofs
+        run: |
+          set -o pipefail   # `run:` defaults to `bash -e` WITHOUT pipefail — tee would eat hevm's exit
+          hevm test --match '^prove_' --solver bitwuzla --num-solvers 1 --max-iterations 32 2>&1 | tee hevm.log
+
+      # [E.32] Floor + completeness: an incomplete exploration prints `[WARNING] … partially
+      # explore`, and an empty match would be a green run that proved nothing — so the verdict
+      # also needs every declared `prove_` PASSed and no WARNING/FAIL line at all. Mutation-
+      # checked 2026-10-24 (7 planted mutants, each reddens its own proof in hevm AND halmos).
+      - name: Floor — every prove_ passed, exploration complete
+        run: |
+          sed -i 's/\x1b\[[0-9;]*m//g' hevm.log
+          declared=$(cat test/symbolic/*.sol | grep -cE '^\s*function prove_')
+          passed=$(grep -cE '\[PASS\] prove_' hevm.log || true)
+          echo "hevm PASS: $passed; declared prove_ functions in test/symbolic: $declared"
+          if grep -nE '\[(WARNING|FAIL)\]|not reproducible' hevm.log; then exit 1; fi
+          [ "$passed" -ge "$declared" ]
 
   aderyn:
     needs: changes
@@ -544,14 +619,14 @@ jobs:
 
   solidity-ok:
     # Single aggregate status check for branch protection — mirrors docs-ok/ci-ok.
-    # Because the 5 audit jobs above are path-gated (skipped on a non-contracts PR),
+    # Because the 6 audit jobs above are path-gated (skipped on a non-contracts PR),
     # they can't each be a required check on their own (a skipped required check
     # blocks the merge forever). This job depends on all of them and fails ONLY if
     # one that actually ran failed/was cancelled; skipped + success are both fine.
     # Make THIS the sole required check for the Solidity audit on main.
     name: Solidity passed
     if: ${{ always() }}
-    needs: [changes, foundry-tests, slither, halmos, aderyn, medusa]
+    needs: [changes, foundry-tests, slither, halmos, hevm, aderyn, medusa]
     runs-on: ubuntu-latest
     steps:
       - name: Harden runner (egress audit)

@@ -144,7 +144,7 @@
   caps `crytic-compile<0.4.0`). **The release-age quarantine has a structural blind spot here:** it
   guards `Gemfile`/`package.json`/conda, but never sees an action's image contents — a day-old
   package walked straight into the money-path gate. Prefer the shape already used elsewhere in this
-  repo: `pip install --require-hashes -r requirements-*.txt` (halmos, medusa) or curl+sha256 (aderyn).
+  repo: `pip install --require-hashes -r requirements-*.txt` (halmos, medusa) or curl+sha256 (aderyn · hevm · bitwuzla).
 16. 🔴 **Identical failure on N INDEPENDENT PRs ⇒ the root is in the BASE, not in the PRs** (2026-07-30).
   Four Dependabot PRs (aws-sdk-s3, httpx, csv, simplecov) all red on `scan_ruby`; I opened their
   diffs first and that cost the most time of the sweep. The cause was one: `main` carried
