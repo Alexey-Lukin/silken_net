@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/Alexey-Lukin/silken_net/compare/v0.9.0...v0.9.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **E.32:** `Стан` не несе дату з майбутнього — дату дозрівання solc 0.8.38 веде OPS.22, тут лишилась дата релізу ([677e55a](https://github.com/Alexey-Lukin/silken_net/commit/677e55a1733d8424d8832c1c43c445d950511fba))
+
 ## [0.9.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.8.0...v0.9.0) (2026-10-24)
 
 
