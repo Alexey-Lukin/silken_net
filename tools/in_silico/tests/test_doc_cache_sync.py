@@ -6641,22 +6641,25 @@ CHECKS += [
      CONTACT108, lambda d: _c108_excl(d, "scots_pine", "cells_below"), 0.0),
     ("contact108 excluded price scots of → 108", SUMMARY, rf"and in \d+ of the\s+Scots pine group's {_U} — a fact",
      CONTACT108, lambda d: _c108_excl(d, "scots_pine", "cells"), 0.0),
-    ("contact108 green never in compression → 108", SUMMARY, rf"\(in {_U} green cells σᴵ stays tensile", CONTACT108,
-     lambda d: d["summary"]["green"]["theta0"]["opening_onset_ue"]["compression"]["turgor_free_root_cells"]["cells_never"],
-     0.0),
+    ("contact108 green never in compression, bare → 108", SUMMARY, rf"\(in {_U} bare-lattice green cells — \d+ over all",
+     CONTACT108, lambda d: d["summary_bare_lattice"]["green"]["theta0"]["opening_onset_ue"]["compression"][
+         "turgor_free_root_cells"]["cells_never"], 0.0),
+    ("contact108 green never in compression, all → 108", SUMMARY, rf"bare-lattice green cells — {_U} over all cells",
+     CONTACT108, lambda d: d["summary"]["green"]["theta0"]["opening_onset_ue"]["compression"]["turgor_free_root_cells"][
+         "cells_never"], 0.0),
     ("contact108 half onset low → 108", SUMMARY, rf"already at least {_U}–[\d.]+ on either reading", CONTACT108,
      lambda d: _floor_n(d["summary_bare_lattice"]["union"]["theta0"]["mu_req_max_at_half_onset"]["tension"][0], 2), 0.0),
     ("contact108 half onset high → 108", SUMMARY, rf"already at least [\d.]+–{_U} on either reading", CONTACT108,
      lambda d: _floor_n(d["summary_bare_lattice"]["union"]["theta0"]["mu_req_max_at_half_onset"]["tension"][1], 2), 0.0),
     ("contact108 open share → 108", SUMMARY, rf"exceeds p₀ over at least {_U} % of the", CONTACT108,
      lambda d: _floor_n(100 * min(x for e in ("low", "high")
-                                  for v in d["summary"]["union"]["theta0"]["at_source_day"]["tension"][e].values()
+                                  for v in d["summary_bare_lattice"]["union"]["theta0"]["at_source_day"]["tension"][e].values()
                                   for x in v["open_share"]), 0), 0.0),
     ("contact108 pole over E_L low → 108", SUMMARY, rf"pole traction\s+is {_U}–[\d.]+× the wood's own", CONTACT108,
      lambda d: _floor_n(d["summary"]["union"]["theta0"]["sigma1_over_E_L"][0], 2), 0.0),
     ("contact108 pole over E_L high → 108", SUMMARY, rf"pole traction\s+is [\d.]+–{_U}× the wood's own", CONTACT108,
      lambda d: _ceil_n(d["summary"]["union"]["theta0"]["sigma1_over_E_L"][1], 2), 0.0),
-    ("contact108 zener → 108", SUMMARY, rf"only below a Zener ratio of {_U} \(on the", CONTACT108,
+    ("contact108 zener → 108", SUMMARY, rf"once the Zener\s+ratio exceeds {_U} \(on the", CONTACT108,
      lambda d: _ceil_n(_c108_zstar(d)[0], 3), 0.0),
     ("contact108 zener strain → 108", SUMMARY, rf"reading at the\s+day's {_U} µε\),", CONTACT108,
      lambda d: round(_c108_end(d, _c108_zstar(d)[1])), 0.0),
@@ -6672,14 +6675,14 @@ CHECKS += [
        r"p₀ reached\s+above " + " ⊥ ".join(_U if k == i else r"\d+" for k in range(2)) + r" µε\)", CONTACT108,
        (lambda ii: lambda d: _ceil_n(_c108_bind(d, "union")[0]["Ta"]["opening_onset_tension_ue"][ii], 0))(i), 0.0)
       for i in range(2)],
-    ("contact108 binding p0 → 108", SUMMARY, rf"and a p₀ of {_U} MPa would offset it", CONTACT108,
-     lambda d: _floor_n(min(min(v["p0_to_stay_closed_at_threshold_MPa"].values())
-                            for v in _c108_bind(d, "union")[0].values()), 1), 0.0),
-    ("contact108 binding price ratio → 108", SUMMARY, rf"as the price, gives {_U}× and [\d.]+ MPa", CONTACT108,
+    ("contact108 binding p0 → 108", SUMMARY, rf"only a p₀ of at least {_U} MPa would offset it", CONTACT108,
+     lambda d: _floor_n(min(_c108_bind(d, "union")[0][_c108_bind(d, "union")[1]][
+         "p0_to_stay_closed_at_threshold_MPa"].values()), 1), 0.0),
+    ("contact108 binding price ratio → 108", SUMMARY, rf"as the price, gives {_U}× and at", CONTACT108,
      lambda d: _floor_n(min(v["threshold_over_onset_min"] for v in _c108_bind(d, "scots_pine")[0].values()), 1), 0.0),
-    ("contact108 binding price p0 → 108", SUMMARY, rf"as the price, gives [\d.]+× and {_U} MPa", CONTACT108,
-     lambda d: _floor_n(min(min(v["p0_to_stay_closed_at_threshold_MPa"].values())
-                            for v in _c108_bind(d, "scots_pine")[0].values()), 1), 0.0),
+    ("contact108 binding price p0 → 108", SUMMARY, rf"gives [\d.]+× and at\s+least {_U} MPa\.", CONTACT108,
+     lambda d: _floor_n(min(_c108_bind(d, "scots_pine")[0][_c108_bind(d, "scots_pine")[1]][
+         "p0_to_stay_closed_at_threshold_MPa"].values()), 1), 0.0),
     *[(f"contact108 junction θ0 {i} {f.__name__} → 108", SUMMARY,
        r"tension half opens above " + " ⊥ ".join(((_U + r"–\d+") if (k == i and f is min) else
                                                   (r"\d+–" + _U) if (k == i and f is max) else r"\d+–\d+")
@@ -6693,7 +6696,7 @@ CHECKS += [
                                      0))(i), 0.0)
       for i in range(2)],
     *[(f"contact108 junction published sup {i} → 108", SUMMARY,
-       r"(?m)^half opens above " + " ⊥ ".join(_U if k == i else r"\d+" for k in range(2))
+       r"(?m)^half's averaged traction reaches p₀ above " + " ⊥ ".join(_U if k == i else r"\d+" for k in range(2))
        + r" µε: at the day's median only", CONTACT108,
        (lambda ii: lambda d: _ceil_n(d["consumer_junction"]["union"]["sup_C44_zero_published_sets_only"][
            "opening_onset_tension_ue"][ii], 0))(i), 0.0)
@@ -6706,12 +6709,14 @@ CHECKS += [
      lambda d: round(d["psi_resolution"]["psi_span_of_one_cell_deg"][0]), 0.0),
     ("contact108 ψ span high → 108", SUMMARY, rf"lattice cell spans \d+–{_U}° of ψ", CONTACT108,
      lambda d: round(d["psi_resolution"]["psi_span_of_one_cell_deg"][1]), 0.0),
-    ("contact108 ψ margin → 108", SUMMARY, rf"(?m)^reading, {_U} at the day's \d+ µε — keeps", CONTACT108,
-     lambda d: _floor_n(d["psi_resolution"]["smallest_margin_need_over_higher_p0_bare_lattice"], 1), 0.0),
-    ("contact108 ψ margin strain → 108", SUMMARY, rf"(?m)^reading, [\d.]+ at the day's {_U} µε — keeps", CONTACT108,
+    ("contact108 ψ margin strain → 108", SUMMARY, rf"over the clamp reading at the day's {_U} µε — keeps", CONTACT108,
      lambda d: round(_c108_end(d, "low")), 0.0),
-    ("contact108 ψ constant → 108", SUMMARY, rf"while C stays below {_U}\.", CONTACT108,
-     lambda d: _floor_n(d["psi_resolution"]["constant_below_which_every_bare_cell_still_opens"], 1), 0.0),
+    ("contact108 ψ constant, rim → 108", SUMMARY, rf"while C stays below {_U} on the rim's period", CONTACT108,
+     lambda d: _floor_n(d["psi_resolution"]["margin_vs_homogenisation_error"]["rim"][
+         "constant_below_which_every_bare_cell_still_opens"], 1), 0.0),
+    ("contact108 ψ constant, core → 108", SUMMARY, rf"⊥ {_U} on the\s+core's \(the conservative end\)", CONTACT108,
+     lambda d: _floor_n(d["psi_resolution"]["margin_vs_homogenisation_error"]["core"][
+         "constant_below_which_every_bare_cell_still_opens"], 1), 0.0),
     ("contact108 further root figure → 108", SUMMARY, rf"up to {_U} MPa, and a bottle-neck root", CONTACT108,
      _c108_further, 0.0),
 ]
@@ -6763,14 +6768,18 @@ def test_contact108_categorical_sentences_follow_the_cache():
                for n in names)
     never = {k for k, b in d["green_cells"].items() if b["theta0"]["sigma2"] >= 0}
     assert len(never) == comp[names[0]]["cells_never"]
-    assert ("green cells σᴵ stays tensile across the stem, so the averaged compression-half traction never reaches p₀ "
-            "there — no holding claim; a local opening is not excluded") in sec
+    assert len({k for k in never if k.endswith("|pores_carry_nothing")}) == sb["green"]["theta0"]["opening_onset_ue"][
+        "compression"][names[0]]["cells_never"]
+    assert ("bare-lattice green cells — " + str(len(never)) + " over all cells, as a demand — σᴵ stays tensile across the "
+            "stem, so the averaged compression-half traction never reaches p₀ there — no holding claim; a local opening is "
+            "not excluded") in sec
     assert d["controls"]["axial_shear_over_stress_worst"] < 1e-12 and "its axial shear is zero" in sec
-    assert d["summary"]["union"]["grid"]["theta_of_lowest_sigma1_at_voigt_ceiling"] == [0.0]
-    assert "no install angle opens the tension half later than θ = 0 does" in sec
+    assert sb["union"]["grid"]["theta_of_lowest_sigma1_at_voigt_ceiling"] == [0.0]
+    assert "no install angle on a bare-lattice cell opens the tension half later than θ = 0 does" in sec
     _, end, n = _c108_zstar(d)
     assert n == "spring_clamps_on_poplar_roots" and end == "low" and "(on the clamp reading at the day's" in sec
-    assert "On a bare-lattice cell the averaged traction keeps the tension half closed" in sec
+    assert ("cell the tension half's averaged traction reaches p₀ at the source day's strain on every install angle once "
+            "the Zener ratio exceeds") in sec
     assert d["summary"]["scots_pine"]["grid"]["lattice_cells_with_sigma1_nonpositive_somewhere"] == 0
     nonpos = [k for k, v in d["green_cells"].items() if "grid" in v and v["grid"]["sigma1"][0] <= 0]
     assert {k.split("|", 1)[1] for k in nonpos} == {"jeong2026_red_pine_green|stiff|pores_carry_nothing",
@@ -6802,16 +6811,22 @@ def test_contact108_categorical_sentences_follow_the_cache():
     opened = pub["tension_half_open_at"]
     assert opened[ends["low"]] == [] and opened["median|large_stem_limit"] == ["turgor_free_root_cells"]
     assert all(opened[f"upper_whisker|{pl}"] == list(names) for pl in ("dbh_min_sensor_on_bark", "large_stem_limit"))
-    assert ("at the day's median only on a large stem on the turgor reading, at its upper whisker on both readings at "
-            "both placements. So «at the day's median on a DBH-38 bark» holds only on our ESM assembly.") in sec
+    assert ("at the day's median only on a large stem on the turgor reading (below p₀ elsewhere at the median — no "
+            "holding claim), at its upper whisker on both readings at both placements. So the opening at the day's median "
+            "on a DBH-38 bark is SHOWN only on our ESM assembly.") in sec
+    mg = d["psi_resolution"]["margin_vs_homogenisation_error"]
+    assert all(mg[t]["tightest_bare_cell"] in d["green_cells"] for t in ("rim", "core")), "the tightest cell left the green group"
+    assert "the green group's patch need over the clamp reading" in sec
     assert _c108_further(d) < min(_c108_need(d, g) for g in ("scots_pine", "green"))
     assert "all lie below the lowest p₀ needed" in sec
     assert d["inputs"]["p0_excluded"]["MPa"] not in [d["inputs"]["p0_readings"][n]["MPa"] for n in names]
     assert "such a contact can be shown failing, never holding" in sec and "no friction is needed" not in sec
     assert sec.count("never holding") == 1 and "for which the map has no direction" in sec
     assert "its effect on the friction needed has no direction here" in sec
+    assert "what an interlock does in tension is not computed" in sec
     for gone in ("does not open at all", "at the earliest", "can only raise", "would open at least",
-                 "whose σᴵ stays tensile"):
+                 "whose σᴵ stays tensile", "keeps the tension half closed", "an interlock does not decouple",
+                 "and a p₀ of"):
         assert gone not in sec, f"a holding or direction claim the 2026-10-22 reviews removed is back: «{gone}»"
     # the PIPELINE_STATUS row's categorical clauses, from the same fields
     pipe = " ".join(doc(PIPELINE).split())

@@ -6476,8 +6476,16 @@ def test_gyroid_interface_contact_map_invariants():
         "108's consumed-field list moved — re-run 108"
     assert fp["106"]["sha256"] == s108.fingerprint(d106, s108.CONSUMED_106), "106's cache moved since 108 ran — re-run 108"
     assert fp["105"]["sha256"] == s108.fingerprint(d105, s108.CONSUMED_105), "105's cache moved since 108 ran — re-run 108"
-    cem = json.loads((REPO / fp["cem_anode"]["file"]).read_text(encoding="utf-8"))
+    assert fp["cem_anode"]["file"] == str(s108.CEM_ANODE.relative_to(s108.REPO_ROOT)), "108 reads another CEM"
+    cem = json.loads(s108.CEM_ANODE.read_text(encoding="utf-8"))
     assert fp["cem_anode"]["fields"] == list(s108.CONSUMED_CEM)
+    pr = d["psi_resolution"]
+    radius = cem["outer_diameter_mm"] / 2
+    periods = [cem["gyroid_period_rim_mm"], cem["gyroid_period_mm"]]
+    assert pr["envelope_radius_mm"] == radius and pr["period_rim_core_mm"] == periods
+    assert pr["psi_span_of_one_cell_deg"] == pytest.approx([math.degrees(q / radius) for q in periods], rel=1e-12)
+    assert d["axial_anode_bond_force_105"]["envelope_mm2"] == pytest.approx(
+        math.pi * cem["outer_diameter_mm"] * cem["length_mm"], rel=1e-12)
     assert fp["cem_anode"]["sha256"] == s108.fingerprint(cem, s108.CONSUMED_CEM), "the anode CEM moved since 108 ran"
     assert s108.control_groups_read(d106) == [] and d["controls"]["groups_unread"] == [], \
         "106 carries a group or a cell block 108 does not read — extend 108"
@@ -6710,6 +6718,15 @@ def test_gyroid_interface_contact_map_invariants():
     assert zu[end][names[idx]]["max"] == a_star
 
     # ── the consumers, from 106's own consumer blocks ──
+    gsets = s106.green_sets()
+
+    def citation(cell):          # 106's naming of a cell, as its consumer blocks print it
+        _, name, rd, fill = cell.split("|")
+        if name in gsets:
+            src = s106.GREEN_SOURCES[gsets[name]["source"]]
+            return f"{src['citation']}, doi {src['doi']}, {gsets[name]['where']}; {rd} reading, {fill}"
+        return f"Güntekin & Akar 2019, doi 10.12841/wood.1644-3985.220.09, group {name}; {rd} reading, {fill}"
+
     cbc = d106["consumer_ceiling_binding_claim"]
     for grp, (k_share, k_thr, consumer) in {
             "union": ("union_theta0_share", "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share",
@@ -6725,7 +6742,7 @@ def test_gyroid_interface_contact_map_invariants():
             thr = {fk: consumer[fk][al] for fk in ("axial_reading", "radial_reading")}
             assert thr == {fk: ba[fk][al]["large_stem_limit|near_uniaxial|sf2"] for fk in thr}, (grp, al)
             if grp == "union":
-                assert cbc["reading_per_alloy"][al].endswith(f"; {v['cell'].split('|')[2]} reading, {fill}"), al
+                assert cbc["reading_per_alloy"][al] == citation(v["cell"]), al
             assert v["threshold_ue_106"] == thr and v["opening_onset_tension_ue"] == b["opening_onset_ue"]["tension"]
             assert v["threshold_over_onset_min"] == min(thr[fk] / x for fk in thr
                                                         for x in b["opening_onset_ue"]["tension"])
@@ -6751,8 +6768,13 @@ def test_gyroid_interface_contact_map_invariants():
     assert (d["consumer_junction"]["union"]["sup_C44_zero"]["cell"],
             d["consumer_junction"]["union"]["sup_C44_zero"]["theta_deg"]) == (sup106["cell"], sup106["theta_deg"])
     # the published-sets-only companion (⚖️ founder 2026-10-22), recomputed by the tensor route from 106's own block
-    pub106 = d106["consumer_ceiling_junction"]["off_axis_sup_at_C44_zero_published_sets_only"]
+    cj106 = d106["consumer_ceiling_junction"]
+    for al, v in d["consumer_junction"]["union"]["theta0_highest"].items():
+        assert cj106["theta0_highest_per_alloy"][al]["share"] == v["t_L"], al
+        assert cj106["theta0_highest_per_alloy"][al]["reading"] == citation(v["cell"]), al
+    pub106 = cj106["off_axis_sup_at_C44_zero_published_sets_only"]
     pub = d["consumer_junction"]["union"]["sup_C44_zero_published_sets_only"]
+    assert d["consumer_junction"]["scots_pine"]["sup_C44_zero"]["t_L"] <= pub["t_L"], "the companion is not the union's"
     assert (pub["cell"], pub["theta_deg"]) == (pub106["cell"], pub106["theta_deg"])
     assert pub["t_L"] == pytest.approx(pub106["share"], rel=1e-12)
     t = sigma_i(*pub["cell"].split("|"), pub["theta_deg"], 0.0)
@@ -6773,13 +6795,21 @@ def test_gyroid_interface_contact_map_invariants():
                 "cells_below": sum(e * all_cells[k]["theta0"]["sigma1"] < ex["MPa"] for k in keys), "cells": len(keys),
                 "bare_lattice_cells_below": sum(e * all_cells[k]["theta0"]["sigma1"] < ex["MPa"] for k in bare),
                 "bare_lattice_cells": len(bare)}, (grp, end)
-    pr = d["psi_resolution"]
     bare_all = [k for k in keys_all["union"] if k.endswith("|pores_carry_nothing")]
-    m = min(ends["low"] * 1e-6 * all_cells[k]["theta0"]["sigma1"] for k in bare_all) / max(p0)
-    assert pr["smallest_margin_need_over_higher_p0_bare_lattice"] == pytest.approx(m, rel=1e-12)
-    span = max(pr["period_rim_core_mm"]) / pr["envelope_radius_mm"]
-    assert pr["largest_cell_over_radius_rad"] == pytest.approx(span, rel=1e-12)
-    assert pr["constant_below_which_every_bare_cell_still_opens"] == pytest.approx((1 - 1 / m) / span, rel=1e-12)
+    mg = pr["margin_vs_homogenisation_error"]
+    for tag, per in (("rim", periods[0]), ("core", periods[1])):
+        arc = per / radius
+        # the patch average of σ_n = c + r·cos 2ψ over ψ ∈ [−arc/2, arc/2], by quadrature here (the script: sin Δ/Δ)
+        grid = np.linspace(-arc / 2, arc / 2, 20001)
+        avg_cos = float(np.trapezoid(np.cos(2 * grid), grid) / arc)
+        patch = {k: ends["low"] * 1e-6 * (0.5 * (all_cells[k]["theta0"]["sigma1"] + all_cells[k]["theta0"]["sigma2"])
+                                          + 0.5 * (all_cells[k]["theta0"]["sigma1"] - all_cells[k]["theta0"]["sigma2"])
+                                          * avg_cos) for k in bare_all}
+        k_min = min(patch, key=patch.get)
+        m = patch[k_min] / max(p0)
+        assert mg[tag]["tightest_bare_cell"] == k_min and mg[tag]["period_mm"] == per, tag
+        assert mg[tag]["patch_need_MPa"] == pytest.approx(patch[k_min], rel=1e-8), tag
+        assert mg[tag]["constant_below_which_every_bare_cell_still_opens"] == pytest.approx((1 - 1 / m) / arc, rel=1e-8)
     ax = d["axial_anode_bond_force_105"]
     assert ax["mean_shear_MPa_range"] == [min(v["mean_shear_MPa"] for v in ax["states"].values()),
                                           max(v["mean_shear_MPa"] for v in ax["states"].values())]
@@ -6797,7 +6827,8 @@ def test_gyroid_interface_contact_map_invariants():
     v = d["verdict"]
     assert v.startswith("Read as a SMOOTH contact on the gyroid's envelope") and "neither failing nor holding" in v
     assert "never holding" not in v and "no friction is needed" not in v, "an unscoped direction or holding claim is back"
-    for gone in ("at the earliest", "can only raise", "would open at least", "does not open at all"):
+    for gone in ("at the earliest", "can only raise", "would open at least", "does not open at all",
+                 "stays closed at the source day's strain only below", "an interlock does not decouple"):
         assert gone not in v, f"a claim the 2026-10-22 reviews removed is back in the verdict: «{gone}»"
     lo_k = d["inputs"]["strain_ends"]["low"]
     sb = d["summary_bare_lattice"]
@@ -6820,16 +6851,40 @@ def test_gyroid_interface_contact_map_invariants():
             + f" the higher named root reading ({max(p0)} MPa") in v
     zb = sb["union"]["grid"]["zener_below_which_tension_half_stays_closed"]
     zmax = max(x["max"] for e in ("low", "high") for x in zb[e].values() if x["max"] is not None)
-    assert f"below a Zener ratio of {up(zmax, 3):.3f} on some install angle" in v
+    assert f"on every install angle once the Zener ratio exceeds {up(zmax, 3):.3f}" in v
+    lo_n, hi_n = min(names, key=lambda n: p0[names.index(n)]), max(names, key=lambda n: p0[names.index(n)])
+
+    def onsets(summ):
+        return " ⊥ ".join(f"{up(summ[g]['theta0']['opening_onset_ue']['tension'][lo_n]['range'][0]):.0f}–"
+                          f"{up(summ[g]['theta0']['opening_onset_ue']['tension'][hi_n]['range'][1]):.0f} µε ({lab})"
+                          for g, lab in (("scots_pine", "the Scots pine group"), ("green", "the green group")))
+
+    def comp_first(summ):
+        return f"first reaches p₀ at {down(summ['union']['theta0']['opening_onset_ue']['compression'][lo_n]['range'][0]):.0f} µε"
+
+    def comp_mu(summ):
+        mus = [summ["union"]["theta0"]["at_source_day"]["compression"][e][n]["mu_req_max_closed"]
+               for e in ("low", "high") for n in names]
+        mus = [x for x in mus if x is not None]
+        return f"is at least {down(min(x[0] for x in mus), 2):.2f}–{down(max(x[1] for x in mus), 2):.2f}."
+
+    def half(summ):
+        h = summ["union"]["theta0"]["mu_req_max_at_half_onset"]["tension"]
+        return f"already at least {down(h[0], 2):.2f}–{down(h[1], 2):.2f} (no p₀)"
+
+    for f in (onsets, comp_first, comp_mu, half):     # the smooth-contact clauses come from the bare lattice …
+        assert f(sb) in v, f.__name__
+        if f(d["summary"]) != f(sb):                   # … and the all-cells value, where it differs, is not in the verdict
+            assert f(d["summary"]) not in v, f"the all-cells reading is back in the verdict: {f.__name__}"
     bu = d["consumer_binding_106_theta0"]["union"]
     rb = min(x["threshold_over_onset_min"] for x in bu.values())
-    p0b = min(min(x["p0_to_stay_closed_at_threshold_MPa"].values()) for x in bu.values())
     al_b = min(bu, key=lambda a: bu[a]["threshold_over_onset_min"])
+    p0b = min(bu[al_b]["p0_to_stay_closed_at_threshold_MPa"].values())       # the sentence's own alloy
     if bu[al_b]["smooth_envelope_consistent"]:
         assert f"opens there at least {down(rb, 1):.1f}× below the binding strain" in v
     else:                       # a cell with tissue in the pores: the demand, with no direction
         assert f"reaches p₀ {down(rb, 1):.1f}× below the binding strain ({al_b})" in v
-        assert f"a p₀ of {down(p0b, 1):.1f} MPa would offset it" in v and "with no direction" in v
+        assert f"only a p₀ of at least {down(p0b, 1):.1f} MPa would offset it" in v and "with no direction" in v
     hi_k = d["inputs"]["strain_ends"]["high"]
     for key in ("sup_C44_zero", "sup_C44_zero_published_sets_only"):
         sp = d["consumer_junction"]["union"][key]
