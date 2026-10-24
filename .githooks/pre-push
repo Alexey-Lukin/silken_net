@@ -11,7 +11,8 @@
 #
 # SCOPE RULE — the line is the COST, not the name. This hook carries DCO plus
 # any check that is deterministic and CHEAP (each block states its MEASURED
-# price). The full suite and the docs battery stay out: at ~1.5 min they buy a
+# price). The full suite and the docs battery stay out: at minutes each (measured
+# 2026-10-24: suite 3 min 8 s, docs band 241 s) they buy a
 # `--no-verify` habit, and then nothing at all stands on this path. `00_06 §3`
 # records the same ground for DCO — «повна сюїта на кожному push купує звичку
 # обходити хук». Read "deliberately DCO-only" in older notes as that cost rule;

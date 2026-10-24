@@ -118,7 +118,7 @@ description: "Use when working on the silken_net legal / business / academic-par
 ## Verify
 
 ```
-ruby scripts/docs_band.rb             # УСЯ смуга CI · Docs (~1.5хв) — перед комітом; перелік кроків із docs.yml
+ruby scripts/docs_band.rb             # УСЯ смуга CI · Docs (хвилини) — перед комітом; перелік кроків із docs.yml
 ruby scripts/docs_check.rb            # ~0.3с швидкий цикл: ДВА кроки джоби, не смуга (OPS.25)
 ruby scripts/protocols_ref_check.rb   # канон-рефи підшару + глибина ../
 ruby scripts/code_tracker_id_check.rb # якщо правив .claude/** або код із tracker-ID

@@ -42,7 +42,7 @@
 ```bash
 ruby --version            # 4.0.9
 bin/rubocop -a            # lint (binstub; -a = автофікс)
-bin/rspec                 # backend suite (binstub; full ~1.5 хв)
+bin/rspec                 # backend suite (binstub; full run: minutes)
 bin/brakeman              # security
 bin/bundler-audit check
 make -C firmware/test     # firmware host-tests (x86, без ARM)
