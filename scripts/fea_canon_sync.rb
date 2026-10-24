@@ -717,7 +717,7 @@ else
     # record. The live chain is the part's whole axial fit table in step order; its length is canon's, as the cube's —
     # the shape word and the per-step words are derived above (word_checks); here the numbers, and that the last step
     # is smaller than the cube's band.
-    if (m = canon.match(/драбинка підігнаного `C` (?:НЕ монотонна|СПАДНА|ЗРОСТАЄ):\*\* після гео-присуду HW\.33 ((?:`\/\d+`(?: → )?)+) дають ((?:\d+\.\d+(?: → )?)+) \(прирости ((?:[+−]\d+\.\d+)(?: і [+−]\d+\.\d+)*)\) — (?:спад|підйом) на першому кроці й (?:спад|підйом) на другому, менший за ширину смуги куба/))
+    if (m = canon.match(/драбинка підігнаного `C` (?:НЕ монотонна|СПАДНА|ЗРОСТАЄ):\*\* після гео-присуду HW\.33 (`\/\d+`(?: → `\/\d+`)*) дають (\d+\.\d+(?: → \d+\.\d+)*) \(прирости ((?:[+−]\d+\.\d+)(?: і [+−]\d+\.\d+)*)\) — (?:спад|підйом) на першому кроці й (?:спад|підйом) на другому, менший за ширину смуги куба/))
       gap_anchors += 1
       named = m[1].scan(/\d+/).map(&:to_i)
       values_q = m[2].split(" → ")
