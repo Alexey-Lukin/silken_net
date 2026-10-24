@@ -32,7 +32,7 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
 | [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Матем. верифікація числової стабільності |
 | `firmware/bio_contracts/bio_contract.rb` · `app/services/silken_net/attractor.rb` · `seed_derivation.rb` | mruby + Rails-дзеркало (Float parity); SEC.11 entry-point |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.66 реалізація гілки (Б); ARCH.18 int-Lorenz — ⚫ 2026-10-13, у §🗄️ з 2026-10-24: обидва мотиви (zkVM · залізо без FPU) стояли на Лоренці пристрою, а (Б) його знімає (§8) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.66 реалізація гілки (Б) |
 
 ## 📑 Зміст
 
