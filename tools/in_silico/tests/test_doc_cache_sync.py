@@ -8077,36 +8077,13 @@ CHECKS += [
     ("shadow 01_04 beyond axis, top → 107", CODIT, rf"проба за таблицею кори, {_SHX}–{N} см на E", SHADOW, lambda d: _DSB(d)["axis_cm"][1], 0.0),
     # 02_01 §5.3 — the bold floor's A.36 note (the bark-axis floor row)
     ("shadow 02_01 bold floor A.36 low → 107", HW_BOM, rf"\(над чотирма окремими інтерполяціями A\.36 — від {N}\) між", SHADOW, lambda d: _floor1(_BS(d)["tm_back_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
-    # 00_07 HW.6 — the two ⚖️ legs (the Стан carries no number) and the HW.8.10 consumer line
-    ("shadow 00_07 ⚖️ azimuth sector floor → 107", TRACKER, rf"на тонкому кінці кори сектор {N}° із запасом", SHADOW, lambda d: _DSR(d)["min_sector_deg"], 0.0),
-    ("shadow 00_07 ⚖️ azimuth margin → 107", TRACKER, rf"сектор {_SHX}° із запасом {N}° на перетині \(DBH", SHADOW, lambda d: _floor2(_DSR(d)["margin_deg_fine"]), 0.0),
-    *[(f"shadow 00_07 ⚖️ azimuth floor stems [{k}] → 107", TRACKER, r"на перетині \(DBH " + (N if k == 0 else _SHX) + "–" + (N if k == 1 else _SHX) + " і " + (N if k == 2 else _SHX) + "–" + (N if k == 3 else _SHX) + r" см, заболонь", SHADOW,
-       _ds_floor_stems(k), 0.0) for k in range(4)],
-    ("shadow 00_07 ⚖️ azimuth bark-axis sector → 107", TRACKER, rf"на товстому — {N}° \(перетин на сітці", SHADOW, lambda d: _BSR(d)["min_sector_deg"], 0.0),
-    ("shadow 00_07 ⚖️ azimuth bark-axis crossing → 107", TRACKER, rf"на товстому — {_SHX}° \(перетин на сітці {N}°, DBH", SHADOW, lambda d: _floor2(_BSR(d)["min_crossing_deg"]), 0.0),
-    ("shadow 00_07 ⚖️ azimuth bark-axis stem → 107", TRACKER, rf"\(перетин на сітці {_SHX}°, DBH {N} см, кора", SHADOW, _bs_at("dbh_cm"), 0.0),
-    ("shadow 00_07 ⚖️ azimuth bark-axis bark → 107", TRACKER, rf"DBH {_SHX} см, кора {N} мм, заболонь {_SHX} см\), де буква", SHADOW, _bs_at("bark_mm"), 0.0),
-    ("shadow 00_07 ⚖️ azimuth loss low → 107", TRACKER, rf"втрата на ±50° {N}–{_SHX} дБ на {_SHX} рядках сітки", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
-    ("shadow 00_07 ⚖️ azimuth loss high → 107", TRACKER, rf"втрата на ±50° {_SHX}–{N} дБ на {_SHX} рядках сітки", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][1], 0.0),
-    ("shadow 00_07 ⚖️ azimuth loss rows → 107", TRACKER, rf"дБ на {N} рядках сітки при DBH", SHADOW, lambda d: _LOSS(d)["n_sector_floor_rows"], 0.0),
-    ("shadow 00_07 ⚖️ azimuth loss A.36 high → 107", TRACKER, rf"над інтерполяціями A\.36 до {N}\); під сухою", SHADOW, lambda d: _BS(d)["loss_at_rule_under_a36_readings"]["span_over_single_readings"][1], 0.0),
-    ("shadow 00_07 ⚖️ azimuth dry/wet thin → 107", TRACKER, rf"під сухою й мокрою корою — {N}° на тонкому", SHADOW, _ds_bark_floor, 0.0),
-    ("shadow 00_07 ⚖️ azimuth dry/wet thick → 107", TRACKER, rf"на тонкому і {N}° на товстому кінці", SHADOW, lambda d: min(v["min_sector_deg"] for v in _BS(d)["thick_end_dry_wet"].values()), 0.0),
-    ("shadow 00_07 ⚖️ azimuth deck +1 → 107", TRACKER, rf"правило повертається — {N}° при {_SHX} мм\)", SHADOW, lambda d: _floor2(_DECK(d, 1.0, 3)), 0.0),
-    ("shadow 00_07 ⚖️ azimuth refinement → 107", TRACKER, rf"дрібніша сітка в межах таблиці дає {N}°, глибше", SHADOW, lambda d: _floor2(_REF(d)["min_crossing_deg"]), 0.0),
-    ("shadow 00_07 ⚖️ azimuth refinement deepening → 107", TRACKER, rf"в межах таблиці дає {_SHX}°, глибше на {N} дБ\)", SHADOW, lambda d: round(_REF(d)["at"]["loss_at_rule_deg_dB"] - max(_LOSS(d)["at_crossing_floor"]), 3), 0.0),
-    ("shadow 00_07 ⚖️ azimuth edge deepening → 107", TRACKER, rf"мм, глибше на {N} дБ; знову над правилом", SHADOW, lambda d: round(min(_BT(d)["rows"], key=lambda r: r[2])[3] - max(_LOSS(d)["at_crossing_floor"]), 3), 0.0),
-    ("shadow 00_07 ⚖️ azimuth deck slope → 107", TRACKER, rf"±1 мм рухає перетин на ≈ {N}° і втрату", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["crossing_deg_per_mm_about_the_floor_row"], 1), 0.0),
-    ("shadow 00_07 ⚖️ azimuth deck loss slope → 107", TRACKER, rf"і втрату на ±50° на ≈ {N} дБ \(на 1 мм вище", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["loss_dB_per_mm_about_the_floor_row"], 2), 0.0),
-    ("shadow 00_07 ⚖️ azimuth loss in the ground, low → 107", TRACKER, rf"падає на соті децибела \({N}–{_SHX} дБ\), і з трьох", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
-    ("shadow 00_07 ⚖️ azimuth loss in the ground, high → 107", TRACKER, rf"падає на соті децибела \({_SHX}–{N} дБ\), і з трьох", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][1], 0.0),
+    # 00_07 HW.6 — the azimuth ⚖️ was applied 2026-10-24 (its full form moved to 01_04 §3.1 ⊕ 2026-10-24; every number
+    # the leg carried is pinned on the 10-23 ⊕ above), so only the max-DBH leg and the HW.8.10 consumer line stay here
     ("shadow 00_07 HW.8.10 consumer deck slope → 107", TRACKER, rf"±1 мм ≈ {N}° перетину −3 дБ — дека рухає вердикт", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["crossing_deg_per_mm_about_the_floor_row"], 1), 0.0),
-    ("shadow 00_07 ⚖️ azimuth beyond thick → 107", TRACKER, rf"перш ніж розвернутись — найнижче {N}° при {_SHX} мм, глибше", SHADOW, lambda d: _floor2(_BT(d)["min_crossing_deg"]), 0.0),
-    ("shadow 00_07 ⚖️ azimuth beyond thick back above → 107", TRACKER, rf"знову над правилом від {N} мм; SD гребенів ±4", SHADOW, lambda d: next((row[0] for row in _BT(d)["rows"] if row[2] >= _BSR(d)["sector_deg"]), math.nan), 0.0),
-    ("shadow 00_07 ⚖️ azimuth deck +1 standoff → 107", TRACKER, rf"правило повертається — {_SHX}° при {N} мм\)", SHADOW, lambda d: _DECK(d, 1.0, 1), 0.0),
-    ("shadow 00_07 ⚖️ azimuth ±45° margin → 107", TRACKER, rf"±45° \(запас ≈ {N}° над усією віссю кори на сітці\)", SHADOW, lambda d: _floor1(_BSR(d)["min_crossing_deg"] - 45), 0.0),
-    ("shadow 00_07 ⚖️ azimuth A.36 span low → 107", TRACKER, rf"перетин підлоги {N}–{_SHX}°\), стовбур", SHADOW, lambda d: _floor2(_BS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][0]), 0.0),
-    ("shadow 00_07 ⚖️ azimuth A.36 span high (outward) → 107", TRACKER, rf"перетин підлоги {_SHX}–{N}°\), стовбур", SHADOW, lambda d: _ceil2(_BS(d)["rule_floor_under_a36_readings"]["span_over_single_readings"][1]), 0.0),
+    # 01_04 §3.1 — the ⊕ of 2026-10-24 (the ratified re-pricing): what it carries that the 10-23 ⊕ does not
+    ("shadow 01_04 ⊕ 10-24 loss in the ground, low → 107", CODIT, rf"гребеневої кори вона падає на соті децибела \({N}–{_SHX} дБ", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
+    ("shadow 01_04 ⊕ 10-24 loss in the ground, high → 107", CODIT, rf"гребеневої кори вона падає на соті децибела \({_SHX}–{N} дБ", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][1], 0.0),
+    ("shadow 01_04 ⊕ 10-24 ±45° margin → 107", CODIT, rf"вужчий сектор ±45°\*\* \(запас ≈ {N}° над усією віссю кори на сітці\)", SHADOW, lambda d: _floor1(_BSR(d)["min_crossing_deg"] - 45), 0.0),
     ("shadow 00_07 ⚖️ max DBH probe axis → 107", TRACKER, rf"проба {N}–{_SHX} см на E вздовж стовбура під «флоемною»", SHADOW, lambda d: _DSB(d)["axis_cm"][0], 0.0),
     ("shadow 00_07 ⚖️ max DBH probe axis, top → 107", TRACKER, rf"проба {_SHX}–{N} см на E вздовж стовбура під «флоемною»", SHADOW, lambda d: _DSB(d)["axis_cm"][1], 0.0),
     ("shadow PIPELINE margin → 107", PIPELINE, rf"with a {N}° crossing margin \(the", SHADOW, lambda d: _floor2(_DSR(d)["margin_deg_fine"]), 0.0),
@@ -8169,7 +8146,6 @@ def test_shadow_dbh_sentences_follow_the_cache():
     assert f"при DBH {order_uk} см відповідно" in tracker
     codit = " ".join(doc(CODIT).split())
     assert f"при DBH {order_uk} см відповідно" in codit
-    assert f"**{'тримається' if bk['holds_on_1deg_grid'] else 'не тримається'} на сітці 1°**" in tracker
     assert f"**тож ±50° {'тримає' if bk['holds_on_1deg_grid'] else 'ПАДАЄ'} на сітці 1° усередині власної вилки кори канону**" in codit
     assert f"over the bark axis it {'holds' if bk['holds_on_1deg_grid'] else 'FAILS'} (sector" in " ".join(doc(PIPELINE).split())
     # the count of named readings is written as a WORD in PIPELINE and the README — composed from the cache
@@ -8187,17 +8163,19 @@ def test_shadow_dbh_sentences_follow_the_cache():
     assert ("підлога стоїть на КРАЮ таблиці, не на екстремумі — за товстим кінцем перетин падає ще, перш ніж розвернутись" in codit) == bt["thick_end_is_an_edge_not_an_extremum"]
     assert ("а кожен рядок підлиги — на нижній" not in codit) and (("а кожен рядок підлоги — на нижній" in codit) == all(a["standoff_mm"] == min(x["standoff_mm"] for x in ds["rule"]["min_sector_at"]) for a in ds["rule"]["min_sector_at"]))
     returns = deck["rule_holds_from_offset_mm"] == 1.0
-    assert ("deck 1 mm higher returns the rule" in text) == returns and ("дека на 1 мм вище повертає правило" in codit) == returns and ("на 1 мм вище правило повертається" in tracker) == returns
+    assert ("deck 1 mm higher returns the rule" in text) == returns and ("дека на 1 мм вище повертає правило" in codit) == returns
     assert ("a deck 1 mm higher returns it" in " ".join(doc(PIPELINE).split())) == returns
     excess_ok = all(3.0 < v < 3.1 for v in bk["loss_at_rule_deg_dB"]["over_sector_floor_rows"])
     assert ("падає на соті децибела" in codit) == excess_ok and ("falls by hundredths of a decibel" in " ".join(doc(PIPELINE).split())) == excess_ok
-    assert ("товстої гребеневої кори падає на соті децибела (" in tracker) == excess_ok and ("де буква правила падає на соті децибела: втрата" in tracker) == excess_ok
+    assert ("товстої гребеневої кори вона падає на соті децибела (" in codit) == excess_ok  # the ⊕ of 2026-10-24
     loss_floor = max(bk["loss_at_rule_deg_dB"]["at_crossing_floor"])
     excess = bk["loss_at_rule_deg_dB"]["over_sector_floor_rows"][1] - 3.0
     only_deck = (deck["loss_dB_per_mm_about_the_floor_row"] > excess and ref["at"]["loss_at_rule_deg_dB"] - loss_floor < excess
                  and min(bt["rows"], key=lambda r: r[2])[3] - loss_floor < excess)
     assert ("and only one of them exceeds the excess" in text) == only_deck and ("і лише одна з них перевищує надлишок" in codit) == only_deck
-    assert ("лише одна перевищує цей надлишок — дека" in tracker) == only_deck
+    assert ("цей надлишок перевищує лише одна — дека" in codit) == only_deck  # the ⊕ of 2026-10-24
+    assert ("±50° лишається граничним правилом, не правилом із запасом" in codit) == (excess_ok and not bk["holds_on_1deg_grid"])
+    assert "**Підставу азимута переціновано — РАТИФІКОВАНО founder 2026-10-24 за рекомендацією:**" in tracker
     # the Стан's words — «з малим запасом» is a claim about the thin-end margin, «не тримається» about the bark axis
     assert ("±50° тримає з малим запасом" in tracker) == (0 < ds["rule"]["margin_deg_fine"] < 1)
     assert ("правило на сітці 1° не тримається" in tracker) == (not bk["holds_on_1deg_grid"])
