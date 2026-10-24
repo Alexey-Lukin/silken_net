@@ -334,8 +334,9 @@ module Maintenance
             render_gps_drift_check
           end
 
+          # [SEC.36] GPS запису — місце ЛЮДИНИ в мить візиту; у чужий домен їде ≈ 11 м, не сира точність.
           a(
-            href: "https://www.google.com/maps?q=#{@record.latitude},#{@record.longitude}",
+            href: "https://www.google.com/maps?q=#{@record.latitude.round(4)},#{@record.longitude.round(4)}",
             target: "_blank", rel: "noopener noreferrer",
             class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-strong " \
                    "hover:bg-gaia-primary hover:text-gaia-primary-text transition-all uppercase text-mini " \

@@ -28,8 +28,8 @@ RSpec.describe TreeBlueprint, type: :model do
       expect(parsed["status"]).to eq("active")
     end
 
-    it "includes peaq_did" do
-      expect(parsed).to have_key("peaq_did")
+    it "does not expose peaq_did — no page reads it [SEC.36]" do
+      expect(parsed).not_to have_key("peaq_did")
     end
 
     it "excludes fields from other views" do
@@ -53,8 +53,8 @@ RSpec.describe TreeBlueprint, type: :model do
       expect(parsed["status"]).to eq("active")
     end
 
-    it "includes peaq_did in index view" do
-      expect(parsed).to have_key("peaq_did")
+    it "does not expose peaq_did in index view — no page reads it [SEC.36]" do
+      expect(parsed).not_to have_key("peaq_did")
     end
 
     it "includes last_seen_at" do
@@ -105,8 +105,8 @@ RSpec.describe TreeBlueprint, type: :model do
       expect(parsed["status"]).to eq("active")
     end
 
-    it "includes peaq_did in show view" do
-      expect(parsed).to have_key("peaq_did")
+    it "does not expose peaq_did in show view — no page reads it [SEC.36]" do
+      expect(parsed).not_to have_key("peaq_did")
     end
 
     it "includes last_seen_at" do

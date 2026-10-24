@@ -248,9 +248,11 @@ module Clusters
           geo_row(t(".geography.region"), @cluster.region)
           geo_row(t(".geography.mapped"), @cluster.mapped? ? t(".geography.mapped_yes") : t(".geography.mapped_no"))
           if center
-            geo_row(t(".geography.centroid"), "#{center[:lat].round(4)}, #{center[:lng].round(4)}")
+            # [SEC.36] Посилання везе в чужий домен рівно ту точність, яку друкує панель.
+            lat, lng = center[:lat].round(4), center[:lng].round(4)
+            geo_row(t(".geography.centroid"), "#{lat}, #{lng}")
             a(
-              href: "https://www.google.com/maps?q=#{center[:lat]},#{center[:lng]}",
+              href: "https://www.google.com/maps?q=#{lat},#{lng}",
               target: "_blank", rel: "noopener noreferrer",
               class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-strong hover:bg-gaia-surface-sunken hover:text-gaia-text-strong transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
               aria_label: t(".map_link_aria")

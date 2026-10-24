@@ -1186,7 +1186,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 **Доступ:** Роль `forester` або вище.
 
-> 🔴 **ТІЛО НИЖЧЕ РОЗІЙШЛОСЬ ІЗ КОДОМ — не правити його «за пам'яттю», спершу прочитати блупринт.** Від 2026-09-07 екшен віддає `AiInsightBlueprint` ([`00_07`](00_07_Action_Plan_Tracker) SEC.36), тож `cluster_id` і `recommendation` він БІЛЬШЕ НЕ несе, а `insight_type`, `probability_score` і `yield_impact` не документовані тут. Гейта на цю вісь немає (§4 ↑), тому розходження прожило непоміченим; зняття боргу — нога в [`00_07`](00_07_Action_Plan_Tracker) SEC.36.
+> 📐 **Форму запису `visions` тримає `AiInsightBlueprint`** (стеля — те, що вже друкує HTML, ⚖️ founder 2026-09-07, [`00_07`](00_07_Action_Plan_Tracker) SEC.36): приклад нижче звірено з блупринтом 2026-10-24. Гейта на вісь «тіло §5 ⊥ блупринт» немає (§4 ↑) — правлячи блупринт, правиш і цей приклад.
 
 **Success Response `200 OK`:**
 
@@ -1195,11 +1195,12 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
   "visions": [
     {
       "id": 1,
-      "cluster_id": 7,
+      "insight_type": "drought_probability",
       "target_date": "2026-04-01",
-      "stress_index": 0.42,
       "summary": "...",
-      "recommendation": { "priority": "high", "action_required": "..." }
+      "probability_score": 0.71,
+      "stress_index": 0.42,
+      "yield_impact": -8.5
     }
   ],
   "emission_forecast": 12.5,

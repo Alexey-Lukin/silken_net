@@ -225,6 +225,15 @@ RSpec.describe Maintenance::Show do
         html = render_component(record: record_with_gps, photos: [], pagy_photos: mock_pagy_photos)
         expect(html).to include("49.4286")
       end
+
+      # [SEC.36] Чужому домену — ≈ 11 м; панель для авторизованого глядача лишається повною.
+      it "sends the visit GPS to the map at four decimals while the panel prints it in full" do
+        rec = build_record(latitude: 49.444123, longitude: 32.059876, maintainable: tree_with_coords)
+        html = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+        href = Nokogiri::HTML5.fragment(html).at_css('a[href*="google.com/maps"]')["href"]
+        expect(href).to eq("https://www.google.com/maps?q=49.4441,32.0599")
+        expect(html).to include("49.444123")
+      end
     end
 
     context "when GPS is not present" do

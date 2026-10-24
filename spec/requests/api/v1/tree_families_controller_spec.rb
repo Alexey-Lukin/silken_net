@@ -10,6 +10,8 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   let(:admin_token) { admin.generate_token_for(:api_access) }
   let(:subscriber_token) { subscriber.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{admin_token}" } }
+  # [SEC.36] Вигляд `TreeFamilyBlueprint :show` — рівно поля `TreeFamilies::Show`.
+  let(:show_page_keys) { %w[id name scientific_name carbon_sequestration_coefficient bark_thickness foliage_density fire_resistance_rating] }
   let(:subscriber_headers) { { "Authorization" => "Bearer #{subscriber_token}" } }
   # Мутації TreeFamily = глобальні money/fraud-константи → лише super_admin (SEC).
   let(:super_admin) { create(:user, :super_admin, organization: organization) }
@@ -26,6 +28,13 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
         names = response.parsed_body["data"].map { |f| f["name"] }
         expect(names).to include("Scots Pine", "Common Oak")
+      end
+
+      # [SEC.36] Стеля — колонки сторінки індексу, не сира модель.
+      it "returns only what the index page prints" do
+        get "/tree_families", headers: headers, as: :json
+        keys = response.parsed_body["data"].flat_map(&:keys).uniq
+        expect(keys).to contain_exactly("id", "name", "scientific_name", "trees_count")
       end
     end
 
@@ -67,6 +76,17 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
         get "/tree_families/#{scots_pine.id}", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["name"]).to eq("Scots Pine")
+      end
+
+      # [SEC.36] Блоб `biological_properties` тримає й ключі, яких не друкує жодна сторінка.
+      it "returns the page's fields through the declared accessors, never the raw JSONB blob" do
+        scots_pine.update_columns(biological_properties: { "bark_thickness" => 12, "sap_flow_index" => 0.3 })
+        get "/tree_families/#{scots_pine.id}", headers: headers, as: :json
+
+        body = response.parsed_body
+        expect(body).to include("bark_thickness" => 12)
+        expect(body).not_to have_key("biological_properties")
+        expect(body.to_s).not_to include("sap_flow_index")
       end
     end
 
@@ -167,6 +187,8 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
         body = response.parsed_body
         expect(body["data"]["name"]).to eq("Silver Birch")
+        # [SEC.36] Мутація віддає вигляд сторінки показу, не сиру модель.
+        expect(body["data"].keys).to match_array(show_page_keys)
       end
 
       it "returns validation errors on failure" do
@@ -264,6 +286,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["data"]["name"]).to eq("Updated Pine")
+        expect(response.parsed_body["data"].keys).to match_array(show_page_keys)
       end
 
       it "returns validation errors on failure" do

@@ -197,6 +197,16 @@ RSpec.describe Clusters::Show do
       expect(html).to include("google.com/maps")
     end
 
+    # [SEC.36] Посилання не везе в чужий домен більше точності, ніж друкує панель.
+    it "carries the centroid into the map link at the panel's four decimals, never the raw float" do
+      cl = build_cluster
+      cl.define_singleton_method(:geo_center) { { lat: 49.444123456, lng: 32.059876543 } }
+      out = render_component(cluster: cl, gateways: [], recent_alerts: [])
+      href = Nokogiri::HTML5.fragment(out).at_css('a[href*="google.com/maps"]')["href"]
+      expect(href).to eq("https://www.google.com/maps?q=49.4441,32.0599")
+      expect(out).to include("49.4441, 32.0599")
+    end
+
     it "displays mapped=No when the cluster is not mapped" do
       cl = build_cluster
       cl.geojson_polygon = {} # джерело, не відповідь: `mapped?` виводить це сам

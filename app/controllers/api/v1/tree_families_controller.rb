@@ -23,7 +23,7 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              data: @families,
+              data: TreeFamilyBlueprint.render_as_hash(@families, view: :index),
               pagy: pagy_metadata(@pagy)
             }
           end
@@ -39,7 +39,7 @@ module Api
       # --- ДЕТАЛІ ПОРОДИ ---
       def show
         respond_to do |format|
-          format.json { render json: @family }
+          format.json { render json: TreeFamilyBlueprint.render_as_hash(@family, view: :show) }
           format.html do
             render_dashboard(
               title: I18n.t("tree_families.show_title", name: @family.name),
@@ -61,7 +61,7 @@ module Api
         @family = TreeFamily.new(family_params)
         if @family.save
           respond_to do |format|
-            format.json { render json: { data: @family }, status: :created }
+            format.json { render json: { data: TreeFamilyBlueprint.render_as_hash(@family, view: :show) }, status: :created }
             format.html { redirect_to tree_families_path, success: I18n.t("flash.tree_families.created") }
           end
         else
@@ -92,7 +92,7 @@ module Api
       def update
         if @family.update(family_params)
           respond_to do |format|
-            format.json { render json: { data: @family } }
+            format.json { render json: { data: TreeFamilyBlueprint.render_as_hash(@family, view: :show) } }
             format.html { redirect_to tree_family_path(@family), success: I18n.t("flash.tree_families.updated") }
           end
         else
