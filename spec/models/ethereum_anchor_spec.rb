@@ -163,18 +163,20 @@ RSpec.describe EthereumAnchor, type: :model do
         gp = BigDecimal("1000.123456")
         supply = BigDecimal("7.654321")
         sfc = BigDecimal("42.135791")
+        heads = [ [ nil, "h" ] ]
+        chains_root = described_class.chain_heads_root(heads)
         leaf0 = Digest::SHA256.hexdigest(
           described_class.aggregate_payload(
             total_growth_points: gp, total_scc_supply: supply, total_sfc: sfc,
-            active_tree_count: 0, chain_hash: "h", anchored_at: now
+            active_tree_count: 0, chain_hash: chains_root, anchored_at: now
           )
         )
 
         record = described_class.create!(
           state_root: MerkleTree.root([ leaf0 ]), total_growth_points: gp,
           total_scc_supply: supply, total_sfc: sfc, active_tree_count: 0,
-          chain_hash: "h", anchored_at: now, root_version: 1,
-          subtree_roots: [ { "kind" => "aggregate", "root" => leaf0 } ], window_to: now
+          chain_hash: chains_root, anchored_at: now, root_version: 1,
+          subtree_roots: [ { "kind" => "aggregate", "root" => leaf0, "chain_heads" => heads } ], window_to: now
         ).reload
 
         expect(record.total_growth_points).to eq(gp)
@@ -197,18 +199,21 @@ RSpec.describe EthereumAnchor, type: :model do
 
     describe "root_version: 1 (Merkle) [ARCH.12]" do
       let(:now) { Time.current.utc }
+      # [ARCH.122] Поле ланцюга агрегату — корінь голів усіх ланцюгів, голови — поруч у клітинці.
+      let(:heads) { [ [ nil, "system_head" ], [ 3, "org3_head" ], [ 9, "org9_head" ] ] }
+      let(:chains_root) { described_class.chain_heads_root(heads) }
       let(:leaf0) do
         Digest::SHA256.hexdigest(
           described_class.aggregate_payload(
             total_growth_points: BigDecimal("1000.5"), total_scc_supply: BigDecimal("7.25"),
             total_sfc: BigDecimal("0"),
-            active_tree_count: 0, chain_hash: "test_chain_hash", anchored_at: now
+            active_tree_count: 0, chain_hash: chains_root, anchored_at: now
           )
         )
       end
       let(:cluster_root) { MerkleTree.root([ "bafkrei-leaf-1", "bafkrei-leaf-2" ]) }
       let(:tier2) do
-        [ { "kind" => "aggregate", "root" => leaf0 },
+        [ { "kind" => "aggregate", "root" => leaf0, "chain_heads" => heads },
           { "cluster_id" => 7, "root" => cluster_root } ]
       end
 
@@ -216,9 +221,27 @@ RSpec.describe EthereumAnchor, type: :model do
         described_class.new(
           state_root: state_root, total_growth_points: BigDecimal("1000.5"),
           total_scc_supply: BigDecimal("7.25"),
-          chain_hash: "test_chain_hash", anchored_at: now,
+          chain_hash: chains_root, anchored_at: now,
           root_version: 1, subtree_roots: subtree_roots, window_to: now - 5.minutes
         )
+      end
+
+      # 🔴 [ARCH.122] Корінь голів перевіряється з самого якоря: підмінена голова будь-якої
+      # організації (чи відсутній перелік) — false, навіть коли leaf0 і корінь самоузгоджені.
+      it "returns false when a stored chain head is tampered" do
+        freeze_time do
+          forged = [ tier2.first.merge("chain_heads" => [ [ nil, "system_head" ], [ 3, "FORGED" ], [ 9, "org9_head" ] ]), tier2.last ]
+          record = build_merkle_record(state_root: MerkleTree.root([ leaf0, cluster_root ]), subtree_roots: forged)
+          expect(record.verify_state_root).to be false
+        end
+      end
+
+      it "returns false when the aggregate entry carries no chain heads" do
+        freeze_time do
+          bare = [ tier2.first.except("chain_heads"), tier2.last ]
+          record = build_merkle_record(state_root: MerkleTree.root([ leaf0, cluster_root ]), subtree_roots: bare)
+          expect(record.verify_state_root).to be false
+        end
       end
 
       it "verifies leaf0 against the aggregate formula AND the root against stored subtree_roots" do

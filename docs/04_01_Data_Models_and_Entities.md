@@ -556,7 +556,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `rotate_key!` | М'яка ротація: старий → `previous_aes_key_hex`, новий генерується. Deprecated — використовуйте `HardwareKeyService.rotate` |
 | `clear_grace_period!` | Очищення `previous_aes_key_hex` після підтвердження синхронізації. Підтвердників рівно два, за типом власника: Tree — перший кадр, чий CCM-MIC пройшов новим ключем (FW.17); Gateway — `FactoryFlashing::Session`, що живо залила поточний KEYC |
 | `owner` | `tree || gateway` |
-| `register_attestation_key!(public_key_hex, user_id:)` | ⚖️ **[FW.66 (Б) · S8b — делеговано й ратифіковано 2026-10-11]** Один дім реєстрації й ротації Ed25519-ключа атестації Королеви: в одній транзакції пише ключ (нижній hex) і запис `AuditLog` `attestation_key_registered` у ланцюг організації шлюзу — `metadata` несе ЛИШЕ `gateway_uid` · `public_key_hex` · `previous_public_key_hex` (generic `Auditable` тут свідомо ні — його колбеки логували б секретні атрибути). Запис несе lineage-бандл поруч із конвертом (дата реєстрації ≤ найранішого листа на конверт — перевіряє верифікатор). ⚠️ Незмінною дата стає лише під якорем, а `leaf0` сьогодні запечатує голову ланцюга лише організації, що писала останньою ([`00_07`](00_07_Action_Plan_Tracker) ARCH.122). Викликачі: провіженінг (актор — користувач) і заводська прошивка (актор — оператор станції); без жодного актора ключ пишеться, а відсутність запису — помилка в лозі. Той самий ключ повторно — no-op |
+| `register_attestation_key!(public_key_hex, user_id:)` | ⚖️ **[FW.66 (Б) · S8b — делеговано й ратифіковано 2026-10-11]** Один дім реєстрації й ротації Ed25519-ключа атестації Королеви: в одній транзакції пише ключ (нижній hex) і запис `AuditLog` `attestation_key_registered` у ланцюг організації шлюзу — `metadata` несе ЛИШЕ `gateway_uid` · `public_key_hex` · `previous_public_key_hex` (generic `Auditable` тут свідомо ні — його колбеки логували б секретні атрибути). Запис несе lineage-бандл поруч із конвертом (дата реєстрації ≤ найранішого листа на конверт — перевіряє верифікатор). Незмінною дата стає під першим якорем після запису: `leaf0` запечатує голови ланцюгів УСІХ організацій, а бандл несе шлях від голови цієї (`audit_chain_seals`, ARCH.122 ⚖️ 2026-10-24; доти — лише організації, що писала останньою). Викликачі: провіженінг (актор — користувач) і заводська прошивка (актор — оператор станції); без жодного актора ключ пишеться, а відсутність запису — помилка в лозі. Той самий ключ повторно — no-op |
 
 **Callbacks:** немає cache-інвалідаційних callbacks (`after_commit :clear_key_cache` видалено). Інвалідація відбувається автоматично через `versioned_cache_key`.
 
@@ -1420,7 +1420,7 @@ active/draft ──cancel──► cancelled
 | `action` | string | Назва дії |
 | `ip_address` | string | IP ініціатора |
 | `metadata` | jsonb | Контекст дії |
-| `chain_hash` | string | SHA-256 попереднього запису + payload (blockchain-ланцюг) |
+| `chain_hash` | string | SHA-256 попереднього запису + payload (blockchain-ланцюг). Ланцюгів стільки, скільки `organization_id` (NULL — системний); голова — останній за `id` у межах організації, і `AuditLog.chain_heads` віддає голови всіх одним `DISTINCT ON` — їх запечатує тижневий L1-якір [ARCH.122] |
 | `ipfs_cid` | string | IPFS CID при архівуванні |
 | `l1_anchor_tx_hash` | string | ⚠️ **Не задротовано** [ARCH.103]: нуль посилань у `app/`/`lib/`, навіть `AuditLogBlueprint` його не віддає. Залишок ПЕР-РЯДКОВОЇ архітектури якорення, витісненої АГРЕГАТНОЮ: `Ethereum::StateAnchorService` бере лише ОСТАННІЙ `chain_hash` як інгредієнт leaf0, і tx-хеш назад у рядок не пише ніколи. Leaf-рівневий proof (ARCH.12) дістав лише `TelemetryLog`, дзеркала для `AuditLog` немає |
 | `archive_requested_at` | datetime | [INF.22] Outbox-маркер: money/MRV-лог, призначений для IPFS-архіву (виставляє `AuditLogWorker`; factory/console прямий `create!` не ставить) |
@@ -1515,7 +1515,7 @@ active/draft ──cancel──► cancelled
 | `total_scc_supply` | decimal(30,6) | **[ARCH.97]** Чинний SCC-supply (Σmints − Σburns, One-Home `BlockchainTransaction.net_minted_supply`) — дзеркало on-chain `totalSupply()` |
 | `total_sfc` | decimal(30,4) | Сума підтверджених SFC мінтингів на момент anchoring [E.53] |
 | `active_tree_count` | integer | Кількість активних дерев в екосистемі на момент anchoring [E.54] |
-| `chain_hash` | string | chain_hash останнього `AuditLog` на момент anchoring |
+| `chain_hash` | string | ⚖️ **[ARCH.122, founder 2026-10-24]** корінь голів УСІХ ланцюгів `AuditLog` на момент anchoring (`EthereumAnchor.chain_heads_root(AuditLog.chain_heads)`); самі голови — `chain_heads` у `aggregate`-клітинці `subtree_roots`. Доти — голова глобально останнього рядка, тобто ланцюг лише організації, що писала останньою |
 | `anchored_at` | datetime | UTC-timestamp включений у хеш |
 | `tx_hash` | string(66) | Ethereum TX hash (`0x` + 64 hex chars, `UNIQUE WHERE NOT NULL`) |
 | `block_number` | bigint | Номер блоку підтвердження |
@@ -1527,7 +1527,7 @@ active/draft ──cancel──► cancelled
 | `window_from` | timestamp | **[ARCH.12]** нижня межа вікна телеметрія-листя (= `window_to` попереднього confirmed v1-якоря, exclusive — вікна ланцюжаться без дір); NULL для legacy і для першого merkle-якоря (from-genesis вікно) |
 | `window_to` | timestamp | **[ARCH.12]** верхня межа вікна (= `anchored_at − GRACE` на момент генерації, ПЕРСИСТОВАНА — історичні вікна не залежать від значення константи); presence-валідація при `root_version=1` |
 | `leaf_count` | integer | **[ARCH.12]** кількість телеметрія-листя у вікні (без leaf0) — аудитор відрізняє «партицію дропнули» від «листя не було» |
-| `subtree_roots` | jsonb | **[ARCH.12]** упорядкований tier2-масив: перший елемент = leaf0-агрегат `{kind: "aggregate", root: hex}` (**БЕЗ** ключа `cluster_id` — свідомо, щоб не колізити з NULL-cluster sentinel-групою), далі `{cluster_id: int\|null, root: hex}` за cluster_id asc (null-sentinel остання). `verify_state_root` самодостатній O(#кластерів) і переживає ретеншн-дроп партицій; фіксує групування-як-було (cluster_id мутабельний) |
+| `subtree_roots` | jsonb | **[ARCH.12]** упорядкований tier2-масив: перший елемент = leaf0-агрегат `{kind: "aggregate", root: hex}` (**БЕЗ** ключа `cluster_id` — свідомо, щоб не колізити з NULL-cluster sentinel-групою), далі `{cluster_id: int\|null, root: hex}` за cluster_id asc (null-sentinel остання). `verify_state_root` самодостатній O(#кластерів) і переживає ретеншн-дроп партицій; фіксує групування-як-було (cluster_id мутабельний). ⊕ [ARCH.122] Перший елемент несе ще й `chain_heads` — пари `[organization_id|null, chain_hash]` голів усіх ланцюгів AuditLog; v1 без них не верифікується |
 
 **Enum `status`** (prefix: true)**:**
 

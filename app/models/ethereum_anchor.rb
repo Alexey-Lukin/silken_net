@@ -84,6 +84,22 @@ class EthereumAnchor < ApplicationRecord
       "#{anchored_at.utc.iso8601}|#{total_scc_supply}"
   end
 
+  # [ARCH.122, ⚖️ founder 2026-10-24] Поле `chain_hash` агрегату — КОРІНЬ голів усіх ланцюгів
+  # AuditLog, а не голова одного: доти якір брав голову ГЛОБАЛЬНО останнього рядка, тож
+  # запечатував ланцюг лише організації, що писала останньою. `root_version 1` перевизначено
+  # на місці — підтверджених якорів у мережах ще не було (anchorCount = 0 на Sepolia й Amoy).
+  # Лист — «<organization_id|NULL>|<chain_hash>»; голови їдуть поруч у `aggregate`-клітинці
+  # `subtree_roots`, тож корінь перевіряється з самого якоря, а lineage-бандл несе шлях від
+  # голови своєї організації до нього.
+  def self.chain_head_leaf(organization_id, chain_hash)
+    "#{organization_id.nil? ? 'NULL' : organization_id}|#{chain_hash}"
+  end
+
+  # Немає жодного ланцюга — та сама мітка, що доти (`AuditLog::GENESIS_HASH`).
+  def self.chain_heads_root(heads)
+    MerkleTree.root(heads.map { |org, hash| chain_head_leaf(org, hash) }) || AuditLog::GENESIS_HASH
+  end
+
   # Перевіряє, чи можна незалежно відтворити state_root з збережених компонентів.
   # Дозволяє зовнішньому аудитору верифікувати хеш без доступу до PostgreSQL.
   # [E.53/E.54] Формула оновлена: включає total_sfc та active_tree_count.
@@ -92,6 +108,16 @@ class EthereumAnchor < ApplicationRecord
   # subtree_roots (самодостатньо O(#кластерів), переживає ретеншн-дроп телеметрія-партицій).
   def verify_state_root
     root_version.to_i >= 1 ? verify_merkle_root : verify_flat_root
+  end
+
+  # Рядок агрегату зі ЗБЕРЕЖЕНИХ колонок — його хеш і є leaf0. Публічний, бо lineage-бандл везе
+  # саме його: верифікатор тоді не відтворює форматування чисел, а лише хешує рядок.
+  def components_payload
+    self.class.aggregate_payload(
+      total_growth_points: total_growth_points, total_scc_supply: total_scc_supply,
+      total_sfc: total_sfc, active_tree_count: active_tree_count,
+      chain_hash: chain_hash, anchored_at: anchored_at
+    )
   end
 
   # Etherscan URL для L1 транзакції. 🔴 [INF.27] Дзеркало `BlockchainTransaction#explorer_url`
@@ -162,16 +188,12 @@ class EthereumAnchor < ApplicationRecord
   def verify_merkle_root
     return false if subtree_roots.blank?
 
-    tier2 = subtree_roots.map { |entry| entry["root"] }
-    subtree_roots.first["root"] == Digest::SHA256.hexdigest(components_payload) &&
-      MerkleTree.root(tier2) == state_root
-  end
+    heads = subtree_roots.first["chain_heads"]
+    return false unless heads.is_a?(Array)
 
-  def components_payload
-    self.class.aggregate_payload(
-      total_growth_points: total_growth_points, total_scc_supply: total_scc_supply,
-      total_sfc: total_sfc, active_tree_count: active_tree_count,
-      chain_hash: chain_hash, anchored_at: anchored_at
-    )
+    tier2 = subtree_roots.map { |entry| entry["root"] }
+    self.class.chain_heads_root(heads) == chain_hash &&
+      subtree_roots.first["root"] == Digest::SHA256.hexdigest(components_payload) &&
+      MerkleTree.root(tier2) == state_root
   end
 end

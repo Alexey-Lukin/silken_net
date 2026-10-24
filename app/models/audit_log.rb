@@ -73,6 +73,16 @@ class AuditLog < ApplicationRecord
   scope :archivable, -> { where.not(archive_requested_at: nil) }
   scope :pending_archive, -> { archivable.not_archived }
 
+  # [ARCH.122, ⚖️ founder 2026-10-24] Голови ВСІХ ланцюгів, по одній на `organization_id`
+  # (NULL — системний), одним `DISTINCT ON`. Голова — за ТИМ САМИМ визначенням, що в обох
+  # писачів нижче: останній за `id` у межах організації, не глобально останній за часом.
+  # Порядок (NULL першим, далі за id організації) — частина контракту кореня якоря.
+  def self.chain_heads
+    select("DISTINCT ON (organization_id) organization_id, chain_hash")
+      .reorder(Arel.sql("organization_id ASC NULLS FIRST, id DESC"))
+      .map { |row| [ row.organization_id, row.chain_hash ] }
+  end
+
   # ---------------------------------------------------------------------------
   # Hot-Path: асинхронний запис через Sidekiq (не блокує основну дію користувача)
   # ---------------------------------------------------------------------------

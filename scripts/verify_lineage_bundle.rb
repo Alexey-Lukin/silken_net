@@ -30,15 +30,17 @@
 #      Ed25519-підпис Королеви над ним і її UID (OpenSSL, строгий S < L — самоперевірка на векторі
 #      RFC 8032 перед першим конвертом); кожен v2-лист із хешем знаходить свій конверт, зайвий
 #      конверт — відмова; запис реєстрації ключа (якщо є) — той самий ключ і до прийому конверта
+#  10. [ARCH.122] печатка ланцюга організації: голова → корінь голів (поле ланцюга в рядку
+#      агрегату), SHA256(рядок агрегату) = leaf0 → tier2-шлях → state_root якоря
 #
 # Межа довіри (свідома, задекларована): amount, ПОВНОТА набору кредитів/листя і
-# континуїтет вікон — issuer-asserted (backstop = org AuditLog-ланцюг; у leaf0 якоря — голова лише
-# організації, що писала останньою, ARCH.122). Лист v2
+# континуїтет вікон — issuer-asserted (backstop = org AuditLog-ланцюг; leaf0 якоря запечатує голови
+# УСІХ ланцюгів, і бандл несе шлях від голови своєї організації — крок 10, ARCH.122). Лист v2
 # зобовʼязує щодо ІДЕНТИЧНОСТІ кадру ефіру, не щодо виміру: кадр — шифртекст сесійним
 # ключем вузла, який ратчет знищує, тож MIC і вміст перевіряє лише власник ключа, поки той живий.
 # Підпис конверта доводить, що його підписав ключ, НАЗВАНИЙ у бандлі; що це ключ Королеви — звір
-# `key_registration` з експортом AuditLog організації (запечатаний у leaf0 лише ланцюг організації, що
-# писала останньою перед якорем, — ARCH.122; для решти дата реєстрації issuer-asserted).
+# `key_registration` з експортом AuditLog організації: голову її ланцюга на мить якоря крок 10
+# перевіряє з файлу, а що запис реєстрації — предок цієї голови, бачить лише експорт.
 # Що кадр листа лежить усередині конверта — issuer-asserted: шифртекст під ключем Королеви.
 # [DOC-T.89] `insurance_payouts` — емісія за ЗБИТОК, НЕ вуглецеві кредити: крипто під
 # нею немає за конструкцією (немає листя), тож тут вона лише ПЕРЕЛІЧУЄТЬСЯ вголос.
@@ -279,10 +281,53 @@ referenced = leaves_by_envelope.keys
 without_envelope = v2_payloads.values.count { |p| p["qatt_envelope_sha256"].nil? }
 held = v2_payloads.values.count { |p| LeafPayloadShape.v2_points_held?(p) }
 
+# 10. [ARCH.122] Печатка ланцюга організації на кожному якорі, на який спирається бандл:
+# голова її ланцюга → корінь голів (поле ланцюга в рядку агрегату), SHA256(рядок) = leaf0,
+# leaf0 → state_root. Що key_registration — предок цієї голови, файл не несе: звір експорт AuditLog.
+chains_sealed = 0
+chains_absent = 0
+anchored_roots = roots_to_check.keys # лише ті, на які спираються листи (печатки додаються нижче)
+seal_roots = []
+Array(bundle["audit_chain_seals"]).each do |seal|
+  seal_roots << seal["state_root"]
+  label = "печатка ланцюга / якір ##{seal['anchor_id']}"
+  case seal["status"]
+  when "no_chain_at_anchor"
+    chains_absent += 1
+  when "sealed"
+    payload = seal["aggregate_payload"].to_s
+    fields = payload.split("|", -1)
+    if fields.size != 6 || fields[3] !~ /\A(?:\h{64}|GENESIS)\z/
+      failures << "#{label}: рядок агрегату не тієї форми (6 полів, поле ланцюга — 64 hex)"
+    elsif seal["organization_id"] != bundle.dig("organization", "id")
+      failures << "#{label}: печатка іншої організації (#{seal['organization_id'].inspect})"
+    elsif !MerkleTree.verify("#{seal['organization_id']}|#{seal['chain_head']}", Array(seal["chain_path"]), fields[3])
+      failures << "#{label}: голова ланцюга не веде до кореня голів у рядку агрегату"
+    elsif !MerkleTree.verify(Digest::SHA256.hexdigest(payload), Array(seal["tier2_path"]), seal["state_root"])
+      failures << "#{label}: рядок агрегату не веде до state_root якоря"
+    else
+      chains_sealed += 1
+      roots_to_check[seal["state_root"]] ||= nil
+    end
+  else
+    failures << "#{label}: невідомий статус #{seal['status'].inspect}"
+  end
+end
+# Печатка — на КОЖЕН якір, на який спираються листи, і лише на них: інакше емітент пропустив би
+# печатку чи підклав чужу, а ✓ однаково обіцяв би «ланцюг запечатано».
+(anchored_roots - seal_roots).each { |root| failures << "якір #{root.to_s[0, 16]}…: листи на нього спираються, а печатки ланцюга в бандлі немає" }
+(seal_roots - anchored_roots).uniq.each { |root| failures << "печатка ланцюга для якоря #{root.to_s[0, 16]}…, на який не спирається жоден лист" }
+failures << "audit_chain_seals: на один якір — одна печатка" if seal_roots.size != seal_roots.uniq.size
+
 puts "── Lineage bundle: #{bundle['credits'].size} credits " \
      "(org #{bundle.dig('organization', 'id')}, #{bundle.dig('period', 'from')}..#{bundle.dig('period', 'to')})"
 puts "   leaves anchored=#{anchored} pending_anchor=#{pending} unprovable_regrouped=#{regrouped} subroot_diverged=#{diverged} · " \
      "credits sealed=#{sealed_credits} unsealed=#{unsealed_credits}"
+if chains_sealed.positive? || chains_absent.positive?
+  puts "   ланцюг AuditLog організації: запечатано якорями=#{chains_sealed} · без ланцюга на мить якоря=#{chains_absent}. " \
+       "⚠️ Що key_registration — предок запечатаної голови, звір з експортом AuditLog (ланцюга файл не несе); " \
+       "«без ланцюга на мить якоря» — заява емітента, файл її не доводить."
+end
 if v2_payloads.any?
   puts "   v2: листів=#{v2_payloads.size} · бали утримано=#{held} (причину лист не несе) · " \
        "без конверта=#{without_envelope} (батч не атестовано) · конвертів=#{envelopes.size} · " \
@@ -340,6 +385,7 @@ if failures.any?
 end
 
 envelope_claim = envelopes.any? ? " + підписи конвертів QATT" : ""
+envelope_claim += " + печатка ланцюга AuditLog" if chains_sealed.positive?
 envelope_claim += " (#{unregistered} — без дати реєстрації ключа)" if unregistered.positive?
 puts "✓ Всі крипто-перевірки пройшли (leaf-CID + did-binding + mint-root + tier1 + tier2#{envelope_claim})."
 exit 0

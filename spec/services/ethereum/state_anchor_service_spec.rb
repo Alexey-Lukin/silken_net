@@ -69,6 +69,45 @@ RSpec.describe Ethereum::StateAnchorService do
       end
     end
 
+    # 🔴 [ARCH.122, ⚖️ founder 2026-10-24] Доти якір брав голову ГЛОБАЛЬНО останнього рядка,
+    # тож запечатував ланцюг лише організації, що писала останньою. Тепер голова тієї, що писала
+    # ПЕРШОЮ, мусить доводитись до кореня голів у якорі — на старій формулі цей пін червоний.
+    it "seals the head of EVERY organization's chain, not only of the last writer" do
+      first = create(:organization)
+      last  = create(:organization)
+      AuditLog.create!(user: create(:user, organization: first), organization: first, action: "first_writes")
+      AuditLog.create!(user: create(:user, organization: last), organization: last, action: "last_writes")
+      first_head = AuditLog.where(organization: first).order(id: :desc).pick(:chain_hash)
+
+      result = described_class.new.generate_state_root
+      heads = result[:subtree_roots].first["chain_heads"]
+      index = heads.index { |org, _head| org == first.id }
+
+      expect(heads).to include([ first.id, first_head ])
+      expect(result[:chain_hash]).to eq(EthereumAnchor.chain_heads_root(heads))
+      expect(MerkleTree.verify(EthereumAnchor.chain_head_leaf(first.id, first_head),
+                               MerkleTree.proof(heads.map { |o, h| EthereumAnchor.chain_head_leaf(o, h) }, index),
+                               result[:chain_hash])).to be true
+    end
+
+    # Голова — за визначенням ПИСАЧІВ (останній за `id` у межах організації), а системний ланцюг
+    # (NULL) стоїть першим: порядок — частина контракту кореня, і пін іде через справжній запит.
+    it "takes each chain's LATEST row as its head and orders the system chain first" do
+      org = create(:organization)
+      user = create(:user, organization: org)
+      AuditLog.create!(user: user, organization: org, action: "older")
+      AuditLog.create!(user: user, organization: org, action: "newer")
+      AuditLog.create!(user: user, organization: nil, action: "system_row")
+      newest = AuditLog.where(organization: org).order(id: :desc).pick(:chain_hash)
+      system_head = AuditLog.where(organization: nil).order(id: :desc).pick(:chain_hash)
+
+      heads = AuditLog.chain_heads
+
+      expect(heads.first).to eq([ nil, system_head ])
+      expect(heads).to include([ org.id, newest ])
+      expect(heads.count { |o, _| o == org.id }).to eq(1)
+    end
+
     it "uses GENESIS fallback when no AuditLog exists (leaf0 = flat aggregate, root = Merkle over [leaf0])" do
       # [ARCH.97] Шосте поле — `total_scc_supply`; на порожній БД теж 0.0, але
       # величина ІНША за природою (Σ confirmed-мінтів − Σ burn'ів, не сума балансів).

@@ -39,8 +39,8 @@ module Mrv
     # офлайн-верифіковне З ЦЬОГО ФАЙЛУ — payload→CID, mint-root sealed-кредитів,
     # tier1-субкорінь, tier2→state_root, device_uid↔tree_did. Issuer-asserted
     # (офлайн НЕ перевіриш): amount, ПОВНОТА набору кредитів/листя, континуїтет
-    # вікон; backstop = org AuditLog-ланцюг. ⚠️ [ARCH.122] leaf0 тижневого якоря запечатує голову
-    # ланцюга лише тієї організації, що писала останньою перед якорем, — не кожної.
+    # вікон; backstop = org AuditLog-ланцюг. [ARCH.122] leaf0 тижневого якоря запечатує голови
+    # УСІХ ланцюгів, і бандл несе шлях від голови своєї організації (`audit_chain_seals`).
     #
     # [DOC-T.89] `insurance_payouts:` не додає до перевірюваного НІЧОГО: крипто під ним
     # немає за конструкцією (немає листя — немає CID, кореня і шляхів), тож секція цілком
@@ -50,6 +50,8 @@ module Mrv
       "Run `ruby scripts/verify_lineage_bundle.rb <bundle.json>` (pure Ruby, offline). " \
       "Cryptographically verified from this file alone: leaf payload -> CID, per-credit " \
       "window Merkle-root (sealed credits), tier1 subroot recomputation, tier2 -> state_root, " \
+      "this organization's AuditLog chain head -> anchor chains root -> leaf0 -> state_root " \
+      "(`audit_chain_seals`), " \
       "device_uid <-> tree_did binding (leaf v2 also: the first 4 bytes of raw_record are the " \
       "DID, and a raw frame never appears under two different leaves — this catches VERBATIM " \
       "repeats only, since the issuer holds the keys; one telemetry_log_id is one leaf across " \
@@ -67,9 +69,10 @@ module Mrv
       "envelopes travel in this bundle only, never in the public archive artifact: the verifier " \
       "checks each one's hash, frame and Ed25519 signature (strict, S < L) under the key named " \
       "beside it. That this key is the Queen's is NOT proven by the file: cross-check " \
-      "`key_registration` against the org AuditLog export (the weekly anchor's leaf0 seals " \
-      "only the chain head of the organization that wrote last before it — ARCH.122 — so for " \
-      "other organizations the registration date is issuer-asserted). That a leaf's frame lies inside its envelope is issuer-asserted " \
+      "`key_registration` against the org AuditLog export: the weekly anchor's leaf0 seals the " \
+      "heads of ALL AuditLog chains, and `audit_chain_seals` proves this organization's head under " \
+      "each anchor the bundle relies on (ARCH.122), so the export must show that registration row " \
+      "as an ancestor of that head. That a leaf's frame lies inside its envelope is issuer-asserted " \
       "(the ciphertext is under the Queen's key). The sum of leaf points is the BASE of a " \
       "credit, not its amount: the tree-family coefficient and the E.64 daily bucket apply " \
       "outside the leaf. THEN verify each printed state_root on-chain: the " \
@@ -77,8 +80,8 @@ module Mrv
       "the `anchor_contract` address against an INDEPENDENT source (project canon / official " \
       "site), never against this file alone. Issuer-asserted (NOT offline-verifiable): tx " \
       "amounts, completeness of the credit/leaf set, window continuity; backstop = the org " \
-      "AuditLog hash-chain (sealed into a weekly anchor's leaf0 only when this organization " \
-      "wrote the last audit row before it — ARCH.122). " \
+      "AuditLog hash-chain (its head is sealed into every weekly anchor's leaf0 and proven by " \
+      "`audit_chain_seals` — ARCH.122). " \
       "SCOPE OF `credits`: MEASURED GROWTH ONLY. An insurance payout is SCC minted against a " \
       "LOSS, carries no telemetry window by construction and is NOT a carbon credit; payouts " \
       "are listed separately under `insurance_payouts` and that section is ENTIRELY " \
@@ -111,6 +114,7 @@ module Mrv
         anchor_contract: ENV["ETHEREUM_ANCHOR_CONTRACT"],
         credits: credits,
         **(v2 ? { qatt_envelopes: qatt_envelope_entries(credits) } : {}),
+        audit_chain_seals: audit_chain_seals(credits),
         insurance_payouts: insurance_payout_transactions.map { |tx| insurance_payout_entry(tx) },
         verification_instructions: VERIFICATION_INSTRUCTIONS
       }
@@ -312,6 +316,29 @@ module Mrv
           public_key_hex: registration.metadata["public_key_hex"]
         }
       }
+    end
+
+    # [ARCH.122, ⚖️ founder 2026-10-24] Печатка ланцюга організації: на кожен якір, на який
+    # спирається бандл, — голова ЇЇ ланцюга на мить якоря, шлях від неї до кореня голів, рядок
+    # агрегату (його хеш — leaf0) і tier2-шлях leaf0 → state_root. Тож «ланцюг запечатано»
+    # перевірне з файлу; що `key_registration` — предок цієї голови, звіряє експорт AuditLog.
+    def audit_chain_seals(credits)
+      ids = credits.flat_map { |c| c[:leaves].filter_map { |l| l.dig(:anchor_proof, :anchor, :id) } }.uniq
+      covering_anchors.select { |anchor| ids.include?(anchor.id) }.map { |anchor| audit_chain_seal(anchor) }
+    end
+
+    def audit_chain_seal(anchor)
+      heads = anchor.subtree_roots.first["chain_heads"] || []
+      index = heads.index { |org, _head| org == @organization.id }
+      seal = { anchor_id: anchor.id, state_root: anchor.state_root, anchored_at: anchor.anchored_at.utc.iso8601 }
+      return seal.merge(status: "no_chain_at_anchor") if index.nil?
+
+      seal.merge(
+        status: "sealed", organization_id: @organization.id, chain_head: heads[index].last,
+        chain_path: MerkleTree.proof(heads.map { |org, head| EthereumAnchor.chain_head_leaf(org, head) }, index),
+        aggregate_payload: anchor.components_payload,
+        tier2_path: MerkleTree.proof(anchor.subtree_roots.map { |entry| entry["root"] }, 0)
+      )
     end
 
     def leaf_entry(log, window_source:)

@@ -50,7 +50,7 @@
 
 Ethereum L1 State Anchor — це **фінальна печатка** всього стану системи SilkenNet. Один раз на тиждень (щопонеділка о 03:00 UTC) `EthereumAnchorWorker` запускає `Ethereum::StateAnchorService`, який:
 
-1. Збирає глобальний стан системи з PostgreSQL (бали росту всіх гаманців + чинний SCC-supply + кумулятивні SFC-мінтинги + кількість активних дерев + останній chain_hash AuditLog + timestamp)
+1. Збирає глобальний стан системи з PostgreSQL (бали росту всіх гаманців + чинний SCC-supply + кумулятивні SFC-мінтинги + кількість активних дерев + корінь голів УСІХ ланцюгів AuditLog [ARCH.122] + timestamp)
 2. Стискає його в 32-байтний SHA-256 хеш (`state_root`)
 3. Записує `bytes32` хеш у смарт-контракт `StateRootAnchor` на **Ethereum Mainnet** через Alchemy RPC
 
@@ -170,7 +170,7 @@ state_root = SHA256("#{total_growth_points}|#{total_sfc}|#{active_tree_count}|#{
 | `total_scc_supply` | `BlockchainTransaction.net_minted_supply(:carbon_coin)` | Decimal — **чинний** monetary supply (Σmints − Σburns), дзеркало on-chain `totalSupply()`. Ім'я каже «supply», а не «minted»: величина не кумулятивна, slash її зменшує | `"48.0"` |
 | `total_sfc` | `BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount)` | Decimal (сума підтверджених SFC мінтингів) — **сира кумулятивна Σ**, свідомо не `net_minted_supply`: бекенд SFC не палить. ⚠️ Але `SilkenForestCoin.sol` має `slash()`/`slashUpTo()`, тож перший DAO-слеш розведе це поле з on-chain `totalSupply()` | `"500.0"` |
 | `active_tree_count` | `Tree.active.count` | Integer (кількість активних дерев у екосистемі) | `"4250"` |
-| `chain_hash` | `AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash)` | String або `"GENESIS"` якщо AuditLog порожній | `"a3f8c2..."` |
+| `chain_hash` | `EthereumAnchor.chain_heads_root(AuditLog.chain_heads)` — ⚖️ [ARCH.122, founder 2026-10-24] `MerkleTree.root` листів «`<organization_id\|NULL>`\|`<chain_hash>`» голів УСІХ ланцюгів (голова — останній за `id` у межах організації, як у писачів; NULL першим, далі за id). Доти — голова ГЛОБАЛЬНО останнього рядка, тож якір запечатував ланцюг лише організації, що писала останньою. Самі голови їдуть у `aggregate`-клітинці `subtree_roots` (`chain_heads`), тож корінь перевіряється з якоря | String (64 hex) або `"GENESIS"`, якщо AuditLog порожній | `"a3f8c2..."` |
 | `anchored_at` | `Time.current.utc` | UTC DateTime (зберігається в `EthereumAnchor.anchored_at`) | `2026-03-23T03:00:01Z` |
 
 > 🔴 **[ARCH.97] Інваріант ШКАЛИ: кожна decimal-колонка якоря = `numeric(30,6)`, бо шкала її ДЖЕРЕЛА = 6.** `wallets.balance` і `blockchain_transactions.amount` — обидва `numeric(24,6)`. `generate_state_root` хешує **необроблене** значення в `leaf0`, а `verify_state_root` перераховує payload зі **збереженої** колонки — тож колонка, вужча за джерело, робить чесний якір таким, що не сходиться САМ ІЗ СОБОЮ, і «зовнішній аудитор відтворить хеш» стає хибним арифметично, а не концептуально. Виміряно SQL: `SELECT 3.000003::numeric(30,4)` → `3.0000`. ⚠️ **І знай, як цей дефект вижив пів дня ПІСЛЯ власного фіксу:** шкалу звели на двох полях із трьох, а `total_sfc` лишився `(30,4)` — захищений не інваріантом, а **збігом** (mint пише ціле `tokens_to_mint`). Збіг не тримає: SFC приходить у транзакції ще й страховим трактом (`InsurancePayoutWorker` → `payout_amount`, голий `numeric` — ⚠️ **СТАТИЧНА колонка полісу, а не похідна величина**: доти цей рядок казав «рахується як `damage_ratio × insured_value`», але такої формули в дереві немає жодною половиною, і `insured_value` не існує як колонка, метод чи змінна — розбір у [`05_05 §4`](05_05_Slashing_and_Risk_Policy), переміряно 2026-08-26). Регресійний носій — `spec/models/ethereum_anchor_spec.rb`, і він мусить подавати КОЖНОМУ decimal-полю власне 6-значне значення: на нулі розходження шкал не виразиме за побудовою.
@@ -205,9 +205,9 @@ def generate_state_root
     # 3. [E.54] Кількість активних дерев (ecosystem coverage metric)
     active_tree_count = Tree.active.count
 
-    # 4. chain_hash останнього AuditLog (криптографічна ланцюгова прив'язка)
-    #    order: created_at DESC, id DESC — гарантує детерміновану сортировку при рівному часі
-    latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
+    # 4. [ARCH.122] Корінь голів УСІХ ланцюгів AuditLog (по одній на організацію, NULL — системний);
+    #    дім форми — EthereumAnchor.chain_heads_root, голови — AuditLog.chain_heads
+    latest_chain_hash = EthereumAnchor.chain_heads_root(AuditLog.chain_heads)
 
     # 5. Timestamp моменту формування хешу (зберігається в EthereumAnchor.anchored_at)
     timestamp = Time.current.utc
@@ -246,12 +246,12 @@ Result:   "977da85c20383e4660e72e0047515966d6934b7fc0d614e4130c4614a3aafcc9"  (6
 | **Чинний SCC supply** (Σmints − Σburns, дзеркало `totalSupply()`) [ARCH.97] — leaf0 | |
 | Кумулятивні SFC-мінтинги [E.53] — leaf0 (⚠️ не supply: burn'и не віднімаються) | |
 | Кількість активних дерев [E.54] — leaf0 | |
-| Останній AuditLog chain_hash — leaf0 | |
+| Корінь голів усіх ланцюгів AuditLog [ARCH.122] — leaf0 | |
 | Timestamp виконання (збережений в БД) — leaf0 | |
 | **Per-record телеметрія-листя вікна** (cluster-субкорені; leaf = `Mrv::TelemetryLeaf`) [ARCH.12 Фаза 1а] | |
 | `REPEATABLE READ` snapshot isolation | |
 
-> **Примітка [ARCH.12 Фаза 1а, 2026-07-19]:** Агрегат-формула вище тепер = **`leaf0`** Merkle-дерева, а `state_root = MerkleTree.root([leaf0] + cluster-субкорені)` (`root_version: 1`; One-Home рядка-формули = `EthereumAnchor.aggregate_payload` — юзають і generate, і verify). Legacy-якорі (`root_version: 0`) — flat commitment. Незалежна верифікація: `EthereumAnchor#verify_state_root` version-route — v0 відтворює хеш зі збережених колонок; v1 звіряє leaf0 з тих самих колонок І перераховує корінь зі збережених `subtree_roots` (самодостатньо O(#кластерів), переживає ретеншн). Механіка вікна/листя — §Merkle нижче.
+> **Примітка [ARCH.12 Фаза 1а, 2026-07-19]:** Агрегат-формула вище тепер = **`leaf0`** Merkle-дерева, а `state_root = MerkleTree.root([leaf0] + cluster-субкорені)` (`root_version: 1`; One-Home рядка-формули = `EthereumAnchor.aggregate_payload` — юзають і generate, і verify). Legacy-якорі (`root_version: 0`) — flat commitment. Незалежна верифікація: `EthereumAnchor#verify_state_root` version-route — v0 відтворює хеш зі збережених колонок; v1 звіряє leaf0 з тих самих колонок І перераховує корінь зі збережених `subtree_roots` (самодостатньо O(#кластерів), переживає ретеншн). ⊕ [ARCH.122, ⚖️ founder 2026-10-24] v1 ще й перераховує корінь голів зі збережених `chain_heads` і звіряє його з `chain_hash`; v1 без голів — `false`. Формулу перевизначено НА МІСЦІ, без `root_version: 2`: підтверджених якорів у мережах не було (`anchorCount = 0` на Sepolia й Amoy, прецедент E.53/E.54), а друга версія у верифікаторі була б кодом без жодного рядка. Lineage-бандл несе `audit_chain_seals` — шлях від голови ланцюга своєї організації до цього кореня, рядок агрегату й tier2-шлях `leaf0 → state_root`, а верифікатор вимагає печатку на кожен якір, на який спираються листи; найслабша ланка — голова засвідчує ланцюг лише до мітки якоря, тож запис після неї чекає наступного тижня. Механіка вікна/листя — §Merkle нижче.
 >
 > 🔴 **ПОПРАВКА [ARCH.97]: тут стояло «верифікуються старою формулою НАЗАВЖДИ», і це звужено.** `root_version` версіонує **структуру** commitment'а (flat ⊥ Merkle), а не заморожує СКЛАД полів: обидві гілки читають один `aggregate_payload`, тож зміна складу міняє обидві. Формулу вже розширювали на місці — E.53/E.54 (3→5 полів) і [ARCH.97] (5→6), — і це легально рівно **до першого підтвердженого якоря**: продовий письменник один і завжди ставить `root_version: 1`, рядків у БД нуль, контракт не задеплоєно ([`SEC.1`](00_07_Action_Plan_Tracker)), тож обіцянка «назавжди» квантифікувалась по ПОРОЖНІЙ множині. **Після першого confirmed-якоря склад полів заморожується, і будь-яке розширення вимагає нової версії кореня** — разом із двома хардкодженими фільтрами `root_version: 1` (window-chaining в `StateAnchorService`, `covering_anchors` у `Mrv::LineageReportService`), які інакше зроблять v2-якорі невидимими для lineage-бандлів.
 

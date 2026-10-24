@@ -103,7 +103,10 @@ module Ethereum
         # перейти на `net_minted_supply(:forest_coin)`.
         total_sfc = BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount).to_d
         active_tree_count = Tree.active.count
-        latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
+        # [ARCH.122, ⚖️ founder 2026-10-24] Корінь голів УСІХ ланцюгів, не голова глобально
+        # останнього рядка (та запечатувала ланцюг лише організації, що писала останньою).
+        chain_heads = AuditLog.chain_heads
+        latest_chain_hash = EthereumAnchor.chain_heads_root(chain_heads)
         timestamp = Time.current.utc
 
         leaf0 = Digest::SHA256.hexdigest(
@@ -121,7 +124,7 @@ module Ethereum
         window_to = timestamp - WINDOW_GRACE
         subroots, leaf_count = telemetry_subtree_roots(window_from, window_to)
 
-        tier2 = [ { "kind" => "aggregate", "root" => leaf0 } ] + subroots
+        tier2 = [ { "kind" => "aggregate", "root" => leaf0, "chain_heads" => chain_heads } ] + subroots
         state_root = MerkleTree.root(tier2.map { |entry| entry["root"] })
 
         {

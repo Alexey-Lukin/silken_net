@@ -119,6 +119,55 @@ RSpec.describe Mrv::LineageReportService do
     FileUtils.rm_f(path)
   end
 
+  # 🔴 [ARCH.122, ⚖️ founder 2026-10-24] Ланцюг організації запечатано, навіть коли останньою
+  # перед якорем писала ІНША організація: доти leaf0 ніс голову лише того, хто писав останнім.
+  # Бандл несе шлях від голови до кореня голів і рядок агрегату — і верифікатор це перевіряє.
+  it "seals the organization's AuditLog chain under its anchor even when another org wrote last" do
+    # Стороння — ПЕРШОЮ: менший id ставить її голову перед нашою, тож печатка не може
+    # випадково брати «перший лист» і влучати.
+    stranger = create(:organization)
+    create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+    mint_confirmed!
+    AuditLog.create!(user: create(:user, organization: organization), organization: organization, action: "own_row")
+    AuditLog.create!(user: create(:user, organization: stranger), organization: stranger, action: "stranger_last")
+    anchor = anchor_confirmed!
+    own_head = AuditLog.where(organization: organization).order(id: :desc).pick(:chain_hash)
+
+    data = JSON.parse(JSON.generate(bundle))
+    seal = data["audit_chain_seals"].sole
+    expect(seal).to include("anchor_id" => anchor.id, "status" => "sealed", "chain_head" => own_head)
+
+    ok, out = run_lineage_verifier(data)
+    expect(ok).to be(true), out
+    expect(out).to include("печатка ланцюга AuditLog")
+
+    seal["chain_head"] = "f" * 64
+    ok, out = run_lineage_verifier(data)
+    expect(ok).to be(false)
+    expect(out).to include("голова ланцюга не веде до кореня голів")
+  end
+
+  # Печатка мусить стояти на КОЖНОМУ якорі, на який спираються листи, і лише на них — інакше
+  # емітент пропустив би її чи підклав чужу, а ✓ однаково обіцяв би «ланцюг запечатано».
+  it "rejects a bundle whose anchor seal is missing, foreign or detached from its state_root" do
+    create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+    mint_confirmed!
+    AuditLog.create!(user: create(:user, organization: organization), organization: organization, action: "own_row")
+    anchor_confirmed!
+    good = JSON.parse(JSON.generate(bundle))
+
+    missing = good.merge("audit_chain_seals" => [])
+    expect(run_lineage_verifier(missing)).to match([ false, /печатки ланцюга в бандлі немає/ ])
+
+    foreign = JSON.parse(JSON.generate(good))
+    foreign["audit_chain_seals"][0]["organization_id"] = organization.id + 1
+    expect(run_lineage_verifier(foreign)).to match([ false, /печатка іншої організації/ ])
+
+    detached = JSON.parse(JSON.generate(good))
+    detached["audit_chain_seals"][0]["tier2_path"] = []
+    expect(run_lineage_verifier(detached)).to match([ false, /рядок агрегату не веде до state_root/ ])
+  end
+
   it "мітка кредиту й схема бандла звіряються з листям, а не довіряються емітенту" do
     create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 2.hours.ago)
     mint_confirmed!

@@ -690,7 +690,7 @@ class BlockchainTransaction < ApplicationRecord
           error: Web3::TransactionErrorClassifier.classify(error_message).to_s,
           # [MRV.1/ARCH.12] транзитивна печатка: корінь вікна → AuditLog-ланцюг →
           # leaf0 наступного тижневого якоря (nil = unsealed, bundle покаже чесно).
-          # ⚠️ [ARCH.122] leaf0 несе голову ланцюга лише організації, що писала останньою.
+          # [ARCH.122] leaf0 несе корінь голів УСІХ ланцюгів; шлях від голови організації — у бандлі.
           telemetry_merkle_root: telemetry_merkle_root
         }
       }
