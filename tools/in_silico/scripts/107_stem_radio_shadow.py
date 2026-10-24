@@ -948,9 +948,10 @@ def main() -> int:
                ["vertical_stack_budget"]["rows"] if r["fr4_is_bom"]]
     GEOMETRY.update({
         "dbh_m": {"values": [cm / 100.0 for cm in sorted(BARK_SINGLE_RIDGE_MM_BY_DBH_CM)],   # the table's named stems
-                  "referent": "the stem's diameter at breast height: the smallest host (lib DBH_MIN_CM — the CODIT rule, "
-                              "01_01 §1) and the two larger stems 01_04 §3.2's bark table reads",
-                  "source": "lib.constants DBH_MIN_CM; 01_04 §3.2"},
+                  "referent": "the stem's diameter at breast height: the three named stems of 01_04 §3.2's bark table — the "
+                              "smallest host (lib DBH_MIN_CM, the CODIT rule, 01_01 §1) to the largest (lib DBH_MAX_CM, "
+                              "where the desk-read table ends)",
+                  "source": "lib.constants BARK_SINGLE_RIDGE_MM_BY_DBH_CM (DBH_MIN_CM · DBH_MAX_CM); 01_04 §3.2"},
         "standoff_m": {"values": [round((min(rf_rows) + flange_t) / 1000.0, 6), round((max(rf_rows) + flange_t) / 1000.0, 6)],
                        "referent": "the RF deck (the booster's radiating ground) over the bark line, which is the flange's "
                                    "UNDERSIDE (02_02): `52`'s rows of the RF-deck top over the flange's top face plus the "

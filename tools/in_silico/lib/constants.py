@@ -399,9 +399,10 @@ GENEROUS_ORING_BOUND_N = 100.0  # N
 
 # The smallest host stem: the 4 % CODIT rule admits the Ø15 wound from DBH 38 cm (01_01 §1, Zone 2 — mirror, edit there).
 DBH_MIN_CM = 38.0               # cm
-# The largest host stem — a different ground: canon's literature (desk) bark table ends here (01_04 §3.2), and the radio
-# axis `107` reads the dead bark off that table, so past it the bark is an assumption (⚖️ founder 2026-10-24; 01_01 §1 —
-# mirror, edit there). Held to the table's last stem below, at import.
+# The largest host stem — a different ground: canon's bark table ends here (01_04 §3.2) because the desk pass READ its
+# primaries only that far (Вайс 2009 runs to DBH 87), and the radio axis `107` reads the dead bark off that table, so
+# past it the bark is an assumption (⚖️ founder 2026-10-24; 01_01 §1 — mirror, edit there). Held to the table's last
+# stem below, at import.
 DBH_MAX_CM = 60.0               # cm
 # Dead outer bark at DBH 38, RIDGE-referenced (01_04 §3.2 desk input, five Scots-pine models — mirror, edit there);
 # furrow depth has no primary. And the install angle the flange's facing is cut at (01_04 §3.2, ⚖️ 2026-09-30).
@@ -413,8 +414,8 @@ BARK_DEAD_RIDGE_DBH38_MM = (13.5, 21.0)
 # against them at import.
 BARK_SINGLE_RIDGE_MM_BY_DBH_CM = {38: (16.5, 22.0), 50: (20.5, 29.0), 60: (25.0, 36.0)}
 assert max(BARK_SINGLE_RIDGE_MM_BY_DBH_CM) == DBH_MAX_CM, (
-    "the largest host is the bark table's last stem: extending the bark table re-opens the ⚖️ of 01_04 §3.2; "
-    "DBH_MAX_CM moves only by a founder verdict")
+    "the largest host is the bark table's last stem: DBH_MAX_CM moves with the bark table's end; "
+    "a different ground needs a different assert")
 LIVE_PHLOEM_MM_THIN_END = 3.0
 LIVE_PHLOEM_MM_THICK_END_READING = 1.0
 assert (BARK_SINGLE_RIDGE_MM_BY_DBH_CM[38][0] - LIVE_PHLOEM_MM_THIN_END,

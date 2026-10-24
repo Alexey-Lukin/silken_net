@@ -8083,7 +8083,9 @@ CHECKS += [
     # 01_04 §3.2 ⊕; every number the legs carried is pinned in CODIT), so only the HW.8.10 consumer line stays here
     ("shadow 00_07 HW.8.10 consumer deck slope → 107", TRACKER, rf"±1 мм ≈ {N}° перетину −3 дБ — дека рухає вердикт", SHADOW, lambda d: round(_BS(d)["deck_sensitivity_at_floor_row"]["crossing_deg_per_mm_about_the_floor_row"], 1), 0.0),
     # the largest host stem (⚖️ 2026-10-24): lib DBH_MAX_CM read back through the cache that consumed it (the DBH axis's
-    # top), against its mirror home 01_01 §1, the verdict's home 01_04 §3.2 and the log-day sheet's two places
+    # top), against its mirror home 01_01 §1, the verdict's home 01_04 §3.2 and EVERY copy of the number — the log-day
+    # sheet, the field strain sheet, the forest-access application, the tracker (HW.6 Стан and Вайс leg, HW.43), the
+    # 10-23 and 10-24 ⊕ of 01_04 §3.1, SUMMARY, PIPELINE_STATUS and the in-silico README
     ("max DBH premise · largest host stem (canon 01_01 §1 → lib/constants.py DBH_MAX_CM → 107's cache)", COAXIAL, rf"\*\*DBH ≤ {N} см\*\*, з іншої підстави", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
     ("max DBH premise · the verdict's home (canon 01_04 §3.2 ⊕ → lib/constants.py DBH_MAX_CM → 107's cache)", CODIT, rf"Максимум DBH господаря — DBH ≤ {N} см, РАТИФІКОВАНО", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
     ("max DBH · log-day sheet §A.0 → 107", BENCH, rf"\| Діаметр \| DBH 38–{N} см \(того ж класу", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
@@ -8096,7 +8098,11 @@ CHECKS += [
     ("max DBH · 00_07 HW.43 host size → 107", TRACKER, rf"на соснах розміру хоста \(DBH 38–{N} см,", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
     ("max DBH · the 10-23 ⊕ marker in 01_04 §3.1 → 107", CODIT, rf"з 2026-10-24 — DBH ≤ {N} см, ⊕ у §3\.2", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
     ("max DBH · SUMMARY largest host → 107", SUMMARY, rf"Canon's largest host — DBH {N} cm", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
-    ("max DBH · 01_04 §3.2 ⊕ the holding assumption's top → 107", CODIT, rf"за третім тримається до {N} см", SHADOW,
+    ("max DBH · PIPELINE_STATUS 107 row → 107", PIPELINE, rf"DBH 38–{N} cm under three barks", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("max DBH · in-silico README 107 row → 107", "tools/in_silico/README.md", rf"the stem's diameter \(38–{N} cm, the bark derived per stem", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("max DBH · 01_04 §3.1 ⊕ 10-24 weakest link → 107", CODIT, rf"товщу за вилку на стовбурах 38–{N} см", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("max DBH · 00_07 HW.6 Вайс leg → 107", TRACKER, rf"класи DBH {N}–87 \(подвійна кора\)", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
+    ("max DBH · 01_04 §3.2 ⊕ the holding assumption's top → 107", CODIT, rf"«флоемною» корою, тримається до {N} см\), і жодне", SHADOW,
      lambda d: _DSB(d)["axis_cm"][1] if list(_DSB(d)["first_stem_cm_failing_by_assumption"].values()).count(None) == 1 else math.nan, 0.0),
     # 01_04 §3.1 — the ⊕ of 2026-10-24 (the ratified re-pricing): what it carries that the 10-23 ⊕ does not
     ("shadow 01_04 ⊕ 10-24 loss in the ground, low → 107", CODIT, rf"гребеневої кори вона падає на соті децибела \({N}–{_SHX} дБ", SHADOW, lambda d: _LOSS(d)["over_sector_floor_rows"][0], 0.0),
@@ -8191,12 +8197,13 @@ def test_shadow_dbh_sentences_follow_the_cache():
     only_deck = (deck["loss_dB_per_mm_about_the_floor_row"] > excess and ref["at"]["loss_at_rule_deg_dB"] - loss_floor < excess
                  and min(bt["rows"], key=lambda r: r[2])[3] - loss_floor < excess)
     assert ("and only one of them exceeds the excess" in text) == only_deck and ("і лише одна з них перевищує надлишок" in codit) == only_deck
-    assert ("цей надлишок перевищує лише одна — дека" in codit) == only_deck  # the ⊕ of 2026-10-24
+    assert ("з трьох меж цієї підлоги (сітка · край таблиці · дека) цей надлишок перекриває лише одна — дека" in codit) == only_deck  # the ⊕ of 2026-10-24
     assert ("±50° лишається граничним правилом, не правилом із запасом" in codit) == (excess_ok and not bk["holds_on_1deg_grid"])
     assert "**Підставу азимута переціновано — РАТИФІКОВАНО founder 2026-10-24 за рекомендацією:**" in tracker
     assert ("у букві не тримається" in codit) == (not bk["holds_on_1deg_grid"])  # the ⊕ of 2026-10-24
-    assert ("з трьох меж моделі цей надлишок перекриває лише одна — дека" in tracker) == only_deck
-    assert "буква на товстому кінці кори падає на соті децибела на «флоемному» прочитанні" in tracker
+    assert ("з трьох меж цієї підлоги (сітка · край таблиці · дека) цей надлишок перекриває лише одна — дека" in tracker) == only_deck
+    assert ("буква на товстому кінці кори падає на соті децибела на «флоемному» прочитанні" in tracker) == (
+        excess_ok and not bk["holds_on_1deg_grid"] and thick >= 50)  # dry and wet hold it at the thick end (thick_end_dry_wet)
     # the max-DBH ⊕ (01_04 §3.2): how many of the probe's three bark assumptions break the rule — composed from the cache
     n_break = sum(v is not None for v in fails.values())
     words_k = {0: "жодним", 1: "одним", 2: "двома", 3: "трьома"}
