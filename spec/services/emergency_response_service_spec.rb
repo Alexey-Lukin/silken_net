@@ -217,8 +217,22 @@ RSpec.describe EmergencyResponseService do
       expect(raised.message_params).to include("actuator_id" => behind_maintenance.id)
     end
 
-    # Межа присуду — лише `maintenance`: шлюз, що оновлює прошивку, свіп тиші судить, тож
-    # аварійні накази він отримує, як і раніше.
+    # ⊕ [ARCH.75, ⚖️ founder 2026-10-24] І `faulty`, що ще в межах вікна живості
+    # (`available?` його пропускає): втрату звʼязку оголошено, тож наказ лише чекав би
+    # прибиральника. Власний ключ — бо й причина інша.
+    it "does not route an emergency command through a faulty gateway that still looks online" do
+      faulty = create(:gateway, :online, cluster: cluster, state: :faulty)
+      valve = create(:actuator, :water_valve, gateway: faulty, state: :idle)
+
+      expect { described_class.call(alert) }.not_to change(ActuatorCommand, :count)
+
+      raised = EwsAlert.alert_type_emergency_response_undeliverable
+                       .find_by(message_key: "emergency_response_gateway_faulty")
+      expect(raised.message_params).to include("actuator_id" => valve.id)
+    end
+
+    # Межа присуду — `maintenance` і `faulty` (`Gateway::COMMAND_REFUSING_STATES`): шлюз,
+    # що оновлює прошивку, свіп тиші судить, тож аварійні накази він отримує, як і раніше.
     it "still routes through a gateway that is updating firmware" do
       updating = create(:gateway, :online, cluster: cluster, state: :updating)
       valve = create(:actuator, :water_valve, gateway: updating, state: :idle)

@@ -217,8 +217,12 @@ class EmergencyResponseService
       return false
     end
 
-    if actuator.gateway.maintenance?
-      report_undeliverable(alert, actuator, "emergency_response_gateway_maintenance")
+    # ⊕ [ARCH.75, ⚖️ founder 2026-10-24] І `faulty`, що ще в межах вікна живості
+    # (`available?` вище його пропускає): втрату звʼязку вже оголошено, і наказ за ним
+    # лише чекав би прибиральника. Межа — `Gateway::COMMAND_REFUSING_STATES`.
+    if actuator.gateway.refuses_commands?
+      key = actuator.gateway.faulty? ? "emergency_response_gateway_faulty" : "emergency_response_gateway_maintenance"
+      report_undeliverable(alert, actuator, key)
       return false
     end
 

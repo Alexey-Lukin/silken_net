@@ -4,6 +4,8 @@ lt:
     actuators:
       command_in_flight: Aktuatorius jau turi aktyvią komandą. Palaukite, kol ji bus baigta.
       command_queued: Komanda įtraukta į eilę — mazgas ją paims per kitą apklausą.
+      gateway_faulty: 'Komanda nepriimta: šio aktuatoriaus vartai paskelbti sugedusiais (prarastas ryšys) — komanda jų nepasiektų.'
+      gateway_maintenance: 'Komanda nepriimta: šio aktuatoriaus vartams atliekama techninė priežiūra. Tokie vartai komandų negauna — jei jie nutiltų, komanda liktų nepristatyta ir be pėdsakų.'
       idempotency_required: Aktuatoriaus komandos vykdymui reikalinga Idempotency-Key antraštė.
     alerts:
       acknowledged: 'Įspėjimas #%{id} patvirtintas.'

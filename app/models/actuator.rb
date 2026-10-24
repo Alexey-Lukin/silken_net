@@ -150,8 +150,10 @@ class Actuator < ApplicationRecord
   def ready_for_deployment?
     return false unless idle?
 
-    # [СИНХРОНІЗОВАНО]: Шлюз має бути в мережі ТА не перебувати в стані оновлення
-    gateway.online? && !gateway.updating?
+    # [ARCH.75, ⚖️ founder 2026-10-24] Межа шлюза — та сама, що в ERS: `maintenance`/`faulty`
+    # ні, `updating` так. Доти було дзеркально навпаки — обслуговування приймалось,
+    # оновлення відкидалось.
+    gateway.online? && !gateway.refuses_commands?
   end
 
   # Backward-compatible wrappers для існуючих Workers

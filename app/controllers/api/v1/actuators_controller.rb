@@ -109,6 +109,22 @@ module Api
           replay_status: :accepted
         )
 
+        # [ARCH.75, ⚖️ founder 2026-10-24] Шлюз на обслуговуванні чи несправний — відмова
+        # ДО запису, з поясненням: доти `create!` проходив, а `dispatch_to_edge!` або нічого
+        # не помічав (обслуговування), або наказ добивав прибиральник (`faulty`) — тоді як
+        # людина вже прочитала «поставлено в чергу».
+        # ⛔ Override сюди НЕ входить (ARCH.58): його створення гасить чергу
+        # (`cancel_pending_for_actuator!`), і відмова лишила б живим OPEN, що чекає
+        # повернення шлюзу, — тобто зупинка була б заборонена рівно тоді, коли вона потрібна.
+        if @actuator.gateway.refuses_commands? && !override_payload?
+          message = I18n.t(@actuator.gateway.faulty? ? "flash.actuators.gateway_faulty" : "flash.actuators.gateway_maintenance")
+          respond_to do |format|
+            format.json { render json: { error: message }, status: :conflict }
+            format.html { redirect_to actuator_path(@actuator), status: :see_other, error: message }
+          end
+          return
+        end
+
         # [ARCH.58] In-flight гард НЕ поширюється на override (STOP/EMERGENCY_*):
         # інакше оператор не може подати аварійну зупинку саме тоді, коли в черзі
         # щось є — тобто в єдиному сценарії, заради якого override існує. Сам

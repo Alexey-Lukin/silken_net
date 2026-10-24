@@ -4,6 +4,8 @@ en:
     actuators:
       command_in_flight: Actuator already has an active command. Wait for it to complete.
       command_queued: Command queued — the node will pick it up on its next poll.
+      gateway_faulty: 'Command not accepted: this actuator’s gateway has been declared faulty (uplink lost) — the command would not reach it.'
+      gateway_maintenance: 'Command not accepted: this actuator’s gateway is under maintenance. Such a gateway receives no commands — if it went silent, the command would sit undelivered and without a trace.'
       idempotency_required: Idempotency-Key header is required for actuator command execution.
     alerts:
       acknowledged: 'Alert #%{id} acknowledged.'

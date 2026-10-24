@@ -177,11 +177,22 @@ class Gateway < ApplicationRecord
   # станах + НЕ у своїй кампанії (updating): Queen тримає один глобальний
   # OTA-буфер — campaign-id (FW.60) знає лише курсор фетчу, а збірка чанків і
   # маска печатки за ним не скидаються, тож перекриті кампанії = битий образ.
-  # Межа одиночних наказів — `maintenance faulty`; кампанія виключає ще й
+  # Межа одиночних наказів — `COMMAND_REFUSING_STATES`; кампанія виключає ще й
   # :updating (одиночна дейтаграма кампанії не боїться).
   scope :ota_deployable, -> {
-    where.not(ip_address: [ nil, "" ]).where.not(state: %w[maintenance faulty updating])
+    where.not(ip_address: [ nil, "" ]).where.not(state: COMMAND_REFUSING_STATES + %w[updating])
   }
+
+  # [ARCH.75, ⚖️ founder 2026-10-24] Межа ОДИНОЧНИХ наказів — один дім на обидва тракти
+  # (оператор і ERS) та OTA-кампанію вище. Шлюз на обслуговуванні свіп тиші свідомо не
+  # судить, тож наказ за ним, якщо шлюз змовкне, помер би без сліду; `faulty` уже оголосив
+  # втрату звʼязку, навіть коли вікно живості ще не сплило (HeliumSos), і його pending
+  # добиває прибиральник. `updating` одиночному наказу не заважає.
+  COMMAND_REFUSING_STATES = %w[maintenance faulty].freeze
+
+  def refuses_commands?
+    state.in?(COMMAND_REFUSING_STATES)
+  end
 
   # --- МЕТОДИ (Intelligence) ---
 

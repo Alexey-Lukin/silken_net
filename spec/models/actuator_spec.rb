@@ -129,12 +129,23 @@ RSpec.describe Actuator, type: :model do
       expect(actuator.ready_for_deployment?).to be false
     end
 
-    it "returns false when gateway is updating" do
-      gateway  = create(:gateway, :online)
+    # [ARCH.75, ⚖️ founder 2026-10-24] Межа шлюза — та сама, що в ERS: оновлення прошивки
+    # одиночному наказу не заважає (доти тут стояла відмова), обслуговування й
+    # несправність — заважають, навіть коли шлюз ще в межах вікна живості.
+    it "returns true when the gateway is updating firmware" do
+      gateway  = create(:gateway, :online, state: :updating)
       actuator = create(:actuator, gateway: gateway, state: :idle)
-      allow(gateway).to receive_messages(online?: true, updating?: true)
 
-      expect(actuator.ready_for_deployment?).to be false
+      expect(actuator.ready_for_deployment?).to be true
+    end
+
+    it "returns false when the gateway is under maintenance or declared faulty, even if online" do
+      %i[maintenance faulty].each do |state|
+        gateway  = create(:gateway, :online, state: state)
+        actuator = create(:actuator, gateway: gateway, state: :idle)
+
+        expect(actuator.ready_for_deployment?).to be(false), "gateway state #{state}"
+      end
     end
 
     it "returns true when idle and gateway is online and not updating" do

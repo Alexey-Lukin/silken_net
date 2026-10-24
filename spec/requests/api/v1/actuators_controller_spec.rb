@@ -202,6 +202,49 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       expect(response).to have_http_status(:accepted)
     end
 
+    # [ARCH.75, ⚖️ founder 2026-10-24] Межа шлюза — та сама, що в ERS, і відмова ДО запису:
+    # доти `create!` проходив, людина читала «поставлено в чергу», а наказ за шлюзом на
+    # обслуговуванні лежав без доставки (за несправним — його знімав прибиральник).
+    { maintenance: "flash.actuators.gateway_maintenance", faulty: "flash.actuators.gateway_faulty" }.each do |state, key|
+      it "refuses an ordinary command behind a gateway in #{state}" do
+        own_gateway.update_columns(state: Gateway.states.fetch(state.to_s))
+
+        expect {
+          post "/actuators/#{own_actuator.id}/execute",
+               params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+               headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+        }.not_to change(ActuatorCommand, :count)
+
+        expect(response).to have_http_status(:conflict)
+        expect(response.parsed_body["error"]).to eq(I18n.t(key))
+      end
+    end
+
+    # ⛔ [ARCH.58 ⊥ ARCH.75] Override межу шлюза МИНАЄ свідомо: його створення гасить
+    # чергу, тож відмова лишила б живим OPEN, що чекає повернення шлюзу з обслуговування.
+    it "lets an override STOP through a gateway under maintenance — and it cancels the queued OPEN" do
+      queued = own_actuator.commands.create!(user: user, command_payload: "OPEN_VALVE",
+                                             duration_seconds: 10, status: :issued)
+      own_gateway.update_columns(state: Gateway.states.fetch("maintenance"))
+
+      post "/actuators/#{own_actuator.id}/execute",
+           params: { action_payload: "STOP", duration_seconds: 1 },
+           headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+
+      expect(response).to have_http_status(:accepted)
+      expect(queued.reload.status).not_to eq("issued")
+    end
+
+    it "accepts a command behind a gateway that is updating firmware" do
+      own_gateway.update_columns(state: Gateway.states.fetch("updating"))
+
+      post "/actuators/#{own_actuator.id}/execute",
+           params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+           headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+
+      expect(response).to have_http_status(:accepted)
+    end
+
     # [ARCH.58] In-flight гард НЕ сміє блокувати аварійну зупинку: інакше
     # оператор не може подати STOP саме тоді, коли в черзі щось є — тобто в
     # єдиному сценарії, заради якого override існує. Модельний виняток
