@@ -439,6 +439,15 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
     ActiveSupport::TimeZone[zone] if zone
   end
 
+  # Формат поля `datetime-local` — один на форму й контролер: правка, що повертає ті самі
+  # цифри, момент не перечитує (секунди, осіння «друга» 03:30, зона старої цілі).
+  SITE_TIME_INPUT_FORMAT = "%Y-%m-%dT%H:%M"
+
+  # Цифри, якими форма друкує цей момент.
+  def performed_at_site_digits
+    performed_at&.in_time_zone(site_time_zone || Time.zone)&.strftime(SITE_TIME_INPUT_FORMAT)
+  end
+
 private
 
 # СИГНАЛ, а не рядок: стрічка дашборда — похідний міжсутнісний рейтинг, тож

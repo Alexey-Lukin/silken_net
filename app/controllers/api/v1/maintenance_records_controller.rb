@@ -223,9 +223,14 @@ module Api
         new_photos = Array(attrs.delete(:photos)).compact_blank
         performed_at_given = attrs.key?(:performed_at)
         performed_at = attrs.delete(:performed_at)
+        # [SEC.37] Цифри, які форма надрукувала (зона СТАРОЇ цілі), — до присвоєння цілі.
+        # Повернуті без змін — момент не перечитується: інакше кожне повторне збереження
+        # різало б секунди, осіння «друга» 03:30 ставала б першою, а зміна цілі перечитувала б
+        # цифри старої зони в новій — і все це тихо рухало б `performed_at`.
+        printed = @record.performed_at_site_digits
         @record.assign_attributes(attrs)
         verify_maintainable_within_organization!(@record)
-        assign_performed_at!(@record, performed_at) if performed_at_given
+        assign_performed_at!(@record, performed_at) if performed_at_given && performed_at != printed
         @record.photos.attach(new_photos) if new_photos.any?
 
         if @record.save

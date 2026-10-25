@@ -73,6 +73,33 @@ RSpec.describe "Maintenance record — site time zone [SEC.37]", type: :request 
     end
   end
 
+  # Форма друкує момент без секунд у зоні СТАРОЇ цілі; ті самі цифри назад — момент не
+  # перечитується, інакше повторне збереження різало б секунди, а зміна цілі зсувала б момент.
+  it "keeps the absolute moment when an edit returns the digits the form printed" do
+    record = create(:maintenance_record, user: forester, maintainable: tree,
+                                         performed_at: Time.utc(2026, 5, 20, 3, 0, 37))
+
+    patch "/maintenance_records/#{record.id}",
+          params: { maintenance_record: { performed_at: "2026-05-20T12:00",
+                                          notes: "Re-checked the anchor collar and the seal." } },
+          headers: headers, as: :json
+
+    expect(record.reload.performed_at).to eq(Time.utc(2026, 5, 20, 3, 0, 37))
+  end
+
+  it "does not re-read unchanged digits in the zone of a newly chosen target" do
+    kyiv_tree = create(:tree, cluster: create(:cluster, organization: organization, time_zone: "Europe/Kyiv"))
+    record = create(:maintenance_record, user: forester, maintainable: tree,
+                                         performed_at: Time.utc(2026, 5, 20, 3, 0, 0))
+
+    patch "/maintenance_records/#{record.id}",
+          params: { maintenance_record: { maintainable_id: kyiv_tree.id, performed_at: "2026-05-20T12:00" } },
+          headers: headers, as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(record.reload.performed_at).to eq(Time.utc(2026, 5, 20, 3, 0, 0))
+  end
+
   it "leaves the moment alone when an edit does not send it" do
     record = create(:maintenance_record, user: forester, maintainable: tree,
                                          performed_at: Time.utc(2026, 5, 20, 3, 0, 0))

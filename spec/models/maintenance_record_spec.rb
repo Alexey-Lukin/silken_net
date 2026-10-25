@@ -901,4 +901,24 @@ RSpec.describe MaintenanceRecord, type: :model do
       expect(described_class.new.site_time_zone).to be_nil
     end
   end
+
+  # [SEC.37] Цифри, якими форма друкує момент: з ними правка звіряє, чи момент змінено.
+  describe "#performed_at_site_digits [SEC.37]" do
+    it "prints the moment in the site zone, without seconds" do
+      tree = build(:tree, cluster: build(:cluster, time_zone: "Asia/Tokyo"))
+      record = build(:maintenance_record, maintainable: tree, performed_at: Time.utc(2026, 5, 20, 3, 0, 37))
+
+      expect(record.performed_at_site_digits).to eq("2026-05-20T12:00")
+    end
+
+    it "falls back to the application zone when the target has no site" do
+      record = described_class.new(performed_at: Time.utc(2026, 5, 20, 3, 0, 0))
+
+      expect(record.performed_at_site_digits).to eq("2026-05-20T03:00")
+    end
+
+    it "is nil without a moment" do
+      expect(described_class.new.performed_at_site_digits).to be_nil
+    end
+  end
 end

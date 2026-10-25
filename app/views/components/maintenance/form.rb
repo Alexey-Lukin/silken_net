@@ -256,7 +256,7 @@ module Maintenance
     def performed_at_site_value
       zone = @site_time_zone || Time.zone
       moment = @record.performed_at || (Time.current if @site_time_zone)
-      moment&.in_time_zone(zone)&.strftime("%Y-%m-%dT%H:%M")
+      moment&.in_time_zone(zone)&.strftime(MaintenanceRecord::SITE_TIME_INPUT_FORMAT)
     end
 
     def performed_at_zone_hint
