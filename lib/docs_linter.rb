@@ -56,7 +56,9 @@ module DocsLinter
       bands[m[1]] = [ m[2].to_i, m[3].to_i ]
       rows[m[1]]  = line
     end
-    return [] if bands.empty?
+    # An unreadable band is a FINDING, not a clean result: with no module row matched,
+    # every check below would iterate an empty set and pass forever.
+    return [ "00_03 §1: per-module band unreadable — TRL_BAND_ROW_RE matched no rows, so the band check never ran" ] if bands.empty?
 
     members = doc_trls.group_by { |base, _| base[0, 2] }.transform_values { |pairs| pairs.map(&:last) }
     by_doc  = doc_trls.group_by { |base, _| base[0, 2] }
@@ -406,7 +408,7 @@ module DocsLinter
   # and the One-Home function is lost without a single red light. The anchor closes that loop:
   # each home must still MATCH the guard's own pattern, so re-pricing the home fails CI until
   # the regex is consciously updated together with every mirror. The violation text doubles as
-  # the mirror checklist (DOC-T.41).
+  # the mirror checklist.
   RATE_ANCHOR_HOMES = {
     "05_03" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ] ],
     "00_04" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ],

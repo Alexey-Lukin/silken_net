@@ -100,7 +100,7 @@
 #
 # NAMED CEILINGS [BIZ.22] — a regex cannot read intent, so each is named, not fixed:
 #   (1) HOMONYM terms are gated only inside locale values, so investment framing in
-#       engineering prose stays a manual-sweep concern (DOC-T.41).
+#       engineering prose stays a manual-sweep concern.
 #   (2) Canon docs under docs/*.md are NOT scanned. They legitimately name the code's
 #       own symbols — 05_03 documents `slash(address investor, …)` because that IS the
 #       ABI. Scanning them produced ~100 downstream lines per run, which is how an advisory

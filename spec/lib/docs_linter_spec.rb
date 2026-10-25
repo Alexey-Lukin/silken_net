@@ -83,7 +83,8 @@ RSpec.describe DocsLinter do
     end
 
     it "ignores the NASA-stage table rows ('**TRL n-m**', not 'NN ...') and module-less docs" do
-      expect(described_class.trl_range_consistency("| **TRL 7-8** | Кваліфікація | Prod |\n", {})).to be_empty
+      expect(described_class.trl_range_consistency("| **TRL 7-8** | Кваліфікація | Prod |\n", {}))
+        .to contain_exactly(a_string_matching(/band unreadable.*never ran/))
       expect(described_class.trl_range_consistency(matrix, { "99_99_Ghost" => 9 })).to be_empty
     end
   end

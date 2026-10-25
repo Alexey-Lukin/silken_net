@@ -99,10 +99,11 @@ RSpec.describe OfferingLexicon do
     it "does not read ROI inside `gyroid`" do
       # g-y-r-o-i-d. An unbounded case-insensitive scan called the manifesto three
       # violations, every one of them this word.
-      with_tree("README.md" => <<~MD) do |root|
-        Macroporous titanium gyroids print on commercial DMLS platforms.
-        The gyroid admits sap; gyroid porosity is ~65%.
-      MD
+      with_tree("config/locales/x/en.yml" => <<~YML) do |root|
+        en:
+          hero:
+            title: TITANIUM GYROID ANCHOR
+      YML
         expect(described_class.audit(root)[:hard]).to be_empty
       end
     end

@@ -53,7 +53,7 @@ namespace :docs do
   # so such a page could not honestly say "not applicable" without losing its Статус:
   # the norm forbade exactly what the gate compelled. Hence a DECLARED exception —
   # a machine cannot tell a process page from a technology one, and inferring it would
-  # be wrong in the silent direction (same reasoning as MANIFEST_TRL_OWNERS).
+  # be wrong in the silent direction.
   # The list is a two-way pin: a page here must ALSO carry no TRL, otherwise the
   # exception would quietly become a licence to keep the category error.
   TRL_NOT_APPLICABLE = {
@@ -375,12 +375,12 @@ namespace :docs do
     # (00_03 §1): band well-formed + row ≤ max member + member ≤ target (see linter).
     # Resolved by NUMBER, never by full filename: the number is the ratified stable
     # coordinate of this page, its title is not. A missing (or ambiguous) match used to
-    # hand `nil` to all three TRL gates below, which then computed empty arrays and
+    # hand `nil` to both TRL gates below, which then computed empty arrays and
     # passed forever — on the corpus's central honesty claim, with zero red. An empty
     # finding-set means "clean" only when the check actually RAN, so say so and go RED.
     matrix_files = files.select { |f| File.basename(f).start_with?("00_03_") }
     matrix_text  = matrix_files.one? ? File.read(matrix_files.first) : nil
-    trl_dark     = matrix_text ? [] : [ "docs/00_03_*.md matched #{matrix_files.size} files — the 3 TRL gates below did NOT run" ]
+    trl_dark     = matrix_text ? [] : [ "docs/00_03_*.md matched #{matrix_files.size} files — the 2 TRL gates below did NOT run" ]
     trl_ranges  = matrix_text ? DocsLinter.trl_matrix_range_violations(matrix_text) : []
     trl_band    = matrix_text ? DocsLinter.trl_range_consistency(matrix_text, doc_trls) : []
 
@@ -552,7 +552,7 @@ end
       puts "  TRL SOURCE DARK — the matrix doc could not be resolved:"
       trl_dark.each { |d| puts "    ✗ #{d}" }
     end
-    # The three ✓ lines below are suppressed while the source is dark — a green tick
+    # The ✓ lines below are suppressed while the source is dark — a green tick
     # next to "did NOT run" is the very thing this lantern exists to prevent.
     if trl_ranges.any?
       puts "  TRL RANGE in 00_03 §1 matrix (#{trl_ranges.size}):"
@@ -688,7 +688,7 @@ end
     failed << "TRL exemption whose page no longer exists (inherited immunity)" unless trl_exempt_dead.empty?
     failed << "owner/exempt constant naming a doc number that no longer exists (inherited immunity)" unless exempt_dead.empty?
     failed << "TRL stated on a declared non-technology page (00_03 §1 category error)" unless trl_misapplied.empty?
-    failed << "TRL matrix doc unresolved — 3 TRL gates did not run" unless trl_dark.empty?
+    failed << "TRL matrix doc unresolved — 2 TRL gates did not run" unless trl_dark.empty?
     failed << "TRL ranges in 00_03 §1 matrix" unless trl_ranges.empty?
     failed << "TRL band inconsistency (doc TRL vs 00_03 §1 module band)" unless trl_band.empty?
     failed << "ToC drift (run docs:toc)" unless toc_drift.empty?
