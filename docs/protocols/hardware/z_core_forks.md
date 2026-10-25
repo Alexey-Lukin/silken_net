@@ -154,4 +154,6 @@
 7. нахил;
 8. дендрометр.
 
+Свідка росту розводять із джерелом (⚖️ 2026-10-25, [`01_03 §4`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)): дендрометр — єдиний пункт, що міряє заяву токена, тож він кандидат на перший важіль, а не на останній ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.54).
+
 **Джерела брейншторму (позначки — звітів дослідників):** Alvarez & Li 2006, IJBC 16(8):2129 [п] · Bellare & Yee 2003, CT-RSA, LNCS 2612 [п] · Yang et al. 2018, IoTDI — DoS через скидання FC у LoRaWAN [а] · Cooper & Smith 2006, J. Power Sources — метод переривання струму [а] · Flexer & Mano 2010, Anal. Chem. 82:1444 [а] · Zweifel 2016, New Phytol. — TWD [а] · Clonch 2021, HardwareX — магнітний дендрометр [а] · Ciruzzi & Loheide 2019, GRL [п] · Hao 2021, J. Exp. Bot. [а] · Helium HIP-66 · WeatherXM docs (QoD, PoL) · GEODNET, NAVI 70(4) · TTN LoRaWAN security · Copernicus ERA5-Land-T · Global Nature Watch DIST-ALERT · Sylvera про Kariba · West et al. 2023, Science (+ спростування arXiv 2312.06793). URL — у звітах; перед будь-якою публікацією звірити в PDF.
