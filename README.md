@@ -5,7 +5,7 @@
 
 <!-- hero: one representative per macro-layer, bottom-up (tree → blockchain) -->
 <p align="center">
-  <a href="docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md"><img alt="EBFC >500mV" src="https://img.shields.io/badge/EBFC%20%3E500mV-2E7D32?style=flat-square"></a>
+  <a href="docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md"><img alt="EBFC >500mV in silico" src="https://img.shields.io/badge/EBFC%20%3E500mV%20in%20silico-2E7D32?style=flat-square"></a>
   <a href="docs/02_03_BQ25570_MPPT_Nano_Power.md"><img alt="BQ25570" src="https://img.shields.io/badge/BQ25570-CC0000?style=flat-square"></a>
   <a href="https://www.st.com/en/microcontrollers-microprocessors/stm32wle5jc.html"><img alt="STM32WLE5" src="https://img.shields.io/badge/STM32WLE5-03234B?style=flat-square&logo=stmicroelectronics&logoColor=white"></a>
   <a href="https://lora-alliance.org/"><img alt="LoRa 868" src="https://img.shields.io/badge/LoRa%20868-5BC236?style=flat-square"></a>
@@ -18,7 +18,7 @@
 
 **Silken Net** is the world's first trustless **D-MRV** (Digital Measurement, Reporting & Verification) platform for planetary-scale forest-health monitoring. Each tree gets a machine identity (peaq DID), becomes an economic agent, and earns carbon tokens (**SCC**) for verified biomass growth.
 
-A titanium gyroid anchor with an enzymatic biofuel cell (EBFC — "zero-grid", >500 mV from xylem sap) powers an STM32 *Soldier* node that senses → computes a Lorenz-attractor homeostasis signal → encrypts → transmits over LoRa 868 MHz to a *Queen* gateway, which relays via CoAP to a Rails 8 / PostgreSQL / Sidekiq backend and a 11-chain Web3 *Proof-of-Growth* pipeline.
+A titanium gyroid anchor carries an STM32 *Soldier* node whose power source is an open research bet — an enzymatic biofuel cell built into the anchor (EBFC, >500 mV computed in silico, not yet measured in a tree). The node senses → encrypts → transmits over LoRa 868 MHz to a *Queen* gateway, which relays via CoAP to a Rails 8 / PostgreSQL / Sidekiq backend and a 11-chain Web3 *Proof-of-Growth* pipeline.
 
 > *"We do not merely watch the forest. We give it a digital will."*
 
@@ -55,7 +55,7 @@ _Bottom-up, the way sap climbs the xylem: from the root inside a living tree (**
 
 | Layer | Stack |
 |:---|:---|
-| **L1 · ROOT**<br><sub>Biophysics</sub> | ![Ti-6Al-4V](https://img.shields.io/badge/Ti--6Al--4V-8A8D8F?style=flat-square) ![Gyroid TPMS](https://img.shields.io/badge/Gyroid%20TPMS-556B2F?style=flat-square) ![EBFC >500mV](https://img.shields.io/badge/EBFC%20%3E500mV-2E7D32?style=flat-square) ![PicoGK](https://img.shields.io/badge/PicoGK-6E4B9E?style=flat-square) ![.NET 9](https://img.shields.io/badge/.NET%209-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![AlphaFold 3](https://img.shields.io/badge/AlphaFold%203-2E6FF2?style=flat-square) ![OpenMM](https://img.shields.io/badge/OpenMM-3B7DD8?style=flat-square) ![PySCF](https://img.shields.io/badge/PySCF-1E5C97?style=flat-square) |
+| **L1 · ROOT**<br><sub>Biophysics</sub> | ![Ti-6Al-4V](https://img.shields.io/badge/Ti--6Al--4V-8A8D8F?style=flat-square) ![Gyroid TPMS](https://img.shields.io/badge/Gyroid%20TPMS-556B2F?style=flat-square) ![EBFC >500mV in silico](https://img.shields.io/badge/EBFC%20%3E500mV%20in%20silico-2E7D32?style=flat-square) ![PicoGK](https://img.shields.io/badge/PicoGK-6E4B9E?style=flat-square) ![.NET 9](https://img.shields.io/badge/.NET%209-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![AlphaFold 3](https://img.shields.io/badge/AlphaFold%203-2E6FF2?style=flat-square) ![OpenMM](https://img.shields.io/badge/OpenMM-3B7DD8?style=flat-square) ![PySCF](https://img.shields.io/badge/PySCF-1E5C97?style=flat-square) |
 | **L2 · CAPSULE**<br><sub>Hardware</sub> | ![BQ25570](https://img.shields.io/badge/BQ25570-CC0000?style=flat-square) ![Supercap 0.47F](https://img.shields.io/badge/Supercap%200.47F-5A6B7B?style=flat-square) ![SIM7070G](https://img.shields.io/badge/SIM7070G-1E88E5?style=flat-square) ![W25Q32](https://img.shields.io/badge/W25Q32-004B87?style=flat-square) ![SE051](https://img.shields.io/badge/SE051-0A6EBD?style=flat-square) |
 | **L3 · BRAIN**<br><sub>Firmware + edge AI</sub> | ![STM32WLE5](https://img.shields.io/badge/STM32WLE5-03234B?style=flat-square&logo=stmicroelectronics&logoColor=white) ![SX1262](https://img.shields.io/badge/SX1262-00A3E0?style=flat-square) ![C](https://img.shields.io/badge/C-A8B9CC?style=flat-square&logo=c&logoColor=white) ![mruby](https://img.shields.io/badge/mruby-4A4A4A?style=flat-square) ![Arm CMSIS](https://img.shields.io/badge/Arm%20CMSIS-0091BD?style=flat-square&logo=arm&logoColor=white) ![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00?style=flat-square&logo=tensorflow&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white) |
 | **L4 · VESSELS**<br><sub>Network</sub> | ![LoRa 868](https://img.shields.io/badge/LoRa%20868-5BC236?style=flat-square) ![LoRaWAN 1.0.4](https://img.shields.io/badge/LoRaWAN%201.0.4-00295B?style=flat-square) ![CoAP](https://img.shields.io/badge/CoAP-2CA5E0?style=flat-square) ![Helium](https://img.shields.io/badge/Helium-0ACF83?style=flat-square&logo=helium&logoColor=white) |
