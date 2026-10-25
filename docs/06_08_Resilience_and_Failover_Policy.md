@@ -438,6 +438,9 @@ Slashing::CauseEvidence.new(cluster, contract: <NaasContract>).positive_a?   # �
 # за миттю запису.
 # Не чекай «наступного тригера»: після строку дії доказ ворота вже не відчиняє, а тригер,
 # що прийде раніше, може бути про ІНШУ подію — ворота не знають, який інцидент довів доказ.
+# ⚠️ <tree_id> — дерево-джерело: без нього шкода 0 або nil → freeze; з ним розмір ≥ 1/N і для ЖИВОГО
+# дерева (`source_tree_damage_ratio`), а прямого виміру стану дерева ворота не питають — його мусить
+# нести сам акт (05_05 §7, найслабша ланка).
 BurnCarbonTokensWorker.perform_async(cluster.organization_id, <contract.id>, <tree_id|nil>)
 ```
 
