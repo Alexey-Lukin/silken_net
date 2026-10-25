@@ -2029,7 +2029,8 @@ script 30's since 2026-09-27 — gives a HIGHER percentage (sleep only raises th
 verdict stands and is, if anything, conservative. ⚖️ The rail question this number fed is decided — **RATIFIED founder
 2026-09-09** (`00_07` HW.42, [`01_03 §6.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)): a second source on the shared rail
 is rejected — closed as an approach, not deferred; a TEG, if integrated at all, needs a physically separate charging path.
-The ground holds while growth points are computed from `delta_t`; it lapses with a separate growth witness (2026-10-25,
+The ground holds while growth points are computed from `delta_t` and while the cell-state probe is read from `delta_t` — a
+second source moves that probe too; it lapses only when both stop (2026-10-25,
 [`01_03 §6.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 (`kinetics/delta_t_aux_power_sensitivity.json`)
 

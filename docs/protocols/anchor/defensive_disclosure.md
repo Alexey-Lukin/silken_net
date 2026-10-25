@@ -3,8 +3,8 @@
 > **Author / discloser:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
 > **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-10-25
 > **First published on 2026-10-04:** §2.1 and §3.1 as they then stood, and every passage or table entry marked
-> «added 2026-10-04» or «corrected 2026-10-04». Passages marked «corrected 2026-10-23» (§2.1) and «corrected 2026-10-25» (§1,
-> SYNERGY A) post-date the Technical Disclosure Commons print and are not re-issued there: what was disclosed stays disclosed, and the correction
+> «added 2026-10-04» or «corrected 2026-10-04». Passages marked «added 2026-10-12» (§5), «corrected 2026-10-23» (§2.1) and «corrected
+> 2026-10-25» (§1 SYNERGY A, §2, §2.1(9)) post-date the Technical Disclosure Commons print and are not re-issued there: what was disclosed stays disclosed, and the correction
 > serves the next reader of this repository.
 > **Status:** published on Technical Disclosure Commons on 2026-10-06 (submitted 2026-10-04, printed from
 > commit `5bd8636f5` of this file) — https://www.tdcommons.org/dpubs_series/12006, under CC BY-SA 4.0.
@@ -54,8 +54,9 @@ placed here into the public record:
   tell them apart from the tree ([`02_03 §12.4.2`](../../02_03_BQ25570_MPPT_Nano_Power.md) · [`02_01 §3.4`](../../02_01_Hardware_Architecture_and_BOM.md)).
   ⚠️ **Corrected 2026-10-25:** the reference design no longer holds that `delta_t` measures tree physiology.
   It measures the power of the cell — anode × enzyme kinetics × electrode, minus the node's own leakage — and
-  is treated as a probe of the cell's own state, not as a witness of growth ([`01_03 §4`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)); the VPD
-  confounder disclosed below likewise no longer explains a `delta_t` excursion.
+  is treated as a probe of the cell's own state, not as a witness of growth ([`01_03 §4`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
+  The reference implementation still maps `delta_t` to the growth reward (§2), as a transitional rule until a
+  separate growth witness exists ([`03_04 §4.3`](../../03_04_mruby_Lorenz_Attractor.md)).
   What was disclosed stays disclosed: as prior art the combination stands whether or not the property holds.
 - **SYNERGY B — triple-function gyroid.** A single triply-periodic-minimal-surface (gyroid) geometry
   **simultaneously** (a) admits xylem sap into its porous volume, (b) reduces the modulus mismatch with
@@ -147,6 +148,8 @@ fixed minimum, an anomaly status replaces it by zero, and a stress status can, r
 alert. What stays withdrawn is the claim that this status measures tree health, which remains an
 unvalidated hypothesis ([`03_04 §4.2`](../../03_04_mruby_Lorenz_Attractor.md) ·
 [`03_04 §5.3`](../../03_04_mruby_Lorenz_Attractor.md)).
+⚠️ **Corrected 2026-10-25:** «primary physiological indicator» no longer holds in the reference design — `delta_t`
+is a probe of the cell's own state (§1, SYNERGY A); the reward mapping stays, transitional.
 
 **Extensions.** A LoRa network of such nodes — in the reference design a star per cluster, in which every
 sensing node is powered **solely by its own EBFC** while the cluster gateway runs on a solar panel and a
@@ -338,6 +341,9 @@ saturating the capsule's desiccant with forest air. The PEEK bonding face is pla
 energy of at least 55 mN/m, and the vent is bonded before the sensor is installed. *Practised* at CAD level;
 the vent, the pocket and the sensor await bench validation, and no manufacturer has qualified the vent's
 adhesive on treated PEEK for long service ([`02_01 §3.4`](../../02_01_Hardware_Architecture_and_BOM.md)).
+⚠️ **Corrected 2026-10-25:** with `delta_t` no longer read as tree physiology (§1, SYNERGY A), VPD no longer
+explains a `delta_t` excursion; it stays disclosed as the weather confounder for a future direct measurement of
+the tree ([`05_05 §7`](../../05_05_Slashing_and_Risk_Policy.md)).
 
 **(10) Band-set self-attestation of the integrity seal, with a narrowing-only guard.** The node bins the
 attractor's state into its categorical status with a threshold band: a lower and an upper bound on the
@@ -432,7 +438,7 @@ they constitute an enabling publication of the combination described in §2 and 
 - **Technical Disclosure Commons** — a no-fee defensive-publication venue whose records are indexed and
   consulted by patent offices. This disclosure: «Defensive Disclosure — SilkenNet Self-Powered Tree-Health
   Monitor (Prior Art)», Defensive Publications Series, published 2026-10-06 —
-  https://www.tdcommons.org/dpubs_series/12006.
+  https://www.tdcommons.org/dpubs_series/12006 (entry added 2026-10-12).
 - **The public SilkenNet git repository** — this file, with a verifiable commit date.
 - **A preprint of Article 1** ([`00_02 §2.1`](../../00_02_Academic_Integration_and_IP.md)) — **planned, not
   yet deposited**: a computational study of the cell's electron-transfer energetics, to be deposited on
