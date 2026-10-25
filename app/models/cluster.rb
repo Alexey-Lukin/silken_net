@@ -51,7 +51,8 @@ class Cluster < ApplicationRecord
 
   # --- JSONB SETTINGS (The Biome Adaptation) ---
   # ⚠️ Ключі тут НЕ рівноцінні за живістю, і різницю видно лише звідси: `custom_fire_threshold`
-  # читає `AlertDispatchService` (перша ланка `fire_limit`), `timezone` — добовий шар;
+  # читає `AlertDispatchService` (перша ланка `fire_limit`), `timezone` лише показує сторінка кластера
+  # (добовий шар зняв ARCH.100 — нижче; зону кластера для моменту візиту ратифіковано в SEC.37, не реалізовано);
   # а ⛔ `seismic_sensitivity_threshold` не читає НІХТО
   # [ARCH.102] — сейсмічний вердикт знято разом із його вимірювачем. Лишається оголошеним
   # forward-контрактом (валідація й рендер чинні на випадок, коли ключ таки виставлять руками),
