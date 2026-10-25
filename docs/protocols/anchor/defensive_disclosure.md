@@ -1,10 +1,10 @@
 # Defensive Disclosure — SilkenNet self-powered tree-health monitor (prior art)
 
 > **Author / discloser:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
-> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-10-23
+> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-10-25
 > **First published on 2026-10-04:** §2.1 and §3.1 as they then stood, and every passage or table entry marked
-> «added 2026-10-04» or «corrected 2026-10-04». One passage in §2.1 marked «corrected 2026-10-23» post-dates the
-> Technical Disclosure Commons print and is not re-issued there: what was disclosed stays disclosed, and the correction
+> «added 2026-10-04» or «corrected 2026-10-04». Passages marked «corrected 2026-10-23» (§2.1) and «corrected 2026-10-25» (§1,
+> SYNERGY A) post-date the Technical Disclosure Commons print and are not re-issued there: what was disclosed stays disclosed, and the correction
 > serves the next reader of this repository.
 > **Status:** published on Technical Disclosure Commons on 2026-10-06 (submitted 2026-10-04, printed from
 > commit `5bd8636f5` of this file) — https://www.tdcommons.org/dpubs_series/12006, under CC BY-SA 4.0.
@@ -52,6 +52,10 @@ placed here into the public record:
   It does not mean that `delta_t` is free of confounders: an ageing energy store, an ageing anchor and the
   weather also lengthen `delta_t`, and §2.1(8) and §2.1(9) disclose how the reference design sets out to
   tell them apart from the tree ([`02_03 §12.4.2`](../../02_03_BQ25570_MPPT_Nano_Power.md) · [`02_01 §3.4`](../../02_01_Hardware_Architecture_and_BOM.md)).
+  ⚠️ **Corrected 2026-10-25:** the reference design no longer holds that `delta_t` measures tree physiology.
+  It measures the power of the cell — anode × enzyme kinetics × electrode, minus the node's own leakage — and
+  is treated as a probe of the cell's own state, not as a witness of growth ([`01_03 §4`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
+  What was disclosed stays disclosed: as prior art the combination stands whether or not the property holds.
 - **SYNERGY B — triple-function gyroid.** A single triply-periodic-minimal-surface (gyroid) geometry
   **simultaneously** (a) admits xylem sap into its porous volume, (b) reduces the modulus mismatch with
   living wood, and (c) forms the metal↔xylem interface electrode of that same EBFC.
