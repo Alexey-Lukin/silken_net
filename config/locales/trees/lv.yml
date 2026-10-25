@@ -64,7 +64,7 @@ lv:
         supply_sub: MCU barošanas šina, VREFINT kalibrēta
         supply_voltage: Barošanas spriegums
       headings:
-        biometrics: Tiešraides biometrijas matrica
+        biometrics: Mezgla tiešraides telemetrija
         deployment_matrix: Izvietojuma matrica
         economic_yield: Uzkrātie izaugsmes punkti
         hardware_vault: Aparatūras drošības glabātuve
@@ -75,7 +75,7 @@ lv:
         silent: KLUSS
         unit: GP
         uplink_state: Augšupsaites stāvoklis
-        verified_balance: Verificētais atlikums
+        verified_balance: Punktu atlikums
       ledger:
         unknown_technician: Nezināms
       locate_aria: Atrast koka mezglu Google Maps

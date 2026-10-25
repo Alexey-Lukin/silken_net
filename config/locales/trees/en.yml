@@ -64,7 +64,7 @@ en:
         supply_sub: MCU rail, VREFINT-calibrated
         supply_voltage: Supply Voltage
       headings:
-        biometrics: Live Biometric Matrix
+        biometrics: Live Node Telemetry
         deployment_matrix: Deployment Matrix
         economic_yield: Growth Points Accrued
         hardware_vault: Hardware Security Vault
@@ -75,7 +75,7 @@ en:
         silent: SILENT
         unit: GP
         uplink_state: Uplink State
-        verified_balance: Verified Balance
+        verified_balance: Points Balance
       ledger:
         unknown_technician: Unknown
       locate_aria: Locate tree node on Google Maps

@@ -8,7 +8,7 @@ uk:
       locked: 'Заблоковано:'
       locked_for: 'Заблоковано для: %{owner}'
       unit: GP
-      verified_balance: Перевірені бали росту
+      verified_balance: Нараховано балів росту
     index:
       audit_link: Аудит реєстру →
       kind_clan: Скарбниця клану

@@ -65,7 +65,7 @@ lt:
         supply_sub: MCU maitinimo šina, kalibruota VREFINT
         supply_voltage: Maitinimo įtampa
       headings:
-        biometrics: Tiesioginė biometrinė matrica
+        biometrics: Tiesioginė mazgo telemetrija
         deployment_matrix: Diegimo matrica
         economic_yield: Sukaupti augimo taškai
         hardware_vault: Aparatūros saugumo saugykla
@@ -76,7 +76,7 @@ lt:
         silent: TYLUS
         unit: GP
         uplink_state: Ryšio aukštyn būsena
-        verified_balance: Patikrintas balansas
+        verified_balance: Taškų balansas
       ledger:
         unknown_technician: Nežinomas
       locate_aria: Rasti medžio mazgą Google Maps

@@ -8,7 +8,7 @@ en:
       locked: 'Locked:'
       locked_for: 'Locked for: %{owner}'
       unit: GP
-      verified_balance: Verified Growth Points
+      verified_balance: Growth Points Accrued
     index:
       audit_link: Audit Ledger →
       kind_clan: Clan Treasury

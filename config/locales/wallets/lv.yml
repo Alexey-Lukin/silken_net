@@ -8,7 +8,7 @@ lv:
       locked: 'Bloķēts:'
       locked_for: 'Bloķēts: %{owner}'
       unit: GP
-      verified_balance: Verificētie izaugsmes punkti
+      verified_balance: Uzkrātie izaugsmes punkti
     index:
       audit_link: Audita virsgrāmata →
       kind_clan: Klana kase

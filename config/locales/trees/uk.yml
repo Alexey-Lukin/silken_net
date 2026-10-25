@@ -66,7 +66,7 @@ uk:
         supply_sub: Шина MCU, калібрування VREFINT
         supply_voltage: Напруга живлення
       headings:
-        biometrics: Жива біометрична матриця
+        biometrics: Жива телеметрія вузла
         deployment_matrix: Матриця розгортання
         economic_yield: Нараховано балів росту
         hardware_vault: Апаратне сховище безпеки
@@ -77,7 +77,7 @@ uk:
         silent: ТИША
         unit: GP
         uplink_state: Стан зв'язку
-        verified_balance: Підтверджений баланс
+        verified_balance: Баланс балів
       ledger:
         unknown_technician: Невідомий
       locate_aria: Знайти вузол дерева на Google Maps

@@ -40,8 +40,9 @@ RSpec.describe Provisioning::New do
       expect(html).not_to include("Hardware Initiation")
     end
 
-    it "renders biometric link subtitle" do
-      expect(html).to include("biometric link")
+    # [HW.54 Р10] Ні біометрії, ні 40 років: вузол лише привʼязується до дерева.
+    it "renders the node-binding subtitle" do
+      expect(html).to include("Binding the node to its tree")
     end
   end
 
