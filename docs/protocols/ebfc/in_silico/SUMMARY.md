@@ -2025,7 +2025,7 @@ the multi-input).
 | 200 µW | 93-95% | 98-99% |
 
 **Verdict** — 🔴 Even at the BOTTOM of the plausible TEG range, `delta_t` is already dominated by
-the auxiliary source rather than tree metabolism, in every season. The percentage result is
+the auxiliary source rather than the EBFC cell, in every season. The percentage result is
 algebraically independent of which `delta_t` definition of the form E / (P·η) is used (E_window cancels
 in every bracket model) — this is not an artifact of scale choice. ⚠️ A definition WITH a sleep term —
 script 30's since 2026-09-27 — gives a HIGHER percentage (sleep only raises the contamination), so the

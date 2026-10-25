@@ -3,8 +3,8 @@
 """
 L2 — temperature sweep: full matrix stability at multiple temperatures.
 
-Purpose (per docs/01_03 §4 "Zero Instrumental Noise")
-------------------------------------------------------
+Purpose (matrix stability over the tree's temperature range)
+-------------------------------------------------------------
 Verify that the Gen 2.0 matrix (genipin + chitosan + CNC) does not
 denature dgrFAD-GDH across the operational temperature range of a tree
 (-10°C to +40°C). This replaces the Arrhenius extrapolation in L4 with

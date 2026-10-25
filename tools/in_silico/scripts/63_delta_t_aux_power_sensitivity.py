@@ -6,9 +6,10 @@ HW.42 — Does a second power source on the SAME BQ25570 rail contaminate `delta
 WHY THIS EXISTS. `00_07` HW.21 carried (until the 2026-09-09 verdict — Scope below) a checkbox
 for TEG multi-input integration onto the same BQ25570 charging rail the EBFC already feeds.
 Since [E.63], `delta_t` (the EDLC recharge interval, `02_03 §12.2-12.3`) drives `growth_points` DIRECTLY — a
-money-minting signal, not a debug counter. `01_03 §4`'s instrumental-noise-source list
-is exhaustively CHEMICAL (enzyme degradation, membrane fouling, chlorides); it has no
-axis at all for "a second, unrelated power source lands on the same charge rail". This
+money-minting signal, not a debug counter. `01_03 §4`'s list of what moves `delta_t` was
+then exhaustively CHEMICAL (enzyme degradation, membrane fouling, chlorides); it had no
+axis for "a second, unrelated power source lands on the same charge rail" (it carries one
+since 2026-10-25, when `delta_t` became a probe of the cell's state, not of the tree). This
 script closes that missing axis with one closed form: how much injecting an auxiliary
 power P_aux (HW.21's TEG estimate, 50-200 µW; swept 10-200 µW here) shifts `delta_t`
 away from the EBFC-only baseline.
