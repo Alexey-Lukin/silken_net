@@ -226,7 +226,7 @@ STM32WLE5CC
 
 | # | Компонент | Призначення |
 |---|---|---|
-| D1 | ST-LINK-V3MINIE | SWD програматор / дебагер |
+| D1 | STLINK-V3MINIE | SWD програматор / дебагер |
 | D2 | FT232RL USB-UART (3.3 В) | Serial console / mruby REPL |
 | D3 | Макетна плата + дроти | Прототипування енергетичного ланцюга |
 | D4 | AA батарея + дільник (3.3 кОм + 100 Ом) | Симуляція 44 мВ streaming potential |
@@ -785,7 +785,7 @@ STM32WLE5CC
 
 **Bench build+test guide** (повний Soldier поблоково на макетці — фронт живлення «еквівалент EBFC» + production sense/SE/radio; легасі-харвестер 44 мВ → LTC3108 знято 2026-09-27) — [`02_04`](02_04_Bench_Build_Guide).
 
-**SWD/UART debug-підключення** ST-LINK-V3MINIE та FT232RL до LoRa-E5 — [`03_01`](03_01_Firmware_Lifecycle_and_DMA) — розділ «Фізичне Підключення Апаратного Відладчика».
+**SWD/UART debug-підключення** STLINK-V3MINIE та FT232RL до LoRa-E5 — [`03_01`](03_01_Firmware_Lifecycle_and_DMA) — розділ «Фізичне Підключення Апаратного Відладчика».
 
 ---
 

@@ -59,7 +59,7 @@
 | **Порт** | Налаштування GPIO pinout (PA9/PA10 UART, ADC, DMA USART1-RX Королеви, RNG, CRYP) до отримання плат |
 | **Clock Tree** | Конфігурація HSE/LSE для ultra-low-power сну (ціль — Standby з RTC на LSE low drive, ≈ 300 nA — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power), ⚖️ 2026-10-05 — §1.10; на TRL 6 baseline: STOP2, 1.07 µA за паспортом) |
 | **HAL drivers** | Auto-генерація ініціалізаційного коду для I2C/SPI/ADC/UART/RTC/CRYP |
-| **Debugger** | Інтеграція з ST-LINK-V3MINIE: breakpoints, live variable watch, SWO trace |
+| **Debugger** | Інтеграція з STLINK-V3MINIE: breakpoints, live variable watch, SWO trace |
 | **Збірка** | GCC ARM Embedded toolchain (вбудований у CubeIDE); той самий компілятор що й для host-тестів |
 
 **Що можна зробити до отримання фізичних плат:**
@@ -167,7 +167,7 @@ make -C firmware/test queen
 
 Компілятор: `gcc` (системний x86). Тести покривають: CIFO, AES, Lorenz, OTA, Mesh, CRC32, DID-генерацію.
 
-### Фізичне Підключення Апаратного Відладчика (ST-LINK-V3MINIE + FT232RL)
+### Фізичне Підключення Апаратного Відладчика (STLINK-V3MINIE + FT232RL)
 
 #### Фаза 0: Заземлення (The Shield — Спільна Земля)
 
@@ -180,7 +180,7 @@ LoRa-E5 GND  ──────┘
 BQ25570 GND  ──────┘
 ```
 
-#### Канал 1: ST-LINK-V3MINIE (SWD — Завантаження Коду)
+#### Канал 1: STLINK-V3MINIE (SWD — Завантаження Коду)
 
 | ST-LINK пін | LoRa-E5 mini пін | Призначення |
 |---|---|---|
@@ -227,7 +227,7 @@ Bench-carrier — STM32WLE5JC у модулі, і його виводи НЕ т�
 #### Фінальне Підключення до Mac
 
 ```
-MacBook USB-A/C ──── ST-LINK-V3MINIE (Type-C) ──── SWD: CLK+DIO+RST+T_VCC → LoRa-E5
+MacBook USB-A/C ──── STLINK-V3MINIE (Type-C) ──── SWD: CLK+DIO+RST+T_VCC → LoRa-E5
 MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX2, RX→TX2 → LoRa-E5 mini
 ```
 
