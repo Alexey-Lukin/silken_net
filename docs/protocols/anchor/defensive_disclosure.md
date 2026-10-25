@@ -54,7 +54,8 @@ placed here into the public record:
   tell them apart from the tree ([`02_03 §12.4.2`](../../02_03_BQ25570_MPPT_Nano_Power.md) · [`02_01 §3.4`](../../02_01_Hardware_Architecture_and_BOM.md)).
   ⚠️ **Corrected 2026-10-25:** the reference design no longer holds that `delta_t` measures tree physiology.
   It measures the power of the cell — anode × enzyme kinetics × electrode, minus the node's own leakage — and
-  is treated as a probe of the cell's own state, not as a witness of growth ([`01_03 §4`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
+  is treated as a probe of the cell's own state, not as a witness of growth ([`01_03 §4`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)); the VPD
+  confounder disclosed below likewise no longer explains a `delta_t` excursion.
   What was disclosed stays disclosed: as prior art the combination stands whether or not the property holds.
 - **SYNERGY B — triple-function gyroid.** A single triply-periodic-minimal-surface (gyroid) geometry
   **simultaneously** (a) admits xylem sap into its porous volume, (b) reduces the modulus mismatch with

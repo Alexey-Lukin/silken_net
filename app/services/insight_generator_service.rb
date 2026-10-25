@@ -331,7 +331,7 @@ class InsightGeneratorService < ApplicationService
   end
 
   # [VPD weather-confounder gate — 04_02 §VPD, 05_05 §7] DISCOUNT-ONLY.
-  # Designed to lower stress_index when depressed metabolism is explained by
+  # Designed to lower stress_index when a depressed direct signal is explained by
   # WEATHER, not disease: saturated air (rain/fog → low VPD) gives near-zero
   # transpiration pull, so a HEALTHY tree legitimately slows. Never RAISES stress
   # (discount-only invariant). The «a humid spell would cross the slash threshold»
@@ -344,14 +344,14 @@ class InsightGeneratorService < ApplicationService
   # measurement of the tree that weather can mimic, not VPD calibration) are in the comment right above the method
   # (04_02 §VPD). We still ship NO guessed kPa threshold into the slashing path.
   # The ML-retrain dependency is gone with its subject (00_07 E.52). NB: the
-  # heuristic ignores sap entirely (GAP, 05_05 §7), and `delta_t` does not measure
-  # sap flow — when the trigger lands, the gate's test is a SIGNED metabolic
-  # deviation (a slowdown, not |dev|), not a low-sap one.
+  # heuristic ignores sap entirely (GAP, 05_05 §7), and `delta_t` measures the
+  # cell, not the tree — when the trigger lands, the gate's test is a SIGNED
+  # deviation of the direct measurement (a slowdown, not |dev|).
 
   # 🔴 ІНЕРТНИЙ, і причина названа. Гейт існує, щоб ЗНИЖУВАТИ стрес, коли
-  # пригнічений метаболізм пояснюється погодою (насичене повітря → нульова
+  # пригнічений прямий сигнал пояснюється погодою (насичене повітря → нульова
   # транспіраційна тяга), а не хворобою. Тобто його передумова — ДВА входи:
-  # погода І метаболічне відхилення. Другого немає: `sap_flow` не мав жодного
+  # погода І пряме відхилення стану дерева. Другого немає: `sap_flow` не мав жодного
   # писача і знятий, а дисконтувати стрес лише за вологим днем означало б
   # вибачати посуху погодою без жодного підтвердження з дерева.
   # ⚠️ Напрямок несучий: гейт тільки ЗНИЖУЄ, тож його інертність безпечна —
@@ -378,9 +378,10 @@ class InsightGeneratorService < ApplicationService
   # це процесний шар навколо механізму, який не має підстави існувати —
   # `00_05 §5` / [У-ВЕЙ, ⚖️ 08-09]. Прибрати дешевше, ніж стерегти.
   # ⏳ **ПОДІЯ ПОВЕРНЕННЯ названа (амана — відкладення без строку стає відмовою):**
-  # перший польовий кадр, що несе ПРЯМИЙ сигнал (`vpd_index` — після bring-up
-  # HW.32; `sap_flow` — лише після вимірювача сокоруху в BOM і wire-ревізії,
-  # ARCH.102); оголошує її той, хто закриває ту ногу. Доти вердикту про стрес
+  # перший польовий кадр, що несе ПРЯМИЙ сигнал стану дерева (TWD дендрометра —
+  # HW.54; `sap_flow` — лише після вимірювача сокоруху в BOM і wire-ревізії,
+  # ARCH.102; `vpd_index` — конфаундер, не прямий сигнал); оголошує її той, хто
+  # закриває ту ногу. Доти вердикту про стрес
   # НЕМАЄ — метод нижче повертає `nil`.
   #
   # ⚖️ [E.64 · (Б), ратифіковано founder 2026-10-10, `05_05 §7`] Стрес = лише ПРЯМІ
@@ -396,7 +397,8 @@ class InsightGeneratorService < ApplicationService
   # для всіх кластерів (`Celo::CommunityRewardService` тримає виплату на `nil`) до
   # першого прямого сигналу. Слешинг (0.83) і страховий Trigger-1 (0.8) NULL не беруть —
   # недосяжні так само, як були під колишньою стелею 0.6.
-  # 🔓 Член повертається лише на ПРЯМОМУ вимірі (`delta_t`, `05_05 §7`), не з новою
+  # 🔓 Член повертається лише на ПРЯМОМУ вимірі (TWD дендрометра · еталонний sap-flow,
+  # `05_05 §7`), не з новою
   # калібровкою статусу; хто його задротовує, той і вирішує, що повертати тут.
   def calculate_stress_index(_stats)
     nil
