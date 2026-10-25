@@ -16,7 +16,7 @@
 # (обидва = f(delta_t)). При Δt=3600s stored=38, не 50; для stored=50 → 40 пакетів,
 # не 24. Guard виводить ОБИДВА з ОДНОГО delta_t → неможливо закодувати такий drift.
 #
-# Джерела (firmware/bio_contracts/metabolic_core.rb — placeholder до bench, E.63):
+# Джерела (firmware/bio_contracts/metabolic_core.rb — заморожені placeholder [transitional]):
 #   DELTA_T_FAST_S=600 (m=1.0), DELTA_T_SLOW_S=7200 (m=0.0)
 #   wire = round(GP_HOMEO_MIN + m*(GP_HOMEO_MAX-GP_HOMEO_MIN)), 5..31
 #   stored = 2*wire (backend ×2 upscale, FW.29-PACK; 03_04 (status & 0x1F) * 2 — на CCM-кадрі

@@ -33,7 +33,7 @@ module Solana
       SOLANA_RPC_URL_FALLBACK_2
     ].freeze
 
-    # Мікро-винагорода за одиницю зростання біомаси (в USDC lamports, 1 USDC = 1_000_000 lamports)
+    # Мікро-винагорода за growth_point (бал з `delta_t`, [transitional] — 03_04 §4.3) (в USDC lamports, 1 USDC = 1_000_000 lamports)
     # 0.01 USDC = 10_000 lamports
     DEFAULT_MICRO_REWARD_LAMPORTS = 10_000
 
@@ -157,13 +157,13 @@ module Solana
       end
     end
 
-    # Розрахунок мікро-винагороди на основі зростання біомаси дерева.
+    # Розрахунок мікро-винагороди за бали дерева (не за виміряний ріст — 03_04 §4.3).
     # growth_points з телеметрії визначає розмір бонусу.
     def calculate_reward
       growth = @telemetry_log.growth_points.to_i
       return 0 if growth <= 0
 
-      # Базова винагорода + бонус за кожну одиницю росту
+      # Базова винагорода + бонус за кожен growth_point
       base = DEFAULT_MICRO_REWARD_LAMPORTS
       bonus = (growth * 100) # 100 lamports за кожен growth_point (0.0001 USDC)
 

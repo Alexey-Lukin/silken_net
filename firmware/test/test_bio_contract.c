@@ -144,8 +144,8 @@ static uint8_t evaluate_and_pack(uint32_t seed, int8_t temp, uint8_t acoustic,
         status = BIO_STATUS_ANOMALY;
         growth_points = 0;
     } else if (delta_t_s == DELTA_T_UNKNOWN_S) {
-        /* [ARCH.102] Гомеостаз виміряно, метаболізм — ні: емісія без доказу
-         * росту не нараховується. Пара (status=0, GP=0) вільна, бо виміряний
+        /* [ARCH.102] Гомеостаз виміряно, `delta_t` — ні: емісія без
+         * виміру не нараховується. Пара (status=0, GP=0) вільна, бо виміряний
          * гомеостаз починається з GP_HOMEO_MIN, а нуль у полі балів доти
          * належав лише аномалії (status=2). */
         status = BIO_STATUS_HOMEOSTASIS;

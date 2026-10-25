@@ -22,7 +22,7 @@ module Trees
         render_header
 
         div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8") do
-          # ЛІВИЙ КОНТУР: Біометрія та Графіки
+          # ЛІВИЙ КОНТУР: Телеметрія вузла та Графіки
           div(class: "xl:col-span-2 space-y-10") do
             render_biometric_panel
             render_maintenance_ledger # Журнал зцілень
@@ -222,7 +222,7 @@ module Trees
           div do
             p(class: "text-mini text-gaia-text-muted uppercase") { t(".labels.verified_balance") }
             div(class: "flex items-baseline gap-2") do
-              # 🔴 Те саме, що в біометричній панелі: `balance` — `decimal`, тож без
+              # 🔴 Те саме, що в панелі телеметрії вузла: `balance` — `decimal`, тож без
               # `&.to_f` баланс рендерився ПОРОЖНІМ, а поруч лишався самотній тікер.
               # ✅ [ARCH.88] Підпис виправлено: це БАЛИ росту, не монети — читаємо
               # `balance` напряму, одиниця з локалі.

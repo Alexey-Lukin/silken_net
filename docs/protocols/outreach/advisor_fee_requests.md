@@ -120,7 +120,7 @@
 
 Dear [Name],
 
-My name is [Name Surname]. I am building SilkenNet, an open-source forest monitoring platform: sensors embedded in tree trunks report the condition of the tree, and the platform keeps a record of the data and issues an accounting unit for the node's telemetry under an internal accounting convention (the node does not measure tree growth directly) — an ERC-20 token on Polygon. Clients pay a fixed fee for the monitoring service. The project is at an early stage: the smart contracts are written and deployed only on test networks, no token of real value has been issued, and there are no clients and no revenue yet.
+My name is [Name Surname]. I am building SilkenNet, an open-source forest monitoring platform: sensor nodes embedded in tree trunks report their own telemetry, and the platform keeps a record of the data and issues an accounting unit for the node's telemetry under an internal accounting convention (the node does not measure tree growth directly) — an ERC-20 token on Polygon. Clients pay a fixed fee for the monitoring service. The project is at an early stage: the smart contracts are written and deployed only on test networks, no token of real value has been issued, and there are no clients and no revenue yet.
 
 I am looking for a paid legal opinion before the first token issuance. We have compiled a factual description of the product, verified against the source code, and some of its features match elements of the tests for financial instruments. We have therefore made the first mainnet issuance conditional on a qualified assessment and, if needed, a product redesign while it is still cheap. We are not asking you to confirm a conclusion of ours: the qualification is yours.
 

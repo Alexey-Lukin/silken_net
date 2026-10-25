@@ -414,7 +414,7 @@ reciprocal reads as a margin ABOVE turnover and means the opposite thing.
 
 ## L4 — Chemical Kinetics
 
-> ⚠️ Scenario labels «healthy» / «stressed» name sap-glucose cases for the CELL, not states of the tree: `delta_t` measures
+> ⚠️ Scenario labels «healthy» / «stressed» / «Active growth» name sap-glucose cases for the CELL, not states of the tree: `delta_t` measures
 > the cell's power, not tree physiology ([`01_03 §4`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)); the labels are pinned and kept.
 
 **Model:** Michaelis-Menten + Arrhenius + BQ25570 boost − sleep drain → delta_t = E_cycle / (P_ebfc · η_BQ − P_sleep) — the same form as the canon's H = E_active / (E_gen − E_sleep) ([`02_03 §9.6`](../../../02_03_BQ25570_MPPT_Nano_Power.md)), with the same cycle cost and sleep drain since 2026-09-27
