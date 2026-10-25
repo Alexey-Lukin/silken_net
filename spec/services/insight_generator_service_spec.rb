@@ -517,6 +517,8 @@ RSpec.describe InsightGeneratorService, type: :service do
       insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
       # Рядок називає СТАН сигналу (положення Z), не діагноз про світ за ним
       expect(insight.summary).to include("СТРЕС: Z нижче критичного мінімуму")
+      # [E.64] Супутня температура поруч без застереження читалась би діагнозом.
+      expect(insight.summary).to include("причину сигнал не називає")
     end
 
     it "generates anomaly summary for status 2" do

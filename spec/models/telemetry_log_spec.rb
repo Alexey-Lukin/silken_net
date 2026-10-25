@@ -19,24 +19,6 @@ RSpec.describe TelemetryLog, type: :model do
 
 
 
-  describe "#critical?" do
-    it "returns true for anomaly status" do
-      log = build(:telemetry_log, :anomaly)
-      expect(log).to be_critical
-    end
-
-    it "returns true for vm_error status" do
-      log = build(:telemetry_log, :vm_errored)
-      expect(log).to be_critical
-    end
-
-    it "returns false for homeostasis" do
-      log = build(:telemetry_log, :healthy)
-      expect(log).not_to be_critical
-    end
-  end
-
-
   describe "#relayed_via_mesh?" do
     # Стартовий TTL залежить від типу пакета (firmware DEFAULT_TTL=3 /
     # PANIC_TTL=5) — до FW.29-panic-персистенції default=5 позначав

@@ -229,11 +229,6 @@ class TelemetryLog < ApplicationRecord
     previous != reset_cause
   end
 
-  # Швидка перевірка на критичність для UI
-  def critical?
-    bio_status_anomaly? || bio_status_vm_error?
-  end
-
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # SELF-HEALING INTELLIGENCE (Recovery Protocols)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

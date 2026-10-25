@@ -711,7 +711,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | Метод | Опис |
 |-------|------|
 | `relayed_via_mesh?` | `mesh_ttl < стартовий TTL типу пакета` (`panic? ? 5 : 3` — `INITIAL_TTL_PANIC/NORMAL`). До FW.29-персистенції давній default 5 позначав «релейнутим» кожен direct normal-пакет |
-| `critical?` | `anomaly?` або `vm_error?` |
+| ⛔ *знято* | `critical?` (`anomaly?` або `vm_error?`) — ⊕ [E.64, 2026-10-25] нуль викликачів, а сам предикат читав ПОЛОЖЕННЯ Z «критичним» станом дерева; Z свідчить лише про DCI ([`05_05 §8.1`](05_05_Slashing_and_Risk_Policy)) |
 | ⛔ *знято* | `healthy?` · `optimal?` · `recovery_confirmed?` + колонка `trees.health_streak` — anti-flapping-петля, ⚖️ присуд founder 2026-08-16. Підстава НЕ «нуль читачів» (продакшну не було), а хибна КОНСТРУКЦІЯ: критерій закриття не спростовує критерій відкриття — `healthy?` не кликав `Attractor.homeostatic?`, тобто був сліпий до половини тригера посухи; для `insect_epidemic` міряв кавітацію (класу «комаха» в TinyML немає); для `entropy_anomaly` — інший рівень агрегації. Не відроджувати: канон [`05_05`](05_05_Slashing_and_Risk_Policy) INS.1 призначив суддею ЛЮДИНУ, а активна біо-тривога є ворітьми перед незворотною виплатою → [`00_07`](00_07_Action_Plan_Tracker) ARCH.84 |
 | `.partition_pruned(iso, metric_caller:)` | **[S6.16]** One-Home pruning-логіки: chainable 1с-вікно по `created_at` (толерантне до секундної точності ISO — стандарт `BlockchainTransaction`) + облік degraded path лічильником `unpruned_lookups`. Воркери/сервіси/контролери делегують сюди, НЕ дублюють |
 
