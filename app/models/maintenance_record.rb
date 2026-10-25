@@ -430,6 +430,15 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
     pulse.present? && pulse > performed_at
   end
 
+  # ⚖️ [SEC.37, founder 2026-10-25] Дім питання «у якій зоні читати й друкувати момент цього
+  # запису» — зона ДІЛЯНКИ цілі. Зберігається завжди абсолютний момент; зона рухає лише
+  # введення й показ. `nil` — ціль ще невідома (порожня форма нового запису) або без ділянки:
+  # тоді «зараз» не підставляють, бо будь-яка підстановка була б тихим зсувом на різницю зон.
+  def site_time_zone
+    zone = maintainable&.cluster&.time_zone
+    ActiveSupport::TimeZone[zone] if zone
+  end
+
 private
 
 # СИГНАЛ, а не рядок: стрічка дашборда — похідний міжсутнісний рейтинг, тож

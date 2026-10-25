@@ -142,7 +142,11 @@ module Maintenance
             span(class: "text-status-warning-accent text-compact", title: t(".hw_pending_title")) { "◌" }
           end
         end
-        td(class: "p-4 text-gaia-text-muted text-tiny") { record.performed_at&.strftime("%d.%m.%y // %H:%M") }
+        # [SEC.37] Кожен рядок — у зоні СВОЄЇ ділянки (`maintainable: :cluster` прелоадить
+        # контролер), і зону названо абревіатурою: рядки різних ділянок стоять поруч.
+        td(class: "p-4 text-gaia-text-muted text-tiny") do
+          record.performed_at&.in_time_zone(record.site_time_zone || "UTC")&.strftime("%d.%m.%y // %H:%M %Z")
+        end
         td(class: "p-4 text-right") do
           a(
             href: maintenance_record_path(record),

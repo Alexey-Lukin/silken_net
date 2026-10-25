@@ -244,4 +244,14 @@ RSpec.describe Maintenance::Index do
       expect(html).to include("—")        # maintainable&.display_identifier || "—"
     end
   end
+
+  # ⚖️ [SEC.37, founder 2026-10-25] Рядок — у зоні СВОЄЇ ділянки, з абревіатурою зони.
+  describe "performed_at in each row's site zone [SEC.37]" do
+    it "prints the row in its site zone" do
+      tree = Tree.new(did: "SNET-00000042", cluster: Cluster.new(time_zone: "Asia/Tokyo"))
+      record = build_record(performed_at: Time.utc(2026, 5, 23, 20, 0, 0), maintainable: tree)
+
+      expect(render_component(records: [ record ], pagy: mock_pagy)).to include("24.05.26 // 05:00 JST")
+    end
+  end
 end

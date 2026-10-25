@@ -87,10 +87,11 @@ RSpec.describe Maintenance::Show do
     r
   end
 
-  def render_component(record:, photos:, pagy_photos:, current_user: build_user)
+  def render_component(record:, photos:, pagy_photos:, current_user: build_user, site_time_zone: nil)
     ApplicationController.renderer.render(
       component_class.new(
-        record: record, photos: photos, pagy_photos: pagy_photos, current_user: current_user
+        record: record, photos: photos, pagy_photos: pagy_photos, current_user: current_user,
+        site_time_zone: site_time_zone
       ),
       layout: false
     )
@@ -662,4 +663,20 @@ RSpec.describe Maintenance::Show do
   def verify_path = "/maintenance_records/7/verify"
   def edit_path   = "/maintenance_records/7/edit"
   def attest_path = "/maintenance_records/7/attest"
+
+  # ⚖️ [SEC.37, founder 2026-10-25] Момент — у зоні ділянки, і зону названо поруч.
+  describe "performed_at in the site zone [SEC.37]" do
+    let(:record) { build_record(performed_at: Time.utc(2026, 5, 23, 20, 0, 0)) }
+
+    it "prints the moment in the site zone and names the zone" do
+      html = render_component(record: record, photos: [], pagy_photos: mock_pagy_photos,
+                              site_time_zone: ActiveSupport::TimeZone["Asia/Tokyo"])
+
+      expect(html).to include("24.05.2026 // 05:00 Asia/Tokyo")
+    end
+
+    it "falls back to an explicitly named UTC without a site" do
+      expect(render_component(record: record, photos: [], pagy_photos: mock_pagy_photos)).to include("23.05.2026 // 20:00 UTC")
+    end
+  end
 end

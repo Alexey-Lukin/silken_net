@@ -10,11 +10,14 @@ module Maintenance
     # лише `edit` і невдалий `update`, обидва за `authorize_record_mutation!`), але
     # безпека трималась на маршруті викликача, а не на власному контракті —
     # і саме таку залежність правило UI.5/UI.6 і забороняє.
-    def initialize(record:, existing_photos: [], current_user: nil)
+    # @param site_time_zone [ActiveSupport::TimeZone, nil] зона ділянки цілі [SEC.37] — подає
+    #   контролер (компонент запитів не робить); `nil` — ціль ще невідома
+    def initialize(record:, existing_photos: [], current_user: nil, site_time_zone: nil)
       @record = record
       @editing = @record.persisted?
       @existing_photos = existing_photos
       @current_user = current_user
+      @site_time_zone = site_time_zone
     end
 
     def view_template
@@ -65,9 +68,12 @@ module Maintenance
                 class: input_classes, **aria
             end
             field_container(f, :performed_at, t(".performed_at")) do |aria|
+              hint_id = f.field_id(:performed_at, :zone)
+              describedby = [ aria.dig(:aria, :describedby), hint_id ].compact.join(" ")
               f.datetime_local_field :performed_at,
-                value: (@record.performed_at || Time.current).strftime("%Y-%m-%dT%H:%M"),
-                class: input_classes, **aria
+                value: performed_at_site_value,
+                class: input_classes, **aria.deep_merge(aria: { describedby: describedby })
+              p(id: hint_id, class: "text-micro text-gaia-text-muted") { performed_at_zone_hint }
             end
           end
 
@@ -244,6 +250,21 @@ module Maintenance
     # [UI.3] Блок дістає ARIA-атрибути ПОЛЯ — інакше `aria-invalid` нікуди
     # поставити: контрол рендерить викликач, а не цей хелпер. Порожній хеш на
     # валідному полі, тож `**aria` у викликача безпечний завжди.
+    # ⚖️ [SEC.37, founder 2026-10-25] Цифри поля — час ДІЛЯНКИ: сервер прочитає їх у тій самій
+    # зоні. Без відомої ділянки «зараз» не підставляється — будь-яка зона тут дала б тихий зсув
+    # на різницю зон; уже вписаний момент (422 без цілі) друкується в зоні, у якій його прочитали.
+    def performed_at_site_value
+      zone = @site_time_zone || Time.zone
+      moment = @record.performed_at || (Time.current if @site_time_zone)
+      moment&.in_time_zone(zone)&.strftime("%Y-%m-%dT%H:%M")
+    end
+
+    def performed_at_zone_hint
+      return t(".performed_at_zone_unknown") unless @site_time_zone
+
+      t(".performed_at_zone", zone: @site_time_zone.tzinfo.identifier)
+    end
+
     def field_container(form, attribute, label_text, &)
       div(class: "space-y-2") do
         form.label attribute, label_text, class: "text-mini uppercase tracking-widest text-gaia-label"

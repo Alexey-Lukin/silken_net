@@ -154,7 +154,10 @@ module Trees
                     td(class: "p-4 text-gaia-text-strong") { record.user&.full_name || t(".ledger.unknown_technician") }
                     td(class: "p-4 uppercase text-gaia-primary-strong") { record.action_type_label }
                     td(class: "p-4 text-gaia-text-muted italic") { record.notes&.truncate(50) || "—" }
-                    td(class: "p-4 text-right text-gaia-text-muted") { record.performed_at&.strftime("%d.%m.%y") || "—" }
+                    # [SEC.37] Дата візиту — у зоні ділянки дерева: біля опівночі UTC-дата інша.
+                    td(class: "p-4 text-right text-gaia-text-muted") do
+                      record.performed_at&.in_time_zone(@tree.cluster&.time_zone || "UTC")&.strftime("%d.%m.%y") || "—"
+                    end
                   end
                 end
               else

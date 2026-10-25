@@ -407,4 +407,27 @@ RSpec.describe TreeChronicleService do
       end
     end
   end
+
+  # ⚖️ [SEC.37, founder 2026-10-25] Дата візиту в хроніці — у зоні ділянки дерева: біля опівночі
+  # UTC-дата інша.
+  describe "maintenance entry date [SEC.37]" do
+    it "dates the visit in the site zone" do
+      cluster.update!(time_zone: "Asia/Tokyo")
+      create(:maintenance_record, maintainable: tree, performed_at: Time.utc(2026, 5, 23, 20, 0, 0))
+
+      entry = described_class.call(tree: tree)[:entries].find { |e| e.event_type == :maintenance }
+
+      expect(entry.date.to_date).to eq(Date.new(2026, 5, 24))
+    end
+
+    it "dates the visit in an explicitly named UTC for a tree without a site" do
+      lone_tree = create(:tree, cluster: nil)
+      create(:maintenance_record, maintainable: lone_tree, performed_at: Time.utc(2026, 5, 23, 20, 0, 0))
+
+      entry = described_class.call(tree: lone_tree)[:entries].find { |e| e.event_type == :maintenance }
+
+      expect(entry.date.to_date).to eq(Date.new(2026, 5, 23))
+      expect(entry.date.time_zone.name).to eq("UTC")
+    end
+  end
 end

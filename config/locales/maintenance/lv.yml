@@ -46,6 +46,8 @@ lv:
         labor_hours: Darba stundas
         parts_cost: Rezerves daļu izmaksas (USD)
       performed_at: Veikts
+      performed_at_zone: Vietas laiks — %{zone}
+      performed_at_zone_unknown: 'Ievadiet mērķa vietas laiku: serveris to nolasīs tās laika joslā'
       submit:
         create: Saglabāt matricā
         update: Atjaunināt ierakstu

@@ -13,9 +13,10 @@ unless Views::Shared::UI::PhotoCard.method_defined?(:_test_blob_helpers_stubbed)
 end
 
 RSpec.describe Maintenance::Form do
-  def render_component(record:, existing_photos: [], current_user: nil)
+  def render_component(record:, existing_photos: [], current_user: nil, site_time_zone: nil)
     ApplicationController.renderer.render(
-      component_class.new(record: record, existing_photos: existing_photos, current_user: current_user),
+      component_class.new(record: record, existing_photos: existing_photos, current_user: current_user,
+                          site_time_zone: site_time_zone),
       layout: false
     )
   end
@@ -310,6 +311,44 @@ RSpec.describe Maintenance::Form do
       record_form = doc.css("form").find { |f| f["action"].to_s.match?(%r{/maintenance_records/\d+\z}) }
       expect(record_form).to be_present
       expect(record_form.css('input[name="_method"]').map { |i| i["value"] }).to eq([ "patch" ])
+    end
+  end
+
+  # ⚖️ [SEC.37, founder 2026-10-25] Цифри поля — час ділянки; без відомої ділянки «зараз» не вигадується.
+  describe "performed_at in the site zone [SEC.37]" do
+    let(:tokyo) { ActiveSupport::TimeZone["Asia/Tokyo"] }
+
+    def performed_at_input(html)
+      Nokogiri::HTML(html).at_css('input[name="maintenance_record[performed_at]"]')
+    end
+
+    def hint_of(html)
+      doc = Nokogiri::HTML(html)
+      input = doc.at_css('input[name="maintenance_record[performed_at]"]')
+      doc.at_css("##{input['aria-describedby'].split.last}")
+    end
+
+    it "prefills now in the site zone and names that zone" do
+      travel_to(Time.utc(2026, 5, 23, 12, 0, 0)) do
+        html = render_component(record: build(:maintenance_record, performed_at: nil), site_time_zone: tokyo)
+
+        expect(performed_at_input(html)["value"]).to eq("2026-05-23T21:00")
+        expect(hint_of(html).text).to include("Asia/Tokyo")
+      end
+    end
+
+    it "prints an existing moment in the site zone" do
+      record = build(:maintenance_record, performed_at: Time.utc(2026, 5, 23, 20, 0, 0))
+
+      expect(performed_at_input(render_component(record: record, site_time_zone: tokyo))["value"])
+        .to eq("2026-05-24T05:00")
+    end
+
+    it "leaves the field empty and says so when the target's site is unknown" do
+      html = render_component(record: build(:maintenance_record, performed_at: nil))
+
+      expect(performed_at_input(html)["value"]).to be_blank
+      expect(hint_of(html).text).to eq(I18n.t("maintenance.form.performed_at_zone_unknown"))
     end
   end
 end

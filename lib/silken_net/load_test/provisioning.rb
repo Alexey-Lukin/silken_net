@@ -72,7 +72,7 @@ module SilkenNet
             crypto_public_address: "0x#{SecureRandom.hex(20)}", hadron_kyc_status: "pending"
           )
           cluster = ::Cluster.create!(
-            organization: org, name: "loadtest-cluster-#{tag}", region: "loadtest"
+            organization: org, name: "loadtest-cluster-#{tag}", region: "loadtest", time_zone: "UTC"
           )
           family = ::TreeFamily.create!(name: "loadtest-family-#{tag}")
           [ org, cluster, family ]

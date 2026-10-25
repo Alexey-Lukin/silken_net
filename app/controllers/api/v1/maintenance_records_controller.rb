@@ -18,7 +18,7 @@ module Api
       # --- ЖУРНАЛ ВТРУЧАНЬ ---
       def index
         @records = organization_scoped_records
-                     .includes(:user, :maintainable, photos_attachments: :blob)
+                     .includes(:user, { maintainable: :cluster }, photos_attachments: :blob)
                      .order(performed_at: :desc)
 
         if params[:maintainable_type].present? && params[:maintainable_id].present?
@@ -79,7 +79,9 @@ module Api
 
         render_dashboard(
           title: I18n.t("maintenance.new_title"),
-          component: Maintenance::Form.new(record: @record)
+          component: Maintenance::Form.new(
+            record: @record, site_time_zone: site_time_zone_within_organization(@record)
+          )
         )
       end
 
@@ -106,8 +108,11 @@ module Api
           replay_status: :ok
         )
 
-        @record = current_user.maintenance_records.build(maintenance_params)
+        attrs = maintenance_params
+        performed_at = attrs.delete(:performed_at)
+        @record = current_user.maintenance_records.build(attrs)
         verify_maintainable_within_organization!(@record)
+        assign_performed_at!(@record, performed_at)
 
         if @record.save
           remember_idempotent_response!(
@@ -135,7 +140,8 @@ module Api
                   # `@record` is freshly `.build`-ed above; a failed `save` never
                   # persists anything (AR validation/callback failure = no DB write),
                   # so it is never `persisted?` here — no photos can exist yet.
-                  existing_photos: []
+                  existing_photos: [],
+                  site_time_zone: @record.site_time_zone
                 ),
                 # [SEC.25] Дзеркалить статус JSON-гілки: на `200` без редиректу Turbo
                 # відповідь викидає, тож лісник у полі, чий запис не пройшов валідацію
@@ -159,7 +165,7 @@ module Api
               # `verify`/`edit`/видалення фото стоять за `authorize_record_mutation!`.
               component: Maintenance::Show.new(
                 record: @record, photos: @photos, pagy_photos: @pagy_photos,
-                current_user: current_user
+                current_user: current_user, site_time_zone: @record.site_time_zone
               )
             )
           end
@@ -183,7 +189,8 @@ module Api
             existing_photos: @record.photos.limit(6).to_a,
             # [UI.6] Актор — явно: галерея вирішує, чи показувати кнопку НЕЗВОРОТНОГО
             # видалення фотодоказу, і компонент більше не деривує це право з маршруту.
-            current_user: current_user
+            current_user: current_user,
+            site_time_zone: @record.site_time_zone
           )
         )
       end
@@ -214,8 +221,11 @@ module Api
         # `guard_evidence_purge!` і повз слід в `AuditLog`. Знімає кадр лише кнопка «×».
         attrs = maintenance_params
         new_photos = Array(attrs.delete(:photos)).compact_blank
+        performed_at_given = attrs.key?(:performed_at)
+        performed_at = attrs.delete(:performed_at)
         @record.assign_attributes(attrs)
         verify_maintainable_within_organization!(@record)
+        assign_performed_at!(@record, performed_at) if performed_at_given
         @record.photos.attach(new_photos) if new_photos.any?
 
         if @record.save
@@ -240,7 +250,8 @@ module Api
                   # записі висять незбережені вкладення, і `photos` делегує вже не в SQL, а
                   # в масив — `limit` там немає, тож кожна невдала правка з фото давала 500.
                   existing_photos: @record.photos_attachments.limit(6).to_a,
-                  current_user: current_user
+                  current_user: current_user,
+                  site_time_zone: @record.site_time_zone
                 ),
                 status: :unprocessable_content
               )
@@ -410,6 +421,29 @@ module Api
            !acting_organization!.ews_alerts.exists?(id: record.ews_alert_id)
           raise ActiveRecord::RecordNotFound
         end
+      end
+
+      # ⚖️ [SEC.37, founder 2026-10-25] Час без зони читається в зоні ДІЛЯНКИ цілі — і лише
+      # після IDOR-гарда: зону мусить дати перевірена ціль, а не та, яку назвав клієнт. Рядок
+      # зі зсувом (`Z`, `+03:00`) абсолютний за будь-якої зони. Без ділянки (запис тоді однаково
+      # не пройде валідацію) — зона застосунку, тож 422-форма повертає ті самі цифри, що вписали.
+      # 🔴 Каст — ЯВНИЙ, усередині блоку: присвоєння AR лише запамʼятовує рядок і парсить його
+      # ліниво, при першому читанні (валідація) — тобто вже поза `use_zone`, в UTC.
+      def assign_performed_at!(record, raw)
+        caster = MaintenanceRecord.type_for_attribute(:performed_at)
+        record.performed_at = Time.use_zone(record.site_time_zone || Time.zone) { caster.cast(raw) }
+      end
+
+      # Префіл `new` бере ціль із параметрів БЕЗ гарда, тож зону чужої ділянки форма не
+      # друкує — та сама межа, що в `organization_scoped_records`; тип звіряється ДО
+      # `record.maintainable`, інакше названий клієнтом клас став би оракулом (SEC.36-B).
+      def site_time_zone_within_organization(record)
+        return if MAINTAINABLE_TYPES.exclude?(record.maintainable_type)
+
+        target = record.maintainable
+        return if target.nil? || !acting_organization!.clusters.exists?(id: target.cluster_id)
+
+        record.site_time_zone
       end
 
       def maintenance_params

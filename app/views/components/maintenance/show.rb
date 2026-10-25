@@ -11,12 +11,13 @@ module Maintenance
     # Дефолт `nil` fail-CLOSED, як у `Navigation::Sidebar` (`04_04 §6.4`). Наслідок для
     # тестів: негативний приклад тут СЛІПИЙ до забутої проводки (без актора кнопки
     # сховані від усіх), тож проводку стереже позитивний request-пін, не компонентний.
-    def initialize(record:, photos:, pagy_photos:, current_user: nil)
-      @record       = record
-      @user         = record.user
-      @photos       = photos
-      @pagy_photos  = pagy_photos
-      @current_user = current_user
+    def initialize(record:, photos:, pagy_photos:, current_user: nil, site_time_zone: nil)
+      @record         = record
+      @user           = record.user
+      @photos         = photos
+      @pagy_photos    = pagy_photos
+      @current_user   = current_user
+      @site_time_zone = site_time_zone
     end
 
     def view_template
@@ -39,6 +40,16 @@ module Maintenance
     end
 
     private
+
+    # ⚖️ [SEC.37, founder 2026-10-25] Момент друкується в зоні ДІЛЯНКИ й називає її — лісник,
+    # засвідчувач і аудитор читають ті самі цифри; без ділянки — явний UTC, теж названий.
+    def performed_at_label
+      return unless @record.performed_at
+
+      zone = @site_time_zone || ActiveSupport::TimeZone["UTC"]
+      name = @site_time_zone ? zone.tzinfo.identifier : "UTC"
+      "#{@record.performed_at.in_time_zone(zone).strftime('%d.%m.%Y // %H:%M')} #{name}"
+    end
 
     # [UI.6] Диспетчер видимості, а не друге місце, де живе правило: єдине джерело —
     # `MaintenanceRecord#mutable_by?`, той самий предикат, що читає гард контролера.
@@ -71,9 +82,7 @@ module Maintenance
           div(class: "flex flex-wrap items-center gap-3 mt-2") do
             action_badge(@record.action_type)
             hardware_badge(@record.hardware_verified)
-            span(class: "text-mini text-gaia-text-muted font-mono") do
-              @record.performed_at&.strftime("%d.%m.%Y // %H:%M UTC")
-            end
+            span(class: "text-mini text-gaia-text-muted font-mono") { performed_at_label }
           end
         end
 

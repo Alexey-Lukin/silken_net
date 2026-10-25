@@ -881,4 +881,24 @@ RSpec.describe MaintenanceRecord, type: :model do
       expect(record.update(action_type: :cleaning)).to be true
     end
   end
+
+  # ⚖️ [SEC.37, founder 2026-10-25] Дім зони, у якій читається й друкується момент запису.
+  describe "#site_time_zone [SEC.37]" do
+    it "is the zone of the tree's site" do
+      tree = build(:tree, cluster: build(:cluster, time_zone: "Asia/Tokyo"))
+
+      expect(build(:maintenance_record, maintainable: tree).site_time_zone.tzinfo.identifier).to eq("Asia/Tokyo")
+    end
+
+    it "is the zone of the gateway's site" do
+      gateway = build(:gateway, cluster: build(:cluster, time_zone: "America/Manaus"))
+
+      expect(build(:maintenance_record, maintainable: gateway).site_time_zone.tzinfo.identifier)
+        .to eq("America/Manaus")
+    end
+
+    it "is nil while the target is unknown — no zone is invented" do
+      expect(described_class.new.site_time_zone).to be_nil
+    end
+  end
 end

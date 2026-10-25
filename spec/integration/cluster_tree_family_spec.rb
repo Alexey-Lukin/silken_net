@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe "Cluster health and tree family management" do
   let(:organization) { create(:organization) }
-  let(:cluster) { create(:cluster, organization: organization, timezone: "Europe/Kyiv") }
+  let(:cluster) { create(:cluster, organization: organization, time_zone: "Europe/Kyiv") }
   let(:tree_family) { create(:tree_family, :common_oak) }
 
   before do
@@ -65,7 +65,7 @@ RSpec.describe "Cluster health and tree family management" do
       travel_to(Time.utc(2026, 8, 13, 2, 0, 0)) do
         expect(Time.use_zone("America/Manaus") { Date.yesterday }).not_to eq(AiInsight.reporting_date)
 
-        cluster.update!(environmental_settings: { "timezone" => "America/Manaus" })
+        cluster.update!(time_zone: "America/Manaus")
         create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
                             target_date: AiInsight.reporting_date, stress_index: 0.4)
 
@@ -75,7 +75,7 @@ RSpec.describe "Cluster health and tree family management" do
 
     it "gives an eastern cluster the same answer on the same data" do
       travel_to(Time.utc(2026, 8, 13, 2, 0, 0)) do
-        cluster.update!(environmental_settings: { "timezone" => "Asia/Jakarta" })
+        cluster.update!(time_zone: "Asia/Jakarta")
         create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
                             target_date: AiInsight.reporting_date, stress_index: 0.4)
 

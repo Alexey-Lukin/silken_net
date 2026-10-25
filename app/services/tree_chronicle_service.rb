@@ -161,9 +161,11 @@ class TreeChronicleService < ApplicationService
          .map { |record| format_maintenance(record) }
   end
 
+  # [SEC.37] Дата візиту — у зоні ділянки дерева (порядок хроніки не міняється: момент той
+  # самий); інсайти лишаються на UTC-добі агрегатора [ARCH.100] — у кожного запису своя семантика.
   def format_maintenance(record)
     Entry.new(
-      date: record.performed_at,
+      date: record.performed_at&.in_time_zone(@tree.cluster&.time_zone || "UTC"),
       event_type: :maintenance,
       icon: "⚙",
       title: TreeChronicle::TextFormatter.maintenance_title(record),

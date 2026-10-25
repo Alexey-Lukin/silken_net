@@ -110,19 +110,17 @@ module Clusters
           vital_block(t(".vitals.active_trees"), @cluster.total_active_trees.to_s)
           vital_block(t(".vitals.queen_gateways"), @gateways.size.to_s)
         end
-        if @cluster.environmental_settings.present?
-          div(class: "mt-8 pt-6 border-t border-gaia-border") do
-            h4(class: "text-mini uppercase tracking-widest text-gaia-text-subtle mb-4") { t(".vitals.env_config") }
-            div(class: "grid grid-cols-3 gap-6 text-tiny font-mono") do
-              if @cluster.environmental_settings["custom_fire_threshold"]
-                env_block(t(".vitals.fire_threshold"), "#{@cluster.environmental_settings['custom_fire_threshold']}°C")
-              end
-              if @cluster.environmental_settings["seismic_sensitivity_threshold"]
-                env_block(t(".vitals.seismic_sensitivity"), @cluster.environmental_settings["seismic_sensitivity_threshold"].to_s)
-              end
-              if @cluster.environmental_settings["timezone"]
-                env_block(t(".vitals.timezone"), @cluster.environmental_settings["timezone"])
-              end
+        # [SEC.37] Зона ділянки — обовʼязкова колонка, тож блок рендериться завжди: це в ній
+        # лісник, засвідчувач і аудитор читають моменти записів обслуговування.
+        div(class: "mt-8 pt-6 border-t border-gaia-border") do
+          h4(class: "text-mini uppercase tracking-widest text-gaia-text-subtle mb-4") { t(".vitals.env_config") }
+          div(class: "grid grid-cols-3 gap-6 text-tiny font-mono") do
+            env_block(t(".vitals.timezone"), @cluster.time_zone)
+            if @cluster.environmental_settings&.dig("custom_fire_threshold")
+              env_block(t(".vitals.fire_threshold"), "#{@cluster.environmental_settings['custom_fire_threshold']}°C")
+            end
+            if @cluster.environmental_settings&.dig("seismic_sensitivity_threshold")
+              env_block(t(".vitals.seismic_sensitivity"), @cluster.environmental_settings["seismic_sensitivity_threshold"].to_s)
             end
           end
         end

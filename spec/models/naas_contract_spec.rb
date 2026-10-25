@@ -170,7 +170,7 @@ RSpec.describe NaasContract, type: :model do
     end
 
     context "when the cluster sits west of UTC-2 (the whole of the Americas)" do
-      let(:cluster) { create(:cluster, organization: organization, environmental_settings: { "timezone" => "America/Manaus" }) }
+      let(:cluster) { create(:cluster, organization: organization, time_zone: "America/Manaus") }
 
       # 🔴 Регрес ARCH.100. Доти дефолт брав «вчора» в поясі кластера, а інсайт лежав за
       # UTC-добою агрегатора — і здоровий ліс щоночі діставав `:blackout`, тобто виклик
@@ -187,7 +187,7 @@ RSpec.describe NaasContract, type: :model do
     end
 
     context "when the cluster sits east of UTC" do
-      let(:cluster) { create(:cluster, organization: organization, environmental_settings: { "timezone" => "Pacific/Auckland" }) }
+      let(:cluster) { create(:cluster, organization: organization, time_zone: "Pacific/Auckland") }
 
       it "returns the same verdict on the same data" do
         travel_to(cron_moment) do

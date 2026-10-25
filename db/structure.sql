@@ -655,7 +655,8 @@ CREATE TABLE public.clusters (
 CASE
     WHEN ((geojson_polygon IS NOT NULL) AND ((geojson_polygon ->> 'type'::text) IS NOT NULL) AND ((geojson_polygon ->> 'coordinates'::text) IS NOT NULL)) THEN public.st_setsrid(public.st_geomfromgeojson((geojson_polygon)::text), 4326)
     ELSE NULL::public.geometry
-END) STORED
+END) STORED,
+    time_zone character varying NOT NULL
 );
 
 
@@ -4980,6 +4981,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261025120000'),
 ('20261024120000'),
 ('20261011160000'),
 ('20261011140000'),

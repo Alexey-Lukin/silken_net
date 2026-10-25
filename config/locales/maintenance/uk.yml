@@ -46,6 +46,8 @@ uk:
         labor_hours: Трудо-години
         parts_cost: Вартість деталей (USD)
       performed_at: Виконано о
+      performed_at_zone: Час ділянки — %{zone}
+      performed_at_zone_unknown: 'Вписуйте час ділянки цілі: сервер прочитає його в її зоні'
       submit:
         create: Зберегти в матрицю
         update: Оновити запис

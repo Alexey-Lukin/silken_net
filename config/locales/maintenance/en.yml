@@ -46,6 +46,8 @@ en:
         labor_hours: Labor Hours
         parts_cost: Parts Cost (USD)
       performed_at: Performed At
+      performed_at_zone: Site time — %{zone}
+      performed_at_zone_unknown: 'Enter the target site''s local time: the server reads it in that site''s zone'
       submit:
         create: Commit to Matrix
         update: Update Record

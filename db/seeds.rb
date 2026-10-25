@@ -331,7 +331,8 @@ cherkasy_forest = Cluster.create!(
   # це біом-ПІН, а не розходження. Наслідок для телеметрії названо в §7 біля
   # `temperature_c` — там число мусить триматись під цим порогом, інакше кадр
   # класифікується пожежею незалежно від того, що каже його власний коментар.
-  environmental_settings: { "custom_fire_threshold" => 60, "timezone" => "Europe/Kyiv" },
+  environmental_settings: { "custom_fire_threshold" => 60 },
+  time_zone: "Europe/Kyiv",
   # 🗺️ Полігон лежить УСЕРЕДИНІ лісу, не на річці. OSM relation 3779329 «Черкаський бір»
   # (natural=wood): bbox lat 49.2326..49.5531, lon 31.4616..31.9417. Доти тут стояв квадрат
   # 31.9..32.0 — східніше східної межі бору, тобто Дніпро й місто: мапа дашборда садила
@@ -344,7 +345,7 @@ amazon_sector = Cluster.create!(
   name: "Amazon Sector Alpha",
   region: "Amazonia, Brazil",
   organization: eco_future_fund,
-  environmental_settings: { "timezone" => "America/Manaus" },
+  time_zone: "America/Manaus",
   geojson_polygon: { type: "Polygon", coordinates: [ [ [ -60.0, -3.0 ], [ -59.9, -3.0 ], [ -59.9, -2.9 ], [ -60.0, -2.9 ], [ -60.0, -3.0 ] ] ] }
 )
 
@@ -820,7 +821,8 @@ codex_forests.each_with_index do |(slug, family), idx|
     name: node.fetch("title_uk"),
     region: "Центральна Україна",
     organization: sosnovyi_bir,
-    environmental_settings: { "custom_fire_threshold" => 60, "timezone" => "Europe/Kyiv" },
+    environmental_settings: { "custom_fire_threshold" => 60 },
+    time_zone: "Europe/Kyiv",
     geojson_polygon: { type: "Polygon", coordinates: [ [ [ lon - d, lat - d ], [ lon + d, lat - d ], [ lon + d, lat + d ], [ lon - d, lat + d ], [ lon - d, lat - d ] ] ] }
   )
   gw_uid = "SNET-Q-#{format("%08X", 0x10 + idx)}"

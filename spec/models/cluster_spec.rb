@@ -63,7 +63,7 @@ RSpec.describe Cluster, type: :model do
       travel_to(Time.utc(2026, 8, 13, 2, 0, 0)) do
         expect(Time.use_zone("America/Manaus") { Date.yesterday }).not_to eq(AiInsight.reporting_date)
 
-        cluster = create(:cluster, environmental_settings: { "timezone" => "America/Manaus" })
+        cluster = create(:cluster, time_zone: "America/Manaus")
         create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
                             target_date: AiInsight.reporting_date, stress_index: 0.4)
 
@@ -524,6 +524,28 @@ RSpec.describe Cluster, type: :model do
     it "passes through a string value unchanged" do
       cluster = build(:cluster, geojson_polygon: "not-a-hash")
       expect(cluster.geojson_polygon).to eq("not-a-hash")
+    end
+  end
+
+  # ⚖️ [SEC.37, founder 2026-10-25] Зона ділянки — IANA, обовʼязкова: у ній читається момент візиту.
+  describe "time_zone [SEC.37]" do
+    it "accepts an IANA identifier" do
+      expect(build(:cluster, time_zone: "America/Manaus")).to be_valid
+    end
+
+    it "rejects a Rails-only zone name" do
+      expect(build(:cluster, time_zone: "Kyiv")).not_to be_valid
+    end
+
+    it "rejects an identifier tzdata does not know" do
+      expect(build(:cluster, time_zone: "Mars/Olympus_Mons")).not_to be_valid
+    end
+
+    it "rejects a blank zone instead of storing an empty string" do
+      cluster = build(:cluster, time_zone: "  ")
+
+      expect(cluster).not_to be_valid
+      expect(cluster.time_zone).to be_nil
     end
   end
 end

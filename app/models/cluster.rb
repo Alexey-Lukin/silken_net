@@ -51,20 +51,27 @@ class Cluster < ApplicationRecord
 
   # --- JSONB SETTINGS (The Biome Adaptation) ---
   # ⚠️ Ключі тут НЕ рівноцінні за живістю, і різницю видно лише звідси: `custom_fire_threshold`
-  # читає `AlertDispatchService` (перша ланка `fire_limit`), `timezone` лише показує сторінка кластера
-  # (добовий шар зняв ARCH.100 — нижче; зону кластера для моменту візиту ратифіковано в SEC.37, не реалізовано);
-  # а ⛔ `seismic_sensitivity_threshold` не читає НІХТО
+  # читає `AlertDispatchService` (перша ланка `fire_limit`), а ⛔ `seismic_sensitivity_threshold`
+  # не читає НІХТО
   # [ARCH.102] — сейсмічний вердикт знято разом із його вимірювачем. Лишається оголошеним
   # forward-контрактом (валідація й рендер чинні на випадок, коли ключ таки виставлять руками),
   # але сід його більше не заповнює: показувати чутливість неіснуючого детектора = фабрикація.
+  # Зона ділянки тут більше не живе — вона колонка `time_zone` нижче [SEC.37].
   store_accessor :environmental_settings,
                  :custom_fire_threshold,
-                 :seismic_sensitivity_threshold,
-                 :timezone
+                 :seismic_sensitivity_threshold
 
   # --- ВАЛІДАЦІЇ ТА НОРМАЛІЗАЦІЯ ---
   validates :name, presence: true, uniqueness: true
   validates :region, presence: true
+
+  # ⚖️ [SEC.37, founder 2026-10-25] Зона ДІЛЯНКИ (IANA): у ній читається й друкується момент,
+  # внесений рукою, — однаково для лісника, засвідчувача й аудитора. Ділянка на межі зон бере
+  # одну з них. Перелік — той самий системний tzdata, на якому стоїть `Time.zone` застосунку;
+  # рейлзові імена («Kyiv») свідомо не приймаються.
+  normalizes :time_zone, with: ->(zone) { zone.strip.presence }
+  validates :time_zone, presence: true,
+                        inclusion: { in: ->(_) { TZInfo::Timezone.all_identifiers } }
 
   validates :custom_fire_threshold, :seismic_sensitivity_threshold,
             numericality: { greater_than: 0 }, allow_nil: true
@@ -138,8 +145,9 @@ class Cluster < ApplicationRecord
   # Він брав «вчора» в поясі кластера, тоді як інсайт, який усі ці читачі шукають,
   # штампується UTC-добою агрегатора. Для поясів західніше UTC−2 дати не збігались
   # НІКОЛИ, тож нічний крон читав порожню добу й видавав на неї вироки. Дім якоря —
-  # `AiInsight.reporting_date`; `environmental_settings["timezone"]` лишається
-  # операторськими даними, чий споживач з'явиться разом із per-tenant агрегацією.
+  # `AiInsight.reporting_date`; зона кластера (`time_zone`) добовий шар не годує — її
+  # споживач тут з'явиться разом із per-tenant агрегацією, а сьогодні вона судить лише
+  # момент візиту [SEC.37].
 
   # [ARCH.84] Дім АГРЕГОВАНОГО здоровʼя — один на всі поверхні. Доти «середнє здоровʼя
   # кластерів» стояло ЧОТИРМА незалежними реалізаціями з ДВОМА протилежними дефолтами

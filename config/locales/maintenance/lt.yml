@@ -46,6 +46,8 @@ lt:
         labor_hours: Darbo valandos
         parts_cost: Atsarginių dalių kaina (USD)
       performed_at: Atlikta
+      performed_at_zone: Vietos laikas — %{zone}
+      performed_at_zone_unknown: 'Įveskite tikslo vietos laiką: serveris jį perskaitys tos vietos laiko juostoje'
       submit:
         create: Išsaugoti matricoje
         update: Atnaujinti įrašą

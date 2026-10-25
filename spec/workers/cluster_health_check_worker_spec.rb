@@ -75,7 +75,7 @@ RSpec.describe ClusterHealthCheckWorker, type: :worker do
     context "with no date_string (the nightly cron path)" do
       let(:cluster) do
         create(:cluster, organization: organization,
-                         environmental_settings: { "timezone" => "America/Manaus" })
+                         time_zone: "America/Manaus")
       end
 
       it "anchors both consumers on the reporting date, not the cluster's local yesterday" do

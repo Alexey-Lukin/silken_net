@@ -34,6 +34,7 @@ RSpec.describe Clusters::Show do
       id: id,
       name: name,
       region: region,
+      time_zone: "Europe/Kyiv",
       health_index: health_index,
       active_trees_count: total_active_trees,
       environmental_settings: {},
@@ -240,11 +241,20 @@ RSpec.describe Clusters::Show do
       expect(html).to include("0.8")
     end
 
-    it "renders timezone when set" do
+    it "renders the site time zone from its column [SEC.37]" do
       cluster = build_cluster
-      cluster.environmental_settings = { "timezone" => "Europe/Kyiv" }
+      cluster.time_zone = "America/Manaus"
       html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
       expect(html).to include("Timezone")
+      expect(html).to include("America/Manaus")
+    end
+
+    # `environmental_settings` — nullable jsonb без дефолту, а зона — обовʼязкова колонка, тож
+    # блок зони не сміє залежати від того, чи задано вогонь/сейсміку.
+    it "renders the site time zone even without environmental settings" do
+      cluster = build_cluster
+      cluster.environmental_settings = nil
+      html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
       expect(html).to include("Europe/Kyiv")
     end
 
