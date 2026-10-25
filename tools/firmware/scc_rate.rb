@@ -22,9 +22,9 @@
 #   stored = 2*wire (backend ×2 upscale, FW.29-PACK; 03_04 (status & 0x1F) * 2 — на CCM-кадрі
 #   2 × серверний перерахунок, що при відповідності заяви дорівнює тому самому, FW.66 (Б))
 #   EMISSION_THRESHOLD = 10_000 GP = 1 SCC (05_03 tokenomics_evaluator_worker.rb)
-# Стеля [E.63]: DELTA_T_* = placeholder, чекають bench recharge-кривої → magnitude
-# уточнити при bench (RUNBOOK §3.3). Guard тримає self-consistency + фізичну стелю,
-# НЕ фіксує точну magnitude (вона calibration-pending).
+# Стеля [E.63 · HW.54]: DELTA_T_* = заморожені placeholder [transitional] (03_04 §4.3) —
+# як свідка росту їх не калібруємо, bench-калібрування — лише передумова мінту до свідка.
+# Guard тримає self-consistency + фізичну стелю, НЕ фіксує точну magnitude.
 
 DELTA_T_FAST_S = 600      # metabolic_core.rb: ≤ → m=1.0 (пік жвавості)
 DELTA_T_SLOW_S = 7200     # metabolic_core.rb: ≥ → m=0.0 (мінімум)

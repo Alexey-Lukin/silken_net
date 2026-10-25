@@ -428,7 +428,7 @@ def levers(p)
   need_same_gp = (ccm[:delta_t_s] - m_target * p[:delta_t_fast_s]) / (1.0 - m_target)
   puts format("  (а) DELTA_T_SLOW_S: %.0f с сьогодні.", floor_s)
   puts "      ⛔ ВІДХИЛЕНО ⚖️ 2026-09-22 (делеговано, 00_07 ARCH.8; дім заборони — 03_04 §4.3):"
-  puts "         це placeholder БІОЛОГІЧНОЇ калібрації, і радіо-число його не заселяє."
+  puts "         це заморожений placeholder грошової формули (до свідка росту), і радіо-число його не заселяє."
   puts "         Числа нижче — підстава відхилення, не меню."
   puts format("      щоб m лишалось > 0 . . . . . . . . . > %.0f с  (+%.1f %%)",
               need_alive, 100.0 * (need_alive / floor_s - 1.0))

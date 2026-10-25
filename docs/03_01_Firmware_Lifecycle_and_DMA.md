@@ -298,7 +298,7 @@ void Error_Handler(void) {
 
 ### 1.4 Phase 1: Sensor Acquisition
 
-**Метаболізм (delta_t):**
+**Перезаряд (delta_t):**
 ```c
 // [FW.49 S1] wall-секунди з free-running RTC-календаря (LSE йде у STOP2)
 uint32_t current_time = Wall_Seconds_Now();
@@ -308,7 +308,7 @@ delta_t_seconds = Silken_Wake_Delta_Seconds(current_time, &last_wakeup_timestamp
                                             DELTA_T_MAX_PLAUSIBLE_S);  // 7 діб
 ```
 
-`delta_t_seconds` — час між пробудженнями в секундах; базу рухає кожне пробудження, а сентинел «не виміряно» дають лише гарди дельти нижче (EXTI-пробудження, що базу не рухало, пішло з пʼєзо — §1.10). Відображає швидкість заряду EDLC суперконденсатора (іоністора). Чим швидше заряд → тим активніший фотосинтез → тим здоровіше дерево. Це є первинний біофізичний сигнал для Атрактора Лоренца.
+`delta_t_seconds` — час між пробудженнями в секундах; базу рухає кожне пробудження, а сентинел «не виміряно» дають лише гарди дельти нижче (EXTI-пробудження, що базу не рухало, пішло з пʼєзо — §1.10). Відображає швидкість заряду EDLC, тобто потужність комірки EBFC — не фотосинтез і не здоровʼя дерева ([`01_03 §4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)); у Лоренц не входить з E.63, а бали з нього рахує `m(delta_t)` — `[transitional]` до свідка росту ([`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)).
 
 > **🟡 tick ≠ wall-time у STOP2 — S1-wiring ✅ (2026-06-12), bench bring-up 👤.** `HAL_GetTick()` (SysTick) **заморожений** у STOP2 — стара tick-різниця міряла лише active-час (~секунди) замість wall-інтервалу заряджання → `m(delta_t)` ≈ максимум у всіх дерев → over-mint Proof-of-Growth. Тепер: `Wall_Seconds_Now()` читає RTC-календар (`Silken_Unix_From_Calendar`, FW.30-арифметика) — він free-running від 2000-01-01 ще ДО першого синку (дельтам цього досить), а beacon-UTC робить його абсолютним (`Wall_Calendar_Set`: `Silken_Civil_From_Unix`-інверсія, roundtrip host-пара з прямою функцією). Guard-и дельти (cold-start / зсув назад / стрибок епохи при першому синку → сентинел «не виміряно» `DELTA_T_UNKNOWN_S`, ARCH.102: «нейтральні» 60 с мінтили максимум) — `wall_time.h`. Wire `dT:2` сатурується @0xFFFF (wall-дельти бувають добами; wrap збрехав би бекенду). Cold-start `epoch_day` (SEC.11) — wall-first з `Silken_Wall_Is_Utc`-предикатом; tick-екстраполяція лишилась фолбеком (бекенд-кандидати — [`03_04`](03_04_mruby_Lorenz_Attractor) Mitigation A). Tick-таймери порогів (FW.27-B/FW.20-S2) ще раніше мігрували на лічильники пробуджень. **Wake-source ВИРІШЕНО** — RTC WUT + Vcap-енергогейт (ADR §1.10, founder 2026-06-07); 👤 лишається bench bring-up: LSE clock-tree + `MX_RTC_Init` (календар/WUT) + верифікація `Wall_Seconds_Now` на кремнії (RUNBOOK §4).
 

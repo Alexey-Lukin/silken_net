@@ -16,7 +16,7 @@
   <a href="https://ethereum.org/"><img alt="Ethereum L1" src="https://img.shields.io/badge/Ethereum%20L1-3C3C3D?style=flat-square&logo=ethereum&logoColor=white"></a>
 </p>
 
-**Silken Net** is the world's first trustless **D-MRV** (Digital Measurement, Reporting & Verification) platform for planetary-scale forest-health monitoring. Each tree gets a machine identity (peaq DID), becomes an economic agent, and earns carbon tokens (**SCC**) for verified biomass growth.
+**Silken Net** is the world's first trustless **D-MRV** (Digital Measurement, Reporting & Verification) platform for planetary-scale forest-health monitoring. Each tree gets a machine identity (peaq DID), becomes an economic agent, and earns growth points that convert to **SCC** — today counted from the recharge time of its own fuel cell, a transitional rule until a separate growth witness exists; SCC is an internal accounting unit, not a registry carbon credit.
 
 A titanium gyroid anchor carries an STM32 *Soldier* node whose power source is an open research bet — an enzymatic biofuel cell built into the anchor (EBFC, >500 mV computed in silico, not yet measured in a tree). The node senses → encrypts → transmits over LoRa 868 MHz to a *Queen* gateway, which relays via CoAP to a Rails 8 / PostgreSQL / Sidekiq backend and a 11-chain Web3 *Proof-of-Growth* pipeline.
 
