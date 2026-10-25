@@ -23,12 +23,13 @@ class AddTimeZoneToClusters < ActiveRecord::Migration[8.1]
     MigrationCluster.where("environmental_settings ? 'timezone'").find_each do |cluster|
       raw = cluster.environmental_settings["timezone"]
       zone = raw.is_a?(String) && iana.include?(raw.strip) ? raw.strip : "UTC"
-      say "cluster #{cluster.id}: timezone #{raw.inspect} не є IANA — лишено UTC", true if zone == "UTC" && raw != "UTC"
+      say "cluster #{cluster.id}: timezone #{raw.inspect} не є IANA — лишено UTC", true unless zone == raw.to_s.strip
       cluster.update_columns(time_zone: zone, environmental_settings: cluster.environmental_settings.except("timezone"))
     end
     change_column_default :clusters, :time_zone, from: "UTC", to: nil
   end
 
+  # Зворот не точний: ключ дістає КОЖЕН кластер, і невалідне значення вертається вже як UTC.
   def down
     MigrationCluster.update_all(
       "environmental_settings = COALESCE(environmental_settings, '{}'::jsonb) || jsonb_build_object('timezone', time_zone)"
