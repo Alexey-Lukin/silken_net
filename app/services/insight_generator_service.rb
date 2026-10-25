@@ -245,10 +245,9 @@ class InsightGeneratorService < ApplicationService
     # [VPD weather-confounder, 05_05 §7] Discount-only weather gate so a humid
     # spell cannot push a cluster over the slash threshold. STRUCTURALLY inert —
     # see #apply_weather_confounder.
-    # ⚠️ Друга умова гейта — метаболічне відхилення — не має каліброваної шкали:
-    # `delta_t` пишеться як `metabolism_s`, але DELTA_T_FAST/SLOW_S — плейсхолдери
-    # до bench-калібрування E.63, тож дисконт не спрацює й після VPD-калібрування;
-    # тригер той самий, що у фрод-гарда.
+    # ⚠️ Друга умова гейта — пряме відхилення стану дерева — виміру не має:
+    # `delta_t` (`metabolism_s`) міряє стан комірки, не дерево (01_03 §4), тож
+    # дисконт не спрацює й після VPD-калібрування; тригер — прямий вимір (04_02 §VPD).
     unless is_fraud
       stress_index = apply_weather_confounder(stress_index, stats.avg_vpd&.to_f)
     end
@@ -341,8 +340,8 @@ class InsightGeneratorService < ApplicationService
   #
   # ⛔ A per-condition INERT list and «activate after firmware VPD + calibration» stood
   # here; they described a gate this method no longer is. It returns its input
-  # unchanged, and what keeps it shut is STRUCTURAL — reason and trigger (E.63
-  # `delta_t`, not VPD calibration) are in the comment right above the method
+  # unchanged, and what keeps it shut is STRUCTURAL — reason and trigger (a direct
+  # measurement of the tree that weather can mimic, not VPD calibration) are in the comment right above the method
   # (04_02 §VPD). We still ship NO guessed kPa threshold into the slashing path.
   # The ML-retrain dependency is gone with its subject (00_07 E.52). NB: the
   # heuristic ignores sap entirely (GAP, 05_05 §7), and `delta_t` does not measure
@@ -357,7 +356,7 @@ class InsightGeneratorService < ApplicationService
   # вибачати посуху погодою без жодного підтвердження з дерева.
   # ⚠️ Напрямок несучий: гейт тільки ЗНИЖУЄ, тож його інертність безпечна —
   # вона лишає стрес як є, а не вигадує його.
-  # 🔓 Тригер: поява метаболічного виміру на рівні дерева (E.63 `delta_t`).
+  # 🔓 Тригер: прямий вимір стану дерева, який погода може імітувати (TWD дендрометра · еталонний sap-flow).
   def apply_weather_confounder(stress_index, _avg_vpd)
     stress_index
   end
