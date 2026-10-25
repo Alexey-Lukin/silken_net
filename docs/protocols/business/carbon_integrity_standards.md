@@ -16,7 +16,7 @@
 >
 > **Легенда впевненості:** 🟢 висока (офіц. стандарт-док / ≥2 незалежні джерела) · 🟡 середня (одне якісне джерело / trade-press) · 🔴 низька (paywall / суперечливо).
 >
-> **Наскрізний guardrail (не пом'якшую):** **SCC ≠ сертифікований carbon-credit.** Жоден integrity-стандарт нижче НЕ може бути задоволений сирим біосигналом дерева → визнаним кредитом. Усі вони оперують на **кредиті** (ICVCM/ISO) та **claim'і покупця** (VCMI/Oxford/SBTi). Наш трек — бути **MRV-data / permanence-шаром, що живить ЧУЖИЙ кредит**, який цим планкам відповідає. Тому колонка «наш стан» усюди = «SCC не задовольняє прямо; підсилює відповідність host-кредиту принципу X».
+> **Наскрізний guardrail (не пом'якшую):** **SCC ≠ сертифікований carbon-credit.** Жоден integrity-стандарт нижче НЕ може бути задоволений сирою телеметрією вузла → визнаним кредитом. Усі вони оперують на **кредиті** (ICVCM/ISO) та **claim'і покупця** (VCMI/Oxford/SBTi). Наш трек — бути **MRV-data / permanence-шаром, що живить ЧУЖИЙ кредит**, який цим планкам відповідає. Тому колонка «наш стан» усюди = «SCC не задовольняє прямо; підсилює відповідність host-кредиту принципу X».
 
 ---
 
@@ -201,7 +201,7 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 | **GHG Protocol Land Sector & Removals Standard** (фінал v1.0 30.01.2026, чинний 01.01.2027) | Перший GHGP-стандарт для land/removals-обліку на **корпоративному рівні** ([GHGP LSR PDF](https://ghgprotocol.org/sites/default/files/2026-06/Land-Sector-and-Removals-Guidance-v1.0.pdf)) | ⚑ визначить, як **enterprise-покупець** обліковує land-removals у власному inventory (ISO 14064-1-суміжно) → формує попит на verifiable land-MRV-дані |
 | **ISO 14064-5:2025** (remote V&V) | Кодифікує дистанційну верифікацію | §3.1 — попутний вітер |
 
-> **Наш стан (несуче, позитивне):** на відміну від carbon-quantification (де metrology-gap закритий), **dMRV-provider-акредитація — це двері, які реально відчиняються** (GCC-procedure, Verra-vetting, Isometric-Certify). Тут наш continuous ground-truth — **диференційований актив**, не претензія (permanence — лише через тишу вузла, без реального часу). Технічний surface доведений (`PuroEarth::PassportService`/`RegistryApiService` `[MAINNET READY]`, ARCH.5) = format-адаптери × N поверх доведеного патерну. **Гейт — не код, а BIZ.9-методолог + institutional buyer + проходження vetting-процедури конкретного реєстру.**
+> **Наш стан (несуче, позитивне):** на відміну від carbon-quantification (де metrology-gap закритий), **dMRV-provider-акредитація — це двері, які реально відчиняються** (GCC-procedure, Verra-vetting, Isometric-Certify). Тут наша безперервна телеметрія вузлів на конкретних деревах — **диференційований актив**, не претензія (permanence — лише через тишу вузла, без реального часу). Технічний surface доведений (`PuroEarth::PassportService`/`RegistryApiService` `[MAINNET READY]`, ARCH.5) = format-адаптери × N поверх доведеного патерну. **Гейт — не код, а BIZ.9-методолог + institutional buyer + проходження vetting-процедури конкретного реєстру.**
 
 ---
 

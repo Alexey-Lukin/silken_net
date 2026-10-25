@@ -102,7 +102,7 @@
 
 Dear colleagues,
 
-**About us and the application.** We are an R&D project in Ukraine developing a sensor node for forest monitoring. A titanium anchor is installed in the trunk of a living tree and works as a small biofuel cell. A sealed capsule with the electronics sits on top of the anchor and takes its power from it through **two spring-loaded pins**. The pins are soldered to the underside of the capsule's lower circuit board and press axially onto two flat contacts on the anchor's top face. The connection is blind: the capsule is placed onto the anchor and locked with a quarter-turn bayonet, and nobody sees the pins touch down.
+**About us and the application.** We are an R&D project in Ukraine developing a sensor node for forest monitoring. A titanium anchor is installed in the trunk of a living tree and carries a small biofuel cell that we are investigating as one candidate power source for the node. A sealed capsule with the electronics sits on top of the anchor and is designed to take its power from it through **two spring-loaded pins**. The pins are soldered to the underside of the capsule's lower circuit board and press axially onto two flat contacts on the anchor's top face. The connection is blind: the capsule is placed onto the anchor and locked with a quarter-turn bayonet, and nobody sees the pins touch down.
 
 This is a technical enquiry and not yet an order. Answering commits neither side to anything, and inline answers in this email are fine.
 

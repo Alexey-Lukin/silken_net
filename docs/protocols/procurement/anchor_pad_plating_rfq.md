@@ -77,7 +77,7 @@
 
 Шановні колеги!
 
-**Про нас і мету запиту.** Ми розробляємо сенсорний вузол для моніторингу лісу: титановий анкер встановлюється в стовбур живого дерева й живиться від вбудованого біопаливного елемента, а знімна капсула з електронікою підключається до анкера двома пружинними контактами (пінами). Контактні площадки анкера мають бути покриті твердим золотом, і ми шукаємо виконавця, який запропонує й виконає маршрут такого покриття по титану.
+**Про нас і мету запиту.** Ми розробляємо сенсорний вузол для моніторингу лісу: титановий анкер встановлюється в стовбур живого дерева й несе вбудований біопаливний елемент, який ми досліджуємо як одного з кандидатів на джерело живлення вузла, а знімна капсула з електронікою підключається до анкера двома пружинними контактами (пінами). Контактні площадки анкера мають бути покриті твердим золотом, і ми шукаємо виконавця, який запропонує й виконає маршрут такого покриття по титану.
 
 Це запит пропозиції та інформації про ваші можливості, а ще не замовлення: відповідь ні до чого не зобовʼязує жодну сторону, і відповідати можна просто в тексті листа.
 
@@ -143,7 +143,7 @@
 
 Dear Sir or Madam,
 
-**About us and the purpose of this request.** We are developing a sensor node for forest monitoring: a titanium anchor is installed in the trunk of a living tree and is powered by a built-in biofuel cell, and a removable electronics capsule connects to the anchor through two spring-loaded contacts (pogo pins). The anchor's contact pads have to be finished with hard gold, and we are looking for a service provider who will propose and carry out a route for such a coating on titanium.
+**About us and the purpose of this request.** We are developing a sensor node for forest monitoring: a titanium anchor is installed in the trunk of a living tree and carries a built-in biofuel cell that we are investigating as one candidate power source for the node, and a removable electronics capsule connects to the anchor through two spring-loaded contacts (pogo pins). The anchor's contact pads have to be finished with hard gold, and we are looking for a service provider who will propose and carry out a route for such a coating on titanium.
 
 This is a request for a proposal and for information about your capabilities, not yet an order: a reply commits neither side, and you are welcome to answer directly in the text of this e-mail.
 

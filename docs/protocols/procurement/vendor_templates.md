@@ -468,7 +468,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 
 Шановні колеги!
 
-**Про нас і мету запиту.** Ми розробляємо титановий сенсорний анкер, який встановлюється в стовбур живого дерева й живиться від ферментного біопаливного елемента. Перед встановленням деталі з нанесеними ферментами треба знезаразити — знищити дереворуйнівні гриби й бактерії, зберігши активність ферментів. Етиленоксид, автоклав і сухий жар для цього непридатні: вони денатурують ферменти. Тому наша специфікація процесу передбачає гамма-опромінення (Co-60) **низькою дозою 15 кГр** — свідомо нижче за стандартну медичну дозу 25 кГр.
+**Про нас і мету запиту.** Ми розробляємо титановий сенсорний анкер, який встановлюється в стовбур живого дерева й несе ферментний біопаливний елемент — одного з кандидатів на джерело живлення вузла, які ми досліджуємо. Перед встановленням деталі з нанесеними ферментами треба знезаразити — знищити дереворуйнівні гриби й бактерії, зберігши активність ферментів. Етиленоксид, автоклав і сухий жар для цього непридатні: вони денатурують ферменти. Тому наша специфікація процесу передбачає гамма-опромінення (Co-60) **низькою дозою 15 кГр** — свідомо нижче за стандартну медичну дозу 25 кГр.
 
 Це запит пропозиції та інформації про ваші можливості, а ще не замовлення: відповідь ні до чого не зобов'язує жодну сторону, і відповідати можна просто в тексті листа.
 
@@ -531,7 +531,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 
 **Subject line:** Enquiry — microporous PTFE membrane (expanded or dense), 0.2–1.0 µm pore rating, 20–100 µm thick: technical data and R&D samples
 
-**Scope of request.** We are developing a titanium sensor anchor that is installed in the trunk of a living tree and powered by an enzymatic bio-fuel cell. Its cathode takes oxygen from the air through an outer PTFE membrane, which has to let oxygen in and keep liquid water out — rain, dew and snow — because a flooded cathode stops producing current. We are looking for a supplier of that membrane. This is an enquiry for technical data and R&D samples, not yet an order; answering commits neither side to anything, and inline answers in this email are fine.
+**Scope of request.** We are developing a titanium sensor anchor that is installed in the trunk of a living tree; as the node's power source we are investigating an enzymatic bio-fuel cell built into the anchor, one of several candidates. The cell's cathode takes oxygen from the air through an outer PTFE membrane, which has to let oxygen in and keep liquid water out — rain, dew and snow — because a flooded cathode stops producing current. We are looking for a supplier of that membrane. This is an enquiry for technical data and R&D samples, not yet an order; answering commits neither side to anything, and inline answers in this email are fine.
 
 **The membrane we need**
 

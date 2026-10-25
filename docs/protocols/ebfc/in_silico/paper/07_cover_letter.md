@@ -58,7 +58,8 @@ is outside its scope and is stated as a limit of the method; spin–orbit coupli
 size computed for [Os(bpy)₃] in the literature, with the other rows of its table (other ligand sets) as the range, is set against every
 cell.
 The author is the founder of the SilkenNet project, an open-hardware forest-monitoring platform of which
-the biofuel cell studied here is a component and which is intended for commercial deployment. No patent
+the biofuel cell studied here is a candidate power source, whose utility token is currently accrued from the
+charge interval of that cell, and which is intended for commercial deployment. No patent
 has been or will be filed on the work disclosed here (defensive-publication posture); the code, hardware
 design and documentation are released under open licenses (AGPL-3.0-or-later, CERN-OHL-S-2.0,
 CC-BY-SA-4.0). The author declares no other competing financial or non-financial interests.

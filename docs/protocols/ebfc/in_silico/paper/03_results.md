@@ -358,7 +358,7 @@ and the relaxed forms, Table 2); and the polymer film against one molecule (135 
 complex, §3.3). On the donor side, none of them sized here: lumiflavin for FAD, the basis and the functional, the
 protonation state at pH 7, the harmonic treatment of soft modes and the missing explicit water (§3.2). For both: the
 absolute-SHE convention (159 mV between 4.281 and 4.44 V). The comparison is made at pH 7 and 7.4, where the two potentials were
-measured, not at the sap pH of the device anode (≈ 5.75 for the xylem sap the device runs in, where the proton-referenced flavin
+measured, not at the sap pH of the device anode (≈ 5.75 for the xylem sap the device anode would sit in, where the proton-referenced flavin
 potential of §3.2 would read −81 mV by its −59 mV per pH unit, against −155 mV at pH 7). Explicit-water QM/MM of the chloro species and of the reduced
 flavin, spin–orbit coupling on osmium and a model of the film are each a step toward the magnitude; the first is the
 named limit of this paper.

@@ -14,8 +14,8 @@ Their power density is modest by comparison with
 abiotic fuel cells, which excludes them from bulk power generation but suits a niche that conventional
 batteries serve poorly: self-powered, implantable or environmentally-embedded sensors that must run
 unattended for years on a fuel drawn from their surroundings.<sup>3,4</sup>
-The work reported here is motivated by one such application — a tree-integrated sensor powered at the
-titanium–xylem interface, where the dilute sugars of sap are the local fuel — but the electron-transfer
+The work reported here is motivated by one such application — a tree-integrated sensor that would draw
+its power from a cell at the titanium–xylem interface, with the dilute sugars of sap as the local fuel — but the electron-transfer
 questions it raises are generic to the EBFC anode→mediator→cathode chain and, we argue, are best posed
 at the level of electronic structure.
 
