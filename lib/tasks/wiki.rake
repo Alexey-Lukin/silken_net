@@ -9,8 +9,7 @@
 #   bin/rails wiki:sync          # DRY-RUN: clone wiki, transform, show diff, do NOT push
 #   bin/rails wiki:sync PUSH=1   # commit + push the changes to the wiki
 #
-# Only NN_NN_*.md canonical docs are synced (manifest.md and everything else is
-# left out). Links are normalised for the wiki (see lib/wiki_link_normalizer.rb):
+# Only NN_NN_*.md canonical docs are synced (everything else is left out). Links are normalised for the wiki (see lib/wiki_link_normalizer.rb):
 # canonical cross-refs → bare wiki links, other repo files → absolute github.com
 # blob URLs, embedded images carried into the wiki under images/. Local runs use
 # SSH; CI (wiki.yml) passes an HTTPS x-access-token remote via WIKI_REMOTE.

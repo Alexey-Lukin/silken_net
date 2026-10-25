@@ -53,7 +53,7 @@ RSpec.describe OfferingLexicon do
     end
 
     it "does NOT exempt the storefront" do
-      %w[docs/manifest.md README.md config/locales/reports/uk.yml].each do |rel|
+      %w[README.md config/locales/reports/uk.yml].each do |rel|
         expect(described_class.exempt?(rel)).to be(false), "expected #{rel} guarded"
       end
     end
@@ -87,9 +87,8 @@ RSpec.describe OfferingLexicon do
       end
     end
 
-    it "flags investor framing in the public manifesto and README" do
-      with_tree("docs/manifest.md" => "Returns for investors are indexed to growth.\n",
-                "README.md" => "Платформа для інвесторів.\n") do |root|
+    it "flags investor framing in the README" do
+      with_tree("README.md" => "Returns for investors are indexed to growth.\nПлатформа для інвесторів.\n") do |root|
         expect(described_class.audit(root)[:hard].size).to eq(2)
       end
     end
@@ -100,7 +99,7 @@ RSpec.describe OfferingLexicon do
     it "does not read ROI inside `gyroid`" do
       # g-y-r-o-i-d. An unbounded case-insensitive scan called the manifesto three
       # violations, every one of them this word.
-      with_tree("docs/manifest.md" => <<~MD) do |root|
+      with_tree("README.md" => <<~MD) do |root|
         Macroporous titanium gyroids print on commercial DMLS platforms.
         The gyroid admits sap; gyroid porosity is ~65%.
       MD

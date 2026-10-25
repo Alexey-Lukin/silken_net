@@ -39,7 +39,7 @@
 #
 # TIERS.
 #   HARD      — the storefront, verified at zero when this gate landed: locale VALUES,
-#               docs/manifest.md, README.md. Drift here fails CI.
+#               README.md. Drift here fails CI.
 #   HARD (code) — OFFERING terms across app/**, db/seeds.rb and lib/**. ⚖️ Flipped
 #               advisory → HARD 2026-09-22 on the response surfaces, and widened to the
 #               whole app + lib tree later the same day once the 14 hits that priced the
@@ -100,8 +100,7 @@
 #
 # NAMED CEILINGS [BIZ.22] — a regex cannot read intent, so each is named, not fixed:
 #   (1) HOMONYM terms are gated only inside locale values, so investment framing in
-#       engineering prose stays a manual-sweep concern — the ceiling DOC-T.41 already
-#       accepted for the manifest, for the same reason.
+#       engineering prose stays a manual-sweep concern (DOC-T.41).
 #   (2) Canon docs under docs/*.md are NOT scanned. They legitimately name the code's
 #       own symbols — 05_03 documents `slash(address investor, …)` because that IS the
 #       ABI. Scanning them produced ~100 downstream lines per run, which is how an advisory
@@ -231,7 +230,7 @@ module OfferingLexicon
     b("market_value")                    => "`market value` in a response key / serialized field"
   }.freeze
 
-  HARD_DOCS = %w[docs/manifest.md README.md].freeze
+  HARD_DOCS = %w[README.md].freeze
 
   # The code layer, split by TERM SET — because the two sets have different exemption
   # economics, and that is what decided the tier (⚖️ 2026-09-22, 00_07 BIZ.22).

@@ -88,75 +88,6 @@ RSpec.describe DocsLinter do
     end
   end
 
-  describe ".manifest_trl_parity" do
-    let(:matrix) do
-      <<~MD
-        | Модуль | TRL | Цільовий | Блокер |
-        |--------|-----|----------|--------|
-        | 01 Materials & EBFC | 3 | 6 | Ti-coin |
-        | 02 Hardware & BOM | 4 | 6 | BQ25570 |
-        | 03 Firmware | 6 | 8 | AES |
-        | 04 Backend Rails | 8 | 9 | RSpec |
-        | 05 Web3 Pipeline | 8 | 9 | SFC |
-      MD
-    end
-    # One bullet per registered layer, mirroring the real §5 shapes: a plain claim,
-    # a two-member claim whose module reads at the LOWER one, and prose digits that
-    # are targets rather than assertions.
-    let(:manifest) do
-      <<~MD
-        - **Backend (Rails 8.1, 11-chain):** TRL 8. External audit is the TRL-9 gate.
-        - **Firmware (STM32WLE5JC Soldier):** TRL 6. Running on hardware.
-        - **Hardware capsule:** TRL 6 — prototyped. **BQ25570 MPPT power chain and EDLC buffer:** TRL 4 — breadboard.
-        - **Tri-zone coaxial anchor and Gen-2.0 EBFC stack:** TRL 3. Next (physical TRL 4): in-vitro.
-      MD
-    end
-
-    it "passes when every public layer matches its 00_03 §1 module" do
-      expect(described_class.manifest_trl_parity(matrix, manifest)).to be_empty
-    end
-
-    it "reads a multi-member bullet at the LOWEST claim (00_03 §1 aggregate rule)" do
-      # Dropping the TRL-4 power chain leaves the capsule's 6 facing module 02 = 4.
-      broken = manifest.sub("**BQ25570 MPPT power chain and EDLC buffer:** TRL 4 — breadboard.", "the power chain.")
-      expect(described_class.manifest_trl_parity(matrix, broken))
-        .to contain_exactly(a_string_matching(/PUBLIC TRL 6 for "Hardware capsule".*module 02 = 4/))
-    end
-
-    it "flags the manifesto drifting above canon" do
-      expect(described_class.manifest_trl_parity(matrix, manifest.sub("Soldier):** TRL 6", "Soldier):** TRL 7")))
-        .to contain_exactly(a_string_matching(/PUBLIC TRL 7 for "Firmware".*module 03 = 6/))
-    end
-
-    it "flags canon moving away from the manifesto (the gate is two-directional)" do
-      expect(described_class.manifest_trl_parity(matrix.sub("| 03 Firmware | 6 |", "| 03 Firmware | 8 |"), manifest))
-        .to contain_exactly(a_string_matching(/PUBLIC TRL 6 for "Firmware".*module 03 = 8/))
-    end
-
-    it "flags a layer whose public claim silently disappears (the registry is a SET pin)" do
-      expect(described_class.manifest_trl_parity(matrix, manifest.sub(/^- \*\*Hardware capsule.*\n/, "")))
-        .to contain_exactly(a_string_matching(/states no TRL for "Hardware capsule"/))
-    end
-
-    it "flags a TRL claim by a layer nobody declared an owner for" do
-      expect(described_class.manifest_trl_parity(matrix, "#{manifest}- **Quantum layer:** TRL 5.\n"))
-        .to contain_exactly(a_string_matching(/unregistered layer "Quantum layer"/))
-    end
-
-    # The load-bearing near-miss: the anchor is the CLAIM FORM, never the digit.
-    # A min-over-every-TRL-number rule would go red on each of these while the
-    # manifesto is perfectly honest — and they are all real §5 phrasings.
-    it "ignores TRL digits that are prose — a target, a norm, a stage left behind" do
-      prose = "#{manifest}We are past the TRL 2 stage; per ISO 16290 in-silico = TRL 3, and TRL-9 is the gate.\n"
-      expect(described_class.manifest_trl_parity(matrix, prose)).to be_empty
-    end
-
-    it "says so instead of passing when the 00_03 band cannot be parsed at all" do
-      expect(described_class.manifest_trl_parity("no table here\n", manifest))
-        .to contain_exactly(a_string_matching(/band unreadable.*never measured/))
-    end
-  end
-
   describe ".canon_blocker_sections" do
     it "flags a '## 🛑 Блокери' section heading" do
       md = "## 🎯 Мета\n## 🛑 Блокери\n### 🟡 BLOCKER-2: AT blocking\n"
@@ -529,14 +460,13 @@ end
       expect(hits.first).to include("carbon rate")
     end
 
-    it "exempts the homes, the labelled-mirror calc, the tracker and the manifesto" do
+    it "exempts the homes, the labelled-mirror calc and the tracker" do
       mint = "курс 10,000 growth_points = 1 SCC\n"
       carbon = "2000 SCC = 1 tCO₂\n"
       expect(described_class.tokenomics_rate_drift("05_03_Tokenomics_SCC_and_SFC", mint)).to be_empty
       expect(described_class.tokenomics_rate_drift("00_04_Nature_as_a_Service_Contracts", mint)).to be_empty
       expect(described_class.tokenomics_rate_drift("00_04_Nature_as_a_Service_Contracts", carbon)).to be_empty
       expect(described_class.tokenomics_rate_drift("00_07_Action_Plan_Tracker", carbon)).to be_empty
-      expect(described_class.tokenomics_rate_drift("manifest", mint)).to be_empty
     end
 
     it "does not flag a line that references the home or is a labelled mirror" do
@@ -557,7 +487,7 @@ end
       hits = described_class.tokenomics_rate_anchor(
         "00_04_Nature_as_a_Service_Contracts", "Конверсія: 12,000 growth_points = 1 SCC; 2500 SCC = 1 tCO₂\n")
       expect(hits.size).to eq(2)
-      expect(hits.join).to include("TOKENOMICS_RATE_RE").and include("CARBON_RATE_RE").and include("manifest.md")
+      expect(hits.join).to include("TOKENOMICS_RATE_RE").and include("CARBON_RATE_RE").and include("02_06 §7 ROI")
     end
 
     it "passes homes that still carry the pinned values; 05_03 is not required to carry carbon" do
@@ -1079,9 +1009,9 @@ end
       expect(described_class.bare_doc_ref("02_01_Hardware", "```\nсм `06_07`\n```\n", ids)).to be_empty
     end
 
-    it "exempts index / standard-owner / tracker / appendix / manifesto" do
+    it "exempts index / standard-owner / tracker / appendix" do
       %w[00_00_SSOT_Index 00_06_SSOT_Documentation_Standard 00_07_Action_Plan_Tracker
-         07_09_Some_Field_Appendix manifest].each do |b|
+         07_09_Some_Field_Appendix].each do |b|
         expect(described_class.bare_doc_ref(b, "`06_07`\n", ids)).to be_empty
       end
     end

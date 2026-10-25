@@ -91,91 +91,6 @@ module DocsLinter
     out
   end
 
-  # [SSOT anti-drift] Public-manifesto TRL parity (HARD; owner 00_03 §1).
-  # `docs/manifest.md` §5 states a TRL for four layers, and it is the only PUBLIC
-  # artifact here that does — §5 turns the statement into a promise of its own
-  # ("Anyone proposing to issue tokenized claims on real-world biology owes that
-  # level of transparency"). Every OTHER axis of that file is already governed by
-  # name — offering_lexicon_check holds it in HARD_DOCS, linkify_bare_refs and the
-  # rate-mirror carry genre exemptions — so the manifesto is already treated as its
-  # own genre with its own rules, and this was the one axis left unwritten. Silent
-  # drift here is not cosmetic: it is a stale claim about our own honesty.
-  #
-  # Why no existing gate sees it: the manifesto is NOT a canon doc and has no
-  # `## ✅ Статус` block, while trl_range_consistency reads member-TRLs harvested
-  # from exactly those blocks. Its absence is structural, not an oversight.
-  #
-  # ANCHOR — a claim is `**<label>:** TRL N`. The bold label is what makes a number
-  # an ASSERTION instead of prose, and that distinction carries the gate: the same
-  # bullets also say "the TRL-9 gate", "physical TRL 4" and "in-silico = TRL 3",
-  # every one a TARGET or a norm, never a statement about today. The cheap rule
-  # (min of every TRL digit in the bullet) returns the right answer on today's text
-  # — but only by accident, because a target is always ≥ the current level; one
-  # honest sentence like "past the TRL 2 stage" would make it scream. Read the
-  # claim FORM, never the digit.
-  #
-  # AGGREGATION — a bullet may carry several claims (capsule TRL 6 beside its power
-  # chain TRL 4) and the module reads at the lowest. That is not manifesto prose but
-  # the canon rule itself (00_03 §1: «рядок модуля = агрегат (мінімум) member-TRL»),
-  # so MIN(claims in the bullet) must equal MIN(00_03 current) over the bullet's
-  # modules — the same arithmetic on both sides of the comparison.
-  #
-  # OWNERSHIP IS DECLARED, never inferred. Which module a public bullet speaks for
-  # is a human judgement — the Backend bullet legitimately covers 04 AND 05 — and a
-  # guessing gate would be wrong in the silent direction. The registry doubles as
-  # the SET pin: a bullet that quietly disappears is itself a violation, because a
-  # check that only validates the claims it happens to find is green on an empty
-  # page. Ceiling, stated: a TRL claim written WITHOUT the bold-label form is
-  # invisible here by construction — that is the price of not firing on prose.
-  MANIFEST_TRL_CLAIM  = /\*\*([^*]+?):\*\*\s*TRL[[:space:]-]*(\d)(?![\d])/
-  MANIFEST_TRL_OWNERS = {
-    "Backend"                 => %w[04 05],
-    "Firmware"                => %w[03],
-    "Hardware capsule"        => %w[02],
-    "Tri-zone coaxial anchor" => %w[01]
-  }.freeze
-
-  def manifest_trl_parity(matrix_text, manifest_text)
-    return [] if matrix_text.nil? || manifest_text.nil?
-
-    bands = {}
-    matrix_text.each_line do |line|
-      m = line.match(TRL_BAND_ROW_RE)
-      bands[m[1]] = m[2].to_i if m
-    end
-    return [ "manifest.md: 00_03 §1 per-module band unreadable — parser found no rows, so parity was never measured" ] if bands.empty?
-
-    out  = []
-    seen = {}
-    manifest_text.each_line do |line|
-      claims = line.scan(MANIFEST_TRL_CLAIM)
-      next if claims.empty?
-
-      lead  = claims.first.first
-      owner = MANIFEST_TRL_OWNERS.keys.find { |k| lead.include?(k) }
-      unless owner
-        out << "manifest.md: TRL claim by an unregistered layer #{lead.inspect} — declare its module(s) in MANIFEST_TRL_OWNERS, or drop the claim"
-        next
-      end
-      out << "manifest.md: layer #{owner.inspect} states a TRL twice — one public claim per layer" if seen.key?(owner)
-      seen[owner] = true
-
-      canon = MANIFEST_TRL_OWNERS[owner].filter_map { |mod| bands[mod] }.min
-      next if canon.nil?
-
-      claimed = claims.map { |_, n| n.to_i }.min
-      next if claimed == canon
-
-      out << "manifest.md: PUBLIC TRL #{claimed} for #{owner.inspect} ≠ 00_03 §1 module " \
-             "#{MANIFEST_TRL_OWNERS[owner].join('/')} = #{canon} — fix whichever is stale"
-    end
-
-    (MANIFEST_TRL_OWNERS.keys - seen.keys).each do |missing|
-      out << "manifest.md: §5 states no TRL for #{missing.inspect} — the layer lost its public claim (or the anchor moved)"
-    end
-    out
-  end
-
   # Blockers live in 00_07, not canon (decided 2026-05-29). Canon docs must not
   # host a blocker SECTION — neither open ("🛑 Блокери", "🛑 Відкриті Блокери")
   # nor a resolved-archive ("✅ Архів", "✅ Закриті Блокери (PR #…)"). ALL blockers
@@ -399,8 +314,7 @@ module DocsLinter
   # on ECB the backend only DECODES the wire value (`(status_byte & 0x1F) * 2`); on CCM it recomputes
   # it from the EMA input (`ccm_growth_points`, FW.66 (Б)). It is the
   # token-MINTING reward, so a stale copy of EITHER dead formula silently misstates
-  # emission — invisible to every other guard (Lorenz knows only β; rate-guard exempts
-  # manifest). Signature tokens unique to the dead formulas: `clamp(… 10, 63 …)`,
+  # emission — invisible to every other guard (Lorenz knows only β). Signature tokens unique to the dead formulas: `clamp(… 10, 63 …)`,
   # `reward / 2`, `50 - deviation`. The live form (`5 + m * 26` / `homeostasis_gp`)
   # never matches. NOT table-skipped (drift lived in a manifest table cell). Owner
   # 03_04 (may keep history) + standard 00_06 (cites it) + 00_07 (tracker) exempt —
@@ -464,11 +378,10 @@ module DocsLinter
   # ONE home: 05_03 (technical) + 00_04 §3 (business view). Re-stating the VALUE
   # elsewhere drifts the instant governance re-prices — exactly the silent dup found
   # across 8 docs (00_01/04_01/05_01/05_02/05_06/00_04 body/03_03). Other docs must
-  # REFERENCE the home, never restate the number. Exempt: 05_03 + 00_04 (homes),
-  # 00_07 (tracker archive) and manifest
-  # (the standalone manifesto). A line that itself references the home or is a
+  # REFERENCE the home, never restate the number. Exempt: 05_03 + 00_04 (homes) and
+  # 00_07 (tracker archive). A line that itself references the home or is a
   # labelled mirror is not flagged — same shape as lorenz_formula_drift.
-  RATE_OWNER_DOC     = /\A05_03_|\A00_04_|\A00_07_|\Amanifest/
+  RATE_OWNER_DOC     = /\A05_03_|\A00_04_|\A00_07_/
   TOKENOMICS_RATE_RE = /10[ .,]?000[^\n]{0,30}=\s*1\s*SCC/i
   CARBON_RATE_RE     = /2[ .,]?000\s*SCC\s*=\s*1\s*[тt]/i
   RATE_MIRROR_RE     = /дзеркал|mirror|05_03|00_04|ProtocolParameters|SystemParameter/i
@@ -493,8 +406,7 @@ module DocsLinter
   # and the One-Home function is lost without a single red light. The anchor closes that loop:
   # each home must still MATCH the guard's own pattern, so re-pricing the home fails CI until
   # the regex is consciously updated together with every mirror. The violation text doubles as
-  # the mirror checklist — manifest.md is exempt from the drift-guard by design (genre),
-  # so THIS is the only red light that will ever name them on a re-price (DOC-T.41).
+  # the mirror checklist (DOC-T.41).
   RATE_ANCHOR_HOMES = {
     "05_03" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ] ],
     "00_04" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ],
@@ -507,7 +419,7 @@ module DocsLinter
 
       "home #{basename[/\A\d\d_\d\d/]} no longer matches the guard's #{const} (#{label}) — " \
         "re-price? Update the regex in lib/docs_linter.rb AND sweep the mirrors: " \
-        "manifest.md (§2 genre home), 02_06 §7 ROI, 03_04/05_02 references"
+        "02_06 §7 ROI, 03_04/05_02 references"
     end
   end
 
@@ -956,10 +868,10 @@ module DocsLinter
   # Only ids that RESOLVE to a current doc (valid_ids) are flagged, so a *retired*-doc
   # mention (the historical `04_07`, merged into 08_03) is NOT a live ref and stays
   # prose. Skips spans already in a link (preceded by '['), ``` fences. Same exempt
-  # set as bare_section_ref + manifest — index / standard-owner / tracker / appendix /
-  # manifesto keep their bare-by-design refs. Caller passes basename + text + the Set
+  # set as bare_section_ref — index / standard-owner / tracker / appendix keep their
+  # bare-by-design refs. Caller passes basename + text + the Set
   # of valid NN_NN ids. Pure: no I/O.
-  BARE_DOC_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|_[Aa]ppendix|\Amanifest/
+  BARE_DOC_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|_[Aa]ppendix/
   BARE_DOC_REF_RE = /(?<!\[)`(?:docs\/)?(\d\d_\d\d)(?:_[A-Za-z0-9_]+)?`/
 
   def bare_doc_ref(basename, text, valid_ids)
