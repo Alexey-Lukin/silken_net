@@ -92,7 +92,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 3. Старт через Thruster — дефолт, і він overridable at runtime
 4. WIF рантайм = ТРИ GCP API, і `sts` та `iamcredentials` вмикаються лише ЯВНО
 5. keyless AUTH ≠ terraform-apply CAPABILITY — CI імперсонує least-privilege deploy-SA БЕЗ IAM/WIF/serviceusage-ADMIN, тож apply IAM/WIF-ресурсів із CI неможливий; рефреш — можливий (read-ґранти в `terraform/iam.tf` з 2026-09-08)
-6. `gh run watch --exit-status` бреше (exit 0 on fail / 1 on empty) — щоб перевірити, чи Deploy·Canopy/Production реально пройшов, довіряй `gh run view --json conclusion`, не `watch`
+6. `gh run watch --exit-status` бреше (exit 0 on fail / 1 on empty), і `conclusion` RUN'а теж — чи Deploy·Canopy/Production реально задеплоїв, судить `conclusion` ДЖОБИ `Kamal Deploy (…)` (`gh run view <id> --json jobs`), бо пропуск деплою — теж зелений run (гоча 13)
 6a. `conclusion: failure` теж бреше — не про факт, а про ПРИЧИНУ, і саме ця брехня маскує справжній червоний
 7. `gh attestation verify` рендерить TTY-only → piped/`tail`/`grep` захоплюють ПОРОЖНЄ; довіряй EXIT=0 або `--format json`
 8. Живі прогони `import.rb` знайшли вже ШІСТЬ дефектів, яких `--dry-run`/`--verify` не бачать ЗА ПОБУДОВОЮ
