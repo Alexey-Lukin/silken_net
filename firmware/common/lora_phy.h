@@ -75,7 +75,8 @@
 _Static_assert(LORA_PHY_FREQ_HZ - LORA_PHY_BW_HZ / 2u >= 868000000u &&
                LORA_PHY_FREQ_HZ + LORA_PHY_BW_HZ / 2u <= 868600000u,
                "LoRa P2P occupied band outside 868.0-868.6 MHz (00_07 ARCH.24)");
-/* coderate: 1 = 4/5 (2 = 4/6, 3 = 4/7, 4 = 4/8). */
+/* coderate: 1 = 4/5 (2 = 4/6, 3 = 4/7, 4 = 4/8). Це й є FEC LoRa: окремого кодера поверх не
+ * будуємо — 03_05 §2.1 ⛔, скіл firmware #28; 4/8 коштує ×1.6 символів навантаження. */
 #define LORA_PHY_CR                    1u
 /* bandwidthAfc — FSK-поле; для LoRa драйвер його ігнорує. */
 #define LORA_PHY_BW_AFC                0u
