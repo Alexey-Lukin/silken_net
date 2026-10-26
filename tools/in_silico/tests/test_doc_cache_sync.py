@@ -8264,13 +8264,13 @@ CHECKS += [
      lambda d: d["findings"]["pine_necessary_cold_start_typ_mM_by_T"]["293.2"], 0.0),
     ("glucose pine necessary cold start 0 °C → 109", SUMMARY, rf"at 20 °C and {N} mM at 0 °C\.", GLU,
      lambda d: d["findings"]["pine_necessary_cold_start_typ_mM_by_T"]["273.2"], 0.0),
-    ("glucose pine pH 5.5 current, low → 109", SUMMARY, rf"\(pH 5\.5\) at {N}–[\d.]+ µA on pine", GLU,
+    ("glucose pine pH 5.5 current, low → 109", SUMMARY, rf"not a stop — at {N}–[\d.]+ µA on pine", GLU,
      lambda d: d["by_sku"][_GLU_PINE]["proton_limit_25C_uA"]["5.5"][0], 0.0),
-    ("glucose pine pH 5.5 current, high → 109", SUMMARY, rf"\(pH 5\.5\) at [\d.]+–{N} µA on pine", GLU,
+    ("glucose pine pH 5.5 current, high → 109", SUMMARY, rf"not a stop — at [\d.]+–{N} µA on pine", GLU,
      lambda d: d["by_sku"][_GLU_PINE]["proton_limit_25C_uA"]["5.5"][1], 0.0),
-    ("glucose pine pH 4.5 current, low → 109", SUMMARY, rf"reaches pH 4\.5 at {N}–[\d.]+ µA \(25 °C\)", GLU,
+    ("glucose pine pH 4.5 current, low → 109", SUMMARY, rf"and pH 4\.5 at {N}–[\d.]+ µA \(25 °C\)", GLU,
      lambda d: d["by_sku"][_GLU_PINE]["proton_limit_25C_uA"]["4.5"][0], 0.0),
-    ("glucose pine pH 4.5 current, high → 109", SUMMARY, rf"reaches pH 4\.5 at [\d.]+–{N} µA \(25 °C\)", GLU,
+    ("glucose pine pH 4.5 current, high → 109", SUMMARY, rf"and pH 4\.5 at [\d.]+–{N} µA \(25 °C\)", GLU,
      lambda d: d["by_sku"][_GLU_PINE]["proton_limit_25C_uA"]["4.5"][1], 0.0),
     ("glucose pairs beyond pH 5.5 → 109", SUMMARY, rf"\*\*{N} of [\d.]+\*\* draw×part pairs", GLU,
      lambda d: d["findings"]["draws_beyond_pH55_in_every_reading"], 0.0),
@@ -8302,13 +8302,30 @@ def test_glucose_threshold_prose_claims_hold():
                     ["necessary_mM"][0] for s, b in d["by_sku"].items()}
             assert vals["anchor_zone1_tropical"] == min(vals.values()) and vals["anchor_zone1_broadleaf"] == max(vals.values())
     sys.path.insert(0, str(REPO / "tools/in_silico"))
-    from lib.constants import ETA_BQ_10UA_READING, P_EDLC_LEAK_1UA_ILLUSTRATION, P_SLEEP_VSTOR_STOP2, V_OP_02_03_TABLE
+    from lib.constants import (
+        EA_ENZYME,
+        EA_SYGMUND_GCGDH,
+        ETA_BOOST_TABLE_UW,
+        ETA_BQ_10UA_READING,
+        ETA_TABLE_READ_ERROR,
+        P_EDLC_LEAK_1UA_ILLUSTRATION,
+        P_SLEEP_VSTOR_STOP2,
+        V_OP_02_03_TABLE,
+    )
     text = doc("docs/02_03_BQ25570_MPPT_Nano_Power.md")
     lo, hi = (round(100 * x) for x in ETA_BQ_10UA_READING)
     assert f"~{lo}-{hi}% на 10 µA" in text, "02_03 §9.1's low-current reading moved — re-mirror lib ETA_BQ_10UA_READING"
     assert f"V_OP={round(1000 * V_OP_02_03_TABLE)} мВ" in text, "02_03 §9.1's table V_OP moved — re-mirror lib"
     assert f"= 7.06 + 2.20 = {P_SLEEP_VSTOR_STOP2 * 1e6:.2f} µW" in text, "02_03 §9.3's STOP2 drain moved — re-mirror lib"
     assert f"+1 мкА на 4.5 В = +{P_EDLC_LEAK_1UA_ILLUSTRATION * 1e6:.1f} мкВт" in text, "02_03 §9.3's EDLC example moved"
+    # The η table the sleep brackets ride on, and the read error §9.1 gives it.
+    for p_uw, eta in ETA_BOOST_TABLE_UW:
+        assert re.search(rf"(?m)^\| P_EBFC={p_uw:g} µW[^|]*\| ~\d+ µA \| \**~{eta:.2f}\** \|$", text), f"02_03 §9.1 η row {p_uw} moved"
+    assert f"порядку ±10-{round(100 * ETA_TABLE_READ_ERROR)} в.п." in text, "02_03 §9.1's read error moved — re-mirror lib"
+    summ = doc(SUMMARY)
+    assert f"Ea {EA_SYGMUND_GCGDH / 1e3:.1f} kJ/mol, measured by Sygmund 2011" in summ and f"or {EA_ENZYME / 1e3:.0f} assumed" in summ
+    rest = [b["beyond_proton_limit_25C"][n]["5.5"] for b in d["by_sku"].values() for n in d["draws_uA"]]
+    assert "none" not in rest, "SUMMARY says the pairs not beyond pH 5.5 in every reading are beyond it in SOME"
 
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",

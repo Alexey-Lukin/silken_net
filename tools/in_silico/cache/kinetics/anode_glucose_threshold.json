@@ -34,18 +34,18 @@
     ],
     [
       46.15,
-      0.68,
-      0.68
+      0.53,
+      0.8300000000000001
     ],
     [
       92.31,
-      0.75,
-      0.75
+      0.6,
+      0.9
     ],
     [
       307.69,
-      0.82,
-      0.82
+      0.6699999999999999,
+      0.97
     ]
   ],
   "draws_uA": {
@@ -58,17 +58,49 @@
       21.43
     ],
     "sleep_scenario_c_target": [
-      12.29,
+      10.07,
       46.15
     ],
     "sleep_stop2_shipped": [
-      27.24,
-      46.15
+      22.31,
+      53.76
     ],
     "sleep_stop2_plus_edlc_1uA": [
-      40.47,
-      62.26
+      33.16,
+      79.88
     ]
+  },
+  "sleep_draws_by_v_op_uA": {
+    "sleep_scenario_c_target": {
+      "0.500": [
+        10.07,
+        41.8
+      ],
+      "0.325": [
+        15.5,
+        46.15
+      ]
+    },
+    "sleep_stop2_shipped": {
+      "0.500": [
+        22.31,
+        46.15
+      ],
+      "0.325": [
+        34.33,
+        53.76
+      ]
+    },
+    "sleep_stop2_plus_edlc_1uA": {
+      "0.500": [
+        33.16,
+        51.92
+      ],
+      "0.325": [
+        47.04,
+        79.88
+      ]
+    }
   },
   "ph_bracket_ratios": {
     "wt": {
@@ -105,7 +137,7 @@
           "4.5": "none"
         },
         "sleep_scenario_c_target": {
-          "5.5": "every",
+          "5.5": "some",
           "4.5": "some"
         },
         "sleep_stop2_shipped": {
@@ -186,11 +218,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.29,
+                0.24,
                 1.1
               ],
               "series_estimate_at_draw_high": {
@@ -214,56 +246,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.64,
-                1.1
+                0.53,
+                1.28
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.3837,
+                  "mM": 1.612,
                   "transport_share": 0.909,
                   "ph_bracket_mM": {
-                    "wt": 1.402,
-                    "rec": 1.4338
+                    "wt": 1.6336,
+                    "rec": 1.6707
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.5289,
+                  "mM": 1.7819,
                   "transport_share": 0.822,
                   "ph_bracket_mM": {
-                    "wt": 1.572,
-                    "rec": 1.6419
+                    "wt": 1.8335,
+                    "rec": 1.916
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.96,
-                1.48
+                0.79,
+                1.9
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.8672,
+                  "mM": 2.3965,
                   "transport_share": 0.908,
                   "ph_bracket_mM": {
-                    "wt": 1.8927,
-                    "rec": 1.936
+                    "wt": 2.4303,
+                    "rec": 2.4864
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 2.0651,
-                  "transport_share": 0.821,
+                  "mM": 2.6531,
+                  "transport_share": 0.82,
                   "ph_bracket_mM": {
-                    "wt": 2.1269,
-                    "rec": 2.2236
+                    "wt": 2.7381,
+                    "rec": 2.8654
                   }
                 }
               }
@@ -338,11 +370,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.15,
+                0.12,
                 0.59
               ],
               "series_estimate_at_draw_high": {
@@ -366,56 +398,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.34,
-                0.59
+                0.28,
+                0.68
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.7414,
-                  "transport_share": 0.906,
+                  "mM": 0.8636,
+                  "transport_share": 0.905,
                   "ph_bracket_mM": {
-                    "wt": 0.7511,
-                    "rec": 0.7686
+                    "wt": 0.8751,
+                    "rec": 0.8954
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.7519,
+                  "mM": 0.8759,
                   "transport_share": 0.893,
                   "ph_bracket_mM": {
-                    "wt": 0.7632,
-                    "rec": 0.7833
+                    "wt": 0.8892,
+                    "rec": 0.9127
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.51,
-                0.79
+                0.42,
+                1.02
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.0003,
+                  "mM": 1.2836,
                   "transport_share": 0.905,
                   "ph_bracket_mM": {
-                    "wt": 1.0137,
-                    "rec": 1.0374
+                    "wt": 1.3012,
+                    "rec": 1.3317
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.0146,
-                  "transport_share": 0.893,
+                  "mM": 1.302,
+                  "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 1.0302,
-                    "rec": 1.0575
+                    "wt": 1.3225,
+                    "rec": 1.3578
                   }
                 }
               }
@@ -490,11 +522,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.14,
+                0.11,
                 0.52
               ],
               "series_estimate_at_draw_high": {
@@ -518,56 +550,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.31,
-                0.52
+                0.25,
+                0.61
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.662,
+                  "mM": 0.7712,
                   "transport_share": 0.908,
                   "ph_bracket_mM": {
-                    "wt": 0.6705,
-                    "rec": 0.6857
+                    "wt": 0.7811,
+                    "rec": 0.7989
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.6619,
+                  "mM": 0.7711,
                   "transport_share": 0.908,
                   "ph_bracket_mM": {
-                    "wt": 0.6704,
-                    "rec": 0.6856
+                    "wt": 0.781,
+                    "rec": 0.7988
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.46,
-                0.71
+                0.38,
+                0.91
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.8932,
+                  "mM": 1.1462,
                   "transport_share": 0.907,
                   "ph_bracket_mM": {
-                    "wt": 0.9049,
-                    "rec": 0.9255
+                    "wt": 1.1614,
+                    "rec": 1.188
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.8931,
-                  "transport_share": 0.908,
+                  "mM": 1.146,
+                  "transport_share": 0.907,
                   "ph_bracket_mM": {
-                    "wt": 0.9047,
-                    "rec": 0.9253
+                    "wt": 1.1612,
+                    "rec": 1.1878
                   }
                 }
               }
@@ -681,11 +713,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.21,
+                0.17,
                 0.79
               ],
               "series_estimate_at_draw_high": {
@@ -709,56 +741,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.47,
-                0.79
+                0.38,
+                0.92
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.0227,
-                  "transport_share": 0.894,
+                  "mM": 1.1914,
+                  "transport_share": 0.893,
                   "ph_bracket_mM": {
-                    "wt": 1.0383,
-                    "rec": 1.0656
+                    "wt": 1.2098,
+                    "rec": 1.2417
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.1476,
+                  "mM": 1.3375,
                   "transport_share": 0.796,
                   "ph_bracket_mM": {
-                    "wt": 1.1838,
-                    "rec": 1.2437
+                    "wt": 1.3808,
+                    "rec": 1.4512
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.69,
-                1.07
+                0.57,
+                1.38
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.38,
+                  "mM": 1.7712,
                   "transport_share": 0.893,
                   "ph_bracket_mM": {
-                    "wt": 1.4017,
-                    "rec": 1.4388
+                    "wt": 1.7998,
+                    "rec": 1.8479
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.55,
-                  "transport_share": 0.795,
+                  "mM": 1.9914,
+                  "transport_share": 0.794,
                   "ph_bracket_mM": {
-                    "wt": 1.6017,
-                    "rec": 1.6841
+                    "wt": 2.0617,
+                    "rec": 2.1699
                   }
                 }
               }
@@ -833,11 +865,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.11,
+                0.09,
                 0.42
               ],
               "series_estimate_at_draw_high": {
@@ -861,56 +893,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.25,
-                0.42
+                0.2,
+                0.49
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.5483,
+                  "mM": 0.6387,
                   "transport_share": 0.89,
                   "ph_bracket_mM": {
-                    "wt": 0.5567,
-                    "rec": 0.5717
+                    "wt": 0.6485,
+                    "rec": 0.6661
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.5574,
+                  "mM": 0.6493,
                   "transport_share": 0.875,
                   "ph_bracket_mM": {
-                    "wt": 0.5671,
-                    "rec": 0.5844
+                    "wt": 0.6607,
+                    "rec": 0.6809
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.37,
-                0.57
+                0.3,
+                0.74
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.7398,
-                  "transport_share": 0.89,
+                  "mM": 0.9493,
+                  "transport_share": 0.889,
                   "ph_bracket_mM": {
-                    "wt": 0.7513,
-                    "rec": 0.7716
+                    "wt": 0.9643,
+                    "rec": 0.9906
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.7521,
+                  "mM": 0.9652,
                   "transport_share": 0.875,
                   "ph_bracket_mM": {
-                    "wt": 0.7654,
-                    "rec": 0.7889
+                    "wt": 0.9826,
+                    "rec": 1.0129
                   }
                 }
               }
@@ -985,11 +1017,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.1,
+                0.08,
                 0.38
               ],
               "series_estimate_at_draw_high": {
@@ -1013,56 +1045,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.22,
-                0.38
+                0.18,
+                0.44
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.4894,
+                  "mM": 0.5701,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.4967,
-                    "rec": 0.5098
+                    "wt": 0.5787,
+                    "rec": 0.594
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.4894,
+                  "mM": 0.57,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.4966,
-                    "rec": 0.5097
+                    "wt": 0.5786,
+                    "rec": 0.5939
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.33,
-                0.51
+                0.27,
+                0.66
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.6604,
+                  "mM": 0.8474,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.6703,
-                    "rec": 0.6881
+                    "wt": 0.8604,
+                    "rec": 0.8833
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.6603,
+                  "mM": 0.8473,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.6702,
-                    "rec": 0.6879
+                    "wt": 0.8602,
+                    "rec": 0.8831
                   }
                 }
               }
@@ -1176,11 +1208,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.2,
+                0.16,
                 0.76
               ],
               "series_estimate_at_draw_high": {
@@ -1204,56 +1236,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.44,
-                0.76
+                0.36,
+                0.88
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.974,
-                  "transport_share": 0.894,
+                  "mM": 1.1346,
+                  "transport_share": 0.893,
                   "ph_bracket_mM": {
-                    "wt": 0.9888,
-                    "rec": 1.0147
+                    "wt": 1.1521,
+                    "rec": 1.1824
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.0928,
+                  "mM": 1.2735,
                   "transport_share": 0.796,
                   "ph_bracket_mM": {
-                    "wt": 1.127,
-                    "rec": 1.1839
+                    "wt": 1.3144,
+                    "rec": 1.3813
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.66,
-                1.02
+                0.54,
+                1.31
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.3143,
+                  "mM": 1.6867,
                   "transport_share": 0.893,
                   "ph_bracket_mM": {
-                    "wt": 1.3348,
-                    "rec": 1.3701
+                    "wt": 1.7138,
+                    "rec": 1.7596
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.4759,
-                  "transport_share": 0.795,
+                  "mM": 1.896,
+                  "transport_share": 0.794,
                   "ph_bracket_mM": {
-                    "wt": 1.5246,
-                    "rec": 1.6028
+                    "wt": 1.9621,
+                    "rec": 2.0647
                   }
                 }
               }
@@ -1328,11 +1360,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.1,
+                0.08,
                 0.4
               ],
               "series_estimate_at_draw_high": {
@@ -1356,56 +1388,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.24,
-                0.4
+                0.19,
+                0.47
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.5222,
+                  "mM": 0.6083,
                   "transport_share": 0.89,
                   "ph_bracket_mM": {
-                    "wt": 0.5301,
-                    "rec": 0.5444
+                    "wt": 0.6176,
+                    "rec": 0.6343
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.5308,
+                  "mM": 0.6184,
                   "transport_share": 0.875,
                   "ph_bracket_mM": {
-                    "wt": 0.5401,
-                    "rec": 0.5565
+                    "wt": 0.6292,
+                    "rec": 0.6484
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.35,
-                0.55
+                0.29,
+                0.7
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.7045,
+                  "mM": 0.9041,
                   "transport_share": 0.89,
                   "ph_bracket_mM": {
-                    "wt": 0.7154,
-                    "rec": 0.7348
+                    "wt": 0.9183,
+                    "rec": 0.9433
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.7162,
+                  "mM": 0.9192,
                   "transport_share": 0.875,
                   "ph_bracket_mM": {
-                    "wt": 0.7289,
-                    "rec": 0.7512
+                    "wt": 0.9357,
+                    "rec": 0.9645
                   }
                 }
               }
@@ -1480,11 +1512,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.09,
+                0.07,
                 0.36
               ],
               "series_estimate_at_draw_high": {
@@ -1508,56 +1540,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.21,
-                0.36
+                0.17,
+                0.42
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.4661,
+                  "mM": 0.543,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.4731,
-                    "rec": 0.4855
+                    "wt": 0.5511,
+                    "rec": 0.5656
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.466,
+                  "mM": 0.5429,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.473,
-                    "rec": 0.4854
+                    "wt": 0.551,
+                    "rec": 0.5655
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.32,
-                0.49
+                0.26,
+                0.63
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.6289,
+                  "mM": 0.807,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.6384,
-                    "rec": 0.6553
+                    "wt": 0.8193,
+                    "rec": 0.8411
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.6288,
+                  "mM": 0.8069,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.6383,
-                    "rec": 0.6551
+                    "wt": 0.8192,
+                    "rec": 0.8409
                   }
                 }
               }
@@ -1595,7 +1627,7 @@
         },
         "sleep_stop2_shipped": {
           "5.5": "every",
-          "4.5": "none"
+          "4.5": "some"
         },
         "sleep_stop2_plus_edlc_1uA": {
           "5.5": "every",
@@ -1671,11 +1703,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.15,
+                0.12,
                 0.57
               ],
               "series_estimate_at_draw_high": {
@@ -1699,56 +1731,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.33,
-                0.57
+                0.27,
+                0.66
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.7572,
+                  "mM": 0.8821,
                   "transport_share": 0.868,
                   "ph_bracket_mM": {
-                    "wt": 0.7714,
-                    "rec": 0.7964
+                    "wt": 0.8989,
+                    "rec": 0.928
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.8715,
+                  "mM": 1.0157,
                   "transport_share": 0.754,
                   "ph_bracket_mM": {
-                    "wt": 0.9042,
-                    "rec": 0.9588
+                    "wt": 1.0548,
+                    "rec": 1.119
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.5,
-                0.77
+                0.41,
+                0.98
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.0218,
+                  "mM": 1.3115,
                   "transport_share": 0.868,
                   "ph_bracket_mM": {
-                    "wt": 1.0415,
-                    "rec": 1.0754
+                    "wt": 1.3374,
+                    "rec": 1.3814
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.1772,
-                  "transport_share": 0.753,
+                  "mM": 1.5126,
+                  "transport_share": 0.752,
                   "ph_bracket_mM": {
-                    "wt": 1.2237,
-                    "rec": 1.2988
+                    "wt": 1.5756,
+                    "rec": 1.674
                   }
                 }
               }
@@ -1823,11 +1855,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.08,
+                0.06,
                 0.3
               ],
               "series_estimate_at_draw_high": {
@@ -1851,56 +1883,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.18,
-                0.3
+                0.14,
+                0.35
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.4064,
+                  "mM": 0.4734,
                   "transport_share": 0.864,
                   "ph_bracket_mM": {
-                    "wt": 0.414,
-                    "rec": 0.4278
+                    "wt": 0.4824,
+                    "rec": 0.4984
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.4147,
+                  "mM": 0.4831,
                   "transport_share": 0.846,
                   "ph_bracket_mM": {
-                    "wt": 0.4236,
-                    "rec": 0.4394
+                    "wt": 0.4935,
+                    "rec": 0.512
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.26,
-                0.41
+                0.22,
+                0.53
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.5483,
-                  "transport_share": 0.864,
+                  "mM": 0.7036,
+                  "transport_share": 0.863,
                   "ph_bracket_mM": {
-                    "wt": 0.5588,
-                    "rec": 0.5774
+                    "wt": 0.7173,
+                    "rec": 0.7413
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.5596,
+                  "mM": 0.7181,
                   "transport_share": 0.846,
                   "ph_bracket_mM": {
-                    "wt": 0.5717,
-                    "rec": 0.5932
+                    "wt": 0.734,
+                    "rec": 0.7617
                   }
                 }
               }
@@ -1975,11 +2007,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.07,
+                0.05,
                 0.27
               ],
               "series_estimate_at_draw_high": {
@@ -2003,56 +2035,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.16,
-                0.27
+                0.13,
+                0.31
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.3625,
-                  "transport_share": 0.867,
+                  "mM": 0.4223,
+                  "transport_share": 0.866,
                   "ph_bracket_mM": {
-                    "wt": 0.3692,
-                    "rec": 0.3812
+                    "wt": 0.4301,
+                    "rec": 0.4441
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.3625,
+                  "mM": 0.4222,
                   "transport_share": 0.867,
                   "ph_bracket_mM": {
-                    "wt": 0.3691,
-                    "rec": 0.3811
+                    "wt": 0.43,
+                    "rec": 0.444
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.24,
-                0.37
+                0.19,
+                0.47
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.4891,
+                  "mM": 0.6277,
                   "transport_share": 0.866,
                   "ph_bracket_mM": {
-                    "wt": 0.4982,
-                    "rec": 0.5145
+                    "wt": 0.6395,
+                    "rec": 0.6605
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.489,
-                  "transport_share": 0.867,
+                  "mM": 0.6276,
+                  "transport_share": 0.866,
                   "ph_bracket_mM": {
-                    "wt": 0.4981,
-                    "rec": 0.5144
+                    "wt": 0.6394,
+                    "rec": 0.6603
                   }
                 }
               }
@@ -2166,11 +2198,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.21,
+                0.17,
                 0.79
               ],
               "series_estimate_at_draw_high": {
@@ -2194,56 +2226,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.47,
-                0.79
+                0.38,
+                0.92
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.0227,
-                  "transport_share": 0.894,
+                  "mM": 1.1914,
+                  "transport_share": 0.893,
                   "ph_bracket_mM": {
-                    "wt": 1.0383,
-                    "rec": 1.0656
+                    "wt": 1.2098,
+                    "rec": 1.2417
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.1476,
+                  "mM": 1.3375,
                   "transport_share": 0.796,
                   "ph_bracket_mM": {
-                    "wt": 1.1838,
-                    "rec": 1.2437
+                    "wt": 1.3808,
+                    "rec": 1.4512
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.69,
-                1.07
+                0.57,
+                1.38
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.38,
+                  "mM": 1.7712,
                   "transport_share": 0.893,
                   "ph_bracket_mM": {
-                    "wt": 1.4017,
-                    "rec": 1.4388
+                    "wt": 1.7998,
+                    "rec": 1.8479
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.55,
-                  "transport_share": 0.795,
+                  "mM": 1.9914,
+                  "transport_share": 0.794,
                   "ph_bracket_mM": {
-                    "wt": 1.6017,
-                    "rec": 1.6841
+                    "wt": 2.0617,
+                    "rec": 2.1699
                   }
                 }
               }
@@ -2318,11 +2350,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.11,
+                0.09,
                 0.42
               ],
               "series_estimate_at_draw_high": {
@@ -2346,56 +2378,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.25,
-                0.42
+                0.2,
+                0.49
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.5483,
+                  "mM": 0.6387,
                   "transport_share": 0.89,
                   "ph_bracket_mM": {
-                    "wt": 0.5567,
-                    "rec": 0.5717
+                    "wt": 0.6485,
+                    "rec": 0.6661
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.5574,
+                  "mM": 0.6493,
                   "transport_share": 0.875,
                   "ph_bracket_mM": {
-                    "wt": 0.5671,
-                    "rec": 0.5844
+                    "wt": 0.6607,
+                    "rec": 0.6809
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.37,
-                0.57
+                0.3,
+                0.74
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.7398,
-                  "transport_share": 0.89,
+                  "mM": 0.9493,
+                  "transport_share": 0.889,
                   "ph_bracket_mM": {
-                    "wt": 0.7513,
-                    "rec": 0.7716
+                    "wt": 0.9643,
+                    "rec": 0.9906
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.7521,
+                  "mM": 0.9652,
                   "transport_share": 0.875,
                   "ph_bracket_mM": {
-                    "wt": 0.7654,
-                    "rec": 0.7889
+                    "wt": 0.9826,
+                    "rec": 1.0129
                   }
                 }
               }
@@ -2470,11 +2502,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.1,
+                0.08,
                 0.38
               ],
               "series_estimate_at_draw_high": {
@@ -2498,56 +2530,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.22,
-                0.38
+                0.18,
+                0.44
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.4894,
+                  "mM": 0.5701,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.4967,
-                    "rec": 0.5098
+                    "wt": 0.5787,
+                    "rec": 0.594
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.4894,
+                  "mM": 0.57,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.4966,
-                    "rec": 0.5097
+                    "wt": 0.5786,
+                    "rec": 0.5939
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.33,
-                0.51
+                0.27,
+                0.66
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.6604,
+                  "mM": 0.8474,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.6703,
-                    "rec": 0.6881
+                    "wt": 0.8604,
+                    "rec": 0.8833
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.6603,
+                  "mM": 0.8473,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.6702,
-                    "rec": 0.6879
+                    "wt": 0.8602,
+                    "rec": 0.8831
                   }
                 }
               }
@@ -2661,11 +2693,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.21,
+                0.17,
                 0.79
               ],
               "series_estimate_at_draw_high": {
@@ -2689,56 +2721,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.47,
-                0.79
+                0.38,
+                0.92
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.0227,
-                  "transport_share": 0.894,
+                  "mM": 1.1914,
+                  "transport_share": 0.893,
                   "ph_bracket_mM": {
-                    "wt": 1.0383,
-                    "rec": 1.0656
+                    "wt": 1.2098,
+                    "rec": 1.2417
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.1476,
+                  "mM": 1.3375,
                   "transport_share": 0.796,
                   "ph_bracket_mM": {
-                    "wt": 1.1838,
-                    "rec": 1.2437
+                    "wt": 1.3808,
+                    "rec": 1.4512
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.69,
-                1.07
+                0.57,
+                1.38
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 1.38,
+                  "mM": 1.7712,
                   "transport_share": 0.893,
                   "ph_bracket_mM": {
-                    "wt": 1.4017,
-                    "rec": 1.4388
+                    "wt": 1.7998,
+                    "rec": 1.8479
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 1.55,
-                  "transport_share": 0.795,
+                  "mM": 1.9914,
+                  "transport_share": 0.794,
                   "ph_bracket_mM": {
-                    "wt": 1.6017,
-                    "rec": 1.6841
+                    "wt": 2.0617,
+                    "rec": 2.1699
                   }
                 }
               }
@@ -2813,11 +2845,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.11,
+                0.09,
                 0.42
               ],
               "series_estimate_at_draw_high": {
@@ -2841,56 +2873,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.25,
-                0.42
+                0.2,
+                0.49
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.5483,
+                  "mM": 0.6387,
                   "transport_share": 0.89,
                   "ph_bracket_mM": {
-                    "wt": 0.5567,
-                    "rec": 0.5717
+                    "wt": 0.6485,
+                    "rec": 0.6661
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.5574,
+                  "mM": 0.6493,
                   "transport_share": 0.875,
                   "ph_bracket_mM": {
-                    "wt": 0.5671,
-                    "rec": 0.5844
+                    "wt": 0.6607,
+                    "rec": 0.6809
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.37,
-                0.57
+                0.3,
+                0.74
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.7398,
-                  "transport_share": 0.89,
+                  "mM": 0.9493,
+                  "transport_share": 0.889,
                   "ph_bracket_mM": {
-                    "wt": 0.7513,
-                    "rec": 0.7716
+                    "wt": 0.9643,
+                    "rec": 0.9906
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.7521,
+                  "mM": 0.9652,
                   "transport_share": 0.875,
                   "ph_bracket_mM": {
-                    "wt": 0.7654,
-                    "rec": 0.7889
+                    "wt": 0.9826,
+                    "rec": 1.0129
                   }
                 }
               }
@@ -2965,11 +2997,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.1,
+                0.08,
                 0.38
               ],
               "series_estimate_at_draw_high": {
@@ -2993,56 +3025,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.22,
-                0.38
+                0.18,
+                0.44
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.4894,
+                  "mM": 0.5701,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.4967,
-                    "rec": 0.5098
+                    "wt": 0.5787,
+                    "rec": 0.594
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.4894,
+                  "mM": 0.57,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.4966,
-                    "rec": 0.5097
+                    "wt": 0.5786,
+                    "rec": 0.5939
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.33,
-                0.51
+                0.27,
+                0.66
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.6604,
+                  "mM": 0.8474,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.6703,
-                    "rec": 0.6881
+                    "wt": 0.8604,
+                    "rec": 0.8833
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.6603,
+                  "mM": 0.8473,
                   "transport_share": 0.892,
                   "ph_bracket_mM": {
-                    "wt": 0.6702,
-                    "rec": 0.6879
+                    "wt": 0.8602,
+                    "rec": 0.8831
                   }
                 }
               }
@@ -3156,11 +3188,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.08,
+                0.07,
                 0.32
               ],
               "series_estimate_at_draw_high": {
@@ -3184,56 +3216,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.19,
-                0.32
+                0.15,
+                0.38
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.4565,
+                  "mM": 0.5318,
                   "transport_share": 0.821,
                   "ph_bracket_mM": {
-                    "wt": 0.468,
-                    "rec": 0.4884
+                    "wt": 0.5454,
+                    "rec": 0.5692
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.5499,
-                  "transport_share": 0.682,
+                  "mM": 0.6409,
+                  "transport_share": 0.681,
                   "ph_bracket_mM": {
-                    "wt": 0.5761,
-                    "rec": 0.6205
+                    "wt": 0.672,
+                    "rec": 0.7241
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.28,
-                0.44
+                0.23,
+                0.56
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.6161,
-                  "transport_share": 0.821,
+                  "mM": 0.7908,
+                  "transport_share": 0.82,
                   "ph_bracket_mM": {
-                    "wt": 0.6319,
-                    "rec": 0.6596
+                    "wt": 0.8116,
+                    "rec": 0.8474
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.7429,
-                  "transport_share": 0.681,
+                  "mM": 0.9546,
+                  "transport_share": 0.68,
                   "ph_bracket_mM": {
-                    "wt": 0.7797,
-                    "rec": 0.8405
+                    "wt": 1.0041,
+                    "rec": 1.0834
                   }
                 }
               }
@@ -3308,11 +3340,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.04,
+                0.03,
                 0.17
               ],
               "series_estimate_at_draw_high": {
@@ -3336,56 +3368,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.1,
-                0.17
+                0.08,
+                0.2
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.2455,
+                  "mM": 0.286,
                   "transport_share": 0.815,
                   "ph_bracket_mM": {
-                    "wt": 0.2517,
-                    "rec": 0.263
+                    "wt": 0.2933,
+                    "rec": 0.3064
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.2523,
+                  "mM": 0.2939,
                   "transport_share": 0.793,
                   "ph_bracket_mM": {
-                    "wt": 0.2595,
-                    "rec": 0.2725
+                    "wt": 0.3024,
+                    "rec": 0.3175
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.15,
-                0.23
+                0.12,
+                0.3
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.3312,
+                  "mM": 0.4251,
                   "transport_share": 0.815,
                   "ph_bracket_mM": {
-                    "wt": 0.3397,
-                    "rec": 0.355
+                    "wt": 0.4361,
+                    "rec": 0.4558
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.3405,
+                  "mM": 0.4369,
                   "transport_share": 0.793,
                   "ph_bracket_mM": {
-                    "wt": 0.3503,
-                    "rec": 0.3679
+                    "wt": 0.4498,
+                    "rec": 0.4724
                   }
                 }
               }
@@ -3460,11 +3492,11 @@
             },
             "sleep_scenario_c_target": {
               "draw_uA": [
-                12.29,
+                10.07,
                 46.15
               ],
               "necessary_mM": [
-                0.04,
+                0.03,
                 0.15
               ],
               "series_estimate_at_draw_high": {
@@ -3488,56 +3520,56 @@
             },
             "sleep_stop2_shipped": {
               "draw_uA": [
-                27.24,
-                46.15
+                22.31,
+                53.76
               ],
               "necessary_mM": [
-                0.09,
-                0.15
+                0.07,
+                0.18
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.2188,
+                  "mM": 0.2548,
                   "transport_share": 0.819,
                   "ph_bracket_mM": {
-                    "wt": 0.2242,
-                    "rec": 0.234
+                    "wt": 0.2612,
+                    "rec": 0.2726
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.2187,
+                  "mM": 0.2548,
                   "transport_share": 0.819,
                   "ph_bracket_mM": {
-                    "wt": 0.2241,
-                    "rec": 0.2339
+                    "wt": 0.2611,
+                    "rec": 0.2726
                   }
                 }
               }
             },
             "sleep_stop2_plus_edlc_1uA": {
               "draw_uA": [
-                40.47,
-                62.26
+                33.16,
+                79.88
               ],
               "necessary_mM": [
-                0.13,
-                0.21
+                0.11,
+                0.27
               ],
               "series_estimate_at_draw_high": {
                 "ea_19.5_measured": {
-                  "mM": 0.2952,
+                  "mM": 0.3788,
                   "transport_share": 0.818,
                   "ph_bracket_mM": {
-                    "wt": 0.3026,
-                    "rec": 0.3159
+                    "wt": 0.3884,
+                    "rec": 0.4055
                   }
                 },
                 "ea_40_assumed": {
-                  "mM": 0.2951,
-                  "transport_share": 0.819,
+                  "mM": 0.3787,
+                  "transport_share": 0.818,
                   "ph_bracket_mM": {
-                    "wt": 0.3025,
-                    "rec": 0.3158
+                    "wt": 0.3883,
+                    "rec": 0.4054
                   }
                 }
               }
@@ -3564,30 +3596,30 @@
     },
     "necessary_sleep_stop2_mM_by_T": {
       "273.2": [
-        0.19,
-        0.64
+        0.15,
+        0.53
       ],
       "293.2": [
-        0.1,
-        0.34
+        0.08,
+        0.28
       ],
       "298.2": [
-        0.09,
-        0.31
+        0.07,
+        0.25
       ]
     },
     "necessary_sleep_target_mM_by_T": {
       "273.2": [
-        0.08,
-        0.29
+        0.07,
+        0.24
       ],
       "293.2": [
-        0.04,
-        0.15
+        0.03,
+        0.12
       ],
       "298.2": [
-        0.04,
-        0.14
+        0.03,
+        0.11
       ]
     },
     "pine_S_uA_per_mM_by_T": {
@@ -3609,12 +3641,12 @@
       "293.2": 0.23,
       "298.2": 0.2
     },
-    "draws_beyond_pH55_in_every_reading": 32,
+    "draws_beyond_pH55_in_every_reading": 31,
     "draws_x_skus": 35,
     "pine_cold_start_typ_beyond_pH45": "some",
     "d_ratio_0C_over_25C": 0.478
   },
-  "verdict": "Necessary, not sufficient: below 0.09–0.32 mM of glucose at the bore wall (20 °C, across the Zone-1 parts; 0.17–0.59 mM at 0 °C) a stagnant sap gap cannot carry the cold-start draw (25.0 µA) for any enzyme. In the same gap the proton half binds first: 32 of 35 draw×part pairs exceed, in every reading, the current at which 85's face leaves the enzyme's kinetic bracket (pH 5.5) at 25 °C, and on pine the cold start reaches pH 4.5 in some readings — so sap above the threshold does not make the gap carry the draw.",
+  "verdict": "Necessary, not sufficient: below 0.09–0.32 mM of glucose at the bore wall (20 °C, across the Zone-1 parts; 0.17–0.59 mM at 0 °C) a stagnant sap gap cannot carry the cold-start draw (25.0 µA) for any enzyme, glucose being the only substrate. In the same gap the face first leaves the enzyme's measured pH window: 31 of 35 draw×part pairs exceed, in every reading, the current at which 85's face leaves the enzyme's kinetic bracket (pH 5.5) at 25 °C, and on pine the cold start reaches pH 4.5 in some readings — so sap above the threshold does not by itself keep the face inside that window.",
   "controls": {
     "forward_solve_max_rel_error": 2.220446049250313e-16,
     "delta_matches_85": true,

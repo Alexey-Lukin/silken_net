@@ -224,6 +224,9 @@ COIN_RESERVE_12WK_PER_ALLOY = 6
 # table puts the boost on the steep low-current rise at «~20-30 % на 10 µA» (SLUSBH2G Figs 4-7, read by eye), and the
 # table itself runs at V_OP 325 mV — the OTHER unreconciled V_OP guess beside V_OP above (⛔ not merged, ⚖️ 2026-09-10).
 ETA_BQ_10UA_READING = (0.20, 0.30)
+# §9.1 also gives its TABLE readings an error — «порядку ±10-15 в.п., не ±1» (read by eye off the same figures) — so a
+# consumer that needs a bound takes each table η as an interval of ± this outer end, never as a point. Mirror — edit there.
+ETA_TABLE_READ_ERROR = 0.15
 V_OP_02_03_TABLE = 0.325     # V
 # The SHIPPED STOP2 sleep at VSTOR (02_03 §9.3: 1.07 µA × 3.3 V through η_buck 0.50, plus the BQ's 488 nA × 4.5 V) —
 # P_SLEEP_VSTOR above is §9.6 Scenario C's TARGET, whose mechanism a primary refuted (FW.54) while the target stands.

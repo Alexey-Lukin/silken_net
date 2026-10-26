@@ -7669,6 +7669,7 @@ def test_anode_glucose_threshold_invariants():
         EA_SYGMUND_GCGDH,
         ETA_BOOST_TABLE_UW,
         ETA_BQ_10UA_READING,
+        ETA_TABLE_READ_ERROR,
         F_CONST,
         J_MAX_25C,
         KM_GLUCOSE,
@@ -7686,7 +7687,9 @@ def test_anode_glucose_threshold_invariants():
     assert set(d["by_sku"]) == set(a85["by_sku"]), "109 must price every Zone-1 SKU 85 prices"
     assert d["draws_uA"]["cold_start_typ"] == [round(BQ25570_PIN_CS_UW / BQ25570_VIN_CS_TYP_MV * 1e3, 2)] * 2
 
-    anchors = [(10.0, *ETA_BQ_10UA_READING)] + [(p / V_OP_02_03_TABLE, e, e) for p, e in ETA_BOOST_TABLE_UW]
+    err = ETA_TABLE_READ_ERROR
+    anchors = [(10.0, *ETA_BQ_10UA_READING)] + [(p / V_OP_02_03_TABLE, max(0.0, e - err), min(1.0, e + err))
+                                                for p, e in ETA_BOOST_TABLE_UW]
 
     def root(p, v, eta_pick):
         y = p / v * 1e6
@@ -7744,4 +7747,18 @@ def test_anode_glucose_threshold_invariants():
             vals = [b["by_T_K"][t_key]["thresholds"][name]["necessary_mM"][0] for b in d["by_sku"].values()]
             assert span == [min(vals), max(vals)], f"findings {key} {t_key} is not the span of its rows"
     flags = [b["beyond_proton_limit_25C"][n]["5.5"] for b in d["by_sku"].values() for n in d["draws_uA"]]
-    assert d["findings"]["draws_beyond_pH55_in_every_reading"] == flags.count("every")
+    fd = d["findings"]
+    assert fd["draws_beyond_pH55_in_every_reading"] == flags.count("every") and fd["draws_x_skus"] == len(flags)
+    pine = d["by_sku"]["anchor_zone1_pine"]
+    assert fd["pine_cold_start_typ_beyond_pH45"] == pine["beyond_proton_limit_25C"]["cold_start_typ"]["4.5"]
+    for t_key, row in pine["by_T_K"].items():
+        assert fd["pine_necessary_cold_start_typ_mM_by_T"][t_key] == row["thresholds"]["cold_start_typ"]["necessary_mM"][0]
+        assert fd["pine_S_uA_per_mM_by_T"][t_key] == row["S_uA_per_mM"]
+    # The verdict is what consumers quote: every number and the pH-4.5 phrase must come from the findings above.
+    v, c20, c0 = d["verdict"], fd["necessary_cold_start_typ_mM_by_T"]["293.2"], fd["necessary_cold_start_typ_mM_by_T"]["273.2"]
+    assert f"below {c20[0]:.2f}–{c20[1]:.2f} mM" in v and f"{c0[0]:.2f}–{c0[1]:.2f} mM at 0 °C" in v
+    assert f"cold-start draw ({d['draws_uA']['cold_start_typ'][0]:.1f} µA)" in v
+    assert (f"{fd['draws_beyond_pH55_in_every_reading']} of {fd['draws_x_skus']} draw×part pairs" in v
+            or (fd["draws_beyond_pH55_in_every_reading"] == fd["draws_x_skus"] and "every draw here exceeds" in v))
+    phrase = {"every": "in every reading", "some": "in some readings", "none": "in none"}[fd["pine_cold_start_typ_beyond_pH45"]]
+    assert f"reaches pH 4.5 {phrase}" in v

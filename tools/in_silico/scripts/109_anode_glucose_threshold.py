@@ -11,13 +11,14 @@ and cold-start draws, with glucose's diffusion coefficient from a primary source
 the small current (02_03 §9.1). The sap's own glucose is not in the tree; the logs of HW.3 read it.
 
 WHAT IS PUBLISHED, AND WHICH SIDE IT STANDS ON. A NECESSARY condition: the limiting current through the gap is S·C_b with
-S = n·F·D·A/δ, so below C_nec = I/S the gap cannot carry the draw I for ANY enzyme. It is computed on the side that keeps
+S = n·F·D·A/δ, so below C_nec = I/S the gap cannot carry the draw I for ANY enzyme, glucose being the only substrate. It is computed on the side that keeps
 «below X it cannot» true — the larger area (`85`'s bottom cap added), D at the top of its stated 95 % uncertainty, the
-smallest reading of the draw — and rounded DOWN. It is not a sufficient condition and is never written as one: every
-unpriced axis (sap more viscous than water, glucose eaten on the way, the enzyme's ceiling on Ti in sap, only the β-anomer
-being the enzyme's substrate, the wall's own resistance) raises the true threshold, and in this same stagnant gap the
-PROTON half of the supply binds first — `85`'s face leaves the enzyme's kinetic bracket at currents below every draw here.
-That half is read from `85`'s cache and printed beside each draw; this script adds nothing to its model.
+smallest reading of the draw — and rounded DOWN. It is not a sufficient condition and is never written as one: the
+unpriced axes (sap more viscous than water, glucose eaten on the way, the enzyme's ceiling on Ti in sap, only the β-anomer
+being the enzyme's substrate, the wall's own resistance) raise the true threshold — xylose, the enzyme's other substrate,
+is the one that would lower it — and in this same stagnant gap the face FIRST leaves the enzyme's MEASURED pH window (pH
+5.5, the acid end of its kinetics — not a stop): `85`'s currents for that edge lie below the draws here in almost every
+reading. That half is read from `85`'s cache and printed beside each draw; this script adds nothing to its model.
 
 MODEL. δ = r_a·ln(r_b/r_a), the envelope's lateral area and the bottom cap's share are READ from `85`'s cache, never
 recomputed (in-silico §When Modifying #4). Beside the necessary threshold an ESTIMATE in series with the enzyme is printed —
@@ -34,10 +35,11 @@ TRC compiler; its unit is not printed, and it reads as 1e-9 m²/s by its ratio t
 DRAWS. The BQ25570 cold start, P_IN(CS) at V_IN(CS) typ and max (02_03 §1.5) — an input current already. The sleep loads at
 VSTOR — §9.6 Scenario C's target 4.18 µW (its mechanism refuted, FW.54; the target stands), the shipped STOP2 9.26 µW
 (§9.3), and the shipped STOP2 plus §9.3's own illustration of a 1 µA EDLC leak (+4.5 µW, not a measurement) — turned into
-an input current by the boost: I·η(I)·V = P at V_OP 0.5 V (lib) or 0.325 V (§9.1 table), never merged. η(I) is known only
-at anchors — 0.20–0.30 at ~10 µA (§9.1 text) and the table's 0.68 · 0.75 · 0.82 at its own currents — so the input current
-is BRACKETED, not solved: with η taken as non-decreasing in I (the datasheet curves rise over this range, §9.1), the root
-sits between the two anchors whose I·η straddle P/V, and inside [P/(η_upper·V), P/(η_lower·V)] of that segment.
+an input current by the boost: I·η(I)·V = P at V_OP 0.5 V (lib) or 0.325 V (§9.1 table) — both kept, their hull
+published, neither chosen. η(I) is known only at anchors, each an INTERVAL — 0.20–0.30 at ~10 µA (§9.1 text) and the
+table's 0.68 · 0.75 · 0.82 at its own currents, each ± §9.1's own read error (±0.15) — so the input current is BRACKETED,
+not solved: with η non-decreasing in I (the datasheet curves rise over this range, §9.1), the root lies between the roots
+of the two extreme step curves the intervals allow (the most efficient and the least).
 
 WHAT IT CANNOT SEE. Whether a living stem keeps the gap stagnant (flow raises the supply; wood grown into the gap has no
 transport source in the tree); glucose consumed on the way by wood cells or microbes; the α-anomer (the enzyme oxidises
@@ -51,8 +53,8 @@ return the draw — CAN catch an algebra or unit slip, CANNOT a wrong input. (2)
 and sits below the gap — CAN catch a geometry read from the wrong field. (3) Mogi and Ribeiro at 25 °C agree within 1 % and
 Mogi's 20/25 °C ratio sits within 5 % of the Stokes–Einstein ratio T/η_water (IAPWS viscosities, NIST WebBook) — CAN catch a
 mistyped D at those two temperatures; the 0 °C point has no viscosity in the tree and is not controlled. (4) Each sleep
-bracket is checked by bisection on the two extreme step curves the anchors allow — CAN catch a bracket that does not
-contain every admissible root.
+bracket's closed form is re-found by bisection on the same two extreme step curves — CAN catch a slip in the closed form,
+CANNOT a wrong anchor (it shares them).
 """
 
 from __future__ import annotations
@@ -73,6 +75,7 @@ from lib.constants import (
     EA_SYGMUND_GCGDH,
     ETA_BOOST_TABLE_UW,
     ETA_BQ_10UA_READING,
+    ETA_TABLE_READ_ERROR,
     F_CONST,
     J_MAX_25C,
     KM_GLUCOSE,
@@ -166,34 +169,54 @@ def forward_current_uA(c_b: float, s: float, jmax_a: float, km: float) -> float:
 
 
 def eta_anchors() -> list[tuple[float, float, float]]:
-    """(current µA, η low, η high) — 02_03 §9.1: the text's ~10 µA reading, then the table's points at its own V_OP."""
+    """(current µA, η low, η high) — 02_03 §9.1: the text's ~10 µA reading, then the table's points at its own V_OP, each
+    widened by the table's own read error (ETA_TABLE_READ_ERROR) — the canon gives them as eye-readings, not points."""
     out = [(I_ETA_10UA, *ETA_BQ_10UA_READING)]
-    out += [(p / (V_OP_02_03_TABLE * 1e3) * 1e3, eta, eta) for p, eta in ETA_BOOST_TABLE_UW]
+    out += [(p / (V_OP_02_03_TABLE * 1e3) * 1e3, max(0.0, eta - ETA_TABLE_READ_ERROR), min(1.0, eta + ETA_TABLE_READ_ERROR))
+            for p, eta in ETA_BOOST_TABLE_UW]
     return out
 
 
-def input_bracket_uA(p_w: float, v: float) -> list[float]:
-    """The input current I with I·η(I)·V = P, for any η(I) non-decreasing through the anchors: between the two anchors
-    whose I·η straddle P/V, and inside [P/(η_upper·V), P/(η_lower·V)] of that segment."""
-    y = p_w / v * 1e6  # µA·η
+def _envelope_root(y: float, fast: bool) -> float:
+    """The root of I·η(I) = y on the extreme step curve the anchors allow for a non-decreasing η: the most efficient one
+    (fast — η = the NEXT anchor's high end on each segment, the smallest root) or the least (η = this anchor's low end, the
+    largest root). Closed form: inside a segment the root is y/η; where the product jumps past y, it is the jump point."""
     anchors = eta_anchors()
     for (i0, e0lo, _e0hi), (i1, _e1lo, e1hi) in itertools.pairwise(anchors):
-        if i0 * e0lo <= y <= i1 * e1hi:
-            return [max(i0, y / e1hi), min(i1, y / e0lo)]
-    raise ValueError(f"P/V = {y:.2f} µA·η lies outside the efficiency anchors of 02_03 §9.1")
+        if fast:
+            if y <= i0 * e1hi:
+                return i0
+            if y <= i1 * e1hi:
+                return y / e1hi
+        else:
+            if y <= i0 * e0lo:
+                return i0
+            if y < i1 * e0lo:
+                return y / e0lo
+    raise ValueError(f"P/V = {y:.2f} µA·η lies above the efficiency anchors of 02_03 §9.1")
 
 
-def step_root_uA(p_w: float, v: float, upper: bool) -> float:
-    """Control (4): the root on the step curve that takes each segment's lowest η (upper=True → the largest root) or its
-    highest, found by bisection on I·η_step(I) = P/V — a route independent of the bracket's closed form."""
+def input_bracket_uA(p_w: float, v: float) -> list[float]:
+    """The input current I with I·η(I)·V = P, over every non-decreasing η(I) through the anchor INTERVALS: between the
+    roots of the two extreme step curves. Refuses a load whose root could lie below the first anchor (no reading there)."""
+    y = p_w / v * 1e6  # µA·η
+    i0, _e0lo, e0hi = eta_anchors()[0]
+    if y < i0 * e0hi:
+        raise ValueError(f"P/V = {y:.2f} µA·η: the root may lie below {i0} µA, where 02_03 §9.1 has no reading")
+    return [_envelope_root(y, True), _envelope_root(y, False)]
+
+
+def step_root_uA(p_w: float, v: float, fast: bool) -> float:
+    """Control (4): the same extreme step curve's root by BISECTION on I·η_step(I) = P/V — a route independent of the
+    closed form above (it shares only the anchors, which it is not meant to check)."""
     y = p_w / v * 1e6
     anchors = eta_anchors()
 
     def eta_at(i: float) -> float:
         for (i0, e0lo, _e0hi), (i1, _e1lo, e1hi) in itertools.pairwise(anchors):
-            if i0 <= i <= i1:
-                return e0lo if upper else e1hi
-        return anchors[-1][1]
+            if (i0 < i <= i1) if fast else (i0 <= i < i1):
+                return e1hi if fast else e0lo
+        return anchors[0][2] if fast else anchors[-1][1]
 
     lo, hi = anchors[0][0], anchors[-1][0]
     for _ in range(200):
@@ -205,18 +228,23 @@ def step_root_uA(p_w: float, v: float, upper: bool) -> float:
     return 0.5 * (lo + hi)
 
 
-def draws() -> dict:
+def draws() -> tuple[dict, dict]:
+    """Every draw as [low, high] µA; the sleep loads also per V_OP (both kept — the hull is published, neither chosen)."""
     out = {"cold_start_typ": [BQ25570_PIN_CS_UW / BQ25570_VIN_CS_TYP_MV * 1e3] * 2,
            "cold_start_worst_vin": [BQ25570_PIN_CS_UW / BQ25570_VIN_CS_MAX_MV * 1e3] * 2}
+    by_v = {}
     loads = {"sleep_scenario_c_target": P_SLEEP_VSTOR, "sleep_stop2_shipped": P_SLEEP_VSTOR_STOP2,
              "sleep_stop2_plus_edlc_1uA": P_SLEEP_VSTOR_STOP2 + P_EDLC_LEAK_1UA_ILLUSTRATION}
     for name, p in loads.items():
-        br = [input_bracket_uA(p, v) for v in (V_OP, V_OP_02_03_TABLE)]
-        out[name] = [min(b[0] for b in br), max(b[1] for b in br)]
-        for v, b in zip((V_OP, V_OP_02_03_TABLE), br, strict=True):
-            lo_root, hi_root = step_root_uA(p, v, False), step_root_uA(p, v, True)
-            assert b[0] - 1e-6 <= lo_root and hi_root <= b[1] + 1e-6, f"{name} @ {v} V: bracket misses a step-curve root"
-    return out
+        by_v[name] = {}
+        for v in (V_OP, V_OP_02_03_TABLE):
+            b = input_bracket_uA(p, v)
+            for fast, end in ((True, 0), (False, 1)):
+                r = step_root_uA(p, v, fast)
+                assert abs(r - b[end]) < 1e-6 * max(1.0, b[end]), f"{name} @ {v} V: closed form ≠ bisection ({b[end]} vs {r})"
+            by_v[name][f"{v:.3f}"] = b
+        out[name] = [min(b[0] for b in by_v[name].values()), max(b[1] for b in by_v[name].values())]
+    return out, by_v
 
 
 def flag(draw: list, limit: list) -> str:
@@ -229,7 +257,7 @@ def flag(draw: list, limit: list) -> str:
 def main() -> int:
     banner("109 — the glucose the sap must bring to the bore wall (00_07 HW.54)")
     a85 = load_85()
-    dr = draws()
+    dr, dr_by_v = draws()
     for k, ref in (("cold_start_typ", "typ"), ("cold_start_worst_vin", "worst")):
         assert round(dr[k][0], 1) == a85["cold_start_uA"][ref], f"cold start {k} does not reproduce 85's cache"
     ribeiro_gap = abs(D_GLUCOSE_RIBEIRO_298[0.002] / D_GLUCOSE_MOGI[298.2] - 1.0)
@@ -298,7 +326,8 @@ def main() -> int:
     every = findings["draws_beyond_pH55_in_every_reading"] == findings["draws_x_skus"]
     verdict = (f"Necessary, not sufficient: below {c20[0]:.2f}–{c20[1]:.2f} mM of glucose at the bore wall (20 °C, across the "
                f"Zone-1 parts; {c0[0]:.2f}–{c0[1]:.2f} mM at 0 °C) a stagnant sap gap cannot carry the cold-start draw "
-               f"({dr['cold_start_typ'][0]:.1f} µA) for any enzyme. In the same gap the proton half binds first: "
+               f"({dr['cold_start_typ'][0]:.1f} µA) for any enzyme, glucose being the only substrate. In the same gap the "
+               "face first leaves the enzyme's measured pH window: "
                + ("every draw here exceeds, in every reading, the current at which 85's face leaves the enzyme's kinetic "
                   "bracket (pH 5.5) at 25 °C" if every else
                   f"{findings['draws_beyond_pH55_in_every_reading']} of {findings['draws_x_skus']} draw×part pairs exceed, "
@@ -306,7 +335,7 @@ def main() -> int:
                + ", and on pine the cold start reaches pH 4.5 "
                + {"every": "in every reading", "some": "in some readings", "none": "in none"}[findings["pine_cold_start_typ_beyond_pH45"]]
                + " "
-               "— so sap above the threshold does not make the gap carry the draw.")
+               "— so sap above the threshold does not by itself keep the face inside that window.")
     result = {
         "script": "109_anode_glucose_threshold.py",
         "question": "the bulk sap glucose at the bore wall below which 85's stagnant sap gap cannot carry the node's "
@@ -321,6 +350,7 @@ def main() -> int:
                        "stokes_einstein_20_25_predicted": round(se_pred, 4), "mogi_20_25_measured": round(se_meas, 4)},
         "eta_anchors_uA": [[round(i, 2), lo, hi] for i, lo, hi in eta_anchors()],
         "draws_uA": {n: [round(v[0], 2), round(v[1], 2)] for n, v in dr.items()},
+        "sleep_draws_by_v_op_uA": {n: {v: [round(b[0], 2), round(b[1], 2)] for v, b in d.items()} for n, d in dr_by_v.items()},
         "ph_bracket_ratios": {f: {k: round(v, 3) for k, v in r.items()} for f, r in phb.items()},
         "by_sku": by_sku,
         "findings": findings,
