@@ -714,9 +714,9 @@ RSpec.describe Wallet, type: :model do
 
   # 💰 [ARCH.95] Гроші стереже не лише Ruby-гард, а CHECK `wallets_balance_invariants` у БД — і
   # багатоколонковий CHECK Postgres на `DROP COLUMN` будь-якої з його колонок зносить ЦІЛКОМ (виміряно
-  # на PG 17.9, 2026-10-26). Крок, що знімає `esg_retired_balance`, без перестворення CHECK зняв би й
-  # `balance >= 0`, і `locked_balance <= balance`, а сюїта лишилась би зеленою — ці два приклади і є
-  # носієм. `update_columns` іде повз валідації, тож відповідає саме база; savepoint тримає з'єднання живим.
+  # на PG 17.9, 2026-10-26). Міграція, що зняла `esg_retired_balance`, перестворила CHECK у тій самій
+  # транзакції; без цього разом із колонкою пішли б `balance >= 0` і `locked_balance <= balance`, а
+  # сюїта лишилась би зеленою — ці два приклади і є носієм для наступного зняття колонки гаманця. `update_columns` іде повз валідації, тож відповідає саме база; savepoint тримає з'єднання живим.
   describe "DB CHECK wallets_balance_invariants" do
     let(:wallet) { create(:tree).wallet }
 
@@ -731,6 +731,12 @@ RSpec.describe Wallet, type: :model do
 
     it "refuses a negative balance at the SQL level" do
       expect { violate(balance: -1, locked_balance: 0) }
+        .to raise_error(ActiveRecord::StatementInvalid, /wallets_balance_invariants/)
+    end
+
+    # Решту двох доданків цей рядок задовольняє, тож червоніє він лише на `locked_balance >= 0`.
+    it "refuses a negative locked_balance at the SQL level" do
+      expect { violate(balance: 10, locked_balance: -1) }
         .to raise_error(ActiveRecord::StatementInvalid, /wallets_balance_invariants/)
     end
   end

@@ -4,10 +4,6 @@
 class Wallet < ApplicationRecord
   include EthAddressValidatable
 
-  # [ARCH.95] (В): читачів і писачів у колонки більше немає, а знімає її окрема міграція —
-  # до неї AR колонки не бачить, щоб живий контейнер rolling-деплою не тримав привида.
-  self.ignored_columns += %w[esg_retired_balance]
-
   # --- ЗВ'ЯЗКИ (The Financial Fabric) ---
   belongs_to :tree
   # [ARCH.57] nullify (не delete_all): guard нижче — первинний захист (settled/in-flight
