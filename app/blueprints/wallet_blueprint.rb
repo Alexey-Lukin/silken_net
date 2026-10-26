@@ -30,7 +30,6 @@ class WalletBlueprint < Blueprinter::Base
     field :scc_balance
     field :locked_balance
     field :available_balance
-    field :esg_retired_balance
   end
 
   # Lightweight view for the /metadata endpoint — returns blockchain identity
@@ -39,7 +38,6 @@ class WalletBlueprint < Blueprinter::Base
     field :crypto_public_address
     field :locked_balance
     field :available_balance
-    field :esg_retired_balance
     field :network do |_wallet, _options|
       "Polygon PoS (Mainnet)"
     end

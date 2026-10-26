@@ -936,8 +936,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
     "growth_points": "1250.500000",
     "scc_balance": "1250.500000",
     "locked_balance": "100.000000",
-    "available_balance": "1150.500000",
-    "esg_retired_balance": "25.000000"
+    "available_balance": "1150.500000"
   }
 }
 ```
@@ -948,7 +947,6 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | `scc_balance` | Decimal (string) | ⚠️ **ДЕПРЕКОВАНО [ARCH.88]** — те саме значення, що `growth_points`. Ім'я успадковане від `alias_attribute` і **бреше**: колонка тримає бали, не монети, тож за курсом конверсії ([`05_03`](05_03_Tokenomics_SCC_and_SFC) — дім) воно завищує величину на кілька порядків. 🔴 **Названа підстава зберігати його СПРОСТОВАНА 2026-08-23:** тут стояло «лишене заради Bearer/mobile-клієнтів, які вже читають це поле» — мобільного клієнта не існує (його ФОРМА досі відкрите ⚖️, [`00_07`](00_07_Action_Plan_Tracker) E.20; `Session#mobile_app?` має нуль прод-викликачів), а машинний контур це рівно пʼятеро дверей [ARCH.77], серед яких гаманців немає. Тобто брехливе money-поле трималось на споживачі, якого ніхто не показав. Знімати — окремим кроком (перевірити реальних читачів ПОІМЕННО, не за класом), але відкладати його більше нема заради кого |
 | `locked_balance` | Decimal (string) | Заблоковано для pending blockchain TX |
 | `available_balance` | Decimal (string) | Доступно до КОНВЕРСІЇ (`balance − locked_balance`) — у балах. `locked_balance` = вже сконвертоване назавжди ([`04_01 §6`](04_01_Data_Models_and_Entities) E.66), тож це не «доступно для витрат» |
-| `esg_retired_balance` | Decimal (string) | ESG-retired **МОНЕТИ SCC**, назавжди виведені з обігу ([ARCH.95] ⚖️ 2026-08-25 — доти цей рядок казав «бали», а сусідній ендпоінт `/metadata` «SCC», тобто публічний контракт описував ОДНУ колонку двома одиницями, що різняться в 10 000×; дім визначення — [`04_01 §6`](04_01_Data_Models_and_Entities)). ⚠️ Це ЄДИНЕ поле цієї відповіді не в балах |
 
 **HTML Response:** Повертає `Wallets::BalanceFrame` Phlex-компонент (Turbo Frame `wallet_balance_frame_{id}`), без layout.
 
@@ -969,7 +967,6 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
     "crypto_public_address": "0xABCDEF1234567890ABCDEF1234567890ABCDEF12",
     "locked_balance": "100.000000",
     "available_balance": "1150.500000",
-    "esg_retired_balance": "25.000000",
     "network": "Polygon PoS (Mainnet)"
   }
 }
@@ -980,7 +977,6 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | `crypto_public_address` | String / null | Polygon/Ethereum адреса гаманця |
 | `locked_balance` | Decimal (string) | Заблоковано для pending TX |
 | `available_balance` | Decimal (string) | Доступно для витрат |
-| `esg_retired_balance` | Decimal (string) | ESG-retired **МОНЕТИ SCC** — дім визначення [`04_01 §6`](04_01_Data_Models_and_Entities) |
 | `network` | String | Мережа блокчейну (`"Polygon PoS (Mainnet)"`) |
 
 **HTML Response:** Повертає `Wallets::MetadataFrame` Phlex-компонент (Turbo Frame `wallet_metadata_frame_{id}`), без layout.

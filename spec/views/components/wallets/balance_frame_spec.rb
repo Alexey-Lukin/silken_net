@@ -17,12 +17,11 @@ RSpec.describe Wallets::BalanceFrame do
   # оголошувались ВЗАГАЛІ, тож делегований `BalanceDisplay` друкував нуль і
   # порожній рядок «Locked for: » у КОЖНОМУ прикладі файлу — при тому, що
   # `available_balance` є деривацією `balance - locked_balance`.
-  def build_wallet(id: 1, balance: 42.5, locked_balance: 0.0, esg_retired_balance: 0.0)
+  def build_wallet(id: 1, balance: 42.5, locked_balance: 0.0)
     Wallet.new(
       id: id,
       balance: balance,
       locked_balance: locked_balance,
-      esg_retired_balance: esg_retired_balance,
       tree: Tree.new(did: "SNET-0000BEEF")
     )
   end
@@ -72,15 +71,6 @@ RSpec.describe Wallets::BalanceFrame do
 
       expect(html).to include("5.0")
       expect(html).to include("Locked")
-    end
-  end
-
-  describe "esg retired balance" do
-    it "shows the retired balance next to its own label" do
-      html = render_component(wallet: build_wallet(esg_retired_balance: 3.25))
-
-      expect(html).to include("3.25")
-      expect(html).to include("ESG")
     end
   end
 

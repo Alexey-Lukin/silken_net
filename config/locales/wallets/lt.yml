@@ -4,7 +4,6 @@ lt:
     balance_display:
       available: 'Galima:'
       decoration: GP
-      esg_retired: 'ESG išimta:'
       locked: 'Užblokuota:'
       locked_for: 'Užblokuota: %{owner}'
       unit: GP
@@ -14,7 +13,6 @@ lt:
       kind_clan: Klano iždas
       kind_soldier: Kario piniginė
       locked_label: "🔒 %{amount} užblokuota"
-      retired_label: "♻ %{amount} išimta"
       subtitle: Augimo taškų srauto stebėsena tinkle.
       system_reserve: Sistemos rezervas
       title: Iždo matrica
@@ -23,8 +21,6 @@ lt:
     index_title: Iždo matrica
     metadata_frame:
       available_balance: Galimas balansas
-      coin_unit: SCC
-      esg_retired: ESG išimta
       locked_balance: Užblokuotas balansas
       network: Tinklas
       not_provisioned: NEAPRŪPINTA

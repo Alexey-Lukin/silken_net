@@ -20,14 +20,13 @@ RSpec.describe Wallets::Index do
   #
   # ⚠️ Адреса доти була «0xDEAD1234BEEF5678» — 16 hex-символів при
   # `ETH_ADDRESS_FORMAT`, що вимагає рівно 40.
-  def build_wallet(id: 1, balance: 42.5, locked_balance: 0, esg_retired_balance: 0,
+  def build_wallet(id: 1, balance: 42.5, locked_balance: 0,
                    tree_did: "SNET-AABBCCDD", org_name: nil,
                    crypto_public_address: "0x1234567890ABCDEF1234567890ABCDEF12345678")
     Wallet.new(
       id: id,
       balance: balance,
       locked_balance: locked_balance,
-      esg_retired_balance: esg_retired_balance,
       tree: tree_did ? Tree.new(did: tree_did) : nil,
       organization: org_name ? Organization.new(name: org_name) : nil,
       crypto_public_address: crypto_public_address
@@ -121,19 +120,6 @@ RSpec.describe Wallets::Index do
     it "hides locked balance when 0" do
       html = render_component(wallets: [ build_wallet(locked_balance: 0) ], total_liquidity: 0)
       expect(html).not_to include("🔒")
-    end
-  end
-
-  describe "ESG retired balance" do
-    it "shows retired balance when > 0" do
-      html = render_component(wallets: [ build_wallet(esg_retired_balance: 3.14) ], total_liquidity: 0)
-      expect(html).to include("♻")
-      expect(html).to include("3.14 retired")
-    end
-
-    it "hides retired balance when 0" do
-      html = render_component(wallets: [ build_wallet(esg_retired_balance: 0) ], total_liquidity: 0)
-      expect(html).not_to include("♻")
     end
   end
 

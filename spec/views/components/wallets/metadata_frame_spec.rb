@@ -17,13 +17,12 @@ RSpec.describe Wallets::MetadataFrame do
   #
   # Тепер годуються ДЖЕРЕЛА (`balance` + `locked_balance`), а `available`
   # виводиться моделлю — саме те віднімання, яке доти не виконувалось ніколи.
-  def build_wallet(id: 1, crypto_public_address: "0xDEAD1234BEEF5678CAFE", balance: 42.5, locked_balance: 0, esg_retired_balance: 0)
+  def build_wallet(id: 1, crypto_public_address: "0xDEAD1234BEEF5678CAFE", balance: 42.5, locked_balance: 0)
     Wallet.new(
       id: id,
       crypto_public_address: crypto_public_address,
       balance: balance,
-      locked_balance: locked_balance,
-      esg_retired_balance: esg_retired_balance
+      locked_balance: locked_balance
     )
   end
 
@@ -61,7 +60,7 @@ RSpec.describe Wallets::MetadataFrame do
     # Доти ці два числа подавались незалежно, і їхня узгодженість була ВИПАДКОВОЮ
     # збіжністю у фікстурі, а не властивістю системи.
     let(:html) do
-      render_component(wallet: build_wallet(balance: 100.0, locked_balance: 10.5, esg_retired_balance: 5.25))
+      render_component(wallet: build_wallet(balance: 100.0, locked_balance: 10.5))
     end
 
     it "displays Locked Balance label" do
@@ -80,26 +79,13 @@ RSpec.describe Wallets::MetadataFrame do
       expect(html).to include("89.5")
     end
 
-    it "displays ESG Retired label" do
-      expect(html).to include("ESG Retired")
-    end
-
-    it "displays ESG retired balance value" do
-      expect(html).to include("5.25")
-    end
-
-    # [ARCH.88 → ARCH.95] Картка несе ДВІ шкали, і саме тому пін тут не про
-    # «яка одиниця присутня», а про те, що кожна стоїть при СВОЇЙ величині.
-    # Доти приклад звався «never the coin ticker» і забороняв «SCC» на всій картці
-    # — тобто цементував твердження «усі три величини балові», яке присуд ARCH.95
-    # спростував: `esg_retired_balance` рахує погашені МОНЕТИ.
-    it "labels the points scales as GP and the retired coins as SCC" do
+    # [ARCH.88] Картка несе лише балові величини, тож тікера монети на ній немає ніде.
+    it "labels the points scales as GP, never as the coin ticker" do
       expect(html).to include("GP")
-      expect(html).to include("SCC")
+      expect(html).not_to include("SCC")
     end
 
-    # Негативна половина, що пережила присуд і несе його: тікер монети не сміє
-    # заповзти на балові рядки — саме там він і був би завищенням у 10 000×.
+    # Тікер монети на баловому рядку був би завищенням у 10 000×.
     it "never prints the coin ticker beside a points balance" do
       points_rows = html.scan(%r{<p[^>]*>\s*[\d.]+\s*GP\s*</p>})
       expect(points_rows.size).to eq(2)

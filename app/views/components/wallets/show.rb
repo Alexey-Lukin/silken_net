@@ -41,7 +41,7 @@ module Wallets
             turbo_frame_tag "wallet_metadata_frame_#{@wallet.id}",
                             src: metadata_wallet_path(@wallet),
                             loading: :lazy do
-              div(class: Wallets::MetadataFrame::PANEL) { render Views::Shared::UI::Skeleton.new(lines: 10) }
+              div(class: Wallets::MetadataFrame::PANEL) { render Views::Shared::UI::Skeleton.new(lines: 8) }
             end
           end
         end

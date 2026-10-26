@@ -126,7 +126,7 @@ class ApplicationComponent < Phlex::HTML
   end
 
   # [ARCH.88] One-Home ТОЧНОСТІ балових величин (`balance` · `locked_balance` ·
-  # `available_balance` · `esg_retired_balance`). Доти ті самі поля того самого
+  # `available_balance`). Доти ті самі поля того самого
   # гаманця друкувались `.round(6)` · `.round(4)` · `.round(2)` у трьох різних
   # компонентах — тобто застосунок відповідав на одне питання трьома числами.
   #

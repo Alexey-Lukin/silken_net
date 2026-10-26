@@ -4,7 +4,6 @@ lv:
     balance_display:
       available: 'Pieejams:'
       decoration: GP
-      esg_retired: 'ESG izņemts:'
       locked: 'Bloķēts:'
       locked_for: 'Bloķēts: %{owner}'
       unit: GP
@@ -14,7 +13,6 @@ lv:
       kind_clan: Klana kase
       kind_soldier: Karavīra maks
       locked_label: "🔒 %{amount} bloķēts"
-      retired_label: "♻ %{amount} izņemts"
       subtitle: Izaugsmes punktu plūsmas uzraudzība tīklā.
       system_reserve: Sistēmas rezerve
       title: Kases matrica
@@ -23,8 +21,6 @@ lv:
     index_title: Kases matrica
     metadata_frame:
       available_balance: Pieejamais atlikums
-      coin_unit: SCC
-      esg_retired: ESG izņemts
       locked_balance: Bloķētais atlikums
       network: Tīkls
       not_provisioned: NAV_NODROŠINĀTS

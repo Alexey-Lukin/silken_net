@@ -20,6 +20,6 @@ class SkeletonPreview < Lookbook::Preview
   # @label In owner's panel
   # @notes How a page places it: inside the loaded component's own `PANEL`, so both states share one box.
   def in_panel
-    render Views::Shared::UI::Skeleton.new(lines: 10, class: Wallets::MetadataFrame::PANEL)
+    render Views::Shared::UI::Skeleton.new(lines: 8, class: Wallets::MetadataFrame::PANEL)
   end
 end

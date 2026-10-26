@@ -69,11 +69,10 @@ RSpec.describe WalletBlueprint, type: :model do
     subject(:parsed) { JSON.parse(described_class.render(wallet, view: :balance)) }
 
     it "includes balance fields with correct values" do
-      expect(parsed).to include("id", "scc_balance", "locked_balance", "available_balance", "esg_retired_balance")
+      expect(parsed).to include("id", "scc_balance", "locked_balance", "available_balance")
       expect(parsed["scc_balance"].to_d).to eq(wallet.scc_balance)
       expect(parsed["locked_balance"].to_d).to eq(wallet.locked_balance)
       expect(parsed["available_balance"].to_d).to eq(wallet.available_balance)
-      expect(parsed["esg_retired_balance"].to_d).to eq(wallet.esg_retired_balance)
     end
 
     it "does not include tree or crypto_public_address" do
@@ -86,7 +85,7 @@ RSpec.describe WalletBlueprint, type: :model do
     subject(:parsed) { JSON.parse(described_class.render(wallet, view: :metadata)) }
 
     it "includes metadata fields with correct values" do
-      expect(parsed).to include("id", "crypto_public_address", "locked_balance", "available_balance", "esg_retired_balance", "network")
+      expect(parsed).to include("id", "crypto_public_address", "locked_balance", "available_balance", "network")
       expect(parsed["crypto_public_address"]).to eq(wallet.crypto_public_address)
       expect(parsed["locked_balance"].to_d).to eq(wallet.locked_balance)
     end

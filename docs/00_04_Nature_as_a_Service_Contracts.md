@@ -245,7 +245,6 @@ NaasContract (status: cancelled, cancelled_at: now)
 | `organization_id` | bigint FK | Організація-власник (для агрегованого гаманця) |
 | `solana_public_address` | varchar | Solana-адреса для USDC мікро-нагород |
 | `hadron_kyc_status` | varchar (default: 'pending') | KYC статус: `pending`, `approved`, `rejected` |
-| `esg_retired_balance` | numeric (default: 0.0) | Необоротно ретайрнуті SCC через KlimaDAO |
 
 ### ParametricInsurance (таблиця `parametric_insurances`)
 

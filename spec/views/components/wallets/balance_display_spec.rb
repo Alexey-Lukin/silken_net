@@ -7,16 +7,15 @@ RSpec.describe Wallets::BalanceDisplay do
   # [TEST.12] Реальний незбережений `Wallet` — фабрика свідомо не взята (тягне
   # `tree → cluster → organization` і б'є в БД заради рендера).
   #
-  # 🔴 **Три з чотирьох величин доти не перевірялись ЖОДНИМ прикладом.** Мок
-  # оголошував самий `balance`, а компонент читає ще `locked_balance`,
-  # `available_balance` і `esg_retired_balance` — `OpenStruct` мовчки віддавав на
-  # них `nil`. Найгірше з трьох — `available_balance`: це не колонка, а
+  # 🔴 **Величини, крім `balance`, доти не перевірялись ЖОДНИМ прикладом.** Мок
+  # оголошував самий `balance`, а компонент читає ще `locked_balance` і
+  # `available_balance` — `OpenStruct` мовчки віддавав на них `nil`. Найгірше з трьох — `available_balance`: це не колонка, а
   # ДЕРИВАЦІЯ (`balance - locked_balance`), тож саме віднімання не виконувалось
   # ніколи. Тепер годується джерело, і воно виводиться.
   #
   # ⚠️ Значення тримають CHECK-констрейнт схеми (`locked_balance <= balance`) —
   # фікстура, що його порушує, описує рядок, якого в БД бути не може.
-  def build_wallet(id: 1, balance: 42.13, locked: 12.13, retired: 5.5, tree_did: "SNET-0000BEEF", org_name: nil)
+  def build_wallet(id: 1, balance: 42.13, locked: 12.13, tree_did: "SNET-0000BEEF", org_name: nil)
     # `Tree::DID_FORMAT` = /\ASNET-[0-9A-F]{8}\z/ — доти фікстура несла
     # `TREE::0xBEEF`, тобто рядок, якого модель не прийняла б у жодному сценарії
     # (ще й `normalize_identifier :did` робить `upcase`).
@@ -27,7 +26,6 @@ RSpec.describe Wallets::BalanceDisplay do
       id: id,
       balance: balance,
       locked_balance: locked,
-      esg_retired_balance: retired,
       tree: tree,
       organization: org
     )
@@ -72,9 +70,8 @@ RSpec.describe Wallets::BalanceDisplay do
       expect(html).to include("30.0")
     end
 
-    it "displays the locked and ESG-retired balances" do
+    it "displays the locked balance" do
       expect(html).to include("12.13")
-      expect(html).to include("5.5")
     end
   end
 
