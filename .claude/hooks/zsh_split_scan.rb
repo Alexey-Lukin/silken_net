@@ -154,7 +154,15 @@ def assignment_rhs?(text, at)
   text[from...at].to_s =~ /\A[A-Za-z_]\w*=/ ? true : false
 end
 
+# 🔑 [OPS.46] The walk runs on BYTES. `str[i]` and `str[i] = …` on a UTF-8 string that
+# holds non-ASCII text cost O(i) each, so the walk went quadratic exactly on this repo's
+# calls (Ukrainian prose inside heredocs) and stayed linear on ASCII probes: measured
+# 2026-10-26, a recorded 53.8 KB call took 1.0 s and the same text ×4 took 18.3 s — past
+# the hook's 5 s timeout, where PreToolUse lets the call through unjudged. Bytes: 0.15 s.
+# Every pattern here is ASCII, so byte offsets agree across walk / match / slice; the
+# findings go back to UTF-8 at the end, so the printed text is cut by characters.
 def findings(cmd)
+  cmd = cmd.b
   masked, qspans = walk(cmd)
   hits = []
   pos = 0
@@ -196,7 +204,7 @@ def findings(cmd)
     end
     pos = m.end(0)
   end
-  hits
+  hits.map { |h| h.map { |x| x.dup.force_encoding(Encoding::UTF_8) } }
 end
 
 # ── controls ─────────────────────────────────────────────────────────────────
@@ -229,8 +237,18 @@ if ARGV[0] == '--selftest'
     got == want
   end
   bad.each { |(want, cmd, why)| warn "FAIL want=#{want} (#{why}): #{cmd}" }
-  warn "zsh_split_scan --selftest: #{CASES.size - bad.size}/#{CASES.size} ok"
-  exit(bad.empty? ? 0 : 1)
+  # [OPS.46] The cost pin: the byte walk is invisible in every finding above (the output is
+  # the same), so only TIME can catch a character-indexed walk coming back. 150 KB of
+  # non-ASCII loops: 0.26 s on bytes, ≈ 5.7 s by characters — the budget sits between.
+  body = "for x in items:\n    print(\"рядок українською — x\")\n"
+  big = "python3 - <<'PY'\n" + body * (150_000 / body.bytesize) + "PY\n"
+  t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  findings(big)
+  dt = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
+  slow = dt >= 1.5
+  warn format('FAIL cost: %d B of non-ASCII took %.2f s (budget 1.5 s) — a walk that indexes UTF-8 by character is quadratic', big.bytesize, dt) if slow
+  warn "zsh_split_scan --selftest: #{CASES.size - bad.size}/#{CASES.size} ok · cost #{format('%.2f', dt)} s / 1.5 s"
+  exit(bad.empty? && !slow ? 0 : 1)
 end
 
 findings($stdin.read).each do |rule, name, tok, list|

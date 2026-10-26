@@ -253,6 +253,26 @@ if [[ "${1:-}" == "--selftest" ]]; then
   t "OPS.45: …did not spend A's warning" warn \
     'bin/rspec spec/foo_spec.rb 2>&1 | tail -5'
   unset T_SID
+  # [OPS.46] Past the 64 KB pipe buffer an EARLY match killed `printf` with SIGPIPE and the
+  # check read «no match»: this ≈ 97 KB call was silent where its 60 KB twin denied. Kept
+  # under 128 KB on purpose — Linux CI caps ONE argv string (here jq's --arg) at 128 KB.
+  big97k=$(head -c 120 /dev/zero | tr '\0' x); big97k=$(for _ in $(seq 800); do printf '%s\n' "$big97k"; done)
+  t "OPS.46: ≈97 KB heredoc, early commit — no SIGPIPE" deny-e \
+    $'ruby scripts/docs_band.rb >/dev/null 2>&1; echo C; git commit -s -q -F - <<\'EOF\'\n'"$big97k"$'\nEOF'
+  # [OPS.46] The cost pin of block E. The verdict alone cannot catch the old split coming
+  # back — it only gets slower — so the case is also timed. On this exact input (1,500 `&&`
+  # links plus one link of 2,000 pipes) the `${st//&&/…}` / `${pl//|/…}` split of bash 3.2
+  # took 90.7 s, one sed pass and `read -ra` 0.8 s (measured 2026-10-26); past the 5 s
+  # timeout the call goes through unjudged.
+  chain="ruby scripts/docs_band.rb >/dev/null 2>&1"
+  for ((k = 0; k < 1500; k++)); do chain+=" && echo a"; done
+  chain+=" && echo a"; for ((k = 0; k < 2000; k++)); do chain+=" | cat"; done
+  chain+=" && git push origin main"
+  SECONDS=0
+  t "OPS.46: 1500-link && chain stays silent" silent "$chain"
+  n=$((n + 1))
+  if (( SECONDS < 4 )); then printf '  ✓ %-36s %ss < 4s\n' "OPS.46: …and is judged within budget" "$SECONDS"
+  else printf '  ✗ %-36s took %ss (budget 4s)\n' "OPS.46: …and is judged within budget" "$SECONDS"; fails=$((fails + 1)); fi
   # F — the SAME text in both contexts, which is the whole point of the rule.
   # The negative arm is not decoration: it is the pin that keeps rule F from
   # degenerating into "a gate followed by echo is suspicious", which would
@@ -441,6 +461,15 @@ body with `01_02:177` inside"'
   exit 0
 fi
 
+# ── hit · every text check reads a here-string, never `printf … | grep -q` [OPS.46] ──
+# Under `pipefail`, `grep -q` exits at its first match; when the text is larger than
+# the pipe buffer (64 KB) `printf` is still writing, dies of SIGPIPE, and the pipeline
+# reports 141 — so the check reads «no match» exactly when the match came EARLY.
+# Measured 2026-10-24: a 180 KB heredoc with an early `git commit` passed block E
+# silently while the same call under 60 KB denied. A here-string has no writer to
+# kill. ⛔ Do not reintroduce the pipe form here, nor `printf | tr | grep -q`.
+hit() { local s=$1; shift; grep "$@" <<< "$s"; }
+
 input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
 session=$(printf '%s' "$input" | jq -r '.session_id // "nosession"' 2>/dev/null)
@@ -465,12 +494,12 @@ bg=$(printf '%s' "$input" | jq -r '.tool_input.run_in_background // false' 2>/de
 # prose «-m "…`x`…»» looks like the command. A rule that documents a forbidden
 # form necessarily contains it. `-F -` is safe by construction (stdin, no shell
 # expansion), so it short-circuits before the flattened match.
-if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+commit[^|;]*-F[[:space:]]+-'; then
+if hit "$cmd" -qE 'git[[:space:]]+commit[^|;]*-F[[:space:]]+-'; then
   :
 else
 _flat=$(printf '%s' "$cmd" | tr '\n' ' ')
-if printf '%s' "$_flat" | grep -qE 'git[[:space:]]+commit[^|;]*-m[[:space:]]+"[^"]*[^\\]`'; then
-  if ! printf '%s' "$_flat" | grep -qE -- '-m[[:space:]]+"\$\('; then
+if hit "$_flat" -qE 'git[[:space:]]+commit[^|;]*-m[[:space:]]+"[^"]*[^\\]`'; then
+  if ! hit "$_flat" -qE -- '-m[[:space:]]+"\$\('; then
     jq -nc --arg r 'Backtick inside git commit -m "…": the shell will RUN it as a command substitution and silently drop the text — it does not fail, and after a push the message cannot be fixed. This repo already carries one such sentence, meaningless forever. Use `git commit -F -` with a heredoc instead.' \
       '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
     exit 0
@@ -505,7 +534,7 @@ fi
 # deny `grep -rn "x" . ; rg -n "y"`, where `-r` is grep's legitimate recursion —
 # and the measurement above was segment-scoped, so a whole-command guard would
 # ship something other than what was measured.
-if printf '%s' "$cmd" | grep -qE '(^|[;&|])[[:space:]]*rg[[:space:]]+([^;&|]*[[:space:]]+)?-[a-zA-Z]*r[a-zA-Z]+([[:space:]]|$)'; then
+if hit "$cmd" -qE '(^|[;&|])[[:space:]]*rg[[:space:]]+([^;&|]*[[:space:]]+)?-[a-zA-Z]*r[a-zA-Z]+([[:space:]]|$)'; then
   jq -nc --arg r 'In `rg`, `-r` is --replace, and in a clustered flag token it eats the remaining letters as the replacement string: `rg -rn "pat"` means --replace=n, so every match prints as the literal "n" and the real text is never shown. Nothing fails and the exit code is 0 — the corruption is in the OUTPUT you are about to read. ripgrep is recursive by default, so `-r` is never what you want here: drop it (`rg -n`), or pass a real replacement with a space (`rg -r "text" -n`).' \
     '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
   exit 0
@@ -544,7 +573,7 @@ fi
 # class the rule measures, which is why the negative controls carry both forms.
 # `$` is excluded from the value so `--audit=$?` (a house idiom) stays silent.
 _unq=$(printf '%s' "$cmd" | sed -e "s/'[^']*'//g" -e 's/"[^"]*"//g')
-if printf '%s' "$_unq" | grep -qE '(^|[[:space:]])--?[a-zA-Z][a-zA-Z0-9_-]*=[^[:space:];&|`$()]*[*?[][^[:space:];&|`$()]*'; then
+if hit "$_unq" -qE '(^|[[:space:]])--?[a-zA-Z][a-zA-Z0-9_-]*=[^[:space:];&|`$()]*[*?[][^[:space:];&|`$()]*'; then
   jq -nc --arg r 'An unquoted glob inside `--flag=…` (e.g. `--include=*.rb`) is expanded by zsh before the program runs, and a glob that matches nothing is FATAL here — unlike bash, the command dies with «no matches found» and nothing executes. When it DOES match (the repo root has nine *.md files), it is worse: grep receives `--include=CLAUDE.md` and the rest as extra search targets, so you get exit 0 and a silently wrong scope. Quote it: --include="*.rb". Measured: 131 such calls in this corpus, 121 killed outright.' \
     '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
   exit 0
@@ -568,7 +597,7 @@ fi
 # about to believe, never in the exit code. Segment-scoped (`[^;&|]*`), so a
 # `-c <hex>` in a NEIGHBOURING statement (`git log -c …`) stays silent, and a
 # 40-hex literal or a `$(…)` / `"$VAR"` value can never match.
-if printf '%s' "$cmd" | grep -qE "(^|[;&|(])[[:space:]]*gh[[:space:]]+run[[:space:]]+list([[:space:]][^;&|]*)?[[:space:]](--commit|-c)([[:space:]]+|=)[\"']?[0-9a-f]{4,39}([\"'[:space:];&|)]|\$)"; then
+if hit "$cmd" -qE "(^|[;&|(])[[:space:]]*gh[[:space:]]+run[[:space:]]+list([[:space:]][^;&|]*)?[[:space:]](--commit|-c)([[:space:]]+|=)[\"']?[0-9a-f]{4,39}([\"'[:space:];&|)]|\$)"; then
   jq -nc --arg r '`gh run list --commit` filters on the FULL 40-character SHA: a short SHA matches NOTHING, and gh returns an empty list with exit 0 (verified here: `--commit 23f2e3f6` gave 0 runs, the full SHA of the same commit gave 5). The empty list has no symptom — it reads as «CI has not started», and a wait-until-all-completed loop ends at once as «all done». Pass the full SHA: --commit "$(git rev-parse <sha>)".' \
     '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
   exit 0
@@ -612,7 +641,7 @@ gate='(bin/rspec|bundle exec rspec|bin/rubocop|bundle exec rubocop|bin/brakeman|
 # 51,117 calls / 181 sessions, and all six were the token as a SEARCH STRING rather
 # than as a variable — so this narrowing costs ~0 live firings. ⛔ Do not re-add it:
 # both warn texts below already tell the reader the uppercase form expands to empty.
-if ! printf '%s' "$cmd" | grep -qE 'pipestatus|pipefail'; then
+if ! hit "$cmd" -qE 'pipestatus|pipefail'; then
 
   # ── A · a GATE truncated into head/tail (9.09% naive→scoped, ~97% precise) ──
   # The discriminator is the PRODUCER, not the pipe: of 11,712 head/tail
@@ -620,9 +649,9 @@ if ! printf '%s' "$cmd" | grep -qE 'pipestatus|pipefail'; then
   # be an actual verdict-emitting gate AND stand at the START of its statement;
   # that anchor is what kills the measured false-positive class, where the word
   # matched a FILENAME (`grep -n … config/brakeman.ignore | head`).
-  if printf '%s' "$cmd" | grep -qE "(^|[;&]|&&|\|\||^[[:space:]]*)[[:space:]]*(env [^|;]* )?${gate}" &&
-     printf '%s' "$cmd" | grep -qE '\|[[:space:]]*(head|tail)([[:space:]]|$)' &&
-     ! printf '%s' "$cmd" | grep -qE 'tail[[:space:]]+-[fF]|--dry-run|--help|--version|--tasks|--list' ; then
+  if hit "$cmd" -qE "(^|[;&]|&&|\|\||^[[:space:]]*)[[:space:]]*(env [^|;]* )?${gate}" &&
+     hit "$cmd" -qE '\|[[:space:]]*(head|tail)([[:space:]]|$)' &&
+     ! hit "$cmd" -qE 'tail[[:space:]]+-[fF]|--dry-run|--help|--version|--tasks|--list' ; then
     warn gate-truncated '[bash-guard] A gate is piped into head/tail. Truncating hides the verdict, and "0 failures" in the visible tail is not one — the run can fail after the lines you kept. Pin the object and grep the step'"'"'s own output, or keep the exit code with $pipestatus[1] (zsh; PIPESTATUS is a bash-ism and expands to EMPTY here). (Fires once per session.)'
   fi
 
@@ -644,9 +673,9 @@ if ! printf '%s' "$cmd" | grep -qE 'pipestatus|pipefail'; then
   # in the FOREGROUND `cmd > log 2>&1; echo "EXIT=$?"` is exactly right, and the
   # discriminator is the flag, not the text. Rule-home for the class: memory
   # `feedback_verify_gate_exit_code`, fourth family (a).
-  if { printf '%s' "$cmd" | grep -qE '[^|]\|[^|][^;]*;[[:space:]]*echo[^;]*\$\?' ||
-       printf '%s' "$cmd" | grep -qE '[^>&<]&[[:space:]]*;[[:space:]]*echo[^;]*\$\?' ; } &&
-     ! printf '%s' "$cmd" | grep -qE '\|[[:space:]]*grep[^|;]*;[[:space:]]*echo[^;]*\$\?' ; then
+  if { hit "$cmd" -qE '[^|]\|[^|][^;]*;[[:space:]]*echo[^;]*\$\?' ||
+       hit "$cmd" -qE '[^>&<]&[[:space:]]*;[[:space:]]*echo[^;]*\$\?' ; } &&
+     ! hit "$cmd" -qE '\|[[:space:]]*grep[^|;]*;[[:space:]]*echo[^;]*\$\?' ; then
     warn exit-after-pipe '[bash-guard] `$?` after a pipe or a background start reports the LAST element, and head/tail/`&` always exit 0 — so this reads success no matter what happened upstream. Use $pipestatus[1] — this shell is zsh, where the array is lowercase and 1-INDEXED; ${PIPESTATUS[0]} expands to an empty string, so a check built on it silently compares against nothing. Or run the command unpiped and echo $? on its own line. (Fires once per session.)'
   fi
 fi
@@ -669,8 +698,8 @@ fi
 # share it and widening it would change their measured behaviour unmeasured —
 # so a backgrounded `ruby scripts/docs_band.rb` is out of scope here by design.
 if [[ "$bg" == "true" ]] &&
-   printf '%s' "$cmd" | grep -qE "(^|[;&]|&&|\|\||^[[:space:]]*)[[:space:]]*(env [^|;]* )?${gate}" &&
-   printf '%s' "$cmd" | grep -qE ';[[:space:]]*echo[^;|]*$' ; then
+   hit "$cmd" -qE "(^|[;&]|&&|\|\||^[[:space:]]*)[[:space:]]*(env [^|;]* )?${gate}" &&
+   hit "$cmd" -qE ';[[:space:]]*echo[^;|]*$' ; then
   warn bg-verdict '[bash-guard] This gate runs in the BACKGROUND and its last statement is an echo — so the completion notice will carry the echo status (0), never the gate. Measured here: 169 of 305 background gate-runs have this shape, and one of them announced "exit code 0" for an rspec run that had died on the coverage floor with 2. Read the verdict out of the .output file yourself (grep for "examples," and for "SimpleCov"/"EXIT="). An EXIT= line captured INSIDE the log is not the notice — the notice still says 0. (Fires once per session.)'
 fi
 
@@ -703,9 +732,9 @@ fi
 #   2. a `cp` of that same path in the SAME call — the backup makes it reversible,
 #      which is the mutation-cycle idiom the rule prescribes in the first place.
 # `-b`, branch names, `stash`, and clean files stay silent by construction.
-if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+checkout[[:space:]]' &&
-   ! printf '%s' "$cmd" | grep -qE 'git[[:space:]]+checkout[[:space:]]+-b'; then
-  ckpaths=$(printf '%s' "$cmd" | grep -oE 'git[[:space:]]+checkout[[:space:]]+(--[[:space:]]+)?[^;&|]+' \
+if hit "$cmd" -qE 'git[[:space:]]+checkout[[:space:]]' &&
+   ! hit "$cmd" -qE 'git[[:space:]]+checkout[[:space:]]+-b'; then
+  ckpaths=$(hit "$cmd" -oE 'git[[:space:]]+checkout[[:space:]]+(--[[:space:]]+)?[^;&|]+' \
             | sed -E 's/git[[:space:]]+checkout[[:space:]]+(--[[:space:]]+)?//' | tr ' ' '\n' \
             | grep -E '\.[a-z]{1,4}$' | head -10)
   if [[ -n "$ckpaths" ]]; then
@@ -721,14 +750,14 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+checkout[[:space:]]' &&
       # «a cp somewhere + the path twice» went silent, and the checkout ate 51
       # uncommitted lines. A `cp` INTO the path is a restore, never a backup.
       p_re=$(printf '%s' "$p" | sed -E 's/[][\.^$*+?(){}|\\/]/\\&/g')
-      if printf '%s' "$cmd" | tr ';&|' '\n\n\n' |
-           grep -qE "^[[:space:]]*cp([[:space:]]+-[[:alnum:]]+)*[[:space:]]+[\"']?${p_re}[\"']?([[:space:]]|$)"; then
+      if hit "$(tr ';&|' '\n\n\n' <<< "$cmd")" \
+           -qE "^[[:space:]]*cp([[:space:]]+-[[:alnum:]]+)*[[:space:]]+[\"']?${p_re}[\"']?([[:space:]]|$)"; then
         continue
       fi
       dirty="${dirty}${p} (${n} uncommitted line(s)); "
     done <<< "$ckpaths"
     # Declared exit 1: an explicit token — the decision is conscious and recorded.
-    if [[ -n "$dirty" ]] && ! printf '%s' "$cmd" | grep -qF 'discard-dirty'; then
+    if [[ -n "$dirty" ]] && ! hit "$cmd" -qF 'discard-dirty'; then
       jq -nc --arg r "git checkout will silently DESTROY uncommitted edits: ${dirty}— no prompt, no stash, nothing to revert, and this hook can only speak BEFORE the call, never after. Relapsed five times with the rule written down, which is why this denies instead of warning. To undo a mutation or an experiment: restore from a cp-backup, or apply a reverse Edit. If the dirty state IS what you mean to discard, declare it — add the token \`discard-dirty\` to the command (a comment is enough), or take the backup in the same call (\`cp <path> \"\$T/f.bak\" && git checkout <path>\`). Rule home: memory feedback_verify_before_commit." \
         '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
       exit 0
@@ -745,7 +774,7 @@ fi
 # CONCLUSION ("no probe output — at_exit skipped"). None of them looked broken.
 # The prefilter is a strict superset of the scanner's own anchors and keeps ruby
 # off 88% of calls (2,115 of 17,524 reach it, ~33 ms each).
-if printf '%s' "$cmd" | grep -qE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+in\b|set[[:space:]]+--'; then
+if hit "$cmd" -qE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+in\b|set[[:space:]]+--'; then
   scan="$(dirname "$0")/zsh_split_scan.rb"
   rb=$(command -v ruby 2>/dev/null || true)
   # /usr/bin/ruby is the OS copy and needs no RVM; the scanner is kept 2.6-clean
@@ -847,7 +876,7 @@ fi
 # `\`-continued `&&` chain, `find -exec … \;`, a `;` inside a quoted message within a
 # `-c`/`eval` body (read as code).
 rgit='git(([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)|([[:space:]]+-[Pp])|([[:space:]]+--(git-dir|work-tree)[[:space:]]+[^[:space:]]+)|([[:space:]]+--[a-z-]+(=[^[:space:]]+)?))*[[:space:]]+(commit|push)'
-if printf '%s' "$cmd" | grep -qE "${rgit}\b"; then
+if hit "$cmd" -qE "${rgit}\b"; then
   # Heredoc BODIES are cut, the lines after each terminator are KEPT [OPS.40 fix-forward]:
   # the body is where a commit message names a gate, but the call goes on after it.
   ecmd=$(printf '%s\n' "$cmd" | awk -v q="'" '
@@ -887,25 +916,39 @@ SED
   # assigns such a path (`M=…/memory`) — the corpus is never written any other way here.
   mvars=$(printf '%s' "$ecmd" | grep -oE "(^|[;&|[:space:]])[A-Za-z_][A-Za-z0-9_]*=[\"']?[^[:space:];&|\"']*/memory([\"'/[:space:];&|]|$)" \
             | sed -E 's/^[;&|[:space:]]*//; s/=.*//' | sort -u | paste -sd'|' -)
-  is_mem() { [[ "$1" == */memory* ]] || { [[ -n "$mvars" ]] && printf '%s' "$1" | grep -qE "^[\"']?\\\$\{?(${mvars})\}?[\"']?$"; }; }
+  is_mem() { [[ "$1" == */memory* ]] || { [[ -n "$mvars" ]] && hit "$1" -qE "^[\"']?\\\$\{?(${mvars})\}?[\"']?$"; }; }
+  # [OPS.46] Links are cut ONCE, by sed over the whole call. `${st//&&/…}` in bash 3.2 grows
+  # ~cubically with the statement: measured 2026-10-26 on one `&&` chain — 0.5 s at 5 KB,
+  # 4 s at 10 KB, 33 s at 20 KB, i.e. past the hook's 5 s timeout, where PreToolUse lets the
+  # call through unjudged. `&&`/`||` become US (\037) and `read -ra` splits on it in one pass;
+  # `|&` becomes `|` in the same pass, so pipe elements split the same way — the single-char
+  # `${pl//|/…}` is no cheaper (1000 pipes in one link: 3.4 s, 2000: 25 s).
+  # If sed fails, the substitution stands in: correct, slow on a huge chain (a ceiling).
+  lsep=$'\037'
+  lmcmd=$(LC_ALL=C sed -E "s/&&|[|][|]/${lsep}/g; s/[|]&/|/g" <<< "$mcmd")
+  if [[ -z "$lmcmd" ]]; then lmcmd=${mcmd//&&/$lsep}; lmcmd=${lmcmd//||/$lsep}; lmcmd=${lmcmd//|&/|}; fi
   # launder <gate-re> <subject: repo|mem> → prints the laundered form, or nothing
   launder() {
-    local g=$1 want=$2 verdict="" gate_seen="" st lk links st_gate st_git st_piped cwdm=0 tgt mem el pl x
-    local -a w
+    local g=$1 want=$2 verdict="" gate_seen="" st lk st_gate st_git st_piped cwdm=0 tgt mem el x li ei
+    local -a w lks els
+    local re_g="^[[:space:]]*${g}"  # [OPS.46] `[[ =~ ]]`, not a grep per link: forks cost ≈ 3 ms each
     while IFS= read -r st; do
-      links=${st//&&/$'\n'}
-      links=${links//||/$'\n'}
+      IFS=$lsep read -ra lks <<< "$st"
+      (( ${#lks[@]} )) || lks=("")  # bash 3.2 + `set -u`: an empty "${lks[@]}" is fatal
       st_gate=""; st_git=""; st_piped=""
-      while IFS= read -r lk; do
-        if printf '%s' "$lk" | grep -qE "^[[:space:]]*${g}"; then
+      for ((li = 0; li < ${#lks[@]}; li++)); do
+        lk=${lks[li]}
+        if [[ "$lk" =~ $re_g ]]; then
           st_gate=1
-          printf '%s' "$lk" | grep -q '|' && st_piped=1
+          [[ "$lk" == *"|"* ]] && st_piped=1
         fi
         if [[ "$lk" =~ ^[[:space:]]*cd[[:space:]]+([^[:space:]]+) ]]; then
           is_mem "${BASH_REMATCH[1]}" && cwdm=1 || cwdm=0
         fi
-        pl=${lk//|&/|}
-        while IFS= read -r el; do  # [OPS.43] the link's start and every pipe element
+        IFS='|' read -ra els <<< "$lk"
+        (( ${#els[@]} )) || els=("")
+        for ((ei = 0; ei < ${#els[@]}; ei++)); do  # [OPS.43] the link's start and every pipe element
+          el=${els[ei]}
           [[ "$el" =~ $re_gitstep ]] || continue
           tgt=""; mem=""
           read -ra w <<< "${BASH_REMATCH[0]}"
@@ -921,18 +964,18 @@ SED
             (( cwdm )) && mem=mem || mem=repo
           fi
           [[ "$mem" == "$want" ]] && st_git=1
-        done <<< "${pl//|/$'\n'}"
-      done <<< "$links"
+        done
+      done
       if [[ -n "$st_git" && -z "$st_gate" && -n "$gate_seen" && "$verdict" != "piped" ]]; then verdict="semicolon"; fi
       if [[ -n "$st_gate" && -n "$st_git" && -n "$st_piped" ]]; then verdict="piped"; fi
       [[ -n "$st_gate" ]] && gate_seen=1
-    done < <(printf '%s\n' "$mcmd" | tr ';' '\n')
+    done < <(printf '%s\n' "$lmcmd" | tr ';' '\n')
     printf '%s' "$verdict"
   }
   re_gitstep="^[[:space:]]*${rgit}([[:space:]]|\$)"
   verdict=""; pair="a repo gate before a repo git step"
-  printf '%s' "$mcmd" | grep -qE "$egate" && verdict=$(launder "$egate" repo)
-  if [[ -z "$verdict" ]] && printf '%s' "$mcmd" | grep -qE "$mgate"; then
+  hit "$mcmd" -qE "$egate" && verdict=$(launder "$egate" repo)
+  if [[ -z "$verdict" ]] && hit "$mcmd" -qE "$mgate"; then
     verdict=$(launder "$mgate" mem); pair="memory_gate.sh --audit before a commit/push of the memory corpus"
   fi
   if [[ -n "$verdict" ]]; then
@@ -961,8 +1004,8 @@ fi
 #
 # `pgrep -x` (34 calls) is the safe sibling and stays silent: it matches the
 # executable NAME, which a shell script's text is not.
-if printf '%s' "$cmd" | grep -qE '(^|[;&|(]|[[:space:]])(until|while)[[:space:]]' &&
-   printf '%s' "$cmd" | grep -qE '\bp(grep|kill)[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*[[:space:]]+["'"'"']?[^"'"'"'$[:space:]]'; then
+if hit "$cmd" -qE '(^|[;&|(]|[[:space:]])(until|while)[[:space:]]' &&
+   hit "$cmd" -qE '\bp(grep|kill)[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*[[:space:]]+["'"'"']?[^"'"'"'$[:space:]]'; then
   warn pgrep-wait-loop '[bash-guard] A wait-loop polls `pgrep -f <literal>`. The loop'"'"'s own command line contains that literal, so a SECOND process carrying it — most often another copy of this waiter, and the detached shells of earlier Bash calls linger — keeps them all alive forever, while each poll reads as "still running". Wait on the ARTIFACT instead (`until grep -q "<verdict>" out.log; do sleep N; done`), or match the executable name with `pgrep -x`. Measured: a lone loop DOES exit; the failure needs company. (Fires once per session.)'
 fi
 
@@ -986,11 +1029,11 @@ fi
 # BODY contained the string `git add -A` (it was writing this very battery), and on
 # two of rule E's own negative cases. A mention is not an invocation.
 gitadd='(^|[;&]|&&|\|\||\|)[[:space:]]*git[[:space:]]+add[[:space:]]'
-if printf '%s' "$cmd" | grep -qE "$gitadd" &&
-   printf '%s' "$cmd" | grep -qvE "${gitadd}+(-N|--intent-to-add|-p|--patch)\b"; then
+if hit "$cmd" -qE "$gitadd" &&
+   hit "$cmd" -qvE "${gitadd}+(-N|--intent-to-add|-p|--patch)\b"; then
   # a pathspec that is a plain directory, or a blanket -A / -u with none
-  if printf '%s' "$cmd" | grep -qE '\bgit[[:space:]]+add[[:space:]]+(-[AuaE]+[[:space:]]*)*(--[[:space:]]+)?([^[:space:]-][^[:space:]]*[[:space:]]+)*(tools|docs|\.|:/)([[:space:]]|$)' ||
-     printf '%s' "$cmd" | grep -qE '\bgit[[:space:]]+add[[:space:]]+(-A|--all|-u|--update)([[:space:]]|$)'; then
+  if hit "$cmd" -qE '\bgit[[:space:]]+add[[:space:]]+(-[AuaE]+[[:space:]]*)*(--[[:space:]]+)?([^[:space:]-][^[:space:]]*[[:space:]]+)*(tools|docs|\.|:/)([[:space:]]|$)' ||
+     hit "$cmd" -qE '\bgit[[:space:]]+add[[:space:]]+(-A|--all|-u|--update)([[:space:]]|$)'; then
     # ⚠️ The dirty-check is a RUNTIME condition, so a battery case built on the real
     # working tree would pass or fail depending on what is mid-computation — a flaky
     # pin, i.e. no pin. `BASHGUARD_CACHE_DIRTY` lets --selftest state the condition
@@ -1018,8 +1061,8 @@ fi
 # is listed beside the archived one (the hint says so); and a script that EDITS an
 # existing archive row fires too — its text cannot tell an insert from an edit
 # (measured on this rule's first day, on its author's own fix-forward).
-if printf '%s' "$cmd" | grep -qF '00_07_Action_Plan_Tracker' &&
-   printf '%s' "$cmd" | grep -qE "File\.write|\.write\(|write_text|open\([^)]*['\"]w['\"]|sed -i|perl -i|>[[:space:]]*docs/00_07"; then
+if hit "$cmd" -qF '00_07_Action_Plan_Tracker' &&
+   hit "$cmd" -qE "File\.write|\.write\(|write_text|open\([^)]*['\"]w['\"]|sed -i|perl -i|>[[:space:]]*docs/00_07"; then
   arch_ids=$(printf '%s\n' "$cmd" \
     | grep -oE "(^|[\"'(]|\\\\n)[[:space:]]*\| [A-Z][A-Za-z0-9]*(-[A-Za-z0-9]+)*(\.[0-9][0-9A-Za-z.]*|-[0-9]+) \| " \
     | grep -oE '\| [^ ]+ \| $' | sed -E 's/^\| ([^ ]+) \| $/\1/' | LC_ALL=C sort -u | tr '\n' ' ')
