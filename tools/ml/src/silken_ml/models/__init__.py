@@ -3,7 +3,7 @@
 
 Path B (docs/03_03 §4.3) — but the DEPLOYED ``Run_Inference`` contract is **per-frame**
 (40 log-mel → 5 classes), NOT a spectrogram CNN. So the baseline is a TINY 2-layer MLP
-over the 40 mel features, chosen UNDER the measured arena ceiling (docs/03_03 §6):
+over the 40 mel features, chosen UNDER the measured arena ceiling (docs/03_03 §4.3):
 
     Input(40) → Normalization(adapted) → Dense(hidden, relu) → Dense(5 logits)
 

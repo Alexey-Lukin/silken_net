@@ -4,13 +4,13 @@
 >
 > **Лишається — актив без носія на вузлі:** модель (self-owned ESC-50 baseline), рантайм INT8 (`silken_net_audio_model.h`, §4) і контракт log-mel (`Compute_LogMel`, §3.4). Можливий майбутній носій — мікрофон Королеви ([`00_07` HW.52](00_07_Action_Plan_Tracker): 🌿 далекий горизонт із тригером «чи потрібен реальний час узагалі», не план).
 >
-> **Історія дизайну, а не чинна поведінка** — усе, що описує інтеграцію на Солдаті: пʼєзо-тригер, EXTI-пробудження й аудіо-DMA Фази 1.5 (§1.2–§2), логіка рішень із подвійними порогами в RTC DR13/DR14, опкод `0x9D` (виведено, повторно не займається) і panic за класом пилки (§5), бюджет SRAM Солдата під TinyML (§6), інтеграція з модулями (§7), чекліст TRL 7 (§8), fauna-сесія з її V_cap-гардом, дорожньою картою й пітчем (§10.2–§10.8). Байт `acoustic_events` на дроті лишається й завжди дорівнює 0 (доля слота — [`00_07` FW.59](00_07_Action_Plan_Tracker)); вхід `acoustic` контракту Лоренца теж лишається — 0 легальний ([`03_04`](03_04_mruby_Lorenz_Attractor)).
+> **Історія дизайну, а не чинна поведінка** — усе, що ще описує інтеграцію на Солдаті: DMA-нормалізація й Vcap-гард FW.42 у §3.1–§3.2 і fauna-сесія з її V_cap-гардом, дорожньою картою й пітчем (§10.2–§10.8). Байт `acoustic_events` на дроті лишається й завжди дорівнює 0 (доля слота — [`00_07` FW.59](00_07_Action_Plan_Tracker)); вхід `acoustic` контракту Лоренца теж лишається — 0 легальний ([`03_04`](03_04_mruby_Lorenz_Attractor)).
 
 ---
 
 ## 🎯 Мета
 
-Дім акустичного TinyML-активу — моделі, рантайму INT8 і контракту log-mel — та історії дизайну його інтеграції на вузлі **Soldier**: від апаратного переривання (п'єзодиск → вібрація) через збір сигналу ADC/DMA у буфер RAM, нормалізацію у float, до нейромережевого інференсу та прийняття рішення (low-freq water-stress proxy / бензопила / тиша — ⚠️ клас 2 НЕ є самою кавітацією: її акустична емісія 25–150 кГц лежить поза Nyquist цього тракту, докладно §4.2). Межу між активом та історією проводить шапка документа.
+Дім акустичного TinyML-активу — моделі, рантайму INT8 і контракту log-mel: від кадру 512 семплів 16 кГц через log-mel (§3.4) до класу й впевненості (§4: тиша / вітер / low-freq water-stress proxy / бензопила / фауна — ⚠️ клас 2 НЕ є самою кавітацією: її акустична емісія 25–150 кГц лежить поза Nyquist цього тракту, докладно §4.2). Носія на вузлі з 2026-09-29 немає — шапка документа.
 
 > **Критичної залежності від TinyML з 2026-09-29 немає:** байт `acoustic_events` на дроті завжди 0 (ECB-кадр; CCM-кадр wire-rev2.2 акустики не везе зовсім — FW.66), контракт Лоренца рахує з `acoustic = 0`, а `growth_points` беруться з `delta_t` ([`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)) — мінтинг SCC від TinyML не залежить.
 
@@ -26,33 +26,28 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle (Phase 1.5 — надгробок з HW.30; RTC-мапа — §2) |
-| [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Queen (EwsAlert relay) |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle · RAM-леджер і купа mruby — §3 (вхід стелі arena, §4.3) · карта опкодів (`0x9D` — RETIRED) |
+| [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Queen — можливий носій мікрофона ([`00_07` HW.52](00_07_Action_Plan_Tracker)) |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | `acoustic_events` → атрактор Лоренца |
-| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування panic-пакетів EwsAlert |
+| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Wire-ledger: слот `acoustic_events` і TTL-байт ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
-| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `AlertDispatchService` |
-| `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) · `_stub.h` (fallback) | `main.c` — з HW.30 без виклику інференсу (Phase 1.5 + ISR — історія дизайну); INT8 forward-pass — актив без носія на вузлі; партнерська модель — опційний апгрейд |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService` (байт `acoustic_events`) · `AlertDispatchService` (panic-кадр з HW.30 — лише лог) |
+| `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) · `_stub.h` (fallback) | `main.c` — з HW.30 без виклику інференсу; INT8 forward-pass — актив без носія на вузлі; партнерська модель — опційний апгрейд |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Статус** (SSOT): HW.52 можливий носій (🌿) · закриті (§🗄️): HW.30 зріз пʼєзо (застосовано 2026-09-29) · FW.4 baseline (актив без носія) · FW.18b threshold · FW.25 DSP Path B |
 
 ## 📑 Зміст
 
 <!-- TOC:AUTO:START -->
-- [1. Апаратна Платформа та Тригер](#-1-апаратна-платформа-та-тригер)
-- [2. Параметри Збору Аудіо (Audio Acquisition)](#-2-параметри-збору-аудіо-audio-acquisition)
+- [1. Апаратна Платформа](#-1-апаратна-платформа)
 - [3. Передобробка (DSP Preprocessing)](#-3-передобробка-dsp-preprocessing)
 - [4. Архітектура Моделі (TinyML Inference)](#-4-архітектура-моделі-tinyml-inference)
-- [5. Логіка Прийняття Рішень (Decision Logic)](#-5-логіка-прийняття-рішень-decision-logic)
-- [6. Бюджет Пам'яті (Memory Audit)](#-6-бюджет-памяті-memory-audit)
-- [7. Інтеграція з Іншими Модулями](#-7-інтеграція-з-іншими-модулями)
-- [8. Верифікація TRL 7 — Чеклист](#-8-верифікація-trl-7--чеклист)
 - [10. Mongabay Pivot — 5-й клас «Fauna Activity» та біорізноманіття як D-MRV сигнал](#-10-mongabay-pivot--5-й-клас-fauna-activity-та-біорізноманіття-як-d-mrv-сигнал)
 - [11. OTA Model Format та Federated Learning Pipeline](#-11-ota-model-format-та-federated-learning-pipeline)
 <!-- TOC:AUTO:END -->
 
 ---
 
-## 🎵 1. Апаратна Платформа та Тригер
+## 🎵 1. Апаратна Платформа
 
 ### 1.1 Мікроконтролер
 
@@ -65,139 +60,6 @@
 | Flash | 256 KB |
 | SRAM | 64 KB |
 | Споживання (сон) | 300 nA — ціль класу Standby; відвантажений STOP2 — 1.07 µA ([`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) |
-
-### 1.2 Тригер: П'єзодиск (Вібраційне Переривання)
-
-> ⚠️ **Історія дизайну, не чинна поведінка (§1.2–§2):** пʼєзо з Солдата зрізано разом із клампом і DNP-порогом перед EXTI (⚖️ founder 2026-09-29, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)); межа активу й історії — шапка документа.
-
-Аудіо-пайплайн активується **виключно** при фізичній вібрації дерева, зафіксованій п'єзодиском:
-
-```c
-// ISR: GPIO_PIN_0 → встановлює прапорець
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  if(GPIO_Pin == GPIO_PIN_0)
-  {
-    vibration_detected = 1;
-  }
-}
-```
-
-**Логіка фільтрації:** Якщо `vibration_detected == 0` на момент Phase 1.5 → аудіо-цикл повністю пропускається → STM32 не витрачає енергію на семплінг у тиші.
-
-**[FIX FW.11] Атомарне зчитування `vibration_detected` — NVIC-ізоляція:** Щоб запобігти race condition між ISR та головним циклом (ISR може виставити прапорець між перевіркою `if (vib)` та `vib = 0`), використовується NVIC-рівнева ізоляція:
-
-```c
-// Вимикаємо лише п'єзо-переривання — SysTick, LoRa та DMA callbacks продовжують працювати
-HAL_NVIC_DisableIRQ(EXTI0_IRQn);
-uint8_t vib = vibration_detected;
-vibration_detected = 0;
-HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-
-if (vib) { /* запустити аудіо-пайплайн */ }
-```
-
-Перевага над `__disable_irq()`: блокується лише конкретна EXTI0 лінія п'єзодиска, менший ризик пропуску радіо-пакетів при mesh relay. Тести: `firmware/test/test_tinyml_pipeline.c` — host-тести для vibration race-condition guard (`make -C firmware/test tinyml`).
-
-**Фізичний сенс:** П'єзодиск фіксує механічні вібрації деревини. Бензопила → характерна вібрація частотою 50–200 Hz (обертання ланцюга). Кавітаційний колапс у ксилемі → ультразвукові мікроімпульси 10–100 µs.
-
-> **⚠️ Wakeup-чутливість — interrupt-storm: hardware-поріг ратифіковано ⚖️ founder 2026-09-10, номінали — bench.** П'єзо-EXTI спрацьовує на *будь-яку* вібрацію (вітер, дощ, гойдання гілок), не лише chainsaw/кавітацію; hardware-захист GPIO доти — лише `BAT54S` voltage-clamp ([`02_01`](02_01_Hardware_Architecture_and_BOM)), **без амплітудного порогу**. Ціна виміряна (номінали зникли разом із пʼєзо — [`00_07` HW.30](00_07_Action_Plan_Tracker)): кожне хибне пробудження = повний цикл ≈ 42 мДж з VSTOR (`E_active` [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power), ECB-ера), а Сценарій C стоїть у беззапасній точці — тож баланс перекидає вже **перше** хибне пробудження, а вітер дає десятки. NVIC race-guard (FW.11 вище) захищає від *race*, але **не** від *частоти* пробуджень. Mitigation, впорядкована за тим, що вона лікує: (1) **hardware R-дільник + RC-поріг перед EXTI** — перша лінія, DNP-контур у BOM ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM) поз. 6): поріг ставиться понад вітер/дощ і нижче chainsaw-рівня — МЕТА, щоб будила пилка, а не погода; ⚠️ чи вона досяжна, не виміряно: амплітуд подій на анкері в дереві немає, а злива дає високий пік при малій енергії ([`acoustic_bench_sheet`](protocols/hardware/acoustic_bench_sheet.md) §5), і будь-який поріг понад погоду глушить заразом слабкий сигнал класу 2 (low-freq water-stress proxy), бо весь інференс іде лише під `if (vib)`; (2) software rate-limiter на кількість пробуджень/год — друга лінія (fast-amplitude gate одразу після wake економить лише ~21 % циклу (TinyML 9.0 з 42.33 мДж), бо стоїть ПІСЛЯ пробудження й ADC-семплу — не заміна порогу). ⚖️ **Ціна присуду — площа:** footprint DNP-контуру (R-дільник + RC, 0402) іде на плату вже зараз, а номінали — стенд; у першому бюджеті площі Power Deck його не пораховано ([`02_01 §3.5`](02_01_Hardware_Architecture_and_BOM) виключає «дільники»; другий прохід — [`00_07` HW.9](00_07_Action_Plan_Tracker)). Пасивний дільник + RC обрано замість компаратора; підстави цього вибору присуд не записав.
-
-### 1.3 Периферія TinyML
-
-| HAL Handle | Периферія | Роль у TinyML пайплайні |
-|------------|-----------|-------------------------|
-| `hadc` | ADC (12-bit SAR) | Оцифровка звуку з п'єзодиска — ⛔ **канал аудіо-входу на кремнії НЕ сконфігурований** (`MX_ADC_Init` порожній; ⛔ з HW.30 (2026-09-29) аудіо-каналу на Солдаті НЕМАЄ взагалі — рядок описує проєкт до зрізу пʼєзо, [`03_01 §1.5`](03_01_Firmware_Lifecycle_and_DMA)) |
-| `htim2` | TIM2 (32-bit timer) | Метроном DMA: 16 kHz — ⛔ **те саме: хендл оголошений, `MX_TIM2_Init` порожній — і з HW.30 метроном не має споживача** |
-| `hdma_adc` | DMA1 Channel 1 (DMAMUX `DMA_REQUEST_ADC`) | Перенесення ADC→`raw_audio_buffer` — ✅ **шар збудований** (`MX_DMA_Init` + `__HAL_LINKDMA` + вектори `DMA1_Channel1_IRQHandler`/`EXTI0_IRQHandler`, ARCH.102 2026-09-09) |
-
----
-
-## 🎙️ 2. Параметри Збору Аудіо (Audio Acquisition)
-
-> ⚠️ **Історія дизайну, не чинна поведінка:** аудіо-тракт Солдата зник разом із пʼєзо (⚖️ founder 2026-09-29, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)). Чинне звідси лише те, що успадкував контракт log-mel — частота 16 кГц і кадр 512 семплів як параметри моделі-активу (§3.4), а не стимул чи тракт вузла.
-
-### 2.1 Технічні Параметри
-
-| Параметр | Значення | Джерело |
-|----------|----------|---------|
-| **Частота дискретизації** | **16 kHz** | `htim2` метроном (коментар у `firmware/soldier/main.c`) |
-| **Розмір вікна** | **512 семплів** | `HAL_ADC_Start_DMA(..., 512)` |
-| **Тривалість вікна** | **32 мс** | 512 / 16 000 Hz |
-
-> ⛔ **[ARCH.102] ЦІ ПАРАМЕТРИ ОПИСУЮТЬ ПРОЄКТ, А НЕ ВІДВАНТАЖЕНЕ — але межа зсунулась 2026-09-09, тож читай її точно.** DMA-**шар** тепер існує (`MX_DMA_Init` + `__HAL_LINKDMA` + обидва вектори — раніше тут стояло «нуль хітів `MX_DMA_Init`», і це вже НЕ так). Досі бракує саме того, чого не можна вигадати без board-freeze ([`FW.46`](00_07_Action_Plan_Tracker)): **тіл `MX_ADC_Init`/`MX_TIM2_Init`** — тобто самого каналу аудіо-входу (канальна карта [`03_01`](03_01_Firmware_Lifecycle_and_DMA) оголошує лише температуру + VREFINT, аудіо-входу немає й на папері) та прескалера метронома від замороженого клок-дерева. Тому `hadc`/`htim2` тут лишаються цільовою конфігурацією, а `acoustic_events` із поля сьогодні джерела НЕ МАЄ. ⚠️ Змінилась при цьому ПОВЕДІНКА відмови, і це половина ARCH.102: доки конфігурації немає, Фаза 1.5 чесно НЕ міряє (гейт `Audio_Dma_Peripherals_Ready`) замість вішати вузол до сторожового пса. 🔴 Наслідок, який коштував окремого присуду, стоїть незмінним: `max_acoustic` не можна вживати як ПРЯМИЙ сигнал, доки тракт не поїде — саме через це бекендний ML-шар знято У-ВЕЙ ([`00_07`](00_07_Action_Plan_Tracker) E.52), а не «докалібровано». Тригера розблокування немає: аудіо-тракт Солдата зрізано разом із пʼєзо ([`HW.30`](00_07_Action_Plan_Tracker), §🗄️); можливий носій звуку — мікрофон Королеви ([`HW.52`](00_07_Action_Plan_Tracker)).
-| **Роздільність АЦП** | **12-бітна** | STM32 ADC (0–4095) |
-| **Формат сирих даних** | `uint16_t[512]` | `raw_audio_buffer[512]` |
-| **Формат нормалізованих даних** | `float[512]` | `audio_buffer[512]` |
-| **RAM для сирого буфера** | **1 024 B** | 512 × 2 байти |
-| **RAM для float буфера** | **2 048 B** | 512 × 4 байти |
-| **Разом RAM аудіо** | **3 072 B** | 4.7% від 64 KB SRAM |
-
-### 2.2 DMA-Семплінг: CPU-Free Acquisition
-
-```
-П'єзодиск → ADC Channel → DMA → raw_audio_buffer[512] → ISR → audio_ready=1
-                                       ↑
-                           CPU у режимі SLEEP (WFI)
-                           Spoживання: ~1 mA vs ~12 mA active
-```
-
-**Послідовність запуску:**
-
-```c
-// 1. Скидаємо прапорці
-vibration_detected = 0;
-audio_ready = 0;
-
-// 2. Гейт ПЕРЕД HAL'ом [ARCH.102]: HAL_ADC_Start_DMA розіменовує
-//    hadc.DMA_Handle без перевірки, тож незалінкований DMA дав би HardFault,
-//    а не HAL_ERROR. Доки MX_ADC_Init/MX_TIM2_Init порожні (board-freeze,
-//    FW.46), ця умова хибна і вікно чесно НЕ знімається.
-if (Audio_Dma_Peripherals_Ready(hadc.Instance, htim2.Instance, hdma_adc.Instance)) {
-    HAL_TIM_Base_Start(&htim2);
-    if (HAL_ADC_Start_DMA(&hadc, (uint32_t*)raw_audio_buffer, 512) == HAL_OK) {
-
-        // 3. CPU входить у SLEEP (WFI) — DMA працює автономно.
-        //    SysTick НЕ зупиняємо: із замороженим HAL_GetTick дедлайн ні з
-        //    чого зробити, а ~32 зайвих пробудження дешевші за IWDG-ребут.
-        uint32_t audio_wait_start = HAL_GetTick();
-        while (audio_ready == AUDIO_DMA_IDLE &&
-               !Audio_Dma_Wait_Expired(audio_wait_start, HAL_GetTick())) {
-            __disable_irq();
-            if (audio_ready == AUDIO_DMA_IDLE) {
-                HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
-            }
-            __enable_irq();
-        }
-
-        // 4. Memory barrier: CPU гарантовано бачить свіжі дані від DMA
-        __DMB();
-    }
-    // 5. Конвеєр зупиняємо НЕЗАЛЕЖНО від результату — озброєний DMA
-    //    дописував би у буфер посеред наступних фаз.
-    HAL_ADC_Stop_DMA(&hadc);
-    HAL_TIM_Base_Stop(&htim2);
-}
-// Інференс біжить ЛИШЕ при audio_ready == AUDIO_DMA_DONE: усі три способи
-// не виміряти (периферій немає · старт відмовив · дедлайн збіг) лишають
-// прапорець в IDLE, а помилка ADC/DMA ставить AUDIO_DMA_ERROR.
-```
-
-> **[ARCH.102] Межі вікна — дім предикатів `firmware/common/audio_dma.h`** (One-Home: прошивка й host-сюїта компілюють той самий заголовок; тести — `make -C firmware/test tinyml`). Бюджет очікування `AUDIO_DMA_TIMEOUT_MS = 250` мс = 8× номіналу 32 мс і ~1% IWDG-вікна, віднімання тіків беззнакове (переживає 49-денний переворот `HAL_GetTick`). ⚠️ Це host/compile-рівень: кремнієм НЕ перевірено — стенд лишається гейтом ([`02_04`](02_04_Bench_Build_Guide)).
-
-**Чому `__disable_irq()` + `WFI` + `__enable_irq()`?**
-Класичний паттерн уникнення пропуску wake-event: якщо ISR `HAL_ADC_ConvCpltCallback` спрацює між перевіркою `while (!audio_ready)` та виконанням `WFI`, то без `__disable_irq()` IRQ вже оброблено до входу в SLEEP — CPU не отримає нового переривання і залишиться у SLEEP до наступного будь-якого IRQ, пропустивши конкретний сигнал готовності аудіо. Паттерн гарантує, що пропущений `audio_ready=1` буде виявлено одразу після `__enable_irq()`, а не чекати наступного зовнішнього переривання.
-
-### 2.3 ISR: DMA Complete Callback
-
-```c
-// Апаратний рефлекс: викликається коли DMA записав 512-й семпл
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
-    // Одна атомарна операція запису → виводить CPU зі SLEEP через pending IRQ
-    audio_ready = 1;
-}
-```
 
 ---
 
@@ -333,7 +195,7 @@ firmware-роботи.
 
 > ⚠️ **Леджер-противага Path C (2026-06-11):** TFLM-інтерпретатор + frontend-op
 > додають власний RAM-оверхед (інтерпретатор/op-resolver/scratch — одиниці КБ)
-> **усередині тієї самої стелі arena 7–15 КБ** (§6) — фолбек став помітно
+> **усередині тієї самої стелі arena 7–15 КБ** (§4.3) — фолбек став помітно
 > вужчим, ніж на момент DECISION 2026-05-22. До того ж Path B фронтенд уже
 > self-owned і доведений (3-way parity + QEMU-нога) — миграційна цінність C
 > впала. Якщо фолбек таки знадобиться — спершу повторити FW.26-замір з
@@ -381,8 +243,8 @@ PVD safety, з запасом). Path B має найменшу sum, але рі�
 
 | Параметр | Значення | Обґрунтування (MCU + ESC) |
 |----------|----------|---------------------------|
-| Sample rate | **16 000 Hz** | TIM2 метроном (§2.1) |
-| Frame / `n_fft` | **512** (= 32 ms) | один DMA-блок = один FFT-кадр (§2.2) |
+| Sample rate | **16 000 Hz** | частота, на якій навчено модель; тракт носія мусить дати саме її |
+| Frame / `n_fft` | **512** (= 32 ms) | один FFT-кадр |
 | Window | **Hann — periodic** (`fftbins=True`, знаменник `N=512`), `win_length=512` | librosa-default; ⚠️ **НЕ `arm_hanning_f32`** (symmetric, знаменник `N−1`) — розійдеться на краях кадру > 1e-3; вшити precomputed periodic-table |
 | DC-removal | **− mean кожного кадру** (перед вікном) | audio нормалізоване в `[0,1)` (велика DC ≈0.5); `melspectrogram(y=audio,…)` цього НЕ робить → обов'язково на ОБОХ сторонах |
 | `hop_length` | **512** (без overlap) | 5 с / 32 мс = **156 кадрів** — точно збігається з монолітним fauna-вікном (§10.2 / ARCH.40); overlap зламав би 156-кадровий Welford |
@@ -398,7 +260,7 @@ PVD safety, з запасом). Path B має найменшу sum, але рі�
 
 #### Бюджет-конверт моделі (обов'язкова друга половина контракту, 2026-06-11)
 
-> Контракт ознак вище — лише половина деплой-умови. Модель мусить вписатись у **виміряний** RAM-леджер Солдата (§6, числа там — One-Home): **tensor arena target ≤ 10 КБ** (тверда стеля 7–15 КБ залежно від mruby-капу — поруч живе виміряна mruby-куча 38 КБ), Flash 32–64 КБ INT8 (§4.3). INT8-квантизація обов'язкова; **топологію обирати під стелю, не навпаки** — «типова ESC-CNN ~16 КБ arena» фізично не деплоїться. Тренувальний крос-чек партнера контракт не гейтить (контракт наш end-to-end), але arena-конверт гейтить залізно: модель ляже у `.bss` Солдата і CI-гейт `[FW.26] ARM static-RAM` зірветься ще до bench.
+> Контракт ознак вище — лише половина деплой-умови. Модель мусить вписатись у **виміряний** RAM-леджер носія (виведення стелі — §4.3; купа mruby — [`03_01 §3`](03_01_Firmware_Lifecycle_and_DMA)): **tensor arena target ≤ 10 КБ** (тверда стеля 7–15 КБ залежно від mruby-капу — поруч живе виміряна mruby-куча 38 КБ), Flash 32–64 КБ INT8 (§4.3). INT8-квантизація обов'язкова; **топологію обирати під стелю, не навпаки** — «типова ESC-CNN ~16 КБ arena» фізично не деплоїться. Тренувальний крос-чек партнера контракт не гейтить (контракт наш end-to-end), але arena-конверт гейтить залізо носія: модель ляже в його `.bss`, і на Солдаті це спіймав би CI-гейт `[FW.26] ARM static-RAM` ще до bench (з HW.30 arena туди не лягає — шапка `check_ram_budget.sh`).
 
 #### Firmware-інтерфейс
 
@@ -438,7 +300,7 @@ logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, 
 
 1. **Оракул + golden-gen** — `silken_ml.dsp` ([`tools/ml`](https://github.com/Alexey-Lukin/silken_net/blob/main/tools/ml)): librosa (training) ≡ pure-stdlib (швидкий, без numpy), parity tol 1e-6 у `ml_smoke.yml`.
 2. **Firmware** — `Compute_LogMel` ([`firmware/common/logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/common/logmel.c); host naive-DFT reference / ARM `arm_rfft_fast_f32`) + golden-vector host-тести ([`firmware/test/test_logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/test/test_logmel.c), tol 1e-3). Таблиці Hann/mel-bank/golden — `silken_ml.codegen` → `firmware/common/logmel_*.h`.
-3. **CMSIS-шлях доведено без плати (FW.4, 2026-06-10)** — спільне ядро перевірок `firmware/sim/logmel_parity_core.h` ганяється двічі: host-ctest (скалярний CMSIS-DSP) **і** QEMU-M4 нога (`firmware/scripts/qemu_logmel.sh`, mps2-an386, soft-float ABI WLE5 — метод [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)): golden-parity (tol 1e-3) + **stack high-water gate** навколо чистих викликів (стек після reuse-buffers — два кадрові буфери; бюджет-tripwire живе у `firmware/sim/qemu_m4/logmel_main.c`). Silicon-confirm float32 — тонка формальність bench.
+3. **CMSIS-шлях доведено без плати (FW.4, 2026-06-10)** — спільне ядро перевірок `firmware/sim/logmel_parity_core.h` ганяється двічі: host-ctest (скалярний CMSIS-DSP) **і** QEMU-M4 нога (`firmware/scripts/qemu_logmel.sh`, mps2-an386, soft-float ABI WLE5 — метод [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)): golden-parity (tol 1e-3) + **stack high-water gate** навколо чистих викликів (стек після reuse-buffers — два кадрові буфери; виміряний слід — 4 660 Б (QEMU, 2026-06-11) проти tripwire 6 КіБ, що живе у `firmware/sim/qemu_m4/logmel_main.c`). Silicon-confirm float32 — тонка формальність bench.
 4. ✅ Розкоментовано `Run_Inference` call-site (`main.c`, `FW.4`) + виміряно Tensor Arena (forward-pass: 76 B стек / 0 .bss / 972 B Flash, §4.3) — self-owned baseline ESC-50 приземлено; host-тест `test_audio_model`. ARM-elf замір — CI hal_check lane. ⊕ З 2026-09-29 виклику на Солдаті немає — пʼєзо зрізано (шапка); модель лишається активом без носія на вузлі.
 
 ---
@@ -458,7 +320,7 @@ logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, 
 > застарів: частину доків полагодили, нота цього не знала). Відтепер жоден канон-док не
 > зве наш деплой-рантайм «CMSIS-NN»; борг закрито в `tools/ml` (№8). Ранній запис тут
 > «TFLM/X-CUBE-AI» передував виміру FW.55 (mruby 38 КБ
-> → arena-стеля 7–15 КБ, §6), на якому C++-каркас TFLM (~16–20 КБ Flash + ~4 КБ
+> → arena-стеля 7–15 КБ, §4.3), на якому C++-каркас TFLM (~16–20 КБ Flash + ~4 КБ
 > SRAM **понад** arena) став маргінальним. Тому baseline деплоїться фіксованою
 > топологією-кодогеном (pure-C, host≡ARM, нуль нового vendoring), а **TFLite/LiteRT**
 > — лише train/quantize/archive-формат (`silken_ml.export` INT8 PTQ). TFLM-інтерпретатор
@@ -482,7 +344,7 @@ uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-К�
 | **0** | Тиша (Silence) | Фоновий шум нижче порогу | < 40 dB SPL |
 | **1** | Вітер (Wind) | Аеродинамічна вібрація крони | 0.1–2 kHz, широкосмуговий |
 | **2** | Кавітація (**audible-proxy**) | Водний стрес ксилеми — низькочастотний structural-слід. ⚠️ Справжня акустична емісія кавітації = ультразвук **25–150 кГц** ([`UNI.11`](00_07_Action_Plan_Tracker) EIS-джерело; літ. Tyree&Dixon 1983), **поза Nyquist-8** цього тракту → 16 кГц ловить proxy, не саму AE (див. ноту нижче) | proxy < 8 кГц; фізична AE 25–150 кГц |
-| **3** | Пилка/Вандалізм (Chainsaw/Tamper) | Бензопила або механічне пошкодження | 2–8 kHz, циклічний |
+| **3** | Пилка/Вандалізм (Chainsaw/Tamper) | Бензопила або механічне пошкодження | 2–8 kHz, циклічний (повітряний звук, на якому навчено модель); структурна вібрація деревини від обертання ланцюга — 50–200 Hz, поза смугою класу |
 | **4** *(planned, Mongabay pivot)* | Fauna Activity (Soundscape) | «Багатошаровий» хор комах/птахів/амфібій з характерними піками на світанку та в сутінках — маркер реального функціонування екосистеми | 0.5–12 kHz, ритмічний (циркадний) |
 
 > **⚖️ Field-валідність landed-baseline (`FW.4`) per-class — НЕ плутати з цілісністю пайплайну:**
@@ -515,11 +377,13 @@ uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-К�
 
 ### 4.3 Tensor Arena (SRAM Budget) — Оцінка
 
-> ✅ **Baseline приземлено (`FW.4`, 2026-06-12):** виміряний footprint self-owned ESC-50-моделі (per-frame 40→16→5, INT8) — **972 B Flash-ваги (`const`/.rodata), ~0 .bss, ~76 B стек** (активації forward-pass) — arena **<<** стелі 7–15 КБ (§6) з гігантським запасом. Таблиця нижче — рання оцінка для TFLM-2D-CNN-класу (fallback); фактичний baseline це forward-pass, не TFLM-arena (§4.1).
+> 📏 **Стеля arena, під якою обрано топологію — леджер Солдата 2026-06-11, до HW.30.** 65 536 Б SRAM − купа mruby 38 392 Б (виміряне плато FW.55; дім числа — [`03_01 §3`](03_01_Firmware_Lifecycle_and_DMA)) − стек-резерв 12 288 Б − статика ≈ 8 000 Б (виміряні 5 690 Б статики Soldier-TU у лейні FW.46 + ≈ 2.3 КБ libc/HAL поза TU) ⇒ **≈ 6 856 Б** консервативно … **≈ 15 344 Б** (чистий mruby ~34 КБ + стек 8 КБ) — звідси «7–15 КБ». Типова ESC-CNN (~16 КБ arena) під неї не лягає ні за якого розкладу без заходів: INT8 + prune + менша топологія (target ≤ 10 КБ arena — бриф ML-партнерам) та/або жорсткий кап `_sbrk` mruby (GC-on-OOM тримає live ~27 КБ ціною GC-тиску). Статику Солдата судить CI-гейт `[FW.26]` (`check_ram_budget.sh --hal-objects`; бюджети — шапка скрипта). ⚠️ Це стеля НОСІЯ, а не моделі: з HW.30 інференсу на Солдаті немає, тож новий носій ([`00_07` HW.52](00_07_Action_Plan_Tracker)) рахує її заново на ВЛАСНОМУ леджері.
+
+> ✅ **Baseline приземлено (`FW.4`, 2026-06-12):** виміряний footprint self-owned ESC-50-моделі (per-frame 40→16→5, INT8) — **972 B Flash-ваги (`const`/.rodata), ~0 .bss, ~76 B стек** (активації forward-pass) — arena **<<** стелі 7–15 КБ (виведення — нижче) з гігантським запасом. Таблиця нижче — рання оцінка для TFLM-2D-CNN-класу (fallback); фактичний baseline це forward-pass, не TFLM-arena (§4.1).
 
 | Параметр | Типова оцінка | Примітка |
 |----------|---------------|---------|
-| Tensor Arena Size | **~16 KB** *(типова для класу — АЛЕ виміряна стеля Солдата = 7–15 КБ, §6 леджер 2026-06-11 → target ≤ 10 КБ)* | Path B 2D-CNN на log-mel (INT8); §3.2 діапазон ~15–30 KB **не влазить** поруч із виміряною mruby-кучею (38 КБ) — INT8+prune+менша топологія обов'язкові |
+| Tensor Arena Size | **~16 KB** *(типова для класу — АЛЕ виміряна стеля Солдата = 7–15 КБ, леджер 2026-06-11 вище → target ≤ 10 КБ)* | Path B 2D-CNN на log-mel (INT8); §3.2 діапазон ~15–30 KB **не влазить** поруч із виміряною mruby-кучею (38 КБ) — INT8+prune+менша топологія обов'язкові |
 | Model Size (Flash) | **32–64 KB** | INT8 квантована модель |
 | Input tensor | `float32[40]` (Path B log-mel) | 1 кадр 40 mel-смуг від `Compute_LogMel` (§3.4); INT8 → `int8[40]`. (Path A 1D-raw `[512]` — superseded) |
 | Output tensor | `float32[5]` або `int8[5]` | Softmax 5 класів (0–3 + fauna §10) |
@@ -548,6 +412,8 @@ ml_event_id = Run_Inference(logmel_features, &ml_confidence);  // Path B: 40 log
 | `confidence` | `float*` | Ймовірність найбільш впевненого класу [0.0, 1.0] |
 | Повернене значення | `uint8_t` | Class ID: 0=Silence, 1=Wind, 2=Cavitation, 3=Chainsaw, 4=Fauna |
 
+> 🎯 **`confidence` — max-prob softmax над INT8-dequant логітами (`SNAM_OUT_SCALE`), а не над float-моделлю.** ECE і conf-at-precision тренування рахувались на float-softmax keras-моделі — це інший розподіл. Тож будь-який поріг на `confidence` (на Солдаті були пороги FW.18 у DR13/DR14, з HW.30 знято) калібрують на INT8-dequant-розподілі (`silken_ml.export.int_reference_logits`), а не на тренувальних метриках; число ECE — `tools/ml/docs/baseline_model_program.md` §8. ⚠️ Валідація порогу (NaN · діапазон · `warn < crit`) тримає ІНВАРІАНТ, а не детекцію: валідна пара warn 0.98 / crit 0.99 проходить її й фактично глушить клас пилки на весь кластер. Отже право ставити пороги є правом вимкнути детектор, і його судять як ключ, а не як конфіг; на Солдаті ця шкода була однією з трьох ніг присуду, що гейтував приймач (⚖️ founder 2026-09-28), поруч з асиметрією сусідніх опкодів і механізмом, яким без пускача міг скористатись лише власник кластерного KEYB.
+
 ### 4.5 Latency Estimation @ 48 MHz Cortex-M4
 
 > ⚠️ **Таблиця = рання оцінка TFLM-2D-CNN-класу (Path-A мова, fallback — §4.3), не landed-вимір** (борг №6,
@@ -569,238 +435,6 @@ ml_event_id = Run_Inference(logmel_features, &ml_confidence);  // Path B: 40 log
 > Інференс-рядки FPU-агностичні (INT8/integer). DSP-доданок — див.
 > чесність-ноту §3.3: WLE5 без FPU → float-DSP software, реальний доданок
 > більший за табличний (точно — bench).
-
----
-
-## ⚡ 5. Логіка Прийняття Рішень (Decision Logic)
-
-> ⚠️ **Історія дизайну, не чинна поведінка (§5.1–§5.4):** з 2026-09-29 Солдатові нема що класифікувати — пʼєзо зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)). Транспорт `Trigger_Emergency_LoRa_TX` лишився без викликача — єдиним пускачем був клас пилки — і зберігається як можливий носій [`00_07` HW.52](00_07_Action_Plan_Tracker) (🌿, не план); `chainsaw_detected` лишився без писача-Солдата (значення enum — для історії); опкод `0x9D` виведено й повторно не займається. Межа активу й історії — шапка документа.
-
-### 5.1 Повний Потік від `audio_ready = 1` до Рішення
-
-```
-DMA ConvCplt ISR: audio_ready = 1
-        ↓
-Main Loop: if (audio_ready == 1)
-        ↓
-HAL_ADC_Stop_DMA() + HAL_TIM_Base_Stop()      ← Зупинка конвеєра
-        ↓
-for i in [0..511]: audio_buffer[i] = raw[i] / 4095.0f   ← Нормалізація
-        ↓
-Compute_LogMel(audio_buffer, logmel_features)   ← 512 семплів → 40 log-mel (Path B, §3.4)
-        ↓
-[✅ FW.4: розкоментовано]
-ml_event_id = Run_Inference(logmel_features, &ml_confidence) ← Інференс (40 log-mel)
-        ↓
-if (ml_confidence >= CRITICAL)                ← DR14, default 0.85
-    │
-    ├── ml_event_id == 2 (Кавітація)
-    │       └── acoustic_events++              ← Лічильник для батчу
-    │
-    ├── ml_event_id == 3 (Пилка/Вандалізм)
-    │       ├── acoustic_events++              ← ТЕЖ інкремент
-    │       └── Trigger_Emergency_LoRa_TX()    ← НЕГАЙНИЙ TX без сну
-    │
-    └── (будь-яке CRITICAL) warning_counter = 0
-
-else if (ml_confidence >= WARNING)            ← DR13, default 0.60
-    │
-    └── ml_event_id ∈ {2, 3}
-            ├── acoustic_events++              ← ТЕЖ інкремент
-            ├── warning_counter++
-            └── 3× поспіль ⇒ Trigger_Emergency_LoRa_TX() ЛИШЕ для класу 3
-
-else                                          ← SILENCE-зона
-    └── warning_counter = 0
-```
-
-### 5.2 Маппінг на Payload та Backend
-
-```c
-// Phase 2: Bit-Pack
-lora_payload[7] = (uint8_t)(acoustic_events & 0xFF); // Byte 7: Acoustic Events
-// ...
-// [ARCH.102] Знімок БЕЗ обнулення — споживає лише успішна передача (Фаза 4).
-```
-
-| Подія | `ml_event_id` | `ml_confidence` | Дія firmware | Backend ефект |
-|-------|--------------|-----------------|--------------|---------------|
-| Тиша / Вітер / Фауна | 0, 1, 4 | будь-яка | Нічого (лічильник не рухається на жодному порозі) | `lora_payload[7]` без змін |
-| Кавітація | 2 | < WARNING | Нічого | `lora_payload[7]` без змін |
-| Кавітація | 2 | ≥ WARNING | `acoustic_events++` · `warning_counter++` | `TelemetryLog#acoustic_events > 0` |
-| **Кавітація** | **2** | **≥ CRITICAL** | **`acoustic_events++`** | **`TelemetryLog#acoustic_events > 0`** |
-| Пилка | 3 | < WARNING | Нічого | `lora_payload[7]` без змін |
-| Пилка | 3 | ≥ WARNING | **`acoustic_events++`** · `warning_counter++` · 3× поспіль ⇒ panic TX | `TelemetryLog#acoustic_events > 0` |
-| **Пилка/Вандалізм** | **3** | **≥ CRITICAL** | **`acoustic_events++` + `Trigger_Emergency_LoRa_TX()`** | **`EwsAlert` тривога** |
-
-> 🔴 **[ARCH.102] Лічильник НЕ «лише кавітація» — і ця таблиця доти казала протилежне.** Клас 3 інкрементує його в обох зонах; одно­порогова схема `> 0.80` вище була застарілою редакцією (пороги стали двома при FW.18 — див. §5.3 нижче й [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)). Ціна дрейфу вимірна: бекенд-коментар у `insight_generator_service` виводив із цієї сторінки гарантію **про гроші** — «this term NEVER slashes a forester for third-party logging», — тоді як стороннє лісозаготівельне пиляння лічильник таки рухає. Сьогодні лісоруба тримає лише ENV-інертність акустичного терму, а не описаний тут механізм.
->
-> ⚠️ **Друга властивість, яку легко проґавити: величина рахує події за ІНТЕРВАЛ МІЖ УСПІШНИМИ ПЕРЕДАЧАМИ, а не за пробудження.** На пробудження припадає щонайбільше один інференс, тож per-wake приріст ≤ 1; накопичення дає саме перерва в передачі — відкладений по морозу цикл (`Should_Defer_TX`) чи grace-hello. Споживання йде відніманням знімка після успішного TX (One-Home — `firmware/common/acoustic_ledger.h`), незʼїдений залишок переживає STOP2 у DR0. **Отже поріг, більший за 1, досяжний лише через накопичення** — читаючи будь-яке порівняння з цим полем, питай не «скільки подій», а «за який інтервал», бо каденс пробуджень енергетичний і не сталий.
-
-> **🎯 Калібрування `ml_confidence` (пороги FW.18) — застереження landed-baseline:** на пристрої
-> `ml_confidence` = max-prob softmax над **INT8-dequant** логітами (`SNAM_OUT_SCALE`), а ECE / conf-
-> at-precision у тренуванні рахувалися на **float-softmax** keras-моделі — це РІЗНІ розподіли. Пороги
-> FW.18 (RTC `DR13`/`DR14`, runtime-tunable) тому калібровані не на deployed-softmax; з appearance
-> польових даних — перекалібрувати на INT8-dequant-розподілі (`silken_ml.export.int_reference_logits`).
-> Деталі — `tools/ml/docs/baseline_model_program.md` §2.1.
-
-### 5.3 Emergency LoRa TX (Реакція на Бензопилу)
-
-*Ілюстрація decision-flow, **не** бітова копія (дім розкладки — нижче).* Коли TinyML класифікує пилку (`CRITICAL`), `Trigger_Emergency_LoRa_TX` (`firmware/soldier/main.c`) **позачергово** (поза Phase 4 jitter) шле 16-байтний panic-кадр і одразу засинає:
-
-- **DID** дерева у байтах 0..3; **`0xFF`** — маркер паніки у байті 7 (максимальна тривога);
-- **[FW.29]** `PANIC_FLAG_BIT` у StatusByte (байт 10) — однозначна детекція паніки на бекенді;
-- **[FW.18b]** байт 11 = `Ttl_Byte_Pack(PANIC_TTL, tinyml_threshold_invalid_count)` (історія; з HW.30 — `Ttl_Byte_Pack(5, 0u)`, лічильник знято разом із порогами) — підвищений TTL (5 проти `DEFAULT_TTL` 3) для глибшого mesh-проникнення + спакований invalid-counter;
-- **[SEC.10]** `panic_frame_counter` (saturating @ 0xFFFF) у байтах 14..15 (BE) — anti-replay nonce (сервер рубає повтори атомарною unique-вставкою в Postgres — `ReplayNonce`, SEC.39), персиститься у DR0 негайно;
-- шифрування AES-128 (ECB-ера) **або** CCM-потік (`#if FW2_CCM_ENABLED`, той самий anti-replay FC у нонсі) → негайний `Radio.Send` → `Radio.Sleep`. Гілка `ARCH26_CAD_ENABLED` подовжує преамбулу («останній зойк» поза зоною Королеви).
-
-> **Дім бітової розкладки panic-кадру:** [`03_01 §8`](03_01_Firmware_Lifecycle_and_DMA) (binary packet format) + StatusByte [`03_04 §4.4`](03_04_mruby_Lorenz_Attractor). Тут — лише ілюстрація реакції; байтові offset'и не дублюємо, щоб копія не старіла.
-
-**Ключові відмінності panic-пакета від стандартного:**
-
-| Параметр | Стандартний пакет | Panic пакет |
-|----------|------------------|-------------|
-| TTL | `DEFAULT_TTL = 3` | `PANIC_TTL = 5` |
-| Байт 7 | `acoustic_events & 0xFF` | `0xFF` (маркер паніки) |
-| Timing | Після засипання + jitter | Негайно |
-| Відправляється | Через Phase 4 (з jitter) | Через `Trigger_Emergency_LoRa_TX()` позачергово |
-| Backend | `TelemetryLog` | `EwsAlert` (критичний) + рядок `TelemetryLog` із `panic = true`, що НЕ є виміром: сенсори NULL, Лоренц не крокує, DCI не судиться ([`03_04 §5.2`](03_04_mruby_Lorenz_Attractor), ARCH.102) |
-
-### 5.4 [FW.18b] OTA Threshold Validation + Invalid-Counter
-
-🗄️ **Історія до HW.30 (2026-09-29): порогів, приймача й опкоду `0x9D` на Солдаті більше немає — опкод виведено й повторно не займається, а регістри порогів — у мапі [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA); абзац нижче описує тодішній стан і присуд.** Пороги WARNING/CRITICAL — OTA-updatable (FW.18, `CMD_SET_AUDIO_THRESHOLDS` `0x9D` → RTC DR13/DR14). ⚠️ **OTA-половини немає (звірено 2026-09-28):** живий лише приймач Солдата, а Rails кадру не будує і черга Королеви `0x9D` не пропускає ([`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA)). ⊕ З 2026-09-29 черга `0x9D` пропускає, а приймач відкриває лише адресний CCM-кадр сесійним ключем цілі ([`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)), тож наступне речення — про стан до реалізації downlink-ревізії, на якому стоїть присуд нижче. Тож досягти цього приймача може тільки той, хто тримає кластерний KEYB, і сама валідація нижче тримає ІНВАРІАНТ, а не детекцію: кадр warn 0.98 / crit 0.99 валідний і глушить клас пилки. ⚖️ **Приймач гейтовано — founder 2026-09-28, ратифіковано за рекомендацією й застосовано того ж дня:** `FW18_AUDIO_CMD_ENABLED 0` у `firmware/soldier/main.c`, ON-гілку компілює лейн `hal_check_ccm`, бойовий `.text` Солдата −200 Б. **Підстава:** асиметрія — сусіди `0x9A` і `0x9E` за тим самим принципом уже за гейтами; механізм без пускача — пустити його може лише власник кластерного KEYB, а KEYB лежить у флеші кожного вузла (RDP L1 ST коренем довіри не визнає, [`03_05 §3.3`](03_05_Hardware_Symmetric_Crypto_and_Security)); кадр warn 0.98 / crit 0.99 гасив би канал доказу Кат-A на весь кластер. **Ціна:** сьогодні нуль — відправника немає; дефолти 0.60/0.85 із RTC лишаються, а повернення фічі коштує відправника в Rails і місця в allowlist черги разом із MAC. **Найслабша ланка** (подана форма, коміт `0e37a52bd^`): якщо KEYB поза флешем вузла недосяжний (L2 + BOOT_LOCK, [`SEC.24`](00_07_Action_Plan_Tracker)), загроза дорожчає, але не зникає — KEYB спільний на кластер, тож одна вкрадена плата відкриває всі дерева. **Фліп** — разом із реалізацією downlink-wire-ревізії [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security) ([`00_07` — FW.17](00_07_Action_Plan_Tracker)). **Відкинуто:** видалити приймач — губить протестований парсер, який ревізії знадобиться; лишити живим — єдиний, хто може ним скористатись сьогодні, є атакувальник. `TinyML_Apply_Thresholds(warn_raw, crit_raw)` валідує кожен OTA-payload перед застосуванням: `TinyML_Validate_Threshold` відкидає NaN/out-of-range → default; інверсія (`!(warn < crit)`) → default обидва (інваріант `SILENCE < WARNING < CRITICAL` зберігається навіть при корумпованому RTC або зловмисно сформованому OTA). Кожна відмова інкрементує `tinyml_threshold_invalid_count` (saturating `uint8` @ 255) — production-visibility лічильник у RAM, що їде на дріт у TTL-байті кожного кадру (`Ttl_Byte_Pack`, FW.18b); Flash-KV `0x01` WARN_ESC для нього — лише план FW.54 ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)), тож RTC-only сон його обнуляє.
-
-**Wiring у телеметрію — ✅ 2026-06-10 (bit-redistribution).** Лічильник їде верхніми 5 бітами TTL-байта (байт 11): бітфілд `[thr_invalid:5 | TTL:3]`, One-Home `firmware/common/ttl_byte.h`, wire-кап 31 (= «≥31»); TTL значеннями 0..5 у 3 біти вкладається з запасом, mesh-релей декрементує лише TTL-біти і не торкається лічильника origin-Солдата. За нульового лічильника байт бітово ідентичний legacy — стара прошивка для нового бекенда виглядає як counter=0 (wire-таблиця — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)). Backend (`TelemetryUnpackerService`) маскує `mesh_ttl` до нижніх 3 біт і на ненульовий звіт інкрементує Prometheus-counter **`silkennet_tinyml_threshold_invalid_reports_total`** (без per-DID мітки — свідоме відхилення від первісного ескізу `{soldier_did}`: cardinality budget [`06_03 §2.9`](06_03_Prometheus_Observability) тримає реєстр bounded; конкретний DID і значення лічильника атрибутуються warn-логом — патерн FW.22 acoustic-overflow). Grafana alert: `rate(silkennet_tinyml_threshold_invalid_reports_total[15m]) > 0` = десь у лісі корумпований RTC або зловмисний OTA-payload — IaC готовий (✅ 2026-06-10): stat-панель + alert rule `sn-alert-tinyml-threshold-invalid` у `deploy/grafana/`. Freeze-contract goldens: `test_soldier_logic.c` (fw18b-сюїта) ↔ `telemetry_unpacker_service_spec.rb`. ✅ **Імпортовано в Grafana Cloud 2026-08-29** — `sn-alert-tinyml-threshold-invalid` стоїть у живому стеку (folder `SilkenNet`, datasource `grafanacloud-prom`), перевірено `ruby deploy/grafana/import.rb --verify`. ⚠️ **Правило існує й мовчить про предмет:** серій `silkennet_*` у стеку ще нема (жодного деплою) — це єдина причина тиші з 2026-08-30, коли contact point задротовано ([`00_07`](00_07_Action_Plan_Tracker) S2.4).
-
----
-
-## 💾 6. Бюджет Пам'яті (Memory Audit)
-
-> ⚠️ **Історія дизайну:** це бюджет SRAM Солдата під інтеграцію TinyML, якої з 2026-09-29 немає (пʼєзо зрізано, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)); чинний RAM-леджер Солдата — [`03_01 §3`](03_01_Firmware_Lifecycle_and_DMA). Для самої моделі-активу несуче одне — її виміряний footprint (§4.3).
-
-### 6.1 SRAM-бюджет TinyML компонентів
-
-| Змінна | Тип | Розмір | Призначення |
-|--------|-----|--------|-------------|
-| `raw_audio_buffer[512]` | `uint16_t` | **1 024 B** | Сирі 12-бітні семпли від ADC/DMA |
-| `audio_buffer[512]` | `float` | **2 048 B** | Нормалізований float input для TinyML |
-| `ml_event_id` | `uint8_t` | 1 B | Клас виходу (0–3) |
-| `ml_confidence` | `float` | 4 B | Ймовірність (0.0–1.0) |
-| `audio_ready` | `volatile uint8_t` | 1 B | Прапорець DMA complete |
-| **Tensor Arena** | (fallback TFLM) | **~8–16 KB** | SRAM лише для fallback TFLM-інтерпретатора; landed baseline (`FW.4`) = forward-pass ~76 B стек / 0 .bss (§4.1, §4.3) |
-| `fauna_feature_accumulator` *(transient, fauna-only, path-dependent — see §3.2)* | `float[]` + scalar | **~256 B** (Path B/C) або **~2 KB** (Path A: raw window memory) | Welford `mean+M2` агрегація 156 feature-векторів за 5 с (Path B: log-mel coefs; Path C: frontend output; Path A: raw audio statistics). 256 B залишається валідною оцінкою для Path B/C; Path A потребує ширшої статистики (`mean+std+kurtosis` на raw envelope) — TBD |
-| **Разом TinyML** | | **~11–19 KB** (Path B/C) / **~13–21 KB** (Path A) | З урахуванням Tensor Arena; +~256 B–2 KB transient під час fauna-сесії |
-
-### 6.2 Загальний SRAM-бюджет Soldier (відомі змінні)
-
-> Per-variable Soldier RAM — **дзеркало владаря [`03_01 §3`](03_01_Firmware_Lifecycle_and_DMA)**; правити там. Тут — лише щоб звести TinyML-ledger (arena-стеля).
-
-| Сегмент | Розмір |
-|---------|--------|
-| AES key (`aes_key[4]`, AES-128 post-ARCH.42) | 16 B |
-| LoRa payloads (2 × 16 B) | 32 B |
-| Mesh relay buffer (16 B) | 16 B |
-| Mesh DID cache (3 × 4 B, FW.21) | 12 B |
-| raw_audio_buffer[512] | 1 024 B |
-| audio_buffer[512] | 2 048 B |
-| OTA buffer (1024 B) | 1 024 B |
-| OTA chunk map (256 B) | 256 B |
-| Incoming LoRa buffer (256 B) | 256 B |
-| Decrypted RX buffer (256 B) | 256 B |
-| mruby VM heap **(ВИМІРЯНО, FW.55 QEMU sbrk-плато, newlib-nano)** | **38 392 B** консервативно (із зонд-оверхедом ~+4-5 КБ; чистий ~34 КБ; live-set ~27 КБ — простір для капу) |
-| Tensor Arena (оцінка §4.3 ~16 КБ — але див. ВИМІРЯНУ стелю нижче) | ляже у `.bss` Солдата при приземленні моделі |
-| fauna_feature_accumulator *(transient, path-dependent — §3.2; лише під час fauna-сесії — §10.2)* | ~324 B (Path B: 40 mel × Welford mean+M2, `FaunaWelford` у `fauna_session.h`; sizeof-tripwire у host-тесті) / ~2 KB (Path A raw window) |
-| Stack: резерв леджера 12 288 B (wle5-карта, FW.55 фіт-гейт; виміряні сліди: mruby-шлях 2 896, `Compute_LogMel` 4 660 проти tripwire 6 144 у QEMU-нозі §3.4 п.3) | 12 288 B |
-| **Статика Soldier-TU (ВИМІРЯНО, ARM `.data+.bss` compile-lane FW.46)** | **5 690 B** (рядки вище ≈ 4 976 Б + дрібнота; + libc/common/HAL ≈ 2.3 КБ поза TU) |
-| **Леджер: 65 536 − mruby 38 392 − stack 12 288 − статика ~8 000** | **СТЕЛЯ tensor arena ≈ 6 856 B** (консервативно) … **≈ 15 344 B** (чистий mruby ~34 КБ + стек 8 КБ) |
-
-> ⚠️ **Виміряна стеля arena = 7–15 КБ** (2026-06-11; залежить від mruby-капу й стек-резерву) — оцінка §4.3 «~16 КБ» **не влазить** ні за якого розкладу без заходів: INT8 + prune + менша топологія (target ≤ 10 КБ arena — **бриф ML-партнерам**) та/або жорсткий `_sbrk`-кап mruby (GC-on-OOM тримає live ~27 КБ ціною GC-тиску). Точний розмір самої arena — після моделі; статику вже тримає CI-гейт `[FW.26] ARM static-RAM` (`check_ram_budget.sh --hal-objects`, per-TU бюджети: Soldier 8 192, Queen 20 480 — arena зірве гейт і змусить свідому ревізію цього леджера).
-
-> 🌿 **`fauna_feature_accumulator` (audit-fix, ARCH.40 / §10.2 / FW.25 path-dependent):** Welford running `mean+M2` для агрегації 156 feature-векторів у межах **одного** awake-циклу (5 с моноліт — STOP2 wipe'не SRAM2 (⚠️ на WL — лише сон класу Standby, FW.54), тому декомпозиція "сон-між-вікнами" заборонена). **Розмір залежить від обраного DSP-шляху (§3.2 Decision Matrix):**
-> - **Path B (log-mel, default-рекомендація)** при `N_mel = 13` (⚠️ **орієнтовна reduced-dim лише для fauna-агрегату** — НЕ per-frame контракт, той = **40** mel, §3.4; фінальний fauna `N_features` open, п.3 нижче): `mean[13] = 52 B` + `M2[13] = 52 B` + `count (uint32) = 4 B` + `inference_input[mean‖std][26] = 104 B` ≈ **212 B**, округлено до **~256 B** з запасом на FFT scratch buffer.
-> - **Path C (TFLM frontend)** при `N_features = 40` mel bins: `mean[40] = 160 B` + `M2[40] = 160 B` + `count = 4 B` + `inference_input[80] = 320 B` ≈ **644 B**, округлено до **~768 B**.
-> - **Path A (raw window memory)**: ширша статистика на time-domain envelope (`mean+std+kurtosis+RMS+ZCR`), ~**2 KB** з повним 512-семпловим reference window для cross-correlation.
->
-> RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після (1) DSP-шляху (Path B log-mel обрано self-owned), (2) калібрувального soundscape-датасету (UNI.13a — архів, носія немає; див. §10.5), (3) фінального вибору `N_features` для 5-class моделі.
-
----
-
-## 🔗 7. Інтеграція з Іншими Модулями
-
-> ⚠️ **Історія дизайну (§7.1–§7.3):** з 2026-09-29 TinyML на дріт нічого не дає — байт `acoustic_events` завжди 0 (у CCM-кадрі wire-rev2.2 його немає зовсім), panic-кадру пускача немає, Лоренц рахує з `acoustic = 0` (пʼєзо зрізано, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)). Межа — шапка документа.
-
-### 7.1 Вихід TinyML → Payload Byte 7
-
-```
-TinyML Inference → ml_event_id → acoustic_events counter
-                                         ↓
-                               lora_payload[7] = (uint8_t)(acoustic_events & 0xFF)
-                                         ↓
-                               AES-128-ECB encrypt → Radio.Send
-                                         ↓
-                               Queen decrypts → CIFO Cache → CoAP PUT
-                                         ↓
-                               TelemetryUnpackerService → TelemetryLog#acoustic_events
-                                         ↓
-                               LorenzAttractorService (acoustic input z=acoustic_events)
-```
-
-### 7.2 Вихід TinyML → EwsAlert (Клас 3)
-
-```
-ml_event_id == 3 (Chainsaw) + confidence ≥ critical-поріг (АБО 3× WARNING-ескалація)
-        ↓
-Trigger_Emergency_LoRa_TX() [StatusByte = PANIC_FLAG (status=homeostasis!), acoustic=0xFF, TTL=5]
-        ↓
-Queen (CIFO cache: byte[7] = 0xFF → critical priority eviction)
-        ↓
-TelemetryUnpackerService: panic = status_byte & PANIC_FLAG_BIT (SEC.10 anti-replay counter)
-        │   рядок без виміру: vcap/temp/dt/acoustic → NULL, Лоренц не крокує, DCI не судиться (ARCH.102)
-        ↓
-AlertDispatchService: panic? || bio_status_anomaly? (без термального порога)
-        ↓ [SLASH-1 P0: гейт саме panic?-first — реальна пилка НЕ ставить anomaly-status]
-EwsAlert(severity: :critical, alert_type: :chainsaw_detected, "(PANIC-TX)" у message)
-        ↓
-EwsAlert.after_create_commit → dispatch_notifications! → WebSocket / SMS / PagerDuty
-```
-
-### 7.3 TinyML та mruby Lorenz Attractor
-
-```c
-// Phase 3: після TinyML → Lorenz Attractor
-args[2] = mrb_fixnum_value(lora_payload[7]); // Акустика → аттрактор
-
-// У bio_contract.rb (сигнатура — дім `03_04 §6.1`, тут НЕ дублюємо):
-// calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
-// ⛔ 3-арг форма з `chaos_seed` знята hard-cutover-ом SEC.11 — `chaos_seed`
-//    більше НЕ є входом Лоренца (FW.30).
-// → Lorenz перераховується з акустичним збуренням
-// → bio_status byte → lora_payload[10]
-```
-
-TinyML-результат безпосередньо впливає на Lorenz Attractor — акустичні події є третім вхідним параметром для математики гомеостазу.
-
----
-
-## 📋 8. Верифікація TRL 7 — Чеклист
-
-> ⚠️ **Історія дизайну:** чекліст перевіряв інтеграцію на Солдаті, якої з 2026-09-29 немає (пʼєзо зрізано, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) — рядки про виклик у `main.c`, ARM-замір, pipeline- і smoke-тести класів 2/3, пороги й overflow лічильника описують стан до зрізу. TRL модуля — TRL активу (Статус).
-
-> Для переходу з TRL 6 → TRL 7 необхідно виконати всі пункти.
-
-| # | Критерій | Статус |
-|---|----------|--------|
-| 1 | `silken_net_audio_model.h` закоміщено в репозиторій | ✅ Self-owned baseline (ESC-50, `FW.4`, 2026-06-12); stub лишається fallback'ом через `__has_include` |
-| 2 | `Run_Inference()` розкоментовано та функціонує | ✅ Розкоментовано (`main.c`); host-тест `test_audio_model` (12 golden, class-exact + softmax) |
-| 3 | `TENSOR_ARENA_SIZE` задокументовано з реального файлу | ✅ Виміряно: 76 B стек / 0 .bss / 972 B Flash-ваги (forward-pass, §4.3) |
-| 4 | Memory Map верифіковано (`arm-none-eabi-size`) | 🟡 Host footprint виміряно (`silken_ml.export`); ARM `arm-none-eabi-size` — CI hal_check lane |
-| 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`; `make -C firmware/test tinyml`) |
-| 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | ✅ `test_audio_model` e2e (FW.4, 2026-06-13): cavitation-golden → real `Run_Inference` → `decide` → `acoustic_events++` |
-| 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | ✅ `test_audio_model` e2e: chainsaw-golden → real `Run_Inference` → `decide` → emergency TX (per-class golden coverage у `emit_golden`) |
-| 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests + Soldier OTA CMD dispatcher `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`) з 7 host-tests — 🗄️ знято з HW.30 разом із пʼєзо (пороги, приймач і їхні тести) |
-| 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | ✅ Path B log-mel — `Compute_LogMel` (RFFT + HTK mel-bank + log; §3.1/§3.4), не сирий time-domain |
-| 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment) |
-| 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 00_02/00_07) |
 
 ---
 
@@ -862,8 +496,6 @@ TinyML-результат безпосередньо впливає на Lorenz 
 ```
 
 **Guard clause (FW.42, обов'язковий) — дворівнева політика енергозбереження:**
-
-⊕ **Спостерігач дротовано 2026-08-29** — `sn-alert-fauna-skip` (`rate(silkennet_fauna_skip_reports_total[15m]) > 0`, for 30m). Поодинокі пропуски взимку штатні; СТІЙКИЙ ненульовий rate = енергодефіцит кластера (деградація EDLC · затінення · обрив pogo-контакту), тобто питання до ЗАЛІЗА, не до софту. Дзеркало сусіда по тому ж diag-байту — `sn-alert-tinyml-threshold-invalid` (§5.4).
 
 | V_cap | Дія | Обґрунтування |
 |---|---|---|
@@ -928,7 +560,7 @@ TRL 8 → 9  (production biodiversity D-MRV):
 
 ### 10.7 Ризики та відкриті питання
 
-1. **Tensor Arena зростання** для 5-class CNN — масштаб залежить від обраного DSP-шляху (§3.2): Path A: +30–50% RAM (~20–40 KB; модель сама вчиться features); Path B: +10–20% (~15–30 KB; features pre-extracted, менша модель); Path C: +15–25% (~25–35 KB; включає frontend scratch). Baseline (per-frame MLP) тривіально влазить (§4.3); партнерська 2D-CNN — повторний замір проти стелі §6.
+1. **Tensor Arena зростання** для 5-class CNN — масштаб залежить від обраного DSP-шляху (§3.2): Path A: +30–50% RAM (~20–40 KB; модель сама вчиться features); Path B: +10–20% (~15–30 KB; features pre-extracted, менша модель); Path C: +15–25% (~25–35 KB; включає frontend scratch). Baseline (per-frame MLP) тривіально влазить (§4.3); партнерська 2D-CNN — повторний замір проти стелі §4.3.
 2. **Шум вітру 0.5–2 кГц перетинається з амфібіями** — ризик false positives для класу 4. Mitigation: акумульоване вікно + dawn/dusk timing constraint (вночі/на світанку вітер слабший). Path B/C дають кращу spectral discrimination ніж Path A.
 3. **Регіональна специфіка soundscape** — модель, натренована на Черкаському борі, може не узагальнюватись на тропіки. Potential solution: Federated Learning (вже описаний у §11.3).
 4. **Чи буде fauna класифікуватись через TinyML, чи через окремий DSP-only метричний модуль (без NN)?** — alternative architecture: спектральний descriptor **(ACI — Acoustic Complexity Index, Pieretti et al. 2011) обчислюється на STM32 з FFT (тобто потребує Path B-style DSP), без NN**. Це може стати TRL-7 інкрементом до повноцінної 5-class моделі. ACI **не є** "no-FFT alternative" — це спектральний показник, не часовий; виконується на тому ж FFT-output, що й Path B mel-bank.

@@ -11,7 +11,7 @@
  *   2) stack high-water НАВКОЛО чистих викликів Compute_LogMel: вхід/вихід —
  *      static (на Солдаті кадр живе в DMA-буфері, не на стеку), вікно під SP
  *      фарбується, після прогону сканується. Бюджет-гейт — коексистенція зі
- *      стеком main-циклу + 16 KB tensor arena + mruby (03_03 §6).
+ *      стеком main-циклу + 16 KB tensor arena (оцінка до виміру стелі 7–15 KB, 03_03 §4.3) + mruby.
  *
  * QEMU не цикло-точний — latency тут НЕ міряємо (то клас C, bench);
  * біти і стек — міряємо. Build/run: firmware/scripts/qemu_logmel.sh

@@ -351,7 +351,7 @@ def emit_golden(p: dict, X: np.ndarray, idxs=None, n_golden: int = 12) -> str:
         # drops a whole class (the earlier index-sorted truncation could → no cavitation
         # frame). The golden's cls is the model prediction, so the host model test
         # (firmware/test/test_audio_model.c) pins >=1 frame per class the model emits. The
-        # 03_03 §8 #6/#7 decision smoke tests left with the Soldier call-site (HW.30).
+        # Soldier decision smoke tests left with its call-site (HW.30).
         preds = np.array([int(np.argmax(int_reference_logits(p, X[i]))) for i in range(len(X))])
         rng = np.random.default_rng(0)
         per_class = [

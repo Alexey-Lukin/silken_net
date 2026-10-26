@@ -338,7 +338,7 @@ class TelemetryUnpackerService < ApplicationService
     apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
 
     # [FW.18b] Верхні 5 біт TTL-байта — saturating лічильник відкинутих
-    # OTA-порогів TinyML (03_03 §5.4). [HW.30] TinyML на Солдаті паркується, тож
+    # OTA-порогів TinyML (FW.18b). [HW.30] TinyML на Солдаті паркується, тож
     # писача в лічильника немає: Prometheus-метрику знято, а декодування й warn-лог
     # лишаються — ненульове значення тепер означає стару прошивку або збій.
     threshold_invalid = (parsed_data[6] >> 3) & 0x1F

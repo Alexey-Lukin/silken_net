@@ -3,7 +3,7 @@
  * ttl_byte.h — [FW.18b] бітфілд байта 11 LoRa-плейну (One-Home).
  *
  * Дріт уже забитий, а production-visibility лічильнику відкинутих
- * OTA-порогів (03_03 §5.4) треба було додому. TTL живе значеннями 0..5
+ * OTA-порогів (FW.18b) треба було додому. TTL живе значеннями 0..5
  * (DEFAULT_TTL=3, PANIC_TTL=5) — байту досить трьох біт, верхні п'ять
  * віддано лічильнику:
  *
@@ -19,7 +19,7 @@
  *
  * Дзеркало бекенда: TelemetryUnpackerService (маски ідентичні, golden
  * у test_soldier_logic.c ↔ telemetry_unpacker_service_spec.rb).
- * Канон: 03_05 §2.1 (wire) + 03_03 §5.4 (лічильник) + 00_07 FW.18b.
+ * Канон: 03_05 §2.1 (wire) + 00_07 FW.18b (лічильник; з HW.30 — завжди 0).
  */
 #ifndef SILKEN_TTL_BYTE_H
 #define SILKEN_TTL_BYTE_H

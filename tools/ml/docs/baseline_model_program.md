@@ -16,8 +16,8 @@
 >
 > **Канонічні домівки (значення правити ТАМ, не тут):**
 > - Log-mel контракт ознак — [`docs/03_03 §3.4`](../../../docs/03_03_TinyML_Acoustic_Inference.md)
-> - RAM-леджер / arena-стеля — [`docs/03_03 §6`](../../../docs/03_03_TinyML_Acoustic_Inference.md)
-> - Архітектура моделі / класи / пороги — `docs/03_03 §4` / §5 / §10
+> - Arena-стеля — [`docs/03_03 §4.3`](../../../docs/03_03_TinyML_Acoustic_Inference.md) (RAM-леджер і купа mruby — `docs/03_01 §3`)
+> - Архітектура моделі / класи / калібрування `confidence` — `docs/03_03 §4` (§4.4) / §10
 > - Трекер — [`docs/00_07`](../../../docs/00_07_Action_Plan_Tracker.md): FW.4 / FW.25 / FW.42 / ARCH.40 закрито (§🗄️; з HW.30 модель без носія на вузлі), FW.26 — загальний RAM-бюджет вузла
 > - ML-метод (parity-інваріант, скаффолди) — [`tools/ml/README.md`](../README.md) + скіл `ml-engineering`
 > - Validation Gate (специфікація ДО коду) — [`00_06 §0`](../../../docs/00_06_SSOT_Documentation_Standard.md) ⚠️ доти цей рядок казав `docs/00_02` — номер розчинено 2026-08-10, і форма без імені доку й без `§` невидима обом реф-гейтам
@@ -71,7 +71,7 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 - Ядро TFLM ≈ **16 КБ Flash** на M3, працює від ~**20 КБ Flash + 4 КБ SRAM** — але це
   **каркас, ПОНАД tensor-arena, і він C++**. *(arXiv 2010.08678; LiteRT microcontrollers)*
 - Наш пост-FW.55 бюджет: 64 КБ SRAM − **38 КБ mruby** − stack − статика ⇒ **arena-стеля
-  7–15 КБ** ([`03_03 §6`](../../../docs/03_03_TinyML_Acoustic_Inference.md)). TFLM-каркас
+  7–15 КБ** ([`03_03 §4.3`](../../../docs/03_03_TinyML_Acoustic_Inference.md)). TFLM-каркас
   (4 КБ SRAM + C++ vendoring у крос-компіляцію) тут **маргінальний + важкий lift**.
 
 ### 1.4 РІШЕННЯ runtime (з принципів + бюджет, не голосуванням доків)
@@ -124,7 +124,7 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 - **`silken_ml.models`** — config-driven топологія під стелю.
 - **`silken_ml.train`** — config (dataclass/YAML); seed-everything; **reproducibility
   manifest** `{data_hash, code_sha, env_hash, config, metrics}`; real eval (stratified,
-  per-class P/R/F1, confusion, **confidence calibration** → пороги FW.18 §5); model
+  per-class P/R/F1, confusion, **confidence calibration** → пороги FW.18, з HW.30 знято; калібрування `confidence` — `docs/03_03 §4.4`); model
   registry `models/registry/<version>/` з provenance.
 - **`silken_ml.export`** — TFLite INT8 PTQ + **QUANTIZATION-PARITY gate** (float↔INT8) +
   емітер `silken_net_audio_model.h` (INT8-ваги + inline portable-C `Run_Inference` +
@@ -155,9 +155,9 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 
 | # | Де | Суть | Фікс |
 |---|-----|------|------|
-| 1 | 03_03 §4.1 / §6 / §3.2 / §10.7 | **runtime-дрейф** «TFLM як наш вибір» + категорійна помилка «TFLM vs CMSIS-NN» | ✅ **закрито** — §4.1 примирення · §3.2 «Лочить на TFLM (НЕ завендорено)» · §6 «landed baseline = forward-pass 76 B» · §10.7 «Path C — лише документований fallback» |
-| 2 | 03_03 §5.3 + §7.1 | Soldier→Queen LoRa = **AES-256-ECB** (стале) | ✅ **закрито** — `grep -c "AES-256" docs/03_03` = 0; усюди AES-128 |
-| 3 | 03_03 §5.3 code | стале тіло `Trigger_Emergency_LoRa_TX` (нема `Ttl_Byte_Pack`/`PANIC_FLAG_BIT`/counter[14..15]) | ✅ **закрито** — `00_07` FW.62 (архів): C-копію замінено прозовим decision-flow + реф у дім; ⊕ з HW.30 `03_03 §5` — історія дизайну, а `Trigger_Emergency_LoRa_TX` без викликача (HW.52) |
+| 1 | 03_03 §4.1 / §3.2 / §10.7 і тодішній бюджет пам'яті Солдата | **runtime-дрейф** «TFLM як наш вибір» + категорійна помилка «TFLM vs CMSIS-NN» | ✅ **закрито** — §4.1 примирення · §3.2 «Лочить на TFLM (НЕ завендорено)» · бюджет пам'яті «landed baseline = forward-pass 76 B» (нині — §4.3) · §10.7 «Path C — лише документований fallback» |
+| 2 | 03_03, тодішні розділи panic-TX і виходу на дріт | Soldier→Queen LoRa = **AES-256-ECB** (стале) | ✅ **закрито** — `grep -c "AES-256" docs/03_03` = 0; усюди AES-128 |
+| 3 | 03_03, тодішній panic-TX (C-код) | стале тіло `Trigger_Emergency_LoRa_TX` (нема `Ttl_Byte_Pack`/`PANIC_FLAG_BIT`/counter[14..15]) | ✅ **закрито** — `00_07` FW.62 (архів): C-копію замінено прозовим decision-flow + реф у дім; ⊕ з HW.30 розділу рішень Солдата в `03_03` немає, а `Trigger_Emergency_LoRa_TX` лишився без викликача (`03_01 §6`, HW.52) |
 | 4 | 03_03 §4.2 + §4.4 | return-doc лише 4 класи (0–3), пропущено **fauna=4** | ✅ **закрито** — §4.2 і §4.4 несуть «4=Fauna» |
 | 5 | 03_03 §3.1 | стале «модель отримує сирий time-domain; DSP невідомий (BLOCKER-2)» | ✅ **закрито** — §3.1 «Path B зафіксовано … НЕ сирий time-domain»; `grep -c BLOCKER docs/03_03` = 0 |
 | 6 | 03_03 §4.5 | latency-таблиця «Conv1D шар 1/2» (Path A мова) | ✅ **закрито 2026-07-17** — таблицю перемарковано як оцінку партнерського CNN-класу + landed FC 40→16→5 названо явно (число не вигадуємо — bench) |
@@ -167,7 +167,7 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 ---
 
 ## 6. SSOT-оновлення (по завершенні фаз)
-- **03_03** — аномалії §5 вище + статуси §8-чеклиста (1–4: stub→реальна модель, arena
+- **03_03** — аномалії §5 вище + статуси TRL-чеклиста (1–4: stub→реальна модель, arena
   виміряна, Run_Inference розкоментовано).
 - **00_07** — FW.4 / FW.25 / FW.26 машинна половина закрита (модель + arena + uncomment).
 - **Ripple** — 02_01 latency, 00_02 Стаття 24a footprint (⊕ статтю знято 2026-09-27),
