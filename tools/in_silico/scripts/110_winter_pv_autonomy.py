@@ -91,7 +91,9 @@ CONTROLS (each says what it CAN and CANNOT catch).
       conversion and its own η (7); CAN catch a slip in the harvest arithmetic (area unit, the µW the boost is read
       at, the hour, the sign) or in the bisection, CANNOT one in a quantity both routes share (anchors, demand, window).
   (7) The vector η curves equal the scalar ones on a grid through and around every anchor, and the corners are ordered;
-      CAN catch an indexing slip in either, CANNOT an error in the anchors.
+      CAN catch an indexing slip in the nominal or the adverse curve and a corner out of order, CANNOT an error in the
+      anchors — and on the favourable corner nothing: there both routes return the one constant, held only by the cache
+      test's check of the ceiling against lib.
   (8) The desk's number: the worst 7-day December–January running mean of GHI, the median of the season minima and
       the count of seasons reproduce the desk pass's 331 · 401 Wh/m²/day (within 1) and 29; CAN catch a wrong window
       length, a lost or an extra season, CANNOT a one-day shift of the window or a season-boundary slip that leaves

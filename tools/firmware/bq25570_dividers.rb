@@ -557,7 +557,7 @@ def canon_e96_problems(text)
   rows.each do |name, *stated|
     b = want.fetch(name)
     stated.map(&:to_f).zip([ *b[:wc_band], *b[:rss_band] ]).each do |st, comp|
-      next if (st - comp).abs <= 0.001
+      next if (st - comp.round(3)).abs < 1e-9        # друк — 3 знаки: рядок дорівнює обчисленому, округленому до них
       problems << format("«%s (наші 1 %% E96)»: таблиця каже %.3f, e96_band дає %.3f", name, st, comp)
     end
   end
