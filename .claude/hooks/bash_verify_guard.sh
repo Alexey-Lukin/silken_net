@@ -79,10 +79,12 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # so a battery that could only send one context could not pin it at all.
   # 5th arg `noawk` / `nosed` runs the hook with that tool failing (exit 127): rule E must
   # then judge the raw call, never nothing [OPS.43].
+  # `T_SID` (set, then unset) runs several cases in ONE session — the only way to pin
+  # what a call leaves behind for the next one [OPS.45].
   t() {
     local name=$1 expect=$2 cmdstr=$3 bgflag=${4:-false} broken=${5:-} out got
     n=$((n + 1))
-    out=$(jq -nc --arg c "$cmdstr" --arg s "selftest-$$-$n" --argjson b "$bgflag" \
+    out=$(jq -nc --arg c "$cmdstr" --arg s "${T_SID:-selftest-$$-$n}" --argjson b "$bgflag" \
             '{tool_input:{command:$c,run_in_background:$b},session_id:$s}' |
           if [[ -n "$broken" ]]; then
             bash -c "${broken#no}() { return 127; }; export -f ${broken#no}; exec bash \"\$0\"" "$self"
@@ -239,6 +241,18 @@ if [[ "${1:-}" == "--selftest" ]]; then
   pad8k=$(head -c 8300 /dev/zero | tr '\0' x)
   t "E: past 8 KB the call is split unmasked" deny-e \
     $'# don\'t panic\n# '"$pad8k"$'\nruby scripts/docs_band.rb >/dev/null 2>&1; echo \'B\'\ngit push origin main'
+  # [OPS.45] A warning QUEUED before a BLOCK must neither silence the deny nor be spent by
+  # it. The first case is the kill-case of print-and-exit inside warn() (it gave `warn`);
+  # the pair after it, in one session, kills setting the marker before the flush (the
+  # second call then went silent). D and I are pinned behind a warning in their own blocks.
+  t "OPS.45: fresh session — tail-truncated gate; push → E" deny-e \
+    'bin/rspec spec/foo_spec.rb 2>&1 | tail -5; git push origin main'
+  T_SID="selftest-$$-ops45"
+  t "OPS.45: same session, the deny first…" deny-e \
+    'bin/rspec spec/foo_spec.rb 2>&1 | tail -5; git push origin main'
+  t "OPS.45: …did not spend A's warning" warn \
+    'bin/rspec spec/foo_spec.rb 2>&1 | tail -5'
+  unset T_SID
   # F — the SAME text in both contexts, which is the whole point of the rule.
   # The negative arm is not decoration: it is the pin that keeps rule F from
   # degenerating into "a gate followed by echo is suspicious", which would
@@ -367,6 +381,8 @@ body with `01_02:177` inside"'
       "cp /tmp/a.bak other.rb; probe x $dfix; git checkout -q -- $dfix"
     t "D: a cp INTO the dirty path is a restore, not a backup" deny \
       "cp /tmp/f.bak $dfix && git checkout $dfix"
+    t "D: behind a queued A warning still denies [OPS.45]" deny \
+      "bin/rspec spec/x_spec.rb 2>&1 | tail -3; git checkout $dfix"
     git rm --cached -q "$dfix" 2>/dev/null
     rm -f "$dfix"
     trap 'rm -rf "$TMPDIR"' EXIT  # back to the battery's own trap, not to none
@@ -414,6 +430,8 @@ body with `01_02:177` inside"'
     $'python3 - <<\'PY\'\nopen(\'docs/02_05_x.md\',\'w\').write(\'| FIXT.9 | x |\')\nPY'
   t "I: a non-ID first cell stays silent" silent \
     $'python3 - <<\'PY\'\np=\'docs/00_07_Action_Plan_Tracker.md\'\nopen(p,\'w\').write(\'| SWD | пади | так |\')\nPY'
+  t "I: the archive hint survives a queued A warning [OPS.45]" warn-i \
+    $'bin/rspec spec/x_spec.rb 2>&1 | tail -1; python3 - <<\'PY\'\np=\'docs/00_07_Action_Plan_Tracker.md\'; s=open(p,encoding=\'utf-8\').read()\nopen(p,\'w\',encoding=\'utf-8\').write(s+\'\\n| FIXT.9 | **закрито** | `00_06 §3` |\')\nPY'
 
   if (( fails > 0 )); then
     echo "bash_verify_guard --selftest: ${fails}/${n} FAILED"
@@ -560,13 +578,20 @@ fi
 # The marker idiom is borrowed from ssot_guard_hint.sh for the reason stated
 # there: a noisy advisory is a disabled gate. It takes rule A from 1,564 firings
 # a month to ≤158, and rule B from 393 to ≤133.
+# 🔑 [OPS.45] DEFERRED: warn() queues and returns; the flush at the END of the file
+# prints the queue and only then sets the markers. Every BLOCK below therefore
+# decides first, and its deny discards the queue — markers included, so a warning
+# the reader never saw is not spent. ⛔ Never print-and-exit inside warn(): the
+# first call of a session that trips A/B/F (or C's lanterns) then never reaches D,
+# C or E — measured 2026-10-24 on recorded commit/push calls, 11 got a warning
+# where E's deny existed (00_07 OPS.45).
+pending_ctx=""; pending_marks=""  # strings, not arrays: bash 3.2 + `set -u` dies on an empty "${a[@]}"
 warn() {
   local class=$1 text=$2 marker
   marker="${TMPDIR:-/tmp}/claude-bashguard-${session}-${class}"
-  [[ -f "$marker" ]] && return 0
-  : > "$marker"
-  jq -nc --arg ctx "$text" '{hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:$ctx}}'
-  exit 0
+  [[ -f "$marker" || "$pending_marks" == *"$marker"* ]] && return 0
+  pending_ctx+="${pending_ctx:+$'\n\n'}${text}"
+  pending_marks+="${marker}"$'\n'
 }
 
 # The verdict-emitting gate vocabulary — shared by rule A (a gate truncated
@@ -820,7 +845,7 @@ fi
 # `gate || true && git commit` (`||` is a plain link separator); `for … do gate; done;
 # git push`; `;` inside `$( )` splits like any other. A clean call that DENIES: a
 # `\`-continued `&&` chain, `find -exec … \;`, a `;` inside a quoted message within a
-# `-c`/`eval` body (read as code). Rules A/B can warn and exit BEFORE this deny.
+# `-c`/`eval` body (read as code).
 rgit='git(([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)|([[:space:]]+-[Pp])|([[:space:]]+--(git-dir|work-tree)[[:space:]]+[^[:space:]]+)|([[:space:]]+--[a-z-]+(=[^[:space:]]+)?))*[[:space:]]+(commit|push)'
 if printf '%s' "$cmd" | grep -qE "${rgit}\b"; then
   # Heredoc BODIES are cut, the lines after each terminator are KEPT [OPS.40 fix-forward]:
@@ -1000,15 +1025,22 @@ if printf '%s' "$cmd" | grep -qF '00_07_Action_Plan_Tracker' &&
     | grep -oE '\| [^ ]+ \| $' | sed -E 's/^\| ([^ ]+) \| $/\1/' | LC_ALL=C sort -u | tr '\n' ' ')
   if [[ -n "${arch_ids// /}" ]]; then
     amark="${TMPDIR:-/tmp}/claude-bashguard-${session}-archive-$(printf '%s' "$arch_ids" | tr -c 'A-Za-z0-9.-' '_')"
-    if [[ ! -f "$amark" ]]; then
-      : > "$amark"
+    if [[ ! -f "$amark" && "$pending_marks" != *"$amark"* ]]; then
       actx=$(bash "$(dirname "$0")/ssot_guard_hint.sh" --archive-hint "$arch_ids" 2>/dev/null)
       if [[ -n "$actx" ]]; then
-        jq -nc --arg ctx "$actx" '{hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:$ctx}}'
-        exit 0
+        pending_ctx+="${pending_ctx:+$'\n\n'}${actx}"
+        pending_marks+="${amark}"$'\n'
       fi
     fi
   fi
 fi
 
+# ── flush · reached only when no BLOCK denied [OPS.45] ───────────────────────
+# The markers are set HERE, after the text is out, so a deny earlier in the file
+# never spends a warning the reader did not see. All queued warnings share one
+# additionalContext: the output has to be a single JSON object.
+if [[ -n "$pending_ctx" ]]; then
+  while IFS= read -r m; do [[ -n "$m" ]] && : > "$m"; done <<< "$pending_marks"
+  jq -nc --arg ctx "$pending_ctx" '{hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:$ctx}}'
+fi
 exit 0
