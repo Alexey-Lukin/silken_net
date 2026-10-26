@@ -252,6 +252,8 @@ if [[ "${1:-}" == "--selftest" ]]; then
     'bin/rspec spec/foo_spec.rb 2>&1 | tail -5; git push origin main'
   t "OPS.45: …did not spend A's warning" warn \
     'bin/rspec spec/foo_spec.rb 2>&1 | tail -5'
+  t "OPS.45: …but a warning SHOWN is spent" silent \
+    'bin/rspec spec/foo_spec.rb 2>&1 | tail -5'
   unset T_SID
   # [OPS.46] Past the 64 KB pipe buffer an EARLY match killed `printf` with SIGPIPE and the
   # check read «no match»: this ≈ 97 KB call was silent where its 60 KB twin denied. Kept
@@ -259,11 +261,20 @@ if [[ "${1:-}" == "--selftest" ]]; then
   big97k=$(head -c 120 /dev/zero | tr '\0' x); big97k=$(for _ in $(seq 800); do printf '%s\n' "$big97k"; done)
   t "OPS.46: ≈97 KB heredoc, early commit — no SIGPIPE" deny-e \
     $'ruby scripts/docs_band.rb >/dev/null 2>&1; echo C; git commit -s -q -F - <<\'EOF\'\n'"$big97k"$'\nEOF'
+  # [OPS.46] A raw US byte (the link separator) in the call must not forge a link boundary —
+  # both arms flipped when it did: a real pipe went silent, a `git push` that is only an
+  # argument of `tail` was denied.
+  t "OPS.46: raw US before a real pipe — still E" deny-e \
+    $'ruby scripts/docs_band.rb \x1f| tail -1 && git push origin main'
+  t "OPS.46: raw US is no link joiner" silent \
+    $'ruby scripts/docs_band.rb 2>&1 | tail -1 \x1f git push origin main'
   # [OPS.46] The cost pin of block E. The verdict alone cannot catch the old split coming
   # back — it only gets slower — so the case is also timed. On this exact input (1,500 `&&`
   # links plus one link of 2,000 pipes) the `${st//&&/…}` / `${pl//|/…}` split of bash 3.2
   # took 90.7 s, one sed pass and `read -ra` 0.8 s (measured 2026-10-26); past the 5 s
-  # timeout the call goes through unjudged.
+  # timeout the call goes through unjudged. 🔒 The budget bites on bash 3.2 ONLY — the hook's
+  # runtime (`/bin/bash` on macOS). Bash 5 runs both slow forms in ≈ 0.2 s, so this case is
+  # green BY CONSTRUCTION in CI (ubuntu); its carrier is the `.githooks/pre-push` block.
   chain="ruby scripts/docs_band.rb >/dev/null 2>&1"
   for ((k = 0; k < 1500; k++)); do chain+=" && echo a"; done
   chain+=" && echo a"; for ((k = 0; k < 2000; k++)); do chain+=" | cat"; done
@@ -924,9 +935,17 @@ SED
   # `|&` becomes `|` in the same pass, so pipe elements split the same way — the single-char
   # `${pl//|/…}` is no cheaper (1000 pipes in one link: 3.4 s, 2000: 25 s).
   # If sed fails, the substitution stands in: correct, slow on a huge chain (a ceiling).
+  # A raw US already in the call would forge a link boundary, so it turns blank first: it is
+  # no shell operator, and no recorded call carries one (0 of 120,683, measured 2026-10-26).
+  # 🔒 Linear is not free: every statement and every link still costs a here-string — a temp
+  # file in bash 3.2, ≈ 0.2 ms — so ≈ 7,000 operators in ONE call reach the 5 s timeout
+  # (adversary review 2026-10-26: 14 KB of `:;` → 4.8 s). The recorded maximum is 266
+  # operators per call, a ×26 margin; re-measure it before trusting it on longer calls.
   lsep=$'\037'
-  lmcmd=$(LC_ALL=C sed -E "s/&&|[|][|]/${lsep}/g; s/[|]&/|/g" <<< "$mcmd")
-  if [[ -z "$lmcmd" ]]; then lmcmd=${mcmd//&&/$lsep}; lmcmd=${lmcmd//||/$lsep}; lmcmd=${lmcmd//|&/|}; fi
+  lsrc=$mcmd
+  [[ "$lsrc" == *"$lsep"* ]] && lsrc=${lsrc//$lsep/ }
+  lmcmd=$(LC_ALL=C sed -E "s/&&|[|][|]/${lsep}/g; s/[|]&/|/g" <<< "$lsrc")
+  if [[ -z "$lmcmd" ]]; then lmcmd=${lsrc//&&/$lsep}; lmcmd=${lmcmd//||/$lsep}; lmcmd=${lmcmd//|&/|}; fi
   # launder <gate-re> <subject: repo|mem> → prints the laundered form, or nothing
   launder() {
     local g=$1 want=$2 verdict="" gate_seen="" st lk st_gate st_git st_piped cwdm=0 tgt mem el x li ei
@@ -1080,10 +1099,11 @@ fi
 
 # ── flush · reached only when no BLOCK denied [OPS.45] ───────────────────────
 # The markers are set HERE, after the text is out, so a deny earlier in the file
-# never spends a warning the reader did not see. All queued warnings share one
+# never spends a warning the reader did not see — and a kill between the two lines
+# repeats the warning once instead of losing it. All queued warnings share one
 # additionalContext: the output has to be a single JSON object.
 if [[ -n "$pending_ctx" ]]; then
-  while IFS= read -r m; do [[ -n "$m" ]] && : > "$m"; done <<< "$pending_marks"
   jq -nc --arg ctx "$pending_ctx" '{hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:$ctx}}'
+  while IFS= read -r m; do [[ -n "$m" ]] && : > "$m"; done <<< "$pending_marks"
 fi
 exit 0

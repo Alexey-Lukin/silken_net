@@ -322,6 +322,33 @@ if printf '%s\n' "$_changed" | grep -qE '^(tools/cad/cem/|docs/images/cad/|tools
   fi
 fi
 
+# [OPS.46] Самотест bash-guard — локальний носій ЧАСОВОЇ осі його піна.
+#
+#   🔑 ЧОМУ ЛОКАЛЬНО: рантайм хука — `/bin/bash` 3.2 macOS (`.claude/settings.json` кличе
+#   `bash`, іншого на цій машині немає), а повільні форми, проти яких стоїть часовий
+#   бюджет блоку E, повільні саме в bash 3.2. На bash 5 CI (`docs.yml`, ubuntu) обидва
+#   мутанти проходять за ≈ 0.2 с, тобто там пін зелений ЗА ПОБУДОВОЮ (адверсарне ревʼю
+#   2026-10-26). Вердикти батареї CI судить сам — цей блок несе вісь часу.
+#
+#   ЦІНА, ВИМІРЯНА 2026-10-26: 11 с. Пускач — 16 із 1620 комітів за 30 днів (1 %), тобто
+#   ≈ 3 хв/місяць.
+#
+#   🔒 СТЕЛЯ: судить bash ЦІЄЇ машини. Стане `/bin/bash` колись bash 5 — блок зеленітиме
+#   так само сліпо, як CI, і вісь часу лишиться без носія.
+if printf '%s\n' "$_changed" | grep -qE '^\.claude/hooks/(bash_verify_guard\.sh|zsh_split_scan\.rb)$'; then
+  if [ -x /bin/bash ] && [ -f "$root/.claude/hooks/bash_verify_guard.sh" ]; then
+    _bvg_out=$( cd "$root" && /bin/bash .claude/hooks/bash_verify_guard.sh --selftest 2>&1 )
+    if [ $? -ne 0 ]; then
+      printf '%s\n' "$_bvg_out" | grep -E '✗|budget|out:' | head -20
+      echo
+      echo "pre-push BLOCKED — bash_verify_guard's own selftest fails on /bin/bash (above)."
+      echo "The hook is broken, NOT the tree: fix .claude/hooks/bash_verify_guard.sh first."
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+  fi
+fi
+
 if printf '%s\n' "$_changed" | grep -qE '^firmware/.*\.(c|h)$'; then
   if [ -x "$root/firmware/scripts/cppcheck.sh" ] && command -v cppcheck >/dev/null 2>&1; then
     if ! ( cd "$root" && sh firmware/scripts/cppcheck.sh ); then

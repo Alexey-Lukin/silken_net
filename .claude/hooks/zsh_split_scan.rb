@@ -41,8 +41,18 @@ FILL = ' '
 #            obvious pattern /"[^"]*[[:space:]][^"]*"/ matches the GAP BETWEEN
 #            two quoted words, so on `"a" "b" "c"` it answers "multi-word" —
 #            i.e. it silently tests a different question than the one asked.
+#
+# 🔑 [OPS.46] The walk indexes an Array of characters, never the String: `str[i]` and
+# `str[i] = …` on a UTF-8 string holding non-ASCII text cost O(i) each, so the walk went
+# quadratic exactly on this repo's calls (Ukrainian prose in heredocs) and stayed linear on
+# ASCII probes — measured 2026-10-26, a recorded 53.8 KB call took 1.0 s and the same text
+# ×4 18.3 s, past the hook's 5 s timeout, where PreToolUse lets the call through unjudged.
+# ⛔ Not `.b` either: walked as BYTES, `\b` below stops counting Cyrillic as word
+# characters, so `echo кdo for x in $list` turned into a finding and a `done` glued to a
+# Cyrillic letter stopped ending the loop body (adversary review, 2026-10-26).
 def walk(cmd)
-  masked = cmd.dup
+  s = cmd.chars
+  masked = s.dup
   qspans = []
   q = 0 # 0 unquoted · 1 inside '…' · 2 inside "…"
   depth = 0
@@ -51,12 +61,12 @@ def walk(cmd)
   qstart = nil
   substart = nil
   i = 0
-  len = cmd.length
+  len = s.length
   while i < len
-    c = cmd[i]
+    c = s[i]
     if q == 1 # single quotes take no escapes and no substitutions
       if c == "'"
-        qspans << [qstart, i, cmd[(qstart + 1)...i]] if depth.zero?
+        qspans << [qstart, i, s[(qstart + 1)...i].join] if depth.zero?
         q = 0
       else
         masked[i] = FILL
@@ -78,7 +88,7 @@ def walk(cmd)
     end
     if c == '"'
       if q == 2
-        qspans << [qstart, i, cmd[(qstart + 1)...i]] if depth.zero?
+        qspans << [qstart, i, s[(qstart + 1)...i].join] if depth.zero?
         q = 0
       else
         qstart = i
@@ -87,7 +97,7 @@ def walk(cmd)
       i += 1
       next
     end
-    if c == '$' && cmd[i + 1] == '(' # substitution opens inside "…" too
+    if c == '$' && s[i + 1] == '(' # substitution opens inside "…" too
       substart = i if depth.zero?
       qstack.push(q)
       q = 0
@@ -130,7 +140,7 @@ def walk(cmd)
     masked[i] = FILL if q == 2 || depth.positive?
     i += 1
   end
-  [masked, qspans]
+  [masked.join, qspans]
 end
 
 LEAD = '(?:\A|[;&|(){}\n]|&&|\|\||\bdo\b|\bthen\b|\belse\b)'
@@ -154,15 +164,7 @@ def assignment_rhs?(text, at)
   text[from...at].to_s =~ /\A[A-Za-z_]\w*=/ ? true : false
 end
 
-# 🔑 [OPS.46] The walk runs on BYTES. `str[i]` and `str[i] = …` on a UTF-8 string that
-# holds non-ASCII text cost O(i) each, so the walk went quadratic exactly on this repo's
-# calls (Ukrainian prose inside heredocs) and stayed linear on ASCII probes: measured
-# 2026-10-26, a recorded 53.8 KB call took 1.0 s and the same text ×4 took 18.3 s — past
-# the hook's 5 s timeout, where PreToolUse lets the call through unjudged. Bytes: 0.15 s.
-# Every pattern here is ASCII, so byte offsets agree across walk / match / slice; the
-# findings go back to UTF-8 at the end, so the printed text is cut by characters.
 def findings(cmd)
-  cmd = cmd.b
   masked, qspans = walk(cmd)
   hits = []
   pos = 0
@@ -204,7 +206,7 @@ def findings(cmd)
     end
     pos = m.end(0)
   end
-  hits.map { |h| h.map { |x| x.dup.force_encoding(Encoding::UTF_8) } }
+  hits
 end
 
 # ── controls ─────────────────────────────────────────────────────────────────
@@ -228,7 +230,10 @@ CASES = [
   [:safe, 'for p in "f.md:tok a" "g.md:tok b"; do n=${p%%:*}; done',  'assignment RHS never splits'],
   [:safe, 'for id in "HW.5 " "HW.6"; do echo $id; done',              'trailing space is not multi-word'],
   [:safe, 'for id in $(grep -oE "(A|B)" f); do e=$(echo "$id"); grep -qE "^## $e " t.md; done',
-          'a paren inside quotes must not close the substitution']
+          'a paren inside quotes must not close the substitution'],
+  # [OPS.46] `\b` must keep counting Cyrillic as a word character — both arms flip on a byte walk.
+  [:hit,  'for g in "ruby -v" "jq --version"; do echo кdone; $g; done', 'a Cyrillic-glued done does not end the body'],
+  [:safe, 'echo кdo for x in $list',                                  'a Cyrillic-glued do is not a loop head']
 ].freeze
 
 if ARGV[0] == '--selftest'
@@ -237,9 +242,10 @@ if ARGV[0] == '--selftest'
     got == want
   end
   bad.each { |(want, cmd, why)| warn "FAIL want=#{want} (#{why}): #{cmd}" }
-  # [OPS.46] The cost pin: the byte walk is invisible in every finding above (the output is
-  # the same), so only TIME can catch a character-indexed walk coming back. 150 KB of
-  # non-ASCII loops: 0.26 s on bytes, ≈ 5.7 s by characters — the budget sits between.
+  # [OPS.46] The cost pin: how the walk indexes is invisible in every finding above (the
+  # output is the same), so only TIME can catch a String-indexed walk coming back. 150 KB of
+  # non-ASCII loops: ≈ 0.2 s over a character Array, ≈ 6 s indexing the String — the budget
+  # sits between.
   body = "for x in items:\n    print(\"рядок українською — x\")\n"
   big = "python3 - <<'PY'\n" + body * (150_000 / body.bytesize) + "PY\n"
   t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
