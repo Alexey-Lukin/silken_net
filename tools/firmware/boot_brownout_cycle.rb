@@ -292,9 +292,10 @@ def report(p)
     lo = p.merge(c_vstor_f: p[:c_vstor_f] * (1.0 - C_TOLERANCE_LOW))
     w_lo = window_mj(lo)
     puts format("  ⚠️ Ємність %.2f F — номінал; на нижньому краю паспортного допуску (−%.0f %%, %.3f F) вікно %.1f мДж: " \
-                "ECB headline %+.1f мДж · CCM %+.1f мДж (02_03 §9.8а ⊕; warn-only)",
+                "ECB headline %+.1f мДж · CCM %+.1f мДж; sensitivity — %s · %s (02_03 §9.8а ⊕; warn-only)",
                 p[:c_vstor_f], C_TOLERANCE_LOW * 100, lo[:c_vstor_f], w_lo,
-                w_lo - headline_3cycle_mj(lo, wire: :ecb), w_lo - headline_3cycle_mj(lo, wire: :ccm))
+                w_lo - headline_3cycle_mj(lo, wire: :ecb), w_lo - headline_3cycle_mj(lo, wire: :ccm),
+                crossover_word(lo, :ecb), crossover_word(lo, :ccm))
   end
   return unless p[:i_stm32_sleep_na] == PARAMS[:i_stm32_sleep_na]
 
