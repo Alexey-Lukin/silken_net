@@ -2430,23 +2430,27 @@ cathode medium, the convection and a day-0 diagnostic CV of the anode (⚖️ fo
 
 ## HW.54 — How Much Glucose Must the Sap Bring to the Anchor's Anode? (script 109)
 
-**The question (2026-10-26, [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.54).** In the state the HW.53 bench sets by hand — the gap between the gyroid and the bore wall filled with sap that does not move — glucose reaches the anode only by diffusion. How much glucose must the sap carry at the bore wall for the anode to deliver the node's own draws? The sap's glucose itself is not in the tree; the logs of HW.3 read it, and this is the threshold that reading will be judged against.
+**The question (2026-10-26, [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.54).** In the state the HW.53 bench sets by hand — the gap between the gyroid and the bore wall filled with sap that does not move — glucose reaches the anode only by diffusion. Below what glucose at the bore wall can that gap not carry the node's draws, and what binds first there? The sap's own glucose is not in the tree; the logs of HW.3 read it.
 
-**The model.** Steady cylindrical diffusion across the gap (film r_a·ln(r_b/r_a), area and bottom cap from `85`'s cache), in series with Michaelis–Menten kinetics at the face on the envelope area (the gyroid's real surface is 30–60× larger, so the kinetic term is overstated). D is glucose's measured infinite-dilution binary diffusion coefficient in water — Mogi et al. 2007, Taylor dispersion, read from the NIST ThermoML record of the paper — at 0, 20 and 25 °C, the record's three points in the sap's range; Ribeiro et al. 2006 agrees at 25 °C within 0.3 %. Sap is taken as water: no viscosity of pine sap is sourced, and a more viscous sap raises every threshold below.
+**What is published, and on which side.** A NECESSARY condition — the limiting diffusion current, the leg's own words: below C = I/S, S = n·F·D·A/δ, the gap cannot carry the draw I for any enzyme. It is computed on the side that keeps «below X it cannot» true (`85`'s bottom cap added to the area, D at the top of its 95 % uncertainty, the draw's low end) and rounded down. It is never written as sufficient: every unpriced axis — sap more viscous than water, glucose eaten on the way, only β-D-glucose being the enzyme's substrate (Sygmund 2011), the wall's own resistance, the enzyme's ceiling on Ti in sap — raises the true threshold.
 
-**The draws.** The BQ25570 cold start, 25.0 µA (typ) and 21.43 µA (the worst-case V_IN column), and the sleep drain over the named readings of `02_03 §9.1` — η 0.68 at its table point and 0.20–0.30 at ~10 µA, V_OP 0.5 V and 0.325 V, never merged: **12.29 – 64.31 µA**. The sleep's input current sits on the curve's rise, so the 64.31 µA end overstates the draw.
+**D.** Glucose's measured infinite-dilution diffusion coefficient in water — Mogi et al. 2007, Taylor dispersion, read from the NIST ThermoML record of the paper — at 0, 20 and 25 °C, with the record's 95 % uncertainty (≈ 6.5–7.1 %, its unit read by ratio); Ribeiro et al. 2006 agrees at 25 °C within 0.3 %, and Mogi's 20/25 °C ratio (0.895) sits within 2.5 % of the Stokes–Einstein ratio from water's viscosity (0.8737). On the pine part the gap carries **98.83 – 120.33 µA per mM** at 25 °C (the envelope at D − U, then the bottom cap at D + U) — the desk estimate of 2026-10-25 (≈ 104) lies inside — **88.35 – 107.79** at 20 °C and **46.91 – 57.82** at 0 °C: D falls ×0.478 from 25 to 0 °C.
 
-**Result.** On the pine part the gap carries **105.71 – 112.97 µA per mM** of sap glucose at 25 °C (the envelope alone, then with the bottom cap) — the desk estimate of 2026-10-25 (≈ 104) holds — **94.6 – 101.11** at 20 °C and **50.51 – 53.98** at 0 °C: D falls ×0.478 from 25 to 0 °C. The sap must bring at least, at 20 °C across the Zone-1 parts:
+**The draws.** The BQ25570 cold start, 25.0 µA (typ) and 21.43 µA (the worst-case V_IN column). The sleep loads at VSTOR become an input current through the boost, whose efficiency `02_03 §9.1` gives only at anchors (≈ 20–30 % at ~10 µA, then 0.68 · 0.75 · 0.82 at its table's currents), so the current is bracketed on any non-decreasing efficiency curve through them, at V_OP 0.5 V and 0.325 V (never merged): Scenario C's target 4.18 µW (`§9.6`; its mechanism refuted, the target stands) **12.29 – 46.15 µA**; the shipped STOP2, 9.26 µW (`§9.3`), **27.24 – 46.15 µA**; the shipped STOP2 plus `§9.3`'s illustration of a 1 µA EDLC leak (not a measurement) **40.47 – 62.26 µA**.
+
+**Result — the necessary threshold** (the draw's low end), across the Zone-1 parts:
 
 | Draw | 20 °C | 0 °C |
 |---|---|---|
-| Cold start, typ | 0.14 – 0.41 mM | 0.3 – 0.83 mM |
-| Sleep, adverse reading | 0.36 – 1.05 mM | 0.77 – 2.14 mM |
-| Sleep, optimistic reading | 0.07 – 0.21 mM | 0.15 – 0.41 mM |
+| Cold start, typ | 0.09 – 0.32 mM | 0.17 – 0.59 mM |
+| Sleep, shipped STOP2 | 0.1 – 0.34 mM | 0.19 – 0.64 mM |
+| Sleep, Scenario C target | 0.04 – 0.15 mM | 0.08 – 0.29 mM |
 
-The low end is the tropical part (the narrowest gap), the high end the broadleaf part (the widest); pine sits at 0.31 mM for the cold start at 20 °C. Thresholds are rounded up — «above X the sap carries the draw» stays true. Transport carries at least **68 %** of every threshold at the laboratory enzyme ceiling, and the pH bracket of the enzyme (`30 §4b`) moves the pine cold-start threshold at 20 °C by less than 0.02 mM: the threshold is a diffusion number, set by D and the gap, not by the enzyme.
+The low end is the tropical part (the narrowest gap), the high end the broadleaf part (the widest); pine sits at 0.23 mM for the cold start at 20 °C and 0.43 mM at 0 °C.
 
-**What it cannot see.** Whether a living stem keeps the gap stagnant (flow past the face raises the supply; wood grown into the gap has no transport source in the tree); glucose consumed on the way by wood cells or microbes (lowers it); temperatures between 0 and 20 °C other than by bracketing; the enzyme's ceiling on etched Ti in sap.
+**What binds first is not the glucose.** In the same stagnant gap `85` prices the PROTON half of the supply: the face leaves the enzyme's kinetic bracket (pH 5.5) at 1.9–5.2 µA on pine and reaches pH 4.5 at 23.8–53.2 µA (25 °C). **32 of 35** draw×part pairs exceed the pH-5.5 current in every reading, and on pine the cold start reaches pH 4.5 in some readings — so sap above the glucose threshold does not make a stagnant gap carry the draw. An estimate in series with the enzyme (the pH-7.4 laboratory ceiling on the envelope area, Ea 19.5 kJ/mol measured for this enzyme by Sygmund 2011 or 40 assumed) puts the pine cold start at 20 °C at 0.30 mM; whether the envelope area over- or understates the kinetic term is not established, so the estimate carries no direction.
+
+**What it cannot see.** Whether a living stem keeps the gap stagnant; glucose consumed on the way; the α-anomer's mutarotation; xylose, the enzyme's other substrate; the wall's resistance (embolised tracheids, resin); temperatures between 0 and 20 °C other than by bracketing, and the proton half below 25 °C; the enzyme's ceiling on etched Ti in sap.
 
 ## HW.5.IS — How Hard Does the Cathode Medium's Malate Pull on the Nanozyme's Metals? (script 93)
 

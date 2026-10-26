@@ -8213,11 +8213,14 @@ def test_shadow_dbh_sentences_follow_the_cache():
 
 
 # ── HW.54 the anode's glucose threshold (109, 2026-10-26) ⟷ SUMMARY §«How Much Glucose Must the Sap Bring to the
-# Anchor's Anode?». Thresholds are cached already rounded UP (`109._up2`) and the sensitivities to 2 decimals, so every
-# cell is pinned to equality.
+# Anchor's Anode?». The necessary thresholds are cached already floored (`109._down2`) and the rest to 2 decimals, so
+# every cell is pinned to equality; the series estimate is quoted to 2 decimals from a 4-decimal cache (tol 0.005).
 GLU = "kinetics/anode_glucose_threshold.json"
-_GLU_TABLE = (("Cold start, typ", "cold_start_typ"), ("Sleep, adverse reading", "sleep_adverse"),
-              ("Sleep, optimistic reading", "sleep_optimistic"))
+_GLU_TABLE = (("Cold start, typ", "necessary_cold_start_typ_mM_by_T"),
+              ("Sleep, shipped STOP2", "necessary_sleep_stop2_mM_by_T"),
+              ("Sleep, Scenario C target", "necessary_sleep_target_mM_by_T"))
+_GLU_PINE = "anchor_zone1_pine"
+_GLU_ANY = r"[\d.]+"
 
 
 def _glu_row(label, j):
@@ -8225,56 +8228,87 @@ def _glu_row(label, j):
     return rf"(?m)^\| {re.escape(label)} \| {n[0]} – {n[1]} mM \| {n[2]} – {n[3]} mM \|$"
 
 
+def _glu_draw(name, end, anchor):
+    n = [N if end == k else r"[\d.]+" for k in range(2)]
+    return (f"glucose draw {name}[{end}] → 109", SUMMARY, rf"{anchor} \*\*{n[0]} – {n[1]} µA\*\*", GLU,
+            lambda d: d["draws_uA"][name][end], 0.0)
+
+
 CHECKS += [
     *[(f"glucose {key} [{j}] → 109", SUMMARY, _glu_row(label, j), GLU,
-       (lambda k, t, e: lambda d: d["findings"][f"{k}_mM_by_T"][t][e])(key, ("293.2", "293.2", "273.2", "273.2")[j],
-                                                                       j % 2), 0.0)
+       (lambda k, t, e: lambda d: d["findings"][k][t][e])(key, ("293.2", "293.2", "273.2", "273.2")[j], j % 2), 0.0)
       for label, key in _GLU_TABLE for j in range(4)],
-    ("glucose pine S at 25 °C, envelope → 109", SUMMARY, rf"carries \*\*{N} – [\d.]+ µA per mM\*\* of sap glucose", GLU,
-     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["298.2"][0], 0.0),
-    ("glucose pine S at 25 °C, with the cap → 109", SUMMARY, rf"carries \*\*[\d.]+ – {N} µA per mM\*\* of sap glucose",
-     GLU, lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["298.2"][1], 0.0),
-    ("glucose pine S at 20 °C, envelope → 109", SUMMARY, rf"\*\*{N} – [\d.]+\*\* at 20 °C and", GLU,
-     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["293.2"][0], 0.0),
-    ("glucose pine S at 20 °C, with the cap → 109", SUMMARY, rf"\*\*[\d.]+ – {N}\*\* at 20 °C and", GLU,
-     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["293.2"][1], 0.0),
-    ("glucose pine S at 0 °C, envelope → 109", SUMMARY, rf"\*\*{N} – [\d.]+\*\* at 0 °C: D falls", GLU,
-     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["273.2"][0], 0.0),
-    ("glucose pine S at 0 °C, with the cap → 109", SUMMARY, rf"\*\*[\d.]+ – {N}\*\* at 0 °C: D falls", GLU,
-     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["273.2"][1], 0.0),
+    *[(f"glucose pine S {t} [{e}] → 109", SUMMARY,
+       lead + r"\*\*" + (N if e == 0 else _GLU_ANY) + " – " + (N if e == 1 else _GLU_ANY) + tail, GLU,
+       (lambda tt, ee: lambda d: d["findings"]["pine_S_uA_per_mM_by_T"][tt][ee])(t, e), 0.0)
+      for t, lead, tail in (("298.2", r"gap carries ", r" µA per mM\*\* at 25 °C"),
+                            ("293.2", r"inside — ", r"\*\* at 20 °C"), ("273.2", r"and ", r"\*\* at 0 °C: D falls"))
+      for e in (0, 1)],
     ("glucose D ratio 0/25 °C → 109", SUMMARY, rf"D falls ×{N} from 25 to 0 °C", GLU,
      lambda d: d["findings"]["d_ratio_0C_over_25C"], 0.0),
-    ("glucose sleep draw, optimistic → 109", SUMMARY, rf"never merged: \*\*{N} – [\d.]+ µA\*\*", GLU,
-     lambda d: d["demands_uA"]["sleep_optimistic"], 0.0),
-    ("glucose sleep draw, adverse → 109", SUMMARY, rf"never merged: \*\*[\d.]+ – {N} µA\*\*", GLU,
-     lambda d: d["demands_uA"]["sleep_adverse"], 0.0),
-    ("glucose cold-start draw, worst V_IN → 109", SUMMARY, rf"25\.0 µA \(typ\) and {N} µA \(the worst-case V_IN column\)",
-     GLU, lambda d: d["demands_uA"]["cold_start_worst_vin"], 0.0),
-    ("glucose pine cold start at 20 °C → 109", SUMMARY, rf"pine sits at {N} mM for the cold start at 20 °C", GLU,
-     lambda d: d["by_sku"]["anchor_zone1_pine"]["by_T_K"]["293.2"]["thresholds"]["cold_start_typ"]["mM_up"], 0.0),
-    ("glucose transport share floor → 109", SUMMARY, rf"Transport carries at least \*\*{N} %\*\* of every threshold", GLU,
-     lambda d: round(100 * d["findings"]["transport_share_min"]), 0.0),
+    ("glucose Mogi 20/25 ratio → 109", SUMMARY, rf"Mogi's 20/25 °C ratio \({N}\)", GLU,
+     lambda d: d["D_controls"]["mogi_20_25_measured"], 0.0),
+    ("glucose Stokes–Einstein ratio → 109", SUMMARY, rf"viscosity \({N}\)", GLU,
+     lambda d: d["D_controls"]["stokes_einstein_20_25_predicted"], 0.0),
     ("glucose Mogi⟷Ribeiro gap at 25 °C → 109", SUMMARY, rf"agrees at 25 °C within {N} %", GLU,
-     lambda d: round(100 * d["D_cross_check_298_15K"]["relative_gap"], 1), 0.0),
+     lambda d: round(100 * d["D_controls"]["ribeiro_2mM_vs_mogi_298"], 1), 0.0),
+    _glu_draw("sleep_scenario_c_target", 0, r"the target stands\)"),
+    _glu_draw("sleep_scenario_c_target", 1, r"the target stands\)"),
+    _glu_draw("sleep_stop2_shipped", 0, r"9\.26 µW \(`§9\.3`\),"),
+    _glu_draw("sleep_stop2_shipped", 1, r"9\.26 µW \(`§9\.3`\),"),
+    _glu_draw("sleep_stop2_plus_edlc_1uA", 0, r"\(not a measurement\)"),
+    _glu_draw("sleep_stop2_plus_edlc_1uA", 1, r"\(not a measurement\)"),
+    ("glucose cold-start draw, worst V_IN → 109", SUMMARY, rf"25\.0 µA \(typ\) and {N} µA \(the worst-case V_IN column\)",
+     GLU, lambda d: d["draws_uA"]["cold_start_worst_vin"][0], 0.0),
+    ("glucose pine necessary cold start 20 °C → 109", SUMMARY, rf"pine sits at {N} mM for the cold start at 20 °C", GLU,
+     lambda d: d["findings"]["pine_necessary_cold_start_typ_mM_by_T"]["293.2"], 0.0),
+    ("glucose pine necessary cold start 0 °C → 109", SUMMARY, rf"at 20 °C and {N} mM at 0 °C\.", GLU,
+     lambda d: d["findings"]["pine_necessary_cold_start_typ_mM_by_T"]["273.2"], 0.0),
+    ("glucose pine pH 5.5 current, low → 109", SUMMARY, rf"\(pH 5\.5\) at {N}–[\d.]+ µA on pine", GLU,
+     lambda d: d["by_sku"][_GLU_PINE]["proton_limit_25C_uA"]["5.5"][0], 0.0),
+    ("glucose pine pH 5.5 current, high → 109", SUMMARY, rf"\(pH 5\.5\) at [\d.]+–{N} µA on pine", GLU,
+     lambda d: d["by_sku"][_GLU_PINE]["proton_limit_25C_uA"]["5.5"][1], 0.0),
+    ("glucose pine pH 4.5 current, low → 109", SUMMARY, rf"reaches pH 4\.5 at {N}–[\d.]+ µA \(25 °C\)", GLU,
+     lambda d: d["by_sku"][_GLU_PINE]["proton_limit_25C_uA"]["4.5"][0], 0.0),
+    ("glucose pine pH 4.5 current, high → 109", SUMMARY, rf"reaches pH 4\.5 at [\d.]+–{N} µA \(25 °C\)", GLU,
+     lambda d: d["by_sku"][_GLU_PINE]["proton_limit_25C_uA"]["4.5"][1], 0.0),
+    ("glucose pairs beyond pH 5.5 → 109", SUMMARY, rf"\*\*{N} of [\d.]+\*\* draw×part pairs", GLU,
+     lambda d: d["findings"]["draws_beyond_pH55_in_every_reading"], 0.0),
+    ("glucose pairs total → 109", SUMMARY, rf"\*\*[\d.]+ of {N}\*\* draw×part pairs", GLU,
+     lambda d: d["findings"]["draws_x_skus"], 0.0),
+    *[(f"glucose series estimate pine 20 °C {ek} → 109", SUMMARY, rf"puts the pine cold start at 20 °C at {N} mM", GLU,
+       (lambda k: lambda d: d["by_sku"][_GLU_PINE]["by_T_K"]["293.2"]["thresholds"]["cold_start_typ"]
+        ["series_estimate_at_draw_high"][k]["mM"])(ek), 0.005)
+      for ek in ("ea_19.5_measured", "ea_40_assumed")],
 ]
 
 
 def test_glucose_threshold_prose_claims_hold():
-    """109's SUMMARY sentences that are claims, not numbers: the pH bracket moves the pine cold-start threshold at 20 °C
-    by less than 0.02 mM, the Mogi⟷Ribeiro «within 0.3 %» is an upper bound on the cached gap, and the lib mirrors of
-    02_03 §9.1 that the sleep draw rides on still say what 02_03 says. CAN catch a sentence the cache no longer supports
-    or a lib mirror that drifted off its canon; CANNOT judge whether 02_03's readings are right."""
-    d = C(GLU)
-    th = d["by_sku"]["anchor_zone1_pine"]["by_T_K"]["293.2"]["thresholds"]["cold_start_typ"]
-    assert max(abs(v - th["mM"][1]) for v in th["ph_bracket_mM"].values()) < 0.02
-    assert d["D_cross_check_298_15K"]["relative_gap"] < 0.003 + 1e-12
+    """109's SUMMARY sentences that are claims, not numbers: Mogi's 20/25 °C ratio sits within 2.5 % of the Stokes–Einstein
+    ratio, Ribeiro agrees within 0.3 %, pine's cold start reaches pH 4.5 «in some readings» (the cached flag), the tropical
+    and broadleaf parts are the table's ends, and the lib mirrors of 02_03 §9.1/§9.3 the draws ride on still say what 02_03
+    says. CAN catch a sentence the cache no longer supports or a lib mirror that drifted off its canon; CANNOT judge whether
+    02_03's readings are right."""
     import sys
+
+    d = C(GLU)
+    ctl = d["D_controls"]
+    assert abs(ctl["mogi_20_25_measured"] / ctl["stokes_einstein_20_25_predicted"] - 1.0) < 0.025
+    assert ctl["ribeiro_2mM_vs_mogi_298"] < 0.003 + 1e-12
+    assert d["by_sku"][_GLU_PINE]["beyond_proton_limit_25C"]["cold_start_typ"]["4.5"] == "some"
+    for key in ("necessary_cold_start_typ_mM_by_T", "necessary_sleep_stop2_mM_by_T"):
+        for t in ("293.2", "273.2"):
+            vals = {s: b["by_T_K"][t]["thresholds"]["cold_start_typ" if "cold" in key else "sleep_stop2_shipped"]
+                    ["necessary_mM"][0] for s, b in d["by_sku"].items()}
+            assert vals["anchor_zone1_tropical"] == min(vals.values()) and vals["anchor_zone1_broadleaf"] == max(vals.values())
     sys.path.insert(0, str(REPO / "tools/in_silico"))
-    from lib.constants import ETA_BQ_10UA_READING, V_OP_02_03_TABLE
+    from lib.constants import ETA_BQ_10UA_READING, P_EDLC_LEAK_1UA_ILLUSTRATION, P_SLEEP_VSTOR_STOP2, V_OP_02_03_TABLE
     text = doc("docs/02_03_BQ25570_MPPT_Nano_Power.md")
     lo, hi = (round(100 * x) for x in ETA_BQ_10UA_READING)
     assert f"~{lo}-{hi}% на 10 µA" in text, "02_03 §9.1's low-current reading moved — re-mirror lib ETA_BQ_10UA_READING"
     assert f"V_OP={round(1000 * V_OP_02_03_TABLE)} мВ" in text, "02_03 §9.1's table V_OP moved — re-mirror lib"
+    assert f"= 7.06 + 2.20 = {P_SLEEP_VSTOR_STOP2 * 1e6:.2f} µW" in text, "02_03 §9.3's STOP2 drain moved — re-mirror lib"
+    assert f"+1 мкА на 4.5 В = +{P_EDLC_LEAK_1UA_ILLUSTRATION * 1e6:.1f} мкВт" in text, "02_03 §9.3's EDLC example moved"
 
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",

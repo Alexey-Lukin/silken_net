@@ -141,6 +141,11 @@ PH_KINETICS_SYGMUND = {
 # disagreement IS the bracket — electing one would manufacture a precision the source does not carry.
 
 EA_ENZYME = 40_000.0         # J/mol — Arrhenius activation energy (typical FAD enzyme)
+# The MEASURED one for this enzyme family, same paper as PH_KINETICS_SYGMUND: «The activation energy was calculated to
+# be 19.5 kJ mol-1 from initial rates in the range of 26 to 51°C and is quite similar to the naturally produced GDH
+# (21 kJ mol-1)» (Sygmund 2011, full text via Europe PMC PMC3252255) — free enzyme, above 26 °C; a reading BESIDE
+# EA_ENZYME (which L4 uses), not a replacement of it.
+EA_SYGMUND_GCGDH = 19_500.0  # J/mol
 V_OP = 0.5                   # V — EBFC operating voltage under load
 A_ELECTRODE = 2.0            # cm² — ONE face of the Ø16×1 mm Ti-coin COUPON (π·8² =
 # 2.01 cm²), never the anchor. Canon home docs/01_01 §6 ties the number to that face and
@@ -220,6 +225,12 @@ COIN_RESERVE_12WK_PER_ALLOY = 6
 # table itself runs at V_OP 325 mV — the OTHER unreconciled V_OP guess beside V_OP above (⛔ not merged, ⚖️ 2026-09-10).
 ETA_BQ_10UA_READING = (0.20, 0.30)
 V_OP_02_03_TABLE = 0.325     # V
+# The SHIPPED STOP2 sleep at VSTOR (02_03 §9.3: 1.07 µA × 3.3 V through η_buck 0.50, plus the BQ's 488 nA × 4.5 V) —
+# P_SLEEP_VSTOR above is §9.6 Scenario C's TARGET, whose mechanism a primary refuted (FW.54) while the target stands.
+# And §9.3's own illustration of the EDLC leak no balance carries: «+1 мкА на 4.5 В = +4.5 мкВт» — an illustration,
+# not a measurement (the part's leak is unmeasured). Mirrors — edit in 02_03 §9.3.
+P_SLEEP_VSTOR_STOP2 = 9.26e-6       # W
+P_EDLC_LEAK_1UA_ILLUSTRATION = 4.5e-6  # W
 E_CYCLE = 33.33e-3           # J — E_active_from_VSTOR per wake cycle (no inference since the piezo cut, ⚖️ 2026-09-29, 02_01 §6)
 P_SLEEP_VSTOR = 4.18e-6      # W — sleep drain from VSTOR between cycles
 BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)

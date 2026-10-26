@@ -7648,14 +7648,17 @@ def test_stem_radio_shadow_width_sweep():
 
 
 def test_anode_glucose_threshold_invariants():
-    """109 (00_07 HW.54, the glucose-threshold leg): every threshold re-derived here by a ROUTE the script does not take —
-    `scipy.optimize.brentq` on the forward model (transport = kinetics at the face, then the bulk concentration whose
-    current is the demand) — from the RAW inputs: 85's cached geometry, the D transcription, lib constants. CAN catch: an
-    algebra or unit slip in the closed-form inversion, a geometry read from the wrong field, a sensitivity off its own
-    inputs, a rounding that turns a «carries above X» threshold the unsafe way, a demand that drifted off lib. CANNOT
-    catch: a wrong D in the source transcription, a wrong δ in 85 itself, or the model's ceilings (stagnant gap, sap =
-    water) — those are the script's named limits, not arithmetic."""
+    """109 (00_07 HW.54, the glucose-threshold leg), re-derived from the RAW inputs by routes the script does not take:
+    the NECESSARY threshold from 85's cached geometry, the D transcription and its uncertainty (floored, and on the side
+    that keeps «below X it cannot» true); every sleep bracket by an independent bisection on the two extreme step curves
+    the efficiency anchors allow; every series estimate by `scipy.optimize.brentq` on the forward model; the proton flags
+    from 85's cached face-pH currents; the SUMMARY's `findings` spans by re-aggregating `by_sku`. CAN catch: a slip in the
+    closed forms, the wrong side of the D/area bracket, a rounding that turns the necessity sentence false, a bracket that
+    misses an admissible root, a flag or a span that drifted off its rows. CANNOT catch: a wrong D in the source, a wrong δ
+    or proton limit in 85, the model's ceilings — the script's named limits, not arithmetic."""
+    import itertools
     import sys
+
     sys.path.insert(0, str(REPO / "tools/in_silico"))
     from scipy.optimize import brentq
 
@@ -7663,42 +7666,82 @@ def test_anode_glucose_threshold_invariants():
         BQ25570_PIN_CS_UW,
         BQ25570_VIN_CS_TYP_MV,
         EA_ENZYME,
+        EA_SYGMUND_GCGDH,
+        ETA_BOOST_TABLE_UW,
         ETA_BQ_10UA_READING,
         F_CONST,
         J_MAX_25C,
         KM_GLUCOSE,
         N_ELECTRONS,
+        P_EDLC_LEAK_1UA_ILLUSTRATION,
         P_SLEEP_VSTOR,
+        P_SLEEP_VSTOR_STOP2,
         R_GAS,
+        V_OP,
         V_OP_02_03_TABLE,
     )
 
     d = json.loads((KINETICS / "anode_glucose_threshold.json").read_text(encoding="utf-8"))
-    geom = {k: v["geometry"] for k, v in json.loads((KINETICS / "electrode_interfacial_ph.json").read_text(
-        encoding="utf-8"))["anchor_anode_sap_gap"]["by_sku"].items()}
-    assert set(d["by_sku"]) == set(geom), "109 must price every Zone-1 SKU 85 prices"
-    assert d["demands_uA"]["cold_start_typ"] == round(BQ25570_PIN_CS_UW / BQ25570_VIN_CS_TYP_MV * 1e3, 2)
-    adverse = P_SLEEP_VSTOR / (min(ETA_BQ_10UA_READING) * V_OP_02_03_TABLE) * 1e6
-    assert d["demands_uA"]["sleep_adverse"] == round(adverse, 2), "the adverse sleep reading is η-low at the table V_OP"
+    a85 = json.loads((KINETICS / "electrode_interfacial_ph.json").read_text(encoding="utf-8"))["anchor_anode_sap_gap"]
+    assert set(d["by_sku"]) == set(a85["by_sku"]), "109 must price every Zone-1 SKU 85 prices"
+    assert d["draws_uA"]["cold_start_typ"] == [round(BQ25570_PIN_CS_UW / BQ25570_VIN_CS_TYP_MV * 1e3, 2)] * 2
+
+    anchors = [(10.0, *ETA_BQ_10UA_READING)] + [(p / V_OP_02_03_TABLE, e, e) for p, e in ETA_BOOST_TABLE_UW]
+
+    def root(p, v, eta_pick):
+        y = p / v * 1e6
+
+        def gap(i):
+            for (i0, e0lo, e0hi), (i1, e1lo, e1hi) in itertools.pairwise(anchors):
+                if i0 <= i <= i1:
+                    return i * eta_pick(e0lo, e0hi, e1lo, e1hi) - y
+            raise AssertionError("outside the anchors")
+
+        return brentq(gap, anchors[0][0], anchors[-1][0], xtol=1e-10)
+
+    loads = {"sleep_scenario_c_target": P_SLEEP_VSTOR, "sleep_stop2_shipped": P_SLEEP_VSTOR_STOP2,
+             "sleep_stop2_plus_edlc_1uA": P_SLEEP_VSTOR_STOP2 + P_EDLC_LEAK_1UA_ILLUSTRATION}
+    for name, p in loads.items():
+        lo, hi = d["draws_uA"][name]
+        for v in (V_OP, V_OP_02_03_TABLE):
+            slow = root(p, v, lambda e0lo, e0hi, e1lo, e1hi: e0lo)   # least efficient admissible curve → largest root
+            fast = root(p, v, lambda e0lo, e0hi, e1lo, e1hi: e1hi)   # most efficient → smallest root
+            assert lo - 0.01 <= fast and slow <= hi + 0.01, f"{name} @ {v} V: bracket {lo}-{hi} misses {fast}-{slow}"
+
     for sku, b in d["by_sku"].items():
-        g = geom[sku]
+        blk = a85["by_sku"][sku]
+        g = blk["geometry"]
+        for n, fl in b["beyond_proton_limit_25C"].items():
+            for edge, f in fl.items():
+                lim, dr = blk[f"face_pH_{edge}"]["i_anode_uA"], d["draws_uA"][n]
+                want = "every" if dr[0] > lim[1] else ("some" if dr[1] > lim[0] else "none")
+                assert f == want, f"{sku} {n} pH {edge}: flag {f} ≠ {want}"
         for t_key, row in b["by_T_K"].items():
-            t_k, dd = float(t_key), d["D_glucose_m2_s"][t_key]
+            t_k, dd, u = float(t_key), d["D_glucose_m2_s"][t_key], d["U_glucose_m2_s"][t_key]
+            s_max = N_ELECTRONS * F_CONST * (dd + u) * 1e4 * g["envelope_lateral_area_cm2"] \
+                * (1 + g["bottom_cap_over_envelope"]) / g["annulus_delta_cm"]
             s_env = N_ELECTRONS * F_CONST * dd * 1e4 * g["envelope_lateral_area_cm2"] / g["annulus_delta_cm"]
-            assert abs(row["S_uA_per_mM"][0] - s_env) < 0.006, f"{sku} {t_key}: S off its inputs"
-            ja = J_MAX_25C * math.exp(-EA_ENZYME / R_GAS * (1 / t_k - 1 / 298.15)) * g["envelope_lateral_area_cm2"] * 1e6
-
-            def current(c_b, s_env=s_env, ja=ja):
-                c_s = brentq(lambda c: s_env * (c_b - c) - ja * c / (KM_GLUCOSE + c), 0.0, c_b, xtol=1e-14)
-                return s_env * (c_b - c_s)
-
             for name, th in row["thresholds"].items():
-                c_star = brentq(lambda c, demand=th["demand_uA"]: current(c) - demand, 1e-9, 50.0, xtol=1e-12)
-                assert abs(th["mM"][1] - c_star) < 1e-3, f"{sku} {t_key} {name}: closed form ≠ forward model"
-                assert th["mM"][0] <= th["mM"][1], f"{sku} {t_key} {name}: the bottom cap must lower the threshold"
-                assert th["mM"][1] <= th["mM_up"] < th["mM"][1] + 0.01 + 1e-9, f"{sku} {t_key} {name}: not rounded up"
-                assert 0.0 < th["transport_share"] <= 1.0
-    for name in d["demands_uA"]:
-        for b in d["by_sku"].values():
-            seq = [b["by_T_K"][k]["thresholds"][name]["mM"][1] for k in sorted(b["by_T_K"], key=float)]
-            assert seq == sorted(seq, reverse=True), f"{name}: a threshold rose with T"
+                for end in (0, 1):
+                    exact = th["draw_uA"][end] / s_max
+                    assert th["necessary_mM"][end] <= exact + 1e-9 < th["necessary_mM"][end] + 0.01 + 2e-4, \
+                        f"{sku} {t_key} {name}: necessary threshold not the floor of I/S_max"
+                for ek, ea in (("ea_19.5_measured", EA_SYGMUND_GCGDH), ("ea_40_assumed", EA_ENZYME)):
+                    ja = J_MAX_25C * math.exp(-ea / R_GAS * (1 / t_k - 1 / 298.15)) * g["envelope_lateral_area_cm2"] * 1e6
+                    i_hi = th["draw_uA"][1]
+
+                    def current(c_b, s=s_env, ja=ja):
+                        c_s = brentq(lambda c: s * (c_b - c) - ja * c / (KM_GLUCOSE + c), 0.0, c_b, xtol=1e-14)
+                        return s * (c_b - c_s)
+
+                    c_star = brentq(lambda c, i=i_hi, cur=current: cur(c) - i, 1e-9, 50.0, xtol=1e-12)
+                    assert abs(th["series_estimate_at_draw_high"][ek]["mM"] - c_star) < 2e-3, f"{sku} {t_key} {name} {ek}"
+
+    for key, name in (("necessary_cold_start_typ_mM_by_T", "cold_start_typ"),
+                      ("necessary_sleep_stop2_mM_by_T", "sleep_stop2_shipped"),
+                      ("necessary_sleep_target_mM_by_T", "sleep_scenario_c_target")):
+        for t_key, span in d["findings"][key].items():
+            vals = [b["by_T_K"][t_key]["thresholds"][name]["necessary_mM"][0] for b in d["by_sku"].values()]
+            assert span == [min(vals), max(vals)], f"findings {key} {t_key} is not the span of its rows"
+    flags = [b["beyond_proton_limit_25C"][n]["5.5"] for b in d["by_sku"].values() for n in d["draws_uA"]]
+    assert d["findings"]["draws_beyond_pH55_in_every_reading"] == flags.count("every")
