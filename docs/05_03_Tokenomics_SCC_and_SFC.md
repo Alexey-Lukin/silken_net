@@ -745,7 +745,7 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 | **Foundry** | toolchain збірки/тестів; конвенції — `CLAUDE.md §8` |
 | **Oracle-ключі** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER) ⊥ `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER) — фізично розділені [E.2] |
 
-> 🏠 **One-Home:** роль КОЖНОЇ з 11 мереж, її статус і активаційний гейт — картки [`05_01 §1`](05_01_Multichain_Architecture). ⛔ Стиснутого ростера мереж тут більше немає (знято 2026-09-04, DOC-T.98): він мав нуль вхідних рефів і ніс два протухлі рядки — Chainlink під знятою номенклатурою «Hybrid mode» (після [ARCH.53] він `⚪ Demoted`, `sendRequest` вилучено) і «Polygon Hadron — KYC/KYB» як робочу залежність, тоді як [ARCH.118] виміряв, що продукту не існує.
+> 🏠 **One-Home:** роль КОЖНОЇ з 10 мереж, її статус і активаційний гейт — картки [`05_01 §1`](05_01_Multichain_Architecture). ⛔ Стиснутого ростера мереж тут більше немає (знято 2026-09-04, DOC-T.98): він мав нуль вхідних рефів і ніс два протухлі рядки — Chainlink під знятою номенклатурою «Hybrid mode» (після [ARCH.53] він `⚪ Demoted`, `sendRequest` вилучено) і «Polygon Hadron — KYC/KYB» як робочу залежність, тоді як [ARCH.118] виміряв, що продукту не існує.
 
 ## 📂 Структура Файлів (File Map)
 

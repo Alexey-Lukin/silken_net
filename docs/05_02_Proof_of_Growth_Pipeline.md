@@ -19,7 +19,7 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (11-chain топологія) |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (10-chain топологія) |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (мінтинг SCC/SFC) |
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | Моделі (TelemetryLog, Wallet, BlockchainTransaction) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Сервіси (Unpacker, Verification, Minting) |

@@ -73,7 +73,7 @@
 
 ### Менеджер Секретів (Рекомендація)
 
-З десятками API-ключів (11 блокчейнів, GCP, Starlink, DB, Redis, GitHub) критично мати єдине захищене сховище:
+З десятками API-ключів (10 блокчейнів, GCP, Starlink, DB, Redis, GitHub) критично мати єдине захищене сховище:
 
 - **Bitwarden** (open-source, self-hostable) або **1Password** — один vault per середовище (canopy / production)
 - Зберігай кожен токен, приватний ключ та credential там **до** заповнення shell-ENV перед `kamal deploy`

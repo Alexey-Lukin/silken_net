@@ -5,7 +5,7 @@
 Зафіксувати єдину політику резервування та відмовостійкості для двох найкритичніших ризик-векторів SilkenNet:
 
 1. **Queen Gateway як Single Point of Failure** — фізичний шлюз між LoRa-мережею Солдатів і Rails.
-2. **11-ланковий Web3-конвеєр як Lego Tower of Doom** — будь-яка зовнішня мережа (IoTeX, Chainlink, Hadron, ...) може mute/cap/break.
+2. **10-ланковий Web3-конвеєр як Lego Tower of Doom** — будь-яка зовнішня мережа (IoTeX, Chainlink, Hadron, ...) може mute/cap/break.
 
 Документ описує `Fallback / Retry / Buffer policy` для кожної ланки та механізм продовжувати Proof-of-Growth ([`05_02`](05_02_Proof_of_Growth_Pipeline)) навіть при тимчасовій відсутності окремих мостів.
 
@@ -21,7 +21,7 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [`00_00` — SSOT Index](00_00_SSOT_Index) | Системна карта (8 рівнів) + 11-chain → 05_02 |
+| [`00_00` — SSOT Index](00_00_SSOT_Index) | Системна карта (8 рівнів) + 10-chain → 05_02 |
 | [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | Hardware Queen + Q2Q mesh + Helium fallback |
 | [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Queen (CoAP retry, CIFO) |
 | [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн архітектура |

@@ -21,7 +21,7 @@
 | Ресурс | Опис |
 |--------|------|
 | [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Vision-рівень: місія, NaaS, філософія negligence-vs-force-majeure |
-| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Upstream guard-clause pipeline + 11-chain стек, що передує slash-тригеру |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Upstream guard-clause pipeline + 10-chain стек, що передує slash-тригеру |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Anti-fraud DCI (`SEC.11`, `check_z_divergence!`); `stress_index` pipeline |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` / `slashUpTo()` [SLASH.2]; Dynamic Tax (insurance-pool funding); GAMMA / PENALTY_FACTOR_MAX — `SystemParameter` ← on-chain `ProtocolParameters` (`slash_gamma`/`slash_penalty_factor_max`), sync у `PARAMETER_MAP` + read-path ✅ (GOV.1 — дім [`05_06 §7`](05_06_Governance_and_DAO)) |
 | [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Slash-burn зменшує `total_scc_supply` — поле, яке [ARCH.97] додало в leaf0 тижневого якоря. ⚠️ **До 2026-08-12 цей рядок був ХИБНИЙ:** у корені лежали лише бали росту під іменем монети, тож спалення не міняло анкероване значення взагалі |
