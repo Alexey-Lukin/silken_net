@@ -86,4 +86,4 @@
 | [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | діапазон температур · pH соку |
 | [`02_06 §5`](../../02_06_Unit_Economics_and_BOM.md) | кластер 100 дерев — орієнтир кількості пілоту |
 | [`rfq_registry`](rfq_registry.md) · [`ua_vendor_map`](ua_vendor_map.md) | індекс аркушів · адресат (§5) |
-| [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.8 (дім стану — нога відправки; ⚖️ «GLT-FKM ⊥ HNBR») · HW.25 (стенд сумісності EPDM) |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.8 (дім стану — нога відправки, стенд сумісності EPDM; ⚖️ «GLT-FKM ⊥ HNBR») |
