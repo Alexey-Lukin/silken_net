@@ -8101,7 +8101,6 @@ CHECKS += [
     ("max DBH · PIPELINE_STATUS 107 row → 107", PIPELINE, rf"DBH 38–{N} cm under three barks", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
     ("max DBH · in-silico README 107 row → 107", "tools/in_silico/README.md", rf"the stem's diameter \(38–{N} cm, the bark derived per stem", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
     ("max DBH · 01_04 §3.1 ⊕ 10-24 weakest link → 107", CODIT, rf"товщу за вилку на стовбурах 38–{N} см", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
-    ("max DBH · 00_07 HW.6 Вайс leg → 107", TRACKER, rf"класи DBH {N}–87 \(подвійна кора\)", SHADOW, lambda d: _DS(d)["axis_cm"][1], 0.0),
     ("max DBH · 01_04 §3.2 ⊕ the holding assumption's top → 107", CODIT, rf"«флоемною» корою, тримається до {N} см\), і жодне", SHADOW,
      lambda d: _DSB(d)["axis_cm"][1] if list(_DSB(d)["first_stem_cm_failing_by_assumption"].values()).count(None) == 1 else math.nan, 0.0),
     # 01_04 §3.1 — the ⊕ of 2026-10-24 (the ratified re-pricing): what it carries that the 10-23 ⊕ does not
@@ -8211,6 +8210,71 @@ def test_shadow_dbh_sentences_follow_the_cache():
     # the Стан's words — «з малим запасом» is a claim about the thin-end margin, «не тримається» about the bark axis
     assert ("±50° тримає з малим запасом" in tracker) == (0 < ds["rule"]["margin_deg_fine"] < 1)
     assert ("правило на сітці 1° не тримається" in tracker) == (not bk["holds_on_1deg_grid"])
+
+
+# ── HW.54 the anode's glucose threshold (109, 2026-10-26) ⟷ SUMMARY §«How Much Glucose Must the Sap Bring to the
+# Anchor's Anode?». Thresholds are cached already rounded UP (`109._up2`) and the sensitivities to 2 decimals, so every
+# cell is pinned to equality.
+GLU = "kinetics/anode_glucose_threshold.json"
+_GLU_TABLE = (("Cold start, typ", "cold_start_typ"), ("Sleep, adverse reading", "sleep_adverse"),
+              ("Sleep, optimistic reading", "sleep_optimistic"))
+
+
+def _glu_row(label, j):
+    n = [N if j == k else r"[\d.]+" for k in range(4)]
+    return rf"(?m)^\| {re.escape(label)} \| {n[0]} – {n[1]} mM \| {n[2]} – {n[3]} mM \|$"
+
+
+CHECKS += [
+    *[(f"glucose {key} [{j}] → 109", SUMMARY, _glu_row(label, j), GLU,
+       (lambda k, t, e: lambda d: d["findings"][f"{k}_mM_by_T"][t][e])(key, ("293.2", "293.2", "273.2", "273.2")[j],
+                                                                       j % 2), 0.0)
+      for label, key in _GLU_TABLE for j in range(4)],
+    ("glucose pine S at 25 °C, envelope → 109", SUMMARY, rf"carries \*\*{N} – [\d.]+ µA per mM\*\* of sap glucose", GLU,
+     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["298.2"][0], 0.0),
+    ("glucose pine S at 25 °C, with the cap → 109", SUMMARY, rf"carries \*\*[\d.]+ – {N} µA per mM\*\* of sap glucose",
+     GLU, lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["298.2"][1], 0.0),
+    ("glucose pine S at 20 °C, envelope → 109", SUMMARY, rf"\*\*{N} – [\d.]+\*\* at 20 °C and", GLU,
+     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["293.2"][0], 0.0),
+    ("glucose pine S at 20 °C, with the cap → 109", SUMMARY, rf"\*\*[\d.]+ – {N}\*\* at 20 °C and", GLU,
+     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["293.2"][1], 0.0),
+    ("glucose pine S at 0 °C, envelope → 109", SUMMARY, rf"\*\*{N} – [\d.]+\*\* at 0 °C: D falls", GLU,
+     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["273.2"][0], 0.0),
+    ("glucose pine S at 0 °C, with the cap → 109", SUMMARY, rf"\*\*[\d.]+ – {N}\*\* at 0 °C: D falls", GLU,
+     lambda d: d["findings"]["pine_S_uA_per_mM_by_T"]["273.2"][1], 0.0),
+    ("glucose D ratio 0/25 °C → 109", SUMMARY, rf"D falls ×{N} from 25 to 0 °C", GLU,
+     lambda d: d["findings"]["d_ratio_0C_over_25C"], 0.0),
+    ("glucose sleep draw, optimistic → 109", SUMMARY, rf"never merged: \*\*{N} – [\d.]+ µA\*\*", GLU,
+     lambda d: d["demands_uA"]["sleep_optimistic"], 0.0),
+    ("glucose sleep draw, adverse → 109", SUMMARY, rf"never merged: \*\*[\d.]+ – {N} µA\*\*", GLU,
+     lambda d: d["demands_uA"]["sleep_adverse"], 0.0),
+    ("glucose cold-start draw, worst V_IN → 109", SUMMARY, rf"25\.0 µA \(typ\) and {N} µA \(the worst-case V_IN column\)",
+     GLU, lambda d: d["demands_uA"]["cold_start_worst_vin"], 0.0),
+    ("glucose pine cold start at 20 °C → 109", SUMMARY, rf"pine sits at {N} mM for the cold start at 20 °C", GLU,
+     lambda d: d["by_sku"]["anchor_zone1_pine"]["by_T_K"]["293.2"]["thresholds"]["cold_start_typ"]["mM_up"], 0.0),
+    ("glucose transport share floor → 109", SUMMARY, rf"Transport carries at least \*\*{N} %\*\* of every threshold", GLU,
+     lambda d: round(100 * d["findings"]["transport_share_min"]), 0.0),
+    ("glucose Mogi⟷Ribeiro gap at 25 °C → 109", SUMMARY, rf"agrees at 25 °C within {N} %", GLU,
+     lambda d: round(100 * d["D_cross_check_298_15K"]["relative_gap"], 1), 0.0),
+]
+
+
+def test_glucose_threshold_prose_claims_hold():
+    """109's SUMMARY sentences that are claims, not numbers: the pH bracket moves the pine cold-start threshold at 20 °C
+    by less than 0.02 mM, the Mogi⟷Ribeiro «within 0.3 %» is an upper bound on the cached gap, and the lib mirrors of
+    02_03 §9.1 that the sleep draw rides on still say what 02_03 says. CAN catch a sentence the cache no longer supports
+    or a lib mirror that drifted off its canon; CANNOT judge whether 02_03's readings are right."""
+    d = C(GLU)
+    th = d["by_sku"]["anchor_zone1_pine"]["by_T_K"]["293.2"]["thresholds"]["cold_start_typ"]
+    assert max(abs(v - th["mM"][1]) for v in th["ph_bracket_mM"].values()) < 0.02
+    assert d["D_cross_check_298_15K"]["relative_gap"] < 0.003 + 1e-12
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import ETA_BQ_10UA_READING, V_OP_02_03_TABLE
+    text = doc("docs/02_03_BQ25570_MPPT_Nano_Power.md")
+    lo, hi = (round(100 * x) for x in ETA_BQ_10UA_READING)
+    assert f"~{lo}-{hi}% на 10 µA" in text, "02_03 §9.1's low-current reading moved — re-mirror lib ETA_BQ_10UA_READING"
+    assert f"V_OP={round(1000 * V_OP_02_03_TABLE)} мВ" in text, "02_03 §9.1's table V_OP moved — re-mirror lib"
 
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",

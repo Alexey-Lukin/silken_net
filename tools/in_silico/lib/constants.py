@@ -215,6 +215,11 @@ COIN_RESERVE_12WK_PER_ALLOY = 6
 # ETA_BOOST_TABLE_UW below says η rises with P_IN — a named model axis (02_03 §9.1).
 # And EDLC self-discharge is absent from BOTH (no number yet, §9.3), though +1 µA would
 # outweigh the whole sleep drain.
+# The two other readings of 02_03 §9.1 (mirrors — edit there, not here; 109 reads both, 00_07 HW.54): the text under its
+# table puts the boost on the steep low-current rise at «~20-30 % на 10 µA» (SLUSBH2G Figs 4-7, read by eye), and the
+# table itself runs at V_OP 325 mV — the OTHER unreconciled V_OP guess beside V_OP above (⛔ not merged, ⚖️ 2026-09-10).
+ETA_BQ_10UA_READING = (0.20, 0.30)
+V_OP_02_03_TABLE = 0.325     # V
 E_CYCLE = 33.33e-3           # J — E_active_from_VSTOR per wake cycle (no inference since the piezo cut, ⚖️ 2026-09-29, 02_01 §6)
 P_SLEEP_VSTOR = 4.18e-6      # W — sleep drain from VSTOR between cycles
 BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)

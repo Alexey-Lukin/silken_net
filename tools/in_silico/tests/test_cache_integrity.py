@@ -7645,3 +7645,60 @@ def test_stem_radio_shadow_width_sweep():
                 if r["polarization"] == pol and r["permittivity"].startswith("scots_sapwood_"):
                     w = round(d["readings"]["permittivity"][r["permittivity"]]["sapwood_width_m"] * 100, 2)
                     assert at[w][1] <= r[key] <= at[w][2], f"{r['permittivity']} {pol} {key} outside the sweep at {w}"
+
+
+def test_anode_glucose_threshold_invariants():
+    """109 (00_07 HW.54, the glucose-threshold leg): every threshold re-derived here by a ROUTE the script does not take —
+    `scipy.optimize.brentq` on the forward model (transport = kinetics at the face, then the bulk concentration whose
+    current is the demand) — from the RAW inputs: 85's cached geometry, the D transcription, lib constants. CAN catch: an
+    algebra or unit slip in the closed-form inversion, a geometry read from the wrong field, a sensitivity off its own
+    inputs, a rounding that turns a «carries above X» threshold the unsafe way, a demand that drifted off lib. CANNOT
+    catch: a wrong D in the source transcription, a wrong δ in 85 itself, or the model's ceilings (stagnant gap, sap =
+    water) — those are the script's named limits, not arithmetic."""
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from scipy.optimize import brentq
+
+    from lib.constants import (
+        BQ25570_PIN_CS_UW,
+        BQ25570_VIN_CS_TYP_MV,
+        EA_ENZYME,
+        ETA_BQ_10UA_READING,
+        F_CONST,
+        J_MAX_25C,
+        KM_GLUCOSE,
+        N_ELECTRONS,
+        P_SLEEP_VSTOR,
+        R_GAS,
+        V_OP_02_03_TABLE,
+    )
+
+    d = json.loads((KINETICS / "anode_glucose_threshold.json").read_text(encoding="utf-8"))
+    geom = {k: v["geometry"] for k, v in json.loads((KINETICS / "electrode_interfacial_ph.json").read_text(
+        encoding="utf-8"))["anchor_anode_sap_gap"]["by_sku"].items()}
+    assert set(d["by_sku"]) == set(geom), "109 must price every Zone-1 SKU 85 prices"
+    assert d["demands_uA"]["cold_start_typ"] == round(BQ25570_PIN_CS_UW / BQ25570_VIN_CS_TYP_MV * 1e3, 2)
+    adverse = P_SLEEP_VSTOR / (min(ETA_BQ_10UA_READING) * V_OP_02_03_TABLE) * 1e6
+    assert d["demands_uA"]["sleep_adverse"] == round(adverse, 2), "the adverse sleep reading is η-low at the table V_OP"
+    for sku, b in d["by_sku"].items():
+        g = geom[sku]
+        for t_key, row in b["by_T_K"].items():
+            t_k, dd = float(t_key), d["D_glucose_m2_s"][t_key]
+            s_env = N_ELECTRONS * F_CONST * dd * 1e4 * g["envelope_lateral_area_cm2"] / g["annulus_delta_cm"]
+            assert abs(row["S_uA_per_mM"][0] - s_env) < 0.006, f"{sku} {t_key}: S off its inputs"
+            ja = J_MAX_25C * math.exp(-EA_ENZYME / R_GAS * (1 / t_k - 1 / 298.15)) * g["envelope_lateral_area_cm2"] * 1e6
+
+            def current(c_b, s_env=s_env, ja=ja):
+                c_s = brentq(lambda c: s_env * (c_b - c) - ja * c / (KM_GLUCOSE + c), 0.0, c_b, xtol=1e-14)
+                return s_env * (c_b - c_s)
+
+            for name, th in row["thresholds"].items():
+                c_star = brentq(lambda c, demand=th["demand_uA"]: current(c) - demand, 1e-9, 50.0, xtol=1e-12)
+                assert abs(th["mM"][1] - c_star) < 1e-3, f"{sku} {t_key} {name}: closed form ≠ forward model"
+                assert th["mM"][0] <= th["mM"][1], f"{sku} {t_key} {name}: the bottom cap must lower the threshold"
+                assert th["mM"][1] <= th["mM_up"] < th["mM"][1] + 0.01 + 1e-9, f"{sku} {t_key} {name}: not rounded up"
+                assert 0.0 < th["transport_share"] <= 1.0
+    for name in d["demands_uA"]:
+        for b in d["by_sku"].values():
+            seq = [b["by_T_K"][k]["thresholds"][name]["mM"][1] for k in sorted(b["by_T_K"], key=float)]
+            assert seq == sorted(seq, reverse=True), f"{name}: a threshold rose with T"

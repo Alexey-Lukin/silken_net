@@ -1194,7 +1194,7 @@
         }
       }
     },
-    "glucose_transport": "not computed — no free-solution D of glucose is sourced in the tree"
+    "glucose_transport": "not computed here — the anchor anode's glucose supply is 109's"
   },
   "anode_check_medium": {
     "malic_mM": 10.0,
@@ -2104,7 +2104,7 @@
   "not_modelled": [
     "which medium and convection the laboratory will use (the letter fixes neither)",
     "the pH inside the coatings — every shift here is a lower bound at the enzyme",
-    "glucose transport at the anode",
+    "glucose transport at the coin anode (the anchor anode's is 109's)",
     "a standard laccase buffer as the cathode medium",
     "salting-out of O2 in the 0.25 M NaCl steps of test D (raises f)",
     "the anode at 20 °C — L4's current is a 25 °C ceiling",

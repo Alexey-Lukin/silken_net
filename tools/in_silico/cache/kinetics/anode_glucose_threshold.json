@@ -1,0 +1,1495 @@
+{
+  "script": "109_anode_glucose_threshold.py",
+  "question": "the bulk sap glucose at the bore wall that carries the node's cold-start and sleep currents through 85's stagnant sap gap",
+  "model": "C*(I) = I/S + K_M·I/(J_max·A − I), S = n·F·D·A/δ, δ = r_a·ln(r_b/r_a) from 85; mM = [with the bottom cap, envelope only]; mM_up = the envelope-only threshold rounded up",
+  "sources": {
+    "D_glucose": "Mogi N., Sugai E., Fuse Y., Funazukuri T. J. Chem. Eng. Data 2007, 52, 40-43, doi:10.1021/je0601816 — NIST TRC ThermoML data record (the paper's full text not accessed)",
+    "D_glucose_cross_check": "Ribeiro A.C.F. et al. J. Chem. Eng. Data 2006, 51, 1836-1840, doi:10.1021/je0602061 — NIST TRC ThermoML data record (the paper's full text not accessed)",
+    "geometry": "85 cache anchor_anode_sap_gap.by_sku[*].geometry (the CEMs as 84 reads them)",
+    "cold_start": "lib.constants BQ25570_PIN_CS_UW / BQ25570_VIN_CS_{TYP,MAX}_MV (02_03 §1.5), as 85",
+    "sleep": "lib.constants P_SLEEP_VSTOR over ETA_BQ · ETA_BQ_10UA_READING and V_OP · V_OP_02_03_TABLE (02_03 §9.1)",
+    "enzyme": "lib.constants J_MAX_25C · KM_GLUCOSE (Zafar 2012, the pH-7.4 ceiling) · EA_ENZYME (assumed) · PH_KINETICS_SYGMUND (the pH bracket, printed beside)"
+  },
+  "D_glucose_m2_s": {
+    "273.2": 3.23e-10,
+    "293.2": 6.05e-10,
+    "298.2": 6.76e-10
+  },
+  "D_cross_check_298_15K": {
+    "ribeiro_2mM": 6.78e-10,
+    "mogi_298_2K": 6.76e-10,
+    "relative_gap": 0.003
+  },
+  "demands_uA": {
+    "cold_start_typ": 25.0,
+    "cold_start_worst_vin": 21.43,
+    "sleep_optimistic": 12.29,
+    "sleep_adverse": 64.31
+  },
+  "sleep_readings_uA": {
+    "eta0.68_v0.500": 12.29,
+    "eta0.68_v0.325": 18.91,
+    "eta0.20_v0.500": 41.8,
+    "eta0.20_v0.325": 64.31,
+    "eta0.30_v0.500": 27.87,
+    "eta0.30_v0.325": 42.87
+  },
+  "ph_bracket_ratios": {
+    "wt": {
+      "km_ratio": 0.537,
+      "kcat_ratio": 0.474
+    },
+    "rec": {
+      "km_ratio": 0.591,
+      "kcat_ratio": 0.428
+    }
+  },
+  "by_sku": {
+    "anchor_zone1_broadleaf": {
+      "delta_cm": 0.20273,
+      "envelope_cm2": 11.938,
+      "cap_share": 0.0658,
+      "by_T_K": {
+        "273.2": {
+          "T_C": 0.05,
+          "D_m2_s": 3.23e-10,
+          "S_uA_per_mM": [
+            36.7,
+            39.12
+          ],
+          "jmax_envelope_uA": 2409.5,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.7848,
+                0.8269
+              ],
+              "mM_up": 0.83,
+              "transport_share": 0.824,
+              "ph_bracket_mM": {
+                "wt": 0.8482,
+                "rec": 0.885
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.6725,
+                0.7086
+              ],
+              "mM_up": 0.71,
+              "transport_share": 0.824,
+              "ph_bracket_mM": {
+                "wt": 0.7266,
+                "rec": 0.758
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.3856,
+                0.4062
+              ],
+              "mM_up": 0.41,
+              "transport_share": 0.825,
+              "ph_bracket_mM": {
+                "wt": 0.4162,
+                "rec": 0.434
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                2.0251,
+                2.1333
+              ],
+              "mM_up": 2.14,
+              "transport_share": 0.821,
+              "ph_bracket_mM": {
+                "wt": 2.1976,
+                "rec": 2.2978
+              }
+            }
+          }
+        },
+        "293.2": {
+          "T_C": 20.05,
+          "D_m2_s": 6.05e-10,
+          "S_uA_per_mM": [
+            68.75,
+            73.27
+          ],
+          "jmax_envelope_uA": 8009.4,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.3847,
+                0.4072
+              ],
+              "mM_up": 0.41,
+              "transport_share": 0.893,
+              "ph_bracket_mM": {
+                "wt": 0.4131,
+                "rec": 0.4239
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.3297,
+                0.349
+              ],
+              "mM_up": 0.35,
+              "transport_share": 0.893,
+              "ph_bracket_mM": {
+                "wt": 0.3541,
+                "rec": 0.3633
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.1892,
+                0.2002
+              ],
+              "mM_up": 0.21,
+              "transport_share": 0.893,
+              "ph_bracket_mM": {
+                "wt": 0.2031,
+                "rec": 0.2084
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.9902,
+                1.0479
+              ],
+              "mM_up": 1.05,
+              "transport_share": 0.893,
+              "ph_bracket_mM": {
+                "wt": 1.0641,
+                "rec": 1.0923
+              }
+            }
+          }
+        },
+        "298.2": {
+          "T_C": 25.05,
+          "D_m2_s": 6.76e-10,
+          "S_uA_per_mM": [
+            76.82,
+            81.87
+          ],
+          "jmax_envelope_uA": 10545.9,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.3384,
+                0.3585
+              ],
+              "mM_up": 0.36,
+              "transport_share": 0.908,
+              "ph_bracket_mM": {
+                "wt": 0.363,
+                "rec": 0.3712
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.29,
+                0.3073
+              ],
+              "mM_up": 0.31,
+              "transport_share": 0.908,
+              "ph_bracket_mM": {
+                "wt": 0.3111,
+                "rec": 0.3181
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.1664,
+                0.1763
+              ],
+              "mM_up": 0.18,
+              "transport_share": 0.908,
+              "ph_bracket_mM": {
+                "wt": 0.1785,
+                "rec": 0.1825
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.8708,
+                0.9225
+              ],
+              "mM_up": 0.93,
+              "transport_share": 0.908,
+              "ph_bracket_mM": {
+                "wt": 0.9345,
+                "rec": 0.9558
+              }
+            }
+          }
+        }
+      }
+    },
+    "anchor_zone1_graded_porosity": {
+      "delta_cm": 0.17059,
+      "envelope_cm2": 13.823,
+      "cap_share": 0.0688,
+      "by_T_K": {
+        "273.2": {
+          "T_C": 0.05,
+          "D_m2_s": 3.23e-10,
+          "S_uA_per_mM": [
+            50.51,
+            53.98
+          ],
+          "jmax_envelope_uA": 2790.0,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.5888,
+                0.6207
+              ],
+              "mM_up": 0.63,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.6389,
+                "rec": 0.6704
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.5046,
+                0.5319
+              ],
+              "mM_up": 0.54,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.5473,
+                "rec": 0.5742
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.2893,
+                0.3049
+              ],
+              "mM_up": 0.31,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.3135,
+                "rec": 0.3288
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                1.5193,
+                1.6012
+              ],
+              "mM_up": 1.61,
+              "transport_share": 0.795,
+              "ph_bracket_mM": {
+                "wt": 1.6549,
+                "rec": 1.7403
+              }
+            }
+          }
+        },
+        "293.2": {
+          "T_C": 20.05,
+          "D_m2_s": 6.05e-10,
+          "S_uA_per_mM": [
+            94.6,
+            101.11
+          ],
+          "jmax_envelope_uA": 9274.1,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.2848,
+                0.3018
+              ],
+              "mM_up": 0.31,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.307,
+                "rec": 0.3163
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.2441,
+                0.2587
+              ],
+              "mM_up": 0.26,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.2631,
+                "rec": 0.271
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.14,
+                0.1484
+              ],
+              "mM_up": 0.15,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.1509,
+                "rec": 0.1554
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.7331,
+                0.7768
+              ],
+              "mM_up": 0.78,
+              "transport_share": 0.875,
+              "ph_bracket_mM": {
+                "wt": 0.7906,
+                "rec": 0.8149
+              }
+            }
+          }
+        },
+        "298.2": {
+          "T_C": 25.05,
+          "D_m2_s": 6.76e-10,
+          "S_uA_per_mM": [
+            105.71,
+            112.97
+          ],
+          "jmax_envelope_uA": 12211.1,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.2498,
+                0.265
+              ],
+              "mM_up": 0.27,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.2689,
+                "rec": 0.2759
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.2141,
+                0.2272
+              ],
+              "mM_up": 0.23,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.2305,
+                "rec": 0.2365
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.1228,
+                0.1303
+              ],
+              "mM_up": 0.14,
+              "transport_share": 0.893,
+              "ph_bracket_mM": {
+                "wt": 0.1322,
+                "rec": 0.1357
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.6428,
+                0.682
+              ],
+              "mM_up": 0.69,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.6923,
+                "rec": 0.7106
+              }
+            }
+          }
+        }
+      }
+    },
+    "anchor_zone1_mangrove": {
+      "delta_cm": 0.17059,
+      "envelope_cm2": 14.514,
+      "cap_share": 0.0655,
+      "by_T_K": {
+        "273.2": {
+          "T_C": 0.05,
+          "D_m2_s": 3.23e-10,
+          "S_uA_per_mM": [
+            53.03,
+            56.51
+          ],
+          "jmax_envelope_uA": 2929.5,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.5621,
+                0.591
+              ],
+              "mM_up": 0.6,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.6083,
+                "rec": 0.6383
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.4817,
+                0.5065
+              ],
+              "mM_up": 0.51,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.5211,
+                "rec": 0.5467
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.2762,
+                0.2904
+              ],
+              "mM_up": 0.3,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.2985,
+                "rec": 0.3131
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                1.4501,
+                1.5246
+              ],
+              "mM_up": 1.53,
+              "transport_share": 0.795,
+              "ph_bracket_mM": {
+                "wt": 1.5752,
+                "rec": 1.6562
+              }
+            }
+          }
+        },
+        "293.2": {
+          "T_C": 20.05,
+          "D_m2_s": 6.05e-10,
+          "S_uA_per_mM": [
+            99.33,
+            105.84
+          ],
+          "jmax_envelope_uA": 9737.8,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.272,
+                0.2875
+              ],
+              "mM_up": 0.29,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.2923,
+                "rec": 0.3012
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.2331,
+                0.2464
+              ],
+              "mM_up": 0.25,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.2506,
+                "rec": 0.2581
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.1337,
+                0.1413
+              ],
+              "mM_up": 0.15,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.1437,
+                "rec": 0.148
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.7,
+                0.7398
+              ],
+              "mM_up": 0.74,
+              "transport_share": 0.875,
+              "ph_bracket_mM": {
+                "wt": 0.7529,
+                "rec": 0.776
+              }
+            }
+          }
+        },
+        "298.2": {
+          "T_C": 25.05,
+          "D_m2_s": 6.76e-10,
+          "S_uA_per_mM": [
+            110.99,
+            118.26
+          ],
+          "jmax_envelope_uA": 12821.6,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.2386,
+                0.2524
+              ],
+              "mM_up": 0.26,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.2561,
+                "rec": 0.2628
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.2045,
+                0.2163
+              ],
+              "mM_up": 0.22,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.2195,
+                "rec": 0.2252
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.1173,
+                0.1241
+              ],
+              "mM_up": 0.13,
+              "transport_share": 0.893,
+              "ph_bracket_mM": {
+                "wt": 0.1259,
+                "rec": 0.1292
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.6139,
+                0.6495
+              ],
+              "mM_up": 0.65,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.6593,
+                "rec": 0.6767
+              }
+            }
+          }
+        }
+      }
+    },
+    "anchor_zone1_oak": {
+      "delta_cm": 0.13389,
+      "envelope_cm2": 15.08,
+      "cap_share": 0.075,
+      "by_T_K": {
+        "273.2": {
+          "T_C": 0.05,
+          "D_m2_s": 3.23e-10,
+          "S_uA_per_mM": [
+            70.2,
+            75.47
+          ],
+          "jmax_envelope_uA": 3043.6,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.4464,
+                0.4712
+              ],
+              "mM_up": 0.48,
+              "transport_share": 0.756,
+              "ph_bracket_mM": {
+                "wt": 0.4878,
+                "rec": 0.5167
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.3825,
+                0.4038
+              ],
+              "mM_up": 0.41,
+              "transport_share": 0.756,
+              "ph_bracket_mM": {
+                "wt": 0.4178,
+                "rec": 0.4425
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.2193,
+                0.2315
+              ],
+              "mM_up": 0.24,
+              "transport_share": 0.756,
+              "ph_bracket_mM": {
+                "wt": 0.2393,
+                "rec": 0.2533
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                1.1522,
+                1.2161
+              ],
+              "mM_up": 1.22,
+              "transport_share": 0.753,
+              "ph_bracket_mM": {
+                "wt": 1.2644,
+                "rec": 1.3421
+              }
+            }
+          }
+        },
+        "293.2": {
+          "T_C": 20.05,
+          "D_m2_s": 6.05e-10,
+          "S_uA_per_mM": [
+            131.49,
+            141.35
+          ],
+          "jmax_envelope_uA": 10117.2,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.2113,
+                0.2246
+              ],
+              "mM_up": 0.23,
+              "transport_share": 0.847,
+              "ph_bracket_mM": {
+                "wt": 0.2293,
+                "rec": 0.2378
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.1811,
+                0.1925
+              ],
+              "mM_up": 0.2,
+              "transport_share": 0.847,
+              "ph_bracket_mM": {
+                "wt": 0.1965,
+                "rec": 0.2038
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.1039,
+                0.1104
+              ],
+              "mM_up": 0.12,
+              "transport_share": 0.847,
+              "ph_bracket_mM": {
+                "wt": 0.1127,
+                "rec": 0.1169
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.5439,
+                0.578
+              ],
+              "mM_up": 0.58,
+              "transport_share": 0.846,
+              "ph_bracket_mM": {
+                "wt": 0.5906,
+                "rec": 0.6128
+              }
+            }
+          }
+        },
+        "298.2": {
+          "T_C": 25.05,
+          "D_m2_s": 6.76e-10,
+          "S_uA_per_mM": [
+            146.92,
+            157.94
+          ],
+          "jmax_envelope_uA": 13321.2,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.1844,
+                0.1963
+              ],
+              "mM_up": 0.2,
+              "transport_share": 0.867,
+              "ph_bracket_mM": {
+                "wt": 0.1998,
+                "rec": 0.2063
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.1581,
+                0.1682
+              ],
+              "mM_up": 0.17,
+              "transport_share": 0.867,
+              "ph_bracket_mM": {
+                "wt": 0.1713,
+                "rec": 0.1768
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.0907,
+                0.0965
+              ],
+              "mM_up": 0.1,
+              "transport_share": 0.867,
+              "ph_bracket_mM": {
+                "wt": 0.0982,
+                "rec": 0.1014
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.4746,
+                0.5051
+              ],
+              "mM_up": 0.51,
+              "transport_share": 0.867,
+              "ph_bracket_mM": {
+                "wt": 0.5145,
+                "rec": 0.5313
+              }
+            }
+          }
+        }
+      }
+    },
+    "anchor_zone1_pine": {
+      "delta_cm": 0.17059,
+      "envelope_cm2": 13.823,
+      "cap_share": 0.0688,
+      "by_T_K": {
+        "273.2": {
+          "T_C": 0.05,
+          "D_m2_s": 3.23e-10,
+          "S_uA_per_mM": [
+            50.51,
+            53.98
+          ],
+          "jmax_envelope_uA": 2790.0,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.5888,
+                0.6207
+              ],
+              "mM_up": 0.63,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.6389,
+                "rec": 0.6704
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.5046,
+                0.5319
+              ],
+              "mM_up": 0.54,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.5473,
+                "rec": 0.5742
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.2893,
+                0.3049
+              ],
+              "mM_up": 0.31,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.3135,
+                "rec": 0.3288
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                1.5193,
+                1.6012
+              ],
+              "mM_up": 1.61,
+              "transport_share": 0.795,
+              "ph_bracket_mM": {
+                "wt": 1.6549,
+                "rec": 1.7403
+              }
+            }
+          }
+        },
+        "293.2": {
+          "T_C": 20.05,
+          "D_m2_s": 6.05e-10,
+          "S_uA_per_mM": [
+            94.6,
+            101.11
+          ],
+          "jmax_envelope_uA": 9274.1,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.2848,
+                0.3018
+              ],
+              "mM_up": 0.31,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.307,
+                "rec": 0.3163
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.2441,
+                0.2587
+              ],
+              "mM_up": 0.26,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.2631,
+                "rec": 0.271
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.14,
+                0.1484
+              ],
+              "mM_up": 0.15,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.1509,
+                "rec": 0.1554
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.7331,
+                0.7768
+              ],
+              "mM_up": 0.78,
+              "transport_share": 0.875,
+              "ph_bracket_mM": {
+                "wt": 0.7906,
+                "rec": 0.8149
+              }
+            }
+          }
+        },
+        "298.2": {
+          "T_C": 25.05,
+          "D_m2_s": 6.76e-10,
+          "S_uA_per_mM": [
+            105.71,
+            112.97
+          ],
+          "jmax_envelope_uA": 12211.1,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.2498,
+                0.265
+              ],
+              "mM_up": 0.27,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.2689,
+                "rec": 0.2759
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.2141,
+                0.2272
+              ],
+              "mM_up": 0.23,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.2305,
+                "rec": 0.2365
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.1228,
+                0.1303
+              ],
+              "mM_up": 0.14,
+              "transport_share": 0.893,
+              "ph_bracket_mM": {
+                "wt": 0.1322,
+                "rec": 0.1357
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.6428,
+                0.682
+              ],
+              "mM_up": 0.69,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.6923,
+                "rec": 0.7106
+              }
+            }
+          }
+        }
+      }
+    },
+    "anchor_zone1_stepped": {
+      "delta_cm": 0.17059,
+      "envelope_cm2": 13.823,
+      "cap_share": 0.0688,
+      "by_T_K": {
+        "273.2": {
+          "T_C": 0.05,
+          "D_m2_s": 3.23e-10,
+          "S_uA_per_mM": [
+            50.51,
+            53.98
+          ],
+          "jmax_envelope_uA": 2790.0,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.5888,
+                0.6207
+              ],
+              "mM_up": 0.63,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.6389,
+                "rec": 0.6704
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.5046,
+                0.5319
+              ],
+              "mM_up": 0.54,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.5473,
+                "rec": 0.5742
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.2893,
+                0.3049
+              ],
+              "mM_up": 0.31,
+              "transport_share": 0.798,
+              "ph_bracket_mM": {
+                "wt": 0.3135,
+                "rec": 0.3288
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                1.5193,
+                1.6012
+              ],
+              "mM_up": 1.61,
+              "transport_share": 0.795,
+              "ph_bracket_mM": {
+                "wt": 1.6549,
+                "rec": 1.7403
+              }
+            }
+          }
+        },
+        "293.2": {
+          "T_C": 20.05,
+          "D_m2_s": 6.05e-10,
+          "S_uA_per_mM": [
+            94.6,
+            101.11
+          ],
+          "jmax_envelope_uA": 9274.1,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.2848,
+                0.3018
+              ],
+              "mM_up": 0.31,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.307,
+                "rec": 0.3163
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.2441,
+                0.2587
+              ],
+              "mM_up": 0.26,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.2631,
+                "rec": 0.271
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.14,
+                0.1484
+              ],
+              "mM_up": 0.15,
+              "transport_share": 0.876,
+              "ph_bracket_mM": {
+                "wt": 0.1509,
+                "rec": 0.1554
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.7331,
+                0.7768
+              ],
+              "mM_up": 0.78,
+              "transport_share": 0.875,
+              "ph_bracket_mM": {
+                "wt": 0.7906,
+                "rec": 0.8149
+              }
+            }
+          }
+        },
+        "298.2": {
+          "T_C": 25.05,
+          "D_m2_s": 6.76e-10,
+          "S_uA_per_mM": [
+            105.71,
+            112.97
+          ],
+          "jmax_envelope_uA": 12211.1,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.2498,
+                0.265
+              ],
+              "mM_up": 0.27,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.2689,
+                "rec": 0.2759
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.2141,
+                0.2272
+              ],
+              "mM_up": 0.23,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.2305,
+                "rec": 0.2365
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.1228,
+                0.1303
+              ],
+              "mM_up": 0.14,
+              "transport_share": 0.893,
+              "ph_bracket_mM": {
+                "wt": 0.1322,
+                "rec": 0.1357
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.6428,
+                0.682
+              ],
+              "mM_up": 0.69,
+              "transport_share": 0.892,
+              "ph_bracket_mM": {
+                "wt": 0.6923,
+                "rec": 0.7106
+              }
+            }
+          }
+        }
+      }
+    },
+    "anchor_zone1_tropical": {
+      "delta_cm": 0.09302,
+      "envelope_cm2": 18.378,
+      "cap_share": 0.0722,
+      "by_T_K": {
+        "273.2": {
+          "T_C": 0.05,
+          "D_m2_s": 3.23e-10,
+          "S_uA_per_mM": [
+            123.15,
+            132.05
+          ],
+          "jmax_envelope_uA": 3709.4,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.2836,
+                0.2973
+              ],
+              "mM_up": 0.3,
+              "transport_share": 0.683,
+              "ph_bracket_mM": {
+                "wt": 0.3107,
+                "rec": 0.3343
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.243,
+                0.2548
+              ],
+              "mM_up": 0.26,
+              "transport_share": 0.683,
+              "ph_bracket_mM": {
+                "wt": 0.2661,
+                "rec": 0.2863
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.1393,
+                0.1461
+              ],
+              "mM_up": 0.15,
+              "transport_share": 0.684,
+              "ph_bracket_mM": {
+                "wt": 0.1524,
+                "rec": 0.1639
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.7322,
+                0.7674
+              ],
+              "mM_up": 0.77,
+              "transport_share": 0.68,
+              "ph_bracket_mM": {
+                "wt": 0.8057,
+                "rec": 0.8686
+              }
+            }
+          }
+        },
+        "293.2": {
+          "T_C": 20.05,
+          "D_m2_s": 6.05e-10,
+          "S_uA_per_mM": [
+            230.67,
+            247.33
+          ],
+          "jmax_envelope_uA": 12330.3,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.1293,
+                0.1366
+              ],
+              "mM_up": 0.14,
+              "transport_share": 0.793,
+              "ph_bracket_mM": {
+                "wt": 0.1405,
+                "rec": 0.1474
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.1108,
+                0.1171
+              ],
+              "mM_up": 0.12,
+              "transport_share": 0.793,
+              "ph_bracket_mM": {
+                "wt": 0.1204,
+                "rec": 0.1263
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.0636,
+                0.0672
+              ],
+              "mM_up": 0.07,
+              "transport_share": 0.793,
+              "ph_bracket_mM": {
+                "wt": 0.069,
+                "rec": 0.0725
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.3329,
+                0.3517
+              ],
+              "mM_up": 0.36,
+              "transport_share": 0.793,
+              "ph_bracket_mM": {
+                "wt": 0.3619,
+                "rec": 0.38
+              }
+            }
+          }
+        },
+        "298.2": {
+          "T_C": 25.05,
+          "D_m2_s": 6.76e-10,
+          "S_uA_per_mM": [
+            257.74,
+            276.36
+          ],
+          "jmax_envelope_uA": 16235.2,
+          "thresholds": {
+            "cold_start_typ": {
+              "demand_uA": 25.0,
+              "mM": [
+                0.1119,
+                0.1184
+              ],
+              "mM_up": 0.12,
+              "transport_share": 0.819,
+              "ph_bracket_mM": {
+                "wt": 0.1213,
+                "rec": 0.1266
+              }
+            },
+            "cold_start_worst_vin": {
+              "demand_uA": 21.43,
+              "mM": [
+                0.0959,
+                0.1015
+              ],
+              "mM_up": 0.11,
+              "transport_share": 0.819,
+              "ph_bracket_mM": {
+                "wt": 0.104,
+                "rec": 0.1085
+              }
+            },
+            "sleep_optimistic": {
+              "demand_uA": 12.29,
+              "mM": [
+                0.055,
+                0.0582
+              ],
+              "mM_up": 0.06,
+              "transport_share": 0.819,
+              "ph_bracket_mM": {
+                "wt": 0.0596,
+                "rec": 0.0622
+              }
+            },
+            "sleep_adverse": {
+              "demand_uA": 64.31,
+              "mM": [
+                0.288,
+                0.3048
+              ],
+              "mM_up": 0.31,
+              "transport_share": 0.819,
+              "ph_bracket_mM": {
+                "wt": 0.3124,
+                "rec": 0.3262
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "findings": {
+    "cold_start_typ_mM_by_T": {
+      "273.2": [
+        0.3,
+        0.83
+      ],
+      "293.2": [
+        0.14,
+        0.41
+      ],
+      "298.2": [
+        0.12,
+        0.36
+      ]
+    },
+    "sleep_adverse_mM_by_T": {
+      "273.2": [
+        0.77,
+        2.14
+      ],
+      "293.2": [
+        0.36,
+        1.05
+      ],
+      "298.2": [
+        0.31,
+        0.93
+      ]
+    },
+    "sleep_optimistic_mM_by_T": {
+      "273.2": [
+        0.15,
+        0.41
+      ],
+      "293.2": [
+        0.07,
+        0.21
+      ],
+      "298.2": [
+        0.06,
+        0.18
+      ]
+    },
+    "pine_S_uA_per_mM_by_T": {
+      "273.2": [
+        50.51,
+        53.98
+      ],
+      "293.2": [
+        94.6,
+        101.11
+      ],
+      "298.2": [
+        105.71,
+        112.97
+      ]
+    },
+    "transport_share_min": 0.68,
+    "d_ratio_0C_over_25C": 0.478
+  },
+  "verdict": "Through a stagnant sap gap the anode carries the cold-start draw (25.0 µA) once the sap brings 0.14–0.41 mM glucose to the bore wall at 20 °C across the Zone-1 SKUs, and 0.30–0.83 mM at 0 °C (D falls ×0.48 from 25 to 0 °C); the most adverse sleep reading (64.3 µA) needs 0.36–1.05 mM at 20 °C. Transport carries at least 68 % of every threshold at the laboratory enzyme ceiling — the threshold is a diffusion number, set by D and the gap, not by the enzyme.",
+  "controls": {
+    "forward_solve_max_rel_error": 2.220446049250313e-16,
+    "delta_matches_85": true,
+    "cold_start_reproduces_85": true,
+    "thresholds_fall_with_T": true
+  },
+  "cannot_see": [
+    "whether a living stem keeps the gap stagnant (flow raises the supply; ingrowth has no source)",
+    "glucose consumed on the way by wood cells or microbes (lowers the supply)",
+    "temperatures between 0 and 20 °C except as a bracket (no measured D between)",
+    "sap viscosity above water's (would lower D and raise every threshold)",
+    "the enzyme ceiling on etched Ti in sap (J_MAX_25C is graphite in phosphate at pH 7.4)"
+  ]
+}

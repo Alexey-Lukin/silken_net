@@ -42,7 +42,7 @@ the adversary's exact similarity solve put within a few % at the transient end).
 malate's D, which nobody has measured. f < 1: the face crosses pH 6 before the cathode runs out of oxygen.
 
 THE ANODE ANSWER IS A THICKNESS. Its δ-free partner would be glucose transport, which this script does not compute —
-no free-solution D of glucose is sourced in the tree — so the answer is δ*: the stagnant-film thickness above which
+`109` does, from a measured free-solution D — so the answer here is δ*: the stagnant-film thickness above which
 L4's current density brings the face to (i) pH 5.5, the acid end of the only measured pH pair of this enzyme's
 kinetics (lib.constants PH_KINETICS_SYGMUND — the L4 bracket), and (ii) pH 4.5, the acid end of its measured
 thermostability band (01_03 §1, Sygmund 2011). L4's current is the pH-7.4 laboratory CEILING (lib.constants J_MAX_25C:
@@ -378,7 +378,7 @@ def anode() -> dict:
         out[f"face_pH_{edge}"] = per
     return {"bulk_pH": PH_SAP, "t_c": 25.0, "glucose_mM": {"hold": GLUCOSE_HOLD_MM, "series_top": GLUCOSE_SERIES_TOP_MM},
             "n_H_per_electron": list(N_H_ANODE), "ph_ratio_hold": [round(min(ratios), 3), round(max(ratios), 3)],
-            "delta_star": out, "glucose_transport": "not computed — no free-solution D of glucose is sourced in the tree"}
+            "delta_star": out, "glucose_transport": "not computed here — the anchor anode's glucose supply is 109's"}
 
 
 CEM = REPO_ROOT / "tools/cad/cem"
@@ -666,7 +666,7 @@ def main() -> int:
            "checks": checks, "cathode": cat, "anode": ano, "anode_check_medium": diag, "anchor_anode_sap_gap": anc,
            "not_modelled": ["which medium and convection the laboratory will use (the letter fixes neither)",
                             "the pH inside the coatings — every shift here is a lower bound at the enzyme",
-                            "glucose transport at the anode",
+                            "glucose transport at the coin anode (the anchor anode's is 109's)",
                             "a standard laccase buffer as the cathode medium",
                             "salting-out of O2 in the 0.25 M NaCl steps of test D (raises f)",
                             "the anode at 20 °C — L4's current is a 25 °C ceiling",
