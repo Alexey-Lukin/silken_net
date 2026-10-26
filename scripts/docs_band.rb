@@ -125,8 +125,9 @@ unless untracked.empty?
   untracked.first(10).each { |f| warn "  ? #{f}" }
   warn "  `git add` їх перед смугою, інакше вона зелена на дереві, яке покладе CI (стеля 2 в шапці)."
   warn "  ⚠️ Крім ТЕПЛОГО виходу фонового обчислення (кеш, який ще пишеться): його не стейджать (in-silico §When Modifying #21) —"
-  warn "     тоді смуга йде в чистому worktree: `git worktree add --detach <tmp> HEAD && git diff --binary HEAD | git -C <tmp> apply`,"
+  warn "     тоді смуга йде в чистому worktree: `git worktree add --detach <tmp> HEAD && git diff --binary HEAD | git -C <tmp> apply --index`,"
   warn "     там `ruby scripts/docs_band.rb`, потім `git worktree remove --force <tmp>` (untracked туди не потрапляє за побудовою)."
+  warn "     (`--index` — бо без нього НОВІ файли діфу лягають у worktree untracked, і ця сама відмова повторюється вже там.)"
   exit 1 unless list_only
 end
 
