@@ -164,8 +164,6 @@ Sentry.init do |config|
     "BioContractFirmware::IntegrityError",
     "Dclimate::VerificationService::OrbitalLagError",
     "Polygon::HadronComplianceService::ComplianceError",
-    "KlimaDao::RetirementService::InsufficientBalanceError",
-    "KlimaDao::RetirementService::InvalidTokenTypeError",
     "Peaq::DidRegistryService::RegistrationError",
     "Chainlink::OracleDispatchService::DispatchError",
     "Iotex::W3bstreamVerificationService::VerificationError",

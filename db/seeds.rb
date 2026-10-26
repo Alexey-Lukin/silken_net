@@ -97,8 +97,8 @@ system_params = [
   { key: "insurance_pool_threshold", value: "100000", value_type: "integer", category: "insurance",
     min_value: 10_000, max_value: 1_000_000, description: "SCC threshold for dynamic tax activation" },
   # [BIZ.1] CO2 equivalence: 2000 SCC = 1 tonne CO2 absorbed (D-MRV, 1 SCC = 0.5 kg CO2).
-  # ⚠️ ЧИТАЧІВ У ПРОД-КОДІ НЕМА (переміряно 2026-08-26): ані KlimaDAO-retirement (той погашає
-  # МОНЕТИ і курсу не читає), ані Puro.earth-паспорт, ані ESG-звіт цей ключ не споживають.
+  # ⚠️ ЧИТАЧІВ У ПРОД-КОДІ НЕМА (переміряно 2026-08-26): ані Puro.earth-паспорт, ані ESG-звіт
+  # цей ключ не споживають.
   # Ключ легальний як DAO-ручка без коду — прод-споживач прийде з carbon-registry (05_06 §7,
   # 00_07 BIZ.1). Доти голос за нього НЕ змінює нічого.
   { key: "scc_per_tonne_co2", value: "2000", value_type: "integer", category: "tokenomics",
@@ -120,7 +120,7 @@ system_params = [
   { key: "oracle_min_balance_matic", value: "0.05", value_type: "float", category: "minting",
     min_value: 0.001, max_value: 10.0, description: "Minimum MATIC balance for Polygon MINTER Oracle wallet" },
   # [INF.22] SLASHER = окремий required-підписант з власним газ-профілем (slash ≠ mint cadence).
-  # Aux (etherisc/puro/klima) свідомо НЕ сіються — activation-gated, параметр створюється при активації.
+  # Aux (etherisc/puro) свідомо НЕ сіються — activation-gated, параметр створюється при активації.
   { key: "oracle_min_balance_matic_slasher", value: "0.05", value_type: "float", category: "minting",
     min_value: 0.001, max_value: 10.0, description: "Minimum MATIC balance for Polygon SLASHER Oracle wallet" },
   { key: "oracle_min_balance_sol", value: "0.05", value_type: "float", category: "minting",
@@ -927,22 +927,16 @@ sample_wallet = cherkasy_trees.first.wallet
 # єдині середовища, де вигадана грошова історія доречна.
 if Rails.env.local?
 
-# Скільки МОНЕТ цей гаманець уже погасив у KlimaDAO (див. ESG-рядок нижче).
-esg_retired_scc = 4
-
 # Гаманець-носій грошового тракту дістає ВЛАСНІ числа, бо решта флоту їх не має:
 #   · `locked_balance` = рівно сума `locked_points` обох мінт-рядків нижче. Інакше база
 #     суперечить сама собі: транзакції стверджують заблоковані бали на гаманці, де
 #     заблоковано нуль, — а `available_balance = balance − locked_balance` є ЄДИНИМ
 #     носієм double-spend-гарда, і при `locked_balance = 0` він у демо невидимий;
 #   · ⛔ DB-CHECK `wallets_balance_invariants` вимагає `locked_balance <= balance`,
-#     тож баланс мусить накривати заблоковане;
-#   · `esg_retired_balance` — МОНЕТИ, і рухає його рівно `KlimaDao::RetirementService`
-#     (балансових колонок він не чіпає взагалі, [ARCH.95] вісь 3).
+#     тож баланс мусить накривати заблоковане.
 sample_wallet.update!(
   balance: 200_000,
-  locked_balance: 150_000,
-  esg_retired_balance: esg_retired_scc
+  locked_balance: 150_000
 )
 
 # --- ЕМІСІЯ (`direction: :mint` — дефолт колонки) ---
@@ -983,9 +977,9 @@ BlockchainTransaction.create!(
 # `net_minted_supply` ніколи не заходила у власну другу гілку: ані дискримінатор
 # напрямку, ані мінусовий рендер `signed_amount` [ARCH.103] не мали на чому спрацювати,
 # а стрічка друкувала б спалення емісією й ніхто б цього в демо не побачив.
-# Родів вилучення ДВА, і розрізняє їх `sourceable`, а не напрямок.
 
-# (1) SLASH-інтент — форма `BlockchainBurningService#create_slash_intent!`.
+# SLASH-інтент — форма `BlockchainBurningService#create_slash_intent!`, сьогодні
+# єдиного писача вилучення з обігу.
 # `sourceable: NaasContract` відповідає на ВУЖЧЕ питання «цей burn є СЛЕШЕМ» (база
 # розміру, `05_05 §3`); модельний інваріант `slash_intent_must_be_a_burn` не дасть
 # записати цей `sourceable` без `direction: :burn`.
@@ -1002,26 +996,6 @@ BlockchainTransaction.create!(
   blockchain_network: "evm",
   to_address: eco_future_fund.crypto_public_address,
   notes: "🚨 SLASHING: Кошти вилучено. Причина: degradation_checkpoint."
-)
-
-# (2) ESG-ПОГАШЕННЯ — форма `KlimaDao::RetirementService#create_retirement_transaction`.
-# ⛔ `sourceable` тут НЕМА свідомо: погашення слешем не є, і саме ця відсутність робила
-# стару деривацію напрямку хибною. `:confirmed` — щоб burn-гілка `net_minted_supply`
-# (вона рахує ЛИШЕ підтверджені) справді працювала; запас монет гаманця після цього
-# рядка = 10 − 4 = 6 SCC, тобто гард `retirable_scc` лишається несуперечливим.
-BlockchainTransaction.create!(
-  wallet: sample_wallet,
-  amount: esg_retired_scc,
-  token_type: :carbon_coin,
-  direction: :burn,
-  status: :confirmed,
-  blockchain_network: "evm",
-  # Плейсхолдер адреси `KLIMA_RETIREMENT_CONTRACT` — сід не вигадує чужу справжню.
-  to_address: "0x#{SecureRandom.hex(20)}",
-  tx_hash: "0x#{SecureRandom.hex(32)}",
-  sent_at: 40.minutes.ago,
-  confirmed_at: 30.minutes.ago,
-  notes: "🌿 ESG Retirement via KlimaDAO: #{esg_retired_scc} SCC погашено для вуглецевої нейтральності."
 )
 
 end # Rails.env.local? — фейковий реєстр §9 (див. підставу над `if`)

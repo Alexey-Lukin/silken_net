@@ -28,7 +28,7 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   # `HADRON_API_KEY` joined 2026-09-02 [OPS.37]: Console-injected like the aux signers (06_04
   # §5.7), and the one name whose arrival on a deploy surface would convert the KYC service's
   # loud refusal into a real outward call — from staging, now that canopy has a job role.
-  let(:activation_gated) { %w[ORACLE_ETHERISC_PRIVATE_KEY ORACLE_PURO_PRIVATE_KEY ORACLE_KLIMA_PRIVATE_KEY HADRON_API_KEY] }
+  let(:activation_gated) { %w[ORACLE_ETHERISC_PRIVATE_KEY ORACLE_PURO_PRIVATE_KEY HADRON_API_KEY] }
   # ENV.fetch("X") NOT followed by "{" (block default); positional-default form never matches.
   let(:code_fetches) do
     Dir[REPO_ROOT.join("app/**/*.rb"), REPO_ROOT.join("lib/**/*.rb")]

@@ -174,7 +174,7 @@ module Security
     # Every dedicated secp256k1 signer key (format-checked when present).
     ORACLE_KEY_ENVS = %w[
       ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY ORACLE_CELO_PRIVATE_KEY
-      ORACLE_ETHERISC_PRIVATE_KEY ORACLE_PURO_PRIVATE_KEY ORACLE_KLIMA_PRIVATE_KEY
+      ORACLE_ETHERISC_PRIVATE_KEY ORACLE_PURO_PRIVATE_KEY
       ETHEREUM_ANCHOR_PRIVATE_KEY
     ].freeze
 
@@ -182,7 +182,7 @@ module Security
     RETIRED_KEY_ENV = "ORACLE_PRIVATE_KEY"
 
     # Boot-critical signer roles (mint/slash money path) — presence-checked in
-    # the signer process. The aux signers (Celo/Etherisc/Puro/Klima) are
+    # the signer process. The aux signers (Celo/Etherisc/Puro) are
     # activation-gated lazy keys: absent until their path goes live (06_04 §2.1).
     SIGNER_KEYS = {
       "minting"  => "ORACLE_MINTER_PRIVATE_KEY",

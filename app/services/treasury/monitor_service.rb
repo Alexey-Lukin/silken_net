@@ -10,7 +10,7 @@ module Treasury
   # =========================================================================
   # Перевіряє баланси ВСІХ живих Oracle-підписантів (per-signer після INF.22 key-спліту):
   #   - Polygon (MATIC) → MINTER (мінт SCC/SFC) + SLASHER (слешинг) + activation-gated
-  #     aux (etherisc/puro/klima — дормантні шляхи пропускаються, поки ключ не інжектнуто)
+  #     aux (etherisc/puro — дормантні шляхи пропускаються, поки ключ не інжектнуто)
   #   - Solana (SOL) → fee-payer мікро-винагород USDC
   #   - Celo (CELO) → community rewards cUSD
   #   - Ethereum L1 (ETH) → state root anchoring (щотижня)
@@ -85,13 +85,6 @@ module Treasury
         role: :puro,
         min_balance: 0.05, currency: "MATIC", decimals: 18,
         param_key: "oracle_min_balance_matic_puro"
-      },
-      polygon_klima: {
-        network: "polygon", signer: "klima", activation_gated: true,
-        env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
-        role: :klima,
-        min_balance: 0.05, currency: "MATIC", decimals: 18,
-        param_key: "oracle_min_balance_matic_klima"
       }
     }.freeze
 
@@ -475,7 +468,7 @@ module Treasury
       # (`address_for`), so a role sealed into Cloud KMS (`ORACLE_*_KMS_KEY`) is read from the
       # HSM's PUBLIC key and this stays the read-only consumer it is — never the last plaintext
       # reader in the tree. `nil` means the role has NEITHER backend, and here that is «wallet
-      # not activated», not a failure (the dormant aux signers etherisc/puro/klima are absent on
+      # not activated», not a failure (the dormant aux signers etherisc/puro are absent on
       # the deploy surface by construction): the sweep continues with 0 instead of the
       # fail-loud `KeyError` that `OracleSigner.for` rightly raises on the money path.
       address = Web3::OracleSigner.address_for(config[:role])

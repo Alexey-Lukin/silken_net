@@ -48,7 +48,6 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
   let(:loud) do
     {
       "CELO_CUSD_CONTRACT_ADDRESS"           => "Celo::CommunityRewardService ENV.fetch outside rescue; CeloRewardWorker re-raises",
-      "KLIMA_RETIREMENT_CONTRACT"            => "KlimaDao::RetirementService ENV.fetch outside rescue; worker re-raises",
       "ETHERISC_DIP_CONTRACT_ADDRESS"        => "Etherisc::ClaimService ENV.fetch outside rescue; InsurancePayoutWorker re-raises",
       "PURO_EARTH_REGISTRY_CONTRACT_ADDRESS" => "PuroEarth::PassportService ENV.fetch outside rescue (registry metadata read is separately nil-safe by design)"
     }

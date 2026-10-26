@@ -15,7 +15,6 @@ RSpec.describe Web3::OracleSigner do
       slasher:  "ORACLE_SLASHER_PRIVATE_KEY",
       celo:     "ORACLE_CELO_PRIVATE_KEY",
       puro:     "ORACLE_PURO_PRIVATE_KEY",
-      klima:    "ORACLE_KLIMA_PRIVATE_KEY",
       etherisc: "ORACLE_ETHERISC_PRIVATE_KEY",
       anchor:   "ETHEREUM_ANCHOR_PRIVATE_KEY"
     }.freeze

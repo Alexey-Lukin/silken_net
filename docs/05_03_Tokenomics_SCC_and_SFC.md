@@ -720,7 +720,6 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 | TX підтвердження | — | `BlockchainConfirmationWorker` | `web3_critical` | 10 |
 | Tokenomics eval | — | `TokenomicsEvaluatorWorker` | `default` | — |
 | Events indexing | `TheGraph::QueryService` | — | — | — |
-| KlimaDAO retire | `KlimaDao::RetirementService` | `KlimaRetirementWorker` | `web3_low` | 3 |
 | Rollback | `MintingRollbackService` | — | — | — |
 
 **Rollback:** `MintingRollbackService.call(transactions:)` при вичерпанні 10 retry `BlockchainConfirmationWorker` через `sidekiq_retries_exhausted` (~15-20 хвилин поллінгу мемпулу).

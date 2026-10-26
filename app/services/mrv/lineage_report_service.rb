@@ -147,8 +147,8 @@ module Mrv
         .for_organization(@organization.id)
         .where(token_type: [ :carbon_coin, :forest_coin ], status: :confirmed)
         # [ARCH.95] Напрямок читається з колонки `direction`, а не деривується з
-        # `sourceable_type`: ESG-погашення теж є вилученням з обігу й `sourceable`
-        # не має, тож стара форма зарахувала б його КРЕДИТОМ у доказовий bundle.
+        # `sourceable_type`: вилучення з обігу без `sourceable` (таким було ESG-погашення)
+        # стара форма зарахувала б КРЕДИТОМ у доказовий bundle.
         .where(direction: :mint)
         .where(created_at: @from..@to)
         .order(:created_at, :id)

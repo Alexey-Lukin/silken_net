@@ -39,7 +39,7 @@ module Web3
     KMS_KEY_ENVS = { minter: "ORACLE_MINTER_KMS_KEY_VERSION", slasher: "ORACLE_SLASHER_KMS_KEY_VERSION" }.freeze
 
     class << self
-      # @param role [Symbol] one of :minter, :slasher, :celo, :puro, :klima, :etherisc, :anchor
+      # @param role [Symbol] one of :minter, :slasher, :celo, :puro, :etherisc, :anchor
       # @return [Web3::KeySigner] `KmsSigner` when the role is sealed, else `LocalEnvSigner`
       # @raise [KeyError] коли ENV-ключ ролі відсутній на цій поверхні (fail-loud, INF.12)
       # @raise [ArgumentError] на невідому роль
@@ -79,7 +79,6 @@ module Web3
           when :slasher  then ENV.fetch("ORACLE_SLASHER_PRIVATE_KEY")
           when :celo     then ENV.fetch("ORACLE_CELO_PRIVATE_KEY")
           when :puro     then ENV.fetch("ORACLE_PURO_PRIVATE_KEY")
-          when :klima    then ENV.fetch("ORACLE_KLIMA_PRIVATE_KEY")
           when :etherisc then ENV.fetch("ORACLE_ETHERISC_PRIVATE_KEY")
           when :anchor   then ENV.fetch("ETHEREUM_ANCHOR_PRIVATE_KEY")
           else raise ArgumentError, "Невідома signer-роль: #{role.inspect}"

@@ -192,7 +192,7 @@ securities-консультація на as-built NaaS-продукт (UNI.16 / 
 | **Окремий vehicle?** | **Так** — третій контур, окремий від operational-vehicle (operations) і token-co (emitent). SPV = carbon-custody/retirement-міст. Може бути co-located з offshore token-co АБО окрема EU/UA-особа |
 | **Що потрібно** ([`securities_review`](securities_review.md) Блок 2.4, BIZ.15) | (1) юрисдикція SPV · (2) ліцензія на роботу з вуглецевими активами — **чи потрібна окрема UA-ліцензія = ВІДКРИТО** · (3) крипто-кастодіан · (4) бухгалтерська класифікація + сертифікат-флоу (фаховий обліковець, UNI.14) |
 | **Залежності** | BIZ.20 (entity) → BIZ.2 (MSA) → перший B2B-клієнт; методолог BIZ.9 (Verra/GS legitimacy) паралельно → [`carbon_registry_matrix`](../business/carbon_registry_matrix.md) |
-| **Позиція в ланцюгу** | `Корпорація → фіат → [SPV: buy+retire кредит реєстру] → сертифікат`. Поточний `KlimaRetirementWorker` гасить SCC через KlimaDAO — що саме таке погашення засвідчує після присуду «SCC не офсет», міряє нога [`00_07`](../../00_07_Action_Plan_Tracker.md) ARCH.95 |
+| **Позиція в ланцюгу** | `Корпорація → фіат → [SPV: buy+retire кредит реєстру] → сертифікат`. On-chain погашення SCC у дереві немає: тракт через KlimaDAO знято ([`00_07`](../../00_07_Action_Plan_Tracker.md) ARCH.95, ⚖️ founder 2026-10-26) |
 
 **Висновок:** SPV — **Phase-2, не зараз.** Вісь у матриці = «окремий carbon-custody vehicle, gated на перший B2B-клієнт», юрисдикція вирішується разом з token-co (крипто-юрист + UA-господарник TBD на UA carbon-license-питання).
 

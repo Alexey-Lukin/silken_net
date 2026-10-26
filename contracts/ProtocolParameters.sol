@@ -215,7 +215,7 @@ contract ProtocolParameters is AccessControl {
     /// @notice Кількість SCC еквівалентних 1 тонні поглиненого CO₂ (D-MRV еквівалент).
     ///         Default: 2000 (2000e18). Визначає вагу кожного SCC у вуглецевих реєстрах.
     ///         1 SCC = 1/2000 tCO₂ = 0.5 kg CO₂.
-    ///         Використовується: KlimaDAO retirement, Puro.earth CORC, ESG звітність.
+    ///         Використовується: Puro.earth CORC, ESG звітність.
     /// @dev [BIZ.1] CO₂ equivalence — закриває юридичний блокер для carbon registry integration.
     function sccPerTonneCo2() external view returns (uint256) {
         return _parameters[KEY_SCC_PER_TONNE_CO2];

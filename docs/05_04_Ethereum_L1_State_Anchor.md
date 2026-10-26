@@ -191,8 +191,8 @@ def generate_state_root
     # 1b. [ARCH.97] ЧИННИЙ monetary supply — One-Home `net_minted_supply`
     #     (Σmints − Σburns, дискримінатор — колонка `direction` [ARCH.95]), спільний
     #     із ChainAudit. ⛔ НЕ деривувати напрямок із `sourceable_type`: та форма
-    #     рахувала ESG-погашення емісією (погашення `sourceable` не має), завищуючи
-    #     саме `leaf0` якоря і базу слешингу — заборона стоїть у самій моделі.
+    #     рахує емісією будь-яке вилучення без `sourceable`, завищуючи саме `leaf0`
+    #     якоря і базу слешингу — заборона стоїть у самій моделі.
     total_scc_supply = BlockchainTransaction.net_minted_supply(:carbon_coin).to_d
 
     # 2. [E.53] Сума підтверджених SFC мінтингів (governance token supply)

@@ -1,14 +1,14 @@
-# 05_01: Мультичейн Архітектура (11-Chain Ecosystem)
+# 05_01: Мультичейн Архітектура (10-Chain Ecosystem)
 
 ## 🎯 Мета
 
-Зафіксувати повну топологію та взаємодію 11 незалежних блокчейн-мереж і децентралізованих протоколів, що утворюють Кіберфізичну Державу SilkenNet. Цей документ деталізує, як фізичні дані з лісу проходять шлях від локального ZK-доказу до глобальної фінансової емісії та фіналізації в Ethereum L1.
+Зафіксувати повну топологію та взаємодію 10 незалежних блокчейн-мереж і децентралізованих протоколів, що утворюють Кіберфізичну Державу SilkenNet. Цей документ деталізує, як фізичні дані з лісу проходять шлях від локального ZK-доказу до глобальної фінансової емісії та фіналізації в Ethereum L1.
 
 ---
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — Мультичейн архітектура повністю спроєктована. Структурний скелет усіх 11 мереж присутній у кодбейсі. Всі сервіси мають RSpec-покриття.
+- **Поточний TRL:** TRL 8 — Мультичейн архітектура повністю спроєктована. Структурний скелет усіх 10 мереж присутній у кодбейсі. Всі сервіси мають RSpec-покриття.
 - **Відкрите:** живе ДЖЕРЕЛО супутникового свідка (S3.2), chain-outage DR (§8) → [`00_07`](00_07_Action_Plan_Tracker). 🔴 **Тут доти стояло «dClimate real API + Production credentials» — і це протухло присудом ⚖️ founder 2026-09-05: вендора ЗРІЗАНО, ногу лишено.** Підстава роздільна: (а) `api.dclimate.net` виміряно мертвим (TLS не встановлюється; маркетплейс віддає `No Data Found`, бо його каталог висить на hosted-сервісі The Graph, вимкненому 2024); (б) дорожче — **нотаризації ми не отримували НІКОЛИ**: `dclimate_ref` генерується цілком у нас (`generate_dclimate_ref` = наш таймстемп + `SecureRandom.hex(8)`), тобто рядка з іменем вендора у вендора ніхто не бачив — клас **СЛОВО** (мітка без вимірювача, [`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)); (в) джерело під вендором живе й пряме — `firms.modaps.eosdis.nasa.gov` віддає 200 + `Invalid MAP_KEY` на РІВНО той датасет, що вже стоїть у нашому коді (VIIRS/Suomi NPP), тобто dClimate його перепродавав. ⚖️ Замінника сьогодні свідомо НЕ будуємо (У-ВЕЙ): живого споживача вироку немає, тож дротування заморозило б дизайн раніше за споживача; подія повернення названа — перший предмет, якому потрібен ЖИВИЙ погодний оракул. ⚠️ Ціна названа вголос: імена `Dclimate::*` / `dclimate_ref` / `DCLIMATE_*` у коді вже є БОРГОМ і в день підключення джерела міняються ОДНИМ комітом разом із дротуванням; а `firms.modaps…` — служба ОДНОГО іноземного уряду, тобто канал, який можна відібрати, і наше слово «невідбирано» тут працює буквально. ⛔ Нога НЕ спить: `schedule_satellite_verification!` висить на `after_create_commit` кожного алерта — її приспав `configured?`-гейт [ARCH.118], і один прогін симулятора до нього дав 304 приречені джоби.
 
 ---
@@ -29,7 +29,7 @@
 
 <!-- TOC:AUTO:START -->
 - [0. Модульний DePIN Стек: Рольова Карта (The Protocol Symphony)](#-0-модульний-depin-стек-рольова-карта-the-protocol-symphony)
-- [1. Топологія 11 Мереж (The 11-Network Stack)](#-1-топологія-11-мереж-the-11-network-stack)
+- [1. Топологія 10 Мереж (The 10-Network Stack)](#-1-топологія-10-мереж-the-10-network-stack)
 - [2. Консенсус "Proof of Growth" — РОЛЬОВА карта мереж (кроки → (05_02_Proof_of_Growth_Pipeline))](#-2-консенсус-proof-of-growth--рольова-карта-мереж-кроки--05_0205_02_proof_of_growth_pipeline)
 - [3. Смарт-Контракти на Polygon — де вони живуть (поверхня → (05_03_Tokenomics_SCC_and_SFC))](#-3-смарт-контракти-на-polygon--де-вони-живуть-поверхня--05_0305_03_tokenomics_scc_and_sfc)
 - [4. Абсолютна Фіналізація (Ethereum State Root Anchoring)](#-4-абсолютна-фіналізація-ethereum-state-root-anchoring)
@@ -71,7 +71,7 @@ SilkenNet не обирає один блокчейн. Система викор
 
 ### Відповідь на питання "Навіщо стільки мереж?"
 
-> Коли аудитор або інвестор запитає: *"Навіщо вам 11 блокчейнів?"*, ваша відповідь:
+> Коли аудитор або інвестор запитає: *"Навіщо вам 10 блокчейнів?"*, ваша відповідь:
 >
 > **«SilkenNet — це агностична інфраструктура. Ми не обираємо між Solana та Ethereum. peaq знає, ХТО це. IoTeX знає, що це ПРАВДА. Filecoin ПАМ'ЯТАЄ це назавжди. Solana ПЛАТИТЬ за це миттєво. Chainlink З'ЄДНУЄ це в одне ціле. Polygon ЮРИДИЧНО ФІКСУЄ цінність. Ethereum ГАРАНТУЄ незмінність на десятки років. Разом — це Протокол Життя, вищий за будь-який окремий блокчейн.»**
 
@@ -105,15 +105,14 @@ SilkenNet не обирає один блокчейн. Система викор
 | 6 | Polygon Hadron | `Polygon::HadronComplianceService` | ⚫ Без адресата | **[ARCH.118]** Продукту «Polygon Hadron» публічно НЕ ІСНУЄ — `api.hadron.polygon.technology` без `A`/`CNAME` при живому `polygon.technology` (перевимір 2026-09-04); клас той самий, що в рядка 3, але тут упала не досяжність, а **сам вендор**. Сервіс лишається fail-closed заявкою без адресата (порожній ключ RAISE-ить у проді — свідомо [INF.11]), але з **[ARCH.119, 2026-09-04]** той raise більше не є робочим станом, а останнім рубежем: enqueue гейтований `verification_reachable?`, тож у проді без ключа джоба не ставиться взагалі; KYC-провайдера **не обрано** → [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20` (Sumsub/Veriff/Onfido/Persona — ⛔ НЕ «Hadron»), і той самий присуд відкриває перейменування `hadron_*` у схемі й коді |
 | 7 | Solana | `Solana::MintingService` | ✅ Real | Ed25519-signed `sendTransaction` (base64). Balance guard: 0.05 SOL |
 | 8 | Celo | `Celo::CommunityRewardService` | ✅ Real | ERC-20 transfer cUSD через Celo RPC |
-| 9 | KlimaDAO | `KlimaDao::RetirementService` | ⚫ Без адресата | Approve + Retire (два ERC-20 виклики). **[ARCH.95, виміряно 2026-10-26]** Функції `retire(uint256)`, яку кличе сервіс, в агрегаторах KlimaDAO НЕМАЄ, а гасять вони лише кредити, визнані реєстром мосту, — не SCC (§9); клас той самий, що в рядка 6, але тут бракує не вендора, а самої ФУНКЦІЇ. Предмет тракту — ⚖️ [`00_07`](00_07_Action_Plan_Tracker) ARCH.95 |
-| 10 | Chainlink | `Chainlink::OracleDispatchService` | ⚪ Demoted | **[ARCH.53]** On-chain `sendRequest` ВИЛУЧЕНО (LINK-cost за callback, що не прилетить: DON-нога unwired — нема Functions JS-source / consumer / relayer, tx_hash≠requestId). `dispatch!` = internal correlation-marker (`chainlink_request_id` живе dedup-ключем Solana + idempotency-guard'ом); мінт іде PATH 2 tokenomics. Callback-endpoint (`/oracle_callbacks`, HMAC) лишається live для майбутнього PATH 1 / manual-fulfillment |
-| 11 | Ethereum L1 | `Ethereum::StateAnchorService` | ✅ Real | `storeStateRoot(bytes32)` через Alchemy Ethereum RPC |
+| 9 | Chainlink | `Chainlink::OracleDispatchService` | ⚪ Demoted | **[ARCH.53]** On-chain `sendRequest` ВИЛУЧЕНО (LINK-cost за callback, що не прилетить: DON-нога unwired — нема Functions JS-source / consumer / relayer, tx_hash≠requestId). `dispatch!` = internal correlation-marker (`chainlink_request_id` живе dedup-ключем Solana + idempotency-guard'ом); мінт іде PATH 2 tokenomics. Callback-endpoint (`/oracle_callbacks`, HMAC) лишається live для майбутнього PATH 1 / manual-fulfillment |
+| 10 | Ethereum L1 | `Ethereum::StateAnchorService` | ✅ Real | `storeStateRoot(bytes32)` через Alchemy Ethereum RPC |
 
 **Легенда:** ✅ Real = Бойова імплементація з реальними RPC-викликами · ⚠️ Hybrid = Працює в реальному режимі з credentials, fallback до симуляції без них · ⚠️ Devnet = Бойова логіка, але транзакції йдуть на Devnet (simulateTransaction)
 
 ---
 
-## 🌐 1. Топологія 11 Мереж (The 11-Network Stack)
+## 🌐 1. Топологія 10 Мереж (The 10-Network Stack)
 
 SilkenNet не покладається на один блокчейн. Для забезпечення максимальної безпеки, масштабованості та compliance, система розподіляє функції (Зберігання, Верифікація, Економіка, Фіналізація) між спеціалізованими протоколами.
 
@@ -308,31 +307,13 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 **Особливості:** **[ARCH.50]** Money-path-hardened — durable `:pending` intent ПЕРЕД broadcast + dedup на ЛОГІЧНИЙ `reward_date` ВСЕРЕДИНІ chain-prefix Kredis-lock (`lock:web3:celo:oracle:`) + Celo-aware reconcile (`CeloConfirmationWorker`, бо `BlockchainConfirmationWorker` хардкоднутий на Polygon) + deterministic-vs-transient rescue split (dedicated `ORACLE_CELO_PRIVATE_KEY`). Закрив детермінований daily double-pay (логічний ключ ≠ `created_at`-партиція). **[ARCH.64]** Той reconcile покриває лише `:sent`; застрягле `:pending` без tx_hash (transient-timeout → dedup-skip, self-masking retry) підбирає `CeloRewardReconcileWorker` cron (:25/:55) → `:manual_review` (money-safe, не blind re-pay; раніше — тиха недоплата cUSD, дім [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy)).
 
-#### 9. KlimaDAO (ESG Carbon Retirement)
-
-⚫ **Без адресата — виміряно 2026-10-26 ([`00_07`](00_07_Action_Plan_Tracker) ARCH.95).** Задум — погашення SCC корпорацією через агрегатор KlimaDAO. Але функції `retire(uint256)`, яку кличе сервіс, в агрегаторах немає: на Polygon Infinity Diamond (`0x8cE54d9625371fb2a068986d32C85De8E6e995f8`) `facetAddress(0x3790cf57)` повертає нульову адресу, а `eth_call` — «Diamond: Function does not exist»; V1-агрегатор у кожній функції гасіння вимагає `isPoolToken[_poolToken]` («Pool Token Not Accepted.»). Гасять агрегатори лише токени, визнані реєстром мосту (Toucan · C3 · Moss · ICR · CMARK), тобто кредити, видані реєстром, — а SCC не офсет ([`00_04 §1.1`](00_04_Nature_as_a_Service_Contracts)). Тож тракт неможливий як написано, і правка параметрів його не оживить; предмет — ⚖️ ARCH.95. Таблиця й кроки нижче описують наш код, не можливість. Дві вади цього коду, мертві разом із трактом (воркер не має місць enqueue): `approve` і `retire` підписує ключ оракула, а не власник SCC, і `esg_retired_balance` росте до receipt, без відкату.
-
-| Параметр | Значення |
-|----------|----------|
-| **Сервіс** | `KlimaDao::RetirementService` |
-| **Воркер** | `KlimaRetirementWorker` |
-| **Черга** | `web3_low` (пріоритет 8) |
-| **Retry** | 3 |
-| **ENV** | `ORACLE_KLIMA_PRIVATE_KEY` (activation-gated dedicated-підписант — INF.22), `CARBON_COIN_CONTRACT_ADDRESS`, `KLIMA_RETIREMENT_CONTRACT` |
-| **RPC** | `ALCHEMY_POLYGON_RPC_URL` (Polygon, де розгорнуто KlimaDAO) |
-| **Спека** | `spec/services/klima_dao/retirement_service_spec.rb` |
-
-**Два кроки (Atomic):**
-1. **Approve** — дозвіл на трансфер SCC до KlimaDAO контракту
-2. **Retire** — безповоротне спалення `retire(scc × 10**18)` → інкремент `wallet.esg_retired_balance` (лічильник погашених **МОНЕТ**)
-
-**Захист:** Pessimistic locking + гард запасу монет (`net_minted_supply`, [ARCH.95]). ⚠️ «Переходу балансу» тут НЕМА і не було правильним: балансові колонки гаманця погашення не рухає взагалі — `balance` лишається gross-лічильником балів ([`04_01 §6`](04_01_Data_Models_and_Entities)), а вилучення з обігу фіксує рядок `BlockchainTransaction(direction: :burn)`.
+⛔ **ESG-погашення SCC через KlimaDAO не будуємо** (⚖️ founder 2026-10-26, [`00_07`](00_07_Action_Plan_Tracker) ARCH.95): агрегатори KlimaDAO гасять лише кредити, визнані реєстром мосту, а функції `retire(uint256)` у них немає — виміряно on-chain 2026-10-26, тож SCC там гасити нічого. Офсет клієнта — шлях SPV і зовнішнього реєстру ([`00_07`](00_07_Action_Plan_Tracker) BIZ.15).
 
 ---
 
 ### Рівень 4: Мости та Фіналізація (Bridging & Finality)
 
-#### 10. Chainlink (DON) — ⚪ demoted до internal correlation-marker [ARCH.53]
+#### 9. Chainlink (DON) — ⚪ demoted до internal correlation-marker [ARCH.53]
 
 **Чесна модель довіри:** on-chain `sendRequest` **вилучено** — DON-нога (Functions JS-source / consumer `fulfillRequest` / relayer) ніколи не існувала, тож кожен on-chain запит платив би LINK за callback, що не прилетить (ба більше, повертався `tx_hash`, а callback-lookup шукає `requestId` — вони б не збіглись). Мінт іде **PATH 2 tokenomics** (оптимістичний, L0-custodial + ex-post clawback — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)). Замикання PATH 1 справжньою DON-інженерією = свідомо відкинуто при TRL-3; on-chain гілка (Router ABI registry + bytecode probe) воскресає з git.
 
@@ -352,7 +333,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 **Callback-endpoint** (`POST /api/v1/oracle_callbacks`, HMAC-SHA256) лишається live — це двері для майбутнього PATH 1 або manual-fulfillment (§8.3).
 
-#### 11. Ethereum L1 (State Root Anchoring)
+#### 10. Ethereum L1 (State Root Anchoring)
 
 Абсолютна істина. Раз на тиждень весь стан лісу та економіки хешується (SHA-256) і записується в Mainnet Ethereum.
 
@@ -385,7 +366,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | Oracle-маркування | **Chainlink** ⚪ demoted | latent-шлях; DON unwired [ARCH.53] | [`05_02`](05_02_Proof_of_Growth_Pipeline) Крок C |
 | Аудит особи | Polygon **Hadron** ⚫ | KYC-гейт бенефіціара — ⛔ вендора не існує [ARCH.118], статус не виходить із `pending` (картка №6 §1) | [`05_02 §Крок E`](05_02_Proof_of_Growth_Pipeline) |
 | Емісія | **Polygon** | mint SCC — два шляхи, гарди РІЗНІ | [`05_02 §DOC.7`](05_02_Proof_of_Growth_Pipeline) |
-| Паралельні рейки (post-mint) | **Solana** · **Celo** · **The Graph** · **KlimaDAO** · **Filecoin** | мікро-винагорода · community-винагорода · індексація · ESG-ретайрмент · CID-архів | [`05_02`](05_02_Proof_of_Growth_Pipeline) Крок F |
+| Паралельні рейки (post-mint) | **Solana** · **Celo** · **The Graph** · **Filecoin** | мікро-винагорода · community-винагорода · індексація · CID-архів | [`05_02`](05_02_Proof_of_Growth_Pipeline) Крок F |
 | Фіналізація | **Ethereum L1** | щотижневий state-root якір | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
 
 ⛔ **Не відтворювати тут покрокову механіку — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Копія мала НУЛЬ вхідних рефів і розійшлася з домом на чотирьох осях одразу, з них дві грошові: вигаданий поріг «`TreeFamily` (напр. 20.0)», якого немає ані в моделі, ані в каноні · до-[E.63] модель «гомеостаз → нараховуються `growth_points`» (магнітуда GP є метаболічною `m(delta_t)`, [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)) · названий не той воркер у KYC-кроці · і сам KYC-гейт поданий прохідним, тоді як картка №6 за 190 рядків вище вже казала протилежне. **Кроки конвеєра нарощують у [`05_02`](05_02_Proof_of_Growth_Pipeline); ця таблиця нарощується лише коли зʼявляється НОВА МЕРЕЖА.**
@@ -435,7 +416,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 
 | Variable | Сервіс |
 |----------|--------|
-| `ALCHEMY_POLYGON_RPC_URL` | Polygon, KlimaDAO |
+| `ALCHEMY_POLYGON_RPC_URL` | Polygon |
 | `ALCHEMY_ETHEREUM_RPC_URL` | Ethereum L1 |
 | `CELO_RPC_URL` | Celo |
 | `SOLANA_RPC_URL` | Solana |
@@ -443,7 +424,6 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 | `ETHEREUM_ANCHOR_PRIVATE_KEY` | L1 anchoring wallet |
 | `CARBON_COIN_CONTRACT_ADDRESS` | SCC contract |
 | `CHAINLINK_HMAC_SECRET` | Oracle-callback endpoint (dispatch-секрети вилучено — ARCH.53) |
-| `KLIMA_RETIREMENT_CONTRACT` | KlimaDAO |
 | `SOLANA_USDC_MINT_ADDRESS` | Solana USDC |
 | `FILECOIN_PINNING_API_URL` | Pinata |
 
@@ -461,7 +441,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 
 ## 📊 7. Повна Матриця Сервісів та Черг
 
-> 🏠 **One-Home:** `Черга` · `Retry` · `Cron` · `Активація` кожної ланки живуть у **її картці §1** (реєстр [`00_06 §2`](00_06_SSOT_Documentation_Standard)), а пріоритетна топологія черг — у [`04_02 §11`](04_02_Business_Logic_and_Services). Нижче — лише **індекс «мережа → воркери»**, щоб бачити всі одинадцять одразу.
+> 🏠 **One-Home:** `Черга` · `Retry` · `Cron` · `Активація` кожної ланки живуть у **її картці §1** (реєстр [`00_06 §2`](00_06_SSOT_Documentation_Standard)), а пріоритетна топологія черг — у [`04_02 §11`](04_02_Business_Logic_and_Services). Нижче — лише **індекс «мережа → воркери»**, щоб бачити всі десять одразу.
 >
 > ⛔ **Колонки `Черга`/`Retry`/`Cron` тут НЕ відновлювати — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Саме вони й протухли: `EthereumAnchorWorker` стояв із `Retry 3` при `retry: 5` у коді, а колонка `Cron` показувала «—» для **всіх** reconcile/backfill-воркерів, чиї крони живі в `config/sidekiq.yml` — тобто таблиця систематично не бачила цілого КЛАСУ ланок, а не помилялась у рядку.
 
@@ -475,9 +455,8 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 | 6 | Hadron ⚫ | `HadronKycVerificationWorker` (enqueue гейтований `verification_reachable?` [ARCH.119]) + ре-арм `HadronKycReverifyWorker` (ре-арм гейтований, замір глибини — НІ); `HadronAssetRegistrationWorker` — воркер-сирота (нуль enqueue, [BIZ.11]), тому свідомо НЕ гейтований: гейт на мертвому коді нічого не стереже | §1 Рівень 3 |
 | 7 | Solana | `SolanaMicroRewardWorker` · `SolanaBatchPayoutWorker` [E.61] | §1 Рівень 3 |
 | 8 | Celo | `CeloRewardWorker` + ре-арм `CeloRewardReconcileWorker` | §1 Рівень 3 |
-| 9 | KlimaDAO | `KlimaRetirementWorker` (нуль enqueue — активація за подією) | §1 Рівень 3 |
-| 10 | Chainlink ⚪ | `ChainlinkDispatchWorker` (demoted [ARCH.53]) | §1 Рівень 2 |
-| 11 | Ethereum L1 | `EthereumAnchorWorker` + `EthereumAnchorConfirmationWorker` + `StuckSentAnchorSweeperWorker` | §1 Рівень 4 |
+| 9 | Chainlink ⚪ | `ChainlinkDispatchWorker` (demoted [ARCH.53]) | §1 Рівень 2 |
+| 10 | Ethereum L1 | `EthereumAnchorWorker` + `EthereumAnchorConfirmationWorker` + `StuckSentAnchorSweeperWorker` | §1 Рівень 4 |
 | — | Cross-chain | `TreasuryMonitorWorker` | [`04_02 §11`](04_02_Business_Logic_and_Services) |
 
 > **Тести.** Spec-шлях кожного сервісу — у його картці §1 (One-Home: інвентар біля підсистеми). Конвенції написання / coverage-гейт / тріаж прогалин — [`04_06`](04_06_Testing_Guide_and_Coverage).

@@ -27,12 +27,5 @@ FactoryBot.define do
       sourceable factory: :naas_contract
       notes { "🚨 SLASHING: Кошти вилучено." }
     end
-
-    # ESG-погашення: теж вилучення з обігу, але БЕЗ `sourceable` — і саме ця
-    # відсутність робила стару деривацію хибною (`KlimaDao::RetirementService`).
-    trait :esg_retirement_burn do
-      direction { :burn }
-      notes { "🌿 ESG Retirement via KlimaDAO" }
-    end
   end
 end

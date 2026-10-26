@@ -16,7 +16,7 @@ RSpec.describe Treasury::MonitorService do
     ENV["CELO_RPC_URL"] ||= "https://celo-mainnet.example.com"
     ENV["ALCHEMY_ETHEREUM_RPC_URL"] ||= "https://eth-mainnet.example.com"
     ENV["ETHEREUM_ANCHOR_PRIVATE_KEY"] ||= "0x" + "b" * 64
-    # aux activation-gated (etherisc/puro/klima) СВІДОМО не сетяться — дормантний default
+    # aux activation-gated (etherisc/puro) СВІДОМО не сетяться — дормантний default
 
     # Стаб Eth::Key для EVM мереж
     allow(Eth::Key).to receive(:new).and_return(mock_key)
@@ -63,7 +63,7 @@ RSpec.describe Treasury::MonitorService do
 
       it "skips dormant activation-gated aux signers (no result, no gauge, no alert)" do
         results = described_class.call
-        expect(results.map { |r| r[:signer] }).not_to include("etherisc", "puro", "klima")
+        expect(results.map { |r| r[:signer] }).not_to include("etherisc", "puro")
       end
 
       it "marks all wallets as healthy" do

@@ -15,8 +15,8 @@ module Web3
   #
   # До цього класу присвоєння в усьому `app/` існувало РІВНО ОДНЕ —
   # `Ethereum::StateAnchorService` (L1). Кожен Polygon/Celo-transact грошового
-  # шляху (`mint` · `batchMint` · `slashUpTo` · Klima `approve`/`retire` ·
-  # Etherisc · Puro · Celo-reward) їхав на gem-дефолтах.
+  # шляху (`mint` · `batchMint` · `slashUpTo` · Etherisc · Puro · Celo-reward) їхав на
+  # gem-дефолтах.
   #
   # ⚠️ НАПРЯМОК РИЗИКУ ІНВЕРСНИЙ ДО ІНТУЇЦІЇ: 42.69 Gwei — не стеля ВИТРАТ, а
   # підлога ГОТОВНОСТІ МАЙНИТИСЬ. За EIP-1559 платиться `baseFee + priorityFee`,
@@ -211,7 +211,7 @@ module Web3
         when :ethereum # L1 anchor
           [ ENV.fetch("ETHEREUM_MAX_FEE_GWEI", 100).to_i,
             ENV.fetch("ETHEREUM_PRIORITY_FEE_GWEI", 2).to_i ]
-        when :polygon # увесь money-path (mint/burn/retire/claim)
+        when :polygon # увесь money-path (mint/burn/claim)
           pair(ENV.fetch("POLYGON_MAX_FEE_GWEI", nil), ENV.fetch("POLYGON_PRIORITY_FEE_GWEI", nil))
         when :celo # community rewards
           pair(ENV.fetch("CELO_MAX_FEE_GWEI", nil), ENV.fetch("CELO_PRIORITY_FEE_GWEI", nil))

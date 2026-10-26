@@ -44,7 +44,7 @@
   - web3_critical
   # [WEB3 СТАНДАРТ]: Стандартні Web3 операції — Celo, Solana, peaq DID.
   - web3      
-  # [WEB3 НИЗЬКИЙ]: Некритичні Web3 задачі — L1 anchoring (раз/тиждень), KlimaDAO, Hadron.
+  # [WEB3 НИЗЬКИЙ]: Некритичні Web3 задачі — L1 anchoring (раз/тиждень), Hadron.
   - web3_low
   # [АНАЛІТИКА]: Важка нічна агрегація (InsightGenerator).
   - low       

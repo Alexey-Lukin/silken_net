@@ -55,7 +55,7 @@ servers:
         # ORACLE_PRIVATE_KEY (legacy shared fallback) is fully RETIRED (INF.22):
         # no code reads it, and Security::Web3NetworkGuard refuses a value under
         # that name (zombie-config tripwire). Every signer has a dedicated key;
-        # aux signers (ORACLE_ETHERISC/PURO/KLIMA_PRIVATE_KEY) are activation-gated
+        # aux signers (ORACLE_ETHERISC/PURO_PRIVATE_KEY) are activation-gated
         # lazy keys — injected when their path goes live, never mapped here.
         - ORACLE_CELO_PRIVATE_KEY
         - ORACLE_MINTER_PRIVATE_KEY
@@ -385,7 +385,6 @@ env:
     ETHEREUM_ANCHOR_CONTRACT: REQUIRED_SECRET_NOT_SET
     PROTOCOL_PARAMETERS_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
     CELO_CUSD_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
-    KLIMA_RETIREMENT_CONTRACT: REQUIRED_SECRET_NOT_SET
     ETHERISC_DIP_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
     PURO_EARTH_REGISTRY_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
 
