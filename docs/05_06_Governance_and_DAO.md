@@ -36,7 +36,7 @@
 - [3. Пріоритет та Залежності](#3-пріоритет-та-залежності)
 - [4. ⚠️ Flash Loan Attack Vector (Критичний)](#4--flash-loan-attack-vector-критичний)
 - [5. Beyond TRL 9: Auto-Immune Sentinel — Проактивний Захист від AI-Driven Economic Attack](#5-beyond-trl-9-auto-immune-sentinel--проактивний-захист-від-ai-driven-economic-attack)
-- [6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)](#6-bonding-curves--динамічне-ціноутворення-перспектива-trl-9)
+- [6. Ціноутворення: фіксований курс емісії (Bonding Curves — ⚫ знято)](#6-ціноутворення-фіксований-курс-емісії-bonding-curves---знято)
 - [7. Governance-Aware Backend (✅ read-path + bounds; Lorenz = DCI-locked)](#7-governance-aware-backend--read-path--bounds-lorenz--dci-locked)
 <!-- TOC:AUTO:END -->
 
@@ -196,7 +196,7 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 >
 > **Кандидати в партнери** (канон — [`00_02`](00_02_Academic_Integration_and_IP); контакту ще не було з жодним): UA-господарник (TBD, правова рамка; вхід — Аблязов Д., СЄУ; запит не надіслано).
 
-## 6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
+## 6. Ціноутворення: фіксований курс емісії (Bonding Curves — ⚫ знято)
 
 Поточна модель: фіксований курс емісії ⚠️ **— і це правда лише про SCC.** Правила емісії SFC не існує НІДЕ (виміряно 2026-08-26): [`05_03`](05_03_Tokenomics_SCC_and_SFC) дає курс тільки для SCC, а SFC-комірка стелі стоїть без деривації взагалі. 🔴 Наслідок був гостріший за прогалину в документі — і саме він купив присуд [DOC-T.89] (§4): доки quorum рахувався від `totalSupply`, genesis-supply = 0 (premine немає) означав, що перші `10_000 SFC` дають своєму власникові 100% голосів. **Це закрито:** база quorum тепер — стеля SFC (`QUORUM_BASE` = 4 000 000 SFC), тож захоплення на старті неможливе за побудовою. ⚠️ Але **прогалина ЛИШАЄТЬСЯ, і вона тепер про інше**: правила емісії SFC як не було, так і немає — а без нього невідомо, КОЛИ 4 000 000 SFC узагалі наберуться, тобто коли DAO прокинеться. Осі — [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89 ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). Для планетарного масштабу можна розглянути алгоритмічне ціноутворення:
 
