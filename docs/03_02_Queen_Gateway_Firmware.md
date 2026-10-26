@@ -1198,11 +1198,11 @@ Cmd_Dedup_Check(hash):
 
 ## 👑 7. Пульс Королеви — health-блок QATT-v2 [ARCH.54; DID=0-sentinel retired]
 
-### Було (retired 2026-07-03)
+### ⛔ Не DID=0-псевдодерево в батчі
 
 DID=0-псевдодерево у батчі: 16B-пакет маскував health під телеметрію. Байтова звірка викрила подвійну брехню — бекенд читав його Солдатськими офсетами (uptime→`voltage_mv`, `0x00`→temperature, cache_count→CSQ), `battery_critical?` хибно горів ~5% життя (uptime-wrap 18.2 год), а при size-flush (cache 45..50 > CSQ-валідного 0..31) пульс мовчки дропався САМЕ під навантаженням; у CCM-ері 16B-запис ще й ламав CCM-stride. e2e був циркулярним (Ruby↔Ruby, без golden проти firmware-байтів).
 
-### Стало
+### Пульс у заголовку конверта
 
 Пульс живе у **header'і підписаного QATT-v2 конверта** (кожен flush; wire-дім — [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security), бітова розкладка One-Home `firmware/common/queen_attest.h`):
 
