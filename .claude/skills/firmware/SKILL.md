@@ -57,6 +57,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 26. Sleeping from INSIDE an interrupt with WFI wakes only on an interrupt that can PREEMPT it — at the highest priority nothing can, so the board sleeps until reset
 27. Mid-commit, the PVD rescuer writes DR1 = 0
 28. FEC on LoRa is the code rate, not a new layer: CR 4/5 and 4/6 only DETECT inside a packet, 4/7 and 4/8 correct one bit, and one constant switches them — `LORA_PHY_CR` in `firmware/common/lora_phy.h`
+29. A TX gate that judges the FRAME — dedup of «similar» frames, novelty, importance, utility — is refuted, not pending: it adds no gate over cadence and `m(Δt)`, and it silences the very beat the server reads growth from
 
 <!-- /FIRMWARE-GOTCHAS-INDEX -->
 
