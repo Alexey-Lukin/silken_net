@@ -8409,44 +8409,70 @@ CHECKS += [
 
 
 def test_winter_pv_prose_claims_hold():
-    """110's sentences that are claims, not numbers: the table's closed-stand rows equal the open field's lowest face (the
-    SUMMARY says so), the favourable threshold sits an order of magnitude below the closed-stand bracket, the binding
-    stretches are the dates the SUMMARY names (the adverse one with no direct beam), and the lib mirrors the corners ride
-    on still say what 02_03 says. CAN catch a sentence the cache no longer supports or a mirror off its canon; CANNOT
-    judge whether 02_03's bands are right."""
+    """110's sentences that are claims, not numbers: the table's closed-stand rows equal the open field's lowest face, the
+    favourable threshold sits 7–10 times below the closed-stand bracket (isotropic ⊥ beam), the binding stretches are the
+    dates and the length the SUMMARY names, the record's years and the desk's numbers and inputs are the cache's — in
+    SUMMARY and in 01_03's desk line, so the cache's desk inputs are held to canon, not to themselves — and the lib
+    mirrors the corners ride on still say what 02_03 says. CAN catch a sentence the cache no longer supports or a mirror
+    off its canon; CANNOT judge whether 02_03's bands are right."""
     import sys
+    from datetime import datetime
 
     d = C(PV)
     for _, dk in _PV_TABLE:
         for key in _PV_COLS:
             s = d["stands"][dk][key]
             assert s["closed_stand_lower"] == s["open_field_lower"], f"{dk}/{key}: the open field differs from the table"
-    fav = d["stands"]["cadence_c"]["favourable.high"]["closed_stand_lower"]
-    assert 10 <= d["desk_bracket_a_eff_cm2"]["closed_stand"][0] / fav < 100, "«an order of magnitude below» moved"
-    summ = doc(SUMMARY)
+    summ, ebfc = doc(SUMMARY), doc(EBFC)
+    fav = d["stands"]["cadence_c"]["favourable.high"]
+    lo_b = d["desk_bracket_a_eff_cm2"]["closed_stand"][0]
+    iso, beam = int(lo_b / fav["closed_stand_isotropic"]), int(lo_b / fav["closed_stand_lower"])
+    assert f"sits {iso}–{beam} times below the closed-stand bracket's low end (the isotropic form gives the {iso}, " \
+           f"the beam the {beam})" in summ, "the favourable margin to the desk bracket moved"
     b = d["binding_stretches"]
-    iso, south = b["cadence_c:favourable:closed_stand.high"], b["cadence_c:favourable:open_face_180.high"]
-    assert f"last full on {iso['last_full'][:10]} and empty on {iso['first_outage'][:10]}" in summ
+    iso_b, south = b["cadence_c:favourable:closed_stand.high"], b["cadence_c:favourable:open_face_180.high"]
+    assert f"last full on {iso_b['last_full'][:10]} and empty on {iso_b['first_outage'][:10]}" in summ
     assert f"south face {south['last_full'][:10]} → {south['first_outage'][:10]}" in summ
     adv = [v for k, v in b.items() if k.startswith("cadence_c:adverse:")]
     assert len({(v["last_full"], v["first_outage"]) for v in adv}) == 1 and all(v["dni_after_last_full_Wh_m2"] == 0 for v in adv)
-    assert f"{adv[0]['last_full'][:10]} → {adv[0]['first_outage'][:10]}, with no direct beam at all" in summ
+    hours = int((datetime.fromisoformat(adv[0]["first_outage"]) - datetime.fromisoformat(adv[0]["last_full"])).total_seconds() // 3600)
+    assert f"a {hours}-hour overcast stretch, {adv[0]['last_full'][:10]} → {adv[0]['first_outage'][:10]}, with no direct beam" in summ
+    years = f"{d['record']['start'][:4]}–{d['record']['end'][:4]}"
+    assert f"over {years}?" in summ and f"сховище порожніє десь у {years}" in ebfc, "the record's years moved"
+    ctl = d["controls"]
+    desk, here = ctl["desk_worst_7d_dec_jan"]["desk"], ctl["desk_worst_7d_dec_jan"]["here"]
+    assert f"(from {here['worst_starts']})" in summ
+    assert f"the desk's {desk['worst_Wh_m2_day']:g} and {desk['median_of_season_minima_Wh_m2_day']:g}, within 1 Wh/m²/day" in summ
+    src = ctl["december_ghi_sources"]
+    assert f"PVGIS-SARAH3 {src['PVGIS-SARAH3 2005-2023']:g} and NASA POWER {src['NASA POWER']:g}" in summ
+    assert f"інсоляція грудня в Черкасах {min(src.values()):g}–{max(src.values()):g} Вт·год/м²/добу" in ebfc
+    k = d["inputs"]
+    (e0, e1), (t0, t1) = k["desk_eta_pv_assumed"], k["desk_canopy_t"]
+    assert f"η_pv {e0 * 100:g}–{e1 * 100:g} % ASSUMED, T {t0:g}–{t1:g} from Sonohat 2004" in summ
+    assert f"ПРИПУЩЕНИЙ ККД a-Si {e0 * 100:g}–{e1 * 100:g} %" in ebfc and f"{t0:g}–{t1:g} для 70 % вимірів" in ebfc
+    assert f"plateau's top, **{k['boost_eta_ceiling']:.2f}**" in summ
+    adv_c = d["stands"]["cadence_c"]["adverse.low"]["closed_stand_lower"]
+    assert f"відсікає частину дужки нижче {adv_c:g}" in ebfc
     sys.path.insert(0, str(REPO / "tools/in_silico"))
     from lib.constants import (
+        C_EDLC_EOL_DROP,
         C_EDLC_TOLERANCE_HIGH,
         C_EDLC_TOLERANCE_LOW,
         ETA_BQ_PLATEAU_READING,
+        I_ETA_10UA,
         VBAT_OK_OFF_V,
         VBAT_OK_OFF_WORST_CASE_V,
         VBAT_OV_WORST_CASE_V,
     )
     text = doc(POWER)
     assert f"−{round(100 * C_EDLC_TOLERANCE_LOW)} %…+{round(100 * C_EDLC_TOLERANCE_HIGH)} %" in text, "02_03 §12.1 tolerance moved"
+    assert f"EOL ΔC {round(100 * C_EDLC_EOL_DROP)} %" in text, "02_03 §12.1's end-of-life loss moved — re-mirror lib"
     lo, hi = (round(100 * x) for x in ETA_BQ_PLATEAU_READING)
     assert f"плато {lo}-{hi}% лише від ~1 мА" in text, "02_03 §9.1's plateau moved — re-mirror lib ETA_BQ_PLATEAU_READING"
+    assert f"на {I_ETA_10UA:g} µA" in text, "02_03 §9.1's low-current anchor moved — re-mirror lib I_ETA_10UA"
     assert f"**{VBAT_OV_WORST_CASE_V[0]} … {VBAT_OV_WORST_CASE_V[1]} В**" in text, "02_03 §4.Б's VBAT_OV band moved"
     assert f"**{VBAT_OK_OFF_WORST_CASE_V[0]} … {VBAT_OK_OFF_WORST_CASE_V[1]:.3f} В**" in text, "02_03 §4.Г's OK_PROG band moved"
-    assert f"| VBAT_OK OFF = `OK_PROG` (спад) | **{VBAT_OK_OFF_V:.2f} В** |" in text, "02_03 §4.Г's OK_PROG moved"
+    assert f"OK_PROG = 1.21 × (1 + 8.25/4.75)          = {VBAT_OK_OFF_V:.3f} В ✓" in text, "02_03 §4.Г's OK_PROG moved"
 
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",

@@ -18,30 +18,9 @@
         "e_max_j": 6.1467,
         "wake_energy_mj": 28.83,
         "leak_uw": 0.0,
-        "boost_eta_anchors_uw": [
-          [
-            3.25,
-            0.2,
-            0.3
-          ],
-          [
-            15.0,
-            0.53,
-            0.8300000000000001
-          ],
-          [
-            30.0,
-            0.6,
-            0.9
-          ],
-          [
-            100.0,
-            0.6699999999999999,
-            0.97
-          ]
-        ],
-        "boost_eta_v_op_v": 0.325,
-        "boost_eta_curve": "most efficient",
+        "boost_eta_anchors_uw": null,
+        "boost_eta_v_op_v": null,
+        "boost_eta_curve": "plateau-top (0.90 at any input)",
         "reflected_end_in_the_sentence": "high"
       },
       "nominal": {
@@ -195,7 +174,7 @@
       "g_w_m2": 20.0,
       "hours": 5000,
       "lanes": 9,
-      "widest_bracket_rel": 8.05e-05
+      "widest_bracket_rel": 8.73e-05
     },
     "eta_curves": "vector ≡ scalar, ordered favourable ≥ nominal ≥ adverse",
     "desk_worst_7d_dec_jan": {
@@ -533,16 +512,16 @@
   "necessary_a_eff_cm2": {
     "standby_sleep": {
       "favourable": {
-        "closed_stand.low": 0.00254,
-        "open_face_000.low": 0.00323,
-        "open_face_090.low": 0.00239,
-        "open_face_180.low": 0.00145,
-        "open_face_270.low": 0.00228,
-        "closed_stand.high": 0.00213,
-        "open_face_000.high": 0.00268,
-        "open_face_090.high": 0.00194,
-        "open_face_180.high": 0.0012,
-        "open_face_270.high": 0.00192
+        "closed_stand.low": 0.0024,
+        "open_face_000.low": 0.00305,
+        "open_face_090.low": 0.00225,
+        "open_face_180.low": 0.00129,
+        "open_face_270.low": 0.00216,
+        "closed_stand.high": 0.00201,
+        "open_face_000.high": 0.00253,
+        "open_face_090.high": 0.00181,
+        "open_face_180.high": 0.00109,
+        "open_face_270.high": 0.0018
       },
       "nominal": {
         "closed_stand.low": 0.00468,
@@ -571,16 +550,16 @@
     },
     "cadence_c": {
       "favourable": {
-        "closed_stand.low": 0.00784,
-        "open_face_000.low": 0.00888,
-        "open_face_090.low": 0.00746,
-        "open_face_180.low": 0.00575,
-        "open_face_270.low": 0.00757,
-        "closed_stand.high": 0.00635,
-        "open_face_000.high": 0.00748,
-        "open_face_090.high": 0.00608,
-        "open_face_180.high": 0.00435,
-        "open_face_270.high": 0.00598
+        "closed_stand.low": 0.00774,
+        "open_face_000.low": 0.00877,
+        "open_face_090.low": 0.00737,
+        "open_face_180.low": 0.00568,
+        "open_face_270.low": 0.00748,
+        "closed_stand.high": 0.00623,
+        "open_face_000.high": 0.00739,
+        "open_face_090.high": 0.00599,
+        "open_face_180.high": 0.00427,
+        "open_face_270.high": 0.00589
       },
       "nominal": {
         "closed_stand.low": 0.0127,
@@ -609,16 +588,16 @@
     },
     "stop2_cadence_c": {
       "favourable": {
-        "closed_stand.low": 0.0139,
-        "open_face_000.low": 0.0146,
-        "open_face_090.low": 0.0132,
-        "open_face_180.low": 0.0102,
+        "closed_stand.low": 0.0138,
+        "open_face_000.low": 0.0145,
+        "open_face_090.low": 0.0131,
+        "open_face_180.low": 0.0101,
         "open_face_270.low": 0.0133,
-        "closed_stand.high": 0.0112,
-        "open_face_000.high": 0.0125,
+        "closed_stand.high": 0.0111,
+        "open_face_000.high": 0.0124,
         "open_face_090.high": 0.011,
-        "open_face_180.high": 0.00843,
-        "open_face_270.high": 0.0105
+        "open_face_180.high": 0.00837,
+        "open_face_270.high": 0.0104
       },
       "nominal": {
         "closed_stand.low": 0.0265,
@@ -650,32 +629,32 @@
     "standby_sleep": {
       "favourable.low": {
         "open_field_by_face": {
-          "000": 0.00323,
-          "090": 0.00239,
-          "180": 0.00145,
-          "270": 0.00228
+          "000": 0.00305,
+          "090": 0.00225,
+          "180": 0.00129,
+          "270": 0.00216
         },
-        "open_field_lower": 0.00145,
+        "open_field_lower": 0.00129,
         "open_field_lowest": [
           "face 180"
         ],
-        "closed_stand_isotropic": 0.00254,
-        "closed_stand_lower": 0.00145,
+        "closed_stand_isotropic": 0.0024,
+        "closed_stand_lower": 0.00129,
         "closed_stand_lower_form": "beam through the gaps, face 180"
       },
       "favourable.high": {
         "open_field_by_face": {
-          "000": 0.00268,
-          "090": 0.00194,
-          "180": 0.0012,
-          "270": 0.00192
+          "000": 0.00253,
+          "090": 0.00181,
+          "180": 0.00109,
+          "270": 0.0018
         },
-        "open_field_lower": 0.0012,
+        "open_field_lower": 0.00109,
         "open_field_lowest": [
           "face 180"
         ],
-        "closed_stand_isotropic": 0.00213,
-        "closed_stand_lower": 0.0012,
+        "closed_stand_isotropic": 0.00201,
+        "closed_stand_lower": 0.00109,
         "closed_stand_lower_form": "beam through the gaps, face 180"
       },
       "nominal.low": {
@@ -748,32 +727,32 @@
     "cadence_c": {
       "favourable.low": {
         "open_field_by_face": {
-          "000": 0.00888,
-          "090": 0.00746,
-          "180": 0.00575,
-          "270": 0.00757
+          "000": 0.00877,
+          "090": 0.00737,
+          "180": 0.00568,
+          "270": 0.00748
         },
-        "open_field_lower": 0.00575,
+        "open_field_lower": 0.00568,
         "open_field_lowest": [
           "face 180"
         ],
-        "closed_stand_isotropic": 0.00784,
-        "closed_stand_lower": 0.00575,
+        "closed_stand_isotropic": 0.00774,
+        "closed_stand_lower": 0.00568,
         "closed_stand_lower_form": "beam through the gaps, face 180"
       },
       "favourable.high": {
         "open_field_by_face": {
-          "000": 0.00748,
-          "090": 0.00608,
-          "180": 0.00435,
-          "270": 0.00598
+          "000": 0.00739,
+          "090": 0.00599,
+          "180": 0.00427,
+          "270": 0.00589
         },
-        "open_field_lower": 0.00435,
+        "open_field_lower": 0.00427,
         "open_field_lowest": [
           "face 180"
         ],
-        "closed_stand_isotropic": 0.00635,
-        "closed_stand_lower": 0.00435,
+        "closed_stand_isotropic": 0.00623,
+        "closed_stand_lower": 0.00427,
         "closed_stand_lower_form": "beam through the gaps, face 180"
       },
       "nominal.low": {
@@ -846,32 +825,32 @@
     "stop2_cadence_c": {
       "favourable.low": {
         "open_field_by_face": {
-          "000": 0.0146,
-          "090": 0.0132,
-          "180": 0.0102,
+          "000": 0.0145,
+          "090": 0.0131,
+          "180": 0.0101,
           "270": 0.0133
         },
-        "open_field_lower": 0.0102,
+        "open_field_lower": 0.0101,
         "open_field_lowest": [
           "face 180"
         ],
-        "closed_stand_isotropic": 0.0139,
-        "closed_stand_lower": 0.0102,
+        "closed_stand_isotropic": 0.0138,
+        "closed_stand_lower": 0.0101,
         "closed_stand_lower_form": "beam through the gaps, face 180"
       },
       "favourable.high": {
         "open_field_by_face": {
-          "000": 0.0125,
+          "000": 0.0124,
           "090": 0.011,
-          "180": 0.00843,
-          "270": 0.0105
+          "180": 0.00837,
+          "270": 0.0104
         },
-        "open_field_lower": 0.00843,
+        "open_field_lower": 0.00837,
         "open_field_lowest": [
           "face 180"
         ],
-        "closed_stand_isotropic": 0.0112,
-        "closed_stand_lower": 0.00843,
+        "closed_stand_isotropic": 0.0111,
+        "closed_stand_lower": 0.00837,
         "closed_stand_lower_form": "beam through the gaps, face 180"
       },
       "nominal.low": {
@@ -952,9 +931,9 @@
       "dni_after_last_full_Wh_m2": 5540.4
     },
     "cadence_c:favourable:open_face_000.high": {
-      "last_full": "2006-11-18T16:00",
+      "last_full": "2006-11-18T17:00",
       "first_outage": "2006-12-25T09:00",
-      "dni_after_last_full_Wh_m2": 22441.0
+      "dni_after_last_full_Wh_m2": 22417.3
     },
     "cadence_c:favourable:open_face_090.high": {
       "last_full": "1996-11-21T16:00",
@@ -967,9 +946,9 @@
       "dni_after_last_full_Wh_m2": 2087.9
     },
     "cadence_c:favourable:open_face_270.high": {
-      "last_full": "1996-11-21T17:00",
+      "last_full": "1996-11-15T17:00",
       "first_outage": "1996-12-16T09:00",
-      "dni_after_last_full_Wh_m2": 5439.3
+      "dni_after_last_full_Wh_m2": 7829.9
     },
     "cadence_c:adverse:closed_stand.low": {
       "last_full": "2017-12-01T16:00",
@@ -1012,9 +991,9 @@
       "field": "closed_stand.low",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00254074,
-      "a_eff_hi_cm2": 0.00254084,
-      "below_this_it_cannot_cm2": 0.00254
+      "a_eff_lo_cm2": 0.00240225,
+      "a_eff_hi_cm2": 0.00240235,
+      "below_this_it_cannot_cm2": 0.0024
     },
     {
       "field": "closed_stand.low",
@@ -1036,9 +1015,9 @@
       "field": "closed_stand.low",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0078408,
-      "a_eff_hi_cm2": 0.0078409,
-      "below_this_it_cannot_cm2": 0.00784
+      "a_eff_lo_cm2": 0.00774282,
+      "a_eff_hi_cm2": 0.00774293,
+      "below_this_it_cannot_cm2": 0.00774
     },
     {
       "field": "closed_stand.low",
@@ -1060,9 +1039,9 @@
       "field": "closed_stand.low",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0139176,
-      "a_eff_hi_cm2": 0.0139178,
-      "below_this_it_cannot_cm2": 0.0139
+      "a_eff_lo_cm2": 0.0138379,
+      "a_eff_hi_cm2": 0.0138381,
+      "below_this_it_cannot_cm2": 0.0138
     },
     {
       "field": "closed_stand.low",
@@ -1084,9 +1063,9 @@
       "field": "open_face_000.low",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00323336,
-      "a_eff_hi_cm2": 0.00323346,
-      "below_this_it_cannot_cm2": 0.00323
+      "a_eff_lo_cm2": 0.00305064,
+      "a_eff_hi_cm2": 0.00305074,
+      "below_this_it_cannot_cm2": 0.00305
     },
     {
       "field": "open_face_000.low",
@@ -1108,9 +1087,9 @@
       "field": "open_face_000.low",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00888276,
-      "a_eff_hi_cm2": 0.00888287,
-      "below_this_it_cannot_cm2": 0.00888
+      "a_eff_lo_cm2": 0.00877799,
+      "a_eff_hi_cm2": 0.00877809,
+      "below_this_it_cannot_cm2": 0.00877
     },
     {
       "field": "open_face_000.low",
@@ -1132,9 +1111,9 @@
       "field": "open_face_000.low",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.014684,
-      "a_eff_hi_cm2": 0.0146842,
-      "below_this_it_cannot_cm2": 0.0146
+      "a_eff_lo_cm2": 0.0145997,
+      "a_eff_hi_cm2": 0.0145999,
+      "below_this_it_cannot_cm2": 0.0145
     },
     {
       "field": "open_face_000.low",
@@ -1156,9 +1135,9 @@
       "field": "open_face_090.low",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0023947,
-      "a_eff_hi_cm2": 0.00239481,
-      "below_this_it_cannot_cm2": 0.00239
+      "a_eff_lo_cm2": 0.00225519,
+      "a_eff_hi_cm2": 0.0022553,
+      "below_this_it_cannot_cm2": 0.00225
     },
     {
       "field": "open_face_090.low",
@@ -1180,9 +1159,9 @@
       "field": "open_face_090.low",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0074651,
-      "a_eff_hi_cm2": 0.00746521,
-      "below_this_it_cannot_cm2": 0.00746
+      "a_eff_lo_cm2": 0.00737821,
+      "a_eff_hi_cm2": 0.00737831,
+      "below_this_it_cannot_cm2": 0.00737
     },
     {
       "field": "open_face_090.low",
@@ -1204,9 +1183,9 @@
       "field": "open_face_090.low",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.013261,
-      "a_eff_hi_cm2": 0.0132612,
-      "below_this_it_cannot_cm2": 0.0132
+      "a_eff_lo_cm2": 0.0131975,
+      "a_eff_hi_cm2": 0.0131977,
+      "below_this_it_cannot_cm2": 0.0131
     },
     {
       "field": "open_face_090.low",
@@ -1228,9 +1207,9 @@
       "field": "open_face_180.low",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00145249,
-      "a_eff_hi_cm2": 0.00145259,
-      "below_this_it_cannot_cm2": 0.00145
+      "a_eff_lo_cm2": 0.00129854,
+      "a_eff_hi_cm2": 0.00129864,
+      "below_this_it_cannot_cm2": 0.00129
     },
     {
       "field": "open_face_180.low",
@@ -1252,9 +1231,9 @@
       "field": "open_face_180.low",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00575967,
-      "a_eff_hi_cm2": 0.00575977,
-      "below_this_it_cannot_cm2": 0.00575
+      "a_eff_lo_cm2": 0.00568088,
+      "a_eff_hi_cm2": 0.00568098,
+      "below_this_it_cannot_cm2": 0.00568
     },
     {
       "field": "open_face_180.low",
@@ -1276,9 +1255,9 @@
       "field": "open_face_180.low",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0102275,
-      "a_eff_hi_cm2": 0.0102277,
-      "below_this_it_cannot_cm2": 0.0102
+      "a_eff_lo_cm2": 0.0101761,
+      "a_eff_hi_cm2": 0.0101763,
+      "below_this_it_cannot_cm2": 0.0101
     },
     {
       "field": "open_face_180.low",
@@ -1300,9 +1279,9 @@
       "field": "open_face_270.low",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00228695,
-      "a_eff_hi_cm2": 0.00228705,
-      "below_this_it_cannot_cm2": 0.00228
+      "a_eff_lo_cm2": 0.00216336,
+      "a_eff_hi_cm2": 0.00216347,
+      "below_this_it_cannot_cm2": 0.00216
     },
     {
       "field": "open_face_270.low",
@@ -1324,9 +1303,9 @@
       "field": "open_face_270.low",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00757109,
-      "a_eff_hi_cm2": 0.00757119,
-      "below_this_it_cannot_cm2": 0.00757
+      "a_eff_lo_cm2": 0.00748177,
+      "a_eff_hi_cm2": 0.00748188,
+      "below_this_it_cannot_cm2": 0.00748
     },
     {
       "field": "open_face_270.low",
@@ -1348,8 +1327,8 @@
       "field": "open_face_270.low",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0133847,
-      "a_eff_hi_cm2": 0.0133849,
+      "a_eff_lo_cm2": 0.0133221,
+      "a_eff_hi_cm2": 0.0133222,
       "below_this_it_cannot_cm2": 0.0133
     },
     {
@@ -1372,9 +1351,9 @@
       "field": "closed_stand.high",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00213524,
-      "a_eff_hi_cm2": 0.00213534,
-      "below_this_it_cannot_cm2": 0.00213
+      "a_eff_lo_cm2": 0.00201053,
+      "a_eff_hi_cm2": 0.00201064,
+      "below_this_it_cannot_cm2": 0.00201
     },
     {
       "field": "closed_stand.high",
@@ -1396,9 +1375,9 @@
       "field": "closed_stand.high",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00635208,
-      "a_eff_hi_cm2": 0.00635218,
-      "below_this_it_cannot_cm2": 0.00635
+      "a_eff_lo_cm2": 0.00623697,
+      "a_eff_hi_cm2": 0.00623707,
+      "below_this_it_cannot_cm2": 0.00623
     },
     {
       "field": "closed_stand.high",
@@ -1420,9 +1399,9 @@
       "field": "closed_stand.high",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0112269,
-      "a_eff_hi_cm2": 0.0112271,
-      "below_this_it_cannot_cm2": 0.0112
+      "a_eff_lo_cm2": 0.011152,
+      "a_eff_hi_cm2": 0.0111522,
+      "below_this_it_cannot_cm2": 0.0111
     },
     {
       "field": "closed_stand.high",
@@ -1444,9 +1423,9 @@
       "field": "open_face_000.high",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00268789,
-      "a_eff_hi_cm2": 0.00268799,
-      "below_this_it_cannot_cm2": 0.00268
+      "a_eff_lo_cm2": 0.00253943,
+      "a_eff_hi_cm2": 0.00253954,
+      "below_this_it_cannot_cm2": 0.00253
     },
     {
       "field": "open_face_000.high",
@@ -1468,9 +1447,9 @@
       "field": "open_face_000.high",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00748839,
-      "a_eff_hi_cm2": 0.00748849,
-      "below_this_it_cannot_cm2": 0.00748
+      "a_eff_lo_cm2": 0.00739712,
+      "a_eff_hi_cm2": 0.00739722,
+      "below_this_it_cannot_cm2": 0.00739
     },
     {
       "field": "open_face_000.high",
@@ -1492,9 +1471,9 @@
       "field": "open_face_000.high",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0125084,
-      "a_eff_hi_cm2": 0.0125086,
-      "below_this_it_cannot_cm2": 0.0125
+      "a_eff_lo_cm2": 0.0124417,
+      "a_eff_hi_cm2": 0.0124419,
+      "below_this_it_cannot_cm2": 0.0124
     },
     {
       "field": "open_face_000.high",
@@ -1516,9 +1495,9 @@
       "field": "open_face_090.high",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00194897,
-      "a_eff_hi_cm2": 0.00194908,
-      "below_this_it_cannot_cm2": 0.00194
+      "a_eff_lo_cm2": 0.00181393,
+      "a_eff_hi_cm2": 0.00181404,
+      "below_this_it_cannot_cm2": 0.00181
     },
     {
       "field": "open_face_090.high",
@@ -1540,9 +1519,9 @@
       "field": "open_face_090.high",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00608852,
-      "a_eff_hi_cm2": 0.00608862,
-      "below_this_it_cannot_cm2": 0.00608
+      "a_eff_lo_cm2": 0.00599008,
+      "a_eff_hi_cm2": 0.00599018,
+      "below_this_it_cannot_cm2": 0.00599
     },
     {
       "field": "open_face_090.high",
@@ -1564,8 +1543,8 @@
       "field": "open_face_090.high",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0110919,
-      "a_eff_hi_cm2": 0.0110921,
+      "a_eff_lo_cm2": 0.0110086,
+      "a_eff_hi_cm2": 0.0110087,
       "below_this_it_cannot_cm2": 0.011
     },
     {
@@ -1588,9 +1567,9 @@
       "field": "open_face_180.high",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00120159,
-      "a_eff_hi_cm2": 0.00120169,
-      "below_this_it_cannot_cm2": 0.0012
+      "a_eff_lo_cm2": 0.0010983,
+      "a_eff_hi_cm2": 0.00109841,
+      "below_this_it_cannot_cm2": 0.00109
     },
     {
       "field": "open_face_180.high",
@@ -1612,9 +1591,9 @@
       "field": "open_face_180.high",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00435393,
-      "a_eff_hi_cm2": 0.00435403,
-      "below_this_it_cannot_cm2": 0.00435
+      "a_eff_lo_cm2": 0.00427141,
+      "a_eff_hi_cm2": 0.00427152,
+      "below_this_it_cannot_cm2": 0.00427
     },
     {
       "field": "open_face_180.high",
@@ -1636,9 +1615,9 @@
       "field": "open_face_180.high",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00843387,
-      "a_eff_hi_cm2": 0.00843397,
-      "below_this_it_cannot_cm2": 0.00843
+      "a_eff_lo_cm2": 0.00837324,
+      "a_eff_hi_cm2": 0.00837334,
+      "below_this_it_cannot_cm2": 0.00837
     },
     {
       "field": "open_face_180.high",
@@ -1660,9 +1639,9 @@
       "field": "open_face_270.high",
       "demand": "standby_sleep",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00192187,
-      "a_eff_hi_cm2": 0.00192198,
-      "below_this_it_cannot_cm2": 0.00192
+      "a_eff_lo_cm2": 0.00180667,
+      "a_eff_hi_cm2": 0.00180677,
+      "below_this_it_cannot_cm2": 0.0018
     },
     {
       "field": "open_face_270.high",
@@ -1684,9 +1663,9 @@
       "field": "open_face_270.high",
       "demand": "cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.00598561,
-      "a_eff_hi_cm2": 0.00598571,
-      "below_this_it_cannot_cm2": 0.00598
+      "a_eff_lo_cm2": 0.00589992,
+      "a_eff_hi_cm2": 0.00590003,
+      "below_this_it_cannot_cm2": 0.00589
     },
     {
       "field": "open_face_270.high",
@@ -1708,9 +1687,9 @@
       "field": "open_face_270.high",
       "demand": "stop2_cadence_c",
       "corner": "favourable",
-      "a_eff_lo_cm2": 0.0105517,
-      "a_eff_hi_cm2": 0.0105519,
-      "below_this_it_cannot_cm2": 0.0105
+      "a_eff_lo_cm2": 0.010493,
+      "a_eff_hi_cm2": 0.0104932,
+      "below_this_it_cannot_cm2": 0.0104
     },
     {
       "field": "open_face_270.high",
@@ -1729,5 +1708,5 @@
       "below_this_it_cannot_cm2": 0.157
     }
   ],
-  "verdict": "At cadence C, with every reading at its favourable end (C 0.846 F, window 4.979→3.203 V, the most efficient boost curve, wake 28.8 mJ, no leak, the high reflected end), the node cannot ride 1991–2020 below 0.00435 cm² under the closed stand (beam through the gaps, face 180) — below the whole desk bracket 0.0439–0.1918 cm² — and below 0.00435 cm² in the open (face 180) — below the whole desk bracket 0.2092–0.3487 cm². With every reading at its adverse end (C 0.263 F, window 4.665→3.420 V, the least efficient boost curve, wake 43.2 mJ, §9.3's 4.5 µW leak illustration, the low reflected end): below 0.103 cm² closed (all faces and both forms equal — a diffuse-only binding stretch) — inside the bracket — and 0.103 cm² open — below the whole bracket. The Standby sleep alone, favourable end: below 0.0012 cm² closed. Which closed-stand form describes a closed stand is not established, so each sentence takes the lower. Necessary conditions only."
+  "verdict": "At cadence C, with each input the specifications bound at its favourable end (C 0.846 F, window 4.979→3.203 V, the plateau-top (0.90 at any input) boost curve, wake 28.8 mJ, no leak, the high reflected reading), the node cannot ride 1991–2020 below 0.00427 cm² under the closed stand (beam through the gaps, face 180) — below the whole desk bracket 0.0439–0.1918 cm² — and below 0.00427 cm² in the open (face 180) — below the whole desk bracket 0.2092–0.3487 cm². With each at its adverse end (C 0.263 F, window 4.665→3.420 V, the least efficient boost curve, wake 43.2 mJ, §9.3's 4.5 µW leak illustration, the low reflected reading): below 0.103 cm² closed (all faces and both forms equal — a diffuse-only binding stretch) — inside the bracket — and 0.103 cm² open — below the whole bracket. The Standby sleep alone, favourable end: below 0.00109 cm² closed. Which closed-stand form describes a closed stand is not established, so each sentence takes the lower. Necessary conditions only."
 }

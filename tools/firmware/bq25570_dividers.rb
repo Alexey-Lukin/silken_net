@@ -61,6 +61,8 @@ RESISTOR_TOL = 0.01
 # щоб таблиця опцій друкувала Δ до чинного бюджету, а не голу напругу.
 EDLC_FARAD = 0.47
 CANON_WINDOW_J = 4.39
+# Пара ROV1/ROV2, РАТИФІКОВАНА founder 2026-09-09 (Derate, HW.37) і запаяна — чому хардкод, а не `solve_ov`, див. report().
+RATIFIED_OV_PAIR = [ 4.75, 7.87 ].freeze
 
 # Рекомендовані суми плечей (Recommended Operating Conditions, МΩ): min/typ/max
 RSUM_SPEC = {
@@ -190,7 +192,7 @@ end
 # плечей одним членом (2.36 % замість 2.19 %) — цей звір тоді почервонів би.
 def e96_band_drift
   t = RESISTOR_TOL
-  [ [ "VBAT_OV", ->(rs) { Bq25570.vbat_ov(*rs) }, [ 4.75, 7.87 ] ],
+  [ [ "VBAT_OV", ->(rs) { Bq25570.vbat_ov(*rs) }, RATIFIED_OV_PAIR ],
     [ "VBAT_OK ON", ->(rs) { Bq25570.vbat_ok_hyst(*rs) }, solve_ok(3.3, 3.4) ] ].filter_map do |name, f, rs|
     v0 = f.call(rs)
     b = e96_band(v0, *rs)
@@ -239,7 +241,7 @@ def report
   # (guard-craft #113: мутація-доказ є твердженням про ЦЕЙ виклик, не про
   # функцію взагалі — тут звірено окремо, щоб report() і --check-canon
   # рахували ОДНУ й ту саму пару, а не дві правдиві-кожна-по-собі).
-  ov1, ov2 = 4.75, 7.87
+  ov1, ov2 = RATIFIED_OV_PAIR
   ov = Bq25570.vbat_ov(ov1, ov2)
   ok1, ok2, ok3 = solve_ok(3.3, 3.4)
   out1, out2 = solve_out(3.3)
@@ -536,9 +538,36 @@ def parse_canon_table(text)
   end
 end
 
-def check_canon_mode
-  rows = parse_canon_table(File.read(CANON_DOC))
+# ── Другий гейт канону: рядки «наші 1 % E96: worst-case · RSS» (§4.Б — VBAT_OV, §4.Г — VBAT_OK OFF) ⟷ `e96_band`.
+# Ці рядки — дзеркала того, що друкує report(); їх читає `tools/in_silico/lib` (смуги кутів скрипту `110`), тож
+# заміна плеча, що не дійшла до канону, інакше лишала б обидва доми старими без жодного червоного. Розмір множини
+# пінується — рядок, що зник або змінив форму, червонить, а не випадає з перевірки мовчки.
+CANON_E96_ROWS_EXPECTED = 2
+CANON_E96_ROW = /^\| (VBAT_OV|VBAT_OK OFF) \(наші 1 % E96: worst-case · RSS\) \| \*\*([\d.]+) … ([\d.]+) В\*\* · ([\d.]+) … ([\d.]+) В \|/
+
+def canon_e96_problems(text)
+  ok1, ok2, = solve_ok(3.3, 3.4)
+  want = { "VBAT_OV" => e96_band(Bq25570.vbat_ov(*RATIFIED_OV_PAIR), *RATIFIED_OV_PAIR),
+           "VBAT_OK OFF" => e96_band(Bq25570.vbat_ok_prog(ok1, ok2), ok1, ok2) }
+  rows = text.scan(CANON_E96_ROW)
   problems = []
+  if rows.size != CANON_E96_ROWS_EXPECTED
+    problems << "рядків «наші 1 % E96» розпізнано #{rows.size}, очікувано #{CANON_E96_ROWS_EXPECTED} — рядок зник або змінив форму"
+  end
+  rows.each do |name, *stated|
+    b = want.fetch(name)
+    stated.map(&:to_f).zip([ *b[:wc_band], *b[:rss_band] ]).each do |st, comp|
+      next if (st - comp).abs <= 0.001
+      problems << format("«%s (наші 1 %% E96)»: таблиця каже %.3f, e96_band дає %.3f", name, st, comp)
+    end
+  end
+  problems
+end
+
+def check_canon_mode
+  text = File.read(CANON_DOC)
+  rows = parse_canon_table(text)
+  problems = canon_e96_problems(text)
   if rows.size != CANON_ROWS_EXPECTED
     problems << "розмір множини: розпізнано #{rows.size} рядків, очікувано #{CANON_ROWS_EXPECTED} " \
                 "— парсер або таблиця змінились; порожня/скорочена множина проходить зеленою мовчки"
@@ -562,7 +591,7 @@ def check_canon_mode
     end
   end
   problems.each { |p| warn "FAIL  #{CANON_DOC.sub(Dir.pwd + '/', '')} — #{p}" }
-  puts problems.empty? ? "OK  §5 (#{rows.size} рядків) збігається з рівняннями SLUSBH2G" : "RED"
+  puts problems.empty? ? "OK  §5 (#{rows.size} рядків) збігається з рівняннями SLUSBH2G · смуги наших 1 % у §4.Б/§4.Г (#{CANON_E96_ROWS_EXPECTED}) — з e96_band" : "RED"
   exit(problems.empty? ? 0 : 1)
 end
 

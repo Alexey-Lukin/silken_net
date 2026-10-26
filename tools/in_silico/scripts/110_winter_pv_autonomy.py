@@ -19,27 +19,28 @@ smallest of the three), cadence C, the shipped STOP2 sleep at cadence C. Within 
 READING with three corners: favourable · nominal · adverse. Per field, demand and corner a bisection on the 30-year
 hourly record finds the smallest A_eff at which the store never empties; the LOWER end of its final bracket is
 published, rounded DOWN. «Below X the node cannot ride the record at demand D» is the FAVOURABLE corner's number: each
-reading at the favourable end of the widest band the canon carries for it. The adverse corner says how high the same
-requirement climbs inside those bands. Neither is sufficient: everything under WHAT IT CANNOT SEE is outside the model.
+input the canon bounds, at the favourable end of the widest band it carries; the two inputs it does not bound for a PV
+cell (the boost's input voltage, the ground's brightness) are named below with their direction. The adverse corner says
+how high the same requirement climbs. Neither is sufficient: everything under WHAT IT CANNOT SEE is outside the model.
   capacitance — nominal 0.47 F; favourable the tolerance's high edge (+80 %); adverse its low edge with the end-of-life
       loss on top (02_03 §12.1);
   window — the store EMPTIES at OK_PROG: from a full store the buck stays on down to it (§4.Г), so the window to the
-      first outage runs from VBAT_OV to OK_PROG (§9.8а's full window — not §8's, which stops at OK_HYST, the reserve
-      above the restart threshold; OK_HYST matters only after an outage, which is outside the model). Both thresholds
+      first outage runs from VBAT_OV to OK_PROG (the full window §9.10 uses — not §8's, which stops at OK_HYST, the
+      reserve above the restart threshold; OK_HYST matters only after an outage, which is outside the model). Both thresholds
       are read on their worst-case bands on our 1 % resistors (§4.Б's row for VBAT_OV, §4.Г's for OK_PROG):
       favourable the top of VBAT_OV's down to the bottom of OK_PROG's, adverse the other way, nominal typ to typ;
   boost η(I) — §9.1 gives it only at anchors in input CURRENT, each an INTERVAL (the text's ~10 µA reading; the
-      table's three points, each ± its read error), and caps it: the plateau, 85–90 %, comes «only from ~1 mA». With η
-      non-decreasing (§9.1) the favourable curve is the most efficient step curve the intervals allow (the next
-      anchor's top on each segment, never above the plateau's 0.90, and 0.90 above the last anchor), the adverse the
-      least (this anchor's bottom; 0 below the first) — `109`'s construction. The anchors become powers at an operating
-      voltage: §9.1's table V_OP (325 mV) on the favourable curve, lib's V_OP (0.5 V) on the adverse — the lower voltage
-      reaches each anchor's η at less power; nominal — linear through the intervals' mid-points at 325 mV, flat outside;
+      table's three points, each ± its read error), read at an EBFC's operating voltage, and caps it: the plateau,
+      85–90 %, comes «only from ~1 mA». A PV cell's input voltage is not the EBFC's and the canon gives no η at it, so
+      the one bound that holds at any input is the cap: the favourable corner takes η = 0.90 everywhere. The adverse
+      corner keeps the EBFC's anchors at lib's V_OP (0.5 V) on the least efficient step curve they allow (this anchor's
+      bottom; 0 below the first — `109`'s construction); nominal — linear through the intervals' mid-points at §9.1's
+      table V_OP (325 mV), flat outside;
   energy per wake (cadence lanes) — E_CYCLE_LOW · E_CYCLE · E_CYCLE_HIGH (02_03 §9.4, lib) at cadence C's FIXED
       interval H = E_CYCLE / (η_BQ · P_GEN − P_sleep) — §9.6's construction;
   leak — none · none · §9.3's 1 µA illustration (not the end of a band: the part's leak is unmeasured);
-  reflected light — each field is run at both of `79`'s ends; the favourable sentence takes the brighter, the adverse
-      the darker.
+  reflected light — each field is run at both of `79`'s readings; the favourable sentence takes the brighter, the
+      adverse the darker — two named readings, not the ends of a band (01_04 §3.1: neither is an extreme of the ground).
 
 MODEL. Hourly, 1991–2020, ERA5 at the Cherkasy grid point (`71`'s loader; radiation is the mean of the PRECEDING hour;
 `79`'s sun and clock gates run here, control 4). The dome's face is a VERTICAL plane facing away from the stem.
@@ -57,8 +58,10 @@ MODEL. Hourly, 1991–2020, ERA5 at the Cherkasy grid point (`71`'s loader; radi
 
 WHAT IT CANNOT SEE. Snow, rime and dirt ON the dome; the dome's optics (PEEK has no optical path — PV is a radome
 change, 01_03 §4); the cell's own temperature; any η_pv dependence on light level (a scalar inside A_eff); the boost's
-dependence on its input VOLTAGE (§9.1's anchors are an EBFC at 0.3–0.5 V; a PV cell sits near its own MPP voltage)
-and whether the MPPT fraction meets a PV cell's MPP; the capacitance and the leak at frost (§12.1 rates neither, and
+η at a PV cell's input voltage (§9.1's anchors are an EBFC's at 0.3–0.5 V; the favourable corner needs no anchor, but
+whether the adverse EBFC anchors over- or understate a PV input is not established) and whether the MPPT fraction meets
+a PV cell's MPP; ground brighter than `79`'s brighter reading lowers X (light only adds to the harvest) and no bound on
+it is carried; the capacitance and the leak at frost (§12.1 rates neither, and
 the leak is an illustration) — the leg asks for both, and they stay inputs the tree does not have; what follows an
 outage — the VBAT_OK hysteresis, the warm-up cost and the cold start of an EMPTIED store (HW.44's subject; VIN(CS) is
 rated only above 0 °C, 02_03 §1.1); the canon's winter mode (§9.8: the MCU's sleep cut by a PFET, TX only at VSTOR ≥
@@ -98,7 +101,7 @@ CONTROLS (each says what it CAN and CANNOT catch).
   (10) A lane whose store empties even at the bisection's top aperture is published as «none up to it», not bisected;
       the bisection raises if it does not close.
 
-Run:  python tools/in_silico/scripts/110_winter_pv_autonomy.py      # about a minute (30 years hourly, 90 lanes)
+Run:  python tools/in_silico/scripts/110_winter_pv_autonomy.py      # about 40 s (30 years hourly, 90 lanes)
 """
 from __future__ import annotations
 
@@ -144,9 +147,9 @@ from lib.utils import banner
 
 SI_DESCRIPTION = ("Whether a small photovoltaic cell on the sensor capsule could keep its supercapacitor from running "
                   "empty through the worst winter stretch of thirty years of hourly weather: per power demand, the "
-                  "effective aperture below which it could not, with every uncertain input at its favourable and at "
-                  "its adverse end, on a model that leaves out snow on the dome, the cell's temperature and the "
-                  "canopy's winter optics")  # its row in the paper SI (72): English, no repo jargon
+                  "effective aperture below which it could not, with the inputs the specifications bound read at "
+                  "their favourable and adverse ends, on a model that leaves out snow on the dome, the cell's "
+                  "temperature and the canopy's winter optics")  # its row in the paper SI (72): English, no repo jargon
 
 OUT = KINETICS_DIR / "winter_pv_autonomy.json"
 SCRIPTS = Path(__file__).resolve().parent
@@ -195,8 +198,8 @@ WINDOW_V = {"favourable": (VBAT_OV_WORST_CASE_V[1], VBAT_OK_OFF_WORST_CASE_V[0])
 E_ACTIVE_J = {"favourable": E_CYCLE_LOW, "nominal": E_CYCLE, "adverse": E_CYCLE_HIGH}
 LEAK_W = {"favourable": 0.0, "nominal": 0.0, "adverse": P_EDLC_LEAK_1UA_ILLUSTRATION}
 END = {"favourable": "high", "adverse": "low"}       # the reflected end each published sentence reads
-ETA_WORD = {"favourable": "most efficient", "nominal": "mid-point", "adverse": "least efficient"}
-ETA_V_OP = {"favourable": V_OP_02_03_TABLE, "nominal": V_OP_02_03_TABLE, "adverse": V_OP}
+ETA_WORD = {"favourable": "plateau-top (0.90 at any input)", "nominal": "mid-point", "adverse": "least efficient"}
+ETA_V_OP = {"nominal": V_OP_02_03_TABLE, "adverse": V_OP}     # the favourable corner reads no anchor
 ETA_CAP = ETA_BQ_PLATEAU_READING[1]
 H_CADENCE_C_S = E_CYCLE / (ETA_BQ * P_GEN_SUMMER_UW * 1e-6 - P_SLEEP_VSTOR)   # §9.6: cadence C's wake interval
 SLEEP_W = {"standby_sleep": P_SLEEP_VSTOR, "cadence_c": P_SLEEP_VSTOR, "stop2_cadence_c": P_SLEEP_VSTOR_STOP2}
@@ -224,9 +227,7 @@ def eta_anchors_ua() -> list[tuple[float, float, float]]:
     return out
 
 
-ANCHORS = {c: [(i * ETA_V_OP[c], lo, hi) for i, lo, hi in eta_anchors_ua()] for c in CORNERS}   # in power, µW
-_FAV_X = np.array([a[0] for a in ANCHORS["favourable"]])
-_FAV_V = np.array([min(a[2], ETA_CAP) for a in ANCHORS["favourable"]] + [ETA_CAP])
+ANCHORS = {c: [(i * v, lo, hi) for i, lo, hi in eta_anchors_ua()] for c, v in ETA_V_OP.items()}   # in power, µW
 _ADV_X = np.array([a[0] for a in ANCHORS["adverse"]])
 _ADV_V = np.array([0.0] + [a[1] for a in ANCHORS["adverse"]])
 _NOM_X = np.array([a[0] for a in ANCHORS["nominal"]])
@@ -235,7 +236,7 @@ _NOM_V = np.array([0.5 * (a[1] + a[2]) for a in ANCHORS["nominal"]])
 
 def boost_eta(p_uw: np.ndarray, code: np.ndarray) -> np.ndarray:
     """η of the boost at input power p_uw, per lane's corner code (broadcast over the last axis)."""
-    fav = _FAV_V[np.searchsorted(_FAV_X, p_uw, side="left")]
+    fav = np.full(np.shape(p_uw), ETA_CAP)
     adv = _ADV_V[np.searchsorted(_ADV_X, p_uw, side="right")]
     nom = np.interp(p_uw, _NOM_X, _NOM_V)
     return np.where(code == 0, fav, np.where(code == 1, nom, adv))
@@ -244,9 +245,6 @@ def boost_eta(p_uw: np.ndarray, code: np.ndarray) -> np.ndarray:
 def eta_scalar(p_uw: float, corner: str) -> float:
     """The same three curves as plain branches — the independent route of controls (6) and (7)."""
     if corner == "favourable":
-        for x, _, hi in ANCHORS[corner]:
-            if p_uw <= x:
-                return min(hi, ETA_CAP)
         return ETA_CAP
     if corner == "adverse":
         eta = 0.0
@@ -408,7 +406,7 @@ def control_harvest_arm() -> dict:
 
 
 def control_eta_curves() -> None:
-    grid = sorted({x * f for c in CORNERS for x, _, _ in ANCHORS[c] for f in (0.5, 0.999, 1.0, 1.001, 2.0)}
+    grid = sorted({x * f for c in ANCHORS for x, _, _ in ANCHORS[c] for f in (0.5, 0.999, 1.0, 1.001, 2.0)}
                   | set(np.geomspace(0.1, 1000.0, 400).tolist()))
     p = np.array(grid)
     for c in CORNERS:
@@ -593,7 +591,7 @@ def main() -> int:
         top, floor = WINDOW_V[c]
         leak = "no leak" if LEAK_W[c] == 0.0 else f"§9.3's {LEAK_W[c] * 1e6:g} µW leak illustration"
         return (f"C {CAP_F[c]:.3f} F, window {top:.3f}→{floor:.3f} V, the {ETA_WORD[c]} boost curve, wake "
-                f"{E_ACTIVE_J[c] * 1e3:.1f} mJ, {leak}, the {END[c]} reflected end")
+                f"{E_ACTIVE_J[c] * 1e3:.1f} mJ, {leak}, the {END[c]} reflected reading")
 
     fav = stands["cadence_c"][f"favourable.{END['favourable']}"]
     adv = stands["cadence_c"][f"adverse.{END['adverse']}"]
@@ -603,11 +601,11 @@ def main() -> int:
     cl_lo, cl_hi = desk["closed_stand"]
     op_lo, op_hi = desk["open_field"]
     verdict = (
-        f"At cadence C, with every reading at its favourable end ({reading('favourable')}), the node cannot ride "
+        f"At cadence C, with each input the specifications bound at its favourable end ({reading('favourable')}), the node cannot ride "
         f"{years} below {fav['closed_stand_lower']:g} cm² under the closed stand ({fav['closed_stand_lower_form']}) — "
         f"{place(fav['closed_stand_lower'], 'closed_stand')} desk bracket {cl_lo:g}–{cl_hi:g} cm² — and below "
         f"{fav['open_field_lower']:g} cm² in the open ({' · '.join(fav['open_field_lowest'])}) — "
-        f"{place(fav['open_field_lower'], 'open_field')} desk bracket {op_lo:g}–{op_hi:g} cm². With every reading at "
+        f"{place(fav['open_field_lower'], 'open_field')} desk bracket {op_lo:g}–{op_hi:g} cm². With each at "
         f"its adverse end ({reading('adverse')}): below {adv['closed_stand_lower']:g} cm² closed "
         f"({adv['closed_stand_lower_form']}) — {place(adv['closed_stand_lower'], 'closed_stand')} bracket — and "
         f"{adv['open_field_lower']:g} cm² open — {place(adv['open_field_lower'], 'open_field')} bracket. The Standby "
@@ -623,8 +621,8 @@ def main() -> int:
         "inputs": {
             "corners": {c: {"capacitance_f": round(CAP_F[c], 4), "window_v": list(WINDOW_V[c]),
                             "e_max_j": round(e_max_j(c), 4), "wake_energy_mj": round(E_ACTIVE_J[c] * 1e3, 3),
-                            "leak_uw": round(LEAK_W[c] * 1e6, 3), "boost_eta_anchors_uw": ANCHORS[c],
-                            "boost_eta_v_op_v": ETA_V_OP[c], "boost_eta_curve": ETA_WORD[c],
+                            "leak_uw": round(LEAK_W[c] * 1e6, 3), "boost_eta_anchors_uw": ANCHORS.get(c),
+                            "boost_eta_v_op_v": ETA_V_OP.get(c), "boost_eta_curve": ETA_WORD[c],
                             "reflected_end_in_the_sentence": END.get(c)}
                         for c in CORNERS},
             "boost_eta_ceiling": ETA_CAP,

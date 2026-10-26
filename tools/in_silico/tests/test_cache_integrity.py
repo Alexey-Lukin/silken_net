@@ -7779,11 +7779,18 @@ def test_winter_pv_autonomy_invariants():
         E_CYCLE_HIGH,
         E_CYCLE_LOW,
         EDLC_WINDOW_VSTOR_J,
+        ETA_BOOST_TABLE_UW,
         ETA_BQ,
+        ETA_BQ_10UA_READING,
+        ETA_BQ_PLATEAU_READING,
+        ETA_TABLE_READ_ERROR,
+        I_ETA_10UA,
         P_EDLC_LEAK_1UA_ILLUSTRATION,
         P_GEN_SUMMER_UW,
         P_SLEEP_VSTOR,
         P_SLEEP_VSTOR_STOP2,
+        V_OP,
+        V_OP_02_03_TABLE,
         VBAT_OK_OFF_V,
         VBAT_OK_OFF_WORST_CASE_V,
         VBAT_OV_RATIFIED_V,
@@ -7846,12 +7853,45 @@ def test_winter_pv_autonomy_invariants():
             assert s["closed_stand_isotropic"] == rows[(f"closed_stand.{end}", dk, c)]["below_this_it_cannot_cm2"]
             assert s["closed_stand_lower"] == min(s["closed_stand_isotropic"], s["open_field_lower"])
 
+    # the boost: the EBFC anchors the nominal and adverse corners read, rebuilt from lib; the favourable corner reads
+    # none — it sits at the plateau's top at any input (a PV cell's input voltage is not the EBFC's)
+    anchors_ua = [(I_ETA_10UA, *ETA_BQ_10UA_READING)] + [
+        (p / V_OP_02_03_TABLE, max(0.0, e - ETA_TABLE_READ_ERROR), min(1.0, e + ETA_TABLE_READ_ERROR))
+        for p, e in ETA_BOOST_TABLE_UW]
+    for c, v in (("nominal", V_OP_02_03_TABLE), ("adverse", V_OP)):
+        k = d["inputs"]["corners"][c]
+        assert k["boost_eta_v_op_v"] == v
+        assert np.allclose(k["boost_eta_anchors_uw"], [(i * v, lo, hi) for i, lo, hi in anchors_ua], rtol=0, atol=1e-12)
+    assert d["inputs"]["corners"]["favourable"]["boost_eta_anchors_uw"] is None
+    assert d["inputs"]["boost_eta_ceiling"] == ETA_BQ_PLATEAU_READING[1]
+
+    # the desk's bracket recomputed from its inputs: η_pv · T · the dome face
+    k = d["inputs"]
+    face = k["dome_face_cm2"]
+    (e0, e1), (t0, t1) = k["desk_eta_pv_assumed"], k["desk_canopy_t"]
+    # the cache prints the face rounded to 3 decimals (in-silico §When Modifying #6 — a display number is not an input),
+    # which moves the recomputed bracket by < 1e-4: compare within that, never to equality
+    assert np.allclose(d["desk_bracket_a_eff_cm2"]["closed_stand"], [e0 * t0 * face, e1 * t1 * face], rtol=0, atol=1e-4)
+    assert np.allclose(d["desk_bracket_a_eff_cm2"]["open_field"], [e0 * face, e1 * face], rtol=0, atol=1e-4)
+
+    # the verdict: each number in its own sentence, each placement recomputed (not «the number appears somewhere»)
+    def place(x, kind):
+        lo_b, hi_b = d["desk_bracket_a_eff_cm2"][kind]
+        return "below the whole" if x < lo_b else ("inside the" if x <= hi_b else "above the whole")
+
     fav = d["stands"]["cadence_c"]["favourable.high"]
     adv = d["stands"]["cadence_c"]["adverse.low"]
-    for x in (fav["closed_stand_lower"], fav["open_field_lower"], adv["closed_stand_lower"], adv["open_field_lower"]):
-        assert f"{x:g} cm²" in d["verdict"], f"the verdict does not quote {x:g}"
-    lo_b, hi_b = d["desk_bracket_a_eff_cm2"]["closed_stand"]
-    assert fav["closed_stand_lower"] < lo_b <= adv["closed_stand_lower"] <= hi_b, "the verdict's placements moved"
+    sleep = d["stands"]["standby_sleep"]["favourable.high"]
+    v = d["verdict"]
+    for frag in (f"below {fav['closed_stand_lower']:g} cm² under the closed stand ({fav['closed_stand_lower_form']}) — "
+                 f"{place(fav['closed_stand_lower'], 'closed_stand')} desk bracket",
+                 f"below {fav['open_field_lower']:g} cm² in the open (",
+                 f"— {place(fav['open_field_lower'], 'open_field')} desk bracket",
+                 f"below {adv['closed_stand_lower']:g} cm² closed ({adv['closed_stand_lower_form']}) — "
+                 f"{place(adv['closed_stand_lower'], 'closed_stand')} bracket",
+                 f"and {adv['open_field_lower']:g} cm² open — {place(adv['open_field_lower'], 'open_field')} bracket",
+                 f"favourable end: below {sleep['closed_stand_lower']:g} cm² closed"):
+        assert frag in v, f"the verdict lost or misplaced: {frag!r}"
 
     ctl = d["controls"]
     assert abs(ctl["december_ghi_Wh_m2_day"] / np.mean(list(ctl["december_ghi_sources"].values())) - 1) <= 0.10
