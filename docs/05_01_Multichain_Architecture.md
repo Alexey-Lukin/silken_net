@@ -209,6 +209,8 @@ did:peaq:0x{SHA256("<hardware_identifier>:<tree_id>:<created_at.to_i>")[0:40]}  
 
 ### Рівень 3: Фінанси та Економіка (Primary Chain & Parallel Rails)
 
+> ⛔ **ESG-погашення SCC через KlimaDAO не будуємо** (⚖️ founder 2026-10-26, [`00_07`](00_07_Action_Plan_Tracker) ARCH.95). Функції `retire(uint256)` немає в жодному агрегаторі, виміряно on-chain 2026-10-26: Infinity Diamond на Polygon (`0x8cE54d9625371fb2a068986d32C85De8E6e995f8`) — `facetAddress(0x3790cf57)` повертає нульову адресу; V1-агрегатор — селектора немає в байткоді; агрегатор Klima 2.0 на Base — `facetAddress` теж нуль. Гасять вони лише кредити, визнані реєстром мосту (Toucan · C3 · Moss · ICR · CMARK), тож SCC там гасити нічого. Офсет клієнта — шлях SPV і зовнішнього реєстру ([`00_07`](00_07_Action_Plan_Tracker) BIZ.15).
+
 #### 5. Polygon (Primary EVM)
 
 Головна артерія системи. Тут розгорнуті наші ключові смарт-контракти (`SilkenCarbonCoin.sol`, `SilkenForestCoin.sol`, `SilkenGovernor.sol`, `SilkenTimelock.sol`, `ProtocolParameters.sol`). Вибраний через низьку вартість транзакцій та сумісність з EVM.
@@ -306,8 +308,6 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 **Сума:** 5 cUSD на здоровий кластер на день. ⚖️ [E.64 (Б), 2026-10-10] **Сьогодні на ПАУЗІ для всіх кластерів:** без прямого сигналу `stress_index` = `nil` на кожній добі, а гейт тримає виплату на `nil` — ратифікована ціна присуду, [`05_05 §7`](05_05_Slashing_and_Risk_Policy); оживає з першим прямим сигналом.
 
 **Особливості:** **[ARCH.50]** Money-path-hardened — durable `:pending` intent ПЕРЕД broadcast + dedup на ЛОГІЧНИЙ `reward_date` ВСЕРЕДИНІ chain-prefix Kredis-lock (`lock:web3:celo:oracle:`) + Celo-aware reconcile (`CeloConfirmationWorker`, бо `BlockchainConfirmationWorker` хардкоднутий на Polygon) + deterministic-vs-transient rescue split (dedicated `ORACLE_CELO_PRIVATE_KEY`). Закрив детермінований daily double-pay (логічний ключ ≠ `created_at`-партиція). **[ARCH.64]** Той reconcile покриває лише `:sent`; застрягле `:pending` без tx_hash (transient-timeout → dedup-skip, self-masking retry) підбирає `CeloRewardReconcileWorker` cron (:25/:55) → `:manual_review` (money-safe, не blind re-pay; раніше — тиха недоплата cUSD, дім [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy)).
-
-⛔ **ESG-погашення SCC через KlimaDAO не будуємо** (⚖️ founder 2026-10-26, [`00_07`](00_07_Action_Plan_Tracker) ARCH.95): агрегатори KlimaDAO гасять лише кредити, визнані реєстром мосту, а функції `retire(uint256)` у них немає — виміряно on-chain 2026-10-26, тож SCC там гасити нічого. Офсет клієнта — шлях SPV і зовнішнього реєстру ([`00_07`](00_07_Action_Plan_Tracker) BIZ.15).
 
 ---
 
@@ -455,7 +455,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 | 6 | Hadron ⚫ | `HadronKycVerificationWorker` (enqueue гейтований `verification_reachable?` [ARCH.119]) + ре-арм `HadronKycReverifyWorker` (ре-арм гейтований, замір глибини — НІ); `HadronAssetRegistrationWorker` — воркер-сирота (нуль enqueue, [BIZ.11]), тому свідомо НЕ гейтований: гейт на мертвому коді нічого не стереже | §1 Рівень 3 |
 | 7 | Solana | `SolanaMicroRewardWorker` · `SolanaBatchPayoutWorker` [E.61] | §1 Рівень 3 |
 | 8 | Celo | `CeloRewardWorker` + ре-арм `CeloRewardReconcileWorker` | §1 Рівень 3 |
-| 9 | Chainlink ⚪ | `ChainlinkDispatchWorker` (demoted [ARCH.53]) | §1 Рівень 2 |
+| 9 | Chainlink ⚪ | `ChainlinkDispatchWorker` (demoted [ARCH.53]) | §1 Рівень 4 |
 | 10 | Ethereum L1 | `EthereumAnchorWorker` + `EthereumAnchorConfirmationWorker` + `StuckSentAnchorSweeperWorker` | §1 Рівень 4 |
 | — | Cross-chain | `TreasuryMonitorWorker` | [`04_02 §11`](04_02_Business_Logic_and_Services) |
 

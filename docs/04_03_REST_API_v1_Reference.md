@@ -1119,7 +1119,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 **Доступ:** 🌐 Публічний (без Bearer token — machine-to-machine, захищено HMAC-SHA256).
 
-> **⚪ Latent [ARCH.53]:** сьогодні callback не прилітає (Chainlink dispatch демоутнуто до local correlation-marker — DON-нога unwired; [`05_01` картка №11](05_01_Multichain_Architecture)). Endpoint лишається live як двері для майбутнього PATH 1 / manual-fulfillment — контракт нижче незмінний.
+> **⚪ Latent [ARCH.53]:** сьогодні callback не прилітає (Chainlink dispatch демоутнуто до local correlation-marker — DON-нога unwired; [`05_01` картка №9](05_01_Multichain_Architecture)). Endpoint лишається live як двері для майбутнього PATH 1 / manual-fulfillment — контракт нижче незмінний.
 
 > **Безпека:** `OracleCallbacksController` має `before_action :verify_chainlink_signature!` — перевіряє `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` та порівнює з `X-Chainlink-Signature` через `ActiveSupport::SecurityUtils.secure_compare` (timing-safe). Якщо `CHAINLINK_HMAC_SECRET` не встановлено — HMAC пропускається з попередженням у логах (dev/test mode).
 >

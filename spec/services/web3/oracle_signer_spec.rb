@@ -42,7 +42,7 @@ RSpec.describe Web3::OracleSigner do
       end
     end
 
-    it "spends the seven roles on seven DISTINCT ENV vars (a copy-paste would collapse E.2 mint⊥burn)" do
+    it "spends the six roles on six DISTINCT ENV vars (a copy-paste would collapse E.2 mint⊥burn)" do
       table = self.class.role_env_table
       fetched = []
       allow(ENV).to receive(:fetch) { |name| fetched << name; private_key }

@@ -907,7 +907,7 @@ fire_alert = EwsAlert.create!(
 puts "⛓️ Реєстрація блокчейн-транзакцій..."
 # 💰 ДВІ ОДИНИЦІ НА ОДНОМУ РЯДКУ, і з імені колонки жодна не видна:
 #   `locked_points` = БАЛИ росту (та сама шкала, що `wallets.balance`/`locked_balance`);
-#   `amount`, `esg_retired_balance` = МОНЕТИ SCC (лише до них застосовне `×10**18`).
+#   `amount` = МОНЕТИ SCC (лише до них застосовне `×10**18`).
 # Курс — `emission_threshold`, засіяний у §0 цього ж файлу: 10 000 балів = 1 SCC.
 # ⛔ Доти обидва рядки несли 500 і 250 балів на 10 і 5 монет, тобто курс 50:1 — у 200
 # разів дешевший за протокольний, і та сама вигадка стояла в `notes`, які рендерить
@@ -918,9 +918,9 @@ sample_wallet = cherkasy_trees.first.wallet
 # 🔴 Фейковий реєстр §9 — ЛИШЕ на локальних середовищах (`Rails.env.local?`), і межа несуча:
 # на canopy (`RAILS_ENV=production`, testnet-слот) ці рядки не демо, а ХИБНЕ СВІДЧЕННЯ.
 # `ChainAuditService` рахує `net_minted_supply` (Σ confirmed mint − Σ confirmed burn) і звіряє
-# з `totalSupply()` живого SCC на Amoy: сід дав би 10 − 4 = 6 SCC у базі проти 0 у ланцюгу →
+# з `totalSupply()` живого SCC на Amoy: сід дав би 10 SCC у базі проти 0 у ланцюгу →
 # `critical: true` назавжди, і `SystemAuditsController` показував би «фрод» на стейджингу,
-# який нікого не мінтив; той самий 6 SCC поїхав би в payload L1-якоря на Sepolia. Реальні
+# який нікого не мінтив; ті самі 10 SCC поїхали б у payload L1-якоря на Sepolia. Реальні
 # рядки на canopy пише сам тракт (`TokenomicsEvaluatorWorker` → `lock_and_mint!`), коли
 # бігає симулятор [OPS.37 / DR.1 drill]. ⚠️ Дискримінатор — `Rails.env.local?`, як у
 # `DEMO_PASSWORD` вище, НЕ слот: обидва деплой-слоти біжать `production`, а dev/test —
@@ -973,10 +973,10 @@ BlockchainTransaction.create!(
 
 # --- ВИЛУЧЕННЯ З ОБІГУ (`direction: :burn`) ---
 # 🔴 [ARCH.95] Напрямок несе КОЛОНКА `direction` — ані `sourceable_type`, ані знак
-# `amount` (слеш пишеться ДОДАТНИМ). Доти сіди не мали жодного burn-рядка, тож
-# `net_minted_supply` ніколи не заходила у власну другу гілку: ані дискримінатор
-# напрямку, ані мінусовий рендер `signed_amount` [ARCH.103] не мали на чому спрацювати,
-# а стрічка друкувала б спалення емісією й ніхто б цього в демо не побачив.
+# `amount` (слеш пишеться ДОДАТНИМ). ⚠️ Другу гілку `net_minted_supply` (Σ confirmed
+# burn) демо НЕ заходить: єдиний писач вилучення — слеш, а він тут свідомо до broadcast
+# (`:pending`, підстава нижче). Вигадувати confirmed burn без писача сід не стане — гілку
+# тримає приклад «віднімає burn без sourceable» у `spec/models/blockchain_transaction_spec.rb`.
 
 # SLASH-інтент — форма `BlockchainBurningService#create_slash_intent!`, сьогодні
 # єдиного писача вилучення з обігу.

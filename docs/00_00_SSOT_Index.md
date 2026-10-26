@@ -131,7 +131,7 @@ _Rails 8.1 Omakase: моделі даних, бізнес-логіка, REST API
 
 _DePIN-стек, Proof of Growth pipeline, токеноміка SCC/SFC, slashing/governance та фіналізація в Ethereum L1._
 
-- [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) (**Core DePIN**: peaq + IoTeX + Chainlink + Polygon + **Filecoin** — audit-critical immutable archive [нот.18: НЕ optional як Solana/Celo; E.60 Фаза 1б SHIPPED — `archive_root` = **Merkle-witness** мінт-диспатчів → формально Core; пін наразі Pinata IPFS, Filecoin-deal = майбутнє] · **Expansion** [optional]: Solana / Celo / KlimaDAO)
+- [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) (**Core DePIN**: peaq + IoTeX + Chainlink + Polygon + **Filecoin** — audit-critical immutable archive [нот.18: НЕ optional як Solana/Celo; E.60 Фаза 1б SHIPPED — `archive_root` = **Merkle-witness** мінт-диспатчів → формально Core; пін наразі Pinata IPFS, Filecoin-deal = майбутнє] · **Expansion** [optional]: Solana / Celo)
 - [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) (Повний uplink → oracle → mint flow + Dynamic Tax)
 - [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) (SCC ERC-20 + SFC governance-токен + Dynamic Tax)
 - [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) (Щотижневий Merkle state root — leaf0-агрегат + телеметрія-субкорені — в Ethereum mainnet)

@@ -520,7 +520,7 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 - `app/workers/chainlink_dispatch_worker.rb` — queue: `web3_critical` (prio 6), retry: 5
 - `app/services/chainlink/oracle_dispatch_service.rb`
 
-**Статус:** ⚪ Demoted **[ARCH.53]** — on-chain `sendRequest` вилучено (LINK-cost за callback, що не прилетить: DON-нога unwired, tx_hash≠requestId). `dispatch!` = local correlation-marker, без RPC; єдиний ENV Chainlink-родини = `CHAINLINK_HMAC_SECRET` (callback-endpoint). On-chain гілка (Router ABI registry + bytecode probe + payload-builder) воскресає з git при замиканні PATH 1. Огляд моделі довіри — «Чесна рамка» вище + [`05_01` картка №11](05_01_Multichain_Architecture).
+**Статус:** ⚪ Demoted **[ARCH.53]** — on-chain `sendRequest` вилучено (LINK-cost за callback, що не прилетить: DON-нога unwired, tx_hash≠requestId). `dispatch!` = local correlation-marker, без RPC; єдиний ENV Chainlink-родини = `CHAINLINK_HMAC_SECRET` (callback-endpoint). On-chain гілка (Router ABI registry + bytecode probe + payload-builder) воскресає з git при замиканні PATH 1. Огляд моделі довіри — «Чесна рамка» вище + [`05_01` картка №9](05_01_Multichain_Architecture).
 
 **Guard-перевірка:**
 ```ruby

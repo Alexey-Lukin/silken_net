@@ -227,7 +227,6 @@ def report(prm)
   puts "Treasury (dynamic tax) на кінець realistic-прогону: " \
        "#{(base[:treasury] / 1e3).round(1)}k SCC — поріг вимкнення " \
        "#{(prm[:insurance_pool_threshold] / 1e3).round(0)}k"
-  puts "⚠️ Retirement supply НЕ зменшує (чужий ABI, не _burn) — у моделі його немає."
   puts "⚠️ Baseline burn = 0 за конструкцією: A-сет порожній, uplift інертний [SLASH-1]."
 
   puts
