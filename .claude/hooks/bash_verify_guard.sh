@@ -418,9 +418,12 @@ body with `01_02:177` inside"'
     rm -f "$dfix"
     trap 'rm -rf "$TMPDIR"' EXIT  # back to the battery's own trap, not to none
     # The false-positive arm: a path with NO uncommitted lines must never deny,
-    # or every legitimate revert becomes blocked work.
+    # or every legitimate revert becomes blocked work. The path is FOUND clean at run
+    # time, never named: a fixed `README.md` went red whenever the author's own tree had
+    # README dirty — a verdict about the session, not the hook (2026-10-26).
+    cfix=$(git ls-files | while IFS= read -r f; do git diff --quiet HEAD -- "$f" 2>/dev/null && { printf '%s' "$f"; break; }; done)
     t "D: checkout of a CLEAN file stays silent" silent \
-      "git checkout README.md"
+      "git checkout ${cfix:-README.md}"
   fi
 
   # ── H · git add of a directory while a compute cache is dirty ──────────────
