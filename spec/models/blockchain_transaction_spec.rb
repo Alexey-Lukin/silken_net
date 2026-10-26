@@ -1147,15 +1147,22 @@ RSpec.describe BlockchainTransaction, type: :model do
     # 💰 [ARCH.95] Напрямок — КОЛОНКА, не тип джерела: burn без `sourceable` віднімається
     # так само, як слеш. Це єдиний поведінковий свідок класу — кожна інша burn-фікстура
     # сюїти несе `sourceable: naas_contract`, тож агрегат, повернутий до деривації з
-    # `sourceable_type`, лишав би їх усі зеленими. Обидві форми One-Home — одним
-    # прикладом: розділена навпіл, властивість дала б дві зелені при зламаній одній.
-    it "віднімає burn без sourceable — напрямок читається з колонки, не з типу джерела" do
-      create(:blockchain_transaction, wallet: wallet, amount: 100, token_type: :carbon_coin, status: :confirmed)
-      create(:blockchain_transaction, wallet: wallet, amount: 25, token_type: :carbon_coin,
-                                      status: :confirmed, direction: :burn)
+    # `sourceable_type`, лишав би їх усі зеленими. Дві форми One-Home — два приклади:
+    # кожна червоніє сама, і поломка однієї не ховає другу.
+    context "with a burn row that carries no sourceable" do
+      before do
+        create(:blockchain_transaction, wallet: wallet, amount: 100, token_type: :carbon_coin, status: :confirmed)
+        create(:blockchain_transaction, wallet: wallet, amount: 25, token_type: :carbon_coin,
+                                        status: :confirmed, direction: :burn)
+      end
 
-      expect(net_scc).to eq(75)
-      expect(described_class.net_minted_by_cluster([ cluster.id ], :carbon_coin)).to eq(cluster.id => 75)
+      it "віднімає burn без sourceable — net_minted_supply читає колонку, не тип джерела" do
+        expect(net_scc).to eq(75)
+      end
+
+      it "віднімає burn без sourceable — net_minted_by_cluster читає колонку, не тип джерела" do
+        expect(described_class.net_minted_by_cluster([ cluster.id ], :carbon_coin)).to eq(cluster.id => 75)
+      end
     end
   end
 

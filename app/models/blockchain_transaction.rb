@@ -283,7 +283,7 @@ class BlockchainTransaction < ApplicationRecord
   # [ARCH.103]. Дім ОДИН на чотирьох читачів (обидва леджери, tx-show, стрічка):
   # рукописні тернари розійшлися б тихо. НЕ для дроту (JSON/CSV віддають сирий
   # `amount` + деривацію окремим полем — аудиторська форма) і НЕ для агрегатів
-  # (там SQL-CASE `net_minted_by_cluster` з тим самим BURN_SOURCEABLE_TYPE).
+  # (там SQL-CASE `net_minted_by_cluster` по колонці `direction`).
   def signed_amount
     burn? ? -amount : amount
   end

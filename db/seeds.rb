@@ -976,7 +976,7 @@ BlockchainTransaction.create!(
 # `amount` (слеш пишеться ДОДАТНИМ). ⚠️ Другу гілку `net_minted_supply` (Σ confirmed
 # burn) демо НЕ заходить: єдиний писач вилучення — слеш, а він тут свідомо до broadcast
 # (`:pending`, підстава нижче). Вигадувати confirmed burn без писача сід не стане — гілку
-# тримає приклад «віднімає burn без sourceable» у `spec/models/blockchain_transaction_spec.rb`.
+# тримають приклади «віднімає burn без sourceable …» у `spec/models/blockchain_transaction_spec.rb`.
 
 # SLASH-інтент — форма `BlockchainBurningService#create_slash_intent!`, сьогодні
 # єдиного писача вилучення з обігу.

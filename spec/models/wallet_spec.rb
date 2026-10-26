@@ -711,4 +711,27 @@ RSpec.describe Wallet, type: :model do
       expect(tx.reload.wallet_id).to be_nil
     end
   end
+
+  # 💰 [ARCH.95] Гроші стереже не лише Ruby-гард, а CHECK `wallets_balance_invariants` у БД — і
+  # багатоколонковий CHECK Postgres на `DROP COLUMN` будь-якої з його колонок зносить ЦІЛКОМ (виміряно
+  # на PG 17.9, 2026-10-26). Крок, що знімає `esg_retired_balance`, без перестворення CHECK зняв би й
+  # `balance >= 0`, і `locked_balance <= balance`, а сюїта лишилась би зеленою — ці два приклади і є
+  # носієм. `update_columns` іде повз валідації, тож відповідає саме база; savepoint тримає з'єднання живим.
+  describe "DB CHECK wallets_balance_invariants" do
+    let(:wallet) { create(:tree).wallet }
+
+    def violate(**cols)
+      ActiveRecord::Base.transaction(requires_new: true) { wallet.update_columns(**cols) }
+    end
+
+    it "refuses locked_balance above balance at the SQL level" do
+      expect { violate(balance: 10, locked_balance: 11) }
+        .to raise_error(ActiveRecord::StatementInvalid, /wallets_balance_invariants/)
+    end
+
+    it "refuses a negative balance at the SQL level" do
+      expect { violate(balance: -1, locked_balance: 0) }
+        .to raise_error(ActiveRecord::StatementInvalid, /wallets_balance_invariants/)
+    end
+  end
 end

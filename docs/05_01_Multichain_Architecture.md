@@ -209,7 +209,7 @@ did:peaq:0x{SHA256("<hardware_identifier>:<tree_id>:<created_at.to_i>")[0:40]}  
 
 ### Рівень 3: Фінанси та Економіка (Primary Chain & Parallel Rails)
 
-> ⛔ **ESG-погашення SCC через KlimaDAO не будуємо** (⚖️ founder 2026-10-26, [`00_07`](00_07_Action_Plan_Tracker) ARCH.95). Функції `retire(uint256)` немає в жодному агрегаторі, виміряно on-chain 2026-10-26: Infinity Diamond на Polygon (`0x8cE54d9625371fb2a068986d32C85De8E6e995f8`) — `facetAddress(0x3790cf57)` повертає нульову адресу; V1-агрегатор — селектора немає в байткоді; агрегатор Klima 2.0 на Base — `facetAddress` теж нуль. Гасять вони лише кредити, визнані реєстром мосту (Toucan · C3 · Moss · ICR · CMARK), тож SCC там гасити нічого. Офсет клієнта — шлях SPV і зовнішнього реєстру ([`00_07`](00_07_Action_Plan_Tracker) BIZ.15).
+> ⛔ **ESG-погашення SCC через KlimaDAO не будуємо** (⚖️ founder 2026-10-26, [`00_07`](00_07_Action_Plan_Tracker) ARCH.95). Функції `retire(uint256)` немає в жодному з трьох перевірених агрегаторів (2026-10-26), і сила свідків різна: Infinity Diamond на Polygon (`0x8cE54d9625371fb2a068986d32C85De8E6e995f8`) — `facetAddress(0x3790cf57)` повертає нульову адресу при позитивному контролі (селектор гасіння `0x1c79d29a` фасет має), виміряно власноруч; V1-агрегатор — селектора немає в байткоді імплементації, вимір делегованого агента; агрегатор Klima 2.0 на Base — `facetAddress` теж нуль, звіт агента без позитивного контролю (провенанс обох — корпус естафет). Гасять вони лише кредити, визнані реєстром мосту (на Polygon — Toucan · Moss · C3 · ICR · COOREST · CMARK, на Base — Toucan Puro · CMARK · UCR), тож SCC там гасити нічого. Офсет клієнта — шлях SPV і зовнішнього реєстру ([`00_07`](00_07_Action_Plan_Tracker) BIZ.15).
 
 #### 5. Polygon (Primary EVM)
 

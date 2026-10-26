@@ -5,7 +5,7 @@
 # @display bg_color "#000"
 class WalletBalanceDisplayPreview < Lookbook::Preview
   # @label Tree Wallet (High Balance)
-  # @notes Displays a soldier's wallet with significant SCC balance.
+  # @notes Displays a soldier's wallet with a large growth-point balance.
   def tree_wallet
     wallet = mock_wallet(balance: 12_847.123456, locked: 500.0, owner_did: "SNET-00000042")
     render Wallets::BalanceDisplay.new(wallet: wallet)
@@ -33,7 +33,7 @@ class WalletBalanceDisplayPreview < Lookbook::Preview
   end
 
   # @label Interactive
-  # @param balance text "Total SCC balance"
+  # @param balance text "Growth-point balance"
   # @param locked_balance text "Locked for pending transactions"
   def interactive(balance: "5000.0", locked_balance: "250.0")
     wallet = mock_wallet(

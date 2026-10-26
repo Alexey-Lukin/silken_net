@@ -16,9 +16,9 @@ require "rails_helper"
 # правдива, і гейт лишається: «одна причина burn» є фактом про сьогоднішніх писачів,
 # не властивістю, тож наступна причина вилучення без цього гейта знову стала б емісією.
 #
-# 🔒 Чому саме така форма. Поведінку стережуть два піни: валідація
-# `slash_intent_must_be_a_burn` (писач слешу) і приклад «віднімає burn без sourceable»
-# у `spec/models/blockchain_transaction_spec.rb` (агрегат, обидві форми One-Home).
+# 🔒 Чому саме така форма. Поведінку стережуть піни: валідація
+# `slash_intent_must_be_a_burn` (писач слешу) і приклади «віднімає burn без sourceable …»
+# у `spec/models/blockchain_transaction_spec.rb` (по одному на кожну форму One-Home).
 # ⚠️ Перше з двох тверджень було НЕТОЧНИМ до 2026-08-27, і поправка варта рядка:
 # валідація ІСНУВАЛА, але її гілка ВІДМОВИ не виконувалась у сюїті жодного разу
 # (виміряно branch-coverage'ом), тобто зняття `errors.add` лишалось зеленим.
@@ -31,12 +31,13 @@ require "rails_helper"
 #
 # 🔴 Виняток для дому НАВМИСНО вужчий за файл. `BURN_SOURCEABLE_TYPE` лишається
 # живим у моделі — але як ознака «цей burn є слешем» усередині ВАЛІДАЦІЇ, і ніколи
-# як джерело напрямку. Якби виняток був файловим, регресія в самому агрегаті
-# (повернути SQL-CASE по `sourceable_type`) пройшла б зеленою — а це рівно те
-# місце, куди вона й прийшла б.
+# як джерело напрямку. Тому HOME судиться не рядками, а ТІЛАМИ агрегатів (через
+# `source_location`) — обох: `net_minted_supply` і `net_minted_by_cluster`. ⚠️ Доти
+# судилось тіло лише першого, і історична форма другого (SQL-CASE по
+# `sourceable_type`, рознесений на два рядки) лишала гейт зеленим (адверсар, 2026-10-26).
 #
 # ⚠️ Стеля, названа прямо: гейт статичний і судить ФОРМУ виразу. Він не побачить
-# деривації, зробленої через проміжну змінну чи через `sourceable`-асоціацію
+# деривації в HOME поза тілами двох агрегатів, зробленої через проміжну змінну чи через `sourceable`-асоціацію
 # (`tx.sourceable.is_a?(NaasContract)`); цю половину тримає сам дім — доки читачі
 # беруть напрямок із колонки, вигадати обхід нема де.
 module MoneyDirectionHome
@@ -44,7 +45,10 @@ module MoneyDirectionHome
 
   # Заборонена форма: `sourceable_type` як ПОРІВНЯННЯ з burn-маркером.
   SOURCEABLE_TYPE = /sourceable_type/
-  BURN_TOKEN      = /BURN_SOURCEABLE_TYPE|"NaasContract"/
+  BURN_TOKEN      = /BURN_SOURCEABLE_TYPE|["']NaasContract["']/
+
+  # Агрегати «скільки монет існує» — їх тіла судяться окремо від файлу HOME.
+  AGGREGATES = %i[net_minted_supply net_minted_by_cluster].freeze
 
   # 🔴 Виняток, знайдений закриваючим свіпом ПЕРШ ніж на ньому хтось спіткнувся:
   # `sourceable_type` як КЛЮЧ ХЕША (`where(sourceable_type: …)`) — це ФІЛЬТР, а не
@@ -87,10 +91,10 @@ module MoneyDirectionHome
     files_where { |line| line.match?(HOME_CALL) } - [ HOME ]
   end
 
-  # Тіло `self.net_minted_supply`, взяте з РЕАЛЬНОГО `source_location`, а не грепом:
+  # Тіло агрегату, взяте з РЕАЛЬНОГО `source_location`, а не грепом:
   # так гейт не залежить від номерів рядків і не роз'їдеться при зсуві файлу.
-  def self.aggregate_body
-    path, line_no = BlockchainTransaction.method(:net_minted_supply).source_location
+  def self.aggregate_body(name = :net_minted_supply)
+    path, line_no = BlockchainTransaction.method(name).source_location
     lines = File.readlines(path)
     header = lines[line_no - 1]
     indent = header[/\A\s*/]
@@ -112,11 +116,16 @@ RSpec.describe MoneyDirectionHome, type: :quality do
     expect(described_class.deriving_files).to eq([ described_class::HOME ])
   end
 
-  it "keeps the burn marker OUT of the supply aggregate — the column is the discriminator" do
-    body = described_class.aggregate_body
+  it "keeps the burn marker OUT of every supply aggregate — the column is the discriminator" do
+    described_class::AGGREGATES.each do |name|
+      agg = described_class.aggregate_body(name)
 
-    expect(body).not_to match(described_class::SOURCEABLE_TYPE)
-    expect(body).not_to match(described_class::BURN_TOKEN)
+      expect(agg).not_to match(described_class::SOURCEABLE_TYPE), "#{name} reads sourceable_type"
+      expect(agg).not_to match(described_class::BURN_TOKEN), "#{name} carries the burn marker"
+      expect(agg).to include("direction"), "#{name} must read the direction column"
+    end
+
+    body = described_class.aggregate_body
     # Обидва боки читаються колонкою — інакше «Σmints − Σburns» знову стало б
     # твердженням про тип джерела, а не про напрямок.
     expect(body).to include("direction: :mint")

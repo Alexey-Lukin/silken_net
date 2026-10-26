@@ -74,7 +74,7 @@ module ModelMessageLocalization
       "slash-інтент мусить нести напрямок :burn [ARCH.95]" ] => {
       why: "інваріант напрямку [ARCH.95]; адресат — РОЗРОБНИК, що додає писача burn-рядка, " \
            "а не користувач: `blockchain_transactions` створюють лише money-path сервіси " \
-           "(lock_and_mint!/burning/celo/solana), контролер має тільки index/show. Спрацювання " \
+           "(lock_and_mint!/burning/celo/solana/insurance payout), контролер має тільки index/show. Спрацювання " \
            "означає баг у коді, не помилку вводу",
       back: "поява людського шляху створення транзакції — тоді рядок стає повідомленням форми"
     },

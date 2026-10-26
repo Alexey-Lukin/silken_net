@@ -933,10 +933,11 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 {
   "data": {
     "id": 42,
-    "growth_points": "1250.500000",
-    "scc_balance": "1250.500000",
-    "locked_balance": "100.000000",
-    "available_balance": "1150.500000"
+    "available_balance": "1150.5",
+    "balance": "1250.5",
+    "growth_points": "1250.5",
+    "locked_balance": "100.0",
+    "scc_balance": "1250.5"
   }
 }
 ```
@@ -945,7 +946,8 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 |------|-----|------|
 | `growth_points` | Decimal (string) | **[ARCH.88]** Накопичені **бали росту** — чесне ім'я величини, що лежить у колонці `balance` (дім → [`04_01 §6`](04_01_Data_Models_and_Entities)) |
 | `scc_balance` | Decimal (string) | ⚠️ **ДЕПРЕКОВАНО [ARCH.88]** — те саме значення, що `growth_points`. Ім'я успадковане від `alias_attribute` і **бреше**: колонка тримає бали, не монети, тож за курсом конверсії ([`05_03`](05_03_Tokenomics_SCC_and_SFC) — дім) воно завищує величину на кілька порядків. 🔴 **Названа підстава зберігати його СПРОСТОВАНА 2026-08-23:** тут стояло «лишене заради Bearer/mobile-клієнтів, які вже читають це поле» — мобільного клієнта не існує (його ФОРМА досі відкрите ⚖️, [`00_07`](00_07_Action_Plan_Tracker) E.20; `Session#mobile_app?` має нуль прод-викликачів), а машинний контур це рівно пʼятеро дверей [ARCH.77], серед яких гаманців немає. Тобто брехливе money-поле трималось на споживачі, якого ніхто не показав. Знімати — окремим кроком (перевірити реальних читачів ПОІМЕННО, не за класом), але відкладати його більше нема заради кого |
-| `locked_balance` | Decimal (string) | Заблоковано для pending blockchain TX |
+| `balance` | Decimal (string) | Те саме значення, що `growth_points`: колонка `balance` (бали росту) — дефолтне поле блупринта, яке успадковує кожна вʼюха |
+| `locked_balance` | Decimal (string) | Бали, вже сконвертовані в монети назавжди ([`04_01 §6`](04_01_Data_Models_and_Entities) E.66), — не «очікують TX» |
 | `available_balance` | Decimal (string) | Доступно до КОНВЕРСІЇ (`balance − locked_balance`) — у балах. `locked_balance` = вже сконвертоване назавжди ([`04_01 §6`](04_01_Data_Models_and_Entities) E.66), тож це не «доступно для витрат» |
 
 **HTML Response:** Повертає `Wallets::BalanceFrame` Phlex-компонент (Turbo Frame `wallet_balance_frame_{id}`), без layout.
@@ -964,9 +966,10 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 {
   "data": {
     "id": 42,
+    "available_balance": "1150.5",
+    "balance": "1250.5",
     "crypto_public_address": "0xABCDEF1234567890ABCDEF1234567890ABCDEF12",
-    "locked_balance": "100.000000",
-    "available_balance": "1150.500000",
+    "locked_balance": "100.0",
     "network": "Polygon PoS (Mainnet)"
   }
 }
@@ -975,8 +978,9 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | Поле | Тип | Опис |
 |------|-----|------|
 | `crypto_public_address` | String / null | Polygon/Ethereum адреса гаманця |
-| `locked_balance` | Decimal (string) | Заблоковано для pending TX |
-| `available_balance` | Decimal (string) | Доступно для витрат |
+| `balance` | Decimal (string) | Бали росту (колонка `balance`) — дефолтне поле блупринта |
+| `locked_balance` | Decimal (string) | Бали, вже сконвертовані в монети назавжди (E.66) |
+| `available_balance` | Decimal (string) | Доступно до КОНВЕРСІЇ (`balance − locked_balance`), у балах — не «для витрат» |
 | `network` | String | Мережа блокчейну (`"Polygon PoS (Mainnet)"`) |
 
 **HTML Response:** Повертає `Wallets::MetadataFrame` Phlex-компонент (Turbo Frame `wallet_metadata_frame_{id}`), без layout.

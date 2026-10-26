@@ -420,10 +420,20 @@ body with `01_02:177` inside"'
     # The false-positive arm: a path with NO uncommitted lines must never deny,
     # or every legitimate revert becomes blocked work. The path is FOUND clean at run
     # time, never named: a fixed `README.md` went red whenever the author's own tree had
-    # README dirty — a verdict about the session, not the hook (2026-10-26).
-    cfix=$(git ls-files | while IFS= read -r f; do git diff --quiet HEAD -- "$f" 2>/dev/null && { printf '%s' "$f"; break; }; done)
-    t "D: checkout of a CLEAN file stays silent" silent \
-      "git checkout ${cfix:-README.md}"
+    # README dirty — a verdict about the session, not the hook (2026-10-26). 🔴 And it is
+    # found among the paths D can SEE (its own `\.[a-z]{1,4}$`, no space, no C-quoting):
+    # the first `git ls-files` entry is `.aiignore`, which D never extracts, so that arm
+    # was silent whatever D did — a mutant calling every path dirty passed (adversary,
+    # 2026-10-26). Clean = no diff against HEAD AND against the index, which D reads.
+    cfix=$(git ls-files | grep -E '^[^ "]+\.[a-z]{1,4}$' | while IFS= read -r f; do
+             git diff --quiet HEAD -- "$f" 2>/dev/null && git diff --quiet -- "$f" 2>/dev/null && { printf '%s' "$f"; break; }
+           done)
+    if [[ -n "$cfix" ]]; then
+      t "D: checkout of a CLEAN file stays silent" silent "git checkout $cfix"
+    else
+      n=$((n + 1)); fails=$((fails + 1))
+      printf '  ✗ %-36s no clean path D can see — the arm would be vacuous\n' "D: checkout of a CLEAN file"
+    fi
   fi
 
   # ── H · git add of a directory while a compute cache is dirty ──────────────
