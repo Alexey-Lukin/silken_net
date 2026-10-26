@@ -52,6 +52,9 @@
 #     пост-TX RX-вікно 500 мс (відкрите щоциклу — ворота vcap вироджені) і TCXO на обох. Холостий
 #     цикл ядра в RX-циклі 600 мс НЕ входить (такт не обрано) — тож за цим членом ціна циклу НИЖНЯ
 #     межа, а стеля тривалості Lorenz тягне навпаки: сценарна точка (`02_03 §9.4`).
+#   • `c_vstor_f=0.47` — НОМІНАЛ, не гарантія: паспорт KR дає допуск −20…+80 % при +20 °C, ΔC ≤ 30 % — критерій
+#     кінця строку, а ємності нижче +20 °C не нормує (`02_03 §12.1`). Вердикт гейта стоїть на номіналі; друге
+#     прочитання на нижньому краю допуску друкує звіт — warn-only, як і CCM-headline (`02_03 §9.8а` ⊕).
 
 require_relative "lib/energy_chain"
 EC = SilkenEnergyChain
@@ -90,6 +93,9 @@ PARAMS = {
 # Паспортний сон відвантаженого режиму (00_07 FW.54, 2026-10-05): прошивка спить у STOP2, а 300 нА у PARAMS —
 # ціль класу Standby. Друге прочитання вироку, не дефолт (DS13105 Rev 12, титульна: Stop2 + RTC 1.07 µA при 3 В).
 STOP2_SHIPPED_NA = 1070.0
+# Нижній край паспортного допуску ємності вцілілого KR-5R5H474-R (02_03 §12.1: −20 %…+80 % при +20 °C). Друге
+# прочитання вироку, не дефолт; кінець строку (ΔC ≤ 30 % поверх) — ще нижче, його число — 02_03 §9.8а ⊕.
+C_TOLERANCE_LOW = 0.20
 P_GEN_SWEEP_UW = [ 3.0, 4.0, 5.0 ].freeze # HW.44-назва смуга: "P_gen 3-5 µW"
 
 params = PARAMS.dup
@@ -255,7 +261,7 @@ def report(p)
   end
   puts
 
-  puts "── Вирок ──"
+  puts "── Вирок (ємність — номінал; край паспортного допуску — рядок ⚠️ нижче) ──"
   puts "  1. ECB (транзитний, ЖИВИЙ сьогодні): headline #{headline_word(win - headline_3cycle_mj(p, wire: :ecb), win)}."
   puts "  2. CCM (wire-rev2.1, FW.2 bench-gated, ЩЕ не в полі): headline " \
        "#{headline_word(win - headline_3cycle_mj(p, wire: :ccm), win)}."
@@ -282,6 +288,14 @@ def report(p)
   puts "  4. Sensitivity-блок (інтервал #{p[:interval_h]} год — припущення): #{crossover_word(p, :ecb)} · " \
        "#{crossover_word(p, :ccm)} — #{band_note}; а сам сонний баланс негативний — вікно спливає за " \
        "~%.0f год і без жодного циклу." % (win / -net_5)
+  if p[:c_vstor_f] == PARAMS[:c_vstor_f]
+    lo = p.merge(c_vstor_f: p[:c_vstor_f] * (1.0 - C_TOLERANCE_LOW))
+    w_lo = window_mj(lo)
+    puts format("  ⚠️ Ємність %.2f F — номінал; на нижньому краю паспортного допуску (−%.0f %%, %.3f F) вікно %.1f мДж: " \
+                "ECB headline %+.1f мДж · CCM %+.1f мДж (02_03 §9.8а ⊕; warn-only)",
+                p[:c_vstor_f], C_TOLERANCE_LOW * 100, lo[:c_vstor_f], w_lo,
+                w_lo - headline_3cycle_mj(lo, wire: :ecb), w_lo - headline_3cycle_mj(lo, wire: :ccm))
+  end
   return unless p[:i_stm32_sleep_na] == PARAMS[:i_stm32_sleep_na]
 
   q = p.merge(i_stm32_sleep_na: STOP2_SHIPPED_NA)
