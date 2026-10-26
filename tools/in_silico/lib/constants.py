@@ -224,6 +224,10 @@ COIN_RESERVE_12WK_PER_ALLOY = 6
 # table puts the boost on the steep low-current rise at «~20-30 % на 10 µA» (SLUSBH2G Figs 4-7, read by eye), and the
 # table itself runs at V_OP 325 mV — the OTHER unreconciled V_OP guess beside V_OP above (⛔ not merged, ⚖️ 2026-09-10).
 ETA_BQ_10UA_READING = (0.20, 0.30)
+I_ETA_10UA = 10.0            # µA — the input current that reading is taken at
+# … and the same text's plateau, «85-90 % лише від ~1 мА»: with η non-decreasing in the input current, its top is the
+# boost's ceiling below that current. Mirror — edit there.
+ETA_BQ_PLATEAU_READING = (0.85, 0.90)
 # §9.1 also gives its TABLE readings an error — «порядку ±10-15 в.п., не ±1» (read by eye off the same figures) — so a
 # consumer that needs a bound takes each table η as an interval of ± this outer end, never as a point. Mirror — edit there.
 ETA_TABLE_READ_ERROR = 0.15
@@ -497,9 +501,23 @@ SECONDS_PER_YEAR = 365.25 * 86400.0      # s — Julian year
 # second power source landing on the SAME BQ25570 charging rail. Mirror of canon;
 # edit `02_03`, not here (same discipline as ETA_BQ above). ──
 C_EDLC_F = 0.47                  # F — EDLC capacitance (02_03 §12.1)
+# ⚠️ 0.47 F is a NOMINAL, not a guarantee (02_03 §12.1 — the surviving KR-5R5H474-R's Technical Data 4327, June 2026):
+# capacitance tolerance −20 %…+80 % at +20 °C; ΔC 30 % is the end-of-life criterion of §12.1's life calculation; no
+# rating below +20 °C. Readings of C, never a pick: the window below is computed on the nominal.
+C_EDLC_TOLERANCE_LOW = 0.20      # — fraction below nominal at the tolerance's low edge (+20 °C)
+C_EDLC_TOLERANCE_HIGH = 0.80     # — fraction above nominal at the tolerance's high edge (+20 °C)
+C_EDLC_EOL_DROP = 0.30           # — capacitance lost at the end-of-life criterion, on top of the initial value
 VBAT_OV_RATIFIED_V = 4.822       # V — the RATIFIED VBAT_OV (Derate, founder 2026-09-09): 02_03 §4.Б divider
                                  #     1.5 × 1.21 × (1 + 7.87/4.75); the EDLC's operating ceiling (00_07 HW.7/HW.37)
+# 02_03 §4.Б's row «наші 1 % E96: worst-case» — the datasheet's ±2 % plus the arms' 1 % (`tools/firmware/
+# bq25570_dividers.rb` computes it). A band of the threshold the store is filled to, for a consumer that needs a bound.
+VBAT_OV_WORST_CASE_V = (4.665, 4.979)
 VBAT_OK_ON_V = 3.40              # V — buck re-enable threshold (OK_HYST), window floor (02_03 §4.Г, §8)
+# OK_PROG — the falling threshold: from a full store the buck stays on down to it (02_03 §4.Г), so the store EMPTIES
+# there; §8's window stops at OK_HYST above it, the reserve above the restart threshold. Its band — §4.Г's row «наші 1 %
+# E96: worst-case» (the datasheet's ±2 % plus the arms'; `tools/firmware/bq25570_dividers.rb` computes it).
+VBAT_OK_OFF_V = 3.312            # V
+VBAT_OK_OFF_WORST_CASE_V = (3.203, 3.420)
 ETA_BUCK_ACTIVE = 0.88           # — buck efficiency, active load (02_03 §9.1 buck table)
 # The window is DERIVED from the thresholds above, never typed: a typed 3.87 J stayed on the part's 5.5 V
 # rating after the derate was ratified, because nothing tied it to VBAT_OV (00_07 HW.37).

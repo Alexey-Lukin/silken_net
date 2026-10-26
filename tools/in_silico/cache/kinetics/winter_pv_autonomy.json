@@ -1,0 +1,1733 @@
+{
+  "script": "110_winter_pv_autonomy.py",
+  "leg": "00_07 HW.54 Р3(б)(2)",
+  "what": "necessary effective aperture A_eff = eta_pv · T · A of a PV cell on the dome for the EDLC never to empty over the hourly record, per field, demand and corner; lower bracket end, rounded down",
+  "record": {
+    "start": "1991-01-01T00:00",
+    "end": "2020-12-31T23:00",
+    "hours": 262992
+  },
+  "inputs": {
+    "corners": {
+      "favourable": {
+        "capacitance_f": 0.846,
+        "window_v": [
+          4.979,
+          3.203
+        ],
+        "e_max_j": 6.1467,
+        "wake_energy_mj": 28.83,
+        "leak_uw": 0.0,
+        "boost_eta_anchors_uw": [
+          [
+            3.25,
+            0.2,
+            0.3
+          ],
+          [
+            15.0,
+            0.53,
+            0.8300000000000001
+          ],
+          [
+            30.0,
+            0.6,
+            0.9
+          ],
+          [
+            100.0,
+            0.6699999999999999,
+            0.97
+          ]
+        ],
+        "boost_eta_v_op_v": 0.325,
+        "boost_eta_curve": "most efficient",
+        "reflected_end_in_the_sentence": "high"
+      },
+      "nominal": {
+        "capacitance_f": 0.47,
+        "window_v": [
+          4.822,
+          3.312
+        ],
+        "e_max_j": 2.8863,
+        "wake_energy_mj": 33.33,
+        "leak_uw": 0.0,
+        "boost_eta_anchors_uw": [
+          [
+            3.25,
+            0.2,
+            0.3
+          ],
+          [
+            15.0,
+            0.53,
+            0.8300000000000001
+          ],
+          [
+            30.0,
+            0.6,
+            0.9
+          ],
+          [
+            100.0,
+            0.6699999999999999,
+            0.97
+          ]
+        ],
+        "boost_eta_v_op_v": 0.325,
+        "boost_eta_curve": "mid-point",
+        "reflected_end_in_the_sentence": null
+      },
+      "adverse": {
+        "capacitance_f": 0.2632,
+        "window_v": [
+          4.665,
+          3.42
+        ],
+        "e_max_j": 1.3247,
+        "wake_energy_mj": 43.164,
+        "leak_uw": 4.5,
+        "boost_eta_anchors_uw": [
+          [
+            5.0,
+            0.2,
+            0.3
+          ],
+          [
+            23.076923076923077,
+            0.53,
+            0.8300000000000001
+          ],
+          [
+            46.15384615384615,
+            0.6,
+            0.9
+          ],
+          [
+            153.84615384615384,
+            0.6699999999999999,
+            0.97
+          ]
+        ],
+        "boost_eta_v_op_v": 0.5,
+        "boost_eta_curve": "least efficient",
+        "reflected_end_in_the_sentence": "low"
+      }
+    },
+    "boost_eta_ceiling": 0.9,
+    "demand_uw": {
+      "standby_sleep": {
+        "favourable": 4.18,
+        "nominal": 4.18,
+        "adverse": 4.18
+      },
+      "cadence_c": {
+        "favourable": 9.387,
+        "nominal": 10.2,
+        "adverse": 11.976
+      },
+      "stop2_cadence_c": {
+        "favourable": 14.467,
+        "nominal": 15.28,
+        "adverse": 17.056
+      }
+    },
+    "cadence_c_interval_s": 5536.5,
+    "dome_face_cm2": 6.975,
+    "desk_eta_pv_assumed": [
+      0.03,
+      0.05
+    ],
+    "desk_canopy_t": [
+      0.21,
+      0.55
+    ],
+    "reflected_ends": [
+      "low",
+      "high"
+    ],
+    "sources": {
+      "canopy_t": "Sonohat G., Balandier P., Ruchaud F. (2004) Ann. For. Sci. 61(7):629-641, doi:10.1051/forest:2004061 — Scots pine stand transmittance of global radiation 0.15-0.81, 70 % of the data 0.21-0.55; horizontal solarimeters, growing season",
+      "dec_ghi_pvgis": "https://re.jrc.ec.europa.eu/api/v5_3/MRcalc?lat=49.44&lon=32.06&horirrad=1&d2g=1&selectrad=1&angle=90&aspect=0&outputformat=json (collected by the desk pass, re-queried by its verifier)",
+      "dec_ghi_nasa_power": "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=ALLSKY_SFC_SW_DWN,ALLSKY_SFC_SW_DIFF,CLRSKY_SFC_SW_DWN&community=RE&longitude=32.06&latitude=49.44&format=JSON (as collected by the desk pass, not re-read)",
+      "desk_worst_7d": "the desk pass of 2026-10-26 over the same ERA5 file (its script was not committed; provenance — the handoff corpus named in 01_03 §4 ⊕, r3b_winter_power)"
+    }
+  },
+  "controls": {
+    "zero_harvest_onset": "matches its closed form on every lane",
+    "store_ceiling": "empties from E_max after each of [24, 240] blinding hours",
+    "december_ghi_Wh_m2_day": 651.9,
+    "december_ghi_sources": {
+      "PVGIS-SARAH3 2005-2023": 636.0,
+      "NASA POWER": 663.0
+    },
+    "sun_gates_of_79": {
+      "geometry": {
+        "declination_deg": [
+          -23.426,
+          23.456
+        ],
+        "equation_of_time_min": [
+          -14.26,
+          16.38
+        ],
+        "june_noon_altitude_deg": 63.955,
+        "june_noon_altitude_expected_deg": 63.94
+      },
+      "clock": {
+        "-1.0": 0.00813,
+        "-0.5": 0.000633,
+        "+0.0": 0.0,
+        "+0.5": 0.00056,
+        "+1.0": 0.01
+      }
+    },
+    "faces": {
+      "solstices": 30,
+      "south_over_cos_h": [
+        0.9951,
+        0.9951
+      ],
+      "east_west_lead_min": 0.387
+    },
+    "harvest_arm": {
+      "g_w_m2": 20.0,
+      "hours": 5000,
+      "lanes": 9,
+      "widest_bracket_rel": 8.05e-05
+    },
+    "eta_curves": "vector ≡ scalar, ordered favourable ≥ nominal ≥ adverse",
+    "desk_worst_7d_dec_jan": {
+      "desk": {
+        "worst_Wh_m2_day": 331.0,
+        "median_of_season_minima_Wh_m2_day": 401.0,
+        "seasons": 29
+      },
+      "here": {
+        "worst_Wh_m2_day": 330.5,
+        "worst_starts": "1993-12-25",
+        "median_of_season_minima_Wh_m2_day": 400.5,
+        "seasons": 29
+      }
+    },
+    "monotone_factors": [
+      0.5,
+      0.9,
+      1.1,
+      2.0
+    ],
+    "bisection_iterations": 30,
+    "lanes_with_no_aperture_up_to_the_top": 0
+  },
+  "autonomy_days_without_sun": {
+    "standby_sleep": {
+      "favourable": 17.01,
+      "nominal": 7.99,
+      "adverse": 1.76,
+      "canon_window_8_nominal_with_1uA_leak": 3.66
+    },
+    "cadence_c": {
+      "favourable": 7.57,
+      "nominal": 3.27,
+      "adverse": 0.93,
+      "canon_window_8_nominal_with_1uA_leak": 2.16
+    },
+    "stop2_cadence_c": {
+      "favourable": 4.91,
+      "nominal": 2.18,
+      "adverse": 0.71,
+      "canon_window_8_nominal_with_1uA_leak": 1.6
+    }
+  },
+  "autonomy_note": "rounded down; canon_window_8_nominal_with_1uA_leak is §8's 2.75 J window (from OK_HYST) — the reading 01_03 §4's desk line names",
+  "worst_stretch": {
+    "closed_stand.low": {
+      "1d": {
+        "worst_Wh_m2_day": 51.3,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 90.9,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 93.8,
+        "worst_starts": "1997-12-03",
+        "median_of_season_minima_Wh_m2_day": 177.8,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 195.0,
+        "worst_starts": "1993-12-25",
+        "median_of_season_minima_Wh_m2_day": 231.4,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 231.9,
+        "worst_starts": "2007-12-09",
+        "median_of_season_minima_Wh_m2_day": 303.0,
+        "seasons": 29
+      }
+    },
+    "open_face_000.low": {
+      "1d": {
+        "worst_Wh_m2_day": 51.3,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 90.9,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 93.3,
+        "worst_starts": "2017-12-01",
+        "median_of_season_minima_Wh_m2_day": 168.7,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 180.9,
+        "worst_starts": "2019-12-21",
+        "median_of_season_minima_Wh_m2_day": 213.6,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 216.7,
+        "worst_starts": "1997-11-22",
+        "median_of_season_minima_Wh_m2_day": 252.3,
+        "seasons": 29
+      }
+    },
+    "open_face_090.low": {
+      "1d": {
+        "worst_Wh_m2_day": 51.3,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 90.9,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 93.8,
+        "worst_starts": "1997-12-03",
+        "median_of_season_minima_Wh_m2_day": 181.2,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 197.6,
+        "worst_starts": "1993-12-25",
+        "median_of_season_minima_Wh_m2_day": 231.1,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 232.9,
+        "worst_starts": "1996-11-26",
+        "median_of_season_minima_Wh_m2_day": 324.4,
+        "seasons": 29
+      }
+    },
+    "open_face_180.low": {
+      "1d": {
+        "worst_Wh_m2_day": 51.3,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 90.9,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 93.8,
+        "worst_starts": "1997-12-03",
+        "median_of_season_minima_Wh_m2_day": 199.7,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 250.0,
+        "worst_starts": "1993-12-25",
+        "median_of_season_minima_Wh_m2_day": 361.6,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 305.1,
+        "worst_starts": "2012-11-27",
+        "median_of_season_minima_Wh_m2_day": 583.3,
+        "seasons": 29
+      }
+    },
+    "open_face_270.low": {
+      "1d": {
+        "worst_Wh_m2_day": 51.3,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 90.9,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 93.3,
+        "worst_starts": "2017-12-01",
+        "median_of_season_minima_Wh_m2_day": 184.9,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 201.0,
+        "worst_starts": "1993-12-25",
+        "median_of_season_minima_Wh_m2_day": 251.8,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 240.7,
+        "worst_starts": "2007-12-09",
+        "median_of_season_minima_Wh_m2_day": 333.2,
+        "seasons": 29
+      }
+    },
+    "closed_stand.high": {
+      "1d": {
+        "worst_Wh_m2_day": 53.9,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 103.5,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 98.6,
+        "worst_starts": "2017-12-01",
+        "median_of_season_minima_Wh_m2_day": 211.0,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 207.7,
+        "worst_starts": "2019-12-21",
+        "median_of_season_minima_Wh_m2_day": 295.6,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 250.8,
+        "worst_starts": "1996-11-26",
+        "median_of_season_minima_Wh_m2_day": 392.2,
+        "seasons": 29
+      }
+    },
+    "open_face_000.high": {
+      "1d": {
+        "worst_Wh_m2_day": 53.9,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 103.5,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 98.1,
+        "worst_starts": "2017-12-01",
+        "median_of_season_minima_Wh_m2_day": 198.6,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 191.0,
+        "worst_starts": "2019-12-21",
+        "median_of_season_minima_Wh_m2_day": 277.8,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 231.6,
+        "worst_starts": "1996-11-26",
+        "median_of_season_minima_Wh_m2_day": 325.4,
+        "seasons": 29
+      }
+    },
+    "open_face_090.high": {
+      "1d": {
+        "worst_Wh_m2_day": 53.9,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 106.4,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 98.8,
+        "worst_starts": "2017-12-01",
+        "median_of_season_minima_Wh_m2_day": 212.8,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 219.4,
+        "worst_starts": "1996-12-02",
+        "median_of_season_minima_Wh_m2_day": 303.9,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 245.0,
+        "worst_starts": "1996-11-26",
+        "median_of_season_minima_Wh_m2_day": 404.6,
+        "seasons": 29
+      }
+    },
+    "open_face_180.high": {
+      "1d": {
+        "worst_Wh_m2_day": 53.9,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 108.1,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 101.2,
+        "worst_starts": "2017-12-01",
+        "median_of_season_minima_Wh_m2_day": 243.0,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 271.5,
+        "worst_starts": "2012-12-03",
+        "median_of_season_minima_Wh_m2_day": 398.9,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 323.5,
+        "worst_starts": "2012-11-27",
+        "median_of_season_minima_Wh_m2_day": 668.4,
+        "seasons": 29
+      }
+    },
+    "open_face_270.high": {
+      "1d": {
+        "worst_Wh_m2_day": 53.9,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 103.5,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 98.1,
+        "worst_starts": "2017-12-01",
+        "median_of_season_minima_Wh_m2_day": 215.0,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 211.3,
+        "worst_starts": "2019-12-21",
+        "median_of_season_minima_Wh_m2_day": 308.4,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 275.5,
+        "worst_starts": "2012-11-27",
+        "median_of_season_minima_Wh_m2_day": 430.3,
+        "seasons": 29
+      }
+    },
+    "ghi_horizontal": {
+      "1d": {
+        "worst_Wh_m2_day": 87.0,
+        "worst_starts": "2017-12-02",
+        "median_of_season_minima_Wh_m2_day": 154.0,
+        "seasons": 29
+      },
+      "3d": {
+        "worst_Wh_m2_day": 159.0,
+        "worst_starts": "1997-12-03",
+        "median_of_season_minima_Wh_m2_day": 301.3,
+        "seasons": 29
+      },
+      "7d": {
+        "worst_Wh_m2_day": 330.5,
+        "worst_starts": "1993-12-25",
+        "median_of_season_minima_Wh_m2_day": 392.2,
+        "seasons": 29
+      },
+      "14d": {
+        "worst_Wh_m2_day": 393.1,
+        "worst_starts": "2007-12-09",
+        "median_of_season_minima_Wh_m2_day": 513.6,
+        "seasons": 29
+      }
+    }
+  },
+  "worst_stretch_note": "irradiance on the face before A_eff, Wh/m²/day: eta_pv and the canopy's T are folded into A_eff, so closed_stand.* here is ½(1+ρ)·GHI without T",
+  "necessary_a_eff_cm2": {
+    "standby_sleep": {
+      "favourable": {
+        "closed_stand.low": 0.00254,
+        "open_face_000.low": 0.00323,
+        "open_face_090.low": 0.00239,
+        "open_face_180.low": 0.00145,
+        "open_face_270.low": 0.00228,
+        "closed_stand.high": 0.00213,
+        "open_face_000.high": 0.00268,
+        "open_face_090.high": 0.00194,
+        "open_face_180.high": 0.0012,
+        "open_face_270.high": 0.00192
+      },
+      "nominal": {
+        "closed_stand.low": 0.00468,
+        "open_face_000.low": 0.00519,
+        "open_face_090.low": 0.00446,
+        "open_face_180.low": 0.00344,
+        "open_face_270.low": 0.00453,
+        "closed_stand.high": 0.00381,
+        "open_face_000.high": 0.00443,
+        "open_face_090.high": 0.00365,
+        "open_face_180.high": 0.00265,
+        "open_face_270.high": 0.00362
+      },
+      "adverse": {
+        "closed_stand.low": 0.0357,
+        "open_face_000.low": 0.0357,
+        "open_face_090.low": 0.0357,
+        "open_face_180.low": 0.0357,
+        "open_face_270.low": 0.0357,
+        "closed_stand.high": 0.034,
+        "open_face_000.high": 0.034,
+        "open_face_090.high": 0.034,
+        "open_face_180.high": 0.034,
+        "open_face_270.high": 0.034
+      }
+    },
+    "cadence_c": {
+      "favourable": {
+        "closed_stand.low": 0.00784,
+        "open_face_000.low": 0.00888,
+        "open_face_090.low": 0.00746,
+        "open_face_180.low": 0.00575,
+        "open_face_270.low": 0.00757,
+        "closed_stand.high": 0.00635,
+        "open_face_000.high": 0.00748,
+        "open_face_090.high": 0.00608,
+        "open_face_180.high": 0.00435,
+        "open_face_270.high": 0.00598
+      },
+      "nominal": {
+        "closed_stand.low": 0.0127,
+        "open_face_000.low": 0.0135,
+        "open_face_090.low": 0.012,
+        "open_face_180.low": 0.01,
+        "open_face_270.low": 0.0122,
+        "closed_stand.high": 0.0106,
+        "open_face_000.high": 0.0124,
+        "open_face_090.high": 0.0109,
+        "open_face_180.high": 0.00872,
+        "open_face_270.high": 0.0106
+      },
+      "adverse": {
+        "closed_stand.low": 0.103,
+        "open_face_000.low": 0.103,
+        "open_face_090.low": 0.103,
+        "open_face_180.low": 0.103,
+        "open_face_270.low": 0.103,
+        "closed_stand.high": 0.0983,
+        "open_face_000.high": 0.0983,
+        "open_face_090.high": 0.0983,
+        "open_face_180.high": 0.0983,
+        "open_face_270.high": 0.0983
+      }
+    },
+    "stop2_cadence_c": {
+      "favourable": {
+        "closed_stand.low": 0.0139,
+        "open_face_000.low": 0.0146,
+        "open_face_090.low": 0.0132,
+        "open_face_180.low": 0.0102,
+        "open_face_270.low": 0.0133,
+        "closed_stand.high": 0.0112,
+        "open_face_000.high": 0.0125,
+        "open_face_090.high": 0.011,
+        "open_face_180.high": 0.00843,
+        "open_face_270.high": 0.0105
+      },
+      "nominal": {
+        "closed_stand.low": 0.0265,
+        "open_face_000.low": 0.0265,
+        "open_face_090.low": 0.0265,
+        "open_face_180.low": 0.0265,
+        "open_face_270.low": 0.0265,
+        "closed_stand.high": 0.0249,
+        "open_face_000.high": 0.0251,
+        "open_face_090.high": 0.0249,
+        "open_face_180.high": 0.0242,
+        "open_face_270.high": 0.0251
+      },
+      "adverse": {
+        "closed_stand.low": 0.165,
+        "open_face_000.low": 0.165,
+        "open_face_090.low": 0.165,
+        "open_face_180.low": 0.165,
+        "open_face_270.low": 0.165,
+        "closed_stand.high": 0.157,
+        "open_face_000.high": 0.157,
+        "open_face_090.high": 0.157,
+        "open_face_180.high": 0.157,
+        "open_face_270.high": 0.157
+      }
+    }
+  },
+  "stands": {
+    "standby_sleep": {
+      "favourable.low": {
+        "open_field_by_face": {
+          "000": 0.00323,
+          "090": 0.00239,
+          "180": 0.00145,
+          "270": 0.00228
+        },
+        "open_field_lower": 0.00145,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.00254,
+        "closed_stand_lower": 0.00145,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "favourable.high": {
+        "open_field_by_face": {
+          "000": 0.00268,
+          "090": 0.00194,
+          "180": 0.0012,
+          "270": 0.00192
+        },
+        "open_field_lower": 0.0012,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.00213,
+        "closed_stand_lower": 0.0012,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "nominal.low": {
+        "open_field_by_face": {
+          "000": 0.00519,
+          "090": 0.00446,
+          "180": 0.00344,
+          "270": 0.00453
+        },
+        "open_field_lower": 0.00344,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.00468,
+        "closed_stand_lower": 0.00344,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "nominal.high": {
+        "open_field_by_face": {
+          "000": 0.00443,
+          "090": 0.00365,
+          "180": 0.00265,
+          "270": 0.00362
+        },
+        "open_field_lower": 0.00265,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.00381,
+        "closed_stand_lower": 0.00265,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "adverse.low": {
+        "open_field_by_face": {
+          "000": 0.0357,
+          "090": 0.0357,
+          "180": 0.0357,
+          "270": 0.0357
+        },
+        "open_field_lower": 0.0357,
+        "open_field_lowest": [
+          "face 000",
+          "face 090",
+          "face 180",
+          "face 270"
+        ],
+        "closed_stand_isotropic": 0.0357,
+        "closed_stand_lower": 0.0357,
+        "closed_stand_lower_form": "all faces and both forms equal — a diffuse-only binding stretch"
+      },
+      "adverse.high": {
+        "open_field_by_face": {
+          "000": 0.034,
+          "090": 0.034,
+          "180": 0.034,
+          "270": 0.034
+        },
+        "open_field_lower": 0.034,
+        "open_field_lowest": [
+          "face 000",
+          "face 090",
+          "face 180",
+          "face 270"
+        ],
+        "closed_stand_isotropic": 0.034,
+        "closed_stand_lower": 0.034,
+        "closed_stand_lower_form": "all faces and both forms equal — a diffuse-only binding stretch"
+      }
+    },
+    "cadence_c": {
+      "favourable.low": {
+        "open_field_by_face": {
+          "000": 0.00888,
+          "090": 0.00746,
+          "180": 0.00575,
+          "270": 0.00757
+        },
+        "open_field_lower": 0.00575,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.00784,
+        "closed_stand_lower": 0.00575,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "favourable.high": {
+        "open_field_by_face": {
+          "000": 0.00748,
+          "090": 0.00608,
+          "180": 0.00435,
+          "270": 0.00598
+        },
+        "open_field_lower": 0.00435,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.00635,
+        "closed_stand_lower": 0.00435,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "nominal.low": {
+        "open_field_by_face": {
+          "000": 0.0135,
+          "090": 0.012,
+          "180": 0.01,
+          "270": 0.0122
+        },
+        "open_field_lower": 0.01,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.0127,
+        "closed_stand_lower": 0.01,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "nominal.high": {
+        "open_field_by_face": {
+          "000": 0.0124,
+          "090": 0.0109,
+          "180": 0.00872,
+          "270": 0.0106
+        },
+        "open_field_lower": 0.00872,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.0106,
+        "closed_stand_lower": 0.00872,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "adverse.low": {
+        "open_field_by_face": {
+          "000": 0.103,
+          "090": 0.103,
+          "180": 0.103,
+          "270": 0.103
+        },
+        "open_field_lower": 0.103,
+        "open_field_lowest": [
+          "face 000",
+          "face 090",
+          "face 180",
+          "face 270"
+        ],
+        "closed_stand_isotropic": 0.103,
+        "closed_stand_lower": 0.103,
+        "closed_stand_lower_form": "all faces and both forms equal — a diffuse-only binding stretch"
+      },
+      "adverse.high": {
+        "open_field_by_face": {
+          "000": 0.0983,
+          "090": 0.0983,
+          "180": 0.0983,
+          "270": 0.0983
+        },
+        "open_field_lower": 0.0983,
+        "open_field_lowest": [
+          "face 000",
+          "face 090",
+          "face 180",
+          "face 270"
+        ],
+        "closed_stand_isotropic": 0.0983,
+        "closed_stand_lower": 0.0983,
+        "closed_stand_lower_form": "all faces and both forms equal — a diffuse-only binding stretch"
+      }
+    },
+    "stop2_cadence_c": {
+      "favourable.low": {
+        "open_field_by_face": {
+          "000": 0.0146,
+          "090": 0.0132,
+          "180": 0.0102,
+          "270": 0.0133
+        },
+        "open_field_lower": 0.0102,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.0139,
+        "closed_stand_lower": 0.0102,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "favourable.high": {
+        "open_field_by_face": {
+          "000": 0.0125,
+          "090": 0.011,
+          "180": 0.00843,
+          "270": 0.0105
+        },
+        "open_field_lower": 0.00843,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.0112,
+        "closed_stand_lower": 0.00843,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "nominal.low": {
+        "open_field_by_face": {
+          "000": 0.0265,
+          "090": 0.0265,
+          "180": 0.0265,
+          "270": 0.0265
+        },
+        "open_field_lower": 0.0265,
+        "open_field_lowest": [
+          "face 000",
+          "face 090",
+          "face 180",
+          "face 270"
+        ],
+        "closed_stand_isotropic": 0.0265,
+        "closed_stand_lower": 0.0265,
+        "closed_stand_lower_form": "all faces and both forms equal — a diffuse-only binding stretch"
+      },
+      "nominal.high": {
+        "open_field_by_face": {
+          "000": 0.0251,
+          "090": 0.0249,
+          "180": 0.0242,
+          "270": 0.0251
+        },
+        "open_field_lower": 0.0242,
+        "open_field_lowest": [
+          "face 180"
+        ],
+        "closed_stand_isotropic": 0.0249,
+        "closed_stand_lower": 0.0242,
+        "closed_stand_lower_form": "beam through the gaps, face 180"
+      },
+      "adverse.low": {
+        "open_field_by_face": {
+          "000": 0.165,
+          "090": 0.165,
+          "180": 0.165,
+          "270": 0.165
+        },
+        "open_field_lower": 0.165,
+        "open_field_lowest": [
+          "face 000",
+          "face 090",
+          "face 180",
+          "face 270"
+        ],
+        "closed_stand_isotropic": 0.165,
+        "closed_stand_lower": 0.165,
+        "closed_stand_lower_form": "all faces and both forms equal — a diffuse-only binding stretch"
+      },
+      "adverse.high": {
+        "open_field_by_face": {
+          "000": 0.157,
+          "090": 0.157,
+          "180": 0.157,
+          "270": 0.157
+        },
+        "open_field_lower": 0.157,
+        "open_field_lowest": [
+          "face 000",
+          "face 090",
+          "face 180",
+          "face 270"
+        ],
+        "closed_stand_isotropic": 0.157,
+        "closed_stand_lower": 0.157,
+        "closed_stand_lower_form": "all faces and both forms equal — a diffuse-only binding stretch"
+      }
+    }
+  },
+  "binding_stretches": {
+    "cadence_c:favourable:closed_stand.high": {
+      "last_full": "1996-11-21T16:00",
+      "first_outage": "1996-12-16T09:00",
+      "dni_after_last_full_Wh_m2": 5540.4
+    },
+    "cadence_c:favourable:open_face_000.high": {
+      "last_full": "2006-11-18T16:00",
+      "first_outage": "2006-12-25T09:00",
+      "dni_after_last_full_Wh_m2": 22441.0
+    },
+    "cadence_c:favourable:open_face_090.high": {
+      "last_full": "1996-11-21T16:00",
+      "first_outage": "1996-12-16T09:00",
+      "dni_after_last_full_Wh_m2": 5540.4
+    },
+    "cadence_c:favourable:open_face_180.high": {
+      "last_full": "2012-11-24T16:00",
+      "first_outage": "2012-12-13T09:00",
+      "dni_after_last_full_Wh_m2": 2087.9
+    },
+    "cadence_c:favourable:open_face_270.high": {
+      "last_full": "1996-11-21T17:00",
+      "first_outage": "1996-12-16T09:00",
+      "dni_after_last_full_Wh_m2": 5439.3
+    },
+    "cadence_c:adverse:closed_stand.low": {
+      "last_full": "2017-12-01T16:00",
+      "first_outage": "2017-12-03T09:00",
+      "dni_after_last_full_Wh_m2": 0.0
+    },
+    "cadence_c:adverse:open_face_000.low": {
+      "last_full": "2017-12-01T16:00",
+      "first_outage": "2017-12-03T09:00",
+      "dni_after_last_full_Wh_m2": 0.0
+    },
+    "cadence_c:adverse:open_face_090.low": {
+      "last_full": "2017-12-01T16:00",
+      "first_outage": "2017-12-03T09:00",
+      "dni_after_last_full_Wh_m2": 0.0
+    },
+    "cadence_c:adverse:open_face_180.low": {
+      "last_full": "2017-12-01T16:00",
+      "first_outage": "2017-12-03T09:00",
+      "dni_after_last_full_Wh_m2": 0.0
+    },
+    "cadence_c:adverse:open_face_270.low": {
+      "last_full": "2017-12-01T16:00",
+      "first_outage": "2017-12-03T09:00",
+      "dni_after_last_full_Wh_m2": 0.0
+    }
+  },
+  "desk_bracket_a_eff_cm2": {
+    "closed_stand": [
+      0.0439,
+      0.1918
+    ],
+    "open_field": [
+      0.2092,
+      0.3487
+    ]
+  },
+  "thresholds": [
+    {
+      "field": "closed_stand.low",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00254074,
+      "a_eff_hi_cm2": 0.00254084,
+      "below_this_it_cannot_cm2": 0.00254
+    },
+    {
+      "field": "closed_stand.low",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.00468473,
+      "a_eff_hi_cm2": 0.00468484,
+      "below_this_it_cannot_cm2": 0.00468
+    },
+    {
+      "field": "closed_stand.low",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0357833,
+      "a_eff_hi_cm2": 0.0357835,
+      "below_this_it_cannot_cm2": 0.0357
+    },
+    {
+      "field": "closed_stand.low",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0078408,
+      "a_eff_hi_cm2": 0.0078409,
+      "below_this_it_cannot_cm2": 0.00784
+    },
+    {
+      "field": "closed_stand.low",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0127054,
+      "a_eff_hi_cm2": 0.0127056,
+      "below_this_it_cannot_cm2": 0.0127
+    },
+    {
+      "field": "closed_stand.low",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.10339,
+      "a_eff_hi_cm2": 0.103391,
+      "below_this_it_cannot_cm2": 0.103
+    },
+    {
+      "field": "closed_stand.low",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0139176,
+      "a_eff_hi_cm2": 0.0139178,
+      "below_this_it_cannot_cm2": 0.0139
+    },
+    {
+      "field": "closed_stand.low",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0265938,
+      "a_eff_hi_cm2": 0.026594,
+      "below_this_it_cannot_cm2": 0.0265
+    },
+    {
+      "field": "closed_stand.low",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.165589,
+      "a_eff_hi_cm2": 0.16559,
+      "below_this_it_cannot_cm2": 0.165
+    },
+    {
+      "field": "open_face_000.low",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00323336,
+      "a_eff_hi_cm2": 0.00323346,
+      "below_this_it_cannot_cm2": 0.00323
+    },
+    {
+      "field": "open_face_000.low",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.00519929,
+      "a_eff_hi_cm2": 0.00519939,
+      "below_this_it_cannot_cm2": 0.00519
+    },
+    {
+      "field": "open_face_000.low",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0357833,
+      "a_eff_hi_cm2": 0.0357835,
+      "below_this_it_cannot_cm2": 0.0357
+    },
+    {
+      "field": "open_face_000.low",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00888276,
+      "a_eff_hi_cm2": 0.00888287,
+      "below_this_it_cannot_cm2": 0.00888
+    },
+    {
+      "field": "open_face_000.low",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.01352,
+      "a_eff_hi_cm2": 0.0135202,
+      "below_this_it_cannot_cm2": 0.0135
+    },
+    {
+      "field": "open_face_000.low",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.10339,
+      "a_eff_hi_cm2": 0.103391,
+      "below_this_it_cannot_cm2": 0.103
+    },
+    {
+      "field": "open_face_000.low",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.014684,
+      "a_eff_hi_cm2": 0.0146842,
+      "below_this_it_cannot_cm2": 0.0146
+    },
+    {
+      "field": "open_face_000.low",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0265938,
+      "a_eff_hi_cm2": 0.026594,
+      "below_this_it_cannot_cm2": 0.0265
+    },
+    {
+      "field": "open_face_000.low",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.165589,
+      "a_eff_hi_cm2": 0.16559,
+      "below_this_it_cannot_cm2": 0.165
+    },
+    {
+      "field": "open_face_090.low",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0023947,
+      "a_eff_hi_cm2": 0.00239481,
+      "below_this_it_cannot_cm2": 0.00239
+    },
+    {
+      "field": "open_face_090.low",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0044668,
+      "a_eff_hi_cm2": 0.00446691,
+      "below_this_it_cannot_cm2": 0.00446
+    },
+    {
+      "field": "open_face_090.low",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0357833,
+      "a_eff_hi_cm2": 0.0357835,
+      "below_this_it_cannot_cm2": 0.0357
+    },
+    {
+      "field": "open_face_090.low",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0074651,
+      "a_eff_hi_cm2": 0.00746521,
+      "below_this_it_cannot_cm2": 0.00746
+    },
+    {
+      "field": "open_face_090.low",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0120921,
+      "a_eff_hi_cm2": 0.0120923,
+      "below_this_it_cannot_cm2": 0.012
+    },
+    {
+      "field": "open_face_090.low",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.10339,
+      "a_eff_hi_cm2": 0.103391,
+      "below_this_it_cannot_cm2": 0.103
+    },
+    {
+      "field": "open_face_090.low",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.013261,
+      "a_eff_hi_cm2": 0.0132612,
+      "below_this_it_cannot_cm2": 0.0132
+    },
+    {
+      "field": "open_face_090.low",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0265938,
+      "a_eff_hi_cm2": 0.026594,
+      "below_this_it_cannot_cm2": 0.0265
+    },
+    {
+      "field": "open_face_090.low",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.165589,
+      "a_eff_hi_cm2": 0.16559,
+      "below_this_it_cannot_cm2": 0.165
+    },
+    {
+      "field": "open_face_180.low",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00145249,
+      "a_eff_hi_cm2": 0.00145259,
+      "below_this_it_cannot_cm2": 0.00145
+    },
+    {
+      "field": "open_face_180.low",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.00344766,
+      "a_eff_hi_cm2": 0.00344776,
+      "below_this_it_cannot_cm2": 0.00344
+    },
+    {
+      "field": "open_face_180.low",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0357833,
+      "a_eff_hi_cm2": 0.0357835,
+      "below_this_it_cannot_cm2": 0.0357
+    },
+    {
+      "field": "open_face_180.low",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00575967,
+      "a_eff_hi_cm2": 0.00575977,
+      "below_this_it_cannot_cm2": 0.00575
+    },
+    {
+      "field": "open_face_180.low",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0100754,
+      "a_eff_hi_cm2": 0.0100756,
+      "below_this_it_cannot_cm2": 0.01
+    },
+    {
+      "field": "open_face_180.low",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.10339,
+      "a_eff_hi_cm2": 0.103391,
+      "below_this_it_cannot_cm2": 0.103
+    },
+    {
+      "field": "open_face_180.low",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0102275,
+      "a_eff_hi_cm2": 0.0102277,
+      "below_this_it_cannot_cm2": 0.0102
+    },
+    {
+      "field": "open_face_180.low",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0265938,
+      "a_eff_hi_cm2": 0.026594,
+      "below_this_it_cannot_cm2": 0.0265
+    },
+    {
+      "field": "open_face_180.low",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.165589,
+      "a_eff_hi_cm2": 0.16559,
+      "below_this_it_cannot_cm2": 0.165
+    },
+    {
+      "field": "open_face_270.low",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00228695,
+      "a_eff_hi_cm2": 0.00228705,
+      "below_this_it_cannot_cm2": 0.00228
+    },
+    {
+      "field": "open_face_270.low",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.00453786,
+      "a_eff_hi_cm2": 0.00453797,
+      "below_this_it_cannot_cm2": 0.00453
+    },
+    {
+      "field": "open_face_270.low",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0357833,
+      "a_eff_hi_cm2": 0.0357835,
+      "below_this_it_cannot_cm2": 0.0357
+    },
+    {
+      "field": "open_face_270.low",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00757109,
+      "a_eff_hi_cm2": 0.00757119,
+      "below_this_it_cannot_cm2": 0.00757
+    },
+    {
+      "field": "open_face_270.low",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0122202,
+      "a_eff_hi_cm2": 0.0122204,
+      "below_this_it_cannot_cm2": 0.0122
+    },
+    {
+      "field": "open_face_270.low",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.10339,
+      "a_eff_hi_cm2": 0.103391,
+      "below_this_it_cannot_cm2": 0.103
+    },
+    {
+      "field": "open_face_270.low",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0133847,
+      "a_eff_hi_cm2": 0.0133849,
+      "below_this_it_cannot_cm2": 0.0133
+    },
+    {
+      "field": "open_face_270.low",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0265938,
+      "a_eff_hi_cm2": 0.026594,
+      "below_this_it_cannot_cm2": 0.0265
+    },
+    {
+      "field": "open_face_270.low",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.165589,
+      "a_eff_hi_cm2": 0.16559,
+      "below_this_it_cannot_cm2": 0.165
+    },
+    {
+      "field": "closed_stand.high",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00213524,
+      "a_eff_hi_cm2": 0.00213534,
+      "below_this_it_cannot_cm2": 0.00213
+    },
+    {
+      "field": "closed_stand.high",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.00381357,
+      "a_eff_hi_cm2": 0.00381368,
+      "below_this_it_cannot_cm2": 0.00381
+    },
+    {
+      "field": "closed_stand.high",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0340519,
+      "a_eff_hi_cm2": 0.0340521,
+      "below_this_it_cannot_cm2": 0.034
+    },
+    {
+      "field": "closed_stand.high",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00635208,
+      "a_eff_hi_cm2": 0.00635218,
+      "below_this_it_cannot_cm2": 0.00635
+    },
+    {
+      "field": "closed_stand.high",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0106914,
+      "a_eff_hi_cm2": 0.0106916,
+      "below_this_it_cannot_cm2": 0.0106
+    },
+    {
+      "field": "closed_stand.high",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0983878,
+      "a_eff_hi_cm2": 0.0983879,
+      "below_this_it_cannot_cm2": 0.0983
+    },
+    {
+      "field": "closed_stand.high",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0112269,
+      "a_eff_hi_cm2": 0.0112271,
+      "below_this_it_cannot_cm2": 0.0112
+    },
+    {
+      "field": "closed_stand.high",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0249709,
+      "a_eff_hi_cm2": 0.024971,
+      "below_this_it_cannot_cm2": 0.0249
+    },
+    {
+      "field": "closed_stand.high",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.157577,
+      "a_eff_hi_cm2": 0.157578,
+      "below_this_it_cannot_cm2": 0.157
+    },
+    {
+      "field": "open_face_000.high",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00268789,
+      "a_eff_hi_cm2": 0.00268799,
+      "below_this_it_cannot_cm2": 0.00268
+    },
+    {
+      "field": "open_face_000.high",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.00443514,
+      "a_eff_hi_cm2": 0.00443524,
+      "below_this_it_cannot_cm2": 0.00443
+    },
+    {
+      "field": "open_face_000.high",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0340519,
+      "a_eff_hi_cm2": 0.0340521,
+      "below_this_it_cannot_cm2": 0.034
+    },
+    {
+      "field": "open_face_000.high",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00748839,
+      "a_eff_hi_cm2": 0.00748849,
+      "below_this_it_cannot_cm2": 0.00748
+    },
+    {
+      "field": "open_face_000.high",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0124976,
+      "a_eff_hi_cm2": 0.0124977,
+      "below_this_it_cannot_cm2": 0.0124
+    },
+    {
+      "field": "open_face_000.high",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0983878,
+      "a_eff_hi_cm2": 0.0983879,
+      "below_this_it_cannot_cm2": 0.0983
+    },
+    {
+      "field": "open_face_000.high",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0125084,
+      "a_eff_hi_cm2": 0.0125086,
+      "below_this_it_cannot_cm2": 0.0125
+    },
+    {
+      "field": "open_face_000.high",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0251059,
+      "a_eff_hi_cm2": 0.0251061,
+      "below_this_it_cannot_cm2": 0.0251
+    },
+    {
+      "field": "open_face_000.high",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.157577,
+      "a_eff_hi_cm2": 0.157578,
+      "below_this_it_cannot_cm2": 0.157
+    },
+    {
+      "field": "open_face_090.high",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00194897,
+      "a_eff_hi_cm2": 0.00194908,
+      "below_this_it_cannot_cm2": 0.00194
+    },
+    {
+      "field": "open_face_090.high",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.00365739,
+      "a_eff_hi_cm2": 0.0036575,
+      "below_this_it_cannot_cm2": 0.00365
+    },
+    {
+      "field": "open_face_090.high",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0340519,
+      "a_eff_hi_cm2": 0.0340521,
+      "below_this_it_cannot_cm2": 0.034
+    },
+    {
+      "field": "open_face_090.high",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00608852,
+      "a_eff_hi_cm2": 0.00608862,
+      "below_this_it_cannot_cm2": 0.00608
+    },
+    {
+      "field": "open_face_090.high",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0109302,
+      "a_eff_hi_cm2": 0.0109304,
+      "below_this_it_cannot_cm2": 0.0109
+    },
+    {
+      "field": "open_face_090.high",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0983878,
+      "a_eff_hi_cm2": 0.0983879,
+      "below_this_it_cannot_cm2": 0.0983
+    },
+    {
+      "field": "open_face_090.high",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0110919,
+      "a_eff_hi_cm2": 0.0110921,
+      "below_this_it_cannot_cm2": 0.011
+    },
+    {
+      "field": "open_face_090.high",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0249092,
+      "a_eff_hi_cm2": 0.0249094,
+      "below_this_it_cannot_cm2": 0.0249
+    },
+    {
+      "field": "open_face_090.high",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.157577,
+      "a_eff_hi_cm2": 0.157578,
+      "below_this_it_cannot_cm2": 0.157
+    },
+    {
+      "field": "open_face_180.high",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00120159,
+      "a_eff_hi_cm2": 0.00120169,
+      "below_this_it_cannot_cm2": 0.0012
+    },
+    {
+      "field": "open_face_180.high",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0026579,
+      "a_eff_hi_cm2": 0.002658,
+      "below_this_it_cannot_cm2": 0.00265
+    },
+    {
+      "field": "open_face_180.high",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0340519,
+      "a_eff_hi_cm2": 0.0340521,
+      "below_this_it_cannot_cm2": 0.034
+    },
+    {
+      "field": "open_face_180.high",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00435393,
+      "a_eff_hi_cm2": 0.00435403,
+      "below_this_it_cannot_cm2": 0.00435
+    },
+    {
+      "field": "open_face_180.high",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.00872788,
+      "a_eff_hi_cm2": 0.00872799,
+      "below_this_it_cannot_cm2": 0.00872
+    },
+    {
+      "field": "open_face_180.high",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0983878,
+      "a_eff_hi_cm2": 0.0983879,
+      "below_this_it_cannot_cm2": 0.0983
+    },
+    {
+      "field": "open_face_180.high",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00843387,
+      "a_eff_hi_cm2": 0.00843397,
+      "below_this_it_cannot_cm2": 0.00843
+    },
+    {
+      "field": "open_face_180.high",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0242984,
+      "a_eff_hi_cm2": 0.0242986,
+      "below_this_it_cannot_cm2": 0.0242
+    },
+    {
+      "field": "open_face_180.high",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.157577,
+      "a_eff_hi_cm2": 0.157578,
+      "below_this_it_cannot_cm2": 0.157
+    },
+    {
+      "field": "open_face_270.high",
+      "demand": "standby_sleep",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00192187,
+      "a_eff_hi_cm2": 0.00192198,
+      "below_this_it_cannot_cm2": 0.00192
+    },
+    {
+      "field": "open_face_270.high",
+      "demand": "standby_sleep",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.00362824,
+      "a_eff_hi_cm2": 0.00362834,
+      "below_this_it_cannot_cm2": 0.00362
+    },
+    {
+      "field": "open_face_270.high",
+      "demand": "standby_sleep",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0340519,
+      "a_eff_hi_cm2": 0.0340521,
+      "below_this_it_cannot_cm2": 0.034
+    },
+    {
+      "field": "open_face_270.high",
+      "demand": "cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.00598561,
+      "a_eff_hi_cm2": 0.00598571,
+      "below_this_it_cannot_cm2": 0.00598
+    },
+    {
+      "field": "open_face_270.high",
+      "demand": "cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0106138,
+      "a_eff_hi_cm2": 0.010614,
+      "below_this_it_cannot_cm2": 0.0106
+    },
+    {
+      "field": "open_face_270.high",
+      "demand": "cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.0983878,
+      "a_eff_hi_cm2": 0.0983879,
+      "below_this_it_cannot_cm2": 0.0983
+    },
+    {
+      "field": "open_face_270.high",
+      "demand": "stop2_cadence_c",
+      "corner": "favourable",
+      "a_eff_lo_cm2": 0.0105517,
+      "a_eff_hi_cm2": 0.0105519,
+      "below_this_it_cannot_cm2": 0.0105
+    },
+    {
+      "field": "open_face_270.high",
+      "demand": "stop2_cadence_c",
+      "corner": "nominal",
+      "a_eff_lo_cm2": 0.0251028,
+      "a_eff_hi_cm2": 0.025103,
+      "below_this_it_cannot_cm2": 0.0251
+    },
+    {
+      "field": "open_face_270.high",
+      "demand": "stop2_cadence_c",
+      "corner": "adverse",
+      "a_eff_lo_cm2": 0.157577,
+      "a_eff_hi_cm2": 0.157578,
+      "below_this_it_cannot_cm2": 0.157
+    }
+  ],
+  "verdict": "At cadence C, with every reading at its favourable end (C 0.846 F, window 4.979→3.203 V, the most efficient boost curve, wake 28.8 mJ, no leak, the high reflected end), the node cannot ride 1991–2020 below 0.00435 cm² under the closed stand (beam through the gaps, face 180) — below the whole desk bracket 0.0439–0.1918 cm² — and below 0.00435 cm² in the open (face 180) — below the whole desk bracket 0.2092–0.3487 cm². With every reading at its adverse end (C 0.263 F, window 4.665→3.420 V, the least efficient boost curve, wake 43.2 mJ, §9.3's 4.5 µW leak illustration, the low reflected end): below 0.103 cm² closed (all faces and both forms equal — a diffuse-only binding stretch) — inside the bracket — and 0.103 cm² open — below the whole bracket. The Standby sleep alone, favourable end: below 0.0012 cm² closed. Which closed-stand form describes a closed stand is not established, so each sentence takes the lower. Necessary conditions only."
+}

@@ -122,6 +122,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 47. A design or precision table's degrees of freedom are an analysis READING, not a given — estimate the spread per contrast (robust if the arms differ) ⊥ pooled over the arms that measure the SAME quantity (licensed by a one-spread assumption the model already makes): publish both, and pool only across one quantity
 48. A bound is about PHASES and bounds stiffness, not response
 49. A physicality flag certifies only what it was written to test — record the window, the picks and ⟨S²⟩ beside t_ij, or the flag IS the record
+50. A NECESSARY threshold is a minimum over the WHOLE band of EVERY input — «nominal» is not «favourable», and the band belongs to the PHYSICAL event the model asks about
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
@@ -273,6 +274,11 @@ Anchor mechanics (CPU):
      interface read as a pressed frictional contact; the growth-pressure readings live in the script; a sha256 of the
      106, 105 and CEM fields it read, recomputed by its cache test); a re-run of 106 or 105, or a change to the pine
      anode's CEM, re-runs 108
+  85 (electrode_interfacial_ph.json `anchor_anode_sap_gap`: the anode gap's film, area and bottom cap, and its proton limits) → 109
+     (anode_glucose_threshold.json); a re-run of 85 re-runs 109
+  71 (importlib: the hourly ERA5 loader, the dome's geometry) · 79 (importlib: the site, the sun, the face factors, the snow and
+     reflected ends, its sun and clock gates) → 110 (winter_pv_autonomy.json; the EDLC, boost and demand readings are lib
+     constants); a change to 71's loader or to 79's sun, faces or reflected ends re-runs 110
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

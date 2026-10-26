@@ -7762,3 +7762,99 @@ def test_anode_glucose_threshold_invariants():
             or (fd["draws_beyond_pH55_in_every_reading"] == fd["draws_x_skus"] and "every draw here exceeds" in v))
     phrase = {"every": "in every reading", "some": "in some readings", "none": "in none"}[fd["pine_cold_start_typ_beyond_pH45"]]
     assert f"reaches pH 4.5 {phrase}" in v
+
+
+def test_winter_pv_autonomy_invariants():
+    """Script 110: the necessary effective aperture of a PV cell on the dome (00_07 HW.54 Р3(б)(2)). Recomputes the
+    corners' inputs from lib, and checks what the published sentences stand on: every threshold rounded DOWN from a
+    closed bracket, the corners ordered favourable ≤ nominal ≤ adverse and the demands Standby ≤ C ≤ STOP2 on every
+    field, the stand summaries being the minima of their rows, and the verdict quoting the numbers it summarises."""
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import (
+        C_EDLC_EOL_DROP,
+        C_EDLC_F,
+        C_EDLC_TOLERANCE_HIGH,
+        C_EDLC_TOLERANCE_LOW,
+        E_CYCLE,
+        E_CYCLE_HIGH,
+        E_CYCLE_LOW,
+        EDLC_WINDOW_VSTOR_J,
+        ETA_BQ,
+        P_EDLC_LEAK_1UA_ILLUSTRATION,
+        P_GEN_SUMMER_UW,
+        P_SLEEP_VSTOR,
+        P_SLEEP_VSTOR_STOP2,
+        VBAT_OK_OFF_V,
+        VBAT_OK_OFF_WORST_CASE_V,
+        VBAT_OV_RATIFIED_V,
+        VBAT_OV_WORST_CASE_V,
+    )
+
+    d = json.loads((KINETICS / "winter_pv_autonomy.json").read_text(encoding="utf-8"))
+    corners, demands = ("favourable", "nominal", "adverse"), ("standby_sleep", "cadence_c", "stop2_cadence_c")
+    cap = {"favourable": C_EDLC_F * (1 + C_EDLC_TOLERANCE_HIGH), "nominal": C_EDLC_F,
+           "adverse": C_EDLC_F * (1 - C_EDLC_TOLERANCE_LOW) * (1 - C_EDLC_EOL_DROP)}
+    window = {"favourable": (VBAT_OV_WORST_CASE_V[1], VBAT_OK_OFF_WORST_CASE_V[0]),
+              "nominal": (VBAT_OV_RATIFIED_V, VBAT_OK_OFF_V),
+              "adverse": (VBAT_OV_WORST_CASE_V[0], VBAT_OK_OFF_WORST_CASE_V[1])}
+    wake = {"favourable": E_CYCLE_LOW, "nominal": E_CYCLE, "adverse": E_CYCLE_HIGH}
+    leak = {"favourable": 0.0, "nominal": 0.0, "adverse": P_EDLC_LEAK_1UA_ILLUSTRATION}
+    h_c = E_CYCLE / (ETA_BQ * P_GEN_SUMMER_UW * 1e-6 - P_SLEEP_VSTOR)
+    sleep = {"standby_sleep": P_SLEEP_VSTOR, "cadence_c": P_SLEEP_VSTOR, "stop2_cadence_c": P_SLEEP_VSTOR_STOP2}
+
+    def demand(dk, c):
+        return (0.0 if dk == "standby_sleep" else wake[c] / h_c) + sleep[dk]
+
+    assert d["inputs"]["cadence_c_interval_s"] == round(h_c, 1)
+    for c in corners:
+        k = d["inputs"]["corners"][c]
+        top, floor = window[c]
+        assert k["capacitance_f"] == round(cap[c], 4) and k["window_v"] == [top, floor]
+        assert k["e_max_j"] == round(0.5 * cap[c] * (top**2 - floor**2), 4)
+        assert k["leak_uw"] == round(leak[c] * 1e6, 3) and k["wake_energy_mj"] == round(wake[c] * 1e3, 3)
+        for dk in demands:
+            assert d["inputs"]["demand_uw"][dk][c] == round(demand(dk, c) * 1e6, 3)
+            days = 0.5 * cap[c] * (top**2 - floor**2) / (demand(dk, c) + leak[c]) / 86400.0
+            assert d["autonomy_days_without_sun"][dk][c] == math.floor(days * 100) / 100   # one-sided: rounded down
+
+    for dk in demands:
+        days = EDLC_WINDOW_VSTOR_J / (demand(dk, "nominal") + P_EDLC_LEAK_1UA_ILLUSTRATION) / 86400.0
+        assert d["autonomy_days_without_sun"][dk]["canon_window_8_nominal_with_1uA_leak"] == math.floor(days * 100) / 100
+
+    rows = {(r["field"], r["demand"], r["corner"]): r for r in d["thresholds"]}
+    assert all(r["a_eff_lo_cm2"] is not None for r in rows.values()), "a lane with no aperture: the verdict needs a sentence"
+    fields = sorted({r["field"] for r in d["thresholds"]})
+    assert len(rows) == len(fields) * len(demands) * len(corners)
+    for r in rows.values():
+        assert 0.0 < r["a_eff_lo_cm2"] < r["a_eff_hi_cm2"]
+        assert (r["a_eff_hi_cm2"] - r["a_eff_lo_cm2"]) / r["a_eff_hi_cm2"] < 2e-4
+        assert 0.0 < r["below_this_it_cannot_cm2"] <= r["a_eff_lo_cm2"], "a one-sided number rounded the wrong way"
+        assert d["necessary_a_eff_cm2"][r["demand"]][r["corner"]][r["field"]] == r["below_this_it_cannot_cm2"]
+    for f in fields:
+        for dk in demands:
+            v = [rows[(f, dk, c)]["a_eff_lo_cm2"] for c in corners]
+            assert v[0] <= v[1] <= v[2], f"{f}/{dk}: corners out of order {v}"
+        for c in corners:
+            v = [rows[(f, dk, c)]["a_eff_lo_cm2"] for dk in demands]
+            assert v[0] <= v[1] <= v[2], f"{f}/{c}: demands out of order {v}"
+
+    for dk, by in d["stands"].items():
+        for key, s in by.items():
+            c, end = key.split(".")
+            faces = {az: rows[(f"open_face_{az}.{end}", dk, c)]["below_this_it_cannot_cm2"] for az in s["open_field_by_face"]}
+            assert s["open_field_by_face"] == faces and s["open_field_lower"] == min(faces.values())
+            assert s["closed_stand_isotropic"] == rows[(f"closed_stand.{end}", dk, c)]["below_this_it_cannot_cm2"]
+            assert s["closed_stand_lower"] == min(s["closed_stand_isotropic"], s["open_field_lower"])
+
+    fav = d["stands"]["cadence_c"]["favourable.high"]
+    adv = d["stands"]["cadence_c"]["adverse.low"]
+    for x in (fav["closed_stand_lower"], fav["open_field_lower"], adv["closed_stand_lower"], adv["open_field_lower"]):
+        assert f"{x:g} cm²" in d["verdict"], f"the verdict does not quote {x:g}"
+    lo_b, hi_b = d["desk_bracket_a_eff_cm2"]["closed_stand"]
+    assert fav["closed_stand_lower"] < lo_b <= adv["closed_stand_lower"] <= hi_b, "the verdict's placements moved"
+
+    ctl = d["controls"]
+    assert abs(ctl["december_ghi_Wh_m2_day"] / np.mean(list(ctl["december_ghi_sources"].values())) - 1) <= 0.10
+    here = ctl["desk_worst_7d_dec_jan"]["here"]
+    for k, v in ctl["desk_worst_7d_dec_jan"]["desk"].items():
+        assert abs(here[k] - v) <= (0 if k == "seasons" else 1.0), f"the desk number {k} is not reproduced"

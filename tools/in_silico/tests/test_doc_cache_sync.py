@@ -8328,6 +8328,127 @@ def test_glucose_threshold_prose_claims_hold():
     assert "none" not in rest, "SUMMARY says the pairs not beyond pH 5.5 in every reading are beyond it in SOME"
 
 
+# ── HW.54 PV on the dome (110, 2026-10-26) ⟷ SUMMARY §«Could a Photovoltaic Cell on the Dome Carry the Node through
+# Winter?», 01_03 §4 ⊕ (б), 00_07 HW.54 Р3(б)(2) and the bands 02_03 §4.Б/§4.Г carry. The thresholds are cached already
+# floored to three significant figures and the autonomies to two decimals, so every cell is pinned to equality.
+PV = "kinetics/winter_pv_autonomy.json"
+_PV_TABLE = (("Standby sleep target alone", "standby_sleep"), ("Cadence C", "cadence_c"),
+             ("Shipped STOP2 at cadence C", "stop2_cadence_c"))
+_PV_COLS = ("favourable.high", "nominal.high", "adverse.low")
+
+
+def _pv_row(label, j):
+    n = [N if j == k else r"[\d.]+" for k in range(3)]
+    return rf"(?m)^\| {re.escape(label)} \| {n[0]} \| {n[1]} \| {n[2]} \|$"
+
+
+def _pv_stand(demand, key, what="closed_stand_lower"):
+    return lambda d: d["stands"][demand][key][what]
+
+
+CHECKS += [
+    *[(f"PV necessary A_eff {dk}/{_PV_COLS[j]} → 110", SUMMARY, _pv_row(label, j), PV, _pv_stand(dk, _PV_COLS[j]), 0.0)
+      for label, dk in _PV_TABLE for j in range(3)],
+    *[(f"PV window E_max {c} → 110", SUMMARY, {"nominal": rf"\*\*{N}\*\* J nominal, ", "favourable": rf"\*\*{N}\*\* favourable, ", "adverse": rf"\*\*{N}\*\* adverse\. The adverse corner"}[c], PV,
+       (lambda cc: lambda d: d["inputs"]["corners"][cc]["e_max_j"])(c), 0.0)
+      for c in ("favourable", "nominal", "adverse")],
+    ("PV December GHI → 110", SUMMARY, rf"December's mean daily GHI comes out \*\*{N}\*\* Wh/m²", PV,
+     lambda d: d["controls"]["december_ghi_Wh_m2_day"], 0.0),
+    ("PV desk 7-day worst → 110", SUMMARY, rf"running mean of GHI is \*\*{N}\*\* Wh/m²/day", PV,
+     lambda d: d["controls"]["desk_worst_7d_dec_jan"]["here"]["worst_Wh_m2_day"], 0.0),
+    ("PV desk 7-day median → 110", SUMMARY, rf"the median of the season minima \*\*{N}\*\*, over", PV,
+     lambda d: d["controls"]["desk_worst_7d_dec_jan"]["here"]["median_of_season_minima_Wh_m2_day"], 0.0),
+    ("PV desk seasons → 110", SUMMARY, rf"over \*\*{N}\*\* winters", PV,
+     lambda d: d["controls"]["desk_worst_7d_dec_jan"]["here"]["seasons"], 0.0),
+    *[(f"PV worst {n} GHI Nov–Mar → 110", SUMMARY, rf"{lead} \*\*{N}\*\*", PV,
+       (lambda nn: lambda d: d["worst_stretch"]["ghi_horizontal"][nn]["worst_Wh_m2_day"])(n), 0.0)
+      for n, lead in (("1d", "the worst single day is"), ("3d", "the worst three days average"),
+                      ("14d", "the worst fortnight"))],
+    ("PV dome face → 110", SUMMARY, rf"on the dome face \({N} cm²;", PV, lambda d: d["inputs"]["dome_face_cm2"], 0.0),
+    *[(f"PV desk bracket {kind}[{e}] → 110", SUMMARY,
+       lead + r"\*\*" + (N if e == 0 else r"[\d.]+") + "–" + (N if e == 1 else r"[\d.]+") + r"\*\*" + tail, PV,
+       (lambda kk, ee: lambda d: d["desk_bracket_a_eff_cm2"][kk][ee])(kind, e), 0.0)
+      for kind, lead, tail in (("closed_stand", r"is ", r" cm² under the closed stand"), ("open_field", r"and ", r" in the open"))
+      for e in range(2)],
+    ("PV adverse cadence C in prose → 110", SUMMARY, rf"the adverse one, \*\*{N}\*\*, sits inside it", PV,
+     _pv_stand("cadence_c", "adverse.low"), 0.0),
+    *[(f"PV autonomy cadence C {c} → 110", SUMMARY, rf"\*\*{N}\*\* {word}", PV,
+       (lambda cc: lambda d: d["autonomy_days_without_sun"]["cadence_c"][cc])(c), 0.0)
+      for c, word in (("favourable", "days on the favourable corner"), ("nominal", "nominal and"), ("adverse", "adverse \\("))],
+    *[(f"PV autonomy {dk} {c} → 110", SUMMARY,
+       lead + " " + " · ".join(N if k == j else r"[\d.]+" for k in range(3)) + tail, PV,
+       (lambda dd, cc: lambda d: d["autonomy_days_without_sun"][dd][cc])(dk, c), 0.0)
+      for dk, lead, tail in (("standby_sleep", r"the Standby sleep alone", ";"), ("stop2_cadence_c", r"STOP2 at cadence C", ";"))
+      for j, c in enumerate(("favourable", "nominal", "adverse"))],
+    *[(f"PV canon §8 window with leak [{e}] → {doc_rel.split('/')[-1][:5]} → 110", doc_rel,
+       lead + r"\*\*" + (N if e == 0 else r"[\d.]+") + "–" + (N if e == 1 else r"[\d.]+") + r"\*\* " + unit, PV,
+       (lambda dk: lambda d: d["autonomy_days_without_sun"][dk]["canon_window_8_nominal_with_1uA_leak"])(
+           ("stop2_cadence_c", "standby_sleep")[e]), 0.0)
+      for doc_rel, lead, unit in ((SUMMARY, "the span is ", "days"), (EBFC, "виходить ", "доби")) for e in range(2)],
+    ("PV favourable cadence C → 01_03 §4 → 110", EBFC, rf"при каденсі C від \*\*{N}\*\* см²", PV,
+     _pv_stand("cadence_c", "favourable.high"), 0.0),
+    ("PV adverse cadence C → 01_03 §4 → 110", EBFC, rf"до \*\*{N}\*\* см² \(на несприятливому\)", PV,
+     _pv_stand("cadence_c", "adverse.low"), 0.0),
+    *[(f"PV desk closed bracket [{e}] → 01_03 §4 → 110", EBFC,
+       r"desk-дужка купола під зімкнутим пологом — \*\*" + (N if e == 0 else r"[\d.]+") + "–" + (N if e == 1 else r"[\d.]+"),
+       PV, (lambda ee: lambda d: d["desk_bracket_a_eff_cm2"]["closed_stand"][ee])(e), 0.0) for e in range(2)],
+    ("PV favourable cadence C → 00_07 HW.54 → 110", TRACKER, rf"при каденсі C від {N} до [\d.]+ см²", PV,
+     _pv_stand("cadence_c", "favourable.high"), 0.0),
+    ("PV adverse cadence C → 00_07 HW.54 → 110", TRACKER, rf"при каденсі C від [\d.]+ до {N} см²", PV,
+     _pv_stand("cadence_c", "adverse.low"), 0.0),
+    # premise rows: the bands 110's corners read, as 02_03 carries them (lib mirrors them; the cache prints what it used)
+    ("PV premise VBAT_OV worst-case low → 02_03 §4.Б", POWER, rf"\*\*{N} … [\d.]+ В\*\* · 4\.717", PV,
+     lambda d: d["inputs"]["corners"]["adverse"]["window_v"][0], 0.0),
+    ("PV premise VBAT_OV worst-case high → 02_03 §4.Б", POWER, rf"\*\*[\d.]+ … {N} В\*\* · 4\.717", PV,
+     lambda d: d["inputs"]["corners"]["favourable"]["window_v"][0], 0.0),
+    ("PV premise OK_PROG worst-case low → 02_03 §4.Г", POWER, rf"\*\*{N} … [\d.]+ В\*\* · 3\.239", PV,
+     lambda d: d["inputs"]["corners"]["favourable"]["window_v"][1], 0.0),
+    ("PV premise OK_PROG worst-case high → 02_03 §4.Г", POWER, rf"\*\*[\d.]+ … {N} В\*\* · 3\.239", PV,
+     lambda d: d["inputs"]["corners"]["adverse"]["window_v"][1], 0.0),
+]
+
+
+def test_winter_pv_prose_claims_hold():
+    """110's sentences that are claims, not numbers: the table's closed-stand rows equal the open field's lowest face (the
+    SUMMARY says so), the favourable threshold sits an order of magnitude below the closed-stand bracket, the binding
+    stretches are the dates the SUMMARY names (the adverse one with no direct beam), and the lib mirrors the corners ride
+    on still say what 02_03 says. CAN catch a sentence the cache no longer supports or a mirror off its canon; CANNOT
+    judge whether 02_03's bands are right."""
+    import sys
+
+    d = C(PV)
+    for _, dk in _PV_TABLE:
+        for key in _PV_COLS:
+            s = d["stands"][dk][key]
+            assert s["closed_stand_lower"] == s["open_field_lower"], f"{dk}/{key}: the open field differs from the table"
+    fav = d["stands"]["cadence_c"]["favourable.high"]["closed_stand_lower"]
+    assert 10 <= d["desk_bracket_a_eff_cm2"]["closed_stand"][0] / fav < 100, "«an order of magnitude below» moved"
+    summ = doc(SUMMARY)
+    b = d["binding_stretches"]
+    iso, south = b["cadence_c:favourable:closed_stand.high"], b["cadence_c:favourable:open_face_180.high"]
+    assert f"last full on {iso['last_full'][:10]} and empty on {iso['first_outage'][:10]}" in summ
+    assert f"south face {south['last_full'][:10]} → {south['first_outage'][:10]}" in summ
+    adv = [v for k, v in b.items() if k.startswith("cadence_c:adverse:")]
+    assert len({(v["last_full"], v["first_outage"]) for v in adv}) == 1 and all(v["dni_after_last_full_Wh_m2"] == 0 for v in adv)
+    assert f"{adv[0]['last_full'][:10]} → {adv[0]['first_outage'][:10]}, with no direct beam at all" in summ
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import (
+        C_EDLC_TOLERANCE_HIGH,
+        C_EDLC_TOLERANCE_LOW,
+        ETA_BQ_PLATEAU_READING,
+        VBAT_OK_OFF_V,
+        VBAT_OK_OFF_WORST_CASE_V,
+        VBAT_OV_WORST_CASE_V,
+    )
+    text = doc(POWER)
+    assert f"−{round(100 * C_EDLC_TOLERANCE_LOW)} %…+{round(100 * C_EDLC_TOLERANCE_HIGH)} %" in text, "02_03 §12.1 tolerance moved"
+    lo, hi = (round(100 * x) for x in ETA_BQ_PLATEAU_READING)
+    assert f"плато {lo}-{hi}% лише від ~1 мА" in text, "02_03 §9.1's plateau moved — re-mirror lib ETA_BQ_PLATEAU_READING"
+    assert f"**{VBAT_OV_WORST_CASE_V[0]} … {VBAT_OV_WORST_CASE_V[1]} В**" in text, "02_03 §4.Б's VBAT_OV band moved"
+    assert f"**{VBAT_OK_OFF_WORST_CASE_V[0]} … {VBAT_OK_OFF_WORST_CASE_V[1]:.3f} В**" in text, "02_03 §4.Г's OK_PROG band moved"
+    assert f"| VBAT_OK OFF = `OK_PROG` (спад) | **{VBAT_OK_OFF_V:.2f} В** |" in text, "02_03 §4.Г's OK_PROG moved"
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

@@ -77,6 +77,7 @@ from lib.constants import (
     ETA_BQ_10UA_READING,
     ETA_TABLE_READ_ERROR,
     F_CONST,
+    I_ETA_10UA,
     J_MAX_25C,
     KM_GLUCOSE,
     N_ELECTRONS,
@@ -114,7 +115,6 @@ D_GLUCOSE_RIBEIRO_298 = {0.002: 6.78e-10, 0.005: 6.77e-10, 0.01: 6.76e-10}
 # Water viscosity (µPa·s) at 0.101325 MPa, NIST Chemistry WebBook (IAPWS formulation): 293.15 K → 1001.60, 298.15 K → 890.022.
 ETA_WATER_UPAS = {293.15: 1001.60, 298.15: 890.022}
 T_REF_K = 298.15
-I_ETA_10UA = 10.0  # µA — the current at which 02_03 §9.1's text reads η 0.20-0.30
 
 SOURCES = {
     "D_glucose": "Mogi N., Sugai E., Fuse Y., Funazukuri T. J. Chem. Eng. Data 2007, 52, 40-43, doi:10.1021/je0601816 — "
