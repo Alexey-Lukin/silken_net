@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Clip → device-domain per-frame log-mel features — THE SAME contract as the device.
 
-Pipeline mirrors the firmware ``audio_buffer[]``: AC signal → (peak-ref) → +DC bias
-(→ ``[0,1)``-ish, like ``raw_adc/4095``) → ``silken_ml.dsp.logmel_librosa.compute_logmel``
+Pipeline mirrors the device-domain input of ``Compute_LogMel``: AC signal → (peak-ref) → +DC bias
+(→ ``[0,1)``-ish, like a 12-bit ADC read over 4095) → ``silken_ml.dsp.logmel_librosa.compute_logmel``
 (per-frame DC-removal + periodic Hann + RFFT + HTK mel + ln; docs/03_03 §3.4). Using the
 canonical oracle guarantees **train ≡ device** feature parity (it is == stdlib == C).
 """

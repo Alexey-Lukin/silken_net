@@ -33,7 +33,7 @@ class DataConfig:
     sr: int = 16_000              # device sample rate (log-mel contract, docs/03_03 §3.4)
     clip_seconds: float = 5.0     # ESC-50 clip length == fauna window (156 frames)
 
-    # device-domain mapping: AC → peak-ref → +DC bias (mirrors audio_buffer[] in [0,1)).
+    # device-domain mapping: AC → peak-ref → +DC bias (the [0,1) input of Compute_LogMel).
     real_peak: float = 0.4        # golden-vector convention (0.5 + 0.4·signal)
     dc_bias: float = 0.5
 

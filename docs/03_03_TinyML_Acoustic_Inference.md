@@ -4,7 +4,7 @@
 >
 > **Лишається — актив без носія на вузлі:** модель (self-owned ESC-50 baseline), рантайм INT8 (`silken_net_audio_model.h`, §4) і контракт log-mel (`Compute_LogMel`, §3.4). Можливий майбутній носій — мікрофон Королеви ([`00_07` HW.52](00_07_Action_Plan_Tracker): 🌿 далекий горизонт із тригером «чи потрібен реальний час узагалі», не план).
 >
-> **Історія дизайну, а не чинна поведінка** — усе, що ще описує інтеграцію на Солдаті: DMA-нормалізація й Vcap-гард FW.42 у §3.1–§3.2 і fauna-сесія з її V_cap-гардом, дорожньою картою й пітчем (§10.2–§10.8). Байт `acoustic_events` на дроті лишається й завжди дорівнює 0 (доля слота — [`00_07` FW.59](00_07_Action_Plan_Tracker)); вхід `acoustic` контракту Лоренца теж лишається — 0 легальний ([`03_04`](03_04_mruby_Lorenz_Attractor)).
+> **Історія дизайну, а не чинна поведінка** — матриця вибору DSP-шляху (§3.2: рішення — Path B, решта — порівняння, з якого його вибрано) і fauna-сесія на Солдаті з її V_cap-гардом, дорожньою картою й пітчем (§10.2–§10.8). Байт `acoustic_events` на дроті лишається й завжди дорівнює 0 (доля слота — [`00_07` FW.59](00_07_Action_Plan_Tracker)); вхід `acoustic` контракту Лоренца теж лишається — 0 легальний ([`03_04`](03_04_mruby_Lorenz_Attractor)).
 
 ---
 
@@ -65,21 +65,6 @@
 
 ## ⚙️ 3. Передобробка (DSP Preprocessing)
 
-### 3.1 Поточний Стан: Тільки Лінійна Нормалізація
-
-**Поточна реалізація** після завершення DMA:
-
-```c
-// 4. Швидко переводимо 12-бітні RAW-дані у Float для TinyML
-for(int i = 0; i < 512; i++) {
-    audio_buffer[i] = (float)raw_audio_buffer[i] / 4095.0f; // Нормалізація 0.0 - 1.0
-}
-```
-
-**Перетворення:** `ADC[i] ∈ [0, 4095]` → `audio_buffer[i] ∈ [0.0, 1.0]`
-
-**Path B зафіксовано (§3.2) — цей розділ описує дотрансформаційний стан:** модель отримує **40 log-mel ознак** від `Compute_LogMel` (RFFT + HTK mel-bank + log; §3.4), НЕ сирий time-domain сигнал. Лінійна нормалізація `[0,1)` лишається ЛИШЕ входом до `Compute_LogMel` (DC прибирається покадрово всередині).
-
 ### 3.2 Decision Matrix: Три шляхи DSP (FW.25)
 
 > **⚠️ DSP-шлях — рішення ML-партнера, а не firmware-даність (log-mel vs MFCC):**
@@ -121,13 +106,13 @@ for(int i = 0; i < 512; i++) {
 
 #### Path A — Raw Audio + 1D CNN
 
-Модель приймає `float32[512]` напряму (поточна нормалізація `[0.0, 1.0]`).
+Модель приймає `float32[512]` напряму (лінійна нормалізація `[0.0, 1.0]`).
 1D-CNN-шари вчаться шукати features з time-domain сигналу. Це
 **Google's keyword spotting** підхід (HotwordNet style).
 
 | Аспект | Значення |
 |--------|----------|
-| Firmware DSP code | **0 KB** (поточна нормалізація достатня) |
+| Firmware DSP code | **0 KB** (досить лінійної нормалізації) |
 | Tensor Arena estimate | **~20–40 KB** (більший — без feature compression) |
 | Model size (INT8) | ~30–60 KB Flash |
 | CPU per inference | ~10–25 мс @ 48 MHz |
@@ -173,11 +158,9 @@ audio, frontend op виконує DSP як layer.
 
 | Артефакт | Path A | Path B | Path C |
 |----------|--------|--------|--------|
-| `audio_buffer[512]` normalization | ✅ як зараз | Замінити на FFT scratch | Залишити (frontend читає raw) |
 | `silken_net_audio_model.h` content | Великий 1D CNN | Менший 2D CNN | CNN + frontend params |
 | Mel-bank матриця у Flash | — | `const float mel_bank[40][257]` ~40 KB АБО sparse triplet ~3 KB | Embedded у TFLite graph |
 | CMSIS-DSP залежність | — | `arm_rfft_fast_f32` + `arm_vlog_f32` + custom mel | — |
-| FW.42 Vcap guard поведінка | Без змін (поточний 4.5 V threshold) | Без змін | Без змін |
 | `fauna_feature_accumulator` shape | `float[512]` raw window | `float[40 × N_frames]` log-mel | `float[40]` per-frame від frontend |
 
 #### Default-рекомендація та open question
@@ -266,7 +249,7 @@ PVD safety, з запасом). Path B має найменшу sum, але рі�
 
 ```c
 /* Один 512-семпловий кадр (32 ms @ 16 kHz) → 40 log-mel ознак.
- * audio: нормалізований [0,1) (як audio_buffer[] зараз) — DC прибирається всередині.
+ * audio: нормалізований [0,1) — DC прибирається всередині.
  * out_mel: 40 float, далі → Run_Inference(out_mel, &confidence). */
 void Compute_LogMel(const float audio[512], float out_mel[40]);
 ```
