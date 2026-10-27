@@ -2,7 +2,7 @@
   "script": "105_printed_part_sway_stress.py",
   "question": "00_07 HW.23 — cyclic stress from stem sway in the printed parts of the shipped geometry",
   "paths": {
-    "S1_S3_inplane_strain_on_gyroid": "a lower bound here (energy) — conditional on E_z*; t_L in `106` (conditional), k_p not computed",
+    "S1_S3_inplane_strain_on_gyroid": "a lower bound here (energy) — conditional on E_z*; beside it the periodic case's uniaxial-state reading of the ligament peak (not a bound); t_L in `106` (conditional)",
     "J_gyroid_shank_junction": "NOT COMPUTED — a candidate the bound cannot see; needs a junction model",
     "S2_bond_force_zone1": "computed here (nominal) — shank, groove root, barbs; the easy flank is loaded",
     "S2_bearing_force_zone3_disc": "computed here (nominal, state 2) — Zone 3 shank and barbs (premise b), disc (b at the shank · a through a preloaded bearing); the mature state not bounded",
@@ -1685,6 +1685,2097 @@
           "fe_reading_at_flip": 0.3494310896070203
         }
       }
+    }
+  },
+  "gyroid_ligament_field_uniaxial_reading": {
+    "source": "tools/cad/cache/fea/periodic_homogenization.network.w100.c1.json",
+    "is": "the INFINITE lattice's ligament field under a unit uniaxial macro stress along (cos θ, sin θ, 0) — across the anchor's axis, θ from the cube axis — from periodic conditions (01_01 §5.2): a READING under a uniaxial macro state, never the energy bound times k_p (ceiling (4)), and not the multiaxial state of the inclusion in the wood",
+    "rungs_steps_per_period": [
+      24,
+      32,
+      48,
+      64
+    ],
+    "rung_rule": "`106`'s `periodic_rungs`: |porosity − the part's 0.6453| ≤ 0.005",
+    "quantiles": {
+      "p99": "the highest quantile that holds a band over the rungs — the one the thresholds read; whether it sits at or below a smooth ligament's peak is not established (01_01 §5.2 ceiling (3)): the outer voxel layer is a large share of the metal, the hottest points are not localised",
+      "p99.9": "beside it — wider over the rungs",
+      "not_read": "max (does not converge over the ladder) · p50, p90 (not peaks)"
+    },
+    "measures": {
+      "max_principal": "max|σ_i| — the energy bound's own criterion",
+      "von_mises": "von Mises — the other common fatigue measure"
+    },
+    "peak_rule": "peak per unit E_s·ε = k_p·(σ_W/S)·E* of one periodic case per rung (six unit-strain solves); a binding claim takes the LOWEST peak over rungs × measures (its measure read, `measure_at_low`), and over the sampled angles the HIGHEST threshold (three directions, not a ceiling over every angle); max|σ_i| alone is printed beside it as the price of the measure",
+    "angle_criterion": "peak_per_E_s_strain(θ) = k_p(θ)·√E*(θ)/√φ of the rung — the mount-angle criterion k_p·√E*·t_L (00_07 HW.23) up to the rung's 1/√φ; t_L(θ) is `106`'s",
+    "field": {
+      "0": {
+        "p99": {
+          "by_rung": {
+            "24": {
+              "modulus_ratio": 0.10011449404979772,
+              "k_p": {
+                "max_principal": 2.9622717427462573,
+                "von_mises": 2.8028681412520426
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.5775398032820767,
+                "von_mises": 1.4926503846258024
+              }
+            },
+            "32": {
+              "modulus_ratio": 0.09678913137125836,
+              "k_p": {
+                "max_principal": 2.8665999660690766,
+                "von_mises": 2.8217514683160916
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.4917286257983184,
+                "von_mises": 1.468390249773037
+              }
+            },
+            "48": {
+              "modulus_ratio": 0.09753796842051575,
+              "k_p": {
+                "max_principal": 2.828632494347363,
+                "von_mises": 2.7693388188399295
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.4847326504677854,
+                "von_mises": 1.4536097470266156
+              }
+            },
+            "64": {
+              "modulus_ratio": 0.09827668042408153,
+              "k_p": {
+                "max_principal": 2.9228772831258167,
+                "von_mises": 2.8355914935599515
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.5409694425293847,
+                "von_mises": 1.4949515220150467
+              }
+            }
+          },
+          "peak_low": 1.4536097470266156,
+          "measure_at_low": "von_mises",
+          "peak_high": 1.5775398032820767
+        },
+        "p99.9": {
+          "by_rung": {
+            "24": {
+              "modulus_ratio": 0.10011449404979772,
+              "k_p": {
+                "max_principal": 3.8243677167209644,
+                "von_mises": 3.215126986953775
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 2.03664377189149,
+                "von_mises": 1.7121963259939894
+              }
+            },
+            "32": {
+              "modulus_ratio": 0.09678913137125836,
+              "k_p": {
+                "max_principal": 4.224410323941199,
+                "von_mises": 3.588060032583465
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 2.1983094543820916,
+                "von_mises": 1.8671638613835888
+              }
+            },
+            "48": {
+              "modulus_ratio": 0.09753796842051575,
+              "k_p": {
+                "max_principal": 4.104599107071579,
+                "von_mises": 3.6159002711242363
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 2.1544800618421034,
+                "von_mises": 1.897964901450428
+              }
+            },
+            "64": {
+              "modulus_ratio": 0.09827668042408153,
+              "k_p": {
+                "max_principal": 3.795186216533869,
+                "von_mises": 3.4462676899434124
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 2.000859229414203,
+                "von_mises": 1.8169059753681538
+              }
+            }
+          },
+          "peak_low": 1.7121963259939894,
+          "measure_at_low": "von_mises",
+          "peak_high": 2.1983094543820916
+        }
+      },
+      "22.5": {
+        "p99": {
+          "by_rung": {
+            "24": {
+              "modulus_ratio": 0.11240740650083136,
+              "k_p": {
+                "max_principal": 2.61920032258015,
+                "von_mises": 2.4634012850054576
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.477995564983043,
+                "von_mises": 1.3900793087964278
+              }
+            },
+            "32": {
+              "modulus_ratio": 0.10959524287639147,
+              "k_p": {
+                "max_principal": 2.6761685499607513,
+                "von_mises": 2.496265557010342
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.4818994968833974,
+                "von_mises": 1.3822801531223556
+              }
+            },
+            "48": {
+              "modulus_ratio": 0.11014651848085313,
+              "k_p": {
+                "max_principal": 2.608380038385663,
+                "von_mises": 2.4617228905841193
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.4549267726667394,
+                "von_mises": 1.3731229681599897
+              }
+            },
+            "64": {
+              "modulus_ratio": 0.11079565080340645,
+              "k_p": {
+                "max_principal": 2.637918379137795,
+                "von_mises": 2.5038837829322818
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.4766613767818102,
+                "von_mises": 1.4016311131714863
+              }
+            }
+          },
+          "peak_low": 1.3731229681599897,
+          "measure_at_low": "von_mises",
+          "peak_high": 1.4818994968833974
+        },
+        "p99.9": {
+          "by_rung": {
+            "24": {
+              "modulus_ratio": 0.11240740650083136,
+              "k_p": {
+                "max_principal": 3.511087657187852,
+                "von_mises": 2.8909789511982535
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.9812810577536681,
+                "von_mises": 1.6313582552254724
+              }
+            },
+            "32": {
+              "modulus_ratio": 0.10959524287639147,
+              "k_p": {
+                "max_principal": 3.758632833671388,
+                "von_mises": 3.172758115005944
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 2.081302429650306,
+                "von_mises": 1.7568806174143927
+              }
+            },
+            "48": {
+              "modulus_ratio": 0.11014651848085313,
+              "k_p": {
+                "max_principal": 3.7256789008484232,
+                "von_mises": 3.2069436864696166
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 2.078144250236935,
+                "von_mises": 1.7887992390736664
+              }
+            },
+            "64": {
+              "modulus_ratio": 0.11079565080340645,
+              "k_p": {
+                "max_principal": 3.4415667250956656,
+                "von_mises": 3.1055586441874135
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.9265299103861186,
+                "von_mises": 1.7384383608947476
+              }
+            }
+          },
+          "peak_low": 1.6313582552254724,
+          "measure_at_low": "von_mises",
+          "peak_high": 2.081302429650306
+        }
+      },
+      "45": {
+        "p99": {
+          "by_rung": {
+            "24": {
+              "modulus_ratio": 0.12814174401344686,
+              "k_p": {
+                "max_principal": 2.092905967912906,
+                "von_mises": 1.8177389709282294
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.2609619533610033,
+                "von_mises": 1.0951756641832384
+              }
+            },
+            "32": {
+              "modulus_ratio": 0.126306822518387,
+              "k_p": {
+                "max_principal": 2.0788663482838294,
+                "von_mises": 1.8566370557211713
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.2358034685802821,
+                "von_mises": 1.1036969814096218
+              }
+            },
+            "48": {
+              "modulus_ratio": 0.1264987780494156,
+              "k_p": {
+                "max_principal": 2.0484422087034018,
+                "von_mises": 1.8814937309159734
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.2244801853347653,
+                "von_mises": 1.1246847885430238
+              }
+            },
+            "64": {
+              "modulus_ratio": 0.1269696773123924,
+              "k_p": {
+                "max_principal": 2.048970376247214,
+                "von_mises": 1.8909021224184126
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.2278459804860382,
+                "von_mises": 1.1331235421550294
+              }
+            }
+          },
+          "peak_low": 1.0951756641832384,
+          "measure_at_low": "von_mises",
+          "peak_high": 1.2609619533610033
+        },
+        "p99.9": {
+          "by_rung": {
+            "24": {
+              "modulus_ratio": 0.12814174401344686,
+              "k_p": {
+                "max_principal": 2.9033985674805836,
+                "von_mises": 2.3635723379470828
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.749278364706831,
+                "von_mises": 1.4240366446753867
+              }
+            },
+            "32": {
+              "modulus_ratio": 0.126306822518387,
+              "k_p": {
+                "max_principal": 2.8919109148514113,
+                "von_mises": 2.3427551857162228
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.7191261681391228,
+                "von_mises": 1.3926749004007009
+              }
+            },
+            "48": {
+              "modulus_ratio": 0.1264987780494156,
+              "k_p": {
+                "max_principal": 2.9169951809524313,
+                "von_mises": 2.4439685031384477
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.7436678392084524,
+                "von_mises": 1.4609106339248445
+              }
+            },
+            "64": {
+              "modulus_ratio": 0.1269696773123924,
+              "k_p": {
+                "max_principal": 2.7470055511814726,
+                "von_mises": 2.348690777936236
+              },
+              "peak_per_E_s_strain": {
+                "max_principal": 1.6461437234483742,
+                "von_mises": 1.407453501780492
+              }
+            }
+          },
+          "peak_low": 1.3926749004007009,
+          "measure_at_low": "von_mises",
+          "peak_high": 1.749278364706831
+        }
+      }
+    },
+    "binds_above_surface_strain_ue": {
+      "Ti-6Al-4V": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 1494.0,
+          "22.5": 1582.0,
+          "45": 1983.0,
+          "any_sampled_angle": 1983.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 1269.0,
+          "22.5": 1332.0,
+          "45": 1560.0,
+          "any_sampled_angle": 1560.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 747.0,
+          "22.5": 791.0,
+          "45": 992.0,
+          "any_sampled_angle": 992.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 635.0,
+          "22.5": 666.0,
+          "45": 780.0,
+          "any_sampled_angle": 780.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 1405.0,
+          "22.5": 1488.0,
+          "45": 1865.0,
+          "any_sampled_angle": 1865.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 1193.0,
+          "22.5": 1252.0,
+          "45": 1467.0,
+          "any_sampled_angle": 1467.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 703.0,
+          "22.5": 744.0,
+          "45": 933.0,
+          "any_sampled_angle": 933.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 597.0,
+          "22.5": 626.0,
+          "45": 734.0,
+          "any_sampled_angle": 734.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 1306.0,
+          "22.5": 1382.0,
+          "45": 1733.0,
+          "any_sampled_angle": 1733.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 1109.0,
+          "22.5": 1163.0,
+          "45": 1363.0,
+          "any_sampled_angle": 1363.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 653.0,
+          "22.5": 691.0,
+          "45": 867.0,
+          "any_sampled_angle": 867.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 555.0,
+          "22.5": 582.0,
+          "45": 682.0,
+          "any_sampled_angle": 682.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 1101.0,
+          "22.5": 1166.0,
+          "45": 1461.0,
+          "any_sampled_angle": 1461.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 935.0,
+          "22.5": 981.0,
+          "45": 1149.0,
+          "any_sampled_angle": 1149.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 551.0,
+          "22.5": 583.0,
+          "45": 731.0,
+          "any_sampled_angle": 731.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 468.0,
+          "22.5": 491.0,
+          "45": 575.0,
+          "any_sampled_angle": 575.0
+        }
+      },
+      "Ti-6Al-7Nb": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 1541.0,
+          "22.5": 1632.0,
+          "45": 2046.0,
+          "any_sampled_angle": 2046.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 1309.0,
+          "22.5": 1374.0,
+          "45": 1609.0,
+          "any_sampled_angle": 1609.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 771.0,
+          "22.5": 816.0,
+          "45": 1023.0,
+          "any_sampled_angle": 1023.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 655.0,
+          "22.5": 687.0,
+          "45": 805.0,
+          "any_sampled_angle": 805.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 1450.0,
+          "22.5": 1535.0,
+          "45": 1924.0,
+          "any_sampled_angle": 1924.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 1231.0,
+          "22.5": 1292.0,
+          "45": 1513.0,
+          "any_sampled_angle": 1513.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 725.0,
+          "22.5": 768.0,
+          "45": 962.0,
+          "any_sampled_angle": 962.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 616.0,
+          "22.5": 646.0,
+          "45": 757.0,
+          "any_sampled_angle": 757.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 1347.0,
+          "22.5": 1426.0,
+          "45": 1787.0,
+          "any_sampled_angle": 1787.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 1143.0,
+          "22.5": 1200.0,
+          "45": 1406.0,
+          "any_sampled_angle": 1406.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 674.0,
+          "22.5": 713.0,
+          "45": 894.0,
+          "any_sampled_angle": 894.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 572.0,
+          "22.5": 600.0,
+          "45": 703.0,
+          "any_sampled_angle": 703.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 1136.0,
+          "22.5": 1202.0,
+          "45": 1508.0,
+          "any_sampled_angle": 1508.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 964.0,
+          "22.5": 1012.0,
+          "45": 1186.0,
+          "any_sampled_angle": 1186.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 568.0,
+          "22.5": 601.0,
+          "45": 754.0,
+          "any_sampled_angle": 754.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 482.0,
+          "22.5": 506.0,
+          "45": 593.0,
+          "any_sampled_angle": 593.0
+        }
+      },
+      "CP-Ti-Gr4": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 862.0,
+          "22.5": 913.0,
+          "45": 1144.0,
+          "any_sampled_angle": 1144.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 732.0,
+          "22.5": 768.0,
+          "45": 900.0,
+          "any_sampled_angle": 900.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 431.0,
+          "22.5": 457.0,
+          "45": 572.0,
+          "any_sampled_angle": 572.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 366.0,
+          "22.5": 384.0,
+          "45": 450.0,
+          "any_sampled_angle": 450.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 811.0,
+          "22.5": 858.0,
+          "45": 1076.0,
+          "any_sampled_angle": 1076.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 689.0,
+          "22.5": 723.0,
+          "45": 846.0,
+          "any_sampled_angle": 846.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 406.0,
+          "22.5": 429.0,
+          "45": 538.0,
+          "any_sampled_angle": 538.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 345.0,
+          "22.5": 362.0,
+          "45": 423.0,
+          "any_sampled_angle": 423.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 753.0,
+          "22.5": 798.0,
+          "45": 1000.0,
+          "any_sampled_angle": 1000.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 640.0,
+          "22.5": 671.0,
+          "45": 786.0,
+          "any_sampled_angle": 786.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 377.0,
+          "22.5": 399.0,
+          "45": 500.0,
+          "any_sampled_angle": 500.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 320.0,
+          "22.5": 336.0,
+          "45": 393.0,
+          "any_sampled_angle": 393.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 636.0,
+          "22.5": 673.0,
+          "45": 843.0,
+          "any_sampled_angle": 843.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 540.0,
+          "22.5": 566.0,
+          "45": 663.0,
+          "any_sampled_angle": 663.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 318.0,
+          "22.5": 337.0,
+          "45": 422.0,
+          "any_sampled_angle": 422.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 270.0,
+          "22.5": 283.0,
+          "45": 332.0,
+          "any_sampled_angle": 332.0
+        }
+      },
+      "beta-Ti-13Nb-13Zr": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 2101.0,
+          "22.5": 2224.0,
+          "45": 2789.0,
+          "any_sampled_angle": 2789.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 1784.0,
+          "22.5": 1872.0,
+          "45": 2193.0,
+          "any_sampled_angle": 2193.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 1051.0,
+          "22.5": 1112.0,
+          "45": 1395.0,
+          "any_sampled_angle": 1395.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 892.0,
+          "22.5": 936.0,
+          "45": 1097.0,
+          "any_sampled_angle": 1097.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 1976.0,
+          "22.5": 2092.0,
+          "45": 2623.0,
+          "any_sampled_angle": 2623.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 1678.0,
+          "22.5": 1761.0,
+          "45": 2062.0,
+          "any_sampled_angle": 2062.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 988.0,
+          "22.5": 1046.0,
+          "45": 1312.0,
+          "any_sampled_angle": 1312.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 839.0,
+          "22.5": 881.0,
+          "45": 1031.0,
+          "any_sampled_angle": 1031.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 1836.0,
+          "22.5": 1943.0,
+          "45": 2437.0,
+          "any_sampled_angle": 2437.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 1559.0,
+          "22.5": 1636.0,
+          "45": 1916.0,
+          "any_sampled_angle": 1916.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 918.0,
+          "22.5": 972.0,
+          "45": 1219.0,
+          "any_sampled_angle": 1219.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 780.0,
+          "22.5": 818.0,
+          "45": 958.0,
+          "any_sampled_angle": 958.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 1548.0,
+          "22.5": 1639.0,
+          "45": 2055.0,
+          "any_sampled_angle": 2055.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 1315.0,
+          "22.5": 1380.0,
+          "45": 1616.0,
+          "any_sampled_angle": 1616.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 774.0,
+          "22.5": 820.0,
+          "45": 1028.0,
+          "any_sampled_angle": 1028.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 658.0,
+          "22.5": 690.0,
+          "45": 808.0,
+          "any_sampled_angle": 808.0
+        }
+      },
+      "Ta": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 347.0,
+          "22.5": 367.0,
+          "45": 460.0,
+          "any_sampled_angle": 460.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 295.0,
+          "22.5": 309.0,
+          "45": 362.0,
+          "any_sampled_angle": 362.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 174.0,
+          "22.5": 184.0,
+          "45": 230.0,
+          "any_sampled_angle": 230.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 148.0,
+          "22.5": 155.0,
+          "45": 181.0,
+          "any_sampled_angle": 181.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 326.0,
+          "22.5": 345.0,
+          "45": 433.0,
+          "any_sampled_angle": 433.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 277.0,
+          "22.5": 291.0,
+          "45": 340.0,
+          "any_sampled_angle": 340.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 163.0,
+          "22.5": 173.0,
+          "45": 217.0,
+          "any_sampled_angle": 217.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 139.0,
+          "22.5": 146.0,
+          "45": 170.0,
+          "any_sampled_angle": 170.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 303.0,
+          "22.5": 321.0,
+          "45": 402.0,
+          "any_sampled_angle": 402.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 257.0,
+          "22.5": 270.0,
+          "45": 316.0,
+          "any_sampled_angle": 316.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 152.0,
+          "22.5": 161.0,
+          "45": 201.0,
+          "any_sampled_angle": 201.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 129.0,
+          "22.5": 135.0,
+          "45": 158.0,
+          "any_sampled_angle": 158.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 256.0,
+          "22.5": 271.0,
+          "45": 339.0,
+          "any_sampled_angle": 339.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 217.0,
+          "22.5": 228.0,
+          "45": 267.0,
+          "any_sampled_angle": 267.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 128.0,
+          "22.5": 136.0,
+          "45": 170.0,
+          "any_sampled_angle": 170.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 109.0,
+          "22.5": 114.0,
+          "45": 134.0,
+          "any_sampled_angle": 134.0
+        }
+      },
+      "Ti-15Zr": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 1774.0,
+          "22.5": 1878.0,
+          "45": 2355.0,
+          "any_sampled_angle": 2355.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 1507.0,
+          "22.5": 1581.0,
+          "45": 1852.0,
+          "any_sampled_angle": 1852.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 887.0,
+          "22.5": 939.0,
+          "45": 1178.0,
+          "any_sampled_angle": 1178.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 754.0,
+          "22.5": 791.0,
+          "45": 926.0,
+          "any_sampled_angle": 926.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 1669.0,
+          "22.5": 1766.0,
+          "45": 2215.0,
+          "any_sampled_angle": 2215.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 1417.0,
+          "22.5": 1487.0,
+          "45": 1742.0,
+          "any_sampled_angle": 1742.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 835.0,
+          "22.5": 883.0,
+          "45": 1108.0,
+          "any_sampled_angle": 1108.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 709.0,
+          "22.5": 744.0,
+          "45": 871.0,
+          "any_sampled_angle": 871.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 1550.0,
+          "22.5": 1641.0,
+          "45": 2058.0,
+          "any_sampled_angle": 2058.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 1316.0,
+          "22.5": 1381.0,
+          "45": 1618.0,
+          "any_sampled_angle": 1618.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 775.0,
+          "22.5": 821.0,
+          "45": 1029.0,
+          "any_sampled_angle": 1029.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 658.0,
+          "22.5": 691.0,
+          "45": 809.0,
+          "any_sampled_angle": 809.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 1308.0,
+          "22.5": 1384.0,
+          "45": 1735.0,
+          "any_sampled_angle": 1735.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 1110.0,
+          "22.5": 1165.0,
+          "45": 1365.0,
+          "any_sampled_angle": 1365.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 654.0,
+          "22.5": 692.0,
+          "45": 868.0,
+          "any_sampled_angle": 868.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 555.0,
+          "22.5": 583.0,
+          "45": 683.0,
+          "any_sampled_angle": 683.0
+        }
+      }
+    },
+    "binds_above_surface_strain_ue_max_principal_only": {
+      "Ti-6Al-4V": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 1463.0,
+          "22.5": 1493.0,
+          "45": 1774.0,
+          "any_sampled_angle": 1774.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 1086.0,
+          "22.5": 1128.0,
+          "45": 1320.0,
+          "any_sampled_angle": 1320.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 732.0,
+          "22.5": 747.0,
+          "45": 887.0,
+          "any_sampled_angle": 887.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 543.0,
+          "22.5": 564.0,
+          "45": 660.0,
+          "any_sampled_angle": 660.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 1376.0,
+          "22.5": 1404.0,
+          "45": 1668.0,
+          "any_sampled_angle": 1668.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 1021.0,
+          "22.5": 1060.0,
+          "45": 1241.0,
+          "any_sampled_angle": 1241.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 688.0,
+          "22.5": 702.0,
+          "45": 834.0,
+          "any_sampled_angle": 834.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 511.0,
+          "22.5": 530.0,
+          "45": 621.0,
+          "any_sampled_angle": 621.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 1278.0,
+          "22.5": 1304.0,
+          "45": 1550.0,
+          "any_sampled_angle": 1550.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 949.0,
+          "22.5": 985.0,
+          "45": 1153.0,
+          "any_sampled_angle": 1153.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 639.0,
+          "22.5": 652.0,
+          "45": 775.0,
+          "any_sampled_angle": 775.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 475.0,
+          "22.5": 493.0,
+          "45": 577.0,
+          "any_sampled_angle": 577.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 1078.0,
+          "22.5": 1100.0,
+          "45": 1307.0,
+          "any_sampled_angle": 1307.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 800.0,
+          "22.5": 831.0,
+          "45": 972.0,
+          "any_sampled_angle": 972.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 539.0,
+          "22.5": 550.0,
+          "45": 654.0,
+          "any_sampled_angle": 654.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 400.0,
+          "22.5": 416.0,
+          "45": 486.0,
+          "any_sampled_angle": 486.0
+        }
+      },
+      "Ti-6Al-7Nb": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 1509.0,
+          "22.5": 1540.0,
+          "45": 1830.0,
+          "any_sampled_angle": 1830.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 1120.0,
+          "22.5": 1163.0,
+          "45": 1361.0,
+          "any_sampled_angle": 1361.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 755.0,
+          "22.5": 770.0,
+          "45": 915.0,
+          "any_sampled_angle": 915.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 560.0,
+          "22.5": 582.0,
+          "45": 681.0,
+          "any_sampled_angle": 681.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 1419.0,
+          "22.5": 1448.0,
+          "45": 1721.0,
+          "any_sampled_angle": 1721.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 1053.0,
+          "22.5": 1094.0,
+          "45": 1280.0,
+          "any_sampled_angle": 1280.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 710.0,
+          "22.5": 724.0,
+          "45": 861.0,
+          "any_sampled_angle": 861.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 527.0,
+          "22.5": 547.0,
+          "45": 640.0,
+          "any_sampled_angle": 640.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 1319.0,
+          "22.5": 1346.0,
+          "45": 1599.0,
+          "any_sampled_angle": 1599.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 979.0,
+          "22.5": 1016.0,
+          "45": 1189.0,
+          "any_sampled_angle": 1189.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 660.0,
+          "22.5": 673.0,
+          "45": 800.0,
+          "any_sampled_angle": 800.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 490.0,
+          "22.5": 508.0,
+          "45": 595.0,
+          "any_sampled_angle": 595.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 1112.0,
+          "22.5": 1135.0,
+          "45": 1348.0,
+          "any_sampled_angle": 1348.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 825.0,
+          "22.5": 857.0,
+          "45": 1003.0,
+          "any_sampled_angle": 1003.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 556.0,
+          "22.5": 568.0,
+          "45": 674.0,
+          "any_sampled_angle": 674.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 413.0,
+          "22.5": 429.0,
+          "45": 502.0,
+          "any_sampled_angle": 502.0
+        }
+      },
+      "CP-Ti-Gr4": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 844.0,
+          "22.5": 862.0,
+          "45": 1024.0,
+          "any_sampled_angle": 1024.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 627.0,
+          "22.5": 651.0,
+          "45": 762.0,
+          "any_sampled_angle": 762.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 422.0,
+          "22.5": 431.0,
+          "45": 512.0,
+          "any_sampled_angle": 512.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 314.0,
+          "22.5": 326.0,
+          "45": 381.0,
+          "any_sampled_angle": 381.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 794.0,
+          "22.5": 810.0,
+          "45": 963.0,
+          "any_sampled_angle": 963.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 589.0,
+          "22.5": 612.0,
+          "45": 716.0,
+          "any_sampled_angle": 716.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 397.0,
+          "22.5": 405.0,
+          "45": 482.0,
+          "any_sampled_angle": 482.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 295.0,
+          "22.5": 306.0,
+          "45": 358.0,
+          "any_sampled_angle": 358.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 738.0,
+          "22.5": 753.0,
+          "45": 894.0,
+          "any_sampled_angle": 894.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 548.0,
+          "22.5": 569.0,
+          "45": 665.0,
+          "any_sampled_angle": 665.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 369.0,
+          "22.5": 377.0,
+          "45": 447.0,
+          "any_sampled_angle": 447.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 274.0,
+          "22.5": 285.0,
+          "45": 333.0,
+          "any_sampled_angle": 333.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 622.0,
+          "22.5": 635.0,
+          "45": 754.0,
+          "any_sampled_angle": 754.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 462.0,
+          "22.5": 480.0,
+          "45": 561.0,
+          "any_sampled_angle": 561.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 311.0,
+          "22.5": 318.0,
+          "45": 377.0,
+          "any_sampled_angle": 377.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 231.0,
+          "22.5": 240.0,
+          "45": 281.0,
+          "any_sampled_angle": 281.0
+        }
+      },
+      "beta-Ti-13Nb-13Zr": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 2057.0,
+          "22.5": 2099.0,
+          "45": 2494.0,
+          "any_sampled_angle": 2494.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 1527.0,
+          "22.5": 1586.0,
+          "45": 1855.0,
+          "any_sampled_angle": 1855.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 1029.0,
+          "22.5": 1050.0,
+          "45": 1247.0,
+          "any_sampled_angle": 1247.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 764.0,
+          "22.5": 793.0,
+          "45": 928.0,
+          "any_sampled_angle": 928.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 1935.0,
+          "22.5": 1974.0,
+          "45": 2346.0,
+          "any_sampled_angle": 2346.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 1436.0,
+          "22.5": 1491.0,
+          "45": 1745.0,
+          "any_sampled_angle": 1745.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 968.0,
+          "22.5": 987.0,
+          "45": 1173.0,
+          "any_sampled_angle": 1173.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 718.0,
+          "22.5": 746.0,
+          "45": 873.0,
+          "any_sampled_angle": 873.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 1797.0,
+          "22.5": 1834.0,
+          "45": 2179.0,
+          "any_sampled_angle": 2179.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 1334.0,
+          "22.5": 1385.0,
+          "45": 1621.0,
+          "any_sampled_angle": 1621.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 899.0,
+          "22.5": 917.0,
+          "45": 1090.0,
+          "any_sampled_angle": 1090.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 667.0,
+          "22.5": 693.0,
+          "45": 811.0,
+          "any_sampled_angle": 811.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 1516.0,
+          "22.5": 1547.0,
+          "45": 1838.0,
+          "any_sampled_angle": 1838.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 1125.0,
+          "22.5": 1168.0,
+          "45": 1367.0,
+          "any_sampled_angle": 1367.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 758.0,
+          "22.5": 774.0,
+          "45": 919.0,
+          "any_sampled_angle": 919.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 563.0,
+          "22.5": 584.0,
+          "45": 684.0,
+          "any_sampled_angle": 684.0
+        }
+      },
+      "Ta": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 340.0,
+          "22.5": 347.0,
+          "45": 412.0,
+          "any_sampled_angle": 412.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 252.0,
+          "22.5": 262.0,
+          "45": 306.0,
+          "any_sampled_angle": 306.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 170.0,
+          "22.5": 174.0,
+          "45": 206.0,
+          "any_sampled_angle": 206.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 126.0,
+          "22.5": 131.0,
+          "45": 153.0,
+          "any_sampled_angle": 153.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 319.0,
+          "22.5": 326.0,
+          "45": 387.0,
+          "any_sampled_angle": 387.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 237.0,
+          "22.5": 246.0,
+          "45": 288.0,
+          "any_sampled_angle": 288.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 160.0,
+          "22.5": 163.0,
+          "45": 194.0,
+          "any_sampled_angle": 194.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 119.0,
+          "22.5": 123.0,
+          "45": 144.0,
+          "any_sampled_angle": 144.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 297.0,
+          "22.5": 303.0,
+          "45": 360.0,
+          "any_sampled_angle": 360.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 220.0,
+          "22.5": 229.0,
+          "45": 268.0,
+          "any_sampled_angle": 268.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 149.0,
+          "22.5": 152.0,
+          "45": 180.0,
+          "any_sampled_angle": 180.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 110.0,
+          "22.5": 115.0,
+          "45": 134.0,
+          "any_sampled_angle": 134.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 250.0,
+          "22.5": 255.0,
+          "45": 303.0,
+          "any_sampled_angle": 303.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 186.0,
+          "22.5": 193.0,
+          "45": 226.0,
+          "any_sampled_angle": 226.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 125.0,
+          "22.5": 128.0,
+          "45": 152.0,
+          "any_sampled_angle": 152.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 93.0,
+          "22.5": 97.0,
+          "45": 113.0,
+          "any_sampled_angle": 113.0
+        }
+      },
+      "Ti-15Zr": {
+        "dbh_min_sensor_on_bark|p99|sf1": {
+          "0": 1737.0,
+          "22.5": 1773.0,
+          "45": 2106.0,
+          "any_sampled_angle": 2106.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf1": {
+          "0": 1289.0,
+          "22.5": 1339.0,
+          "45": 1567.0,
+          "any_sampled_angle": 1567.0
+        },
+        "dbh_min_sensor_on_bark|p99|sf2": {
+          "0": 869.0,
+          "22.5": 887.0,
+          "45": 1053.0,
+          "any_sampled_angle": 1053.0
+        },
+        "dbh_min_sensor_on_bark|p99.9|sf2": {
+          "0": 645.0,
+          "22.5": 670.0,
+          "45": 784.0,
+          "any_sampled_angle": 784.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf1": {
+          "0": 1634.0,
+          "22.5": 1667.0,
+          "45": 1981.0,
+          "any_sampled_angle": 1981.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf1": {
+          "0": 1212.0,
+          "22.5": 1259.0,
+          "45": 1474.0,
+          "any_sampled_angle": 1474.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99|sf2": {
+          "0": 817.0,
+          "22.5": 834.0,
+          "45": 991.0,
+          "any_sampled_angle": 991.0
+        },
+        "dbh_min_sensor_on_xylem_thin_contact_78|p99.9|sf2": {
+          "0": 606.0,
+          "22.5": 630.0,
+          "45": 737.0,
+          "any_sampled_angle": 737.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf1": {
+          "0": 1518.0,
+          "22.5": 1549.0,
+          "45": 1840.0,
+          "any_sampled_angle": 1840.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf1": {
+          "0": 1126.0,
+          "22.5": 1170.0,
+          "45": 1369.0,
+          "any_sampled_angle": 1369.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99|sf2": {
+          "0": 759.0,
+          "22.5": 775.0,
+          "45": 920.0,
+          "any_sampled_angle": 920.0
+        },
+        "dbh_min_sensor_on_xylem_thick_side_78|p99.9|sf2": {
+          "0": 563.0,
+          "22.5": 585.0,
+          "45": 685.0,
+          "any_sampled_angle": 685.0
+        },
+        "large_stem_limit|p99|sf1": {
+          "0": 1280.0,
+          "22.5": 1306.0,
+          "45": 1552.0,
+          "any_sampled_angle": 1552.0
+        },
+        "large_stem_limit|p99.9|sf1": {
+          "0": 950.0,
+          "22.5": 987.0,
+          "45": 1155.0,
+          "any_sampled_angle": 1155.0
+        },
+        "large_stem_limit|p99|sf2": {
+          "0": 640.0,
+          "22.5": 653.0,
+          "45": 776.0,
+          "any_sampled_angle": 776.0
+        },
+        "large_stem_limit|p99.9|sf2": {
+          "0": 475.0,
+          "22.5": 494.0,
+          "45": 578.0,
+          "any_sampled_angle": 578.0
+        }
+      }
+    },
+    "source_day_large_stem_sf2": {
+      "median": {
+        "Ti-6Al-4V": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 1.6660617059891107,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 1.5746140651801028,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 1.255813953488372,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 1.255813953488372,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 1.9615384615384615,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 1.8696537678207739,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 1.5965217391304347,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 1.5965217391304347,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "Ti-6Al-7Nb": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 1.6161971830985915,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 1.5274542429284526,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 1.2175066312997347,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 1.2175066312997347,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 1.904564315352697,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 1.8142292490118577,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 1.548060708263069,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 1.548060708263069,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "CP-Ti-Gr4": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 2.8867924528301887,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 2.7240356083086055,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 2.175355450236967,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 2.175355450236967,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 3.4,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 3.243816254416961,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 2.7650602409638556,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 2.7650602409638556,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "beta-Ti-13Nb-13Zr": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 1.186046511627907,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 1.1195121951219513,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": false,
+              "margin_over_threshold": 0.8929961089494164,
+              "flips_inside_readings": true
+            },
+            "any_sampled_angle": {
+              "exceeds": false,
+              "margin_over_threshold": 0.8929961089494164,
+              "flips_inside_readings": true
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 1.3951367781155015,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 1.3304347826086957,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 1.136138613861386,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 1.136138613861386,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "Ta": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 7.171875,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 6.75,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 5.4,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 5.4,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 8.422018348623853,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 8.052631578947368,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 6.850746268656716,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 6.850746268656716,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "Ti-15Zr": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 1.4036697247706422,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 1.3265895953757225,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 1.0576036866359446,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 1.0576036866359446,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 1.654054054054054,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 1.5746140651801028,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 1.3440702781844802,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 1.3440702781844802,
+              "flips_inside_readings": false
+            }
+          }
+        }
+      },
+      "upper_whisker": {
+        "Ti-6Al-4V": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 3.3339382940108893,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 3.150943396226415,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 2.5129958960328316,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 2.5129958960328316,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 3.925213675213675,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 3.741344195519348,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 3.194782608695652,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 3.194782608695652,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "Ti-6Al-7Nb": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 3.234154929577465,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 3.0565723793677204,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 2.4363395225464193,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 2.4363395225464193,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 3.8112033195020745,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 3.630434782608696,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 3.097807757166948,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 3.097807757166948,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "CP-Ti-Gr4": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 5.776729559748428,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 5.451038575667655,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 4.3530805687203795,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 4.3530805687203795,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 6.803703703703704,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 6.491166077738516,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 5.533132530120482,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 5.533132530120482,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "beta-Ti-13Nb-13Zr": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 2.3733850129198966,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 2.2402439024390244,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 1.7869649805447472,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 1.7869649805447472,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 2.791793313069909,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 2.6623188405797102,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 2.2735148514851486,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 2.2735148514851486,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "Ta": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 14.3515625,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 13.507352941176471,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 10.805882352941177,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 10.805882352941177,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 16.853211009174313,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 16.114035087719298,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 13.708955223880597,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 13.708955223880597,
+              "flips_inside_readings": false
+            }
+          }
+        },
+        "Ti-15Zr": {
+          "p99": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 2.808868501529052,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 2.6546242774566475,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 2.116359447004608,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 2.116359447004608,
+              "flips_inside_readings": false
+            }
+          },
+          "p99.9": {
+            "0": {
+              "exceeds": true,
+              "margin_over_threshold": 3.30990990990991,
+              "flips_inside_readings": false
+            },
+            "22.5": {
+              "exceeds": true,
+              "margin_over_threshold": 3.150943396226415,
+              "flips_inside_readings": false
+            },
+            "45": {
+              "exceeds": true,
+              "margin_over_threshold": 2.6896046852122986,
+              "flips_inside_readings": false
+            },
+            "any_sampled_angle": {
+              "exceeds": true,
+              "margin_over_threshold": 2.6896046852122986,
+              "flips_inside_readings": false
+            }
+          }
+        }
+      }
+    },
+    "knife_edges_large_stem_sf2": [
+      {
+        "reading": "median",
+        "alloy": "beta-Ti-13Nb-13Zr",
+        "quantile": "p99",
+        "angle": "45"
+      },
+      {
+        "reading": "median",
+        "alloy": "beta-Ti-13Nb-13Zr",
+        "quantile": "p99",
+        "angle": "any_sampled_angle"
+      }
+    ],
+    "controls": {
+      "energy_identity_worst_rel": 1.4509577064607246e-09
     }
   },
   "gyroid_axial_term_mature_stiff_bond_upper": {
@@ -11206,7 +13297,8 @@
     }
   },
   "not_computed": [
-    "E_z* and k_p — the infinite lattice's come from the periodic voxel case (fea --periodic), not read here; the finite part's under traction — no case",
+    "the finite part's E_z* and ligament field under traction — no case; the inclusion's field under the wood's multiaxial strain — the periodic cache holds uniaxial cases only",
+    "which quantile of the periodic field is a smooth ligament's fatigue peak — the instrument does not say (01_01 §5.2 ceiling (3)); p99 and p99.9 are read as named readings",
     "the gyroid⊥shank junction's stress — a junction model (gyroid + solid + sleeve end + wood)",
     "t_L — the share of the wood's in-plane strain the bonded gyroid takes: `106`, conditional on the tissue in the pores, the wood reading and C44",
     "the count of host-stem strain cycles above the threshold — the field strain sensor, 00_07 HW.43",
@@ -11315,5 +13407,5 @@
       }
     }
   },
-  "verdict": "The bonded GYROID is strain-controlled, so its figure of merit is σ_e/E_s, not σ_e (relative to Ti-6Al-4V: Ti-6Al-4V 1.00, Ti-6Al-7Nb 1.03, CP-Ti-Gr4 0.58, beta-Ti-13Nb-13Zr 1.41, Ta 0.23, Ti-15Zr 1.19). An energy LOWER bound — it can show a ligament binding, never safe — puts the ligaments' RMS stress at ≥ 0.50–0.51 E_s·ε on the two FE readings, neither of which is the in-plane traction modulus the bound needs. On the lower reading (the radial one), at t_L = k_p = 1 with near-uniaxial ligaments, the bound alone reaches SF 2 above a stem surface strain of Ti-6Al-4V 1580, Ti-6Al-7Nb 1630, CP-Ti-Gr4 912, beta-Ti-13Nb-13Zr 2222, Ta 367, Ti-15Zr 1876 µε on a large stem; k_p > 1 lowers these, t_L < 1 (not excluded) raises them. The source tree's upper surface strain (1837 µε, one tree, one gust), placed on a large stem, exceeds them for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb on the lower reading (CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb on the higher; any stress state: CP-Ti-Gr4, Ta); its median for CP-Ti-Gr4, Ta. The gyroid⊥shank junction is a candidate the bound cannot see: at t_L = 1 its first layer absorbs 7.4 µm of radial mismatch, 2.75× the wood's strain over one rim period. The anode's bond force in the mature state is 746 N on a stiff bond and 103 N on a soft one (1654 N with a rigid sleeve at `103`'s stiff bond): the Zone 1 shank carries 7.9 MPa, and the tie reverses the force onto the barbs' easy flank — which 01_01 §4.3 A says nothing loads in service. The FLANGE DISC in state 2 on a rigid bark (673 N, Zone-3 fit) carries a worst nominal 97.1 MPa (disc_shank_root|b_pull_at_shank|rim_only_dished_seat): one-sided (a bearing without preload) it reaches SF 2 at K_f 1.51 on the printed route ⊥ 2.58 on the CNC route — the same number is its un-notched SF when a preload ≥ F carries both halves. On the air-dry bark reading the force is 66 N; the mature-state disc force is not bounded. The mass path stays below 0.33 MPa. Not computed: E_z* and k_p (the infinite lattice's come from `fea --periodic`, not read here; the finite part's — no traction case), the junction (a junction model), t_L (`106` — conditional), the count of host-stem cycles above the threshold (the field sensor), any K_t, a barb row's ratchet force, the static means, ice, the collar and lug root."
+  "verdict": "The bonded GYROID is strain-controlled, so its figure of merit is σ_e/E_s, not σ_e (relative to Ti-6Al-4V: Ti-6Al-4V 1.00, Ti-6Al-7Nb 1.03, CP-Ti-Gr4 0.58, beta-Ti-13Nb-13Zr 1.41, Ta 0.23, Ti-15Zr 1.19). An energy LOWER bound — it can show a ligament binding, never safe — puts the ligaments' RMS stress at ≥ 0.50–0.51 E_s·ε on the two FE readings, neither of which is the in-plane traction modulus the bound needs. On the lower reading (the radial one), at t_L = k_p = 1 with near-uniaxial ligaments, the bound alone reaches SF 2 above a stem surface strain of Ti-6Al-4V 1580, Ti-6Al-7Nb 1630, CP-Ti-Gr4 912, beta-Ti-13Nb-13Zr 2222, Ta 367, Ti-15Zr 1876 µε on a large stem; k_p > 1 lowers these, t_L < 1 (not excluded) raises them. The source tree's upper surface strain (1837 µε, one tree, one gust), placed on a large stem, exceeds them for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb on the lower reading (CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb on the higher; any stress state: CP-Ti-Gr4, Ta); its median for CP-Ti-Gr4, Ta. The periodic voxel case's ligament field — the INFINITE lattice under a uniaxial macro stress across the anchor's axis, a READING, neither this bound times a peak factor nor the inclusion's multiaxial state — puts the peak at p99 (the highest quantile that holds a band over the rungs; whether a smooth ligament's fatigue peak sits above or below it is not established) at 1.45–1.58 E_s·ε along the cube axis and 1.09–1.27 at 45°, over the rungs of the part's density and two measures (max|σ_i| ⊥ von Mises). At its lowest — von Mises at every sampled angle — and t_L = 1 the ligaments reach SF 2 on a large stem above Ti-6Al-4V 731, Ti-6Al-7Nb 754, CP-Ti-Gr4 422, beta-Ti-13Nb-13Zr 1028, Ta 170, Ti-15Zr 868 µε at every sampled mount angle (Ti-6Al-4V 551, Ti-6Al-7Nb 568, CP-Ti-Gr4 318, beta-Ti-13Nb-13Zr 774, Ta 128, Ti-15Zr 654 at θ = 0; on max|σ_i| alone, at every sampled angle: Ti-6Al-4V 654, Ti-6Al-7Nb 674, CP-Ti-Gr4 377, beta-Ti-13Nb-13Zr 919, Ta 152, Ti-15Zr 776). The source day's median exceeds them for CP-Ti-Gr4, Ta, Ti-15Zr, Ti-6Al-4V, Ti-6Al-7Nb at every sampled angle and for every alloy at θ = 0, its upper whisker for every alloy; read at p99.9, the median exceeds them for every alloy. Inside the span of readings — knife-edges, not members: beta-Ti-13Nb-13Zr (median, p99, θ = 45°); beta-Ti-13Nb-13Zr (median, p99, every sampled angle). The gyroid⊥shank junction is a candidate the bound cannot see: at t_L = 1 its first layer absorbs 7.4 µm of radial mismatch, 2.75× the wood's strain over one rim period. The anode's bond force in the mature state is 746 N on a stiff bond and 103 N on a soft one (1654 N with a rigid sleeve at `103`'s stiff bond): the Zone 1 shank carries 7.9 MPa, and the tie reverses the force onto the barbs' easy flank — which 01_01 §4.3 A says nothing loads in service. The FLANGE DISC in state 2 on a rigid bark (673 N, Zone-3 fit) carries a worst nominal 97.1 MPa (disc_shank_root|b_pull_at_shank|rim_only_dished_seat): one-sided (a bearing without preload) it reaches SF 2 at K_f 1.51 on the printed route ⊥ 2.58 on the CNC route — the same number is its un-notched SF when a preload ≥ F carries both halves. On the air-dry bark reading the force is 66 N; the mature-state disc force is not bounded. The mass path stays below 0.33 MPa. Not computed: the finite part's E_z* and field under traction (no case), the inclusion's field under the wood's multiaxial strain (the periodic cache holds uniaxial cases only), the junction (a junction model), t_L (`106` — conditional), the count of host-stem cycles above the threshold (the field sensor), any K_t, a barb row's ratchet force, the static means, ice, the collar and lug root."
 }

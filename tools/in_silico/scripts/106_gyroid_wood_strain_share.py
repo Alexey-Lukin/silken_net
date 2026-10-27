@@ -366,6 +366,17 @@ def _load(name: str, file: str):
     return module
 
 
+def periodic_rungs(per: dict, phi: float, nu_s: float) -> list[dict]:
+    """The periodic case's rungs of the part's density (01_01 §5.2) — the ONE home of the rule; `105` calls it too."""
+    assert per["boundary_condition"] == "periodic" and abs(per["poisson_ratio"] - nu_s) < 1e-12, \
+        "the periodic case is not on the part's solid — re-read it"
+    rungs = [r for r in per["rows"] if abs(r["porosity"] - (1.0 - phi)) <= PERIODIC_DENSITY_TOL]
+    assert tuple(r["steps_per_period"] for r in rungs) == PERIODIC_RUNGS, \
+        f"the rungs of the part's density moved: {[r['steps_per_period'] for r in rungs]}"
+    assert all(r["converged"] is True and r["discarded_island_fraction"] == 0 for r in rungs), "a rung is not a solve"
+    return rungs
+
+
 def up0(x: float) -> float:
     """Rounded UP to a whole µε — a «binds above X» sentence (in-silico §When Modifying #43)."""
     return float(math.ceil(round(x, 9)))
@@ -1128,12 +1139,7 @@ def main() -> int:
     # E_z* of ONE tensor (in-silico §When Modifying #45 (b)). Each rung of the part's density is its own tensor; the ladder
     # is quoted as a ladder, never a row (01_01 §5.2, ceiling (2)), and a binding figure takes its adverse rung (#11).
     per = json.loads(PERIODIC.read_text(encoding="utf-8"))
-    assert per["boundary_condition"] == "periodic" and abs(per["poisson_ratio"] - nu_s) < 1e-12, \
-        "the periodic case is not on the part's solid — re-read it"
-    rungs = [r for r in per["rows"] if abs(r["porosity"] - (1.0 - phi)) <= PERIODIC_DENSITY_TOL]
-    assert tuple(r["steps_per_period"] for r in rungs) == PERIODIC_RUNGS, \
-        f"the rungs of the part's density moved: {[r['steps_per_period'] for r in rungs]}"
-    assert all(r["converged"] is True and r["discarded_island_fraction"] == 0 for r in rungs), "a rung is not a solve"
+    rungs = periodic_rungs(per, phi, nu_s)
     forms = {}
     for r in rungs:
         st = r["steps_per_period"]

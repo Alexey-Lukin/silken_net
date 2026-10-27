@@ -6425,6 +6425,117 @@ def test_printed_part_sway_stress_invariants():
     assert mmax < bound
 
 
+def test_printed_part_sway_stress_ligament_field_reading():
+    """105's uniaxial-state reading of the ligament peak (00_07 HW.23), recomputed HERE from the periodic voxel cache, the
+    lib's alloys, `55`'s markers and `87`'s stem strains — not from the script's algebra.
+
+    CAN catch: a rung set other than `106`'s rule (`periodic_rungs`, its ONE home, re-applied here by hand too); a peak off
+    k_p·√(E*/φ) of the SAME rung (the energy identity taken independently of σ_W), a quantile or measure read in the wrong
+    slot, a claim-adverse peak that is not the LOWEST over rungs × measures or a `measure_at_low` that does not name it;
+    a threshold off ε_e/(SF·peak·r/R) or rounded DOWN, an any-angle threshold that is not the highest over the sampled
+    angles, a state divisor wrongly applied, a max|σ_i|-only price off its own rungs' lowest peak; a source-day flag,
+    margin (over the ROUNDED cell — the bound's convention) or knife-edge that does not follow, a knife-edge list that
+    misses a flagged cell; a θ grid whose first direction is not the cube axis; a verdict set, list or band that
+    disagrees with the cache. CANNOT catch: a wrong periodic FE field, which quantile is a smooth ligament's fatigue peak,
+    the multiaxial state of the inclusion — the declared ceilings (01_01 §5.2 (3)–(4)).
+    """
+    import importlib.util
+
+    from lib.constants import ALLOY_PROPERTIES
+
+    d = json.loads((MECHANICAL / "printed_part_sway_stress.json").read_text(encoding="utf-8"))
+    d87 = json.loads((MECHANICAL / "pogo_sway_transfer.json").read_text(encoding="utf-8"))
+    per = json.loads((REPO / "tools/cad/cache/fea/periodic_homogenization.network.w100.c1.json").read_text(encoding="utf-8"))
+    spec = importlib.util.spec_from_file_location("s55_105l", REPO / "tools/in_silico/scripts/55_bus_mechanical.py")
+    s55 = importlib.util.module_from_spec(spec)
+    sys.modules["s55_105l"] = s55
+    spec.loader.exec_module(s55)
+    spec = importlib.util.spec_from_file_location("s106_105l", REPO / "tools/in_silico/scripts/106_gyroid_wood_strain_share.py")
+    s106 = importlib.util.module_from_spec(spec)
+    sys.modules["s106_105l"] = s106
+    spec.loader.exec_module(s106)
+    lf = d["gyroid_ligament_field_uniaxial_reading"]
+    phi = d["inputs"]["solid_fraction"]
+    frac = d["inputs"]["depth_fraction"]
+
+    rungs = [r for r in per["rows"] if abs(r["porosity"] - (1 - phi)) <= s106.PERIODIC_DENSITY_TOL]
+    assert [r["steps_per_period"] for r in rungs] == lf["rungs_steps_per_period"] == list(s106.PERIODIC_RUNGS)
+    assert [r["steps_per_period"] for r in s106.periodic_rungs(per, phi, per["poisson_ratio"])] == lf["rungs_steps_per_period"]
+    qs, ms = ("p99", "p99.9"), {"max_principal": "principal_over_sigma_w", "von_mises": "von_mises_over_sigma_w"}
+    tks = list(lf["field"])
+    assert tks[0] == "0" and [f"{f['theta_deg']:g}" for f in rungs[0]["fields"]] == tks
+    low, high, low_m, pr_low = {}, {}, {}, {}
+    for r in rungs:
+        for f in r["fields"]:
+            tk = f"{f['theta_deg']:g}"
+            for q in qs:
+                c = lf["field"][tk][q]["by_rung"][str(r["steps_per_period"])]
+                assert c["modulus_ratio"] == f["modulus_ratio"]
+                for m, key in ms.items():
+                    pk = f[key][q] * math.sqrt(f["modulus_ratio"] / r["solid_fraction_meshed"])
+                    assert c["peak_per_E_s_strain"][m] == pytest.approx(pk, rel=1e-6), (tk, q, m, r["steps_per_period"])
+                    assert c["k_p"][m] == f[key][q]
+                    if pk < low.get((tk, q), math.inf):
+                        low[tk, q], low_m[tk, q] = pk, m
+                    high[tk, q] = max(high.get((tk, q), 0.0), pk)
+                    if m == "max_principal":
+                        pr_low[tk, q] = min(pr_low.get((tk, q), math.inf), pk)
+    for (tk, q), v in low.items():
+        assert lf["field"][tk][q]["peak_low"] == pytest.approx(v, rel=1e-6)
+        assert lf["field"][tk][q]["measure_at_low"] == low_m[tk, q]
+        assert lf["field"][tk][q]["peak_high"] == pytest.approx(high[tk, q], rel=1e-6)
+
+    knives = []
+    for al, p in ALLOY_PROPERTIES.items():
+        eps_e = s55.ENDURANCE_OVER_YIELD * s55.AS_PRINTED_DERATE * p["yield_MPa"] / (p["E_GPa"] * 1e3) * 1e6
+        for dk, fr in frac.items():
+            for sf in (1.0, 2.0):
+                for q in qs:
+                    for table, peak in ((lf["binds_above_surface_strain_ue"], low),
+                                        (lf["binds_above_surface_strain_ue_max_principal_only"], pr_low)):
+                        cell = table[al][f"{dk}|{q}|sf{sf:g}"]
+                        for tk in tks:
+                            exact = eps_e / sf / (peak[tk, q] * fr)          # no state divisor: the measure holds it
+                            assert exact - 1e-6 <= cell[tk] < exact + 1, (al, dk, sf, q, tk)   # rounded UP
+                        assert cell["any_sampled_angle"] == max(cell[tk] for tk in tks)
+        for rd in ("median", "upper_whisker"):
+            eps = d87["by_slope_reading"][rd]["stem_at_anchor_h_le_2m"]["surface_strain_microstrain_source_tree"]
+            for q in qs:
+                cells = lf["binds_above_surface_strain_ue"][al][f"large_stem_limit|{q}|sf2"]
+                x_oth = {tk: eps_e / 2 / high[tk, q] for tk in tks}
+                x_oth["any_sampled_angle"] = max(x_oth.values())
+                for k, v in lf["source_day_large_stem_sf2"][rd][al][q].items():
+                    assert v["exceeds"] == (eps > cells[k]), (rd, al, q, k)
+                    assert v["margin_over_threshold"] == pytest.approx(eps / cells[k], rel=1e-12)
+                    assert v["flips_inside_readings"] == (x_oth[k] < eps <= cells[k]), (rd, al, q, k)
+                    if v["flips_inside_readings"]:
+                        knives.append({"reading": rd, "alloy": al, "quantile": q, "angle": k})
+    key = lambda k: (k["reading"], k["alloy"], k["quantile"], k["angle"])   # noqa: E731
+    assert sorted(lf["knife_edges_large_stem_sf2"], key=key) == sorted(knives, key=key)
+
+    # the verdict's sets, lists and bands are the cache, not hand-typed — each anchored on BOTH sides
+    def names_all(rd, q, k="any_sampled_angle"):
+        xs = sorted(al for al in ALLOY_PROPERTIES if lf["source_day_large_stem_sf2"][rd][al][q][k]["exceeds"])
+        return "every alloy" if set(xs) == set(ALLOY_PROPERTIES) else ", ".join(xs) if xs else "none"
+
+    def listing(table, k):
+        return ", ".join(f"{al} {table[al]['large_stem_limit|p99|sf2'][k]:.0f}" for al in d["alloys"])
+
+    def band(tk):
+        f = lf["field"][tk]["p99"]
+        return f"{math.floor(round(f['peak_low'] * 100, 9)) / 100:.2f}–{math.ceil(round(f['peak_high'] * 100, 9)) / 100:.2f}"
+
+    v = d["verdict"]
+    assert f"at {band('0')} E_s·ε along the cube axis and {band(tks[-1])} at {tks[-1]}°, over" in v
+    assert f"large stem above {listing(lf['binds_above_surface_strain_ue'], 'any_sampled_angle')} µε at every sampled mount angle (" in v
+    assert f"({listing(lf['binds_above_surface_strain_ue'], '0')} at θ = 0; on" in v
+    assert f"at every sampled angle: {listing(lf['binds_above_surface_strain_ue_max_principal_only'], 'any_sampled_angle')})." in v
+    assert (f"The source day's median exceeds them for {names_all('median', 'p99')} at every sampled angle and for "
+            f"{names_all('median', 'p99', '0')} at θ = 0, its upper whisker for {names_all('upper_whisker', 'p99')}; read at "
+            f"p99.9, the median exceeds them for {names_all('median', 'p99.9')}. ") in v
+    assert ("knife-edges, not members:" in v) == bool(knives)
+
+
 
 
 def test_gyroid_interface_contact_map_invariants():

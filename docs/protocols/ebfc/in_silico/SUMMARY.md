@@ -1009,8 +1009,8 @@ radial CTE stays above 5.95 ppm/K, and the bark's own strain, growth preload and
 ## HW.23 — What the Stem's Sway Puts into the Anchor's Titanium Parts (script 105)
 
 The S-N plan (`docs/protocols/anchor/sn_fatigue_test_plan.md` §1.3) accepts a printed part by its endurance against
-`K_f · S · σ_n`, and until `105` no model gave `σ_n` for the shanks, the barbs or the flange — for the gyroid it now gives only a lower
-bound. `105` lists
+`K_f · S · σ_n`, and until `105` no model gave `σ_n` for the shanks, the barbs or the flange — for the gyroid it gives a lower
+bound and, beside it, a uniaxial-state reading of the ligament peak. `105` lists
 every path the sway takes into them (in-silico §Critical Rules #15 — the full list, with each one's status, is the
 cache's `paths`) and prices the ones a closed form reaches. The endurance markers are `55`'s and OURS (`0.40 × 0.5 × σ_y`
 printed, `× 1.0` for the CNC route the flange may take — `01_02 §1.7`), not a standard; SF 2 is `55`'s line.
@@ -1058,6 +1058,40 @@ it). This one is every large-stem SF 2 cell whose flip lies inside the span of t
 finest-step readings and the 22 raw readings of the step ladder; every other such cell keeps its side on all of them. β-Ti's high figure stands on a yield the tree carries without a source. Whether a host's stem
 crosses these strains often enough is the field histogram's question, not this table's.
 
+**The ligament field, read under a uniaxial macro stress.** The periodic voxel case (`01_01 §5.2`) gives the INFINITE
+lattice's in-plane modulus E*(θ) and the quantiles of its ligaments' peak over their RMS, one periodic case (six
+unit-strain solves) per rung, θ measured from the cube axis across the anchor's axis — the mount angle, when the wood's
+strain runs along the stem. `105` reads them on the rungs of the part's density (`106`'s rule, /24–/64) as a peak per
+unit `E_s · ε` of the macro strain, `k_p · √(E*/φ)` of one rung (the energy identity (σ_W/S) · E* = √(E*/φ) holds on
+every rung — the control). It is a READING, neither this bound times a peak factor — the bound stands on the uniaxial
+state being the least energy at a given strain, and the peak has no such order — nor the multiaxial state of the
+inclusion in the wood; no state divisor applies, since the measure already holds the ligaments' state. Two choices are
+named readings, not picks: the stress measure — the largest principal stress, the bound's own criterion, ⊥ von Mises —
+and the quantile — p99, the highest that holds a band over the rungs (the maximum does not converge), ⊥ p99.9. Whether
+p99 sits at or below a smooth ligament's fatigue peak is not established: the staircase's outer voxel layer is a large
+share of the metal at every rung, and the hottest points are not localised (`01_01 §5.2`, ceiling (3)). At p99 the peak
+is 1.45–1.58 `E_s · ε` along the cube axis and 1.09–1.27 at 45° over rungs × measures; each threshold takes the lowest —
+von Mises at every sampled angle — and at t_L = 1 the ligaments on a large stem reach SF 2 above:
+
+| alloy | binds above, µε: p99, every sampled mount angle | p99, θ = 0 | p99.9, every sampled mount angle | p99, every sampled mount angle, largest principal stress alone |
+|---|---|---|---|---|
+| Ta | 170 | 128 | 134 | 152 |
+| CP-Ti Gr4 | 422 | 318 | 332 | 377 |
+| Ti-6Al-4V | 731 | 551 | 575 | 654 |
+| Ti-6Al-7Nb | 754 | 568 | 593 | 674 |
+| Ti-15Zr | 868 | 654 | 683 | 776 |
+| β-Ti-13Nb-13Zr | 1028 | 774 | 808 | 919 |
+
+«Every sampled mount angle» is the highest threshold over θ = 0, 22.5 and 45° — a maximum over three directions, not a
+ceiling over every angle; the angle criterion is the product `k_p · √E*` with `106`'s `t_L(θ)` (the peak factor falls
+toward 45° while the modulus rises — `01_01 §5.2`). On this reading the source day's median (918 µε) binds every alloy
+at θ = 0, and at every sampled angle every alloy but β-Ti-13Nb-13Zr, which sits at ×0.90 of its threshold: at 45° the largest
+principal stress binds it on the /24, /32 and /64 rungs and von Mises on none — a knife-edge inside the span of
+readings, not a member; its upper whisker binds
+every alloy at every sampled angle, and read at p99.9 so does the median. These thresholds are not the bound tightened:
+they read a peak rather than an RMS, on the infinite lattice's modulus rather than the part's, and t_L, the multiaxial
+state of the inclusion and the smooth-peak quantile each move them (cache: `gyroid_ligament_field_uniaxial_reading`).
+
 **The junction is a candidate the bound cannot see.** At t_L = 1 the bonded gyroid moves with the wood while the solid
 shank in the soft sleeve does not, so the first cell layer at the junction absorbs 7.4 µm of radial mismatch on the
 source day (sensor on bark, DBH 38) — 2.75× the wood's strain over one 2.0 mm rim period. That is an order of the
@@ -1095,8 +1129,8 @@ bearing, pressed by the sleeve's top face (31.9–49.1 MPa at 473 N). The Zone 3
 38.72 MPa (K_f at SF 2 one-sided 3.78 printed ⊥ 6.49 CNC). The capsule's mass on its lever arm stays below 0.33 MPa.
 
 ⚠️ **Bounds.** The shank's nominal is its axial term only: the pin's bending by the stem's transverse shear and its
-anticlastic curvature (S5) is not computed. E_z* and k_p of the INFINITE lattice come from the periodic voxel case (`01_01 §5.2`; its k_p is a
-uniaxial-state reading, never a multiplier of this bound), which this script does not read yet; the finite part's E_z* under traction and the junction's stress need a traction case on the part and a
+anticlastic curvature (S5) is not computed. E_z* and k_p of the INFINITE lattice are read from the periodic voxel case only as the
+uniaxial-state reading above, never as a multiplier of this bound; the inclusion's field under the wood's multiaxial strain is not in that cache (its cases are uniaxial), and the finite part's E_z* under traction and the junction's stress need a traction case on the part and a
 junction model (gyroid + solid + sleeve end + wood); t_L is `106`'s (next section) and hangs on the tissue in the pores,
 the wood's reading and moisture, and off the cube axis on the lattice's shear modulus; the callus annulus's stiffness is unknown. `62` counts first-mode cycles,
 not strain ranges, so no amplitude here is paired with a count — the field record does that. No K_t (barb root, groove,

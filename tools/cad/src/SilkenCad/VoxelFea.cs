@@ -736,8 +736,8 @@ internal static class VoxelFea
     // (the radial case above is neither: its shell fixes the radial DOFs only, and it runs on a graded part), and the two
     // meet only as the specimen grows (Huet 1990, J. Mech. Phys. Solids 38:813; Kanit et al. 2003, Int. J. Solids Struct.
     // 40:3647). Off the cube axis script `106` needs the lattice's SHEAR modulus C44, which none of the four cases above
-    // measures, and `105`'s bound needs the in-plane modulus under uniaxial STRESS and the ligaments' peak over their RMS —
-    // a stress field, not a stiffness. On an exactly periodic lattice all three are properties of the INFINITE lattice,
+    // measures, and `105` reads, beside its bound and never inside it, the in-plane modulus under uniaxial STRESS and
+    // the ligaments' peak over their RMS — a stress field, not a stiffness. On an exactly periodic lattice all three are properties of the INFINITE lattice,
     // and periodic boundary conditions on one period cell return them with no boundary at all.
     //
     // Method. The grid is read as one period cell: node (i, j, k) wraps onto (i mod Nx, j mod Ny, k mod Nz), so the mesh

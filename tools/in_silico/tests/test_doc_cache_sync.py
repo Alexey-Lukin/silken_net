@@ -6434,7 +6434,89 @@ CHECKS += [
      lambda d: _floor2(d["zone3_members"][_SW_Z3]["members"]["zone3_barb_root_bending"]["cnc_wrought"]["one_sided"]["kf_at_sf2"]), 0.0),
     ("sway105 mass → 105", SUMMARY, rf"lever arm stays below {N} MPa", SWAY105,
      lambda d: math.ceil(round(max(v["zone3_shank_bending_MPa"] for v in d["mass_path"].values()) * 100, 9)) / 100, 0.0),
+    # the ligament field's uniaxial-state reading: thresholds cached rounded UP like the bound's; the peak band printed
+    # outward (its lower end DOWN, its higher end UP); the knife-edge margin rounded toward 1 (`_ceil_n`, as 106's)
+    *[(f"sway105 field {key} col {j} → 105", SUMMARY,
+       rf"(?m)^\| {re.escape(label)} \| " + r" \| ".join(N if j == k else r"[\d.]+" for k in range(4)) + r" \|$", SWAY105,
+       (lambda al, c: lambda d: d["gyroid_ligament_field_uniaxial_reading"][c[0]][al][c[1]][c[2]])(key, cell), 0.0)
+      for label, key in _SWAY105_ROWS
+      for j, cell in enumerate((("binds_above_surface_strain_ue", "large_stem_limit|p99|sf2", "any_sampled_angle"),
+                                ("binds_above_surface_strain_ue", "large_stem_limit|p99|sf2", "0"),
+                                ("binds_above_surface_strain_ue", "large_stem_limit|p99.9|sf2", "any_sampled_angle"),
+                                ("binds_above_surface_strain_ue_max_principal_only", "large_stem_limit|p99|sf2",
+                                 "any_sampled_angle")))],
+    *[(f"sway105 field peak {tk} {end} → 105", SUMMARY, pat, SWAY105,
+       (lambda t_, e: lambda d: (_floor2 if e == "peak_low" else lambda x: math.ceil(round(x * 100, 9)) / 100)(
+           d["gyroid_ligament_field_uniaxial_reading"]["field"][t_]["p99"][e]))(tk, end), 0.0)
+      for tk, end, pat in (("0", "peak_low", rf"At p99 the peak\nis {N}–[\d.]+ `E_s · ε` along"),
+                           ("0", "peak_high", rf"At p99 the peak\nis [\d.]+–{N} `E_s · ε` along"),
+                           ("45", "peak_low", rf"cube axis and {N}–[\d.]+ at 45° over"),
+                           ("45", "peak_high", rf"cube axis and [\d.]+–{N} at 45° over"))],
+    ("sway105 field rungs lo → 105", SUMMARY, rf"\(`106`'s rule, /{N}–/\d+\)", SWAY105,
+     lambda d: min(d["gyroid_ligament_field_uniaxial_reading"]["rungs_steps_per_period"]), 0.0),
+    ("sway105 field rungs hi → 105", SUMMARY, rf"\(`106`'s rule, /\d+–/{N}\)", SWAY105,
+     lambda d: max(d["gyroid_ligament_field_uniaxial_reading"]["rungs_steps_per_period"]), 0.0),
+    ("sway105 field median → 105", SUMMARY, rf"source day's median \({N} µε\) binds every alloy", SWAY105,
+     lambda d: d["inputs"]["stem_readings_87"]["median"]["surface_strain_ue"], 0.0),
+    ("sway105 field knife margin → 105", SUMMARY, rf"which sits at ×{N} of its threshold", SWAY105,
+     lambda d: _ceil_n(min(v["p99"]["any_sampled_angle"]["margin_over_threshold"]
+                           for v in d["gyroid_ligament_field_uniaxial_reading"]["source_day_large_stem_sf2"]["median"].values()
+                           if v["p99"]["any_sampled_angle"]["flips_inside_readings"]), 2), 0.0),
 ]
+
+
+def test_sway105_ligament_field_sets_follow_the_cache():
+    """105's sentences on the ligament field's uniaxial-state reading — in SUMMARY and in 00_07 HW.23 — name SETS (whom the
+    source day's median binds at θ = 0 and at every sampled angle, the knife-edge, the upper whisker, p99.9), the measure
+    at the lowest peak, the sampled angles and the table's columns; recomposed here from the cache. CAN catch: a re-run
+    that moves a set, the measure, the knife-edge or the θ grid while the prose keeps the old one; a swapped table
+    header. CANNOT catch: a sentence this test does not compose (the bounds paragraph); a rewritten form fails here until
+    it is recomposed."""
+    d = json.loads((CACHE / SWAY105).read_text(encoding="utf-8"))
+    text = " ".join(doc(SUMMARY).split())
+    tracker = " ".join(doc(TRACKER).split())
+    names = {"CP-Ti-Gr4": "CP-Ti Gr4", "beta-Ti-13Nb-13Zr": "β-Ti-13Nb-13Zr"}
+    lf = d["gyroid_ligament_field_uniaxial_reading"]
+    src = lf["source_day_large_stem_sf2"]
+    every = set(d["alloys"])
+
+    def who(rd, q, k, flag="exceeds"):
+        return {al for al, v in src[rd].items() if v[q][k][flag]}
+
+    assert who("median", "p99", "0") == every
+    miss, knife = every - who("median", "p99", "any_sampled_angle"), who("median", "p99", "any_sampled_angle", "flips_inside_readings")
+    assert len(miss) == 1 and miss == knife, (miss, knife)      # the sentences name ONE alloy that misses, as a knife-edge
+    assert who("upper_whisker", "p99", "any_sampled_angle") == every
+    assert who("median", "p99.9", "any_sampled_angle") == every
+    m = names.get(next(iter(miss)), next(iter(miss)))
+    # the knife's span, NAMED: at the angle that sets its threshold, which rungs bind it on each measure
+    al_k = next(iter(miss))
+    lim = d["alloys"][al_k]["endurance_strain_printed_ue"] / 2.0
+    eps = d["inputs"]["stem_readings_87"]["median"]["surface_strain_ue"]
+    tk_k = max(lf["field"], key=lambda tk: lim / lf["field"][tk]["p99"]["peak_low"])
+    binds = {ms: [r for r, v in lf["field"][tk_k]["p99"]["by_rung"].items() if eps > lim / v["peak_per_E_s_strain"][ms]]
+             for ms in ("max_principal", "von_mises")}
+    assert binds["max_principal"] and not binds["von_mises"], binds
+    rl = ", ".join(f"/{r}" for r in binds["max_principal"][:-1]) + f" and /{binds['max_principal'][-1]}"
+    rl_ua = ", ".join(f"/{r}" for r in binds["max_principal"][:-1]) + f" і /{binds['max_principal'][-1]}"
+    assert (f"at {tk_k}° the largest principal stress binds it on the {rl} rungs and von Mises on none — a knife-edge "
+            "inside the span of readings, not a member") in text
+    assert {lf["field"][tk]["p99"]["measure_at_low"] for tk in lf["field"]} == {"von_mises"}
+    assert "each threshold takes the lowest — von Mises at every sampled angle —" in text
+    assert f"binds every alloy at θ = 0, and at every sampled angle every alloy but {m}, which sits at ×" in text
+    assert "its upper whisker binds every alloy at every sampled angle, and read at p99.9 so does the median" in text
+    tks = list(lf["field"])
+    angles = ", ".join(tks[:-1]) + f" and {tks[-1]}°"
+    assert f"«Every sampled mount angle» is the highest threshold over θ = {angles} —" in text
+    assert ("| alloy | binds above, µε: p99, every sampled mount angle | p99, θ = 0 | p99.9, every sampled mount angle | "
+            "p99, every sampled mount angle, largest principal stress alone |") in doc(SUMMARY)
+    # 00_07 HW.23 carries the same sets in two places — the Стан and the ⚖️ «рівень решітки» leg
+    assert (f"медіана дня-джерела на великому стовбурі звʼязує кожен сплав на θ = 0, а за будь-якого відібраного кута — "
+            f"кожен, крім {m}: на {tk_k}° його звʼязує найбільше головне напруження на рунгах {rl_ua}, а фон Мізес — на "
+            "жодному, тож це ніж усередині розмаху прочитань") in tracker
+    assert (f"та сама медіана звʼязує кожен сплав на θ = 0 і за будь-якого відібраного кута — кожен, крім {m} (ніж "
+            "усередині розмаху прочитань)") in tracker
+    assert "(це фон Мізес)" in tracker
 
 
 

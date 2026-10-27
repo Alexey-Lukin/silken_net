@@ -256,8 +256,11 @@ Anchor mechanics (CPU):
      Zone-3 fit; the air-dry share read raw, not reproduced) · 52 (z_stack_tolerance.json: the applied gland) · 86
      (importlib: soderberg; through it 55's endurance markers, wrought derate and SF line) ·
      tools/cad/cache/fea/anchor_zone1_pine.json + anchor_zone1_pine.h*um.json (the voxel-FE step ladder: the pinned sweep and the HW.23 re-sweep of 2026-10-23, read by 105 as one ladder with lock flags; the sweep's saw is the sampler's phase lock, measured — `00_07` HW.23, `01_01 §5.2`) · tools/cad/cem (lock, flange, sleeve, pine
-     anode) → 105 (printed_part_sway_stress.json — the sway stress in the anchor's titanium parts); a re-run of 87,
-     102, 103, 52 or the FEA sweep, or a change to those CEMs, re-runs 105
+     anode) · tools/cad/cache/fea/periodic_homogenization.network.w100.c1.json + 106 (importlib: `periodic_rungs`
+     — the periodic rung rule's ONE home — and PERIODIC; never 106's cache) → 105
+     (printed_part_sway_stress.json — the sway stress in the anchor's titanium parts, and the ligament field's
+     uniaxial-state reading); a re-run of 87, 102, 103, 52, the FEA sweep or the periodic case, a change to 106's rung
+     rule, or a change to those CEMs, re-runs 105
   105 (importlib: read_fe — ONE home of the FE reading rule — rms_factor, NU_SOLID; printed_part_sway_stress.json: the two FE readings,
      per axis the ADVERSE end of the [finest unlocked ⊥ finest locked] finest-step bracket over the merged ladder (§When Modifying #11; the
      two-point Richardson pair they replaced extrapolated a phase-locked error — HW.23, 2026-10-23), and `fe_reading_lower`, the one a

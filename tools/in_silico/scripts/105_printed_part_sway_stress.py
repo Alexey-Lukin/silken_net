@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """105 — the cyclic stress that the stem's sway puts into the titanium parts of the shipped anchor, path by path, and
 the condition under which each part becomes binding (00_07 HW.23, the leg «циклічне напруження від гойдання в
-друкованих деталях ВІДВАНТАЖЕНОЇ геометрії не пораховане ніде»; closed forms and one energy bound, no FE).
+друкованих деталях ВІДВАНТАЖЕНОЇ геометрії не пораховане ніде»; closed forms, one energy bound and a reading of the
+cached periodic voxel field — no FE solve here).
 
 WHY. The S-N plan (docs/protocols/anchor/sn_fatigue_test_plan.md §1.3) accepts a printed part by
 σ_e,print(N) ≥ K_f · S · σ_n, and no model in the tree gave σ_n for the gyroid, the shanks, the barbs or the flange —
@@ -68,6 +69,21 @@ MODEL.
   beside it as one reading placed on a large stem. The S2 axial term at the shank end has its own lower bound
   (force-controlled: the higher axial ratio is its conservative end); the two bounds are not additive (the macro
   energy's cross term has no established sign).
+  Ligament field (00_07 HW.23): beside the bound, NOT multiplying it, the periodic voxel case's field of the INFINITE
+  lattice (01_01 §5.2) under a unit uniaxial macro stress across the anchor's axis, at θ from the cube axis — the mount
+  angle when the wood's strain runs along the stem. On each periodic rung of the part's density (`106`'s rung rule, read
+  from it) one periodic case (six unit-strain solves) gives E*(θ), σ_W/S and the quantiles of the ligaments' peak over
+  σ_W, so the peak per unit E_s·ε of the macro strain is k_p·(σ_W/S)·E* — with (σ_W/S)·E* = √(E*/φ) exactly (the
+  energy identity, controlled). It is a READING under a uniaxial macro state: the bound stands on that state being the
+  least energy at a given strain, the peak has no such order, and the inclusion in the wood is strained multiaxially
+  (ceiling (4)). The measure already holds the ligaments' state, so no state divisor applies. Named readings, not picks:
+  two measures — max|σ_i| (the bound's own criterion) ⊥ von Mises — and two quantiles — p99, the highest that holds a
+  band over the rungs (the max does not converge), ⊥ p99.9. Whether p99 sits at or below a smooth ligament's peak is not
+  established (ceiling (3)): the staircase's outer voxel layer is a large share of the metal at every rung, and the
+  hottest points are not localised. A binding claim takes the LOWEST peak over rungs × measures, read from the cache;
+  max|σ_i| alone is printed beside it as the price of the measure. Over the three sampled angles the claim-adverse
+  threshold is the HIGHEST, a maximum over what was computed, not a ceiling over every angle; every source-day cell
+  whose flag flips inside the span of readings (rungs × measures) is printed as a knife-edge.
   Forces: `103`'s own closed forms — state 2 (no tie): F = k_s·kc/(kc + k_s)·shift with kc = series(k_A, k_F);
   state 3 (a rigid tie at depth d): F_A = series(k_A, k_lower(d))·(1 − d/dv)·shift — held to `103`'s cached share caps,
   on `103`'s own depth grid, before use. F_A with a rigid sleeve: k_A·shift at `103`'s bond. The bearing force in state 3
@@ -86,14 +102,16 @@ MODEL.
 
 CAN: list every path and say which this script prices; give, per alloy, the stem's surface strain above which the bound
 alone puts the gyroid's ligaments at σ_e/S (t_L = k_p = 1, per FE reading, stress-state reading and sensor reference),
-and whether the source day reaches it; the anode's bond force and the bearing force per premise, state and bond end;
+and whether the source day reaches it; the same for the periodic case's uniaxial-state reading of the ligament PEAK,
+per named quantile and sampled mount angle at the readings' adverse end (rungs × measures), with max|σ_i| beside it and
+every knife-edge; the anode's bond force and the bearing force per premise, state and bond end;
 each solid member's nominal stress, the K_f at which it reaches SF 2 per cycle reading and route, and the static mean at
 which it does; the force the sway puts on the barbs' easy flank; the junction's mismatch; the mass path.
-CANNOT: (1) show any part SAFE from the gyroid bound; give k_p, E_z* or the junction's stress — a voxel field's stresses
-under an off-axis traction case — the infinite lattice's field comes from the periodic voxel case (`fea --periodic`,
-01_01 §5.2; the lattice's elastic half is the CAD side's, in-silico §When Modifying #24), which this script does not
-read, while a traction case on the finite part exists nowhere — and a junction
-model (gyroid + solid + sleeve end + wood); (2) give t_L — `106` does (orthotropic Eshelby on Scots pine's measured
+CANNOT: (1) show any part SAFE from the gyroid bound, or any ligament safe from the field reading; give the finite
+part's E_z* or field under traction (a traction case on the finite part exists nowhere), the inclusion's field under
+the wood's multiaxial strain (the periodic cache holds uniaxial cases only — the lattice's elastic half is the CAD
+side's, in-silico §When Modifying #24), which quantile is a smooth ligament's fatigue peak (01_01 §5.2 ceiling (3)), or
+the junction's stress — a junction model (gyroid + solid + sleeve end + wood); (2) give t_L — `106` does (orthotropic Eshelby on Scots pine's measured
 constants), and it hangs on the tissue in the pores, the wood reading and moisture, and off the cube axis on the
 lattice's shear modulus (measured for the infinite lattice by the periodic voxel case, not read here); the
 callus annulus's stiffness is unknown (01_04 §2); (3) count how often a
@@ -128,10 +146,13 @@ from lib.utils import banner
 
 SI_DESCRIPTION = ("Cyclic stress from stem sway in the titanium parts of the anchor, path by path: an energy lower "
                   "bound on the ligament stress of a gyroid lattice bonded to the wood, given as the stem surface strain "
-                  "above which it alone reaches the endurance limit, per candidate alloy; the axial force the wood "
+                  "above which it alone reaches the endurance limit, per candidate alloy, and beside it a reading of the "
+                  "ligament peak under a uniaxial macro stress from a periodic finite-element case of the infinite "
+                  "lattice, which is not a bound; the axial force the wood "
                   "imposes through the anode bond; and the nominal stress in the solid shanks, barbs and the flange disc "
                   "(an annular Kirchhoff plate on the bark), with the stress-concentration factor and the static mean at "
-                  "which each reaches the safety-factor line; closed forms, no finite elements")
+                  "which each reaches the safety-factor line; closed forms over cached finite-element results, no "
+                  "solve here")
 
 MECH = CACHE_DIR / "mechanical"
 CEM = REPO_ROOT / "tools/cad/cem"
@@ -146,6 +167,13 @@ DEPTH_MIN_MM = 0.5         # the shallowest tie on `103`'s depth axis (its DEPTH
 DEPTH_POINTS = 40          # `103`'s depth grid: DEPTH_MIN … each tie depth in 40 steps (its `depths`)
 CAP_TOL = 1e-4             # `103` caches its shares at four decimals
 CYCLES = ("one_sided", "reversed", "on_preload")
+# the periodic field's quantiles read as the ligament peak — NAMED readings, not a pick (01_01 §5.2 ceiling (3)): p99 is
+# the one a binding claim takes (the lower peak of the two that hold a band over the rungs), p99.9 its price; the max
+# does not converge over the ladder, and p50/p90 are not peaks
+PEAK_QUANTILES = ("p99", "p99.9")
+# the periodic field's stress measures — NAMED readings (§When Modifying #11): max|σ_i| is the bound's own criterion, von
+# Mises the other common fatigue measure; a binding claim takes whichever gives the lower peak, read from the cache
+PEAK_MEASURES = {"max_principal": "principal_over_sigma_w", "von_mises": "von_mises_over_sigma_w"}
 
 
 def _load(name: str, file: str):
@@ -536,6 +564,80 @@ def main() -> int:
                             or abs(gyroid[al][key][fk] - rv["surface_strain_ue"]) <= 1.0), f"flip ⊥ flag: {rd} {al} {key}"
                 source_day_flip[rd][al][key] = cell
 
+    # ── The ligament field: the periodic voxel case's UNIAXIAL-STATE reading (00_07 HW.23) ───────────────────────────
+    # The infinite lattice's k_p and E*(θ) come from one periodic case per rung of the part's density (six unit-strain
+    # solves); the rung rule is `106`'s `periodic_rungs`, its ONE home. Peak per unit E_s·ε of the macro strain =
+    # k_p·(σ_W/S)·E*. Not this bound times k_p (01_01 §5.2 ceiling (4)); no state divisor — the measure already holds the
+    # ligaments' state. Two measures are NAMED readings (§When Modifying #11): max|σ_i|, the bound's own criterion, ⊥ von
+    # Mises; a binding claim takes the LOWEST peak over rungs × measures — which measure that is, is read, never assumed.
+    s106 = _load("s106_105", "106_gyroid_wood_strain_share.py")
+    rungs = s106.periodic_rungs(json.loads(s106.PERIODIC.read_text(encoding="utf-8")), phi, NU_SOLID)
+    thetas = [f["theta_deg"] for f in rungs[0]["fields"]]
+    assert all([f["theta_deg"] for f in r["fields"]] == thetas for r in rungs), "the rungs carry different θ grids"
+    assert thetas[0] == 0, "the verdict reads the first sampled direction as the cube axis — the θ grid moved"
+    lig_field, identity_worst = {}, 0.0
+    for i, th in enumerate(thetas):
+        tk = f"{th:g}"
+        lig_field[tk] = {}
+        for q in PEAK_QUANTILES:
+            by_rung = {}
+            for r in rungs:
+                f = r["fields"][i]
+                e, sw = f["modulus_ratio"], f["sigma_w_per_macro_stress"]
+                rms = math.sqrt(e / r["solid_fraction_meshed"])
+                # control — CAN catch: σ_W redefined or rescaled in the cache (per strain, per φ), or E* and σ_W taken
+                # from different solves; CANNOT catch a wrong field — the identity holds on any converged one
+                identity_worst = max(identity_worst, abs(sw * e - rms) / rms)
+                by_rung[str(r["steps_per_period"])] = {
+                    "modulus_ratio": e,
+                    "k_p": {m: f[key][q] for m, key in PEAK_MEASURES.items()},
+                    "peak_per_E_s_strain": {m: f[key][q] * sw * e for m, key in PEAK_MEASURES.items()}}
+            cells = [(v["peak_per_E_s_strain"][m], m) for v in by_rung.values() for m in PEAK_MEASURES]
+            lig_field[tk][q] = {"by_rung": by_rung, "peak_low": min(cells)[0], "measure_at_low": min(cells)[1],
+                                "peak_high": max(cells)[0]}
+    assert identity_worst < 1e-6, f"(σ_W/S)·E* ≠ √(E*/φ) on the periodic case ({identity_worst:.1e}) — re-read its σ_W"
+    tks = list(lig_field)
+
+    # the stem's surface strain above which the reading puts the ligament PEAK at σ_e/S at t_L = 1, at the lowest peak over
+    # rungs × measures (adverse to a binding claim), rounded UP; over the sampled angles the claim-adverse one is the
+    # HIGHEST. Beside it, the price of the measure: the same on max|σ_i| alone (its rungs' lowest peak)
+    def thr_cells(lim, frac, q, peak_of):
+        cell = {tk: up0(lim / (peak_of(tk, q) * frac)) for tk in tks}
+        cell["any_sampled_angle"] = max(cell[tk] for tk in tks)
+        return cell
+
+    def principal_low(tk, q):
+        return min(v["peak_per_E_s_strain"]["max_principal"] for v in lig_field[tk][q]["by_rung"].values())
+
+    lig, lig_principal = {}, {}
+    for al, row in alloys.items():
+        lig[al], lig_principal[al] = {}, {}
+        for dk, frac in depth_fraction.items():
+            for sf in SF_LINES:
+                for q in PEAK_QUANTILES:
+                    lim = row["endurance_strain_printed_ue"] / sf
+                    lig[al][f"{dk}|{q}|sf{sf:g}"] = thr_cells(lim, frac, q, lambda t, qq: lig_field[t][qq]["peak_low"])
+                    lig_principal[al][f"{dk}|{q}|sf{sf:g}"] = thr_cells(lim, frac, q, principal_low)
+    # the source day on a large stem at SF 2: the flag on the rounded cell and its margin over it (the bound's convention),
+    # and whether some reading in the span flips it — the threshold at the HIGHEST peak over rungs × measures below the
+    # strain while the adverse cell is not: a knife-edge, not a member. CANNOT: a strain in the rounding sliver of the
+    # adverse cell (x < ε ≤ ⌈x⌉) is labelled a knife-edge too
+    lig_source, knives = {}, []
+    for rd, rv in readings.items():
+        eps = rv["surface_strain_ue"]
+        lig_source[rd] = {}
+        for al, row in alloys.items():
+            lim = row["endurance_strain_printed_ue"] / 2.0
+            lig_source[rd][al] = {}
+            for q in PEAK_QUANTILES:
+                x_oth = {tk: lim / lig_field[tk][q]["peak_high"] for tk in tks}
+                x_oth["any_sampled_angle"] = max(x_oth.values())
+                cells = lig[al][f"large_stem_limit|{q}|sf2"]
+                lig_source[rd][al][q] = {k: {"exceeds": eps > cells[k], "margin_over_threshold": eps / cells[k],
+                                             "flips_inside_readings": x_oth[k] < eps <= cells[k]} for k in cells}
+                knives += [{"reading": rd, "alloy": al, "quantile": q, "angle": k}
+                           for k, v in lig_source[rd][al][q].items() if v["flips_inside_readings"]]
+
     # the S2 axial term at the gyroid's shank end — its own lower bound, force-controlled (the higher ratio is its
     # conservative end); mature state, stiff bond, the source day's upper reading
     fa_axial = f_newton(forces["b_zone3_fit"]["anode_bond_stiff"]["state3_bond_per_mm_max_over_ties"], "upper_whisker")
@@ -597,6 +699,41 @@ def main() -> int:
     def names(xs):
         return ", ".join(xs) if xs else "none"
 
+    def names_all(xs):
+        return "every alloy" if set(xs) == set(alloys) else names(xs)
+
+    def lig_set(rd, q, flag, k="any_sampled_angle"):
+        return sorted(al for al in alloys if lig_source[rd][al][q][k][flag])
+
+    def lig_band(q, tk):
+        return f"{down2(lig_field[tk][q]['peak_low']):.2f}–{up2(lig_field[tk][q]['peak_high']):.2f}"
+
+    def lig_list(table, k):
+        return ", ".join(f"{al} {table[al]['large_stem_limit|p99|sf2'][k]:.0f}" for al in alloys)
+
+    measure_name = {"max_principal": "max|σ_i|", "von_mises": "von Mises"}
+    lows = {lig_field[tk]["p99"]["measure_at_low"] for tk in tks}
+    low_on = (f"{measure_name[next(iter(lows))]} at every sampled angle" if len(lows) == 1 else
+              ", ".join(f"{measure_name[lig_field[tk]['p99']['measure_at_low']]} at {tk}°" for tk in tks))
+    angle_name = {"any_sampled_angle": "every sampled angle", **{tk: f"θ = {tk}°" for tk in tks}}
+    knife_txt = "; ".join(f"{k['alloy']} ({k['reading'].replace('_', ' ')}, {k['quantile']}, {angle_name[k['angle']]})"
+                          for k in knives)
+    lig_text = (
+        f"The periodic voxel case's ligament field — the INFINITE lattice under a uniaxial macro stress across the "
+        f"anchor's axis, a READING, neither this bound times a peak factor nor the inclusion's multiaxial state — puts "
+        f"the peak at p99 (the highest quantile that holds a band over the rungs; whether a smooth ligament's fatigue peak "
+        f"sits above or below it is not established) at {lig_band('p99', tks[0])} E_s·ε along the cube axis and "
+        f"{lig_band('p99', tks[-1])} at {tks[-1]}°, over the rungs of the part's density and two measures (max|σ_i| ⊥ "
+        f"von Mises). At its lowest — {low_on} — and t_L = 1 the ligaments reach SF 2 on a large stem above "
+        f"{lig_list(lig, 'any_sampled_angle')} µε at every sampled mount angle ({lig_list(lig, tks[0])} at θ = 0; on "
+        f"max|σ_i| alone, at every sampled angle: {lig_list(lig_principal, 'any_sampled_angle')}). The source day's "
+        f"median exceeds them for {names_all(lig_set('median', 'p99', 'exceeds'))} at every sampled angle and for "
+        f"{names_all(lig_set('median', 'p99', 'exceeds', tks[0]))} at θ = 0, its upper whisker for "
+        f"{names_all(lig_set('upper_whisker', 'p99', 'exceeds'))}; read at p99.9, the median exceeds them for "
+        f"{names_all(lig_set('median', 'p99.9', 'exceeds'))}. "
+        + (f"Inside the span of readings — knife-edges, not members: {knife_txt}. " if knives else
+           "No source-day cell flips inside the span of readings. "))
+
     verdict = (
         f"The bonded GYROID is strain-controlled, so its figure of merit is σ_e/E_s, not σ_e (relative to "
         f"{ALLOY_BASELINE}: " + ", ".join(f"{al} {v:.2f}" for al, v in fm.items()) + "). An energy LOWER bound — "
@@ -606,7 +743,8 @@ def main() -> int:
         f"reaches SF 2 above a stem surface strain of {alist} µε on a large stem; k_p > 1 lowers these, t_L < 1 (not "
         f"excluded) raises them. The source tree's upper surface strain ({eps_up:.0f} µε, one tree, one gust), placed on a "
         f"large stem, exceeds them for {names(lo_uni)} on the lower reading ({names(hi_uni)} on the higher; any stress "
-        f"state: {names(lo_any)}); its median for {names(md_uni)}. The gyroid⊥shank junction is a candidate the bound "
+        f"state: {names(lo_any)}); its median for {names(md_uni)}. " + lig_text + "The gyroid⊥shank junction is a "
+        f"candidate the bound "
         f"cannot see: at t_L = 1 its first layer absorbs {junction['mismatch_um_at_tL1_sensor_on_bark']['upper_whisker']:.1f} "
         f"µm of radial mismatch, {junction['layer_over_wood_strain']:.2f}× the wood's strain over one rim period. The "
         f"anode's bond force in the mature state is {z1_cap['force_N']:.0f} N on a stiff bond and {z1_soft['force_N']:.0f} N "
@@ -618,9 +756,9 @@ def main() -> int:
         f"printed route ⊥ {down2(wdc['one_sided']['kf_at_sf2']):.2f} on the CNC route — the same number is its un-notched SF "
         f"when a preload ≥ F carries both halves. On the air-dry bark reading "
         f"the force is {z3_dry['force_N']:.0f} N; the mature-state disc force is not bounded. The mass path stays below "
-        f"{up2(max(v['zone3_shank_bending_MPa'] for v in mass_path.values())):.2f} MPa. Not computed: E_z* and k_p (the "
-        f"infinite lattice's come from `fea --periodic`, not read here; the finite part's — no traction case), the "
-        f"junction (a junction model), t_L (`106` — conditional), the "
+        f"{up2(max(v['zone3_shank_bending_MPa'] for v in mass_path.values())):.2f} MPa. Not computed: the finite part's "
+        f"E_z* and field under traction (no case), the inclusion's field under the wood's multiaxial strain (the "
+        f"periodic cache holds uniaxial cases only), the junction (a junction model), t_L (`106` — conditional), the "
         f"count of host-stem cycles above the threshold (the field sensor), any K_t, a barb row's ratchet force, the "
         f"static means, ice, the collar and lug root.")
 
@@ -628,7 +766,9 @@ def main() -> int:
         "script": Path(__file__).name,
         "question": "00_07 HW.23 — cyclic stress from stem sway in the printed parts of the shipped geometry",
         "paths": {
-            "S1_S3_inplane_strain_on_gyroid": "a lower bound here (energy) — conditional on E_z*; t_L in `106` (conditional), k_p not computed",
+            "S1_S3_inplane_strain_on_gyroid": "a lower bound here (energy) — conditional on E_z*; beside it the periodic "
+                                              "case's uniaxial-state reading of the ligament peak (not a bound); t_L in "
+                                              "`106` (conditional)",
             "J_gyroid_shank_junction": "NOT COMPUTED — a candidate the bound cannot see; needs a junction model",
             "S2_bond_force_zone1": "computed here (nominal) — shank, groove root, barbs; the easy flank is loaded",
             "S2_bearing_force_zone3_disc": "computed here (nominal, state 2) — Zone 3 shank and barbs (premise b), disc "
@@ -682,6 +822,36 @@ def main() -> int:
         "gyroid_binds_above_surface_strain_ue": gyroid,
         "gyroid_source_day_exceeds": source_day,
         "gyroid_source_day_flip_large_stem_sf2": source_day_flip,
+        "gyroid_ligament_field_uniaxial_reading": {
+            "source": str(s106.PERIODIC.relative_to(REPO_ROOT)),
+            "is": "the INFINITE lattice's ligament field under a unit uniaxial macro stress along (cos θ, sin θ, 0) — "
+                  "across the anchor's axis, θ from the cube axis — from periodic conditions (01_01 §5.2): a READING "
+                  "under a uniaxial macro state, never the energy bound times k_p (ceiling (4)), and not the multiaxial "
+                  "state of the inclusion in the wood",
+            "rungs_steps_per_period": list(s106.PERIODIC_RUNGS),
+            "rung_rule": f"`106`'s `periodic_rungs`: |porosity − the part's {1.0 - phi:.4f}| ≤ "
+                         f"{s106.PERIODIC_DENSITY_TOL}",
+            "quantiles": {"p99": "the highest quantile that holds a band over the rungs — the one the thresholds read; "
+                                 "whether it sits at or below a smooth ligament's peak is not established (01_01 §5.2 "
+                                 "ceiling (3)): the outer voxel layer is a large share of the metal, the hottest points "
+                                 "are not localised",
+                          "p99.9": "beside it — wider over the rungs",
+                          "not_read": "max (does not converge over the ladder) · p50, p90 (not peaks)"},
+            "measures": {"max_principal": "max|σ_i| — the energy bound's own criterion",
+                         "von_mises": "von Mises — the other common fatigue measure"},
+            "peak_rule": "peak per unit E_s·ε = k_p·(σ_W/S)·E* of one periodic case per rung (six unit-strain solves); "
+                         "a binding claim takes the LOWEST peak over rungs × measures (its measure read, "
+                         "`measure_at_low`), and over the sampled angles the HIGHEST threshold (three directions, not a "
+                         "ceiling over every angle); max|σ_i| alone is printed beside it as the price of the measure",
+            "angle_criterion": "peak_per_E_s_strain(θ) = k_p(θ)·√E*(θ)/√φ of the rung — the mount-angle criterion "
+                               "k_p·√E*·t_L (00_07 HW.23) up to the rung's 1/√φ; t_L(θ) is `106`'s",
+            "field": lig_field,
+            "binds_above_surface_strain_ue": lig,
+            "binds_above_surface_strain_ue_max_principal_only": lig_principal,
+            "source_day_large_stem_sf2": lig_source,
+            "knife_edges_large_stem_sf2": knives,
+            "controls": {"energy_identity_worst_rel": identity_worst},
+        },
         "gyroid_axial_term_mature_stiff_bond_upper": {"force_N": fa_axial, "by_alloy": axial_rms,
                                                       "note": "its own lower bound; not additive with the in-plane one"},
         "junction": junction,
@@ -692,7 +862,10 @@ def main() -> int:
         "zone3_members": zone3,
         "mass_path": mass_path,
         "not_computed": [
-            "E_z* and k_p — the infinite lattice's come from the periodic voxel case (fea --periodic), not read here; the finite part's under traction — no case",
+            "the finite part's E_z* and ligament field under traction — no case; the inclusion's field under the wood's "
+            "multiaxial strain — the periodic cache holds uniaxial cases only",
+            "which quantile of the periodic field is a smooth ligament's fatigue peak — the instrument does not say "
+            "(01_01 §5.2 ceiling (3)); p99 and p99.9 are read as named readings",
             "the gyroid⊥shank junction's stress — a junction model (gyroid + solid + sleeve end + wood)",
             "t_L — the share of the wood's in-plane strain the bonded gyroid takes: `106`, conditional on the tissue in the pores, the wood reading and C44",
             "the count of host-stem strain cycles above the threshold — the field strain sensor, 00_07 HW.43",
@@ -722,6 +895,12 @@ def main() -> int:
         print(f"    {al:20s} σ_e/E_s ×{fm[al]:.2f}  near-uniaxial " + " | ".join(f"{x:5.0f}" for x in cells)
               + f"   any-state large {thr(al, 'large_stem_limit', 'any_state'):5.0f}"
               + f"   axial term {axial_rms[al]['over_sf2_line']:.2f} of the SF-2 line")
+    print(f"  ligament field — periodic, uniaxial-state READING (rungs /{', /'.join(map(str, s106.PERIODIC_RUNGS))}; "
+          f"energy identity worst {identity_worst:.1e}): peak / (E_s·ε) over rungs × measures, and SF 2 binds-above (µε) "
+          f"on a large stem at t_L = 1, at every sampled angle; knife-edges: {knife_txt or 'none'}")
+    for q in PEAK_QUANTILES:
+        print(f"    {q:5s} " + " · ".join(f"θ {tk}° {lig_band(q, tk)}" for tk in tks) + "   "
+              + ", ".join(f"{al} {lig[al][f'large_stem_limit|{q}|sf2']['any_sampled_angle']:.0f}" for al in alloys))
     for pn in premises:
         for bn in bonds:
             fz = forces[pn][bn]
