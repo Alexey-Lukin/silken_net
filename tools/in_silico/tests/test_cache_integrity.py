@@ -8146,7 +8146,22 @@ def test_winter_pv_autonomy_invariants():
     for c, lead in (("favourable", "below R "), ("nominal", "the nominal one needs "), ("adverse", "the adverse ")):
         frag = lead + " ⊥ ".join(f"{rs[('cadence_c', c, e)]:#.3g} at η {e * 100:g} %" for e in mf["eta_pv_readings"])
         assert frag in vr, f"the measured-form verdict lost {frag!r}"
-    assert f"({face:.3f} cm², the largest the dome holds;" in vr
+    assert mf["flat_crown_diameter_mm"] < 2 * math.sqrt(a_x * 100 / math.pi), "the crown is not inside the dome face"
+    assert mf["flat_crown_cm2"] == pytest.approx(math.pi * (mf["flat_crown_diameter_mm"] / 2) ** 2 / 100, rel=1e-12)
+    assert (f"({face:.3f} cm² — an upper bound: a cell sits inside behind a window, and the flat crown is "
+            f"Ø{mf['flat_crown_diameter_mm']:g} mm, {mf['flat_crown_cm2']:.2f} cm², before any glue land;") in vr
+    # the per-area thresholds (01_03 §4 ⊕ «короткий список»): each from its lane's bracket and its area; the crown and the
+    # bore from their diameters; the open-vertical bound under the diffuse-only adverse stretch is ½(1 + ρ) ∈ (½, 1)
+    pa = mf["r_below_which_it_cannot_by_cell_area"]
+    assert pa["flat_crown_circle"]["area_cm2"] == pytest.approx(mf["flat_crown_cm2"], rel=1e-12)
+    assert pa["bore_circle"]["area_cm2"] == pytest.approx(math.pi * (mf["bore_diameter_mm"] / 2) ** 2 / 100, rel=1e-12)
+    assert mf["flat_crown_diameter_mm"] < mf["bore_diameter_mm"] < 2 * math.sqrt(a_x * 100 / math.pi)
+    for k, v in pa.items():
+        for e, by in v["cadence_c"].items():
+            for c, x in by.items():
+                assert x == floor3(mf["by_demand"]["cadence_c"][c]["a_eff_lo_cm2"] / (float(e) * v["area_cm2"])), (k, e, c)
+    assert mf["binding_stretches"]["cadence_c"]["adverse"]["dni_after_last_full_Wh_m2"] == 0.0
+    assert all(0.5 < b < 1.0 for b in mf["r_bound_open_vertical_diffuse_only"].values())
     # the lanes named as binding from November are exactly those whose last full hour falls in November
     nov = sorted(f"{dk}/{c}" for dk, by in mf["binding_stretches"].items() for c, v in by.items() if v["last_full"][5:7] == "11")
     assert mf["binding_stretch_last_full_in_november"] == nov

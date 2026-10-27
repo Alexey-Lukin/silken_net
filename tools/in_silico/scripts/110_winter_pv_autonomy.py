@@ -57,8 +57,9 @@ MODEL. Hourly, 1991–2020, ERA5 at the Cherkasy grid point (`71`'s loader; radi
   empties is used.
   The measured form (HW.54 Р3(б)(4) — the winter field sheet, before its data): G = R·GHI, R the ratio of the light on
   a vertical stem face at the anchor's height to an open horizontal's — the canopy's T, the face's geometry and its
-  horizon sit INSIDE R, so A_eff = η·A with A the whole dome face (the largest cell the dome holds; a smaller one
-  raises R* in inverse proportion to its area). The harvest depends on η·A·R alone (P = η·A·R·GHI, the boost read in
+  horizon sit INSIDE R, so A_eff = η·A with A the outer dome face — an UPPER bound on a cell's area, not a cell the
+  dome holds: the cell sits inside the capsule behind a window, and the radome's flat crown (its diameter less the
+  edge round, from the radome CEM) is far smaller; a smaller cell raises R* in inverse proportion to its area. The harvest depends on η·A·R alone (P = η·A·R·GHI, the boost read in
   power, as everywhere here), so ONE bisection on the GHI field per lane gives the R below which the store empties, at
   any η — a NECESSARY condition, like every threshold here: R* = A_eff*(GHI) / (η·A), printed at the two named η of
   ETA_PV_R_READINGS and rounded down. R is taken CONSTANT over the record.
@@ -172,6 +173,12 @@ OPEN_AZIMUTHS_DEG = (0, 90, 180, 270)      # the open faces printed — a subset
 DESK_ETA_PV = (0.03, 0.05)                 # a-Si at daylight — ASSUMED, the desk's own word (01_03 §4 ⊕ (б))
 ETA_PV_R_READINGS = (0.03, 0.08)           # the measured form's two η: a-Si's low end · a good c-Si cell's top at weak
                                            # daylight (01_03 §4 ⊕ (3), Reich et al. 2005 Table II) — readings, no cell picked
+ETA_PV_WEAK_LIGHT = (0.021, 0.05, 0.08)    # c-Si at 1 % of outdoor daylight 2.1–5.0 %, 8.1 % only at 5 % (same source):
+                                           # the per-area thresholds below print all three, the light level decides
+# Named areas for a cell behind a window in the dome — package or die OUTLINES, an upper bound on the active area, from
+# the makers' datasheets read raw 2026-10-27 (01_03 §4 ⊕ «короткий список»); the crown and the bore come from the CEM.
+CELL_AREA_READINGS_CM2 = {"one_package_in_the_crown_KXOB25-07X1TF": 11.35 * 8.0 / 100.0,
+                          "four_dies_in_the_crown_XOD17-04B": 4 * 6.0 * 6.0 / 100.0}
 DESK_CANOPY_T = (0.21, 0.55)               # 70 % of the readings, SOURCES["canopy_t"] (01_03 §4 ⊕ (б))
 DEC_GHI_SOURCES_WH_M2_DAY = {"PVGIS-SARAH3 2005-2023": 636.0, "NASA POWER": 663.0}   # 01_03 §4 ⊕ (б), SOURCES
 DEC_GHI_TOL = 0.10
@@ -611,6 +618,20 @@ def main() -> int:
     before_window = sorted(f"{d}/{c}" for d in DEMANDS for c in CORNERS
                            if np.datetime64(binding_r[d][c]["last_full"], "M").astype(int) % 12 + 1 == 11)
     rc = measured_r["cadence_c"]
+    rcem = json.loads(S71.RADOME_CEM.read_text())
+    crown_d = float(rcem["dome_diameter_mm"]) - 2.0 * float(rcem["bell_radius_mm"])
+    crown_cm2 = math.pi * (crown_d / 2.0) ** 2 / 100.0
+    bore_d = float(rcem["dome_diameter_mm"]) - 2.0 * float(rcem["wall_thickness_mm"])
+    areas = dict(CELL_AREA_READINGS_CM2, flat_crown_circle=crown_cm2, bore_circle=math.pi * (bore_d / 2.0) ** 2 / 100.0)
+    lo_c = {c: float(lo_r[combos_r.index((0, "cadence_c", c))]) for c in CORNERS}
+    per_area = {k: {"area_cm2": a, "cadence_c": {f"{e:g}": {c: floor_sig(lo_c[c] / (e * a)) for c in ("nominal", "adverse")}
+                                                for e in ETA_PV_WEAK_LIGHT}} for k, a in areas.items()}
+    # the adverse binding stretch is diffuse-only (no beam after its last full hour), so even an unshaded vertical in the
+    # open sees at most ½(1 + ρ) of the open horizontal under an isotropic sky (an overcast one gives the face less) — on
+    # each of 79's bare-ground readings
+    if binding_r["cadence_c"]["adverse"]["dni_after_last_full_Wh_m2"] != 0.0:
+        raise SystemExit("the adverse binding stretch carries beam — the diffuse bound on R no longer applies")
+    diffuse_bound = {e[0]: 0.5 * (1.0 + e[4]) for e in S79.REFLECT_ENDS}
 
     def r_at(c: str) -> str:
         return " ⊥ ".join(f"{rc[c]['below_this_r_it_cannot'][f'{e:g}']:#.3g} at η {e * 100:g} %" for e in ETA_PV_R_READINGS)
@@ -618,7 +639,8 @@ def main() -> int:
     verdict_r = (
         f"Read in the measured form — the light on the dome's face as R·GHI, R the field sheet's ratio of a vertical "
         f"stem face to an open horizontal, with the canopy and the face's geometry inside it — and a cell of efficiency "
-        f"η on the whole dome face ({a_face:.3f} cm², the largest the dome holds; a smaller cell raises each R in "
+        f"η on the outer dome face ({a_face:.3f} cm² — an upper bound: a cell sits inside behind a window, and the "
+        f"flat crown is Ø{crown_d:g} mm, {crown_cm2:.2f} cm², before any glue land; a smaller cell raises each R in "
         f"inverse proportion to its area), at cadence C the node cannot ride {years} below R {r_at('favourable')} on the favourable corner; "
         f"the nominal one needs {r_at('nominal')}, the adverse {r_at('adverse')}. R is taken constant over the record. "
         f"Necessary conditions only.")
@@ -705,6 +727,14 @@ def main() -> int:
             "form": "G = R·GHI, A_eff = η·A — R holds the canopy's T, the face's geometry and its horizon; the harvest "
                     "depends on η·A·R alone, so R* = A_eff*(GHI) / (η·A) at any η",
             "dome_face_cm2_exact": a_face, "eta_pv_readings": list(ETA_PV_R_READINGS),
+            "dome_face_is": "the OUTER dome face — an upper bound on a cell's area; the cell sits inside behind a window",
+            "flat_crown_diameter_mm": crown_d, "flat_crown_cm2": crown_cm2, "bore_diameter_mm": bore_d,
+            "eta_pv_weak_light": list(ETA_PV_WEAK_LIGHT),
+            "r_below_which_it_cannot_by_cell_area": per_area,
+            "r_bound_open_vertical_diffuse_only": diffuse_bound,
+            "r_bound_is": "½(1 + ρ) of the open horizontal for an unshaded vertical under an isotropic sky, on 79's two "
+                          "bare-ground readings — the adverse binding stretch carries no beam; an overcast sky gives the "
+                          "face less, a canopy less still",
             "eta_pv_readings_are": "a-Si's low end · a good c-Si cell's top at weak daylight (01_03 §4 ⊕ (3)) — "
                                    "readings, no cell picked",
             "by_demand": measured_r, "bisection_iterations": iters_r,

@@ -8454,6 +8454,33 @@ CHECKS += [
     *[(f"PV window E_max {c} → 110", SUMMARY, {"nominal": rf"\*\*{N}\*\* J nominal, ", "favourable": rf"\*\*{N}\*\* favourable, ", "adverse": rf"\*\*{N}\*\* adverse\. The adverse corner"}[c], PV,
        (lambda cc: lambda d: d["inputs"]["corners"][cc]["e_max_j"])(c), 0.0)
       for c in ("favourable", "nominal", "adverse")],
+    # 01_03 §4 ⊕ «короткий список» (HW.54 Р3(б), 2026-10-27): the per-area thresholds and the diffuse-only bound
+    *[(f"PV per-area {k}/{e}/{c} → 01_03 §4 → 110", EBFC, rx, PV,
+       (lambda kk, ee, cc: lambda d: d["measured_form_r"]["r_below_which_it_cannot_by_cell_area"][kk]["cadence_c"][ee][cc])(k, e, c), 0.0)
+      for k, e, c, rx in (
+          ("one_package_in_the_crown_KXOB25-07X1TF", "0.05", "adverse", rf"від одного корпусу в короні \([\d.]+ см²\) — R ≥ {N} при η 5 %"),
+          ("four_dies_in_the_crown_XOD17-04B", "0.05", "adverse", rf"від чотирьох кристалів \([\d.]+ см²\) — R ≥ {N} при η 5 %"),
+          ("four_dies_in_the_crown_XOD17-04B", "0.08", "adverse", rf"при η 5 % і {N} лише при η 8 %"),
+          ("flat_crown_circle", "0.05", "adverse", rf"\(3\.08 см², лише замовна кругла\) — R ≥ {N} при η 5 %"),
+          ("bore_circle", "0.05", "adverse", rf"від вікна на весь отвір Ø[\d.]+ — R ≥ {N}\."),
+          ("one_package_in_the_crown_KXOB25-07X1TF", "0.05", "nominal", rf"вимагає R ≥ {N} \(корпус\)"),
+          ("four_dies_in_the_crown_XOD17-04B", "0.05", "nominal", rf"\(корпус\) · {N} \(кристали\)"),
+          ("flat_crown_circle", "0.05", "nominal", rf"\(кристали\) · {N} \(вся корона\)"))],
+    *[(f"PV per-area area {k} → 01_03 §4 → 110", EBFC, rx, PV,
+       (lambda kk, n_: lambda d: round(d["measured_form_r"]["r_below_which_it_cannot_by_cell_area"][kk]["area_cm2"], n_))(k, nd), 0.0)
+      for k, rx, nd in (("one_package_in_the_crown_KXOB25-07X1TF", rf"від одного корпусу в короні \({N} см²\)", 3),
+                        ("four_dies_in_the_crown_XOD17-04B", rf"від чотирьох кристалів \({N} см²\)", 2))],
+    *[(f"PV diffuse bound {e} → 01_03 §4 → 110", EBFC,
+       r"R ≤ ½\(1 \+ ρ\) = " + (N if e == "low" else r"[\d.]+") + " … " + (N if e == "high" else r"[\d.]+") + " на двох прочитаннях",
+       PV, (lambda ee: lambda d: round(d["measured_form_r"]["r_bound_open_vertical_diffuse_only"][ee], 2))(e), 0.0)
+      for e in ("low", "high")],
+    ("PV crown in canon → 01_03 §4 → 110", EBFC, rf"лишає пласку корону Ø{N} мм", PV,
+     lambda d: d["measured_form_r"]["flat_crown_diameter_mm"], 0.0),
+    ("PV bore in canon → 01_03 §4 → 110", EBFC, rf"має отвір Ø{N}, і край", PV, lambda d: d["measured_form_r"]["bore_diameter_mm"], 0.0),
+    ("PV flat crown Ø → 110", SUMMARY, rf"the radome's flat crown is only Ø{N} mm \(", PV,
+     lambda d: d["measured_form_r"]["flat_crown_diameter_mm"], 0.0),
+    ("PV flat crown area → 110", SUMMARY, rf"flat crown is only Ø[\d.]+ mm \({N} cm²\)", PV,
+     lambda d: round(d["measured_form_r"]["flat_crown_cm2"], 2), 0.0),
     # the measured form (HW.54 Р3(б)(4), before the data): every cell «η 3 % ⊥ 8 %» of the R table
     *[(f"PV measured-form R* {dk}/{c}/{e} → 110", SUMMARY,
        rf"(?m)^\| {re.escape(label)} \| " + r" \| ".join(

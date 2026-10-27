@@ -1717,6 +1717,90 @@
       0.03,
       0.08
     ],
+    "dome_face_is": "the OUTER dome face — an upper bound on a cell's area; the cell sits inside behind a window",
+    "flat_crown_diameter_mm": 19.8,
+    "flat_crown_cm2": 3.0790749597833567,
+    "bore_diameter_mm": 25.8,
+    "eta_pv_weak_light": [
+      0.021,
+      0.05,
+      0.08
+    ],
+    "r_below_which_it_cannot_by_cell_area": {
+      "one_package_in_the_crown_KXOB25-07X1TF": {
+        "area_cm2": 0.9079999999999999,
+        "cadence_c": {
+          "0.021": {
+            "nominal": 0.393,
+            "adverse": 3.19
+          },
+          "0.05": {
+            "nominal": 0.165,
+            "adverse": 1.34
+          },
+          "0.08": {
+            "nominal": 0.103,
+            "adverse": 0.839
+          }
+        }
+      },
+      "four_dies_in_the_crown_XOD17-04B": {
+        "area_cm2": 1.44,
+        "cadence_c": {
+          "0.021": {
+            "nominal": 0.247,
+            "adverse": 2.01
+          },
+          "0.05": {
+            "nominal": 0.104,
+            "adverse": 0.847
+          },
+          "0.08": {
+            "nominal": 0.065,
+            "adverse": 0.529
+          }
+        }
+      },
+      "flat_crown_circle": {
+        "area_cm2": 3.0790749597833567,
+        "cadence_c": {
+          "0.021": {
+            "nominal": 0.115,
+            "adverse": 0.943
+          },
+          "0.05": {
+            "nominal": 0.0486,
+            "adverse": 0.396
+          },
+          "0.08": {
+            "nominal": 0.0304,
+            "adverse": 0.247
+          }
+        }
+      },
+      "bore_circle": {
+        "area_cm2": 5.227924334838775,
+        "cadence_c": {
+          "0.021": {
+            "nominal": 0.0682,
+            "adverse": 0.555
+          },
+          "0.05": {
+            "nominal": 0.0286,
+            "adverse": 0.233
+          },
+          "0.08": {
+            "nominal": 0.0179,
+            "adverse": 0.145
+          }
+        }
+      }
+    },
+    "r_bound_open_vertical_diffuse_only": {
+      "low": 0.59,
+      "high": 0.62
+    },
+    "r_bound_is": "½(1 + ρ) of the open horizontal for an unshaded vertical under an isotropic sky, on 79's two bare-ground readings — the adverse binding stretch carries no beam; an overcast sky gives the face less, a canopy less still",
     "eta_pv_readings_are": "a-Si's low end · a good c-Si cell's top at weak daylight (01_03 §4 ⊕ (3)) — readings, no cell picked",
     "by_demand": {
       "standby_sleep": {
@@ -1861,5 +1945,5 @@
     "not_seen": "R moving with the day, the sky, the ground or the season — R is taken constant, while the sheet measures December–February (the lanes in binding_stretch_last_full_in_november bind from November) and a snowy winter's R carries snow light the bare-ground binding stretches lack; the reference is the yard's open horizontal, not ERA5's cell; the instrument's spectral weighting (a silicon pyranometer — about a c-Si cell's; under a NIR-shifted canopy an a-Si cell's R would be lower, so the measured R is biased high for it — the shift's sign rests on an abstract the sheet has not verified); η 8 % on rows whose R is a few per cent of open light, where the bracket's source gives a c-Si cell at most 5 %",
     "necessary_only": "the leg asked for the R at which a reading PASSES; this publishes the R below which it CANNOT — the same number to the bracket, read as a necessary condition (in-silico §When Modifying #50)"
   },
-  "verdict_measured_form": "Read in the measured form — the light on the dome's face as R·GHI, R the field sheet's ratio of a vertical stem face to an open horizontal, with the canopy and the face's geometry inside it — and a cell of efficiency η on the whole dome face (6.975 cm², the largest the dome holds; a smaller cell raises each R in inverse proportion to its area), at cadence C the node cannot ride 1991–2020 below R 0.0218 at η 3 % ⊥ 0.00818 at η 8 % on the favourable corner; the nominal one needs 0.0358 at η 3 % ⊥ 0.0134 at η 8 %, the adverse 0.291 at η 3 % ⊥ 0.109 at η 8 %. R is taken constant over the record. Necessary conditions only."
+  "verdict_measured_form": "Read in the measured form — the light on the dome's face as R·GHI, R the field sheet's ratio of a vertical stem face to an open horizontal, with the canopy and the face's geometry inside it — and a cell of efficiency η on the outer dome face (6.975 cm² — an upper bound: a cell sits inside behind a window, and the flat crown is Ø19.8 mm, 3.08 cm², before any glue land; a smaller cell raises each R in inverse proportion to its area), at cadence C the node cannot ride 1991–2020 below R 0.0218 at η 3 % ⊥ 0.00818 at η 8 % on the favourable corner; the nominal one needs 0.0358 at η 3 % ⊥ 0.0134 at η 8 %, the adverse 0.291 at η 3 % ⊥ 0.109 at η 8 %. R is taken constant over the record. Necessary conditions only."
 }
