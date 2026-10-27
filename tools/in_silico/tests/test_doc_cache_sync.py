@@ -6735,8 +6735,38 @@ CHECKS += [
      lambda d: _ceil_n(_c108_zstar(d)[0], 3), 0.0),
     ("contact108 zener strain → 108", SUMMARY, rf"reading at the\s+day's {_U} µε\),", CONTACT108,
      lambda d: round(_c108_end(d, _c108_zstar(d)[1])), 0.0),
-    ("contact108 voigt ceiling → 108", SUMMARY, rf"against the Voigt ceiling {_U} — no measured", CONTACT108,
+    ("contact108 voigt ceiling → 108", SUMMARY, rf"against the Voigt ceiling {_U} — and \*\*on `106`'s", CONTACT108,
      lambda d: _ceil_n(d["inputs"]["lattice_reading_106"]["zener_voigt_ceiling"], 3), 0.0),
+    *[(f"contact108 measured zener [{e}] → 108", SUMMARY,
+       "the part body's Zener ratio " + (_U if e == 0 else r"[\d.]+") + "–" + (_U if e == 1 else r"[\d.]+") + " on its",
+       CONTACT108,
+       (lambda ee: lambda d: (_floor_n, _ceil_n)[ee](d["measured_C44_106"]["part_body_zener_range"][ee], 2))(e), 0.0)
+      for e in range(2)],   # the reading range rounded OUTWARD, so no rung falls outside the printed span
+    ("contact108 measured distance → 108", SUMMARY, rf"at least ×{_U} the threshold, which exists", CONTACT108,
+     lambda d: _floor_n(d["measured_C44_106"]["part_body_zener_over_threshold_min"], 0), 0.0),
+    ("contact108 finite thresholds → 108", SUMMARY, rf"exists on only {_U} of the [\d]+ cell × end", CONTACT108,
+     lambda d: d["measured_C44_106"]["finite_zener_thresholds"]["with_a_threshold"], 0.0),
+    ("contact108 threshold states → 108", SUMMARY, rf"exists on only [\d]+ of the {_U} cell × end", CONTACT108,
+     lambda d: d["measured_C44_106"]["finite_zener_thresholds"]["states"], 0.0),
+    # «every lattice cell … — N»: N is the count that OPENS (least over the readings), so one cell that does not open
+    # reds the sentence (in-silico §When Modifying #5 ⊕ — a set sentence recomposed from its field)
+    ("contact108 measured lattice cells → 108", SUMMARY, rf"every lattice cell of both groups — {_U}, [\d]+ of them bare",
+     CONTACT108, lambda d: min(b["lattice_cells_reaching_p0_on_every_angle"] for b in
+                               d["measured_C44_106"]["per_group"]["union"]["by_reading"].values()), 0.0),
+    ("contact108 measured lattice total → 108", SUMMARY, rf"every lattice cell of both groups — {_U}, [\d]+ of them bare",
+     CONTACT108, lambda d: d["measured_C44_106"]["per_group"]["union"]["lattice_cells"], 0.0),
+    ("contact108 measured bare cells → 108", SUMMARY, rf"of both groups — [\d]+, {_U} of them bare", CONTACT108,
+     lambda d: min(b["bare_lattice_cells_open_on_every_angle"] for b in
+                   d["measured_C44_106"]["per_group"]["union"]["by_reading"].values()), 0.0),
+    ("contact108 measured θ = 0 seat total → 108", SUMMARY, rf"and on all {_U} the least pole traction over the angles sits",
+     CONTACT108, lambda d: d["measured_C44_106"]["per_group"]["union"]["lattice_cells"], 0.0),
+    ("contact108 measured θ = 0 seat → 108", SUMMARY, rf"and on all {_U} the least pole traction over the angles sits",
+     CONTACT108, lambda d: min(b["lattice_cells_least_sigma1_at_theta0"] for b in
+                               d["measured_C44_106"]["per_group"]["union"]["by_reading"].values()), 0.0),
+    *[(f"contact108 measured margin {g} → 108", SUMMARY, rx, CONTACT108,
+       (lambda gg: lambda d: _floor_n(min(b["smallest_margin"] for b in
+                                          d["measured_C44_106"]["per_group"][gg]["by_reading"].values()), 2))(g), 0.0)
+      for g, rx in (("green", rf"the smallest σ₁·ε/p₀ ×{_U}\s+\(the green group"), ("scots_pine", rf"×{_U} on Scots pine\)"))],
     ("contact108 green σ₁ ≤ 0 cells → 108", SUMMARY, rf"On {_U} green lattice cells the pole traction", CONTACT108,
      lambda d: d["summary"]["green"]["grid"]["lattice_cells_with_sigma1_nonpositive_somewhere"], 0.0),
     ("contact108 binding ratio → 108", SUMMARY, rf"reaches p₀ {_U}× below the binding strain", CONTACT108,

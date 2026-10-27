@@ -10,8 +10,8 @@
     },
     "upstream_fingerprint": {
       "106": {
-        "sha256": "1942431ee1ef8502787bd168a44442bc710644c0e92084edfcd63645f67ee2ad",
-        "fields": ["inputs.lattice_reading", "inputs.solid_fraction_105", "inputs.theta_deg", "inputs.zener_grid", "inputs.groups", "wood_readings", "green_wood_readings", "cells", "green_cells", "theta0_share_over_modelled_set", "green_theta0_share", "union_theta0_share", "gyroid_binds_above_surface_strain_ue_theta0_lowest_share", "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share", "junction_share_sup_at_C44_zero", "green_junction_share_sup_at_C44_zero", "union_junction_share_sup_at_C44_zero", "consumer_ceiling_binding_claim", "consumer_ceiling_junction"]
+        "sha256": "d1a29296c2da4ec1fc30fd466db90cda6a9f282b6b3fd32885e1f9dfe2a9a7a2",
+        "fields": ["inputs.lattice_reading", "inputs.solid_fraction_105", "inputs.theta_deg", "inputs.zener_grid", "inputs.groups", "wood_readings", "green_wood_readings", "cells", "green_cells", "theta0_share_over_modelled_set", "green_theta0_share", "union_theta0_share", "gyroid_binds_above_surface_strain_ue_theta0_lowest_share", "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share", "junction_share_sup_at_C44_zero", "green_junction_share_sup_at_C44_zero", "union_junction_share_sup_at_C44_zero", "consumer_ceiling_binding_claim", "consumer_ceiling_junction", "measured_C44"]
       },
       "105": {
         "sha256": "688927e11b2fb447a7fa53ef73499c2619d9717f6233594c46721575cee2f6bc",
@@ -101,7 +101,9 @@
     "theta0_sigma_moves_with_C44_worst": 4.793670645083102e-17,
     "sigma1_drop_as_C44_rises_worst": 0.0,
     "mu_tangent_vs_brute_force_worst": 4.879430193227563e-13,
-    "mu_onset_fraction_form_vs_half_map_worst": 1.3200551762793111e-13
+    "mu_onset_fraction_form_vs_half_map_worst": 1.3200551762793111e-13,
+    "whole_tensor_sigma1_vs_swept_worst": 2.220446049250313e-16,
+    "measured_part_body_direct_vs_zener_threshold": "agree on every lattice cell, rung, end and p₀"
   },
   "cells": {
     "Ti-6Al-4V|rh45|stiff|pores_carry_nothing": {
@@ -34257,6 +34259,196 @@
       }
     }
   },
+  "measured_C44_106": {
+    "source_106": "measured_C44",
+    "is": "106's three named readings of the INFINITE lattice's measured C44 over its FE rungs (the part body's absolute modulus ⊥ its Zener ratio on the body's own C11 − C12 — both on this script's Zener axis — and the material tensor read whole, another body); per lattice cell, the smallest σ₁ over 106's θ grid against p₀/ε at both ends of the source day on both named p₀ readings, every rung; margin = σ₁·ε/p₀, ≥ 1 means the tension half's averaged traction reaches p₀ on every install angle",
+    "rungs_steps_per_period": [24, 32, 48, 64],
+    "readings": {
+      "part_body_C44_absolute": {
+        "24": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05691182435414086,
+          "solid_fraction": 0.35466066410533914,
+          "zener_on_108_axis": 1.6171472846677746
+        },
+        "32": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05657553533334423,
+          "solid_fraction": 0.35466066410533914,
+          "zener_on_108_axis": 1.6075916451672587
+        },
+        "48": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05647796716300039,
+          "solid_fraction": 0.35466066410533914,
+          "zener_on_108_axis": 1.6048192493860283
+        },
+        "64": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05654694294024853,
+          "solid_fraction": 0.35466066410533914,
+          "zener_on_108_axis": 1.606779193424908
+        }
+      },
+      "part_body_zener": {
+        "24": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.052695560027780655,
+          "solid_fraction": 0.35466066410533914,
+          "zener_on_108_axis": 1.4973422971420336
+        },
+        "32": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05442234217787751,
+          "solid_fraction": 0.35466066410533914,
+          "zener_on_108_axis": 1.546408745053903
+        },
+        "48": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05385406008942937,
+          "solid_fraction": 0.35466066410533914,
+          "zener_on_108_axis": 1.5302610315218137
+        },
+        "64": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05349678953068076,
+          "solid_fraction": 0.35466066410533914,
+          "zener_on_108_axis": 1.5201092024330662
+        }
+      },
+      "material_tensor": {
+        "24": {
+          "C11_over_E_s": 0.1418566912864054,
+          "C12_over_E_s": 0.06583957153660865,
+          "C44_over_E_s": 0.05691182435414086,
+          "solid_fraction": 0.35300925925925924,
+          "zener_on_108_axis": null
+        },
+        "32": {
+          "C11_over_E_s": 0.13981275238649138,
+          "C12_over_E_s": 0.06664253071735282,
+          "C44_over_E_s": 0.05657553533334423,
+          "solid_fraction": 0.357421875,
+          "zener_on_108_axis": null
+        },
+        "48": {
+          "C11_over_E_s": 0.14022434711751988,
+          "C12_over_E_s": 0.06640953252103997,
+          "C44_over_E_s": 0.05647796716300039,
+          "solid_fraction": 0.35402199074074076,
+          "zener_on_108_axis": null
+        },
+        "64": {
+          "C11_over_E_s": 0.14107838319602514,
+          "C12_over_E_s": 0.06667985597213852,
+          "C44_over_E_s": 0.05654694294024853,
+          "solid_fraction": 0.35357666015625,
+          "zener_on_108_axis": null
+        }
+      }
+    },
+    "part_body_zener_range": [1.4973422971420336, 1.6171472846677746],
+    "zener_threshold_max_bare_lattice": 0.02905485988032657,
+    "per_group": {
+      "scots_pine": {
+        "lattice_cells": 120,
+        "bare_lattice_cells": 60,
+        "by_reading": {
+          "part_body_C44_absolute": {
+            "lattice_cells_reaching_p0_on_every_angle": 120,
+            "bare_lattice_cells_open_on_every_angle": 60,
+            "smallest_margin": 7.487369631748808,
+            "smallest_margin_tissue_in_pores": 9.939856440696229,
+            "lattice_cells_least_sigma1_at_theta0": 120
+          },
+          "part_body_zener": {
+            "lattice_cells_reaching_p0_on_every_angle": 120,
+            "bare_lattice_cells_open_on_every_angle": 60,
+            "smallest_margin": 7.487369631748808,
+            "smallest_margin_tissue_in_pores": 9.939856440696229,
+            "lattice_cells_least_sigma1_at_theta0": 120
+          },
+          "material_tensor": {
+            "lattice_cells_reaching_p0_on_every_angle": 120,
+            "bare_lattice_cells_open_on_every_angle": 60,
+            "smallest_margin": 7.589838942382605,
+            "smallest_margin_tissue_in_pores": 9.953443975967101,
+            "lattice_cells_least_sigma1_at_theta0": 120
+          }
+        }
+      },
+      "green": {
+        "lattice_cells": 312,
+        "bare_lattice_cells": 156,
+        "by_reading": {
+          "part_body_C44_absolute": {
+            "lattice_cells_reaching_p0_on_every_angle": 312,
+            "bare_lattice_cells_open_on_every_angle": 156,
+            "smallest_margin": 2.4670666745646925,
+            "smallest_margin_tissue_in_pores": 2.4983233984802267,
+            "lattice_cells_least_sigma1_at_theta0": 312
+          },
+          "part_body_zener": {
+            "lattice_cells_reaching_p0_on_every_angle": 312,
+            "bare_lattice_cells_open_on_every_angle": 156,
+            "smallest_margin": 2.4670666745646925,
+            "smallest_margin_tissue_in_pores": 2.4983233984802267,
+            "lattice_cells_least_sigma1_at_theta0": 312
+          },
+          "material_tensor": {
+            "lattice_cells_reaching_p0_on_every_angle": 312,
+            "bare_lattice_cells_open_on_every_angle": 156,
+            "smallest_margin": 2.4725346063785483,
+            "smallest_margin_tissue_in_pores": 2.5025139372059835,
+            "lattice_cells_least_sigma1_at_theta0": 312
+          }
+        }
+      },
+      "union": {
+        "lattice_cells": 432,
+        "bare_lattice_cells": 216,
+        "by_reading": {
+          "part_body_C44_absolute": {
+            "lattice_cells_reaching_p0_on_every_angle": 432,
+            "bare_lattice_cells_open_on_every_angle": 216,
+            "smallest_margin": 2.4670666745646925,
+            "smallest_margin_tissue_in_pores": 2.4983233984802267,
+            "lattice_cells_least_sigma1_at_theta0": 432
+          },
+          "part_body_zener": {
+            "lattice_cells_reaching_p0_on_every_angle": 432,
+            "bare_lattice_cells_open_on_every_angle": 216,
+            "smallest_margin": 2.4670666745646925,
+            "smallest_margin_tissue_in_pores": 2.4983233984802267,
+            "lattice_cells_least_sigma1_at_theta0": 432
+          },
+          "material_tensor": {
+            "lattice_cells_reaching_p0_on_every_angle": 432,
+            "bare_lattice_cells_open_on_every_angle": 216,
+            "smallest_margin": 2.4725346063785483,
+            "smallest_margin_tissue_in_pores": 2.5025139372059835,
+            "lattice_cells_least_sigma1_at_theta0": 432
+          }
+        }
+      }
+    },
+    "theta_grid_deg": [0.0, 45.0, 2.5],
+    "finite_zener_thresholds": {
+      "states": 1728,
+      "with_a_threshold": 401,
+      "all_bare_lattice": true,
+      "is": "lattice cell × end of the day × named p₀ states whose tension half needs a Zener ratio to reach p₀ on every angle; the rest reach it at any ratio"
+    },
+    "part_body_zener_over_threshold_min": 51.53500320804864
+  },
   "p0_excluded_price": {
     "MPa": 2.5,
     "is": "cells (θ = 0) whose averaged tension traction ε·σ₁ stays below the excluded 2.5 MPa at each of the source day's two ends — what the «every cell» headline stands on; a fact about the averaged traction, no holding claim",
@@ -34769,6 +34961,6 @@
     }
   },
   "homogenisation": "the traction is the average over the cut lattice on the envelope; for a SMOOTH contact whose local normal is the envelope's, full stick needs |τ_loc| ≤ μ·p_loc at every point, so μ_req of the averages is a lower bound on the friction it needs and an averaged opening forces a local one — that contact can be shown failing, never holding. A contact that is not smooth has no guaranteed direction (an inclined facet carries averaged shear with zero friction, an undercut one averaged tension under positive pressure), and with tissue in the macropores (01_04 §2, Phase 2) the envelope is crossed by an interlocked composite: the traction is its demand, and neither failing nor holding follows. On a Voigt cell σᴵ is a bound tensor's stress, not the average of an admissible local traction. So the smooth-contact statements are taken over the bare-lattice cells (`summary_bare_lattice`); `summary` over all cells is the demand, and a field named «opens» there means the averaged traction reaches p₀",
-  "not_computed": ["the unbonded and the interlocked ends — slip with the normal contact kept, opening, and the internal Ti–tissue faces of an interlock — and what each does to t_L (the leg's step 2: a slipping interface keeps no uniform field in an anisotropic matrix)", "the traction on the ligament ends and on the ligament surfaces inside the pores (the homogenised traction is their average), and the O(cell/radius) error of that average", "the Ø15 interface, callus against the old wood of the drilled wall — no interface in 106's model", "p₀ for a conifer's stem callus, its distribution around the gyroid and its relaxation", "the finite length: the ends' axial shear and the anode bond force's distribution along the gyroid", "the part's own C44 and 106's measured-C44 readings (not read here), the tissue's stiffness, the bark and S5 — as in 106", "the change of σ_n the anode's axial bond force makes through the gyroid's Poisson strain (its sign alternates with the sway), so the axial force's net effect on the friction needed"],
-  "verdict": "Read as a SMOOTH contact on the gyroid's envelope — its local normal the envelope's, pressed by a growth pressure p₀ and held by friction, with no adhesion; consistent only with the bare-lattice cells (60 ⊥ 156), the cells with tissue in the pores giving the demand on an interlocked composite — the bonded field of 106 is carried around the interface by normal traction and in-plane shear; the infinite cylinder's axial shear is zero. With a cube axis on the stem's axis (θ = 0, free of C44) the tension half of a bare-lattice cell stays closed at the source day's strain (676–1837 µε at the gyroid) only under p₀ of at least 5.39 MPa (the Scots pine group) ⊥ 1.77 MPa (the green group) — 7.4× ⊥ 2.4× the higher named root reading (0.72 MPa, Bruder's clamps; the turgor reading is 0.5 MPa); the 2.5 MPa Bruder uses in two senses is not taken — had it been taken, the averaged tension traction at the day's 676 µε would stay below it in 0 of 180 cells (the Scots pine group; 0 of 60 bare lattice) and 167 of 468 cells (the green group; 59 of 156 bare lattice), a fact about the averaged traction and no holding claim — and the highest further root figure on his pages (1.45 MPa) stays below the lowest p₀ needed. On both named readings the tension half's averaged traction exceeds p₀ at both ends of the day in every one of its 60 bare-lattice cells (the Scots pine group) and every one of its 156 bare-lattice cells (the green group) — an opening on a smooth envelope — and, as a demand, in every one of its 180 cells (the Scots pine group) and every one of its 468 cells (the green group); on a bare-lattice cell it opens the poles facing along the stem above 33–91 µε (the Scots pine group) ⊥ 47–275 µε (the green group), and at half that strain the friction needed is already at least 0.34–0.39 (no p₀). In the compression half the averaged traction at the poles facing around the stem first reaches p₀ at 307 µε on a bare-lattice cell, and where it stays below p₀ at the source day's strain the friction a bare-lattice cell needs is at least 0.68–61.55. Off the axis the pole traction falls as C44 falls: on a bare-lattice cell the tension half's averaged traction reaches p₀ at the source day's strain on every install angle once the Zener ratio exceeds 0.030, against the Voigt ceiling 3.755; no measured C44 is used. At 106's binding cell (the union's lowest θ = 0 share, the pores_voigt_phase_bound reading, which puts tissue in the pores: the envelope is no contact surface there and σᴵ a bound tensor's stress) the averaged envelope traction reaches p₀ 16.1× below the binding strain (Ta), and only a p₀ of at least 11.6 MPa would offset it up to that strain — a demand on the interlocked composite, with no direction. At the union's C44 → 0 supremum, a bare-lattice cell, the in-plane stress is isotropic — the bending field puts no averaged in-plane shear there, which is no holding claim; its tension half opens at the source day's upper whisker on a large stem on 2 of 2 named readings and at its median on a DBH-38 bark on 1; on the published sets only (the founder-ratified companion) its averaged traction reaches p₀ at the source day's upper whisker on a large stem on 2 of 2 named readings and at its median on a DBH-38 bark on 0 (below p₀ elsewhere — no holding claim). With tissue in the macropores (01_04 §2, Phase 2) the lattice interlocks with it: the envelope traction is then the demand on that composite, and neither failing nor holding follows from it; the anode's axial bond force also moves σ_n through the gyroid's Poisson strain, with a sign that alternates with the sway, and what that, opening, slip and interlock do to the share is not computed."
+  "not_computed": ["the unbonded and the interlocked ends — slip with the normal contact kept, opening, and the internal Ti–tissue faces of an interlock — and what each does to t_L (the leg's step 2: a slipping interface keeps no uniform field in an anisotropic matrix)", "the traction on the ligament ends and on the ligament surfaces inside the pores (the homogenised traction is their average), and the O(cell/radius) error of that average", "the Ø15 interface, callus against the old wood of the drilled wall — no interface in 106's model", "p₀ for a conifer's stem callus, its distribution around the gyroid and its relaxation", "the finite length: the ends' axial shear and the anode bond force's distribution along the gyroid", "the part's own C44 (106's measured C44 is the infinite lattice's, carried onto the part body — read here off the axis, not at θ = 0, which is free of it), the tissue's stiffness, the bark and S5 — as in 106", "the change of σ_n the anode's axial bond force makes through the gyroid's Poisson strain (its sign alternates with the sway), so the axial force's net effect on the friction needed"],
+  "verdict": "Read as a SMOOTH contact on the gyroid's envelope — its local normal the envelope's, pressed by a growth pressure p₀ and held by friction, with no adhesion; consistent only with the bare-lattice cells (60 ⊥ 156), the cells with tissue in the pores giving the demand on an interlocked composite — the bonded field of 106 is carried around the interface by normal traction and in-plane shear; the infinite cylinder's axial shear is zero. With a cube axis on the stem's axis (θ = 0, free of C44) the tension half of a bare-lattice cell stays closed at the source day's strain (676–1837 µε at the gyroid) only under p₀ of at least 5.39 MPa (the Scots pine group) ⊥ 1.77 MPa (the green group) — 7.4× ⊥ 2.4× the higher named root reading (0.72 MPa, Bruder's clamps; the turgor reading is 0.5 MPa); the 2.5 MPa Bruder uses in two senses is not taken — had it been taken, the averaged tension traction at the day's 676 µε would stay below it in 0 of 180 cells (the Scots pine group; 0 of 60 bare lattice) and 167 of 468 cells (the green group; 59 of 156 bare lattice), a fact about the averaged traction and no holding claim — and the highest further root figure on his pages (1.45 MPa) stays below the lowest p₀ needed. On both named readings the tension half's averaged traction exceeds p₀ at both ends of the day in every one of its 60 bare-lattice cells (the Scots pine group) and every one of its 156 bare-lattice cells (the green group) — an opening on a smooth envelope — and, as a demand, in every one of its 180 cells (the Scots pine group) and every one of its 468 cells (the green group); on a bare-lattice cell it opens the poles facing along the stem above 33–91 µε (the Scots pine group) ⊥ 47–275 µε (the green group), and at half that strain the friction needed is already at least 0.34–0.39 (no p₀). In the compression half the averaged traction at the poles facing around the stem first reaches p₀ at 307 µε on a bare-lattice cell, and where it stays below p₀ at the source day's strain the friction a bare-lattice cell needs is at least 0.68–61.55. Off the axis the pole traction falls as C44 falls: on a bare-lattice cell the tension half's averaged traction reaches p₀ at the source day's strain on every install angle once the Zener ratio exceeds 0.030, against the Voigt ceiling 3.755; on 106's measured C44 — the part body's Zener ratio 1.49–1.62 (its absolute modulus ⊥ its Zener form over the FE rungs, at least ×51 the threshold) and the material tensor, another body off this axis, read whole — it does so on 106's θ grid (0–45° in 2.5° steps) at both ends of the day on both named p₀ readings in all 120 lattice cells of the Scots pine group (60 of them bare) and in all 312 lattice cells of the green group (156 of them bare), the smallest σ₁·ε/p₀ ×2.46; on every lattice cell and every measured reading the least pole traction over the install angles sits on the cube axis (θ = 0), which C44 does not enter: off the axis a bare-lattice cell's opening (the demand, on a cell with tissue in the pores) is a finding on these readings, not a condition on C44 — the measured C44 is the infinite lattice's, carried onto the part body (an assumption, 106). At 106's binding cell (the union's lowest θ = 0 share, the pores_voigt_phase_bound reading, which puts tissue in the pores: the envelope is no contact surface there and σᴵ a bound tensor's stress) the averaged envelope traction reaches p₀ 16.1× below the binding strain (Ta), and only a p₀ of at least 11.6 MPa would offset it up to that strain — a demand on the interlocked composite, with no direction. At the union's C44 → 0 supremum, a bare-lattice cell, the in-plane stress is isotropic — the bending field puts no averaged in-plane shear there, which is no holding claim; its tension half opens at the source day's upper whisker on a large stem on 2 of 2 named readings and at its median on a DBH-38 bark on 1; on the published sets only (the founder-ratified companion) its averaged traction reaches p₀ at the source day's upper whisker on a large stem on 2 of 2 named readings and at its median on a DBH-38 bark on 0 (below p₀ elsewhere — no holding claim). With tissue in the macropores (01_04 §2, Phase 2) the lattice interlocks with it: the envelope traction is then the demand on that composite, and neither failing nor holding follows from it; the anode's axial bond force also moves σ_n through the gyroid's Poisson strain, with a sign that alternates with the sway, and what that, opening, slip and interlock do to the share is not computed."
 }

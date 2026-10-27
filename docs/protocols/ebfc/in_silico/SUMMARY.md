@@ -1387,8 +1387,17 @@ readings holds — its direction does — and the p₀ it needs scales with the 
 **Off the cube axis C44 enters**, and the pole traction never falls as C44 rises (asserted on `106`'s grid); at C44's
 Voigt ceiling no install angle on a bare-lattice cell opens the tension half later than θ = 0 does. On a bare-lattice
 cell the tension half's averaged traction reaches p₀ at the source day's strain on every install angle once the Zener
-ratio exceeds 0.030 (on the clamp reading at the day's 676 µε), against the Voigt ceiling 3.755 — no measured C44 is
-used. On 12 green lattice cells the pole traction
+ratio exceeds 0.030 (on the clamp reading at the day's 676 µε), against the Voigt ceiling 3.755 — and **on `106`'s
+measured C44** (read 2026-10-27: the part body's Zener ratio 1.49–1.62 on its absolute modulus ⊥ its Zener form over the
+FE rungs — at least ×51 the threshold, which exists on only 401 of the 1728 cell × end × p₀ states, all bare lattice, the
+rest reaching p₀ at any ratio — and the material tensor, another body off this axis, read whole on its own solid
+fraction) every lattice cell of both groups — 432, 216 of them bare — has its tension half reach p₀ on every install
+angle of `106`'s θ grid (0–45° in 2.5° steps) at both ends of the day on both named p₀ readings, the smallest σ₁·ε/p₀ ×2.46
+(the green group; ×7.48 on Scots pine), and on all 432 the least pole traction over the angles sits, on every reading,
+on the cube axis, which C44 does not enter. Off the axis a bare-lattice cell's opening — the demand, on a cell with
+tissue in the pores — is therefore a finding on these readings, not a condition on C44; the measured C44 is the
+infinite lattice's, carried onto the part body (`106`'s assumption).
+On 12 green lattice cells the pole traction
 falls to zero or below as C44 → 0 at θ = 45° — Jeong's two green sets, bare lattice, every alloy: the averaged traction
 there is compressive all around, which is no holding claim — a local opening is not excluded.
 

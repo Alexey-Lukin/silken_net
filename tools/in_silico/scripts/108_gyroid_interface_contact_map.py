@@ -88,7 +88,12 @@ CAN: per cell of each group (alloy · wood set · symmetrisation reading · pore
 Mohr circle, the strain at which each half opens on each named p₀ reading, the growth pressure each half NEEDS to stay
 closed at the source day's strains (the fields named `p0_to_stay_closed*` — a need, never a sufficiency), and at the source day's two ends the open share and the friction needed where
 closed; over `106`'s grid (install angle × Zener ratio, C44 → 0 included) the principal stresses' extremes, the Zener
-ratio above which the tension half's averaged traction reaches p₀ on every install angle, and the compression half's friction; summaries per
+ratio above which the tension half's averaged traction reaches p₀ on every install angle, and the compression half's
+friction; on `106`'s measured C44 (`measured_C44` — three named readings × its FE rungs: the part body's absolute modulus
+⊥ its Zener ratio, both on this script's Zener axis, and the material tensor read whole as `106`'s `t_l_form` composes
+it, on its own meshed solid fraction)
+whether every lattice cell's tension half reaches p₀ on every install angle at both ends of the day, with the smallest
+margin σ₁·ε/p₀ — the part-body readings checked against the grid's threshold cell by cell; summaries per
 group (Scots pine ⊥ green ⊥ union), over all cells and over the bare-lattice cells alone; what excluding Bruder's 2.5 MPa
 costs the «every cell» headline; the verdict's smallest margin against the homogenisation error; both consumers' cells;
 the mean axial shear of the anode's bond force; a fingerprint of every `106`, `105` and CEM field read, which the cache
@@ -102,8 +107,8 @@ ring as the host's xylem, so that wall is no interface in the model, and its tra
 r/a = 15/11) is not uniform and not computed; (4) give p₀ for a conifer's stem callus, its distribution around the gyroid
 or its relaxation; (5) the finite length — at the ends a finite gyroid carries its axial mismatch by axial shear (the
 infinite model's σᴵ_RR is its scale), and the anode's bond-force distribution; (6) everything `106` cannot (the part's own
-C44, the tissue's stiffness, the bark, S5), and `106`'s measured-C44 readings, which this script does not read yet (00_07
-HW.23); (7) the change of σ_n the anode's axial force makes through the gyroid's Poisson
+C44 — the measured one is the infinite lattice's, carried onto the part body by `106` as an assumption —, the tissue's
+stiffness, the bark, S5); (7) the change of σ_n the anode's axial force makes through the gyroid's Poisson
 strain (Axial, above).
 
 Run:  conda activate silken_md
@@ -191,13 +196,18 @@ CONSUMED_106 = ("inputs.lattice_reading", "inputs.solid_fraction_105", "inputs.t
                 "gyroid_binds_above_surface_strain_ue_theta0_lowest_share",
                 "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share", "junction_share_sup_at_C44_zero",
                 "green_junction_share_sup_at_C44_zero", "union_junction_share_sup_at_C44_zero",
-                "consumer_ceiling_binding_claim", "consumer_ceiling_junction")
+                "consumer_ceiling_binding_claim", "consumer_ceiling_junction", "measured_C44")
 CONSUMED_105 = ("inputs.stem_readings_87", "inputs.depth_fraction", "inputs.solid_fraction", "zone1_members")
 # the pine anode's CEM fields read — the ψ resolution and the axial envelope (the 2026-10-22 review: a CEM edit left the
 # cache test green)
 CONSUMED_CEM = ("outer_diameter_mm", "gyroid_period_rim_mm", "gyroid_period_mm", "length_mm")
 FE_READINGS = ("axial_reading", "radial_reading")       # `105`'s two FE readings, as `106`'s threshold blocks key them
 BARE = "pores_carry_nothing"                            # the one pore reading a smooth envelope is consistent with
+# `106`'s named readings of the measured C44 (its `measured_C44` block); the part body's two sit on THIS script's Zener
+# axis (its C11 − C12), the material tensor carries its own C11 and C12 — another body, read whole
+MEASURED_READINGS = ("part_body_C44_absolute", "part_body_zener", "material_tensor")
+ON_AXIS = MEASURED_READINGS[:2]
+MEASURED_GROUPS_106 = ("scots_pine", "union")           # 106's per-group blocks; the tensor is the lattice's, not a group's
 PSI_ID = 720                # ψ points of the Mohr-identity control on [0, 2π)
 PSI_BRUTE = 40000           # ψ points of the brute-force μ_max control on [0, π)
 BISECT = 55                 # Zener-ratio bisection steps inside a bracket of adjacent grid points (ratio ≈ 1.19): ≪ 1e-12
@@ -660,6 +670,116 @@ def main() -> int:
     # are taken over these cells alone; the additive and Voigt cells give the demand (the 2026-10-22 review, finding 3)
     summary_bare = {grp: summarise([k for k in keys_of[grp] if k.endswith(f"|{BARE}")]) for grp in GROUP_ORDER}
 
+    # ── 106's measured C44: does the tension half's averaged traction reach p₀ on EVERY install angle? ───────────────
+    #    Every lattice cell (the Voigt cells are θ- and C44-free), every named reading × FE rung, both ends of the source
+    #    day, both p₀ readings. The tensor is the INFINITE lattice's, carried onto the part body by 106 — an assumption.
+    meas = d106["measured_C44"]
+    rungs = sorted(meas[MEASURED_GROUPS_106[0]][MEASURED_READINGS[0]], key=int)
+    tensors = {}
+    for rd in MEASURED_READINGS:
+        for rg in rungs:
+            t = [meas[grp][rd][rg] for grp in MEASURED_GROUPS_106]
+            fields = ("C11_over_E_s", "C12_over_E_s", "C44_over_E_s", "solid_fraction")
+            assert all(x[k] == t[0][k] for x in t for k in fields), \
+                f"106's measured tensor differs between its group blocks: {rd}/{rg}"
+            tensors[(rd, rg)] = tuple(t[0][k] for k in fields)
+            if rd in ON_AXIS:
+                assert tensors[(rd, rg)][0:2] == (c11, c12) and tensors[(rd, rg)][3] == phi, \
+                    f"a part-body reading off this script's Zener axis or solid fraction: {rd}/{rg}"
+
+    def sigma1_whole(key: str, th: float, t11: float, t12: float, t44: float, ph: float) -> float:
+        """σ₁ per unit remote strain on a lattice cell whose tensor is (C11, C12, C44)/E_s on solid fraction ph, read
+        whole — 106's `t_l_form`: C44 in place of a·(C11 − C12)/2, and the additive pore reading on the tensor's OWN
+        solid fraction (the material tensor's meshed one, the part body's φ)."""
+        al, g, rd_, fill = key.split("|")
+        wk = f"{g}|{rd_}"
+        w = wood[wk]
+        base, shear = s106.cubic_parts(t11, t12, math.radians(th))
+        ci = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3 * (base + t44 * shear)
+        if fill == "pores_additive_host_sapwood":
+            ci = ci + (1 - ph) * w["cm"]
+        e_i = s106.inclusion_strain(w["cm"], ci, w["s"], w["eps"])
+        c, r, _ = mohr(ci @ e_i / s106.MW / w["eps"][0])
+        return c + r
+
+    lattice_keys = [k for k in cells if not k.endswith("pores_voigt_phase_bound")]
+    # the whole-tensor path against the swept one on the part body at a grid point — CAN catch: a slip in the C44 term,
+    # the pore reading or the angle of the whole-tensor composition. CANNOT catch: a wrong measured tensor (106's).
+    j_mid = len(a_list) // 2
+    whole_worst = max(abs(sigma1_whole(k, theta[i], c11, c12, a_list[j_mid] * q_lat / 2, phi)
+                          / float((circles[k][0] + circles[k][1])[i, j_mid]) - 1.0)
+                      for k in lattice_keys for i in range(len(theta)))
+    assert whole_worst < 1e-12, f"the whole-tensor σ₁ disagrees with the swept one ({whole_worst})"
+
+    assert theta[0] == 0.0, "106's θ grid does not start on the cube axis"
+    s1_theta = {(rd, rg): {k: np.array([sigma1_whole(k, th, *tensors[(rd, rg)]) for th in theta]) for k in lattice_keys}
+                for rd in MEASURED_READINGS for rg in rungs}
+    s1_meas = {rr: {k: float(v.min()) for k, v in by.items()} for rr, by in s1_theta.items()}
+    ends_e = {"low": strains[LOW_END] * 1e-6, "high": strains[HIGH_END] * 1e-6}
+    # on the part body the direct σ₁ must agree with the grid's Zener threshold on every cell, end and p₀ — CAN catch: a
+    # slip in either route (the bisection, the whole-tensor σ₁, the strain or p₀ pairing). CANNOT catch: an error both
+    # share (σᴵ's composition, held above to 106's shares).
+    for rd in ON_AXIS:
+        for rg in rungs:
+            a_meas = 2.0 * tensors[(rd, rg)][2] / q_lat
+            for k in lattice_keys:
+                for end, e in ends_e.items():
+                    for idx, n in enumerate(P0_NAMES):
+                        z = out_cells[k]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][end][idx]
+                        assert (s1_meas[(rd, rg)][k] * e >= p0v[n]) == (z is None or a_meas > z), \
+                            f"direct σ₁ and the Zener threshold disagree: {rd}/{rg} {k} {end} {n}"
+
+    def measured_summary(keys: list[str]) -> dict:
+        bare = [k for k in keys if k.endswith(f"|{BARE}")]
+        out = {"lattice_cells": len(keys), "bare_lattice_cells": len(bare), "by_reading": {}}
+        for rd in MEASURED_READINGS:
+            margin = {k: min(s1_meas[(rd, rg)][k] * e / p0v[n]
+                             for rg in rungs for e in ends_e.values() for n in P0_NAMES) for k in keys}
+            # the cube axis sets the least σ₁ over θ (to round-off) on every rung — then C44 does not enter the margin
+            on_axis_min = [k for k in keys if all(s1_theta[(rd, rg)][k][0] <= s1_meas[(rd, rg)][k] * (1 + 1e-12)
+                                                  for rg in rungs)]
+            out["by_reading"][rd] = {
+                "lattice_cells_reaching_p0_on_every_angle": sum(m >= 1.0 for m in margin.values()),
+                "bare_lattice_cells_open_on_every_angle": sum(margin[k] >= 1.0 for k in bare),
+                "smallest_margin": min(margin.values()),
+                # the cells with tissue in the pores — the only ones the reading's own solid fraction enters
+                "smallest_margin_tissue_in_pores": min(margin[k] for k in keys if not k.endswith(f"|{BARE}")),
+                "lattice_cells_least_sigma1_at_theta0": len(on_axis_min)}
+        return out
+
+    measured = {
+        "source_106": "measured_C44",
+        "is": "106's three named readings of the INFINITE lattice's measured C44 over its FE rungs (the part body's "
+              "absolute modulus ⊥ its Zener ratio on the body's own C11 − C12 — both on this script's Zener axis — and "
+              "the material tensor read whole, another body); per lattice cell, the smallest σ₁ over 106's θ grid "
+              "against p₀/ε at both ends of the source day on both named p₀ readings, every rung; margin = σ₁·ε/p₀, "
+              "≥ 1 means the tension half's averaged traction reaches p₀ on every install angle",
+        "rungs_steps_per_period": [int(r) for r in rungs],
+        "readings": {rd: {rg: {"C11_over_E_s": tensors[(rd, rg)][0], "C12_over_E_s": tensors[(rd, rg)][1],
+                               "C44_over_E_s": tensors[(rd, rg)][2], "solid_fraction": tensors[(rd, rg)][3],
+                               "zener_on_108_axis": 2.0 * tensors[(rd, rg)][2] / q_lat if rd in ON_AXIS else None}
+                          for rg in rungs} for rd in MEASURED_READINGS},
+        "part_body_zener_range": [min(2.0 * tensors[(rd, rg)][2] / q_lat for rd in ON_AXIS for rg in rungs),
+                                  max(2.0 * tensors[(rd, rg)][2] / q_lat for rd in ON_AXIS for rg in rungs)],
+        "zener_threshold_max_bare_lattice": max(
+            (v["max"] for e in ("low", "high")
+             for v in summary_bare[UNION]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][e].values()
+             if v["max"] is not None), default=None),
+        "per_group": {grp: measured_summary([k for k in keys_of[grp] if k in set(lattice_keys)])
+                      for grp in GROUP_ORDER},
+        "theta_grid_deg": [theta[0], theta[-1], theta[1] - theta[0]],
+    }
+    states = [(k, x) for k in lattice_keys for e in ("low", "high")
+              for x in out_cells[k]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][e]]
+    finite = [k for k, x in states if x is not None]
+    measured["finite_zener_thresholds"] = {
+        "states": len(states), "with_a_threshold": len(finite),
+        "all_bare_lattice": all(k.endswith(f"|{BARE}") for k in finite),
+        "is": "lattice cell × end of the day × named p₀ states whose tension half needs a Zener ratio to reach p₀ on "
+              "every angle; the rest reach it at any ratio"}
+    measured["part_body_zener_over_threshold_min"] = (measured["part_body_zener_range"][0]
+                                                      / measured["zener_threshold_max_bare_lattice"])
+
     # ── Consumers, from 106's consumer blocks (#4): the binding claim's thresholds and price from
     #    `consumer_ceiling_binding_claim`, its cell the union's lowest θ = 0 share; the junction on the highest share,
     #    the C44 → 0 supremum and its published-sets-only companion ────────────────────────────────────────────────────
@@ -841,6 +961,26 @@ def main() -> int:
     zstar = [sb[UNION]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][end][n]["max"]
              for end in ("low", "high") for n in P0_NAMES]
     zstar_fin = [z for z in zstar if z is not None]
+    zr = measured["part_body_zener_range"]
+    z_over, tg = measured["part_body_zener_over_threshold_min"], measured["theta_grid_deg"]
+    mg = measured["per_group"]
+    m_min = min(b["smallest_margin"] for g in GROUPS_READ for b in mg[g]["by_reading"].values())
+    n_ax = min(b["lattice_cells_least_sigma1_at_theta0"] for b in mg[UNION]["by_reading"].values())
+    n_lat = mg[UNION]["lattice_cells"]
+    axis_clause = (("on every lattice cell" if n_ax == n_lat else f"on {n_ax} of the {n_lat} lattice cells")
+                   + " and every measured reading the least pole traction over the install angles sits on the cube "
+                     "axis (θ = 0), which C44 does not enter")
+
+    def meas_clause(g: str) -> str:
+        """The lattice cells whose tension half reaches p₀ on every angle on EVERY measured reading, rung, end and p₀ (an
+        opening on a bare-lattice cell, the demand on one with tissue in the pores)."""
+        m, by = mg[g], mg[g]["by_reading"].values()
+        lo = min(b["lattice_cells_reaching_p0_on_every_angle"] for b in by)
+        lb = min(b["bare_lattice_cells_open_on_every_angle"] for b in by)
+        q = "all" if lo == m["lattice_cells"] else f"at least {lo} of the"
+        qb = f"{lb} of them" if lb == m["bare_lattice_cells"] else f"at least {lb} of its {m['bare_lattice_cells']}"
+        return f"{q} {m['lattice_cells']} lattice cells of {label[g]} ({qb} bare)"
+
     bind_u = binding[UNION]
     ratio_bind = min(v["threshold_over_onset_min"] for v in bind_u.values())
     al_bind = min(bind_u, key=lambda al: bind_u[al]["threshold_over_onset_min"])
@@ -904,8 +1044,15 @@ def main() -> int:
         f"{down(min(x[0] for x in comp_mu), 2):.2f}–{down(max(x[1] for x in comp_mu), 2):.2f}. "
         f"Off the axis the pole traction falls as C44 falls: on a bare-lattice cell the tension half's averaged traction "
         f"reaches p₀ at the source day's strain on every install angle once the Zener ratio exceeds "
-        f"{f'{up(max(zstar_fin), 3):.3f}' if zstar_fin else 'none'}, against the Voigt ceiling {up(a_voigt, 3):.3f}; no "
-        f"measured C44 is used. At 106's binding "
+        f"{f'{up(max(zstar_fin), 3):.3f}' if zstar_fin else 'none'}, against the Voigt ceiling {up(a_voigt, 3):.3f}; on "
+        f"106's measured C44 — the part body's Zener ratio {down(zr[0], 2):.2f}–{up(zr[1], 2):.2f} (its absolute modulus ⊥ "
+        f"its Zener form over the FE rungs, at least ×{down(z_over, 0):.0f} the threshold) and the material tensor, "
+        f"another body off this axis, read whole — it does so on 106's θ grid ({tg[0]:g}–{tg[1]:g}° in {tg[2]:g}° steps) "
+        f"at both ends of the day on both named p₀ readings in " + " and in ".join(meas_clause(g) for g in GROUPS_READ)
+        + f", the smallest σ₁·ε/p₀ ×{down(m_min, 2):.2f}; {axis_clause}: off the axis a bare-lattice cell's opening (the "
+        f"demand, on a cell with tissue in the pores) is a finding on these readings, not a condition on C44 — the "
+        f"measured C44 is the infinite lattice's, carried onto the part body (an assumption, 106). "
+        f"At 106's binding "
         f"cell (the union's lowest θ = 0 share, {bind_clause}. At the union's C44 → 0 supremum, a bare-lattice cell, the "
         f"in-plane stress is "
         f"{'isotropic — the bending field puts no averaged in-plane shear there, which is no holding claim' if sup['in_plane_stress_isotropic'] else 'anisotropic'}"
@@ -964,11 +1111,14 @@ def main() -> int:
                      "theta0_sigma_moves_with_C44_worst": c44_free_worst,
                      "sigma1_drop_as_C44_rises_worst": s1_drop_worst,
                      "mu_tangent_vs_brute_force_worst": brute_worst,
-                     "mu_onset_fraction_form_vs_half_map_worst": lam_worst},
+                     "mu_onset_fraction_form_vs_half_map_worst": lam_worst,
+                     "whole_tensor_sigma1_vs_swept_worst": whole_worst,
+                     "measured_part_body_direct_vs_zener_threshold": "agree on every lattice cell, rung, end and p₀"},
         "cells": {k: out_cells[k] for k in keys_of["scots_pine"]},
         "green_cells": {k: out_cells[k] for k in keys_of["green"]},
         "summary": summary,
         "summary_bare_lattice": summary_bare,
+        "measured_C44_106": measured,
         "p0_excluded_price": excluded_price,
         "consumer_binding_106_theta0": binding,
         "consumer_junction": junction,
@@ -994,7 +1144,8 @@ def main() -> int:
             "the Ø15 interface, callus against the old wood of the drilled wall — no interface in 106's model",
             "p₀ for a conifer's stem callus, its distribution around the gyroid and its relaxation",
             "the finite length: the ends' axial shear and the anode bond force's distribution along the gyroid",
-            "the part's own C44 and 106's measured-C44 readings (not read here), the tissue's stiffness, the bark and S5 — as in 106",
+            "the part's own C44 (106's measured C44 is the infinite lattice's, carried onto the part body — read here off "
+            "the axis, not at θ = 0, which is free of it), the tissue's stiffness, the bark and S5 — as in 106",
             "the change of σ_n the anode's axial bond force makes through the gyroid's Poisson strain (its sign alternates "
             "with the sway), so the axial force's net effect on the friction needed",
         ],

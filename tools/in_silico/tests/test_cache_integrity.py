@@ -6581,16 +6581,18 @@ def test_gyroid_interface_contact_map_invariants():
             memo[(g, rd)] = (cm, np.linalg.pinv(nine(cm)).reshape(3, 3, 3, 3), eshelby_gl(cm))
         return memo[(g, rd)]
 
-    def sigma_i(al, g, rd, fill, th_deg, a):
-        """σᴵ per unit remote strain along L, MPa — a 3×3 tensor."""
+    def sigma_i(al, g, rd, fill, th_deg, a, tensor=None):
+        """σᴵ per unit remote strain along L, MPa — a 3×3 tensor; `tensor` = (C11, C12, C44)/E_s read whole (106's
+        measured readings) in place of the swept body at Zener ratio a, with its solid fraction as 4th member."""
         cm, sm, sesh = matrix(g, rd)
         e_s = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3
         if fill == "pores_voigt_phase_bound":
             ci = phi * iso4(e_s, ALLOY_PROPERTIES[al]["nu"]) + (1 - phi) * cm
         else:
-            ci = e_s * cubic4(c11, c12, a * (c11 - c12) / 2, math.radians(th_deg))
+            t11, t12, t44, ph = tensor or (c11, c12, a * (c11 - c12) / 2, phi)
+            ci = e_s * cubic4(t11, t12, t44, math.radians(th_deg))
             if fill == "pores_additive_host_sapwood":
-                ci = ci + (1 - phi) * cm
+                ci = ci + (1 - ph) * cm
         sig = np.zeros((3, 3))
         sig[0, 0] = 1.0
         e_inf = np.einsum("ijkl,kl->ij", sm, sig)
@@ -6716,6 +6718,93 @@ def test_gyroid_interface_contact_map_invariants():
     assert min(s1s) == pytest.approx(p0[idx] / (ends[end] * 1e-6), rel=1e-6), best
     zu = d["summary"]["union"]["grid"]["zener_above_which_tension_half_opens_on_every_angle"]
     assert zu[end][names[idx]]["max"] == a_star
+
+    # ── 106's measured C44 (00_07 HW.23, 2026-10-27): the tensors are 106's, the part body's Zener ratio is on 108's
+    #    axis, the counts follow from the grid's thresholds (σ₁ never falls as C44 rises), and the least margin and its
+    #    θ = 0 seat are recomputed by the tensor route on every lattice cell — the material tensor included ──
+    mz, m106 = d["measured_C44_106"], d106["measured_C44"]
+    rungs = sorted(m106["scots_pine"]["part_body_zener"], key=int)
+    assert mz["rungs_steps_per_period"] == [int(r) for r in rungs]
+    tens, z_body = {}, []
+    for rd, by in mz["readings"].items():
+        for rg in rungs:
+            t, src = by[rg], m106["union"][rd][rg]
+            tens[(rd, rg)] = (src["C11_over_E_s"], src["C12_over_E_s"], src["C44_over_E_s"], src["solid_fraction"])
+            assert (t["C11_over_E_s"], t["C12_over_E_s"], t["C44_over_E_s"], t["solid_fraction"]) == tens[(rd, rg)]
+            if rd == "material_tensor":
+                assert t["zener_on_108_axis"] is None
+            else:
+                assert tens[(rd, rg)][:2] == (c11, c12) and tens[(rd, rg)][3] == phi, (rd, rg)
+                assert t["zener_on_108_axis"] == pytest.approx(2 * t["C44_over_E_s"] / (c11 - c12), rel=1e-12)
+                z_body.append(t["zener_on_108_axis"])
+    assert mz["part_body_zener_range"] == [min(z_body), max(z_body)]
+    lat_keys = [k for k in keys_all["union"] if "grid" in all_cells[k]]
+    bare_keys = [k for k in lat_keys if k.endswith("|pores_carry_nothing")]
+    assert mz["zener_threshold_max_bare_lattice"] == max(
+        x for k in bare_keys for e in ("low", "high")
+        for x in all_cells[k]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][e] if x is not None)
+    th_grid = d106["inputs"]["theta_deg"]
+    assert th_grid[0] == 0.0
+    for grp, ks in keys_all.items():
+        lk = [k for k in ks if "grid" in all_cells[k]]
+        m = mz["per_group"][grp]
+        assert (m["lattice_cells"], m["bare_lattice_cells"]) == (len(lk), sum(k.endswith("|pores_carry_nothing") for k in lk))
+        for rd in ("part_body_C44_absolute", "part_body_zener"):    # on 108's axis: the counts from the grid's thresholds
+            zr = [mz["readings"][rd][rg]["zener_on_108_axis"] for rg in rungs]
+            opens = [k for k in lk if all(x is None or x < min(zr) for e in ("low", "high")
+                                          for x in all_cells[k]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][e])]
+            assert m["by_reading"][rd]["lattice_cells_reaching_p0_on_every_angle"] == len(opens), (grp, rd)
+    # the least margin, by the tensor route: at θ = 0 C44 does not enter, so on the part body it is the cached θ = 0 σ₁
+    # (held to the tensor route above); the material tensor's own C11 and C12 are recomputed here on every lattice cell
+    lo_e, hi_p = ends["low"] * 1e-6, max(p0)
+    for grp, ks in keys_all.items():
+        lk = [k for k in ks if "grid" in all_cells[k]]
+        body = min(all_cells[k]["theta0"]["sigma1"] for k in lk) * lo_e / hi_p
+        for rd in ("part_body_C44_absolute", "part_body_zener"):
+            assert mz["per_group"][grp]["by_reading"][rd]["smallest_margin"] == pytest.approx(body, rel=1e-9), (grp, rd)
+    # ... and the whole block by the tensor route on EVERY lattice cell, reading, rung and angle of 106's grid: σ₁ > 0
+    # everywhere, so the least margin over ends and p₀ is the low end on the higher p₀; the θ = 0 seat, both counts and
+    # the least margin follow from these values alone
+    s1_all = {(rd, rg): {k: np.array([s1_of(sigma_i(*k.split("|"), th, None, tensor=tens[(rd, rg)])) for th in th_grid])
+                         for k in lat_keys} for rd in mz["readings"] for rg in rungs}
+    assert all(v.min() > 0 for by in s1_all.values() for v in by.values())
+    for grp, ks in keys_all.items():
+        lk = [k for k in ks if "grid" in all_cells[k]]
+        for rd in mz["readings"]:
+            b = mz["per_group"][grp]["by_reading"][rd]
+            least = {k: min(s1_all[(rd, rg)][k].min() for rg in rungs) * lo_e / hi_p for k in lk}
+            seat = [k for k in lk if all(s1_all[(rd, rg)][k][0] <= s1_all[(rd, rg)][k].min() * (1 + 1e-12) for rg in rungs)]
+            assert b["lattice_cells_least_sigma1_at_theta0"] == len(seat), (grp, rd)
+            assert b["lattice_cells_reaching_p0_on_every_angle"] == sum(m >= 1.0 for m in least.values()), (grp, rd)
+            assert b["bare_lattice_cells_open_on_every_angle"] == sum(
+                least[k] >= 1.0 for k in lk if k.endswith("|pores_carry_nothing")), (grp, rd)
+            assert b["smallest_margin"] == pytest.approx(min(least.values()), rel=1e-9), (grp, rd)
+            assert b["smallest_margin_tissue_in_pores"] == pytest.approx(   # where the reading's solid fraction enters
+                min(v for k, v in least.items() if not k.endswith("|pores_carry_nothing")), rel=1e-9), (grp, rd)
+    # the grid's finite thresholds (the count the closed tracker leg named) and the part body's distance above them
+    states = [(k, x) for k in lat_keys for e in ("low", "high")
+              for x in all_cells[k]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][e]]
+    fin = [k for k, x in states if x is not None]
+    ft = mz["finite_zener_thresholds"]
+    assert (ft["states"], ft["with_a_threshold"]) == (len(states), len(fin))
+    assert ft["all_bare_lattice"] == all(k.endswith("|pores_carry_nothing") for k in fin)
+    assert mz["part_body_zener_over_threshold_min"] == pytest.approx(
+        mz["part_body_zener_range"][0] / mz["zener_threshold_max_bare_lattice"], rel=1e-12)
+    assert mz["theta_grid_deg"] == [th_grid[0], th_grid[-1], th_grid[1] - th_grid[0]]
+    # the verdict clause is composed from these fields: the range rounded OUTWARD, the distance, the grid, the counts
+    zr_, tg = mz["part_body_zener_range"], mz["theta_grid_deg"]
+    for frag in (f"the part body's Zener ratio {down(zr_[0], 2):.2f}–{up(zr_[1], 2):.2f}",
+                 f"at least ×{down(mz['part_body_zener_over_threshold_min']):.0f} the threshold",
+                 f"on 106's θ grid ({tg[0]:g}–{tg[1]:g}° in {tg[2]:g}° steps)",
+                 f"the smallest σ₁·ε/p₀ ×{down(min(b['smallest_margin'] for g in ('scots_pine', 'green') for b in mz['per_group'][g]['by_reading'].values()), 2):.2f}"):
+        assert frag in d["verdict"], frag
+    for g, lab in (("scots_pine", "the Scots pine group"), ("green", "the green group")):
+        m = mz["per_group"][g]
+        if all(b["lattice_cells_reaching_p0_on_every_angle"] == m["lattice_cells"] for b in m["by_reading"].values()):
+            assert f"all {m['lattice_cells']} lattice cells of {lab}" in d["verdict"], g
+    if all(b["lattice_cells_least_sigma1_at_theta0"] == mz["per_group"]["union"]["lattice_cells"]
+           for b in mz["per_group"]["union"]["by_reading"].values()):
+        assert "on every lattice cell and every measured reading the least pole traction" in d["verdict"]
 
     # ── the consumers, from 106's own consumer blocks ──
     gsets = s106.green_sets()
