@@ -1349,7 +1349,6 @@ exempt = {
   # section — citing it IS the lesson. `code_doc_section_refs.rb` exempts the
   # ssot-maintenance skill for this same ref, for this same reason.
   "project_ssot_campaign_history.md" => ["05_03 §749", "08_03 §11", "08_01 §2"],
-  "log_portfolio_surgery.md" => ["08_03 §9", "08_03 §15"],
   "project_ip_posture_defensive_publication.md" => ["08_01 §2"],
   # Розкол 00_04 (DOC-T.83, 2026-08-22) забрав §11–§20 у 02_06. Записи нижче —
   # ІСТОРІЯ vilize-кампанії: субʼєкт речення факт («оновив §3, але забув §17.1
@@ -1373,7 +1372,12 @@ exempt = {
   # (`ref.include?(e)`), тож «07_01 §1» мовчки покриває й «§10»: явний «§10» мусить стояти
   # ПЕРЕД «§1», інакше його завжди перехоплює коротший і він гине як EXEMPT-DEAD.
   "log_sec07_legal.md" => ["07_01 §8", "07_01 §10", "07_01 §1", "07_01 §4", "07_01 §5"],
-  "project_sec07_legal_campaign.md" => ["07_03 §3"]
+  "project_sec07_legal_campaign.md" => ["07_03 §3"],
+  # DOC-T.126 хвиля 1 (2026-10-26) зняла 03_03 §5–§8. Обидва записи — історія за тим самим тестом
+  # «де щось БУЛО ⊥ де воно Є»: FW.62 від народження був про тіло в §5.3 (запис про ID),
+  # а `03_03 §5` у log_parallel_edit — зразок токена в історії зламаної лінкіфікації (навчальна цитата).
+  "log_portfolio_surgery.md" => ["08_03 §9", "08_03 §15", "03_03 §5.3"],
+  "log_parallel_edit.md" => ["03_03 §5"]
 }
 # Test seam, same shape as the MEMORY_GATE_* overrides elsewhere: the curated
 # table names a real corpus file, which no fixture repo has, so the self-test
