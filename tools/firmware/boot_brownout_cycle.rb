@@ -55,6 +55,11 @@
 #   • `c_vstor_f=0.47` — НОМІНАЛ, не гарантія: паспорт KR дає допуск −20…+80 % при +20 °C, ΔC ≤ 30 % — критерій
 #     кінця строку, а ємності нижче +20 °C не нормує (`02_03 §12.1`). Вердикт гейта стоїть на номіналі; друге
 #     прочитання на нижньому краю допуску друкує звіт — warn-only, як і CCM-headline (`02_03 §9.8а` ⊕).
+#   • ESR іоністора модель НЕ несе — лише енергію ½CV². Кадр TX бере з VSTOR струм крізь опір деталі, а VBAT_OK
+#     бачить напругу на піні VSTOR, тож вузол може циклити й при достатній енергії (`02_03 §12.1`). Звіт друкує
+#     прочитання на `esr_ohm` (дефолт — паспортний максимум початкового ESR; виміряний опір — override) — warn-only;
+#     опір міряє RUNBOOK 3.7 («TX у мороз», стрибок VSTOR на фронті імпульсу). Прочитання стоїть на тому самому,
+#     що й v_ok_off: що VBAT_OK вимикає buck (`02_03 §7` — дроту канон не називає).
 
 require_relative "lib/energy_chain"
 EC = SilkenEnergyChain
@@ -73,6 +78,8 @@ PARAMS = {
   rx_mj: 7.95,              # пост-TX RX-вікно 500 мс @ 4.82 мА, SMPS — ЩОЦИКЛУ (§9.4)
   tcxo_ecb_mj: 4.63,        # TCXO 2.11 мА на кадрі ECB + RX-вікні (§9.4)
   tcxo_ccm_mj: 5.06,        # TCXO на кадрі CCM + RX-вікні (§9.6 врізка)
+  i_tx_ma: 23.5,            # струм TX, з якого §9.4 рахує tx_ecb_mj (× 3.3 В × 0.1649 с) — вхід прочитання ESR
+  i_tcxo_ma: 2.11,          # струм TCXO, з якого §9.4 рахує tcxo_ecb_mj (× 3.3 В × (0.1649 + 0.5) с)
   eta_buck_active: 0.88,    # §9.1 buck active
   # ── сон + генерація для inter-cycle sensitivity (02_03 §9.1/§9.3/§9.6/§9.8) ───
   i_stm32_sleep_na: 300,    # ціль Сценарію C (§9.8) — клас Standby; відвантажений STOP2 = 1070 (00_07 FW.54)
@@ -87,7 +94,11 @@ PARAMS = {
   # Обидва — дзеркала `voc_maxhold.h` (правити там); `--assert` звіряє їх із самим заголовком.
   voc_window_s: 16.3,       # щільний збір ≥ 16.3 с — VOC_MAXHOLD_WINDOW_MIN_MS (02_03 §12.4.2)
   voc_step_s: 0.128,        # крок ≤ 128 мс — VOC_MAXHOLD_STEP_MAX_MS
-  i_run_ma: 3.40            # 48 МГц CoreMark (DS13105) — ЄДИНИЙ run-струм, який несе дерево
+  i_run_ma: 3.40,           # 48 МГц CoreMark (DS13105) — ЄДИНИЙ run-струм, який несе дерево
+  # ── ESR іоністора — лише для прочитання ESR (warn-only), вердикту гейта не рухає ──────────
+  # Паспортний максимум ПОЧАТКОВОГО ESR KR-5R5H474-R (Technical Data 4327, 06/2026: ≤ 50 Ω @ 1 kHz, +20 °C;
+  # кінець строку ≤ 400 %); виміряний опір — override (RUNBOOK 3.7: стрибок VSTOR на фронті імпульсу).
+  esr_ohm: 50.0
 }.freeze
 
 # Паспортний сон відвантаженого режиму (00_07 FW.54, 2026-10-05): прошивка спить у STOP2, а 300 нА у PARAMS —
@@ -96,6 +107,7 @@ STOP2_SHIPPED_NA = 1070.0
 # Нижній край паспортного допуску ємності вцілілого KR-5R5H474-R (02_03 §12.1: −20 %…+80 % при +20 °C). Друге
 # прочитання вироку, не дефолт; кінець строку (ΔC ≤ 30 % поверх) — ще нижче, його число — 02_03 §9.8а ⊕.
 C_TOLERANCE_LOW = 0.20
+VBAT_OV_V = 4.822 # дзеркало ратифікованого VBAT_OV (02_03 §4.Б) — верх вікна, до якого міряється частка енергії
 P_GEN_SWEEP_UW = [ 3.0, 4.0, 5.0 ].freeze # HW.44-назва смуга: "P_gen 3-5 µW"
 
 params = PARAMS.dup
@@ -208,6 +220,40 @@ def voc_mirror_drift(p)
   end
 end
 
+# Струм, який кадр TX бере з VSTOR на межі брауноуту (А). Там VSTOR ≈ OK_PROG 3.312 В = VOUT_SET (02_03 §4),
+# тож buck у прохідному режимі (SLUSBH2G §7.3.7: «pass (100% duty cycle) mode … as long as VSTOR … less than
+# VOUT») — струм із VSTOR дорівнює струму навантаження, без η. Ядро входить: воно чекає кінця власного кадру
+# (02_03 §9.4 ⛔); ті самі ≈ 29 мА бере RUNBOOK 3.7.
+def tx_current_from_vstor_a(p) = (p[:i_tx_ma] + p[:i_tcxo_ma] + p[:i_run_ma]) / 1000.0
+
+# Ефір кадру ери — з її ж TX-енергії (§9.4: E = I_TX · 3.3 В · t), с.
+def tx_airtime_s(p, wire:) = (wire == :ccm ? p[:tx_ccm_mj] : p[:tx_ecb_mj]) / (p[:i_tx_ma] * p[:v_out])
+
+# Напруга іоністора без навантаження, нижче якої кадр тягне клему під OK_PROG до свого кінця: спад I·R
+# на опорі плюс I·t/C за ефір. Енергії до кадру (Lorenz, сенсори) тут немає — межа оптимістична.
+def voc_min_for_tx(p, esr_ohm, wire:) =
+  p[:v_ok_off] + tx_current_from_vstor_a(p) * (esr_ohm + tx_airtime_s(p, wire: wire) / p[:c_vstor_f])
+
+# Стеля ESR, за якої кадр ще тримає клему на OK_PROG зі стартової напруги voc (Ω).
+def esr_ceiling_ohm(p, voc, wire:) =
+  (voc - p[:v_ok_off]) / tx_current_from_vstor_a(p) - tx_airtime_s(p, wire: wire) / p[:c_vstor_f]
+
+# Після брауноуту першим летить cold-boot hello — 16-Б кадр ECB в обох ерах (`soldier_unix_ts == 0` →
+# `grace_hello`, firmware/soldier/main.c), тож стелю boot-TX задає його ефір, а не кадр ери (Ω).
+def boot_esr_ceiling_ohm(p) = esr_ceiling_ohm(p, p[:v_ok_on], wire: :ecb)
+
+# Слово ери: зі старту вище якої напруги кадр живиться і яка це частка енергії вікна; напругу понад
+# VBAT_OV не друкує — іоністор її не досягає (скіл firmware #15(a)).
+def esr_era_word(p, wire)
+  v_min = voc_min_for_tx(p, p[:esr_ohm], wire: wire)
+  return "#{wire.upcase} — за жодного заряду" if v_min >= VBAT_OV_V
+
+  share = (cap_energy_mj(p[:c_vstor_f], VBAT_OV_V) - cap_energy_mj(p[:c_vstor_f], [ v_min, p[:v_ok_on] ].max)) /
+          (cap_energy_mj(p[:c_vstor_f], VBAT_OV_V) - cap_energy_mj(p[:c_vstor_f], p[:v_ok_on]))
+  format("%s — вище %.2f В (%.0f %% енергії вікна %.3f→%.3f В)", wire.upcase, v_min, share * 100, VBAT_OV_V,
+         p[:v_ok_on])
+end
+
 def crossover_word(p, wire)
   x = crossover_uw(p, wire: wire)
   label = wire.to_s.upcase
@@ -297,6 +343,27 @@ def report(p)
                 w_lo - headline_3cycle_mj(lo, wire: :ecb), w_lo - headline_3cycle_mj(lo, wire: :ccm),
                 crossover_word(lo, :ecb), crossover_word(lo, :ccm))
   end
+  # Поза блоком номіналу свідомо: прогін із ВИМІРЯНОЮ ємністю — саме той, де прочитання ESR потрібне.
+  esr_label = if p[:esr_ohm] == PARAMS[:esr_ohm]
+                format("паспортному максимумі початкового ESR (%.0f Ω @ 1 кГц)", p[:esr_ohm])
+  else
+                format("заданому ESR %.1f Ω", p[:esr_ohm])
+  end
+  # Над стелею boot-TX частка енергії вікна НЕДОСЯЖНА: вузол вмикається на ON і падає на першому кадрі,
+  # тож прочитання повертає замикання, а частку друкує лише як ціну ходу «вищий OK_HYST» (скіл firmware #15(a)).
+  boot_cap = boot_esr_ceiling_ohm(p)
+  bands = format("кадр живився б лише зі старту %s · %s", esr_era_word(p, :ecb), esr_era_word(p, :ccm))
+  reach = if p[:esr_ohm] > boot_cap
+            "boot-TX НЕ живиться: вузол, увімкнений VBAT_OK на ON, падає на першому ж кадрі й замикається на дні " \
+              "вікна (за гейта VBAT_OK→buck; FW.10 відкладає TX лише нижче −15 °C) — якби boot ставався вище " \
+              "(хід «вищий OK_HYST»), #{bands}"
+  else
+            "клема тримає OK_PROG до кінця кадру: #{bands.sub('кадр живився б лише', 'кадр живиться')}"
+  end
+  puts format("  ⚠️ ESR модель не несе: кадр бере з VSTOR ≈ %.1f мА (на межі buck у прохідному режимі, ядро входить); " \
+              "стеля boot-TX (cold-boot hello — 16-Б кадр ECB в обох ерах) — ESR ≤ %.2f Ω, і ще нижче на енергію до " \
+              "кадру; на %s %s; понад %.0f Ω кадр не живиться за жодного заряду (02_03 §12.1; warn-only)",
+              tx_current_from_vstor_a(p) * 1000, boot_cap, esr_label, reach, esr_ceiling_ohm(p, VBAT_OV_V, wire: :ccm))
   return unless p[:i_stm32_sleep_na] == PARAMS[:i_stm32_sleep_na]
 
   q = p.merge(i_stm32_sleep_na: STOP2_SHIPPED_NA)
@@ -327,6 +394,11 @@ if assert_mode
     "E_gen_winter @5µW (§9.8, 11.7 мДж/год)" => (gen_mj_per_hour(PARAMS, 5.0) - 11.7).abs < 0.01,
     "E_active_from_VSTOR ECB (§9.6, 33.33 мДж)" =>
       (active_cycle_from_vstor_mj(PARAMS, wire: :ecb) - 33.33).abs < 0.01,
+    # Струми прочитання ESR — ті самі, з яких §9.4 рахує енергії: зміна одного без іншого червонить тут.
+    "i_tx_ma × 3.3 В × 0.1649 с = tx_ecb_mj (§9.4, 12.79 мДж)" =>
+      (PARAMS[:i_tx_ma] * PARAMS[:v_out] * 0.1649 - PARAMS[:tx_ecb_mj]).abs < 0.01,
+    "i_tcxo_ma × 3.3 В × (0.1649 + 0.5) с = tcxo_ecb_mj (§9.4, 4.63 мДж)" =>
+      (PARAMS[:i_tcxo_ma] * PARAMS[:v_out] * (0.1649 + 0.5) - PARAMS[:tcxo_ecb_mj]).abs < 0.01,
     "ECB не циклить у sensitivity-блоці за жодного P_gen > 0 (§9.8а)" => crossover_uw(PARAMS, wire: :ecb) <= 0.0,
     "точка CCM-циклення в sensitivity-блоці (§9.8а, 1.9 µW)" => (crossover_uw(PARAMS, wire: :ccm) - 1.9).abs < 0.05,
     # [HW.19] Вердикт, а не лише число: активне вікно мусить ПЕРЕВИЩУВАТИ буфер — інакше
@@ -337,7 +409,12 @@ if assert_mode
     # [HW.19] СТЕЛЯ одного LPTIM-пробудження (02_03 §9.8б) — межа, яку стенд порівнює з виміром.
     "стеля LPTIM-пробудження (HW.19, 128 × ≤ 0.260 мДж ≈ 20.4 мс)" =>
       voc_wakes(PARAMS) == 128 && (voc_wake_ceiling_mj(PARAMS) - 0.260).abs < 0.001 &&
-      (voc_wake_ceiling_ms(PARAMS) - 20.4).abs < 0.05
+      (voc_wake_ceiling_ms(PARAMS) - 20.4).abs < 0.05,
+    # Прочитання ESR (warn-only) друкує межі, які канон цитує: зсув входу рухає їх, і червоніє саме цей рядок.
+    "ESR: стеля boot-TX ≈ 2.7 Ω · старт кадру ECB на 50 Ω ≈ 4.77 В · «за жодного заряду» ≈ 52 Ω (02_03 §12.1)" =>
+      (boot_esr_ceiling_ohm(PARAMS) - 2.68).abs < 0.01 &&
+      (voc_min_for_tx(PARAMS, PARAMS[:esr_ohm], wire: :ecb) - 4.773).abs < 0.005 &&
+      (esr_ceiling_ohm(PARAMS, VBAT_OV_V, wire: :ccm) - 51.6).abs < 0.1
   }
   checks.each { |name, ok| failures << "self-check провалено: #{name}" unless ok }
   failures.concat(voc_mirror_drift(PARAMS))
