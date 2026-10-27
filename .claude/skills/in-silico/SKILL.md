@@ -123,6 +123,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 48. A bound is about PHASES and bounds stiffness, not response
 49. A physicality flag certifies only what it was written to test — record the window, the picks and ⟨S²⟩ beside t_ij, or the flag IS the record
 50. A NECESSARY threshold is a minimum over the WHOLE band of EVERY input — «nominal» is not «favourable», and the band belongs to the PHYSICAL event the model asks about
+51. A threshold computed on an AREA is a claim about whatever that area IS — a housing's face bounds a cell behind it, it is not one; take the part's envelope from its CEM, publish the threshold per NAMED area, and call an outline an upper bound on active area
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
