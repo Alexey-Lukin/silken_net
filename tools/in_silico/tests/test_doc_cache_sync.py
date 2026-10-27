@@ -6471,6 +6471,27 @@ def _ba106(d, fk, al):
     return d["gyroid_binds_above_surface_strain_ue_theta0_lowest_share"][fk][al][_S106_LS]
 
 
+def _c44f106(d, field, g="scots_pine", forms=None):
+    """A per-rung field of 106's measured-C44 block over the named forms (all three by default) and every rung."""
+    m = d["measured_C44"][g]
+    return [r[field] for fm in (forms or m) for r in m[fm].values()]
+
+
+def _c44a106(d, field, al="Ti-6Al-4V", g="scots_pine", forms=None):
+    m = d["measured_C44"][g]
+    return [r["alloys"][al][field] for fm in (forms or m) for r in m[fm].values()]
+
+
+def _c44r106(d, g):
+    return [r for fm in d["measured_C44"][g].values() for r in fm.values()]
+
+
+def _single106(values):
+    """The one value a sentence names for a whole set — None (an anchor that cannot match) when the set has more."""
+    values = sorted(set(values))
+    return values[0] if len(values) == 1 else None
+
+
 def _mo106(d, rd, k):
     return d["moisture_grid_points"][rd][k]
 
@@ -6509,6 +6530,57 @@ CHECKS += [
      lambda d: _ceil_n(max(v["highest"] for v in d["theta0_share_over_modelled_set"].values()), 3), 0.0),
     ("share106 junction sup → 106", SUMMARY, rf"C44 → 0 up to {N} on the Scots pine group and", SHARE106,
      lambda d: _ceil_n(d["junction_share_sup_at_C44_zero"], 3), 0.0),
+    ("share106 c44 /16 off → 106", SUMMARY, rf"period/16 sits {N} pp off", SHARE106,
+     lambda d: round(100 * (1 - d["inputs"]["solid_fraction_105"] - d["measured_C44"]["rungs_excluded"]["16"]), 1), 0.0),
+    ("share106 c44 voigt lo → 106", SUMMARY, rf"rung its own tensor \(C44 {N}–", SHARE106,
+     lambda d: _floor_n(min(_c44f106(d, "C44_over_voigt_ceiling", forms=["material_tensor"])), 2), 0.0),
+    ("share106 c44 voigt hi → 106", SUMMARY, rf"\(C44 [\d.]+–{N} of Voigt's ceiling on the rung's", SHARE106,
+     lambda d: _ceil_n(max(_c44f106(d, "C44_over_voigt_ceiling", forms=["material_tensor"])), 2), 0.0),
+    ("share106 c44 zener lo → 106", SUMMARY, rf"solid fraction, a Zener ratio of\s+{N}–", SHARE106,
+     lambda d: _floor_n(min(_c44f106(d, "zener", forms=["material_tensor"])), 2), 0.0),
+    ("share106 c44 zener hi → 106", SUMMARY, rf"solid fraction, a Zener ratio of\s+[\d.]+–{N}\)", SHARE106,
+     lambda d: _ceil_n(max(_c44f106(d, "zener", forms=["material_tensor"])), 2), 0.0),
+    ("share106 c44 eq count → 106", SUMMARY, rf"in {N} of the [\d]+ combinations of reading, rung", SHARE106,
+     lambda d: d["measured_C44"]["theta_free_equals_theta0"]["count"], 0.0),
+    ("share106 c44 eq of → 106", SUMMARY, rf"in [\d]+ of the {N} combinations of reading, rung", SHARE106,
+     lambda d: d["measured_C44"]["theta_free_equals_theta0"]["of"], 0.0),
+    ("share106 c44 radial θ0 → 106", SUMMARY, rf"its θ = 0 figure, {N} µε, stands", SHARE106,
+     lambda d: _ba106(d, "radial_reading", "Ti-6Al-4V"), 0.0),
+    ("share106 c44 lattice cells → 106", SUMMARY, rf"of\s+the {N} cells C44 enters", SHARE106,
+     lambda d: sum(1 for k in d["cells"] if not k.endswith("voigt_phase_bound")), 0.0),
+    ("share106 c44 abs zener lo → 106", SUMMARY, rf"\(a Zener\s+ratio of {N}–[\d.]+ on the body's own", SHARE106,
+     lambda d: _floor_n(min(_c44f106(d, "zener", forms=["part_body_C44_absolute"])), 2), 0.0),
+    ("share106 c44 abs zener hi → 106", SUMMARY, rf"\(a Zener\s+ratio of [\d.]+–{N} on the body's own", SHARE106,
+     lambda d: _ceil_n(max(_c44f106(d, "zener", forms=["part_body_C44_absolute"])), 2), 0.0),
+    ("share106 c44 own zener lo → 106", SUMMARY, rf"measured Zener ratio itself \({N}–", SHARE106,
+     lambda d: _floor_n(min(_c44f106(d, "zener", forms=["part_body_zener"])), 2), 0.0),
+    ("share106 c44 own zener hi → 106", SUMMARY, rf"measured Zener ratio itself \([\d.]+–{N}\)", SHARE106,
+     lambda d: _ceil_n(max(_c44f106(d, "zener", forms=["part_body_zener"])), 2), 0.0),
+    ("share106 c44 binds hi → 106", SUMMARY, rf"the gyroid binds above {N} µε at most on the tensor's own", SHARE106,
+     lambda d: max(_c44a106(d, "binds_above_theta_free_ue")), 0.0),
+    ("share106 c44 binds lo → 106", SUMMARY, rf"E_z\*\(θ\) \({N} on the lowest reading", SHARE106,
+     lambda d: min(v["Ti-6Al-4V"]["max_over_rungs"]
+                   for v in d["measured_C44"]["binds_above_theta_free_ue"]["scots_pine"].values()), 0.0),
+    ("share106 c44 rise count → 106", SUMMARY, rf"rises off the axis in {N} of the [\d]+\s+combinations", SHARE106,
+     lambda d: d["measured_C44"]["lattice_fills_rise_off_axis"]["count"], 0.0),
+    ("share106 c44 rise of → 106", SUMMARY, rf"rises off the axis in [\d]+ of the {N}\s+combinations", SHARE106,
+     lambda d: d["measured_C44"]["lattice_fills_rise_off_axis"]["of"], 0.0),
+    ("share106 c44 rise θ → 106", SUMMARY, rf"combinations, always at θ = {N}°", SHARE106,
+     lambda d: _single106(d["measured_C44"]["lattice_fills_rise_off_axis"]["theta_deg"]), 0.0),
+    ("share106 c44 junction θ → 106", SUMMARY, rf"highest share over every angle is at θ = {N}°", SHARE106,
+     lambda d: _single106({r["junction_share_sup_theta_deg"] for r in _c44r106(d, "union")}), 0.0),
+    ("share106 c44 lattice θ0 → 106", SUMMARY, rf"the part body, Ti-6Al-4V {N} → ", SHARE106,
+     lambda d: max(_c44a106(d, "lattice_fills_binds_above_theta0_ue", forms=["part_body_C44_absolute"])), 0.0),
+    ("share106 c44 lattice free → 106", SUMMARY, rf"Ti-6Al-4V [\d]+ → {N} µε\)", SHARE106,
+     lambda d: max(_c44a106(d, "lattice_fills_binds_above_theta_free_ue", forms=["part_body_C44_absolute"])), 0.0),
+    ("share106 c44 rise → 106", SUMMARY, rf"by at\s+most {N} % over its θ = 0 one", SHARE106,
+     lambda d: _ceil_n(100 * (d["measured_C44"]["lattice_fills_rise_off_axis"]["max_rise"] - 1), 1), 0.0),
+    ("share106 c44 45 lo → 106", SUMMARY, rf"the share exceeds 1 in {N}–[\d]+ of\s+the [\d]+ cells", SHARE106,
+     lambda d: min(_c44f106(d, "t_L_theta45_lattice_cells_above_1")), 0.0),
+    ("share106 c44 45 hi → 106", SUMMARY, rf"the share exceeds 1 in [\d]+–{N} of\s+the [\d]+ cells", SHARE106,
+     lambda d: max(_c44f106(d, "t_L_theta45_lattice_cells_above_1")), 0.0),
+    ("share106 c44 junction → 106", SUMMARY, rf"over the union it is at most {N} — the C44 → 0", SHARE106,
+     lambda d: _ceil_n(max(_c44f106(d, "junction_share_sup", g="union")), 3), 0.0),
     ("share106 moist stiff fall → 106", SUMMARY, rf"from 45 to 95 % RH at {N} of", SHARE106,
      lambda d: _mo106(d, "stiff", "falling"), 0.0),
     ("share106 moist points → 106", SUMMARY, rf"at [\d]+ of {N} points, rises at none", SHARE106,

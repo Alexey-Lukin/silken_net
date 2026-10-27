@@ -7361,6 +7361,137 @@ def _shadow_direct_homogeneous(eps, a, rho, pol, n_max, f_hz, phi_deg):
     return p_in, p_rad, 10 * np.log10(field / p_in), 10 * np.log10(field)
 
 
+def test_gyroid_wood_strain_share_measured_c44():
+    """106's measured-C44 block (00_07 HW.23) against the CURRENT periodic voxel cache and 105's cache, the modulus by
+    another arithmetic (uniaxial stress pushed through the inverted Voigt stiffness; the script: the cubic closed form).
+
+    CAN catch: a block stale against a re-run periodic case (its rungs or their tensors); a rung admitted or dropped off
+    the density rule; a form whose tensor is not the one it names (the absolute C44 ⊥ the Zener ratio on the part body's
+    own C11 − C12 ⊥ the material read whole on its own solid fraction); E_z* at 0° or 45° off its tensor; a θ = 0 figure
+    on the part body that moved with C44 or is not the θ = 0 block's; a θ-free figure below its θ = 0 one, a lattice-fills
+    figure above the all-fills one, a bracket that is not the rungs' extremes; an equality count off the block, or a
+    verdict that says «does not rise» when a rung does; each number of the verdict's measured-C44 sentence off the block. CANNOT catch: the shares off the axis — the test does not re-solve Eshelby there (the invariants test above
+    holds the solution at θ = 0, and the script asserts its measured path against the sweep at the same Zener ratio).
+    """
+    import importlib.util
+
+    from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES
+
+    spec = importlib.util.spec_from_file_location("s106_c44", REPO / "tools/in_silico/scripts/106_gyroid_wood_strain_share.py")
+    s106 = importlib.util.module_from_spec(spec)
+    sys.modules["s106_c44"] = s106
+    spec.loader.exec_module(s106)
+    d = json.loads((MECHANICAL / "gyroid_wood_strain_share.json").read_text(encoding="utf-8"))
+    d105 = json.loads((MECHANICAL / "printed_part_sway_stress.json").read_text(encoding="utf-8"))
+    m = d["measured_C44"]
+    per = json.loads((REPO / m["source"]).read_text(encoding="utf-8"))
+    phi, nu = d105["inputs"]["solid_fraction"], per["poisson_ratio"]
+    mu_s = 1.0 / (2 * (1 + nu))
+    rungs = [r for r in per["rows"] if abs(r["porosity"] - (1 - phi)) <= s106.PERIODIC_DENSITY_TOL]
+    assert [r["steps_per_period"] for r in rungs] == m["rungs_steps_per_period"] == list(s106.PERIODIC_RUNGS)
+    assert m["rungs_excluded"] == {str(r["steps_per_period"]): r["porosity"] for r in per["rows"] if r not in rungs}
+    lat = d["inputs"]["lattice_reading"]
+    q_lat = lat["C11_over_E_s"] - lat["C12_over_E_s"]
+
+    def e_uniaxial(c11, c12, c44, th_deg):
+        c = np.zeros((6, 6))
+        c[:3, :3] = c12
+        np.fill_diagonal(c[:3, :3], c11)
+        c[3, 3] = c[4, 4] = c[5, 5] = c44                       # Voigt, engineering shear
+        n = np.array([math.cos(math.radians(th_deg)), math.sin(math.radians(th_deg)), 0.0])
+        sig = np.array([n[0] ** 2, n[1] ** 2, n[2] ** 2, n[1] * n[2], n[0] * n[2], n[0] * n[1]])
+        eps = np.linalg.solve(c, sig)
+        return 1.0 / float(eps[:3] @ n ** 2 + eps[3] * n[1] * n[2] + eps[4] * n[0] * n[2] + eps[5] * n[0] * n[1])
+
+    cell = s106.CELL_LS
+    theta0_block = {"scots_pine": d["gyroid_binds_above_surface_strain_ue_theta0_lowest_share"]["axial_reading"],
+                    "union": d["union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share"]["axial_reading"]}
+    for g in ("scots_pine", "union"):
+        for r in rungs:
+            st = str(r["steps_per_period"])
+            want = {"part_body_C44_absolute": (lat["C11_over_E_s"], lat["C12_over_E_s"], r["C44"], phi),
+                    "part_body_zener": (lat["C11_over_E_s"], lat["C12_over_E_s"], r["zener"] * q_lat / 2, phi),
+                    "material_tensor": (r["C11"], r["C12"], r["C44"], r["solid_fraction_meshed"])}
+            assert set(want) == set(s106.C44_FORMS)
+            for fm, (c11, c12, c44, ph) in want.items():
+                rec = m[g][fm][st]
+                got = (rec["C11_over_E_s"], rec["C12_over_E_s"], rec["C44_over_E_s"], rec["solid_fraction"])
+                assert got == pytest.approx((c11, c12, c44, ph), rel=1e-12), f"{g} {fm} /{st}: not its tensor"
+                assert rec["zener"] == pytest.approx(2 * c44 / (c11 - c12), rel=1e-12)
+                assert rec["C44_over_voigt_ceiling"] == pytest.approx(c44 / (ph * mu_s), rel=1e-12)
+                assert rec["E_z_star_theta0"] == pytest.approx(e_uniaxial(c11, c12, c44, 0.0), rel=1e-10)
+                assert rec["E_z_star_theta45"] == pytest.approx(e_uniaxial(c11, c12, c44, 45.0), rel=1e-10)
+                for al in ALLOY_PROPERTIES:
+                    a = rec["alloys"][al]
+                    if fm.startswith("part_body"):
+                        assert a["binds_above_theta0_ue"] == theta0_block[g][al][cell], f"{g} {fm} /{st} {al}: θ = 0 moved"
+                    assert a["binds_above_theta_free_ue"] >= a["binds_above_theta0_ue"]
+                    assert a["lattice_fills_binds_above_theta_free_ue"] >= a["lattice_fills_binds_above_theta0_ue"]
+                    assert a["lattice_fills_binds_above_theta_free_ue"] <= a["binds_above_theta_free_ue"]
+        for key in ("binds_above_theta_free_ue", "binds_above_theta0_ue", "lattice_fills_binds_above_theta_free_ue",
+                    "lattice_fills_binds_above_theta0_ue"):
+            for fm in s106.C44_FORMS:
+                for al in ALLOY_PROPERTIES:
+                    vals = [m[g][fm][str(s)]["alloys"][al][key] for s in s106.PERIODIC_RUNGS]
+                    b = m[key][g][fm][al]
+                    assert (b["min_over_rungs"], b["max_over_rungs"]) == (min(vals), max(vals)), f"{key} {g} {fm} {al}"
+
+    # the equality count behind «does not rise above the θ = 0 figure», recomputed, and the verdict's phrase follows it
+    eq = [m[g][fm][str(s)]["alloys"][al]["binds_above_theta_free_ue"] == m[g][fm][str(s)]["alloys"][al]["binds_above_theta0_ue"]
+          for g in ("scots_pine", "union") for fm in s106.C44_FORMS for s in s106.PERIODIC_RUNGS for al in ALLOY_PROPERTIES]
+    assert m["theta_free_equals_theta0"]["count"] == sum(eq) and m["theta_free_equals_theta0"]["of"] == len(eq)
+    assert ("does not rise above the θ = 0 figure on any reading" in d["verdict"]) == all(eq)
+    combos = [m[g][fm][str(s)]["alloys"][al] for g in ("scots_pine", "union") for fm in s106.C44_FORMS
+              for s in s106.PERIODIC_RUNGS for al in ALLOY_PROPERTIES]
+    rise = [a for a in combos if a["lattice_fills_binds_above_theta_free_ue"] > a["lattice_fills_binds_above_theta0_ue"]]
+    lr = m["lattice_fills_rise_off_axis"]
+    assert (lr["count"], lr["of"]) == (len(rise), len(combos))
+    assert lr["theta_deg"] == sorted({a["lattice_fills_theta_free_deg"] for a in rise})
+    assert lr["max_rise"] == pytest.approx(max(a["lattice_fills_binds_above_theta_free_ue"]
+                                               / a["lattice_fills_binds_above_theta0_ue"] for a in rise), rel=1e-12)
+    # SUMMARY «the binding cell sits under the Voigt phase bound» and «on every measured reading» (the angle probe)
+    vb = m["binding_cell_is_voigt_phase_bound"]
+    assert (vb["count"], vb["of"]) == (sum(a["theta_free_cell"].endswith("|pores_voigt_phase_bound") for a in combos),
+                                       len(combos)) and vb["count"] == vb["of"], "the binding cell left the Voigt bound"
+    probe = d["ligament_factor_argmin_theta_deg_baseline_rh95_stiff"]["zener_1_of_ceiling"]
+    for g in ("scots_pine", "union"):
+        for fm in s106.C44_FORMS:
+            for s in s106.PERIODIC_RUNGS:
+                assert m[g][fm][str(s)]["ligament_factor_argmin_theta_deg_baseline_rh95_stiff"] == probe, (g, fm, s)
+
+    # the verdict's measured-C44 numbers are the block's
+    def lo2(x):
+        return math.floor(round(x * 100, 9)) / 100
+
+    def hi2(x):
+        return math.ceil(round(x * 100, 9)) / 100
+
+    mat = [m["scots_pine"]["material_tensor"][str(s)] for s in s106.PERIODIC_RUNGS]
+    bf = m["binds_above_theta_free_ue"]["scots_pine"]
+    x_hi = max(bf[fm][ALLOY_BASELINE]["max_over_rungs"] for fm in s106.C44_FORMS)
+    x_lo = min(bf[fm][ALLOY_BASELINE]["max_over_rungs"] for fm in s106.C44_FORMS)
+    y_hi = max(m["lattice_fills_binds_above_theta_free_ue"]["scots_pine"][fm][ALLOY_BASELINE]["max_over_rungs"]
+               for fm in s106.C44_FORMS)
+    j_rec = max((m["union"][fm][str(s)] for fm in s106.C44_FORMS for s in s106.PERIODIC_RUNGS),
+                key=lambda r: r["junction_share_sup"])
+    j_max = j_rec["junction_share_sup"]
+    n_lat = sum(1 for k in d["cells"] if not k.endswith("voigt_phase_bound"))
+    n45 = [m["scots_pine"][fm][str(s)]["t_L_theta45_lattice_cells_above_1"]
+           for fm in s106.C44_FORMS for s in s106.PERIODIC_RUNGS]
+    radial0 = d["gyroid_binds_above_surface_strain_ue_theta0_lowest_share"]["radial_reading"][ALLOY_BASELINE][cell]
+    for phrase in (
+            f"{lo2(min(r['C44_over_voigt_ceiling'] for r in mat)):.2f}–{hi2(max(r['C44_over_voigt_ceiling'] for r in mat)):.2f} "
+            "of Voigt's ceiling on its own solid fraction",
+            f"Zener ratio {lo2(min(r['zener'] for r in mat)):.2f}–{hi2(max(r['zener'] for r in mat)):.2f}, carried",
+            f"({m['theta_free_equals_theta0']['count']} of {m['theta_free_equals_theta0']['of']} readings",
+            f"binds above {x_hi:.0f} µε at most on the tensor's own E_z*(θ) ({x_lo:.0f} on the lowest reading)",
+            f"C44 enters reaching {y_hi:.0f} µε", f"its θ = 0 figure {radial0:.0f} µε stands",
+            f"the share is at most {math.ceil(round(j_max * 1000, 9)) / 1000:.3f} over the union, "
+            f"at θ = {j_rec['junction_share_sup_theta_deg']:g}°",
+            f"exceeds 1 in {min(n45)}–{max(n45)} of the {n_lat} cells"):
+        assert phrase in d["verdict"], phrase
+
+
 def test_stem_radio_shadow_invariants():
     """107 (00_07 HW.6, the trunk-shadow leg): every homogeneous row against the DIRECT closed form computed here, and
     every row's derived fields against its own powers and gains.

@@ -173,7 +173,7 @@
       "nu_star": 0.33590715776086977,
       "E100_over_E_s": 0.0940284341899575,
       "zener_voigt_ceiling": 3.7547202062397482,
-      "is": "both FE cases read as ONE homogeneous cubic body (kinematic-side readings); C44 not read here (the periodic voxel case measures it for the infinite lattice), swept"
+      "is": "both FE cases read as ONE homogeneous cubic body (kinematic-side readings); C44 swept here, and the periodic voxel case's measured C44 of the infinite lattice read apart as named readings (measured_C44)"
     },
     "theta_deg": [
       0.0,
@@ -3458,6 +3458,2962 @@
       "pores_carry_nothing": 45.0,
       "pores_additive_host_sapwood": 45.0,
       "pores_voigt_phase_bound": 0.0
+    }
+  },
+  "measured_C44": {
+    "source": "tools/cad/cache/fea/periodic_homogenization.network.w100.c1.json",
+    "is": "the INFINITE lattice's tensor from periodic conditions on one period cell (01_01 §5.2), carried onto the part body, which has no C44 of its own — an assumption — in two forms (the absolute modulus ⊥ the Zener ratio on the body's own C11 − C12), and beside them the material tensor read whole on its own solid fraction; one cell gives the share and E_z* of one tensor",
+    "rungs_steps_per_period": [
+      24,
+      32,
+      48,
+      64
+    ],
+    "rungs_excluded": {
+      "16": 0.62890625
+    },
+    "density_rule": "|porosity − the part's 0.6453| ≤ 0.005",
+    "binding_threshold_rule": "105's headline cell (large_stem_limit|near_uniaxial|sf2); a binding sentence takes the HIGHEST threshold over the modelled cells — and, with the install angle free, over θ — and over the rungs; rounded UP",
+    "scots_pine": {
+      "part_body_C44_absolute": {
+        "24": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05691182435414086,
+          "zener": 1.6171472846677746,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.43069714808052356,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12619728428629445,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4534.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4534.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2288.0,
+              "lattice_fills_binds_above_theta_free_ue": 2334.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4568.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4568.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2291.0,
+              "lattice_fills_binds_above_theta_free_ue": 2331.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2527.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2527.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1287.0,
+              "lattice_fills_binds_above_theta_free_ue": 1310.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5389.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5389.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2887.0,
+              "lattice_fills_binds_above_theta_free_ue": 2887.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1349.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1349.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 687.0,
+              "lattice_fills_binds_above_theta_free_ue": 711.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5123.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5123.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2602.0,
+              "lattice_fills_binds_above_theta_free_ue": 2644.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 47,
+          "t_L_theta45_lattice_cells_below_1": 73,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "32": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05657553533334423,
+          "zener": 1.6075916451672587,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.4281521809523109,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12578281453996004,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4534.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4534.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2288.0,
+              "lattice_fills_binds_above_theta_free_ue": 2333.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4568.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4568.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2291.0,
+              "lattice_fills_binds_above_theta_free_ue": 2330.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2527.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2527.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1287.0,
+              "lattice_fills_binds_above_theta_free_ue": 1310.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5389.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5389.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2887.0,
+              "lattice_fills_binds_above_theta_free_ue": 2887.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1349.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1349.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 687.0,
+              "lattice_fills_binds_above_theta_free_ue": 710.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5123.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5123.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2602.0,
+              "lattice_fills_binds_above_theta_free_ue": 2644.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 47,
+          "t_L_theta45_lattice_cells_below_1": 73,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "48": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05647796716300039,
+          "zener": 1.6048192493860283,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.4274138048206824,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12566215372670295,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4534.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4534.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2288.0,
+              "lattice_fills_binds_above_theta_free_ue": 2333.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4568.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4568.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2291.0,
+              "lattice_fills_binds_above_theta_free_ue": 2330.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2527.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2527.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1287.0,
+              "lattice_fills_binds_above_theta_free_ue": 1309.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5389.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5389.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2887.0,
+              "lattice_fills_binds_above_theta_free_ue": 2887.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1349.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1349.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 687.0,
+              "lattice_fills_binds_above_theta_free_ue": 710.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5123.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5123.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2602.0,
+              "lattice_fills_binds_above_theta_free_ue": 2643.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 47,
+          "t_L_theta45_lattice_cells_below_1": 73,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "64": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05654694294024853,
+          "zener": 1.606779193424908,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.4279357995183493,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.1257474739911249,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4534.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4534.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2288.0,
+              "lattice_fills_binds_above_theta_free_ue": 2333.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4568.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4568.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2291.0,
+              "lattice_fills_binds_above_theta_free_ue": 2330.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2527.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2527.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1287.0,
+              "lattice_fills_binds_above_theta_free_ue": 1309.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5389.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5389.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2887.0,
+              "lattice_fills_binds_above_theta_free_ue": 2887.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1349.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1349.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 687.0,
+              "lattice_fills_binds_above_theta_free_ue": 710.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5123.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5123.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2602.0,
+              "lattice_fills_binds_above_theta_free_ue": 2644.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 47,
+          "t_L_theta45_lattice_cells_below_1": 73,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        }
+      },
+      "part_body_zener": {
+        "24": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.052695560027780655,
+          "zener": 1.4973422971420336,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.3987893144883842,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12083755038441427,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4534.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4534.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2288.0,
+              "lattice_fills_binds_above_theta_free_ue": 2324.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4568.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4568.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2291.0,
+              "lattice_fills_binds_above_theta_free_ue": 2321.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2527.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2527.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1287.0,
+              "lattice_fills_binds_above_theta_free_ue": 1305.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5389.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5389.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2887.0,
+              "lattice_fills_binds_above_theta_free_ue": 2887.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1349.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1349.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 687.0,
+              "lattice_fills_binds_above_theta_free_ue": 707.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5123.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5123.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2602.0,
+              "lattice_fills_binds_above_theta_free_ue": 2634.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 49,
+          "t_L_theta45_lattice_cells_below_1": 71,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "32": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05442234217787751,
+          "zener": 1.546408745053903,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.4118572517025416,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.1230762849128539,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4534.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4534.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2288.0,
+              "lattice_fills_binds_above_theta_free_ue": 2328.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4568.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4568.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2291.0,
+              "lattice_fills_binds_above_theta_free_ue": 2325.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2527.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2527.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1287.0,
+              "lattice_fills_binds_above_theta_free_ue": 1307.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5389.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5389.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2887.0,
+              "lattice_fills_binds_above_theta_free_ue": 2887.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1349.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1349.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 687.0,
+              "lattice_fills_binds_above_theta_free_ue": 708.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5123.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5123.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2602.0,
+              "lattice_fills_binds_above_theta_free_ue": 2638.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 48,
+          "t_L_theta45_lattice_cells_below_1": 72,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "48": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05385406008942937,
+          "zener": 1.5302610315218137,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.40755660807395533,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12234636744807276,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4534.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4534.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2288.0,
+              "lattice_fills_binds_above_theta_free_ue": 2327.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4568.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4568.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2291.0,
+              "lattice_fills_binds_above_theta_free_ue": 2324.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2527.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2527.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1287.0,
+              "lattice_fills_binds_above_theta_free_ue": 1306.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5389.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5389.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2887.0,
+              "lattice_fills_binds_above_theta_free_ue": 2887.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1349.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1349.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 687.0,
+              "lattice_fills_binds_above_theta_free_ue": 708.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5123.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5123.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2602.0,
+              "lattice_fills_binds_above_theta_free_ue": 2637.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 48,
+          "t_L_theta45_lattice_cells_below_1": 72,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "64": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05349678953068076,
+          "zener": 1.5201092024330662,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.40485285692044015,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.1218840619418326,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4534.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4534.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2288.0,
+              "lattice_fills_binds_above_theta_free_ue": 2326.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4568.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4568.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2291.0,
+              "lattice_fills_binds_above_theta_free_ue": 2323.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2527.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2527.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1287.0,
+              "lattice_fills_binds_above_theta_free_ue": 1306.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5389.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5389.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2887.0,
+              "lattice_fills_binds_above_theta_free_ue": 2887.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1349.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1349.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 687.0,
+              "lattice_fills_binds_above_theta_free_ue": 707.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5123.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5123.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2602.0,
+              "lattice_fills_binds_above_theta_free_ue": 2636.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 48,
+          "t_L_theta45_lattice_cells_below_1": 72,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        }
+      },
+      "material_tensor": {
+        "24": {
+          "C11_over_E_s": 0.1418566912864054,
+          "C12_over_E_s": 0.06583957153660865,
+          "C44_over_E_s": 0.05691182435414086,
+          "zener": 1.4973422971420336,
+          "solid_fraction": 0.35300925925925924,
+          "C44_over_voigt_ceiling": 0.4327119829294038,
+          "E_z_star_theta0": 0.10011449408743028,
+          "E_z_star_theta45": 0.12814174388230296,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4375.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4375.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2281.0,
+              "lattice_fills_binds_above_theta_free_ue": 2319.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4407.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4407.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2282.0,
+              "lattice_fills_binds_above_theta_free_ue": 2315.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2439.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2439.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1282.0,
+              "lattice_fills_binds_above_theta_free_ue": 1301.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5199.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5199.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2832.0,
+              "lattice_fills_binds_above_theta_free_ue": 2832.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1302.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1302.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 689.0,
+              "lattice_fills_binds_above_theta_free_ue": 709.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 4942.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4942.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2591.0,
+              "lattice_fills_binds_above_theta_free_ue": 2626.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 47,
+          "t_L_theta45_lattice_cells_below_1": 73,
+          "junction_share_sup": 1.9095334442433345,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "32": {
+          "C11_over_E_s": 0.13981275238649138,
+          "C12_over_E_s": 0.06664253071735282,
+          "C44_over_E_s": 0.05657553533334423,
+          "zener": 1.546408745053903,
+          "solid_fraction": 0.357421875,
+          "C44_over_voigt_ceiling": 0.4248445533298596,
+          "E_z_star_theta0": 0.09678913164262853,
+          "E_z_star_theta45": 0.1263068226166016,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4502.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4502.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2292.0,
+              "lattice_fills_binds_above_theta_free_ue": 2333.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4536.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4536.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2293.0,
+              "lattice_fills_binds_above_theta_free_ue": 2329.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2509.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2509.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1289.0,
+              "lattice_fills_binds_above_theta_free_ue": 1309.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5351.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5351.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2873.0,
+              "lattice_fills_binds_above_theta_free_ue": 2873.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1339.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1339.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 691.0,
+              "lattice_fills_binds_above_theta_free_ue": 712.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5086.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5086.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2605.0,
+              "lattice_fills_binds_above_theta_free_ue": 2643.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 47,
+          "t_L_theta45_lattice_cells_below_1": 73,
+          "junction_share_sup": 1.9458581487202742,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "48": {
+          "C11_over_E_s": 0.14022434711751988,
+          "C12_over_E_s": 0.06640953252103997,
+          "C44_over_E_s": 0.05647796716300039,
+          "zener": 1.5302610315218137,
+          "solid_fraction": 0.35402199074074076,
+          "C44_over_voigt_ceiling": 0.42818488068585525,
+          "E_z_star_theta0": 0.09753796851032003,
+          "E_z_star_theta45": 0.1264987783329884,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4444.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4444.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2284.0,
+              "lattice_fills_binds_above_theta_free_ue": 2324.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4477.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4477.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2286.0,
+              "lattice_fills_binds_above_theta_free_ue": 2320.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2477.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2477.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1284.0,
+              "lattice_fills_binds_above_theta_free_ue": 1304.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5282.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5282.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2859.0,
+              "lattice_fills_binds_above_theta_free_ue": 2859.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1322.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1322.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 689.0,
+              "lattice_fills_binds_above_theta_free_ue": 710.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 5021.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5021.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2596.0,
+              "lattice_fills_binds_above_theta_free_ue": 2632.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 47,
+          "t_L_theta45_lattice_cells_below_1": 73,
+          "junction_share_sup": 1.9375071164334572,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "64": {
+          "C11_over_E_s": 0.14107838319602514,
+          "C12_over_E_s": 0.06667985597213852,
+          "C44_over_E_s": 0.05654694294024853,
+          "zener": 1.5201092024330662,
+          "solid_fraction": 0.35357666015625,
+          "C44_over_voigt_ceiling": 0.42924777553065036,
+          "E_z_star_theta0": 0.09827668050286464,
+          "E_z_star_theta45": 0.1269696773430812,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 4422.0,
+              "theta0_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4422.0,
+              "theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2283.0,
+              "lattice_fills_binds_above_theta_free_ue": 2322.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 4455.0,
+              "theta0_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4455.0,
+              "theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2284.0,
+              "lattice_fills_binds_above_theta_free_ue": 2318.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 2465.0,
+              "theta0_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2465.0,
+              "theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1283.0,
+              "lattice_fills_binds_above_theta_free_ue": 1303.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 5256.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 5256.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2850.0,
+              "lattice_fills_binds_above_theta_free_ue": 2850.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 1316.0,
+              "theta0_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 1316.0,
+              "theta_free_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 689.0,
+              "lattice_fills_binds_above_theta_free_ue": 709.0,
+              "lattice_fills_theta_free_cell": "Ta|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 4996.0,
+              "theta0_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4996.0,
+              "theta_free_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2594.0,
+              "lattice_fills_binds_above_theta_free_ue": 2630.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 47,
+          "t_L_theta45_lattice_cells_below_1": 73,
+          "junction_share_sup": 1.9299228898450165,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        }
+      }
+    },
+    "union": {
+      "part_body_C44_absolute": {
+        "24": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05691182435414086,
+          "zener": 1.6171472846677746,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.43069714808052356,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12619728428629445,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8261.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8261.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4590.0,
+              "lattice_fills_binds_above_theta_free_ue": 4635.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8400.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8400.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4587.0,
+              "lattice_fills_binds_above_theta_free_ue": 4645.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4594.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4594.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2578.0,
+              "lattice_fills_binds_above_theta_free_ue": 2609.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9848.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9848.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5520.0,
+              "lattice_fills_binds_above_theta_free_ue": 5640.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2383.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2383.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1344.0,
+              "lattice_fills_binds_above_theta_free_ue": 1344.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9353.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9353.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5206.0,
+              "lattice_fills_binds_above_theta_free_ue": 5278.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 55,
+          "t_L_theta45_lattice_cells_below_1": 377,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "32": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05657553533334423,
+          "zener": 1.6075916451672587,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.4281521809523109,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12578281453996004,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8261.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8261.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4590.0,
+              "lattice_fills_binds_above_theta_free_ue": 4634.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8400.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8400.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4587.0,
+              "lattice_fills_binds_above_theta_free_ue": 4645.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4594.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4594.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2578.0,
+              "lattice_fills_binds_above_theta_free_ue": 2609.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9848.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9848.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5520.0,
+              "lattice_fills_binds_above_theta_free_ue": 5639.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2383.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2383.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1344.0,
+              "lattice_fills_binds_above_theta_free_ue": 1344.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9353.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9353.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5206.0,
+              "lattice_fills_binds_above_theta_free_ue": 5277.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 56,
+          "t_L_theta45_lattice_cells_below_1": 376,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "48": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05647796716300039,
+          "zener": 1.6048192493860283,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.4274138048206824,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12566215372670295,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8261.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8261.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4590.0,
+              "lattice_fills_binds_above_theta_free_ue": 4634.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8400.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8400.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4587.0,
+              "lattice_fills_binds_above_theta_free_ue": 4645.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4594.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4594.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2578.0,
+              "lattice_fills_binds_above_theta_free_ue": 2609.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9848.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9848.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5520.0,
+              "lattice_fills_binds_above_theta_free_ue": 5638.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2383.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2383.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1344.0,
+              "lattice_fills_binds_above_theta_free_ue": 1344.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9353.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9353.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5206.0,
+              "lattice_fills_binds_above_theta_free_ue": 5277.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 56,
+          "t_L_theta45_lattice_cells_below_1": 376,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "64": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05654694294024853,
+          "zener": 1.606779193424908,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.4279357995183493,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.1257474739911249,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8261.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8261.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4590.0,
+              "lattice_fills_binds_above_theta_free_ue": 4634.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8400.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8400.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4587.0,
+              "lattice_fills_binds_above_theta_free_ue": 4645.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4594.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4594.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2578.0,
+              "lattice_fills_binds_above_theta_free_ue": 2609.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9848.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9848.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5520.0,
+              "lattice_fills_binds_above_theta_free_ue": 5638.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2383.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2383.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1344.0,
+              "lattice_fills_binds_above_theta_free_ue": 1344.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9353.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9353.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5206.0,
+              "lattice_fills_binds_above_theta_free_ue": 5277.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 56,
+          "t_L_theta45_lattice_cells_below_1": 376,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        }
+      },
+      "part_body_zener": {
+        "24": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.052695560027780655,
+          "zener": 1.4973422971420336,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.3987893144883842,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12083755038441427,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8261.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8261.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4590.0,
+              "lattice_fills_binds_above_theta_free_ue": 4630.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8400.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8400.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4587.0,
+              "lattice_fills_binds_above_theta_free_ue": 4639.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4594.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4594.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2578.0,
+              "lattice_fills_binds_above_theta_free_ue": 2606.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9848.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9848.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5520.0,
+              "lattice_fills_binds_above_theta_free_ue": 5622.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2383.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2383.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1344.0,
+              "lattice_fills_binds_above_theta_free_ue": 1344.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9353.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9353.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5206.0,
+              "lattice_fills_binds_above_theta_free_ue": 5269.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 61,
+          "t_L_theta45_lattice_cells_below_1": 371,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "32": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05442234217787751,
+          "zener": 1.546408745053903,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.4118572517025416,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.1230762849128539,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8261.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8261.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4590.0,
+              "lattice_fills_binds_above_theta_free_ue": 4632.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8400.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8400.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4587.0,
+              "lattice_fills_binds_above_theta_free_ue": 4641.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4594.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4594.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2578.0,
+              "lattice_fills_binds_above_theta_free_ue": 2607.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9848.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9848.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5520.0,
+              "lattice_fills_binds_above_theta_free_ue": 5630.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2383.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2383.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1344.0,
+              "lattice_fills_binds_above_theta_free_ue": 1344.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9353.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9353.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5206.0,
+              "lattice_fills_binds_above_theta_free_ue": 5273.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 58,
+          "t_L_theta45_lattice_cells_below_1": 374,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "48": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05385406008942937,
+          "zener": 1.5302610315218137,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.40755660807395533,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.12234636744807276,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8261.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8261.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4590.0,
+              "lattice_fills_binds_above_theta_free_ue": 4631.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8400.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8400.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4587.0,
+              "lattice_fills_binds_above_theta_free_ue": 4640.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4594.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4594.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2578.0,
+              "lattice_fills_binds_above_theta_free_ue": 2607.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9848.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9848.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5520.0,
+              "lattice_fills_binds_above_theta_free_ue": 5627.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2383.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2383.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1344.0,
+              "lattice_fills_binds_above_theta_free_ue": 1344.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9353.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9353.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5206.0,
+              "lattice_fills_binds_above_theta_free_ue": 5271.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 59,
+          "t_L_theta45_lattice_cells_below_1": 373,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "64": {
+          "C11_over_E_s": 0.142426923529926,
+          "C12_over_E_s": 0.07204146774154643,
+          "C44_over_E_s": 0.05349678953068076,
+          "zener": 1.5201092024330662,
+          "solid_fraction": 0.35466066410533914,
+          "C44_over_voigt_ceiling": 0.40485285692044015,
+          "E_z_star_theta0": 0.0940284341899575,
+          "E_z_star_theta45": 0.1218840619418326,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8261.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8261.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4590.0,
+              "lattice_fills_binds_above_theta_free_ue": 4631.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8400.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8400.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4587.0,
+              "lattice_fills_binds_above_theta_free_ue": 4640.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4594.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4594.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2578.0,
+              "lattice_fills_binds_above_theta_free_ue": 2606.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9848.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9848.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5520.0,
+              "lattice_fills_binds_above_theta_free_ue": 5626.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2383.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2383.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1344.0,
+              "lattice_fills_binds_above_theta_free_ue": 1344.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9353.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9353.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5206.0,
+              "lattice_fills_binds_above_theta_free_ue": 5271.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 59,
+          "t_L_theta45_lattice_cells_below_1": 373,
+          "junction_share_sup": 1.9817828020829615,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        }
+      },
+      "material_tensor": {
+        "24": {
+          "C11_over_E_s": 0.1418566912864054,
+          "C12_over_E_s": 0.06583957153660865,
+          "C44_over_E_s": 0.05691182435414086,
+          "zener": 1.4973422971420336,
+          "solid_fraction": 0.35300925925925924,
+          "C44_over_voigt_ceiling": 0.4327119829294038,
+          "E_z_star_theta0": 0.10011449408743028,
+          "E_z_star_theta45": 0.12814174388230296,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 7971.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 7971.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4644.0,
+              "lattice_fills_binds_above_theta_free_ue": 4685.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8104.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8104.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4639.0,
+              "lattice_fills_binds_above_theta_free_ue": 4691.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4432.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4432.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2607.0,
+              "lattice_fills_binds_above_theta_free_ue": 2635.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9500.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9500.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5570.0,
+              "lattice_fills_binds_above_theta_free_ue": 5674.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2300.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2300.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1365.0,
+              "lattice_fills_binds_above_theta_free_ue": 1365.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9023.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9023.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5263.0,
+              "lattice_fills_binds_above_theta_free_ue": 5327.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 54,
+          "t_L_theta45_lattice_cells_below_1": 378,
+          "junction_share_sup": 1.9095334442433345,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "32": {
+          "C11_over_E_s": 0.13981275238649138,
+          "C12_over_E_s": 0.06664253071735282,
+          "C44_over_E_s": 0.05657553533334423,
+          "zener": 1.546408745053903,
+          "solid_fraction": 0.357421875,
+          "C44_over_voigt_ceiling": 0.4248445533298596,
+          "E_z_star_theta0": 0.09678913164262853,
+          "E_z_star_theta45": 0.1263068226166016,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8204.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8204.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4650.0,
+              "lattice_fills_binds_above_theta_free_ue": 4696.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8343.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8343.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4645.0,
+              "lattice_fills_binds_above_theta_free_ue": 4703.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4562.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4562.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2611.0,
+              "lattice_fills_binds_above_theta_free_ue": 2642.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9782.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9782.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5579.0,
+              "lattice_fills_binds_above_theta_free_ue": 5693.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2365.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2365.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1367.0,
+              "lattice_fills_binds_above_theta_free_ue": 1367.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9289.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9289.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5270.0,
+              "lattice_fills_binds_above_theta_free_ue": 5342.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 55,
+          "t_L_theta45_lattice_cells_below_1": 377,
+          "junction_share_sup": 1.9458581487202742,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "48": {
+          "C11_over_E_s": 0.14022434711751988,
+          "C12_over_E_s": 0.06640953252103997,
+          "C44_over_E_s": 0.05647796716300039,
+          "zener": 1.5302610315218137,
+          "solid_fraction": 0.35402199074074076,
+          "C44_over_voigt_ceiling": 0.42818488068585525,
+          "E_z_star_theta0": 0.09753796851032003,
+          "E_z_star_theta45": 0.1264987783329884,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8097.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8097.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4635.0,
+              "lattice_fills_binds_above_theta_free_ue": 4679.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8233.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8233.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4630.0,
+              "lattice_fills_binds_above_theta_free_ue": 4686.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4503.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4503.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2602.0,
+              "lattice_fills_binds_above_theta_free_ue": 2633.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9652.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9652.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5561.0,
+              "lattice_fills_binds_above_theta_free_ue": 5672.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2336.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2336.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1362.0,
+              "lattice_fills_binds_above_theta_free_ue": 1362.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9167.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9167.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5253.0,
+              "lattice_fills_binds_above_theta_free_ue": 5322.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 55,
+          "t_L_theta45_lattice_cells_below_1": 377,
+          "junction_share_sup": 1.9375071164334572,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        },
+        "64": {
+          "C11_over_E_s": 0.14107838319602514,
+          "C12_over_E_s": 0.06667985597213852,
+          "C44_over_E_s": 0.05654694294024853,
+          "zener": 1.5201092024330662,
+          "solid_fraction": 0.35357666015625,
+          "C44_over_voigt_ceiling": 0.42924777553065036,
+          "E_z_star_theta0": 0.09827668050286464,
+          "E_z_star_theta45": 0.1269696773430812,
+          "alloys": {
+            "Ti-6Al-4V": {
+              "binds_above_theta0_ue": 8057.0,
+              "theta0_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8057.0,
+              "theta_free_cell": "Ti-6Al-4V|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4634.0,
+              "lattice_fills_binds_above_theta_free_ue": 4676.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-4V|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ti-6Al-7Nb": {
+              "binds_above_theta0_ue": 8192.0,
+              "theta0_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 8192.0,
+              "theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 4629.0,
+              "lattice_fills_binds_above_theta_free_ue": 4683.0,
+              "lattice_fills_theta_free_cell": "Ti-6Al-7Nb|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "CP-Ti-Gr4": {
+              "binds_above_theta0_ue": 4480.0,
+              "theta0_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 4480.0,
+              "theta_free_cell": "CP-Ti-Gr4|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 2601.0,
+              "lattice_fills_binds_above_theta_free_ue": 2631.0,
+              "lattice_fills_theta_free_cell": "CP-Ti-Gr4|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "beta-Ti-13Nb-13Zr": {
+              "binds_above_theta0_ue": 9604.0,
+              "theta0_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9604.0,
+              "theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5560.0,
+              "lattice_fills_binds_above_theta_free_ue": 5668.0,
+              "lattice_fills_theta_free_cell": "beta-Ti-13Nb-13Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            },
+            "Ta": {
+              "binds_above_theta0_ue": 2325.0,
+              "theta0_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 2325.0,
+              "theta_free_cell": "Ta|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 1361.0,
+              "lattice_fills_binds_above_theta_free_ue": 1361.0,
+              "lattice_fills_theta_free_cell": "Ta|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 0.0
+            },
+            "Ti-15Zr": {
+              "binds_above_theta0_ue": 9122.0,
+              "theta0_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "binds_above_theta_free_ue": 9122.0,
+              "theta_free_cell": "Ti-15Zr|davies2016_table2_SO|soft|pores_voigt_phase_bound",
+              "theta_free_deg": 0.0,
+              "lattice_fills_binds_above_theta0_ue": 5252.0,
+              "lattice_fills_binds_above_theta_free_ue": 5319.0,
+              "lattice_fills_theta_free_cell": "Ti-15Zr|davies2016_table2_NSC|stiff|pores_additive_host_sapwood",
+              "lattice_fills_theta_free_deg": 45.0
+            }
+          },
+          "t_L_theta45_lattice_cells_above_1": 55,
+          "t_L_theta45_lattice_cells_below_1": 377,
+          "junction_share_sup": 1.9299228898450165,
+          "junction_share_sup_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing",
+          "junction_share_sup_theta_deg": 0.0,
+          "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+            "pores_carry_nothing": 45.0,
+            "pores_additive_host_sapwood": 45.0,
+            "pores_voigt_phase_bound": 0.0
+          }
+        }
+      }
+    },
+    "binds_above_theta_free_ue": {
+      "scots_pine": {
+        "part_body_C44_absolute": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4534.0,
+            "max_over_rungs": 4534.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4568.0,
+            "max_over_rungs": 4568.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2527.0,
+            "max_over_rungs": 2527.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5389.0,
+            "max_over_rungs": 5389.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 1349.0,
+            "max_over_rungs": 1349.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5123.0,
+            "max_over_rungs": 5123.0,
+            "rung_of_max": 24
+          }
+        },
+        "part_body_zener": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4534.0,
+            "max_over_rungs": 4534.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4568.0,
+            "max_over_rungs": 4568.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2527.0,
+            "max_over_rungs": 2527.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5389.0,
+            "max_over_rungs": 5389.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 1349.0,
+            "max_over_rungs": 1349.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5123.0,
+            "max_over_rungs": 5123.0,
+            "rung_of_max": 24
+          }
+        },
+        "material_tensor": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4375.0,
+            "max_over_rungs": 4502.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4407.0,
+            "max_over_rungs": 4536.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2439.0,
+            "max_over_rungs": 2509.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5199.0,
+            "max_over_rungs": 5351.0,
+            "rung_of_max": 32
+          },
+          "Ta": {
+            "min_over_rungs": 1302.0,
+            "max_over_rungs": 1339.0,
+            "rung_of_max": 32
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 4942.0,
+            "max_over_rungs": 5086.0,
+            "rung_of_max": 32
+          }
+        }
+      },
+      "union": {
+        "part_body_C44_absolute": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 8261.0,
+            "max_over_rungs": 8261.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 8400.0,
+            "max_over_rungs": 8400.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 4594.0,
+            "max_over_rungs": 4594.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 9848.0,
+            "max_over_rungs": 9848.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 2383.0,
+            "max_over_rungs": 2383.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 9353.0,
+            "max_over_rungs": 9353.0,
+            "rung_of_max": 24
+          }
+        },
+        "part_body_zener": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 8261.0,
+            "max_over_rungs": 8261.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 8400.0,
+            "max_over_rungs": 8400.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 4594.0,
+            "max_over_rungs": 4594.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 9848.0,
+            "max_over_rungs": 9848.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 2383.0,
+            "max_over_rungs": 2383.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 9353.0,
+            "max_over_rungs": 9353.0,
+            "rung_of_max": 24
+          }
+        },
+        "material_tensor": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 7971.0,
+            "max_over_rungs": 8204.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 8104.0,
+            "max_over_rungs": 8343.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 4432.0,
+            "max_over_rungs": 4562.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 9500.0,
+            "max_over_rungs": 9782.0,
+            "rung_of_max": 32
+          },
+          "Ta": {
+            "min_over_rungs": 2300.0,
+            "max_over_rungs": 2365.0,
+            "rung_of_max": 32
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 9023.0,
+            "max_over_rungs": 9289.0,
+            "rung_of_max": 32
+          }
+        }
+      }
+    },
+    "binds_above_theta0_ue": {
+      "scots_pine": {
+        "part_body_C44_absolute": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4534.0,
+            "max_over_rungs": 4534.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4568.0,
+            "max_over_rungs": 4568.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2527.0,
+            "max_over_rungs": 2527.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5389.0,
+            "max_over_rungs": 5389.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 1349.0,
+            "max_over_rungs": 1349.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5123.0,
+            "max_over_rungs": 5123.0,
+            "rung_of_max": 24
+          }
+        },
+        "part_body_zener": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4534.0,
+            "max_over_rungs": 4534.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4568.0,
+            "max_over_rungs": 4568.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2527.0,
+            "max_over_rungs": 2527.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5389.0,
+            "max_over_rungs": 5389.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 1349.0,
+            "max_over_rungs": 1349.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5123.0,
+            "max_over_rungs": 5123.0,
+            "rung_of_max": 24
+          }
+        },
+        "material_tensor": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4375.0,
+            "max_over_rungs": 4502.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4407.0,
+            "max_over_rungs": 4536.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2439.0,
+            "max_over_rungs": 2509.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5199.0,
+            "max_over_rungs": 5351.0,
+            "rung_of_max": 32
+          },
+          "Ta": {
+            "min_over_rungs": 1302.0,
+            "max_over_rungs": 1339.0,
+            "rung_of_max": 32
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 4942.0,
+            "max_over_rungs": 5086.0,
+            "rung_of_max": 32
+          }
+        }
+      },
+      "union": {
+        "part_body_C44_absolute": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 8261.0,
+            "max_over_rungs": 8261.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 8400.0,
+            "max_over_rungs": 8400.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 4594.0,
+            "max_over_rungs": 4594.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 9848.0,
+            "max_over_rungs": 9848.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 2383.0,
+            "max_over_rungs": 2383.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 9353.0,
+            "max_over_rungs": 9353.0,
+            "rung_of_max": 24
+          }
+        },
+        "part_body_zener": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 8261.0,
+            "max_over_rungs": 8261.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 8400.0,
+            "max_over_rungs": 8400.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 4594.0,
+            "max_over_rungs": 4594.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 9848.0,
+            "max_over_rungs": 9848.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 2383.0,
+            "max_over_rungs": 2383.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 9353.0,
+            "max_over_rungs": 9353.0,
+            "rung_of_max": 24
+          }
+        },
+        "material_tensor": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 7971.0,
+            "max_over_rungs": 8204.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 8104.0,
+            "max_over_rungs": 8343.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 4432.0,
+            "max_over_rungs": 4562.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 9500.0,
+            "max_over_rungs": 9782.0,
+            "rung_of_max": 32
+          },
+          "Ta": {
+            "min_over_rungs": 2300.0,
+            "max_over_rungs": 2365.0,
+            "rung_of_max": 32
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 9023.0,
+            "max_over_rungs": 9289.0,
+            "rung_of_max": 32
+          }
+        }
+      }
+    },
+    "lattice_fills_binds_above_theta_free_ue": {
+      "scots_pine": {
+        "part_body_C44_absolute": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 2333.0,
+            "max_over_rungs": 2334.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 2330.0,
+            "max_over_rungs": 2331.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 1309.0,
+            "max_over_rungs": 1310.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 2887.0,
+            "max_over_rungs": 2887.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 710.0,
+            "max_over_rungs": 711.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 2643.0,
+            "max_over_rungs": 2644.0,
+            "rung_of_max": 24
+          }
+        },
+        "part_body_zener": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 2324.0,
+            "max_over_rungs": 2328.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 2321.0,
+            "max_over_rungs": 2325.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 1305.0,
+            "max_over_rungs": 1307.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 2887.0,
+            "max_over_rungs": 2887.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 707.0,
+            "max_over_rungs": 708.0,
+            "rung_of_max": 32
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 2634.0,
+            "max_over_rungs": 2638.0,
+            "rung_of_max": 32
+          }
+        },
+        "material_tensor": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 2319.0,
+            "max_over_rungs": 2333.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 2315.0,
+            "max_over_rungs": 2329.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 1301.0,
+            "max_over_rungs": 1309.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 2832.0,
+            "max_over_rungs": 2873.0,
+            "rung_of_max": 32
+          },
+          "Ta": {
+            "min_over_rungs": 709.0,
+            "max_over_rungs": 712.0,
+            "rung_of_max": 32
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 2626.0,
+            "max_over_rungs": 2643.0,
+            "rung_of_max": 32
+          }
+        }
+      },
+      "union": {
+        "part_body_C44_absolute": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4634.0,
+            "max_over_rungs": 4635.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4645.0,
+            "max_over_rungs": 4645.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2609.0,
+            "max_over_rungs": 2609.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5638.0,
+            "max_over_rungs": 5640.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 1344.0,
+            "max_over_rungs": 1344.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5277.0,
+            "max_over_rungs": 5278.0,
+            "rung_of_max": 24
+          }
+        },
+        "part_body_zener": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4630.0,
+            "max_over_rungs": 4632.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4639.0,
+            "max_over_rungs": 4641.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2606.0,
+            "max_over_rungs": 2607.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5622.0,
+            "max_over_rungs": 5630.0,
+            "rung_of_max": 32
+          },
+          "Ta": {
+            "min_over_rungs": 1344.0,
+            "max_over_rungs": 1344.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5269.0,
+            "max_over_rungs": 5273.0,
+            "rung_of_max": 32
+          }
+        },
+        "material_tensor": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4676.0,
+            "max_over_rungs": 4696.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4683.0,
+            "max_over_rungs": 4703.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2631.0,
+            "max_over_rungs": 2642.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5668.0,
+            "max_over_rungs": 5693.0,
+            "rung_of_max": 32
+          },
+          "Ta": {
+            "min_over_rungs": 1361.0,
+            "max_over_rungs": 1367.0,
+            "rung_of_max": 32
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5319.0,
+            "max_over_rungs": 5342.0,
+            "rung_of_max": 32
+          }
+        }
+      }
+    },
+    "lattice_fills_binds_above_theta0_ue": {
+      "scots_pine": {
+        "part_body_C44_absolute": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 2288.0,
+            "max_over_rungs": 2288.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 2291.0,
+            "max_over_rungs": 2291.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 1287.0,
+            "max_over_rungs": 1287.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 2887.0,
+            "max_over_rungs": 2887.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 687.0,
+            "max_over_rungs": 687.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 2602.0,
+            "max_over_rungs": 2602.0,
+            "rung_of_max": 24
+          }
+        },
+        "part_body_zener": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 2288.0,
+            "max_over_rungs": 2288.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 2291.0,
+            "max_over_rungs": 2291.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 1287.0,
+            "max_over_rungs": 1287.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 2887.0,
+            "max_over_rungs": 2887.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 687.0,
+            "max_over_rungs": 687.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 2602.0,
+            "max_over_rungs": 2602.0,
+            "rung_of_max": 24
+          }
+        },
+        "material_tensor": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 2281.0,
+            "max_over_rungs": 2292.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 2282.0,
+            "max_over_rungs": 2293.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 1282.0,
+            "max_over_rungs": 1289.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 2832.0,
+            "max_over_rungs": 2873.0,
+            "rung_of_max": 32
+          },
+          "Ta": {
+            "min_over_rungs": 689.0,
+            "max_over_rungs": 691.0,
+            "rung_of_max": 32
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 2591.0,
+            "max_over_rungs": 2605.0,
+            "rung_of_max": 32
+          }
+        }
+      },
+      "union": {
+        "part_body_C44_absolute": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4590.0,
+            "max_over_rungs": 4590.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4587.0,
+            "max_over_rungs": 4587.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2578.0,
+            "max_over_rungs": 2578.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5520.0,
+            "max_over_rungs": 5520.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 1344.0,
+            "max_over_rungs": 1344.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5206.0,
+            "max_over_rungs": 5206.0,
+            "rung_of_max": 24
+          }
+        },
+        "part_body_zener": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4590.0,
+            "max_over_rungs": 4590.0,
+            "rung_of_max": 24
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4587.0,
+            "max_over_rungs": 4587.0,
+            "rung_of_max": 24
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2578.0,
+            "max_over_rungs": 2578.0,
+            "rung_of_max": 24
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5520.0,
+            "max_over_rungs": 5520.0,
+            "rung_of_max": 24
+          },
+          "Ta": {
+            "min_over_rungs": 1344.0,
+            "max_over_rungs": 1344.0,
+            "rung_of_max": 24
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5206.0,
+            "max_over_rungs": 5206.0,
+            "rung_of_max": 24
+          }
+        },
+        "material_tensor": {
+          "Ti-6Al-4V": {
+            "min_over_rungs": 4634.0,
+            "max_over_rungs": 4650.0,
+            "rung_of_max": 32
+          },
+          "Ti-6Al-7Nb": {
+            "min_over_rungs": 4629.0,
+            "max_over_rungs": 4645.0,
+            "rung_of_max": 32
+          },
+          "CP-Ti-Gr4": {
+            "min_over_rungs": 2601.0,
+            "max_over_rungs": 2611.0,
+            "rung_of_max": 32
+          },
+          "beta-Ti-13Nb-13Zr": {
+            "min_over_rungs": 5560.0,
+            "max_over_rungs": 5579.0,
+            "rung_of_max": 32
+          },
+          "Ta": {
+            "min_over_rungs": 1361.0,
+            "max_over_rungs": 1367.0,
+            "rung_of_max": 32
+          },
+          "Ti-15Zr": {
+            "min_over_rungs": 5252.0,
+            "max_over_rungs": 5270.0,
+            "rung_of_max": 32
+          }
+        }
+      }
+    },
+    "controls": {
+      "e_dir_vs_tensor_worst": 4.440892098500626e-16,
+      "form_vs_sweep_worst": 0.0
+    },
+    "theta_free_equals_theta0": {
+      "count": 144,
+      "of": 144,
+      "over": "readings × rungs × alloys × groups (Scots pine ⊥ union)"
+    },
+    "lattice_fills_rise_off_axis": {
+      "count": 120,
+      "of": 144,
+      "theta_deg": [
+        45.0
+      ],
+      "max_rise": 1.034934497816594
+    },
+    "binding_cell_is_voigt_phase_bound": {
+      "count": 144,
+      "of": 144
     }
   },
   "green_wood_readings": {
@@ -9623,7 +12579,7 @@
     }
   },
   "not_computed": [
-    "C44 read into the share — the periodic voxel case measures it for the infinite lattice; reading it is open (00_07 HW.23)",
+    "the finite part's own C44 — the measured one (measured_C44) is the infinite lattice's, carried onto the part body as an assumption",
     "the stiffness of the tissue in the pores and of the ring — a soft ring drives t_L to 0 in its limit",
     "a green (above fibre saturation) SCOTS PINE set — the green group reads other Pinaceae — and the share's direction with moisture (across the two groups species and moisture are confounded)",
     "S_1212 of an anisotropic matrix against an independent closed form",
@@ -9664,5 +12620,5 @@
       "off_axis_is": "every θ at the C44 grid's floor and ceiling and at C44 = 0 — reported, not capped: Jeong's off-axis cells stand on the borrowed ν_RT"
     }
   },
-  "verdict": "t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel case, not read here); at the moistest group (95 % RH) it is 0.267–1.744 over the alloys, the material symmetrisation readings and the three pore readings, and which side of 1 it takes depends on the pore reading and on the symmetrisation reading. Off that axis C44 enters too: t_L falls as C44 rises, and at θ = 45° it crosses 1 inside the admissible C44 in 90 of the 120 cells the lattice's C44 enters. The pore readings' stiffness ends do not bracket the share (9 cell-fields fall outside them). Across the source's moisture groups the share takes no single direction. For 105, the only C44-free binding figure is at θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the Scots pine group (Ti-6Al-4V 0.342, Ti-6Al-7Nb 0.350, CP-Ti-Gr4 0.354, beta-Ti-13Nb-13Zr 0.405, Ta 0.267, Ti-15Zr 0.360) the source day's upper whisker exceeds the large-stem threshold for Ta on this tensor's E[100] and for Ta on 105's lower reading (the radial one), and its median for none; at t_L = 1 on both readings the upper whisker exceeded it for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb and the median for CP-Ti-Gr4, Ta. Above fibre saturation no open primary gives a full Scots pine set; on the separate group of green readings of other Pinaceae (26 live, 3 not a material) the lowest θ = 0 share is Ti-6Al-4V 0.188, Ti-6Al-7Nb 0.190, CP-Ti-Gr4 0.195, beta-Ti-13Nb-13Zr 0.221, Ta 0.151, Ti-15Zr 0.197, so over the union it is Ti-6Al-4V 0.188, Ti-6Al-7Nb 0.190, CP-Ti-Gr4 0.195, beta-Ti-13Nb-13Zr 0.221, Ta 0.151, Ti-15Zr 0.197 — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Table 2, stiff outerwood; soft reading, pores_voigt_phase_bound — and there the upper whisker exceeds the threshold for none on this tensor's E[100] and for none on 105's lower reading (the radial one), its median for none. Of the highest θ = 0 share, no green reading raises the Scots pine group's for any alloy; off the axis at C44 = 0 the union reaches 9.840 (the Scots pine group 6.040) — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Additional files 2–3, stiff outerwood; stiff reading, pores_carry_nothing, our assembly of its raw means; on the published green sets alone it reaches 7.155 — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Table 2, stiff outerwood; soft reading, pores_carry_nothing. Off the axis the threshold has no ceiling as C44 falls. The modelled set reads the ring as the host's xylem, its Scots pine group stops below fibre saturation and its green readings are other Pinaceae, so its lowest share is not a floor."
+  "verdict": "t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel case and read below); at the moistest group (95 % RH) it is 0.267–1.744 over the alloys, the material symmetrisation readings and the three pore readings, and which side of 1 it takes depends on the pore reading and on the symmetrisation reading. Off that axis C44 enters too: t_L falls as C44 rises, and at θ = 45° it crosses 1 inside the admissible C44 in 90 of the 120 cells the lattice's C44 enters. The pore readings' stiffness ends do not bracket the share (9 cell-fields fall outside them). Across the source's moisture groups the share takes no single direction. For 105, the only C44-free binding figure is at θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the Scots pine group (Ti-6Al-4V 0.342, Ti-6Al-7Nb 0.350, CP-Ti-Gr4 0.354, beta-Ti-13Nb-13Zr 0.405, Ta 0.267, Ti-15Zr 0.360) the source day's upper whisker exceeds the large-stem threshold for Ta on this tensor's E[100] and for Ta on 105's lower reading (the radial one), and its median for none; at t_L = 1 on both readings the upper whisker exceeded it for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb and the median for CP-Ti-Gr4, Ta. Above fibre saturation no open primary gives a full Scots pine set; on the separate group of green readings of other Pinaceae (26 live, 3 not a material) the lowest θ = 0 share is Ti-6Al-4V 0.188, Ti-6Al-7Nb 0.190, CP-Ti-Gr4 0.195, beta-Ti-13Nb-13Zr 0.221, Ta 0.151, Ti-15Zr 0.197, so over the union it is Ti-6Al-4V 0.188, Ti-6Al-7Nb 0.190, CP-Ti-Gr4 0.195, beta-Ti-13Nb-13Zr 0.221, Ta 0.151, Ti-15Zr 0.197 — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Table 2, stiff outerwood; soft reading, pores_voigt_phase_bound — and there the upper whisker exceeds the threshold for none on this tensor's E[100] and for none on 105's lower reading (the radial one), its median for none. Of the highest θ = 0 share, no green reading raises the Scots pine group's for any alloy; off the axis at C44 = 0 the union reaches 9.840 (the Scots pine group 6.040) — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Additional files 2–3, stiff outerwood; stiff reading, pores_carry_nothing, our assembly of its raw means; on the published green sets alone it reaches 7.155 — on Davies, Altaner & Apiolaza 2016, N.Z. J. For. Sci. 46:19, doi 10.1186/s40490-016-0075-x, Table 2, stiff outerwood; soft reading, pores_carry_nothing. Off the axis the swept threshold has no ceiling as C44 falls. Read on the measured C44 — the periodic voxel case's infinite lattice, 0.42–0.44 of Voigt's ceiling on its own solid fraction, Zener ratio 1.49–1.55, carried onto the part body (which has none of its own) as the absolute modulus ⊥ the Zener ratio, the material tensor read whole beside them — the threshold has a ceiling off the axis, and with the install angle free it does not rise above the θ = 0 figure on any reading, rung, alloy or group (144 of 144 readings × rungs × alloys × groups): for Ti-6Al-4V on the Scots pine group the gyroid binds above 4534 µε at most on the tensor's own E_z*(θ) (4502 on the lowest reading), the cells the lattice's C44 enters reaching 2334 µε, and on 105's radial reading, which has no off-axis counterpart, its θ = 0 figure 4610 µε stands; over every angle the share is at most 1.982 over the union, at θ = 0°, and at θ = 45° it exceeds 1 in 47–49 of the 120 cells the lattice's C44 enters. The modelled set reads the ring as the host's xylem, its Scots pine group stops below fibre saturation and its green readings are other Pinaceae, so its lowest share is not a floor."
 }

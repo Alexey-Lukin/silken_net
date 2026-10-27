@@ -1126,8 +1126,8 @@ traction; against the INFINITE lattice of the periodic case (`01_01 §5.2`), on 
 dilatational term C11 + C12 is higher on every density-matched pairing of basis and rung (by 3–4 %) and its deviatoric term
 C11 − C12 lower (by 4–7 %) — but the cube's rungs are phase-locked and scatter by the order of the smallest gap, so no
 stiffness ordering between the two is established.
-C44 the periodic case measures for the infinite lattice; this script does not read it
-yet, so it is swept up to Voigt's ceiling φ·μ_s (a Zener ratio of at most 3.755). The cube's angle θ to the stem's axis is the anchor's rotation at install, swept 0–45°. The pores take three
+C44 is swept up to Voigt's ceiling φ·μ_s (a Zener ratio of at most 3.755) and, apart from the sweep, read from the
+periodic case's measured tensor of the infinite lattice (below). The cube's angle θ to the stem's axis is the anchor's rotation at install, swept 0–45°. The pores take three
 readings: nothing (the bare lattice — the composite's lower stiffness end), Voigt's
 phase bound φ·C_Ti + (1 − φ)·C_wood (its upper stiffness end, if the tissue in the pores — Phase 3's xylem — is no
 stiffer than the host's sapwood in every direction, which nothing measures), and the additive C_lattice + (1 − φ)·C_wood
@@ -1172,6 +1172,26 @@ alloys are the gyroid's figure of merit with the share — σ_e/(E_s·t_L), with
 in the Voigt phase bound) — not σ_e/E_s alone. Off the axis E[110] falls with C44 while the share stays finite, so the threshold has no ceiling as C44
 falls and no binding figure exists there without C44; at θ = 45° E[110] falls under `105`'s radial reading below a Zener
 ratio of 0.951 (under the axial one below 1.000, where E[110] = E[100]).
+
+**On the measured C44 the threshold has a ceiling off the axis, and with the install angle free it does not rise above
+the θ = 0 figure** (2026-10-27, `00_07` HW.23). The periodic voxel case gives the infinite lattice's whole cubic tensor
+(`01_01 §5.2`); `106` reads its four rungs of the part's density (period/24–/64; period/16 sits 1.6 pp off the part's
+porosity), each rung its own tensor (C44 0.42–0.44 of Voigt's ceiling on the rung's own solid fraction, a Zener ratio of
+1.49–1.55). The part body has no
+C44 of its own, so carrying one onto it is an assumption, and its form is a reading — the absolute modulus (a Zener
+ratio of 1.60–1.62 on the body's own C11 − C12) ⊥ the measured Zener ratio itself (1.49–1.55); beside them the material
+tensor read whole on its own solid fraction. On each reading one cell gives the share and E_z*(θ) of one tensor, and
+in 144 of the 144 combinations of reading, rung, alloy and group the highest threshold over the modelled cells and every
+angle is the θ = 0 one: for Ti-6Al-4V on the Scots pine group the gyroid binds above 4534 µε at most on the tensor's own
+E_z*(θ) (4502 on the lowest reading — the material tensor, stiffer along its cube axis — each reading at its adverse
+rung), and on `105`'s radial reading — the
+table's conservative column, which has no off-axis counterpart — its θ = 0 figure, 4610 µε, stands. The binding cell explains it: it sits under the Voigt phase bound, whose share does not
+depend on θ, while above a Zener ratio of 1 the lattice's in-plane modulus rises off the axis, so there the threshold is
+highest at θ = 0. Over the cells the lattice's C44 enters alone the highest threshold rises off the axis in 120 of the 144
+combinations, always at θ = 45°, by at most 3.5 % over its θ = 0 one (on the Scots pine group and the part body, Ti-6Al-4V 2288 → 2334 µε) — below the
+binding cell. On the part body the tensor's θ = 0 end is `105`'s axial
+reading; the material tensor's is its own E[100]. At θ = 45° the share exceeds 1 in 47–49 of
+the 120 cells C44 enters.
 
 **Green wood — a separate group of other Pinaceae** (⚖️ founder 2026-10-22, `00_07` HW.23, option (Б) by
 recommendation). No open primary gives a full Scots pine set above fibre saturation (the search and its positive
@@ -1233,12 +1253,12 @@ pine puts the lowest share below the Scots pine group's for every alloy, Jeong's
 proxies do not settle the direction a green stem moves the share either — the full sets and Jeong's Korean pine lower
 it, the one set with a borrowed ν_RT raises it.
 
-**What settles the share:** C44 (measured for the infinite lattice by the periodic voxel case, `01_01 §5.2`, not yet read here), the tissue in the pores and the ring, which reading
+**What settles the share:** the finite part's own C44 (the infinite lattice's, read above, is carried onto the part as an assumption), the tissue in the pores and the ring, which reading
 of the paper's non-symmetric compliances holds, and a green Scots pine's own constants (the green group above reads other
 Pinaceae). The install angle becomes a choice only
 with C44 AND the tissue in the pores: at one C44 the angle that minimises the ligaments' stress factor √(E_z*(θ))·t_L(θ) — and so
 raises their threshold — differs between pore readings (45° on the bare and additive readings, 0° on the Voigt phase
-bound, at Ti-6Al-4V's 95 % RH stiffer-axis cell, both at C44's ceiling and at 0.3 of it); the junction's criterion is t_L(θ). The lowest share is the
+bound, at Ti-6Al-4V's 95 % RH stiffer-axis cell, at C44's ceiling, at 0.3 of it and on every measured reading); the junction's criterion is t_L(θ). The lowest share is the
 lowest of the MODELLED set: the ring is read as the host's xylem, and a soft ring drives the share to 0 in its limit.
 
 **The interface is a further unknown, and the model fixes it at perfect bond** (read 2026-10-22, `00_07` HW.23). `106`
@@ -1272,7 +1292,9 @@ C44 → 0 up to 6.040 on the Scots pine group and up to 9.840 over the union —
 compression; one board, whose softer-axis reading is not a material): Jeong's off-axis maximum stays below it with its ν_RT
 anywhere in the swept span (asserted). On the published green sets alone — Davies' Table 2, Liu and Jeong, without that
 assembly — it is up to 7.155, on Davies' Table 2 stiff outerwood (softer-axis reading, bare lattice, θ = 45°). Both stand
-on a lattice tensor read from kinematic-side cases, so an input end, not shown to be the output's.
+on a lattice tensor read from kinematic-side cases, so an input end, not shown to be the output's. On the measured C44 the
+highest share over every angle is at θ = 0°: over the union it is at most 1.982 — the C44 → 0 supremum is the sweep's
+end, which no measured reading reaches.
 
 **Moisture.** Across the source's groups the share takes no single direction. Over the full grid of angles and C44, on
 the stiffer-axis reading it falls monotonically from 45 to 95 % RH at 486 of 14022 points, rises at none and does
@@ -1294,7 +1316,8 @@ verb) compressed the top cells of the part to 0.42–0.49 of their nominal along
 64–67° off the part axis). The verdict (option (в): one axial period, the rim's) removed the height term — the shipped part
 reads DA ≤ 1.25 at every height — and this script reads the FE re-run on that geometry (2026-10-22; the `/32` fit,
 which neither `105` nor `106` reads, followed 2026-10-23 — `01_01 §5.2`); Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
-the sweep). C44 is measured for the infinite lattice by the periodic voxel case (`01_01 §5.2`) but not read here; the tissue in the pores
+the sweep). C44 is read from the periodic voxel case of the INFINITE lattice (`01_01 §5.2`) and carried onto the part body as an
+assumption; the tissue in the pores
 and the ring are unmeasured: the ring is read as the host's xylem (ours —
 `01_04 §2`'s phases say nothing of it); the interface is perfectly bonded, a reading no primary measures, and its
 slipping and opening ends are not computed (above). An infinite cylinder in an infinite matrix: the 40 mm length on Ø11, the bending

@@ -50,9 +50,9 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   against the INFINITE lattice of the periodic voxel case (01_01 §5.2) its in-plane dilatational term C11 + C12 and, on the
   HW.33 (в) geometry, its deviatoric term C11 − C12 as well are lower on every density-matched pairing (before it the
   deviatoric sign depended on the pairing) — but those bases are an extrapolation the part's non-monotone step sweep does
-  not prove, so no stiffness ordering between the two is established — an input end, not shown to be the output's. C44, which that periodic case measures
-  for the infinite lattice, is not read here: it is swept over (0, φ·μ_s] — Voigt's ceiling (a tighter bound,
-  Hashin–Shtrikman's, would narrow it) — as the Zener ratio A* = 2·C44/(C11 − C12) ∈ (0, A*_V]. The cube's rotation θ
+  not prove, so no stiffness ordering between the two is established — an input end, not shown to be the output's. C44 is
+  swept over (0, φ·μ_s] — Voigt's ceiling (a tighter bound, Hashin–Shtrikman's, would narrow it) — as the Zener ratio
+  A* = 2·C44/(C11 − C12) ∈ (0, A*_V], and read apart from the sweep from that periodic case (Measured C44 below). The cube's rotation θ
   about the anode's axis against L is the anchor's rotation at install, which the model leaves free: swept over 0–45°
   (cubic symmetry and the matrix's mirror close the rest — asserted).
   Pores, three readings of the inclusion's tensor: «nothing» — the bare lattice, the composite's LOWER stiffness end
@@ -74,15 +74,26 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   stays finite, so the threshold has no ceiling as C44 → 0: no binding figure exists there without C44. The junction's
   mismatch (`105`) scales with the HIGHEST share instead; its supremum off the axis is taken at C44 = 0 exactly (t_L is
   non-increasing in C44 — asserted on the grid).
+  Measured C44 (00_07 HW.23). The periodic voxel case gives the INFINITE lattice's full cubic tensor on a ladder of mesh
+  steps (01_01 §5.2); its rungs of the part's density (porosity within PERIODIC_DENSITY_TOL of the part's) are read as a
+  ladder, each rung its own tensor. The part body has no C44 of its own, so carrying one onto it is an assumption, and the
+  form it is carried in is a reading: the absolute modulus C44/E_s ⊥ the Zener ratio on the body's own C11 − C12; beside
+  them the material tensor read whole, on its own solid fraction (in-silico §When Modifying #11). C44 is carried without a
+  density correction — every rung sits within PERIODIC_DENSITY_TOL of the part's porosity. On each, one cell gives
+  t_L(θ) and E_z*(θ) of ONE tensor, and `105`'s headline threshold is taken at its highest over the modelled cells, the
+  install angle and the rungs — the side a binding sentence takes; the same over the cells C44 enters alone shows what
+  the lattice's own off-axis stiffness does.
 
 CAN: per alloy, moisture group or green set, symmetrisation reading, pore reading and install angle — t_L over the
 admissible C44, the Zener ratio at which t_L crosses 1 at 45°, how many cells the additive reading leaves the ends'
 interval, how many grid points fall, rise or neither across the measured moisture groups, the θ = 0 share's range and
 the `105` thresholds at its lowest on two readings (the Scots pine group ⊥ the union with the green group), the
 off-axis threshold factor at the C44 grid's ends, the junction's share at θ = 0 and at C44 = 0; the lattice's off-axis
-modulus against `105`'s readings.
-CANNOT: (1) read C44 — the periodic voxel case measures it for the infinite lattice (01_01 §5.2), and reading it into the
-share, with the body it is read on named, is open work (00_07 HW.23); (2) give the stiffness of the tissue in the
+modulus against `105`'s readings; on the measured C44 (three named readings × the ladder's rungs) the binding threshold
+with the install angle free beside its θ = 0 figure, the same over the cells C44 enters alone, the highest share over
+every angle, the cells whose 45° share exceeds 1 and the angle that minimises the ligaments' stress factor.
+CANNOT: (1) give the finite part's own C44 — the measured one is the infinite lattice's (01_01 §5.2), carried onto the
+part body as an assumption in two named forms; nor narrow the sweep by Hashin–Shtrikman; (2) give the stiffness of the tissue in the
 pores or of the ring — a soft ring decouples the gyroid and drives t_L to 0 in its limit (no monotonicity shown); our
 reading of the ring (= the host's xylem) is the only ring modelled, so the lowest share here is the lowest of the
 MODELLED set, not of the admissible one; (3) give a green SCOTS PINE share or the share's direction with moisture — the
@@ -118,12 +129,14 @@ SI_DESCRIPTION = ("The share of a living stem's in-plane bending strain that a b
                   "from an orthotropic Eshelby solution for a circular cylinder on the measured elastic constants of "
                   "Scots pine sapwood at four moisture levels below fibre saturation and, as a separate group, of green "
                   "sets of four other Pinaceae, with the lattice's cubic constants read from two voxel "
-                  "finite-element cases and its shear modulus, which a periodic voxel case measures for the infinite lattice and this script does not yet read, swept up to the Voigt bound; the install "
+                  "finite-element cases and its shear modulus both swept up to the Voigt bound and read, as three named readings, "
+                  "from a periodic voxel case of the infinite lattice; the install "
                   "angle and three readings of the pore filling are swept as well; closed forms checked against three "
                   "independent solutions, no finite elements")
 
 MECH = CACHE_DIR / "mechanical"
 FEA = REPO_ROOT / "tools/cad/cache/fea/anchor_zone1_pine.json"
+PERIODIC = REPO_ROOT / "tools/cad/cache/fea/periodic_homogenization.network.w100.c1.json"
 SRC105 = MECH / "printed_part_sway_stress.json"
 OUT = MECH / "gyroid_wood_strain_share.json"
 
@@ -335,6 +348,9 @@ N_QUAD = 720                                            # ω points of Mura's in
 GROUPS = ("rh45", "rh65", "rh85", "rh95")               # the moisture order of the source's groups
 COVARIANCE_DEG = 30.0                                   # the matrix rotation of the covariance control
 CELL_LS = "large_stem_limit|near_uniaxial|sf2"          # 105's headline cell
+PERIODIC_RUNGS = (24, 32, 48, 64)                      # the periodic ladder's rungs of the part's density (01_01 §5.2)
+PERIODIC_DENSITY_TOL = 0.005                           # |porosity − the part's| that admits a rung (/16 sits 1.6 pp off)
+C44_FORMS = ("part_body_C44_absolute", "part_body_zener", "material_tensor")
 
 # Axes 0 = L (the stem's axis), 1 = T, 2 = R (the anchor's axis). Mandel order 11, 22, 33, 23, 13, 12.
 VOIGT = ((0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1))
@@ -1105,6 +1121,172 @@ def main() -> int:
     # which reading 105's binding rule takes is READ from its cache, never assumed (the radial one since the HW.23
     # re-sweep of 2026-10-23; on the HW.33 (в) geometry's two-point readings the two had coincided within the
     # extrapolation — 00_07 HW.23)
+    # ── The measured C44 (00_07 HW.23): the periodic voxel case's tensor of the INFINITE lattice (01_01 §5.2) ──────────
+    # The part body has no C44 of its own, so a measured one enters it as an ASSUMPTION, and its FORM is a reading: the
+    # absolute modulus C44/E_s ⊥ the Zener ratio A = 2·C44/(C11 − C12) carried onto the body's own C11 − C12. Beside both,
+    # the material read whole — the periodic C11, C12, C44 on its own solid fraction — so that one cell gives the share and
+    # E_z* of ONE tensor (in-silico §When Modifying #45 (b)). Each rung of the part's density is its own tensor; the ladder
+    # is quoted as a ladder, never a row (01_01 §5.2, ceiling (2)), and a binding figure takes its adverse rung (#11).
+    per = json.loads(PERIODIC.read_text(encoding="utf-8"))
+    assert per["boundary_condition"] == "periodic" and abs(per["poisson_ratio"] - nu_s) < 1e-12, \
+        "the periodic case is not on the part's solid — re-read it"
+    rungs = [r for r in per["rows"] if abs(r["porosity"] - (1.0 - phi)) <= PERIODIC_DENSITY_TOL]
+    assert tuple(r["steps_per_period"] for r in rungs) == PERIODIC_RUNGS, \
+        f"the rungs of the part's density moved: {[r['steps_per_period'] for r in rungs]}"
+    assert all(r["converged"] is True and r["discarded_island_fraction"] == 0 for r in rungs), "a rung is not a solve"
+    forms = {}
+    for r in rungs:
+        st = r["steps_per_period"]
+        forms[("part_body_C44_absolute", st)] = (lat["C11"], lat["C12"], r["C44"], phi)
+        forms[("part_body_zener", st)] = (lat["C11"], lat["C12"], r["zener"] * q_lat / 2, phi)
+        forms[("material_tensor", st)] = (r["C11"], r["C12"], r["C44"], r["solid_fraction_meshed"])
+    for (fm, st), (c11, c12, c44, ph) in forms.items():
+        assert 0 < c44 <= ph * mu_s and c11 > abs(c12) and c11 + 2 * c12 > 0, f"{fm} /{st}: not an admissible cubic body"
+    fparts = {key: (parts if key[0] != "material_tensor"
+                    else {th: cubic_parts(v[0], v[1], math.radians(th)) for th in THETA_DEG}) for key, v in forms.items()}
+
+    def e_dir(c11: float, c12: float, c44: float, th: float) -> float:
+        """Uniaxial-stress modulus along L of a cubic body whose [100] lies θ off L in its (001) plane, units of E_s."""
+        d = (c11 - c12) * (c11 + 2 * c12)
+        s11, s12 = (c11 + c12) / d, -c12 / d
+        cs = math.cos(math.radians(th)) * math.sin(math.radians(th))
+        return 1.0 / (s11 - 2 * (s11 - s12 - 1.0 / (2 * c44)) * cs * cs)
+
+    # Control: the closed form against the numeric inverse of the rotated tensor on every form, at three angles. CAN
+    # catch: a slip in e_dir, or in a form's rotated parts (the material forms build their own). CANNOT catch: an error
+    # common to cubic_parts and the closed form (the E110 check above ties them at 45° on the part body only).
+    e_dir_worst = max(abs(e_dir(*forms[key][:3], th)
+                          * np.linalg.inv(fparts[key][th][0] + forms[key][2] * fparts[key][th][1])[0, 0] - 1)
+                      for key in forms for th in (0.0, 22.5, 45.0))
+    assert e_dir_worst < 1e-10, f"the off-axis modulus closed form disagrees with the tensor: {e_dir_worst}"
+
+    def t_l_form(wk: str, al: str, fill: str, key: tuple, th: float) -> float:
+        wv = allw[wk]
+        c44, ph = forms[key][2], forms[key][3]
+        if fill == "pores_voigt_phase_bound":
+            ci = ph * ti_phase[al] + (1 - ph) * wv["_cm"]
+        else:
+            base, shear = fparts[key][th]
+            ci = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3 * (base + c44 * shear)
+            if fill == "pores_additive_host_sapwood":
+                ci = ci + (1 - ph) * wv["_cm"]
+        return float(inclusion_strain(wv["_cm"], ci, wv["_s"], wv["_eps"])[0] / wv["_eps"][0])
+
+    # Control: on the part body the Zener form IS a point of the sweep, so the two paths must agree. CAN catch: a slip in
+    # how t_l_form composes the lattice, the pores or φ. CANNOT catch: an error the sweep shares (the closed-form
+    # controls above hold that).
+    zkey = ("part_body_zener", PERIODIC_RUNGS[-1])
+    form_vs_sweep = max(abs(t_l_form(live[0], al, fill, zkey, th) - t_l(live[0], al, fill, th, rungs[-1]["zener"]))
+                        for al in ALLOY_PROPERTIES for fill in FILLS for th in (0.0, 22.5, 45.0))
+    assert form_vs_sweep < 1e-12, f"the measured-C44 path disagrees with the sweep at the same Zener ratio: {form_vs_sweep}"
+
+    dk_ls, sk_ls, sf_ls = CELL_LS.split("|")
+    sf_ls = float(sf_ls[2:])
+
+    def thr_ls(al: str, t: float, ez: float, ph: float) -> float:
+        """105's headline threshold (large stem, near-uniaxial, SF 2) for one cell's share and modulus, unrounded."""
+        return (d105["alloys"][al]["endurance_strain_printed_ue"] / sf_ls * d105["inputs"]["stress_state_divisor"][sk_ls]
+                / (s105.rms_factor(ez, ph) * d105["inputs"]["depth_fraction"][dk_ls] * t))
+
+    union_keys = [*live, *live_green]
+    t_form = {}                                      # (form, rung) → {(al, wk, fill): share over THETA_DEG}
+    for key in forms:
+        t_form[key] = {(al, wk, fill): [t_l_form(wk, al, fill, key, th) for th in THETA_DEG]
+                       for al in ALLOY_PROPERTIES for wk in union_keys for fill in FILLS}
+        assert min(min(v) for v in t_form[key].values()) > 0, f"a non-positive share on {key}"
+
+    def measured(keys: list[str]) -> dict:
+        out = {}
+        for fm in C44_FORMS:
+            per_rung = {}
+            for st in PERIODIC_RUNGS:
+                c11, c12, c44, ph = forms[(fm, st)]
+                ez = [e_dir(c11, c12, c44, th) for th in THETA_DEG]
+                tab = {k: v for k, v in t_form[(fm, st)].items() if k[1] in keys}
+                alloys = {}
+                for al in ALLOY_PROPERTIES:
+                    cand = [(thr_ls(al, ts[i], ez[i], ph), f"{al}|{wk}|{fill}", THETA_DEG[i], fill)
+                            for (a_, wk, fill), ts in tab.items() if a_ == al for i in range(len(THETA_DEG))]
+                    at0, free = max(c for c in cand if c[2] == 0.0), max(cand)
+                    lat0 = max(c for c in cand if c[2] == 0.0 and c[3] in LATTICE_FILLS)
+                    latf = max(c for c in cand if c[3] in LATTICE_FILLS)
+                    alloys[al] = {"binds_above_theta0_ue": up0(at0[0]), "theta0_cell": at0[1],
+                                  "binds_above_theta_free_ue": up0(free[0]), "theta_free_cell": free[1],
+                                  "theta_free_deg": free[2],
+                                  # the cells C44 enters alone — what the lattice's own off-axis stiffness does
+                                  "lattice_fills_binds_above_theta0_ue": up0(lat0[0]),
+                                  "lattice_fills_binds_above_theta_free_ue": up0(latf[0]),
+                                  "lattice_fills_theta_free_cell": latf[1], "lattice_fills_theta_free_deg": latf[2]}
+                probe = {fill: THETA_DEG[int(np.argmin([math.sqrt(ez[i]) * t_form[(fm, st)][(ALLOY_BASELINE, "rh95|stiff",
+                                                                                              fill)][i]
+                                                        for i in range(len(THETA_DEG))]))] for fill in FILLS}
+                sup_k = max(tab, key=lambda k: max(tab[k]))
+                lat_cells = [ts[-1] for k, ts in tab.items() if k[2] in LATTICE_FILLS]
+                per_rung[str(st)] = {
+                    "C11_over_E_s": c11, "C12_over_E_s": c12, "C44_over_E_s": c44, "zener": 2 * c44 / (c11 - c12),
+                    "solid_fraction": ph, "C44_over_voigt_ceiling": c44 / (ph * mu_s),
+                    "E_z_star_theta0": ez[0], "E_z_star_theta45": ez[-1], "alloys": alloys,
+                    "t_L_theta45_lattice_cells_above_1": sum(1 for x in lat_cells if x > 1),
+                    "t_L_theta45_lattice_cells_below_1": sum(1 for x in lat_cells if x < 1),
+                    "junction_share_sup": max(tab[sup_k]), "junction_share_sup_cell": "|".join(sup_k),
+                    "junction_share_sup_theta_deg": THETA_DEG[int(np.argmax(tab[sup_k]))],
+                    "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": probe}
+            out[fm] = per_rung
+        return out
+
+    meas_scots, meas_union = measured(live), measured(union_keys)
+    # control: on the part body θ = 0 is free of C44, so the measured forms must give 105's θ = 0 figure exactly
+    for fm in ("part_body_C44_absolute", "part_body_zener"):
+        for st in PERIODIC_RUNGS:
+            for al in ALLOY_PROPERTIES:
+                assert meas_scots[fm][str(st)]["alloys"][al]["binds_above_theta0_ue"] == \
+                    binds_above["axial_reading"][al][CELL_LS], f"θ = 0 on the part body moved with C44 ({fm} /{st} {al})"
+
+    def bracket(m: dict, field: str) -> dict:
+        """Per form and alloy: the field over the rungs — its adverse end for a binding sentence is the max."""
+        return {fm: {al: {"min_over_rungs": min(m[fm][str(st)]["alloys"][al][field] for st in PERIODIC_RUNGS),
+                          "max_over_rungs": max(m[fm][str(st)]["alloys"][al][field] for st in PERIODIC_RUNGS),
+                          "rung_of_max": max(PERIODIC_RUNGS, key=lambda s: m[fm][str(s)]["alloys"][al][field])}
+                     for al in ALLOY_PROPERTIES} for fm in C44_FORMS}
+
+    measured_c44 = {
+        "source": str(PERIODIC.relative_to(REPO_ROOT)),
+        "is": ("the INFINITE lattice's tensor from periodic conditions on one period cell (01_01 §5.2), carried onto the "
+               "part body, which has no C44 of its own — an assumption — in two forms (the absolute modulus ⊥ the Zener "
+               "ratio on the body's own C11 − C12), and beside them the material tensor read whole on its own solid "
+               "fraction; one cell gives the share and E_z* of one tensor"),
+        "rungs_steps_per_period": list(PERIODIC_RUNGS),
+        "rungs_excluded": {str(r["steps_per_period"]): r["porosity"] for r in per["rows"] if r not in rungs},
+        "density_rule": f"|porosity − the part's {1.0 - phi:.4f}| ≤ {PERIODIC_DENSITY_TOL}",
+        "binding_threshold_rule": ("105's headline cell (" + CELL_LS + "); a binding sentence takes the HIGHEST "
+                                   "threshold over the modelled cells — and, with the install angle free, over θ — and "
+                                   "over the rungs; rounded UP"),
+        "scots_pine": meas_scots, "union": meas_union,
+        "binds_above_theta_free_ue": {"scots_pine": bracket(meas_scots, "binds_above_theta_free_ue"),
+                                      "union": bracket(meas_union, "binds_above_theta_free_ue")},
+        "binds_above_theta0_ue": {"scots_pine": bracket(meas_scots, "binds_above_theta0_ue"),
+                                  "union": bracket(meas_union, "binds_above_theta0_ue")},
+        "lattice_fills_binds_above_theta_free_ue": {
+            "scots_pine": bracket(meas_scots, "lattice_fills_binds_above_theta_free_ue"),
+            "union": bracket(meas_union, "lattice_fills_binds_above_theta_free_ue")},
+        "lattice_fills_binds_above_theta0_ue": {
+            "scots_pine": bracket(meas_scots, "lattice_fills_binds_above_theta0_ue"),
+            "union": bracket(meas_union, "lattice_fills_binds_above_theta0_ue")},
+        "controls": {"e_dir_vs_tensor_worst": e_dir_worst, "form_vs_sweep_worst": form_vs_sweep},
+    }
+    eq = [m[fm][str(st)]["alloys"][al]["binds_above_theta_free_ue"] == m[fm][str(st)]["alloys"][al]["binds_above_theta0_ue"]
+          for m in (meas_scots, meas_union) for fm in C44_FORMS for st in PERIODIC_RUNGS for al in ALLOY_PROPERTIES]
+    measured_c44["theta_free_equals_theta0"] = {"count": sum(eq), "of": len(eq),
+                                                "over": "readings × rungs × alloys × groups (Scots pine ⊥ union)"}
+    combos = [m[fm][str(st)]["alloys"][al]
+              for m in (meas_scots, meas_union) for fm in C44_FORMS for st in PERIODIC_RUNGS for al in ALLOY_PROPERTIES]
+    rise = [a for a in combos if a["lattice_fills_binds_above_theta_free_ue"] > a["lattice_fills_binds_above_theta0_ue"]]
+    measured_c44["lattice_fills_rise_off_axis"] = {
+        "count": len(rise), "of": len(combos), "theta_deg": sorted({a["lattice_fills_theta_free_deg"] for a in rise}),
+        "max_rise": max(a["lattice_fills_binds_above_theta_free_ue"] / a["lattice_fills_binds_above_theta0_ue"] for a in rise)}
+    measured_c44["binding_cell_is_voigt_phase_bound"] = {
+        "count": sum(a["theta_free_cell"].endswith("|pores_voigt_phase_bound") for a in combos), "of": len(combos)}
+
     lower105 = d105["inputs"]["fe_reading_lower"]
     assert lower105 == ("axial_reading" if r_a < r_r else "radial_reading"), "105's lower reading is not its lower"
     a_label = "this tensor's E[100]" + (" (105's lower reading)" if lower105 == "axial_reading" else "")
@@ -1115,10 +1297,41 @@ def main() -> int:
                  f"at t_L = 1 the upper whisker exceeded it for {', '.join(t1a['upper_whisker']) or 'none'} on this tensor's "
                  f"E[100] and for {', '.join(t1r['upper_whisker']) or 'none'} on 105's radial reading, the median for "
                  f"{', '.join(t1a['median']) or 'none'} on E[100] and for {', '.join(t1r['median']) or 'none'} on the radial one")
+    # the measured-C44 sentence, every clause from the computed block (in-silico §When Modifying #5)
+    mc_s, mc_u = measured_c44["scots_pine"], measured_c44["union"]
+
+    def over_rungs(m: dict, field: str) -> list:
+        return [m[fm][str(st)][field] for fm in C44_FORMS for st in PERIODIC_RUNGS]
+
+    c44v = [mc_s["material_tensor"][str(st)]["C44_over_voigt_ceiling"] for st in PERIODIC_RUNGS]
+    zen = [mc_s["material_tensor"][str(st)]["zener"] for st in PERIODIC_RUNGS]
+    eq_c = measured_c44["theta_free_equals_theta0"]
+    free_is_theta0 = eq_c["count"] == eq_c["of"]
+    radial0 = binds_above["radial_reading"][ALLOY_BASELINE][CELL_LS]
+    bf_s = measured_c44["binds_above_theta_free_ue"]["scots_pine"]
+    lf_s = measured_c44["lattice_fills_binds_above_theta_free_ue"]["scots_pine"]
+    x_hi = max(bf_s[fm][ALLOY_BASELINE]["max_over_rungs"] for fm in C44_FORMS)
+    x_lo = min(bf_s[fm][ALLOY_BASELINE]["max_over_rungs"] for fm in C44_FORMS)    # each reading at ITS adverse rung
+    y_hi = max(lf_s[fm][ALLOY_BASELINE]["max_over_rungs"] for fm in C44_FORMS)
+    j_rec = max((mc_u[fm][str(st)] for fm in C44_FORMS for st in PERIODIC_RUNGS), key=lambda r: r["junction_share_sup"])
+    n45 = over_rungs(mc_s, "t_L_theta45_lattice_cells_above_1")
+    c44_sentence = (
+        f" Read on the measured C44 — the periodic voxel case's infinite lattice, {floor_to(min(c44v), 2):.2f}–"
+        f"{ceil_to(max(c44v), 2):.2f} of Voigt's ceiling on its own solid fraction, Zener ratio {floor_to(min(zen), 2):.2f}–"
+        f"{ceil_to(max(zen), 2):.2f}, carried onto the part body (which has none of its own) as the absolute modulus ⊥ the Zener ratio, the material "
+        f"tensor read whole beside them — the threshold has a ceiling off the axis, and with the install angle free it "
+        + ("does not rise above the θ = 0 figure on any reading, rung, alloy or group" if free_is_theta0 else
+           "rises above the θ = 0 figure on some reading")
+        + f" ({eq_c['count']} of {eq_c['of']} readings × rungs × alloys × groups): for {ALLOY_BASELINE} on the Scots pine "
+        f"group the gyroid binds above {x_hi:.0f} µε at most on the tensor's own E_z*(θ) ({x_lo:.0f} on the lowest reading), "
+        f"the cells the lattice's C44 enters reaching {y_hi:.0f} µε, and on 105's radial reading, which has no off-axis "
+        f"counterpart, its θ = 0 figure {radial0:.0f} µε stands; over every angle the share is at "
+        f"most {ceil_to(j_rec['junction_share_sup'], 3):.3f} over the union, at θ = {j_rec['junction_share_sup_theta_deg']:g}°, "
+        f"and at θ = 45° it exceeds 1 in {min(n45)}–{max(n45)} of the {lattice_cells} cells the lattice's C44 enters.")
     verdict = (
         f"t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) "
         f"it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel "
-        f"case, not read here); at the moistest group (95 % RH) it is "
+        f"case and read below); at the moistest group (95 % RH) it is "
         f"{floor_to(min(cells[k]['t_L_theta0_any_C44'] for k in rh95), 3):.3f}–"
         f"{ceil_to(max(cells[k]['t_L_theta0_any_C44'] for k in rh95), 3):.3f} over the alloys, the material symmetrisation "
         f"readings and the three pore readings, and which side of 1 it takes depends on the pore reading and on the "
@@ -1139,7 +1352,7 @@ def main() -> int:
         f"{ceil_to(junction_sup, 3):.3f}) — on {citation(junction_union_cell)}, our assembly of its raw means; on the "
         f"published green sets alone it reaches {ceil_to(junction_pub['share'], 3):.3f} — on "
         f"{citation(junction_pub_cell)}{', whose off-axis cells stand on the borrowed ν_RT' if junction_pub['stands_on_borrowed_nu_RT'] else ''}. Off the "
-        f"axis the threshold has no ceiling as C44 falls. The modelled set reads the ring as the host's xylem, its Scots "
+        f"axis the swept threshold has no ceiling as C44 falls.{c44_sentence} The modelled set reads the ring as the host's xylem, its Scots "
         f"pine group stops below fibre saturation and its green readings are other Pinaceae, so its lowest share is not a "
         f"floor."
     )
@@ -1164,7 +1377,8 @@ def main() -> int:
             "lattice_reading": {"C11_over_E_s": lat["C11"], "C12_over_E_s": lat["C12"], "nu_star": lat["nu"],
                                 "E100_over_E_s": lat["E100"], "zener_voigt_ceiling": a_voigt,
                                 "is": "both FE cases read as ONE homogeneous cubic body (kinematic-side readings); "
-                                      "C44 not read here (the periodic voxel case measures it for the infinite lattice), swept"},
+                                      "C44 swept here, and the periodic voxel case's measured C44 of the infinite lattice "
+                                      "read apart as named readings (measured_C44)"},
             "theta_deg": list(THETA_DEG),
             "zener_grid": [float(a) for a in a_grid],
             "pore_readings": {
@@ -1213,6 +1427,7 @@ def main() -> int:
         "e_z_star_105_premise_theta45": ez45,
         "junction_share_sup_at_C44_zero": junction_sup,
         "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": angle_probe,
+        "measured_C44": measured_c44,
         "green_wood_readings": {k: {kk: vv for kk, vv in v.items() if not kk.startswith("_")} for k, v in wood_green.items()},
         "green_wood_readings_excluded_not_a_material": excluded_green,
         "green_cells": cells_green,
@@ -1247,7 +1462,8 @@ def main() -> int:
             "jeong_c44_zero_max_plus_its_nu_RT_sensitivity": jeong_c44_zero + nu_rt_off_axis,
             "off_axis_sup_at_C44_zero_published_sets_only": junction_pub | {"reading": citation(junction_pub_cell)}},
         "not_computed": [
-            "C44 read into the share — the periodic voxel case measures it for the infinite lattice; reading it is open (00_07 HW.23)",
+            "the finite part's own C44 — the measured one (measured_C44) is the infinite lattice's, carried onto the part "
+            "body as an assumption",
             "the stiffness of the tissue in the pores and of the ring — a soft ring drives t_L to 0 in its limit",
             "a green (above fibre saturation) SCOTS PINE set — the green group reads other Pinaceae — and the share's "
             "direction with moisture (across the two groups species and moisture are confounded)",
@@ -1304,6 +1520,9 @@ def main() -> int:
     print(f"  reciprocity (measured sets): L-pairs {min(l_pairs):.3f}–{max(l_pairs):.3f} · R–T {min(rt_pair):.3f}–"
           f"{max(rt_pair):.3f} · Davies Table 2 {min(t2_pairs):.3f}–{max(t2_pairs):.3f}")
     print(f"  → {OUT.relative_to(REPO_ROOT)}")
+    print(f"  measured C44 ({len(PERIODIC_RUNGS)} rungs × {len(C44_FORMS)} readings): {ALLOY_BASELINE} binds above "
+          f"{x_lo:.0f}–{x_hi:.0f} µε θ-free (θ-free = θ = 0 everywhere: {free_is_theta0}) · C44 cells alone ≤ {y_hi:.0f} · "
+          f"share ≤ {j_rec['junction_share_sup']:.3f} · controls e_dir {e_dir_worst:.1e} · form ≡ sweep {form_vs_sweep:.1e}")
     print(f"  {verdict}")
     return 0
 

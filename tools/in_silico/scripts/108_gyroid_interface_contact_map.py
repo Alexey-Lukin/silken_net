@@ -101,8 +101,9 @@ O(cell/radius) error; (3) give the Ø15 interface — the callus against the old
 ring as the host's xylem, so that wall is no interface in the model, and its traction (the matrix's exterior field at
 r/a = 15/11) is not uniform and not computed; (4) give p₀ for a conifer's stem callus, its distribution around the gyroid
 or its relaxation; (5) the finite length — at the ends a finite gyroid carries its axial mismatch by axial shear (the
-infinite model's σᴵ_RR is its scale), and the anode's bond-force distribution; (6) everything `106` cannot (C44, the
-tissue's stiffness, the bark, S5); (7) the change of σ_n the anode's axial force makes through the gyroid's Poisson
+infinite model's σᴵ_RR is its scale), and the anode's bond-force distribution; (6) everything `106` cannot (the part's own
+C44, the tissue's stiffness, the bark, S5), and `106`'s measured-C44 readings, which this script does not read yet (00_07
+HW.23); (7) the change of σ_n the anode's axial force makes through the gyroid's Poisson
 strain (Axial, above).
 
 Run:  conda activate silken_md
@@ -993,7 +994,7 @@ def main() -> int:
             "the Ø15 interface, callus against the old wood of the drilled wall — no interface in 106's model",
             "p₀ for a conifer's stem callus, its distribution around the gyroid and its relaxation",
             "the finite length: the ends' axial shear and the anode bond force's distribution along the gyroid",
-            "C44, the tissue's stiffness, the bark and S5 — as in 106",
+            "the part's own C44 and 106's measured-C44 readings (not read here), the tissue's stiffness, the bark and S5 — as in 106",
             "the change of σ_n the anode's axial bond force makes through the gyroid's Poisson strain (its sign alternates "
             "with the sway), so the axial force's net effect on the friction needed",
         ],
