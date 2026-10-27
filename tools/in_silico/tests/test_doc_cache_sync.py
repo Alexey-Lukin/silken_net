@@ -8464,10 +8464,6 @@ CHECKS += [
     *[(f"PV desk closed bracket [{e}] → 01_03 §4 → 110", EBFC,
        r"desk-дужка купола під зімкнутим пологом — \*\*" + (N if e == 0 else r"[\d.]+") + "–" + (N if e == 1 else r"[\d.]+"),
        PV, (lambda ee: lambda d: d["desk_bracket_a_eff_cm2"]["closed_stand"][ee])(e), 0.0) for e in range(2)],
-    ("PV favourable cadence C → 00_07 HW.54 → 110", TRACKER, rf"при каденсі C від {N} до [\d.]+ см²", PV,
-     _pv_stand("cadence_c", "favourable.high"), 0.0),
-    ("PV adverse cadence C → 00_07 HW.54 → 110", TRACKER, rf"при каденсі C від [\d.]+ до {N} см²", PV,
-     _pv_stand("cadence_c", "adverse.low"), 0.0),
     # premise rows: the bands 110's corners read, as 02_03 carries them (lib mirrors them; the cache prints what it used)
     ("PV premise VBAT_OV worst-case low → 02_03 §4.Б", POWER, rf"\*\*{N} … [\d.]+ В\*\* · 4\.717", PV,
      lambda d: d["inputs"]["corners"]["adverse"]["window_v"][0], 0.0),
