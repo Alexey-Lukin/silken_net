@@ -1708,5 +1708,158 @@
       "below_this_it_cannot_cm2": 0.157
     }
   ],
-  "verdict": "At cadence C, with each input the specifications bound at its favourable end (C 0.846 F, window 4.979→3.203 V, the plateau-top (0.90 at any input) boost curve, wake 28.8 mJ, no leak, the high reflected reading), the node cannot ride 1991–2020 below 0.00427 cm² under the closed stand (beam through the gaps, face 180) — below the whole desk bracket 0.0439–0.1918 cm² — and below 0.00427 cm² in the open (face 180) — below the whole desk bracket 0.2092–0.3487 cm². With each at its adverse end (C 0.263 F, window 4.665→3.420 V, the least efficient boost curve, wake 43.2 mJ, §9.3's 4.5 µW leak illustration, the low reflected reading): below 0.103 cm² closed (all faces and both forms equal — a diffuse-only binding stretch) — inside the bracket — and 0.103 cm² open — below the whole bracket. The Standby sleep alone, favourable end: below 0.00109 cm² closed. Which closed-stand form describes a closed stand is not established, so each sentence takes the lower. Necessary conditions only."
+  "verdict": "At cadence C, with each input the specifications bound at its favourable end (C 0.846 F, window 4.979→3.203 V, the plateau-top (0.90 at any input) boost curve, wake 28.8 mJ, no leak, the high reflected reading), the node cannot ride 1991–2020 below 0.00427 cm² under the closed stand (beam through the gaps, face 180) — below the whole desk bracket 0.0439–0.1918 cm² — and below 0.00427 cm² in the open (face 180) — below the whole desk bracket 0.2092–0.3487 cm². With each at its adverse end (C 0.263 F, window 4.665→3.420 V, the least efficient boost curve, wake 43.2 mJ, §9.3's 4.5 µW leak illustration, the low reflected reading): below 0.103 cm² closed (all faces and both forms equal — a diffuse-only binding stretch) — inside the bracket — and 0.103 cm² open — below the whole bracket. The Standby sleep alone, favourable end: below 0.00109 cm² closed. Which closed-stand form describes a closed stand is not established, so each sentence takes the lower. Necessary conditions only.",
+  "measured_form_r": {
+    "leg": "00_07 HW.54 Р3(б)(4) — the R threshold before the data",
+    "form": "G = R·GHI, A_eff = η·A — R holds the canopy's T, the face's geometry and its horizon; the harvest depends on η·A·R alone, so R* = A_eff*(GHI) / (η·A) at any η",
+    "dome_face_cm2_exact": 6.974649850234701,
+    "eta_pv_readings": [
+      0.03,
+      0.08
+    ],
+    "eta_pv_readings_are": "a-Si's low end · a good c-Si cell's top at weak daylight (01_03 §4 ⊕ (3)) — readings, no cell picked",
+    "by_demand": {
+      "standby_sleep": {
+        "favourable": {
+          "a_eff_lo_cm2": 0.00155838,
+          "a_eff_hi_cm2": 0.00155848,
+          "below_this_r_it_cannot": {
+            "0.03": 0.00744,
+            "0.08": 0.00279
+          }
+        },
+        "nominal": {
+          "a_eff_lo_cm2": 0.00276397,
+          "a_eff_hi_cm2": 0.00276408,
+          "below_this_r_it_cannot": {
+            "0.03": 0.0132,
+            "0.08": 0.00495
+          }
+        },
+        "adverse": {
+          "a_eff_lo_cm2": 0.0211121,
+          "a_eff_hi_cm2": 0.0211123,
+          "below_this_r_it_cannot": {
+            "0.03": 0.1,
+            "0.08": 0.0378
+          }
+        }
+      },
+      "cadence_c": {
+        "favourable": {
+          "a_eff_lo_cm2": 0.00456823,
+          "a_eff_hi_cm2": 0.00456833,
+          "below_this_r_it_cannot": {
+            "0.03": 0.0218,
+            "0.08": 0.00818
+          }
+        },
+        "nominal": {
+          "a_eff_lo_cm2": 0.00749621,
+          "a_eff_hi_cm2": 0.00749631,
+          "below_this_r_it_cannot": {
+            "0.03": 0.0358,
+            "0.08": 0.0134
+          }
+        },
+        "adverse": {
+          "a_eff_lo_cm2": 0.0610004,
+          "a_eff_hi_cm2": 0.0610006,
+          "below_this_r_it_cannot": {
+            "0.03": 0.291,
+            "0.08": 0.109
+          }
+        }
+      },
+      "stop2_cadence_c": {
+        "favourable": {
+          "a_eff_lo_cm2": 0.00816434,
+          "a_eff_hi_cm2": 0.00816444,
+          "below_this_r_it_cannot": {
+            "0.03": 0.039,
+            "0.08": 0.0146
+          }
+        },
+        "nominal": {
+          "a_eff_lo_cm2": 0.0156902,
+          "a_eff_hi_cm2": 0.0156904,
+          "below_this_r_it_cannot": {
+            "0.03": 0.0749,
+            "0.08": 0.0281
+          }
+        },
+        "adverse": {
+          "a_eff_lo_cm2": 0.0976977,
+          "a_eff_hi_cm2": 0.0976979,
+          "below_this_r_it_cannot": {
+            "0.03": 0.466,
+            "0.08": 0.175
+          }
+        }
+      }
+    },
+    "bisection_iterations": 30,
+    "binding_stretches": {
+      "standby_sleep": {
+        "favourable": {
+          "last_full": "1997-11-10T16:00",
+          "first_outage": "1998-01-20T08:00",
+          "dni_after_last_full_Wh_m2": 31764.4
+        },
+        "nominal": {
+          "last_full": "2007-12-03T16:00",
+          "first_outage": "2007-12-27T10:00",
+          "dni_after_last_full_Wh_m2": 2587.7
+        },
+        "adverse": {
+          "last_full": "2017-11-30T16:00",
+          "first_outage": "2017-12-03T09:00",
+          "dni_after_last_full_Wh_m2": 0.0
+        }
+      },
+      "cadence_c": {
+        "favourable": {
+          "last_full": "2007-11-30T16:00",
+          "first_outage": "2007-12-27T09:00",
+          "dni_after_last_full_Wh_m2": 3189.0
+        },
+        "nominal": {
+          "last_full": "2007-12-03T16:00",
+          "first_outage": "2007-12-27T09:00",
+          "dni_after_last_full_Wh_m2": 2563.2
+        },
+        "adverse": {
+          "last_full": "2017-12-01T16:00",
+          "first_outage": "2017-12-03T09:00",
+          "dni_after_last_full_Wh_m2": 0.0
+        }
+      },
+      "stop2_cadence_c": {
+        "favourable": {
+          "last_full": "2007-12-03T16:00",
+          "first_outage": "2007-12-27T09:00",
+          "dni_after_last_full_Wh_m2": 2563.2
+        },
+        "nominal": {
+          "last_full": "1997-12-02T16:00",
+          "first_outage": "1997-12-06T09:00",
+          "dni_after_last_full_Wh_m2": 0.0
+        },
+        "adverse": {
+          "last_full": "2017-12-01T16:00",
+          "first_outage": "2017-12-03T09:00",
+          "dni_after_last_full_Wh_m2": 0.0
+        }
+      }
+    },
+    "binding_stretch_last_full_in_november": [
+      "cadence_c/favourable",
+      "standby_sleep/adverse",
+      "standby_sleep/favourable"
+    ],
+    "rounding": "R* and A_eff lower ends rounded DOWN (a «below it cannot» sentence), upper ends UP",
+    "not_seen": "R moving with the day, the sky, the ground or the season — R is taken constant, while the sheet measures December–February (the lanes in binding_stretch_last_full_in_november bind from November) and a snowy winter's R carries snow light the bare-ground binding stretches lack; the reference is the yard's open horizontal, not ERA5's cell; the instrument's spectral weighting (a silicon pyranometer — about a c-Si cell's; under a NIR-shifted canopy an a-Si cell's R would be lower, so the measured R is biased high for it — the shift's sign rests on an abstract the sheet has not verified); η 8 % on rows whose R is a few per cent of open light, where the bracket's source gives a c-Si cell at most 5 %",
+    "necessary_only": "the leg asked for the R at which a reading PASSES; this publishes the R below which it CANNOT — the same number to the bracket, read as a necessary condition (in-silico §When Modifying #50)"
+  },
+  "verdict_measured_form": "Read in the measured form — the light on the dome's face as R·GHI, R the field sheet's ratio of a vertical stem face to an open horizontal, with the canopy and the face's geometry inside it — and a cell of efficiency η on the whole dome face (6.975 cm², the largest the dome holds; a smaller cell raises each R in inverse proportion to its area), at cadence C the node cannot ride 1991–2020 below R 0.0218 at η 3 % ⊥ 0.00818 at η 8 % on the favourable corner; the nominal one needs 0.0358 at η 3 % ⊥ 0.0134 at η 8 %, the adverse 0.291 at η 3 % ⊥ 0.109 at η 8 %. R is taken constant over the record. Necessary conditions only."
 }

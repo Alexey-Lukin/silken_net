@@ -8113,6 +8113,45 @@ def test_winter_pv_autonomy_invariants():
                  f"favourable end: below {sleep['closed_stand_lower']:g} cm² closed"):
         assert frag in v, f"the verdict lost or misplaced: {frag!r}"
 
+    # ── the measured form (00_07 HW.54 Р3(б)(4), before the data): R* = A_eff*(GHI) / (η·A) from its own bracket, rounded
+    #    DOWN (a «below it cannot» sentence), ordered like the A_eff rows, the two η scaling it exactly; the sentence
+    #    composed from the cells ──
+    mf = d["measured_form_r"]
+    a_x = mf["dome_face_cm2_exact"]
+    assert round(a_x, 3) == face and mf["eta_pv_readings"] == [0.03, 0.08]
+
+    def floor3(x):
+        k = 2 - math.floor(math.log10(x))
+        return math.floor(x * 10**k) / 10**k
+
+    rs = {}
+    for dk in demands:
+        for c in corners:
+            r = mf["by_demand"][dk][c]
+            assert 0.0 < r["a_eff_lo_cm2"] < r["a_eff_hi_cm2"]
+            assert (r["a_eff_hi_cm2"] - r["a_eff_lo_cm2"]) / r["a_eff_hi_cm2"] < 2e-4
+            for e in mf["eta_pv_readings"]:
+                x = r["below_this_r_it_cannot"][f"{e:g}"]
+                assert x * e * a_x <= r["a_eff_lo_cm2"] * (1 + 1e-5), "R* rounded the wrong way"   # 6-figure lo
+                assert x == floor3(r["a_eff_lo_cm2"] / (e * a_x)), (dk, c, e)
+                rs[(dk, c, e)] = x
+    for e in mf["eta_pv_readings"]:
+        for dk in demands:
+            v = [rs[(dk, c, e)] for c in corners]
+            assert v[0] <= v[1] <= v[2], f"R*: corners out of order {dk} {v}"
+        for c in corners:
+            v = [rs[(dk, c, e)] for dk in demands]
+            assert v[0] <= v[1] <= v[2], f"R*: demands out of order {c} {v}"
+    vr = d["verdict_measured_form"]
+    for c, lead in (("favourable", "below R "), ("nominal", "the nominal one needs "), ("adverse", "the adverse ")):
+        frag = lead + " ⊥ ".join(f"{rs[('cadence_c', c, e)]:#.3g} at η {e * 100:g} %" for e in mf["eta_pv_readings"])
+        assert frag in vr, f"the measured-form verdict lost {frag!r}"
+    assert f"({face:.3f} cm², the largest the dome holds;" in vr
+    # the lanes named as binding from November are exactly those whose last full hour falls in November
+    nov = sorted(f"{dk}/{c}" for dk, by in mf["binding_stretches"].items() for c, v in by.items() if v["last_full"][5:7] == "11")
+    assert mf["binding_stretch_last_full_in_november"] == nov
+    assert {(dk, c) for dk, by in mf["binding_stretches"].items() for c in by} == {(dk, c) for dk in demands for c in corners}
+
     ctl = d["controls"]
     assert abs(ctl["december_ghi_Wh_m2_day"] / np.mean(list(ctl["december_ghi_sources"].values())) - 1) <= 0.10
     here = ctl["desk_worst_7d_dec_jan"]["here"]

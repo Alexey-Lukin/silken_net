@@ -55,13 +55,25 @@ MODEL. Hourly, 1991–2020, ERA5 at the Cherkasy grid point (`71`'s loader; radi
   Store: E_max = ½·C·(V_top² − V_floor²); each hour E ← min(E_max, E + (η_b(P)·P − D − L)·3600 s), P = A_eff·G, and an
   hour that would take E below zero is an outage (E held at 0). The record starts full. Only WHETHER the store
   empties is used.
+  The measured form (HW.54 Р3(б)(4) — the winter field sheet, before its data): G = R·GHI, R the ratio of the light on
+  a vertical stem face at the anchor's height to an open horizontal's — the canopy's T, the face's geometry and its
+  horizon sit INSIDE R, so A_eff = η·A with A the whole dome face (the largest cell the dome holds; a smaller one
+  raises R* in inverse proportion to its area). The harvest depends on η·A·R alone (P = η·A·R·GHI, the boost read in
+  power, as everywhere here), so ONE bisection on the GHI field per lane gives the R below which the store empties, at
+  any η — a NECESSARY condition, like every threshold here: R* = A_eff*(GHI) / (η·A), printed at the two named η of
+  ETA_PV_R_READINGS and rounded down. R is taken CONSTANT over the record.
 
 WHAT IT CANNOT SEE. Snow, rime and dirt ON the dome; the dome's optics (PEEK has no optical path — PV is a radome
 change, 01_03 §4); the cell's own temperature; any η_pv dependence on light level (a scalar inside A_eff); the boost's
 η at a PV cell's input voltage (§9.1's anchors are an EBFC's at 0.3–0.5 V; the favourable corner needs no anchor, but
 whether the adverse EBFC anchors over- or understate a PV input is not established) and whether the MPPT fraction meets
 a PV cell's MPP; ground brighter than `79`'s brighter reading lowers X (light only adds to the harvest) and no bound on
-it is carried; the capacitance and the leak at frost (§12.1 rates neither, and
+it is carried; for the measured form, an R that moves with the day, the sky, the ground or the season (the sheet measures
+December–February, while some lanes bind from November — the cache names them; a snowy winter's R carries snow light
+the bare-ground binding stretches lack), the yard's reference against ERA5's cell, and R's own spectral weighting (the
+sheet's silicon pyranometer weighs light roughly as a c-Si cell does; under a canopy that shifts light to the near
+infrared — a sign the sheet takes from an unverified abstract — an a-Si cell's R would be lower, so for the η 3 %
+reading the measured R is biased high); the capacitance and the leak at frost (§12.1 rates neither, and
 the leak is an illustration) — the leg asks for both, and they stay inputs the tree does not have; what follows an
 outage — the VBAT_OK hysteresis, the warm-up cost and the cold start of an EMPTIED store (HW.44's subject; VIN(CS) is
 rated only above 0 °C, 02_03 §1.1); the canon's winter mode (§9.8: the MCU's sleep cut by a PFET, TX only at VSTOR ≥
@@ -103,7 +115,7 @@ CONTROLS (each says what it CAN and CANNOT catch).
   (10) A lane whose store empties even at the bisection's top aperture is published as «none up to it», not bisected;
       the bisection raises if it does not close.
 
-Run:  python tools/in_silico/scripts/110_winter_pv_autonomy.py      # about 40 s (30 years hourly, 90 lanes)
+Run:  python tools/in_silico/scripts/110_winter_pv_autonomy.py      # about 45 s (30 years hourly, 90 + 9 lanes)
 """
 from __future__ import annotations
 
@@ -158,6 +170,8 @@ SCRIPTS = Path(__file__).resolve().parent
 
 OPEN_AZIMUTHS_DEG = (0, 90, 180, 270)      # the open faces printed — a subset of `79`'s AZIMUTHS_DEG, asserted
 DESK_ETA_PV = (0.03, 0.05)                 # a-Si at daylight — ASSUMED, the desk's own word (01_03 §4 ⊕ (б))
+ETA_PV_R_READINGS = (0.03, 0.08)           # the measured form's two η: a-Si's low end · a good c-Si cell's top at weak
+                                           # daylight (01_03 §4 ⊕ (3), Reich et al. 2005 Table II) — readings, no cell picked
 DESK_CANOPY_T = (0.21, 0.55)               # 70 % of the readings, SOURCES["canopy_t"] (01_03 §4 ⊕ (б))
 DEC_GHI_SOURCES_WH_M2_DAY = {"PVGIS-SARAH3 2005-2023": 636.0, "NASA POWER": 663.0}   # 01_03 §4 ⊕ (б), SOURCES
 DEC_GHI_TOL = 0.10
@@ -576,6 +590,39 @@ def main() -> int:
                     CORNER_CODE[c], float(lo[i]))
 
     a_face = dome_face_cm2()
+
+    # ── The measured form (HW.54 Р3(б)(4), before the data): G = R·GHI, A_eff = η·A — one bisection on GHI per lane ──
+    combos_r = [(0, d, c) for d in DEMANDS for c in CORNERS]
+    lanes_r = lanes_of(combos_r)
+    g_r = ghi[:, None]
+    lo_r, hi_r, feas_r, iters_r = thresholds(g_r, lanes_r)
+    if not feas_r.all():
+        raise SystemExit("a measured-form lane has no aperture up to the top — write that sentence first")
+    mono_r = np.stack([simulate(g_r, lanes_r, hi_r * k) for k in MONOTONE_FACTORS])                 # control (9)
+    if np.any(np.diff(mono_r, axis=0) > 0) or np.any(mono_r[MONOTONE_FACTORS.index(1.1)] > 0):
+        raise SystemExit("control (9): the measured-form lanes are not monotone around their thresholds")
+    measured_r = {d: {} for d in DEMANDS}
+    for i, (_, d, c) in enumerate(combos_r):
+        measured_r[d][c] = {"a_eff_lo_cm2": floor_sig(float(lo_r[i]), 6), "a_eff_hi_cm2": ceil_sig(float(hi_r[i]), 6),
+                            "below_this_r_it_cannot": {f"{e:g}": floor_sig(float(lo_r[i]) / (e * a_face))
+                                                       for e in ETA_PV_R_READINGS}}
+    binding_r = {d: {c: binding_stretch(ghi, times, wx["dni"], demand_w(d, c), LEAK_W[c], e_max_j(c), CORNER_CODE[c],
+                                        float(lo_r[combos_r.index((0, d, c))])) for c in CORNERS} for d in DEMANDS}
+    before_window = sorted(f"{d}/{c}" for d in DEMANDS for c in CORNERS
+                           if np.datetime64(binding_r[d][c]["last_full"], "M").astype(int) % 12 + 1 == 11)
+    rc = measured_r["cadence_c"]
+
+    def r_at(c: str) -> str:
+        return " ⊥ ".join(f"{rc[c]['below_this_r_it_cannot'][f'{e:g}']:#.3g} at η {e * 100:g} %" for e in ETA_PV_R_READINGS)
+
+    verdict_r = (
+        f"Read in the measured form — the light on the dome's face as R·GHI, R the field sheet's ratio of a vertical "
+        f"stem face to an open horizontal, with the canopy and the face's geometry inside it — and a cell of efficiency "
+        f"η on the whole dome face ({a_face:.3f} cm², the largest the dome holds; a smaller cell raises each R in "
+        f"inverse proportion to its area), at cadence C the node cannot ride {years} below R {r_at('favourable')} on the favourable corner; "
+        f"the nominal one needs {r_at('nominal')}, the adverse {r_at('adverse')}. R is taken constant over the record. "
+        f"Necessary conditions only.")
+
     desk = {"closed_stand": [round(DESK_ETA_PV[0] * DESK_CANOPY_T[0] * a_face, 4),
                              round(DESK_ETA_PV[1] * DESK_CANOPY_T[1] * a_face, 4)],
             "open_field": [round(DESK_ETA_PV[0] * a_face, 4), round(DESK_ETA_PV[1] * a_face, 4)]}
@@ -653,6 +700,29 @@ def main() -> int:
         "desk_bracket_a_eff_cm2": desk,
         "thresholds": rows,
         "verdict": verdict,
+        "measured_form_r": {
+            "leg": "00_07 HW.54 Р3(б)(4) — the R threshold before the data",
+            "form": "G = R·GHI, A_eff = η·A — R holds the canopy's T, the face's geometry and its horizon; the harvest "
+                    "depends on η·A·R alone, so R* = A_eff*(GHI) / (η·A) at any η",
+            "dome_face_cm2_exact": a_face, "eta_pv_readings": list(ETA_PV_R_READINGS),
+            "eta_pv_readings_are": "a-Si's low end · a good c-Si cell's top at weak daylight (01_03 §4 ⊕ (3)) — "
+                                   "readings, no cell picked",
+            "by_demand": measured_r, "bisection_iterations": iters_r,
+            "binding_stretches": binding_r,
+            "binding_stretch_last_full_in_november": before_window,
+            "rounding": "R* and A_eff lower ends rounded DOWN (a «below it cannot» sentence), upper ends UP",
+            "not_seen": "R moving with the day, the sky, the ground or the season — R is taken constant, while the "
+                        "sheet measures December–February (the lanes in binding_stretch_last_full_in_november bind "
+                        "from November) and a snowy winter's R carries snow light the bare-ground binding stretches "
+                        "lack; the reference is the yard's open horizontal, not ERA5's cell; the instrument's "
+                        "spectral weighting (a silicon pyranometer — about a c-Si cell's; under a NIR-shifted canopy "
+                        "an a-Si cell's R would be lower, so the measured R is biased high for it — the shift's sign "
+                        "rests on an abstract the sheet has not verified); η 8 % on rows whose R is a few per cent "
+                        "of open light, where the bracket's source gives a c-Si cell at most 5 %",
+            "necessary_only": "the leg asked for the R at which a reading PASSES; this publishes the R below which it "
+                              "CANNOT — the same number to the bracket, read as a necessary condition (in-silico "
+                              "§When Modifying #50)"},
+        "verdict_measured_form": verdict_r,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
@@ -667,6 +737,11 @@ def main() -> int:
             print(f"  {d:16s} {key:16s} closed ≥ {s['closed_stand_lower']:<8g} ({s['closed_stand_lower_form']}) · "
                   f"open ≥ {s['open_field_lower']:<8g}")
     print("  " + verdict)
+    for d in DEMANDS:
+        print(f"  R* {d:16s} " + " · ".join(f"{c} " + " ⊥ ".join(
+            f"{measured_r[d][c]['below_this_r_it_cannot'][f'{e:g}']:g}@{e * 100:g}%" for e in ETA_PV_R_READINGS)
+            for c in CORNERS))
+    print("  " + verdict_r)
     print(f"\n  wrote {OUT.relative_to(REPO_ROOT)}")
     return 0
 

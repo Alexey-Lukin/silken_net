@@ -8454,6 +8454,14 @@ CHECKS += [
     *[(f"PV window E_max {c} → 110", SUMMARY, {"nominal": rf"\*\*{N}\*\* J nominal, ", "favourable": rf"\*\*{N}\*\* favourable, ", "adverse": rf"\*\*{N}\*\* adverse\. The adverse corner"}[c], PV,
        (lambda cc: lambda d: d["inputs"]["corners"][cc]["e_max_j"])(c), 0.0)
       for c in ("favourable", "nominal", "adverse")],
+    # the measured form (HW.54 Р3(б)(4), before the data): every cell «η 3 % ⊥ 8 %» of the R table
+    *[(f"PV measured-form R* {dk}/{c}/{e} → 110", SUMMARY,
+       rf"(?m)^\| {re.escape(label)} \| " + r" \| ".join(
+           " ⊥ ".join(N if (cc, ee) == (c, e) else r"[\d.]+" for ee in ("0.03", "0.08"))
+           for cc in ("favourable", "nominal", "adverse")) + r" \|$",
+       PV, (lambda dd, c2, e2: lambda d: d["measured_form_r"]["by_demand"][dd][c2]["below_this_r_it_cannot"][e2])(dk, c, e),
+       0.0)
+      for label, dk in _PV_TABLE for c in ("favourable", "nominal", "adverse") for e in ("0.03", "0.08")],
     ("PV December GHI → 110", SUMMARY, rf"December's mean daily GHI comes out \*\*{N}\*\* Wh/m²", PV,
      lambda d: d["controls"]["december_ghi_Wh_m2_day"], 0.0),
     ("PV desk 7-day worst → 110", SUMMARY, rf"running mean of GHI is \*\*{N}\*\* Wh/m²/day", PV,
@@ -8535,6 +8543,19 @@ def test_winter_pv_prose_claims_hold():
     assert len({(v["last_full"], v["first_outage"]) for v in adv}) == 1 and all(v["dni_after_last_full_Wh_m2"] == 0 for v in adv)
     hours = int((datetime.fromisoformat(adv[0]["first_outage"]) - datetime.fromisoformat(adv[0]["last_full"])).total_seconds() // 3600)
     assert f"a {hours}-hour overcast stretch, {adv[0]['last_full'][:10]} → {adv[0]['first_outage'][:10]}, with no direct beam" in summ
+    # the measured form's binding stretches (HW.54 Р3(б)(4)): «inside the sheet's window (Dec–Feb), the favourable one
+    # from its eve» and «the adverse one the same overcast stretch as above» — each recomposed from the cache
+    mb = d["measured_form_r"]["binding_stretches"]["cadence_c"]
+    assert (f"on the favourable corner the store is last full on {mb['favourable']['last_full'][:10]} and empty on "
+            f"{mb['favourable']['first_outage'][:10]}") in summ
+    for v in mb.values():
+        lf, fo = datetime.fromisoformat(v["last_full"]), datetime.fromisoformat(v["first_outage"])
+        assert fo.month in (12, 1, 2) and (lf.month in (12, 1, 2) or (lf.month, lf.day) == (11, 30)), v
+    assert (mb["adverse"]["last_full"], mb["adverse"]["first_outage"]) == (adv[0]["last_full"], adv[0]["first_outage"])
+    assert mb["adverse"]["dni_after_last_full_Wh_m2"] == 0 and f"the same {hours}-hour overcast stretch as above" in summ
+    sf = d["measured_form_r"]["binding_stretches"]["standby_sleep"]["favourable"]
+    assert f"the Standby sleep's favourable stretch runs {sf['last_full'][:10]} → {sf['first_outage'][:10]}" in summ
+    assert sf["last_full"][5:7] == "11", "the Standby favourable stretch no longer starts in November — rewrite «Not every row»"
     years = f"{d['record']['start'][:4]}–{d['record']['end'][:4]}"
     assert f"over {years}?" in summ and f"сховище порожніє десь у {years}" in ebfc, "the record's years moved"
     ctl = d["controls"]
