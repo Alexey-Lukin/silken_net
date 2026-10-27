@@ -45,9 +45,8 @@
 
 /* === Input tensor geometry =============================================== */
 /* Path B (log-mel) baseline: 40 mel bands × N frames inferred per inference
- * window. For 32 ms @ 16 kHz the model receives one 40×1 column per call;
- * the 5-second fauna window aggregates 156 such columns via Welford
- * (`docs/03_03 §10.2`, ARCH.40).
+ * window. For 32 ms @ 16 kHz the model receives one 40×1 column per call
+ * (a fauna window would aggregate 156 such columns — `docs/03_03 §10.5`).
  *
  * Path A fallback (raw 1D CNN) would set this to 512. ML partner declares the
  * real value in the production header.
