@@ -61,7 +61,7 @@ internal static class VoxelFea
     // modulus that carries the alloy, and the modulus is factored out on purpose.
     internal const double SolidPoissonRatio = 0.342;
 
-    internal enum LoadCase { AxialX, AxialY, AxialZ, Radial }
+    internal enum LoadCase { AxialX, AxialY, AxialZ, Radial, TractionInPlane }
 
     internal readonly record struct FeaResult
     {
@@ -188,6 +188,7 @@ internal static class VoxelFea
     private sealed class Mesh
     {
         public required int[] ElemNodes { get; init; }     // 8 node ids per element, flattened
+        public required int[] ElemCells { get; init; }     // the grid cell index of each element
         public required int[][] Colours { get; init; }     // element ids grouped by voxel parity (8 groups)
         public required int NodeCount { get; init; }
         public required float[] NodeX { get; init; }
@@ -278,6 +279,7 @@ internal static class VoxelFea
         return new Mesh
         {
             ElemNodes = aElemNodes,
+            ElemCells = [.. aElemCells],
             Colours = [.. aColourLists.Select(l => l.ToArray())],
             NodeCount = nNodes,
             NodeX = aNodeX,
@@ -729,6 +731,229 @@ internal static class VoxelFea
         };
     }
 
+    // ── Static (traction) in-plane modulus of the part (00_07 HW.23) ─────────────────────────────
+    //
+    // 🔴 WHY THIS EXISTS: `105`'s energy bound on the gyroid's ligament stress holds only while the part's in-plane modulus
+    // under TRACTION is at least the FE reading it is evaluated on, and every case above is kinematic or periodic — the
+    // softer, static side of a finite cut lattice (Huet 1990) was measured nowhere, and the periodic value does not bound
+    // it from below.
+    //
+    // NAMED FORM (a uniform traction on a cut lattice surface is ill-defined — the pores carry none): t = Σ·n with
+    // Σ = d⊗d, d = (cos θ, sin θ, 0), on the METAL faces of the envelope's lateral boundary (a solid cell whose x/y
+    // neighbour is Outside), uniform over each h×h face; the ends carry none (Σ·e_z = 0). Pores on the cut break the
+    // closure, so the face loads are not self-equilibrated: the load is made so by the least-squares projection of the
+    // six rigid modes over the loaded nodes, and the projection's relative size is returned — a reading of how
+    // ill-defined the condition is on this cut, not a correction to be trusted blindly. A 3-2-1 support then removes the
+    // rigid modes with (to solver precision) zero reaction, which is returned too. The modulus is read from the energy
+    // against the REALISED macro stress ⟨σ⟩ = (1/V)·Σ sym(f ⊗ x) over the envelope volume V — never the nominal Σ, of
+    // which the metal carries only its own share of the cut — E = ⟨σ⟩_dd²·V / (f·u), with ⟨σ⟩'s departure from
+    // uniaxial along d returned beside it.
+    //
+    // ⚠️ DECLARED CEILING.
+    //   • The static side of a FINITE, graded, cut specimen — not a bound in Huet's sense, whose order (kinematic ≥
+    //     periodic ≥ static) holds on a volume of whole cells only; here it is a reading, softer than the periodic value
+    //     only on average.
+    //   • E is defined through ⟨σ⟩, which the energy equals exactly only while ⟨σ⟩ is uniaxial along d; the returned
+    //     off-axis share says how far that holds.
+    //   • The same staircase and fully integrated hexes as every case here (picogk gotcha #16): read it with its step
+    //     ladder, never a row.
+    // CONTROL: the solid counterpart is in exactly uniform uniaxial stress under this load (every exterior face carries
+    // σ·n, the closure is exact, the hex passes the patch test) — modulus 1, zero projection, zero reaction.
+
+    internal readonly record struct TractionResult
+    {
+        public required FeaResult Fea { get; init; }
+        public required double ThetaDeg { get; init; }
+        /// <summary>|f − f′| / |f| — the share of the raw face load the self-equilibrating projection removed.</summary>
+        public required double ProjectionRelative { get; init; }
+        /// <summary>⟨σ⟩_dd per unit Σ — the macro stress the metal of the cut actually carries.</summary>
+        public required double MacroStressAlongD { get; init; }
+        /// <summary>|⟨σ⟩ − ⟨σ⟩_dd·d⊗d|_F / ⟨σ⟩_dd — how far the realised macro stress is from uniaxial along d.</summary>
+        public required double MacroStressOffAxisRelative { get; init; }
+        /// <summary>|reaction at the 3-2-1 support| / |f′| — zero for a self-equilibrated load.</summary>
+        public required double SupportReactionRelative { get; init; }
+    }
+
+    // Local nodes of the four lateral faces in the a*4 + b*2 + c order: (di, dj, outward n_x, n_y, nodes).
+    private static readonly (int Di, int Dj, double Nx, double Ny, int[] Nodes)[] s_aLateralFaces =
+    [
+        (1, 0, 1.0, 0.0, [4, 5, 6, 7]), (-1, 0, -1.0, 0.0, [0, 1, 2, 3]),
+        (0, 1, 0.0, 1.0, [2, 3, 6, 7]), (0, -1, 0.0, -1.0, [0, 1, 4, 5]),
+    ];
+
+    /// <summary>Where the self-equilibrating correction goes: over the LOADED nodes (the reading) or over every node of
+    /// the body (the alternative whose difference prices the choice — the condition is ill-defined, so its sensitivity is
+    /// read, never assumed small).</summary>
+    internal enum Equilibration { LoadedNodes, AllNodes }
+
+    internal static TractionResult TractionInPlaneModulus(
+        in Connectivity.Grid grid, double dThetaDeg, double dTol = 1e-8, int nMaxIter = 200_000,
+        Equilibration eEquilibration = Equilibration.LoadedNodes)
+    {
+        (bool[] aKeep, double dSolid, double dDiscarded) = LargestSolidBody(grid);
+        Mesh mesh = Build(grid, aKeep, dSolid, dDiscarded);
+        double[] aKe = HexElementStiffness(grid.StepMm, SolidPoissonRatio);
+        int nDof = mesh.NodeCount * 3;
+        double h = grid.StepMm;
+        double dTh = dThetaDeg * Math.PI / 180.0;
+        double dDx = Math.Cos(dTh), dDy = Math.Sin(dTh);
+
+        // raw face loads: t = (d·n)·d, uniform over the face, a quarter of its force to each of its four nodes
+        var aF = new double[nDof];
+        double dQuarter = h * (double)h / 4.0;
+        for (int e = 0; e < mesh.ElementCount; e++)
+        {
+            int idx = mesh.ElemCells[e];
+            int i = idx / (grid.Ny * grid.Nz), j = (idx / grid.Nz) % grid.Ny, k = idx % grid.Nz;
+            foreach ((int di, int dj, double dNx, double dNy, int[] aNodes) in s_aLateralFaces)
+            {
+                int ii = i + di, jj = j + dj;
+                bool bOut = ii < 0 || jj < 0 || ii >= grid.Nx || jj >= grid.Ny
+                            || grid.Cells[grid.Index(ii, jj, k)] == Phase.Outside;
+                if (!bOut) continue;
+                double dDn = (dDx * dNx) + (dDy * dNy);
+                if (dDn == 0.0) continue;
+                foreach (int nLocal in aNodes)
+                {
+                    int nd = mesh.ElemNodes[(e * 8) + nLocal] * 3;
+                    aF[nd + 0] += dQuarter * dDn * dDx;
+                    aF[nd + 1] += dQuarter * dDn * dDy;
+                }
+            }
+        }
+
+        // self-equilibrate: remove the six rigid modes' share of the load, least squares over the loaded nodes
+        var aLoaded = new List<int>();
+        for (int n = 0; n < mesh.NodeCount; n++)
+            if (aF[(n * 3) + 0] != 0.0 || aF[(n * 3) + 1] != 0.0 || aF[(n * 3) + 2] != 0.0) aLoaded.Add(n);
+        double dCx = 0, dCy = 0, dCz = 0;
+        foreach (int n in aLoaded) { dCx += mesh.NodeX[n]; dCy += mesh.NodeY[n]; dCz += mesh.NodeZ[n]; }
+        if (aLoaded.Count == 0)
+            throw new InvalidOperationException("no metal face on the lateral boundary carries a load — nothing to read");
+        dCx /= aLoaded.Count; dCy /= aLoaded.Count; dCz /= aLoaded.Count;
+        List<int> aSpread = eEquilibration == Equilibration.LoadedNodes ? aLoaded : [.. Enumerable.Range(0, mesh.NodeCount)];
+        double[] Rigid(int n, int m)
+        {
+            double rx = mesh.NodeX[n] - dCx, ry = mesh.NodeY[n] - dCy, rz = mesh.NodeZ[n] - dCz;
+            return m switch
+            {
+                0 => [1, 0, 0], 1 => [0, 1, 0], 2 => [0, 0, 1],
+                3 => [0, -rz, ry], 4 => [rz, 0, -rx], _ => [-ry, rx, 0],
+            };
+        }
+        var aG = new double[6, 6];
+        var aRhs = new double[6];
+        foreach (int n in aLoaded)
+            for (int a = 0; a < 6; a++)
+            {
+                double[] ra = Rigid(n, a);
+                aRhs[a] += (ra[0] * aF[(n * 3) + 0]) + (ra[1] * aF[(n * 3) + 1]) + (ra[2] * aF[(n * 3) + 2]);
+            }
+        foreach (int n in aSpread)
+            for (int a = 0; a < 6; a++)
+            {
+                double[] ra = Rigid(n, a);
+                for (int b = 0; b < 6; b++)
+                {
+                    double[] rb = Rigid(n, b);
+                    aG[a, b] += (ra[0] * rb[0]) + (ra[1] * rb[1]) + (ra[2] * rb[2]);
+                }
+            }
+        double[] aCoef = SolveDense(aG, aRhs);
+        double dRaw = Math.Sqrt(Dot(aF, aF)), dCut = 0.0;
+        foreach (int n in aSpread)
+        {
+            var aCorr = new double[3];
+            for (int a = 0; a < 6; a++)
+            {
+                double[] ra = Rigid(n, a);
+                for (int d = 0; d < 3; d++) aCorr[d] += ra[d] * aCoef[a];
+            }
+            for (int d = 0; d < 3; d++) { aF[(n * 3) + d] -= aCorr[d]; dCut += aCorr[d] * aCorr[d]; }
+        }
+
+        // 3-2-1 support on unloaded nodes, far apart: A (bottom, nearest the axis) all three · B (top, nearest the axis)
+        // x and y · C (bottom, farthest +x) y — a non-singular set, so it removes exactly the six rigid modes
+        double dMx = mesh.ExtentXMm / 2.0, dMy = mesh.ExtentYMm / 2.0;
+        var aIsLoaded = new bool[mesh.NodeCount];
+        foreach (int n in aLoaded) aIsLoaded[n] = true;
+        int ArgMin(Func<int, double> fn)   // supports on UNLOADED nodes only, so no load is lost into a fixed DOF
+        {
+            int nBest = -1; double dBest = double.MaxValue;
+            for (int n = 0; n < mesh.NodeCount; n++)
+            {
+                if (aIsLoaded[n]) continue;
+                double v = fn(n);
+                if (v < dBest) { dBest = v; nBest = n; }
+            }
+            return nBest >= 0 ? nBest : throw new InvalidOperationException("every node is loaded — no support can be placed");
+        }
+        int nA = ArgMin(n => Math.Abs(mesh.NodeX[n] - dMx) + Math.Abs(mesh.NodeY[n] - dMy) + mesh.NodeZ[n]);
+        int nB = ArgMin(n => Math.Abs(mesh.NodeX[n] - dMx) + Math.Abs(mesh.NodeY[n] - dMy) + (mesh.ExtentZMm - mesh.NodeZ[n]));
+        int nC = ArgMin(n => Math.Abs(mesh.NodeY[n] - dMy) + mesh.NodeZ[n] - mesh.NodeX[n]);
+        if (nA == nB || nA == nC || nB == nC)
+            throw new InvalidOperationException("the 3-2-1 support collapsed onto a shared node — the body is too small to read");
+        var aFixed = new bool[nDof];
+        aFixed[(nA * 3) + 0] = aFixed[(nA * 3) + 1] = aFixed[(nA * 3) + 2] = true;
+        aFixed[(nB * 3) + 0] = aFixed[(nB * 3) + 1] = true;
+        aFixed[(nC * 3) + 1] = true;
+
+        var sys = new System_ { Mesh = mesh, Ke = aKe, Fixed = aFixed, Prescribed = new double[nDof] };
+        (double[] aU, int nIter, double dRes, bool bConv) = Solve(sys, dTol, nMaxIter, aF);
+
+        var aKu = new double[nDof];
+        Multiply(sys, aU, aKu);
+        double dReaction = 0.0;
+        for (int d = 0; d < nDof; d++)
+            if (aFixed[d]) dReaction += (aKu[d] - aF[d]) * (aKu[d] - aF[d]);
+
+        // realised macro stress: ⟨σ⟩ = (1/V)·Σ sym(f ⊗ x) — origin-free, the load being self-equilibrated
+        long nInside = 0;
+        foreach (Phase p in grid.Cells) if (p != Phase.Outside) nInside++;
+        double dV = nInside * h * (double)h * h;
+        var aS = new double[3, 3];
+        for (int n = 0; n < mesh.NodeCount; n++)
+        {
+            double[] x = [mesh.NodeX[n], mesh.NodeY[n], mesh.NodeZ[n]];
+            for (int a = 0; a < 3; a++)
+                for (int b = 0; b < 3; b++)
+                    aS[a, b] += 0.5 * ((aF[(n * 3) + a] * x[b]) + (aF[(n * 3) + b] * x[a])) / dV;
+        }
+        double[] dVec = [dDx, dDy, 0.0];
+        double dSdd = 0.0;
+        for (int a = 0; a < 3; a++) for (int b = 0; b < 3; b++) dSdd += dVec[a] * aS[a, b] * dVec[b];
+        double dOff = 0.0;
+        for (int a = 0; a < 3; a++)
+            for (int b = 0; b < 3; b++)
+            {
+                double v = aS[a, b] - (dSdd * dVec[a] * dVec[b]);
+                dOff += v * v;
+            }
+
+        double dWork = Dot(aF, aU);
+        return new TractionResult
+        {
+            Fea = new FeaResult
+            {
+                Case = LoadCase.TractionInPlane,
+                StepMm = grid.StepMm,
+                Elements = mesh.ElementCount,
+                Dofs = nDof,
+                Iterations = nIter,
+                Residual = dRes,
+                Converged = bConv,
+                StiffnessRatio = dSdd * dSdd * dV / dWork,
+                SolidFraction = mesh.SolidFraction,
+                DiscardedIslandFraction = mesh.DiscardedIslandFraction,
+            },
+            ThetaDeg = dThetaDeg,
+            ProjectionRelative = Math.Sqrt(dCut) / dRaw,
+            MacroStressAlongD = dSdd,
+            MacroStressOffAxisRelative = Math.Sqrt(dOff) / Math.Abs(dSdd),
+            SupportReactionRelative = Math.Sqrt(dReaction) / Math.Sqrt(Dot(aF, aF)),
+        };
+    }
+
     // ── Periodic homogenisation (00_07 HW.23) ────────────────────────────────────────────────────
     //
     // 🔴 WHY THIS EXISTS: every case above loads a FINITE specimen through its boundary, and a finite lattice specimen has
@@ -1010,6 +1235,7 @@ internal static class VoxelFea
         return new Mesh
         {
             ElemNodes = aElemNodes,
+            ElemCells = [.. aElemCells],
             Colours = [.. aColourLists.Select(l => l.ToArray())],
             NodeCount = nNodes,
             NodeX = aNodeX,

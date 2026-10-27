@@ -6517,6 +6517,15 @@ def test_sway105_ligament_field_sets_follow_the_cache():
     assert (f"та сама медіана звʼязує кожен сплав на θ = 0 і за будь-якого відібраного кута — кожен, крім {m} (ніж "
             "усередині розмаху прочитань)") in tracker
     assert "(це фон Мізес)" in tracker
+    # the premise sentence: the angle sets are 105's premise flags, never typed
+    pr = d["gyroid_bound_premise_static_modulus"]["by_theta"]
+
+    def angles(ks):
+        xs = [f"{k}°" if k != "0" else "θ = 0" for k in ks]
+        return " and ".join(xs) if len(xs) < 3 else ", ".join(xs[:-1]) + " and " + xs[-1]
+    hold = [k for k, v in pr.items() if v["holds_on_every_step"]]
+    fail = [k for k, v in pr.items() if v["fails_on_every_step"]]
+    assert (f"meets the lower reading at {angles(hold)} and falls below it at {angles(fail)} on every measured step") in text
 
 
 

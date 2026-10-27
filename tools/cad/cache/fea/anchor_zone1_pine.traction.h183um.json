@@ -1,0 +1,49 @@
+{
+  "_note": "STATIC (traction) in-plane modulus of the part as MODELLED, in units of E_solid, at one step. Named form and declared ceiling live on VoxelFea.TractionInPlaneModulus: t = \u03A3\u00B7n on the metal faces of the lateral cut, made self-equilibrated by the least-squares rigid-mode projection over the loaded nodes; E read from the energy against the REALISED macro stress. A reading of a finite cut specimen, not a Huet bound; read with its step ladder.",
+  "cem": "anchor_zone1_pine",
+  "topology": "network",
+  "poisson_ratio": 0.342,
+  "step_mm": 0.18333334,
+  "step_divisor": null,
+  "elements": 219869,
+  "porosity": 0.6449884714498847,
+  "solid_calibration_theta0": 0.9999999728587747,
+  "rows": [
+    {
+      "theta_deg": 0,
+      "all_nodes_equilibration_ratio": 0.08477703958887921,
+      "traction_modulus_ratio": 0.08752991977040156,
+      "macro_stress_along_d": 0.34458771049735704,
+      "macro_stress_off_axis_relative": 0.003018298718032557,
+      "projection_relative": 0.2117739377208139,
+      "support_reaction_relative": 5.942943567184748E-07,
+      "iterations": 7059,
+      "residual": 9.878920282064208E-09,
+      "converged": true
+    },
+    {
+      "theta_deg": 22.5,
+      "all_nodes_equilibration_ratio": null,
+      "traction_modulus_ratio": 0.09647999855687726,
+      "macro_stress_along_d": 0.35020866559500524,
+      "macro_stress_off_axis_relative": 0.007365517745334642,
+      "projection_relative": 0.16856511655820994,
+      "support_reaction_relative": 5.238327358916229E-07,
+      "iterations": 7217,
+      "residual": 9.831216866535006E-09,
+      "converged": true
+    },
+    {
+      "theta_deg": 45,
+      "all_nodes_equilibration_ratio": null,
+      "traction_modulus_ratio": 0.10574950519992136,
+      "macro_stress_along_d": 0.35368504089946984,
+      "macro_stress_off_axis_relative": 0.010277491502152429,
+      "projection_relative": 0.12985949679635078,
+      "support_reaction_relative": 4.665936362949223E-07,
+      "iterations": 7253,
+      "residual": 9.788217279753015E-09,
+      "converged": true
+    }
+  ]
+}

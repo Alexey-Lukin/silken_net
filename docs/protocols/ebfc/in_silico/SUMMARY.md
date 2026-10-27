@@ -1032,7 +1032,10 @@ convergence leaves inside the bracket; the axial bracket closes to 0.05 %) — a
 strain above which the bound alone puts the ligaments at SF 2, at a share of the wood's strain t_L = 1 and a peak over
 RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 — the actual state's, of which the periodic case's k_p is only the
 uniaxial-state reading — lowers every cell, a share below 1 raises it (the share
-itself — `106`, the next section: it lies on both sides of 1). No cell is a strain below which the gyroid is safe.
+itself — `106`, the next section: it lies on both sides of 1). No cell is a strain below which the gyroid is safe. **The premise, measured (2026-10-28):** the part's static
+in-plane modulus (`01_01 §5.2`, `fea --traction`) meets the lower reading at 22.5° and 45° and falls below it at θ = 0
+on every measured step — so with the cube axis along the stem this table's «binds above» is not established, and `105`
+reads the static modulus as this check only, never in its thresholds (`00_07` HW.23).
 
 | alloy | σ_e printed, MPa | σ_e/E_s vs Ti-6Al-4V | binds above, µε: large stem (lower ⊥ higher reading: radial ⊥ axial) | DBH 38, sensor on bark ⊥ on xylem (thick bark), lower reading | any stress state, large stem, lower reading |
 |---|---|---|---|---|---|
@@ -1130,7 +1133,7 @@ bearing, pressed by the sleeve's top face (31.9–49.1 MPa at 473 N). The Zone 3
 
 ⚠️ **Bounds.** The shank's nominal is its axial term only: the pin's bending by the stem's transverse shear and its
 anticlastic curvature (S5) is not computed. E_z* and k_p of the INFINITE lattice are read from the periodic voxel case only as the
-uniaxial-state reading above, never as a multiplier of this bound; the inclusion's field under the wood's multiaxial strain is not in that cache (its cases are uniaxial), and the finite part's E_z* under traction and the junction's stress need a traction case on the part and a
+uniaxial-state reading above, never as a multiplier of this bound; the inclusion's field under the wood's multiaxial strain is not in that cache (its cases are uniaxial), the field under traction has no case, and the junction's stress needs a
 junction model (gyroid + solid + sleeve end + wood); t_L is `106`'s (next section) and hangs on the tissue in the pores,
 the wood's reading and moisture, and off the cube axis on the lattice's shear modulus; the callus annulus's stiffness is unknown. `62` counts first-mode cycles,
 not strain ranges, so no amplitude here is paired with a count — the field record does that. No K_t (barb root, groove,

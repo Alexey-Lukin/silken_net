@@ -796,4 +796,85 @@ public class VoxelFeaTests
                                 $"{strName} would be written by two different rows: {oRowOfName.GetValueOrDefault(strName)} and {strRow}");
                         }
     }
+    // ── Static (traction) in-plane modulus (00_07 HW.23) ──────────────────────────────────────────
+    //
+    // 🔑 Same shape as the rest of this file: each pin is a body whose answer under this load is known before the solve.
+
+    // A voxel cylinder along z, every inside cell solid, the rest Outside.
+    private static Connectivity.Grid SolidCylinder(int n, int nz, float fStepMm)
+    {
+        var aCells = new Phase[n * n * nz];
+        var grid = new Connectivity.Grid(aCells, n, n, nz, fStepMm);
+        double c = n / 2.0, r = n / 2.0;
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                for (int k = 0; k < nz; k++)
+                    if (((i + 0.5 - c) * (i + 0.5 - c)) + ((j + 0.5 - c) * (j + 0.5 - c)) <= r * r)
+                        aCells[grid.Index(i, j, k)] = Phase.Solid;
+        return grid;
+    }
+
+    // 🔴 THE calibration of the static case. Every exterior face of a solid voxel body carries σ·n, so the exact solution
+    // is uniform uniaxial stress, the hex reproduces it, the closure is exact (zero net force and moment — nothing to
+    // project) and the support reacts nothing: modulus 1 at any direction in the plane.
+    // MUTATION: swap two node lists in s_aLateralFaces (load the +x face's force on the −x nodes) ⇒ the stress is no
+    // longer uniform and the modulus leaves 1.
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(45.0)]
+    public void A_Solid_Cylinder_Under_Face_Tractions_Returns_The_Solid_Modulus(double dThetaDeg)
+    {
+        VoxelFea.TractionResult o = VoxelFea.TractionInPlaneModulus(SolidCylinder(10, 6, 0.25f), dThetaDeg);
+        Assert.True(o.Fea.Converged, $"CG did not converge (residual {o.Fea.Residual:E2})");
+        // the alternative equilibration has nothing to spread on a closed solid boundary — the same 1
+        VoxelFea.TractionResult oAll = VoxelFea.TractionInPlaneModulus(SolidCylinder(10, 6, 0.25f), dThetaDeg,
+                                                                       eEquilibration: VoxelFea.Equilibration.AllNodes);
+        Assert.True(Math.Abs(oAll.Fea.StiffnessRatio - 1.0) < 1e-6, $"θ = {dThetaDeg}°, correction over all nodes: {oAll.Fea.StiffnessRatio:F9}, not 1");
+        Assert.True(Math.Abs(o.Fea.StiffnessRatio - 1.0) < 1e-6, $"θ = {dThetaDeg}°: modulus {o.Fea.StiffnessRatio:F9}, not 1");
+        Assert.True(o.ProjectionRelative < 1e-9, $"a closed solid boundary needs no projection, got {o.ProjectionRelative:E2}");
+        Assert.True(Math.Abs(o.MacroStressAlongD - 1.0) < 1e-9, $"⟨σ⟩_dd {o.MacroStressAlongD:F12}, not 1");
+        Assert.True(o.MacroStressOffAxisRelative < 1e-9, $"⟨σ⟩ off uniaxial by {o.MacroStressOffAxisRelative:E2}");
+        Assert.True(o.SupportReactionRelative < 1e-6, $"the support reacted {o.SupportReactionRelative:E2} of the load");
+    }
+
+    // 🔴 The REALISED-stress normalisation, pinned by a body whose answer is φ. A box whose two ±y skins are pore (inside
+    // the envelope, not Outside) loaded along x: only the ±x metal faces carry σ·n, the metal is a prism in exactly
+    // uniform σ_xx, so the work is V_metal and ⟨σ⟩_xx over the envelope is φ = V_metal/V_envelope — hence E = φ²·V/V_metal
+    // = φ. MUTATION: read E against the nominal Σ (drop ⟨σ⟩_dd²) ⇒ this returns 1/φ and reds.
+    [Fact]
+    public void A_Porous_Skin_Reads_Its_Metal_Fraction_Through_The_Realised_Stress()
+    {
+        int nx = 6, ny = 8, nz = 4;
+        var aCells = new Phase[nx * ny * nz];
+        var grid = new Connectivity.Grid(aCells, nx, ny, nz, 0.25f);
+        for (int i = 0; i < nx; i++)
+            for (int j = 0; j < ny; j++)
+                for (int k = 0; k < nz; k++)
+                    aCells[grid.Index(i, j, k)] = j == 0 || j == ny - 1 ? Phase.Pore : Phase.Solid;
+        double dPhi = (ny - 2.0) / ny;
+        VoxelFea.TractionResult o = VoxelFea.TractionInPlaneModulus(grid, 0.0);
+        Assert.True(o.Fea.Converged, $"CG did not converge (residual {o.Fea.Residual:E2})");
+        Assert.True(Math.Abs(o.MacroStressAlongD - dPhi) < 1e-9, $"⟨σ⟩_xx {o.MacroStressAlongD:F12}, not φ = {dPhi}");
+        Assert.True(Math.Abs(o.Fea.StiffnessRatio - dPhi) < 1e-6, $"modulus {o.Fea.StiffnessRatio:F9}, not φ = {dPhi}");
+    }
+
+    // 🔴 An unbalanced cut: a pore notch on the +x face leaves its −x mirror loaded alone, so the raw face loads carry a
+    // net force and no static solution exists. The projection must remove a non-zero share and leave the support with
+    // (to solver precision) nothing to react. MUTATION: skip the projection ⇒ the support takes the net force and the
+    // reaction share reds.
+    [Fact]
+    public void An_Unbalanced_Cut_Is_Projected_To_Self_Equilibrium()
+    {
+        int nx = 6, ny = 6, nz = 4;
+        var aCells = new Phase[nx * ny * nz];
+        var grid = new Connectivity.Grid(aCells, nx, ny, nz, 0.25f);
+        for (int i = 0; i < nx; i++)
+            for (int j = 0; j < ny; j++)
+                for (int k = 0; k < nz; k++)
+                    aCells[grid.Index(i, j, k)] = i == nx - 1 && j >= 2 && j <= 3 && k >= 1 && k <= 2 ? Phase.Pore : Phase.Solid;
+        VoxelFea.TractionResult o = VoxelFea.TractionInPlaneModulus(grid, 0.0);
+        Assert.True(o.Fea.Converged, $"CG did not converge (residual {o.Fea.Residual:E2})");
+        Assert.True(o.ProjectionRelative > 1e-3, $"the notch unbalances the load, yet the projection removed only {o.ProjectionRelative:E2}");
+        Assert.True(o.SupportReactionRelative < 1e-6, $"the support reacted {o.SupportReactionRelative:E2} of the load");
+    }
 }

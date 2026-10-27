@@ -1460,6 +1460,7 @@ internal static class Program
             "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]\n" +
             "  fea --fit         Gibson-Ashby C and n fitted over a wall_param sweep  [--walls | --cells | --steps-per-period | --period | --sheet]\n" +
             "  fea <cem.json> --fit --walls <list>   the same fit on the shipped part  [--step-div N | --step-mm H | --with-radial]\n" +
+            "  fea <cem.json> --traction (--step-mm H | --step-div N)   STATIC in-plane modulus of the part at one step → cache/fea/<name>.traction.h<µm>um.json\n" +
             "  fea --periodic    the lattice's EFFECTIVE tensor (C11 · C12 · C44) and its ligament stress field, periodic conditions on one\n" +
             "                    period cell — a material, not the part → cache/fea/periodic_homogenization.*  [--wall | --period | --cells |\n" +
             "                    --steps-per-period | --thetas | --sheet]\n" +
@@ -1520,6 +1521,15 @@ internal static class Program
                 ? FeaFitPart(args) : FeaFitLattice(args);
         if (args.Contains("--ladder"))
             return FeaLadder(args);
+        if (args.Contains("--traction"))
+        {
+            // ⛔ One step per run, like an --step-mm row: a traction row is tens of minutes on the fine steps, and a
+            //    sweep flag silently ignored here would caption one step as a ladder.
+            string[] aForeign = ["--fit", "--sweep", "--walls", "--with-radial", "--face-offsets-mm", "--dilate"];
+            if (args.Any(a => aForeign.Contains(a)))
+                return Fail("fea --traction reads ONE step per run (--step-mm H or --step-div N) — run the other verbs separately");
+            return FeaTraction(args);
+        }
 
         string strCemPath = args[1];
         string strJson = File.ReadAllText(strCemPath);
@@ -1620,6 +1630,92 @@ internal static class Program
             ["cem"] = cem.Name,
             ["topology"] = cem.Topology,
             ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
+            ["rows"] = aRows,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"→ {strOut}");
+        return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
+    }
+
+    // The STATIC (traction) in-plane modulus of the shipped part at one step (00_07 HW.23): the side `105`'s energy bound
+    // needs for a finite gyroid, which no kinematic or periodic case gives. The named form and its ceiling live on
+    // VoxelFea.TractionInPlaneModulus; the solid counterpart is solved once, at θ = 0, as a live calibration (exactly 1).
+    private static int FeaTraction(string[] args)
+    {
+        string strCemPath = args[1];
+        string strJson = File.ReadAllText(strCemPath);
+        if (Cem.Kind(strJson) != "anchor_zone1")
+            return Fail($"fea --traction: only anchor_zone1 manifests carry a lattice; {strCemPath} is '{Cem.Kind(strJson)}'");
+        AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
+        float fStepMmArg = ArgFloat(args, "--step-mm", 0f);
+        int nDiv = ArgInt(args, "--step-div", 0);
+        if ((fStepMmArg > 0f) == (nDiv > 0))
+            return Fail("fea --traction needs exactly one of --step-mm H or --step-div N");
+        float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
+        float fStep = nDiv > 0 ? fPeriodMin / nDiv : fStepMmArg;
+        string strOut = Path.Combine("cache", "fea", $"{cem.Name}.traction.h{MathF.Round(fStep * 1000f):0}um.json");
+        if (File.Exists(strOut))
+            throw new InvalidOperationException($"{strOut} exists — a traction row is named by its step at 1 µm resolution and is not overwritten; delete it first if you mean to");
+
+        Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep);
+        WarnPhaseLock(fStep, cem, "the static modulus here sits on a staircase in the wall level");
+        Console.WriteLine($"fea --traction {cem.Name} — static in-plane modulus / E_solid at step {fStep:F4} mm, ν = {VoxelFea.SolidPoissonRatio}");
+        Console.WriteLine("  form: t = Σ·n on the metal faces of the lateral cut, self-equilibrated by the rigid-mode projection; E against the realised ⟨σ⟩");
+
+        VoxelFea.TractionResult oCal = VoxelFea.TractionInPlaneModulus(VoxelFea.SolidCounterpart(grid), 0.0);
+        Console.WriteLine($"  solid calibration θ = 0: {oCal.Fea.StiffnessRatio:F9} (projection {oCal.ProjectionRelative:E2}, reaction {oCal.SupportReactionRelative:E2})");
+        if (Math.Abs(oCal.Fea.StiffnessRatio - 1.0) > 1e-4)
+            Console.WriteLine("  ⚠ the solid counterpart is not at 1 — the SOLVER is off, not the lattice");
+
+        Console.WriteLine($"{"θ,°",6} {"E/E_s",9} {"⟨σ⟩_dd",8} {"off-ax",8} {"proj.",8} {"react.",9} {"CG it.",8}");
+        var aRows = new List<Dictionary<string, object>>();
+        int nElements = 0;
+        foreach (double dTheta in new[] { 0.0, 22.5, 45.0 })
+        {
+            VoxelFea.TractionResult o = VoxelFea.TractionInPlaneModulus(grid, dTheta);
+            nElements = o.Fea.Elements;
+            Console.WriteLine($"{dTheta,6:0.#} {o.Fea.StiffnessRatio,9:F5} {o.MacroStressAlongD,8:F4} {o.MacroStressOffAxisRelative,8:F4} " +
+                              $"{o.ProjectionRelative,8:F4} {o.SupportReactionRelative,9:E1} {o.Fea.Iterations,8:N0}");
+            if (!o.Fea.Converged)
+                Console.WriteLine($"  ⚠ CG did not reach tolerance (residual {o.Fea.Residual:E2}) — the row above is NOT a measurement");
+            // the price of the equilibration choice, read once (θ = 0): the same load with its correction spread over every
+            // node of the body instead of the loaded ones — the condition is ill-defined, so its sensitivity is a reading
+            double? dAlt = null;
+            if (dTheta == 0.0)
+            {
+                VoxelFea.TractionResult oAlt = VoxelFea.TractionInPlaneModulus(grid, 0.0, eEquilibration: VoxelFea.Equilibration.AllNodes);
+                dAlt = oAlt.Fea.Converged ? oAlt.Fea.StiffnessRatio : null;
+                Console.WriteLine($"  θ = 0 with the correction over every node: {oAlt.Fea.StiffnessRatio:F5} ({(oAlt.Fea.StiffnessRatio / o.Fea.StiffnessRatio - 1.0) * 100.0:+0.00;−0.00} %)");
+            }
+            aRows.Add(new Dictionary<string, object>
+            {
+                ["theta_deg"] = dTheta,
+                ["all_nodes_equilibration_ratio"] = dAlt!,
+                ["traction_modulus_ratio"] = o.Fea.StiffnessRatio,
+                ["macro_stress_along_d"] = o.MacroStressAlongD,
+                ["macro_stress_off_axis_relative"] = o.MacroStressOffAxisRelative,
+                ["projection_relative"] = o.ProjectionRelative,
+                ["support_reaction_relative"] = o.SupportReactionRelative,
+                ["iterations"] = o.Fea.Iterations,
+                ["residual"] = o.Fea.Residual,
+                ["converged"] = o.Fea.Converged,
+            });
+        }
+
+        Directory.CreateDirectory(Path.Combine("cache", "fea"));
+        File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["_note"] = "STATIC (traction) in-plane modulus of the part as MODELLED, in units of E_solid, at one step. Named form and "
+                      + "declared ceiling live on VoxelFea.TractionInPlaneModulus: t = Σ·n on the metal faces of the lateral cut, made "
+                      + "self-equilibrated by the least-squares rigid-mode projection over the loaded nodes; E read from the energy "
+                      + "against the REALISED macro stress. A reading of a finite cut specimen, not a Huet bound; read with its step ladder.",
+            ["cem"] = cem.Name,
+            ["topology"] = cem.Topology,
+            ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
+            ["step_mm"] = fStep,
+            ["step_divisor"] = nDiv > 0 ? (object)nDiv : null!,
+            ["elements"] = nElements,
+            ["porosity"] = Connectivity.Porosity(grid),
+            ["solid_calibration_theta0"] = oCal.Fea.StiffnessRatio,
             ["rows"] = aRows,
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"→ {strOut}");

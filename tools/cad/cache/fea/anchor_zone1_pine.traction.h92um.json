@@ -1,0 +1,49 @@
+{
+  "_note": "STATIC (traction) in-plane modulus of the part as MODELLED, in units of E_solid, at one step. Named form and declared ceiling live on VoxelFea.TractionInPlaneModulus: t = \u03A3\u00B7n on the metal faces of the lateral cut, made self-equilibrated by the least-squares rigid-mode projection over the loaded nodes; E read from the energy against the REALISED macro stress. A reading of a finite cut specimen, not a Huet bound; read with its step ladder.",
+  "cem": "anchor_zone1_pine",
+  "topology": "network",
+  "poisson_ratio": 0.342,
+  "step_mm": 0.09166667,
+  "step_divisor": null,
+  "elements": 1753201,
+  "porosity": 0.6450894845347468,
+  "solid_calibration_theta0": 0.9999999901866917,
+  "rows": [
+    {
+      "theta_deg": 0,
+      "all_nodes_equilibration_ratio": 0.08102893266994525,
+      "traction_modulus_ratio": 0.08344525251777217,
+      "macro_stress_along_d": 0.34810731239047715,
+      "macro_stress_off_axis_relative": 0.0013873835325381686,
+      "projection_relative": 0.21312145739817195,
+      "support_reaction_relative": 8.478346924102367E-07,
+      "iterations": 15612,
+      "residual": 9.942766037243339E-09,
+      "converged": true
+    },
+    {
+      "theta_deg": 22.5,
+      "all_nodes_equilibration_ratio": null,
+      "traction_modulus_ratio": 0.09269801977641648,
+      "macro_stress_along_d": 0.3525170721778516,
+      "macro_stress_off_axis_relative": 0.0044292834084584416,
+      "projection_relative": 0.17246234001121186,
+      "support_reaction_relative": 6.403160270560608E-07,
+      "iterations": 16403,
+      "residual": 9.91808640367747E-09,
+      "converged": true
+    },
+    {
+      "theta_deg": 45,
+      "all_nodes_equilibration_ratio": null,
+      "traction_modulus_ratio": 0.1035715638353901,
+      "macro_stress_along_d": 0.35464288597679017,
+      "macro_stress_off_axis_relative": 0.006201592618611201,
+      "projection_relative": 0.1324831530092728,
+      "support_reaction_relative": 4.013629771577956E-07,
+      "iterations": 16423,
+      "residual": 9.9249659842552E-09,
+      "converged": true
+    }
+  ]
+}

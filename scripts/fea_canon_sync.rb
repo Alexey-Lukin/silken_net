@@ -36,6 +36,10 @@
 #   8. THE PERIODIC TENSOR AND FIELD (§5.2, HW.23) — the effective-tensor ladder and the field-quantile rows against
 #      `periodic_homogenization.*`, that file's provenance and controls, and every sentence canon derives from it —
 #      including the one that sets it beside the PART's two readings, recomputed by `105`'s own Richardson rule.
+#   9. THE STEP LADDER (§5.2, HW.23) — the merged sweep ⊕ re-sweep table with its lock flags and the sentences derived
+#      from it (the unlocked chain's convergence, the locked rows' cost, the two readings `105` takes).
+#  10. THE STATIC IN-PLANE MODULUS (§5.2, HW.23) — the traction table against `<cem>.traction.h*um.json`, those files'
+#      provenance and controls, and the sentences canon derives from them against `105`'s two readings.
 #
 # ⚠️ DECLARED CEILING, and it is wider than the usual one for a value guard:
 #   • It judges NUMBERS — and, in 4b and 8, the derivations prose computes from them with the words those stand
@@ -1466,12 +1470,86 @@ else
   failures << "the periodic cache is not committed — canon §5.2 quotes it (`fea --periodic`)"
 end
 
+# ── 10. THE STATIC (TRACTION) IN-PLANE MODULUS (§5.2, HW.23 — 2026-10-28) ───────────────────────────────────────────
+#
+# 🔴 Added with `fea --traction`, for the reason layers 4, 5 and 8 exist: the numbers live in a file family
+# (`*.traction.h*um.json`) no other layer opens. Held: (a) TRANSCRIPTION of every cell — the three moduli, the porosity,
+# the ⟨σ⟩_dd and projection ranges (printed OUTWARD: the low end down, the high end up) and the alternative equilibration;
+# (b) PROVENANCE — the file calls itself STATIC, is the pine part at the sweep's ν, its solid counterpart reads 1, every
+# row converged with a support reaction at solver precision and ⟨σ⟩ within the quoted off-axis share; (c) the row COUNT
+# against the files (a step run without the table following reds); (d) the DERIVED sentences, each against `105`'s two
+# readings: below both at θ = 0 on every step, above the lower at 45° on every step, falling with the step at θ = 0 and
+# 22.5°, and the alternative equilibration below the reading at θ = 0 on every step.
+# ⛔ DECLARED CEILING: it pins the numbers and the directions canon reads off them, never the instrument (VoxelFeaTests
+# holds the closed forms) nor whether the named form is the right static condition — that is the reading canon names.
+traction_files = Dir.glob(File.join(ROOT, "tools/cad/cache/fea/anchor_zone1_pine.traction.h*um.json")).sort
+traction_rows_seen = 0
+traction_anchors = 0
+unless traction_files.empty?
+  tr = traction_files.map { |f| JSON.parse(File.read(f)) }.sort_by { |d| -d["step_mm"] }
+  r105 = JSON.parse(File.read(CACHE_105))["inputs"]["fe_readings"]
+  lo105, hi105 = r105.values.minmax
+  tr.each do |d|
+    tag = "traction #{format('%.4f', d['step_mm'])} mm"
+    failures << "#{tag}: the file does not call itself STATIC" unless d["_note"].to_s.include?("STATIC")
+    failures << "#{tag}: not the pine part at the sweep's ν" unless d["cem"] == "anchor_zone1_pine" && (d["poisson_ratio"] - sweep["poisson_ratio"]).abs < 1e-12
+    failures << "#{tag}: solid calibration #{d['solid_calibration_theta0']}, not 1" unless (d["solid_calibration_theta0"] - 1.0).abs < 1e-6
+    d["rows"].each do |r|
+      failures << "#{tag} θ #{r['theta_deg']}: did not converge — canon must not quote it" unless r["converged"]
+      failures << "#{tag} θ #{r['theta_deg']}: support reacted #{r['support_reaction_relative']}" unless r["support_reaction_relative"] < 1e-5
+      failures << "#{tag} θ #{r['theta_deg']}: ⟨σ⟩ off uniaxial by #{r['macro_stress_off_axis_relative']} — canon says ≤ 1.1 %" unless r["macro_stress_off_axis_relative"] <= 0.011
+    end
+  end
+  at = ->(d, th) { d["rows"].find { |r| (r["theta_deg"] - th).abs < 1e-9 } }
+  down = ->(x, n) { (x * 10**n).floor.to_f / 10**n }
+  up = ->(x, n) { (x * 10**n).ceil.to_f / 10**n }
+  canon.scan(/^\| 11\/(\d+) \(([0-9.]+) мм\) \| ([0-9.]+) % \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+)–([0-9.]+) \| (\d+)–(\d+) % \| ([0-9.]+) \|$/) do
+    den, mm, por, e0, e22, e45, s_lo, s_hi, p_lo, p_hi, alt = Regexp.last_match.captures
+    d = tr.find { |x| (x["step_mm"] - (11.0 / den.to_i)).abs < 1e-6 }
+    next failures << "traction table row 11/#{den} has no cache file" if d.nil?
+
+    traction_rows_seen += 1
+    s = d["rows"].map { |r| r["macro_stress_along_d"] }
+    pr = d["rows"].map { |r| r["projection_relative"] * 100.0 }
+    expect = { "step" => [format("%.4f", d["step_mm"]), mm], "porosity" => [format("%.1f", d["porosity"] * 100.0), por],
+               "θ0" => [format("%.4f", at.call(d, 0.0)["traction_modulus_ratio"]), e0],
+               "θ22.5" => [format("%.4f", at.call(d, 22.5)["traction_modulus_ratio"]), e22],
+               "θ45" => [format("%.4f", at.call(d, 45.0)["traction_modulus_ratio"]), e45],
+               "⟨σ⟩ low" => [format("%.2f", down.call(s.min, 2)), s_lo], "⟨σ⟩ high" => [format("%.2f", up.call(s.max, 2)), s_hi],
+               "projection low" => [pr.min.floor.to_s, p_lo], "projection high" => [pr.max.ceil.to_s, p_hi],
+               "all-nodes θ0" => [format("%.4f", at.call(d, 0.0)["all_nodes_equilibration_ratio"]), alt] }
+    expect.each { |cell, (want, got)| flag(failures, "traction 11/#{den} #{cell}", want, got) if want != got }
+  end
+  if traction_rows_seen < tr.size
+    failures << "only #{traction_rows_seen} of #{tr.size} traction rows matched — a step was run without the table, or a "\
+                "rewording DISARMED the comparison; fix the row shape, do not lower this number"
+  end
+  claims = {
+    "«На θ = 0 преміса межі `105` не тримається»: θ = 0 sits below BOTH of 105's readings on every step" =>
+      tr.all? { |d| at.call(d, 0.0)["traction_modulus_ratio"] < lo105 },
+    "«На θ = 45° преміса тримається на обох кроках»: 45° sits at or above 105's lower reading on every step" =>
+      tr.all? { |d| at.call(d, 45.0)["traction_modulus_ratio"] >= lo105 },
+    "«на θ = 22.5° — теж на обох»: 22.5° sits at or above 105's lower reading on every step" =>
+      tr.all? { |d| at.call(d, 22.5)["traction_modulus_ratio"] >= lo105 },
+    "«з подрібненням падає» / «запасом, що … меншає»: θ = 0 and 22.5° fall from each step to the next finer one" =>
+      tr.each_cons(2).all? { |a, b| [0.0, 22.5].all? { |th| at.call(b, th)["traction_modulus_ratio"] < at.call(a, th)["traction_modulus_ratio"] } },
+    "«поправка по всіх вузлах дає нижчий модуль на обох кроках»" =>
+      tr.all? { |d| at.call(d, 0.0)["all_nodes_equilibration_ratio"] < at.call(d, 0.0)["traction_modulus_ratio"] },
+  }
+  claims.each do |what, ok|
+    traction_anchors += 1
+    failures << "traction: #{what} — no longer true of the caches" unless ok
+  end
+  failures << "traction: the higher reading #{hi105} is not above the lower #{lo105} — «обидва FE-прочитання» names two" unless hi105 > lo105
+  failures << "traction: canon no longer says the premise fails at θ = 0" unless canon.include?("**На θ = 0 преміса межі `105` не тримається:**")
+end
+
 if failures.empty?
   puts "fea_canon_sync ✓ — 01_01 §5.2 matches tools/cad/cache/fea (transcription + #{anchors} derivation anchors + provenance " \
        "+ #{fit_rows_seen} fitted rows + #{dilation_rows_seen} sensitivity rows and #{dilation_anchors} of their derivations, " \
        "zero row = the pinned sweep field for field, + the graded pair of §5.5, + the canonical pair as quoted #{pair_quotes}× " \
        "and #{pair_derivations} derivations with it, + #{gap_anchors} size-gap derivations, + #{periodic_rows_seen} periodic-tensor rows and #{periodic_anchors} of " \
-       "their derivations)"
+       "their derivations, + #{traction_rows_seen} static-modulus rows and #{traction_anchors} of their derivations)"
   exit 0
 end
 

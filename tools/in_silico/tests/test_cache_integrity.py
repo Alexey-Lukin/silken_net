@@ -6538,6 +6538,37 @@ def test_printed_part_sway_stress_ligament_field_reading():
 
 
 
+def test_printed_part_sway_stress_bound_premise_static_modulus():
+    """105's check of its bound's premise against the part's static in-plane modulus (`fea --traction`, 01_01 §5.2,
+    00_07 HW.23), recomputed HERE from the traction caches and 105's own lower FE reading.
+
+    CAN catch: a step file left out or a stale one read, a modulus transcribed off its file, a «holds»/«fails» flag that
+    does not follow the comparison against the LOWER reading on EVERY step, a verdict sentence whose angle sets disagree
+    with the flags. CANNOT catch: a wrong static modulus (VoxelFeaTests hold the instrument's closed forms) or whether
+    the named traction form is the right static condition — the declared ceilings of 01_01 §5.2."""
+    d = json.loads((MECHANICAL / "printed_part_sway_stress.json").read_text(encoding="utf-8"))
+    pr = d["gyroid_bound_premise_static_modulus"]
+    files = sorted((REPO / "tools/cad/cache/fea").glob("anchor_zone1_pine.traction.h*um.json"))
+    assert files, "105 reads a premise check, yet no traction cache is committed"
+    tr = sorted((json.loads(f.read_text(encoding="utf-8")) for f in files), key=lambda x: -x["step_mm"])
+    lo = min(d["inputs"]["fe_readings"].values())
+    assert pr["lower_fe_reading"] == pytest.approx(lo, abs=1e-15)
+    assert pr["steps_mm"] == [x["step_mm"] for x in tr]
+    for tk, v in pr["by_theta"].items():
+        e = [next(r["traction_modulus_ratio"] for r in x["rows"] if f"{r['theta_deg']:g}" == tk) for x in tr]
+        assert v["static_modulus_by_step"] == pytest.approx(e, abs=1e-15), tk
+        assert v["holds_on_every_step"] == all(x >= lo for x in e), tk
+        assert v["fails_on_every_step"] == all(x < lo for x in e), tk
+
+    def angles(ks):
+        xs = [f"{k}°" if k != "0" else "θ = 0" for k in ks]
+        return " and ".join(xs) if len(xs) < 3 else ", ".join(xs[:-1]) + " and " + xs[-1]
+    hold = [k for k, v in pr["by_theta"].items() if v["holds_on_every_step"]]
+    fail = [k for k, v in pr["by_theta"].items() if v["fails_on_every_step"]]
+    assert (f"meets it at {angles(hold) if hold else 'no angle'} and falls below it at {angles(fail) if fail else 'no angle'} "
+            "on every measured step") in d["verdict"]
+
+
 def test_gyroid_interface_contact_map_invariants():
     """108 (00_07 HW.23, the leg on 106's bonded interface, step 1): the validity map rebuilt HERE by another ARITHMETIC,
     on BOTH of 106's wood groups (Scots pine ⊥ green Pinaceae). σᴵ of every θ = 0 cell is recomputed through 4th-order
