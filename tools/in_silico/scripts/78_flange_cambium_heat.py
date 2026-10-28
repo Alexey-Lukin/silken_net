@@ -261,15 +261,24 @@ def main() -> int:
     sens = json.loads((OUT_DIR / "capsule_envelope.json").read_text(encoding="utf-8"))["hot_bound_h_c_sensitivity"]
     if sens["h_c_scale"] != S71.H_C_SENSITIVITY or ALPHAS[0] != lo:
         raise SystemExit("71's cached h_c sensitivity or 78's α grid is not the one this block reads")
-    low = []
+    low, checked = [], 0
     for alpha in ALPHAS:
         q = alpha * (h["dni"] * a_proj + S71.SKY_VIEW * h["dif"] * a_exp)
         t_cap = S71.solve_t_cap(h["t_air"], q, a_exp, d_m, still * h["u10"], h_c_scale=S71.H_C_SENSITIVITY)
         want = sens["sunlit_still_air"].get(f"{alpha:.2f}")
-        if want is not None and abs(round(float(t_cap.max()), 1) - want["t_cap_max_c"]) > 0.05:
-            raise SystemExit(f"71's h_c × {S71.H_C_SENSITIVITY} row not reproduced: {t_cap.max():.2f} vs "
-                             f"{want['t_cap_max_c']} (α {alpha})")
+        if want is not None:
+            checked += 1
+            if abs(round(float(t_cap.max()), 1) - want["t_cap_max_c"]) > 0.05:
+                raise SystemExit(f"71's h_c × {S71.H_C_SENSITIVITY} row not reproduced: {t_cap.max():.2f} vs "
+                                 f"{want['t_cap_max_c']} (α {alpha})")
         low.append(t_cap)
+    # 71 caches its sensitivity rows at the ends of its α sweep only; every one it caches must have been compared — a
+    # key-format change would otherwise let this check pass with nothing compared
+    if checked != len(sens["sunlit_still_air"]):
+        raise SystemExit(f"compared {checked} of 71's {len(sens['sunlit_still_air'])} cached h_c × "
+                         f"{S71.H_C_SENSITIVITY} rows")
+    print(f"  h_c × {S71.H_C_SENSITIVITY}: capsule checked against 71's {checked} cached sensitivity rows "
+          f"(α {', '.join(sens['sunlit_still_air'])}); the rows between them are unchecked")
     low_cam = {side: run(np.column_stack(low), layers(b), b + S58.T_PHLOEM, SUBSTEPS_PER_HOUR)
                for side, b in (("thin", bark["thin_mm"]), ("thick", bark["thick_mm"]))}
     low_max = {side: [round(float(low_cam[side][:, j].max()), 2) for j in range(len(ALPHAS))] for side in low_cam}
