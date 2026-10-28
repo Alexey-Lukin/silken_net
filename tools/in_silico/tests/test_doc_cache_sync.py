@@ -3996,7 +3996,7 @@ CHECKS += [
      lambda d: _V78(d)["alpha_crossing_sunlit_still_air"]["thin"], 0.005),
     ("HW.6 ⚖️ · log-day thermal criterion: dead bark left under the deep edge → flange_cambium_heat.json",
      BENCH, rf"має лишатися ≥ ≈ \*\*{N} мм\*\* мертвої кори", FLANGE_HEAT,
-     lambda d: _V78(d)["h_c_x0_7"]["dead_bark_floor_mm_at_specified_alpha"], 0.05),
+     lambda d: HW6_RATIFIED_BARK_MM, 0.05),
     ("HW.6 ⚖️ · the day verdict is 78's h_c × 0.7 floor → bench sheet → 78", BENCH,
      rf"{N} мм — поріг `78` за `h_c × 0\.7`", FLANGE_HEAT,
      lambda d: _V78(d)["h_c_x0_7"]["dead_bark_floor_mm_at_specified_alpha"], 0.05),
@@ -8894,6 +8894,14 @@ def _low78(*path):
 
 _X78 = _low78("alpha_crossing_sunlit_still_air", "thin")
 _F78 = _low78("dead_bark_floor_mm_at_specified_alpha")
+# ⚖️ founder 2026-10-28 («HW.6 так», 01_04 §3.1): the RATIFIED criterion is a number of the verdict, not of the cache —
+# its copies are pinned to this constant, and `test_hw6_ratified_bark_criterion_still_sufficient` says when 78 moved
+# under it (a re-sync of a ratified text is a new verdict, not a pin fix)
+HW6_RATIFIED_BARK_MM = 5.0
+_R78 = lambda d: HW6_RATIFIED_BARK_MM  # noqa: E731
+# the verdict paragraph's other numbers are its RECORD at ratification (78's two readings, the price's headroom and ridge
+# fallback) — pinned here, so a re-run of 78 reds only the machine copies (01_04 ⊕ · 02_01 ⊕ · the sheet), never the verdict
+HW6_RATIFIED_RECORD = {"nominal_floor_mm": 2.0, "crossing_alpha": 0.57, "ridge_floor_mm": 13.5}
 CHECKS += [
     ("HW.6 · h_c × 0.7 crossing, thinnest contact → 01_04 §3.1 → 78", CODIT,
      rf"поріг досягається вже понад α ≈ \*\*{N}\*\* на найтоншому контакті", FLANGE_HEAT, _X78, 0.005),
@@ -8916,20 +8924,33 @@ CHECKS += [
      _X78, 0.005),
     # the ⚖️ 2026-10-28 verdict (HW.6 так) — its full form moved to 01_04 §3.1 with its pins; the sheet carries the day verdict
     ("HW.6 ⚖️ · criterion, the verdict's head → 01_04 §3.1 → 78", CODIT,
-     rf"\*\*Тепловий критерій торцювання на дні колод — ≥ ≈ {N} мм мертвої кори", FLANGE_HEAT, _F78, 0.05),
+     rf"\*\*Тепловий критерій торцювання на дні колод — ≥ ≈ {N} мм мертвої кори", FLANGE_HEAT, _R78, 0.05),
     ("HW.6 ⚖️ · nominal criterion → 01_04 §3.1 → 78", CODIT, rf"≥ ≈ {N} мм за номінального ⊥ ≥ ≈ [\d.]+ мм за `h_c × 0\.7`",
-     FLANGE_HEAT, lambda d: d["verdict"]["dead_bark_floor_mm_at_specified_alpha"], 0.05),
+     FLANGE_HEAT, lambda d: HW6_RATIFIED_RECORD["nominal_floor_mm"], 0.05),
     ("HW.6 ⚖️ · h_c × 0.7 criterion → 01_04 §3.1 → 78", CODIT, rf"за номінального ⊥ ≥ ≈ {N} мм за `h_c × 0\.7`, обидва",
-     FLANGE_HEAT, _F78, 0.05),
+     FLANGE_HEAT, _R78, 0.05),
     ("HW.6 ⚖️ · ridge seat fallback → 01_04 §3.1 → 78", CODIT, rf"\(≥ {N} мм мертвої кори на тонкому краю\)", FLANGE_HEAT,
-     lambda d: round(d["bark"]["thin_mm"] + d["bark"]["facing_spread_mm"], 1), 0.05),
-    ("HW.6 ⚖️ · zero-headroom residual → 01_04 §3.1 → 78", CODIT, rf"за залишку рівно {N} мм запасу α", FLANGE_HEAT, _F78, 0.05),
+     lambda d: HW6_RATIFIED_RECORD["ridge_floor_mm"], 0.05),
+    ("HW.6 ⚖️ · zero-headroom residual → 01_04 §3.1 → 78", CODIT, rf"за залишку рівно {N} мм запасу α", FLANGE_HEAT, _R78, 0.05),
     ("HW.6 ⚖️ · headroom on the thinnest contact → 01_04 §3.1 → 78", CODIT, rf"а запас від 0\.5 до ≈ {N} тримається лише",
-     FLANGE_HEAT, _X78, 0.005),
+     FLANGE_HEAT, lambda d: HW6_RATIFIED_RECORD["crossing_alpha"], 0.005),
     ("HW.6 ⚖️ · the pointer to the verdict → 01_04 §3.1 → 78", CODIT, rf"Приймання на дні колод судить ≥ ≈ {N} мм", FLANGE_HEAT,
-     _F78, 0.05),
-    ("HW.6 ⚖️ · day verdict → bench sheet §A.1 → 78", BENCH, rf"\*\*Тепловий критерій — вирок дня ≥ ≈ {N} мм\*\*", FLANGE_HEAT, _F78, 0.05),
-    ("HW.6 ⚖️ · Стан pointer → 00_07 HW.6 → 78", TRACKER, rf"приймання на дні колод судить ≥ ≈ {N} мм", FLANGE_HEAT, _F78, 0.05),
+     _R78, 0.05),
+    ("HW.6 ⚖️ · day verdict → bench sheet §A.1 → 78", BENCH, rf"\*\*Тепловий критерій — вирок дня ≥ ≈ {N} мм\*\*", FLANGE_HEAT, _R78, 0.05),
+("HW.6 ⚖️ · the ratified recommendation's working line → 01_04 §3.1", CODIT, rf"судити приймання за {N} мм, а залишок",
+ FLANGE_HEAT, _R78, 0.05),
+("HW.6 ⚖️ · the 10-03 record's nominal reading → 01_04 §3.1 → 78", CODIT,
+ rf"для такого торцювання ≈ {N} мм — тепловий критерій", FLANGE_HEAT,
+ lambda d: d["verdict"]["dead_bark_floor_mm_at_specified_alpha"], 0.05),
+("HW.6 ⚖️ · the 10-03 record's mark → 01_04 §3.1", CODIT, rf"номінального `h_c`; приймання судить ≥ ≈ {N} мм — ⚖️ ↓",
+ FLANGE_HEAT, _R78, 0.05),
+("HW.6 ⚖️ · the verdict list in Стан → 00_07 HW.6", TRACKER,
+ rf"на дні колод — ≥ ≈ {N} мм мертвої кори під глибоким краєм \(2026-10-28\)", FLANGE_HEAT, _R78, 0.05),
+("HW.6 ⚖️ · the air-gap leg → 00_07 HW.6", TRACKER, rf"судить тепловий критерій ≥ ≈ {N} мм \(⚖️ 2026-10-28",
+ FLANGE_HEAT, _R78, 0.05),
+("HW.6 ⚖️ · the α bound on the acceptance number → bench sheet §A.1", BENCH, rf"за залишку рівно {N} мм запасу α",
+ FLANGE_HEAT, _R78, 0.05),
+    ("HW.6 ⚖️ · Стан pointer → 00_07 HW.6 → 78", TRACKER, rf"приймання на дні колод судить ≥ ≈ {N} мм", FLANGE_HEAT, _R78, 0.05),
     ("HW.6 → HW.37 · thinnest contact of the headroom → 02_01 §5.2 → 78", HW_BOM,
      rf"і лише на найтоншому контакті брекета \({N} мм\)", FLANGE_HEAT, lambda d: d["bark"]["thin_mm"], 0.05),
     ("HW.6 → HW.37 · zero-headroom residual → 02_01 §5.2 → 78", HW_BOM,
@@ -9888,3 +9909,16 @@ def test_sap_recipe_mirrors_match_the_live_point():
                     bad.append(f"{f.relative_to(REPO)}:{i}: {m.group(1)} {m.group(2)}")
     assert len(files) >= 5, f"the walk found the recipe in only {sorted(files)} — the pattern no longer reads the letters"
     assert not bad, "a recipe mirror off the live point (67 q7):\n" + "\n".join(bad)
+
+
+def test_hw6_ratified_bark_criterion_still_sufficient():
+    """⚖️ founder 2026-10-28 ratified ≥ ≈ 5 mm of dead bark under the deep edge as SUFFICIENT on 78's adverse h_c
+    reading (01_04 §3.1). Its copies are pinned to HW6_RATIFIED_BARK_MM, not to the cache, so a re-run of 78 cannot
+    turn those pins red and invite a re-sync of a ratified text. This test is the other half: it reds when 78's floor
+    at h_c × 0.7 rises above the ratified number — the verdict's ground is then gone, and the fix is a new ⚖️
+    submission, never an edit of the number. CAN catch: the floor rising. CANNOT catch: a floor that falls (the
+    verdict stays sufficient, only stricter than it needs to be) or an UP term 78 does not model."""
+    floor = json.loads((CACHE / FLANGE_HEAT).read_text())["verdict"]["h_c_x0_7"]["dead_bark_floor_mm_at_specified_alpha"]
+    assert floor <= HW6_RATIFIED_BARK_MM + 1e-9, (
+        f"78's dead-bark floor at h_c × 0.7 is {floor} mm, above the ratified {HW6_RATIFIED_BARK_MM} mm "
+        "(⚖️ 2026-10-28, 01_04 §3.1) — re-submit ⚖️ HW.6; do not edit the ratified number")
