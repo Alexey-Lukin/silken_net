@@ -1494,6 +1494,15 @@ internal static class Program
     // for one. Pure-managed on purpose — the whole point is that it runs where `verify` cannot.
     private static int Fea(string[] args)
     {
+        // ⛔ Dispatched FIRST: every other verb below returns before it would be seen, so a foreign flag beside it would
+        //    silently drop the traction case instead of being refused.
+        if (args.Contains("--traction"))
+        {
+            string[] aForeign = ["--fit", "--ladder", "--sweep", "--periodic", "--walls", "--with-radial", "--face-offsets-mm", "--dilate"];
+            if (args.Any(a => aForeign.Contains(a)))
+                return Fail("fea --traction reads ONE step per run (--step-mm H or --step-div N) — run the other verbs separately");
+            return FeaTraction(args);
+        }
         if (args.Contains("--dilate"))
         {
             // ⛔ One axis per run: `--dilate` sweeps the face OFFSET at one step. A flag of another axis silently
@@ -1521,15 +1530,6 @@ internal static class Program
                 ? FeaFitPart(args) : FeaFitLattice(args);
         if (args.Contains("--ladder"))
             return FeaLadder(args);
-        if (args.Contains("--traction"))
-        {
-            // ⛔ One step per run, like an --step-mm row: a traction row is tens of minutes on the fine steps, and a
-            //    sweep flag silently ignored here would caption one step as a ladder.
-            string[] aForeign = ["--fit", "--sweep", "--walls", "--with-radial", "--face-offsets-mm", "--dilate"];
-            if (args.Any(a => aForeign.Contains(a)))
-                return Fail("fea --traction reads ONE step per run (--step-mm H or --step-div N) — run the other verbs separately");
-            return FeaTraction(args);
-        }
 
         string strCemPath = args[1];
         string strJson = File.ReadAllText(strCemPath);
@@ -1677,19 +1677,19 @@ internal static class Program
                               $"{o.ProjectionRelative,8:F4} {o.SupportReactionRelative,9:E1} {o.Fea.Iterations,8:N0}");
             if (!o.Fea.Converged)
                 Console.WriteLine($"  ⚠ CG did not reach tolerance (residual {o.Fea.Residual:E2}) — the row above is NOT a measurement");
-            // the price of the equilibration choice, read once (θ = 0): the same load with its correction spread over every
-            // node of the body instead of the loaded ones — the condition is ill-defined, so its sensitivity is a reading
-            double? dAlt = null;
-            if (dTheta == 0.0)
-            {
-                VoxelFea.TractionResult oAlt = VoxelFea.TractionInPlaneModulus(grid, 0.0, eEquilibration: VoxelFea.Equilibration.AllNodes);
-                dAlt = oAlt.Fea.Converged ? oAlt.Fea.StiffnessRatio : null;
-                Console.WriteLine($"  θ = 0 with the correction over every node: {oAlt.Fea.StiffnessRatio:F5} ({(oAlt.Fea.StiffnessRatio / o.Fea.StiffnessRatio - 1.0) * 100.0:+0.00;−0.00} %)");
-            }
+            // the price of the equilibration choice, read at EVERY angle: the same load with its correction spread over
+            // every node of the body instead of the loaded ones — the condition is ill-defined, so its sensitivity is a
+            // reading of one alternative, never a bound, and an angle without it would carry an unpriced claim
+            VoxelFea.TractionResult oAlt = VoxelFea.TractionInPlaneModulus(grid, dTheta, eEquilibration: VoxelFea.Equilibration.AllNodes);
+            double dAlt = oAlt.Fea.StiffnessRatio;
+            bool bAltConverged = oAlt.Fea.Converged;
+            Console.WriteLine($"  θ = {dTheta:0.#}° with the correction over every node: {dAlt:F5} ({(dAlt / o.Fea.StiffnessRatio - 1.0) * 100.0:+0.00;−0.00} %)");
             aRows.Add(new Dictionary<string, object>
             {
                 ["theta_deg"] = dTheta,
-                ["all_nodes_equilibration_ratio"] = dAlt!,
+                ["all_nodes_equilibration_ratio"] = dAlt,
+                ["all_nodes_equilibration_converged"] = bAltConverged,
+                ["load_outside_loaded_relative"] = o.LoadOutsideLoadedRelative,
                 ["traction_modulus_ratio"] = o.Fea.StiffnessRatio,
                 ["macro_stress_along_d"] = o.MacroStressAlongD,
                 ["macro_stress_off_axis_relative"] = o.MacroStressOffAxisRelative,
@@ -1719,7 +1719,7 @@ internal static class Program
             ["rows"] = aRows,
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"→ {strOut}");
-        return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
+        return aRows.All(r => (bool)r["converged"] && (bool)r["all_nodes_equilibration_converged"]) ? 0 : 1;
     }
 
     // The face-offset SENSITIVITY of the shipped part (00_07 HW.51): the lattice dilated by one structuring element

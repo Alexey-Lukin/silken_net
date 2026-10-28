@@ -50,7 +50,9 @@ MODEL.
   energy-equivalent stress σ_W over the ligaments is at least √(E_s·E_z*/φ)·ε_z, and no peak is below an RMS. σ_W is
   |σ_1| in uniaxial stress — a ligament in bending and stretching — and at most √(3 + 2ν)·max|σ_i| in any state: two
   readings («near_uniaxial» ⊥ «any_state»). E_z* is the gyroid's uniaxial in-plane modulus under traction conditions,
-  which NO row of the voxel-FE cache measures: the radial case is a kinematic shell loading ∝ (C11+C12), the axial one
+  which neither FE reading below is: the static case (`fea --traction`, 01_01 §5.2) gives a named ESTIMATE of it — read
+  below as a check of this premise, never fed into the thresholds, an estimate that can sit on either side of the true
+  static modulus — while the radial case is a kinematic shell loading ∝ (C11+C12), the axial one
   is E[100] of a cubic lattice and an in-plane direction can be off-axis, and both sit on the kinematic side of a
   traction-BC modulus for a finite part. The two FE ratios — per axis the LOWER end of the finest-step
   bracket, the finest UNLOCKED step (one whose sampled phase does not repeat within four axial cells — the mirror of
@@ -104,12 +106,12 @@ CAN: list every path and say which this script prices; give, per alloy, the stem
 alone puts the gyroid's ligaments at σ_e/S (t_L = k_p = 1, per FE reading, stress-state reading and sensor reference),
 and whether the source day reaches it; the same for the periodic case's uniaxial-state reading of the ligament PEAK,
 per named quantile and sampled mount angle at the readings' adverse end (rungs × measures), with max|σ_i| beside it and
-every knife-edge; per mount angle, whether the part's static in-plane modulus meets the bound's FE reading on every
+every knife-edge; per mount angle, where the part's named static estimate lies against BOTH FE readings on every
 measured step; the anode's bond force and the bearing force per premise, state and bond end;
 each solid member's nominal stress, the K_f at which it reaches SF 2 per cycle reading and route, and the static mean at
 which it does; the force the sway puts on the barbs' easy flank; the junction's mismatch; the mass path.
 CANNOT: (1) show any part SAFE from the gyroid bound, or any ligament safe from the field reading; carry the part's
-static in-plane modulus into the thresholds (it is read as a CHECK of the bound's premise only — `fea --traction`,
+static in-plane reading into the thresholds (it is read as a CHECK of the bound's premise only — `fea --traction`,
 01_01 §5.2), or give the field under traction (no case), the inclusion's field under
 the wood's multiaxial strain (the periodic cache holds uniaxial cases only — the lattice's elastic half is the CAD
 side's, in-silico §When Modifying #24), which quantile is a smooth ligament's fatigue peak (01_01 §5.2 ceiling (3)), or
@@ -640,10 +642,11 @@ def main() -> int:
                 knives += [{"reading": rd, "alloy": al, "quantile": q, "angle": k}
                            for k, v in lig_source[rd][al][q].items() if v["flips_inside_readings"]]
 
-    # ── The bound's PREMISE against the part's static in-plane modulus (`fea --traction`, 01_01 §5.2, 00_07 HW.23) ────
+    # ── The bound's PREMISE against the part's static in-plane reading (`fea --traction`, 01_01 §5.2, 00_07 HW.23) ────
     # The bound holds only while the in-plane modulus under traction is at least the FE reading it is evaluated on. The
-    # static modulus is now measured per mount angle on a step ladder; it is read here as a CHECK of that premise — per
-    # angle, does it meet the lower reading on every measured step — never fed into the thresholds above.
+    # static case gives a named ESTIMATE of it per mount angle on a step ladder — one that can sit on either side of the
+    # true static modulus (01_01 §5.2, ceiling (3)) — read here as a CHECK of that premise: per angle, where it lies
+    # against BOTH readings on every measured step. Never fed into the thresholds above.
     traction = []
     for f in sorted(FEA_DIR.glob(f"{pine['name']}.traction.h*um.json")):
         d = json.loads(f.read_text(encoding="utf-8"))
@@ -651,12 +654,14 @@ def main() -> int:
         assert abs(d["solid_calibration_theta0"] - 1.0) < 1e-6 and all(r["converged"] for r in d["rows"]), f"{f.name}: not a measurement"
         traction.append(d)
     traction.sort(key=lambda d: -d["step_mm"])
-    premise = {"lower_fe_reading": fe_readings[lo_key], "steps_mm": [d["step_mm"] for d in traction], "by_theta": {}}
+    premise = {"lower_fe_reading": fe_readings[lo_key], "higher_fe_reading": fe_readings[hi_key],
+               "steps_mm": [d["step_mm"] for d in traction], "by_theta": {}}
     for th in sorted({r["theta_deg"] for d in traction for r in d["rows"]}):
         ladder_e = [next(r["traction_modulus_ratio"] for r in d["rows"] if r["theta_deg"] == th) for d in traction]
+        above = all(e >= fe_readings[hi_key] for e in ladder_e)
+        below = all(e < fe_readings[lo_key] for e in ladder_e)
         premise["by_theta"][f"{th:g}"] = {"static_modulus_by_step": ladder_e,
-                                          "holds_on_every_step": all(e >= fe_readings[lo_key] for e in ladder_e),
-                                          "fails_on_every_step": all(e < fe_readings[lo_key] for e in ladder_e)}
+                                          "where": "above_both" if above else "below_both" if below else "between"}
 
     # the S2 axial term at the gyroid's shank end — its own lower bound, force-controlled (the higher ratio is its
     # conservative end); mature state, stiff bond, the source day's upper reading
@@ -742,13 +747,16 @@ def main() -> int:
         xs = [f"{k}°" if k != "0" else "θ = 0" for k in ks]
         return " and ".join(xs) if len(xs) < 3 else ", ".join(xs[:-1]) + " and " + xs[-1]
 
-    p_hold = [k for k, v in premise["by_theta"].items() if v["holds_on_every_step"]]
-    p_fail = [k for k, v in premise["by_theta"].items() if v["fails_on_every_step"]]
+    def where(w):
+        ks = [k for k, v in premise["by_theta"].items() if v["where"] == w]
+        return angles(ks) if ks else "no angle"
+
     prem_text = (
         f"The bound stands on the part's in-plane modulus under traction being at least its FE reading ({lo_name} "
-        f"{fe_readings[lo_key]:.4f} of E_s): the static modulus measured per mount angle (01_01 §5.2) meets it at "
-        f"{angles(p_hold) if p_hold else 'no angle'} and falls below it at {angles(p_fail) if p_fail else 'no angle'} on every "
-        f"measured step — where it falls, this bound's «binds above» is not established. " if traction else
+        f"{fe_readings[lo_key]:.4f} of E_s): the named static estimate (01_01 §5.2 — a reading that can sit on either side "
+        f"of the true static modulus, never a proof) lies above both FE readings at {where('above_both')}, below both at "
+        f"{where('below_both')} and between them at {where('between')} on every measured step — where it is not above both, "
+        f"this bound's «binds above» is not established. " if traction else
         "The bound's premise — the part's in-plane modulus under traction at least the FE reading — is not measured. ")
     lig_text = (
         f"The periodic voxel case's ligament field — the INFINITE lattice under a uniaxial macro stress across the "
@@ -789,7 +797,7 @@ def main() -> int:
         f"when a preload ≥ F carries both halves. On the air-dry bark reading "
         f"the force is {z3_dry['force_N']:.0f} N; the mature-state disc force is not bounded. The mass path stays below "
         f"{up2(max(v['zone3_shank_bending_MPa'] for v in mass_path.values())):.2f} MPa. Not computed: the field under "
-        f"traction (no case) — the static modulus enters as a premise check only, never the thresholds — the inclusion's "
+        f"traction (no case) — the static reading enters as a premise check only, never the thresholds — the inclusion's "
         f"field under the wood's multiaxial strain (the periodic cache holds uniaxial cases only), the junction (a junction model), t_L (`106` — conditional), the "
         f"count of host-stem cycles above the threshold (the field sensor), any K_t, a barb row's ratchet force, the "
         f"static means, ice, the collar and lug root.")
@@ -855,9 +863,10 @@ def main() -> int:
         "gyroid_source_day_exceeds": source_day,
         "gyroid_source_day_flip_large_stem_sf2": source_day_flip,
         "gyroid_bound_premise_static_modulus": dict(premise, source="tools/cad/cache/fea/<cem>.traction.h*um.json",
-                                                    rule="per mount angle: does the static in-plane modulus meet the "
-                                                         "lower FE reading on every measured step — a CHECK of the "
-                                                         "bound's premise, never fed into its thresholds"),
+                                                    rule="per mount angle: where the named static estimate lies against "
+                                                         "BOTH FE readings on every measured step — a CHECK of the "
+                                                         "bound's premise (an estimate that can sit on either side of "
+                                                         "the true static modulus), never fed into its thresholds"),
         "gyroid_ligament_field_uniaxial_reading": {
             "source": str(s106.PERIODIC.relative_to(REPO_ROOT)),
             "is": "the INFINITE lattice's ligament field under a unit uniaxial macro stress along (cos θ, sin θ, 0) — "
@@ -898,7 +907,7 @@ def main() -> int:
         "zone3_members": zone3,
         "mass_path": mass_path,
         "not_computed": [
-            "the field under traction — no case; the part's static in-plane modulus is read as a premise check only, never "
+            "the field under traction — no case; the part's static in-plane reading enters as a premise check only, never "
             "fed into the thresholds (00_07 HW.23); the inclusion's field under the wood's multiaxial strain — the periodic "
             "cache holds uniaxial cases only",
             "which quantile of the periodic field is a smooth ligament's fatigue peak — the instrument does not say "

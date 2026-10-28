@@ -38,8 +38,8 @@
 #      including the one that sets it beside the PART's two readings, recomputed by `105`'s own Richardson rule.
 #   9. THE STEP LADDER (§5.2, HW.23) — the merged sweep ⊕ re-sweep table with its lock flags and the sentences derived
 #      from it (the unlocked chain's convergence, the locked rows' cost, the two readings `105` takes).
-#  10. THE STATIC IN-PLANE MODULUS (§5.2, HW.23) — the traction table against `<cem>.traction.h*um.json`, those files'
-#      provenance and controls, and the sentences canon derives from them against `105`'s two readings.
+#  10. THE STATIC IN-PLANE READING (§5.2, HW.23) — the traction table against `<cem>.traction.h*um.json`, those files'
+#      provenance and controls, the set of steps, and the sentences canon derives from them against `105`'s two readings.
 #
 # ⚠️ DECLARED CEILING, and it is wider than the usual one for a value guard:
 #   • It judges NUMBERS — and, in 4b and 8, the derivations prose computes from them with the words those stand
@@ -1470,78 +1470,131 @@ else
   failures << "the periodic cache is not committed — canon §5.2 quotes it (`fea --periodic`)"
 end
 
-# ── 10. THE STATIC (TRACTION) IN-PLANE MODULUS (§5.2, HW.23 — 2026-10-28) ───────────────────────────────────────────
+# ── 10. THE STATIC (TRACTION) IN-PLANE READING (§5.2, HW.23 — 2026-10-28) ───────────────────────────────────────────
 #
 # 🔴 Added with `fea --traction`, for the reason layers 4, 5 and 8 exist: the numbers live in a file family
 # (`*.traction.h*um.json`) no other layer opens. Held: (a) TRANSCRIPTION of every cell — the three moduli, the porosity,
-# the ⟨σ⟩_dd and projection ranges (printed OUTWARD: the low end down, the high end up) and the alternative equilibration;
-# (b) PROVENANCE — the file calls itself STATIC, is the pine part at the sweep's ν, its solid counterpart reads 1, every
-# row converged with a support reaction at solver precision and ⟨σ⟩ within the quoted off-axis share; (c) the row COUNT
-# against the files (a step run without the table following reds); (d) the DERIVED sentences, each against `105`'s two
-# readings: below both at θ = 0 on every step, above the lower at 45° on every step, falling with the step at θ = 0 and
-# 22.5°, and the alternative equilibration below the reading at θ = 0 on every step.
-# ⛔ DECLARED CEILING: it pins the numbers and the directions canon reads off them, never the instrument (VoxelFeaTests
-# holds the closed forms) nor whether the named form is the right static condition — that is the reading canon names.
+# the ⟨σ⟩_dd and projection ranges (printed OUTWARD: the low end down, the high end up) and the alternative
+# equilibration at every angle; (b) PROVENANCE — the file calls itself STATIC, is the pine part at the sweep's ν, its
+# solid counterpart reads 1, every row and its alternative converged, the support reaction sits at solver precision, the
+# reading's correction stayed on the loaded nodes, and ⟨σ⟩'s off-axis share is under the bound canon QUOTES (read from
+# canon, never typed here); (c) the SET of steps — every cache has exactly one table row and every row a cache (a step
+# run without the table, a row duplicated over another, a rewording that disarms the row shape — each reds); (d) the
+# DERIVED sentences, each COMPOSED here from the caches and `105`'s two readings and required verbatim in canon — where
+# the reading lies per angle, which way the alternative equilibration moves it per angle, the margins of every angle
+# that sits between the readings, and the step transcription (finest against coarsest — a transcription, never a trend); and `105`'s own premise categories agree with this layer's.
+# ⛔ DECLARED CEILING: it pins the numbers and the sentences canon reads off them, never the instrument (VoxelFeaTests
+# holds the closed forms), nor whether the named form is the right static condition, nor on which side of the true
+# static modulus the reading sits — that is the reading canon names, ceiling (3).
 traction_files = Dir.glob(File.join(ROOT, "tools/cad/cache/fea/anchor_zone1_pine.traction.h*um.json")).sort
 traction_rows_seen = 0
 traction_anchors = 0
-unless traction_files.empty?
+if traction_files.empty?
+  failures << "the traction caches are not committed — canon §5.2 quotes them (`fea --traction`)" if canon.include?("#### Статичний (силовий)")
+else
   tr = traction_files.map { |f| JSON.parse(File.read(f)) }.sort_by { |d| -d["step_mm"] }
-  r105 = JSON.parse(File.read(CACHE_105))["inputs"]["fe_readings"]
-  lo105, hi105 = r105.values.minmax
+  c105 = JSON.parse(File.read(CACHE_105))
+  lo105, hi105 = c105["inputs"]["fe_readings"].values.minmax
+  thetas = [ 0.0, 22.5, 45.0 ]
+  at = ->(d, th) { d["rows"].find { |r| (r["theta_deg"] - th).abs < 1e-9 } }
+  e_of = ->(d, th) { at.call(d, th)["traction_modulus_ratio"] }
+  alt_of = ->(d, th) { at.call(d, th)["all_nodes_equilibration_ratio"] }
+  off_bound = canon[/[Чч]астка ⟨σ⟩ поза віссю — ≤ ([0-9.]+) %/, 1]
+  failures << "traction: canon no longer quotes the off-axis bound «частка ⟨σ⟩ поза віссю — ≤ X %»" if off_bound.nil?
   tr.each do |d|
     tag = "traction #{format('%.4f', d['step_mm'])} mm"
     failures << "#{tag}: the file does not call itself STATIC" unless d["_note"].to_s.include?("STATIC")
     failures << "#{tag}: not the pine part at the sweep's ν" unless d["cem"] == "anchor_zone1_pine" && (d["poisson_ratio"] - sweep["poisson_ratio"]).abs < 1e-12
     failures << "#{tag}: solid calibration #{d['solid_calibration_theta0']}, not 1" unless (d["solid_calibration_theta0"] - 1.0).abs < 1e-6
+    failures << "#{tag}: angles #{d['rows'].map { |r| r['theta_deg'] }} — canon reads #{thetas}" unless d["rows"].map { |r| r["theta_deg"].to_f } == thetas
     d["rows"].each do |r|
-      failures << "#{tag} θ #{r['theta_deg']}: did not converge — canon must not quote it" unless r["converged"]
-      failures << "#{tag} θ #{r['theta_deg']}: support reacted #{r['support_reaction_relative']}" unless r["support_reaction_relative"] < 1e-5
-      failures << "#{tag} θ #{r['theta_deg']}: ⟨σ⟩ off uniaxial by #{r['macro_stress_off_axis_relative']} — canon says ≤ 1.1 %" unless r["macro_stress_off_axis_relative"] <= 0.011
+      th = "#{tag} θ #{r['theta_deg']}"
+      failures << "#{th}: did not converge — canon must not quote it" unless r["converged"]
+      failures << "#{th}: the alternative equilibration did not converge" unless r["all_nodes_equilibration_converged"] == true
+      failures << "#{th}: support reacted #{r['support_reaction_relative']}" unless r["support_reaction_relative"] < 1e-5
+      failures << "#{th}: the correction left the loaded nodes (#{r['load_outside_loaded_relative']})" unless r["load_outside_loaded_relative"].to_f < 1e-12 && r.key?("load_outside_loaded_relative")
+      if off_bound && r["macro_stress_off_axis_relative"] * 100.0 > off_bound.to_f
+        failures << "#{th}: ⟨σ⟩ off uniaxial by #{format('%.2f', r['macro_stress_off_axis_relative'] * 100.0)} % — canon says ≤ #{off_bound} %"
+      end
     end
   end
-  at = ->(d, th) { d["rows"].find { |r| (r["theta_deg"] - th).abs < 1e-9 } }
+  if off_bound
+    want = format("%.1f", (tr.flat_map { |d| d["rows"].map { |r| r["macro_stress_off_axis_relative"] } }.max * 1000.0).ceil / 10.0)
+    flag(failures, "traction off-axis bound (rounded UP from the largest row)", want, off_bound) if want != off_bound
+  end
   down = ->(x, n) { (x * 10**n).floor.to_f / 10**n }
   up = ->(x, n) { (x * 10**n).ceil.to_f / 10**n }
-  canon.scan(/^\| 11\/(\d+) \(([0-9.]+) мм\) \| ([0-9.]+) % \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+)–([0-9.]+) \| (\d+)–(\d+) % \| ([0-9.]+) \|$/) do
-    den, mm, por, e0, e22, e45, s_lo, s_hi, p_lo, p_hi, alt = Regexp.last_match.captures
+  dens = []
+  canon.scan(/^\| 11\/(\d+) \(([0-9.]+) мм\) \| ([0-9.]+) % \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+)–([0-9.]+) \| (\d+)–(\d+) % \| ([0-9.]+) · ([0-9.]+) · ([0-9.]+) \|$/) do
+    den, mm, por, e0, e22, e45, s_lo, s_hi, p_lo, p_hi, a0, a22, a45 = Regexp.last_match.captures
+    dens << den
     d = tr.find { |x| (x["step_mm"] - (11.0 / den.to_i)).abs < 1e-6 }
     next failures << "traction table row 11/#{den} has no cache file" if d.nil?
 
     traction_rows_seen += 1
     s = d["rows"].map { |r| r["macro_stress_along_d"] }
     pr = d["rows"].map { |r| r["projection_relative"] * 100.0 }
-    expect = { "step" => [format("%.4f", d["step_mm"]), mm], "porosity" => [format("%.1f", d["porosity"] * 100.0), por],
-               "θ0" => [format("%.4f", at.call(d, 0.0)["traction_modulus_ratio"]), e0],
-               "θ22.5" => [format("%.4f", at.call(d, 22.5)["traction_modulus_ratio"]), e22],
-               "θ45" => [format("%.4f", at.call(d, 45.0)["traction_modulus_ratio"]), e45],
-               "⟨σ⟩ low" => [format("%.2f", down.call(s.min, 2)), s_lo], "⟨σ⟩ high" => [format("%.2f", up.call(s.max, 2)), s_hi],
-               "projection low" => [pr.min.floor.to_s, p_lo], "projection high" => [pr.max.ceil.to_s, p_hi],
-               "all-nodes θ0" => [format("%.4f", at.call(d, 0.0)["all_nodes_equilibration_ratio"]), alt] }
+    expect = { "step" => [ format("%.4f", d["step_mm"]), mm ], "porosity" => [ format("%.1f", d["porosity"] * 100.0), por ],
+               "⟨σ⟩ low" => [ format("%.2f", down.call(s.min, 2)), s_lo ], "⟨σ⟩ high" => [ format("%.2f", up.call(s.max, 2)), s_hi ],
+               "projection low" => [ pr.min.floor.to_s, p_lo ], "projection high" => [ pr.max.ceil.to_s, p_hi ] }
+    thetas.zip([ e0, e22, e45 ], [ a0, a22, a45 ]).each do |th, e, a|
+      expect["θ#{th}"] = [ format("%.4f", e_of.call(d, th)), e ]
+      expect["all-nodes θ#{th}"] = [ format("%.4f", alt_of.call(d, th)), a ]
+    end
     expect.each { |cell, (want, got)| flag(failures, "traction 11/#{den} #{cell}", want, got) if want != got }
   end
-  if traction_rows_seen < tr.size
-    failures << "only #{traction_rows_seen} of #{tr.size} traction rows matched — a step was run without the table, or a "\
-                "rewording DISARMED the comparison; fix the row shape, do not lower this number"
+  failures << "traction table rows #{dens.tally.select { |_, n| n > 1 }.keys} appear more than once" if dens.uniq.size < dens.size
+  if traction_rows_seen < tr.size || dens.uniq.size < tr.size
+    failures << "only #{dens.uniq.size} distinct traction rows for #{tr.size} cache files — a step was run without the table, "\
+                "a row was duplicated over another, or a rewording DISARMED the comparison; fix the row shape, do not lower this number"
   end
-  claims = {
-    "«На θ = 0 преміса межі `105` не тримається»: θ = 0 sits below BOTH of 105's readings on every step" =>
-      tr.all? { |d| at.call(d, 0.0)["traction_modulus_ratio"] < lo105 },
-    "«На θ = 45° преміса тримається на обох кроках»: 45° sits at or above 105's lower reading on every step" =>
-      tr.all? { |d| at.call(d, 45.0)["traction_modulus_ratio"] >= lo105 },
-    "«на θ = 22.5° — теж на обох»: 22.5° sits at or above 105's lower reading on every step" =>
-      tr.all? { |d| at.call(d, 22.5)["traction_modulus_ratio"] >= lo105 },
-    "«з подрібненням падає» / «запасом, що … меншає»: θ = 0 and 22.5° fall from each step to the next finer one" =>
-      tr.each_cons(2).all? { |a, b| [0.0, 22.5].all? { |th| at.call(b, th)["traction_modulus_ratio"] < at.call(a, th)["traction_modulus_ratio"] } },
-    "«поправка по всіх вузлах дає нижчий модуль на обох кроках»" =>
-      tr.all? { |d| at.call(d, 0.0)["all_nodes_equilibration_ratio"] < at.call(d, 0.0)["traction_modulus_ratio"] },
-  }
-  claims.each do |what, ok|
+
+  # (d) the sentences, composed from the caches — never typed here
+  ang = ->(th) { th.zero? ? "θ = 0" : "θ = #{format('%g', th)}°" }
+  list = lambda do |ths|
+    xs = ths.map { |th| ang.call(th) }
+    xs.empty? ? "ні на якому куті" : (xs.size < 3 ? xs.join(" і ") : "#{xs[0..-2].join(', ')} і #{xs[-1]}")
+  end
+  where = thetas.group_by do |th|
+    es = tr.map { |d| e_of.call(d, th) }
+    es.min >= hi105 ? :above : (es.max < lo105 ? :below : :between)
+  end
+  where_text = "вище обох — на #{list.call(where.fetch(:above, []))}; між ними — на #{list.call(where.fetch(:between, []))}; "\
+               "нижче обох — на #{list.call(where.fetch(:below, []))}"
+  readings_text = "(нижчого #{format('%.4f', lo105)} і вищого #{format('%.4f', hi105)})"
+  move = thetas.group_by do |th|
+    ds = tr.map { |d| alt_of.call(d, th) - e_of.call(d, th) }
+    ds.all?(&:negative?) ? :down : (ds.all?(&:positive?) ? :up : :mixed)
+  end
+  move_text = { down: "вниз на кожному кроці", up: "вгору на кожному кроці", mixed: "у різні боки по кроках" }
+              .filter_map { |k, w| "#{w} — на #{list.call(move[k])}" if move[k] }.join("; ")
+  pct = ->(x) { format("%+.1f", x * 100.0).sub("-", "−") + " %" }
+  fine = tr.last
+  margins = where.fetch(:between, []).map do |th|
+    "на #{ang.call(th)} на найдрібнішому кроці прочитання стоїть на #{pct.call(e_of.call(fine, th) / lo105 - 1.0)} від нижчого "\
+      "FE-прочитання і на #{pct.call(e_of.call(fine, th) / hi105 - 1.0)} від вищого, а альтернативне врівноваження зсуває "\
+      "його на #{pct.call(alt_of.call(fine, th) / e_of.call(fine, th) - 1.0)}"
+  end
+  sentences = { "where the reading lies per angle" => "#{readings_text} на кожному виміряному кроці: #{where_text}",
+                "which way the alternative equilibration moves it" => "поправка по всіх вузлах зсуває прочитання #{move_text}" }
+  margins.each_with_index { |m, i| sentences["the margins of a between-angle (#{i + 1})"] = m }
+  coarse, = tr
+  dd = thetas.map { |th| e_of.call(fine, th) <=> e_of.call(coarse, th) }.uniq
+  word = { [ -1 ] => "менше", [ 1 ] => "більше" }.fetch(dd, "по-різному")
+  den_of = ->(d) { (11.0 / d["step_mm"]).round }
+  sentences["the step transcription (finest against coarsest, every angle)"] =
+    "На кожному куті число на 11/#{den_of.call(fine)} #{word}, ніж на 11/#{den_of.call(coarse)}"
+  sentences.each do |what, s|
     traction_anchors += 1
-    failures << "traction: #{what} — no longer true of the caches" unless ok
+    failures << "traction: canon no longer carries #{what}, composed from the caches: «#{s}»" unless canon.include?(s)
+  end
+  p105 = c105.fetch("gyroid_bound_premise_static_modulus", {}).fetch("by_theta", {})
+  thetas.each do |th|
+    mine = where.find { |_, ths| ths.include?(th) }.first
+    theirs = { "above_both" => :above, "below_both" => :below, "between" => :between }[p105.dig(format("%g", th), "where")]
+    failures << "traction: `105` files #{ang.call(th)} as #{theirs.inspect}, this layer as #{mine.inspect} — re-run `105`" unless mine == theirs
   end
   failures << "traction: the higher reading #{hi105} is not above the lower #{lo105} — «обидва FE-прочитання» names two" unless hi105 > lo105
-  failures << "traction: canon no longer says the premise fails at θ = 0" unless canon.include?("**На θ = 0 преміса межі `105` не тримається:**")
 end
 
 if failures.empty?
@@ -1549,7 +1602,7 @@ if failures.empty?
        "+ #{fit_rows_seen} fitted rows + #{dilation_rows_seen} sensitivity rows and #{dilation_anchors} of their derivations, " \
        "zero row = the pinned sweep field for field, + the graded pair of §5.5, + the canonical pair as quoted #{pair_quotes}× " \
        "and #{pair_derivations} derivations with it, + #{gap_anchors} size-gap derivations, + #{periodic_rows_seen} periodic-tensor rows and #{periodic_anchors} of " \
-       "their derivations, + #{traction_rows_seen} static-modulus rows and #{traction_anchors} of their derivations)"
+       "their derivations, + #{traction_rows_seen} static-reading rows and #{traction_anchors} of their derivations)"
   exit 0
 end
 

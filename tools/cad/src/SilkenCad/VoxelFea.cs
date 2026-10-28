@@ -24,8 +24,9 @@ namespace SilkenCad;
 // gradients; the element loop is 8-coloured by voxel parity, so two elements of one colour can never
 // share a node and the scatter is race-free under Parallel.For.
 //
-// 🔑 SELF-CALIBRATION rather than an analytic inversion. Every apparent modulus is reported as a
-// RATIO to the identical test run on the identical envelope filled SOLID. For the axial case that
+// 🔑 SELF-CALIBRATION rather than an analytic inversion. Every apparent modulus of the boundary cases is reported as
+// a RATIO to the identical test run on the identical envelope filled SOLID (the static case reports its modulus
+// directly — there the solid twin only checks it). For the axial case that
 // solid run must return exactly E_solid (uniform uniaxial stress), which makes it a live validation
 // of the element matrix, the assembly, the boundary conditions and the reaction sum in one number —
 // see FeaTests. For the radial case no closed form is needed at all: the solid run IS the normaliser.
@@ -753,8 +754,11 @@ internal static class VoxelFea
     //   • The static side of a FINITE, graded, cut specimen — not a bound in Huet's sense, whose order (kinematic ≥
     //     periodic ≥ static) holds on a volume of whole cells only; here it is a reading, softer than the periodic value
     //     only on average.
-    //   • E is defined through ⟨σ⟩, which the energy equals exactly only while ⟨σ⟩ is uniaxial along d; the returned
-    //     off-axis share says how far that holds.
+    //   • E is the exact energy bookkeeping against ⟨σ⟩ (Clapeyron), but it is the STATIC (SUBC) modulus only under the
+    //     SUBC load t = Σ·n on the WHOLE boundary — which a cut with pore openings does not admit, and the projection
+    //     replaces a share of the load besides. At fixed ⟨σ⟩ any non-uniform self-equilibrated load only adds energy, so
+    //     this reading can sit on EITHER side of the true static modulus: a reading of the premise, never a proof of it.
+    //     The off-axis share of ⟨σ⟩ moves E by tenths of a percent and certifies nothing about this.
     //   • The same staircase and fully integrated hexes as every case here (picogk gotcha #16): read it with its step
     //     ladder, never a row.
     // CONTROL: the solid counterpart is in exactly uniform uniaxial stress under this load (every exterior face carries
@@ -770,8 +774,10 @@ internal static class VoxelFea
         public required double MacroStressAlongD { get; init; }
         /// <summary>|⟨σ⟩ − ⟨σ⟩_dd·d⊗d|_F / ⟨σ⟩_dd — how far the realised macro stress is from uniaxial along d.</summary>
         public required double MacroStressOffAxisRelative { get; init; }
-        /// <summary>|reaction at the 3-2-1 support| / |f′| — zero for a self-equilibrated load.</summary>
+        /// <summary>|reaction at the 3-2-1 support| / |f′| — reads Rᵀf′ and the CG residual, zero for a self-equilibrated load.</summary>
         public required double SupportReactionRelative { get; init; }
+        /// <summary>|f′ on the nodes that carried no raw load| / |f′| — zero when the correction stays on the loaded nodes.</summary>
+        public required double LoadOutsideLoadedRelative { get; init; }
     }
 
     // Local nodes of the four lateral faces in the a*4 + b*2 + c order: (di, dj, outward n_x, n_y, nodes).
@@ -877,7 +883,7 @@ internal static class VoxelFea
         double dMx = mesh.ExtentXMm / 2.0, dMy = mesh.ExtentYMm / 2.0;
         var aIsLoaded = new bool[mesh.NodeCount];
         foreach (int n in aLoaded) aIsLoaded[n] = true;
-        int ArgMin(Func<int, double> fn)   // supports on UNLOADED nodes only, so no load is lost into a fixed DOF
+        int ArgMin(Func<int, double> fn)   // supports on unloaded raw nodes; the reaction then reads Rᵀf′ and the CG residual
         {
             int nBest = -1; double dBest = double.MaxValue;
             for (int n = 0; n < mesh.NodeCount; n++)
@@ -931,6 +937,10 @@ internal static class VoxelFea
             }
 
         double dWork = Dot(aF, aU);
+        double dOutside = 0.0;
+        for (int n = 0; n < mesh.NodeCount; n++)
+            if (!aIsLoaded[n])
+                for (int d = 0; d < 3; d++) dOutside += aF[(n * 3) + d] * aF[(n * 3) + d];
         return new TractionResult
         {
             Fea = new FeaResult
@@ -951,6 +961,7 @@ internal static class VoxelFea
             MacroStressAlongD = dSdd,
             MacroStressOffAxisRelative = Math.Sqrt(dOff) / Math.Abs(dSdd),
             SupportReactionRelative = Math.Sqrt(dReaction) / Math.Sqrt(Dot(aF, aF)),
+            LoadOutsideLoadedRelative = Math.Sqrt(dOutside) / Math.Sqrt(Dot(aF, aF)),
         };
     }
 
@@ -960,7 +971,7 @@ internal static class VoxelFea
     // no unique stiffness — on one volume of whole cells a kinematic boundary reads it high and a traction boundary low
     // (the radial case above is neither: its shell fixes the radial DOFs only, and it runs on a graded part), and the two
     // meet only as the specimen grows (Huet 1990, J. Mech. Phys. Solids 38:813; Kanit et al. 2003, Int. J. Solids Struct.
-    // 40:3647). Off the cube axis script `106` needs the lattice's SHEAR modulus C44, which none of the four cases above
+    // 40:3647). Off the cube axis script `106` needs the lattice's SHEAR modulus C44, which none of the boundary cases above
     // measures, and `105` reads, beside its bound and never inside it, the in-plane modulus under uniaxial STRESS and
     // the ligaments' peak over their RMS — a stress field, not a stiffness. On an exactly periodic lattice all three are properties of the INFINITE lattice,
     // and periodic boundary conditions on one period cell return them with no boundary at all.

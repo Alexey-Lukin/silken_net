@@ -1032,10 +1032,12 @@ convergence leaves inside the bracket; the axial bracket closes to 0.05 %) — a
 strain above which the bound alone puts the ligaments at SF 2, at a share of the wood's strain t_L = 1 and a peak over
 RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 — the actual state's, of which the periodic case's k_p is only the
 uniaxial-state reading — lowers every cell, a share below 1 raises it (the share
-itself — `106`, the next section: it lies on both sides of 1). No cell is a strain below which the gyroid is safe. **The premise, measured (2026-10-28):** the part's static
-in-plane modulus (`01_01 §5.2`, `fea --traction`) meets the lower reading at 22.5° and 45° and falls below it at θ = 0
-on every measured step — so with the cube axis along the stem this table's «binds above» is not established, and `105`
-reads the static modulus as this check only, never in its thresholds (`00_07` HW.23).
+itself — `106`, the next section: it lies on both sides of 1). No cell is a strain below which the gyroid is safe. **The premise, read (2026-10-28):** a named static estimate of the
+part's in-plane modulus (`01_01 §5.2`, `fea --traction`) lies above both FE readings at 45°, below both at θ = 0 and
+between them at 22.5° on every measured step. It is a reading, not a bound — at a fixed macro stress any non-uniform
+self-equilibrated load only adds energy, so it can sit on either side of the true static modulus — and it proves the
+premise at no angle; where it is not above both, this table's «binds above» is not established. `105` reads it as
+this check only, never in its thresholds (`00_07` HW.23).
 
 | alloy | σ_e printed, MPa | σ_e/E_s vs Ti-6Al-4V | binds above, µε: large stem (lower ⊥ higher reading: radial ⊥ axial) | DBH 38, sensor on bark ⊥ on xylem (thick bark), lower reading | any stress state, large stem, lower reading |
 |---|---|---|---|---|---|

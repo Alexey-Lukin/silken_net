@@ -46,11 +46,13 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   axial case is E[001] = r_a·E_s (uniaxial stress between frictionless platens) and the radial case, an equibiaxial
   in-plane strain with the ends held, is C11 + C12 = r_r·E_s/((1 + ν_s)(1 − 2ν_s)) — the solid envelope's same test as
   its normaliser. Two roots; the one outside the Voigt bound φ·C_s (Loewner order) is refused. Both readings sit on the
-  kinematic side of a traction modulus (`105`), so this tensor may be stiffer than the finite part under traction — while
+  kinematic side of a traction modulus (`105`), so this tensor may be stiffer than the finite part under traction (whose
+  named static estimate, 01_01 §5.2, is a reading that can sit on either side of the true static modulus) — while
   against the INFINITE lattice of the periodic voxel case (01_01 §5.2) its in-plane dilatational term C11 + C12 and, on the
   HW.33 (в) geometry, its deviatoric term C11 − C12 as well are lower on every density-matched pairing (before it the
-  deviatoric sign depended on the pairing) — but those bases are an extrapolation the part's non-monotone step sweep does
-  not prove, so no stiffness ordering between the two is established — an input end, not shown to be the output's. C44 is
+  deviatoric sign depended on the pairing) — and both bases are MEASURED on the HW.23 re-sweep's finest steps, not
+  extrapolated, yet the cube's rungs are phase-locked and scatter in a band of the order of the gaps, so no stiffness
+  ordering between the two is established — an input end, not shown to be the output's. C44 is
   swept over (0, φ·μ_s] — Voigt's ceiling (a tighter bound, Hashin–Shtrikman's, would narrow it) — as the Zener ratio
   A* = 2·C44/(C11 − C12) ∈ (0, A*_V], and read apart from the sweep from that periodic case (Measured C44 below). The cube's rotation θ
   about the anode's axis against L is the anchor's rotation at install, which the model leaves free: swept over 0–45°

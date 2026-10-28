@@ -12,6 +12,8 @@
     {
       "theta_deg": 0,
       "all_nodes_equilibration_ratio": 0.08477703958887921,
+      "all_nodes_equilibration_converged": true,
+      "load_outside_loaded_relative": 0,
       "traction_modulus_ratio": 0.08752991977040156,
       "macro_stress_along_d": 0.34458771049735704,
       "macro_stress_off_axis_relative": 0.003018298718032557,
@@ -23,7 +25,9 @@
     },
     {
       "theta_deg": 22.5,
-      "all_nodes_equilibration_ratio": null,
+      "all_nodes_equilibration_ratio": 0.09485420603362402,
+      "all_nodes_equilibration_converged": true,
+      "load_outside_loaded_relative": 0,
       "traction_modulus_ratio": 0.09647999855687726,
       "macro_stress_along_d": 0.35020866559500524,
       "macro_stress_off_axis_relative": 0.007365517745334642,
@@ -35,7 +39,9 @@
     },
     {
       "theta_deg": 45,
-      "all_nodes_equilibration_ratio": null,
+      "all_nodes_equilibration_ratio": 0.10707365270146442,
+      "all_nodes_equilibration_converged": true,
+      "load_outside_loaded_relative": 0,
       "traction_modulus_ratio": 0.10574950519992136,
       "macro_stress_along_d": 0.35368504089946984,
       "macro_stress_off_axis_relative": 0.010277491502152429,

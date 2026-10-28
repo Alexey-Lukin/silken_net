@@ -858,6 +858,41 @@ public class VoxelFeaTests
         Assert.True(Math.Abs(o.Fea.StiffnessRatio - dPhi) < 1e-6, $"modulus {o.Fea.StiffnessRatio:F9}, not φ = {dPhi}");
     }
 
+    // A box with a pore notch on its +x face placed OFF-CENTRE in y and z, inside a grid padded by (ox, oy) Outside cells —
+    // the raw face loads then carry a net force AND a net moment, so every rigid mode of the projection is exercised.
+    private static Connectivity.Grid OffCentreNotch(int ox, int oy)
+    {
+        int bx = 8, by = 6, bz = 4, nx = bx + ox, ny = by + oy;
+        var aCells = new Phase[nx * ny * bz];
+        var grid = new Connectivity.Grid(aCells, nx, ny, bz, 0.25f);
+        for (int i = 0; i < bx; i++)
+            for (int j = 0; j < by; j++)
+                for (int k = 0; k < bz; k++)
+                    aCells[grid.Index(i + ox, j + oy, k)] = i == bx - 1 && j == 1 && k >= 2 ? Phase.Pore : Phase.Solid;
+        return grid;
+    }
+
+    // 🔴 The rotational modes and the realised-stress readout, pinned by invariants. (1) The off-centre notch leaves a net
+    // moment, so a wrong rotational mode leaves the support reacting. (2) The same body shifted inside its grid must read
+    // the same ⟨σ⟩ and modulus — the projected load is self-equilibrated, so its virial is origin-free, while the RAW load
+    // is not. (3) The correction stays on the loaded nodes in the reading's mode and leaves them in the alternative.
+    // MUTATIONS: a sign slip in a rotational mode ⇒ (1) reds; ⟨σ⟩ read from the raw load ⇒ (2) reds; the two
+    // equilibration modes swapped ⇒ (3) reds.
+    [Fact]
+    public void An_Off_Centre_Cut_Is_Equilibrated_In_Every_Mode_And_Reads_Origin_Free()
+    {
+        VoxelFea.TractionResult a = VoxelFea.TractionInPlaneModulus(OffCentreNotch(0, 0), 0.0);
+        VoxelFea.TractionResult b = VoxelFea.TractionInPlaneModulus(OffCentreNotch(3, 2), 0.0);
+        Assert.True(a.Fea.Converged && b.Fea.Converged, "CG did not converge");
+        Assert.True(a.ProjectionRelative > 1e-3, $"the off-centre notch unbalances the load, yet the projection removed {a.ProjectionRelative:E2}");
+        Assert.True(a.SupportReactionRelative < 1e-6, $"the support reacted {a.SupportReactionRelative:E2} — a rigid mode was not removed");
+        Assert.True(Math.Abs(a.MacroStressAlongD - b.MacroStressAlongD) < 1e-9, $"⟨σ⟩_dd moved with the origin: {a.MacroStressAlongD:F12} ⊥ {b.MacroStressAlongD:F12}");
+        Assert.True(Math.Abs(a.Fea.StiffnessRatio - b.Fea.StiffnessRatio) < 1e-6, $"the modulus moved with the origin: {a.Fea.StiffnessRatio:F9} ⊥ {b.Fea.StiffnessRatio:F9}");
+        Assert.True(a.LoadOutsideLoadedRelative < 1e-12, $"the reading's correction left the loaded nodes: {a.LoadOutsideLoadedRelative:E2}");
+        VoxelFea.TractionResult c = VoxelFea.TractionInPlaneModulus(OffCentreNotch(0, 0), 0.0, eEquilibration: VoxelFea.Equilibration.AllNodes);
+        Assert.True(c.LoadOutsideLoadedRelative > 1e-6, $"the alternative's correction stayed on the loaded nodes: {c.LoadOutsideLoadedRelative:E2}");
+    }
+
     // 🔴 An unbalanced cut: a pore notch on the +x face leaves its −x mirror loaded alone, so the raw face loads carry a
     // net force and no static solution exists. The projection must remove a non-zero share and leave the support with
     // (to solver precision) nothing to react. MUTATION: skip the projection ⇒ the support takes the net force and the
