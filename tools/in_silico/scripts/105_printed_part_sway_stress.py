@@ -51,7 +51,8 @@ MODEL.
   |σ_1| in uniaxial stress — a ligament in bending and stretching — and at most √(3 + 2ν)·max|σ_i| in any state: two
   readings («near_uniaxial» ⊥ «any_state»). E_z* is the gyroid's uniaxial in-plane modulus under traction conditions,
   which neither FE reading below is: the static case (`fea --traction`, 01_01 §5.2) gives a named ESTIMATE of it — read
-  below as a check of this premise, never fed into the thresholds, an estimate that can sit on either side of the true
+  below as a check of this premise, not fed into the thresholds (whether it should is an open 00_07 HW.23 leg), an
+  estimate that can sit on either side of the true
   static modulus — while the radial case is a kinematic shell loading ∝ (C11+C12), the axial one
   is E[100] of a cubic lattice and an in-plane direction can be off-axis, and both sit on the kinematic side of a
   traction-BC modulus for a finite part. The two FE ratios — per axis the LOWER end of the finest-step
@@ -646,7 +647,8 @@ def main() -> int:
     # The bound holds only while the in-plane modulus under traction is at least the FE reading it is evaluated on. The
     # static case gives a named ESTIMATE of it per mount angle on a step ladder — one that can sit on either side of the
     # true static modulus (01_01 §5.2, ceiling (3)) — read here as a CHECK of that premise: per angle, where it lies
-    # against BOTH readings on every measured step. Never fed into the thresholds above.
+    # against BOTH readings on every measured step. Not fed into the thresholds above (whether it should is an open
+    # 00_07 HW.23 leg).
     traction = []
     for f in sorted(FEA_DIR.glob(f"{pine['name']}.traction.h*um.json")):
         d = json.loads(f.read_text(encoding="utf-8"))
@@ -797,7 +799,8 @@ def main() -> int:
         f"when a preload ≥ F carries both halves. On the air-dry bark reading "
         f"the force is {z3_dry['force_N']:.0f} N; the mature-state disc force is not bounded. The mass path stays below "
         f"{up2(max(v['zone3_shank_bending_MPa'] for v in mass_path.values())):.2f} MPa. Not computed: the field under "
-        f"traction (no case) — the static reading enters as a premise check only, never the thresholds — the inclusion's "
+        f"traction (no case) — the static reading enters as a premise check only, not the thresholds (whether it should "
+        f"is an open 00_07 HW.23 leg) — the inclusion's "
         f"field under the wood's multiaxial strain (the periodic cache holds uniaxial cases only), the junction (a junction model), t_L (`106` — conditional), the "
         f"count of host-stem cycles above the threshold (the field sensor), any K_t, a barb row's ratchet force, the "
         f"static means, ice, the collar and lug root.")
@@ -866,7 +869,8 @@ def main() -> int:
                                                     rule="per mount angle: where the named static estimate lies against "
                                                          "BOTH FE readings on every measured step — a CHECK of the "
                                                          "bound's premise (an estimate that can sit on either side of "
-                                                         "the true static modulus), never fed into its thresholds"),
+                                                         "the true static modulus), not fed into its thresholds — "
+                                                         "whether it should is an open 00_07 HW.23 leg"),
         "gyroid_ligament_field_uniaxial_reading": {
             "source": str(s106.PERIODIC.relative_to(REPO_ROOT)),
             "is": "the INFINITE lattice's ligament field under a unit uniaxial macro stress along (cos θ, sin θ, 0) — "
@@ -907,8 +911,8 @@ def main() -> int:
         "zone3_members": zone3,
         "mass_path": mass_path,
         "not_computed": [
-            "the field under traction — no case; the part's static in-plane reading enters as a premise check only, never "
-            "fed into the thresholds (00_07 HW.23); the inclusion's field under the wood's multiaxial strain — the periodic "
+            "the field under traction — no case; the part's static in-plane reading enters as a premise check only, not "
+            "fed into the thresholds (whether it should is an open 00_07 HW.23 leg); the inclusion's field under the wood's multiaxial strain — the periodic "
             "cache holds uniaxial cases only",
             "which quantile of the periodic field is a smooth ligament's fatigue peak — the instrument does not say "
             "(01_01 §5.2 ceiling (3)); p99 and p99.9 are read as named readings",
