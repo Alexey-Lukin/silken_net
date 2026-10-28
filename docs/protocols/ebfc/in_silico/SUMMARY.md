@@ -1037,7 +1037,7 @@ part's in-plane modulus (`01_01 §5.2`, `fea --traction`) lies above both FE rea
 between them at 22.5° on every measured step. It is a reading, not a bound — at a fixed macro stress any non-uniform
 self-equilibrated load only adds energy, so it can sit on either side of the true static modulus — and it proves the
 premise at no angle; where it is not above both, this table's «binds above» is not established. `105` reads it as
-this check only, never in its thresholds (`00_07` HW.23).
+this check only, not in its thresholds — whether it should is an open leg of `00_07` HW.23.
 
 | alloy | σ_e printed, MPa | σ_e/E_s vs Ti-6Al-4V | binds above, µε: large stem (lower ⊥ higher reading: radial ⊥ axial) | DBH 38, sensor on bark ⊥ on xylem (thick bark), lower reading | any stress state, large stem, lower reading |
 |---|---|---|---|---|---|

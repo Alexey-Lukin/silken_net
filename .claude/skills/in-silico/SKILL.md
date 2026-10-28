@@ -259,7 +259,7 @@ Anchor mechanics (CPU):
      anode) · tools/cad/cache/fea/periodic_homogenization.network.w100.c1.json + 106 (importlib: `periodic_rungs`
      — the periodic rung rule's ONE home — and PERIODIC; never 106's cache) · tools/cad/cache/fea/
      anchor_zone1_pine.traction.h*um.json (the part's named STATIC in-plane reading, `fea --traction`, 2026-10-28 — a
-     CHECK of the bound's premise only, never its thresholds; `01_01 §5.2`) → 105
+     CHECK of the bound's premise only, not its thresholds — whether it should be is an open HW.23 leg; `01_01 §5.2`) → 105
      (printed_part_sway_stress.json — the sway stress in the anchor's titanium parts, the ligament field's
      uniaxial-state reading and the premise check); a re-run of 87, 102, 103, 52, the FEA sweep, the periodic case or a
      traction row, a change to 106's rung rule, or a change to those CEMs, re-runs 105
