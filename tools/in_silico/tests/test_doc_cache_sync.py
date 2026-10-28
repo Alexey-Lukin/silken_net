@@ -6498,7 +6498,6 @@ def test_sway105_ligament_field_sets_follow_the_cache():
              for ms in ("max_principal", "von_mises")}
     assert binds["max_principal"] and not binds["von_mises"], binds
     rl = ", ".join(f"/{r}" for r in binds["max_principal"][:-1]) + f" and /{binds['max_principal'][-1]}"
-    rl_ua = ", ".join(f"/{r}" for r in binds["max_principal"][:-1]) + f" і /{binds['max_principal'][-1]}"
     assert (f"at {tk_k}° the largest principal stress binds it on the {rl} rungs and von Mises on none — a knife-edge "
             "inside the span of readings, not a member") in text
     assert {lf["field"][tk]["p99"]["measure_at_low"] for tk in lf["field"]} == {"von_mises"}
@@ -6510,13 +6509,10 @@ def test_sway105_ligament_field_sets_follow_the_cache():
     assert f"«Every sampled mount angle» is the highest threshold over θ = {angles} —" in text
     assert ("| alloy | binds above, µε: p99, every sampled mount angle | p99, θ = 0 | p99.9, every sampled mount angle | "
             "p99, every sampled mount angle, largest principal stress alone |") in doc(SUMMARY)
-    # 00_07 HW.23 carries the same sets in two places — the Стан and the ⚖️ «рівень решітки» leg
-    assert (f"медіана дня-джерела на великому стовбурі звʼязує кожен сплав на θ = 0, а за будь-якого відібраного кута — "
-            f"кожен, крім {m}: на {tk_k}° його звʼязує найбільше головне напруження на рунгах {rl_ua}, а фон Мізес — на "
-            "жодному, тож це ніж усередині розмаху прочитань") in tracker
+    # 00_07 HW.23 carries the same sets in ONE place — the ⚖️ «рівень решітки» leg; its Стан points to SUMMARY, and a copy
+    # re-added there would stand unguarded by this test
     assert (f"та сама медіана звʼязує кожен сплав на θ = 0 і за будь-якого відібраного кута — кожен, крім {m} (ніж "
             "усередині розмаху прочитань)") in tracker
-    assert "(це фон Мізес)" in tracker
     # the premise sentence: the angle sets are 105's premise categories, never typed
     pr = d["gyroid_bound_premise_static_modulus"]["by_theta"]
 
@@ -7430,17 +7426,18 @@ def test_sway105_source_day_sentence_follows_the_cache():
     assert all(b < span[0] for b in binds)
     assert (f"now they bind on any FE reading above {binds[0]:.4f} ⊥ {binds[1]:.4f} of `E_s`, which every raw reading "
             "and both finest-step readings exceed") in text
-    assert tracker.count(f"на будь-якому FE-прочитанні вище {binds[0]:.4f} ⊥ {binds[1]:.4f} `E_s`") == 2
+    assert tracker.count(f"на будь-якому FE-прочитанні вище {binds[0]:.4f} ⊥ {binds[1]:.4f} `E_s`") == 1
     # the order of the readings — every raw row radial-lower, the finest-step readings too, by the gap SUMMARY's CHECKS pin
     # carries; its other homes are here
     assert all(r["radial_ratio"] < r["axial_ratio"] for r in rows), "a raw row has the axial reading lower"
     assert lo == "radial_reading", "the lower reading is no longer the radial one — every sentence below says it is"
     gap = round((max(rich.values()) / min(rich.values()) - 1) * 100, 1)
     assert "every raw row of the step ladder has the radial one lower" in text
-    # EVERY copy, counted: 01_01 carries it twice (the banner and the ladder paragraph), 00_07 twice (the Стан and the
-    # S-N leg) — `in` on a duplicated phrase holds one copy and lets the other rot (adversary, 2026-10-23)
+    # EVERY copy, counted: 01_01 carries it twice (the banner and the ladder paragraph), 00_07 once (the S-N leg; its
+    # Стан points to SUMMARY) — `in` on a duplicated phrase holds one copy and lets the other rot
+    # (adversary, 2026-10-23)
     assert coaxial.count("кожен сирий рядок драбини має нижчим радіальне") == 2
-    assert tracker.count("кожен сирий рядок драбини має нижчим радіальне") == 2
+    assert tracker.count("кожен сирий рядок драбини має нижчим радіальне") == 1
     # the lock cost of /16 and /20 against the finest unlocked row, per axis — SUMMARY's clause composed from the ladder
     fu = d["inputs"]["fea_rows_used"]["finest_unlocked"]
     cost = {r["step_mm"]: {ax: (r[f"{ax}_ratio"] / fu[f"{ax}_ratio"] - 1) * 100 for ax in ("axial", "radial")}
@@ -7461,7 +7458,7 @@ def test_sway105_source_day_sentence_follows_the_cache():
     # ν* of 106's lattice body in the S-N leg, held to 106's cache
     d106 = json.loads((CACHE / SHARE106).read_text(encoding="utf-8"))
     assert f"(ν* 0.261 → 0.343 → {d106['inputs']['lattice_reading']['nu_star']:.3f})" in tracker
-    # EVERY copy of the gap in its two homes (the banner and the ladder paragraph of 01_01, the Стан and the S-N leg of 00_07)
+    # EVERY copy of the gap in its two homes (the banner and the ladder paragraph of 01_01, the S-N leg of 00_07)
     for home, body in (("00_07", tracker), ("01_01", coaxial)):
         hits = re.findall(r"осьове(?: прочитання `105`)? вище за радіальне на ([\d.]+) %", body)
         assert hits, f"{home}: no «осьове … вище за радіальне на X %» sentence"

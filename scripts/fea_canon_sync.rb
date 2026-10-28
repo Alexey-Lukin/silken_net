@@ -1390,14 +1390,8 @@ if File.exist?(PERIODIC)
     else
       failures << "periodic (3) Hue clause «ні … рівновісний, ні … девіаторний член йому не суперечить» is gone or reworded — fix its shape"
     end
-    tracker = File.read(File.join(ROOT, "docs/00_07_Action_Plan_Tracker.md"))
-    up = ->(want) { want == "вищий" ? "вище" : "нижче" }
-    if (tm = tracker.match(/і в різні боки — (вище|нижче) на рівновісний, (вище|нижче) на девіаторний/))
-      flag(failures, "00_07 HW.23 Стан — dilatational direction", up.call(want_dil), tm[1]) if want_dil && tm[1] != up.call(want_dil)
-      flag(failures, "00_07 HW.23 Стан — deviatoric direction", up.call(want_dev), tm[2]) if want_dev && tm[2] != up.call(want_dev)
-    else
-      failures << "00_07 HW.23 Стан «і в різні боки — … на рівновісний, … на девіаторний» is gone or reworded — fix its shape"
-    end
+    # ⛔ 00_07 HW.23's Стан points to these two homes and carries no copy of this comparison — do not re-add one there:
+    # this guard does not read the tracker, so a copy would stand unguarded.
     # SUMMARY §106 carries the same comparison in English — direction words derived, ranges held (two homes, one measurement)
     summary = File.read(File.join(ROOT, "docs/protocols/ebfc/in_silico/SUMMARY.md"))
     en = ->(want) { want == "вищий" ? "higher" : "lower" }
