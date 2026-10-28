@@ -41,8 +41,9 @@
     "psi_grid": 90001,
     "plumbing_capsule_no_window_c": 52.9,
     "plumbing_capsule_uniform_c": 58.1,
+    "plumbing_capsule_no_window_low_h_c_c": 55.0,
     "uniform_control_alpha": 0.7,
-    "plumbing_note": "the two plumbing identities pass for any formula returning α_r when Δα·A_dark = 0 — they check the wiring, not the two-zone term"
+    "plumbing_note": "the three plumbing identities pass for any formula returning α_r when Δα·A_dark = 0 — they check the wiring, not the two-zone term"
   },
   "named_windows": {
     "one_package_in_the_crown_KXOB25-07X1TF": {
@@ -470,33 +471,33 @@
     "1.00": {
       "nominal": {
         "largest_dark_aperture_under_gate_cm2": 3.66,
+        "crossing_interpolated_mm2": 366.818,
         "is_nowhere_on_the_crown": false,
         "is_already_at_no_window": false,
-        "cambium_max_C_at_no_window": 46.62,
-        "cambium_max_C_at_whole_crown": 53.12
+        "cambium_max_C_at_no_window": 46.62
       },
       "h_c_x0_7": {
         "largest_dark_aperture_under_gate_cm2": 1.65,
+        "crossing_interpolated_mm2": 165.169,
         "is_nowhere_on_the_crown": false,
         "is_already_at_no_window": false,
-        "cambium_max_C_at_no_window": 48.29,
-        "cambium_max_C_at_whole_crown": 55.71
+        "cambium_max_C_at_no_window": 48.29
       }
     },
     "0.90": {
       "nominal": {
         "largest_dark_aperture_under_gate_cm2": 4.58,
+        "crossing_interpolated_mm2": 458.523,
         "is_nowhere_on_the_crown": false,
         "is_already_at_no_window": false,
-        "cambium_max_C_at_no_window": 46.62,
-        "cambium_max_C_at_whole_crown": 51.8
+        "cambium_max_C_at_no_window": 46.62
       },
       "h_c_x0_7": {
         "largest_dark_aperture_under_gate_cm2": 2.06,
+        "crossing_interpolated_mm2": 206.463,
         "is_nowhere_on_the_crown": false,
         "is_already_at_no_window": false,
-        "cambium_max_C_at_no_window": 48.29,
-        "cambium_max_C_at_whole_crown": 54.2
+        "cambium_max_C_at_no_window": 48.29
       }
     }
   },
@@ -505,7 +506,7 @@
     "the window's optics — transmittance, its own absorption, the cavity's greenhouse (isothermal lump)",
     "a cell's real absorptance (α_c 0.90 is ours)",
     "the two cell-outline rows are LOWER bounds on the dark aperture: a window exposing the outline is at least as large — read them against the crossing",
-    "the R5 edge: a window wider than the flat crown sits on it, and 71 models it as part of a flat disc — the beam term stays the bound (a centred convex patch, its edge sloping less than 90° − ψ* at the binding angle, projects as its planar disc), the diffuse term counts the planar disc, a few per cent less than the curved surface",
+    "the R5 edge: a window wider than the flat crown sits on it, and 71 models it as part of a flat disc — for every named window and every crossing (none wider than the bore) the beam term stays the bound (a centred convex patch, its edge sloping less than 90° − ψ* at the binding angle, projects as its planar disc), the diffuse term counts the planar disc, a few per cent less than the curved surface; grid points near the whole crown fall outside that condition, so no number at the grid's far end is cached",
     "71's own ceilings move the hot answer UP beyond these bounds: sunlit bark around the rim conducting in, ERA5 smoothing station maxima",
     "whether a window meets the ratified α ≤ 0.5 — a verdict, not a number",
     "the RF half of the window (01_03 §4)"

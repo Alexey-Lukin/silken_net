@@ -36,8 +36,9 @@ MODEL — `71`'s lump and `78`'s column, imported, never re-implemented; only th
 
 CONTROLS — the two-zone beam term against a brute force over ψ for every named aperture and α_c (a control with
 α_c ≠ α_r, i.e. one that can fail on the formula); plumbing identities: A_dark = 0 reproduces `71`'s α_r row and
-`78`'s α_r cell, a uniform dome (α_c = α_r = 0.70) reproduces their α 0.70 rows — those two pass for ANY formula that
-returns α_r when Δα·A_dark = 0, so they check the wiring, never the two-zone term; the crossing grid is monotone.
+`78`'s α_r cell, a uniform dome (α_c = α_r = 0.70) reproduces their α 0.70 rows, and A_dark = 0 at h_c × 0.7
+reproduces `71`'s cached sensitivity row — all three pass for ANY formula that returns α_r when Δα·A_dark = 0, so they
+check the wiring (the third, the h_c × 0.7 path's), never the two-zone term; the crossing grid is monotone.
 
 DIRECTION, stated first: every term inherited from `71` and `78` pushes the temperatures UP (worst orientation over
 all beam directions, adiabatic base, flange at the capsule's temperature, 1D column, adiabatic inner end) and α_c = 1
@@ -45,9 +46,11 @@ does too, so every hot number is an UPPER bound and every «stays under» is suf
 reading it names; a «does not clear» is not «crosses» — an upper bound cannot show a crossing. Two terms run the
 other way and are named, not hidden: `71`'s own ⛔ ceilings (sunlit bark around the rim conducting in, ERA5 smoothing
 station maxima) move the hot answer UP beyond these bounds; and a window wider than the flat crown sits on the R5
-edge, which `71` models as part of a flat disc — for the beam the patch is centred and its edge slopes less than 90° −
-ψ* at the binding angle, so a convex patch projects exactly as its planar disc and the beam term stays the bound,
-while the diffuse term counts the planar disc, a few per cent less than the curved surface.
+edge, which `71` models as part of a flat disc — for every named window and every crossing (none wider than the bore)
+the patch is centred and its edge slopes less than 90° − ψ* at the binding angle, so a convex patch projects exactly
+as its planar disc and the beam term stays the bound, while the diffuse term counts the planar disc, a few per cent
+less than the curved surface. Grid points near the whole crown fall outside that condition (the edge there reaches
+90°), which is why no number at the grid's far end is cached or quoted.
 
 CAN show: per named aperture, α_c and h_c reading, the capsule's hottest hour against the EDLC rating and the
 cambium's against its gate under `71`'s and `78`'s cases; the largest dark aperture that keeps the bound's cambium
@@ -178,6 +181,7 @@ def main() -> int:
 
     add("control_no_window", 0.0, 1.0, "sunlit", 1.0)
     add("control_uniform", a_crown, UNIFORM_CONTROL_ALPHA, "sunlit", 1.0, alpha_r=UNIFORM_CONTROL_ALPHA)
+    add("control_no_window_low_h_c", 0.0, 1.0, "sunlit", 1.0, S71.H_C_SENSITIVITY)
     for name, area in areas.items():
         for ac in ALPHA_CELL:
             for scale in H_C_READINGS:
@@ -192,11 +196,16 @@ def main() -> int:
     # ── plumbing identities on the capsule: 71's own rows ────────────────────────────────────────────────────────────
     want_r = c71["hot_bound"]["sunlit"][f"{ALPHA_R:.2f}"][f"{STILL:.1f}"]["t_cap_max_c"]
     want_u = c71["hot_bound"]["sunlit"][f"{UNIFORM_CONTROL_ALPHA:.2f}"][f"{STILL:.1f}"]["t_cap_max_c"]
-    got_r, got_u = round(float(cols[0].max()), 1), round(float(cols[1].max()), 1)
-    if abs(got_r - want_r) > 0.05 or abs(got_u - want_u) > 0.05:
-        raise SystemExit(f"capsule identity failed: no window {got_r} vs 71's {want_r}; uniform {got_u} vs {want_u}")
+    sens = c71["hot_bound_h_c_sensitivity"]
+    if sens["h_c_scale"] != S71.H_C_SENSITIVITY:
+        raise SystemExit(f"71's cached h_c sensitivity is × {sens['h_c_scale']}, its code says × {S71.H_C_SENSITIVITY}")
+    want_l = sens["sunlit_still_air"][f"{ALPHA_R:.2f}"]["t_cap_max_c"]
+    got_r, got_u, got_l = (round(float(cols[i].max()), 1) for i in (0, 1, 2))
+    if abs(got_r - want_r) > 0.05 or abs(got_u - want_u) > 0.05 or abs(got_l - want_l) > 0.05:
+        raise SystemExit(f"capsule identity failed: no window {got_r} vs 71's {want_r}; uniform {got_u} vs {want_u}; "
+                         f"no window at h_c × {S71.H_C_SENSITIVITY} {got_l} vs {want_l}")
     print(f"  plumbing identities on 71: no window {got_r} °C (cache {want_r}) · uniform α {UNIFORM_CONTROL_ALPHA:.2f} "
-          f"{got_u} °C (cache {want_u})")
+          f"{got_u} °C (cache {want_u}) · no window at h_c × {S71.H_C_SENSITIVITY} {got_l} °C (cache {want_l})")
 
     # ── the cambium: 78's column — every column on the thin side, the non-grid ones on the thick side too ────────────
     cam_thin = S78.run(np.column_stack(cols), S78.layers(bark["thin_mm"]), bark["thin_mm"] + S78.S58.T_PHLOEM,
@@ -244,10 +253,13 @@ def main() -> int:
         if any(b < a - 1e-9 for a, b in itertools.pairwise(ys)):
             raise SystemExit(f"the crossing grid is not monotone in the aperture (α_c {ac}, h_c × {scale})")
         x = S78.crossing(xs, ys, GATE_C)
+        # S78.crossing returns the interpolated aperture rounded to 0.001 mm² — the floor to 0.01 cm² below is taken
+        # on that value, so a true crossing within 0.0005 mm² under a whole mm² could floor one step high (not met here)
         crossing.setdefault(f"{ac:.2f}", {})[hc_key(scale)] = {
             "largest_dark_aperture_under_gate_cm2": None if x is None else math.floor(x) / 100.0,
+            "crossing_interpolated_mm2": x,
             "is_nowhere_on_the_crown": x is None, "is_already_at_no_window": x == xs[0],
-            "cambium_max_C_at_no_window": round(ys[0], 2), "cambium_max_C_at_whole_crown": round(ys[-1], 2)}
+            "cambium_max_C_at_no_window": round(ys[0], 2)}
 
     # ── the verdict, from the data ───────────────────────────────────────────────────────────────────────────────────
     def cell(name, ac, key):
@@ -289,8 +301,9 @@ def main() -> int:
                    "crossing_rounding": "floored to 0.01 cm² (one-sided «stays under», modifying #43)"},
         "controls": {"two_zone_beam_closed_form_vs_brute_force_rel": worst_rel, "psi_grid": PSI_GRID,
                      "plumbing_capsule_no_window_c": got_r, "plumbing_capsule_uniform_c": got_u,
+                     "plumbing_capsule_no_window_low_h_c_c": got_l,
                      "uniform_control_alpha": UNIFORM_CONTROL_ALPHA,
-                     "plumbing_note": "the two plumbing identities pass for any formula returning α_r when "
+                     "plumbing_note": "the three plumbing identities pass for any formula returning α_r when "
                                       "Δα·A_dark = 0 — they check the wiring, not the two-zone term"},
         "named_windows": named,
         "crossing_worst_cell_thin_sunlit_still": crossing,
@@ -300,9 +313,11 @@ def main() -> int:
                      "the two cell-outline rows are LOWER bounds on the dark aperture: a window exposing the outline "
                      "is at least as large — read them against the crossing",
                      "the R5 edge: a window wider than the flat crown sits on it, and 71 models it as part of a flat "
-                     "disc — the beam term stays the bound (a centred convex patch, its edge sloping less than "
-                     "90° − ψ* at the binding angle, projects as its planar disc), the diffuse term counts the planar "
-                     "disc, a few per cent less than the curved surface",
+                     "disc — for every named window and every crossing (none wider than the bore) the beam term stays "
+                     "the bound (a centred convex patch, its edge sloping less than 90° − ψ* at the binding angle, "
+                     "projects as its planar disc), the diffuse term counts the planar disc, a few per cent less than "
+                     "the curved surface; grid points near the whole crown fall outside that condition, so no number "
+                     "at the grid's far end is cached",
                      "71's own ceilings move the hot answer UP beyond these bounds: sunlit bark around the rim "
                      "conducting in, ERA5 smoothing station maxima",
                      "whether a window meets the ratified α ≤ 0.5 — a verdict, not a number",

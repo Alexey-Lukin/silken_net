@@ -8763,6 +8763,11 @@ def _pvw_bare(hk):
     return lambda d: d["crossing_worst_cell_thin_sunlit_still"]["1.00"][hk]["cambium_max_C_at_no_window"]
 
 
+def _pvw_outline_headroom(d):
+    lim = d["crossing_worst_cell_thin_sunlit_still"]["1.00"]["h_c_x0_7"]["largest_dark_aperture_under_gate_cm2"]
+    return round(lim - d["named_windows"]["four_dies_in_the_crown_XOD17-04B"]["area_cm2"], 2)
+
+
 _X07 = r"`h_c × 0\.7`"
 CHECKS += [
     *[(f"PV window {key} col {j} → 111", SUMMARY, _pvw_row(label, kind, j), PVW,
@@ -8770,6 +8775,8 @@ CHECKS += [
       for label, key, kind in _PVW_ROWS for j in range(9)],
     ("PV window plumbing no window → 111", SUMMARY, rf"no window reproduces `71`'s α 0\.50 row \({N} °C\)", PVW,
      lambda d: d["controls"]["plumbing_capsule_no_window_c"], 0.0),
+    ("PV window plumbing no window h_c x0.7 → 111", SUMMARY, rf"reproduces `71`'s cached sensitivity row \({N} °C\)", PVW,
+     lambda d: d["controls"]["plumbing_capsule_no_window_low_h_c_c"], 0.0),
     ("PV window hottest capsule → 111", SUMMARY, rf"the hottest hour is {N} °C, [\d.]+ °C with h_c × 0\.7", PVW,
      _pvw_hottest("sunlit_nominal"), 0.0),
     ("PV window hottest capsule h_c x0.7 → 111", SUMMARY, rf"the hottest hour is [\d.]+ °C, {N} °C with h_c × 0\.7", PVW,
@@ -8781,6 +8788,10 @@ CHECKS += [
         ("0.90", "h_c_x0_7", rf"\([\d.]+ ⊥ {N} cm² at α_c 0\.90"))],
     ("PV window both-readings aperture → 111", SUMMARY, rf"clears the gate up to ≈ {N} cm² of dark aperture", PVW,
      _pvw_cross("1.00", "h_c_x0_7"), 0.0),
+    ("PV window summed-outline headroom → 111", SUMMARY, rf"summed with no spacing \([\d.]+ cm²\), sit {N} cm² under it",
+     PVW, _pvw_outline_headroom, 0.0),
+    ("PV window summed-outline headroom → 01_03 §4 → 111", EBFC, rf"без зазорів \([\d.]+ см²\) лежить на {N} см² нижче",
+     PVW, _pvw_outline_headroom, 0.0),
     ("PV window flat-crown margin → 111", SUMMARY, rf"at the nominal h_c only, by {N} K", PVW, _pvw_crown_margin, 0.0),
     ("PV window flat-crown hours h_c x0.7 → 111", SUMMARY, rf"not with h_c × 0\.7 \({N} hours in 30 years\)", PVW,
      _pvw_hours("flat_crown_circle", "sunlit_h_c_x0_7"), 0.0),
@@ -8853,15 +8864,15 @@ def test_pv_window_sentences_follow_the_cache():
     assert nw["four_dies_in_the_crown_XOD17-04B"]["area_cm2"] <= x["h_c_x0_7"]["largest_dark_aperture_under_gate_cm2"]
     text = " ".join(doc(SUMMARY).split())
     for phrase in ("No named window brings the capsule to the EDLC's 70 °C rating on either h_c reading",
-                   "the four-die string's outline fits under it",
+                   "a window around a spaced string is larger and is not shown to clear with h_c × 0.7",
                    "the whole flat crown clears it at the nominal h_c only",
                    "the whole bore clears it on neither",
-                   "so the ratified finish's cambium ground holds across `71`'s h_c band"):
+                   "is a nominal-h_c number `78` has not run at h_c × 0.7"):
         assert phrase in text, phrase
     ebfc = " ".join(doc(EBFC).split())
-    for phrase in ("контур рядка з чотирьох кристалів (1.44 см²) під неї вміщається",
+    for phrase in ("але вікно навколо рядка із зазорами більше й за `h_c × 0.7` не показане",
                    "вся пласка корона проходить лише за номінального `h_c`", "отвір — на жодному",
-                   "тож камбійна підстава ратифікованого α ≤ 0.5 тримається на всій смузі `h_c`"):
+                   "і за `h_c × 0.7` `78` його не ганяв"):
         assert phrase in ebfc, phrase
     tracker = " ".join(doc(TRACKER).split())
     assert tracker.count("(вся пласка корона — лише за номінального `h_c`)") == 2

@@ -4924,6 +4924,9 @@ def test_pv_window_thermal_invariants():
     assert ctl["plumbing_capsule_no_window_c"] == c71["hot_bound"]["sunlit"][f"{ar:.2f}"]["0.0"]["t_cap_max_c"]
     ua = ctl["uniform_control_alpha"]
     assert ctl["plumbing_capsule_uniform_c"] == c71["hot_bound"]["sunlit"][f"{ua:.2f}"]["0.0"]["t_cap_max_c"]
+    sens = c71["hot_bound_h_c_sensitivity"]
+    assert sens["h_c_scale"] == inp["h_c_readings"][1]
+    assert ctl["plumbing_capsule_no_window_low_h_c_c"] == sens["sunlit_still_air"][f"{ar:.2f}"]["t_cap_max_c"]
     thin78 = next(r for r in c78["runs"] if (r["case"], r["alpha"], r["wind_k"], r["bark_side"])
                   == ("sunlit", ar, 0.0, "thin"))["cambium_max_C"]
     by_area = sorted(named.values(), key=lambda v: v["area_cm2"])
@@ -4938,7 +4941,9 @@ def test_pv_window_thermal_invariants():
                 assert x["cambium_max_C_at_no_window"] == thin78
             lim = x["largest_dark_aperture_under_gate_cm2"]
             if lim is not None:
-                assert lim == math.floor(lim * 100.0 + 1e-6) / 100.0, "the crossing is not floored to 0.01 cm²"
+                raw = x["crossing_interpolated_mm2"]
+                assert lim == math.floor(raw) / 100.0, ("the crossing is not floored to 0.01 cm²", lim, raw)
+                assert lim * 100.0 <= raw, "the published crossing sits above the interpolated one"
             for v in by_area:
                 hours = v["by_alpha_cell"][key][f"sunlit_{hk}"]["cambium_thin"]["hours_above_gate"]
                 if lim is not None and v["area_cm2"] <= lim:
