@@ -8867,15 +8867,56 @@ def test_pv_window_sentences_follow_the_cache():
                    "a window around a spaced string is larger and is not shown to clear with h_c × 0.7",
                    "the whole flat crown clears it at the nominal h_c only",
                    "the whole bore clears it on neither",
-                   "is a nominal-h_c number `78` has not run at h_c × 0.7"):
+                   "is a nominal-h_c number — `78`, run at h_c × 0.7 too, puts it at α ≈"):
         assert phrase in text, phrase
     ebfc = " ".join(doc(EBFC).split())
     for phrase in ("але вікно навколо рядка із зазорами більше й за `h_c × 0.7` не показане",
                    "вся пласка корона проходить лише за номінального `h_c`", "отвір — на жодному",
-                   "і за `h_c × 0.7` `78` його не ганяв"):
+                   "за `h_c × 0.7` `78` ставить перетин на α ≈"):
         assert phrase in ebfc, phrase
     tracker = " ".join(doc(TRACKER).split())
     assert tracker.count("(вся пласка корона — лише за номінального `h_c`)") == 2
+
+
+# ── HW.6 78 at 71's second h_c reading (h_c × 0.7, 2026-10-28) ⟷ 01_04 §3.1 ⊕, 02_01 §5.2 ⊕, the log-day sheet §A.1 ⊕,
+# SUMMARY §111, 01_03 §4 ⊕ and 00_07 HW.6 — every copy of the two numbers pinned to the `h_c_x0_7` block.
+def _low78(*path):
+    def get(d):
+        v = d["verdict"]["h_c_x0_7"]
+        for p in path:
+            v = v[p]
+        return v
+    return get
+
+
+_X78 = _low78("alpha_crossing_sunlit_still_air", "thin")
+_F78 = _low78("dead_bark_floor_mm_at_specified_alpha")
+CHECKS += [
+    ("HW.6 · h_c × 0.7 crossing, thinnest contact → 01_04 §3.1 → 78", CODIT,
+     rf"поріг досягається вже понад α ≈ \*\*{N}\*\* на найтоншому контакті", FLANGE_HEAT, _X78, 0.005),
+    ("HW.6 · h_c × 0.7 crossing, thick end → 01_04 §3.1 → 78", CODIT, rf"на найтоншому контакті \(≈ {N} на товстому\)",
+     FLANGE_HEAT, _low78("alpha_crossing_sunlit_still_air", "thick"), 0.005),
+    ("HW.6 · h_c × 0.7 dead-bark floor → 01_04 §3.1 → 78", CODIT,
+     rf"мертвої кори лишається менше ≈ \*\*{N} мм\*\* \(`78`, блок `h_c_x0_7`\)", FLANGE_HEAT, _F78, 0.05),
+    ("HW.6 · h_c × 0.7 hottest cambium hour at α 0.50 → 01_04 §3.1 → 78", CODIT,
+     rf"найгарячіша година за × 0\.7 — {N} °C", FLANGE_HEAT, _low78("specified_alpha_thin", "cambium_max_C"), 0.05),
+    ("HW.6 → HW.37 · h_c × 0.7 crossing → 02_01 §5.2 → 78", HW_BOM, rf"перетин — ≈ \*\*{N}\*\* \(`78`, блок `h_c_x0_7`\)",
+     FLANGE_HEAT, _X78, 0.005),
+    ("HW.6 → HW.37 · h_c × 0.7 headroom → 02_01 §5.2 → 78", HW_BOM,
+     rf"на тій половині смуги — від 0\.5 до ≈ {N}; сам α 0\.5", FLANGE_HEAT, _X78, 0.005),
+    ("HW.6 · h_c × 0.7 log-day thermal criterion → bench sheet → 78", BENCH, rf"той самий критерій — ≥ ≈ \*\*{N} мм\*\*",
+     FLANGE_HEAT, _F78, 0.05),
+    ("HW.6 · h_c × 0.7 crossing → SUMMARY §111 → 78", SUMMARY, rf"puts it at α ≈ {N} there", FLANGE_HEAT, _X78, 0.005),
+    ("HW.6 · h_c × 0.7 headroom → SUMMARY §111 → 78", SUMMARY, rf"the headroom is 0\.5 → {N}\.", FLANGE_HEAT, _X78, 0.005),
+    ("HW.6 · h_c × 0.7 crossing → 01_03 §4 → 78", EBFC, rf"`78` ставить перетин на α ≈ {N}", FLANGE_HEAT, _X78, 0.005),
+    ("HW.6 · h_c × 0.7 headroom → 01_03 §4 → 78", EBFC, rf"на тому читанні запас — від 0\.5 до ≈ {N}\.", FLANGE_HEAT,
+     _X78, 0.005),
+    ("HW.6 · h_c × 0.7 criterion → 00_07 HW.6 ⚖️ → 78", TRACKER, rf"⊥ ≥ ≈ {N} мм за `h_c × 0\.7`", FLANGE_HEAT, _F78, 0.05),
+    ("HW.6 · h_c × 0.7 headroom → 00_07 HW.6 ⚖️ → 78", TRACKER, rf"на тому ж читанні — від 0\.5 до ≈ {N}, а не", FLANGE_HEAT,
+     _X78, 0.005),
+    ("HW.6 · thinnest contact in the ⚖️ leg → 00_07 HW.6 → 78", TRACKER, rf"\(найтонший контакт брекета кори {N} мм\)",
+     FLANGE_HEAT, lambda d: d["bark"]["thin_mm"], 0.05),
+]
 
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",

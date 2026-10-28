@@ -254,6 +254,31 @@ def main() -> int:
     a_star = {side: crossing(ALPHAS, [cell("sunlit", a, still, side)["cambium_max_C"] for a in ALPHAS], GATE_C)
               for side in reference}
     floor_mm = bark_floor(series[keys.index(("sunlit", lo, still))], bark["thin_mm"])
+
+    # ── 71's h_c band: the sunlit still-air sweep again with h_c × H_C_SENSITIVITY — 71 counts that band in its own
+    #    uncertainty and prints both readings, so a crossing read on the nominal one alone is one end of it. The
+    #    capsule series are checked against 71's cached sensitivity rows; `runs` above stays the nominal reading.
+    sens = json.loads((OUT_DIR / "capsule_envelope.json").read_text(encoding="utf-8"))["hot_bound_h_c_sensitivity"]
+    if sens["h_c_scale"] != S71.H_C_SENSITIVITY or ALPHAS[0] != lo:
+        raise SystemExit("71's cached h_c sensitivity or 78's α grid is not the one this block reads")
+    low = []
+    for alpha in ALPHAS:
+        q = alpha * (h["dni"] * a_proj + S71.SKY_VIEW * h["dif"] * a_exp)
+        t_cap = S71.solve_t_cap(h["t_air"], q, a_exp, d_m, still * h["u10"], h_c_scale=S71.H_C_SENSITIVITY)
+        want = sens["sunlit_still_air"].get(f"{alpha:.2f}")
+        if want is not None and abs(round(float(t_cap.max()), 1) - want["t_cap_max_c"]) > 0.05:
+            raise SystemExit(f"71's h_c × {S71.H_C_SENSITIVITY} row not reproduced: {t_cap.max():.2f} vs "
+                             f"{want['t_cap_max_c']} (α {alpha})")
+        low.append(t_cap)
+    low_cam = {side: run(np.column_stack(low), layers(b), b + S58.T_PHLOEM, SUBSTEPS_PER_HOUR)
+               for side, b in (("thin", bark["thin_mm"]), ("thick", bark["thick_mm"]))}
+    low_max = {side: [round(float(low_cam[side][:, j].max()), 2) for j in range(len(ALPHAS))] for side in low_cam}
+    a_star_low = {side: crossing(ALPHAS, low_max[side], GATE_C) for side in low_cam}
+    spec_low = {side: summarise(low_cam[side][:, 0], times) for side in low_cam}
+    floor_low = bark_floor(low[0], bark["thin_mm"])
+    print(f"  h_c × {S71.H_C_SENSITIVITY}: cambium max, thin · thick, α → " + "  ".join(f"{a:.2f}" for a in ALPHAS))
+    for side in low_cam:
+        print(f"    {side:<5s} " + "  ".join(f"{v:4.1f}" for v in low_max[side]))
     ref_max = max(v["cambium_max_C"] for v in reference.values())
     spec = worst[f"sunlit_{lo:.2f}"]
 
@@ -271,6 +296,13 @@ def main() -> int:
             f"cambium hour by up to +{shift[f'{lo:.2f}']:.1f} K at α {lo:.2f} (+{shift[f'{hi:.2f}']:.1f} K at α "
             f"{hi:.2f}) over bark without it ({ref_max:.1f} °C). In full sun there is no reference: sunlit bark has no "
             f"temperature anywhere in the tree. Every number is a 1D UPPER bound, so both crossings are conservative.")
+    floor_low_txt = ("not even with no dead bark left" if floor_low is None
+                     else f"with less than ≈ {floor_low:.1f} mm of dead bark left")
+    text += (f" Those crossings are read at 71's nominal h_c; with h_c × {S71.H_C_SENSITIVITY} — the band 71 counts in "
+             f"its own uncertainty — the specified finish's hottest cambium hour on the thinnest contact is "
+             f"{spec_low['thin']['cambium_max_C']:.1f} °C ({spec_low['thin']['hours_above_gate']} hours above the gate), "
+             f"the gate is reached {past(a_star_low['thin'])} on it ({past(a_star_low['thick'])} on the thick end), or "
+             f"at α {lo:.2f} {floor_low_txt} — so «conservative» holds on the nominal reading only.")
     print(f"\n  → {text}")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -287,7 +319,15 @@ def main() -> int:
         "scheme_check_rel_error": round(scheme_err, 5),
         "runs": runs,
         "reference_no_flange_surface_at_air": reference,
-        "verdict": {"worst_cell": worst, "no_flange_max_C": ref_max, "shift_under_crown_K": shift,
+        "verdict": {"h_c_x0_7": {"h_c_scale": S71.H_C_SENSITIVITY,
+                                 "cambium_max_C_sunlit_still_by_alpha": {side: dict(zip([f"{a:.2f}" for a in ALPHAS],
+                                                                                        low_max[side], strict=True))
+                                                                         for side in low_max},
+                                 "alpha_crossing_sunlit_still_air": a_star_low,
+                                 "specified_alpha_thin": {k: spec_low["thin"][k]
+                                                          for k in ("cambium_max_C", "at", "hours_above_gate")},
+                                 "dead_bark_floor_mm_at_specified_alpha": floor_low},
+                    "worst_cell": worst, "no_flange_max_C": ref_max, "shift_under_crown_K": shift,
                     "alpha_crossing_sunlit_still_air": a_star,
                     "dead_bark_floor_mm_at_specified_alpha": floor_mm, "text": text},
         "ceilings": ["1D, adiabatic inner end, zero contact resistance, flange AT the capsule temperature — UPPER bounds",

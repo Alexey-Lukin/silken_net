@@ -4519,6 +4519,38 @@ def test_flange_cambium_heat_invariants():
     assert a_star["thin"] is None or a_star["thick"] is None or a_star["thin"] <= a_star["thick"]
 
 
+def test_flange_cambium_heat_low_h_c_reading():
+    """78's second h_c reading (h_c × 0.7, the band 71 counts in its own uncertainty), against physics and against 111.
+
+    CAN catch: a lower h_c not running hotter at every α and on both bark sides; a crossing at a HIGHER α than the
+    nominal one; a dead-bark floor thinner than the nominal one; the α sweep not rising; the block's scale not 71's
+    cached sensitivity scale; and — across two scripts — 78's α 0.50 thin-contact maximum at × 0.7 not equal to 111's
+    no-window cell at × 0.7 (the same column reached by two code paths).
+    CANNOT catch: whether × 0.7 is the right end of the band (71's own ceiling), nor anything the nominal test covers.
+    """
+    d = json.loads((THERMAL / "flange_cambium_heat.json").read_text(encoding="utf-8"))
+    c71 = json.loads((THERMAL / "capsule_envelope.json").read_text(encoding="utf-8"))
+    low, v = d["verdict"]["h_c_x0_7"], d["verdict"]
+    assert low["h_c_scale"] == c71["hot_bound_h_c_sensitivity"]["h_c_scale"]
+    alphas = [f"{a:.2f}" for a in d["inputs"]["alphas"]]
+    nominal = {(r["alpha"], r["bark_side"]): r["cambium_max_C"] for r in d["runs"]
+               if r["case"] == "sunlit" and r["wind_k"] == 0.0}
+    for side in ("thin", "thick"):
+        row = [low["cambium_max_C_sunlit_still_by_alpha"][side][a] for a in alphas]
+        assert row == sorted(row)
+        for a, x in zip(d["inputs"]["alphas"], row, strict=True):
+            assert x >= nominal[(a, side)], (side, a)
+        lo_x, nom_x = low["alpha_crossing_sunlit_still_air"][side], v["alpha_crossing_sunlit_still_air"][side]
+        assert lo_x is not None and (nom_x is None or lo_x <= nom_x), (side, lo_x, nom_x)
+    for side in ("thin",):
+        assert low["cambium_max_C_sunlit_still_by_alpha"][side][alphas[0]] == low["specified_alpha_thin"]["cambium_max_C"]
+    f_lo, f_nom = low["dead_bark_floor_mm_at_specified_alpha"], v["dead_bark_floor_mm_at_specified_alpha"]
+    assert f_lo is None or f_nom is None or f_lo >= f_nom
+    pv = json.loads((THERMAL / "pv_window_thermal.json").read_text(encoding="utf-8"))
+    assert pv["crossing_worst_cell_thin_sunlit_still"]["1.00"]["h_c_x0_7"]["cambium_max_C_at_no_window"] == \
+        low["cambium_max_C_sunlit_still_by_alpha"]["thin"][alphas[0]]
+
+
 def test_flange_cambium_frost_invariants():
     """79 (HW.6, the frost half): areas, sky, gates and the declared directions re-derived from the cache and the CEMs.
 

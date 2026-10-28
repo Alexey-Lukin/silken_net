@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 380 · 28,089,001 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 380 · 28,099,083 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -126,7 +126,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/75_pcm_ecp_radius_attribution.py` | `6f503e7289f65122cb4b2092c4671645de811c052915721b479ab9e5b44d5760` | Attribution of the conda-lock gap on metal-in-PCM couples to the PySCF 2.13.0 PCM ECP-radius fix. |
 | `tools/in_silico/scripts/76_os_chelate_sensitivity.py` | `2c6fd51d8bf318254c856dccd6edd8f6c79097dbabfbebd4cb75fea3e668aa3c` | Sensitivity of the device osmium couple to closing its bipyridine chelates onto the assumed bond length and bite angle. |
 | `tools/in_silico/scripts/77_anchor_torque_path.py` | `3ca15a15294796eb137e44550b09a0c850ae4d52ecf5ac7d71cafbda234defc3` | Torque path onto the anchor's own axis under stem torsion, and the press-fit friction that carries it (by inversion). |
-| `tools/in_silico/scripts/78_flange_cambium_heat.py` | `8155b75118fc7227d4c05afa318a47fc13fbbb4fe3ccc5e51949313f7608034a` | Cambium temperature under the anchor's titanium flange over thirty years of hourly weather, against bark without it (1D upper bound). |
+| `tools/in_silico/scripts/78_flange_cambium_heat.py` | `1b8642a7f1408083f10307af38348c727237aa3caa8d20fe3e9f4e64e34bda1a` | Cambium temperature under the anchor's titanium flange over thirty years of hourly weather, against bark without it (1D upper bound). |
 | `tools/in_silico/scripts/79_flange_cambium_frost.py` | `4bee537c96f5d28236529e157b87bacb23b8d4323d6ce3c706ba93098f00dcd7` | Cambium temperature under the anchor's titanium flange on winter days, against bark without it, over thirty years of hourly weather, bracketed by sky, sun and coupling, with direct sun swept over the trunk face's azimuth (1D). |
 | `tools/in_silico/scripts/80_chem11_a3d_crosscheck.py` | `30443398039f633e98f422c9d19f2469b79c6c08d5221d36ed1890528c327a65` | Aggrescan3D cross-check of the four deglycosylation hotspots of the aglycosylated FAD-GDH. |
 | `tools/in_silico/scripts/81_capsule_cold_edge_sky.py` | `796730c1eca2d7b4b968ce08ab7289ba84aa817e11e80f68070ade27ec9fd8c3` | Cold edge of the sensor capsule's thermal envelope with clear-sky and overcast long-wave exchange, over thirty years of hourly weather, against the operating floor of its supercapacitor. |
@@ -151,8 +151,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `25965675538212f685290e093c3f24717378ca44f4e63b2209dc5a247b8e4856` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `81396d3a6076763cfeefde8f451feb40f7da51b5533670976f96d838c03d2d94` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `2fa0cd5e4d6070777dedc2f2184c7bebf1d2b43b686414e7e00d1f44acf7d8f4` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `33c6fa3cc6b42c82ee9ed31e322b837fbd4ff37803d900ecd6db0bf0ac6f8f54` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -379,7 +379,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/thermal/capsule_cold_edge_sky.json` | `3e95e09ed99c3780171d1253adc418b86d20d1104329bd571264658585f796b0` | 8,747 |
 | `tools/in_silico/cache/thermal/capsule_envelope.json` | `9beaedb7150d558d44075f0bf835f49d442bc430220fb1b4a9a8b05a1a86e4ef` | 11,609 |
 | `tools/in_silico/cache/thermal/flange_cambium_frost.json` | `3c42a6c4151c73c2503e72ea27130a409f29aed51cde3220d01d382a3287d988` | 676,043 |
-| `tools/in_silico/cache/thermal/flange_cambium_heat.json` | `b9c91e511129f08a71c16426937ba66c784a24f5360d6e7313299e8be326a2bd` | 20,172 |
+| `tools/in_silico/cache/thermal/flange_cambium_heat.json` | `0137b243b2cdc3f613bf7462593160b8acfdf5e9e125075169a2d4f710a7ad81` | 21,333 |
 | `tools/in_silico/cache/thermal/pv_window_thermal.json` | `7aeeaa932d85ef228a26bd1a496f0a57c3b0e14132b238f30be0666e4665ae04` | 17,937 |
 | `tools/in_silico/cache/thermal/site_rain_dew.json` | `d0fca9bda4f875747594654e650e40bd5348be24923f0a6d3629d70679877ebc` | 6,936 |
 

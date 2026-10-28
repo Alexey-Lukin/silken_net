@@ -631,6 +631,37 @@
     }
   },
   "verdict": {
+    "h_c_x0_7": {
+      "h_c_scale": 0.7,
+      "cambium_max_C_sunlit_still_by_alpha": {
+        "thin": {
+          "0.50": 48.29,
+          "0.60": 50.75,
+          "0.70": 53.13,
+          "0.80": 55.45,
+          "0.90": 57.72,
+          "0.95": 58.83
+        },
+        "thick": {
+          "0.50": 44.18,
+          "0.60": 46.11,
+          "0.70": 47.99,
+          "0.80": 49.86,
+          "0.90": 51.79,
+          "0.95": 52.74
+        }
+      },
+      "alpha_crossing_sunlit_still_air": {
+        "thin": 0.57,
+        "thick": 0.807
+      },
+      "specified_alpha_thin": {
+        "cambium_max_C": 48.29,
+        "at": "2007-07-19T16:00",
+        "hours_above_gate": 0
+      },
+      "dead_bark_floor_mm_at_specified_alpha": 5.0
+    },
     "worst_cell": {
       "sunlit_0.50": {
         "case": "sunlit",
@@ -791,7 +822,7 @@
       "thick": 0.937
     },
     "dead_bark_floor_mm_at_specified_alpha": 2.0,
-    "text": "With the specified finish (α 0.50) no hour of 30 years puts the cambium under the flange above 50 °C, even in full sun and still air (hottest 46.6 °C). The gate is reached past α ≈ 0.66 on the bracket's thinnest contact (8.3 mm of dead bark; past α ≈ 0.94 on 21.0 mm), or at α 0.50 with less than ≈ 2.0 mm of dead bark left under the flange. Under a crown the flange raises the hottest cambium hour by up to +3.2 K at α 0.50 (+7.5 K at α 0.95) over bark without it (35.2 °C). In full sun there is no reference: sunlit bark has no temperature anywhere in the tree. Every number is a 1D UPPER bound, so both crossings are conservative."
+    "text": "With the specified finish (α 0.50) no hour of 30 years puts the cambium under the flange above 50 °C, even in full sun and still air (hottest 46.6 °C). The gate is reached past α ≈ 0.66 on the bracket's thinnest contact (8.3 mm of dead bark; past α ≈ 0.94 on 21.0 mm), or at α 0.50 with less than ≈ 2.0 mm of dead bark left under the flange. Under a crown the flange raises the hottest cambium hour by up to +3.2 K at α 0.50 (+7.5 K at α 0.95) over bark without it (35.2 °C). In full sun there is no reference: sunlit bark has no temperature anywhere in the tree. Every number is a 1D UPPER bound, so both crossings are conservative. Those crossings are read at 71's nominal h_c; with h_c × 0.7 — the band 71 counts in its own uncertainty — the specified finish's hottest cambium hour on the thinnest contact is 48.3 °C (0 hours above the gate), the gate is reached past α ≈ 0.57 on it (past α ≈ 0.81 on the thick end), or at α 0.50 with less than ≈ 5.0 mm of dead bark left — so «conservative» holds on the nominal reading only."
   },
   "ceilings": [
     "1D, adiabatic inner end, zero contact resistance, flange AT the capsule temperature — UPPER bounds",
