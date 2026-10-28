@@ -286,6 +286,11 @@ Anchor mechanics (CPU):
      reflected ends, its sun and clock gates) → 110 (winter_pv_autonomy.json; the EDLC, boost and demand readings are lib
      constants); a change to 71's loader or the radome CEM it reads the dome from (tools/cad/cem), or to 79's sun, faces,
      snow files or reflected ends, re-runs 110
+  71 (importlib: geometry · load_hours · solve_t_cap · SKY_VIEW · ALPHA_EDGES · H_C_SENSITIVITY; capsule_envelope.json —
+     its identity rows) · 78 (importlib: run · layers · bark_bracket · summarise · crossing · CASES · GATE_C;
+     flange_cambium_heat.json — its identity cells) · 110 (winter_pv_autonomy.json `measured_form_r` — the named window
+     apertures) → 111 (pv_window_thermal.json — a dark PV window in the crown, per aperture); a re-run of 71, 78 or 110,
+     or a change to the radome CEM, re-runs 111
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

@@ -4875,6 +4875,70 @@ def test_capsule_cold_edge_sky_invariants():
     assert f"a median of {wind['hours_air_below_floor']:.1f} m/s against {wind['all_winter_hours']:.1f} m/s" in v
 
 
+def test_pv_window_thermal_invariants():
+    """111 (HW.54): the two-zone dome re-derived by another arithmetic, the identities, and the orderings.
+
+    CAN catch: a beam absorptance that is not the largest absorbed projection over the beam angle (re-derived here by a
+    brute force over ψ, not the closed form — mutation: the side wall's α_r dropped from the hypot reds here); a diffuse
+    absorptance that is not the area-weighted one; named apertures that are not `110`'s; identities that no longer equal
+    `71`'s and `78`'s cached rows; a larger or darker window running colder, sun not beating shade, the thick bark side
+    running hotter than the thin one; a margin that is not the rating minus the hottest hour; a crossing aperture that
+    disagrees with the named windows' gate hours on either side of it.
+    CANNOT catch: the window's optics, a cell's real absorptance, the R5 edge's curvature — the declared ceilings;
+    nor whether 71's worst-orientation lump and 78's 1D column are the right models (their own ceilings).
+    """
+    d = json.loads((THERMAL / "pv_window_thermal.json").read_text(encoding="utf-8"))
+    c71 = json.loads((THERMAL / "capsule_envelope.json").read_text(encoding="utf-8"))
+    c78 = json.loads((THERMAL / "flange_cambium_heat.json").read_text(encoding="utf-8"))
+    c110 = json.loads((CACHE / "kinetics/winter_pv_autonomy.json").read_text(encoding="utf-8"))
+    inp, geo = d["inputs"], d["inputs"]["geometry_71"]
+    assert geo == c71["geometry"]
+    ar = inp["alpha_radome"]
+    dd, hh = geo["dome_diameter_mm"], geo["h_over_bark_mm"]
+    a_crown = math.pi * (dd / 2) ** 2
+    psi = np.radians(np.linspace(0.0, 90.0, 90001))
+    proj = a_crown * np.cos(psi) + dd * hh * np.sin(psi)
+    named = d["named_windows"]
+    assert {k: round(v["area_cm2"], 4) for k, v in named.items()} == {
+        k: round(v["area_cm2"], 4) for k, v in c110["measured_form_r"]["r_below_which_it_cannot_by_cell_area"].items()}
+    for v in named.values():
+        a_dark = v["area_cm2"] * 100.0
+        for ac, row in v["by_alpha_cell"].items():
+            gain = ar * proj + (float(ac) - ar) * a_dark * np.cos(psi)
+            assert row["alpha_beam"] == pytest.approx(gain.max() / proj.max(), abs=2e-4)
+            assert row["alpha_diffuse"] == pytest.approx(ar + (float(ac) - ar) * a_dark / geo["a_exp_mm2"], abs=1e-4)
+            s, sh = row["sunlit"], row["shaded"]
+            assert s["margin_to_rating_k"] == pytest.approx(inp["edlc_rating_c"] - s["t_cap_max_c"], abs=0.11)
+            assert s["t_cap_max_c"] >= sh["t_cap_max_c"]
+            assert s["t_cap_max_c_h_c_x0_7"] >= s["t_cap_max_c"]
+            for r in (s, sh):
+                assert r["cambium_thin"]["cambium_max_C"] > r["cambium_thick"]["cambium_max_C"]
+    ctl = d["controls"]
+    assert ctl["capsule_no_window_c"] == c71["hot_bound"]["sunlit"][f"{ar:.2f}"]["0.0"]["t_cap_max_c"]
+    ua = ctl["uniform_control_alpha"]
+    assert ctl["capsule_uniform_c"] == c71["hot_bound"]["sunlit"][f"{ua:.2f}"]["0.0"]["t_cap_max_c"]
+    thin78 = next(r for r in c78["runs"] if (r["case"], r["alpha"], r["wind_k"], r["bark_side"])
+                  == ("sunlit", ar, 0.0, "thin"))["cambium_max_C"]
+    by_area = sorted(named.values(), key=lambda v: v["area_cm2"])
+    for ac in inp["alpha_cell_readings"]:
+        key = f"{ac:.2f}"
+        cam = [v["by_alpha_cell"][key]["sunlit"]["cambium_thin"]["cambium_max_C"] for v in by_area]
+        cap = [v["by_alpha_cell"][key]["sunlit"]["t_cap_max_c"] for v in by_area]
+        assert cam == sorted(cam) and cap == sorted(cap)
+        x = d["crossing_worst_cell_thin_sunlit_still"][key]
+        assert x["cambium_max_C_at_no_window"] == thin78
+        lim = x["largest_dark_aperture_under_gate_cm2"]
+        for v in by_area:
+            hours = v["by_alpha_cell"][key]["sunlit"]["cambium_thin"]["hours_above_gate"]
+            if lim is not None and v["area_cm2"] < lim - 0.1:
+                assert hours == 0, (v["area_cm2"], key)
+            if lim is not None and v["area_cm2"] > lim + 0.1:
+                assert hours > 0, (v["area_cm2"], key)
+    for v in named.values():
+        assert v["by_alpha_cell"]["1.00"]["sunlit"]["cambium_thin"]["cambium_max_C"] >= \
+            v["by_alpha_cell"]["0.90"]["sunlit"]["cambium_thin"]["cambium_max_C"]
+
+
 def test_collar_running_clearance_invariants():
     """82 (HW.33 · HW.9 root package): the collar's running clearance re-derived from its inputs and its sibling caches.
 

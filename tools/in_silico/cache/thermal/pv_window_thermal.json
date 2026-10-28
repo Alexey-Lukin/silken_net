@@ -1,0 +1,364 @@
+{
+  "question": "how much a dark PV window in the radome's crown heats the capsule and the cambium under the flange, per named window aperture, the rest of the dome at the specified finish",
+  "method": "71's lumped capsule balance and 78's 1D cambium column, imported; the absorbed power of a two-zone dome in 71's worst-orientation construction (beam) and its view factor (diffuse)",
+  "inputs": {
+    "alpha_radome": 0.5,
+    "alpha_cell_readings": [
+      1.0,
+      0.9
+    ],
+    "alpha_cell_readings_are": {
+      "1.00": "bound — everything entering the window stays as heat",
+      "0.90": "ours — a dark cell with some reflection, no primary read"
+    },
+    "geometry_71": {
+      "dome_diameter_mm": 29.8,
+      "h_over_bark_mm": 18.0,
+      "h_over_bark_from": "radome.json cavity_height_mm + bell_radius_mm (01_04 §5.5: порожнина + корона)",
+      "a_proj_max_mm2": 879.88,
+      "a_exp_mm2": 2382.62
+    },
+    "crown_disc_mm2": 697.46,
+    "bark": {
+      "flange_diameter_mm": 29.8,
+      "facing_spread_mm": 5.175,
+      "thin_mm": 8.325,
+      "thick_mm": 21.0
+    },
+    "gate_C": 50.0,
+    "edlc_rating_c": 70.0,
+    "wind_k": 0.0,
+    "named_apertures_from": "110 measured_form_r",
+    "area_grid_step_mm2": 10.0
+  },
+  "controls": {
+    "capsule_no_window_c": 52.9,
+    "capsule_uniform_c": 58.1,
+    "uniform_control_alpha": 0.7
+  },
+  "named_windows": {
+    "one_package_in_the_crown_KXOB25-07X1TF": {
+      "area_cm2": 0.908,
+      "by_alpha_cell": {
+        "1.00": {
+          "alpha_beam": 0.5418,
+          "alpha_diffuse": 0.5191,
+          "sunlit": {
+            "t_cap_max_c": 53.9,
+            "margin_to_rating_k": 16.1,
+            "at": "2010-08-08T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 47.44,
+              "at": "2007-07-19T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 43.51,
+              "at": "2010-08-08T17:00",
+              "hours_above_gate": 0
+            },
+            "t_cap_max_c_h_c_x0_7": 56.1
+          },
+          "shaded": {
+            "t_cap_max_c": 43.0,
+            "margin_to_rating_k": 27.0,
+            "at": "2010-08-06T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 38.55,
+              "at": "2010-08-06T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 35.69,
+              "at": "2010-08-06T17:00",
+              "hours_above_gate": 0
+            }
+          }
+        },
+        "0.90": {
+          "alpha_beam": 0.5333,
+          "alpha_diffuse": 0.5152,
+          "sunlit": {
+            "t_cap_max_c": 53.7,
+            "margin_to_rating_k": 16.3,
+            "at": "2010-08-08T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 47.27,
+              "at": "2007-07-19T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 43.38,
+              "at": "2010-08-08T17:00",
+              "hours_above_gate": 0
+            },
+            "t_cap_max_c_h_c_x0_7": 55.9
+          },
+          "shaded": {
+            "t_cap_max_c": 43.0,
+            "margin_to_rating_k": 27.0,
+            "at": "2010-08-06T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 38.51,
+              "at": "2010-08-06T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 35.66,
+              "at": "2010-08-06T17:00",
+              "hours_above_gate": 0
+            }
+          }
+        }
+      }
+    },
+    "four_dies_in_the_crown_XOD17-04B": {
+      "area_cm2": 1.44,
+      "by_alpha_cell": {
+        "1.00": {
+          "alpha_beam": 0.5671,
+          "alpha_diffuse": 0.5302,
+          "sunlit": {
+            "t_cap_max_c": 54.5,
+            "margin_to_rating_k": 15.5,
+            "at": "2010-08-08T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 47.92,
+              "at": "2007-07-19T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 43.89,
+              "at": "2010-08-08T17:00",
+              "hours_above_gate": 0
+            },
+            "t_cap_max_c_h_c_x0_7": 56.8
+          },
+          "shaded": {
+            "t_cap_max_c": 43.2,
+            "margin_to_rating_k": 26.8,
+            "at": "2010-08-06T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 38.66,
+              "at": "2010-08-06T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 35.78,
+              "at": "2010-08-06T17:00",
+              "hours_above_gate": 0
+            }
+          }
+        },
+        "0.90": {
+          "alpha_beam": 0.5533,
+          "alpha_diffuse": 0.5242,
+          "sunlit": {
+            "t_cap_max_c": 54.2,
+            "margin_to_rating_k": 15.8,
+            "at": "2010-08-08T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 47.66,
+              "at": "2007-07-19T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 43.68,
+              "at": "2010-08-08T17:00",
+              "hours_above_gate": 0
+            },
+            "t_cap_max_c_h_c_x0_7": 56.4
+          },
+          "shaded": {
+            "t_cap_max_c": 43.1,
+            "margin_to_rating_k": 26.9,
+            "at": "2010-08-06T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 38.6,
+              "at": "2010-08-06T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 35.73,
+              "at": "2010-08-06T17:00",
+              "hours_above_gate": 0
+            }
+          }
+        }
+      }
+    },
+    "flat_crown_circle": {
+      "area_cm2": 3.0791,
+      "by_alpha_cell": {
+        "1.00": {
+          "alpha_beam": 0.6475,
+          "alpha_diffuse": 0.5646,
+          "sunlit": {
+            "t_cap_max_c": 56.4,
+            "margin_to_rating_k": 13.6,
+            "at": "2010-08-08T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 49.45,
+              "at": "2007-07-19T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 45.07,
+              "at": "2010-08-08T17:00",
+              "hours_above_gate": 0
+            },
+            "t_cap_max_c_h_c_x0_7": 59.0
+          },
+          "shaded": {
+            "t_cap_max_c": 43.7,
+            "margin_to_rating_k": 26.3,
+            "at": "2010-08-06T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 39.01,
+              "at": "2010-08-06T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 36.04,
+              "at": "2010-08-06T17:00",
+              "hours_above_gate": 0
+            }
+          }
+        },
+        "0.90": {
+          "alpha_beam": 0.6169,
+          "alpha_diffuse": 0.5517,
+          "sunlit": {
+            "t_cap_max_c": 55.7,
+            "margin_to_rating_k": 14.3,
+            "at": "2010-08-08T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 48.87,
+              "at": "2007-07-19T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 44.62,
+              "at": "2010-08-08T17:00",
+              "hours_above_gate": 0
+            },
+            "t_cap_max_c_h_c_x0_7": 58.2
+          },
+          "shaded": {
+            "t_cap_max_c": 43.5,
+            "margin_to_rating_k": 26.5,
+            "at": "2010-08-06T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 38.88,
+              "at": "2010-08-06T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 35.94,
+              "at": "2010-08-06T17:00",
+              "hours_above_gate": 0
+            }
+          }
+        }
+      }
+    },
+    "bore_circle": {
+      "area_cm2": 5.2279,
+      "by_alpha_cell": {
+        "1.00": {
+          "alpha_beam": 0.7575,
+          "alpha_diffuse": 0.6097,
+          "sunlit": {
+            "t_cap_max_c": 58.9,
+            "margin_to_rating_k": 11.1,
+            "at": "2010-08-08T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 51.47,
+              "at": "2007-07-19T16:00",
+              "hours_above_gate": 26
+            },
+            "cambium_thick": {
+              "cambium_max_C": 46.63,
+              "at": "2010-08-08T17:00",
+              "hours_above_gate": 0
+            },
+            "t_cap_max_c_h_c_x0_7": 61.8
+          },
+          "shaded": {
+            "t_cap_max_c": 44.4,
+            "margin_to_rating_k": 25.6,
+            "at": "2010-08-06T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 39.45,
+              "at": "2010-08-06T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 36.38,
+              "at": "2010-08-06T17:00",
+              "hours_above_gate": 0
+            }
+          }
+        },
+        "0.90": {
+          "alpha_beam": 0.7035,
+          "alpha_diffuse": 0.5878,
+          "sunlit": {
+            "t_cap_max_c": 57.7,
+            "margin_to_rating_k": 12.3,
+            "at": "2010-08-08T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 50.48,
+              "at": "2007-07-19T16:00",
+              "hours_above_gate": 3
+            },
+            "cambium_thick": {
+              "cambium_max_C": 45.87,
+              "at": "2010-08-08T17:00",
+              "hours_above_gate": 0
+            },
+            "t_cap_max_c_h_c_x0_7": 60.4
+          },
+          "shaded": {
+            "t_cap_max_c": 44.1,
+            "margin_to_rating_k": 25.9,
+            "at": "2010-08-06T13:00",
+            "cambium_thin": {
+              "cambium_max_C": 39.24,
+              "at": "2010-08-06T16:00",
+              "hours_above_gate": 0
+            },
+            "cambium_thick": {
+              "cambium_max_C": 36.21,
+              "at": "2010-08-06T17:00",
+              "hours_above_gate": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "crossing_worst_cell_thin_sunlit_still": {
+    "1.00": {
+      "largest_dark_aperture_under_gate_cm2": 3.67,
+      "is_nowhere_on_the_crown": false,
+      "cambium_max_C_at_no_window": 46.62,
+      "cambium_max_C_at_whole_crown": 53.12
+    },
+    "0.90": {
+      "largest_dark_aperture_under_gate_cm2": 4.59,
+      "is_nowhere_on_the_crown": false,
+      "cambium_max_C_at_no_window": 46.62,
+      "cambium_max_C_at_whole_crown": 51.8
+    }
+  },
+  "verdict": "With the rest of the dome at α 0.50 and the window at α_c 1.00 (the bound), the capsule's hottest hour stays under the 70 °C EDLC rating for every named window — at most 58.9 °C (61.8 °C with h_c × 0.7). The cambium under the flange's thinnest contact stays under its 50 °C gate in full sun and still air for one_package_in_the_crown_KXOB25-07X1TF, four_dies_in_the_crown_XOD17-04B, flat_crown_circle; it does not clear it for bore_circle. On the bound the largest dark aperture that keeps it under is ≈ 3.67 cm² (grid 0.10 cm²). Every number is an UPPER bound inherited from 71 and 78.",
+  "not_seen": [
+    "the window's optics — transmittance, its own absorption, the cavity's greenhouse (isothermal lump)",
+    "a cell's real absorptance (α_c 0.90 is ours)",
+    "71 takes the crown as a flat disc of the dome's diameter: a window wider than the flat crown sits on the curved R5 edge, whose projection this construction does not follow",
+    "whether a window meets the ratified α ≤ 0.5 — a verdict, not a number",
+    "the RF half of the window (01_03 §4)",
+    "every ceiling of 71 and 78 (sunlit bark, ERA5 smoothing, 1D, adiabatic ends)"
+  ]
+}

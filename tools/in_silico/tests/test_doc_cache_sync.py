@@ -8710,6 +8710,105 @@ def test_winter_pv_prose_claims_hold():
     assert f"OK_PROG = 1.21 × (1 + 8.25/4.75)          = {VBAT_OK_OFF_V:.3f} В ✓" in text, "02_03 §4.Г's OK_PROG moved"
 
 
+# ── HW.54 a dark PV window in the crown (111, 2026-10-28) ⟷ SUMMARY §«How Much Does a Dark PV Window in the Dome Heat
+# the Capsule and the Cambium?» and 01_03 §4 ⊕ 2026-10-28. The temperatures and hours are cached at the precision the
+# table prints; the absorptances at four decimals, printed at three; the apertures as `110` holds them.
+PVW = "thermal/pv_window_thermal.json"
+_PVW_ROWS = (("one package in the crown", "one_package_in_the_crown_KXOB25-07X1TF"),
+             ("four dies in the crown", "four_dies_in_the_crown_XOD17-04B"),
+             ("the whole flat crown", "flat_crown_circle"), ("the whole bore", "bore_circle"))
+_PVW_COLS = ((("area_cm2",), 0.005), (("by_alpha_cell", "1.00", "alpha_beam"), 0.0006),
+             (("by_alpha_cell", "1.00", "alpha_diffuse"), 0.0006),
+             (("by_alpha_cell", "1.00", "sunlit", "t_cap_max_c"), 0.0),
+             (("by_alpha_cell", "1.00", "sunlit", "t_cap_max_c_h_c_x0_7"), 0.0),
+             (("by_alpha_cell", "1.00", "sunlit", "cambium_thin", "cambium_max_C"), 0.0),
+             (("by_alpha_cell", "1.00", "sunlit", "cambium_thin", "hours_above_gate"), 0.0))
+
+
+def _pvw_get(name, path):
+    def get(d):
+        v = d["named_windows"][name]
+        for p in path:
+            v = v[p]
+        return v
+    return get
+
+
+def _pvw_row(label, j):
+    n = [N if j == k else r"[\d.]+" for k in range(7)]
+    return rf"(?m)^\| {re.escape(label)} \| {n[0]} \| {n[1]} ⊥ {n[2]} \| {n[3]} \({n[4]}\) \| {n[5]} · {n[6]} \|$"
+
+
+def _pvw_hottest(key):
+    return lambda d: max(v["by_alpha_cell"]["1.00"]["sunlit"][key] for v in d["named_windows"].values())
+
+
+def _pvw_crown_margin(d):
+    return round(d["inputs"]["gate_C"]
+                 - d["named_windows"]["flat_crown_circle"]["by_alpha_cell"]["1.00"]["sunlit"]["cambium_thin"]["cambium_max_C"], 2)
+
+
+def _pvw_bore_hours(ac):
+    return lambda d: d["named_windows"]["bore_circle"]["by_alpha_cell"][ac]["sunlit"]["cambium_thin"]["hours_above_gate"]
+
+
+def _pvw_cross(ac):
+    return lambda d: d["crossing_worst_cell_thin_sunlit_still"][ac]["largest_dark_aperture_under_gate_cm2"]
+
+
+CHECKS += [
+    *[(f"PV window {key} col {j} → 111", SUMMARY, _pvw_row(label, j), PVW, _pvw_get(key, _PVW_COLS[j][0]), _PVW_COLS[j][1])
+      for label, key in _PVW_ROWS for j in range(7)],
+    ("PV window identity no window → 111", SUMMARY, rf"no window reproduces `71`'s α 0\.50 row \({N} °C\)", PVW,
+     lambda d: d["controls"]["capsule_no_window_c"], 0.0),
+    ("PV window hottest capsule → 111", SUMMARY, rf"the hottest hour is {N} °C, [\d.]+ °C with h_c × 0\.7", PVW,
+     _pvw_hottest("t_cap_max_c"), 0.0),
+    ("PV window hottest capsule h_c x0.7 → 111", SUMMARY, rf"the hottest hour is [\d.]+ °C, {N} °C with h_c × 0\.7", PVW,
+     _pvw_hottest("t_cap_max_c_h_c_x0_7"), 0.0),
+    ("PV window flat-crown margin → 111", SUMMARY, rf"the whole flat crown by {N} K", PVW, _pvw_crown_margin, 0.0),
+    ("PV window bore hours bound → 111", SUMMARY, rf"{N} hours in 30 years on the bound, [\d.]+ at α_c 0\.90", PVW,
+     _pvw_bore_hours("1.00"), 0.0),
+    ("PV window bore hours 0.90 → 111", SUMMARY, rf"[\d.]+ hours in 30 years on the bound, {N} at α_c 0\.90", PVW,
+     _pvw_bore_hours("0.90"), 0.0),
+    ("PV window crossing bound → 111", SUMMARY, rf"under the gate is ≈ {N} cm² \(≈ [\d.]+ cm² at α_c 0\.90", PVW,
+     _pvw_cross("1.00"), 0.0),
+    ("PV window crossing 0.90 → 111", SUMMARY, rf"under the gate is ≈ [\d.]+ cm² \(≈ {N} cm² at α_c 0\.90", PVW,
+     _pvw_cross("0.90"), 0.0),
+    # 01_03 §4 ⊕ 2026-10-28 — the same cache, its second home
+    ("PV window hottest capsule → 01_03 §4 → 111", EBFC, rf"найгарячіша година — {N} °C, за `h_c × 0\.7` — [\d.]+ °C", PVW,
+     _pvw_hottest("t_cap_max_c"), 0.0),
+    ("PV window hottest capsule h_c x0.7 → 01_03 §4 → 111", EBFC, rf"найгарячіша година — [\d.]+ °C, за `h_c × 0\.7` — {N} °C",
+     PVW, _pvw_hottest("t_cap_max_c_h_c_x0_7"), 0.0),
+    ("PV window flat-crown margin → 01_03 §4 → 111", EBFC, rf"аж до всієї пласкої корони \(на {N} K\)", PVW, _pvw_crown_margin, 0.0),
+    ("PV window bore hours bound → 01_03 §4 → 111", EBFC, rf"вікна на весь отвір — {N} годин за 30 років на межі", PVW,
+     _pvw_bore_hours("1.00"), 0.0),
+    ("PV window bore hours 0.90 → 01_03 §4 → 111", EBFC, rf"на межі \({N} — при α_c 0\.90\)", PVW, _pvw_bore_hours("0.90"), 0.0),
+    ("PV window crossing bound → 01_03 §4 → 111", EBFC, rf"апертура під гейтом — ≈ {N} см² на межі", PVW, _pvw_cross("1.00"), 0.0),
+    ("PV window crossing 0.90 → 01_03 §4 → 111", EBFC, rf"\(≈ {N} см² при α_c 0\.90\)", PVW, _pvw_cross("0.90"), 0.0),
+]
+
+
+def test_pv_window_sentences_follow_the_cache():
+    """111's set sentence — which named windows keep the cambium under the gate on the bound — recomposed from the cache.
+
+    CAN catch: a re-run that moves a named window across the gate while SUMMARY and 01_03 §4 keep «up to the whole flat
+    crown» / «not the bore»; the EDLC rating being reached by any named window while the prose says none is.
+    CANNOT catch: a sentence it does not compose (the model and bounds paragraphs).
+    """
+    d = json.loads((CACHE / PVW).read_text(encoding="utf-8"))
+    nw = d["named_windows"]
+    under = {k for k, v in nw.items() if v["by_alpha_cell"]["1.00"]["sunlit"]["cambium_thin"]["hours_above_gate"] == 0}
+    assert under == {"one_package_in_the_crown_KXOB25-07X1TF", "four_dies_in_the_crown_XOD17-04B", "flat_crown_circle"}, under
+    assert all(v["by_alpha_cell"]["1.00"]["sunlit"]["margin_to_rating_k"] > 0 for v in nw.values())
+    text = " ".join(doc(SUMMARY).split())
+    assert "stays under its gate for every window up to the whole flat crown" in text
+    assert "the bore window does not clear it" in text
+    assert "No named window brings the capsule to the EDLC's 70 °C rating" in text
+    ebfc = " ".join(doc(EBFC).split())
+    assert "лишається під гейтом для вікна аж до всієї пласкої корони" in ebfc
+    assert "не проходить лише вікна на весь отвір" in ebfc
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

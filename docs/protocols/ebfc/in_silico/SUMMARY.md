@@ -2557,6 +2557,25 @@ At cadence C the binding stretches on this form run inside the sheet's window, t
 
 **What it cannot see.** Snow, rime and dirt on the dome, and the dome's optics (PEEK has no optical path — PV is a radome change); the cell's temperature and its efficiency's dependence on light; the boost's dependence on its input voltage (the `§9.1` anchors are an EBFC's; a PV cell sits near its own MPP); the capacitance and the leak at frost, which the leg asks for and `§12.1` does not rate; what follows an outage — the hysteresis, the warm-up cost, a cold start below 0 °C; the canon's state-dependent winter mode (`§9.8`); winter light under a canopy on a vertical face; the canopy's own ground light (the reflected ends are open-field ones, neither an extreme); a winter worse than the record's worst.
 
+## HW.54 — How Much Does a Dark PV Window in the Dome Heat the Capsule and the Cambium? (script 111)
+
+**The question (2026-10-28, [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.54, the leg «тепловий прогін `71` і `78` з α комірки на грані — дужкою, доки комірку не обрано»).** The radome's finish is specified as α ≤ 0.5 for its whole service life (`02_01 §5.2`), on two grounds: the EDLC's margin at the dark end is of the order of the model's own uncertainty (`71`), and the cambium under the flange's thinnest contact reaches its 50 °C gate past α ≈ 0.66 (`78`, interpolated on `71`'s α grid). The only PV form the desk kept is a cell inside the capsule behind a window in the crown (`01_03 §4` ⊕ Р3(б)), and `71` and `78` take the dome as one uniform finish, so neither says what a dark patch of a given area does.
+
+**Model.** `71`'s lump and `78`'s column, imported; only the absorbed power changes. A two-zone dome — the window's aperture A_dark at α_c, the rest at α 0.50 — in `71`'s own worst-orientation construction (the largest projection over all beam directions, an upper bound on the direct gain): the crown projects as cos ψ, the side wall as sin ψ, and the patch sits in the crown, so the beam enters as α_beam = √((α_r·A_crown + Δα·A_dark)² + (α_r·D·H)²) / A_proj, and the diffuse as the area-weighted α_r + Δα·A_dark/A_exp. α_c = 1.00 is the bound — everything that enters the window stays in the lump as heat: the share η the cell converts is stored and spent by the node inside the same lump, and none is converted once the store is full (`01_03 §4` counts (1 − η) as heat while charging); 0.90 is ours. The aperture is the window's, not the cell's active area: light that enters the window and misses the cell is absorbed in the lump all the same. The named apertures are `110`'s. Identities, asserted before any reading: no window reproduces `71`'s α 0.50 row (52.9 °C) and `78`'s cambium cell on both bark sides; a uniform α 0.70 dome reproduces both α 0.70 rows.
+
+| window (`110`'s named apertures) | aperture, cm² | α_beam ⊥ α_diffuse | capsule, °C (h_c × 0.7) | cambium at the thinnest contact, °C · hours above 50 °C in 30 years |
+|---|---|---|---|---|
+| one package in the crown | 0.908 | 0.542 ⊥ 0.519 | 53.9 (56.1) | 47.44 · 0 |
+| four dies in the crown | 1.44 | 0.567 ⊥ 0.530 | 54.5 (56.8) | 47.92 · 0 |
+| the whole flat crown | 3.08 | 0.648 ⊥ 0.565 | 56.4 (59.0) | 49.45 · 0 |
+| the whole bore | 5.23 | 0.758 ⊥ 0.610 | 58.9 (61.8) | 51.47 · 26 |
+
+(α_c 1.00, full sun, still air — `71`'s and `78`'s worst cell.)
+
+**Result.** No named window brings the capsule to the EDLC's 70 °C rating — the hottest hour is 58.9 °C, 61.8 °C with h_c × 0.7. The cambium under the thinnest contact stays under its gate for every window up to the whole flat crown — the whole flat crown by 0.55 K — and the bore window does not clear it: 26 hours in 30 years on the bound, 3 at α_c 0.90. On the bound the largest dark aperture that keeps the cambium under the gate is ≈ 3.67 cm² (≈ 4.59 cm² at α_c 0.90; grid 0.10 cm²) — above the flat crown, below the bore. So «a window with a cell reads as a dark finish, past the cambium's ceiling» holds for a window over the whole bore, not for one on the flat crown.
+
+**Direction and what it cannot see.** Every term inherited from `71` and `78` pushes the temperatures up (the worst orientation over all beam directions, the adiabatic base, the flange at the capsule's temperature, the 1D column, the adiabatic inner end), and α_c = 1 does too, so every hot number is an upper bound and «stays under» is sufficient within those models; «does not clear it» is not «crosses it». Not seen: the window's optics (transmittance, its own absorption, the cavity's greenhouse — the lump is isothermal); a cell's real absorptance; the R5 edge's curvature (`71` takes the crown as a flat disc of the dome's diameter, and the bore window sits partly on that edge); whether a window meets the ratified α ≤ 0.5 at all — a verdict, not a number; the window's RF half (`01_03 §4`). Cache: `thermal/pv_window_thermal.json`.
+
 ## HW.5.IS — How Hard Does the Cathode Medium's Malate Pull on the Nanozyme's Metals? (script 93)
 
 The buffered cathode medium (malic acid 10 mM in the sap's salts, pH 4.5 — ⚖️ founder 2026-10-12, `01_03 §3.5`) carried
