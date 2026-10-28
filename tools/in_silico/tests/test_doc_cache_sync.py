@@ -8711,102 +8711,160 @@ def test_winter_pv_prose_claims_hold():
 
 
 # ── HW.54 a dark PV window in the crown (111, 2026-10-28) ⟷ SUMMARY §«How Much Does a Dark PV Window in the Dome Heat
-# the Capsule and the Cambium?» and 01_03 §4 ⊕ 2026-10-28. The temperatures and hours are cached at the precision the
-# table prints; the absorptances at four decimals, printed at three; the apertures as `110` holds them.
+# the Capsule and the Cambium?», 01_03 §4 ⊕ 2026-10-28 and 00_07 HW.54. Temperatures and hours are cached at the
+# precision the table prints; the absorptances at six decimals and pinned at the three the table prints, EXACTLY (a
+# loose tolerance let a double rounding through — adversary on 98dbf6f36); the apertures as `110` holds them.
 PVW = "thermal/pv_window_thermal.json"
-_PVW_ROWS = (("one package in the crown", "one_package_in_the_crown_KXOB25-07X1TF"),
-             ("four dies in the crown", "four_dies_in_the_crown_XOD17-04B"),
-             ("the whole flat crown", "flat_crown_circle"), ("the whole bore", "bore_circle"))
-_PVW_COLS = ((("area_cm2",), 0.005), (("by_alpha_cell", "1.00", "alpha_beam"), 0.0006),
-             (("by_alpha_cell", "1.00", "alpha_diffuse"), 0.0006),
-             (("by_alpha_cell", "1.00", "sunlit", "t_cap_max_c"), 0.0),
-             (("by_alpha_cell", "1.00", "sunlit", "t_cap_max_c_h_c_x0_7"), 0.0),
-             (("by_alpha_cell", "1.00", "sunlit", "cambium_thin", "cambium_max_C"), 0.0),
-             (("by_alpha_cell", "1.00", "sunlit", "cambium_thin", "hours_above_gate"), 0.0))
+_PVW_ROWS = (("one package in the crown", "one_package_in_the_crown_KXOB25-07X1TF", "cell outline"),
+             ("four dies in the crown", "four_dies_in_the_crown_XOD17-04B", "cell outline"),
+             ("the whole flat crown", "flat_crown_circle", "window"), ("the whole bore", "bore_circle", "window"))
+_B = ("by_alpha_cell", "1.00")
+_PVW_COLS = ((("area_cm2",), None, 0.005), ((*_B, "alpha_beam"), 3, 0.0), ((*_B, "alpha_diffuse"), 3, 0.0),
+             ((*_B, "sunlit_nominal", "t_cap_max_c"), None, 0.0), ((*_B, "sunlit_h_c_x0_7", "t_cap_max_c"), None, 0.0),
+             ((*_B, "sunlit_nominal", "cambium_thin", "cambium_max_C"), None, 0.0),
+             ((*_B, "sunlit_nominal", "cambium_thin", "hours_above_gate"), None, 0.0),
+             ((*_B, "sunlit_h_c_x0_7", "cambium_thin", "cambium_max_C"), None, 0.0),
+             ((*_B, "sunlit_h_c_x0_7", "cambium_thin", "hours_above_gate"), None, 0.0))
 
 
-def _pvw_get(name, path):
+def _pvw_get(name, path, digits=None):
     def get(d):
         v = d["named_windows"][name]
         for p in path:
             v = v[p]
-        return v
+        return v if digits is None else round(v, digits)
     return get
 
 
-def _pvw_row(label, j):
-    n = [N if j == k else r"[\d.]+" for k in range(7)]
-    return rf"(?m)^\| {re.escape(label)} \| {n[0]} \| {n[1]} ⊥ {n[2]} \| {n[3]} \({n[4]}\) \| {n[5]} · {n[6]} \|$"
+def _pvw_row(label, kind, j):
+    n = [N if j == k else r"[\d.]+" for k in range(9)]
+    return (rf"(?m)^\| {re.escape(label)} \| {kind} \| {n[0]} \| {n[1]} ⊥ {n[2]} \| {n[3]} ⊥ {n[4]} \| "
+            rf"{n[5]} · {n[6]} ⊥ {n[7]} · {n[8]} \|$")
 
 
 def _pvw_hottest(key):
-    return lambda d: max(v["by_alpha_cell"]["1.00"]["sunlit"][key] for v in d["named_windows"].values())
+    return lambda d: max(v["by_alpha_cell"]["1.00"][key]["t_cap_max_c"] for v in d["named_windows"].values())
 
 
 def _pvw_crown_margin(d):
-    return round(d["inputs"]["gate_C"]
-                 - d["named_windows"]["flat_crown_circle"]["by_alpha_cell"]["1.00"]["sunlit"]["cambium_thin"]["cambium_max_C"], 2)
+    return round(d["inputs"]["gate_C"] - d["named_windows"]["flat_crown_circle"]["by_alpha_cell"]["1.00"]
+                 ["sunlit_nominal"]["cambium_thin"]["cambium_max_C"], 2)
 
 
-def _pvw_bore_hours(ac):
-    return lambda d: d["named_windows"]["bore_circle"]["by_alpha_cell"][ac]["sunlit"]["cambium_thin"]["hours_above_gate"]
+def _pvw_hours(name, key):
+    return lambda d: d["named_windows"][name]["by_alpha_cell"]["1.00"][key]["cambium_thin"]["hours_above_gate"]
 
 
-def _pvw_cross(ac):
-    return lambda d: d["crossing_worst_cell_thin_sunlit_still"][ac]["largest_dark_aperture_under_gate_cm2"]
+def _pvw_cross(ac, hk):
+    return lambda d: d["crossing_worst_cell_thin_sunlit_still"][ac][hk]["largest_dark_aperture_under_gate_cm2"]
 
 
+def _pvw_bare(hk):
+    return lambda d: d["crossing_worst_cell_thin_sunlit_still"]["1.00"][hk]["cambium_max_C_at_no_window"]
+
+
+_X07 = r"`h_c × 0\.7`"
 CHECKS += [
-    *[(f"PV window {key} col {j} → 111", SUMMARY, _pvw_row(label, j), PVW, _pvw_get(key, _PVW_COLS[j][0]), _PVW_COLS[j][1])
-      for label, key in _PVW_ROWS for j in range(7)],
-    ("PV window identity no window → 111", SUMMARY, rf"no window reproduces `71`'s α 0\.50 row \({N} °C\)", PVW,
-     lambda d: d["controls"]["capsule_no_window_c"], 0.0),
+    *[(f"PV window {key} col {j} → 111", SUMMARY, _pvw_row(label, kind, j), PVW,
+       _pvw_get(key, _PVW_COLS[j][0], _PVW_COLS[j][1]), _PVW_COLS[j][2])
+      for label, key, kind in _PVW_ROWS for j in range(9)],
+    ("PV window plumbing no window → 111", SUMMARY, rf"no window reproduces `71`'s α 0\.50 row \({N} °C\)", PVW,
+     lambda d: d["controls"]["plumbing_capsule_no_window_c"], 0.0),
     ("PV window hottest capsule → 111", SUMMARY, rf"the hottest hour is {N} °C, [\d.]+ °C with h_c × 0\.7", PVW,
-     _pvw_hottest("t_cap_max_c"), 0.0),
+     _pvw_hottest("sunlit_nominal"), 0.0),
     ("PV window hottest capsule h_c x0.7 → 111", SUMMARY, rf"the hottest hour is [\d.]+ °C, {N} °C with h_c × 0\.7", PVW,
-     _pvw_hottest("t_cap_max_c_h_c_x0_7"), 0.0),
-    ("PV window flat-crown margin → 111", SUMMARY, rf"the whole flat crown by {N} K", PVW, _pvw_crown_margin, 0.0),
-    ("PV window bore hours bound → 111", SUMMARY, rf"{N} hours in 30 years on the bound, [\d.]+ at α_c 0\.90", PVW,
-     _pvw_bore_hours("1.00"), 0.0),
-    ("PV window bore hours 0.90 → 111", SUMMARY, rf"[\d.]+ hours in 30 years on the bound, {N} at α_c 0\.90", PVW,
-     _pvw_bore_hours("0.90"), 0.0),
-    ("PV window crossing bound → 111", SUMMARY, rf"under the gate is ≈ {N} cm² \(≈ [\d.]+ cm² at α_c 0\.90", PVW,
-     _pvw_cross("1.00"), 0.0),
-    ("PV window crossing 0.90 → 111", SUMMARY, rf"under the gate is ≈ [\d.]+ cm² \(≈ {N} cm² at α_c 0\.90", PVW,
-     _pvw_cross("0.90"), 0.0),
-    # 01_03 §4 ⊕ 2026-10-28 — the same cache, its second home
-    ("PV window hottest capsule → 01_03 §4 → 111", EBFC, rf"найгарячіша година — {N} °C, за `h_c × 0\.7` — [\d.]+ °C", PVW,
-     _pvw_hottest("t_cap_max_c"), 0.0),
-    ("PV window hottest capsule h_c x0.7 → 01_03 §4 → 111", EBFC, rf"найгарячіша година — [\d.]+ °C, за `h_c × 0\.7` — {N} °C",
-     PVW, _pvw_hottest("t_cap_max_c_h_c_x0_7"), 0.0),
-    ("PV window flat-crown margin → 01_03 §4 → 111", EBFC, rf"аж до всієї пласкої корони \(на {N} K\)", PVW, _pvw_crown_margin, 0.0),
-    ("PV window bore hours bound → 01_03 §4 → 111", EBFC, rf"вікна на весь отвір — {N} годин за 30 років на межі", PVW,
-     _pvw_bore_hours("1.00"), 0.0),
-    ("PV window bore hours 0.90 → 01_03 §4 → 111", EBFC, rf"на межі \({N} — при α_c 0\.90\)", PVW, _pvw_bore_hours("0.90"), 0.0),
-    ("PV window crossing bound → 01_03 §4 → 111", EBFC, rf"апертура під гейтом — ≈ {N} см² на межі", PVW, _pvw_cross("1.00"), 0.0),
-    ("PV window crossing 0.90 → 01_03 §4 → 111", EBFC, rf"\(≈ {N} см² при α_c 0\.90\)", PVW, _pvw_cross("0.90"), 0.0),
+     _pvw_hottest("sunlit_h_c_x0_7"), 0.0),
+    *[(f"PV window crossing {ac}/{hk} → 111", SUMMARY, rx, PVW, _pvw_cross(ac, hk), 0.0) for ac, hk, rx in (
+        ("1.00", "nominal", rf"under the gate is {N} cm² at the nominal h_c and [\d.]+ cm² with h_c × 0\.7"),
+        ("1.00", "h_c_x0_7", rf"under the gate is [\d.]+ cm² at the nominal h_c and {N} cm² with h_c × 0\.7"),
+        ("0.90", "nominal", rf"\({N} ⊥ [\d.]+ cm² at α_c 0\.90"),
+        ("0.90", "h_c_x0_7", rf"\([\d.]+ ⊥ {N} cm² at α_c 0\.90"))],
+    ("PV window both-readings aperture → 111", SUMMARY, rf"clears the gate up to ≈ {N} cm² of dark aperture", PVW,
+     _pvw_cross("1.00", "h_c_x0_7"), 0.0),
+    ("PV window flat-crown margin → 111", SUMMARY, rf"at the nominal h_c only, by {N} K", PVW, _pvw_crown_margin, 0.0),
+    ("PV window flat-crown hours h_c x0.7 → 111", SUMMARY, rf"not with h_c × 0\.7 \({N} hours in 30 years\)", PVW,
+     _pvw_hours("flat_crown_circle", "sunlit_h_c_x0_7"), 0.0),
+    ("PV window bore hours nominal → 111", SUMMARY, rf"clears it on neither \({N} ⊥ [\d.]+ hours\)", PVW,
+     _pvw_hours("bore_circle", "sunlit_nominal"), 0.0),
+    ("PV window bore hours h_c x0.7 → 111", SUMMARY, rf"clears it on neither \([\d.]+ ⊥ {N} hours\)", PVW,
+     _pvw_hours("bore_circle", "sunlit_h_c_x0_7"), 0.0),
+    ("PV window bare dome nominal → 111", SUMMARY, rf"stays under the gate on both readings \({N} ⊥ [\d.]+ °C\)", PVW,
+     _pvw_bare("nominal"), 0.0),
+    ("PV window bare dome h_c x0.7 → 111", SUMMARY, rf"stays under the gate on both readings \([\d.]+ ⊥ {N} °C\)", PVW,
+     _pvw_bare("h_c_x0_7"), 0.0),
+    # 01_03 §4 ⊕ 2026-10-28 and its in-place mark — the same cache, its second home
+    ("PV window hottest capsule → 01_03 §4 → 111", EBFC, rf"найгарячіша година — {N} °C, за {_X07} — [\d.]+ °C", PVW,
+     _pvw_hottest("sunlit_nominal"), 0.0),
+    ("PV window hottest capsule h_c x0.7 → 01_03 §4 → 111", EBFC, rf"найгарячіша година — [\d.]+ °C, за {_X07} — {N} °C",
+     PVW, _pvw_hottest("sunlit_h_c_x0_7"), 0.0),
+    ("PV window crossing nominal → 01_03 §4 → 111", EBFC, rf"під гейтом — {N} см² за номінального `h_c`", PVW,
+     _pvw_cross("1.00", "nominal"), 0.0),
+    ("PV window crossing h_c x0.7 → 01_03 §4 → 111", EBFC, rf"і {N} см² за {_X07} \(за α_c", PVW,
+     _pvw_cross("1.00", "h_c_x0_7"), 0.0),
+    ("PV window crossing 0.90 nominal → 01_03 §4 → 111", EBFC, rf"за α_c 0\.90 — {N} ⊥ [\d.]+ см²", PVW,
+     _pvw_cross("0.90", "nominal"), 0.0),
+    ("PV window crossing 0.90 h_c x0.7 → 01_03 §4 → 111", EBFC, rf"за α_c 0\.90 — [\d.]+ ⊥ {N} см²", PVW,
+     _pvw_cross("0.90", "h_c_x0_7"), 0.0),
+    ("PV window both-readings aperture → 01_03 §4 → 111", EBFC, rf"гейт проходить вікно до ≈ {N} см² темної апертури", PVW,
+     _pvw_cross("1.00", "h_c_x0_7"), 0.0),
+    ("PV window flat-crown margin → 01_03 §4 → 111", EBFC, rf"лише за номінального `h_c` \(на {N} K\)", PVW,
+     _pvw_crown_margin, 0.0),
+    ("PV window flat-crown hours h_c x0.7 → 01_03 §4 → 111", EBFC, rf"а за {_X07} — ні \({N} година за 30 років\)", PVW,
+     _pvw_hours("flat_crown_circle", "sunlit_h_c_x0_7"), 0.0),
+    ("PV window bare dome nominal → 01_03 §4 → 111", EBFC, rf"на обох читаннях \({N} ⊥ [\d.]+ °C\)", PVW,
+     _pvw_bare("nominal"), 0.0),
+    ("PV window bare dome h_c x0.7 → 01_03 §4 → 111", EBFC, rf"на обох читаннях \([\d.]+ ⊥ {N} °C\)", PVW,
+     _pvw_bare("h_c_x0_7"), 0.0),
+    ("PV window mark h_c x0.7 → 01_03 §4 → 111", EBFC, rf"не очищено понад ≈ {N} см² темної апертури за {_X07}", PVW,
+     _pvw_cross("1.00", "h_c_x0_7"), 0.0),
+    ("PV window mark nominal → 01_03 §4 → 111", EBFC, rf"і понад ≈ {N} см² за номінального, а «не очищено»", PVW,
+     _pvw_cross("1.00", "nominal"), 0.0),
+    # 00_07 HW.54 — the Стан ⊕ and the cell-choice ⊕ carry the both-readings aperture
+    ("PV window both-readings aperture → 00_07 HW.54 Стан → 111", TRACKER,
+     rf"на межі проходить гейт на обох читаннях `h_c` лише до ≈ {N} см² темної апертури", PVW,
+     _pvw_cross("1.00", "h_c_x0_7"), 0.0),
+    ("PV window both-readings aperture → 00_07 HW.54 choice → 111", TRACKER,
+     rf"на обох читаннях `h_c` лише для темної апертури до ≈ {N} см²", PVW, _pvw_cross("1.00", "h_c_x0_7"), 0.0),
 ]
 
 
 def test_pv_window_sentences_follow_the_cache():
-    """111's set sentence — which named windows keep the cambium under the gate on the bound — recomposed from the cache.
+    """111's set sentences — which windows keep the cambium under the gate on which h_c reading — recomposed from the cache.
 
-    CAN catch: a re-run that moves a named window across the gate while SUMMARY and 01_03 §4 keep «up to the whole flat
-    crown» / «not the bore»; the EDLC rating being reached by any named window while the prose says none is.
+    CAN catch: a re-run that moves a named window across the gate on either reading while SUMMARY, 01_03 §4 and 00_07
+    HW.54 keep «the flat crown at the nominal h_c only» / «the bore on neither»; the EDLC rating reached by any named
+    window; the bare dome leaving the gate on either reading while the prose says its cambium ground holds; the
+    four-die outline no longer under the both-readings aperture.
     CANNOT catch: a sentence it does not compose (the model and bounds paragraphs).
     """
     d = json.loads((CACHE / PVW).read_text(encoding="utf-8"))
     nw = d["named_windows"]
-    under = {k for k, v in nw.items() if v["by_alpha_cell"]["1.00"]["sunlit"]["cambium_thin"]["hours_above_gate"] == 0}
-    assert under == {"one_package_in_the_crown_KXOB25-07X1TF", "four_dies_in_the_crown_XOD17-04B", "flat_crown_circle"}, under
-    assert all(v["by_alpha_cell"]["1.00"]["sunlit"]["margin_to_rating_k"] > 0 for v in nw.values())
+
+    def under(hk):
+        return {k for k, v in nw.items() if v["by_alpha_cell"]["1.00"][f"sunlit_{hk}"]["cambium_thin"]["hours_above_gate"] == 0}
+
+    outlines = {"one_package_in_the_crown_KXOB25-07X1TF", "four_dies_in_the_crown_XOD17-04B"}
+    assert under("nominal") == outlines | {"flat_crown_circle"}, under("nominal")
+    assert under("h_c_x0_7") == outlines, under("h_c_x0_7")
+    assert all(v["by_alpha_cell"]["1.00"][k]["margin_to_rating_k"] > 0
+               for v in nw.values() for k in ("sunlit_nominal", "sunlit_h_c_x0_7"))
+    x = d["crossing_worst_cell_thin_sunlit_still"]["1.00"]
+    assert all(x[k]["cambium_max_C_at_no_window"] < d["inputs"]["gate_C"] for k in ("nominal", "h_c_x0_7"))
+    assert nw["four_dies_in_the_crown_XOD17-04B"]["area_cm2"] <= x["h_c_x0_7"]["largest_dark_aperture_under_gate_cm2"]
     text = " ".join(doc(SUMMARY).split())
-    assert "stays under its gate for every window up to the whole flat crown" in text
-    assert "the bore window does not clear it" in text
-    assert "No named window brings the capsule to the EDLC's 70 °C rating" in text
+    for phrase in ("No named window brings the capsule to the EDLC's 70 °C rating on either h_c reading",
+                   "the four-die string's outline fits under it",
+                   "the whole flat crown clears it at the nominal h_c only",
+                   "the whole bore clears it on neither",
+                   "so the ratified finish's cambium ground holds across `71`'s h_c band"):
+        assert phrase in text, phrase
     ebfc = " ".join(doc(EBFC).split())
-    assert "лишається під гейтом для вікна аж до всієї пласкої корони" in ebfc
-    assert "не проходить лише вікна на весь отвір" in ebfc
+    for phrase in ("контур рядка з чотирьох кристалів (1.44 см²) під неї вміщається",
+                   "вся пласка корона проходить лише за номінального `h_c`", "отвір — на жодному",
+                   "тож камбійна підстава ратифікованого α ≤ 0.5 тримається на всій смузі `h_c`"):
+        assert phrase in ebfc, phrase
+    tracker = " ".join(doc(TRACKER).split())
+    assert tracker.count("(вся пласка корона — лише за номінального `h_c`)") == 2
 
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",

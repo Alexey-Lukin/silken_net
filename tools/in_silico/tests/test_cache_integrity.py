@@ -4876,14 +4876,15 @@ def test_capsule_cold_edge_sky_invariants():
 
 
 def test_pv_window_thermal_invariants():
-    """111 (HW.54): the two-zone dome re-derived by another arithmetic, the identities, and the orderings.
+    """111 (HW.54): the two-zone dome re-derived by another arithmetic, the identities, the orderings, the crossing.
 
     CAN catch: a beam absorptance that is not the largest absorbed projection over the beam angle (re-derived here by a
     brute force over ψ, not the closed form — mutation: the side wall's α_r dropped from the hypot reds here); a diffuse
-    absorptance that is not the area-weighted one; named apertures that are not `110`'s; identities that no longer equal
-    `71`'s and `78`'s cached rows; a larger or darker window running colder, sun not beating shade, the thick bark side
-    running hotter than the thin one; a margin that is not the rating minus the hottest hour; a crossing aperture that
-    disagrees with the named windows' gate hours on either side of it.
+    absorptance that is not the area-weighted one; named apertures that are not `110`'s, or a cell outline classed as a
+    window; plumbing identities that no longer equal `71`'s and `78`'s cached rows; a larger or darker window, or the
+    lower h_c, running colder; sun not beating shade; the thick bark side running hotter than the thin one; a margin
+    that is not the rating minus the hottest hour; a crossing aperture that is not floored, or that disagrees with the
+    named windows' gate hours on either side of it, on either h_c reading.
     CANNOT catch: the window's optics, a cell's real absorptance, the R5 edge's curvature — the declared ceilings;
     nor whether 71's worst-orientation lump and 78's 1D column are the right models (their own ceilings).
     """
@@ -4893,50 +4894,61 @@ def test_pv_window_thermal_invariants():
     c110 = json.loads((CACHE / "kinetics/winter_pv_autonomy.json").read_text(encoding="utf-8"))
     inp, geo = d["inputs"], d["inputs"]["geometry_71"]
     assert geo == c71["geometry"]
+    assert d["controls"]["two_zone_beam_closed_form_vs_brute_force_rel"] < 1e-6
     ar = inp["alpha_radome"]
     dd, hh = geo["dome_diameter_mm"], geo["h_over_bark_mm"]
     a_crown = math.pi * (dd / 2) ** 2
-    psi = np.radians(np.linspace(0.0, 90.0, 90001))
+    psi = np.radians(np.linspace(0.0, 90.0, 180001))
     proj = a_crown * np.cos(psi) + dd * hh * np.sin(psi)
     named = d["named_windows"]
     assert {k: round(v["area_cm2"], 4) for k, v in named.items()} == {
         k: round(v["area_cm2"], 4) for k, v in c110["measured_form_r"]["r_below_which_it_cannot_by_cell_area"].items()}
+    kinds = {k: v["kind"] for k, v in named.items()}
+    assert {k for k, v in kinds.items() if v == "cell_outline"} == {
+        "one_package_in_the_crown_KXOB25-07X1TF", "four_dies_in_the_crown_XOD17-04B"}, kinds
+    hc_keys = ["nominal", "h_c_x0_7"]
     for v in named.values():
         a_dark = v["area_cm2"] * 100.0
         for ac, row in v["by_alpha_cell"].items():
             gain = ar * proj + (float(ac) - ar) * a_dark * np.cos(psi)
-            assert row["alpha_beam"] == pytest.approx(gain.max() / proj.max(), abs=2e-4)
-            assert row["alpha_diffuse"] == pytest.approx(ar + (float(ac) - ar) * a_dark / geo["a_exp_mm2"], abs=1e-4)
-            s, sh = row["sunlit"], row["shaded"]
-            assert s["margin_to_rating_k"] == pytest.approx(inp["edlc_rating_c"] - s["t_cap_max_c"], abs=0.11)
-            assert s["t_cap_max_c"] >= sh["t_cap_max_c"]
-            assert s["t_cap_max_c_h_c_x0_7"] >= s["t_cap_max_c"]
-            for r in (s, sh):
+            assert row["alpha_beam"] == pytest.approx(gain.max() / proj.max(), abs=2e-6)
+            assert row["alpha_diffuse"] == pytest.approx(ar + (float(ac) - ar) * a_dark / geo["a_exp_mm2"], abs=2e-6)
+            nom, low, sh = row["sunlit_nominal"], row["sunlit_h_c_x0_7"], row["shaded"]
+            for r in (nom, low):
+                assert r["margin_to_rating_k"] == pytest.approx(inp["edlc_rating_c"] - r["t_cap_max_c"], abs=0.11)
+            assert low["t_cap_max_c"] >= nom["t_cap_max_c"] >= sh["t_cap_max_c"]
+            assert low["cambium_thin"]["cambium_max_C"] >= nom["cambium_thin"]["cambium_max_C"]
+            for r in (nom, low, sh):
                 assert r["cambium_thin"]["cambium_max_C"] > r["cambium_thick"]["cambium_max_C"]
     ctl = d["controls"]
-    assert ctl["capsule_no_window_c"] == c71["hot_bound"]["sunlit"][f"{ar:.2f}"]["0.0"]["t_cap_max_c"]
+    assert ctl["plumbing_capsule_no_window_c"] == c71["hot_bound"]["sunlit"][f"{ar:.2f}"]["0.0"]["t_cap_max_c"]
     ua = ctl["uniform_control_alpha"]
-    assert ctl["capsule_uniform_c"] == c71["hot_bound"]["sunlit"][f"{ua:.2f}"]["0.0"]["t_cap_max_c"]
+    assert ctl["plumbing_capsule_uniform_c"] == c71["hot_bound"]["sunlit"][f"{ua:.2f}"]["0.0"]["t_cap_max_c"]
     thin78 = next(r for r in c78["runs"] if (r["case"], r["alpha"], r["wind_k"], r["bark_side"])
                   == ("sunlit", ar, 0.0, "thin"))["cambium_max_C"]
     by_area = sorted(named.values(), key=lambda v: v["area_cm2"])
     for ac in inp["alpha_cell_readings"]:
         key = f"{ac:.2f}"
-        cam = [v["by_alpha_cell"][key]["sunlit"]["cambium_thin"]["cambium_max_C"] for v in by_area]
-        cap = [v["by_alpha_cell"][key]["sunlit"]["t_cap_max_c"] for v in by_area]
-        assert cam == sorted(cam) and cap == sorted(cap)
-        x = d["crossing_worst_cell_thin_sunlit_still"][key]
-        assert x["cambium_max_C_at_no_window"] == thin78
-        lim = x["largest_dark_aperture_under_gate_cm2"]
-        for v in by_area:
-            hours = v["by_alpha_cell"][key]["sunlit"]["cambium_thin"]["hours_above_gate"]
-            if lim is not None and v["area_cm2"] < lim - 0.1:
-                assert hours == 0, (v["area_cm2"], key)
-            if lim is not None and v["area_cm2"] > lim + 0.1:
-                assert hours > 0, (v["area_cm2"], key)
+        for hk in hc_keys:
+            cam = [v["by_alpha_cell"][key][f"sunlit_{hk}"]["cambium_thin"]["cambium_max_C"] for v in by_area]
+            cap = [v["by_alpha_cell"][key][f"sunlit_{hk}"]["t_cap_max_c"] for v in by_area]
+            assert cam == sorted(cam) and cap == sorted(cap)
+            x = d["crossing_worst_cell_thin_sunlit_still"][key][hk]
+            if hk == "nominal":
+                assert x["cambium_max_C_at_no_window"] == thin78
+            lim = x["largest_dark_aperture_under_gate_cm2"]
+            if lim is not None:
+                assert lim == math.floor(lim * 100.0 + 1e-6) / 100.0, "the crossing is not floored to 0.01 cm²"
+            for v in by_area:
+                hours = v["by_alpha_cell"][key][f"sunlit_{hk}"]["cambium_thin"]["hours_above_gate"]
+                if lim is not None and v["area_cm2"] <= lim:
+                    assert hours == 0, (v["area_cm2"], key, hk)
+                if lim is not None and v["area_cm2"] > lim + 0.11:
+                    assert hours > 0, (v["area_cm2"], key, hk)
     for v in named.values():
-        assert v["by_alpha_cell"]["1.00"]["sunlit"]["cambium_thin"]["cambium_max_C"] >= \
-            v["by_alpha_cell"]["0.90"]["sunlit"]["cambium_thin"]["cambium_max_C"]
+        for hk in hc_keys:
+            assert v["by_alpha_cell"]["1.00"][f"sunlit_{hk}"]["cambium_thin"]["cambium_max_C"] >= \
+                v["by_alpha_cell"]["0.90"][f"sunlit_{hk}"]["cambium_thin"]["cambium_max_C"]
 
 
 def test_collar_running_clearance_invariants():

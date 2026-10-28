@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 380 · 28,070,046 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 380 · 28,086,245 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -58,7 +58,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/109_anode_glucose_threshold.py` | `e90cf34492c4bb3878b34a6d032e3923761dff1205a118dc412b9b81dcc97e32` | Glucose supply threshold of the anchor's anode: the limiting current of steady cylindrical glucose diffusion through a stagnant sap-filled gap between the electrode envelope and the bore wall gives the bulk glucose concentration below which the node's cold-start and sleep currents cannot be carried, from measured diffusion coefficients of glucose in water at 0, 20 and 25 degrees Celsius with their uncertainty; sleep currents are bracketed on a non-decreasing boost-efficiency curve, a series estimate with Michaelis-Menten kinetics is printed beside, and the interfacial proton limit of the same gap is read from a companion model |
 | `tools/in_silico/scripts/10_genipin_stability_md.py` | `b56c5791d674b8d4be97c986afa3bc74d9343331ed706dc380dcff25e551bd41` | L2 — full stability MD: GcGDH + FAD + genipin matrix in xylem-like water box. |
 | `tools/in_silico/scripts/110_winter_pv_autonomy.py` | `83a243ddbaf56ab886941f9be9bc2b377b8c64fd98748a58eb7286e140e4df20` | Whether a small photovoltaic cell on the sensor capsule could keep its supercapacitor from running empty through the worst winter stretch of thirty years of hourly weather: per power demand, the effective aperture below which it could not, with the inputs the specifications bound read at their favourable and adverse ends, on a model that leaves out snow on the dome, the cell's temperature and the canopy's winter optics |
-| `tools/in_silico/scripts/111_pv_window_thermal.py` | `bfbbf2ccc3d47848604cb8da84301f7adac0df4ea2a7fecfdea2e2dc46339382` | Capsule and cambium temperature with a dark photovoltaic window in the radome's crown, per window area, the rest of the dome at the specified finish (upper bound). |
+| `tools/in_silico/scripts/111_pv_window_thermal.py` | `501a4d5b691c48bc07f44cb2d33990be38f3c2639a3b896331446a29657580a8` | Capsule and cambium temperature with a dark photovoltaic window in the radome's crown, per window area, the rest of the dome at the specified finish (upper bound). |
 | `tools/in_silico/scripts/11_full_matrix_md.py` | `28c8a0919352ea39c45ea353f1764bf90a12cb12bef5ce397970e4a62d174ac7` | L2-extended — full matrix stability MD: protein + FAD + genipin + chitosan + CNC. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `21c4b260195f62e079d7505e26cc41cd3519417d8f2047ddec96976b02c062fc` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
 | `tools/in_silico/scripts/13_psbma_diffusion_md.py` | `1df7d7778e3fc058fa5f00cc181eaf242148a6dfbffd262543e0c617c50828c8` | L2 — glucose diffusion through PSBMA membrane layer. |
@@ -151,8 +151,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `442940f203cccdccb8efded5a9575bc6f1b6c7774b5fc9ee4d11bb3a610e0989` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `754c9883d55456717f8dc13da82da5e001a9bf04a8fc1592897cb62e5bcb3956` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `42164f02ddfa25901399e4fc7a7ea2ae7aa4eb93b47df95303088dd2b6cdc297` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `940beea2f051473d52f0a20f93e1b3360cd306e970e87e036bb7f4bae7b565da` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -380,7 +380,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/thermal/capsule_envelope.json` | `9beaedb7150d558d44075f0bf835f49d442bc430220fb1b4a9a8b05a1a86e4ef` | 11,609 |
 | `tools/in_silico/cache/thermal/flange_cambium_frost.json` | `3c42a6c4151c73c2503e72ea27130a409f29aed51cde3220d01d382a3287d988` | 676,043 |
 | `tools/in_silico/cache/thermal/flange_cambium_heat.json` | `b9c91e511129f08a71c16426937ba66c784a24f5360d6e7313299e8be326a2bd` | 20,172 |
-| `tools/in_silico/cache/thermal/pv_window_thermal.json` | `958ffefba52c0d7e8cf516dc84e0300a2459a8cfcb0d8a4569e1bd6d8c4d179d` | 11,954 |
+| `tools/in_silico/cache/thermal/pv_window_thermal.json` | `9054a97e76080c6ea08b9812e6e4d1d41c5e6d61fb168e8dd68f47f9aa0b97a1` | 17,710 |
 | `tools/in_silico/cache/thermal/site_rain_dew.json` | `d0fca9bda4f875747594654e650e40bd5348be24923f0a6d3629d70679877ebc` | 6,936 |
 
 ## S4. Committed input data
