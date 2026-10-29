@@ -24,6 +24,11 @@
 # memory corpus, the scratchpad — pass untouched, the memory gate guards the first;
 # and an edit OF a skill file never meets the lock: Edit requires a Read of its target,
 # and that Read — even a few lines by offset — disarms it (measured live 2026-10-17).
+# ⊕ Two more, measured live 2026-10-29: re-invoking a skill through the Skill tool
+# hands its whole SKILL.md back yet does not disarm — only a Read does; and an edit
+# made through Bash (a script, `sed -i`, `ruby`) never meets the lock at all, because
+# the lock stands on Edit|Write — so a session that edits by script after a compaction
+# is exactly the case the lock was built for and one it cannot see.
 set -uo pipefail
 
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
