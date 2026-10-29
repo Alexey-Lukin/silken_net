@@ -18,7 +18,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — це TRL **активу**, не можливості вузла: DSP Path B зафіксовано + **self-owned baseline приземлено** (`FW.4`, 2026-06-12): `silken_net_audio_model.h` (INT8 forward-pass, §4.1), arena виміряно (§4.3). ⚠️ З 2026-09-29 носія на Солдаті немає (шапка), і ноги про інтеграцію переглянуто разом із [`00_07` HW.30](00_07_Action_Plan_Tracker) (§🗄️): ARM `arm-none-eabi-size` на повному `.elf` (`FW.26`) лишився загальним RAM-бюджетом вузла, а threshold-visibility у Grafana (`FW.18b`) знято разом із метрикою, правилом і панеллю (warn-лог декодування лишився); сам confidence threshold закрито (`FW.18` → §🗄️).
+- **Поточний TRL:** TRL 6 — це TRL **активу**, не можливості вузла: DSP Path B зафіксовано + **self-owned baseline приземлено** (`FW.4`, 2026-06-12): `silken_net_audio_model.h` (INT8 forward-pass, §4.1), arena виміряно (§4.3). ⚠️ З 2026-09-29 носія на Солдаті немає (шапка).
 
 ---
 
@@ -32,7 +32,7 @@
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Wire-ledger: слот `acoustic_events` і TTL-байт ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService` (байт `acoustic_events`) · `AlertDispatchService` (panic-кадр з HW.30 — лише лог) |
-| `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) · `_stub.h` (fallback) | `main.c` — з HW.30 без виклику інференсу; INT8 forward-pass — актив без носія на вузлі; партнерська модель — опційний апгрейд |
+| `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) · `_stub.h` (не включається — §4.1) | `main.c` — з HW.30 без виклику інференсу; INT8 forward-pass — актив без носія на вузлі; партнерська модель — опційний апгрейд |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Статус** (SSOT): HW.52 можливий носій (🌿) · закриті (§🗄️): HW.30 зріз пʼєзо (застосовано 2026-09-29) · FW.4 baseline (актив без носія) · FW.18b threshold · FW.25 DSP Path B |
 
 ## 📑 Зміст
@@ -239,7 +239,7 @@ PVD safety, з запасом). Path B має найменшу sum, але рі�
 | Log | **`ln(mel + 1e-6)`** (натуральний) | `arm_vlog_f32`; floor 1e-6 проти log(0) |
 | Вхід-нормалізація | **у моделі** (BatchNorm 1-й шар) | MCU видає сирий log-mel; модель нормалізує — стандарт ESC-CNN |
 
-**Вихід:** `float[40]` на кадр; один стовпець — вхід `Run_Inference`, що віддає один із пʼяти класів §4.2 покадрово. Агрегованого fauna-шляху (156 кадрів → Welford) не побудовано — §10.5.
+**Вихід:** `float[40]` на кадр; один стовпець — вхід `Run_Inference`, що віддає один із пʼяти класів §4.2 покадрово. Агрегованого fauna-шляху (156 кадрів → Welford) немає: акумулятор знято разом із пʼєзо (HW.30), моделі на mean‖std не тренували — §10.5.
 
 #### Бюджет-конверт моделі (обов'язкова друга половина контракту, 2026-06-11)
 
@@ -284,7 +284,7 @@ logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, 
 1. **Оракул + golden-gen** — `silken_ml.dsp` ([`tools/ml`](https://github.com/Alexey-Lukin/silken_net/blob/main/tools/ml)): librosa (training) ≡ pure-stdlib (швидкий, без numpy), parity tol 1e-6 у `ml_smoke.yml`.
 2. **Firmware** — `Compute_LogMel` ([`firmware/common/logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/common/logmel.c); host naive-DFT reference / ARM `arm_rfft_fast_f32`) + golden-vector host-тести ([`firmware/test/test_logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/test/test_logmel.c), tol 1e-3). Таблиці Hann/mel-bank/golden — `silken_ml.codegen` → `firmware/common/logmel_*.h`.
 3. **CMSIS-шлях доведено без плати (FW.4, 2026-06-10)** — спільне ядро перевірок `firmware/sim/logmel_parity_core.h` ганяється двічі: host-ctest (скалярний CMSIS-DSP) **і** QEMU-M4 нога (`firmware/scripts/qemu_logmel.sh`, mps2-an386, soft-float ABI WLE5 — метод [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)): golden-parity (tol 1e-3) + **stack high-water gate** навколо чистих викликів (стек після reuse-buffers — два кадрові буфери; виміряний слід — 4 660 Б (QEMU, 2026-06-11) проти tripwire 6 КіБ, що живе у `firmware/sim/qemu_m4/logmel_main.c`). Silicon-confirm float32 — тонка формальність bench.
-4. **Модель** — self-owned baseline ESC-50 (`FW.4`, `silken_net_audio_model.h`): слід forward-pass — §4.3; host-тест `test_audio_model`, ARM-elf замір — CI hal_check lane. Виклику на Солдаті немає (шапка) — актив без носія на вузлі.
+4. **Модель** — self-owned baseline ESC-50 (`FW.4`, `silken_net_audio_model.h`): слід forward-pass — §4.3; включає модель сьогодні лише host-тест `test_audio_model`, тож ARM-заміру моделі в CI немає (`hal_check` будує `main.c`, а той моделі не включає). Виклику на Солдаті немає (шапка) — актив без носія на вузлі.
 
 ---
 
@@ -307,8 +307,8 @@ logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, 
 > footprint влізе. ST X-CUBE-AI (нині ST Edge AI) — опція vendor-кодогену для більшої
 > партнерської моделі. Метод — `tools/ml/docs/baseline_model_program.md`.
 
-**Джерело:** `#include "silken_net_audio_model.h"` — baseline приземлено (`FW.4`,
-self-owned ESC-50); stub лишається fallback'ом через `__has_include`.
+**Джерело:** `silken_net_audio_model.h` — self-owned baseline ESC-50 (`FW.4`); `_stub.h`
+сьогодні не включає жоден файл (`__has_include` у коді немає).
 
 ### 4.2 Класи Виходу (Output Classes)
 
@@ -320,7 +320,7 @@ self-owned ESC-50); stub лишається fallback'ом через `__has_incl
 | **1** | Вітер (Wind) | Аеродинамічна вібрація крони | 0.1–2 kHz, широкосмуговий |
 | **2** | Кавітація (**audible-proxy**) | Водний стрес ксилеми — низькочастотний structural-слід. ⚠️ Справжня акустична емісія кавітації = ультразвук **25–150 кГц** ([`UNI.11`](00_07_Action_Plan_Tracker) EIS-джерело; літ. Tyree&Dixon 1983), **поза Nyquist-8** цього тракту → 16 кГц ловить proxy, не саму AE (див. ноту нижче) | proxy < 8 кГц; фізична AE 25–150 кГц |
 | **3** | Пилка/Вандалізм (Chainsaw/Tamper) | Бензопила або механічне пошкодження | 2–8 kHz, циклічний (повітряний звук, на якому навчено модель); структурна вібрація деревини від обертання ланцюга — 50–200 Hz, поза смугою класу |
-| **4** *(Mongabay pivot — §10; у моделі FW.4 — покадрово, на interim ESC-50-проксі, нота нижче; агрегований шлях §10 не побудовано)* | Fauna Activity (Soundscape) | «Багатошаровий» хор комах/птахів/амфібій з характерними піками на світанку та в сутінках — маркер реального функціонування екосистеми | 0.5–12 kHz, ритмічний (циркадний) |
+| **4** *(Mongabay pivot — §10; у моделі FW.4 — покадрово, на interim ESC-50-проксі, нота нижче; агрегованого шляху §10 немає — §3.4)* | Fauna Activity (Soundscape) | «Багатошаровий» хор комах/птахів/амфібій з характерними піками на світанку та в сутінках — маркер реального функціонування екосистеми | 0.5–12 kHz, ритмічний (циркадний) |
 
 > **⚖️ Field-валідність landed-baseline (`FW.4`) per-class — НЕ плутати з цілісністю пайплайну:**
 > wind/chainsaw — **реальні** (ESC-50); fauna — **interim** ESC-50-проксі (реальне = Cherkasy
@@ -365,15 +365,15 @@ self-owned ESC-50); stub лишається fallback'ом через `__has_incl
 **Очікувана архітектура (Path B — log-mel вхід; точна топологія — за тренуванням):**
 ```
 per-frame:   Input(40 log-mel) → [Conv/Dense над mel-смугами] → Dense(N_class) → Softmax
-fauna (§10): Input(mean‖std log-mel) → … → Dense(5) → Softmax
+fauna (§10.5 — дизайн, не тренувалась): Input(mean‖std log-mel) → … → Dense(5) → Softmax
 ```
-> Path A (1D time-domain `Input(512)→Conv1D…→Dense(4)`) — **superseded** рішенням §3.2; лишається лише як 4-class raw-MVP fallback, якщо ML-партнер недоступний.
+> Path A (1D time-domain `Input(512)→Conv1D…→Dense(4)`) — **superseded** рішенням §3.2.
 
 ### 4.4 Сигнатура функції інференсу
 
 ```c
-// Оголошення в silken_net_audio_model.h (FW.4):
-uint8_t Run_Inference(const float* buffer, float* confidence);
+// silken_net_audio_model.h (FW.4) — static inline-визначення:
+static inline uint8_t Run_Inference(const float* buffer, float* confidence);
 ```
 
 | Параметр | Тип | Зміст |
@@ -441,7 +441,7 @@ uint8_t Run_Inference(const float* buffer, float* confidence);
 | Macro-Micro verification: NDVI Sentinel-2 (open data, наш адаптер) ↔ soundscape → `biodiversity_trend` | метод fusion (permutation / ANOVA) не обрано — ⚖️ при відродженні | [`00_07` E.14](00_07_Action_Plan_Tracker) (архів) |
 | Статистика розподілів `fauna_activity_index` між ділянками (ANOVA dawn/dusk peak amplitude) | метод не обрано; даних немає | [`00_07` E.59](00_07_Action_Plan_Tracker) (архів) |
 
-**Відкриті питання при відродженні:** (1) шум вітру 0.5–2 кГц перетинається з амфібіями — ризик хибних позитивів класу 4; лік — акумульоване вікно й dawn/dusk-вікно (вітер тоді слабший); (2) модель Черкаського бору може не узагальнитись на інші біоми — лік: навчання на записах кількох біомів (централізоване — §11.3; FL — §11.4); (3) fauna може рахуватись не NN, а спектральним дескриптором ACI (Acoustic Complexity Index, Pieretti et al. 2011) на тому ж FFT-виході, що й mel-bank Path B — ACI не є «no-FFT» альтернативою.
+**Відкриті питання при відродженні:** (1) шум вітру 0.5–2 кГц перетинається з амфібіями — ризик хибних позитивів класу 4; лік — акумульоване вікно й dawn/dusk-вікно (вітер тоді слабший); (2) модель Черкаського бору може не узагальнитись на інші біоми — кандидат-лік FL (§11.4: сьогодні без предмета); (3) fauna може рахуватись не NN, а спектральним дескриптором ACI (Acoustic Complexity Index, Pieretti et al. 2011) на тому ж FFT-виході, що й mel-bank Path B — ACI не є «no-FFT» альтернативою.
 
 ---
 
@@ -467,7 +467,7 @@ uint8_t Run_Inference(const float* buffer, float* confidence);
 Модель **обов'язково** повинна використовувати **INT8 post-training quantization** для розгортання на STM32WLE5 (вузол `CC`):
 
 - **Float32 модель:** ~50-100 KB (перевищує SRAM бюджет)
-- **INT8 модель:** ~12-25 KB (вписується в Tensor Arena 8-32 KB)
+- **INT8 модель:** ~12-25 KB для типової ESC-CNN — чи влізе, судить стеля arena §4.3 (відвантажений baseline — там само)
 - **Втрата точності:** типово < 1-2% для аудіо-класифікації (допустимо)
 - **Інструмент:** `tf.lite.TFLiteConverter` з `tf.lite.Optimize.DEFAULT` + representative dataset
 
@@ -524,7 +524,7 @@ OtaPackagerService → 512-byte chunks → Queen poll-fetch [FW.60] → LoRa →
 > - **Tabular Q-learning:** сам lookup дешевий, але reward «days-to-next-VBAT_OK» вимагає **тижневих** епізодів, а ε-greedy exploration з 0.1 ймовірністю «sample_extra» не має з чого платити: Сценарій C стоїть у беззапасній точці (≈0 мДж/год, [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)).
 > - **On-device backprop:** seconds × 12 mA на Cortex-M4 без AI-акселератора = **гарантований brownout**.
 >
-> **Тому інтелект ієрархічно делегований** — але делегування міряють ДВІ осі, і склеювати їх не можна. За **енергією** L3 справді легший — більш ніж на 5 порядків (LiFePO4 12V/20Ah ≈ 864 кДж, [`02_05 §7`](02_05_Queen_Hardware_and_Starlink), проти робочого вікна іоністора 2.75 Дж на VSTOR, [`02_03 §8`](02_03_BQ25570_MPPT_Nano_Power) — ≈ 3·10⁵). За **обчисленням** — ані на порядок: Королева стоїть на тій самій родині STM32WLE5, що й Солдат (у неї `JC` — [`02_05 §7`](02_05_Queen_Hardware_and_Starlink), у вузла Солдата `CC` — §11.1), тобто Cortex-M4 без FPU ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), 256 KB Flash ([`02_05 §7`](02_05_Queen_Hardware_and_Starlink)) і 64 KB SRAM ([`03_02 §9`](03_02_Queen_Gateway_Firmware)) — ті самі числа, що в Солдата ([`03_01 §3`](03_01_Firmware_Lifecycle_and_DMA) · [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)). Енергія купує Королеві always-on RX і агрегацію, але не TF-навчання: TF fine-tune, `.tflite`-компіляція, `mrbc` і повний backprop на Cortex-M4/64 KB не виконуються, тож навчання живе поза Королевою — сьогодні на хості (Python/GPU, §11.3; `mrbc` — [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)); чи навчатиме L2 Conductor — відкрито ([`00_07`](00_07_Action_Plan_Tracker) ARCH.1 · ARCH.6 🌿). Про малий on-device крок (1–4 incremental classes — roadmap ↑, не виміряно) канон не судить; повному backprop потрібен AI-coprocessor у v3-залізі. Рівні мережі:
+> **Тому інтелект ієрархічно делегований** — але делегування міряють ДВІ осі, і склеювати їх не можна. За **енергією** L3 справді легший — більш ніж на 5 порядків (LiFePO4 12V/20Ah ≈ 864 кДж, [`02_05 §7`](02_05_Queen_Hardware_and_Starlink), проти робочого вікна іоністора 2.75 Дж на VSTOR, [`02_03 §8`](02_03_BQ25570_MPPT_Nano_Power) — ≈ 3·10⁵). За **обчисленням** — ані на порядок: Королева стоїть на тій самій родині STM32WLE5, що й Солдат (у неї `JC` — [`02_05 §7`](02_05_Queen_Hardware_and_Starlink), у вузла Солдата `CC` — §11.1), тобто Cortex-M4 без FPU ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), 256 KB Flash ([`02_05 §7`](02_05_Queen_Hardware_and_Starlink)) і 64 KB SRAM ([`03_02 §9`](03_02_Queen_Gateway_Firmware)) — ті самі числа, що в Солдата ([`03_01 §3`](03_01_Firmware_Lifecycle_and_DMA) · [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)). Енергія купує Королеві always-on RX і агрегацію, але не TF-навчання: TF fine-tune, `.tflite`-компіляція, `mrbc` і повний backprop на Cortex-M4/64 KB не виконуються, тож навчання живе поза Королевою — сьогодні на хості (`tools/ml`; §11.3 — нереалізований ретренінг; `mrbc` — [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)); чи навчатиме L2 Conductor — відкрито ([`00_07`](00_07_Action_Plan_Tracker) ARCH.1 · ARCH.6 🌿). Про малий on-device крок (1–4 incremental classes — roadmap ↑, не виміряно) канон не судить; повному backprop потрібен AI-coprocessor у v3-залізі. Рівні мережі:
 >
 > | Рівень | Що відбувається | Envelope |
 > |--------|----------------|----------|

@@ -130,7 +130,8 @@ not the real signal**: true xylem-cavitation acoustic emission is ultrasonic 25�
 1983; `UNI.11`), **beyond this chain's 16 kHz / Nyquist-8**, so `gen_cavitation` synthesises 5–8 kHz
 clicks *under the Nyquist ceiling*, not from physics — the class trains a low-freq structural proxy,
 never true AE (real detection needs a dedicated high-rate channel / v3). A future partner CNN is a
-drop-in header swap (the `_stub.h` `__has_include` fallback stays).
+drop-in header swap. ⚠️ No `__has_include` exists in the code and nothing includes `_stub.h` today —
+the only consumer of the model header is the host test (`03_03 §4.1`).
 
 ## Two ML domains — keep the boundary
 
