@@ -23,9 +23,11 @@ module DocsToc
 
   # GitHub heading-anchor slug — validated against real repo anchors. Lowercase;
   # drop emoji / punctuation / em-dash (keep letters, digits, `_`, `-`, space);
-  # drop variation-selectors / ZWJ / combining marks; spaces → hyphens.
+  # drop variation-selectors / ZWJ / combining marks; spaces → hyphens. GitHub slugs
+  # the RENDERED text, so a markdown link contributes its label and never its URL.
   def github_anchor(text)
     s = text.strip.downcase
+    s = s.gsub(/\[([^\]]*)\]\([^)]*\)/, '\1')
     s = s.gsub(/[^\p{Word}\- ]/u, "")
     s = s.gsub(/[\p{Mn}\p{Me}\p{Cf}]/u, "")
     s.gsub(" ", "-")

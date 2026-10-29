@@ -30,8 +30,8 @@
 <!-- TOC:AUTO:START -->
 - [0. Модульний DePIN Стек: Рольова Карта (The Protocol Symphony)](#-0-модульний-depin-стек-рольова-карта-the-protocol-symphony)
 - [1. Топологія 10 Мереж (The 10-Network Stack)](#-1-топологія-10-мереж-the-10-network-stack)
-- [2. Консенсус "Proof of Growth" — РОЛЬОВА карта мереж (кроки → (05_02_Proof_of_Growth_Pipeline))](#-2-консенсус-proof-of-growth--рольова-карта-мереж-кроки--05_0205_02_proof_of_growth_pipeline)
-- [3. Смарт-Контракти на Polygon — де вони живуть (поверхня → (05_03_Tokenomics_SCC_and_SFC))](#-3-смарт-контракти-на-polygon--де-вони-живуть-поверхня--05_0305_03_tokenomics_scc_and_sfc)
+- [2. Консенсус "Proof of Growth" — РОЛЬОВА карта мереж (кроки → (05_02_Proof_of_Growth_Pipeline))](#-2-консенсус-proof-of-growth--рольова-карта-мереж-кроки--05_02)
+- [3. Смарт-Контракти на Polygon — де вони живуть (поверхня → (05_03_Tokenomics_SCC_and_SFC))](#-3-смарт-контракти-на-polygon--де-вони-живуть-поверхня--05_03)
 - [4. Абсолютна Фіналізація (Ethereum State Root Anchoring)](#-4-абсолютна-фіналізація-ethereum-state-root-anchoring)
 - [5. Конфігурація Credentials та ENV](#-5-конфігурація-credentials-та-env)
 - [6. Shared Infrastructure Layer](#-6-shared-infrastructure-layer)

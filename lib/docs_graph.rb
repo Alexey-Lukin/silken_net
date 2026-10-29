@@ -87,6 +87,7 @@ module DocsGraph
   # `(x₀, y₀, z₀)`) from false-flagging in the #anchor check.
   def gh_anchor(text)
     s = text.strip.downcase
+    s = s.gsub(/\[([^\]]*)\]\([^)]*\)/, '\1')
     s = s.gsub(/[^\p{Word}\p{No}\- ]/u, "")
     s = s.gsub(/[\p{Mn}\p{Me}\p{Cf}]/u, "")
     s.gsub(" ", "-")

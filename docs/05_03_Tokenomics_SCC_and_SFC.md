@@ -38,15 +38,15 @@
 - [Події (Events)](#-події-events)
 - [Dynamic Tax — HYBRID PROTOCOL GAIA](#-dynamic-tax--hybrid-protocol-gaia)
 - [Відро ліміту зарахування телеметрії на дерево](#-відро-ліміту-зарахування-телеметрії-на-дерево-e64)
-- [Потік Мінтингу — контрактний ВХІД (backend-гейти → (05_02_Proof_of_Growth_Pipeline))](#-потік-мінтингу--контрактний-вхід-backend-гейти--05_02-doc705_02_proof_of_growth_pipeline)
+- [Потік Мінтингу — контрактний ВХІД (backend-гейти → (05_02_Proof_of_Growth_Pipeline))](#-потік-мінтингу--контрактний-вхід-backend-гейти--05_02-doc7)
 - [Потік Slashing (Поточний Стан)](#-потік-slashing-поточний-стан)
 - [Зв'язок з Rails Backend](#-звязок-з-rails-backend)
 - [Subgraph (The Graph)](#-subgraph-the-graph)
-- [Зовнішні Залежності — токеномічні (ростер мереж → (05_01_Multichain_Architecture))](#-зовнішні-залежності--токеномічні-ростер-мереж--05_01-105_01_multichain_architecture)
+- [Зовнішні Залежності — токеномічні (ростер мереж → (05_01_Multichain_Architecture))](#-зовнішні-залежності--токеномічні-ростер-мереж--05_01-1)
 - [Структура Файлів (File Map)](#-структура-файлів-file-map)
 - [Governance DAO (Законодавча Гілка Влади) → 05_06](#-governance-dao-законодавча-гілка-влади--05_06)
 - [Smart Contract Audit Roadmap](#-smart-contract-audit-roadmap)
-- [Посмертна Економіка (Puro.earth Biochar) — дім (04_02_Business_Logic_and_Services), тут НЕ описується](#-посмертна-економіка-puroearth-biochar--дім-04_0204_02_business_logic_and_services-тут-не-описується)
+- [Посмертна Економіка (Puro.earth Biochar) — дім (04_02_Business_Logic_and_Services), тут НЕ описується](#-посмертна-економіка-puroearth-biochar--дім-04_02-тут-не-описується)
 <!-- TOC:AUTO:END -->
 
 ---

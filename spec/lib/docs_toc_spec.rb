@@ -14,6 +14,11 @@ RSpec.describe DocsToc do
       expect(described_class.github_anchor("🗺️ 2. Soldier RTC Backup Register Map (DR0..DR19) — Canonical SSOT [DOC.3]"))
         .to eq("-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3")
     end
+
+    it "slugs a link in the heading by its label, never by its URL (GitHub slugs the rendered text)" do
+      expect(described_class.github_anchor("🛡️ 3. IP-постава — дім у [`00_01 §8`](00_01_Vision_Mission_and_Roadmap)"))
+        .to eq("-3-ip-постава--дім-у-00_01-8")
+    end
   end
 
   describe ".link_text" do
