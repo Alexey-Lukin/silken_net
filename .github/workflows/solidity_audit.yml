@@ -80,7 +80,7 @@ jobs:
           submodules: recursive
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
         with:
 # 🔒 [OPS.21] Пін замість `stable`. SHA-пін тримає ОБГОРТКУ дії, а `stable`
 # тягне свіжий `forge` на КОЖЕН прогін — рівно той клас, яким апстрим-реліз
@@ -300,7 +300,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
         with:
           # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
           version: v1.8.5
@@ -365,7 +365,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
         with:
           # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
           version: v1.8.5
@@ -411,7 +411,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
         with:
           # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
           version: v1.8.5
@@ -552,7 +552,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
         with:
           # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
           version: v1.8.5
