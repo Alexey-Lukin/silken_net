@@ -407,7 +407,8 @@ class EwsAlert < ApplicationRecord
   # `after_create_commit :bust…` + `after_update_commit :bust…` — ОДИН і той
   # самий метод двічі. Rails дедуплікує колбеки за парою (kind, filter), тож
   # замість двох записів лишається ОДИН: друга реєстрація ЗАМІЩАЄ першу
-  # (`duplicates?` → `delete_if` перед `append`), тож виживає лише
+  # (`duplicates?` → `delete_if` перед вставкою; `after_commit` за
+  # `load_defaults 8.1` вставляється `prepend`-ом), тож виживає лише
   # `update`-половина з власною умовою, а `create` зникає — і ніщо про це не
   # попереджає: `_commit_callbacks` показує колбек присутнім. Виміряно пробою:
   # після `create` значення в кеші лишалось попереднім (backend-гоча #42).

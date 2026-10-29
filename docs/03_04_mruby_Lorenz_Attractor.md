@@ -757,8 +757,8 @@ if (mrb) {
 
 | ENV | Default | Тип | Семантика |
 |-----|---------|-----|-----------|
-| `DCI_NUMERIC_TOLERANCE` (до 2026-10-04 — `GAIA_DCI_NUMERIC_TOLERANCE`, префікс ретированого бренду; у прод не пушився — Gate P ще попереду) | unset → `false` | Boolean (`true`/`1`/`yes`) | Вмикає numeric branch **on top of** категоричної перевірки (не замінює). Категоричний enum-match завжди виконується першим. |
-| `DCI_NUMERIC_EPSILON` | `0.001` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON`) | Float (parsed via `Float()`) | Tolerance threshold. Malformed/non-numeric value → graceful fallback до DEFAULT_DCI_EPSILON + `Rails.logger.warn`. |
+| `DCI_NUMERIC_TOLERANCE` (до 2026-10-04 — `GAIA_DCI_NUMERIC_TOLERANCE`, префікс ретированого бренду; у прод не пушився — до Gate P не дійшло) | unset → `false` | Boolean (`true`/`1`/`yes`) | Вмикає numeric branch **on top of** категоричної перевірки (не замінює). Категоричний enum-match завжди виконується першим. |
+| `DCI_NUMERIC_EPSILON` (до 2026-10-04 — `GAIA_DCI_NUMERIC_EPSILON`) | `0.001` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON`) | Float (parsed via `Float()`) | Tolerance threshold. Malformed/non-numeric value → graceful fallback до DEFAULT_DCI_EPSILON + `Rails.logger.warn`. |
 
 **Гейт активації — `device_z` має бути в payload: ✅ wire-дім існував (FW.2 wire-rev2, 2026-06-12); ⊕ 2026-10-10 — знято разом із числовою DCI: байти 16..17 wire-rev2.2 несуть `voc_mv` (гілка (Б), [`00_07` — FW.66](00_07_Action_Plan_Tracker)).**
 
