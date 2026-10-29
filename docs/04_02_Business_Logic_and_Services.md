@@ -21,7 +21,7 @@
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | Схема БД (моделі під сервісами) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof-of-Growth пайплайн (порядок сервісів) |
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Апаратне шифрування, HKDF ключі |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (Planned services: E.20 / ARCH.5 / E.52) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (Planned services: ARCH.5) |
 
 ### Конвенція впорядкування розділів
 

@@ -1522,7 +1522,7 @@ active/draft ──cancel──► cancelled
 | `nonce` | bigint | EVM nonce broadcast'у — персиститься **перед** `transact` ([ARCH.66] companion: F2a same-nonce resume проти double-send; NULL доти, доки anchor не дійшов до broadcast) |
 | `status` | integer | Enum: `pending(0) / sent(1) / confirmed(2) / failed(3) / manual_review(4)` [ARCH.66] |
 | `error_message` | string(500) | Деталі помилки (якщо є) |
-| `root_version` | integer | **[ARCH.12 Фаза 1а]** 0 = legacy flat SHA-256 commitment · 1 = Merkle-корінь; `verify_state_root` маршрутизується за версією (legacy-рядки верифікуються старою формулою назавжди) |
+| `root_version` | integer | **[ARCH.12 Фаза 1а]** 0 = legacy flat SHA-256 commitment · 1 = Merkle-корінь; `verify_state_root` маршрутизується за версією (legacy-рядки — flat-хеш того самого `aggregate_payload`; «назавжди» знято ПОПРАВКОЮ [ARCH.97], [`05_04 §3`](05_04_Ethereum_L1_State_Anchor)) |
 | `window_from` | timestamp | **[ARCH.12]** нижня межа вікна телеметрія-листя (= `window_to` попереднього confirmed v1-якоря, exclusive — вікна ланцюжаться без дір); NULL для legacy і для першого merkle-якоря (from-genesis вікно) |
 | `window_to` | timestamp | **[ARCH.12]** верхня межа вікна (= `anchored_at − GRACE` на момент генерації, ПЕРСИСТОВАНА — історичні вікна не залежать від значення константи); presence-валідація при `root_version=1` |
 | `leaf_count` | integer | **[ARCH.12]** кількість телеметрія-листя у вікні (без leaf0) — аудитор відрізняє «партицію дропнули» від «листя не було» |

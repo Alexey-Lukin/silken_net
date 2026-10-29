@@ -88,7 +88,7 @@ module Ethereum
     # дані між цими двома SQL-запитами.
     # [ARCH.12 Фаза 1а] state_root = Merkle-корінь: tier2-листя = [leaf0-агрегат] + cluster-субкорені.
     # leaf0 = SHA256 тієї САМОЇ агрегат-формули (EthereumAnchor.aggregate_payload — One-Home з
-    # verify), тож supply-finality і незалежна верифікація з 5 збережених колонок живуть далі;
+    # verify), тож supply-finality і незалежна верифікація з 6 збережених колонок живуть далі;
     # per-record телеметрія-листя (Mrv::TelemetryLeaf) дають inclusion-proof для ISO-звіту.
     def generate_state_root
       ActiveRecord::Base.transaction(isolation: :repeatable_read) do

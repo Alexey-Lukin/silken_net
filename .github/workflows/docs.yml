@@ -120,7 +120,7 @@ jobs:
         # 04_04 §3.5 forbids raw Tailwind colours in app/views/shared/** and — its
         # exception narrowed 2026-08-07 — in domain page-components too. The task's default
         # perimeter used to be the permissive tree, so it policed where the rule
-        # is soft and never looked where it is hard; flipped 2026-08-07, and the
+        # was then soft and never looked where it was hard; flipped 2026-08-07, and the
         # strict surface measured clean, which is what makes this gateable now.
         run: bin/rails gaia:lint_tokens
 
