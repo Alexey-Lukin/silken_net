@@ -1756,6 +1756,11 @@ RUBY
 #     legitimately names the item it was bought under. Only a clause PROMISING
 #     current state is reported, which is why the promise-vocabulary is
 #     bilingual: an English-only pattern is blind to half this corpus.
+#   · The live/archived split is per ITEM, never per LEG: a clause routing to a
+#     LIVE item whose relevant leg has CLOSED reads as current. That was the
+#     dominant form when measured (2026-10-29, a step-6A pass: 7 of 10 memory
+#     clauses promising open work already done sat under LIVE IDs), and only the
+#     per-action READ of playbook step 6A reaches it — no leg-level parse here.
 stale_state_check() {
   [ -n "$RB" ] || { echo "DARK  stale_state_check did not run — no usable ruby"; return 0; }
   [ -f "$REPO/lib/tracker/dashboard.rb" ] || { echo "SKIP  no tracker resolver at $REPO/lib/tracker — cannot split live from archived"; return 0; }
