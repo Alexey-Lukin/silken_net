@@ -14,9 +14,11 @@
 # price). The full suite and the docs battery stay out: at minutes each (measured
 # 2026-10-24: suite 3 min 8 s, docs band 241 s) they buy a
 # `--no-verify` habit, and then nothing at all stands on this path. `00_06 §3`
-# records the same ground for DCO — «повна сюїта на кожному push купує звичку
-# обходити хук». Read "deliberately DCO-only" in older notes as that cost rule;
-# it was never a rule about the number of checks (I18N.4, 2026-08-13).
+# (row «DCO sign-off») records the NORM — the line is the cost, not the count;
+# this header is the only home of its GROUND (the 00_06 sentence quoted here
+# until 2026-10-29 was cut 2026-09-07, DOC-T.102). Read "deliberately DCO-only"
+# in older notes as that cost rule; it was never a rule about the number of
+# checks (I18N.4, 2026-08-13).
 #
 # Enabled by `git config core.hooksPath .githooks` (set by bin/setup; re-run it
 # after a fresh clone). Emergency bypass: `git push --no-verify`.
