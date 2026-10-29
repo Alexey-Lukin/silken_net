@@ -189,7 +189,7 @@ public void No_Lock_Or_Flange_Manifest_Carries_A_Barb_Direction_Key()
 
 // The window the SHIPPED Zone-1 lock admits, from its free end: the end of its PEEK-contact zone to the end of its
 // shank. ⚖️ 2026-09-18 (00_07 HW.26, «Ціна»): the deep end USED to be the near flank of the DIN-471 groove (15.0) —
-// no ring is fitted as a backup any more, so the groove, still in the geometry until G1/G3, bounds nothing. A
+// no ring is fitted as a backup any more, so the groove, still in the geometry until G3, bounds nothing. A
 // regression pin on a DERIVED number read from the real manifest — it reds when the lock geometry moves, which is
 // the moment any insertion judged against it has to be judged again.
 // MUTATION: Min = contact_start alone · Max = groove_offset (the retired groove bound) ⇒ reds.
@@ -197,7 +197,7 @@ public void No_Lock_Or_Flange_Manifest_Carries_A_Barb_Direction_Key()
 public void Zone1_Lock_Admits_Insertion_From_Its_Contact_Zone_End_To_The_End_Of_Its_Shank()
 {
     var cem = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone1.json")));
-    Assert.True(MechanicalLock.HasGroove(cem), "the Zone-1 groove stays in the geometry until HW.26 G1/G3 — and bounds nothing");
+    Assert.True(MechanicalLock.HasGroove(cem), "the Zone-1 groove stays in the geometry until HW.26 G3 — and bounds nothing");
     MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(cem);
     Assert.Equal(14.0f, w.MinMm, 3);   // contact_start 2 + contact_length 12
     Assert.Equal(18.0f, w.MaxMm, 3);   // shank_length 18 — NOT groove_offset 15

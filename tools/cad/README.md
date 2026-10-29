@@ -177,7 +177,7 @@ longer exercises the period/24 rule — its carrier is now a dedicated sheet-hel
 **Mechanical-lock barbs (shipped)** — `MechanicalLock.cs` adds annular asymmetric **ratchet barbs** on
 the Ti shank (`01_01 §4.3 A`, HW.26 — the lock against PEEK cold-flow creep) and, on an end that still
 carries one, a **DIN-471 groove** (`§4.3 B`): ⚖️ 2026-09-18 the ring as a backup was removed on BOTH ends
-and the Zone-3 groove from the geometry; the Zone-1 groove stays until G1/G3 and bounds nothing
+and the Zone-3 groove from the geometry; the Zone-1 groove bounds nothing and stays in the geometry until G3 (after the barb-row snap-force measurement, `01_01 §4.3 A`)
 (`MechanicalLock.HasGroove`). Own SDF (4th, ratchet `R(z)`), solid `BaseCylinder` + thin barb-ridge
 `BoolAdd` + groove-ring `BoolSubtract` where `HasGroove` + a central bore (`0` ⇒ SOLID shank — the Zone-1
 end, whose anode carries no core; `Ø1.35` ⇒ cathode channel the welded bus wire threads, `01_01 §1.4`). Metrics MEASURED off the profile (barb count /

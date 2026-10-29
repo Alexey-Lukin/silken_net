@@ -7,7 +7,7 @@ namespace SilkenCad;
 
 // Annular ratchet barbs on a solid Ti shank — the 01_01 §4.3 mechanical lock against PEEK cold-flow creep
 // (BLOCKER-3, HW.26) — plus a DIN-471 groove on an end that still carries one: the ring as a backup was removed
-// on BOTH ends ⚖️ 2026-09-18 (00_07 HW.26), the Zone-3 groove with it, and the Zone-1 groove stays until G1/G3.
+// on BOTH ends ⚖️ 2026-09-18 (00_07 HW.26), the Zone-3 groove with it, and the Zone-1 groove stays until G3.
 // The part is axisymmetric, so the whole shank is one signed-distance field over the outer radius R(z): a base
 // cylinder, asymmetric ratchet teeth in the PEEK-contact zone, and a subtractive groove where HasGroove. Asymmetric
 // = a RATCHET — a shallow leading ramp (α, easy hot press-fit insert) and a steep trailing ramp (β, hard pull-out).
@@ -145,16 +145,14 @@ internal static class MechanicalLock
     // what must never be reused in the anode frame is the lock's GEOMETRY (G4), not this scalar.
     //   Min = end of the declared PEEK-contact zone: shallower, the last barbs and the PEEK that has to sit
     //         behind their steep faces are outside the sleeve (01_01 §4.3 A).
-    //   Max = the whole shank, on EVERY end. ⚖️ 2026-09-18 (00_07 HW.26, «Ціна»): the window LOST its upper bound
-    //         until G1/G3. It used to be the near flank of the DIN-471 groove — deeper, the ring could not be fitted
+    //   Max = the whole shank, on EVERY end. ⚖️ 2026-09-18 (00_07 HW.26, «Ціна»): the window LOST its upper bound.
+    //         It used to be the near flank of the DIN-471 groove — deeper, the ring could not be fitted
     //         once pressed — but no ring is fitted as a backup on either end any more, so a groove bounds nothing,
-    //         including the Zone-1 groove that stays in the geometry until G1/G3. What is left is the extent of the
-    //         lock itself: on Zone 3 the shoulder stops the press there; on Zone 1 nothing in the tree does (the
-    //         verdict's weakest link: whether that end needs a stop against moving DEEPER is G1/G3), so past it the
-    //         mouth leaves the geometry this manifest describes — which is exactly the G1 conflict to report.
+    //         including the Zone-1 groove that stays in the geometry until G3. What is left is the extent of the
+    //         lock itself: on Zone 3 the shoulder stops the press there; on Zone 1 the PRESS FIXTURE does, not the
+    //         part (⚖️ G1 2026-10-12, 01_01 §4.3 A) — so the shipped insertion IS this Max, and `verify` prints both.
     // ⛔ Declared ceiling: nominal dims only — no depth tolerance of a force-controlled press, no chamfer at
-    //    the mouth. And the Zone-1 `shank_length_mm` is the MODELLED length of the lock coupon, not a physical
-    //    shank length (that length IS G1), so its Max is a statement about this model, never about the anode.
+    //    the mouth. The Zone-1 `shank_length_mm` is the physical shank since G1 (branch (А)), so its Max is the anode's.
     internal readonly record struct InsertionWindow(float MinMm, float MaxMm);
 
     public static InsertionWindow InsertionWindowMm(MechanicalLockCem cem)

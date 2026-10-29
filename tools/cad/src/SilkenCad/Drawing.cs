@@ -743,8 +743,9 @@ internal static class Drawing
         b.AppendLine(Text(bz0 + (bzLen / 2), sideTop - 8, $"{cem.BarbRows}× barb · shallow α ramp faces the LEFT end (enters PEEK first)", 9, "middle", Dim));
 
         // B. DIN-471 groove — no longer a backup against pull-out: the ring was removed on BOTH ends (⚖️ 2026-09-18,
-        // §4.3 B), retention is the barbs' (A), and only the Zone-1 end keeps the groove, until the shank integration
-        // (00_07 HW.26 G1/G3) says whether a stop in the EASY direction of the ratchet is needed. Where it is cut it is
+        // §4.3 B), retention is the barbs' (A), and only the Zone-1 end keeps the groove, which stops nothing: the stop
+        // in the EASY direction of the ratchet is the press fixture (⚖️ 00_07 HW.26 G1 2026-10-12), and taking the
+        // groove out is G3, after the barb-row snap-force measurement (01_01 §4.3 A). Where it is cut it is
         // a real notch at the CEM's own offset/width/depth — the number `cem_canon_sync` pins against canon §4.3 B, so
         // the number a human reviewer reads here is the same one a drift would show up on.
         if (bGroove)

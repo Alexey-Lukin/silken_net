@@ -565,7 +565,7 @@ public class DrawingTests
         Assert.Contains("</svg>", svg);
         Assert.Contains("Ø11", svg);           // shank Ø straight from the CEM default
         Assert.Contains("4× barb", svg);       // barb rows straight from the CEM
-        Assert.Contains("groove 1.1×0.25 DIN-471", svg);   // the record default = the Zone-1 groove, kept until HW.26 G1/G3 (§4.3 B)
+        Assert.Contains("groove 1.1×0.25 DIN-471", svg);   // the record default = the Zone-1 groove, kept until HW.26 G3 (§4.3 B)
         Assert.Contains("rev test", svg);
         Assert.DoesNotContain("NaN", svg);
         Assert.DoesNotContain("Infinity", svg);

@@ -251,7 +251,7 @@ internal sealed record AnchorCem
 // Mechanical-lock shank (01_01 §4.3 A/B) — the §4.3 BLOCKER-3 lock against PEEK cold-flow creep
 // (HW.26): annular ratchet barbs on the solid Ti shank that press-fits into the PEEK sleeve. The DIN-471
 // ring as a backup was removed on BOTH ends ⚖️ 2026-09-18 (00_07 HW.26) and the Zone-3 groove with it; the
-// Zone-1 groove stays in the geometry until G1/G3 and bounds nothing. Zone 1 (real Ø11) is a self-contained demo part — NOT yet integrated into the
+// Zone-1 groove bounds nothing and stays in the geometry until G3. Zone 1 (real Ø11) is a self-contained demo part — NOT yet integrated into the
 // gyroid rod (separate session, 00_07); the Zone-3 set (placeholder Ø) is already the cathode flange's
 // shank (`CathodeFlange.ShankCem` → `MechanicalLock.Build`). Canon over-specifies the tooth (h, base,
 // α, β all fixed); a triangle has 2 free params, so we keep α/β + h and DERIVE base ≈ 2.1·h — verify
@@ -283,7 +283,7 @@ internal sealed record MechanicalLockCem
     //    rotating it, never by a sign.
 
     // DIN-471 retaining-ring groove (§4.3 B) — 1.1 × 0.25 deep for the Ø11 shank, near the outer (capsule-side) end.
-    // ⚖️ 2026-09-18 (00_07 HW.26): NO ring is fitted in it as a backup; it stays in the Zone-1 geometry only until G1/G3,
+    // ⚖️ 2026-09-18 (00_07 HW.26): NO ring is fitted in it as a backup; it stays in the Zone-1 geometry only until G3,
     // and these defaults ARE that Zone-1 groove — which is why a Zone-3 manifest must declare its zeros explicitly.
     public float GrooveOffsetMm { get; init; } = 15f;
     public float GrooveWidthMm { get; init; } = 1.1f;   // DIN-471 для Ø11 shank (§4.3 B; «0.8×0.6» = off-spec, не штатне кільце)
