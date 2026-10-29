@@ -49,8 +49,8 @@
 | Константа | Де зашита | Значення |
 |-----------|---------|---------|
 | `SIGMA = 10.0`, `RHO = 28.0`, `BETA = 8.0/3.0` | `SilkenNet::Attractor` | Параметри атрактора Лоренца |
-| `slash_threshold` = 0.20 | ⚠️ **НЕ константа** — `ContractHealthCheckService` читає `SystemParameter.current(:slash_threshold)` | 20% аномальних дерев → Slashing |
-| `EMISSION_THRESHOLD = 10_000` | `TokenomicsEvaluatorWorker` | Конверсія growth points → SCC. |
+| `slash_threshold` = 0.20 | ⚠️ **НЕ константа** — `ContractHealthCheckService` читає `SystemParameter.current(:slash_threshold)` | 20% аномальних дерев → чокпоінт слешингу (cause-gate вирішує slash/freeze — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)) |
+| `EMISSION_THRESHOLD = 10_000` | `TokenomicsEvaluatorWorker` | Конверсія growth points → SCC |
 | `AiInsight::SLASH_STRESS_THRESHOLD = 0.83` | ⚠️ **`AiInsight`, не `ContractHealthCheckService`** — той лише читає `AiInsight.slash_stress_threshold` (DAO-live) | Поріг стресу дерева |
 
 > Значення-приклади ілюструють hardcoded-стан *до* governance; канонічні доми: Lorenz [`03_04 §1.2`](03_04_mruby_Lorenz_Attractor), slash-пороги [`05_05`](05_05_Slashing_and_Risk_Policy), tokenomics-курс [`05_03`](05_03_Tokenomics_SCC_and_SFC).
