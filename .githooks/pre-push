@@ -181,7 +181,8 @@ fi
 # scan's primary subjects (config/deploy*.yml, .kamal/*, terraform/compute.tf), so the very
 # diffs that move money-secret placement pushed unchecked on both surfaces at once.
 # ⊕ [S1.1 2026-09-01] `.gitignore` added: invariant C now judges it too (the `gha-creds-*.json`
-# WIF-credential rule). Keep this pattern ≡ the `alloy` filter in ci.yml and the subject set in
+# WIF-credential rule). Keep this pattern ≡ the `alloy` filter in ci.yml minus the script itself
+# (CI-only — the script's header declares it), and ⊇ the subject set in
 # the script's header — the three drift apart silently, and that is exactly how four of the
 # scan's five subjects went unwatched until 2026-08-30.
 if printf '%s\n' "$_changed" | grep -qE '^(deploy/|config/deploy.*\.yml|\.kamal/|terraform/compute\.tf|\.dockerignore|\.gitignore|Dockerfile)'; then

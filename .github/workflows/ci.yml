@@ -176,7 +176,7 @@ jobs:
               # carefully about a SECONDARY subject while the four the scan exists for
               # were never listed — "decorative by INPUT" (guard-craft #1). Widening was
               # free: the scan is green on the current tree, so this adds a trigger, not
-              # a backlog. Keep this list ≡ the subject set at the top of the script.
+              # a backlog. Keep this list ⊇ the subject set at the top of the script.
               - 'config/deploy.yml'
               - 'config/deploy.canopy.yml'
               - '.kamal/**'

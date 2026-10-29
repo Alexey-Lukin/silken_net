@@ -117,8 +117,8 @@ jobs:
         run: bin/rails docs:check_refs
 
       - name: Design-token compliance in shared primitives (UI.1)
-        # 04_04 §3.5 forbids raw Tailwind colours in app/views/shared/** and
-        # explicitly ALLOWS them in domain page-components. The task's default
+        # 04_04 §3.5 forbids raw Tailwind colours in app/views/shared/** and — its
+        # exception narrowed 2026-08-07 — in domain page-components too. The task's default
         # perimeter used to be the permissive tree, so it policed where the rule
         # is soft and never looked where it is hard; flipped 2026-08-07, and the
         # strict surface measured clean, which is what makes this gateable now.

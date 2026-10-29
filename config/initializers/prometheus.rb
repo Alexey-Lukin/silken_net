@@ -541,7 +541,7 @@ module SilkenNet
     # 🔥 WORKER-SPECIFIC METRICS (Gap Analysis — S2.4)
     # -----------------------------------------------------------------------
 
-    # Slashing events by reason (fraud, cluster_stress, contract_breach)
+    # Slashing events by reason (contractual_forfeiture · tree_death · cluster_degradation — BurnCarbonTokensWorker)
     SLASHING_EVENTS_TOTAL = REGISTRY.counter(
       :silkennet_slashing_events_total,
       docstring: "Total slashing (burn) events by reason",

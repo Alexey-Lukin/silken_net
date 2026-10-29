@@ -9,8 +9,9 @@ class AiInsight < ApplicationRecord
   # доки damage читав саме її, DAO-голос за `:stress_threshold` тихо розводив половини (два баги
   # поспіль на цьому місці: спершу тригер 0.83 vs damage 1.0 → 100% over-burn, потім метод vs
   # константа). Правило: обидва споживачі читають МЕТОД; константу чіпає лише `default:`.
-  # Канон-дім порога — 05_06 (рядок таблиці констант, іменований за ЦІЄЮ константою) + 05_05 §3/§7. ⚠️ НЕ плутати з `critical_stress`-scope /
-  # `contract_breach?` (0.8 — ширший insurance/UI-концепт, свідомо окремий від slash-порога).
+  # Канон-дім порога — 05_06 (рядок таблиці констант, іменований за ЦІЄЮ константою) + 05_05 §3/§7. ⚠️ НЕ плутати з `0.8` —
+  # ширшим insurance/UI-концептом, свідомо окремим від slash-порога (його носії тут, `critical_stress`-scope і
+  # `contract_breach?`, знято — SLASH-1, нижче).
   SLASH_STRESS_THRESHOLD = 0.83
 
   # [GOV.1] DAO-live поріг: SystemParameter(:stress_threshold) ← ProtocolParameters.sol
