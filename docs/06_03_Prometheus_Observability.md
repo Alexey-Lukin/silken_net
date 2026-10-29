@@ -229,8 +229,6 @@ end
 
 > **[ARCH.61]** Actioning DeadSet-алертів: **`/sidekiq`** (Sidekiq::Web, змонтований за **`super_admin`-only** route-constraint + SEC.16 salt-stamp — ⚠️ звужено ⚖️ 2026-09-05 із `admin_or_above?`, бо вкладки Retries/Dead несуть `tree_id`/`wallet_id`/DID і суми ВСІХ орендарів, тобто клієнтський адміністратор діставав вікно повз тенант-ізоляцію (⚖️ founder; підстава — коментар над `mount` у `config/routes.rb`); app-constraint = єдиний шлюз — HAProxy path-ACL немає; unmatched → 404). Механіка constraint — [`04_03 §1`](04_03_REST_API_v1_Reference).
 
-> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
-
 ### 2.4 Реалізовані додаткові метрики (Sprint 2, S2.4)
 
 Нові метрики (S2.4) зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних воркерах (повний реєстр + кількість — §2.8):
@@ -242,8 +240,6 @@ end
 | `silkennet_ews_alerts_total` | Counter | `EwsAlert` (`after_create_commit`) — [INF.26] дім переїхав із `DclimateVerificationWorker`, який лічив лише супутниково верифіковану підмножину | `alert_type` |
 | `silkennet_oracle_dispatch_duration_seconds` | Histogram | `ChainlinkDispatchWorker` | — |
 | `silkennet_coap_packets_received_total` | Counter | `UnpackTelemetryWorker` | `status` |
-
-> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
 ### 2.4.1 RSpec покриття нових метрик (S2.4 — Виконано)
 
@@ -267,8 +263,6 @@ end
 
 Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних класах. `ORACLE_DISPATCH_DURATION` вимірює повний цикл dispatch (від виклику до отримання request_id). `LORENZ_COMPUTATION_DURATION` вимірює час серверного розрахунку 250 ітерацій Лоренца (Float арифметика).
 
-> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
-
 ### 2.6 Entropy Monitor Metric — ⛔ ЗНЯТО 2026-09-05 (історична секція)
 
 ⛔ **`silkennet_cluster_entropy_score` більше не існує.** Одним комітом знято ВЕСЬ тракт: gauge, обидва воркери (`ClusterEntropyAnalyzerWorker` · `ClusterEntropySweepWorker`), сервіс `SilkenNet::EntropyCalculatorService`, cron `cluster_entropy_sweep`, Grafana-правило `sn-alert-cluster-entropy` і панель дашборда. Номер секції лишено, щоб §2.7/§2.8 не пере'їхали, а адреса присуду не осиротіла.
@@ -276,8 +270,6 @@ end
 **Підстава — ВИМІР, не смак.** Прогін продовими класами (`SeedDerivation.initial_state` → `Attractor.calculate_z_from_state` → `EntropyCalculatorService`; N=200 дерев, R=500 повторів): ліс із НУЛЬОВОЮ біологічною різницею (ідентичні temp/acoustic, різні `K_seed`) дає **H = 0.9077 ± 0.0106** і **0/500** перетинів порога 0.65 — тобто канонічна «здорова смуга 0.75–0.95» відтворювалась самим лише криптошумом зерен, які ми ж і призначили. Канонічний синхронізований стрес (38 °C на всіх) перетинав поріг лише у **5.8 %** — промах у 94 % НА ВЛАСНОМУ сценарії; а те падіння, що було, ішло через ρ(temp), тобто через `temperature_c`, вже наявну ПРЯМИМ стовпцем (data-processing inequality — той самий присуд, що [`05_05 §8.1`](05_05_Slashing_and_Risk_Policy)). Звичайна мікрокліматична різниця фальш-тригерила у 1.8 %; саме лише тепле продовження траєкторії зсувало базову лінію на −0.033 без жодної зміни світу.
 
 🔑 **ЦІНА НАЗВАНА ВГОЛОС:** кластерного передстресового сигналу тепер НЕМАЄ — ні метрики, ні алерту, ні панелі. Порожньо тут означає «ніхто не міряв», НІКОЛИ «стресу немає» ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)). Повний вимір і заборона на відродження живуть у МІСЦІ ДІЇ — над enum-значенням `entropy_anomaly: 6` у `app/models/ews_alert.rb` (саме значення лишене ІСТОРИЧНИМ, бо `EwsAlert#message` є РЕНДЕРОМ архівних рядків); відкрите — [`00_07`](00_07_Action_Plan_Tracker) E.64 (real-signal activation).
-
-> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
 ### 2.7 Governance Parameter Sync Observability
 
@@ -377,7 +369,7 @@ end
 | `silkennet_partition_maintenance_failures_total` | алертна | — | PartitionMaintenanceWorker run failures (missing partition → rows silently land in the _default leaf, which then blocks CREATE PARTITION for that month permanently) |
 | `silkennet_peaq_backfill_rearmed_total` | діагностична | — | Дерева, ре-армовані `PeaqBackfillWorker` на peaq-DID реєстрацію [ARCH.119]. ⚠️ Ярус оголошено, а не заслужено алертом: нога activation-gated, `PEAQ_*` не стоять на жодній деплой-поверхні, тож лічильник **нуль за побудовою** — споживача дротуємо, коли ключі зʼявляться |
 | `silkennet_qatt_nonce_fallback_total` | алертна | — | Total Queen-attestation batch nonce checks falling back from Redis to the Postgres nonce table (Redis outage indicator; SEC.39) |
-| `silkennet_rate_limit_store_errors_total` | алертна | — | **[INF.22]** Операції cache-store'у Rack::Attack, проковтнуті failsafe'ом `RedisCacheStore`. 🔴 Не деградація, а ВІДСУТНІСТЬ щита: фолбеку тут немає, `nil`-читання невідрізненне від «нуль страйків», тож throttle не рахує й fail2ban не банить — мовчки, з порожнім логом. ⛔ Ярус НЕ діагностичний і не сміє ним стати (безпековий шлях — [INF.26] судить, що там декларація узаконює діру). Споживач — `sn-alert-rate-limit-store-errors`; писач — `error_handler` у `config/initializers/rack_attack.rb`. ⚠️ **Лічильник ПО-ВОРКЕРНИЙ, і це псує ЧИСЛО в анотації, не сам вердикт:** реєстр in-process, а web-роль форкає `WEB_CONCURRENCY` воркерів без спільного сховища, тож `increase(...[1h])` читає перехід між воркерами як reset+delta й завищує. Вердикт (`> 0`) вистоює — при збої Redis помиляються ВСІ воркери, поріг перетинається однаково, — але людина, що прийде за анотацією, побачить не ту величину. 🔑 Це та сама вісь, що три scrape-таргети нижче, лише на рівень глибше: там процес⊥процес, тут воркер⊥воркер УСЕРЕДИНІ одного таргета. ⊕ І окремо: `error_handler` тут **ПЕРЕКРИВ** дефолтний `RedisCacheStore::DEFAULT_ERROR_HANDLER`, отже вся видимість цього класу висить на ОДНОМУ цьому правилі (підстава — шапка `rack_attack.rb`). 🔴 **Але «…який робив `error_reporter.report` → Sentry» СПРОСТОВАНО 2026-08-31 і знято:** дефолт справді кличе `ActiveSupport.error_reporter&.report`, однак `sentry-rails` тримає `register_error_subscriber = false` за замовчуванням і ми його не вмикаємо, тож у НАШОМУ застосунку той виклик фанився в порожній список підписників — тихий no-op без логер-фолбеку. Тобто до перекриття клас був лог-only й НЕалертований, а перекриття є **приростом** видимості, не розміном; правило «перекриття ≠ доповнення» лишається, приклад був хибний ([`00_07`](00_07_Action_Plan_Tracker) INF.22) |
+| `silkennet_rate_limit_store_errors_total` | алертна | — | **[INF.22]** Операції cache-store'у Rack::Attack, проковтнуті failsafe'ом `RedisCacheStore`. 🔴 Не деградація, а ВІДСУТНІСТЬ щита: фолбеку тут немає, `nil`-читання невідрізненне від «нуль страйків», тож throttle не рахує й fail2ban не банить — мовчки, з порожнім логом. ⛔ Ярус НЕ діагностичний і не сміє ним стати (безпековий шлях — [INF.26] судить, що там декларація узаконює діру). Споживач — `sn-alert-rate-limit-store-errors`; писач — `error_handler` у `config/initializers/rack_attack.rb`. ⚠️ **Лічильник ПО-ВОРКЕРНИЙ, і це псує ЧИСЛО в анотації, не сам вердикт:** реєстр in-process, а web-роль форкає `WEB_CONCURRENCY` воркерів без спільного сховища, тож `increase(...[1h])` читає перехід між воркерами як reset+delta й завищує. Вердикт (`> 0`) вистоює — при збої Redis помиляються ВСІ воркери, поріг перетинається однаково, — але людина, що прийде за анотацією, побачить не ту величину. 🔑 Це та сама вісь, що три scrape-таргети нижче, лише на рівень глибше: там процес⊥процес, тут воркер⊥воркер УСЕРЕДИНІ одного таргета. ⊕ І окремо: `error_handler` тут **ПЕРЕКРИВ** дефолтний `RedisCacheStore::DEFAULT_ERROR_HANDLER`, отже вся видимість цього класу висить на ОДНОМУ цьому правилі (підстава — шапка `rack_attack.rb`). 🔴 **Але «…який робив `error_reporter.report` → Sentry» СПРОСТОВАНО:** дефолт справді кличе `ActiveSupport.error_reporter&.report`, однак `sentry-rails` тримає `register_error_subscriber = false` за замовчуванням і ми його не вмикаємо, тож у НАШОМУ застосунку той виклик фанився в порожній список підписників — тихий no-op без логер-фолбеку. Тобто до перекриття клас був лог-only й НЕалертований, а перекриття є **приростом** видимості, не розміном; правило «перекриття ≠ доповнення» лишається, приклад був хибний ([`00_07`](00_07_Action_Plan_Tracker) INF.22) |
 | `silkennet_rpc_errors_total` | алертна | `network`, `error_type` | Total Web3 RPC errors |
 | `silkennet_scc_minted_total` | алертна | `token_type` | Total SCC (SilkenCarbonCoin) tokens minted |
 | `silkennet_scc_slashed_total` | алертна | — | Total tokens slashed (burned due to cluster stress) |

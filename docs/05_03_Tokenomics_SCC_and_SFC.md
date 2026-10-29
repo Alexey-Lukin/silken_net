@@ -730,7 +730,7 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 
 **Файли (ОДИН дім — самі файли, канон їх не копіює):** `subgraph/subgraph.yaml` (три dataSource — `SilkenCarbonCoin` · `SilkenForestCoin` · `ProtocolParameters` — на живих Amoy-адресах броадкасту 2026-09-01, `startBlock` = блок деплою; адреси також у [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) Фаза 2t) · `subgraph/schema.graphql` (сутності) · `subgraph/src/mapping.ts` (обробники). **Мережа:** `polygon-amoy` до mainnet-cutover ([`00_07`](00_07_Action_Plan_Tracker) DEPLOY-1 Фаза 2 — `network: polygon` + три MAINNET-адреси з їхнім блоком деплою; ⛔ Amoy-значення замінити, не «бампати»). Гейти: `subgraph/validate_addresses.sh` (нульова адреса = fail, крок `CI · Subgraph` з 2026-09-03) · `graph codegen` + `build` + matchstick-тести · `spec/quality/subgraph_{entity_completeness,abi_parity}_spec.rb`.
 
-🔴 **Доти тут стояла ВБУДОВАНА копія маніфесту й схеми, і вона брехала тричі** (знято 2026-09-03): адреса `0x0000…` «TODO після деплою» через два дні після живого деплою; `CarbonMintEvent` без полів `treeDidHash`/`kind`/`subjectDid`/`archiveRoot`, які реальна схема має; `ProtocolFinancials` із вигаданими `totalForestMinted`/`totalGovernanceSlashed` замість реальних `totalMintedGrowth`/`totalMintedInsurance`/`totalMintedTax`/`totalBurned`. Копія коду в каноні є drift-поверхнею ЗА ПОБУДОВОЮ — читай файли.
+🔴 **Доти тут стояла ВБУДОВАНА копія маніфесту й схеми, і вона брехала тричі**: адреса `0x0000…` «TODO після деплою» через два дні після живого деплою; `CarbonMintEvent` без полів `treeDidHash`/`kind`/`subjectDid`/`archiveRoot`, які реальна схема має; `ProtocolFinancials` із вигаданими `totalForestMinted`/`totalGovernanceSlashed` замість реальних `totalMintedGrowth`/`totalMintedInsurance`/`totalMintedTax`/`totalBurned`. Копія коду в каноні є drift-поверхнею ЗА ПОБУДОВОЮ — читай файли.
 
 > **⚠️ The Graph = off-chain analytics, НЕ realtime (нот.2).** Subgraph має **eventual consistency** (indexing-lag секунди–хвилини, більше при reorg на Polygon). UI-баланс гаманця читається з **Rails DB** (`wallets.balance`, One-Home), субграф — для історії/аналітики; індекс порожній до ПЕРШОЇ емісії, а не «до mainnet» (шапка `subgraph.yaml`).
 
@@ -745,7 +745,7 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 | **Foundry** | toolchain збірки/тестів; конвенції — `CLAUDE.md §8` |
 | **Oracle-ключі** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER) ⊥ `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER) — фізично розділені [E.2] |
 
-> 🏠 **One-Home:** роль КОЖНОЇ з 10 мереж, її статус і активаційний гейт — картки [`05_01 §1`](05_01_Multichain_Architecture). ⛔ Стиснутого ростера мереж тут більше немає (знято 2026-09-04, DOC-T.98): він мав нуль вхідних рефів і ніс два протухлі рядки — Chainlink під знятою номенклатурою «Hybrid mode» (після [ARCH.53] він `⚪ Demoted`, `sendRequest` вилучено) і «Polygon Hadron — KYC/KYB» як робочу залежність, тоді як [ARCH.118] виміряв, що продукту не існує.
+> 🏠 **One-Home:** роль КОЖНОЇ з 10 мереж, її статус і активаційний гейт — картки [`05_01 §1`](05_01_Multichain_Architecture). ⛔ Стиснутого ростера мереж тут більше немає (DOC-T.98): він мав нуль вхідних рефів і ніс два протухлі рядки — Chainlink під знятою номенклатурою «Hybrid mode» (після [ARCH.53] він `⚪ Demoted`, `sendRequest` вилучено) і «Polygon Hadron — KYC/KYB» як робочу залежність, тоді як [ARCH.118] виміряв, що продукту не існує.
 
 ## 📂 Структура Файлів (File Map)
 

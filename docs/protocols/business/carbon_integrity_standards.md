@@ -234,7 +234,7 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 2. **Enterprise-pitch-каркас (чесні value-props, жоден не претендує на quantification):**
    - **(A) Permanence-monitor** — per-tree телеметрія живить CCP-P6: втрату дерева видно як ТИШУ вузла із затримкою свіпу (тиша → повідомлення → польовий аудит), подію встановлює польовий аудит, не сенсор. Реального часу немає — пʼєзо з вузла зрізано ⚖️ 2026-09-29 ([`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)).
    - **(B) Transparency/ground-truth data-layer** — continuous per-tree telemetry живить CCP-P3 + ISO 14064-2-моніторинг + TNFD-disclosure host-проєкту.
-   - **(C) Biodiversity co-benefit evidence** — ⛔ знято 2026-09-29: acoustic soundscape трималась на пʼєзо вузла, якого більше немає (§4.4). Прилад ділянки на Королеві ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52) — лише далека опція, не план і не value-prop.
+   - **(C) Biodiversity co-benefit evidence** — ⛔ знято: acoustic soundscape трималась на пʼєзо вузла, якого більше немає (§4.4). Прилад ділянки на Королеві ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52) — лише далека опція, не план і не value-prop.
 
 3. **Honesty-корекція класу «in-silico ≠ TRL 4»:** диференціює, не применшує. Наша цінність там, де integrity-стандарти найголодніші до нових доказів (permanence, transparency) і де remote-sensing-реєстри сліпі.
 
