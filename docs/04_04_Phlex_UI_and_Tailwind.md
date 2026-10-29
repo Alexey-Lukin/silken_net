@@ -38,7 +38,7 @@
 - [9. Чекліст Доступності](#9-чекліст-доступності)
 - [10. Lookbook (Дослідник Компонентів)](#10-lookbook-дослідник-компонентів)
 - [Додаткові Матеріали](#додаткові-матеріали)
-- [11. Міграція з ActionController::API на ActionController::Base](#11-міграція-з-actioncontrollerapi-на-actioncontrollerbase)
+- [11. — , не (Phlex потребує )](#11-apiv1basecontroller--actioncontrollerbase-не-api-phlex-потребує-view_context)
 - [12. Інтернаціоналізація та Локалізація (i18n)](#12-інтернаціоналізація-та-локалізація-i18n)
 - [13. Mobile Drawer (Phase 2)](#13-mobile-drawer-phase-2)
 - [14. Animations & Motion (Phase 3)](#14-animations--motion-phase-3)
@@ -1612,7 +1612,7 @@ end
 
 ---
 
-## 11. Міграція з ActionController::API на ActionController::Base
+## 11. `Api::V1::BaseController` — `ActionController::Base`, не `::API` (Phlex потребує `view_context`)
 
 ### Контекст
 

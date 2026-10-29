@@ -263,7 +263,7 @@ end
 
 Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних класах. `ORACLE_DISPATCH_DURATION` вимірює повний цикл dispatch (від виклику до отримання request_id). `LORENZ_COMPUTATION_DURATION` вимірює час серверного розрахунку 250 ітерацій Лоренца (Float арифметика).
 
-### 2.6 Entropy Monitor Metric — ⛔ ЗНЯТО 2026-09-05 (історична секція)
+### 2.6 Entropy Monitor Metric — ⛔ ЗНЯТО 2026-09-05
 
 ⛔ **`silkennet_cluster_entropy_score` більше не існує.** Одним комітом знято ВЕСЬ тракт: gauge, обидва воркери (`ClusterEntropyAnalyzerWorker` · `ClusterEntropySweepWorker`), сервіс `SilkenNet::EntropyCalculatorService`, cron `cluster_entropy_sweep`, Grafana-правило `sn-alert-cluster-entropy` і панель дашборда. Номер секції лишено, щоб §2.7/§2.8 не пере'їхали, а адреса присуду не осиротіла.
 

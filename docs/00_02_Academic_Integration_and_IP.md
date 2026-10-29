@@ -40,7 +40,7 @@
 - [Відкриті передумови та критерій складу портфеля](#-відкриті-передумови-та-критерій-складу-портфеля)
 - [1. Канали (установа → контакт → одна дія)](#-1-канали-установа--контакт--одна-дія)
 - [2. План Публікацій (Scopus / Web of Science)](#-2-план-публікацій-scopus--web-of-science)
-- [3. IP-постава — дім переїхав у (00_01_Vision_Mission_and_Roadmap)](#-3-ip-постава--дім-переїхав-у-00_01-800_01_vision_mission_and_roadmap)
+- [3. IP-постава — дім у (00_01_Vision_Mission_and_Roadmap)](#-3-ip-постава--дім-у-00_01-800_01_vision_mission_and_roadmap)
 - [4. IP-інструменти (TISC + trademark + UA-юр-review)](#-4-ip-інструменти-tisc--trademark--ua-юр-review)
 - [5. Бренд-архітектура (SilkenNet)](#-5-бренд-архітектура-silkennet)
 <!-- TOC:AUTO:END -->
@@ -233,9 +233,9 @@
 
 ---
 
-## ⚖️ 3. IP-постава — дім переїхав у [`00_01 §8`](00_01_Vision_Mission_and_Roadmap)
+## ⚖️ 3. IP-постава — дім у [`00_01 §8`](00_01_Vision_Mission_and_Roadmap)
 
-Ліцензійна матриця, чотири стовпи постави (defensive publication · open license · trademark · trade secret), non-assertion pledge, межа розкриття та розподіл «відкрито / утримуємо» живуть тепер у [`00_01 §8`](00_01_Vision_Mission_and_Roadmap).
+Ліцензійна матриця, чотири стовпи постави (defensive publication · open license · trademark · trade secret), non-assertion pledge, межа розкриття та розподіл «відкрито / утримуємо» живуть у [`00_01 §8`](00_01_Vision_Mission_and_Roadmap).
 
 **Чому не тут:** аудиторія цієї постави — кожен контрибʼютор і кожна CI-джоба, а не академічний шар. `NOTICE` називає її каноном першим рядком блоку LICENSING; на неї ж ключуються `README`, `dco.yml`, `spdx_headers.rb` і `dco_check.rb`. Критерій місії [`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap) уже декларує «невідбирано» одним із трьох несучих слів і шле по деталь саме туди — тож це возз'єднання, а не переїзд (⚖️ ратифіковано 2026-08-09).
 
