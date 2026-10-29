@@ -612,7 +612,7 @@ groups:
             relativeTimeRange: { from: 300, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: "rate(silkennet_telemetry_log_unpruned_lookups_total{caller=~\"oracle.*|.*Worker\"}[5m])"
+              expr: "rate(silkennet_telemetry_log_unpruned_lookups_total{caller=~\"(Oracle.*|.*Worker):.*\"}[5m])"
               refId: A
           - refId: B
             datasourceUid: "__expr__"

@@ -237,6 +237,50 @@ end
       "config/initializers/prometheus.rb."
   end
 
+  # [S2.4, 2026-10-29] Третя форма «конфіг повний, шлях мертвий»: метрика зареєстрована й
+  # інкрементується, правило на неї є, а фільтр мітки не матчить ЖОДНОГО значення, яке пише код.
+  # PromQL якорить `=~` на обидва кінці й розрізняє регістр, тож `oracle.*|.*Worker` мовчав
+  # проти `OracleCallbacksController:…` і `ApplicationWeb3Worker:missing_created_at_iso` з дня
+  # народження правила, а спека вище бачила лише, що метрика ІСНУЄ. Мітки тут деривуються з
+  # коду: `metric_caller:`-літерали викликачів `partition_pruned` × суфікси, які той дописує.
+  # Присуд фільтра — `04_01 §3` (блок Observability): гарячі шляхи пейджать, ручний rollback —
+  # лише облік. Новий викликач червонить спеку, доки його не віднесуть до одного з двох.
+  # ⚠️ Стеля: судить лише цю метрику (єдину з caller-фільтром у yaml); викликача, що передає
+  # `metric_caller:` не літералом, екстрактор не бачить — тоді множина не зійдеться з присудом.
+  it "the telemetry unpruned-lookup alert's caller filter pages exactly the hot callers" do
+    hot  = %w[ApplicationWeb3Worker OracleCallbacksController]
+    cold = %w[MintingRollbackService]
+
+    suffixes = File.read(REPO_ROOT.join("app/models/telemetry_log.rb"))
+      .scan(/caller: "\#\{metric_caller\}:([a-z0-9_]+)"/).flatten.uniq
+    callers = Dir[REPO_ROOT.join("{app,lib}/**/*.rb").to_s].flat_map do |path|
+      File.read(path).scan(/partition_pruned\([^)]*metric_caller:\s*"([A-Za-z0-9:]+)"/m).flatten
+    end.uniq
+
+    expect(suffixes).not_to be_empty, "екстрактор суфіксів мітки `caller` нічого не знайшов у telemetry_log.rb"
+    expect(callers).to match_array(hot + cold),
+      "Викликачі `partition_pruned` (#{callers.sort.join(', ')}) розійшлись із присудом фільтра " \
+      "(гарячі #{hot.join(', ')} · холодні #{cold.join(', ')}). Віднеси нового до однієї з груп — " \
+      "і, якщо він гарячий, перевір, що регекс правила його ловить."
+
+    yaml = YAML.safe_load(File.read(alerts_file), aliases: true)
+    rule = yaml.fetch("groups").flat_map { |g| g.fetch("rules") }
+      .find { |r| r["uid"] == "sn-alert-telemetry-unpruned-lookups" }
+    expr = rule.fetch("data").filter_map { |d| d.dig("model", "expr") }.join(" ")
+    source = expr[/caller=~"([^"]+)"/, 1]
+    expect(source).not_to be_nil, "правило втратило фільтр `caller=~` — тепер пейджить і холодний rollback"
+
+    filter = Regexp.new("\\A(?:#{source})\\z") # PromQL `=~` якориться на обидва кінці
+    labels = ->(names) { names.product(suffixes).map { |c, s| "#{c}:#{s}" } }
+    silent = labels.call(hot).reject { |l| filter.match?(l) }
+    paging = labels.call(cold).select { |l| filter.match?(l) }
+
+    expect(silent).to be_empty,
+      "Регекс `#{source}` НЕ матчить гарячі мітки #{silent.join(', ')} — правило мовчить саме там, " \
+      "де мусить кричати (PromQL `=~` якориться на обидва кінці й розрізняє регістр)."
+    expect(paging).to be_empty, "Регекс `#{source}` пейджить холодний шлях: #{paging.join(', ')}"
+  end
+
   it "the three INF.22 observability metrics are wired to an alert" do
     %w[
       silkennet_anchor_missed_weeks_total

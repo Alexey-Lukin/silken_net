@@ -760,7 +760,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 > - `OracleCallbacksController:missing_created_at_iso` / `:invalid_iso8601` — Chainlink DON callback без `created_at` query param; **hot path → ALERT** (виправити Chainlink Functions JS source).
 > - `MintingRollbackService:missing_created_at_iso` / `:invalid_iso8601` — admin manual rollback; **cold path, acceptable**, але трекати для прозорості.
 >
-> ⚠️ Суфікс `_iso` несе КОЖНА мітка blank-гілки — вона деривується одним рядком у `TelemetryLog.partition_pruned` (`"#{metric_caller}:missing_created_at_iso"`), тож точний PromQL по мітці без суфікса нічого не знайде. Префіксний regex у прикладі нижче цим не зачеплений.
+> ⚠️ Суфікс `_iso` несе КОЖНА мітка blank-гілки — вона деривується одним рядком у `TelemetryLog.partition_pruned` (`"#{metric_caller}:missing_created_at_iso"`), тож точний PromQL по мітці без суфікса нічого не знайде. Фільтр `caller` правила нижче звіряє саме з цими мітками `spec/deploy/grafana_alerts_spec.rb`: PromQL `=~` якориться на обидва кінці, тож регекс без суфікса мовчить.
 >
 > 🔴 **Дзеркало на грошовій моделі з'явилось лише 2026-08-07** (PERF.1): `silkennet_blockchain_transaction_unpruned_lookups_total{caller}` — доти `BlockchainTransaction` деградувала так само, але **МОВЧКИ**, тобто рівно та подія, заради якої лічильник заводили, була невидима там, де скан коштує найдорожче. Мітки: `<caller>:missing_created_at` · `:invalid_created_at` · `:missing_span` · `undeclared:*`, коли викликач себе не назвав. Два викликачі годують її прямо з URL-параметра (`wallets#transaction_status`, `blockchain_transactions#show`), тож битий клієнтський рядок — реальний пускач, не лише забутий аргумент воркера.
 >
