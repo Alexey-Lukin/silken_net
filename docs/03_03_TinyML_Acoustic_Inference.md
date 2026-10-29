@@ -32,7 +32,7 @@
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Wire-ledger: слот `acoustic_events` і TTL-байт ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService` (байт `acoustic_events`) · `AlertDispatchService` (panic-кадр з HW.30 — лише лог) |
-| `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) · `_stub.h` (не включається — §4.1) | `main.c` — з HW.30 без виклику інференсу; INT8 forward-pass — актив без носія на вузлі; партнерська модель — опційний апгрейд |
+| `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) | `main.c` — з HW.30 без виклику інференсу; INT8 forward-pass — актив без носія на вузлі; партнерська модель — опційний апгрейд |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Статус** (SSOT): HW.52 можливий носій (🌿) · закриті (§🗄️): HW.30 зріз пʼєзо (застосовано 2026-09-29) · FW.4 baseline (актив без носія) · FW.18b threshold · FW.25 DSP Path B |
 
 ## 📑 Зміст
@@ -231,7 +231,7 @@ PVD safety, з запасом). Path B має найменшу sum, але рі�
 | Window | **Hann — periodic** (`fftbins=True`, знаменник `N=512`), `win_length=512` | librosa-default; ⚠️ **НЕ `arm_hanning_f32`** (symmetric, знаменник `N−1`) — розійдеться на краях кадру > 1e-3; вшити precomputed periodic-table |
 | DC-removal | **− mean кожного кадру** (перед вікном) | audio нормалізоване в `[0,1)` (велика DC ≈0.5); `melspectrogram(y=audio,…)` цього НЕ робить → обов'язково на ОБОХ сторонах |
 | `hop_length` | **512** (без overlap) | 5 с / 32 мс = **156 кадрів** — точно збігається з 5-с fauna-вікном (§10.5 / ARCH.40); overlap зламав би 156-кадровий Welford |
-| `n_mels` | **40** | = `MODEL_INPUT_SIZE` (stub); ESC-стандарт |
+| `n_mels` | **40** | = `MODEL_INPUT_SIZE` (`silken_net_audio_model.h`); ESC-стандарт |
 | `fmin` / `fmax` | **50 Hz / 8000 Hz** | fmax = Nyquist@16k; покриває комах 4–8 кГц, птахів 1–6, амфібій 0.5–3 (§10) |
 | Mel-scale | **HTK** (`mel = 2595·log₁₀(1 + f/700)`) | замкнена формула для precompute на MCU (Slaney — кусково-лінійна, зайва складність) |
 | Power | **2.0** (`|X|²`) | librosa default; `re² + im²` без sqrt |
@@ -307,8 +307,7 @@ logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, 
 > footprint влізе. ST X-CUBE-AI (нині ST Edge AI) — опція vendor-кодогену для більшої
 > партнерської моделі. Метод — `tools/ml/docs/baseline_model_program.md`.
 
-**Джерело:** `silken_net_audio_model.h` — self-owned baseline ESC-50 (`FW.4`); `_stub.h`
-сьогодні не включає жоден файл (`__has_include` у коді немає).
+**Джерело:** `silken_net_audio_model.h` — self-owned baseline ESC-50 (`FW.4`).
 
 ### 4.2 Класи Виходу (Output Classes)
 
