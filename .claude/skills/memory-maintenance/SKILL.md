@@ -53,6 +53,7 @@ the measurement and the provenance are in the companion. Numbering is append-onl
 20. Нишпорка, що звіряє гачок індексу з тілом, приписує клаузу рядка-ХАБА не тому файлу — і рапортує «гачок обіцяє те, чого в тілі немає», хоч клауза живе в СУСІДА
 21. Step 6A's own instrument lies by default: the corpus routes to the tracker by BARE ID, not by the literal `00_07`
 22. «This file has no line in `MEMORY.md`» is NOT a finding for a `log_*` journal — it is the design
+23. A cited rule number whose generated INDEX line does not match the citation is NOT yet stale — the index carries only the rule's HEAD, and the cited sense often lives in the TAIL of its body
 
 <!-- /MEMORY-TRAPS-INDEX -->
 
