@@ -56,7 +56,7 @@
 | Solid **Cache/Cable** БД (`*_cache/_cable` — Solid Queue pruned, INF.18) | Cloud SQL (той самий інстанс) | той самий backup | 🟢 Низько — регенеровні (cache transient, cable ephemeral; черги живуть у Redis — рядок нижче) |
 | **Terraform state** | GCS `silken-net-terraform-state` (CMEK `silken-tfstate-ew1`, [SEC.22] → [`06_04 §5.6`](06_04_Secrets_Checklist)) | bucket versioning, 10 версій/30д (`S5.6`) | 🟡 Високо — infra drift/lock; відновлюється з версій (усі noncurrent = plaintext-копії секретів, тому retention свідомо короткий) |
 | **`SECRET_KEY_BASE`** (GitHub Secret; = `credentials.secret_key_base`) | GitHub Secrets · ✅ **vault + offline з 2026-09-03** | ручний (password manager) — **виконано 2026-09-03** | 🔴 **Незамінний** — сесії та всі `generates_token_for`-токени; GitHub значень назад не віддає. `RAILS_MASTER_KEY` (`config/master.key`) з 2026-09-02 незамінним НЕ є: vault тримає лише `secret_key_base`, у деплой ключ не їде (SEC.22 Phase-2) |
-| **AR-encryption трійка** (`ACTIVE_RECORD_ENCRYPTION_*`) | ENV + vault + offline ✅ 2026-09-01 | ручний (password manager) | 🔴 **Незамінна третім класом** — без неї `hardware_keys` (device AES / Lorenz-seed) і `users.otp_secret` нечитні назавжди; доти інвентар називав незамінними лише два master-ключі |
+| **AR-encryption трійка** (`ACTIVE_RECORD_ENCRYPTION_*`) | ENV + vault + offline ✅ 2026-09-01 | ручний (password manager) | 🔴 **Незамінна третім класом** — без неї `hardware_keys` (device AES / Lorenz-seed) і `users.otp_secret` нечитні назавжди |
 | **`PROVISIONING_MASTER_KEY`** | secrets store | ручний | 🔴 **Незамінний** — без нього не деривувати нові per-device ключі (вже прошиті пристрої працюють; нове provisioning — ні) |
 | **On-chain state** (SCC/SFC баланси, slashing, anchors) | Polygon / Ethereum L1 | сам блокчейн = immutable backup | 🟢 N/A — мережа є джерелом правди |
 | Oracle/anchor private keys, contract addresses | secrets ([`06_04`](06_04_Secrets_Checklist)) | ручний | 🟡 Високо — redeployable, але disruptive (revoke+redeploy) |
@@ -111,7 +111,7 @@
 
 `SECRET_KEY_BASE` та `PROVISIONING_MASTER_KEY` **не зберігаються** у жодному автоматичному backup (GitHub Secrets значень не віддає, не в БД). Їх втрата незворотна:
 
-- **`SECRET_KEY_BASE`** → усі сесії й кожен `generates_token_for`-токен недійсні. Recovery: нова випадкова value = примусовий вихід усіх користувачів і мертві reset-лінки, не втрата даних. ⚠️ Доти тут стояв `RAILS_MASTER_KEY` з присудом «усі Web3-ключі, HMAC-секрети стають нечитабельними» — vault ніколи їх не тримав (єдиний ключ у ньому — `secret_key_base`), а з 2026-09-02 master-key і в деплой не їде (SEC.22 Phase-2): втрата `config/master.key` = регенерація порожнього vault.
+- **`SECRET_KEY_BASE`** → усі сесії й кожен `generates_token_for`-токен недійсні. Recovery: нова випадкова value = примусовий вихід усіх користувачів і мертві reset-лінки, не втрата даних. ⚠️ `RAILS_MASTER_KEY` до незамінних НЕ належить: vault ніколи не тримав Web3-ключів чи HMAC-секретів (єдиний ключ у ньому — `secret_key_base`), а з 2026-09-02 master-key і в деплой не їде (SEC.22 Phase-2): втрата `config/master.key` = регенерація порожнього vault.
 - **`PROVISIONING_MASTER_KEY`** → HKDF-корінь per-device AES. Втрата: вже прошиті Soldier/Queen працюють (ключі у Flash), але **нове provisioning неможливе** і backend не деривує ключі для replay-перевірки нових пристроїв.
 
 **Процедура (👤, DR.1):** обидва ключі — у password manager / Vault (offline-копія в сейфі для founder-level). Ротація — [`06_04 §5.2`](06_04_Secrets_Checklist).

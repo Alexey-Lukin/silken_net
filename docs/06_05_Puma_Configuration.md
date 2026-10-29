@@ -125,7 +125,7 @@ end
 `cluster do … end` — DSL Puma 8 — явно фіксує що хуки виконуються **лише** в clustered mode. В single mode (`workers 0`, dev) хуки no-op.
 
 - **`before_fork`:** відключає всі ActiveRecord connection pools та Sidekiq Redis pool у master перед fork. Без цього — stale file descriptors у forked workers → socket hijacking. ⚠️ Виняток у цьому хуку Puma друкує в stdout разом із повідомленням, а `URI::InvalidURIError` несе ВЕСЬ URL із креденшелами (виміряно 2026-09-02 на скаліченому `REDIS_URL`); скраб Sentry (`sentry.rb`) на stdout не поширюється → ротація [`06_04 §5`](06_04_Secrets_Checklist).
-- **`before_worker_boot`:** re-establish ActiveRecord connections + `Kredis.connections.clear` у кожному worker після fork. 🔴 **Доти тут стояв `Kredis.clear_all`, і це не синонім, а FLUSHDB** ([INF.22], 2026-08-30): гем гілкується на наявність namespace і без нього спорожняє базу — ту саму, що тримає живі Web3-локи й прапорці circuit-breaker'а. Чистити треба кеш ЗʼЄДНАНЬ (`connections`), а не сховище. ⚠️ **Дефект був ЛАТЕНТНИЙ, і це записано навмисно:** `clear_all` ітерує `connections.each_value`, тобто лише ВЖЕ закешовані зʼєднання, а майстер Puma на буті Kredis не торкається — успадкований хеш порожній, отже викликів до Redis було нуль. Озброївся б у день, коли щось прочитає Kredis-ключ у майстрі або ввімкнуть `fork_worker`. **Перша редакція цього рядка стверджувала, що воно «вимивало» локи на кожному деплої — це домисел, а не вимір** (гілку `flushdb` у гемі прочитали, досяжність не перевірили); поправка лишається тут, бо саме такий вигляд має підстава, вигадана заднім числом під правильний висновок.
+- **`before_worker_boot`:** re-establish ActiveRecord connections + `Kredis.connections.clear` у кожному worker після fork. 🔴 **НЕ `Kredis.clear_all` — це не синонім, а FLUSHDB** ([INF.22], 2026-08-30): гем гілкується на наявність namespace і без нього спорожняє базу — ту саму, що тримає живі Web3-локи й прапорці circuit-breaker'а. Чистити треба кеш ЗʼЄДНАНЬ (`connections`), а не сховище. ⚠️ **Дефект був ЛАТЕНТНИЙ, і це записано навмисно:** `clear_all` ітерує `connections.each_value`, тобто лише ВЖЕ закешовані зʼєднання, а майстер Puma на буті Kredis не торкається — успадкований хеш порожній, отже викликів до Redis було нуль. Озброївся б у день, коли щось прочитає Kredis-ключ у майстрі або ввімкнуть `fork_worker`. **Перша редакція цього рядка стверджувала, що воно «вимивало» локи на кожному деплої — це домисел, а не вимір** (гілку `flushdb` у гемі прочитали, досяжність не перевірили); поправка лишається тут, бо саме такий вигляд має підстава, вигадана заднім числом під правильний висновок.
 
 ---
 
@@ -149,7 +149,7 @@ env["rack.response_finished"] << ->(_env, _status, _headers, _error) {
 
 ## 🌐 IO-bound позначення запитів — ЗНЯТО [ARCH.80]
 
-✅ **Присуд власника 2026-08-14: `MarkWeb3RequestsAsIoBound` видалено разом з обома його шляхами.** Тут доти жив опис живого механізму; збережено як запис про зняття, бо `max_io_threads` у `puma.rb` лишається налаштованим і наступний читач мусить розуміти, чому бонус недосяжний.
+✅ **Присуд власника 2026-08-14: `MarkWeb3RequestsAsIoBound` видалено разом з обома його шляхами.**
 
 **Що було:** Puma 8.0+ виставляє `env["puma.mark_as_io_bound"]` — лямбду, після виклику якої thread переходить у IO-bound режим і може породжувати нові threads понад `max_threads`. Middleware кликав її для двох шляхів: `POST /api/v1/oracle_callbacks` і `POST /provisioning/register`.
 
