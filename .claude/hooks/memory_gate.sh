@@ -1191,6 +1191,35 @@ RUBY
   return 0
 }
 
+# DOC-T.120 index form, the half nobody carried: a journal that DECLARES itself a hub's twin
+# («Тіла рядків хаба [[hub]] за номером (N), дослівно») promises a body (N) for EVERY numbered
+# row of that hub. The recipe lives in the memory-maintenance skill and is read when a
+# CONVERSION starts, but a new rule is appended to a hub at the end of some other session —
+# so the body half had no carrier at that moment. Measured 2026-10-29: 24 rows in 11 hubs had
+# no body, every one a paragraph 1.5–4.4× its hub's median, i.e. the hub sliding back into the
+# anthology genre the form exists to prevent; precision 24/24, base zero after the fix.
+# Marker forms counted: `**(N)**` · `**(N) ⊕` · `**(N⊕)` · `**(N) <text>**` — the exact-form
+# regex the first count used invented two findings, so the variants are pinned (33f).
+twin_parity_check() {
+  [ -n "$RB" ] || return 0
+  "$RB" - "$MEM_DIR" <<'RUBY'
+dir = ARGV[0]
+Dir[File.join(dir, "log_*.md")].sort.each do |lf|
+  t = File.read(lf)
+  m = t.match(/Тіла рядків хаба `?\[\[([a-zA-Z0-9_-]+)\]\]/) or next
+  hub = File.join(dir, "#{m[1]}.md")
+  next unless File.exist?(hub)
+  bodies = t.scan(/\*\*\((\d+[a-z]?)\s*⊕?\s*\)/).flatten.uniq
+  File.read(hub).lines.grep(/\A(\d+[a-z]?)\. /) { $1 }.uniq.each do |n|
+    next if bodies.include?(n)
+    puts "TWINLESS #{m[1]}.md ##{n} — this row has no body (#{n}) in its declared twin [[#{File.basename(lf, '.md')}]]: " \
+         "DOC-T.120 puts the body in the twin VERBATIM and keeps the hub row an index line — body first, then the row"
+  end
+end
+RUBY
+  return 0
+}
+
 # The package registry is the THIRD address book of the corpus (beside the index and the
 # [[strings]]), and the only one the start ritual reads (00_05 §3 крок 1, DOC-T.120). It
 # rots the way the other two do — a rename or a delete that never reaches it — plus one
@@ -3045,6 +3074,17 @@ printf -- '---\nname: log_hubx\ndescription: "L"\nmetadata:\n  type: project\n--
 printf -- '---\nname: log_other\ndescription: "O"\nmetadata:\n  type: project\n---\n\n%s Rule home: [[feedback_hubx]]\n' "$_st_par" >"$d/log_other.md"
 _st_check "a router to the hub reaches its declared twin (no OVERLAP)" reject 'OVERLAP'
 
+# 33d-33f [DOC-T.120 parity] Every numbered row of a hub has a body (N) in its declared twin.
+# 33f pins the marker VARIANTS: an exact-form `**(N)**` regex invented findings on day one.
+_st_hubp='---\nname: feedback_hubp\ndescription: "H"\nmetadata:\n  type: feedback\n---\n\n1. **One:** x.\n2. **Two:** y.\n'
+_st_logp='---\nname: log_hubp\ndescription: "L"\nmetadata:\n  type: project\n---\n\nТіла рядків хаба [[feedback_hubp]] за номером `(N)`, дослівно (DOC-T.120).\n\n**(1)** Body one.\n'
+_st_build "$d"; printf -- "$_st_hubp" >"$d/feedback_hubp.md"; printf -- "$_st_logp" >"$d/log_hubp.md"
+_st_check "TWINLESS on a hub row whose declared twin carries no body (N)" expect 'TWINLESS feedback_hubp.md #2'
+_st_build "$d"; printf -- "$_st_hubp" >"$d/feedback_hubp.md"; printf -- "$_st_logp" >"$d/log_hubp.md"; printf '\n**(2)** Body two.\n' >>"$d/log_hubp.md"
+_st_check "a hub whose twin carries every body is silent (no TWINLESS)" reject 'TWINLESS'
+_st_build "$d"; printf -- "$_st_hubp" >"$d/feedback_hubp.md"; printf -- "$_st_logp" >"$d/log_hubp.md"; printf '\n**(2) ⊕** Addendum-form body two.\n' >>"$d/log_hubp.md"
+_st_check "a variant marker (N) ⊕ counts as the body (no TWINLESS)" reject 'TWINLESS'
+
   # RUBY RESOLUTION. The class these pin is not "a check is wrong" but "a check
   # did not run and the battery said OK" — the failure that hid for weeks
   # because CI installs `.ruby-version` while the hook takes whatever PATH
@@ -3112,7 +3152,7 @@ case "${1:-}" in
     # check actually EXECUTED — so state the precondition before reading it.
     out=$( { [ -n "$RB" ] || rb_dark "ten checks"
              override_check; index_check; harness_wall_check; desc_check; corpus_floor_check; integrity_check
-             unstrung_check; asset_check; package_check
+             unstrung_check; asset_check; package_check; twin_parity_check
              overlap_check; section_ref_check; canon_section_check
              skill_item_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; mojibake_check "$f"; done; } )
@@ -3483,6 +3523,8 @@ RUBY
               asset_check
               # A new home is WRITTEN here; this is the one moment it can still be packed.
               package_check
+              # A rule row is APPENDED to a hub here — the one moment its body still has a carrier.
+              twin_parity_check
               # Runs on BOTH stances (the UNSTRUNG lesson): severing a section a
               # string points at happens WHILE rewriting, not while auditing. The
               # corpus is at zero here, so any output is this write's own trace.
