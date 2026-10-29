@@ -3,7 +3,8 @@
 
 Every knob lives here so a run is reproducible from a single frozen object (its ``hash()``
 is stamped into the run manifest). See ``tools/ml/docs/baseline_model_program.md`` §2–3.
-Class IDs MUST match ``ML_CLASS_*`` in ``firmware/soldier/silken_net_audio_model.h`` (canon docs/03_03 §4.2).
+``silken_ml.export`` emits ``ML_CLASS_*`` of ``firmware/soldier/silken_net_audio_model.h`` from ``CLASS_NAMES``
+(canon docs/03_03 §4.2).
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass
 
-# Class IDs — order must match ML_CLASS_* in the emitted firmware model header.
+# Class IDs — the one source: silken_ml.export emits ML_CLASS_* from this tuple.
 CLASS_NAMES = ("silence", "wind", "cavitation", "chainsaw", "fauna")
 NUM_CLASSES = 5
 

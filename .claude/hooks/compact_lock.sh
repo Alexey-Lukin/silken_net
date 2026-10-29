@@ -28,7 +28,11 @@
 # hands its whole SKILL.md back yet does not disarm — only a Read does; and an edit
 # made through Bash (a script, `sed -i`, `ruby`) never meets the lock at all, because
 # the lock stands on Edit|Write — so a session that edits by script after a compaction
-# is exactly the case the lock was built for and one it cannot see.
+# is exactly the case the lock was built for and one it cannot see. And the marker is
+# keyed on `session_id`, which a subagent shares with its parent (its transcript carries
+# the parent's id; one denial was seen in a subagent that never compacted — what armed
+# it was not established): a subagent's edit can spend the parent's one stop, and a
+# subagent's Read of a skill file can disarm it.
 set -uo pipefail
 
 REPO=$(cd "$(dirname "$0")/../.." && pwd)

@@ -130,7 +130,7 @@ not the real signal**: true xylem-cavitation acoustic emission is ultrasonic 25�
 1983; `UNI.11`), **beyond this chain's 16 kHz / Nyquist-8**, so `gen_cavitation` synthesises 5–8 kHz
 clicks *under the Nyquist ceiling*, not from physics — the class trains a low-freq structural proxy,
 never true AE (real detection needs a dedicated high-rate channel / v3). A future partner CNN is a
-drop-in header swap — the only consumer of the model header today is the host test (`03_03 §4.1`).
+drop-in header swap — the only consumer of the model header today is the host test (`03_03 §3.4`).
 
 ## Two ML domains — keep the boundary
 

@@ -27,6 +27,7 @@ from pathlib import Path
 import numpy as np
 
 from ..codegen.emit_c import c_float
+from ..data.config import CLASS_NAMES
 from ..dsp.contract import contract_hash
 from ..models import ModelConfig
 
@@ -207,7 +208,7 @@ def int8_accuracy(p: dict, X: np.ndarray, y: np.ndarray) -> float:
 
 
 # ── C header emission ─────────────────────────────────────────────────────────
-_CLASS_NAMES = ("SILENCE", "WIND", "CAVITATION", "CHAINSAW", "FAUNA")
+_CLASS_NAMES = tuple(n.upper() for n in CLASS_NAMES)
 
 _FORWARD_C = r"""/* === gemmlowp fixed-point requantize (bit-mirror of silken_ml.export) === */
 static inline int32_t snam_srdhm(int32_t a, int32_t b) {

@@ -135,8 +135,8 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 
 ## 4. Інтеграція у firmware
 
-> ⚠️ **HW.30 (2026-09-29): інтеграцію відкочено.** Живим лишився лише крок 1 (заголовок як
-> актив) і паритет `test_audio_model.c`. Кроки 2 і 4 зняті разом із пʼєзо: call-site
+> ⚠️ **HW.30 (2026-09-29): інтеграцію відкочено.** Від кроку 1 живий лише заголовок як актив
+> (механізму `__has_include` і `_stub.h` у дереві немає) і паритет `test_audio_model.c`. Кроки 2 і 4 зняті разом із пʼєзо: call-site
 > `Run_Inference` і `#include logmel.h` вирізано з `main.c`, decision-тести #6/#7 і
 > `test_tinyml_pipeline.c` пішли з decision-логікою; для кроку 3 arena на Солдата не лягає
 > (шапка `firmware/scripts/check_ram_budget.sh`). Список нижче — як інтеграцію виконували.
