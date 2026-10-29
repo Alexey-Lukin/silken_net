@@ -159,12 +159,17 @@ module Api
           return
         end
 
-        @command = @actuator.commands.create!(
+        @command = @actuator.commands.new(
           user: current_user,
           command_payload: params[:action_payload],
           duration_seconds: params[:duration_seconds],
           status: :issued
         )
+        # [DOC-T.127] Відмова валідації — 422 з `errors`, не `create!` → `RecordInvalid` →
+        # `rescue_from StandardError` → 500 (відсутня тривалість, тривалість понад ліміт
+        # актуатора). Невдалий `save` не комітить, тож `dispatch_to_edge!` не біжить,
+        # а кеш ідемпотентності пишеться лише в гілці успіху нижче.
+        return render_validation_error(@command) unless @command.save
 
         # Команда автоматично диспетчеризується через after_commit :dispatch_to_edge!
 

@@ -125,6 +125,36 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       expect(response.parsed_body["command_id"]).to be_present
     end
 
+    # [DOC-T.127] Відмова ВАЛІДАЦІЇ — 422, не 500. `create!` ніс `RecordInvalid` у
+    # `rescue_from StandardError`, тож API-клієнт без `duration_seconds` чи з тривалістю
+    # понад ліміт актуатора діставав 500 — а `04_03` сам каже, що `RecordInvalid`, який
+    # долетів до бази, є пропущеним гардом. Ключ — `errors` (масив, гілка валідації), не
+    # `error` (рядок, guard-гілки вище): гоча `backend` #25a, тож обидва ключі пінимо.
+    it "rejects a command without duration_seconds with 422 and creates nothing" do
+      expect do
+        post "/actuators/#{own_actuator.id}/execute",
+             params: { action_payload: "OPEN_VALVE" },
+             headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+      end.not_to change(ActuatorCommand, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"]).to be_an(Array).and(be_present)
+      expect(response.parsed_body).not_to have_key("error")
+    end
+
+    # Ліміт звужено на САМОМУ актуаторі: фабрика ставить його рівним загальній стелі
+    # `MAX_DURATION_S`, і тоді приклад судив би `numericality`, а не safety envelope.
+    it "rejects a duration beyond the actuator's own safety envelope with 422" do
+      own_actuator.update!(max_active_duration_s: 60)
+
+      post "/actuators/#{own_actuator.id}/execute",
+           params: { action_payload: "OPEN_VALVE", duration_seconds: 61 },
+           headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"].join).to include("60")
+    end
+
     it "returns conflict when actuator already has pending command" do
       silence_side_effects!(:actuator_dispatch)
       own_actuator.commands.create!(
