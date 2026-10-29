@@ -12,7 +12,7 @@ Navigation aid — the **SSOT is the code + docs below**; this skill points, it 
 
 | Document | What it covers |
 |----------|---------------|
-| `docs/03_06_Factory_Flashing_and_Key_Provisioning.md` | THE factory home (split from 03_05 §3.4): pipeline Гілки A/B, HKDF per-device derivation, the OTA-seal public key (KPUB, FW.23 — protocol §4), §5 ops-security (2-Person Rule, master-key delivery variants, SEC.3 status) |
+| `docs/03_06_Factory_Flashing_and_Key_Provisioning.md` | THE factory home: pipeline Гілки A/B, HKDF per-device derivation, the OTA-seal public key (KPUB, FW.23 — protocol §4), §5 ops-security (2-Person Rule, master-key delivery variants, SEC.3 status) |
 | `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` | Crypto modes, SE050 (SEC.6), key rotation, RDP (SEC.2) |
 | `docs/00_07_Action_Plan_Tracker.md` | `SEC.3` (bench SWD + Bitwarden live — residuals), `SEC.2` (RDP Level 2) |
 

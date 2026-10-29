@@ -18,7 +18,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 | `docs/03_03_TinyML_Acoustic_Inference.md` | **Parked since HW.30 (2026-09-29):** the model, the INT8 forward-pass (NOT CMSIS-NN) and the log-mel contract are an asset with NO Soldier call-site; the design history it still carries (the DSP-path decision matrix §3.2) is marked as such by its header; the Soldier fauna session, the decision logic and the DR13/DR14 thresholds have left the canon for git, and §10 keeps only the fauna source and what a revival on a site carrier would need (§10.5) |
 | `docs/03_04_mruby_Lorenz_Attractor.md` | **CCM-era contract without Lorenz — §8** (what the device computes ⊥ what the server does; FW.66 (Б)); ECB-era: Lorenz constants (§1.2; Z-thresholds §4.1), Float-not-BigDecimal parity, RTC continuation vs cold-start (§2.1), Status-byte packing (§4.4) |
 | `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` | AES modes, key rotation (FW.17), SE05x secure element (baseline SE051C2; SEC.6 + SEC.14 provisioning-only — KEYL stays in Protected Flash; ATECC608B = banner-legacy pattern), IV, QATT wire (§2.2), PQC roadmap |
-| `docs/03_06_Factory_Flashing_and_Key_Provisioning.md` | Factory home (split from 03_05 §3.4): HKDF per-device derivation, K_seed, OTA seal (Ed25519, FW.23 §4), flashing pipeline + ops-security (SEC.3 §5) |
+| `docs/03_06_Factory_Flashing_and_Key_Provisioning.md` | Factory home: HKDF per-device derivation, K_seed, OTA seal (Ed25519, FW.23 §4), flashing pipeline + ops-security (SEC.3 §5) |
 | `docs/00_07_Action_Plan_Tracker.md` | FW.*/SEC.* task status, open items (canonical home of blockers) |
 
 ## Gotchas Not Obvious From Docs
