@@ -82,7 +82,7 @@ module DocsLinter
         unless named
           out << "00_03 §1: module #{mod} row #{cur} is ABOVE its lowest member #{minm} (#{low.map { |d| d[0, 5] }.join(", ")}) " \
                  "and the blocker cell names none of them — the row IS the minimum by §1, so a higher row is " \
-                 "legitimate only when the cell says WHICH doc gates and why (the 06 row is the reference form)"
+                 "legitimate only when the cell says WHICH doc gates and why (the 02 row is the reference form)"
         end
       end
     end
