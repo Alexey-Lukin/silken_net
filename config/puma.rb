@@ -17,8 +17,8 @@
 # Infrastructure targets:
 #   Kamal (GCP):  the only target. deploy.yml pins WEB_CONCURRENCY=2 — and since
 #                 [OPS.37] that stopped being a conservative fallback default and
-#                 became the SPEC of the app host, so it moves together with the
-#                 machine when terraform regains the web resource. The separate
+#                 became the SPEC of the app host, so it moves together with that
+#                 machine (`google_compute_instance.app`). The separate
 #                 e2-small Ingress Anchor runs no Puma (CoAP daemon + HAProxy only —
 #                 terraform/compute.tf).
 #

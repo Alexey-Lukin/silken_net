@@ -168,9 +168,9 @@
 
 ## 🔒 6. Slashing Policy — філософія (канон → 05_05)
 
-Slashing у SilkenNet — це **покарання за халатність/зловмисність, а не за стихію**: якщо ліс згорів від блискавки, спалювати токени клієнта = карати жертву. Тому причини деградації діляться на **A. Negligence** (slashing активний), **B. Force Majeure** (страхування, без burn) і **C. Indeterminate** (заморозка + DAO peer-review). Фінансовий вирок **ніколи** не спирається лише на Z-Лоренца — потрібен ≥1 прямий некорельований сигнал.
+Slashing у SilkenNet — це **покарання за халатність/зловмисність, а не за стихію**: якщо ліс згорів від блискавки, спалювати токени клієнта = карати жертву. Тому причини деградації діляться на **A. Negligence** (slashing активний), **B. Force Majeure** (страхування, без burn) і **C. Indeterminate** (вирок заморожено + DAO peer-review). Фінансовий вирок **ніколи** не спирається лише на Z-Лоренца — потрібен ≥1 прямий некорельований сигнал.
 
-> Повна політика — категоризація A/B/C, прогресивна формула (`damage_ratio^GAMMA`), operator-bond, insurance, anti-fraud cross-checks і multi-signal de-risk — живе в [`05_05` — Slashing & Risk Policy](05_05_Slashing_and_Risk_Policy).
+> Повна політика — категоризація A/B/C, прогресивна формула (`damage_ratio^GAMMA`), insurance, anti-fraud cross-checks і multi-signal de-risk — живе в [`05_05` — Slashing & Risk Policy](05_05_Slashing_and_Risk_Policy).
 
 ---
 
