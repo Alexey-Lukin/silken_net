@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 380 · 28,105,072 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 380 · 28,104,985 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -103,7 +103,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/52_z_stack_tolerance.py` | `618f8f977f2c9dcaabdb142281b7c97e2c8b0b72982506b0b3aa2c418e6cfb35` | Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs). |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4478077492c51936376836ad377739348e119abe4302ce5c490f84dc396f9733` | Per-alloy native-oxide tunnelling model: direct-electron-transfer feasibility across the candidate anchor alloys. |
 | `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `b95c67309b8bce54b570fb5551a430cd412c8f1367f4648e06a8784c5ca7c689` | Axial thermal bridge of the central bus conductor through the anchor's PEEK thermal break. |
-| `tools/in_silico/scripts/55_bus_mechanical.py` | `12126df73dfef6139ffb2d664009a927aa3917eedb18075d5d7b99b43607e4a5` | Mechanical check of the central bus rod: buckling and sway fatigue. |
+| `tools/in_silico/scripts/55_bus_mechanical.py` | `040cf52b5deafea296f05059b798e35f151e1b5052f041902879ca034a62dc79` | Mechanical check of the central bus rod: buckling and sway fatigue. |
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `540c96b92a3d8b411b7b321f13a730a123eb6c19533a49eec2aaebf67f7fa9e8` | Unified thick-wall Lamé model: press-fit interference and thermal mismatch in one model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `c499587651ab9c61db0d8fafea1f711708622ee75808a73f57304504f29ba8d2` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `019c603112ff0c5363a0a6a44ecacc40868d69a9f5420bec569780db0b903a26` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |

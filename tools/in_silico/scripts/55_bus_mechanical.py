@@ -211,11 +211,10 @@ def lock_insertion_window_mm() -> tuple[float, float]:
 
     ⚖️ 2026-09-18 (00_07 HW.26, «Ціна»): the upper end used to be the near flank of the DIN-471 groove —
     deeper, the ring could not be fitted once pressed — but NO ring is fitted as a backup on either end any
-    more, so a groove bounds nothing, including the Zone-1 groove that stays in the geometry until G1/G3.
-    What is left is the extent of the lock itself, and on Zone 1 nothing in the tree stops the mouth there:
-    past it the mouth leaves the geometry this manifest describes, which IS the G1 conflict to report.
-    Since G1 (⚖️ 2026-10-12) `shank_length_mm` is the PHYSICAL Zone-1 shank, and the shipped insertion is this upper
-    end. Mirrors `MechanicalLock.InsertionWindowMm`
+    more, so a groove bounds nothing, including the Zone-1 groove that stays in the geometry until G3.
+    What is left is the extent of the lock itself: on Zone 1 the PRESS FIXTURE stops the mouth there, not the
+    part (⚖️ G1 2026-10-12, 01_01 §4.3 A), so `shank_length_mm` is the PHYSICAL Zone-1 shank and the shipped
+    insertion is this upper end. Mirrors `MechanicalLock.InsertionWindowMm`
     (tools/cad) BY VALUE: the formula's one home is there, pinned by `MechanicalLockTests`, and nothing binds
     this line to it."""
     lock = cem("mechanical_lock.zone1")

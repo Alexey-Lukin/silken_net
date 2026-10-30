@@ -153,6 +153,8 @@ internal static class MechanicalLock
     //         part (⚖️ G1 2026-10-12, 01_01 §4.3 A) — so the shipped insertion IS this Max, and `verify` prints both.
     // ⛔ Declared ceiling: nominal dims only — no depth tolerance of a force-controlled press, no chamfer at
     //    the mouth. The Zone-1 `shank_length_mm` is the physical shank since G1 (branch (А)), so its Max is the anode's.
+    // ⚠️ Mirrored BY VALUE in `tools/in_silico/scripts/55_bus_mechanical.py` (`lock_insertion_window_mm`): no gate
+    //    spans the pair, so a verdict that moves this window or the prose above edits both.
     internal readonly record struct InsertionWindow(float MinMm, float MaxMm);
 
     public static InsertionWindow InsertionWindowMm(MechanicalLockCem cem)
