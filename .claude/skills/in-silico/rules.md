@@ -107,6 +107,6 @@
 
 44. **A DATA attribution with no DOI and no artifact in the tree is an ASSUMPTION and is labelled one** (as `tools/in_silico/lib/xylem_sap.py` now labels its Pinus sylvestris profile).
 
-45. **The same question for an INSTRUMENT: a canon number that cites a script must have its run in the tree — ask «where are its script and its cache?»**
+45. **The same question for an INSTRUMENT: a canon number that cites a script must have its run in the tree — ask «where are its script and its cache?»** ⊕ **A number a REVIEW computed is the same class, and the review is its witness, not its home** (2026-10-30, `00_07` HW.5.IS, коміт Г): the refutation pass of `stattia1_self_review_round2` printed the K8 numbers — the out-of-plane probe at the computed λ(Co), a downhill-ΔG threshold, the orbital pick at the window edge — and no script or cache in the tree holds them. A commit that carries such a number into the paper opens with the instrument (re-run with the record: window, picks, ⟨S²⟩ — §When Modifying #49), never with the text; caught while planning that commit, before a word of it was written.
 
 46. **Check each reference for the error classes already caught here — a wrong year, a wrong lead author, a result credited to the wrong group.** Catches: wrong-year, wrong-author (Solomon was LAST author → cite Lee et al.), mis-attribution (the FAD-GDH E° scaffold said «Sygmund/Bioelectrochem»; truth = Schachinger/Ma/Ludwig, *Electrochem. Commun.*). Final ACS-numbered list = a mechanical last pass in a reference manager (founder's step).
