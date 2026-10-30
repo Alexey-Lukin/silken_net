@@ -1,0 +1,509 @@
+{
+ "script": "113_os_series_vs_lever.py",
+ "question": "① П4 (г) — on which side of Lever's additive E_L prediction do the computed and the measured per-substituent shifts of E°(Os III/II) fall, per line and band?",
+ "source": {
+  "title": "Electrochemical Parametrization of Metal Complex Redox Potentials, using the Ruthenium(III)/Ruthenium(II) Couple to generate a Ligand Electrochemical Series",
+  "author": "A. B. P. Lever",
+  "document": "Office of Naval Research Technical Report No. 27, York University",
+  "dated": "10/8/89 (Table 2) · 10/17/89 (Table 1)",
+  "published_as": "Inorg. Chem. 1990, 29, 1271–1285, doi:10.1021/ic00331a030 (paper ref 23; Crossref 2026-10-30)",
+  "read": "2026-10-30, page images of the scan (Table 1 at 300 dpi); the version of record was NOT read"
+ },
+ "copy": {
+  "host": "academia.edu upload of the scanned report",
+  "pages": 54,
+  "sha256": "9abbd839b0fde08994fdd415563b606e5b050e1ed92f4cc02b9a487938d11730"
+ },
+ "convention": "each bipyridine counts twice (report p. 4, eq. 3); four substituents per complex, one per site",
+ "E_L_V_vs_NHE": {
+  "bpy": {
+   "E_L": 0.259,
+   "printed_to": 0.001,
+   "where": "2,2'-Bipyridine {94}, report p. 15"
+  },
+  "dmbpy": {
+   "E_L": 0.23,
+   "printed_to": 0.01,
+   "where": "2,2-Bipyridine, 4,4-dimethyl (4,4-Me2bpy), report p. 15"
+  },
+  "br2bpy": {
+   "E_L": 0.28,
+   "printed_to": 0.01,
+   "where": "2,2-Bipyridine, 4,4'-dibromo (4,4-Br2bpy), report p. 15"
+  },
+  "no2_mono": {
+   "E_L": 0.3,
+   "printed_to": 0.01,
+   "where": "2,2-Bipyridine, 4-nitro, report p. 15"
+  }
+ },
+ "os_iii_ii_lines": {
+  "water": {
+   "S_M": 1.61,
+   "S_M_se": 0.05,
+   "I_M": -1.3,
+   "I_M_se": 0.11,
+   "n": 18
+  },
+  "organic": {
+   "S_M": 1.01,
+   "S_M_se": 0.02,
+   "I_M": -0.4,
+   "I_M_se": 0.11,
+   "n": 80
+  }
+ },
+ "transfers": {
+  "L1": "4-nitro-bpy (mono) for 4,4'-(NO2)2-bpy: additivity within the ligand, k = 2",
+  "L2": "4,4'-Br2-bpy for 4,4'-Cl2-bpy: a halogen of the same σp (0.23; Br's unchecked), not Cl's own E_L",
+  "L3": "the water line is defined for net-charge 2+ species (report p. 10); every aqueous reading here (ours, ref 8, ampy) is a +1 Os(II) complex"
+ },
+ "bands": {
+  "rounding": "half the last printed digit of each E_L",
+  "half_range": "±0.01 V per E_L — one complex typically within half the usual 20 mV range between complexes (report p. 4)",
+  "range": "±0.02 V per E_L — that usual maximum",
+  "always": "bpy (94 compounds) keeps its rounding; summed linearly; S_M's SE and the water scatter left out"
+ },
+ "witness": "page images; Table 1 re-read at 300 dpi 2026-10-30 (a 130-dpi read had taken Br2bpy's 0.28 for 0.26)",
+ "pairs": [
+  {
+   "pair": "dmbpy-bpy",
+   "lever_rows": [
+    "dmbpy",
+    "bpy"
+   ],
+   "k": 1,
+   "transfer": null,
+   "lever": {
+    "water": {
+     "shift_V": -0.04669,
+     "rounding_band_V": [
+      -0.055545000000000004,
+      -0.037835
+     ],
+     "half_range_band_V": [
+      -0.06359500000000001,
+      -0.029785
+     ],
+     "range_band_V": [
+      -0.07969500000000002,
+      -0.013684999999999996
+     ],
+     "half_range_all_band_V": [
+      -0.07889,
+      -0.014490000000000003
+     ]
+    },
+    "organic": {
+     "shift_V": -0.029289999999999997,
+     "rounding_band_V": [
+      -0.034844999999999994,
+      -0.023734999999999996
+     ],
+     "half_range_band_V": [
+      -0.039895,
+      -0.018684999999999993
+     ],
+     "range_band_V": [
+      -0.049995,
+      -0.008584999999999995
+     ],
+     "half_range_all_band_V": [
+      -0.04948999999999999,
+      -0.009089999999999997
+     ]
+    }
+   },
+   "computed_b3lyp_V": -0.03721399974946138,
+   "measured_V": {
+    "mecn_tris": -0.015000000000000005,
+    "pvi_ref8": -0.027749999999999997
+   },
+   "sides": {
+    "ours": {
+     "water": {
+      "rounding": "above",
+      "half_range": "inside",
+      "range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "rounding": "below",
+      "half_range": "inside",
+      "range": "inside",
+      "half_range_all": "inside"
+     }
+    },
+    "mecn_tris": {
+     "water": {
+      "rounding": "above",
+      "half_range": "above",
+      "range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "rounding": "above",
+      "half_range": "above",
+      "range": "inside",
+      "half_range_all": "inside"
+     }
+    },
+    "pvi_ref8": {
+     "water": {
+      "rounding": "above",
+      "half_range": "above",
+      "range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "rounding": "inside",
+      "half_range": "inside",
+      "range": "inside",
+      "half_range_all": "inside"
+     }
+    }
+   }
+  },
+  {
+   "pair": "cl-bpy",
+   "lever_rows": [
+    "br2bpy",
+    "bpy"
+   ],
+   "k": 1,
+   "transfer": "L2",
+   "lever": {
+    "water": {
+     "shift_V": 0.033810000000000034,
+     "rounding_band_V": [
+      0.024955000000000033,
+      0.042665000000000036
+     ],
+     "half_range_band_V": [
+      0.01690500000000003,
+      0.05071500000000004
+     ],
+     "range_band_V": [
+      0.0008050000000000279,
+      0.06681500000000004
+     ],
+     "half_range_all_band_V": [
+      0.001610000000000035,
+      0.06601000000000004
+     ]
+    },
+    "organic": {
+     "shift_V": 0.02121000000000002,
+     "rounding_band_V": [
+      0.01565500000000002,
+      0.02676500000000002
+     ],
+     "half_range_band_V": [
+      0.010605000000000019,
+      0.031815000000000024
+     ],
+     "range_band_V": [
+      0.0005050000000000193,
+      0.04191500000000002
+     ],
+     "half_range_all_band_V": [
+      0.0010100000000000213,
+      0.041410000000000016
+     ]
+    }
+   },
+   "computed_b3lyp_V": 0.041897373654162795,
+   "measured_V": {
+    "pvi_ref8": 0.01725
+   },
+   "sides": {
+    "ours": {
+     "water": {
+      "rounding": "inside",
+      "half_range": "inside",
+      "range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "rounding": "above",
+      "half_range": "above",
+      "range": "inside",
+      "half_range_all": "above"
+     }
+    },
+    "pvi_ref8": {
+     "water": {
+      "rounding": "below",
+      "half_range": "inside",
+      "range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "rounding": "inside",
+      "half_range": "inside",
+      "range": "inside",
+      "half_range_all": "inside"
+     }
+    }
+   }
+  },
+  {
+   "pair": "cl-dmbpy",
+   "lever_rows": [
+    "br2bpy",
+    "dmbpy"
+   ],
+   "k": 1,
+   "transfer": "L2",
+   "lever": {
+    "water": {
+     "shift_V": 0.08050000000000003,
+     "rounding_band_V": [
+      0.06440000000000003,
+      0.09660000000000003
+     ],
+     "half_range_band_V": [
+      0.04830000000000003,
+      0.11270000000000002
+     ],
+     "range_band_V": [
+      0.01610000000000003,
+      0.14490000000000003
+     ],
+     "half_range_all_band_V": [
+      0.04830000000000003,
+      0.11270000000000002
+     ]
+    },
+    "organic": {
+     "shift_V": 0.05050000000000002,
+     "rounding_band_V": [
+      0.04040000000000002,
+      0.060600000000000015
+     ],
+     "half_range_band_V": [
+      0.030300000000000018,
+      0.07070000000000001
+     ],
+     "range_band_V": [
+      0.010100000000000019,
+      0.09090000000000001
+     ],
+     "half_range_all_band_V": [
+      0.030300000000000018,
+      0.07070000000000001
+     ]
+    }
+   },
+   "computed_b3lyp_V": 0.07911137340362417,
+   "measured_V": {
+    "pvi_ref8": 0.045,
+    "aqueous_ampy": 0.036250000000000004
+   },
+   "sides": {
+    "ours": {
+     "water": {
+      "rounding": "inside",
+      "half_range": "inside",
+      "range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "rounding": "above",
+      "half_range": "above",
+      "range": "inside",
+      "half_range_all": "above"
+     }
+    },
+    "pvi_ref8": {
+     "water": {
+      "rounding": "below",
+      "half_range": "below",
+      "range": "inside",
+      "half_range_all": "below"
+     },
+     "organic": {
+      "rounding": "inside",
+      "half_range": "inside",
+      "range": "inside",
+      "half_range_all": "inside"
+     }
+    },
+    "aqueous_ampy": {
+     "water": {
+      "rounding": "below",
+      "half_range": "below",
+      "range": "inside",
+      "half_range_all": "below"
+     },
+     "organic": {
+      "rounding": "below",
+      "half_range": "inside",
+      "range": "inside",
+      "half_range_all": "inside"
+     }
+    }
+   }
+  },
+  {
+   "pair": "no2-bpy",
+   "lever_rows": [
+    "no2_mono",
+    "bpy"
+   ],
+   "k": 2,
+   "transfer": "L1",
+   "lever": {
+    "water": {
+     "shift_V": 0.13201999999999994,
+     "rounding_band_V": [
+      0.11430999999999994,
+      0.14972999999999995
+     ],
+     "half_range_band_V": [
+      0.09820999999999994,
+      0.16582999999999995
+     ],
+     "range_band_V": [
+      0.06600999999999993,
+      0.19802999999999996
+     ],
+     "half_range_all_band_V": [
+      0.06761999999999994,
+      0.19641999999999993
+     ]
+    },
+    "organic": {
+     "shift_V": 0.08281999999999996,
+     "rounding_band_V": [
+      0.07170999999999997,
+      0.09392999999999996
+     ],
+     "half_range_band_V": [
+      0.061609999999999956,
+      0.10402999999999997
+     ],
+     "range_band_V": [
+      0.04140999999999996,
+      0.12422999999999997
+     ],
+     "half_range_all_band_V": [
+      0.042419999999999965,
+      0.12321999999999997
+     ]
+    }
+   },
+   "computed_b3lyp_V": 0.18307539667032957,
+   "measured_V": {},
+   "sides": {
+    "ours": {
+     "water": {
+      "rounding": "above",
+      "half_range": "above",
+      "range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "rounding": "above",
+      "half_range": "above",
+      "range": "above",
+      "half_range_all": "above"
+     }
+    }
+   }
+  }
+ ],
+ "relaxed_ours": {
+  "cl-bpy": {
+   "series": {
+    "shift_mV": 41.89737365416279,
+    "sides": {
+     "water": {
+      "half_range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "half_range": "above",
+      "half_range_all": "above"
+     }
+    }
+   },
+   "relaxed": {
+    "shift_mV": 48.40707896345897,
+    "sides": {
+     "water": {
+      "half_range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "half_range": "above",
+      "half_range_all": "above"
+     }
+    }
+   },
+   "adiabatic": {
+    "shift_mV": 52.45314832319647,
+    "sides": {
+     "water": {
+      "half_range": "above",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "half_range": "above",
+      "half_range_all": "above"
+     }
+    }
+   }
+  },
+  "cl-dmbpy": {
+   "series": {
+    "shift_mV": 79.11137340362417,
+    "sides": {
+     "water": {
+      "half_range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "half_range": "above",
+      "half_range_all": "above"
+     }
+    }
+   },
+   "relaxed": {
+    "shift_mV": 82.42485084789641,
+    "sides": {
+     "water": {
+      "half_range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "half_range": "above",
+      "half_range_all": "above"
+     }
+    }
+   },
+   "adiabatic": {
+    "shift_mV": 80.40251223974404,
+    "sides": {
+     "water": {
+      "half_range": "inside",
+      "half_range_all": "inside"
+     },
+     "organic": {
+      "half_range": "above",
+      "half_range_all": "above"
+     }
+    }
+   }
+  }
+ },
+ "not_covered": [
+  "ome",
+  "dcbpy",
+  "cf3",
+  "so2cf3",
+  "nme2",
+  "nh2"
+ ],
+ "verdict": "Per 4,4'-substituent, mV, against Lever's E_L scheme (ONR report of paper ref 23, not the version of record) — dmbpy-bpy: Lever -29.3 organic / -46.7 water, ours -37.2, mecn_tris -15.0, pvi_ref8 -27.8; cl-bpy (L2): Lever +21.2 organic / +33.8 water, ours +41.9, pvi_ref8 +17.3; cl-dmbpy (L2): Lever +50.5 organic / +80.5 water, ours +79.1, pvi_ref8 +45.0, aqueous_ampy +36.3; no2-bpy (L1): Lever +82.8 organic / +132.0 water, ours +183.1. Each reading on both lines: water line, half-range band — outside: mecn_tris above on dmbpy-bpy, pvi_ref8 above on dmbpy-bpy, pvi_ref8 below on cl-dmbpy, aqueous_ampy below on cl-dmbpy, ours above on no2-bpy · water line, range band — every reading inside on every pair · water line, half-range-all band — outside: pvi_ref8 below on cl-dmbpy, aqueous_ampy below on cl-dmbpy · organic line, half-range band — outside: mecn_tris above on dmbpy-bpy, ours above on cl-bpy, ours above on cl-dmbpy, ours above on no2-bpy · organic line, range band — outside: ours above on no2-bpy · organic line, half-range-all band — outside: ours above on cl-bpy, ours above on cl-dmbpy, ours above on no2-bpy. Which side a reading takes depends on the line and the band, and the report defines no line for a +1 complex in water. OMe, COOH, CF3, SO2CF3, NMe2 and NH2 have no 4,4'-row in Table 1."
+}

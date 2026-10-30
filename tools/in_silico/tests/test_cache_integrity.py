@@ -8496,3 +8496,77 @@ def test_winter_pv_autonomy_invariants():
     here = ctl["desk_worst_7d_dec_jan"]["here"]
     for k, v in ctl["desk_worst_7d_dec_jan"]["desk"].items():
         assert abs(here[k] - v) <= (0 if k == "seasons" else 1.0), f"the desk number {k} is not reproduced"
+
+
+def test_113_lever_rows_follow_from_its_constants_and_the_caches():
+    """П4 (г), 2026-10-30: 113's cache recomputed with this test's OWN pair set, Table 2 copy, band widths and side rule.
+
+    CAN catch: a pair dropped or relabelled in the script (the set is stated HERE) · a Table 2 value edited away from its
+    transcription (a copy stated here) · a band that is not k · S_M · (half-digit | 10 | 20 mV per E_L, bpy its half-digit) ·
+    a computed shift off 21e's ΔΔE_red per substituent · a measured value that is not 83's · a side the numbers do not give,
+    on either line, in any band (bpy at ±10 mV in the last) · a relaxed Cl row or tier that is not 83's, or its side · a misread E_L digit that breaks the
+    Hammett proportionality of the three ligand rows by ×3 or more (the 130-dpi read of Br₂'s 0.28 as 0.26 gave ×39).
+    CANNOT catch: a misread S_M or I_M (the copy here comes from the same reading), a misread E_L within that factor, the
+    version of record, whether the transfers hold, or which line a +1 complex in water follows.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("s113", Path(__file__).parents[1] / "scripts" / "113_os_series_vs_lever.py")
+    s113 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(s113)
+    d = json.loads((DFT / "os_series_vs_lever.json").read_text())
+    b3 = {c["name"]: c for c in json.loads((DFT / "os_mediator_series.json").read_text())["complexes"]}
+    m83 = json.loads((DFT / "os_series_vs_measured.json").read_text())
+    pairs = [("dmbpy-bpy", ("dmbpy", "bpy"), 1, None), ("cl-bpy", ("br2bpy", "bpy"), 1, "L2"),
+             ("cl-dmbpy", ("br2bpy", "dmbpy"), 1, "L2"), ("no2-bpy", ("no2_mono", "bpy"), 2, "L1")]
+    assert [(r["pair"], tuple(r["lever_rows"]), r["k"], r["transfer"]) for r in d["pairs"]] == pairs
+    table2 = {"water": (1.61, -1.30), "organic": (1.01, -0.40)}   # report p. 20, as transcribed 2026-10-30
+    assert {ln: (v["S_M"], v["I_M"]) for ln, v in d["os_iii_ii_lines"].items()} == table2
+    el = {k: (v["E_L"], v["printed_to"]) for k, v in d["E_L_V_vs_NHE"].items()}
+    widths = {"rounding": None, "half_range": 0.010, "range": 0.020, "half_range_all": 0.010}   # the last: bpy at ±10 too
+
+    def where(v, band):
+        return "inside" if band[0] <= v <= band[1] else ("above" if v > band[1] else "below")
+
+    half = {}
+    for r in d["pairs"]:
+        x, ref = r["pair"].split("-")
+        lx, lref = r["lever_rows"]
+        ours = -(b3[x]["dE_red_eV"] - b3[ref]["dE_red_eV"]) / 4
+        assert r["computed_b3lyp_V"] == pytest.approx(ours, rel=1e-12)
+        meas = {}
+        if x in m83["measured"] and ref in m83["measured"]:
+            meas["mecn_tris"] = (m83["measured"][x]["shift_per_substituent_V"]
+                                 - m83["measured"][ref]["shift_per_substituent_V"])
+        pvi = m83["pvi_series"]["measured_E_V"]
+        if x in pvi and ref in pvi:
+            meas["pvi_ref8"] = (pvi[x]["E_V"] - pvi[ref]["E_V"]) / 4
+        aq = m83["aqueous_series"]["measured"]
+        if x in aq and ref in aq:
+            meas["aqueous_ampy"] = aq[x]["shift_per_substituent_V"] - aq[ref]["shift_per_substituent_V"]
+        assert r["measured_V"] == pytest.approx(meas, rel=1e-12), r["pair"]
+        want = {}
+        for line, (s_m, _) in table2.items():
+            mid = s_m * r["k"] * (el[lx][0] - el[lref][0])
+            assert r["lever"][line]["shift_V"] == pytest.approx(mid, rel=1e-12), (r["pair"], line)
+            for band, w in widths.items():
+                h = s_m * r["k"] * sum(el[n][1] / 2 if (w is None or (n == "bpy" and band != "half_range_all")) else w
+                                       for n in (lx, lref))
+                assert r["lever"][line][f"{band}_band_V"] == pytest.approx([mid - h, mid + h], rel=1e-12), (r["pair"], line, band)
+                for who, v in {"ours": ours, **meas}.items():
+                    want.setdefault(who, {}).setdefault(line, {})[band] = where(v, [mid - h, mid + h])
+                if band in ("half_range", "half_range_all"):
+                    half[(r["pair"], line, band)] = [mid - h, mid + h]
+        assert r["sides"] == want, (r["pair"], r["sides"], want)
+    rows83 = {p["pair"]: p for p in m83["relaxed_geometry_check"]["acceptors"]["pairs_vs_measured"] if p["series_name"] == "ref 8"}
+    assert set(d["relaxed_ours"]) == {"cl-bpy", "cl-dmbpy"}
+    for pair, tiers in d["relaxed_ours"].items():
+        assert set(tiers) == {"series", "relaxed", "adiabatic"}, (pair, set(tiers))
+        for tier, t in tiers.items():
+            assert t["shift_mV"] == rows83[pair][f"{tier}_mV"], (pair, tier)
+            assert t["sides"] == {ln: {b: where(t["shift_mV"] / 1e3, half[(pair, ln, b)]) for b in ("half_range", "half_range_all")}
+                                  for ln in table2}, (pair, tier)
+    assert d["verdict"] == s113.verdict(d["pairs"]), "the verdict is not what the cache's rows give"
+    sig = {n: c["sigma_para"] for n, c in b3.items()}   # Br read at Cl's σp — transfer L2
+    per = [(el["dmbpy"][0] - el["bpy"][0]) / sig["dmbpy"], (el["br2bpy"][0] - el["bpy"][0]) / sig["cl"],
+           2 * (el["no2_mono"][0] - el["bpy"][0]) / sig["no2"]]
+    assert min(per) > 0 and max(per) / min(per) < 3, f"ΔE_L per σ per site {per} — a misread digit in Table 1?"

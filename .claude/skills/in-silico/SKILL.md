@@ -182,6 +182,7 @@ L3 DFT anode (CPU):
   21e (SERIES σ table, importlib · os_mediator_series.json) · 21f · 21d (the ωB97X centre caches) · 21e `b3lyp-osdef2`, the three
      continuum variants, `b3lyp-pyaxial`, `b3lyp-relaxed-os2` and `b3lyp-relaxed-os3` (read when each exists and holds its comparison; the donor reading
      needs every DONOR's adiabatic row, an acceptor is read only once both its rows exist — block `acceptors`) → 83 (computed ⊥ three measured series — ref 8's PVI polymers · MeCN · aqueous; writes os_series_vs_measured.json)
+  21e (os_mediator_series.json) · 83 (os_series_vs_measured.json, incl. its relaxed acceptor rows) → 113 (os_series_vs_lever.json — Lever's E_L scheme ⊥ computed ⊥ measured, no SCF; a re-run of 21e or 83 re-runs 113)
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check) · 75 · 76 (`close_chelate=True` — the only caller)
   21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
   21f (importlib TIERS) · reproduction/lock_rerun_2026-10-01.json (the base) → 76 (C-min; writes reproduction/, runs ONLY in silken_lock)

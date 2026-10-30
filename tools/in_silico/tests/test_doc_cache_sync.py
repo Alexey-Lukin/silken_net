@@ -1205,6 +1205,118 @@ CHECKS += [
         "dft/cathode_ket_lambda.json",
         lambda d: d["geometry_sensitivity_refused_offplane"]["margin_adverse"], 1.0,
     ),
+    # ── П4 (г) (self-review round 2, 2026-10-30): Lever's half of the triangulation, script 113 ──
+    (
+        "readings left outside Lever at ±20 mV — exactly ours on NO₂ − H, organic → os_series_vs_lever.json",
+        SUMMARY, r"the \*\*(\d)\*\* reading left outside, on the organic line",
+        "dft/os_series_vs_lever.json",
+        lambda d: (lambda out: len(out) if out == [("no2-bpy", "ours", "organic")] else float("nan"))(
+            [(r["pair"], k, ln) for r in d["pairs"] for k, s in r["sides"].items() for ln in ("organic", "water")
+             if s[ln]["range"] != "inside"]), 0,
+    ),
+    (
+        "Lever's organic-line Cl − Me shift → os_series_vs_lever.json",
+        SUMMARY, r"\(Cl − Me: Lever \*\*\+([\d.]+)\*\*, ours",
+        "dft/os_series_vs_lever.json",
+        lambda d: next(1e3 * r["lever"]["organic"]["shift_V"] for r in d["pairs"] if r["pair"] == "cl-dmbpy"), 0.05,
+    ),
+    (
+        "our Cl − Me shift, above the organic line on both Cl pairs at ±10 mV → os_series_vs_lever.json",
+        SUMMARY, r"\(Cl − Me: Lever \*\*\+[\d.]+\*\*, ours \*\*\+([\d.]+)\*\*\)",
+        "dft/os_series_vs_lever.json",
+        lambda d: (next(1e3 * r["computed_b3lyp_V"] for r in d["pairs"] if r["pair"] == "cl-dmbpy")
+                   if all(r["sides"]["ours"]["organic"]["half_range"] == "above" for r in d["pairs"] if r["pair"].startswith("cl-"))
+                   else float("nan")), 0.05,
+    ),
+    (
+        "measured Cl readings inside the organic line at ±10 mV (all of them) → os_series_vs_lever.json",
+        SUMMARY, r"while the \*\*(\d)\*\* measured Cl readings sit inside",
+        "dft/os_series_vs_lever.json",
+        lambda d: (lambda m: len(m) if all(x == "inside" for x in m) else float("nan"))(
+            [s["organic"]["half_range"] for r in d["pairs"] if r["pair"].startswith("cl-")
+             for k, s in r["sides"].items() if k != "ours"]), 0,
+    ),
+    (
+        "Lever's water-line Cl − Me shift: ours inside on both Cl pairs, the measured below on Cl − Me → os_series_vs_lever.json",
+        SUMMARY, r"\(Cl − Me: Lever \*\*\+([\d.]+)\*\*\) while the measured fall below it",
+        "dft/os_series_vs_lever.json",
+        lambda d: next((1e3 * r["lever"]["water"]["shift_V"]
+                        if all(q["sides"]["ours"]["water"]["half_range"] == "inside" for q in d["pairs"] if q["pair"].startswith("cl-"))
+                        and all(s["water"]["half_range"] == "below" for k, s in r["sides"].items() if k != "ours")
+                        else float("nan")) for r in d["pairs"] if r["pair"] == "cl-dmbpy"), 0.05,
+    ),
+    (
+        "aqueous measured readings inside the organic line at ±10 mV (all of them) → os_series_vs_lever.json",
+        SUMMARY, r"all \*\*(\d)\*\* aqueous measured readings sit inside the organic",
+        "dft/os_series_vs_lever.json",
+        lambda d: (lambda m: len(m) if all(x == "inside" for x in m) else float("nan"))(
+            [s["organic"]["half_range"] for r in d["pairs"] for k, s in r["sides"].items() if k in ("pvi_ref8", "aqueous_ampy")]), 0,
+    ),
+    (
+        "aqueous measured readings outside the water line at ±10 mV → os_series_vs_lever.json",
+        SUMMARY, r"\*\*(\d)\*\* of them outside the water one",
+        "dft/os_series_vs_lever.json",
+        lambda d: sum(s["water"]["half_range"] != "inside" for r in d["pairs"] for k, s in r["sides"].items()
+                      if k in ("pvi_ref8", "aqueous_ampy")), 0,
+    ),
+    (
+        "our NO₂ − H shift, above both lines at ±10 mV → os_series_vs_lever.json",
+        SUMMARY, r"\(\*\*\+([\d.]+)\*\* against \*\*",
+        "dft/os_series_vs_lever.json",
+        lambda d: next((1e3 * r["computed_b3lyp_V"]
+                        if all(r["sides"]["ours"][ln]["half_range"] == "above" for ln in ("organic", "water"))
+                        else float("nan")) for r in d["pairs"] if r["pair"] == "no2-bpy"), 0.05,
+    ),
+    (
+        "Lever's organic-line NO₂ − H shift → os_series_vs_lever.json",
+        SUMMARY, r"against \*\*\+([\d.]+)\*\* organic",
+        "dft/os_series_vs_lever.json",
+        lambda d: next(1e3 * r["lever"]["organic"]["shift_V"] for r in d["pairs"] if r["pair"] == "no2-bpy"), 0.05,
+    ),
+    (
+        "Lever's water-line NO₂ − H shift → os_series_vs_lever.json",
+        SUMMARY, r"organic and \*\*\+([\d.]+)\*\* water\)",
+        "dft/os_series_vs_lever.json",
+        lambda d: next(1e3 * r["lever"]["water"]["shift_V"] for r in d["pairs"] if r["pair"] == "no2-bpy"), 0.05,
+    ),
+    (
+        "the MeCN Me − H shift, smaller than Lever's on both lines at ±10 mV → os_series_vs_lever.json",
+        SUMMARY, r"than the MeCN series' \*\*([−\d.]+)\*\*",
+        "dft/os_series_vs_lever.json",
+        lambda d: next((1e3 * r["measured_V"]["mecn_tris"]
+                        if all(r["sides"]["mecn_tris"][ln]["half_range"] == "above" for ln in ("organic", "water"))
+                        else float("nan")) for r in d["pairs"] if r["pair"] == "dmbpy-bpy"), 0.05,
+    ),
+    (
+        "ref 8's loading control on its Me complex → os_series_vs_measured.json",
+        SUMMARY, r"differs by \*\*([\d.]+)\*\* mV per complex",
+        "dft/os_series_vs_measured.json", lambda d: d["pvi_series"]["loading_control"]["shift_mV"], 0.5,
+    ),
+    (
+        "83's adiabatic Cl − H, the only relaxed row past the water line's ±10 mV edge → os_series_vs_lever.json",
+        SUMMARY, r"only the adiabatic Cl − H \(\*\*\+([\d.]+)\*\*\) passes",
+        "dft/os_series_vs_lever.json",
+        lambda d: (d["relaxed_ours"]["cl-bpy"]["adiabatic"]["shift_mV"]
+                   if [(p, t) for p, ts in d["relaxed_ours"].items() for t, v in ts.items()
+                       if v["sides"]["water"]["half_range"] != "inside"] == [("cl-bpy", "adiabatic")] else float("nan")), 0.05,
+    ),
+    (
+        "the water line's ±10 mV upper edge on Cl − H → os_series_vs_lever.json",
+        SUMMARY, r"passes the water line's ±10 mV edge \(\*\*\+([\d.]+)\*\*\)",
+        "dft/os_series_vs_lever.json",
+        lambda d: next(1e3 * r["lever"]["water"]["half_range_band_V"][1] for r in d["pairs"] if r["pair"] == "cl-bpy"), 0.05,
+    ),
+    (
+        "sides that move inside with ±10 mV on bpy too — none on the Cl pairs, the adiabatic Cl − H with them → os_series_vs_lever.json",
+        SUMMARY, r"line split while\s+\*\*(\d)\*\* sides move inside",
+        "dft/os_series_vs_lever.json",
+        lambda d: (lambda flips: len(flips)
+                   if flips and all(to == "inside" and not p.startswith("cl-") for p, _, _, to in flips)
+                   and d["relaxed_ours"]["cl-bpy"]["adiabatic"]["sides"]["water"]["half_range_all"] == "inside"
+                   else float("nan"))(
+            [(r["pair"], k, ln, s[ln]["half_range_all"]) for r in d["pairs"] for k, s in r["sides"].items()
+             for ln in ("organic", "water") if s[ln]["half_range"] != s[ln]["half_range_all"]]), 0,
+    ),
     (
         "coupling gain to reach turnover (FO-DFT scale, assumed λ(Co)) → cathode_ket_lambda.json",
         SUMMARY, r"needs \*\*×([\d.]+)\*\* on the diabatised t_ij at the ASSUMED",
