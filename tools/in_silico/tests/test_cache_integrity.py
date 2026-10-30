@@ -4070,6 +4070,70 @@ def test_cascade_like_for_like_is_its_inputs():
              if "cascade_V" in v and hit(v["gap_to_measured_same_couples_V"], v["donor_side_V"], v["acceptor_side_V"])}
     assert {(c["form"], c["level"]) for c in can["rows"]} == want, "95 names other cancellations than its rows hold — re-run 95"
     assert all(c["form"] in d["verdict"] for c in can["rows"]), "a cancellation is in the record but not in the verdict"
+    # the higher tier (⚖️ 2026-10-30): computed exactly when 112's cache exists, B1's Os side minus 112's flavin, never typed
+    ht, c112 = d["higher_tier"], DFT / "pcet_donor_basis_functional.json"
+    assert ht["computed"] == c112.exists(), "95's higher-tier cell disagrees with whether 112 has run — re-run 95"
+    if ht["computed"]:
+        sys.path.insert(0, str(REPO / "tools/in_silico"))
+        from lib.constants import HARTREE_TO_EV
+        b1 = json.loads((DFT / "os_complex_wb97xd_dmbpy.json").read_text())
+        e_os_b1 = (b1["os3_plus"]["E_total_Ha"] - b1["os2_plus"]["E_total_Ha"]) * HARTREE_TO_EV - she
+        assert abs(ht["E_os_vs_SHE_V"] - e_os_b1) < 1e-4, "95's higher tier stands on another B1 than the cache holds"
+        steps = json.loads(c112.read_text())["tiers"]["wb97x_def2tzvp"]["E_vs_SHE_mV"]
+        for k, lv in ht["levels"].items():
+            assert abs(lv["cascade_V"] - (e_os_b1 - steps[k]["pH_7.0"] / 1000)) < 1e-4, f"higher tier {k}: 112 moved — re-run 95"
+            assert lv["direction"] == ("downhill" if lv["cascade_V"] > 0 else "uphill"), k
+        assert " · ".join(f"{v['cascade_V'] * 1000:+.0f}" for v in ht["levels"].values()) in d["verdict"], \
+            "the higher-tier cell is in the record but not in the verdict"
+
+
+def test_pcet_donor_basis_functional_is_its_inputs():
+    """112 re-reads 32b's two relaxed flavin geometries at def2-TZVP, B3LYP then ωB97X: its controls must hold, and every
+    E° it caches must be 32's formula on its own energies (+ 32b's thermal terms for the composite levels). CAN catch: a
+    re-run of 32b (new geometries or energies) that left 112 stale · a rehearsal record committed as the result · a shift
+    or a donor side that is not the difference of its own E°s · a protocol drift against 33's ωB97X/def2-TZVP FADH₂.
+    CANNOT catch: whether def2-TZVP or ωB97X is the right reading — one step each, not an error bar (112's CANNOT 5)."""
+    path = DFT / "pcet_donor_basis_functional.json"
+    if not path.exists():
+        pytest.skip("112 not run")
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import HARTREE_TO_EV, NERNST_SLOPE_V
+    d = json.loads(path.read_text())
+    p32 = json.loads((DFT / "pcet_redox_potential.json").read_text())
+    p32b = json.loads((DFT / "pcet_redox_potential_thermo.json").read_text())
+    e33 = json.loads((DFT / "pcet_cascade.json").read_text())["E_FADH2_Ha"]
+    assert d["rehearsal"] is False, "a rehearsal record stands in the cache"
+    for tag in ("ox", "red"):
+        assert d["geometry"][tag]["max_dev_vs_32b_cache_A"] <= 1e-6, tag
+        assert abs(d["control_32b"][tag]["E_Ha"] - p32b["species"][tag]["E_Ha"]) <= 1e-6, f"{tag}: 32b moved — re-run 112"
+    assert d["control_33"]["E_FADH2_33_Ha"] == e33, "33 moved since 112 — re-run 112"
+    assert abs(d["control_33"]["delta_Ha"]) <= d["control_33"]["tolerance_Ha"]
+
+    def e_mv(red: float, ox: float, ph: float) -> float:   # 32's formula: FAD + 2H⁺ + 2e⁻ → FADH₂
+        dg = (red - ox) * HARTREE_TO_EV - 2 * p32["G_star_H_aq_eV"]
+        return round((-dg / 2 - p32["SHE_abs_V"] - NERNST_SLOPE_V * ph) * 1000, 1)
+
+    meas = p32["exp_free_flavin_pH7_mV"][0]
+    th = {t: p32b["species"][t] for t in ("ox", "red")}
+    prev = p32b["E_vs_SHE_mV"]["relaxed_electronic"]["pH_7.0"]
+    for key in ("b3lyp_def2tzvp", "wb97x_def2tzvp"):
+        tier = d["tiers"][key]
+        ox, red = tier["species"]["ox"]["E_Ha"], tier["species"]["red"]["E_Ha"]
+        levels = {"relaxed_electronic": (red, ox),
+                  "relaxed_plus_zpe": (red + th["red"]["ZPE_Ha"], ox + th["ox"]["ZPE_Ha"]),
+                  "relaxed_rrho_free_energy": (red + th["red"]["G_tot_Ha"] - th["red"]["E_Ha"],
+                                               ox + th["ox"]["G_tot_Ha"] - th["ox"]["E_Ha"])}
+        for lv, (r, o) in levels.items():
+            for ph in (0.0, 4.5, 7.0):
+                # 0.2, not 0.1: 32's CACHE carries G*(H⁺) rounded (-11.7209 eV) while 112 uses 32's module constant, so an
+                # unmutated cell lands 0.1 mV off (measured 2026-10-30 at ωB97X + ZPE); a 1 mV mutation still reds
+                assert abs(tier["E_vs_SHE_mV"][lv][f"pH_{ph}"] - e_mv(r, o, ph)) <= 0.2 + 1e-9, (key, lv, ph)
+            assert abs(tier["vs_measured_free_flavin_pH7_mV"][lv] - (tier["E_vs_SHE_mV"][lv]["pH_7.0"] - meas)) <= 0.1 + 1e-9
+        e7 = tier["E_vs_SHE_mV"]["relaxed_electronic"]["pH_7.0"]
+        assert abs(tier["shift_vs_previous_tier_pH7_mV"] - (e7 - prev)) <= 0.1 + 1e-9, key
+        prev = e7
+    k = d["knobs_pH7_mV"]
+    assert abs(k["both"] - (k["basis"] + k["functional"])) <= 0.2 + 1e-9, "the two knobs do not add up to the total"
 
 
 def test_pcet_cascade_converged():

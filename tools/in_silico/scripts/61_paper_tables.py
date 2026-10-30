@@ -141,7 +141,15 @@ def build() -> str:
               + " | ".join(f"**{mv0(meas['cascade_same_couples_V'])}**" for _ in levels) + " |")
     canc = "; ".join(f"{c['form']} at {flv[c['level']]['label']} ({mv(c['gap_V'])} mV = donor {mv(c['donor_side_V'])} + "
                      f"acceptor {mv(c['acceptor_side_V'])})" for c in lfl["cancellations"]["rows"])
-    md.append(f"\n*Cascade = E°(Os) − E°(FAD/FADH₂, pH 7) in mV, > 0 = downhill; every cell is downhill (smallest "
+    ht = lfl["higher_tier"]
+    htl = ht.get("levels", {})
+    higher = (f"At ωB97X/def2-TZVP on both sides — the device form only, the one osmium form computed at that tier, against "
+              f"the flavin re-read at it on 32b's geometries (script 112) — the device cascade is "
+              f"{mv(htl['relaxed_electronic']['cascade_V'])} mV on the relaxed electronic flavin level "
+              f"({htl['relaxed_electronic']['direction']}) and {mv(htl['relaxed_plus_zpe']['cascade_V'])} / "
+              f"{mv(htl['relaxed_rrho_free_energy']['cascade_V'])} mV with the flavin's zero-point / RRHO terms (one-sided; "
+              f"§3.5). ") if ht["computed"] else ""
+    md.append(f"\n*Cascade = E°(Os) − E°(FAD/FADH₂, pH 7) in mV, > 0 = downhill; every cell at this tier (B3LYP/6-31G(d)) is downhill (smallest "
               f"{mv(min(cells))} mV). Donor side = computed − measured free flavin "
               f"({mv0(lfl['flavin']['E_pH7_measured_free_V'])} mV); acceptor side = measured ({mv0(meas['E_os_V'])} mV) − "
               f"computed Os; their sum is the gap to the measured {mv0(meas['cascade_same_couples_V'])} mV (the free flavin against the "
@@ -160,7 +168,7 @@ def build() -> str:
               f"{mv(bipy['against_measured_flavin']['by_form_V'][lfl['forms'][0]['form']])} mV at the [Os(bpy)₃] value and turns uphill past "
               f"{mv(s2rows['device_turns_uphill_against_measured_flavin_past_V'])} mV; the alternative 4.44 V convention "
               f"({mv0(conv['shift_V'])} mV) turns {'none' if not conv['n_uphill'] else conv['n_uphill']}, with spin–orbit coupling "
-              f"{both_bipy['n_uphill']} and {both['n_uphill']} (§3.5). Agreements by cancellation, not validations — thresholds ours "
+              f"{both_bipy['n_uphill']} and {both['n_uphill']} (§3.5). {higher}Agreements by cancellation, not validations — thresholds ours "
               f"(|gap| ≤ {mv0(lfl['cancellations']['gap_max_V'], False)} mV while each side is ≥ "
               f"{mv0(lfl['cancellations']['each_side_min_V'], False)} "
               f"mV off): {canc}.*\n")

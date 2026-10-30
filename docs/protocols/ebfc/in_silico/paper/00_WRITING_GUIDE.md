@@ -32,7 +32,7 @@ something already known. Frame everything around the *insight*, never around "we
 
 **Revised 2026-10-19 (the like-for-like revision, `00_07` HW.5.IS):** the cascade is framed like for like — direction and table (⚖️ founder 2026-10-16) — not as a decomposed ~1 eV gap; one-electron readings carry no conclusion.
 
-Our honest finding is that the cascade, compared like for like, is downhill in every form within one protocol — whose
+Our honest finding is that the cascade, compared like for like, is downhill in every form within one protocol (B3LYP/6-31G(d); uphill for the device couple on the relaxed electronic flavin level at ωB97X/def2-TZVP on both sides) — whose
 omitted spin–orbit coupling on osmium reverses the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] and more cells at the larger rows of ref 63's Table S2, so the protocol does not determine the sign — while its magnitude is method-dependent and its near-exact agreements are cancellations; the cathode DET margin is
 conditional on λ(Co) — below turnover at the computed value, straddling it only at an assumed one. A first-timer's instinct is to
 hide this and claim "validation". **Do the opposite — the honesty IS the contribution.** Three real

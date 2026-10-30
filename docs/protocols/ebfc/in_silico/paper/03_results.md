@@ -31,9 +31,11 @@ MMFF94s geometries at the electronic level — 65 mV positive of the experimenta
 takes it to −430 mV — the term the electronic level omits while it pairs the flavin with a proton free energy; the reduced
 state carries two more N–H bonds, and the change in zero-point energy between the states, +0.62 eV for the two-electron
 couple, moves E° by −311 mV; the RRHO free energy gives −419 mV. The thermochemically corrected levels thus lie ≈210 and ≈200 mV more
-negative than the measured value. We do not attribute that overshoot — lumiflavin for FAD, the basis and the functional,
-the protonation state at pH 7, the harmonic treatment of soft modes, the absolute-SHE convention and the missing explicit
-water are all candidates (§3.5) — and read neither level as agreement. The proton reference remains the right frame for the
+negative than the measured value. We do not attribute that overshoot. Two of its candidates are sized on the same geometries (script 112): the
+def2-TZVP basis moves E° by +126.6 mV and ωB97X by a further +90.8 mV, which puts the relaxed electronic level at +98.7 mV
+and the + ZPE level at −212.0 mV — one step of each knob, not an error bar, and a near-agreement we do not read as one;
+lumiflavin for FAD, the protonation state at pH 7, the harmonic treatment of soft modes, the absolute-SHE convention and the
+missing explicit water are the others (§3.5) — and we read neither level as agreement. The proton reference remains the right frame for the
 two-electron, two-proton couple, and it is what makes the like-for-like comparison of §3.5 possible.
 
 The inner-sphere reorganisation energy of the first anode oxidation was likewise computed, not assumed, for
@@ -280,7 +282,7 @@ polymer brush could present (hypothetical, not observed); and the aqua form, a m
 the substitution-inert Os(II) d⁶ couple. The + ZPE and + RRHO levels correct the flavin only, so those cells are one-sided,
 except one row in which the osmium side carries its own zero-point energy.
 
-**Direction.** Every cell is downhill; the smallest cascade, +218.5 mV, is the device form on the relaxed electronic
+**Direction.** Every cell of Table 2 — B3LYP/6-31G(d) on both sides — is downhill; the smallest cascade, +218.5 mV, is the device form on the relaxed electronic
 level. That holds within the protocol: every cell shares one functional, one continuum, one absolute-SHE convention
 (|SHE_abs| = 4.281 V) and a scalar-relativistic osmium, and varying the flavin level and the osmium form tests none of
 them. One term the protocol omits has a known sign: spin–orbit coupling, absent from the LANL2DZ pseudopotential,
@@ -305,8 +307,12 @@ lies inside choices the protocol fixes. Three
 alternative choices lower E°(Os) relative to ours without being errors of known sign: the other absolute-SHE value in
 common use, 4.44 V, lowers every E°(Os) and every cascade by 159 mV when the proton free energy moves with it (E°(Os) has
 no proton to compensate) — alone it turns no cell uphill, together with the spin–orbit shift 10 of the 32 at the [Os(bpy)₃] size and 12 at the full one —, and
-ωB97X lowers the device couple's E°(Os) by 138 mV (Table 4; 134 mV of it the functional, the rest the basis), with no
-ωB97X flavin potential to say what it does to the cascade; def2-TZVP with its core potential on osmium lowers the device
+ωB97X lowers the device couple's E°(Os) by 138 mV (Table 4; 134 mV of it the functional, the rest the basis), while the
+flavin, re-read at that tier on 32b's geometries (script 112), rises by 126.6 mV with the basis and 90.8 mV more with the
+functional, so both halves lower the cascade: with both sides at ωB97X/def2-TZVP the device cell is −136.7 mV on the relaxed
+electronic flavin level — uphill — and +174.0 and +163.5 mV with the flavin's zero-point and RRHO terms, one-sided (Table 2;
+the osmium geometry programmatic and vertical, the flavin's from B3LYP, the device form the only one computed at that tier);
+def2-TZVP with its core potential on osmium lowers the device
 couple's E°(Os) by 65 mV and alone turns no cell uphill. Terms that raise E°(Os) or the cascade are not netted against
 these: the osmium zero-point energy (+41 mV where computed, below), the cavity radii (UFF ×1.1 with a sphere on every
 hydrogen: +122 mV on the device couple's E°(Os), with no UFF flavin potential; under them the device cell on the relaxed electronic flavin level, −31.5 mV at the [Os(bpy)₃] shift on the default radii, keeps
@@ -355,7 +361,8 @@ default set and the UFF set); spin–orbit coupling on osmium (−250 mV as ref 
 +209 to +459 and +509 mV); the
 functional (138 mV on the osmium side of the device couple); the osmium geometry (up to 113 mV between the programmatic
 and the relaxed forms, Table 2); and the polymer film against one molecule (135 mV between preparations of the measured
-complex, §3.3). On the donor side, none of them sized here: lumiflavin for FAD, the basis and the functional, the
+complex, §3.3). On the donor side, the basis and the functional are sized on 32b's geometries — +126.6 and +90.8 mV on
+E°(FAD/FADH₂) (script 112), one step of each, not an error bar — and none of the rest: lumiflavin for FAD, the
 protonation state at pH 7, the harmonic treatment of soft modes and the missing explicit water (§3.2). For both: the
 absolute-SHE convention (159 mV between 4.281 and 4.44 V). The comparison is made at pH 7 and 7.4, where the two potentials were
 measured, not at the sap pH of the device anode (≈ 5.75 for the xylem sap the device anode would sit in, where the proton-referenced flavin

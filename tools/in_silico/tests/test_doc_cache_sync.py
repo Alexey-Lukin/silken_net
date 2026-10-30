@@ -412,6 +412,64 @@ CHECKS = [
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["both_sided"]["levels"]["relaxed_plus_zpe"]["acceptor_side_V"], 0.5),
     ("like-for-like both-sided + ZPE, donor side → cascade_like_for_like", SUMMARY, rf"the donor side {N} mV\. Its RRHO",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["both_sided"]["levels"]["relaxed_plus_zpe"]["donor_side_V"], 0.5),
+]
+# ⊕ 2026-10-30 — 112 (the donor side's basis and functional, П4(a)) and 95 `higher_tier` (⚖️ founder 2026-10-30 (a)): every
+# copy of the knobs and of the device cell at ωB97X/def2-TZVP on both sides, in the paper and in SUMMARY
+_P112 = "dft/pcet_donor_basis_functional.json"
+_LFL = "dft/cascade_like_for_like.json"
+_HT = lambda k: (lambda d: 1000 * d["higher_tier"]["levels"][k]["cascade_V"])  # noqa: E731
+_W112 = lambda k: (lambda d: d["tiers"]["wb97x_def2tzvp"]["E_vs_SHE_mV"][k]["pH_7.0"])  # noqa: E731
+_D112 = lambda k: (lambda d: d["tiers"]["wb97x_def2tzvp"]["vs_measured_free_flavin_pH7_mV"][k])  # noqa: E731
+CHECKS += [
+    ("112 basis knob · paper §3.2 → 112", PAPER_RESULTS, rf"def2-TZVP basis moves E° by {N} mV and ωB97X", _P112,
+     lambda d: d["knobs_pH7_mV"]["basis"], 0.05),
+    ("112 functional knob · paper §3.2 → 112", PAPER_RESULTS, rf"and ωB97X by a further {N} mV, which puts", _P112,
+     lambda d: d["knobs_pH7_mV"]["functional"], 0.05),
+    ("112 ωB97X electronic E° · paper §3.2 → 112", PAPER_RESULTS, rf"puts the relaxed electronic level at {N} mV", _P112,
+     _W112("relaxed_electronic"), 0.05),
+    ("112 ωB97X + ZPE E° · paper §3.2 → 112", PAPER_RESULTS, rf"and the \+ ZPE level at {N} mV — one step", _P112,
+     _W112("relaxed_plus_zpe"), 0.05),
+    ("112 basis knob · paper §3.5 Direction → 112", PAPER_RESULTS, rf"rises by {N} mV with the basis", _P112,
+     lambda d: d["knobs_pH7_mV"]["basis"], 0.05),
+    ("112 functional knob · paper §3.5 Direction → 112", PAPER_RESULTS, rf"and {N} mV more with the\s+functional", _P112,
+     lambda d: d["knobs_pH7_mV"]["functional"], 0.05),
+    ("112 basis knob · paper §3.5 limits → 112", PAPER_RESULTS, rf"sized on 32b's geometries — {N} and", _P112,
+     lambda d: d["knobs_pH7_mV"]["basis"], 0.05),
+    ("112 functional knob · paper §3.5 limits → 112", PAPER_RESULTS, rf"— [+\d.]+ and {N} mV on\s+E°\(FAD/FADH₂\) \(script 112\)",
+     _P112, lambda d: d["knobs_pH7_mV"]["functional"], 0.05),
+    ("higher tier electronic · paper §3.5 → 95", PAPER_RESULTS, rf"the device cell is {N} mV on the relaxed", _LFL,
+     _HT("relaxed_electronic"), 0.05),
+    ("higher tier + ZPE · paper §3.5 → 95", PAPER_RESULTS, rf"uphill — and {N} and [+\d.]+ mV with the flavin's zero-point", _LFL,
+     _HT("relaxed_plus_zpe"), 0.05),
+    ("higher tier + RRHO · paper §3.5 → 95", PAPER_RESULTS, rf"uphill — and [+\d.]+ and {N} mV with the flavin's zero-point", _LFL,
+     _HT("relaxed_rrho_free_energy"), 0.05),
+    ("higher tier electronic · paper §4 → 95", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md",
+     rf"electronic flavin level uphill \({N} mV\)", _LFL, _HT("relaxed_electronic"), 0.05),
+    ("higher tier electronic · abstract → 95", "docs/protocols/ebfc/in_silico/paper/05_abstract.md",
+     rf"both sides at ωB97X/def2-TZVP \({N} mV\)", _LFL, _HT("relaxed_electronic"), 0.5),
+    ("112 basis knob · SUMMARY → 112", SUMMARY, rf"def2-TZVP moves E°\(FAD/FADH₂, pH 7\) by \*\*{N}\*\* mV", _P112,
+     lambda d: d["knobs_pH7_mV"]["basis"], 0.05),
+    ("112 B3LYP/def2-TZVP E° · SUMMARY → 112", SUMMARY, rf"\(−118\.7 → \*\*{N}\*\*\)", _P112,
+     lambda d: d["tiers"]["b3lyp_def2tzvp"]["E_vs_SHE_mV"]["relaxed_electronic"]["pH_7.0"], 0.05),
+    ("112 functional knob · SUMMARY → 112", SUMMARY, rf"ωB97X/def2-TZVP by \*\*{N}\*\* mV more", _P112,
+     lambda d: d["knobs_pH7_mV"]["functional"], 0.05),
+    ("112 ωB97X electronic E° · SUMMARY → 112", SUMMARY, rf"mV more \(→ \*\*{N}\*\*\)", _P112, _W112("relaxed_electronic"), 0.05),
+    ("112 both knobs · SUMMARY → 112", SUMMARY, rf"\*\*{N}\*\* together\. With", _P112, lambda d: d["knobs_pH7_mV"]["both"], 0.05),
+    ("112 donor side electronic · SUMMARY → 112", SUMMARY, rf"the donor side reads \*\*{N} · ", _P112,
+     _D112("relaxed_electronic"), 0.05),
+    ("112 donor side + ZPE · SUMMARY → 112", SUMMARY, rf"the donor side reads \*\*[+\d.]+ · {N} · ", _P112,
+     _D112("relaxed_plus_zpe"), 0.05),
+    ("112 donor side + RRHO · SUMMARY → 112", SUMMARY, rf"the donor side reads \*\*[+\d.]+ · [+\d.]+ · {N}\*\*", _P112,
+     _D112("relaxed_rrho_free_energy"), 0.05),
+    ("higher tier E°(Os) · SUMMARY → 95", SUMMARY, rf"C-PCM: E°\(Os\) \*\*{N}\*\* mV", _LFL,
+     lambda d: 1000 * d["higher_tier"]["E_os_vs_SHE_V"], 0.05),
+    ("higher tier electronic · SUMMARY → 95", SUMMARY, rf"the device cascade is \*\*{N}\*\* mV on the relaxed electronic flavin level",
+     _LFL, _HT("relaxed_electronic"), 0.05),
+    ("higher tier + ZPE · SUMMARY → 95", SUMMARY, rf"— \*\*uphill\*\* — and \*\*{N} · ", _LFL, _HT("relaxed_plus_zpe"), 0.05),
+    ("higher tier + RRHO · SUMMARY → 95", SUMMARY, rf"— \*\*uphill\*\* — and \*\*[+\d.]+ · {N}\*\*", _LFL,
+     _HT("relaxed_rrho_free_energy"), 0.05),
+    ("higher tier + ZPE with SOC bipy · SUMMARY → 95", SUMMARY, rf"the \+ ZPE cell would read \*\*{N}\*\* mV", _LFL,
+     lambda d: 1000 * d["higher_tier"]["levels"]["relaxed_plus_zpe"]["with_spin_orbit_os_ref63_bipy_V"], 0.05),
     # ⊕ 2026-10-19 — the choices every cell shares (95 `shared_shifts`): §3.5 states the direction as the protocol's, and
     # every number it sets against the cells is read here (referee rounds 2–3 of step 3 — spin–orbit coupling on Os, set
     # against the computed AND the measured flavin)
@@ -560,7 +618,7 @@ CHECKS = [
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["flavin"]["levels"]["mmff_electronic"]["donor_side_V"], 0.5),
     ("abstract: flavin below measured (+ ZPE) → cascade_like_for_like", "docs/protocols/ebfc/in_silico/paper/05_abstract.md", rf"and ≈{N} mV below it with",
      "dft/cascade_like_for_like.json", lambda d: -1000 * d["flavin"]["levels"]["relaxed_plus_zpe"]["donor_side_V"], 0.6),
-    ("abstract: smallest cell → cascade_like_for_like", "docs/protocols/ebfc/in_silico/paper/05_abstract.md", rf"protocol cells \(smallest \+{N} mV; measured",
+    ("abstract: smallest cell → cascade_like_for_like", "docs/protocols/ebfc/in_silico/paper/05_abstract.md", rf"B3LYP/6-31G\(d\) cells \(smallest \+{N} mV; measured",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
     ("abstract: measured cascade → cascade_like_for_like", "docs/protocols/ebfc/in_silico/paper/05_abstract.md", rf"smallest \+[\d.]+ mV; measured\s+\+{N} mV\)",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["measured"]["cascade_same_couples_V"], 0.05),

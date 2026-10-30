@@ -26,8 +26,9 @@ form with the ZPE and RRHO terms on BOTH sides (`both_sided`, two boundary contr
 this form's ΔE_red). CANNOT: (1) the Os side's ZPE and thermal terms of every other form — 96 corrects one (32b CANNOT 1),
 so there the cascade at (ii)/(iii) is a ONE-SIDED correction, and only the electronic levels carry the same approximation
 on both sides; 96's RRHO level enters only when its two states' soft-mode censuses match; (2) the protein shift of the bound cofactor (free −220 → bound −265 mV) — measured, carried as
-such, never computed (④); (3) the measured mediator is a polymer film, the computed one a molecule with one 1-MeIm; (4) any
-ωB97X reading — the flavin has no ωB97X PCET potential, so an ωB97X Os side would not be like-for-like; (5) geometry: each
+such, never computed (④); (3) the measured mediator is a polymer film, the computed one a molecule with one 1-MeIm; (4) an
+ωB97X reading of every form but the device one — only B1 gives an Os side at that tier, so the device cell alone is composed
+with 112's flavin (`higher_tier`, ⚖️ founder 2026-10-30); (5) geometry: each
 Os form is programmatic or B3LYP-relaxed as its label says, the flavin MMFF or relaxed as its level says; (6) spin–orbit
 coupling on Os — LANL2DZ is scalar-relativistic. NHE and SHE are taken as one scale, as in 32.
 
@@ -36,7 +37,7 @@ the donor level and the Os form tests none of them (in-silico §When Modifying #
 each term that has a known sign against every cell and names the cells it turns uphill: spin–orbit coupling on Os
 at two literature sizes — ref 63's [Os(bpy)₃] row (`OS_SOC_SHIFT_BIPY_V`, the reading taken, ⚖️ 2026-10-20) and its
 octahedral value (`OS_SOC_SHIFT_V`, the abstract's summary — not an upper count: every Table S2 row is set against the cells) — the 4.44 V convention (`SHE_ABS_ALT_V`), and ωB97X against B3LYP on the device couple's Os
-side (B1 — the flavin's ωB97X potential is not computed, so that term is half a functional shift, device form only). The
+side (B1 — half of a functional-and-basis shift, device form only; the whole shift, with 112's flavin, is `higher_tier`). The
 continuum has no such entry: the explicit waters on the chloride RAISE E°(Os) and the hexa-aqua second shell lowers it, so
 its sign on the device couple is not known.
 
@@ -146,6 +147,40 @@ def both_sided(rows: list, e_fad: dict, meas_free: float, fad_free_meas: float, 
     return out
 
 
+HIGHER_TIER_LEVELS = ("relaxed_electronic", "relaxed_plus_zpe", "relaxed_rrho_free_energy")   # 112 re-reads 32b's minima only
+
+
+def higher_tier(she_abs: float, fad_free_meas: float, os_meas: float, meas_free: float) -> dict:
+    """The device form at ωB97X/def2-TZVP on BOTH sides (⚖️ founder 2026-10-30, self-review round 2 П4(a) «(a)»): B1's ΔE_red on
+    the Os side, 112's E°(FAD/FADH₂) on the donor side — one functional, one light-atom basis, one continuum, one SHE convention,
+    LANL2DZ on Os as in every cell. Each half alone would print without its sum; this is the sum.
+    CAN: give the device cascade at the higher tier on 112's three flavin levels, and the same cell with ref 63's [Os(bipy)₃]
+    spin–orbit size beside it (printed, not netted). CANNOT: the Os geometry stays programmatic and vertical and the flavin's
+    B3LYP-relaxed; only the device form has an Os side at this tier; the ZPE and RRHO terms are 32b's B3LYP ones on the donor
+    only; spin–orbit coupling on Os is omitted here as in every cell."""
+    path = DFT_CACHE / "pcet_donor_basis_functional.json"
+    if not path.exists():
+        return {"computed": False, "reason": "112 not run — no ωB97X/def2-TZVP flavin potential"}
+    t112 = json.loads(path.read_text(encoding="utf-8"))
+    if t112.get("rehearsal"):
+        raise SystemExit("112's cache is a rehearsal record — re-run 112 before 95")
+    wb = _load("os_complex_wb97xd_dmbpy.json")   # B1 — the same file shared_shifts reads for `functional_os_side`
+    e_os = (wb["os3_plus"]["E_total_Ha"] - wb["os2_plus"]["E_total_Ha"]) * HARTREE_TO_EV - she_abs
+    steps = t112["tiers"]["wb97x_def2tzvp"]["E_vs_SHE_mV"]
+    levels = {}
+    for k in HIGHER_TIER_LEVELS:
+        e_fad = steps[k]["pH_7.0"] / 1000.0
+        cascade = e_os - e_fad
+        levels[k] = {"cascade_V": round(cascade, 4), "direction": "downhill" if cascade > 0 else "uphill",
+                     "gap_to_measured_same_couples_V": round(meas_free - cascade, 4),
+                     "donor_side_V": round(e_fad - fad_free_meas, 4),
+                     "with_spin_orbit_os_ref63_bipy_V": round(cascade + OS_SOC_SHIFT_BIPY_V, 4)}
+    return {"computed": True, "form": "chloro (device, programmatic)",
+            "tier": f"Os side: {wb['method']} (B1) · donor: 112 ωB97X/def2-TZVP+C-PCM on 32b's B3LYP minima",
+            "E_os_vs_SHE_V": round(e_os, 4), "acceptor_side_V": round(os_meas - e_os, 4), "levels": levels,
+            "one_sided": ["relaxed_plus_zpe", "relaxed_rrho_free_energy"]}
+
+
 def shared_shifts(rows: list, bs: dict, she_abs: float, e_fad: dict, fad_free_meas: float, os_meas: float) -> dict:
     """What every cell shares, against every cell. ONE omitted term has a known sign — spin–orbit coupling on Os, which
     stabilises Os(III) and lowers E°(Os) — and two ALTERNATIVE choices move E°(Os) the same way relative to ours without
@@ -180,8 +215,8 @@ def shared_shifts(rows: list, bs: dict, she_abs: float, e_fad: dict, fad_free_me
                                "kind": "alternative choice", "computed": True,
                                "functional_only_6_31gd_V": round(rows[0]["dE_red_III_to_II_eV"] - de_red_wb_small, 6),
                                "source": "ωB97X/def2-TZVP (B1) against B3LYP on the device couple's ΔE_red — the Os side "
-                                         "only (the flavin's ωB97X potential is not computed); functional_only = ωB97X/6-31G(d) "
-                                         "(34b), the rest the basis"},
+                                         "only, half of the higher tier (the flavin's half is 112, the sum `higher_tier`); "
+                                         "functional_only = ωB97X/6-31G(d) (34b), the rest the basis"},
     }
     uff = _load("os_mediator_series_uffcavity.json")["complexes"]["dmbpy"]["dE_red_eV"]      # 21e `b3lyp-uffcavity`
     osd2 = _load("os_mediator_series_osdef2.json")["complexes"]["dmbpy"]["dE_red_eV"]        # 21e `b3lyp-osdef2`
@@ -296,6 +331,12 @@ def main() -> int:
                       for k, v in bs.get("levels", {}).items()
                       if "cascade_V" in v and cancels(v["gap_to_measured_same_couples_V"], v["donor_side_V"], v["acceptor_side_V"])]
     shared = shared_shifts(rows, bs, she_abs, e_fad, fad_free_meas, os_meas)
+    ht = higher_tier(she_abs, fad_free_meas, os_meas, meas_free)
+    if ht["computed"]:
+        print(f"\n  «{ht['form']}» at ωB97X/def2-TZVP on both sides (B1 + 112): E°(Os) {ht['E_os_vs_SHE_V'] * 1000:+.1f} mV · "
+              + " · ".join(f"{LEVELS[k]} {v['cascade_V'] * 1000:+.1f} mV ({v['direction']})" for k, v in ht["levels"].items()))
+    else:
+        print(f"\n  higher tier: {ht['reason']}")
     soc, conv = shared["terms"]["spin_orbit_os"], shared["terms"]["she_abs_4_44"]
     bipy = shared["terms"]["spin_orbit_os_ref63_bipy"]
     both = shared["combined"]["spin_orbit_os + she_abs_4_44"]
@@ -359,6 +400,12 @@ def main() -> int:
           f"{soc['against_measured_flavin']['by_form_V'][rows[0]['form']] * 1000:+.0f} mV and turns uphill past "
           f"{shared['ref63_table_s2_rows']['device_turns_uphill_against_measured_flavin_past_V'] * 1000:+.0f} mV — so with "
           f"spin–orbit coupling at any of those sizes the protocol does not determine the sign of the device cascade."
+        + ((" At ωB97X/def2-TZVP on both sides (the device form only — B1 with 112's flavin) the device cascade is "
+            + " · ".join(f"{v['cascade_V'] * 1000:+.0f}" for v in ht["levels"].values())
+            + " mV (relaxed electronic · + ZPE · + RRHO, the last two one-sided)"
+            + (": the B3LYP cells' direction on the electronic level does not survive the higher tier"
+               if ht["levels"]["relaxed_electronic"]["direction"] != dev_at["relaxed_electronic"]["direction"] else "")
+            + ".") if ht["computed"] else "")
     )
     result = {
         "method": "B3LYP/6-31G(d)+C-PCM(water), LANL2DZ on Os; the flavin at 32b's four levels (MMFF electronic = 32 · relaxed "
@@ -379,13 +426,16 @@ def main() -> int:
         "both_sided": bs,
         "cancellations": {"gap_max_V": CANCEL_GAP_V, "each_side_min_V": CANCEL_SIDE_V, "rows": cancellations},
         "shared_shifts": shared,
+        "higher_tier": ht,
         "not_computed": [("ZPE and thermal terms of every Os form but the adiabatic chloro one (96 corrects one form) — for "
                           "the others the ZPE and RRHO levels correct the donor only") if bs["computed"] else
                          ("ZPE and thermal terms of the Os couple (96 not run) — the ZPE and RRHO levels correct the donor "
                           "only"),
                          "protein shift of the bound cofactor (measured, carried)",
                          "polymer film of the measured mediator vs one 1-MeIm molecule",
-                         "any ωB97X reading (no ωB97X PCET potential of the flavin)",
+                         ("an ωB97X reading of every form but the device one (B1 is the only Os side at that tier; with "
+                          "112's flavin it is `higher_tier`)" if ht["computed"] else
+                          "any ωB97X reading (112 not run — no ωB97X PCET potential of the flavin)"),
                          "spin–orbit coupling on Os (LANL2DZ is scalar-relativistic) — its literature size is a shared shift"],
         "verdict": verdict,
     }

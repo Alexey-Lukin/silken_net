@@ -1,0 +1,127 @@
+{
+  "method": "single points on 32b's B3LYP/6-31G(d)+C-PCM relaxed geometries; C-PCM water; E° by 32's formula (32b `potential`); thermal terms from 32b's B3LYP/6-31G(d) Hessians",
+  "rehearsal": false,
+  "pyscf": "2.11.0",
+  "protocol": {
+    "conv_tol": 1e-08
+  },
+  "geometry": {
+    "ox": {
+      "file": "ligands/lumiflavin_ox_opt.xyz",
+      "max_dev_vs_32b_cache_A": 4.961567601213801e-09
+    },
+    "red": {
+      "file": "ligands/lumiflavin_red_opt.xyz",
+      "max_dev_vs_32b_cache_A": 4.99859442726347e-09
+    }
+  },
+  "control_32b": {
+    "ox": {
+      "E_Ha": -872.1260044115913,
+      "rescued": false,
+      "wall_seconds": 65.2,
+      "delta_vs_32b_Ha": 1.1523297871463e-09
+    },
+    "red": {
+      "E_Ha": -873.3238317610608,
+      "rescued": false,
+      "wall_seconds": 63.5,
+      "delta_vs_32b_Ha": 4.715957402368076e-09
+    }
+  },
+  "tiers": {
+    "b3lyp_def2tzvp": {
+      "xc": "b3lyp",
+      "basis_light": "def2-tzvp",
+      "knob": "basis: 6-31G(d) → def2-TZVP at B3LYP",
+      "species": {
+        "ox": {
+          "E_Ha": -872.4767906878585,
+          "rescued": false,
+          "wall_seconds": 390.7
+        },
+        "red": {
+          "E_Ha": -873.6839233449668,
+          "rescued": false,
+          "wall_seconds": 387.5
+        }
+      },
+      "E_vs_SHE_mV": {
+        "relaxed_electronic": {
+          "pH_0.0": 422.0,
+          "pH_4.5": 155.8,
+          "pH_7.0": 7.9
+        },
+        "relaxed_plus_zpe": {
+          "pH_0.0": 111.2,
+          "pH_4.5": -155.0,
+          "pH_7.0": -302.9
+        },
+        "relaxed_rrho_free_energy": {
+          "pH_0.0": 121.7,
+          "pH_4.5": -144.5,
+          "pH_7.0": -292.4
+        }
+      },
+      "shift_vs_32b_pH7_mV": 126.6,
+      "shift_vs_previous_tier_pH7_mV": 126.6,
+      "vs_measured_free_flavin_pH7_mV": {
+        "relaxed_electronic": 227.9,
+        "relaxed_plus_zpe": -82.9,
+        "relaxed_rrho_free_energy": -72.4
+      }
+    },
+    "wb97x_def2tzvp": {
+      "xc": "wb97x",
+      "basis_light": "def2-tzvp",
+      "knob": "functional: B3LYP → ωB97X at def2-TZVP",
+      "species": {
+        "ox": {
+          "E_Ha": -872.241345100356,
+          "rescued": false,
+          "wall_seconds": 603.4
+        },
+        "red": {
+          "E_Ha": -873.455153847467,
+          "rescued": false,
+          "wall_seconds": 646.2
+        }
+      },
+      "E_vs_SHE_mV": {
+        "relaxed_electronic": {
+          "pH_0.0": 512.8,
+          "pH_4.5": 246.6,
+          "pH_7.0": 98.7
+        },
+        "relaxed_plus_zpe": {
+          "pH_0.0": 202.1,
+          "pH_4.5": -64.1,
+          "pH_7.0": -212.0
+        },
+        "relaxed_rrho_free_energy": {
+          "pH_0.0": 212.6,
+          "pH_4.5": -53.6,
+          "pH_7.0": -201.5
+        }
+      },
+      "shift_vs_32b_pH7_mV": 217.4,
+      "shift_vs_previous_tier_pH7_mV": 90.8,
+      "vs_measured_free_flavin_pH7_mV": {
+        "relaxed_electronic": 318.7,
+        "relaxed_plus_zpe": 8.0,
+        "relaxed_rrho_free_energy": 18.5
+      }
+    }
+  },
+  "control_33": {
+    "E_FADH2_33_Ha": -873.4552193567536,
+    "delta_Ha": 6.550928651449794e-05,
+    "tolerance_Ha": 0.0001
+  },
+  "knobs_pH7_mV": {
+    "basis": 126.6,
+    "functional": 90.8,
+    "both": 217.4
+  },
+  "verdict": "E°(FAD/FADH₂, pH 7) on 32b's relaxed geometries: -118.7 mV at B3LYP/6-31G(d) (32b), +7.9 at B3LYP/def2-TZVP — the basis moves it +126.6 mV — and +98.7 at ωB97X/def2-TZVP — the functional a further +90.8 mV, +217.4 together. Against -220 mV measured for the free flavin the donor side reads, electronic · + ZPE · + RRHO: +227.9 · -82.9 · -72.4 mV at B3LYP/def2-TZVP, +318.7 · +8.0 · +18.5 mV at ωB97X/def2-TZVP (32b: +101.3 · -209.5 · -199.0). Geometries and thermal terms stay 32b's B3LYP/6-31G(d) ones; the osmium side is not recomputed (CANNOT 1–3)."
+}

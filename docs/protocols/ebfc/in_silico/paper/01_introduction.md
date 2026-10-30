@@ -89,7 +89,8 @@ finding a margin conditional on the Co reorganisation energy — below enzymatic
 straddling it only at an assumed literature value — together with the levers it suggests (a low-reorganization metal, computed indicatively;
 conductive-MOF band transport and an acid-stable enzyme-free catalyst, named but not computed); and (iv) compare the anode→mediator
 cascade like for like — the two-electron, two-proton flavin couple against each one-electron osmium couple on one
-SHE scale — finding it downhill in every osmium form at every level of the flavin treatment within one protocol, a direction
+SHE scale — finding it downhill in every osmium form at every level of the flavin treatment at B3LYP/6-31G(d), a direction
+that the ωB97X/def2-TZVP tier on both sides reverses for the device couple on the relaxed electronic flavin level and
 that spin–orbit coupling on osmium, which the protocol omits, reverses for the device couple on one flavin level at
 the literature size for homoleptic [Os(bpy)₃] and in more cells at the larger shifts the same source computes for other
 ligand sets (§3.5) — against the measured flavin the device couple keeps +69.8 mV at the [Os(bpy)₃] size, less than the
