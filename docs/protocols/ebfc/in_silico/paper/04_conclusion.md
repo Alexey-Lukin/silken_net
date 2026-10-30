@@ -40,9 +40,11 @@ two-proton flavin couple against each one-electron osmium couple on one SHE scal
 downhill in every osmium form at every level of the flavin treatment, consistent with the measured direction; but that
 holds within one functional, one continuum, one absolute-SHE convention and a scalar-relativistic osmium. Re-reading both
 sides' energies at ωB97X/def2-TZVP (single points; the osmium geometry programmatic and vertical with LANL2DZ on osmium as in
-every cell, the flavin's geometry and thermal terms from B3LYP) turns the device cell on the relaxed electronic
-flavin level uphill (−136.7 mV); its two cells with the flavin's zero-point or RRHO terms stay downhill while the spin–orbit
-shift below stays under 174.0 and 163.5 mV — at the [Os(bpy)₃] size they read −76.0 and −86.5 mV (§3.5).
+every cell and its Os(III) accepted on convergence alone, the flavin's geometry and thermal terms from B3LYP) turns the device
+cell on the relaxed electronic
+flavin level uphill (−136.7 mV); the device couple's cells with the flavin's zero-point and RRHO terms stay downhill until the
+spin–orbit shift passes −174.0 and −163.5 mV respectively — at the [Os(bpy)₃] size they read −76.0 and −86.5 mV, and on the
+4.44 V convention they keep only +15.0 and +4.5 mV (§3.5).
 Spin–orbit coupling on osmium, of known sign and omitted here, turns 2 of the 32 cells uphill at the size the literature computes for
 homoleptic [Os(bpy)₃] and more at the larger shifts the same source computes for other ligand sets (§3.5) (7 at −333 mV, 10 at −400 mV —
 hexacyano and hexachloro) — the device couple on flavin levels that lie above the measured flavin among them — while against

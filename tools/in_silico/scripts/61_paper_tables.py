@@ -144,15 +144,19 @@ def build() -> str:
                      f"acceptor {mv(c['acceptor_side_V'])})" for c in lfl["cancellations"]["rows"])
     ht = lfl["higher_tier"]
     htl = ht.get("levels", {})
+    # the footnote writes «stay downhill» for the two one-sided cells: refuse rather than print a threshold under a false word
+    if ht["computed"] and any(htl[k]["direction"] != "downhill" for k in ("relaxed_plus_zpe", "relaxed_rrho_free_energy")):
+        raise SystemExit("higher tier: a zero-point/RRHO cell is no longer downhill — rewrite the Table 2 footnote, do not regenerate it")
     higher = (f"At ωB97X/def2-TZVP on both sides — the device form only, the one osmium form computed at that tier, against "
               f"the flavin re-read at it on 32b's geometries (script 112) — the device cascade is "
               f"{mv(htl['relaxed_electronic']['cascade_V'])} mV on the relaxed electronic flavin level "
               f"({htl['relaxed_electronic']['direction']}) and {mv(htl['relaxed_plus_zpe']['cascade_V'])} / "
               f"{mv(htl['relaxed_rrho_free_energy']['cascade_V'])} mV with the flavin's zero-point / RRHO terms (one-sided; single "
               f"points — the osmium geometry programmatic and vertical with LANL2DZ on osmium as in every cell, the flavin's "
-              f"geometry and thermal terms from B3LYP; the zero-point / RRHO cells stay downhill while the spin–orbit shift "
-              f"stays under {mv(htl['relaxed_plus_zpe']['cascade_V'])[1:]} / {mv(htl['relaxed_rrho_free_energy']['cascade_V'])[1:]} "
-              f"mV, and at the [Os(bpy)₃] size read "
+              f"geometry and thermal terms from B3LYP, its Os(III) accepted on convergence alone; the zero-point / RRHO cells stay "
+              f"downhill until the spin–orbit shift passes {mv(-htl['relaxed_plus_zpe']['cascade_V'])} / "
+              f"{mv(-htl['relaxed_rrho_free_energy']['cascade_V'])} mV, keep {mv(htl['relaxed_plus_zpe']['with_she_abs_4_44_V'])} / "
+              f"{mv(htl['relaxed_rrho_free_energy']['with_she_abs_4_44_V'])} mV on the 4.44 V convention, and at the [Os(bpy)₃] size read "
               f"{mv(htl['relaxed_plus_zpe']['with_spin_orbit_os_ref63_bipy_V'])} / "
               f"{mv(htl['relaxed_rrho_free_energy']['with_spin_orbit_os_ref63_bipy_V'])} mV; §3.5). ") if ht["computed"] else ""
     md.append(f"\n*Cascade = E°(Os) − E°(FAD/FADH₂, pH 7) in mV, > 0 = downhill; every cell at this tier (B3LYP/6-31G(d)) is downhill (smallest "

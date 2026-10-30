@@ -1019,21 +1019,24 @@
         "direction": "uphill",
         "gap_to_measured_same_couples_V": 0.6657,
         "donor_side_V": 0.3187,
-        "with_spin_orbit_os_ref63_bipy_V": -0.3867
+        "with_spin_orbit_os_ref63_bipy_V": -0.3867,
+        "with_she_abs_4_44_V": -0.2957
       },
       "relaxed_plus_zpe": {
         "cascade_V": 0.174,
         "direction": "downhill",
         "gap_to_measured_same_couples_V": 0.355,
         "donor_side_V": 0.008,
-        "with_spin_orbit_os_ref63_bipy_V": -0.076
+        "with_spin_orbit_os_ref63_bipy_V": -0.076,
+        "with_she_abs_4_44_V": 0.015
       },
       "relaxed_rrho_free_energy": {
         "cascade_V": 0.1635,
         "direction": "downhill",
         "gap_to_measured_same_couples_V": 0.3655,
         "donor_side_V": 0.0185,
-        "with_spin_orbit_os_ref63_bipy_V": -0.0865
+        "with_spin_orbit_os_ref63_bipy_V": -0.0865,
+        "with_she_abs_4_44_V": 0.0045
       }
     },
     "one_sided": [

@@ -295,7 +295,7 @@ both on the relaxed electronic flavin level (to −31.5 and −5.0 mV); at the o
 the device form on both electronic flavin levels (to −44.8 and −81.5 mV), the doubly relaxed form on both (to −18.3 and
 −55.0 mV) and the one-water form on the relaxed level (to −18.1 mV); and at the larger rows of ref 63's Table S2, 7 at −333 mV
 ([Os(CN)₆]), 8 at −362 mV ([Os(NH₃)₆]) and 10 at −400 mV ([OsCl₆]) — the octahedral summary is not an upper count. Which cells
-flip depends as much on the flavin as on the osmium. Every flip sits on the two electronic flavin levels — those that omit
+flip depends as much on the flavin as on the osmium. Among the 32, every flip sits on the two electronic flavin levels — those that omit
 the flavin's zero-point term (§3.2) and lie 65 and 101 mV above the measured flavin potential; the + ZPE and + RRHO cells
 keep at least +218.8 mV with the full shift, and the doubly relaxed form with zero-point energies on both sides +296.3 mV.
 That margin is, however, largely the ≈ 200 mV by which those levels lie below the measured flavin: against the measured
@@ -313,8 +313,9 @@ functional, so both halves lower the cascade: with both sides at ωB97X/def2-TZV
 electronic flavin level — uphill — and +174.0 and +163.5 mV with the flavin's zero-point and RRHO terms, one-sided (Table 2;
 single points: the osmium geometry programmatic and vertical with LANL2DZ on osmium as in every cell, the flavin's geometry
 and thermal terms from B3LYP, the device form the only one computed at that tier, its Os(III) accepted on convergence alone (§2.2); the
-zero-point and RRHO cells stay downhill while the spin–orbit shift stays under 174.0 and 163.5 mV, and at the [Os(bpy)₃]
-size read −76.0 and −86.5 mV);
+zero-point and RRHO cells stay downhill until the spin–orbit shift passes −174.0 and −163.5 mV respectively, and at the
+[Os(bpy)₃] size read −76.0 and −86.5 mV; on the 4.44 V convention they keep +15.0 and +4.5 mV, so any row of ref 63 turns
+them uphill);
 def2-TZVP with its core potential on osmium lowers the device
 couple's E°(Os) by 65 mV and alone turns no cell uphill. Terms that raise E°(Os) or the cascade are not netted against
 these: the osmium zero-point energy (+41 mV where computed, below), the cavity radii (UFF ×1.1 with a sphere on every

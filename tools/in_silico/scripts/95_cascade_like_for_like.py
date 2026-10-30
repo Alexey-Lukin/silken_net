@@ -155,7 +155,7 @@ def higher_tier(she_abs: float, fad_free_meas: float, os_meas: float, meas_free:
     the Os side, 112's E°(FAD/FADH₂) on the donor side — one functional, one light-atom basis, one continuum, one SHE convention,
     LANL2DZ on Os as in every cell. Each half alone would print without its sum; this is the sum.
     CAN: give the device cascade at the higher tier on 112's three flavin levels, and the same cell with ref 63's [Os(bipy)₃]
-    spin–orbit size stored beside it (not netted). CANNOT: the Os geometry stays programmatic and vertical and the flavin's
+    spin–orbit size and on the 4.44 V convention stored beside it (not netted). CANNOT: the Os geometry stays programmatic and vertical and the flavin's
     B3LYP-relaxed; only the device form has an Os side at this tier; the ZPE and RRHO terms are 32b's B3LYP ones on the donor
     only; spin–orbit coupling on Os is omitted here as in every cell."""
     path = DFT_CACHE / "pcet_donor_basis_functional.json"
@@ -174,7 +174,8 @@ def higher_tier(she_abs: float, fad_free_meas: float, os_meas: float, meas_free:
         levels[k] = {"cascade_V": round(cascade, 4), "direction": "downhill" if cascade > 0 else "uphill",
                      "gap_to_measured_same_couples_V": round(meas_free - cascade, 4),
                      "donor_side_V": round(e_fad - fad_free_meas, 4),
-                     "with_spin_orbit_os_ref63_bipy_V": round(cascade + OS_SOC_SHIFT_BIPY_V, 4)}
+                     "with_spin_orbit_os_ref63_bipy_V": round(cascade + OS_SOC_SHIFT_BIPY_V, 4),
+                     "with_she_abs_4_44_V": round(cascade + she_abs - SHE_ABS_ALT_V, 4)}
     return {"computed": True, "form": "chloro (device, programmatic)",
             "tier": f"Os side: {wb['method']} (B1) · donor: 112 ωB97X/def2-TZVP+C-PCM on 32b's B3LYP minima",
             "E_os_vs_SHE_V": round(e_os, 4), "acceptor_side_V": round(os_meas - e_os, 4), "levels": levels,
