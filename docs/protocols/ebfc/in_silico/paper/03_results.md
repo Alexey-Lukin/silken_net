@@ -312,8 +312,9 @@ flavin, re-read at that tier on 32b's geometries (script 112), rises by 126.6 mV
 functional, so both halves lower the cascade: with both sides at ωB97X/def2-TZVP the device cell is −136.7 mV on the relaxed
 electronic flavin level — uphill — and +174.0 and +163.5 mV with the flavin's zero-point and RRHO terms, one-sided (Table 2;
 single points: the osmium geometry programmatic and vertical with LANL2DZ on osmium as in every cell, the flavin's geometry
-and thermal terms from B3LYP, the device form the only one computed at that tier; at the [Os(bpy)₃] spin–orbit size the
-zero-point and RRHO cells read −76.0 and −86.5 mV);
+and thermal terms from B3LYP, the device form the only one computed at that tier, its Os(III) accepted on convergence alone (§2.2); the
+zero-point and RRHO cells stay downhill while the spin–orbit shift stays under 174.0 and 163.5 mV, and at the [Os(bpy)₃]
+size read −76.0 and −86.5 mV);
 def2-TZVP with its core potential on osmium lowers the device
 couple's E°(Os) by 65 mV and alone turns no cell uphill. Terms that raise E°(Os) or the cascade are not netted against
 these: the osmium zero-point energy (+41 mV where computed, below), the cavity radii (UFF ×1.1 with a sphere on every

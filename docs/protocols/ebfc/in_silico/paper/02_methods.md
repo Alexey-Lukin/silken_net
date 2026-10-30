@@ -34,7 +34,7 @@ basis was **6-31G(d)**<sup>37–39</sup> on all non-metal atoms, with the **LANL
 and basis<sup>40</sup> on the transition metals (Os, Cu, Co, Ru) and the **Stuttgart RSC** ECP/basis on cerium.<sup>41</sup> Both pseudopotentials are scalar-relativistic, so spin–orbit
 coupling is not computed; its size for the osmium couple is taken from the literature in §3.5. The
 adiabatic ωB97X cross-check (§2.3) replaced 6-31G(d) by **def2-TZVP**<sup>42</sup> on the non-metal atoms, keeping LANL2DZ
-on osmium, and so did the ωB97X Hammett cross-check, whose NH₂ and NO₂ ends were also computed with the 6-31G(d)/LANL2DZ basis of the B3LYP tier, as was the ωB97X speciation cross-check. In the ωB97X Hammett cross-check an open-shell Os(III) state was accepted on its ⟨S²⟩ (≤ 0.80; a pure doublet is 0.75), not on convergence alone. For its end points (NMe₂, NH₂, NO₂, SO₂CF₃) the value was read from run logs that are not part of the deposited data, and one run failed — NO₂ at ωB97X/6-31G(d), where the second-order solver had reached a spin-contaminated state that its record still marked as converged; it was recomputed from a doublet start built from its Os(II) orbitals, and that record carries ⟨S²⟩, internal stability and an aufbau filling. No ⟨S²⟩ was kept for the B3LYP Hammett series, whose points rest on SCF convergence. Aqueous
+on osmium, and so did the ωB97X Hammett cross-check, whose NH₂ and NO₂ ends were also computed with the 6-31G(d)/LANL2DZ basis of the B3LYP tier, as was the ωB97X speciation cross-check. In the ωB97X Hammett cross-check an open-shell Os(III) state was accepted on its ⟨S²⟩ (≤ 0.80; a pure doublet is 0.75), not on convergence alone. For its end points (NMe₂, NH₂, NO₂, SO₂CF₃) the value was read from run logs that are not part of the deposited data, and one run failed — NO₂ at ωB97X/6-31G(d), where the second-order solver had reached a spin-contaminated state that its record still marked as converged; it was recomputed from a doublet start built from its Os(II) orbitals, and that record carries ⟨S²⟩, internal stability and an aufbau filling. The two centre points, Me — the dimethyl couple, the osmium side of the higher-tier device cells of §3.5 — and H, rest on convergence alone: no record or log keeps their ⟨S²⟩. No ⟨S²⟩ was kept for the B3LYP Hammett series, whose points rest on SCF convergence. Aqueous
 solvation was treated with the **C-PCM** continuum<sup>43,44</sup> (ε = 78.3553) for the redox, speciation and
 reorganisation-energy calculations, on PySCF's default cavity — modified-Bondi radii scaled by 1.2, 302 Lebedev
 points per atomic sphere, and a 2.0 Å placeholder radius for Os, Co, Ru and Ce, which the radius table lacks (how
@@ -131,7 +131,7 @@ proton free energy moves with it — E°(Os) has no proton to compensate — and
 otherwise. That shift and the literature sizes of spin–orbit coupling on osmium are set against every cell in §3.5, since every cell
 shares them; the ωB97X−B3LYP difference, the cavity radii and the osmium basis, which move the device couple alone, are set
 against its four cells, and with the flavin re-read at ωB97X/def2-TZVP (script 112) the device couple's ωB97X energies compose
-one cell at that tier (script 95).
+the device form's three cells at that tier, one per relaxed flavin level (script 95).
 
 ## 2.5 Electron-transfer kinetics
 

@@ -4075,7 +4075,7 @@ def test_cascade_like_for_like_is_its_inputs():
     assert ht["computed"] == c112.exists(), "95's higher-tier cell disagrees with whether 112 has run — re-run 95"
     if ht["computed"]:
         sys.path.insert(0, str(REPO / "tools/in_silico"))
-        from lib.constants import HARTREE_TO_EV
+        from lib.constants import HARTREE_TO_EV, OS_SOC_SHIFT_BIPY_V
         b1 = json.loads((DFT / "os_complex_wb97xd_dmbpy.json").read_text())
         e_os_b1 = (b1["os3_plus"]["E_total_Ha"] - b1["os2_plus"]["E_total_Ha"]) * HARTREE_TO_EV - she
         assert abs(ht["E_os_vs_SHE_V"] - e_os_b1) < 1e-4, "95's higher tier stands on another B1 than the cache holds"
@@ -4083,6 +4083,7 @@ def test_cascade_like_for_like_is_its_inputs():
         for k, lv in ht["levels"].items():
             assert abs(lv["cascade_V"] - (e_os_b1 - steps[k]["pH_7.0"] / 1000)) < 1e-4, f"higher tier {k}: 112 moved — re-run 95"
             assert lv["direction"] == ("downhill" if lv["cascade_V"] > 0 else "uphill"), k
+            assert abs(lv["with_spin_orbit_os_ref63_bipy_V"] - (lv["cascade_V"] + OS_SOC_SHIFT_BIPY_V)) < 1e-4, k
         assert " · ".join(f"{v['cascade_V'] * 1000:+.0f}" for v in ht["levels"].values()) in d["verdict"], \
             "the higher-tier cell is in the record but not in the verdict"
 
