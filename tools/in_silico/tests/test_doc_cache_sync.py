@@ -8833,10 +8833,7 @@ CHECKS += [
      _pvw_cross("1.00", "h_c_x0_7"), 0.0),
     ("PV window mark nominal → 01_03 §4 → 111", EBFC, rf"і понад ≈ {N} см² за номінального, а «не очищено»", PVW,
      _pvw_cross("1.00", "nominal"), 0.0),
-    # 00_07 HW.54 — the Стан ⊕ and the cell-choice ⊕ carry the both-readings aperture
-    ("PV window both-readings aperture → 00_07 HW.54 Стан → 111", TRACKER,
-     rf"на межі проходить гейт на обох читаннях `h_c` лише до ≈ {N} см² темної апертури", PVW,
-     _pvw_cross("1.00", "h_c_x0_7"), 0.0),
+    # 00_07 HW.54 — the cell-choice leg carries the both-readings aperture (the Стан points to 01_03 §4 ⊕ 2026-10-28)
     ("PV window both-readings aperture → 00_07 HW.54 choice → 111", TRACKER,
      rf"на обох читаннях `h_c` лише для темної апертури до ≈ {N} см²", PVW, _pvw_cross("1.00", "h_c_x0_7"), 0.0),
 ]
@@ -8878,7 +8875,7 @@ def test_pv_window_sentences_follow_the_cache():
                    "за `h_c × 0.7` `78` ставить перетин на α ≈"):
         assert phrase in ebfc, phrase
     tracker = " ".join(doc(TRACKER).split())
-    assert tracker.count("(вся пласка корона — лише за номінального `h_c`)") == 2
+    assert tracker.count("(вся пласка корона — лише за номінального `h_c`)") == 1
 
 
 # ── HW.6 78 at 71's second h_c reading (h_c × 0.7, 2026-10-28) ⟷ 01_04 §3.1 ⊕, 02_01 §5.2 ⊕, the log-day sheet §A.1 ⊕,
