@@ -314,8 +314,8 @@ electronic flavin level — uphill — and +174.0 and +163.5 mV with the flavin'
 single points: the osmium geometry programmatic and vertical with LANL2DZ on osmium as in every cell, the flavin's geometry
 and thermal terms from B3LYP, the device form the only one computed at that tier, its Os(III) accepted on convergence alone (§2.2); the
 zero-point and RRHO cells stay downhill until the spin–orbit shift passes −174.0 and −163.5 mV respectively, and at the
-[Os(bpy)₃] size read −76.0 and −86.5 mV; on the 4.44 V convention they keep +15.0 and +4.5 mV, so any row of ref 63 turns
-them uphill);
+[Os(bpy)₃] size read −76.0 and −86.5 mV; on the 4.44 V convention they keep +15.0 and +4.5 mV, so there any osmium row of ref 63 (from −152 mV)
+turns them uphill);
 def2-TZVP with its core potential on osmium lowers the device
 couple's E°(Os) by 65 mV and alone turns no cell uphill. Terms that raise E°(Os) or the cascade are not netted against
 these: the osmium zero-point energy (+41 mV where computed, below), the cavity radii (UFF ×1.1 with a sphere on every
