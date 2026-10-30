@@ -144,10 +144,12 @@ def build() -> str:
                      f"acceptor {mv(c['acceptor_side_V'])})" for c in lfl["cancellations"]["rows"])
     ht = lfl["higher_tier"]
     htl = ht.get("levels", {})
-    # the footnote writes «stay downhill» for the two one-sided cells: refuse rather than print a threshold under a false word
+    # the footnote writes «stay downhill» and «keep … on the 4.44 V convention» for the two one-sided cells: refuse rather
+    # than print a threshold under a false word
     if ht["computed"] and any(htl[k]["direction"] != "downhill" or htl[k]["with_she_abs_4_44_V"] <= 0
                                 for k in ("relaxed_plus_zpe", "relaxed_rrho_free_energy")):
-        raise SystemExit("higher tier: a zero-point/RRHO cell is no longer downhill — rewrite the Table 2 footnote, do not regenerate it")
+        raise SystemExit("higher tier: a zero-point/RRHO cell is no longer downhill, or no longer > 0 on the 4.44 V convention — "
+                         "rewrite the Table 2 footnote, do not regenerate it")
     higher = (f"At ωB97X/def2-TZVP on both sides — the device form only, the one osmium form computed at that tier, against "
               f"the flavin re-read at it on 32b's geometries (script 112) — the device cascade is "
               f"{mv(htl['relaxed_electronic']['cascade_V'])} mV on the relaxed electronic flavin level "

@@ -312,7 +312,7 @@ chloro↔+2/+3 **bracket is functional-robust**. The internal aqua↔bis-Im orde
 ωB97X keeps **aqua > bis-Im** (the plain-bpy order), whereas B3LYP-dimethyl uniquely flipped
 to bis-Im > aqua (the two within <0.15 eV). Since aqua is only a methodological benchmark,
 the operando **chloro↔bis-Im bracket holds at both functionals**. Cache
-`wb97x_speciation_dmbpy.json` (3/3 forms converged via Newton, ⟨S²⟩≈0.754 per the run's console note (commit 6f2a73fd5); no record or log keeps it — the paper's Methods §2.2 counts these forms as convergence-only).
+`wb97x_speciation_dmbpy.json` (3/3 forms converged via Newton, ⟨S²⟩≈0.754 per the commit message of 6f2a73fd5; no cache record or run log keeps it — the paper's Methods §2.2 counts these forms as convergence-only).
 
 ### Electron Tunneling Route (script 28 — a contact-graph shortest path, NOT a pathway analysis)
 
