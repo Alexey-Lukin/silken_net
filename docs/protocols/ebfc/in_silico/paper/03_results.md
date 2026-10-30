@@ -311,7 +311,9 @@ no proton to compensate) — alone it turns no cell uphill, together with the sp
 flavin, re-read at that tier on 32b's geometries (script 112), rises by 126.6 mV with the basis and 90.8 mV more with the
 functional, so both halves lower the cascade: with both sides at ωB97X/def2-TZVP the device cell is −136.7 mV on the relaxed
 electronic flavin level — uphill — and +174.0 and +163.5 mV with the flavin's zero-point and RRHO terms, one-sided (Table 2;
-the osmium geometry programmatic and vertical, the flavin's from B3LYP, the device form the only one computed at that tier);
+single points: the osmium geometry programmatic and vertical with LANL2DZ on osmium as in every cell, the flavin's geometry
+and thermal terms from B3LYP, the device form the only one computed at that tier; at the [Os(bpy)₃] spin–orbit size the
+zero-point and RRHO cells read −76.0 and −86.5 mV);
 def2-TZVP with its core potential on osmium lowers the device
 couple's E°(Os) by 65 mV and alone turns no cell uphill. Terms that raise E°(Os) or the cascade are not netted against
 these: the osmium zero-point energy (+41 mV where computed, below), the cavity radii (UFF ×1.1 with a sphere on every
@@ -319,8 +321,9 @@ hydrogen: +122 mV on the device couple's E°(Os), with no UFF flavin potential; 
 +91 mV there and +41 mV at −300 mV, so the sign depends on the cavity as well), the explicit waters on the chloride (+63 to +72 mV
 each, unconverged — whereas on the small [Os(H₂O)₆]³⁺/²⁺ couple a second shell lowers E° by 0.98 V, ΔE_red going from
 −4.946 to −3.964 eV between six and eighteen waters) and, for the device rather than the free couples, the protein shift
-of the bound flavin (+45 mV, §3.6). The computed direction therefore agrees with the measured one within the protocol,
-and the protocol does not establish it.
+of the bound flavin (+45 mV, §3.6). The computed direction therefore agrees with the measured one within the B3LYP/6-31G(d) protocol — not for the
+device cell on the relaxed electronic flavin level once both sides are re-read at ωB97X/def2-TZVP — and the protocol
+does not establish it.
 
 **Magnitude.** How far the computed cascade lies from the measured +529 mV, and on which side the difference sits, moves
 with the protocol by hundreds of millivolts (Fig 4b). The donor side — computed minus measured flavin — runs +65, +101,

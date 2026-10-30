@@ -42,7 +42,7 @@ reorganisation energies computed for Co, Ce and Ru (λ(Cu) cited) shows the Co�
 computed Co reorganisation energy and to straddle enzymatic turnover only at an assumed literature value — a verdict
 conditional on λ(Co) — with the low-λ-metal lever computed indicatively; and (4) the anode→mediator cascade, compared like for like (the two-electron, two-proton flavin couple against
 each one-electron osmium couple on one SHE scale), is downhill in every osmium form at every level of the flavin
-treatment at B3LYP/6-31G(d) — a direction that the ωB97X/def2-TZVP tier on both sides reverses for the device couple on
+treatment at B3LYP/6-31G(d) — a direction that the ωB97X/def2-TZVP tier on both sides (single points, LANL2DZ on osmium) reverses for the device couple on
 the relaxed electronic flavin level and that spin–orbit coupling on osmium, omitted here, reverses for the device
 couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] (and more cells at the larger shifts the same source computes for other ligand sets), while against the measured flavin the device couple keeps +69.8 mV at the [Os(bpy)₃] size and turns uphill past −320 mV, so the protocol does not determine the sign — while its magnitude is method-dependent and its near-exact agreements are named as cancellations, with
 explicit-water QM/MM and spin–orbit coupling on osmium identified as the next steps toward the magnitude.

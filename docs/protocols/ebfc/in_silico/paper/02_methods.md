@@ -28,7 +28,8 @@ All density-functional calculations (Table 1) used **PySCF**<sup>30,31</sup> (ve
 geometry optimisation; §2.7). Two functionals were employed: **B3LYP**<sup>32–34</sup> (the PySCF/libxc `B3LYP`, i.e. with the VWN RPA local-correlation
 term<sup>35</sup> of the Gaussian convention, not the VWN5 variant) for the orbital-resolved and ΔSCF
 energetics, and the range-separated hybrid **ωB97X**<sup>36</sup> for cross-checks (the one-electron ΔSCF readings, §2.3; six members of the
-Hammett series, vertical, §3.3). The
+Hammett series, vertical, §3.3; the flavin's two-electron potential on 32b's minima, with B3LYP/def2-TZVP as the basis-only
+step, script 112, §3.2 and §3.5). The
 basis was **6-31G(d)**<sup>37–39</sup> on all non-metal atoms, with the **LANL2DZ** effective-core potential
 and basis<sup>40</sup> on the transition metals (Os, Cu, Co, Ru) and the **Stuttgart RSC** ECP/basis on cerium.<sup>41</sup> Both pseudopotentials are scalar-relativistic, so spin–orbit
 coupling is not computed; its size for the osmium couple is taken from the literature in §3.5. The
@@ -39,7 +40,8 @@ reorganisation-energy calculations, on PySCF's default cavity — modified-Bondi
 points per atomic sphere, and a 2.0 Å placeholder radius for Os, Co, Ru and Ce, which the radius table lacks (how
 the recorded version switches the surface of an atom that carries an ECP is stated in §2.7); the ZIF-cluster
 couplings and the molecular-dynamics snapshot orbitals (§2.5) were computed in the gas phase, without a continuum.
-SCF energies were converged to 10⁻⁶ E_h (10⁻⁷ E_h for the lumiflavin redox pair, 10⁻⁵ E_h for the
+SCF energies were converged to 10⁻⁶ E_h (10⁻⁷ E_h for the lumiflavin redox pair at the screening level and 10⁻⁸ E_h on the relaxed flavin minima and their
+single points, scripts 32b and 112; 10⁻⁵ E_h for the
 two-solution ΔSCF couplings of the ZIF clusters). A level shift stabilised the open-shell UKS SCF where it
 oscillated — 0.3 E_h on the Os(III) states of the speciation series and of the ωB97X tier and in the Co/Ce/Ru
 reorganisation and ZIF-cluster calculations (0.5 E_h for the second SCF solution of each
@@ -128,7 +130,8 @@ other absolute-SHE value in common use, 4.44 V, lies 159 mV away; the cascade in
 proton free energy moves with it — E°(Os) has no proton to compensate — and the donor/acceptor split moves by it
 otherwise. That shift and the literature sizes of spin–orbit coupling on osmium are set against every cell in §3.5, since every cell
 shares them; the ωB97X−B3LYP difference, the cavity radii and the osmium basis, which move the device couple alone, are set
-against its four cells.
+against its four cells, and with the flavin re-read at ωB97X/def2-TZVP (script 112) the device couple's ωB97X energies compose
+one cell at that tier (script 95).
 
 ## 2.5 Electron-transfer kinetics
 

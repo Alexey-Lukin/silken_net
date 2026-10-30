@@ -38,9 +38,11 @@ catalyst as levers not computed here.
 The paper's methodological core is the like-for-like treatment of the cascade. Set like for like — the two-electron,
 two-proton flavin couple against each one-electron osmium couple on one SHE scale — the computed cascade is
 downhill in every osmium form at every level of the flavin treatment, consistent with the measured direction; but that
-holds within one functional, one continuum, one absolute-SHE convention and a scalar-relativistic osmium. Raising both
-sides to ωB97X/def2-TZVP turns the device cell on the relaxed electronic flavin level uphill (−136.7 mV), the cells with the
-flavin's zero-point or RRHO terms staying downhill (§3.5).
+holds within one functional, one continuum, one absolute-SHE convention and a scalar-relativistic osmium. Re-reading both
+sides' energies at ωB97X/def2-TZVP (single points; the osmium programmatic, vertical and LANL2DZ, the flavin's geometry and
+thermal terms from B3LYP) turns the device cell on the relaxed electronic flavin level uphill (−136.7 mV); the cells with the
+flavin's zero-point or RRHO terms stay downhill only without spin–orbit coupling, which at the [Os(bpy)₃] size takes them to
+−76.0 and −86.5 mV (§3.5).
 Spin–orbit coupling on osmium, of known sign and omitted here, turns 2 of the 32 cells uphill at the size the literature computes for
 homoleptic [Os(bpy)₃] and more at the larger shifts the same source computes for other ligand sets (§3.5) (7 at −333 mV, 10 at −400 mV —
 hexacyano and hexachloro) — the device couple on flavin levels that lie above the measured flavin among them — while against

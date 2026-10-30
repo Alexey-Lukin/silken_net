@@ -248,7 +248,8 @@ DELTA_MEMBRANE = 20e-4       # cm (20 µm) — Layers 4+5 thickness
 N_ELECTRONS = 2              # electrons per glucose (FAD → FADH₂)
 
 # ── Cascade anchors (experimental E°, verified — the AUTHORITATIVE cascade verdict;
-#    computed like for like the cascade is downhill in every Os form within the protocol — spin–orbit coupling on Os, which
+#    computed like for like the cascade is downhill in every Os form within the protocol, B3LYP/6-31G(d) (uphill for the device cell on the relaxed
+#    electronic flavin level at ωB97X/def2-TZVP on both sides — 95 `higher_tier`) — spin–orbit coupling on Os, which
 #    it omits, reverses the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] — its magnitude method-dependent — 95, SUMMARY). One-Home: SUMMARY/L3/paper link here.
 # Os mediator [Os(4,4'-dimethyl-bpy)₂(PVI)Cl]⁺: +309 mV vs NHE (Zafar et al. 2012, Anal. Chem. 84, 334,
 #   doi:10.1021/ac202647z, Table 1 — the best-performing of six Os polymers, +15…+489 mV window, wired to GcGDH;

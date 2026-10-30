@@ -86,6 +86,7 @@ def build() -> str:
     md.append("| ωB97X one-electron readings | ωB97X single points (FAD geometries B3LYP/def2-SVP for the ΔSCF, B3LYP/6-31G(d) for the proton-coupled route) | def2-TZVP; LANL2DZ (Os) | C-PCM (water) | vertical and adiabatic ΔSCF of the first oxidation; the proton-coupled one-electron route with the proton reference (Table 2b) |")
     md.append("| Publication — speciation | ωB97X | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | speciation functional-robustness (②) |")
     md.append("| PCET | B3LYP + thermodynamic proton reference (Isse–Gennaro) | 6-31G(d) | C-PCM (water) | the 2e⁻/2H⁺ FAD E° (32, 32b) |")
+    md.append("| PCET — basis and functional | B3LYP, then ωB97X, single points on 32b's minima + the same proton reference | def2-TZVP | C-PCM (water) | the 2e⁻/2H⁺ FAD E° one knob at a time (112); with the device couple's ωB97X energies (def2-TZVP; LANL2DZ (Os)) the device cascade at that tier (95, Table 2 footnote) |")
     md.append("| Reorganisation λ | B3LYP; Nelsen 4-point (29b, 35) | def2-SVP (29b, flavin); 6-31G(d) + LANL2DZ (Co, Ru) / stuttgart_rsc (Ce) (35) | C-PCM (water) | inner-sphere λ_i of the flavin semiquinone couple and of Co, Ce and Ru; + Marcus two-sphere outer-sphere λ_o for the flavin (29c, analytical) |")
     md.append("| DET coupling | B3LYP; ΔSCF-UKS energy-splitting (24); two-state orbital diabatisation, FO-DFT label (24b; the Ru swap 24c/24d) | 6-31G(d); LANL2DZ (Cu, Co, Ru); stuttgart_rsc (Ce) | none (gas phase) | ZIF inter-metal t_ij and the site-energy gap |")
     md.append("\n*Reproducibility: scripted, fixed-seed DFT in `tools/in_silico`; every DFT cache behind these tables computed with PySCF 2.11.0 "
@@ -147,8 +148,11 @@ def build() -> str:
               f"the flavin re-read at it on 32b's geometries (script 112) — the device cascade is "
               f"{mv(htl['relaxed_electronic']['cascade_V'])} mV on the relaxed electronic flavin level "
               f"({htl['relaxed_electronic']['direction']}) and {mv(htl['relaxed_plus_zpe']['cascade_V'])} / "
-              f"{mv(htl['relaxed_rrho_free_energy']['cascade_V'])} mV with the flavin's zero-point / RRHO terms (one-sided; "
-              f"§3.5). ") if ht["computed"] else ""
+              f"{mv(htl['relaxed_rrho_free_energy']['cascade_V'])} mV with the flavin's zero-point / RRHO terms (one-sided; single "
+              f"points — the osmium programmatic, vertical and LANL2DZ, the flavin's geometry and thermal terms B3LYP; at the "
+              f"[Os(bpy)₃] spin–orbit size the zero-point / RRHO cells read "
+              f"{mv(htl['relaxed_plus_zpe']['with_spin_orbit_os_ref63_bipy_V'])} / "
+              f"{mv(htl['relaxed_rrho_free_energy']['with_spin_orbit_os_ref63_bipy_V'])} mV; §3.5). ") if ht["computed"] else ""
     md.append(f"\n*Cascade = E°(Os) − E°(FAD/FADH₂, pH 7) in mV, > 0 = downhill; every cell at this tier (B3LYP/6-31G(d)) is downhill (smallest "
               f"{mv(min(cells))} mV). Donor side = computed − measured free flavin "
               f"({mv0(lfl['flavin']['E_pH7_measured_free_V'])} mV); acceptor side = measured ({mv0(meas['E_os_V'])} mV) − "

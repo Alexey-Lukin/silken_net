@@ -446,7 +446,7 @@ CHECKS += [
     ("higher tier electronic · paper §4 → 95", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md",
      rf"electronic flavin level uphill \({N} mV\)", _LFL, _HT("relaxed_electronic"), 0.05),
     ("higher tier electronic · abstract → 95", "docs/protocols/ebfc/in_silico/paper/05_abstract.md",
-     rf"both sides at ωB97X/def2-TZVP \({N} mV\)", _LFL, _HT("relaxed_electronic"), 0.5),
+     rf"both sides re-read at ωB97X/def2-TZVP \({N} mV\)", _LFL, _HT("relaxed_electronic"), 0.5),
     ("112 basis knob · SUMMARY → 112", SUMMARY, rf"def2-TZVP moves E°\(FAD/FADH₂, pH 7\) by \*\*{N}\*\* mV", _P112,
      lambda d: d["knobs_pH7_mV"]["basis"], 0.05),
     ("112 B3LYP/def2-TZVP E° · SUMMARY → 112", SUMMARY, rf"\(−118\.7 → \*\*{N}\*\*\)", _P112,
@@ -470,6 +470,18 @@ CHECKS += [
      _HT("relaxed_rrho_free_energy"), 0.05),
     ("higher tier + ZPE with SOC bipy · SUMMARY → 95", SUMMARY, rf"the \+ ZPE cell would read \*\*{N}\*\* mV", _LFL,
      lambda d: 1000 * d["higher_tier"]["levels"]["relaxed_plus_zpe"]["with_spin_orbit_os_ref63_bipy_V"], 0.05),
+    ("higher tier + ZPE with SOC bipy · paper §3.5 → 95", PAPER_RESULTS, rf"zero-point and RRHO cells read {N} and [+\d.−]+ mV\);",
+     _LFL, lambda d: 1000 * d["higher_tier"]["levels"]["relaxed_plus_zpe"]["with_spin_orbit_os_ref63_bipy_V"], 0.05),
+    ("higher tier + RRHO with SOC bipy · paper §3.5 → 95", PAPER_RESULTS, rf"zero-point and RRHO cells read [+\d.−]+ and {N} mV\);",
+     _LFL, lambda d: 1000 * d["higher_tier"]["levels"]["relaxed_rrho_free_energy"]["with_spin_orbit_os_ref63_bipy_V"], 0.05),
+    ("higher tier + ZPE with SOC bipy · paper §4 → 95", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md",
+     rf"takes them to\s+{N} and", _LFL, lambda d: 1000 * d["higher_tier"]["levels"]["relaxed_plus_zpe"]["with_spin_orbit_os_ref63_bipy_V"], 0.05),
+    ("higher tier + RRHO with SOC bipy · paper §4 → 95", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md",
+     rf"takes them to\s+[+\d.−]+ and {N} mV \(§3\.5\)", _LFL, lambda d: 1000 * d["higher_tier"]["levels"]["relaxed_rrho_free_energy"]["with_spin_orbit_os_ref63_bipy_V"], 0.05),
+    ("112 basis knob · PIPELINE_STATUS row → 112", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md",
+     rf"E°\(FAD/FADH₂, pH 7\): basis \*\*{N}\*\* mV", _P112, lambda d: d["knobs_pH7_mV"]["basis"], 0.05),
+    ("112 functional knob · PIPELINE_STATUS row → 112", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md",
+     rf"functional \*\*{N}\*\* mV more; composed", _P112, lambda d: d["knobs_pH7_mV"]["functional"], 0.05),
     # ⊕ 2026-10-19 — the choices every cell shares (95 `shared_shifts`): §3.5 states the direction as the protocol's, and
     # every number it sets against the cells is read here (referee rounds 2–3 of step 3 — spin–orbit coupling on Os, set
     # against the computed AND the measured flavin)

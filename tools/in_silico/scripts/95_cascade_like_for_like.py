@@ -155,7 +155,7 @@ def higher_tier(she_abs: float, fad_free_meas: float, os_meas: float, meas_free:
     the Os side, 112's E°(FAD/FADH₂) on the donor side — one functional, one light-atom basis, one continuum, one SHE convention,
     LANL2DZ on Os as in every cell. Each half alone would print without its sum; this is the sum.
     CAN: give the device cascade at the higher tier on 112's three flavin levels, and the same cell with ref 63's [Os(bipy)₃]
-    spin–orbit size beside it (printed, not netted). CANNOT: the Os geometry stays programmatic and vertical and the flavin's
+    spin–orbit size stored beside it (not netted). CANNOT: the Os geometry stays programmatic and vertical and the flavin's
     B3LYP-relaxed; only the device form has an Os side at this tier; the ZPE and RRHO terms are 32b's B3LYP ones on the donor
     only; spin–orbit coupling on Os is omitted here as in every cell."""
     path = DFT_CACHE / "pcet_donor_basis_functional.json"
@@ -403,7 +403,7 @@ def main() -> int:
         + ((" At ωB97X/def2-TZVP on both sides (the device form only — B1 with 112's flavin) the device cascade is "
             + " · ".join(f"{v['cascade_V'] * 1000:+.0f}" for v in ht["levels"].values())
             + " mV (relaxed electronic · + ZPE · + RRHO, the last two one-sided)"
-            + (": the B3LYP cells' direction on the electronic level does not survive the higher tier"
+            + (": the device cell's direction on the relaxed electronic flavin level does not survive the higher tier"
                if ht["levels"]["relaxed_electronic"]["direction"] != dev_at["relaxed_electronic"]["direction"] else "")
             + ".") if ht["computed"] else "")
     )

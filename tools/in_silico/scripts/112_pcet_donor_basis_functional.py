@@ -3,7 +3,7 @@
 """112 — E°(FAD/FADH₂) on 32b's relaxed geometries at the larger basis, then at the range-separated functional.
 
 WHY. The like-for-like cascade (95) reads its donor side from 32b, whose one tier is B3LYP/6-31G(d)+C-PCM, and the
-manuscript's limits paragraph lists «the basis and the functional» among the donor-side terms it does not size (paper
+manuscript's limits paragraph listed «the basis and the functional» among the donor-side terms it did not size (paper
 §3.5). This script sizes those two and nothing else (self-review round 2, П4(a) — ⚖️ founder 2026-10-23, «both»).
 
 One knob at a time (in-silico §When Modifying #33 · #36), every tier on the SAME two geometries:
@@ -22,8 +22,8 @@ new electronic energies (Critical Rule #22's composite, one level further), so t
 CAN: say how far the larger basis, and then the range-separated functional, move E°(FAD/FADH₂) on 32b's geometries — so
 how far each moves the donor side of the like-for-like cascade if the osmium side is held.
 CANNOT: (1) the geometry at the new tiers — both states stay B3LYP/6-31G(d) minima; (2) the thermal terms at the new
-tiers — 32b's Hessians are reused; (3) the osmium side at the same tiers — 95's acceptor side stays at its own tier, so
-a cascade cell with this donor would mix tiers, and none is written; (4) any other donor-side term the paper names
+tiers — 32b's Hessians are reused; (3) the osmium side — this script writes no cascade; 95 `higher_tier` composes its
+ωB97X/def2-TZVP flavin with B1's device couple (LANL2DZ on Os), the one form at that tier (⚖️ founder 2026-10-30); (4) any other donor-side term the paper names
 (lumiflavin for FAD, the protonation state at pH 7, the soft modes, explicit water); (5) basis-set convergence —
 def2-TZVP is one step up, not a limit.
 
