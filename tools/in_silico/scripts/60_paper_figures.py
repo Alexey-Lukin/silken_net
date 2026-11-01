@@ -9,7 +9,7 @@ data-driven paper figures into `docs/protocols/ebfc/in_silico/paper/figures/`:
   * fig1_structure.png       — NOT from this script: the PyMOL render of the AF3 model (`fig1_pymol_cartoon.py`, `pymol_tmp` env)
   * fig2_hammett.png         — the osmium-mediator Hammett trend (①), ΔE_red and the Koopmans offset vs σ_para
   * fig3_cathode_det.png    — (a) ZIF Cu-Co-Ce coupling ladder; (b) k_DET margin
-                              vs reorganization-energy scenario (③, conditional on λ(Co))
+                              vs reorganization-energy scenario (③, conditional on λ(Co) and λ(Cu))
   * fig4_cascade_like_for_like.png — (a) the cascade like for like per Os form and donor level (95);
                               (b) its gap split into the donor and acceptor sides (cancellations named)
   * figS1_frontier_levels.png — SI: the one-electron frontier levels of the FADH₂→Os(III) step (old Fig 3a; К15, 2026-10-23)
@@ -269,7 +269,7 @@ def fig4() -> None:
     axb.set_xticks(xs)
     axb.set_xticklabels(disp, fontsize=7)
     axb.set_ylabel("k$_{DET}$ margin vs turnover  (×)")
-    axb.set_title("(b) DET margin (FO-DFT t) — conditional on λ(Co)")
+    axb.set_title("(b) DET margin (FO-DFT t) — conditional on λ(Co) and λ(Cu)")
     axb.set_ylim(3e-7, 1e5)
     axb.legend(loc="upper right", frameon=False)
 

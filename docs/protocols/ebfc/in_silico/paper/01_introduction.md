@@ -85,9 +85,9 @@ agreement with experiment survives relaxed geometries and zero-point energy; (ii
 compute a Hammett<sup>22</sup> trend for the osmium mediator whose direction agrees with every measured pair in three series and which
 alone covers the acceptors beyond Cl, where its magnitude is unvalidated (its slope moves by ≈15 % between two method tiers on three shared points, one of them an acceptor) — ligand-additive and Hammett rules for such potentials are established practice,<sup>23,24</sup> and the empirical optimum is ref 8's own<sup>8</sup>; (iii) compute the
 Co–Cu–Ce-ZIF cathode direct-electron-transfer kinetics with reorganization energies computed for Co and Ce and indicatively for Ru (λ(Cu) cited),
-finding a margin conditional on the Co reorganisation energy — below enzymatic turnover at the computed λ(Co),
-straddling it only at an assumed literature value, on a coplanar bridge geometry whose out-of-plane alternative would
-lift it — together with the levers it suggests (a low-reorganization metal, computed indicatively;
+finding a margin conditional on the Co and the Cu reorganisation energies — below enzymatic turnover at the computed
+λ(Co) on two solution readings of λ(Cu), straddling it at an assumed literature λ(Co) on the same readings; a λ(Cu) as low as azurin's protein-held one, or
+the out-of-plane alternative to a coplanar bridge geometry, would lift it — together with the levers it suggests (a low-reorganization metal, computed indicatively;
 conductive-MOF band transport and an acid-stable enzyme-free catalyst, named but not computed); and (iv) compare the anode→mediator
 cascade like for like — the two-electron, two-proton flavin couple against each one-electron osmium couple on one
 SHE scale — finding it downhill in every osmium form at every level of the flavin treatment at B3LYP/6-31G(d), a direction

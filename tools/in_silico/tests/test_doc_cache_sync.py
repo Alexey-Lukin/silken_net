@@ -9124,6 +9124,11 @@ _OFF = lambda d: d["geometry_sensitivity_refused_offplane"]  # noqa: E731
 _LO = lambda d: d["outer_sphere_term"]["lambda_o_at_turnover_eV"]  # noqa: E731
 _SENS = lambda d, sc: d["other_hops_threshold_sensitivity"]["by_scenario"][sc]  # noqa: E731
 _AZ = lambda d, sc, br: _SENS(d, sc)["verdict_at_azurin_by_dG"][br]["margin_vs_turnover"]  # noqa: E731
+_CU = lambda d, sc, br: d["copper_lambda_condition"]["lambda_cu_at_turnover"][sc][br]["lambda_cu_eV"]  # noqa: E731
+_RCT_FLOOR = lambda d: d["computed_lambda_co_floor_at_any_lambda_cu"]["rct_ohm"]  # noqa: E731
+_OFFCAP = lambda d, k: d["geometry_sensitivity_refused_offplane"]["by_lambda_co"][k]["cathode_cap_by_other_hops"]  # noqa: E731
+_PCON = "docs/protocols/ebfc/in_silico/paper/04_conclusion.md"
+_ERASE = lambda d, sc: d["copper_lambda_condition"]["co_ce_ceiling_that_erases_the_straddle"][sc]  # noqa: E731
 CHECKS += [
     ("paper §3.4 largest applied |ΔG| → 25", PAPER_RESULTS, rf"applied \(\|ΔG\| ≤ {N} eV\)", _KET,
      lambda d: d["outer_sphere_term"]["gap_max_eV"], 0.0006),
@@ -9207,6 +9212,60 @@ CHECKS += [
          lambda d: _SENS(d, "computed λ (B3LYP)")["lambda_cu_at_azurin"]["Co-Ce"], 0.0),
         ("SUMMARY", SUMMARY, "azurin computed favourable", rf"straddles turnover, \*\*×[\d.]+ … ×{N}\*\*",
          lambda d: _AZ(d, "computed λ (B3LYP)", "favourable (−gap, downhill)"), 0.05))],
+    # ⚖️ 2026-11-01 — the λ(Cu) condition's threshold (25 → copper_lambda_condition) and the EIS test it moves (31b)
+    *[(f"{where} λ(Cu) at turnover {key} → 25", doc_, rx, _KET, f, tol) for where, doc_, key, rx, f, tol in (
+        ("paper", PAPER_RESULTS, "computed ΔG=0", rf"turnover needs λ\(Cu\) ≲ {N} eV at zero driving force and",
+         lambda d: _CU(d, "computed λ (B3LYP)", "dG=0 (ASSUMPTION)"), 0.005),
+        ("paper", PAPER_RESULTS, "computed favourable", rf"and ≲ {N} eV at the favourable corner, and no λ\(Cu\)",
+         lambda d: _CU(d, "computed λ (B3LYP)", "favourable (−gap, downhill)"), 0.005),
+        ("paper", PAPER_RESULTS, "literature ΔG=0", rf"at the assumed λ\(Co\), ≲ {N} eV at zero driving force",
+         lambda d: _CU(d, "literature λ", "dG=0 (ASSUMPTION)"), 0.05),
+        ("conclusion", _PCON, "computed ΔG=0", rf"turnover at zero driving force needs λ\(Cu\) ≲ {N} eV —",
+         lambda d: _CU(d, "computed λ (B3LYP)", "dG=0 (ASSUMPTION)"), 0.005),
+        ("conclusion", _PCON, "computed favourable", rf"computed λ\(Co\) for λ\(Cu\) ≲ {N} eV — azurin's",
+         lambda d: _CU(d, "computed λ (B3LYP)", "favourable (−gap, downhill)"), 0.005),
+        ("SUMMARY L3b row", SUMMARY, "computed favourable", rf"and for λ\(Cu\) ≲ {N} eV the computed case straddles it",
+         lambda d: _CU(d, "computed λ (B3LYP)", "favourable (−gap, downhill)"), 0.005),
+        ("paper", PAPER_RESULTS, "Co–Ce coupling drop that erases it", rf"a Co–Ce coupling\s+{N} times smaller, or that hop",
+         lambda d: _ERASE(d, "computed λ (B3LYP)")["coupling_drop"], 0.005),
+        ("paper", PAPER_RESULTS, "Co–Ce uphill ΔG that erases it", rf"or that hop {N} eV uphill, keeps the computed",
+         lambda d: _ERASE(d, "computed λ (B3LYP)")["uphill_dG_eV"], 0.0005),
+        ("SUMMARY §Cathode", SUMMARY, "Co–Ce coupling drop that erases it", rf"a Co–Ce coupling \*\*{N}\*\*× smaller",
+         lambda d: _ERASE(d, "computed λ (B3LYP)")["coupling_drop"], 0.005),
+        ("SUMMARY §Cathode", SUMMARY, "Co–Ce uphill ΔG that erases it", rf"or that hop \*\*{N}\*\* eV uphill",
+         lambda d: _ERASE(d, "computed λ (B3LYP)")["uphill_dG_eV"], 0.0005),
+        ("SUMMARY §Cathode", SUMMARY, "Co–Ce drop at the assumed λ(Co)", rf"at the assumed λ\(Co\) ×{N} or [\d.]+ eV\)",
+         lambda d: _ERASE(d, "literature λ")["coupling_drop"], 0.5),
+        ("SUMMARY §Cathode", SUMMARY, "Co–Ce uphill at the assumed λ(Co)", rf"at the assumed λ\(Co\) ×[\d.]+ or {N} eV\)",
+         lambda d: _ERASE(d, "literature λ")["uphill_dG_eV"], 0.005),
+        ("paper", PAPER_RESULTS, "computed favourable, straddle", rf"computed λ\(Co\) for λ\(Cu\) ≲ {N} eV, as at azurin",
+         lambda d: _CU(d, "computed λ (B3LYP)", "favourable (−gap, downhill)"), 0.005),
+        ("SUMMARY §Cathode", SUMMARY, "computed ΔG=0", rf"turnover needs λ\(Cu\) ≲ \*\*{N}\*\* eV at ΔG = 0 and",
+         lambda d: _CU(d, "computed λ (B3LYP)", "dG=0 (ASSUMPTION)"), 0.0005),
+        ("SUMMARY §Cathode", SUMMARY, "computed favourable", rf"and ≲ \*\*{N}\*\* eV at the favourable corner, and no",
+         lambda d: _CU(d, "computed λ (B3LYP)", "favourable (−gap, downhill)"), 0.0005),
+        ("SUMMARY §Cathode", SUMMARY, "literature adverse", rf"at the assumed λ\(Co\) ≲ {N} · [\d.]+ · [\d.]+ eV",
+         lambda d: _CU(d, "literature λ", "adverse (+gap, uphill)"), 0.0005),
+        ("SUMMARY §Cathode", SUMMARY, "literature ΔG=0", rf"at the assumed λ\(Co\) ≲ [\d.]+ · {N} · [\d.]+ eV",
+         lambda d: _CU(d, "literature λ", "dG=0 (ASSUMPTION)"), 0.0005),
+        ("SUMMARY §Cathode", SUMMARY, "literature favourable", rf"at the assumed λ\(Co\) ≲ [\d.]+ · [\d.]+ · {N} eV",
+         lambda d: _CU(d, "literature λ", "favourable (−gap, downhill)"), 0.0005),
+        ("SUMMARY §Cathode", SUMMARY, "Co–Ce ceiling", rf"lifts the computed cathode above ×{N}: Co–Ce",
+         lambda d: d["copper_lambda_condition"]["chain_at_lambda_cu_zero"]["computed λ (B3LYP)"]["favourable (−gap, downhill)"]["margin_vs_turnover"], 0.005),
+        ("SUMMARY", SUMMARY, "computed ΔG=0", rf"turnover needs λ\(Cu\) ≲ {N} eV at ΔG = 0 \(`copper_lambda_condition`\)",
+         lambda d: _CU(d, "computed λ (B3LYP)", "dG=0 (ASSUMPTION)"), 0.005))],
+    ("paper §3.4 computed branch floor at any λ(Cu) → 31b", PAPER_RESULTS, rf"computed branch down to ≈ {N} Ω, its floor",
+     "kinetics/cathode_det_rct.json", _RCT_FLOOR, 0.005),
+    ("paper §4 computed branch floor at any λ(Cu) → 31b", _PCON, rf"computed branch down to ≈ {N} Ω — its floor",
+     "kinetics/cathode_det_rct.json", _RCT_FLOOR, 0.005),
+    ("paper §3.4 λ(Co) branch overlap low → 31b", PAPER_RESULTS, rf"only an arc below ≈ {N} Ω or above",
+     "kinetics/cathode_det_rct.json", lambda d: d["lambda_co_branch_overlap_ohm"][0], 5.0),
+    ("paper §3.4 λ(Co) branch overlap high → 31b", PAPER_RESULTS, rf"Ω or above ≈ {N} kΩ would exclude",
+     "kinetics/cathode_det_rct.json", lambda d: d["lambda_co_branch_overlap_ohm"][1] / 1e3, 0.05),
+    ("paper §3.4 off-plane probe cathode cap, literature → 25", PAPER_RESULTS, rf"caps the cathode at ×{N}×10³ at the",
+     _KET, lambda d: _OFFCAP(d, "literature_assumed") / 1e3, 0.05),
+    ("paper §3.4 off-plane probe cathode cap, computed → 25", PAPER_RESULTS, rf"literature λ\(Co\) and at ×{N} at the computed one",
+     _KET, lambda d: _OFFCAP(d, "computed"), 0.05),
 ]
 
 
@@ -9217,6 +9276,26 @@ def test_paper_categorical_claims_of_commit_g_match_their_instruments():
     a table edit or a prose edit that moves any of these apart; CANNOT catch a claim worded outside these clauses."""
     import numpy as np
     meth, res = " ".join(doc(_PM).split()), " ".join(doc(PAPER_RESULTS).split())
+    # ⚖️ 2026-11-01: «no λ(Cu) reaches it at the adverse corner» at the computed λ(Co) — the threshold's null branch
+    ket = C(_KET)
+    cu = ket["copper_lambda_condition"]["lambda_cu_at_turnover"]["computed λ (B3LYP)"]
+    assert ("no λ(Cu) reaches it at the adverse corner" in res) == (cu["adverse (+gap, uphill)"] is None), cu
+    # the abstract's «lifts the computed case across turnover and the assumed one clear of it», per lever
+    az = {n: [v["margin_vs_turnover"] for v in sc["verdict_at_azurin_by_dG"].values()]
+          for n, sc in ket["other_hops_threshold_sensitivity"]["by_scenario"].items()}
+    off = ket["geometry_sensitivity_refused_offplane"]["by_lambda_co"]
+    abstract = " ".join(doc("docs/protocols/ebfc/in_silico/paper/05_abstract.md").split())
+    assert "lifts the computed case across turnover and the assumed one clear of it" in abstract
+    assert min(az["computed λ (B3LYP)"]) < 1 <= max(az["computed λ (B3LYP)"]) and min(az["literature λ"]) >= 1, az
+    assert (off["computed"]["offplane_cathode"]["adverse"] < 1 <= off["computed"]["offplane_cathode"]["favourable"]
+            and off["literature_assumed"]["offplane_cathode"]["adverse"] >= 1), off
+    # azurin is an example below the readings, never a framework/site value (round-1 and round-2 adversary)
+    assert "framework-held Cu–N" not in ket["verdict"] and "framework-held Cu–N" not in ket["lambda_cu_bracket_bounds"]
+    summ = " ".join(doc(SUMMARY).split())
+    assert not any("framework-held Cu–N" in t for t in (res, summ)), "azurin worded as a framework/site value again"
+    # «its floor at any λ(Cu), set by the Co–Ce hop» names the BINDING hop of 31b's floor, not just its number
+    rct = C("kinetics/cathode_det_rct.json")["computed_lambda_co_floor_at_any_lambda_cu"]
+    assert ("its floor at any λ(Cu), set by the Co–Ce hop" in res) == (rct["binding_hop"] == "Co-Ce"), rct
     src = (REPO / "tools/in_silico/scripts/24_dft_hopping_integrals.py").read_text()
     spins = dict(re.findall(r'\("(\w\w)_\w+\.xyz", "\w+", "\w+", "[^"]+", \+1, (\d)\)', src))
     assert spins == {"cu": "2", "co": "3", "ce": "1"}, f"24's cluster spins moved: {spins}"

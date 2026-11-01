@@ -10,8 +10,11 @@ survives a realistic λ. It does NOT: that margin was a double artifact of
 (a) a broken bridging geometry (script 23 imidazole N–H clashing into the 2nd
 metal at 0.97 Å — since deprotonated to an imidazolate bridge) and (b) an
 assumed λ = 0.7 eV. ⊕ 2026-10-15: the table runs on 24b's diabatised coupling, and the verdict is
-CONDITIONAL on λ(Co) — below turnover at every corner on the COMPUTED λ(Co) 3.09 eV, straddling it only
-on the ASSUMED literature 1.4 eV, which has no primary (`cobalt_lambda_condition`);
+CONDITIONAL on λ(Co) — below turnover at every corner on the COMPUTED λ(Co) 3.09 eV, straddling it
+on the ASSUMED literature 1.4 eV, which has no primary (`cobalt_lambda_condition`), both on the two solution
+readings of λ(Cu) — ⊕ ⚖️ 2026-11-01 and on λ(Cu): the λ(Cu) at which the chain reaches turnover is
+`copper_lambda_condition`, and for λ(Cu) ≲ 0.92 eV (azurin's protein-held 0.7 eV is one) the computed case straddles it
+— on the shipped Co–Ce coupling at an assumed ΔG(Co–Ce) = 0, whose erase thresholds are printed beside it;
 a Co→Ru swap (computed λ_Ru = 0.78) restores a margin that is indicative only, because
 Cu(II/I) keeps a large λ — itself a bracket of two named readings, never a pick.
 Compute-light: reads cached JSON, runs no DFT.
@@ -21,6 +24,7 @@ Run:  python tools/in_silico/scripts/25_cathode_ket_lambda.py
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -42,9 +46,11 @@ TURNOVER_S = 1.0e3  # enzymatic turnover ~10³ s⁻¹ (the rate the cathode must
 #     (PMC553296, §"Ru-Proteins", citing their ref 24). ⚠️ The species is an inline formula IMAGE;
 #     the page's text layer drops it, and it had been read as «aqueous Cu(II/I)» — it is a bis-phen
 #     N4 chelate, not the aqua ion. Read from the image 2026-09-24.
-# ⛔ Both are UNCONSTRAINED solution couples. A framework-held Cu–N4 node can sit BELOW both (the
-# same paragraph gives Cu(II/I) in azurin 0.7 eV — the entatic fold), so the bracket bounds the
-# READINGS, not the site: its adverse end is a consumer ceiling, its kind end is no floor.
+# ⛔ Both are UNCONSTRAINED solution couples. A more rigidly held copper can sit BELOW both (the same
+# paragraph gives azurin's protein-held Cu(II/I), 0.7 eV — the entatic fold; an example, not a value for
+# the framework copper or the T1 site), so the bracket bounds the READINGS, not the site: its adverse
+# end is a consumer ceiling, its kind end is no floor. ⊕ ⚖️ 2026-11-01: λ(Cu) is the verdict's second
+# condition — its threshold is `copper_lambda_condition`.
 LAMBDA_CU_READINGS = {"unsourced": 2.0, "cu_phen2": 2.4}
 LAMBDA_CU_READING_SOURCES = {
     "unsourced": "textbook value, no primary found — [CITATION NEEDED]",
@@ -243,9 +249,10 @@ def main() -> int:
            "lambda_cu_reading_sources": LAMBDA_CU_READING_SOURCES,
            "lambda_cu_base_reading": LAMBDA_CU_BASE,
            "lambda_cu_bracket_bounds": "the READINGS, not the site — both are unconstrained "
-                                       "solution couples; a framework-held Cu–N4 node can sit below "
-                                       "both (Cu(II/I) in azurin 0.7 eV, same source), so the kind "
-                                       "end is no floor",
+                                       "solution couples, and a more rigidly held copper can sit below "
+                                       "both (azurin's protein-held Cu(II/I), 0.7 eV, same source — an "
+                                       "example, not a value for the framework copper or the enzyme's "
+                                       "T1 site), so the low end of the λ(Cu) bracket is no floor",
            "scenarios": {}}
 
     def _branches(name: str, lam: dict[str, float], t_map: dict[str, float] | None = None) -> dict[str, dict]:
@@ -345,6 +352,68 @@ def main() -> int:
         "by_scenario": sens}
     print(f"  other hops' coupling-drop threshold, sensitivity: {sens}")
 
+    # ⊕ 2026-11-01 (⚖️ founder: the verdict is conditional on λ(Cu) too; in-silico §When Modifying #40 — publish the
+    # threshold, not one example): the λ(Cu) at which the whole CHAIN reaches turnover, per λ(Co) scenario and ΔG
+    # branch. Only the Cu–Co hop depends on λ(Cu), and its k falls monotonically in λ(Cu) here (λ_hop ≥ λ(Co)/2 exceeds
+    # the gap), so bisection on [0, LAMBDA_CU_SCAN_TOP] is exact; null = unreachable at any λ(Cu) ≥ 0 (the chain at
+    # λ(Cu) = 0 is still below turnover), the scan top = reached on the whole scan.
+    LAMBDA_CU_SCAN_TOP = 3.0
+
+    def _chain(name: str, lam_cu: float, b: str) -> tuple[float, str]:
+        lam_h, dg = _scenarios(lam_cu)[name], _dg(name, _BRANCH_KEY[b])
+        ks = {h: marcus_rate(tij[h], lam_h[h], dg[h]) for h in tij}
+        return min(ks.values()), min(ks, key=ks.get)
+    cu_need = {}
+    for name in ("literature λ", "computed λ (B3LYP)"):
+        cu_need[name] = {}
+        for b in BRANCHES:
+            if _chain(name, 0.0, b)[0] < TURNOVER_S:
+                cu_need[name][b] = None
+                continue
+            a, z = 0.0, LAMBDA_CU_SCAN_TOP
+            if _chain(name, z, b)[0] >= TURNOVER_S:
+                cu_need[name][b] = {"lambda_cu_eV": z, "reached_on_the_whole_scan": True}
+                continue
+            for _ in range(80):
+                m = (a + z) / 2
+                a, z = (m, z) if _chain(name, m, b)[0] >= TURNOVER_S else (a, m)
+            cu_need[name][b] = {"lambda_cu_eV": round((a + z) / 2, 3), "reached_on_the_whole_scan": False}
+    # The other hops do not depend on λ(Cu), so they CAP what any λ(Cu) can buy: the chain at λ(Cu) = 0 is that
+    # ceiling, and where it is set by Co–Ce a lower λ(Cu) moves nothing further (31b reads it as the R_ct floor).
+    cu_zero = {name: {b: {"margin_vs_turnover": _chain(name, 0.0, b)[0] / TURNOVER_S, "binding_hop": _chain(name, 0.0, b)[1]}
+                      for b in BRANCHES} for name in cu_need}
+    out["copper_lambda_condition"] = {
+        "what": "the λ(Cu) at which the chain's slowest hop reaches turnover, per λ(Co) scenario and ΔG branch; "
+                "null = no λ(Cu) ≥ 0 reaches it",
+        "lambda_cu_readings_eV": LAMBDA_CU_READINGS, "scan_top_eV": LAMBDA_CU_SCAN_TOP,
+        "lambda_cu_at_turnover": cu_need,
+        "chain_at_lambda_cu_zero": cu_zero,
+        "chain_at_lambda_cu_zero_reading": "the ceiling any λ(Cu) can buy: the hops that do not depend on λ(Cu) "
+                                           "bind there wherever `binding_hop` is not Cu-Co"}
+    # ⊕ 2026-11-01 (adversary round 3, F1): that ceiling is the Co–Ce hop on its SHIPPED coupling (crude ΔSCF, on the
+    # compressed Ce–N contact of §2.5) at an ASSUMED ΔG = 0 — so «a low enough λ(Cu) lifts the computed cathode across
+    # turnover» stands on it. Rule #40: the threshold, not the example — how much smaller the Co–Ce coupling, or how far
+    # uphill that hop, keeps the chain below turnover at EVERY λ(Cu) (the ceiling above falls to 1).
+    def _co_ce_erases(name: str) -> dict:
+        lam_h = scenarios[name]["Co-Ce"]
+        cap = marcus_rate(tij["Co-Ce"], lam_h, 0.0) / TURNOVER_S
+        if cap < 1.0:
+            return {"ceiling": cap, "coupling_drop": None, "uphill_dG_eV": None}
+        a, z = 0.0, lam_h
+        for _ in range(80):
+            m = (a + z) / 2
+            a, z = (m, z) if marcus_rate(tij["Co-Ce"], lam_h, m) >= TURNOVER_S else (a, m)
+        # Rounded UP (in-silico §When Modifying #43): the sentence is «past this, below turnover», so the printed value
+        # must already lie past the threshold — rounding to nearest put 0.044 eV and ×78 on the wrong side.
+        return {"ceiling": cap, "coupling_drop": math.ceil(cap ** 0.5 * 100) / 100,
+                "uphill_dG_eV": math.ceil((a + z) / 2 * 1000) / 1000}
+    out["copper_lambda_condition"]["co_ce_ceiling_that_erases_the_straddle"] = {
+        "what": "the Co–Ce coupling drop, or the Co–Ce uphill ΔG, at which the λ(Cu)-independent ceiling falls to turnover "
+                "— past either, no λ(Cu) lifts that λ(Co) case to turnover at any corner",
+        **{n: _co_ce_erases(n) for n in ("computed λ (B3LYP)", "literature λ")}}
+    print(f"  Co–Ce ceiling that erases the straddle: {out['copper_lambda_condition']['co_ce_ceiling_that_erases_the_straddle']}")
+    print(f"  λ(Cu) at turnover: {cu_need}")
+
     # The pre-2026-10-15 table on the crude coupling — a RECORD of what was published, never a consumer reading.
     out["scenarios_crude_dscf"] = {}
     for name in scenarios:
@@ -418,7 +487,10 @@ def main() -> int:
         # ⊕ 2026-10-30 (self-review round 2, К8): the fields above are at the ASSUMED λ(Co) only, so they could not say
         # whether the COMPUTED-λ(Co) verdict («below turnover at every corner») survives the same roll. The whole bracket
         # per λ(Co) value, on both couplings, is computed here — the review printed it with no script behind it.
-        def _off_by_co(lam_co: float) -> dict:
+        def _off_by_co(lam_co: float, name: str) -> dict:
+            # ⊕ 2026-11-01 (adversary round 2, M7): the probe moves only the Cu–Co hop, so the CATHODE is capped by
+            # the other hops (ΔG = 0 there, λ(Cu)-independent) — printed beside the hop margins, never folded into them.
+            cap = min(marcus_rate(tij[h], scenarios[name][h], 0.0) for h in tij if h != "Cu-Co") / TURNOVER_S
             per = {}
             for geom, (t, g) in (("shipped", (t_fo, dg_fo)), ("offplane", (off["t_ij_eV"], off["site_energy_gap_eV"]))):
                 cells = {f"{r}|{tag}": marcus_rate(t, _cross_relation(lam_cu, lam_co), dg) / TURNOVER_S
@@ -426,11 +498,15 @@ def main() -> int:
                          for tag, dg in (("dG=+gap", g), ("dG=0", 0.0), ("dG=-gap", -g))}
                 per[geom] = {"margins": cells, "adverse": min(cells.values()), "favourable": max(cells.values())}
             return {"lambda_co_eV": lam_co, **per,
+                    "cathode_cap_by_other_hops": cap,
+                    "offplane_cathode": {"adverse": min(per["offplane"]["adverse"], cap),
+                                         "favourable": min(per["offplane"]["favourable"], cap)},
                     "offplane_crosses_turnover": per["offplane"]["adverse"] < 1.0 <= per["offplane"]["favourable"],
                     "shipped_side_of_turnover": ("below" if per["shipped"]["favourable"] < 1.0 else
                                                  "above" if per["shipped"]["adverse"] >= 1.0 else "across")}
         g = out["geometry_sensitivity_refused_offplane"]
-        g["by_lambda_co"] = {"literature_assumed": _off_by_co(LAMBDA_LIT["Co"]), "computed": _off_by_co(lam_c["Co"])}
+        g["by_lambda_co"] = {"literature_assumed": _off_by_co(LAMBDA_LIT["Co"], "literature λ"),
+                             "computed": _off_by_co(lam_c["Co"], "computed λ (B3LYP)")}
         g["by_lambda_co_key"] = ("<λ(Cu) reading>|<ΔG branch>, each geometry's OWN gap; adverse/favourable = the bracket's "
                                  "corners over the gap sign × the λ(Cu) reading, as in `scenarios`")
         print(f"\n  geometry sensitivity (REFUSED off-plane probe): t_ij ×{g['t_ij_ratio_vs_shipped']}, "
@@ -454,7 +530,8 @@ def main() -> int:
         "definition": "|t_ij| multiplier the bottleneck hop needs for k_ET to reach enzymatic "
                       "turnover at the consumer-rule (adverse) end; k_ET ∝ |t_ij|², so 1/√margin. "
                       "A COUPLING lever only.",
-        # ⊕ 2026-10-15 (cluster 1): the gain is CONDITIONAL on λ(Co) like the verdict it serves — the fields above
+        # ⊕ 2026-10-15 (cluster 1): the gain is CONDITIONAL on λ(Co) (⊕ ⚖️ 2026-11-01 and on λ(Cu), on whose two
+        # readings it is computed) like the verdict it serves — the fields above
         # are at the ASSUMED literature λ(Co), the computed one needs the multiplier below. Quoting one without
         # naming its λ(Co) is how the single pre-conditional number got carried for weeks.
         "by_lambda_co": {
@@ -635,9 +712,25 @@ def main() -> int:
              if v["bottleneck_hop"] != lit["by_dG"][BRANCHES[1]]["bottleneck_hop"]]
     comp = out["scenarios"]["computed λ (B3LYP)"]
     co_lbl = zif["pairs"][0]["label"]
+    az_by = {n: [v["margin_vs_turnover"] for v in sc["verdict_at_azurin_by_dG"].values()]
+             for n, sc in out["other_hops_threshold_sensitivity"]["by_scenario"].items()}
+    az_c, az_l = az_by["computed λ (B3LYP)"], az_by["literature λ"]
+    az_fav_hop = out["other_hops_threshold_sensitivity"]["by_scenario"]["computed λ (B3LYP)"][
+        "verdict_at_azurin_by_dG"][BRANCHES[2]]["bottleneck_hop"]
+
+    def _cu_need_text(name: str) -> str:
+        reach, none = [], []
+        for b, tag in zip(BRANCHES, ("at the adverse corner", "at ΔG = 0", "at the favourable corner"), strict=True):
+            v = cu_need[name][b]
+            if v is None:
+                none.append(tag)
+            else:
+                reach.append(f"{'≥ any up to' if v['reached_on_the_whole_scan'] else '≲'} {v['lambda_cu_eV']} eV {tag}")
+        return (", ".join(reach) or "no λ(Cu) ≥ 0 at any corner") + (
+            f", and no λ(Cu) ≥ 0 reaches it {' or '.join(none)}" if none and reach else "")
     verdict = (
         f"The bottleneck is {lit['by_dG'][BRANCHES[1]]['bottleneck_hop']}"
-        + (", in every ΔG branch of every live scenario" if invariant else
+        + (", in every ΔG branch of every live scenario on the two λ(Cu) readings" if invariant else
            ", but which hop limits DEPENDS on the ΔG branch — read per row")
         + (f" (the withdrawn λ = 0.7 row differs: {'; '.join(flips)})" if flips else "")
         + f". Its coupling is the two-state diabatisation (24b, t = {t_fo:.4f} eV): the crude ΔSCF value "
@@ -646,7 +739,8 @@ def main() -> int:
         "unconstrained solutions from one start, so it is not used (its table is kept as `scenarios_crude_dscf`). "
         f"Every margin is a BRACKET over the sign of the computed {GAP_EV['Cu-Co']} eV site-energy gap and the λ(Cu) "
         f"reading ({' ⊥ '.join(f'{r} {v}' for r, v in LAMBDA_CU_READINGS.items())} eV); ΔG = 0 is the function's "
-        "DEFAULT, not a measurement. The verdict is CONDITIONAL ON λ(Co). At the assumed literature λ(Co) "
+        "DEFAULT, not a measurement. The verdict is CONDITIONAL ON λ(Co) AND ON λ(Cu) (⚖️ founder 2026-11-01). At the "
+        "assumed literature λ(Co) "
         f"{LAMBDA_LIT['Co']} eV (no primary): ×{lit['margin_vs_turnover_adverse']:.2g} … "
         f"×{lit['margin_vs_turnover_favourable']:.3g} (×{lit['margin_vs_turnover_at_dG0']:.2g} at ΔG = 0 on the "
         f"{LAMBDA_CU_BASE} reading). At the computed λ(Co) {lam_c['Co']} eV ({lam_prov['Co']}): "
@@ -657,8 +751,13 @@ def main() -> int:
         + ("⚠️ The adverse corner is below turnover on BOTH λ(Co) values — rate-limiting, not borderline. "
            if max(lit["margin_vs_turnover_adverse"], comp["margin_vs_turnover_adverse"]) < 1.0 else "")
         + "The λ(Cu) bracket bounds the READINGS, not the site: both are unconstrained solution couples, and a "
-        "framework-held Cu–N4 node can sit below both. "
-        f"The Ru-swap reads ×{ru['margin_vs_turnover_adverse']:.2g} … ×{ru['margin_vs_turnover_favourable']:.2g} — "
+        "more rigidly held copper can sit below both. "
+        + f"At the computed λ(Co), turnover needs λ(Cu) {_cu_need_text('computed λ (B3LYP)')}; at the assumed one, "
+        f"{_cu_need_text('literature λ')}. At the protein-held λ(Cu) of azurin ({LAMBDA_CU_AZURIN_EV} eV — an example "
+        f"below both readings, not this site's value) the computed-λ(Co) cathode reads ×{min(az_c):.2g} … "
+        f"×{max(az_c):.2g} (its favourable corner limited by {az_fav_hop}) and the literature one ×{min(az_l):.2g} … "
+        f"×{max(az_l):.3g}. "
+        + f"The Ru-swap reads ×{ru['margin_vs_turnover_adverse']:.2g} … ×{ru['margin_vs_turnover_favourable']:.2g} — "
         "across the λ(Cu) reading only, on the borrowed Cu–Co coupling, because no usable gap or coupling exists for the "
         f"{RU_GAP_REFUSED['pair']} node: {RU_GAP_REFUSED['reason']}; and its λ(Ru) is a sum of Nelsen halves "
         f"{ru35['lambda_1_eV']:.3f} and {ru35['lambda_2_eV']:.3f} eV"

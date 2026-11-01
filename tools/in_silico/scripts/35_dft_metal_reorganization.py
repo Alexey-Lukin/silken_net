@@ -8,7 +8,8 @@ This computes λ from first principles per metal couple and feeds it back into 2
 replacing the guess. ⚠️ The parenthesis here read «the cathode-not-rate-limiting verdict is robust
 regardless» until 2026-10-15: that is false and was the opposite of what this script found — the
 computed λ(Co) 3.09 eV puts the Cu–Co hop BELOW turnover at every corner, and the whole cathode verdict
-is now stated as conditional on λ(Co) (`25` → `cobalt_lambda_condition`, Стаття 1 self-review cluster 1).
+is now stated as conditional on λ(Co) (`25` → `cobalt_lambda_condition`, Стаття 1 self-review cluster 1) — ⊕ ⚖️
+2026-11-01 and on λ(Cu) (`copper_lambda_condition`): «below at every corner» holds on the two solution readings.
 
 METHOD — Nelsen 4-point on a single-metal aquo model [M(H₂O)₆]^q (two-sphere Marcus
 for a hop: λ_hop(M1-M2) = (λ_M1 + λ_M2)/2). Aquo is a robust, well-behaved proxy for

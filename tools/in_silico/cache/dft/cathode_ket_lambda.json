@@ -64,7 +64,7 @@
     "cu_phen2": "Cu(phen)2 2+/+ self-exchange \u22482.4 eV \u2014 Gray & Winkler, PNAS 2005, 102, 3534 (PMC553296); species read from the inline formula image, not the text layer"
   },
   "lambda_cu_base_reading": "unsourced",
-  "lambda_cu_bracket_bounds": "the READINGS, not the site \u2014 both are unconstrained solution couples; a framework-held Cu\u2013N4 node can sit below both (Cu(II/I) in azurin 0.7 eV, same source), so the kind end is no floor",
+  "lambda_cu_bracket_bounds": "the READINGS, not the site \u2014 both are unconstrained solution couples, and a more rigidly held copper can sit below both (azurin's protein-held Cu(II/I), 0.7 eV, same source \u2014 an example, not a value for the framework copper or the enzyme's T1 site), so the low end of the \u03bb(Cu) bracket is no floor",
   "scenarios": {
     "canon \u03bb=0.7 (old assumption)": {
       "lambda_hop_eV": {
@@ -549,6 +549,85 @@
       }
     }
   },
+  "copper_lambda_condition": {
+    "what": "the \u03bb(Cu) at which the chain's slowest hop reaches turnover, per \u03bb(Co) scenario and \u0394G branch; null = no \u03bb(Cu) \u2265 0 reaches it",
+    "lambda_cu_readings_eV": {
+      "unsourced": 2.0,
+      "cu_phen2": 2.4
+    },
+    "scan_top_eV": 3.0,
+    "lambda_cu_at_turnover": {
+      "literature \u03bb": {
+        "adverse (+gap, uphill)": {
+          "lambda_cu_eV": 1.596,
+          "reached_on_the_whole_scan": false
+        },
+        "dG=0 (ASSUMPTION)": {
+          "lambda_cu_eV": 2.121,
+          "reached_on_the_whole_scan": false
+        },
+        "favourable (\u2212gap, downhill)": {
+          "lambda_cu_eV": 2.611,
+          "reached_on_the_whole_scan": false
+        }
+      },
+      "computed \u03bb (B3LYP)": {
+        "adverse (+gap, uphill)": null,
+        "dG=0 (ASSUMPTION)": {
+          "lambda_cu_eV": 0.427,
+          "reached_on_the_whole_scan": false
+        },
+        "favourable (\u2212gap, downhill)": {
+          "lambda_cu_eV": 0.917,
+          "reached_on_the_whole_scan": false
+        }
+      }
+    },
+    "chain_at_lambda_cu_zero": {
+      "literature \u03bb": {
+        "adverse (+gap, uphill)": {
+          "margin_vs_turnover": 3037.232215860327,
+          "binding_hop": "Cu-Co"
+        },
+        "dG=0 (ASSUMPTION)": {
+          "margin_vs_turnover": 6145.762519117169,
+          "binding_hop": "Co-Ce"
+        },
+        "favourable (\u2212gap, downhill)": {
+          "margin_vs_turnover": 6145.762519117169,
+          "binding_hop": "Co-Ce"
+        }
+      },
+      "computed \u03bb (B3LYP)": {
+        "adverse (+gap, uphill)": {
+          "margin_vs_turnover": 0.6119835434009158,
+          "binding_hop": "Cu-Co"
+        },
+        "dG=0 (ASSUMPTION)": {
+          "margin_vs_turnover": 2.3902807300664604,
+          "binding_hop": "Co-Ce"
+        },
+        "favourable (\u2212gap, downhill)": {
+          "margin_vs_turnover": 2.3902807300664604,
+          "binding_hop": "Co-Ce"
+        }
+      }
+    },
+    "chain_at_lambda_cu_zero_reading": "the ceiling any \u03bb(Cu) can buy: the hops that do not depend on \u03bb(Cu) bind there wherever `binding_hop` is not Cu-Co",
+    "co_ce_ceiling_that_erases_the_straddle": {
+      "what": "the Co\u2013Ce coupling drop, or the Co\u2013Ce uphill \u0394G, at which the \u03bb(Cu)-independent ceiling falls to turnover \u2014 past either, no \u03bb(Cu) lifts that \u03bb(Co) case to turnover at any corner",
+      "computed \u03bb (B3LYP)": {
+        "ceiling": 2.3902807300664604,
+        "coupling_drop": 1.55,
+        "uphill_dG_eV": 0.045
+      },
+      "literature \u03bb": {
+        "ceiling": 6145.762519117169,
+        "coupling_drop": 78.4,
+        "uphill_dG_eV": 0.387
+      }
+    }
+  },
   "scenarios_crude_dscf": {
     "canon \u03bb=0.7 (old assumption)": {
       "margin_vs_turnover_adverse": 2291.4550776352967,
@@ -648,6 +727,11 @@
           "adverse": 1169.3180532580136,
           "favourable": 23615.439594215317
         },
+        "cathode_cap_by_other_hops": 6145.762519117169,
+        "offplane_cathode": {
+          "adverse": 1169.3180532580136,
+          "favourable": 6145.762519117169
+        },
         "offplane_crosses_turnover": false,
         "shipped_side_of_turnover": "across"
       },
@@ -676,6 +760,11 @@
           },
           "adverse": 0.25646064341741365,
           "favourable": 5.08909303691791
+        },
+        "cathode_cap_by_other_hops": 2.3902807300664604,
+        "offplane_cathode": {
+          "adverse": 0.25646064341741365,
+          "favourable": 2.3902807300664604
         },
         "offplane_crosses_turnover": true,
         "shipped_side_of_turnover": "below"
@@ -788,5 +877,5 @@
     "negative_half": true,
     "reading": "a negative Nelsen half means one state's energy at the OTHER state's geometry lies below its own optimised one \u2014 the optimisation did not find that minimum \u2014 so \u03bb(Ru) is indicative, not computed"
   },
-  "verdict": "The bottleneck is Cu-Co, in every \u0394G branch of every live scenario. Its coupling is the two-state diabatisation (24b, t = 0.0015 eV): the crude \u0394SCF value (0.0013 eV) is half an energy difference of 9.4\u00d7 the SCF tolerance between two unconstrained solutions from one start, so it is not used (its table is kept as `scenarios_crude_dscf`). Every margin is a BRACKET over the sign of the computed 0.1299 eV site-energy gap and the \u03bb(Cu) reading (unsourced 2.0 \u22a5 cu_phen2 2.4 eV); \u0394G = 0 is the function's DEFAULT, not a measurement. The verdict is CONDITIONAL ON \u03bb(Co). At the assumed literature \u03bb(Co) 1.4 eV (no primary): \u00d70.018 \u2026 \u00d720.9 (\u00d71.8 at \u0394G = 0 on the unsourced reading). At the computed \u03bb(Co) 3.094 eV (computed \u2014 script 35 row `co_nh3` (ammine = the ZIF N-donor analogue)): \u00d74.1e-06 \u2026 \u00d70.0046 (\u00d70.00039 at \u0394G = 0). Turnover needs \u03bb(Co) \u2272 1.521 eV at \u0394G = 0 on the unsourced reading and \u2272 0.596 eV at the adverse corner. \u26a0\ufe0f The adverse corner is below turnover on BOTH \u03bb(Co) values \u2014 rate-limiting, not borderline. The \u03bb(Cu) bracket bounds the READINGS, not the site: both are unconstrained solution couples, and a framework-held Cu\u2013N4 node can sit below both. The Ru-swap reads \u00d75.5 \u2026 \u00d741 \u2014 across the \u03bb(Cu) reading only, on the borrowed Cu\u2013Co coupling, because no usable gap or coupling exists for the Cu-Ru (CHEM.32, Co\u2192Ru swap) node: 24d self-flags localised=False / physically_reasonable=False \u2014 the minimal cluster cannot form a clean Cu\u2194Ru diabatic pair, so its site-energy gap is not a measurement any more than its t_ij was; and its \u03bb(Ru) is a sum of Nelsen halves -0.256 and 1.037 eV \u2014 one negative \u2014 so that margin is indicative only."
+  "verdict": "The bottleneck is Cu-Co, in every \u0394G branch of every live scenario on the two \u03bb(Cu) readings. Its coupling is the two-state diabatisation (24b, t = 0.0015 eV): the crude \u0394SCF value (0.0013 eV) is half an energy difference of 9.4\u00d7 the SCF tolerance between two unconstrained solutions from one start, so it is not used (its table is kept as `scenarios_crude_dscf`). Every margin is a BRACKET over the sign of the computed 0.1299 eV site-energy gap and the \u03bb(Cu) reading (unsourced 2.0 \u22a5 cu_phen2 2.4 eV); \u0394G = 0 is the function's DEFAULT, not a measurement. The verdict is CONDITIONAL ON \u03bb(Co) AND ON \u03bb(Cu) (\u2696\ufe0f founder 2026-11-01). At the assumed literature \u03bb(Co) 1.4 eV (no primary): \u00d70.018 \u2026 \u00d720.9 (\u00d71.8 at \u0394G = 0 on the unsourced reading). At the computed \u03bb(Co) 3.094 eV (computed \u2014 script 35 row `co_nh3` (ammine = the ZIF N-donor analogue)): \u00d74.1e-06 \u2026 \u00d70.0046 (\u00d70.00039 at \u0394G = 0). Turnover needs \u03bb(Co) \u2272 1.521 eV at \u0394G = 0 on the unsourced reading and \u2272 0.596 eV at the adverse corner. \u26a0\ufe0f The adverse corner is below turnover on BOTH \u03bb(Co) values \u2014 rate-limiting, not borderline. The \u03bb(Cu) bracket bounds the READINGS, not the site: both are unconstrained solution couples, and a more rigidly held copper can sit below both. At the computed \u03bb(Co), turnover needs \u03bb(Cu) \u2272 0.427 eV at \u0394G = 0, \u2272 0.917 eV at the favourable corner, and no \u03bb(Cu) \u2265 0 reaches it at the adverse corner; at the assumed one, \u2272 1.596 eV at the adverse corner, \u2272 2.121 eV at \u0394G = 0, \u2272 2.611 eV at the favourable corner. At the protein-held \u03bb(Cu) of azurin (0.7 eV \u2014 an example below both readings, not this site's value) the computed-\u03bb(Co) cathode reads \u00d70.019 \u2026 \u00d72.4 (its favourable corner limited by Co-Ce) and the literature one \u00d789 \u2026 \u00d76.15e+03. The Ru-swap reads \u00d75.5 \u2026 \u00d741 \u2014 across the \u03bb(Cu) reading only, on the borrowed Cu\u2013Co coupling, because no usable gap or coupling exists for the Cu-Ru (CHEM.32, Co\u2192Ru swap) node: 24d self-flags localised=False / physically_reasonable=False \u2014 the minimal cluster cannot form a clean Cu\u2194Ru diabatic pair, so its site-energy gap is not a measurement any more than its t_ij was; and its \u03bb(Ru) is a sum of Nelsen halves -0.256 and 1.037 eV \u2014 one negative \u2014 so that margin is indicative only."
 }

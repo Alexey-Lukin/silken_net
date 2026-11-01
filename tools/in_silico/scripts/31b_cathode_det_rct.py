@@ -89,6 +89,24 @@ def main() -> int:
         print(f"  {kname:>26} {k:>12.0f} " + " ".join(f"{v:>14.3g}" for v in row))
 
     lo, hi = min(all_rct), max(all_rct)
+    # ⊕ 2026-11-01 (⚖️ founder: the verdict is conditional on λ(Cu) too): the band above and the overlap of the two λ(Co)
+    # branches are on the two SOLUTION readings of λ(Cu). A lower λ(Cu) (azurin's protein-held one is 25's example) makes
+    # the computed-λ(Co) chain faster, so its R_ct reaches far below the overlap — but no lower than the FLOOR the
+    # λ(Cu)-independent hops set (25 → `copper_lambda_condition.chain_at_lambda_cu_zero`): an arc below the overlap then
+    # excludes only «computed λ(Co) on a solution-reading λ(Cu)», and only an arc below the floor still excludes the
+    # computed λ(Co) at any λ(Cu). Printed, so the text is never hand-derived.
+    overlap = [min(g["rct_ohm"] for g in grid if g["k_label"].startswith("computed")),
+               max(g["rct_ohm"] for g in grid if g["k_label"].startswith("lit"))]
+    sens = klam["other_hops_threshold_sensitivity"]
+    k_az = [v["margin_vs_turnover"] * turnover
+            for v in sens["by_scenario"]["computed λ (B3LYP)"]["verdict_at_azurin_by_dG"].values()]
+    rct_az = [min(rct(max(k_az), g) for g in GAMMA_GRID.values()), max(rct(min(k_az), g) for g in GAMMA_GRID.values())]
+    zero = klam["copper_lambda_condition"]["chain_at_lambda_cu_zero"]["computed λ (B3LYP)"]
+    fast = max(zero.values(), key=lambda v: v["margin_vs_turnover"])
+    rct_floor = min(rct(fast["margin_vs_turnover"] * turnover, g) for g in GAMMA_GRID.values())
+    print(f"  λ(Co) branches overlap (solution readings of λ(Cu)): {overlap[0]:.3g} – {overlap[1]:.3g} Ω; "
+          f"computed λ(Co) at λ(Cu) {sens['lambda_cu_azurin_eV']} eV: {rct_az[0]:.3g} – {rct_az[1]:.3g} Ω; "
+          f"its floor at any λ(Cu): {rct_floor:.3g} Ω ({fast['binding_hop']})")
     print(f"\n  cathode R_ct band: {lo:.3g} – {hi:.3g} Ω  (≈ {hi/lo:.0e}× spread)")
     if anode_rct:
         # The comparison with the anode is COMPUTED: a typed «comparable to the anode» survived the
@@ -105,7 +123,7 @@ def main() -> int:
         "§Cathode). The decisive test is the measured Ti-coin cathode EIS."
         if anode_rct else
         f"cathode DET R_ct spans {lo:.2g}–{hi:.2g} Ω — k_DET bracket × unknown-Γ → indicative only; "
-        "the robust statement is the kinetic competition k_DET against turnover, itself conditional on λ(Co)."
+        "the robust statement is the kinetic competition k_DET against turnover, itself conditional on λ(Co) and λ(Cu)."
     )
     print(f"\n  ⚠️ INDICATIVE — {verdict}")
 
@@ -115,7 +133,22 @@ def main() -> int:
         "n_electrons": N_E, "A_cm2": A_ELECTRODE, "turnover_s": turnover,
         "k_scenarios_s": k_scenarios, "gamma_grid_mol_cm2": GAMMA_GRID,
         "anode_rct_ohm_context": anode_rct,
-        "grid": grid, "rct_band_ohm": [lo, hi], "verdict": verdict,
+        "grid": grid, "rct_band_ohm": [lo, hi],
+        "lambda_co_branch_overlap_ohm": overlap,
+        "lambda_co_branch_overlap_reading": "computed-λ(Co) minimum ⊥ literature-λ(Co) maximum, both on the two "
+                                            "solution readings of λ(Cu); outside it an arc excludes one λ(Co) branch "
+                                            "ON THOSE READINGS",
+        "computed_lambda_co_at_protein_held_lambda_cu": {
+            "lambda_cu_eV": sens["lambda_cu_azurin_eV"], "rct_ohm": rct_az,
+            "reading": "the computed-λ(Co) chain at azurin's λ(Cu) (25's sensitivity example, not this site's value): "
+                       "its low end lies far below the overlap"},
+        "computed_lambda_co_floor_at_any_lambda_cu": {
+            "rct_ohm": rct_floor, "binding_hop": fast["binding_hop"],
+            "reading": "the lowest R_ct the computed-λ(Co) chain reaches at ANY λ(Cu) ≥ 0, at the densest Γ of the grid: the "
+                       "λ(Cu)-independent hops cap its rate — the Co–Ce hop on its shipped coupling at an assumed ΔG = 0 "
+                       "(25 → `co_ce_ceiling_that_erases_the_straddle`) — so on that hop only an arc below this still excludes "
+                       "the computed λ(Co) whatever λ(Cu) is"},
+        "verdict": verdict,
     }
     outp = KINETICS_DIR / "cathode_det_rct.json"
     outp.write_text(json.dumps(out, indent=2))

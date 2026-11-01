@@ -260,6 +260,11 @@ def build() -> str:
     lit, comp = sc["literature λ"], sc["computed λ (B3LYP)"]
     co = ket["cobalt_lambda_condition"]
     co_dg0 = co["lambda_co_at_turnover_eV"][f"fodft|{ket['lambda_cu_base_reading']}|dG=0"]
+    sens = ket["other_hops_threshold_sensitivity"]
+    az_c = [v["margin_vs_turnover"] for v in sens["by_scenario"]["computed λ (B3LYP)"]["verdict_at_azurin_by_dG"].values()]
+    cu_need = ket["copper_lambda_condition"]["lambda_cu_at_turnover"]["computed λ (B3LYP)"]
+    cu_dg0 = next(v for b, v in cu_need.items() if b.startswith("dG=0"))["lambda_cu_eV"]
+    az_side = ("below" if max(az_c) < 1 else "above" if min(az_c) >= 1 else "across")
     md.append("\n*Inner-sphere λ via Nelsen 4-point (script 35) on [Co(NH₃)₆] for Co and on [M(H₂O)₆] for Ce and Ru; λ(Cu) is a "
               f"literature bracket of two solution readings — {cu_lo:.1f} eV (textbook value, source not "
               f"found) and {cu_hi:.1f} eV (Cu(phen)₂²⁺/⁺ self-exchange, Gray & Winkler) — a Cu(I) d¹⁰ "
@@ -268,17 +273,20 @@ def build() -> str:
               "two kinds — the computed ones inner-sphere, λ(Cu) and the literature-scenario values read as solution totals, "
               "outer sphere included — and no outer-sphere term for the framework is added (§3.4 gives the one at which "
               "each corner reaches turnover). "
-              "Both readings are unconstrained solution couples; a framework-held Cu–N₄ site can lie below "
-              "both (0.7 eV in azurin, same source), so the favourable corner is no floor. The adverse corner is "
+              "Both readings are unconstrained solution couples, and a more rigidly held copper can lie below both "
+              "(azurin's protein-held Cu(II/I), 0.7 eV, same source — an example, not a value for the framework copper "
+              "or the enzyme's T1 site), so the favourable corner is no ceiling on the margin. The adverse corner is "
               "the uphill gap sign at the higher λ(Cu). The crude ΔSCF couplings are half the energy difference of "
               "two unconstrained SCF solutions from one start; for Cu–Co that difference is a single-digit multiple "
               "of the SCF tolerance, so the margins use the two-state diabatisation (FO-DFT label, Methods §2.5). "
-              f"The verdict is conditional on λ(Co): turnover needs λ(Co) ≲ {co_dg0:.1f} eV at ΔG = 0 on the "
+              f"The verdict is conditional on λ(Co) and on λ(Cu): turnover needs λ(Co) ≲ {co_dg0:.1f} eV at ΔG = 0 on the "
               f"{cu_lo:.1f} eV λ(Cu) reading and ≲ {co['lambda_co_at_turnover_adverse_corner_eV']:.1f} eV at the adverse corner; "
               f"the computed {lam_comp['Co']:.2f} eV puts the cathode {'below' if comp['margin_vs_turnover_favourable'] < 1 else 'across'} "
               f"turnover at every corner, the assumed {lam_lit['Co']:.1f} eV (no primary) "
               + ("across it" if lit["margin_vs_turnover_adverse"] < 1.0 <= lit["margin_vs_turnover_favourable"] else "on one side of it")
-              + ".*\n")
+              + f"; at the computed λ(Co) turnover needs λ(Cu) ≲ {cu_dg0:.2f} eV at ΔG = 0, and at azurin's "
+                f"{sens['lambda_cu_azurin_eV']} eV the computed case lies {az_side} turnover "
+                f"(×{min(az_c):.2g} to ×{max(az_c):.2g}).*\n")
 
     # ── Table 4 — mediator structure–activity series ──
     md.append("## Table 4. Osmium mediator series — ΔE_red and the Koopmans offset vs Hammett σ (①)\n")

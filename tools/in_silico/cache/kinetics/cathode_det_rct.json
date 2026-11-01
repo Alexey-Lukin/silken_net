@@ -150,5 +150,23 @@
     0.06378254311768902,
     32596785.1431812
   ],
+  "lambda_co_branch_overlap_ohm": [
+    286.98474423937006,
+    7334.631411934305
+  ],
+  "lambda_co_branch_overlap_reading": "computed-\u03bb(Co) minimum \u22a5 literature-\u03bb(Co) maximum, both on the two solution readings of \u03bb(Cu); outside it an arc excludes one \u03bb(Co) branch ON THOSE READINGS",
+  "computed_lambda_co_at_protein_held_lambda_cu": {
+    "lambda_cu_eV": 0.7,
+    "rct_ohm": [
+      0.5570157734913549,
+      7118.96547744607
+    ],
+    "reading": "the computed-\u03bb(Co) chain at azurin's \u03bb(Cu) (25's sensitivity example, not this site's value): its low end lies far below the overlap"
+  },
+  "computed_lambda_co_floor_at_any_lambda_cu": {
+    "rct_ohm": 0.5570157734913549,
+    "binding_hop": "Co-Ce",
+    "reading": "the lowest R_ct the computed-\u03bb(Co) chain reaches at ANY \u03bb(Cu) \u2265 0, at the densest \u0393 of the grid: the \u03bb(Cu)-independent hops cap its rate \u2014 the Co\u2013Ce hop on its shipped coupling at an assumed \u0394G = 0 (25 \u2192 `co_ce_ceiling_that_erases_the_straddle`) \u2014 so on that hop only an arc below this still excludes the computed \u03bb(Co) whatever \u03bb(Cu) is"
+  },
   "verdict": "the cathode DET R_ct is NOT a single value \u2014 it spans 0.064\u20133.3e+07 \u03a9 across the k_DET bracket (gap sign \u00d7 \u03bb(Cu) reading \u00d7 \u03bb(Co) value) AND the unknown coverage \u0393. It can be negligible (fast/dense) or it exceeds the anode arc (~73 \u03a9) up to \u00d74.5e+05 (slow/sparse). \u2192 an EIS cathode arc cannot be predicted a priori; the robust statement stays the KINETIC COMPETITION k_DET vs turnover (SUMMARY \u00a7Cathode). The decisive test is the measured Ti-coin cathode EIS."
 }

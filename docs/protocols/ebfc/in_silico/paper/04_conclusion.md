@@ -29,10 +29,11 @@ the functional — and is consistent with the
 trade-off behind the experimental optimum, which it does not locate, while making explicit that the cascade-thermodynamic
 optimum is not the cell-voltage optimum. The **direct electron transfer** through the Co–Cu–Ce ZIF cathode is, on a
 clash-corrected geometry, with reorganisation energies computed for Co and Ce and indicatively for Ru (λ(Cu) cited), and with a framework copper standing in
-for the enzyme's T1 site beside the cobalt node (§3.4), a process whose verdict is conditional on the Co reorganisation energy:
-*rate-limiting* at every corner of its bracket at the computed λ(Co), straddling turnover only at an assumed
-literature value (turnover needs λ(Co) ≲ 1.5 eV at zero driving force on the 2.0 eV λ(Cu) reading, and ≲ 0.6 eV at the
-adverse corner) — a conditional finding (thresholds on λ(Co) and on the driving force, over a minimal-cluster coupling
+for the enzyme's T1 site beside the cobalt node (§3.4), a process whose verdict is conditional on the Co and the Cu reorganisation energies:
+*rate-limiting* at every corner of its bracket at the computed λ(Co) on two solution readings of λ(Cu), straddling
+turnover at an assumed literature λ(Co) on the same readings (turnover needs λ(Co) ≲ 1.5 eV at zero driving force on the 2.0 eV λ(Cu)
+reading, and ≲ 0.6 eV at the adverse corner), and at the computed λ(Co) for λ(Cu) ≲ 0.92 eV — azurin's protein-held 0.7 eV is one such value, on the
+shipped Co–Ce coupling — where turnover at zero driving force needs λ(Cu) ≲ 0.43 eV — a conditional finding (thresholds on λ(Co), on λ(Cu) and on the driving force, over a minimal-cluster coupling
 whose verdict a refused bridge geometry lifts to or across turnover) that motivates a
 low-reorganisation-energy metal, computed indicatively, and names conductive-MOF band transport and an acid-stable enzyme-free
 catalyst as levers not computed here.
@@ -62,8 +63,10 @@ and a model of the mediator film.
 
 The immediate experimental test is the EIS of the forthcoming Ti-coin half-cell, for which
 the present work supplies the bracket the measurement must narrow — the cathode charge-transfer resistance spans ≈ 8.7 decades
-(0.064 Ω to 32.6 MΩ) over λ(Co), the sign of the site-energy gap, the λ(Cu) reading and the unknown coverage, and the two λ(Co)
-branches overlap between ≈ 287 Ω and ≈ 7.33 kΩ, so only an arc outside that window excludes one of them; the QM/MM treatment of the cascade with spin–orbit coupling on osmium,
+(0.064 Ω to 32.6 MΩ) over λ(Co), the sign of the site-energy gap, the λ(Cu) reading and the unknown coverage, and, on the two
+solution readings of λ(Cu), the two λ(Co) branches overlap between ≈ 287 Ω and ≈ 7.33 kΩ, so only an arc outside that window excludes one of them
+(a low enough λ(Cu), such as azurin's, takes the computed branch down to ≈ 0.56 Ω — its floor at any λ(Cu), set by the
+Co–Ce hop on its shipped coupling — so, whatever λ(Cu) is, only an arc below that floor still excludes the computed λ(Co)); the QM/MM treatment of the cascade with spin–orbit coupling on osmium,
 and the protein-bound cofactor potential, are the natural next computational steps. The broader message is that the
 electronic-structure level — under-used in the biofuel-cell literature relative to experimental and
 reaction-diffusion modelling — yields both mechanistic findings with their limits and a measured account of how far

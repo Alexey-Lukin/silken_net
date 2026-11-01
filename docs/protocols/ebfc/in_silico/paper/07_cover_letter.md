@@ -39,8 +39,9 @@ the osmium mediator (slope −0.92 eV per σ unit per complex at B3LYP, four sub
 over the shared points; its donor pairs move by up to 20.1 mV per substituent when both osmium oxidation states are relaxed) reproduces the sign of the measured substituent shifts in three series, overshoots on the acceptor side and is
 consistent with the trade-off behind the empirical potential optimum, which it does not locate; (3) a two-state diabatised coupling with
 reorganisation energies computed for Co and Ce and indicatively for Ru (λ(Cu) cited) shows the Co–Cu–Ce-ZIF cathode direct electron transfer to be *rate-limiting* at the
-computed Co reorganisation energy and to straddle enzymatic turnover only at an assumed literature value — a verdict
-conditional on λ(Co) and on the coplanar bridge geometry — with the low-λ-metal lever computed indicatively; and (4) the anode→mediator cascade, compared like for like (the two-electron, two-proton flavin couple against
+computed Co reorganisation energy on two solution readings of the Cu one, and to straddle enzymatic turnover at an assumed
+literature Co value or, at the computed one, for a Cu value as low as azurin's protein-held one — a verdict
+conditional on λ(Co), on λ(Cu) and on the coplanar bridge geometry — with the low-λ-metal lever computed indicatively; and (4) the anode→mediator cascade, compared like for like (the two-electron, two-proton flavin couple against
 each one-electron osmium couple on one SHE scale), is downhill in every osmium form at every level of the flavin
 treatment at B3LYP/6-31G(d) — a direction that the ωB97X/def2-TZVP tier on both sides (single points, LANL2DZ on osmium) reverses for the device couple on
 the relaxed electronic flavin level and that spin–orbit coupling on osmium, omitted here, reverses for the device

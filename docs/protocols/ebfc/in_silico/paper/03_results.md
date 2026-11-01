@@ -216,7 +216,7 @@ diabatic coupling either; on those couplings and at zero driving force on those 
 they are not rate-limiting in any live scenario on the two λ(Cu) readings — for Co–Ce on a compressed Ce–N contact
 (§2.5) whose effect on its coupling is not computed: Co–Ce would limit only were that coupling at least 17 times
 smaller (23 times at the computed λ(Co)), 4.5 (6.2) times if it ran uphill by a site difference the size of
-Cu–Co's, and at a protein-held λ(Cu) it limits already (below).
+Cu–Co's, and at a protein-held λ(Cu) such as azurin's it limits the favourable corner already (below).
 
 Each hop's reorganisation energy is λ_hop = ½(λ_i + λ_j), the additivity approximation behind the Marcus cross-relation,
 over the two sites' self-exchange values, and those are not of one kind: computed inner-sphere (Nelsen four-point) values for Co, Ce and Ru, while λ(Cu)
@@ -233,7 +233,7 @@ the hop; no corner covers that, since the bracket bounds the readings, not the s
 work, the anode flavin's (§3.2's totals less its inner-sphere λ), is 0.375–0.469 eV at its buried, delocalised end — another medium, a scale only, and
 above all three thresholds, the highest only just. Every margin is a bracket over two axes — the sign of the computed gap,
 which the diabatisation does not fix, and the λ(Cu) reading — and we quote its adverse corner. **The cathode verdict
-is conditional on λ(Co).** At the computed λ(Co) = 3.09 eV the Cu–Co hop runs at **×4.1×10⁻⁶ to ×0.0046** of
+is conditional on λ(Co) and on λ(Cu).** At the computed λ(Co) = 3.09 eV the Cu–Co hop runs at **×4.1×10⁻⁶ to ×0.0046** of
 enzymatic turnover (×0.00039 at zero driving force): below turnover at every corner — ×0.0046 at the kindest, ×4.1×10⁻⁶ at the adverse. Because the site-energy gap is an
 orbital-energy difference rather than a free energy (§2.5), we also state this against the driving force itself: at
 the computed λ(Co) the hop stays below turnover for any downhill ΔG smaller than 0.441 eV on the 2.0 eV λ(Cu) reading
@@ -246,11 +246,16 @@ turnover at zero driving force needs **λ(Co) ≲ 1.5 eV** (on the 2.0 eV λ(Cu)
 high-spin Co(II) pair imposed, and a spin-state change of that kind carries a large inner-sphere λ. It is also
 octahedral, while the framework's cobalt sits in a tetrahedral CoN₄ node, and in which direction that moves λ(Co) is
 not known here; the measured cathode impedance is the test. Both λ(Cu)
-readings are for unconstrained solution couples; a framework-held Cu–N₄ site can lie below both (0.7 eV in
-azurin<sup>48</sup>), so the bracket bounds the readings, not the site. At that value, on the shipped couplings,
-the computed-λ(Co) hop would straddle turnover (×0.019 to ×2.4, its favourable corner set by Co–Ce instead of
-Cu–Co) and the literature-λ(Co) one would clear it (×89 and above) — and the enzyme's own T1 copper, which the
-framework copper stands in for, is a protein-held site.
+readings are for unconstrained solution couples, and a more rigidly held copper can lie below both — 0.7 eV for the
+protein-held Cu(II/I) of azurin<sup>48</sup>, an example, not a value for the framework copper or for the enzyme's T1
+site — so the bracket bounds the readings, not the site, and λ(Cu) is the verdict's second condition. At the computed
+λ(Co), turnover needs λ(Cu) ≲ 0.43 eV at zero driving force and ≲ 0.92 eV at the favourable corner, and no λ(Cu)
+reaches it at the adverse corner (at the assumed λ(Co), ≲ 2.1 eV at zero driving force — between the two readings).
+At azurin's value, on the shipped couplings, the computed-λ(Co) cathode would straddle turnover (×0.019 to ×2.4, its favourable
+corner set by Co–Ce instead of Cu–Co) and the literature-λ(Co) one would clear it (×89 and above); the T1 copper the
+framework copper stands in for is protein-held too, though its λ is not known here. That straddle rests on the Co–Ce
+hop, which caps the computed case at ×2.4 whatever λ(Cu) is, on its shipped coupling at zero driving force: a Co–Ce coupling
+1.55 times smaller, or that hop 0.045 eV uphill, keeps the computed case below turnover at every λ(Cu).
 
 This is a finding, not a failure, and we present it with its sensitivity. A low-λ metal removes the dependence on
 λ(Co): replacing Co by **Ru** (computed λ 0.78 eV) gives ×5.5 to ×41 across the λ(Cu) readings — an indicative
@@ -265,8 +270,8 @@ both a crude ΔSCF and an FO-DFT diabatisation returned a large t_ij but failed 
 the frontier orbitals localise entirely on Ru with no copper partner, so the minimal cluster cannot form
 a clean Cu↔Ru diabatic pair; that coupling advantage is therefore a hypothesis for constrained-DFT, not a
 result, and the Ru lever is justified here by λ alone.) The reading supported here is a
-cathode whose kinetics are set by λ(Co) — rate-limiting at the computed value, straddling turnover only at the assumed
-one — and whose three levers — a low-λ metal (computed indicatively above), conductive-MOF band transport and an
+cathode whose kinetics are set by λ(Co) and λ(Cu) — rate-limiting at the computed λ(Co) on the two solution readings of
+λ(Cu), straddling turnover at the assumed λ(Co), or at the computed λ(Co) for λ(Cu) ≲ 0.92 eV, as at azurin's protein-held 0.7 eV — and whose three levers — a low-λ metal (computed indicatively above), conductive-MOF band transport and an
 acid-stable enzyme-free single-atom catalyst (named, not computed) — are listed; ranking them for the acidic cathode environment
 of the device (xylem sap, pH ≈ 5.75) is left to the experimental programme.
 
@@ -288,7 +293,9 @@ raises t_ij 88-fold *and* shrinks the site-energy gap to 0.026 eV, moving the up
 to ×8.7×10³ on the 2.0 eV λ(Cu) reading at the literature λ(Co) (×0.018 to ×1.2×10³ at its adverse corner) — i.e.
 across enzymatic turnover; at the computed
 λ(Co) the same roll moves the whole bracket from ×4.1×10⁻⁶ … ×0.0046 to ×0.26 … ×5.1, to straddle turnover where it lay
-wholly below. (On
+wholly below. These are Cu–Co hop margins: the roll leaves Co–Ce untouched, and Co–Ce caps the cathode at ×6.1×10³ at the
+literature λ(Co) and at ×2.4 at the computed one — so the roll lifts the computed case across turnover only on the
+same Co–Ce condition as the λ(Cu) leg above. (On
 that geometry the two sites are nearly resonant — the gap is small against 2t_ij ≈ 0.26 eV, the localising rotation
 is 2θ ≈ 84°, and a gap read off so complete a mixing is ill-conditioned, so we quote it and the margins built on it to
 two significant figures.) That configuration is rejected on chemical grounds, since
@@ -302,7 +309,9 @@ conduction, and the 3D framework presents parallel instances of the bottleneck h
 transport would require a conductive MOF (one of the levers above). The cathode
 charge-transfer resistance is correspondingly bracketed, not predicted: with the DET-rate bracket and the unknown
 nanozyme site coverage, a surface-confined (Laviron<sup>61</sup>) estimate spans ~0.06 Ω to ~33 MΩ — the cathode arc could
-be negligible or exceed the anode's by more than five orders of magnitude, so it cannot be fixed a priori — only an arc below ≈ 290 Ω or above ≈ 7.3 kΩ would exclude one λ(Co) branch (§4) — and
+be negligible or exceed the anode's by more than five orders of magnitude, so it cannot be fixed a priori — on the two solution readings of λ(Cu) only an arc below ≈ 290 Ω or above ≈ 7.3 kΩ would exclude one λ(Co) branch (§4),
+and a low enough λ(Cu), such as azurin's, takes the computed branch down to ≈ 0.56 Ω, its floor at any λ(Cu), set by the
+Co–Ce hop on its shipped coupling at zero driving force — and
 the kinetic competition (rather than a single R_ct) is the robust description. The cathode EIS of the forthcoming Ti-coin
 experiment is the experimental test.
 

@@ -34,7 +34,8 @@ something already known. Frame everything around the *insight*, never around "we
 
 Our honest finding is that the cascade, compared like for like, is downhill in every form within one protocol (B3LYP/6-31G(d); uphill for the device couple on the relaxed electronic flavin level at ωB97X/def2-TZVP on both sides) — whose
 omitted spin–orbit coupling on osmium reverses the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] and more cells at the larger rows of ref 63's Table S2, so the protocol does not determine the sign — while its magnitude is method-dependent and its near-exact agreements are cancellations; the cathode DET margin is
-conditional on λ(Co) — below turnover at the computed value, straddling it only at an assumed one. A first-timer's instinct is to
+conditional on λ(Co) and λ(Cu) — below turnover at the computed λ(Co) on two solution readings of λ(Cu), straddling it
+at an assumed λ(Co), and at the computed one for λ(Cu) ≲ 0.92 eV, as at azurin's protein-held copper. A first-timer's instinct is to
 hide this and claim "validation". **Do the opposite — the honesty IS the contribution.** Three real
 insights to sell (all are "new physical insight"):
 
@@ -46,7 +47,7 @@ insights to sell (all are "new physical insight"):
    three measured series and overshoots on the acceptor side; it is consistent with the trade-off behind the known
    experimental optimum, which it does not locate (a ωB97X/def2-TZVP cross-check moves the slope by ≈15 %, so its
    magnitude is method-dependent; «predictive» and «design rule» retired ⚖️ 2026-10-23, К9).
-3. **An honest, mechanistic cathode finding.** The λ(Co)-conditional DET (a *finding*, corrected from
+3. **An honest, mechanistic cathode finding.** The λ(Co)- and λ(Cu)-conditional DET (a *finding*, corrected from
    an earlier artifact) + the low-λ-metal / conductive-MOF / enzyme-free design levers.
 
 > **Rule of thumb:** every claim is one of {*positive result*, *quantified limitation*, *design rule*,

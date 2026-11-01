@@ -119,7 +119,7 @@ def marcus_k(t_ij, lam, dG=0.0, T=TEMPERATURE_K):
 def main() -> int:
     # λ_hop from the canon cache (drift-proof — never hardcode another script's result).
     # lit λ is the row this probe compares on (a fixed reference for the coupling comparison, not a claim that it is
-    # the better λ — the cathode verdict is conditional on λ(Co), self-review round 1 cluster 1, 2026-10-15).
+    # the better λ — the cathode verdict is conditional on λ(Co), self-review round 1 cluster 1, 2026-10-15; ⊕ ⚖️ 2026-11-01 and on λ(Cu)).
     klam = json.loads((DFT_CACHE / "cathode_ket_lambda.json").read_text())
     lam_lit = klam["lambda_lit_eV"]
     lam_hop = {
