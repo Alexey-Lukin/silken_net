@@ -90,7 +90,8 @@ _Static_assert(ADC_TEMP_CALC_ERROR_C == LL_ADC_TEMPERATURE_CALC_ERROR,
 // status=3 + growth_points 31 → бекенд (×2) карбував 62 бали за КОЖЕН error-пакет.
 // 0x60 переживає маску незмінним і чесно каже: довіри нема, емісії нема.
 // [SLASH-1] status=3 — це НАШ софт-збій, не tamper: бекенд декодує його як
-// vm_error → firmware_fault (ops-тріаж); фізичний tamper — PANIC_FLAG, не статус-біти.
+// vm_error → firmware_fault (ops-тріаж); фізичний tamper — не статус-біти, а з HW.30 каналу
+// tamper на Солдаті немає зовсім: PANIC_FLAG без писача, вимикача на платі не закладено (02_01 §6).
 #define BIO_STATUS_VM_ERROR       0x60
 #define VCAP_LISTEN_THRESHOLD     2800       // Поріг напруги для прослуховування ефіру (мВ)
 // [FW.49 S1] delta_t — wall-секунди з RTC-календаря (LSE йде у STOP2);

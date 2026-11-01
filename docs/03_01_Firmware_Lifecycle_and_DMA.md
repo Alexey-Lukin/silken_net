@@ -92,7 +92,7 @@
 | Функція | Пін | У QFN48 |
 |---|---|---|
 | SWD | PA13 / PA14 | ✅ |
-| *резерв під подієвий WKUP-вхід (tamper · нахил) — ⚖️ 2026-11-01, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM); ⛔ не розводити під інше без ⚖️ (пʼєзо зрізано — [`00_07`](00_07_Action_Plan_Tracker) HW.30)* | PA0 (WKUP1) | ✅ |
+| *резерв — лишити незайнятим (⚖️ 2026-11-01, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM); задум — подієвий WKUP-вхід); ⛔ не розводити під інше без ⚖️ — і `SW_CTRL3` ключа RF, який зразок ST кладе саме сюди, перенести (пʼєзо зрізано — [`00_07`](00_07_Action_Plan_Tracker) HW.30)* | PA0 (WKUP1) | ✅ |
 | I²C1 — BME280 + SE05x ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)) | PB6 (SCL) / PB7 (SDA) | ✅ |
 | Консоль (FT232RL) | PA2 / PA3 — USART2 або LPUART1 (USART1 на PB6/PB7 зайнятий I²C) | ✅ |
 | TCXO · LSE | PB0-VDD_TCXO · PC14/PC15 | ✅ |
