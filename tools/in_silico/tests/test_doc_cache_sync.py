@@ -9307,6 +9307,21 @@ def test_paper_categorical_claims_of_commit_g_match_their_instruments():
         mp = next(x for e, x in atoms if e == metal)
         return sorted(round(float(np.linalg.norm(x - mp)), 2) for e, x in atoms if e == "N")[:3]
     co_n, ce_n = m_n("cu_co_zif", "Co"), m_n("co_ce_zif", "Ce")
+    # the xyz title names the ligands as the coordinates carry them (§2.5: terminals protonated, bridge bare), per RING —
+    # a cluster-wide count could not see a protonated bridge; the SI's solved/perpendicular probes are titled too
+    for xyz, n_term in (("cu_co_zif", 4), ("co_ce_zif", 4), ("ce_graphene", 2),
+                        ("cu_co_zif_solved_perp", 4), ("co_ce_zif_solved_perp", 4), ("ce_graphene_solved_perp", 2)):
+        rows = (REPO / f"docs/protocols/ebfc/in_silico/ligands/{xyz}.xyz").read_text().split("\n")
+        at = [(r.split()[0], np.array([float(v) for v in r.split()[1:4]])) for r in rows[2:2 + int(rows[0])]]
+        mets = [x for e, x in at if e in ("Cu", "Co", "Ce")]
+        ns = [x for e, x in at if e == "N"]
+        bound = [{k for k, m in enumerate(mets) if np.linalg.norm(x - m) <= 2.7} for x in ns]
+        bridge = {i for i in range(len(ns)) for j in range(len(ns)) if i != j and np.linalg.norm(ns[i] - ns[j]) <= 2.4
+                  and bound[i] and bound[j] and not (bound[i] & bound[j])}
+        with_h = {i for i, x in enumerate(ns) if any(e == "H" and np.linalg.norm(y - x) < 1.15 for e, y in at)}
+        assert len(with_h & bridge) == 0 and len(with_h - bridge) == n_term, (xyz, with_h, bridge)
+        assert len(bridge) == (2 if len(mets) == 2 else 0), (xyz, bridge)
+        assert f"2-methylimidazole (N–H ×{n_term})" in rows[1] and "bridge N–H" not in rows[1], (xyz, rows[1])
     assert (f"{co_n[0]:.2f} Å from cobalt in the Cu–Co cluster against {co_n[1]:.2f} Å" in meth
             and f"{ce_n[0]:.2f} Å from cerium in the Co–Ce cluster against {ce_n[1]:.2f} Å" in meth), (co_n, ce_n)
     fo = C("dft/fodft_coupling.json")

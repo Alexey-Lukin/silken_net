@@ -8,8 +8,9 @@ through the nCoCuCeZIF nanozyme cathode:
 
   MWCNT ←t₃→ Ce(Im)₂ ←t₂→ Co(Im)₂ ←t₁→ Cu(Im)₂ (≈ laccase T1)
 
-Each cluster: two metal centers bridged by a 2-methylimidazolate linker,
-with additional terminal imidazolate ligands for tetrahedral coordination.
+Each cluster: two metal centers bridged by a deprotonated 2-methylimidazolate linker, with
+additional terminal ligands — neutral imidazoles that keep their ring N–H (paper §2.5; the xyz
+title prints the N–H count of each, measured from the coordinates).
 
 Geometry: programmatic octahedral/tetrahedral placement (same approach as
 script 21b for Os-bpy). Metal-N distances: ASSUMED typical values (no crystallographic primary is cited in the tree).
@@ -328,7 +329,7 @@ def build_bimetallic_cluster(
         bridge = place_ligand_at(br, br_n3, bridge_n3_pos, bridge_dir)
     all_atoms += bridge
 
-    # Terminal ligands on M1: 2 imidazolates at ~109° (tetrahedral)
+    # Terminal ligands on M1: 2 imidazoles (N–H kept) at ~109° (tetrahedral)
     for angle in [120, 240]:
         rad = np.radians(angle)
         direction = np.array([np.cos(rad), np.sin(rad), 0.0])
@@ -336,7 +337,7 @@ def build_bimetallic_cluster(
         lig = place_ligand_at(im, n3, target, direction)
         all_atoms += lig
 
-    # Terminal ligands on M2: 2 imidazolates
+    # Terminal ligands on M2: 2 imidazoles (N–H kept)
     for angle in [60, -60]:
         rad = np.radians(angle)
         direction = np.array([np.cos(rad), np.sin(rad), 0.0])
@@ -355,7 +356,7 @@ def build_ce_graphene_cluster(smiles: str = MEIMID_SMILES) -> list[tuple[str, np
     ce_pos = np.array([0.0, 0.0, 3.5])  # Ce 3.5 Å above graphene plane
     all_atoms: list[tuple[str, np.ndarray]] = [("Ce", ce_pos)]
 
-    # Two terminal imidazolates on Ce
+    # Two terminal imidazoles (N–H kept) on Ce
     for angle in [60, -60]:
         rad = np.radians(angle)
         direction = np.array([np.cos(rad), np.sin(rad), 0.5])
@@ -402,6 +403,32 @@ def deprotonate_metal_clashes(
             continue
         cleaned.append((s, p))
     return cleaned, removed
+
+
+def nh_by_ring(atoms: list[tuple[str, np.ndarray]]) -> tuple[int, int]:
+    """(N–H on the terminals, N–H on the bridge), counted from the coordinates. The bridge is the ring whose two N
+    sit ≤ 2.4 Å apart (one ring's N···N span is ≈ 2.2 Å) and bind DIFFERENT metals (≤ 2.7 Å — the solved Ce–N 2.45
+    included); every other N–H is a terminal's. CAN catch a protonated bridge or a deprotonated terminal; CANNOT tell
+    which terminal a proton sits on."""
+    metals = [p for s, p in atoms if s in ("Cu", "Co", "Ce")]
+    n_atoms = [p for s, p in atoms if s == "N"]
+    bound = [{k for k, m in enumerate(metals) if np.linalg.norm(n - m) <= 2.7} for n in n_atoms]
+    bridge = {i for i in range(len(n_atoms)) for j in range(len(n_atoms))
+              if i != j and np.linalg.norm(n_atoms[i] - n_atoms[j]) <= 2.4
+              and bound[i] and bound[j] and not (bound[i] & bound[j])}
+    with_h = {i for i, n in enumerate(n_atoms)
+              if any(s == "H" and np.linalg.norm(p - n) < 1.15 for s, p in atoms)}
+    return len(with_h - bridge), len(with_h & bridge)
+
+
+def terminal_label(atoms: list[tuple[str, np.ndarray]], linker_label: str) -> str:
+    """The terminals as the coordinates carry them: each keeps its ring N–H, so it is the
+    neutral imidazole, not the «-ate» the LINKERS label names (that label is the bridge's
+    form). Both N–H counts are MEASURED (`nh_by_ring`) and printed, so a build that
+    deprotonates a terminal or protonates the bridge says so in the title instead of being misnamed."""
+    term, br = nh_by_ring(atoms)
+    name = linker_label.split(' — ')[0].replace('imidazolate', 'imidazole')
+    return f"{name} (N–H ×{term})" + (f"; bridge N–H ×{br}" if br else "")
 
 
 def write_xyz(atoms: list[tuple[str, np.ndarray]], path: Path, comment: str) -> None:
@@ -600,7 +627,7 @@ def main() -> int:
     if check_distances(cu_co, "Cu-Co") < CLASH_A:
         clashes.append("Cu-Co")
     p1 = LIGANDS_DIR / f"cu_co_zif{suffix}.xyz"
-    write_xyz(cu_co, p1, f"Cu(L)2-L-Co(L)2 ZIF cluster; terminals {linker_label}; "
+    write_xyz(cu_co, p1, f"Cu(L)2-L-Co(L)2 ZIF cluster; terminals {terminal_label(cu_co, linker_label)}; "
                          f"bridge {bridge_label}")
     print(f"  Wrote {p1.relative_to(REPO_ROOT)}")
 
@@ -627,7 +654,7 @@ def main() -> int:
     if check_distances(co_ce, "Co-Ce") < CLASH_A:
         clashes.append("Co-Ce")
     p2 = LIGANDS_DIR / f"co_ce_zif{suffix}.xyz"
-    write_xyz(co_ce, p2, f"Co(L)2-L-Ce(L)2 ZIF cluster; terminals {linker_label}; "
+    write_xyz(co_ce, p2, f"Co(L)2-L-Ce(L)2 ZIF cluster; terminals {terminal_label(co_ce, linker_label)}; "
                          f"bridge {bridge_label}")
     print(f"  Wrote {p2.relative_to(REPO_ROOT)}")
 
@@ -636,7 +663,7 @@ def main() -> int:
     if check_distances(ce_gr, "Ce-graphene") < CLASH_A:
         clashes.append("Ce-graphene")
     p3 = LIGANDS_DIR / f"ce_graphene{suffix}.xyz"
-    write_xyz(ce_gr, p3, f"Ce(L)2 + coronene (MWCNT proxy); L = {linker_label}")
+    write_xyz(ce_gr, p3, f"Ce(L)2 + coronene (MWCNT proxy); L = {terminal_label(ce_gr, linker_label)}")
     print(f"  Wrote {p3.relative_to(REPO_ROOT)}")
 
     if clashes:

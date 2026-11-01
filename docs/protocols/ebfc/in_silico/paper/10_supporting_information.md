@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 389 · 28,522,387 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 389 · 28,525,649 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -78,7 +78,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/21f_dft_os_dimethyl.py` | `b0b775688b351a12aea77d9d948af89d23280d3c625d4f981394d3cce2fa5464` | L3 — Os mediator on the real 4,4'-dimethyl-2,2'-bipyridine ligand of the device mediator. |
 | `tools/in_silico/scripts/21g_adiabatic_dscf.py` | `d224a45da5c04cc8e60101328bc2c33ba29f180142cdfb379fe15b01835f2ae3` | L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade. |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | `e902887fd1f5222fc81e82649061fe92b45081562a929c4519d8690138ff4685` | L3 step 3 — aggregate frontier orbital energies from script 20 (FAD) and the canonical Os owner. |
-| `tools/in_silico/scripts/23_build_zif_clusters.py` | `6a4e615d676e8e4fb06db2979e3d63d9de19c200cab75241471e708ce71637db` | L3b step 1 — build two-metal ZIF cluster models for hopping integral calculations. |
+| `tools/in_silico/scripts/23_build_zif_clusters.py` | `d795142980709652b27b3a467899184a269130127a131549e2b2d740c6ac20c8` | L3b step 1 — build two-metal ZIF cluster models for hopping integral calculations. |
 | `tools/in_silico/scripts/24_dft_hopping_integrals.py` | `dd7fb931b0bf0df99f84954aeebea70d7856a45a46b6ac1131245a8a4a4f1f85` | L3b step 2 — ΔSCF hopping integrals for DET through ZIF nanozyme cathode. |
 | `tools/in_silico/scripts/24b_fodft_coupling.py` | `218bd2344cc80d5913e8b2fa4e910dc9ba1d508c21502b67c425ee65cdc767c3` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
 | `tools/in_silico/scripts/24c_cu_ru_coupling.py` | `0fd1bdbea65c9edd6abf2301063d443586655bf647913c200a266b6c8cb8ab27` | 24c — Cu–Ru direct-electron-transfer coupling: does a Ru node also raise the Cu–node coupling? (energy-splitting estimate) |
@@ -156,7 +156,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `6d8b2cb8357f55c70ed4ff04bc818b1e3d41f7706e082b5ac73ba4fc2eef7bb0` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `e5227ef76c6ec733d2c40c9f65dbd7f39bbf36b0e14235d18cb3840b8cf5b3df` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `0a7f885850b71633049f23c2f0e2824276378bd323538d7581f1c087d3aadc5a` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -451,14 +451,14 @@ External records the desk models read at run time (climate reanalysis, wind, hom
 | `docs/protocols/ebfc/in_silico/deglycosylate.rb` | `c64f43ee8c0dbbc6ad60b2f42203fe3fa601c979f34b0e1e14d19d81df936120` | 2,959 |
 | `docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb` | `44f34e5af1d46c48d83a59e84e984a3c47fda8a07c6d9b709bf145753598a319` | 371,411 |
 | `docs/protocols/ebfc/in_silico/ligands/FAD.sdf` | `039e57851c270120c8935967036322748f9a84388c0dc757152e1125dd0c1eab` | 7,283 |
-| `docs/protocols/ebfc/in_silico/ligands/ce_graphene.xyz` | `c7b633054cd2aaeaf64bcad7dd81fdedcfa40d036f6fc484cd23a94ef520d618` | 2,838 |
-| `docs/protocols/ebfc/in_silico/ligands/ce_graphene_solved_perp.xyz` | `c7b633054cd2aaeaf64bcad7dd81fdedcfa40d036f6fc484cd23a94ef520d618` | 2,838 |
+| `docs/protocols/ebfc/in_silico/ligands/ce_graphene.xyz` | `b0637829bf9b9d0302fa2f83b8a489f3c85ded1f2f5a0ae12c3d71736eced708` | 2,815 |
+| `docs/protocols/ebfc/in_silico/ligands/ce_graphene_solved_perp.xyz` | `b0637829bf9b9d0302fa2f83b8a489f3c85ded1f2f5a0ae12c3d71736eced708` | 2,815 |
 | `docs/protocols/ebfc/in_silico/ligands/cellobiose.sdf` | `51d12ff52f8865d79e4fdc635c5741db6492d073234cf53c1101ff785a0fb41e` | 3,828 |
 | `docs/protocols/ebfc/in_silico/ligands/chitosan_trimer.sdf` | `ded3891d00c67e3a178c4fcb8063e4fb5a1eb8cce14e50e46ccfcfdf0d7aa25e` | 5,833 |
-| `docs/protocols/ebfc/in_silico/ligands/co_ce_zif.xyz` | `314349fd93b525b47beaf75fe6f57d4ae3844533c144406156a32d7528089dda` | 2,901 |
-| `docs/protocols/ebfc/in_silico/ligands/co_ce_zif_solved_perp.xyz` | `b4d29fcb6fe0241bd764e73533c980662947485d67e74f4d4504f8410f461b7e` | 2,901 |
-| `docs/protocols/ebfc/in_silico/ligands/cu_co_zif.xyz` | `39900d978b021d39c82aa1da3d028ba5b87ff69edc7224a1dc6a2a0d0469f348` | 2,901 |
-| `docs/protocols/ebfc/in_silico/ligands/cu_co_zif_solved_perp.xyz` | `8bb76b3170dde78fa183ac085aa66d493d23475254a8a58dea53af83a8af65de` | 2,901 |
+| `docs/protocols/ebfc/in_silico/ligands/co_ce_zif.xyz` | `ed6ca0d63ff75dcc3bae40db8ff87e0581ac9b71bb955a1ed84ef35d0cb33c9c` | 2,878 |
+| `docs/protocols/ebfc/in_silico/ligands/co_ce_zif_solved_perp.xyz` | `ce4dcb35e864b79fb5a9ef35a8d0de871bf46f7c073cd3d56a61423d5122127a` | 2,878 |
+| `docs/protocols/ebfc/in_silico/ligands/cu_co_zif.xyz` | `7ef5cfeb40f2e13b48b5ccaca3ada4de50053663288c3a5ce70bd0da4979b279` | 2,878 |
+| `docs/protocols/ebfc/in_silico/ligands/cu_co_zif_solved_perp.xyz` | `9a1a74bbd4e8a7b58cbbbc3f87b542f775cbc72130ce5c0a5624accb8332acb0` | 2,878 |
 | `docs/protocols/ebfc/in_silico/ligands/cu_ru_zif.xyz` | `6af2fed77643f5c4dd7cbaa46d4b3181b0a5568b202b2011c34402f25babf6ca` | 2,847 |
 | `docs/protocols/ebfc/in_silico/ligands/genipin.sdf` | `6424be0538838b22db3e653ed97780e81d165178ea91248b2324f93788298f74` | 2,583 |
 | `docs/protocols/ebfc/in_silico/ligands/lumiflavin_ox.xyz` | `54650181ef26106fd58a9936bd26d2f1ef3c027e13ed6fb6413b087b4a88ed4b` | 1,430 |
