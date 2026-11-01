@@ -29,8 +29,9 @@ class EwsAlert < ApplicationRecord
     # НАРАЗІ НЕМАЄ: wire status=3 = vm_error (софт-збій, НЕ tamper → firmware_fault нижче),
     # а акустичний шлях пилки зрізано разом із пʼєзо Солдата (HW.30).
     # Створюється вручну — Field-Audit C→A ескалація (console, 06_08 §4); майбутнє джерело —
-    # HW tamper-канал (tamper-switch · SE05x tamper-pins · датчик нахилу HW.52, а останній
-    # сам по собі НЕ Кат-A: буревій теж валить, `02_01 §6`).
+    # HW tamper-канал (tamper-switch — на цій ревізії плати не закладено, PA0 зарезервовано ·
+    # датчик нахилу HW.52, а він сам по собі НЕ Кат-A: буревій теж валить, `02_01 §6`;
+    # зовнішніх tamper-входів SE05x не має).
     # Тип живий свідомо: ворота positive-A лишаються wired, чесно-порожні.
     vandalism_breach: 2,
     fire_detected: 3,     # Пожежа

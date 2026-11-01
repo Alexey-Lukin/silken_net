@@ -17,8 +17,9 @@ module Slashing
   # ⚖️ 2026-09-29, `02_01 §6`). Ворота лишаються wired і чесно-порожні: до наповнення A-сету
   # КОЖЕН slash-тригер іде freeze/Field-Audit.
   # Джерела vandalism_breach: ручна C→A ескалація Field-Audit (console-рецепт, `06_08 §4.6`) зараз;
-  # майбутній HW tamper-канал (tamper-switch · SE05x tamper-pins · датчик нахилу HW.52, а
-  # останній сам по собі НЕ Кат-A — буревій теж валить) — потім; slash() необоротний.
+  # майбутній HW tamper-канал (tamper-switch — на цій ревізії плати не закладено, `02_01 §6` ·
+  # датчик нахилу HW.52, а він сам по собі НЕ Кат-A — буревій теж валить; зовнішніх
+  # tamper-входів SE05x не має) — потім; slash() необоротний.
   # `critical_unmaintained?` досі рахує й force-majeure-типи (aged `fire_detected` без
   # maintenance → пропустив би burn на природній пожежі). Розширення A-сету (scoped
   # unmaintained, HW tamper-канал) — 👤 DAO-ратифікація (`05_05 §3.2`,
