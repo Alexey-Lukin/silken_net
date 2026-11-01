@@ -9008,6 +9008,114 @@ def test_winter_pv_prose_claims_hold():
     assert f"OK_PROG = 1.21 × (1 + 8.25/4.75)          = {VBAT_OK_OFF_V:.3f} В ✓" in text, "02_03 §4.Г's OK_PROG moved"
 
 
+# ── HW.54 Р3(б) snow, hoarfrost and the gateway's bearing on the dome's PV face (115, 2026-10-31) ⟷ SUMMARY §«Do Snow,
+# Hoarfrost and the Gateway's Bearing Leave a PV Cell on the Dome Any Winter?», 01_03 §4 ⊕ Р3(б) 2026-11-01. The tables
+# are rendered from the cache with `:g`, «—» for a cell where no aperture up to the scan's top suffices; every cell pinned.
+PVS = "kinetics/pv_face_snow_frost_azimuth.json"
+_PVS_ROWS = (("clear face (`110`)", "none"), ("favourable end", "favourable_end"), ("melt only", "melt_only"),
+             ("vapour budget + NREL slide", "nrel_published"), ("ceiling", "ceiling"))
+_PVS_FACES = ("closed_stand", "open_face_000", "open_face_090", "open_face_180", "open_face_270")
+
+
+def _pvs_table(corner: str) -> str:
+    """The doc's table for one corner, sliced out by its italic caption — the two tables share their row labels."""
+    text = doc(SUMMARY)
+    a = text.index(f"*{corner.capitalize()} corner:*")
+    return text[a:text.index("\n\n", text.index("| ceiling |", a))]
+
+
+@pytest.mark.parametrize("corner", ["favourable", "nominal"])
+def test_pv_snow_frost_tables_match_their_cache(corner):
+    """Every cell of 115's two threshold tables (ρ low ⊥ high per face) against `by_field`. CAN catch a cell edited or a
+    reading's row swapped; CANNOT catch a table the doc stopped printing (the caption lookup then raises)."""
+    d = C(PVS)["by_field"]
+    table = _pvs_table(corner)
+    fmt = lambda x: "—" if x is None else f"{x:g}"  # noqa: E731
+    for label, key in _PVS_ROWS:
+        want = f"| {label} | " + " | ".join(
+            f"{fmt(d[f + '.low'][corner][key])} ⊥ {fmt(d[f + '.high'][corner][key])}" for f in _PVS_FACES) + " |"
+        assert want in table, f"115 {corner} row «{label}» drifted from the cache: want {want}"
+
+
+def test_pv_snow_frost_order_is_the_measured_one():
+    """The order the doc prints is the cache's measured one, and the cache's is what `by_field` gives. CAN catch a hand
+    order coming back (one was written into the uncommitted cache and swapped the middle pair) or a re-run that reorders
+    the readings."""
+    ro = C(PVS)["readings_order_for_pv"]
+    assert ro["unordered_pairs"] == [] and ro["adverse_to_favourable"] == ["ceiling", "nrel_published", "melt_only", "favourable_end"]
+    assert "**ceiling ≥ vapour budget + NREL slide ≥ melt only ≥ favourable end**" in doc(SUMMARY)
+    assert f"{ro['cells_where_every_reading_is_none']} cells are that on every reading" in doc(SUMMARY)
+    assert f"rests on {ro['cells_strictly_kinder']['nrel_published<ceiling']} cells" in doc(SUMMARY)
+    assert f"strictly the harsher in {ro['cells_strictly_kinder']['melt_only<nrel_published']} cells" in doc(SUMMARY)
+
+
+def _pvs_run_row(label: str, col: int, i: int) -> str:
+    """The runs table: «median ⊥ max (snow-only max ⊥ frost-only max)» in column `col`; capture the i-th of the four."""
+    n = [N if i == k else r"[\d.]+" for k in range(4)]
+    return rf"(?m)^\| {re.escape(label)} \| " + r"[^|]*\| " * col + rf"{n[0]} ⊥ {n[1]} \({n[2]} ⊥ {n[3]}\)"
+
+
+def _pvs_run_get(v: str, face: str, i: int):
+    def get(d):
+        c = d["covers"][f"{face}.low:{v}"]
+        return [*c["longest_run_days_together_median_max"], c["longest_run_days_snow_only_median_max"][1],
+                c["longest_run_days_frost_only_median_max"][1]][i]
+    return get
+
+
+def test_pv_snow_frost_survivor_counts_and_bearings_are_the_cache_s():
+    """The counted sentence («keeps a threshold in X and Y»), its 01_03 mirror, the run bounds and the bearing sentence
+    against the cache — each bearing set EXACTLY, beside the prose clause that states it. CAN catch a re-run that changes
+    a count, a bound or a bearing's emptiness while the prose stays, and a prose clause dropped; CANNOT catch prose about
+    faces the sentences do not name (the face-by-face sentence is checked only through the tables' cells)."""
+    d = C(PVS)
+    bf, az, text = d["by_field"], d["azimuth"], " ".join(doc(SUMMARY).split())
+    names = {"ceiling": "the ceiling keeps a threshold in", "nrel_published": "the vapour budget + NREL slide in",
+             "melt_only": "melt only in", "favourable_end": "the favourable end in"}
+    for v, lead in names.items():
+        n = [sum(r[c][v] is not None for r in bf.values()) for c in ("favourable", "nominal")]
+        assert f"{lead} {n[0]} and {n[1]}" in text, f"115 survivor count for {v} drifted: {n}"
+        assert all(r["adverse"][v] is None for r in bf.values()), f"{v} keeps a face at the adverse corner"
+    canon = " ".join(doc("docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md").split())
+    cnt = {v: [sum(r[c][v] is not None for r in bf.values()) for c in ("favourable", "nominal")] for v in names}
+    assert (f"стеля лишає {cnt['ceiling'][0]} і {cnt['ceiling'][1]}, бюджет пари {cnt['nrel_published'][0]} і "
+            f"{cnt['nrel_published'][1]}" in canon and f"«лише танення» {cnt['melt_only'][0]} і {cnt['melt_only'][1]}" in canon
+            and f"сприятливий кінець {cnt['favourable_end'][0]} і {cnt['favourable_end'][1]}" in canon), "01_03's counts drifted"
+    assert len(bf) == 18 and "over all nine fields × two ground ends (18)" in text, "the field count the prose names moved"
+    cv = d["covers"]
+    lo = min(s["longest_run_days_snow_only_median_max"][1] for k, s in cv.items() if k.endswith(":nrel_published"))
+    hi = max(s["longest_run_days_snow_only_median_max"][1] for k, s in cv.items() if k.endswith(":melt_only"))
+    assert f"at least {lo} days on every face and ground end, melt only's at most {hi}" in text
+    none = lambda k: set(az[k]["bearings_with_none_up_to_cm2"]["bearings"])  # noqa: E731
+    for key, want, clause in (
+            ("low:favourable:melt_only", {"000", "045", "315"}, "north-east and north-west none on dark ground at both corners"),
+            ("low:nominal:melt_only", {"000", "045", "090", "315"}, "east none on dark ground at the nominal one"),
+            ("high:favourable:melt_only", {"000"}, "a gateway due north leaves none at either corner on either ground"),
+            ("high:nominal:melt_only", {"000", "045", "315"}, "and on bright at the nominal one"),
+            ("high:favourable:nrel_published", {"000", "045", "270", "315"}, "bearings N, NE, W and NW leave none"),
+            ("low:nominal:favourable_end", {"000"}, "leaves a gateway due north none on dark ground at the nominal corner")):
+        assert none(key) == want, f"115 bearing set {key} moved: {sorted(none(key))}"
+        assert clause in text, f"the bearing clause «{clause}» is gone from SUMMARY"
+
+
+CHECKS += [
+    ("PV snow adverse autonomy → 115", SUMMARY, rf"`110`'s window carries cadence C {N} days without light\) no reading keeps any", PVS,
+     lambda d: d["autonomy_days_110"]["adverse"], 0.0),
+    ("PV snow worst bearing / south, favourable low → 115", SUMMARY, rf"costs ×{N} ⊥ ×[\d.]+ the south face at the favourable", PVS,
+     lambda d: d["azimuth"]["low:favourable:none"]["worst_over_south"], 0.0),
+    ("PV snow worst bearing / south, favourable high → 115", SUMMARY, rf"costs ×[\d.]+ ⊥ ×{N} the south face at the favourable", PVS,
+     lambda d: d["azimuth"]["high:favourable:none"]["worst_over_south"], 0.0),
+    ("PV snow worst bearing / south, nominal low → 115", SUMMARY, rf"×{N} ⊥ ×[\d.]+ at the nominal one", PVS,
+     lambda d: d["azimuth"]["low:nominal:none"]["worst_over_south"], 0.0),
+    ("PV snow worst bearing / south, nominal high → 115", SUMMARY, rf"×[\d.]+ ⊥ ×{N} at the nominal one", PVS,
+     lambda d: d["azimuth"]["high:nominal:none"]["worst_over_south"], 0.0),
+    *[(f"PV snow run {v} {face} {i} → 115", SUMMARY, _pvs_run_row(label, j, i), PVS, _pvs_run_get(v, face, i), 0.0)
+      for label, v in (("ceiling", "ceiling"), ("vapour budget + NREL slide", "nrel_published"), ("melt only", "melt_only"),
+                       ("favourable end", "favourable_end"))
+      for j, face in enumerate(("open_face_180", "open_face_000", "closed_stand")) for i in range(4)],
+]
+
+
 # ── HW.54 Р3(в) a point dendrometer on the anchor (114, 2026-10-31) ⟷ SUMMARY §«Can a Point Dendrometer Use the Anchor
 # as Its Support?», 01_03 §4 ⊕ (в) 2026-11-01 and 00_07 HW.54. Both tables are rendered from the cache at its own
 # precision, so every cell is pinned EXACTLY; the bearing's band is printed in percent at one and zero decimals.

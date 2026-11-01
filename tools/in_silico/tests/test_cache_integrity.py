@@ -8790,3 +8790,20 @@ def test_dendrometer_budget_is_self_consistent():
     assert d["bark_bearing"]["fraction_lost_U_at_air_dry_bark_readings"] == [min(U), max(U)]
     assert d["bark_bearing"]["growth_under_reported_um_per_yr_at_795"] == pytest.approx(
         [d["inputs"]["growth"]["yr_um"] * u for u in (min(U), max(U))], abs=0.06)
+
+
+def test_pv_snow_frost_order_and_azimuth_are_recomputed():
+    """115 — the measured order and the azimuth ratios against the fields they derive from. CAN catch a hand-written order
+    or a stale ratio after a partial re-run; CANNOT catch a wrong cover model (the script's controls carry those)."""
+    import itertools
+    import math
+    d = json.loads((KINETICS / "pv_face_snow_frost_azimuth.json").read_text())
+    cells = [r for v in d["by_field"].values() for r in v.values()]
+    val = lambda x: math.inf if x is None else x  # noqa: E731
+    order = d["readings_order_for_pv"]["adverse_to_favourable"]
+    for a, b in itertools.pairwise(order):
+        assert all(val(r[a]) >= val(r[b]) for r in cells), f"{a} is kinder than {b} somewhere"
+    assert all(val(r["none"]) <= min(val(r[v]) for v in order) for r in cells)
+    for k, v in d["azimuth"].items():
+        if v["worst_over_south"] is not None:
+            assert v["worst_over_south"] == pytest.approx(v["worst_bearing_cm2"] / v["south_face_cm2"], abs=0.002), k

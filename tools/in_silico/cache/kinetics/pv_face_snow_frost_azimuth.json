@@ -1,0 +1,2850 @@
+{
+  "script": "115_pv_face_snow_frost_azimuth.py",
+  "leg": "00_07 HW.54 Р3(б)",
+  "what": "four readings of snow and hoarfrost cover on the dome's PV face, named by how they are built (a ceiling, melt only, a vapour budget with NREL's slide rate on our wet-snow events, a favourable end; their order is measured in readings_order_for_pv) against 110's necessary A_eff at cadence C, and the A_eff a node can have when its face is set within the mounting window of its gateway's bearing",
+  "inputs": {
+    "demand": "cadence_c",
+    "mounting_window_deg": 50.0,
+    "winter_months": [
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "wind_k_plausible": 0.1,
+    "alpha_dark_cell": 0.9,
+    "lewis": 0.86,
+    "frost_blind_kg_m2": 0.05,
+    "ceiling_snow": [
+      0.002,
+      1.0
+    ],
+    "nrel_snow_step_m": 0.01,
+    "wet_snow_C": [
+      -1.0,
+      1.0
+    ],
+    "nrel_slide_per_h": 0.197,
+    "nrel_can_slide_W_m2_C": -80.0,
+    "dome_diameter_m": 0.0298,
+    "azimuths_deg": [
+      0,
+      45,
+      90,
+      135,
+      180,
+      225,
+      270,
+      315
+    ],
+    "sources": {
+      "fields_lanes_bisection": "110 (imported)",
+      "sun_faces_weather_snow_sky_wind_k": "79 (imported)",
+      "convection_air": "71 h_natural · h_forced · air_props",
+      "snow_cover_model": "Marion et al. 2013, Solar Energy 97:112, as pvlib coverage_nrel (v0.11.2 source read 2026-10-31)",
+      "window": "01_04 §3.1 (⚖️ 2026-10-22)"
+    }
+  },
+  "controls": {
+    "brackets_110_rows": 30,
+    "sky_term": "cloud ≥ clear; dark still clear ≤ air",
+    "clearing": "melt synthetic 4 h; no melt-blind hour above 0 °C; full snow cover gone in 6 h; frost zeroed above 0 °C by construction (not asserted)",
+    "window": "best = min over three neighbours by modular indexing, checked against an angular-distance minimum"
+  },
+  "snow_event_h_per_year": {
+    "ceiling": 126.4,
+    "nrel_wet": 15.4
+  },
+  "readings_order_for_pv": {
+    "measured_on": "54 field × corner thresholds of `by_field`, within the scan's top: None (no aperture up to it) is the most adverse, two Nones agree, so a crossing above the top is invisible",
+    "cells_where_every_reading_is_none": 22,
+    "adverse_to_favourable": [
+      "ceiling",
+      "nrel_published",
+      "melt_only",
+      "favourable_end"
+    ],
+    "unordered_pairs": [],
+    "cells_strictly_kinder": {
+      "melt_only<ceiling": 14,
+      "melt_only<nrel_published": 14,
+      "nrel_published<ceiling": 2,
+      "favourable_end<ceiling": 32,
+      "favourable_end<melt_only": 27,
+      "favourable_end<nrel_published": 32
+    }
+  },
+  "radio_caveat": "the best face within ±50° of the gateway's bearing is what the mounting rule allows; the radio's cost of turning up to 45° off the bearing is the mounting rule's to price, not priced here",
+  "frost_event_h_per_winter_south_by_wind_k": {
+    "0": 503.6,
+    "0.1": 314.2,
+    "0.3": 228.0
+  },
+  "autonomy_days_110": {
+    "favourable": 7.57,
+    "nominal": 3.27,
+    "adverse": 0.93
+  },
+  "covers": {
+    "closed_stand.low:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7189
+    },
+    "open_face_000.low:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.764
+    },
+    "open_face_045.low:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7698
+    },
+    "open_face_090.low:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.774
+    },
+    "open_face_135.low:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7554
+    },
+    "open_face_180.low:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7262
+    },
+    "open_face_225.low:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7003
+    },
+    "open_face_270.low:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7006
+    },
+    "open_face_315.low:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7393
+    },
+    "closed_stand.high:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7462
+    },
+    "open_face_000.high:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7874
+    },
+    "open_face_045.high:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7901
+    },
+    "open_face_090.high:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7882
+    },
+    "open_face_135.high:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7682
+    },
+    "open_face_180.high:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7408
+    },
+    "open_face_225.high:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7212
+    },
+    "open_face_270.high:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.73
+    },
+    "open_face_315.high:ceiling": {
+      "longest_run_days_together_median_max": [
+        52.5,
+        116.1
+      ],
+      "longest_run_days_snow_only_median_max": [
+        50.7,
+        115.1
+      ],
+      "longest_run_days_frost_only_median_max": [
+        52.5,
+        116.1
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 29,
+        "nominal": 29,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 3016.3,
+      "light_lost_share_of_winter_harvest": 0.7683
+    },
+    "closed_stand.low:melt_only": {
+      "longest_run_days_together_median_max": [
+        3.5,
+        20.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        3.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        3.5,
+        20.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 15,
+        "adverse": 24
+      },
+      "winters": 29,
+      "covered_h_per_winter": 632.2,
+      "light_lost_share_of_winter_harvest": 0.0581
+    },
+    "open_face_000.low:melt_only": {
+      "longest_run_days_together_median_max": [
+        7.5,
+        20.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        5.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        7.5,
+        20.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 13,
+        "nominal": 23,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 732.0,
+      "light_lost_share_of_winter_harvest": 0.1086
+    },
+    "open_face_045.low:melt_only": {
+      "longest_run_days_together_median_max": [
+        7.5,
+        20.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        5.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        7.5,
+        20.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 13,
+        "nominal": 23,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 721.5,
+      "light_lost_share_of_winter_harvest": 0.1028
+    },
+    "open_face_090.low:melt_only": {
+      "longest_run_days_together_median_max": [
+        2.7,
+        11.7
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        2.7
+      ],
+      "longest_run_days_frost_only_median_max": [
+        2.6,
+        11.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 4,
+        "nominal": 11,
+        "adverse": 24
+      },
+      "winters": 29,
+      "covered_h_per_winter": 587.6,
+      "light_lost_share_of_winter_harvest": 0.0414
+    },
+    "open_face_135.low:melt_only": {
+      "longest_run_days_together_median_max": [
+        1.6,
+        3.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_frost_only_median_max": [
+        1.6,
+        3.8
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 2,
+        "adverse": 21
+      },
+      "winters": 29,
+      "covered_h_per_winter": 520.5,
+      "light_lost_share_of_winter_harvest": 0.016
+    },
+    "open_face_180.low:melt_only": {
+      "longest_run_days_together_median_max": [
+        1.6,
+        2.9
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_frost_only_median_max": [
+        1.6,
+        2.9
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 18
+      },
+      "winters": 29,
+      "covered_h_per_winter": 521.0,
+      "light_lost_share_of_winter_harvest": 0.0153
+    },
+    "open_face_225.low:melt_only": {
+      "longest_run_days_together_median_max": [
+        1.7,
+        2.9
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        1.7,
+        2.9
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 21
+      },
+      "winters": 29,
+      "covered_h_per_winter": 563.7,
+      "light_lost_share_of_winter_harvest": 0.0228
+    },
+    "open_face_270.low:melt_only": {
+      "longest_run_days_together_median_max": [
+        2.8,
+        10.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.9
+      ],
+      "longest_run_days_frost_only_median_max": [
+        2.8,
+        10.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 3,
+        "nominal": 11,
+        "adverse": 23
+      },
+      "winters": 29,
+      "covered_h_per_winter": 635.9,
+      "light_lost_share_of_winter_harvest": 0.0544
+    },
+    "open_face_315.low:melt_only": {
+      "longest_run_days_together_median_max": [
+        7.5,
+        20.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        5.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        7.5,
+        20.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 13,
+        "nominal": 23,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 728.7,
+      "light_lost_share_of_winter_harvest": 0.1017
+    },
+    "closed_stand.high:melt_only": {
+      "longest_run_days_together_median_max": [
+        2.5,
+        6.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        2.5,
+        6.4
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 4,
+        "adverse": 23
+      },
+      "winters": 29,
+      "covered_h_per_winter": 559.8,
+      "light_lost_share_of_winter_harvest": 0.0367
+    },
+    "open_face_000.high:melt_only": {
+      "longest_run_days_together_median_max": [
+        2.8,
+        12.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        2.8,
+        12.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 3,
+        "nominal": 14,
+        "adverse": 26
+      },
+      "winters": 29,
+      "covered_h_per_winter": 604.1,
+      "light_lost_share_of_winter_harvest": 0.0638
+    },
+    "open_face_045.high:melt_only": {
+      "longest_run_days_together_median_max": [
+        2.8,
+        12.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        2.8,
+        12.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 3,
+        "nominal": 14,
+        "adverse": 26
+      },
+      "winters": 29,
+      "covered_h_per_winter": 595.8,
+      "light_lost_share_of_winter_harvest": 0.0614
+    },
+    "open_face_090.high:melt_only": {
+      "longest_run_days_together_median_max": [
+        1.8,
+        6.6
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.7
+      ],
+      "longest_run_days_frost_only_median_max": [
+        1.8,
+        6.6
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 4,
+        "adverse": 22
+      },
+      "winters": 29,
+      "covered_h_per_winter": 530.0,
+      "light_lost_share_of_winter_harvest": 0.0269
+    },
+    "open_face_135.high:melt_only": {
+      "longest_run_days_together_median_max": [
+        1.3,
+        2.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_frost_only_median_max": [
+        1.3,
+        2.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 16
+      },
+      "winters": 29,
+      "covered_h_per_winter": 500.5,
+      "light_lost_share_of_winter_harvest": 0.0118
+    },
+    "open_face_180.high:melt_only": {
+      "longest_run_days_together_median_max": [
+        1.2,
+        2.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.8,
+        2.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 15
+      },
+      "winters": 29,
+      "covered_h_per_winter": 504.1,
+      "light_lost_share_of_winter_harvest": 0.0119
+    },
+    "open_face_225.high:melt_only": {
+      "longest_run_days_together_median_max": [
+        1.2,
+        2.7
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.7
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.9,
+        2.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 15
+      },
+      "winters": 29,
+      "covered_h_per_winter": 534.7,
+      "light_lost_share_of_winter_harvest": 0.0179
+    },
+    "open_face_270.high:melt_only": {
+      "longest_run_days_together_median_max": [
+        1.8,
+        3.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        1.8,
+        3.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 1,
+        "adverse": 23
+      },
+      "winters": 29,
+      "covered_h_per_winter": 568.5,
+      "light_lost_share_of_winter_harvest": 0.0375
+    },
+    "open_face_315.high:melt_only": {
+      "longest_run_days_together_median_max": [
+        2.8,
+        12.5
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        2.8,
+        12.5
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 3,
+        "nominal": 14,
+        "adverse": 26
+      },
+      "winters": 29,
+      "covered_h_per_winter": 603.0,
+      "light_lost_share_of_winter_harvest": 0.0605
+    },
+    "closed_stand.low:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.9,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.8,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.7,
+        7.3
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 21,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 393.4,
+      "light_lost_share_of_winter_harvest": 0.0516
+    },
+    "open_face_000.low:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.9,
+        15.0
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.9,
+        15.0
+      ],
+      "longest_run_days_frost_only_median_max": [
+        1.5,
+        7.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 7,
+        "nominal": 22,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 425.8,
+      "light_lost_share_of_winter_harvest": 0.0706
+    },
+    "open_face_045.low:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.9,
+        15.0
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.9,
+        15.0
+      ],
+      "longest_run_days_frost_only_median_max": [
+        1.5,
+        7.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 7,
+        "nominal": 22,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 421.4,
+      "light_lost_share_of_winter_harvest": 0.0673
+    },
+    "open_face_090.low:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.9,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.8,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.7,
+        6.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 21,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 378.0,
+      "light_lost_share_of_winter_harvest": 0.0511
+    },
+    "open_face_135.low:nrel_published": {
+      "longest_run_days_together_median_max": [
+        3.6,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        3.6,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        2.9
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 15,
+        "adverse": 27
+      },
+      "winters": 29,
+      "covered_h_per_winter": 340.5,
+      "light_lost_share_of_winter_harvest": 0.0344
+    },
+    "open_face_180.low:nrel_published": {
+      "longest_run_days_together_median_max": [
+        2.9,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        2.9,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        2.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 4,
+        "nominal": 13,
+        "adverse": 27
+      },
+      "winters": 29,
+      "covered_h_per_winter": 321.8,
+      "light_lost_share_of_winter_harvest": 0.0287
+    },
+    "open_face_225.low:nrel_published": {
+      "longest_run_days_together_median_max": [
+        3.9,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        3.9,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.6,
+        2.8
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 5,
+        "nominal": 15,
+        "adverse": 27
+      },
+      "winters": 29,
+      "covered_h_per_winter": 345.2,
+      "light_lost_share_of_winter_harvest": 0.032
+    },
+    "open_face_270.low:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.9,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.8,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.7,
+        6.6
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 19,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 387.7,
+      "light_lost_share_of_winter_harvest": 0.0468
+    },
+    "open_face_315.low:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.9,
+        15.0
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.9,
+        15.0
+      ],
+      "longest_run_days_frost_only_median_max": [
+        1.5,
+        7.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 7,
+        "nominal": 22,
+        "adverse": 29
+      },
+      "winters": 29,
+      "covered_h_per_winter": 424.9,
+      "light_lost_share_of_winter_harvest": 0.0653
+    },
+    "closed_stand.high:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.5,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.2,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.6,
+        5.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 18,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 367.2,
+      "light_lost_share_of_winter_harvest": 0.0441
+    },
+    "open_face_000.high:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.7,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.2,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.8,
+        6.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 20,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 389.5,
+      "light_lost_share_of_winter_harvest": 0.0592
+    },
+    "open_face_045.high:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.7,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.2,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.8,
+        6.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 20,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 386.2,
+      "light_lost_share_of_winter_harvest": 0.0573
+    },
+    "open_face_090.high:nrel_published": {
+      "longest_run_days_together_median_max": [
+        3.9,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        3.9,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        3.8
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 17,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 353.0,
+      "light_lost_share_of_winter_harvest": 0.0429
+    },
+    "open_face_135.high:nrel_published": {
+      "longest_run_days_together_median_max": [
+        3.5,
+        14.3
+      ],
+      "longest_run_days_snow_only_median_max": [
+        3.5,
+        14.3
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        2.0
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 5,
+        "nominal": 15,
+        "adverse": 27
+      },
+      "winters": 29,
+      "covered_h_per_winter": 322.8,
+      "light_lost_share_of_winter_harvest": 0.0285
+    },
+    "open_face_180.high:nrel_published": {
+      "longest_run_days_together_median_max": [
+        2.9,
+        14.3
+      ],
+      "longest_run_days_snow_only_median_max": [
+        2.9,
+        14.3
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.8
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 3,
+        "nominal": 12,
+        "adverse": 27
+      },
+      "winters": 29,
+      "covered_h_per_winter": 305.0,
+      "light_lost_share_of_winter_harvest": 0.0249
+    },
+    "open_face_225.high:nrel_published": {
+      "longest_run_days_together_median_max": [
+        2.9,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        2.9,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.6,
+        0.8
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 4,
+        "nominal": 13,
+        "adverse": 27
+      },
+      "winters": 29,
+      "covered_h_per_winter": 323.0,
+      "light_lost_share_of_winter_harvest": 0.028
+    },
+    "open_face_270.high:nrel_published": {
+      "longest_run_days_together_median_max": [
+        3.9,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        3.9,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.6,
+        2.8
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 16,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 362.2,
+      "light_lost_share_of_winter_harvest": 0.0414
+    },
+    "open_face_315.high:nrel_published": {
+      "longest_run_days_together_median_max": [
+        4.7,
+        14.4
+      ],
+      "longest_run_days_snow_only_median_max": [
+        4.2,
+        14.4
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.8,
+        6.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 6,
+        "nominal": 20,
+        "adverse": 28
+      },
+      "winters": 29,
+      "covered_h_per_winter": 388.5,
+      "light_lost_share_of_winter_harvest": 0.056
+    },
+    "closed_stand.low:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.6,
+        3.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        3.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 1,
+        "adverse": 4
+      },
+      "winters": 29,
+      "covered_h_per_winter": 123.3,
+      "light_lost_share_of_winter_harvest": 0.0062
+    },
+    "open_face_000.low:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.8,
+        5.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        5.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.6,
+        3.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 2,
+        "adverse": 11
+      },
+      "winters": 29,
+      "covered_h_per_winter": 139.0,
+      "light_lost_share_of_winter_harvest": 0.0123
+    },
+    "open_face_045.low:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.8,
+        5.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        5.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.6,
+        3.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 2,
+        "adverse": 11
+      },
+      "winters": 29,
+      "covered_h_per_winter": 134.1,
+      "light_lost_share_of_winter_harvest": 0.0112
+    },
+    "open_face_090.low:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.5,
+        2.7
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        2.7
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 6
+      },
+      "winters": 29,
+      "covered_h_per_winter": 113.4,
+      "light_lost_share_of_winter_harvest": 0.0034
+    },
+    "open_face_135.low:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 1
+      },
+      "winters": 29,
+      "covered_h_per_winter": 107.5,
+      "light_lost_share_of_winter_harvest": 0.0014
+    },
+    "open_face_180.low:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 1
+      },
+      "winters": 29,
+      "covered_h_per_winter": 108.6,
+      "light_lost_share_of_winter_harvest": 0.0016
+    },
+    "open_face_225.low:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.6,
+        1.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 3
+      },
+      "winters": 29,
+      "covered_h_per_winter": 120.4,
+      "light_lost_share_of_winter_harvest": 0.0031
+    },
+    "open_face_270.low:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.7,
+        1.9
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.9
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.6,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 3
+      },
+      "winters": 29,
+      "covered_h_per_winter": 125.3,
+      "light_lost_share_of_winter_harvest": 0.0061
+    },
+    "open_face_315.low:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.8,
+        5.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        5.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.6,
+        3.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 2,
+        "adverse": 11
+      },
+      "winters": 29,
+      "covered_h_per_winter": 137.9,
+      "light_lost_share_of_winter_harvest": 0.0113
+    },
+    "closed_stand.high:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.6,
+        1.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 3
+      },
+      "winters": 29,
+      "covered_h_per_winter": 116.2,
+      "light_lost_share_of_winter_harvest": 0.004
+    },
+    "open_face_000.high:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.6,
+        1.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 3
+      },
+      "winters": 29,
+      "covered_h_per_winter": 119.8,
+      "light_lost_share_of_winter_harvest": 0.0063
+    },
+    "open_face_045.high:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.6,
+        1.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 3
+      },
+      "winters": 29,
+      "covered_h_per_winter": 116.2,
+      "light_lost_share_of_winter_harvest": 0.0057
+    },
+    "open_face_090.high:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.5,
+        1.7
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.7
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 2
+      },
+      "winters": 29,
+      "covered_h_per_winter": 107.3,
+      "light_lost_share_of_winter_harvest": 0.0019
+    },
+    "open_face_135.high:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 1
+      },
+      "winters": 29,
+      "covered_h_per_winter": 106.0,
+      "light_lost_share_of_winter_harvest": 0.0011
+    },
+    "open_face_180.high:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.2
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 1
+      },
+      "winters": 29,
+      "covered_h_per_winter": 107.0,
+      "light_lost_share_of_winter_harvest": 0.0013
+    },
+    "open_face_225.high:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.6,
+        1.7
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.7
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 2
+      },
+      "winters": 29,
+      "covered_h_per_winter": 115.9,
+      "light_lost_share_of_winter_harvest": 0.0025
+    },
+    "open_face_270.high:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.6,
+        1.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 3
+      },
+      "winters": 29,
+      "covered_h_per_winter": 118.8,
+      "light_lost_share_of_winter_harvest": 0.0043
+    },
+    "open_face_315.high:favourable_end": {
+      "longest_run_days_together_median_max": [
+        0.6,
+        1.8
+      ],
+      "longest_run_days_snow_only_median_max": [
+        0.5,
+        1.8
+      ],
+      "longest_run_days_frost_only_median_max": [
+        0.5,
+        0.7
+      ],
+      "winters_with_run_over_110_autonomy": {
+        "favourable": 0,
+        "nominal": 0,
+        "adverse": 3
+      },
+      "winters": 29,
+      "covered_h_per_winter": 119.0,
+      "light_lost_share_of_winter_harvest": 0.0059
+    }
+  },
+  "by_field": {
+    "closed_stand.low": {
+      "favourable": {
+        "none": 0.00774,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.00774
+      },
+      "nominal": {
+        "none": 0.0127,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      },
+      "adverse": {
+        "none": 0.103,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_000.low": {
+      "favourable": {
+        "none": 0.00877,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.00881
+      },
+      "nominal": {
+        "none": 0.0135,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      },
+      "adverse": {
+        "none": 0.103,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_045.low": {
+      "favourable": {
+        "none": 0.00874,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.00878
+      },
+      "nominal": {
+        "none": 0.0134,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      },
+      "adverse": {
+        "none": 0.103,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_090.low": {
+      "favourable": {
+        "none": 0.00737,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.00737
+      },
+      "nominal": {
+        "none": 0.012,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.012
+      },
+      "adverse": {
+        "none": 0.103,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_135.low": {
+      "favourable": {
+        "none": 0.00618,
+        "ceiling": null,
+        "melt_only": 0.00627,
+        "nrel_published": null,
+        "favourable_end": 0.00618
+      },
+      "nominal": {
+        "none": 0.0105,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.0105
+      },
+      "adverse": {
+        "none": 0.103,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_180.low": {
+      "favourable": {
+        "none": 0.00568,
+        "ceiling": null,
+        "melt_only": 0.00575,
+        "nrel_published": null,
+        "favourable_end": 0.00568
+      },
+      "nominal": {
+        "none": 0.01,
+        "ceiling": null,
+        "melt_only": 0.0127,
+        "nrel_published": null,
+        "favourable_end": 0.01
+      },
+      "adverse": {
+        "none": 0.103,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_225.low": {
+      "favourable": {
+        "none": 0.00629,
+        "ceiling": null,
+        "melt_only": 0.00656,
+        "nrel_published": null,
+        "favourable_end": 0.00629
+      },
+      "nominal": {
+        "none": 0.0105,
+        "ceiling": null,
+        "melt_only": 0.019,
+        "nrel_published": null,
+        "favourable_end": 0.0105
+      },
+      "adverse": {
+        "none": 0.103,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_270.low": {
+      "favourable": {
+        "none": 0.00748,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.00748
+      },
+      "nominal": {
+        "none": 0.0122,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.0122
+      },
+      "adverse": {
+        "none": 0.103,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_315.low": {
+      "favourable": {
+        "none": 0.00872,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.00875
+      },
+      "nominal": {
+        "none": 0.0134,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      },
+      "adverse": {
+        "none": 0.103,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "closed_stand.high": {
+      "favourable": {
+        "none": 0.00623,
+        "ceiling": null,
+        "melt_only": 0.0113,
+        "nrel_published": null,
+        "favourable_end": 0.00623
+      },
+      "nominal": {
+        "none": 0.0106,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.0106
+      },
+      "adverse": {
+        "none": 0.0983,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_000.high": {
+      "favourable": {
+        "none": 0.00739,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.00741
+      },
+      "nominal": {
+        "none": 0.0124,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.0126
+      },
+      "adverse": {
+        "none": 0.0983,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_045.high": {
+      "favourable": {
+        "none": 0.00736,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.00738
+      },
+      "nominal": {
+        "none": 0.0124,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.0126
+      },
+      "adverse": {
+        "none": 0.0983,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_090.high": {
+      "favourable": {
+        "none": 0.00598,
+        "ceiling": null,
+        "melt_only": 0.00598,
+        "nrel_published": null,
+        "favourable_end": 0.00598
+      },
+      "nominal": {
+        "none": 0.0109,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.0109
+      },
+      "adverse": {
+        "none": 0.0983,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_135.high": {
+      "favourable": {
+        "none": 0.00479,
+        "ceiling": null,
+        "melt_only": 0.0048,
+        "nrel_published": 0.0085,
+        "favourable_end": 0.0048
+      },
+      "nominal": {
+        "none": 0.00931,
+        "ceiling": null,
+        "melt_only": 0.00936,
+        "nrel_published": null,
+        "favourable_end": 0.00931
+      },
+      "adverse": {
+        "none": 0.0983,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_180.high": {
+      "favourable": {
+        "none": 0.00427,
+        "ceiling": null,
+        "melt_only": 0.00429,
+        "nrel_published": 0.00784,
+        "favourable_end": 0.00427
+      },
+      "nominal": {
+        "none": 0.00872,
+        "ceiling": null,
+        "melt_only": 0.00872,
+        "nrel_published": null,
+        "favourable_end": 0.00872
+      },
+      "adverse": {
+        "none": 0.0983,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_225.high": {
+      "favourable": {
+        "none": 0.00455,
+        "ceiling": null,
+        "melt_only": 0.00462,
+        "nrel_published": null,
+        "favourable_end": 0.00455
+      },
+      "nominal": {
+        "none": 0.00931,
+        "ceiling": null,
+        "melt_only": 0.00931,
+        "nrel_published": null,
+        "favourable_end": 0.00931
+      },
+      "adverse": {
+        "none": 0.0983,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_270.high": {
+      "favourable": {
+        "none": 0.00589,
+        "ceiling": null,
+        "melt_only": 0.00589,
+        "nrel_published": null,
+        "favourable_end": 0.00589
+      },
+      "nominal": {
+        "none": 0.0106,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.0106
+      },
+      "adverse": {
+        "none": 0.0983,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    },
+    "open_face_315.high": {
+      "favourable": {
+        "none": 0.00734,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.00736
+      },
+      "nominal": {
+        "none": 0.0124,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": 0.0126
+      },
+      "adverse": {
+        "none": 0.0983,
+        "ceiling": null,
+        "melt_only": null,
+        "nrel_published": null,
+        "favourable_end": null
+      }
+    }
+  },
+  "azimuth": {
+    "low:favourable:none": {
+      "best_in_window_by_bearing": {
+        "000": 0.00872,
+        "045": 0.00737,
+        "090": 0.00618,
+        "135": 0.00568,
+        "180": 0.00568,
+        "225": 0.00568,
+        "270": 0.00629,
+        "315": 0.00748
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": 0.00872,
+      "south_face_cm2": 0.00568,
+      "worst_over_south": 1.535
+    },
+    "low:favourable:ceiling": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "low:favourable:melt_only": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": 0.00627,
+        "135": 0.00575,
+        "180": 0.00575,
+        "225": 0.00575,
+        "270": 0.00656,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": null,
+      "south_face_cm2": 0.00575,
+      "worst_over_south": null
+    },
+    "low:favourable:nrel_published": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "low:favourable:favourable_end": {
+      "best_in_window_by_bearing": {
+        "000": 0.00875,
+        "045": 0.00737,
+        "090": 0.00618,
+        "135": 0.00568,
+        "180": 0.00568,
+        "225": 0.00568,
+        "270": 0.00629,
+        "315": 0.00748
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": 0.00875,
+      "south_face_cm2": 0.00568,
+      "worst_over_south": 1.54
+    },
+    "low:nominal:none": {
+      "best_in_window_by_bearing": {
+        "000": 0.0134,
+        "045": 0.012,
+        "090": 0.0105,
+        "135": 0.01,
+        "180": 0.01,
+        "225": 0.01,
+        "270": 0.0105,
+        "315": 0.0122
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": 0.0134,
+      "south_face_cm2": 0.01,
+      "worst_over_south": 1.34
+    },
+    "low:nominal:ceiling": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "low:nominal:melt_only": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": 0.0127,
+        "180": 0.0127,
+        "225": 0.0127,
+        "270": 0.019,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": null,
+      "south_face_cm2": 0.0127,
+      "worst_over_south": null
+    },
+    "low:nominal:nrel_published": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "low:nominal:favourable_end": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": 0.012,
+        "090": 0.0105,
+        "135": 0.01,
+        "180": 0.01,
+        "225": 0.01,
+        "270": 0.0105,
+        "315": 0.0122
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": null,
+      "south_face_cm2": 0.01,
+      "worst_over_south": null
+    },
+    "low:adverse:none": {
+      "best_in_window_by_bearing": {
+        "000": 0.103,
+        "045": 0.103,
+        "090": 0.103,
+        "135": 0.103,
+        "180": 0.103,
+        "225": 0.103,
+        "270": 0.103,
+        "315": 0.103
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": 0.103,
+      "south_face_cm2": 0.103,
+      "worst_over_south": 1.0
+    },
+    "low:adverse:ceiling": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "low:adverse:melt_only": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "low:adverse:nrel_published": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "low:adverse:favourable_end": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "high:favourable:none": {
+      "best_in_window_by_bearing": {
+        "000": 0.00734,
+        "045": 0.00598,
+        "090": 0.00479,
+        "135": 0.00427,
+        "180": 0.00427,
+        "225": 0.00427,
+        "270": 0.00455,
+        "315": 0.00589
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": 0.00734,
+      "south_face_cm2": 0.00427,
+      "worst_over_south": 1.719
+    },
+    "high:favourable:ceiling": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "high:favourable:melt_only": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": 0.00598,
+        "090": 0.0048,
+        "135": 0.00429,
+        "180": 0.00429,
+        "225": 0.00429,
+        "270": 0.00462,
+        "315": 0.00589
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": null,
+      "south_face_cm2": 0.00429,
+      "worst_over_south": null
+    },
+    "high:favourable:nrel_published": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": 0.0085,
+        "135": 0.00784,
+        "180": 0.00784,
+        "225": 0.00784,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": null,
+      "south_face_cm2": 0.00784,
+      "worst_over_south": null
+    },
+    "high:favourable:favourable_end": {
+      "best_in_window_by_bearing": {
+        "000": 0.00736,
+        "045": 0.00598,
+        "090": 0.0048,
+        "135": 0.00427,
+        "180": 0.00427,
+        "225": 0.00427,
+        "270": 0.00455,
+        "315": 0.00589
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": 0.00736,
+      "south_face_cm2": 0.00427,
+      "worst_over_south": 1.724
+    },
+    "high:nominal:none": {
+      "best_in_window_by_bearing": {
+        "000": 0.0124,
+        "045": 0.0109,
+        "090": 0.00931,
+        "135": 0.00872,
+        "180": 0.00872,
+        "225": 0.00872,
+        "270": 0.00931,
+        "315": 0.0106
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": 0.0124,
+      "south_face_cm2": 0.00872,
+      "worst_over_south": 1.422
+    },
+    "high:nominal:ceiling": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "high:nominal:melt_only": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": 0.00936,
+        "135": 0.00872,
+        "180": 0.00872,
+        "225": 0.00872,
+        "270": 0.00931,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": null,
+      "south_face_cm2": 0.00872,
+      "worst_over_south": null
+    },
+    "high:nominal:nrel_published": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "high:nominal:favourable_end": {
+      "best_in_window_by_bearing": {
+        "000": 0.0126,
+        "045": 0.0109,
+        "090": 0.00931,
+        "135": 0.00872,
+        "180": 0.00872,
+        "225": 0.00872,
+        "270": 0.00931,
+        "315": 0.0106
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": 0.0126,
+      "south_face_cm2": 0.00872,
+      "worst_over_south": 1.445
+    },
+    "high:adverse:none": {
+      "best_in_window_by_bearing": {
+        "000": 0.0983,
+        "045": 0.0983,
+        "090": 0.0983,
+        "135": 0.0983,
+        "180": 0.0983,
+        "225": 0.0983,
+        "270": 0.0983,
+        "315": 0.0983
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": "000",
+      "worst_bearing_cm2": 0.0983,
+      "south_face_cm2": 0.0983,
+      "worst_over_south": 1.0
+    },
+    "high:adverse:ceiling": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "high:adverse:melt_only": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "high:adverse:nrel_published": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    },
+    "high:adverse:favourable_end": {
+      "best_in_window_by_bearing": {
+        "000": null,
+        "045": null,
+        "090": null,
+        "135": null,
+        "180": null,
+        "225": null,
+        "270": null,
+        "315": null
+      },
+      "bearings_with_none_up_to_cm2": {
+        "bearings": [
+          "000",
+          "045",
+          "090",
+          "135",
+          "180",
+          "225",
+          "270",
+          "315"
+        ],
+        "top_cm2": 100.0
+      },
+      "worst_bearing": null,
+      "worst_bearing_cm2": null,
+      "south_face_cm2": null,
+      "worst_over_south": null
+    }
+  }
+}

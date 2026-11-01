@@ -303,6 +303,11 @@ Anchor mechanics (CPU):
      (ALPHA_PEEK_1K · E_CYCLE · ETA_BUCK_ACTIVE) · the radome and cathode-flange CEMs → 114 (dendrometer_support_budget.json —
      a point dendrometer on the anchor); a re-run of 78, 103 or 110, a change to 71's loader, those lib constants or
      either CEM re-runs 114
+  110 (importlib: thresholds · lanes_of · floor_sig · CORNERS · BISECT_HI_CM2, and through it 79 — sun, faces, weather,
+     snow, sky, ground reflection, vapour pressure, WIND_K, AZIMUTHS_DEG — and 71 — convection, geometry;
+     winter_pv_autonomy.json — the autonomy days, `necessary_a_eff_cm2` for control 1, `record.hours`) → 115
+     (pv_face_snow_frost_azimuth.json — snow, hoarfrost and the gateway's bearing on the dome's PV face); a re-run of
+     71, 79 or 110 re-runs 115
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

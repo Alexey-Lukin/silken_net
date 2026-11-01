@@ -2628,6 +2628,55 @@ The period is what makes the count recoverable without the device. The device se
 
 **Controls.** Each says in the script what it can and cannot catch: the loop's closure with one α everywhere, unit impulses against independently derived node positions, the sections against `103`'s lengths and anode centroid, the field's optimum P* = 2πg for a thick scale and its needed-B_r by a second route, the energy function against lib's E_CYCLE, the ERA5 hour count against `110`'s, and the monotone support that makes each crossing unique.
 
+## HW.54 — Do Snow, Hoarfrost and the Gateway's Bearing Leave a PV Cell on the Dome Any Winter? (script 115)
+
+**The question (2026-10-31, [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.54, leg Р3(б), «сніг, іній і азимут, заданий шлюзом, а не сонцем»).** `110` gives the effective aperture A_eff below which a PV cell on the dome cannot carry the node through the worst winter of 1991–2020, with the face always clear and on four fixed faces. Two things it does not see: a covered face (hoarfrost, plastered snow) passes little or no light while the store drains, and the face's azimuth is not ours to choose — the ratified mounting rule turns the flange towards its own gateway, within ±50° of the gateway's bearing (`01_04 §3.1`, ⚖️ 2026-10-22). `115` re-runs `110`'s own machinery (fields, lanes, harvest arm, bisection — imported) on covered fields at cadence C on its three corners, on all eight faces of `79`'s 45° grid and the closed stand (numbers — `cache/kinetics/pv_face_snow_frost_azimuth.json`).
+
+**Four readings of the cover — two named by how they are built, two by where they land, and where they land is measured below.** **Ceiling** — the face as cold as the model allows, cleared by the melt rule (no light absorbed, a clear sky every hour, still air; frost every hour below the frost point and 0 °C; plastered snow on any ≥ 2 mm rise in either reanalysis at ≤ +1 °C; a cover clears only above 0 °C). **Melt only** — a dark cell's values (α 0.9, `79`'s cloud-weighted sky, the trunk's wind k·u10 with k 0.1); snow only on ERA5-Land rises ≥ 1 cm/h (NREL's threshold for a new cover) of WET snow, −1 … +1 °C — our assumption that dry snow does not plaster a vertical face, which only removes events; the ceiling's clearing rule kept. **Vapour budget + NREL slide** (cache key `nrel_published`) — the same air, sky and wet-snow events; frost as a vapour budget on the covered face's temperature (α 0.3, also while the face is bare; deposited and sublimated at the Chilton–Colburn rate, melted above 0 °C, the face blind past 0.05 kg/m²); snow sliding off at Marion et al. 2013's rate (through pvlib `coverage_nrel`, v0.11.2 source read, at sin 90° = 1) in every hour the air is warmer than −G/80, no melt added. NREL's are the new-cover threshold (1 cm/h), the slide rate and its −G/80 condition; ours are applying that threshold to an ERA5-Land depth rise, the wet filter, the frost model, its thresholds and its α. **Favourable end** — the vapour budget + NREL slide run on the bare dark cell's temperature (α 0.9), so its frost deposits less as well as melting, and every cover clears in any hour that cell would be above 0 °C: the end most favourable to PV, never a central estimate. 🔴 **Their order is measured, not declared** (`readings_order_for_pv`, on 54 thresholds within the scan's top of 100 cm² — two «none up to the top» agree, 22 cells are that on every reading): **ceiling ≥ vapour budget + NREL slide ≥ melt only ≥ favourable end**, no pair crossing — the vapour budget is never the kinder of the two middle readings and is strictly the harsher in 14 cells, while «ceiling ≥ vapour budget» rests on 2 cells. Melt only is the harsher on frost, the vapour budget on snow: its longest snow run is at least 14.3 days on every face and ground end, melt only's at most 5.8.
+
+**Result — the necessary A_eff at cadence C, cm², ρ low ⊥ high, by face** (— = no aperture up to 100 cm² keeps the store from emptying; five of the nine fields shown):
+
+*Favourable corner:*
+
+| reading | closed stand | N | E | S | W |
+|---|---|---|---|---|---|
+| clear face (`110`) | 0.00774 ⊥ 0.00623 | 0.00877 ⊥ 0.00739 | 0.00737 ⊥ 0.00598 | 0.00568 ⊥ 0.00427 | 0.00748 ⊥ 0.00589 |
+| favourable end | 0.00774 ⊥ 0.00623 | 0.00881 ⊥ 0.00741 | 0.00737 ⊥ 0.00598 | 0.00568 ⊥ 0.00427 | 0.00748 ⊥ 0.00589 |
+| melt only | — ⊥ 0.0113 | — ⊥ — | — ⊥ 0.00598 | 0.00575 ⊥ 0.00429 | — ⊥ 0.00589 |
+| vapour budget + NREL slide | — ⊥ — | — ⊥ — | — ⊥ — | — ⊥ 0.00784 | — ⊥ — |
+| ceiling | — ⊥ — | — ⊥ — | — ⊥ — | — ⊥ — | — ⊥ — |
+
+*Nominal corner:*
+
+| reading | closed stand | N | E | S | W |
+|---|---|---|---|---|---|
+| clear face (`110`) | 0.0127 ⊥ 0.0106 | 0.0135 ⊥ 0.0124 | 0.012 ⊥ 0.0109 | 0.01 ⊥ 0.00872 | 0.0122 ⊥ 0.0106 |
+| favourable end | — ⊥ 0.0106 | — ⊥ 0.0126 | 0.012 ⊥ 0.0109 | 0.01 ⊥ 0.00872 | 0.0122 ⊥ 0.0106 |
+| melt only | — ⊥ — | — ⊥ — | — ⊥ — | 0.0127 ⊥ 0.00872 | — ⊥ — |
+| vapour budget + NREL slide | — ⊥ — | — ⊥ — | — ⊥ — | — ⊥ — | — ⊥ — |
+| ceiling | — ⊥ — | — ⊥ — | — ⊥ — | — ⊥ — | — ⊥ — |
+
+Counted over all nine fields × two ground ends (18): the ceiling keeps a threshold in 0 and 0 at the favourable and the nominal corner, the vapour budget + NREL slide in 2 and 0, melt only in 9 and 5, the favourable end in 18 and 14; at the **adverse** corner (`110`'s window carries cadence C 0.93 days without light) no reading keeps any. Face by face: the vapour budget + NREL slide keeps only the open south and south-east faces on bright ground at the favourable corner, at ≈ ×1.8 their clear-face value; melt only keeps the south and south-west faces at both corners on both grounds (the south at ×1.0–1.27 its clear-face value), the south-east everywhere but the nominal corner on dark ground, east, west and the closed stand only on bright ground at the favourable corner, and the north, north-east and north-west never; the favourable end keeps every face at the favourable corner within 0.5 % of the clear one and, at the nominal corner, loses the closed stand, north, north-east and north-west on dark ground.
+
+**The gateway's bearing.** On the clear face the worst bearing a gateway can impose costs ×1.535 ⊥ ×1.719 the south face at the favourable corner, ×1.34 ⊥ ×1.422 at the nominal one and nothing at the adverse one (the window there is a 41-hour overcast, the same for every face — `110`). Under a cover the bearing decides whether a node has any face at all within its ±50° window (`azimuth[…].bearings_with_none_up_to_cm2`): under melt only a gateway due north leaves none at either corner on either ground, north-east and north-west none on dark ground at both corners and on bright at the nominal one, east none on dark ground at the nominal one; under the vapour budget + NREL slide, at the one corner it keeps (bright ground, favourable), bearings N, NE, W and NW leave none; and the favourable end leaves a gateway due north none on dark ground at the nominal corner.
+
+**What binds — the longest covered run per winter, days, median ⊥ maximum over 29 winters (longest snow-only ⊥ frost-only run, maximum), ρ low:**
+
+| reading | S face | N face | closed stand |
+|---|---|---|---|
+| ceiling | 52.5 ⊥ 116.1 (115.1 ⊥ 116.1) | 52.5 ⊥ 116.1 (115.1 ⊥ 116.1) | 52.5 ⊥ 116.1 (115.1 ⊥ 116.1) |
+| vapour budget + NREL slide | 2.9 ⊥ 14.4 (14.4 ⊥ 2.7) | 4.9 ⊥ 15.0 (15.0 ⊥ 7.7) | 4.9 ⊥ 14.4 (14.4 ⊥ 7.3) |
+| melt only | 1.6 ⊥ 2.9 (1.2 ⊥ 2.9) | 7.5 ⊥ 20.5 (5.8 ⊥ 20.5) | 3.5 ⊥ 20.5 (3.8 ⊥ 20.5) |
+| favourable end | 0.5 ⊥ 1.2 (1.2 ⊥ 0.7) | 0.8 ⊥ 5.8 (5.8 ⊥ 3.7) | 0.6 ⊥ 3.8 (3.8 ⊥ 0.7) |
+
+against `110`'s autonomy without light at cadence C: 7.57 · 3.27 · 0.93 days (favourable · nominal · adverse). Under the vapour budget + NREL slide the snow runs reach two weeks on every face; under melt only the frost runs reach ≈ 20 days on dark ground on the north, north-east and north-west faces and the closed stand. A run shorter than the autonomy is necessary, not sufficient, which is why the thresholds above are re-run rather than read off the runs.
+
+**So, Р3(б)'s answer on snow and frost.** Snow and frost decide PV on the dome at the adverse corner on every reading, and on the three harsher readings they remove at least half of the face-ends at the other two corners; only the favourable end leaves the clear-face picture nearly intact, and only at the favourable corner (within 0.5 %) — at the nominal one it too loses 4 of 18 face-ends and leaves a gateway due north no face on dark ground. What decides between the readings is how a cover leaves a SMALL VERTICAL face 30 mm across — whether dry snow plasters it (three readings assume not) and whether NREL's slide rate, taken at sin 90° = 1, holds on it; neither is known. The arbiter is a winter field test of a cell on a dome (a camera and its short-circuit current), or more cheaply the `stem_face_winter_light` loggers' own record of cover episodes on their face — a proposal, not a decision.
+
+**What it cannot see.** Rime from supercooled fog (no fog or liquid-water variable in the record); the face's heat capacity and the window's conduction to and from the capsule (not one sign); wind direction for plastered snow; the ground's half of the view held at the air's temperature (snow is colder); azimuths between the 45° grid; a frost layer's partial transmission beyond the one threshold; whether dry snow plasters a small vertical face and whether NREL's slide rate transfers to it; crossings of the readings above the scan's top; the cell, the window and the efficiency (`110`'s A_eff carries them); and the radio's cost of turning the face up to 45° off its gateway, which is the mounting rule's to price.
+
+**Controls.** Each says in the script what it can and cannot catch: uncovered, every row `110` holds for cadence C lies inside `115`'s own bracket (all 30); the sky term's sign (the cloud-weighted sky never colder than the clear one, full cloud radiating at the air's temperature); the clearing rules on synthetic records (a warm hour, NREL's slide sign at G = 100 W/m², a full cover gone in ⌈1/0.197⌉ hours, a snowfall in a warm hour leaving none); the azimuth window against an angular-distance minimum; and the measured order, which refuses to draw a line through a crossing pair (its cell-by-cell check is a test).
+
 ## HW.5.IS — How Hard Does the Cathode Medium's Malate Pull on the Nanozyme's Metals? (script 93)
 
 The buffered cathode medium (malic acid 10 mM in the sap's salts, pH 4.5 — ⚖️ founder 2026-10-12, `01_03 §3.5`) carried
