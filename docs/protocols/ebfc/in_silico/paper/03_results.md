@@ -358,7 +358,7 @@ past −320 mV (−13, −42 and −80 mV at the three larger rows) — less tha
 cascade: the thermochemically corrected levels keep it downhill only with their donor excess, and without it the margin
 lies inside choices the protocol fixes. Three
 alternative choices lower E°(Os) relative to ours without being errors of known sign: the other absolute-SHE value in
-common use, 4.44 V, lowers every E°(Os) and every cascade by 159 mV when the proton free energy moves with it (E°(Os) has
+common use, 4.44 V,<sup>64</sup> lowers every E°(Os) and every cascade by 159 mV when the proton free energy moves with it (E°(Os) has
 no proton to compensate) — alone it turns no cell uphill, together with the spin–orbit shift 10 of the 32 at the [Os(bpy)₃] size and 12 at the full one —, and
 ωB97X lowers the device couple's E°(Os) by 138 mV (Table 4; 134 mV of it the functional, the rest the basis), while the
 flavin, re-read at that tier on 32b's geometries (script 112), rises by 126.6 mV with the basis and 90.8 mV more with the
@@ -368,7 +368,7 @@ single points: the osmium geometry programmatic and vertical with LANL2DZ on osm
 and thermal terms from B3LYP, the device form the only one computed at that tier, its Os(III) accepted on convergence alone (§2.2); the
 zero-point and RRHO cells stay downhill until the spin–orbit shift passes −174.0 and −163.5 mV respectively, and at the
 [Os(bpy)₃] size read −76.0 and −86.5 mV; on the 4.44 V convention they keep +15.0 and +4.5 mV, so there any osmium row of ref 63 (from −152 mV)
-turns them uphill);
+turns them uphill, and both lie inside the ±0.02 V that ref 64 gives for that value itself);
 def2-TZVP with its core potential on osmium lowers the device
 couple's E°(Os) by 65 mV and alone turns no cell uphill. Terms that raise E°(Os) or the cascade are not netted against
 these: the osmium zero-point energy (+41 mV where computed, below), the cavity radii (UFF ×1.1 with a sphere on every

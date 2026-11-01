@@ -162,7 +162,7 @@ def build() -> str:
               f"{mv(htl['relaxed_plus_zpe']['with_spin_orbit_os_ref63_bipy_V'])} / "
               f"{mv(htl['relaxed_rrho_free_energy']['with_spin_orbit_os_ref63_bipy_V'])} mV, and on the 4.44 V convention keep "
               f"{mv(htl['relaxed_plus_zpe']['with_she_abs_4_44_V'])} / {mv(htl['relaxed_rrho_free_energy']['with_she_abs_4_44_V'])} "
-              f"mV; §3.5). ") if ht["computed"] else ""
+              f"mV, inside that value's own ±0.02 V; §3.5). ") if ht["computed"] else ""
     md.append(f"\n*Cascade = E°(Os) − E°(FAD/FADH₂, pH 7) in mV, > 0 = downhill; every cell at this tier (B3LYP/6-31G(d)) is downhill (smallest "
               f"{mv(min(cells))} mV). Donor side = computed − measured free flavin "
               f"({mv0(lfl['flavin']['E_pH7_measured_free_V'])} mV); acceptor side = measured ({mv0(meas['E_os_V'])} mV) − "

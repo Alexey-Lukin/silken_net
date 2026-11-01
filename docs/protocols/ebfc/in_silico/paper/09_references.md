@@ -15,6 +15,14 @@
 > DataCite-registered (Zenodo), not Crossref. Ref 51 is cited for the GAFF2 parameters used (`gaff-2.11`),
 > which have no separate paper. The founder's final reference-manager pass still applies.
 >
+> ⊕ **Ref 64 (Trasatti 1986, added 2026-11-01) stands OUT of first-appearance order** — first cited in Methods §2.4 for
+> the 4.44 V value, between refs 47 and 48 — because inserting it there would renumber refs 48–63, which ≈ 150 places
+> outside this list quote by number, among them committed cache records (`cascade_like_for_like` and three more) and
+> test pins. ⚠️ The founder's reference-manager pass belongs to the sleeping journal branch, so the ChemRxiv preprint
+> ships with 64 out of order (47 → 64 → 48). Printed from its Crossref record, fetched 2026-11-01 (vol. 58, issue 7;
+> published-print 1986). READ in full (publicly available, De Gruyter); the value checked on the page image: eqn (19),
+> p. 960, E°(H⁺/H₂)(abs) = (4.44 ± 0.02) V at 298.15 K (note k: eqn (15) gives 4.448 V).
+>
 > ⛔ **An integrity GATE over this numbering was measured and REFUSED — twice, 2026-09-24 and re-measured
 > 2026-10-01** (migrated here 2026-10-04 from the `00_07` HW.5.IS checkbox that carried it, before that
 > checkbox could take the verdict down with it when the leg closes). The naive form — «first appearances
@@ -356,6 +364,7 @@ legend line stays in each, as the criterion allows.
 61. Laviron, E. A.C. polarography and faradaic impedance of strongly adsorbed electroactive species. *J. Electroanal. Chem. Interfacial Electrochem.* **1979**, *97*, 135–149. DOI: 10.1016/s0022-0728(79)80057-1.
 62. Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2023**, *146*, 107405. DOI: 10.1016/j.elecom.2022.107405.
 63. Srnec, M.; Chalupský, J.; Fojta, M.; Zendlová, L.; Havran, L.; Hocek, M.; Kývala, M.; Rulíšek, L. Effect of Spin−Orbit Coupling on Reduction Potentials of Octahedral Ruthenium(II/III) and Osmium(II/III) Complexes. *J. Am. Chem. Soc.* **2008**, *130*, 10947–10954. DOI: 10.1021/ja800616s.
+64. Trasatti, S. The absolute electrode potential: an explanatory note (Recommendations 1986). *Pure Appl. Chem.* **1986**, *58*, 955–966. DOI: 10.1351/pac198658070955.
 
 ## Verified but not cited in the text (NOT part of the numbered list)
 

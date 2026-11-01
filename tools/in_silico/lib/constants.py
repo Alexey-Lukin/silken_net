@@ -287,7 +287,7 @@ SRNEC_TABLE_S2_OS = {
 OS_SOC_SHIFT_BIPY_V = SRNEC_TABLE_S2_OS["[Os(bipy)3]2+/3+"][2] / 1000.0
 # The other absolute-SHE value in common use beside 32's Isse–Gennaro 4.281 V; the flavin's E° does not move with it when
 #   the proton free energy moves consistently, so E°(Os), which has no proton, carries the whole difference.
-SHE_ABS_ALT_V = 4.44
+SHE_ABS_ALT_V = 4.44  # Trasatti 1986, IUPAC Recommendations, eqn (19): (4.44 ± 0.02) V (paper ref 64; read 2026-11-01)
 # Nernst slope, V per pH unit at 298 K — the proton term of the 2e⁻/2H⁺ flavin couple (32) and of the one-electron
 #   proton-coupled route printed at pH 7 beside it (61, Table 2b; self-review round 2 К4, 2026-10-23).
 NERNST_SLOPE_V = 0.05916

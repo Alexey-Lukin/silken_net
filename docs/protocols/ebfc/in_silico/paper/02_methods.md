@@ -128,7 +128,7 @@ osmium form and each flavin level, without a further SCF; its donor side (comput
 acceptor side (measured − computed osmium) are reported separately, and an agreement with the measured cascade
 within 50 mV while each side is at least 100 mV off is flagged as a cancellation (the 50 and 100 mV thresholds are ours; an agreement within 50 mV with both sides under 100 mV would have been read as
 agreement, and on our convention no cell meets it). The
-other absolute-SHE value in common use, 4.44 V, lies 159 mV away; the cascade inherits that difference in full when the
+other absolute-SHE value in common use, 4.44 V,<sup>64</sup> lies 159 mV away; the cascade inherits that difference in full when the
 proton free energy moves with it — E°(Os) has no proton to compensate — and the donor/acceptor split moves by it
 otherwise. That shift and the literature sizes of spin–orbit coupling on osmium are set against every cell in §3.5, since every cell
 shares them; the ωB97X−B3LYP difference, the cavity radii and the osmium basis, which move the device couple alone, are set
