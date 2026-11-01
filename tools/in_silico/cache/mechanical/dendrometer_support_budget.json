@@ -1,0 +1,1288 @@
+{
+  "script": "114_dendrometer_support_budget.py",
+  "leg": "00_07 HW.54 Р3(в)",
+  "what": "a point dendrometer with the anchor as its support: (1) the support's thermal artefact per fixation depth and the bark bearing's share, (2) the magnetic scale behind the capsule wall — period, the Hall sensor's error terms, the unwrap margin, (3) the energy of a read on cadence C, (4) years until the bark reaches the flange seat and the dome's top",
+  "inputs": {
+    "alpha_xylem_green_ppm_K": 7.9,
+    "alpha_peek_ppm_K": 47.0,
+    "dead_bark_under_flange_78_probe_proxy_mm": {
+      "thin_contact_78": 8.325,
+      "thick_side_78": 21.0
+    },
+    "tie_axis_mm_103": [
+      0.5,
+      {
+        "thin_contact_78": 11.325,
+        "thick_side_78": 24.0
+      }
+    ],
+    "frame_sensitivity_um_per_K": 0.3,
+    "growth": {
+      "yr_um": 795.0,
+      "hr_um": 2.29,
+      "dry_site_um_per_growth_day": 27.6,
+      "resolution_um": [
+        1.0,
+        5.0
+      ]
+    },
+    "frost_swing_mm": [
+      1.0,
+      2.0
+    ],
+    "daily_swing_mm": [
+      0.1,
+      0.2
+    ],
+    "radial_rate_mm_per_yr": [
+      0.8,
+      5.0
+    ],
+    "growth_months_min_assumed": 4.0,
+    "hall": {
+      "i_active_A": 0.0023,
+      "t_conv_one_ch_s": 0.000825,
+      "t_add_ch_s": 0.0008,
+      "t_sleep_to_standby_s": 5e-05,
+      "t_standby_to_measure_s": 7e-05,
+      "i_sleep_A": 5e-09,
+      "noise_T": {
+        "x_y": 2.2e-05,
+        "z": 1.1e-05
+      },
+      "offset_drift_T_per_K": {
+        "typ": 3e-06,
+        "max": 1e-05
+      },
+      "sens_mismatch_drift": {
+        "x_y": 0.05,
+        "x_z": 0.15
+      },
+      "angle_error_deg": {
+        "x_y": 0.5,
+        "x_z": 1.0
+      },
+      "linear_range_T": [
+        0.04,
+        0.08
+      ]
+    },
+    "mismatch_linear_spread_K_assumed": [
+      65.0,
+      100.0
+    ],
+    "encoder_2mm": {
+      "i_supply_A": {
+        "typ": 0.016,
+        "max": 0.021
+      },
+      "t_power_up_s": 0.02,
+      "period_mm": 2.0
+    },
+    "core_run_A": 0.008,
+    "v_out": 3.3,
+    "eta_buck_active": 0.88,
+    "e_cycle_J": 0.03333,
+    "gaps_mm": [
+      1.5,
+      2.0,
+      3.0,
+      4.0
+    ],
+    "scale_thickness_mm": [
+      1.0,
+      2.0
+    ],
+    "noise_target_um": 1.0,
+    "sources": {
+      "geometry_alpha_share": "103 cache (anchor_wood_share.json); xylem α — Sevanto et al. 2005, Boreal Env. Res. 10:437, Table 1, P. sylvestris, radial",
+      "flange_heat": "78 cache (flange_cambium_heat.json)",
+      "radome_flange": "tools/cad/cem/radome.json · cathode_flange.json; top = Radome.TopZMm",
+      "cadence_demand": "110 cache",
+      "air": "ERA5 hourly, Cherkasy grid point (71's loader)",
+      "hall": "TI TMAG5273 datasheet SLYS045, §5.7 (A1) and §5.11, read 2026-10-31",
+      "encoder": "ams AS5311 rev 1.13",
+      "frames": "Zweifel et al. 2021 New Phytol. 10.1111/nph.17552, Methods (ZN11)",
+      "growth": "nph.17552 Table 1 · Etzold et al. 2022 Ecol. Lett. 10.1111/ele.13933 · Zweifel et al. 2021 Front. For. Glob. Change 10.3389/ffgc.2021.776905 p. 9",
+      "swings_and_rate_ends": "01_03 §4 ⊕ (в)",
+      "core_vout_cycle": "02_03 §9.4",
+      "collection": "handoff 2026-10-26_r3v_dendrometer.json"
+    }
+  },
+  "controls": {
+    "closure_and_impulses": "A = 0 with one α; unit impulses → z_f − z_t · z_t + h · −h · −section length",
+    "sections": "tile from 0, end at 103's full depth, gyroid centre on its anode centroid, 103's PEEK length to the shank's top",
+    "field_optimum": "P* = 2πg for a thick scale",
+    "energy": "02_03 §9.4 members → lib's E_CYCLE through the active buck",
+    "era5_hours": 262992,
+    "monotone_support": "every anchor section's α > α_w"
+  },
+  "temperature": {
+    "diurnal_range_growing_MJJA_K": {
+      "p50": 9.8,
+      "p95": 14.2
+    },
+    "daily_mean_unfrozen_p5_p95_C": [
+      2.7,
+      24.8
+    ],
+    "freeze_thaw_days_per_year": 52.7,
+    "unfrozen_days_share": 0.717,
+    "days": 10958
+  },
+  "support": {
+    "flange_on_bark:bonded": {
+      "sections_mm_alpha_ppm_K": [
+        [
+          0.0,
+          32.0,
+          47.0
+        ],
+        [
+          32.0,
+          50.0,
+          9.3646
+        ],
+        [
+          50.0,
+          90.0,
+          8.6
+        ]
+      ],
+      "points": {
+        "tie_shallowest:thin_contact_78": {
+          "z_f_mm": 0.5,
+          "peek_in_path_mm": 0.5,
+          "anchor_term_um_per_K": -0.02,
+          "x_frames": 0.1,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0005,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": -0.0078
+        },
+        "tie_at_install_cambium:thin_contact_78": {
+          "z_f_mm": 11.325,
+          "peek_in_path_mm": 11.32,
+          "anchor_term_um_per_K": -0.443,
+          "x_frames": 1.5,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0113,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.003
+        },
+        "zone1_shank_top:thin_contact_78": {
+          "z_f_mm": 32.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.251,
+          "x_frames": 4.2,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.032,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0237
+        },
+        "gyroid_top:thin_contact_78": {
+          "z_f_mm": 50.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.278,
+          "x_frames": 4.3,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.05,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0417
+        },
+        "anode_centroid:thin_contact_78": {
+          "z_f_mm": 70.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.292,
+          "x_frames": 4.3,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.07,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0617
+        },
+        "gyroid_bottom:thin_contact_78": {
+          "z_f_mm": 90.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.306,
+          "x_frames": 4.4,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.09,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0817
+        },
+        "tie_shallowest:thick_side_78": {
+          "z_f_mm": 0.5,
+          "peek_in_path_mm": 0.5,
+          "anchor_term_um_per_K": -0.02,
+          "x_frames": 0.1,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0005,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": -0.0205
+        },
+        "tie_at_install_cambium:thick_side_78": {
+          "z_f_mm": 24.0,
+          "peek_in_path_mm": 24.0,
+          "anchor_term_um_per_K": -0.938,
+          "x_frames": 3.1,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.024,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.003
+        },
+        "zone1_shank_top:thick_side_78": {
+          "z_f_mm": 32.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.251,
+          "x_frames": 4.2,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.032,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.011
+        },
+        "gyroid_top:thick_side_78": {
+          "z_f_mm": 50.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.278,
+          "x_frames": 4.3,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.05,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.029
+        },
+        "anode_centroid:thick_side_78": {
+          "z_f_mm": 70.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.292,
+          "x_frames": 4.3,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.07,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.049
+        },
+        "gyroid_bottom:thick_side_78": {
+          "z_f_mm": 90.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.306,
+          "x_frames": 4.4,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.09,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.069
+        }
+      },
+      "frames_crossing_depth_mm": 7.67,
+      "crossing_minus_live_bark_depth_mm": {
+        "thin_contact_78": -0.652,
+        "thick_side_78": -13.327
+      },
+      "reading_note": "the fits held (103's reading)",
+      "tie_climb_drift_um_per_K_per_year_at_rate_ends": {
+        "thin_contact_78": [
+          0.031,
+          0.195
+        ],
+        "thick_side_78": [
+          0.031,
+          0.195
+        ]
+      }
+    },
+    "flange_on_bark:shoulder": {
+      "sections_mm_alpha_ppm_K": [
+        [
+          0.0,
+          32.0,
+          47.0
+        ],
+        [
+          32.0,
+          50.0,
+          47.0
+        ],
+        [
+          50.0,
+          90.0,
+          8.6
+        ]
+      ],
+      "points": {
+        "tie_shallowest:thin_contact_78": {
+          "z_f_mm": 0.5,
+          "peek_in_path_mm": 0.5,
+          "anchor_term_um_per_K": -0.02,
+          "x_frames": 0.1,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0005,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": -0.0078
+        },
+        "tie_at_install_cambium:thin_contact_78": {
+          "z_f_mm": 11.325,
+          "peek_in_path_mm": 11.32,
+          "anchor_term_um_per_K": -0.443,
+          "x_frames": 1.5,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0113,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.003
+        },
+        "zone1_shank_top:thin_contact_78": {
+          "z_f_mm": 32.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.251,
+          "x_frames": 4.2,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.032,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0237
+        },
+        "gyroid_top:thin_contact_78": {
+          "z_f_mm": 50.0,
+          "peek_in_path_mm": 50.0,
+          "anchor_term_um_per_K": -1.955,
+          "x_frames": 6.5,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.05,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0417
+        },
+        "anode_centroid:thin_contact_78": {
+          "z_f_mm": 70.0,
+          "peek_in_path_mm": 50.0,
+          "anchor_term_um_per_K": -1.969,
+          "x_frames": 6.6,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.07,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0617
+        },
+        "gyroid_bottom:thin_contact_78": {
+          "z_f_mm": 90.0,
+          "peek_in_path_mm": 50.0,
+          "anchor_term_um_per_K": -1.983,
+          "x_frames": 6.6,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.09,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0817
+        },
+        "tie_shallowest:thick_side_78": {
+          "z_f_mm": 0.5,
+          "peek_in_path_mm": 0.5,
+          "anchor_term_um_per_K": -0.02,
+          "x_frames": 0.1,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0005,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": -0.0205
+        },
+        "tie_at_install_cambium:thick_side_78": {
+          "z_f_mm": 24.0,
+          "peek_in_path_mm": 24.0,
+          "anchor_term_um_per_K": -0.938,
+          "x_frames": 3.1,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.024,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.003
+        },
+        "zone1_shank_top:thick_side_78": {
+          "z_f_mm": 32.0,
+          "peek_in_path_mm": 32.0,
+          "anchor_term_um_per_K": -1.251,
+          "x_frames": 4.2,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.032,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.011
+        },
+        "gyroid_top:thick_side_78": {
+          "z_f_mm": 50.0,
+          "peek_in_path_mm": 50.0,
+          "anchor_term_um_per_K": -1.955,
+          "x_frames": 6.5,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.05,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.029
+        },
+        "anode_centroid:thick_side_78": {
+          "z_f_mm": 70.0,
+          "peek_in_path_mm": 50.0,
+          "anchor_term_um_per_K": -1.969,
+          "x_frames": 6.6,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.07,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.049
+        },
+        "gyroid_bottom:thick_side_78": {
+          "z_f_mm": 90.0,
+          "peek_in_path_mm": 50.0,
+          "anchor_term_um_per_K": -1.983,
+          "x_frames": 6.6,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.09,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.069
+        }
+      },
+      "frames_crossing_depth_mm": 7.67,
+      "crossing_minus_live_bark_depth_mm": {
+        "thin_contact_78": -0.652,
+        "thick_side_78": -13.327
+      },
+      "reading_note": "the consistent adverse end — the Zone-1 fit slipped",
+      "tie_climb_drift_um_per_K_per_year_at_rate_ends": {
+        "thin_contact_78": [
+          0.031,
+          0.195
+        ],
+        "thick_side_78": [
+          0.031,
+          0.195
+        ]
+      }
+    },
+    "zone3_fit:bonded": {
+      "sections_mm_alpha_ppm_K": [
+        [
+          0.0,
+          14.0,
+          9.7563
+        ],
+        [
+          14.0,
+          32.0,
+          47.0
+        ],
+        [
+          32.0,
+          50.0,
+          9.3646
+        ],
+        [
+          50.0,
+          90.0,
+          8.6
+        ]
+      ],
+      "points": {
+        "tie_shallowest:thin_contact_78": {
+          "z_f_mm": 0.5,
+          "peek_in_path_mm": 0.0,
+          "anchor_term_um_per_K": -0.001,
+          "x_frames": 0.0,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0005,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": -0.0078
+        },
+        "tie_at_install_cambium:thin_contact_78": {
+          "z_f_mm": 11.325,
+          "peek_in_path_mm": 0.0,
+          "anchor_term_um_per_K": -0.021,
+          "x_frames": 0.1,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0113,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.003
+        },
+        "zone1_shank_top:thin_contact_78": {
+          "z_f_mm": 32.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.73,
+          "x_frames": 2.4,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.032,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0237
+        },
+        "gyroid_top:thin_contact_78": {
+          "z_f_mm": 50.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.756,
+          "x_frames": 2.5,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.05,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0417
+        },
+        "anode_centroid:thin_contact_78": {
+          "z_f_mm": 70.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.77,
+          "x_frames": 2.6,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.07,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0617
+        },
+        "gyroid_bottom:thin_contact_78": {
+          "z_f_mm": 90.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.784,
+          "x_frames": 2.6,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.09,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0817
+        },
+        "tie_shallowest:thick_side_78": {
+          "z_f_mm": 0.5,
+          "peek_in_path_mm": 0.0,
+          "anchor_term_um_per_K": -0.001,
+          "x_frames": 0.0,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0005,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": -0.0205
+        },
+        "tie_at_install_cambium:thick_side_78": {
+          "z_f_mm": 24.0,
+          "peek_in_path_mm": 10.0,
+          "anchor_term_um_per_K": -0.417,
+          "x_frames": 1.4,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.024,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.003
+        },
+        "zone1_shank_top:thick_side_78": {
+          "z_f_mm": 32.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.73,
+          "x_frames": 2.4,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.032,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.011
+        },
+        "gyroid_top:thick_side_78": {
+          "z_f_mm": 50.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.756,
+          "x_frames": 2.5,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.05,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.029
+        },
+        "anode_centroid:thick_side_78": {
+          "z_f_mm": 70.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.77,
+          "x_frames": 2.6,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.07,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.049
+        },
+        "gyroid_bottom:thick_side_78": {
+          "z_f_mm": 90.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.784,
+          "x_frames": 2.6,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.09,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.069
+        }
+      },
+      "frames_crossing_depth_mm": 21.01,
+      "crossing_minus_live_bark_depth_mm": {
+        "thin_contact_78": 12.683,
+        "thick_side_78": 0.008
+      },
+      "reading_note": "the fits held (103's reading)",
+      "tie_climb_drift_um_per_K_per_year_at_rate_ends": {
+        "thin_contact_78": [
+          0.001,
+          0.009
+        ],
+        "thick_side_78": [
+          0.031,
+          0.195
+        ]
+      }
+    },
+    "zone3_fit:shoulder": {
+      "sections_mm_alpha_ppm_K": [
+        [
+          0.0,
+          14.0,
+          9.7563
+        ],
+        [
+          14.0,
+          32.0,
+          47.0
+        ],
+        [
+          32.0,
+          50.0,
+          47.0
+        ],
+        [
+          50.0,
+          90.0,
+          8.6
+        ]
+      ],
+      "points": {
+        "tie_shallowest:thin_contact_78": {
+          "z_f_mm": 0.5,
+          "peek_in_path_mm": 0.0,
+          "anchor_term_um_per_K": -0.001,
+          "x_frames": 0.0,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0005,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": -0.0078
+        },
+        "tie_at_install_cambium:thin_contact_78": {
+          "z_f_mm": 11.325,
+          "peek_in_path_mm": 0.0,
+          "anchor_term_um_per_K": -0.021,
+          "x_frames": 0.1,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0113,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.003
+        },
+        "zone1_shank_top:thin_contact_78": {
+          "z_f_mm": 32.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.73,
+          "x_frames": 2.4,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.032,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0237
+        },
+        "gyroid_top:thin_contact_78": {
+          "z_f_mm": 50.0,
+          "peek_in_path_mm": 36.0,
+          "anchor_term_um_per_K": -1.434,
+          "x_frames": 4.8,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.05,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0417
+        },
+        "anode_centroid:thin_contact_78": {
+          "z_f_mm": 70.0,
+          "peek_in_path_mm": 36.0,
+          "anchor_term_um_per_K": -1.448,
+          "x_frames": 4.8,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.07,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0617
+        },
+        "gyroid_bottom:thin_contact_78": {
+          "z_f_mm": 90.0,
+          "peek_in_path_mm": 36.0,
+          "anchor_term_um_per_K": -1.462,
+          "x_frames": 4.9,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.09,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.0817
+        },
+        "tie_shallowest:thick_side_78": {
+          "z_f_mm": 0.5,
+          "peek_in_path_mm": 0.0,
+          "anchor_term_um_per_K": -0.001,
+          "x_frames": 0.0,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.0005,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": -0.0205
+        },
+        "tie_at_install_cambium:thick_side_78": {
+          "z_f_mm": 24.0,
+          "peek_in_path_mm": 10.0,
+          "anchor_term_um_per_K": -0.417,
+          "x_frames": 1.4,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.024,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.003
+        },
+        "zone1_shank_top:thick_side_78": {
+          "z_f_mm": 32.0,
+          "peek_in_path_mm": 18.0,
+          "anchor_term_um_per_K": -0.73,
+          "x_frames": 2.4,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.032,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.011
+        },
+        "gyroid_top:thick_side_78": {
+          "z_f_mm": 50.0,
+          "peek_in_path_mm": 36.0,
+          "anchor_term_um_per_K": -1.434,
+          "x_frames": 4.8,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.05,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.029
+        },
+        "anode_centroid:thick_side_78": {
+          "z_f_mm": 70.0,
+          "peek_in_path_mm": 36.0,
+          "anchor_term_um_per_K": -1.448,
+          "x_frames": 4.8,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.07,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.049
+        },
+        "gyroid_bottom:thick_side_78": {
+          "z_f_mm": 90.0,
+          "peek_in_path_mm": 36.0,
+          "anchor_term_um_per_K": -1.462,
+          "x_frames": 4.9,
+          "d_anchor_term_d_alpha_w_um_per_K_per_ppm": 0.09,
+          "d_total_A_d_alpha_w_um_per_K_per_ppm": 0.069
+        }
+      },
+      "frames_crossing_depth_mm": 21.01,
+      "crossing_minus_live_bark_depth_mm": {
+        "thin_contact_78": 12.683,
+        "thick_side_78": 0.008
+      },
+      "reading_note": "intermediate — the Zone-3 fit held while the Zone-1 fit slipped",
+      "tie_climb_drift_um_per_K_per_year_at_rate_ends": {
+        "thin_contact_78": [
+          0.001,
+          0.009
+        ],
+        "thick_side_78": [
+          0.031,
+          0.195
+        ]
+      }
+    }
+  },
+  "support_worst_abs_um_per_K": {
+    "shoulder": 1.983,
+    "bonded": 1.306
+  },
+  "support_worst_in_um_air_proxy": {
+    "worst_shoulder": {
+      "diurnal_growing_p50_um": 19.4,
+      "diurnal_growing_p95_um": 28.2,
+      "seasonal_unfrozen_p5_p95_um": 43.8
+    },
+    "worst_bonded": {
+      "diurnal_growing_p50_um": 12.8,
+      "diurnal_growing_p95_um": 18.5,
+      "seasonal_unfrozen_p5_p95_um": 28.9
+    }
+  },
+  "flange_hot_hour_78": {
+    "flange_max_C": 52.9,
+    "cambium_under_flange_max_C": 46.62,
+    "cambium_no_flange_max_C": 35.18,
+    "case": "78: sunlit, α 0.5, still air"
+  },
+  "bark_bearing": {
+    "fraction_lost_U_at_air_dry_bark_readings": [
+      0.0021,
+      0.4246
+    ],
+    "fraction_lost_U_rigid_bark": 1.0,
+    "before_anode_bond": "unpriced — before ingrowth the deep tie is not the anode but the sleeve's grip in the Ø15 channel and ice in the 2 mm gap at the cold edge, which 103 leaves unbounded (zone3_fit.share.state1_ties_not_bounded)",
+    "growth_under_reported_um_per_yr_at_795": [
+      1.7,
+      337.6
+    ],
+    "U_rows_premise_b": {
+      "sway:green_p_radiata_lowest_group__ln2.3:sequoia_whole_bark_air_dry__thin_contact_78": 0.0229,
+      "sway:green_p_radiata_lowest_group__ln2.3:sequoia_whole_bark_air_dry__thick_side_78": 0.0092,
+      "sway:green_p_radiata_lowest_group__ln2.3:p_taeda_outer_bark_air_dry__thin_contact_78": 0.3266,
+      "sway:green_p_radiata_lowest_group__ln2.3:p_taeda_outer_bark_air_dry__thick_side_78": 0.1612,
+      "sway:green_p_radiata_lowest_group__ln3.5:sequoia_whole_bark_air_dry__thin_contact_78": 0.0329,
+      "sway:green_p_radiata_lowest_group__ln3.5:sequoia_whole_bark_air_dry__thick_side_78": 0.0133,
+      "sway:green_p_radiata_lowest_group__ln3.5:p_taeda_outer_bark_air_dry__thin_contact_78": 0.4133,
+      "sway:green_p_radiata_lowest_group__ln3.5:p_taeda_outer_bark_air_dry__thick_side_78": 0.2183,
+      "sway:scots_pine_22_8pct_mc__ln2.3:sequoia_whole_bark_air_dry__thin_contact_78": 0.0052,
+      "sway:scots_pine_22_8pct_mc__ln2.3:sequoia_whole_bark_air_dry__thick_side_78": 0.0021,
+      "sway:scots_pine_22_8pct_mc__ln2.3:p_taeda_outer_bark_air_dry__thin_contact_78": 0.0978,
+      "sway:scots_pine_22_8pct_mc__ln2.3:p_taeda_outer_bark_air_dry__thick_side_78": 0.0412,
+      "sway:scots_pine_22_8pct_mc__ln3.5:sequoia_whole_bark_air_dry__thin_contact_78": 0.0063,
+      "sway:scots_pine_22_8pct_mc__ln3.5:sequoia_whole_bark_air_dry__thick_side_78": 0.0025,
+      "sway:scots_pine_22_8pct_mc__ln3.5:p_taeda_outer_bark_air_dry__thin_contact_78": 0.1161,
+      "sway:scots_pine_22_8pct_mc__ln3.5:p_taeda_outer_bark_air_dry__thick_side_78": 0.0495,
+      "slow:green_p_radiata_lowest_group__ln2.3:sequoia_whole_bark_air_dry__thin_contact_78": 0.0244,
+      "slow:green_p_radiata_lowest_group__ln2.3:sequoia_whole_bark_air_dry__thick_side_78": 0.0098,
+      "slow:green_p_radiata_lowest_group__ln2.3:p_taeda_outer_bark_air_dry__thin_contact_78": 0.3414,
+      "slow:green_p_radiata_lowest_group__ln2.3:p_taeda_outer_bark_air_dry__thick_side_78": 0.1705,
+      "slow:green_p_radiata_lowest_group__ln3.5:sequoia_whole_bark_air_dry__thin_contact_78": 0.0344,
+      "slow:green_p_radiata_lowest_group__ln3.5:sequoia_whole_bark_air_dry__thick_side_78": 0.0139,
+      "slow:green_p_radiata_lowest_group__ln3.5:p_taeda_outer_bark_air_dry__thin_contact_78": 0.4246,
+      "slow:green_p_radiata_lowest_group__ln3.5:p_taeda_outer_bark_air_dry__thick_side_78": 0.2263,
+      "slow:scots_pine_22_8pct_mc__ln2.3:sequoia_whole_bark_air_dry__thin_contact_78": 0.0068,
+      "slow:scots_pine_22_8pct_mc__ln2.3:sequoia_whole_bark_air_dry__thick_side_78": 0.0027,
+      "slow:scots_pine_22_8pct_mc__ln2.3:p_taeda_outer_bark_air_dry__thin_contact_78": 0.1242,
+      "slow:scots_pine_22_8pct_mc__ln2.3:p_taeda_outer_bark_air_dry__thick_side_78": 0.0532,
+      "slow:scots_pine_22_8pct_mc__ln3.5:sequoia_whole_bark_air_dry__thin_contact_78": 0.0079,
+      "slow:scots_pine_22_8pct_mc__ln3.5:sequoia_whole_bark_air_dry__thick_side_78": 0.0031,
+      "slow:scots_pine_22_8pct_mc__ln3.5:p_taeda_outer_bark_air_dry__thin_contact_78": 0.1415,
+      "slow:scots_pine_22_8pct_mc__ln3.5:p_taeda_outer_bark_air_dry__thick_side_78": 0.0613
+    },
+    "reading": "U = (1/k_A + 1/k_s)/(1/k_A + 1/k_s + 1/k_F) on 103's stiffnesses, premise (b), sway and slow (relaxed PEEK): the fraction of a radial change of the bark the flange follows, so the reading loses it (our reading of a growth push as a displacement source; k_F is the air-dry bark readings, green bark is softer); U is priced with the anode BONDED (103's state 2) — before ingrowth the deep tie is a grip 103 leaves unbounded, so U there is not priced; under premise (a) a rising bark can lift the flange off the sleeve — our reading, 103 does not model lift-off"
+  },
+  "design_terms": "(α_s − α_w)·z_t + (α_s − α_h)·h — nulled in the base reading; each ppm/K of mismatch costs z_t (or h) in mm × 1e-3 µm/K, and α_s = α_w cannot be designed while α_w is one reading",
+  "scale": {
+    "t1:g1.5": {
+      "t_mm": 1.0,
+      "g_mm": 1.5,
+      "best_period_mm": 6.01,
+      "half_period_mm": 3.005,
+      "b_r_needed_T_offset_term_only": {
+        "typ": 0.2,
+        "max": 0.667
+      },
+      "field_at_sensor_mT_at_needed_b_r": {
+        "typ": 13.5,
+        "max": 45.1
+      },
+      "within_linear_range_40mT": {
+        "typ": true,
+        "max": false
+      },
+      "within_linear_range_80mT": {
+        "typ": true,
+        "max": true
+      },
+      "two_channel_samples_for_1um_at_needed_b_r": {
+        "typ": 3,
+        "max": 1
+      },
+      "axis_pairs": {
+        "x_y": {
+          "angle_error_static_cyclic_um": 8.3,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 23.9,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.24,
+            0.37
+          ]
+        },
+        "x_z": {
+          "angle_error_static_cyclic_um": 16.7,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 71.7,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.72,
+            1.1
+          ]
+        }
+      },
+      "surface_field_share_kept_by_2mm_period": 0.00898,
+      "gap_below_radome_wall": true,
+      "in_place_angle_calibration_yr_fast_slow": [
+        1.2,
+        7.5
+      ]
+    },
+    "t1:g2": {
+      "t_mm": 1.0,
+      "g_mm": 2.0,
+      "best_period_mm": 7.64,
+      "half_period_mm": 3.82,
+      "b_r_needed_T_offset_term_only": {
+        "typ": 0.318,
+        "max": 1.059
+      },
+      "field_at_sensor_mT_at_needed_b_r": {
+        "typ": 17.2,
+        "max": 57.3
+      },
+      "within_linear_range_40mT": {
+        "typ": true,
+        "max": false
+      },
+      "within_linear_range_80mT": {
+        "typ": true,
+        "max": true
+      },
+      "two_channel_samples_for_1um_at_needed_b_r": {
+        "typ": 3,
+        "max": 1
+      },
+      "axis_pairs": {
+        "x_y": {
+          "angle_error_static_cyclic_um": 10.6,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 30.4,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.3,
+            0.47
+          ]
+        },
+        "x_z": {
+          "angle_error_static_cyclic_um": 21.2,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 91.2,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.91,
+            1.4
+          ]
+        }
+      },
+      "surface_field_share_kept_by_2mm_period": 0.00187,
+      "gap_below_radome_wall": false,
+      "in_place_angle_calibration_yr_fast_slow": [
+        1.5,
+        9.5
+      ]
+    },
+    "t1:g3": {
+      "t_mm": 1.0,
+      "g_mm": 3.0,
+      "best_period_mm": 10.84,
+      "half_period_mm": 5.42,
+      "b_r_needed_T_offset_term_only": {
+        "typ": 0.631,
+        "max": 2.104
+      },
+      "field_at_sensor_mT_at_needed_b_r": {
+        "typ": 24.4,
+        "max": 81.3
+      },
+      "within_linear_range_40mT": {
+        "typ": true,
+        "max": false
+      },
+      "within_linear_range_80mT": {
+        "typ": true,
+        "max": false
+      },
+      "two_channel_samples_for_1um_at_needed_b_r": {
+        "typ": 3,
+        "max": 1
+      },
+      "axis_pairs": {
+        "x_y": {
+          "angle_error_static_cyclic_um": 15.1,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 43.1,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.43,
+            0.66
+          ]
+        },
+        "x_z": {
+          "angle_error_static_cyclic_um": 30.1,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 129.4,
+          "mismatch_um_per_K_if_linear_over_K": [
+            1.29,
+            1.99
+          ]
+        }
+      },
+      "surface_field_share_kept_by_2mm_period": 8.07e-05,
+      "gap_below_radome_wall": false,
+      "in_place_angle_calibration_yr_fast_slow": [
+        2.2,
+        13.5
+      ]
+    },
+    "t1:g4": {
+      "t_mm": 1.0,
+      "g_mm": 4.0,
+      "best_period_mm": 14.02,
+      "half_period_mm": 7.01,
+      "b_r_needed_T_offset_term_only": {
+        "typ": 1.049,
+        "max": 3.498
+      },
+      "field_at_sensor_mT_at_needed_b_r": {
+        "typ": 31.5,
+        "max": 105.2
+      },
+      "within_linear_range_40mT": {
+        "typ": true,
+        "max": false
+      },
+      "within_linear_range_80mT": {
+        "typ": true,
+        "max": false
+      },
+      "two_channel_samples_for_1um_at_needed_b_r": {
+        "typ": 3,
+        "max": 1
+      },
+      "axis_pairs": {
+        "x_y": {
+          "angle_error_static_cyclic_um": 19.5,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 55.8,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.56,
+            0.86
+          ]
+        },
+        "x_z": {
+          "angle_error_static_cyclic_um": 38.9,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 167.4,
+          "mismatch_um_per_K_if_linear_over_K": [
+            1.67,
+            2.57
+          ]
+        }
+      },
+      "surface_field_share_kept_by_2mm_period": 3.49e-06,
+      "gap_below_radome_wall": false,
+      "in_place_angle_calibration_yr_fast_slow": [
+        2.8,
+        17.5
+      ]
+    },
+    "t2:g1.5": {
+      "t_mm": 2.0,
+      "g_mm": 1.5,
+      "best_period_mm": 6.96,
+      "half_period_mm": 3.48,
+      "b_r_needed_T_offset_term_only": {
+        "typ": 0.145,
+        "max": 0.484
+      },
+      "field_at_sensor_mT_at_needed_b_r": {
+        "typ": 15.6,
+        "max": 52.2
+      },
+      "within_linear_range_40mT": {
+        "typ": true,
+        "max": false
+      },
+      "within_linear_range_80mT": {
+        "typ": true,
+        "max": true
+      },
+      "two_channel_samples_for_1um_at_needed_b_r": {
+        "typ": 3,
+        "max": 1
+      },
+      "axis_pairs": {
+        "x_y": {
+          "angle_error_static_cyclic_um": 9.7,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 27.7,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.28,
+            0.43
+          ]
+        },
+        "x_z": {
+          "angle_error_static_cyclic_um": 19.3,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 83.1,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.83,
+            1.28
+          ]
+        }
+      },
+      "surface_field_share_kept_by_2mm_period": 0.00898,
+      "gap_below_radome_wall": true,
+      "in_place_angle_calibration_yr_fast_slow": [
+        1.4,
+        8.7
+      ]
+    },
+    "t2:g2": {
+      "t_mm": 2.0,
+      "g_mm": 2.0,
+      "best_period_mm": 8.69,
+      "half_period_mm": 4.345,
+      "b_r_needed_T_offset_term_only": {
+        "typ": 0.217,
+        "max": 0.724
+      },
+      "field_at_sensor_mT_at_needed_b_r": {
+        "typ": 19.5,
+        "max": 65.2
+      },
+      "within_linear_range_40mT": {
+        "typ": true,
+        "max": false
+      },
+      "within_linear_range_80mT": {
+        "typ": true,
+        "max": true
+      },
+      "two_channel_samples_for_1um_at_needed_b_r": {
+        "typ": 3,
+        "max": 1
+      },
+      "axis_pairs": {
+        "x_y": {
+          "angle_error_static_cyclic_um": 12.1,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 34.6,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.35,
+            0.53
+          ]
+        },
+        "x_z": {
+          "angle_error_static_cyclic_um": 24.1,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 103.7,
+          "mismatch_um_per_K_if_linear_over_K": [
+            1.04,
+            1.6
+          ]
+        }
+      },
+      "surface_field_share_kept_by_2mm_period": 0.00187,
+      "gap_below_radome_wall": false,
+      "in_place_angle_calibration_yr_fast_slow": [
+        1.7,
+        10.9
+      ]
+    },
+    "t2:g3": {
+      "t_mm": 2.0,
+      "g_mm": 3.0,
+      "best_period_mm": 12.03,
+      "half_period_mm": 6.015,
+      "b_r_needed_T_offset_term_only": {
+        "typ": 0.4,
+        "max": 1.334
+      },
+      "field_at_sensor_mT_at_needed_b_r": {
+        "typ": 27.1,
+        "max": 90.2
+      },
+      "within_linear_range_40mT": {
+        "typ": true,
+        "max": false
+      },
+      "within_linear_range_80mT": {
+        "typ": true,
+        "max": false
+      },
+      "two_channel_samples_for_1um_at_needed_b_r": {
+        "typ": 3,
+        "max": 1
+      },
+      "axis_pairs": {
+        "x_y": {
+          "angle_error_static_cyclic_um": 16.7,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 47.9,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.48,
+            0.74
+          ]
+        },
+        "x_z": {
+          "angle_error_static_cyclic_um": 33.4,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 143.6,
+          "mismatch_um_per_K_if_linear_over_K": [
+            1.44,
+            2.21
+          ]
+        }
+      },
+      "surface_field_share_kept_by_2mm_period": 8.07e-05,
+      "gap_below_radome_wall": false,
+      "in_place_angle_calibration_yr_fast_slow": [
+        2.4,
+        15.0
+      ]
+    },
+    "t2:g4": {
+      "t_mm": 2.0,
+      "g_mm": 4.0,
+      "best_period_mm": 15.28,
+      "half_period_mm": 7.64,
+      "b_r_needed_T_offset_term_only": {
+        "typ": 0.636,
+        "max": 2.118
+      },
+      "field_at_sensor_mT_at_needed_b_r": {
+        "typ": 34.4,
+        "max": 114.6
+      },
+      "within_linear_range_40mT": {
+        "typ": true,
+        "max": false
+      },
+      "within_linear_range_80mT": {
+        "typ": true,
+        "max": false
+      },
+      "two_channel_samples_for_1um_at_needed_b_r": {
+        "typ": 3,
+        "max": 1
+      },
+      "axis_pairs": {
+        "x_y": {
+          "angle_error_static_cyclic_um": 21.2,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 60.8,
+          "mismatch_um_per_K_if_linear_over_K": [
+            0.61,
+            0.94
+          ]
+        },
+        "x_z": {
+          "angle_error_static_cyclic_um": 42.4,
+          "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 182.4,
+          "mismatch_um_per_K_if_linear_over_K": [
+            1.82,
+            2.81
+          ]
+        }
+      },
+      "surface_field_share_kept_by_2mm_period": 3.49e-06,
+      "gap_below_radome_wall": false,
+      "in_place_angle_calibration_yr_fast_slow": [
+        3.1,
+        19.1
+      ]
+    }
+  },
+  "unwrap": {
+    "worst_change_mm_by_basis": {
+      "winter": 2.0,
+      "growing_month_fast_end_plus_daily_swing": 1.45,
+      "cross_season_outage": 3.45
+    },
+    "period_required_mm_by_basis": {
+      "winter": 4.0,
+      "growing_month_fast_end_plus_daily_swing": 2.9,
+      "cross_season_outage": 6.9
+    },
+    "margin_by_geometry": {
+      "t1:g1.5": {
+        "winter": 1.502,
+        "growing_month_fast_end_plus_daily_swing": 2.072,
+        "cross_season_outage": 0.871
+      },
+      "t1:g2": {
+        "winter": 1.91,
+        "growing_month_fast_end_plus_daily_swing": 2.634,
+        "cross_season_outage": 1.107
+      },
+      "t1:g3": {
+        "winter": 2.71,
+        "growing_month_fast_end_plus_daily_swing": 3.738,
+        "cross_season_outage": 1.571
+      },
+      "t1:g4": {
+        "winter": 3.505,
+        "growing_month_fast_end_plus_daily_swing": 4.834,
+        "cross_season_outage": 2.032
+      },
+      "t2:g1.5": {
+        "winter": 1.74,
+        "growing_month_fast_end_plus_daily_swing": 2.4,
+        "cross_season_outage": 1.009
+      },
+      "t2:g2": {
+        "winter": 2.172,
+        "growing_month_fast_end_plus_daily_swing": 2.997,
+        "cross_season_outage": 1.259
+      },
+      "t2:g3": {
+        "winter": 3.007,
+        "growing_month_fast_end_plus_daily_swing": 4.148,
+        "cross_season_outage": 1.743
+      },
+      "t2:g4": {
+        "winter": 3.82,
+        "growing_month_fast_end_plus_daily_swing": 5.269,
+        "cross_season_outage": 2.214
+      }
+    },
+    "basis_note": "season-consistent: winter = the frost swing with no growth; growing season = a month of the fast end's increment (laid down over ≥ 4 months — our assumption; a growing-season outage of a month is itself an assumption, 110's outages fall in winter) plus the daily swing; cross-season = an outage spanning both. P/2 bounds an absolute-in-period phase; the collector's «half a pole» bounds an incremental pole counter, a different reader. A period above P* buys unwrap margin at a small cost to the OFFSET term (its optimum is flat) — the angle and mismatch errors grow in proportion to P.",
+    "sensitivity_two_growing_months": {
+      "worst_change_mm": 4.7,
+      "period_required_mm": 9.4,
+      "geometries_meeting_at_p_star": [
+        "t1:g3",
+        "t1:g4",
+        "t2:g3",
+        "t2:g4"
+      ]
+    },
+    "encoder_2mm_half_period_mm": 1.0,
+    "count_home": "the server unwraps the delivered phases — nothing persisted on the device (03_01: the RTC backup domain does not survive an outage on our board). What breaks it: a maintenance event that moves the sensor against the scale (radome off/on, a board re-seat) — a step the server must mark as a discontinuity; a ledger whose old readings are archived or expire — the server keeps a persisted running unwrapped position, not a recompute over history; creep of the sensor's mount; and the phase needs a field on the wire."
+  },
+  "energy": {
+    "cadence_c_s": 5536.5,
+    "demand_uW_110_nominal": {
+      "standby_sleep": 4.18,
+      "cadence_c": 10.2,
+      "stop2_cadence_c": 15.28
+    },
+    "two_channel_sample_s": 0.001625,
+    "samples_worst_lane": 3,
+    "hall_read_vstor_uJ": 192.9,
+    "hall_read_avg_uW": 0.0348,
+    "hall_read_share_of_E_cycle_pct": 0.58,
+    "hall_sleep_uW_at_vout": 0.0165,
+    "hall_sleep_share_of_smallest_demand_pct": 0.39,
+    "encoder_2mm_read_vstor_mJ": {
+      "typ": 1.8,
+      "max": 2.175
+    },
+    "encoder_2mm_avg_uW": {
+      "typ": 0.325,
+      "max": 0.393
+    },
+    "encoder_2mm_share_of_E_cycle_pct": {
+      "typ": 5.4,
+      "max": 6.53
+    }
+  },
+  "travel": {
+    "dome_top_over_seat_mm": 21.0,
+    "of_which_flange_thickness_placeholder_mm": 3.0,
+    "outer_bark_climb_to_dome_top_mm": [
+      15.825,
+      21.0
+    ],
+    "outer_bark_to_dome_top_yr": [
+      3.2,
+      26.2
+    ],
+    "outer_bark_to_dome_top_yr_by_edge_fast_slow": {
+      "deep_edge": [
+        3.2,
+        19.8
+      ],
+      "shallow_edge": [
+        4.2,
+        26.2
+      ]
+    },
+    "radome_height_over_flange_top_mm": 18.0,
+    "outer_bark_flange_top_to_dome_top_yr_fast_slow": [
+      3.6,
+      22.5
+    ],
+    "outer_bark_above_flange_top_at_install_mm": {
+      "deep_edge": 2.175,
+      "shallow_edge": -3.0
+    },
+    "live_bark_to_flange_seat_yr": {
+      "thin_contact_78": [
+        1.7,
+        10.4
+      ],
+      "thick_side_78": [
+        4.2,
+        26.2
+      ]
+    },
+    "twenty_year_travel_mm": [
+      16.0,
+      100.0
+    ]
+  }
+}

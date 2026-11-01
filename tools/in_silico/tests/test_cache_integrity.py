@@ -8755,3 +8755,38 @@ def test_113_lever_rows_follow_from_its_constants_and_the_caches():
     per = [(el["dmbpy"][0] - el["bpy"][0]) / sig["dmbpy"], (el["br2bpy"][0] - el["bpy"][0]) / sig["cl"],
            2 * (el["no2_mono"][0] - el["bpy"][0]) / sig["no2"]]
     assert min(per) > 0 and max(per) / min(per) < 3, f"ΔE_L per σ per site {per} — a misread digit in Table 1?"
+
+
+def test_dendrometer_budget_is_self_consistent():
+    """114 (HW.54 Р3(в)) — the cache's derived fields against the fields they derive from, so a hand edit or a partial
+    re-run cannot leave a doc pin agreeing with one half of the record.
+
+    CAN catch: a period requirement that is not twice its basis's worst change · an unwrap margin that is not P* over the
+    requirement · a worst |A| that is not the maximum over the named points of its shank reading · a «× frames» that is not
+    |A| / 0.3 · a read share that is not the read's energy over E_CYCLE · a bearing band that is not the min/max of its rows ·
+    the shallowest tie or the frames' crossing out of the depth order the text states.
+    CANNOT catch: a wrong input (`103`'s sections, the datasheet rows, ERA5) — the script's own controls carry those.
+    """
+    d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
+    un = d["unwrap"]
+    for b, ch in un["worst_change_mm_by_basis"].items():
+        assert un["period_required_mm_by_basis"][b] == pytest.approx(2 * ch, abs=1e-9), b
+        for k, v in d["scale"].items():
+            assert un["margin_by_geometry"][k][b] == pytest.approx(v["best_period_mm"] / (2 * ch), abs=0.002), (k, b)
+    frames = d["inputs"]["frame_sensitivity_um_per_K"]
+    for shank in ("bonded", "shoulder"):
+        worst = max(abs(pt["anchor_term_um_per_K"]) for k, r in d["support"].items() if k.endswith(shank)
+                    for pt in r["points"].values())
+        assert d["support_worst_abs_um_per_K"][shank] == pytest.approx(worst, abs=1e-9), shank
+    for r in d["support"].values():
+        for name, pt in r["points"].items():
+            assert pt["x_frames"] == pytest.approx(abs(pt["anchor_term_um_per_K"]) / frames, abs=0.051), name
+            if abs(pt["anchor_term_um_per_K"]) < frames:
+                assert pt["z_f_mm"] < r["frames_crossing_depth_mm"] + 1e-9, name
+    e = d["energy"]
+    assert e["hall_read_share_of_E_cycle_pct"] == pytest.approx(
+        100 * e["hall_read_vstor_uJ"] * 1e-6 / d["inputs"]["e_cycle_J"], abs=0.006)
+    U = list(d["bark_bearing"]["U_rows_premise_b"].values())
+    assert d["bark_bearing"]["fraction_lost_U_at_air_dry_bark_readings"] == [min(U), max(U)]
+    assert d["bark_bearing"]["growth_under_reported_um_per_yr_at_795"] == pytest.approx(
+        [d["inputs"]["growth"]["yr_um"] * u for u in (min(U), max(U))], abs=0.06)

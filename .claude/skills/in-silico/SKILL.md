@@ -297,6 +297,12 @@ Anchor mechanics (CPU):
      flange_cambium_heat.json — its identity cells) · 110 (winter_pv_autonomy.json `measured_form_r` — the named window
      apertures) → 111 (pv_window_thermal.json — a dark PV window in the crown, per aperture); a re-run of 71, 78 or 110,
      or a change to the radome CEM, re-runs 111
+  71 (importlib: load_hours — the ERA5 hourly loader, code) · 78 (flange_cambium_heat.json — the flange's and the cambium's
+     hottest hour, `bark.facing_spread_mm`, the no-flange maximum) · 103 (anchor_wood_share.json — sections, PEEK lengths,
+     stiffnesses, the green xylem's α) · 110 (winter_pv_autonomy.json — cadence C, the demand, `record.hours`) · lib
+     (ALPHA_PEEK_1K · E_CYCLE · ETA_BUCK_ACTIVE) · the radome and cathode-flange CEMs → 114 (dendrometer_support_budget.json —
+     a point dendrometer on the anchor); a re-run of 78, 103 or 110, a change to 71's loader, those lib constants or
+     either CEM re-runs 114
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

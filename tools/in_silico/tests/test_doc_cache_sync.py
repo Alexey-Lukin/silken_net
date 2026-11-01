@@ -9008,6 +9008,104 @@ def test_winter_pv_prose_claims_hold():
     assert f"OK_PROG = 1.21 × (1 + 8.25/4.75)          = {VBAT_OK_OFF_V:.3f} В ✓" in text, "02_03 §4.Г's OK_PROG moved"
 
 
+# ── HW.54 Р3(в) a point dendrometer on the anchor (114, 2026-10-31) ⟷ SUMMARY §«Can a Point Dendrometer Use the Anchor
+# as Its Support?», 01_03 §4 ⊕ (в) 2026-11-01 and 00_07 HW.54. Both tables are rendered from the cache at its own
+# precision, so every cell is pinned EXACTLY; the bearing's band is printed in percent at one and zero decimals.
+DEN = "mechanical/dendrometer_support_budget.json"
+_DEN_SUP = (("(a) flange on the bark · Zone-1 shank bonded", "flange_on_bark:bonded"),
+            ("(a) flange on the bark · on its shoulder", "flange_on_bark:shoulder"),
+            ("(b) Zone-3 fit · Zone-1 shank bonded", "zone3_fit:bonded"), ("(b) Zone-3 fit · on its shoulder", "zone3_fit:shoulder"))
+_DEN_SUP_COLS = (lambda r: r["frames_crossing_depth_mm"],
+                 lambda r: abs(r["points"]["tie_at_install_cambium:thin_contact_78"]["anchor_term_um_per_K"]),
+                 lambda r: abs(r["points"]["tie_at_install_cambium:thick_side_78"]["anchor_term_um_per_K"]),
+                 lambda r: abs(r["points"]["zone1_shank_top:thin_contact_78"]["anchor_term_um_per_K"]),
+                 lambda r: abs(r["points"]["gyroid_bottom:thin_contact_78"]["anchor_term_um_per_K"]),
+                 lambda r: r["points"]["gyroid_bottom:thin_contact_78"]["x_frames"])
+
+
+def _den_sup_row(label, j):
+    n = [N if j == k else r"[\d.]+" for k in range(6)]
+    return rf"(?m)^\| {re.escape(label)} \| {n[0]} \| {n[1]} ⊥ {n[2]} \| {n[3]} \| {n[4]} \(×{n[5]}\) \|$"
+
+
+_DEN_SCALE = ("t1:g1.5", "t1:g2", "t1:g3", "t1:g4", "t2:g1.5", "t2:g2", "t2:g3", "t2:g4")
+_DEN_SCALE_COLS = (lambda v, k, d: v["best_period_mm"],
+                   lambda v, k, d: v["b_r_needed_T_offset_term_only"]["typ"],
+                   lambda v, k, d: v["b_r_needed_T_offset_term_only"]["max"],
+                   lambda v, k, d: v["field_at_sensor_mT_at_needed_b_r"]["typ"],
+                   lambda v, k, d: v["field_at_sensor_mT_at_needed_b_r"]["max"],
+                   lambda v, k, d: v["axis_pairs"]["x_y"]["angle_error_static_cyclic_um"],
+                   lambda v, k, d: v["axis_pairs"]["x_z"]["angle_error_static_cyclic_um"],
+                   lambda v, k, d: v["axis_pairs"]["x_y"]["mismatch_drift_cyclic_peak_um_over_datasheet_drift"],
+                   lambda v, k, d: v["axis_pairs"]["x_z"]["mismatch_drift_cyclic_peak_um_over_datasheet_drift"],
+                   lambda v, k, d: d["unwrap"]["margin_by_geometry"][k]["cross_season_outage"])
+
+
+def _den_scale_row(key, j):
+    t, g = key[1:].split(":g")
+    n = [N if j == k else r"[\d.]+" for k in range(10)]
+    return (rf"(?m)^\| {re.escape(t)} · {re.escape(g)} \| {n[0]} \| {n[1]} ⊥ {n[2]} \| {n[3]} ⊥ {n[4]} \| {n[5]} ⊥ {n[6]} \| "
+            rf"{n[7]} ⊥ {n[8]} \| {n[9]} \|$")
+
+
+CHECKS += [
+    *[(f"dendrometer support {key} col {j} → 114", SUMMARY, _den_sup_row(label, j), DEN,
+       lambda d, k=key, f=f: f(d["support"][k]), 0.0)
+      for label, key in _DEN_SUP for j, f in enumerate(_DEN_SUP_COLS)],
+    *[(f"dendrometer scale {key} col {j} → 114", SUMMARY, _den_scale_row(key, j), DEN,
+       lambda d, k=key, f=f: f(d["scale"][k], k, d), 0.0)
+      for key in _DEN_SCALE for j, f in enumerate(_DEN_SCALE_COLS)],
+    ("dendrometer crossing, premise (a) → 114", SUMMARY, rf"for a hold shallower than \*\*{N} mm\*\* below the flange seat under premise \(a\)", DEN,
+     lambda d: d["support"]["flange_on_bark:bonded"]["frames_crossing_depth_mm"], 0.0),
+    ("dendrometer crossing above the live bark → 114", SUMMARY, rf"— {N} mm above the live bark at the thin contact", DEN,
+     lambda d: -d["support"]["flange_on_bark:bonded"]["crossing_minus_live_bark_depth_mm"]["thin_contact_78"], 0.0),
+    ("dendrometer crossing, premise (b) → 114", SUMMARY, rf"and \*\*{N} mm\*\* under \(b\)", DEN,
+     lambda d: d["support"]["zone3_fit:bonded"]["frames_crossing_depth_mm"], 0.0),
+    ("dendrometer diurnal µm bonded → 114", SUMMARY, rf"the worst reading moves \*\*{N} ⊥ [\d.]+ µm\*\*", DEN,
+     lambda d: d["support_worst_in_um_air_proxy"]["worst_bonded"]["diurnal_growing_p50_um"], 0.0),
+    ("dendrometer diurnal µm shoulder → 114", SUMMARY, rf"the worst reading moves \*\*[\d.]+ ⊥ {N} µm\*\*", DEN,
+     lambda d: d["support_worst_in_um_air_proxy"]["worst_shoulder"]["diurnal_growing_p50_um"], 0.0),
+    ("dendrometer bearing U low % → 114", SUMMARY, rf"U = \*\*{N}–[\d.]+ %\*\* over the air-dry", DEN,
+     lambda d: 100 * d["bark_bearing"]["fraction_lost_U_at_air_dry_bark_readings"][0], 0.05),
+    ("dendrometer bearing U high % → 114", SUMMARY, rf"U = \*\*[\d.]+–{N} %\*\* over the air-dry", DEN,
+     lambda d: 100 * d["bark_bearing"]["fraction_lost_U_at_air_dry_bark_readings"][1], 0.5),
+    ("dendrometer growth lost low → 114", SUMMARY, rf"\*\*{N}–[\d.]+ µm/yr\*\* of the 795", DEN,
+     lambda d: d["bark_bearing"]["growth_under_reported_um_per_yr_at_795"][0], 0.0),
+    ("dendrometer growth lost high → 114", SUMMARY, rf"\*\*[\d.]+–{N} µm/yr\*\* of the 795", DEN,
+     lambda d: d["bark_bearing"]["growth_under_reported_um_per_yr_at_795"][1], 0.5),
+    *[(f"dendrometer unwrap period, {b} → 114", SUMMARY, rx, DEN,
+       lambda d, b=b: d["unwrap"]["period_required_mm_by_basis"][b], 0.0) for b, rx in (
+        ("winter", rf"at least \*\*{N}\*\* mm through a winter's frost swing"),
+        ("growing_month_fast_end_plus_daily_swing", rf"\*\*{N}\*\* mm over a growing month"),
+        ("cross_season_outage", rf"\*\*{N}\*\* mm across an outage that spans a season"))],
+    ("dendrometer read energy → 114", SUMMARY, rf"cost \*\*{N} µJ\*\* from VSTOR", DEN,
+     lambda d: d["energy"]["hall_read_vstor_uJ"], 0.0),
+    ("dendrometer read share of E_CYCLE → 114", SUMMARY, rf"\*\*{N} %\*\* of E_CYCLE", DEN,
+     lambda d: d["energy"]["hall_read_share_of_E_cycle_pct"], 0.0),
+    ("dendrometer flange top to dome top, fast rate → 114", SUMMARY, rf"to the dome's top in \*\*{N}–[\d.]+ years\*\*", DEN,
+     lambda d: d["travel"]["outer_bark_flange_top_to_dome_top_yr_fast_slow"][0], 0.0),
+    ("dendrometer flange top to dome top, slow rate → 114", SUMMARY, rf"to the dome's top in \*\*[\d.]+–{N} years\*\*", DEN,
+     lambda d: d["travel"]["outer_bark_flange_top_to_dome_top_yr_fast_slow"][1], 0.0),
+    ("dendrometer bark above the placeholder flange top at install → 114", SUMMARY, rf"already stands {N} mm above the flange's top", DEN,
+     lambda d: d["travel"]["outer_bark_above_flange_top_at_install_mm"]["deep_edge"], 0.0),
+    *[(f"dendrometer in-place calibration, {end} → 114", SUMMARY, rx, DEN, f, 0.0) for end, rx, f in (
+        ("fast low", rf"— {N}–[\d.]+ years at the fast end",
+         lambda d: min(v["in_place_angle_calibration_yr_fast_slow"][0] for v in d["scale"].values())),
+        ("fast high", rf"— [\d.]+–{N} years at the fast end",
+         lambda d: max(v["in_place_angle_calibration_yr_fast_slow"][0] for v in d["scale"].values())),
+        ("slow low", rf"{N}–[\d.]+ at the slow one",
+         lambda d: min(v["in_place_angle_calibration_yr_fast_slow"][1] for v in d["scale"].values())),
+        ("slow high", rf"[\d.]+–{N} at the slow one",
+         lambda d: max(v["in_place_angle_calibration_yr_fast_slow"][1] for v in d["scale"].values())))],
+    ("dendrometer two-month unwrap period → 114", SUMMARY, rf"over two the period must reach {N} mm", DEN,
+     lambda d: d["unwrap"]["sensitivity_two_growing_months"]["period_required_mm"], 0.0),
+    ("dendrometer canon crossings → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md",
+     rf"мілкіше {N} мм під посадкою фланця", DEN, lambda d: d["support"]["flange_on_bark:bonded"]["frames_crossing_depth_mm"], 0.0),
+    ("dendrometer canon read share → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md",
+     rf"193 мкДж, {N} % E_CYCLE", DEN, lambda d: d["energy"]["hall_read_share_of_E_cycle_pct"], 0.0),
+]
+
+
 # ── HW.54 a dark PV window in the crown (111, 2026-10-28) ⟷ SUMMARY §«How Much Does a Dark PV Window in the Dome Heat
 # the Capsule and the Cambium?», 01_03 §4 ⊕ 2026-10-28 and 00_07 HW.54. Temperatures and hours are cached at the
 # precision the table prints; the absorptances at six decimals and pinned at the three the table prints, EXACTLY (a
