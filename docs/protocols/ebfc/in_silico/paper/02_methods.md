@@ -144,25 +144,42 @@ distance-only weight, summed along the path, and it starts at atoms outside the 
 
 **Cathode direct electron transfer (DET).** Inter-metal electronic couplings t_ij in the Co–Cu–Ce
 ZIF nanozyme were first estimated as half the energy difference of two UKS solutions of each cluster on
-clash-free cluster geometries (a bridging imidazole N–H that collided with the second metal was
-deprotonated to the imidazolate, restoring physical coordination). The clusters were computed as +1 cations in the doublet
-state, the four terminal 2-methylimidazoles protonated and the bridge an imidazolate; the +3 cation of the node's
-Cu(II)/Co(II) ⇄ Cu(I)/Co(III) cycle was not computed (§4). The two solutions are not charge-localised
-states: they start from the same guess and differ only in their SCF settings (level shift 0.3 and 0.5 E_h, DIIS space, cycle cap), so the estimate is
+clash-corrected cluster geometries (a bridging imidazole N–H that collided with the second metal was
+deprotonated to the imidazolate, restoring physical coordination). The clusters were computed as +1 cations — Cu–Co
+a triplet and Co–Ce a quartet (2S = 2 and 3; each with the four terminal 2-methylimidazoles protonated and the bridge
+an imidazolate, so their metals sum to +2) and Ce–graphene a doublet, its cerium carrying two protonated
+2-methylimidazoles above a neutral coronene and so formally +1, against Ce(III)/Ce(IV) in the framework. In the two ZIF
+clusters each metal is three-coordinate, its donors in one plane with the other metal (some terminal rings tilt well
+out of it), whereas the framework's node is tetrahedral; and the bridge was placed at one metal–nitrogen target for
+every metal, so in the Co–Ce cluster its nitrogen sits 1.92 Å from cerium against 2.45 Å from cerium's terminal donors —
+a compressed contact under that hop's coupling. The node's Cu(II)/Co(II) ⇄ Cu(I)/Co(III)
+hop makes the Cu–Co cluster +3 on the same atoms; computed at +3, and at −1 with the four terminal imidazoles
+deprotonated as well (the same metal charges), two spin states each (the lower ones spin-contaminated, ⟨S²⟩ 3.0 and
+2.9 against 2.0), the diabatisation below yields no pair of the hop's two sites: at +3 it pairs an occupied orbital
+with a virtual one ≈ 8 eV above it, at −1 two virtual orbitals, although its automatic physicality check passes all four
+(script 24e, Supporting Information); so the coupling and gap reported are those of the +1 model, not of the physical hop (§4). The two crude
+solutions are not charge-localised states: they start from the same guess and differ only in their SCF settings (level shift 0.3 and 0.5 E_h, DIIS space, cycle cap), so the estimate is
 read against the SCF tolerance — for Cu–Co the difference is 9.4 times it, which resolves no coupling (Table 3). For
 the rate-limiting Cu–Co hop the coupling the margins use is therefore a two-state orbital diabatisation, labelled FO-DFT in the tables and figures (it is neither the fragment-orbital basis of textbook FO-DFT nor the dipole-based generalised Mulliken–Hush scheme, and no specific published implementation is claimed for it): from one UKS
-SCF of the Cu–Co cluster, the two frontier orbitals with the largest combined Cu-d + Co-d character were
-rotated into the basis that diagonalises their Cu-projected Mulliken population (a population-based
-localisation), leaving one orbital on each metal; t_ij is the off-diagonal Fock element in that
-basis, and the difference of the two diagonal elements is the site-energy gap carried as the hop's driving
-force. A physicality check — the two localised orbitals on distinct metals, t_ij inside a physical band —
-flags a non-physical pair instead of reporting it. Hopping rates followed the
-**Marcus** expression<sup>13</sup> with the reorganisation energy computed (below), not assumed; the margin is
-that of the slowest hop.
+SCF of the Cu–Co cluster, the two α orbitals with the largest combined Cu + Co Mulliken population within a fixed
+window of ten orbitals around the frontier (HOMO−5 to LUMO+3) were rotated into the basis that diagonalises their
+Cu-projected Mulliken population (a population-based localisation), leaving one orbital on each metal; t_ij is the
+off-diagonal Fock element in that basis. Its SCF is polished as §2.2 states, and the record beside t_ij keeps the
+orbital gradient that SCF stopped at over t_ij (0.5 % for Cu–Co). The pair
+picked is HOMO−5 and HOMO−3, the first on the window's lower edge, so the pair is the window's choice as much as the
+cluster's; the record also carries the window, the picks and ⟨S²⟩ (2.014 for the triplet). The difference of the two
+diagonal elements is the site-energy gap: a gas-phase difference of two one-electron orbital energies — nearly the
+canonical difference of the pair, since the localising rotation is only 2θ = 1.3° — not a free energy, and of a sign
+the calculation does not fix, so §3.4 carries it as a bracket on the driving force and states the verdict against the
+driving force itself as well. A physicality check — the two localised orbitals on distinct metals, t_ij inside a
+physical band — flags a non-physical pair instead of reporting it; it does not see the window's edge or ⟨S²⟩. Hopping
+rates followed the **Marcus** expression<sup>13</sup> with λ_hop = ½(λ_i + λ_j), the additivity approximation behind the Marcus
+cross-relation, over the two sites' self-exchange values (below), and no outer-sphere term for the framework; the margin is that of the slowest
+hop.
 
 **Reorganisation energies (Nelsen 4-point).** Inner-sphere λ was computed by the four-point method<sup>15</sup>
 (two relaxed geometries + two cross single-points seeded from the diagonal density). For the
-cathode this was applied to the well-behaved mixed-valence metal couples — **Co, Ce and Ru; Cu(II/I)
+cathode this was applied to the metal redox couples — **Co, Ce and Ru; Cu(II/I)
 was not computed**, a d¹⁰ Cu(I) hexa-aqua optimisation being unphysical in implicit solvent, so λ(Cu)
 enters as a bracket of two literature readings of Cu(II/I) self-exchange — an **assumed** textbook value of
 2.0 eV, for which no primary source is cited here, and 2.4 eV, the value for Cu(phen)₂²⁺/⁺<sup>48</sup> —
@@ -173,7 +190,9 @@ both assumptions are labelled as such in the scripts that consume them, and the 
 adverse corner rather than as a measurement. For the anode the
 physically-correct **FADH⁻/FADH• (deprotonated semiquinone) couple** was used; the radical-cation couple
 FADH₂/FADH₂•⁺ was not — on the retired 4a,5-dihydro tautomer its cation fragmented on relaxation in continuum
-solvent, and on the 1,5-dihydro donor, where it relaxes to a minimum, its λ was not computed. Reported λ are inner-sphere; the Marcus outer-sphere term adds on top.
+solvent, and on the 1,5-dihydro donor, where it relaxes to a minimum, its λ was not computed. The computed λ are inner-sphere: for the anode flavin a Marcus two-sphere outer-sphere term is
+added on top (§3.2); for the cathode hops none is, and λ(Cu) and the literature-scenario values are read as solution
+self-exchange totals, outer sphere included — of them only the 2.4 eV Cu(phen)₂ value is a measured one (§3.4).
 
 **Thermal ensemble.** Frames were taken from a separate explicit-solvent molecular-dynamics production
 trajectory of the enzyme in its immobilisation matrix, run with OpenMM<sup>49</sup> using Amber ff14SB<sup>50</sup> for
@@ -195,8 +214,11 @@ not as corrections: their shifts are reported, and no gap is decomposed into the
 
 The pipeline is fully scripted (fixed RDKit embedding seeds, a shared geometry / DFT-runner library, committed
 cache JSONs) and was run in one **recorded** environment (PySCF 2.11.0, geomeTRIC 1.1, Python 3.12; the exact
-package list with checksums is in the Supporting Information). Repeated calculations return their energies within
-the SCF tolerance, with one exception: the open-shell Os(III) of the [Os(H₂O)₆]³⁺/²⁺ benchmark can converge to
+package list with checksums is in the Supporting Information). Repeated calculations with the same settings return their
+energies within the SCF tolerance, with two exceptions. Two runs of the off-plane cathode geometry of §3.4 at the
+tolerance it was first run at stopped 3.5 × 10⁻⁵ E_h apart, 35 times that tolerance (its SCF is now polished, §2.5);
+the shipped cluster's repeats agreed with each other at that tolerance while all stopping 5 × 10⁻⁵ E_h above the
+minimum (§2.2). And the open-shell Os(III) of the [Os(H₂O)₆]³⁺/²⁺ benchmark can converge to
 different SCF solutions — two committed runs of that couple in the recorded environment differ by 2.4 meV in
 ΔE_red, and the second-shell shift (§3.5) is quoted from one of them. That environment was installed from
 conda-forge on 2026-05-24 with PySCF unpinned, when 2.11.0 was the newest osx-arm64 build there. The repository's

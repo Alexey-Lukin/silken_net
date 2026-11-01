@@ -12,7 +12,8 @@ only the crude two-solution estimate. Spin–orbit coupling on osmium is not com
 the osmium forms of Table 2 carry at most three on the chloride (the 6–18-water second shell is a benchmark on [Os(H₂O)₆]
 alone, §3.5), and nothing is sampled explicitly; the
 flavin→mediator coupling and the protein-bound flavin potential are not computed, and the osmium reorganisation energy only on
-one leg (λ_III 86–150 meV over five complexes, §3.3), with no outer-sphere term; the cathode reorganisation energy for cobalt comes from an octahedral ammine proxy with no benchmark,
+one leg (λ_III 86–150 meV over five complexes, §3.3), with no outer-sphere term; the cathode reorganisation energy for cobalt comes from an octahedral ammine proxy for a tetrahedral node with no
+benchmark, λ(Cu) is cited and no outer-sphere term for the framework is added,
 and its kinetics assume an oriented enzyme–framework contact; four ωB97X end-point values are transcribed from run logs that are
 not deposited; nothing here is measured, and no cell-level quantity — open-circuit voltage, current, power, lifetime — is
 computed. Within those limits, we have computed the electron-transfer energetics of three steps of a FAD–osmium enzymatic
@@ -27,11 +28,12 @@ its donor pairs by up to 20.1 mV per substituent, so the magnitude of its donor 
 the functional — and is consistent with the
 trade-off behind the experimental optimum, which it does not locate, while making explicit that the cascade-thermodynamic
 optimum is not the cell-voltage optimum. The **direct electron transfer** through the Co–Cu–Ce ZIF cathode is, on a
-clash-free geometry, with reorganisation energies computed for Co, Ce and Ru (λ(Cu) cited), and with a framework copper standing in
+clash-corrected geometry, with reorganisation energies computed for Co and Ce and indicatively for Ru (λ(Cu) cited), and with a framework copper standing in
 for the enzyme's T1 site beside the cobalt node (§3.4), a process whose verdict is conditional on the Co reorganisation energy:
 *rate-limiting* at every corner of its bracket at the computed λ(Co), straddling turnover only at an assumed
 literature value (turnover needs λ(Co) ≲ 1.5 eV at zero driving force on the 2.0 eV λ(Cu) reading, and ≲ 0.6 eV at the
-adverse corner) — a conditional, quantitative finding (the λ(Co) thresholds on a minimal-cluster coupling) that motivates a
+adverse corner) — a conditional finding (thresholds on λ(Co) and on the driving force, over a minimal-cluster coupling
+whose verdict a refused bridge geometry lifts to or across turnover) that motivates a
 low-reorganisation-energy metal, computed indicatively, and names conductive-MOF band transport and an acid-stable enzyme-free
 catalyst as levers not computed here.
 

@@ -1204,18 +1204,18 @@ CHECKS += [
         SUMMARY, r"margin goes \*\*×[\d.]+ → ×([\d.]+) × 10³ — a factor",
         "dft/cathode_ket_lambda.json",
         # two figures: the probe's gap is the residue of a near-full mix (2θ ≈ 84°) and moved 0.0004 eV on re-run
-        lambda d: d["geometry_sensitivity_refused_offplane"]["margin_adverse"] / 1e3, 0.05,
+        lambda d: d["geometry_sensitivity_refused_offplane"]["margin_uphill_gap_unsourced"] / 1e3, 0.05,
     ),
     # ── К8 (self-review round 2, 2026-10-30): the numbers the review printed with no script behind them ──
     (
         "off-plane probe at the COMPUTED λ(Co), adverse corner → cathode_ket_lambda.json",
-        SUMMARY, r"to \*\*×([\d.]+) … ×[\d.]+ — across turnover as well",
+        SUMMARY, r"to \*\*×([\d.]+) … ×[\d.]+ — straddling turnover",
         "dft/cathode_ket_lambda.json",
         lambda d: d["geometry_sensitivity_refused_offplane"]["by_lambda_co"]["computed"]["offplane"]["adverse"], 0.005,
     ),
     (
         "off-plane probe at the COMPUTED λ(Co), favourable corner → cathode_ket_lambda.json",
-        SUMMARY, r"to \*\*×[\d.]+ … ×([\d.]+) — across turnover as well",
+        SUMMARY, r"to \*\*×[\d.]+ … ×([\d.]+) — straddling turnover",
         "dft/cathode_ket_lambda.json",
         lambda d: d["geometry_sensitivity_refused_offplane"]["by_lambda_co"]["computed"]["offplane"]["favourable"], 0.05,
     ),
@@ -9114,6 +9114,140 @@ CHECKS += [
                        ("favourable end", "favourable_end"))
       for j, face in enumerate(("open_face_180", "open_face_000", "closed_stand")) for i in range(4)],
 ]
+
+
+# ── Коміт Г, text (2026-11-01): К8/К9 numbers the manuscript now prints in §2.5 and §3.4 — before this, no §3.4 number on
+# the off-plane probe and none of the outer-sphere or driving-force thresholds had a pin.
+_KET = "dft/cathode_ket_lambda.json"
+_PM = "docs/protocols/ebfc/in_silico/paper/02_methods.md"
+_OFF = lambda d: d["geometry_sensitivity_refused_offplane"]  # noqa: E731
+_LO = lambda d: d["outer_sphere_term"]["lambda_o_at_turnover_eV"]  # noqa: E731
+CHECKS += [
+    ("paper §3.4 largest applied |ΔG| → 25", PAPER_RESULTS, rf"applied \(\|ΔG\| ≤ {N} eV\)", _KET,
+     lambda d: d["outer_sphere_term"]["gap_max_eV"], 0.0006),
+    ("paper §3.4 smallest live λ_hop → 25", PAPER_RESULTS, rf"below every λ_hop\s+\(≥ {N} eV\)", _KET,
+     lambda d: d["outer_sphere_term"]["lambda_hop_min_eV"], 0.005),
+    ("paper §3.4 λ_o, literature favourable corner → 25", PAPER_RESULTS, rf"falls to turnover at λ_o = {N} eV, the Ru swap", _KET,
+     lambda d: _LO(d)["literature λ"]["favourable_corner"], 0.005),
+    ("paper §3.4 λ_o, Ru adverse corner → 25", PAPER_RESULTS, rf"the Ru swap \(discussed below\) at {N} eV \(adverse corner\)", _KET,
+     lambda d: _LO(d)["Ru-swap (Co→Ru, computed)"]["adverse_corner"], 0.005),
+    ("paper §3.4 λ_o, Ru favourable corner → 25", PAPER_RESULTS, rf"and\s+{N} eV \(favourable\), and the computed-λ\(Co\)", _KET,
+     lambda d: _LO(d)["Ru-swap (Co→Ru, computed)"]["favourable_corner"], 0.005),
+    ("paper §3.4 anode outer-sphere scale, low → 25", PAPER_RESULTS, rf"is {N}–[\d.]+ eV at its buried, delocalised end", _KET,
+     lambda d: d["outer_sphere_term"]["anode_outer_sphere_physical_end_eV"][0], 0.005),
+    ("paper §3.4 anode outer-sphere scale, high → 25", PAPER_RESULTS, rf"is [\d.]+–{N} eV at its buried, delocalised end", _KET,
+     lambda d: d["outer_sphere_term"]["anode_outer_sphere_physical_end_eV"][1], 0.005),
+    ("paper §3.4 Ru outer-sphere ceiling, adverse → 25", PAPER_RESULTS, rf"framework adding ≈ {N} eV\s+of one", _KET,
+     lambda d: _LO(d)["Ru-swap (Co→Ru, computed)"]["adverse_corner"], 0.005),
+    ("paper §3.4 Ru outer-sphere ceiling, favourable → 25", PAPER_RESULTS, rf"≈ {N} eV its favourable one", _KET,
+     lambda d: _LO(d)["Ru-swap (Co→Ru, computed)"]["favourable_corner"], 0.005),
+    ("paper §3.4 downhill-ΔG threshold, 2.0 eV λ(Cu) → 25", PAPER_RESULTS, rf"downhill ΔG smaller than {N} eV on the 2\.0 eV", _KET,
+     lambda d: d["downhill_gap_condition"]["downhill_gap_at_turnover_eV"]["unsourced"], 5e-4),
+    ("paper §3.4 downhill-ΔG threshold, 2.4 eV λ(Cu) → 25", PAPER_RESULTS, rf"\({N} eV on the 2\.4 eV one\)", _KET,
+     lambda d: d["downhill_gap_condition"]["downhill_gap_at_turnover_eV"]["cu_phen2"], 5e-4),
+    ("paper §3.4 off-plane coupling ratio → 25", PAPER_RESULTS, rf"raises t_ij {N}-fold", _KET, lambda d: _OFF(d)["t_ij_ratio_vs_shipped"], 0.5),
+    ("paper §3.4 off-plane gap → 24b off-plane", PAPER_RESULTS, rf"shrinks the site-energy gap to {N} eV", "dft/fodft_coupling_offplane.json",
+     lambda d: d["site_energy_gap_eV"], 0.0005),
+    ("paper §3.4 shipped adverse margin (2.0 reading) → 25", PAPER_RESULTS, rf"moving the uphill-gap margin from ×{N}", _KET,
+     lambda d: _OFF(d)["margin_uphill_gap_unsourced_shipped"], 0.005),
+    ("paper §3.4 off-plane adverse margin → 25", PAPER_RESULTS, rf"to ×{N}×10³ on the 2\.0 eV λ\(Cu\) reading", _KET,
+     lambda d: _OFF(d)["margin_uphill_gap_unsourced"] / 1e3, 0.05),
+    ("paper §3.4 computed-λ(Co) shipped adverse → 25", PAPER_RESULTS, rf"bracket from ×{NSCI} … ×[\d.]+ to ×", _KET,
+     lambda d: _OFF(d)["by_lambda_co"]["computed"]["shipped"]["adverse"], 1e-7),
+    ("paper §3.4 computed-λ(Co) shipped favourable → 25", PAPER_RESULTS, rf"bracket from ×\S+ … ×{N} to ×", _KET,
+     lambda d: _OFF(d)["by_lambda_co"]["computed"]["shipped"]["favourable"], 1e-4),
+    ("paper §3.4 computed-λ(Co) off-plane adverse → 25", PAPER_RESULTS, rf"to ×{N} … ×[\d.]+, to straddle turnover", _KET,
+     lambda d: _OFF(d)["by_lambda_co"]["computed"]["offplane"]["adverse"], 0.005),
+    ("paper §3.4 computed-λ(Co) off-plane favourable → 25", PAPER_RESULTS, rf"to ×[\d.]+ … ×{N}, to straddle turnover", _KET,
+     lambda d: _OFF(d)["by_lambda_co"]["computed"]["offplane"]["favourable"], 0.05),
+    ("paper §3.4 off-plane 2t → 24b off-plane", PAPER_RESULTS, rf"2t_ij ≈ {N} eV", "dft/fodft_coupling_offplane.json",
+     lambda d: 2 * d["t_ij_eV"], 0.005),
+    ("paper §3.4 off-plane 2θ → 24b off-plane", PAPER_RESULTS, rf"rotation\s+is 2θ ≈ {N}°", "dft/fodft_coupling_offplane.json",
+     lambda d: d["localisation_2theta_deg"], 0.5),
+    ("paper §2.5 shipped 2θ → 24b", _PM, rf"rotation is only 2θ = {N}°", "dft/fodft_coupling.json",
+     lambda d: d["localisation_2theta_deg"], 0.05),
+    ("paper §2.5 shipped ⟨S²⟩ → 24b", _PM, rf"⟨S²⟩ \({N} for the triplet\)", "dft/fodft_coupling.json", lambda d: d["S2"], 5e-4),
+    ("paper §2.5 resolution |g|/t_ij → 24b", _PM, rf"over t_ij \({N} % for Cu–Co\)", "dft/fodft_coupling.json",
+     lambda d: 100 * d["grad_norm_over_t_ij"], 0.05),
+    ("paper §3.4 off-plane, adverse corner shipped → 25", PAPER_RESULTS, rf"\(×{N} to ×[\d.]+×10³ at its adverse corner\)", _KET,
+     lambda d: _OFF(d)["by_lambda_co"]["literature_assumed"]["shipped"]["adverse"], 0.0005),
+    ("paper §3.4 off-plane, adverse corner probe → 25", PAPER_RESULTS, rf"\(×[\d.]+ to ×{N}×10³ at its adverse corner\)", _KET,
+     lambda d: _OFF(d)["by_lambda_co"]["literature_assumed"]["offplane"]["adverse"] / 1e3, 0.05),
+]
+
+
+def test_paper_categorical_claims_of_commit_g_match_their_instruments():
+    """The CATEGORICAL claims commit Г's text makes — the kind that went wrong unpinned («doublet» for a triplet): the
+    clusters' spins against script 24's own table, the diabatised pair and window, what 24e's probe found, the Hammett fit
+    set and its exclusions with their residuals and the alternative fits, and Lever's verdict per band. CAN catch a re-run,
+    a table edit or a prose edit that moves any of these apart; CANNOT catch a claim worded outside these clauses."""
+    import numpy as np
+    meth, res = " ".join(doc(_PM).split()), " ".join(doc(PAPER_RESULTS).split())
+    src = (REPO / "tools/in_silico/scripts/24_dft_hopping_integrals.py").read_text()
+    spins = dict(re.findall(r'\("(\w\w)_\w+\.xyz", "\w+", "\w+", "[^"]+", \+1, (\d)\)', src))
+    assert spins == {"cu": "2", "co": "3", "ce": "1"}, f"24's cluster spins moved: {spins}"
+    assert "Cu–Co a triplet and Co–Ce a quartet (2S = 2 and 3;" in meth and "Ce–graphene a doublet" in meth
+    # the compressed Ce–N bridge contact §2.5 discloses — read from the deposited geometry, so a rebuilt bridge reds here
+    rows = (REPO / "docs/protocols/ebfc/in_silico/ligands/co_ce_zif.xyz").read_text().split("\n")
+    atoms = [(r.split()[0], np.array([float(v) for v in r.split()[1:4]])) for r in rows[2:2 + int(rows[0])]]
+    ce = next(x for e, x in atoms if e == "Ce")
+    ce_n = sorted(round(float(np.linalg.norm(x - ce)), 2) for e, x in atoms if e == "N")[:3]
+    assert f"sits {ce_n[0]:.2f} Å from cerium against {ce_n[1]:.2f} Å from cerium's terminal donors" in meth, ce_n
+    fo = C("dft/fodft_coupling.json")
+    assert fo["picked_rel_HOMO"] == [-5, -3] and fo["pick_at_window_edge"] and "picked is HOMO−5 and HOMO−3" in meth
+    assert fo["window"][1] - fo["window"][0] == 10 and fo["window"][0] == fo["nocc_alpha"] - 6, "the window moved"
+    assert "window of ten orbitals around the frontier (HOMO−5 to LUMO+3)" in meth
+    probe = C("reproduction/cluster_charge_probe_2026-10-23.json")["runs"]
+    assert all(r["localised"] and r["physically_reasonable"] for r in probe), "24e: the automatic check no longer passes all four"
+    assert all(min(r["picked_rel_HOMO"]) < 0 < max(r["picked_rel_HOMO"]) and r["site_energy_gap_eV"] > 7
+               for r in probe if r["charge"] == 3), "24e: a +3 pick is no longer occupied ⊥ virtual ≈ 8 eV apart"
+    assert all(min(r["picked_rel_HOMO"]) > 0 for r in probe if r["charge"] == -1), "24e: a −1 pick is no longer virtual"
+    assert "although its automatic physicality check passes all four" in meth
+    ser = C("dft/os_mediator_series.json")
+    lf, cx = ser["lfer"], {c["name"]: c for c in ser["complexes"]}
+    assert lf["fit_set"] == ["ome", "dmbpy", "bpy", "dcbpy", "no2"] and lf["excluded"] == {
+        "donor_saturation": ["nme2", "nh2"], "inert_design_picks": ["cf3", "so2cf3"], "measured_series_points": ["cl"]}
+    resid = {n: round(1000 * (cx[n]["dE_red_eV"] - lf["intercept_eV"] - lf["slope_eV_per_sigma"] * cx[n]["sigma_para"]))
+             for n in cx}
+    inside = max(abs(resid[n]) for n in lf["fit_set"])
+    assert (f"by {resid['cl']}, {resid['cf3']} and {resid['so2cf3']} meV, against at most {inside} meV inside the fit"
+            in res), f"Hammett residuals moved: {resid}"
+    assert f"NMe₂ falls {-resid['nme2']} meV short" in res and f"NH₂ lies {resid['nh2']} meV beyond it" in res, resid
+    # «every left-out point but NH₂ on the flatter side»: a flatter response is a residual of the sign opposite to σ
+    left_out = [n for n in cx if n not in lf["fit_set"]]
+    assert all((resid[n] > 0) == (cx[n]["sigma_para"] > 0) for n in left_out if n != "nh2") and resid["nh2"] > 0, resid
+
+    def fit(names):
+        x = np.array([cx[n]["sigma_para"] for n in names])
+        y = np.array([cx[n]["dE_red_eV"] for n in names])
+        b, a = np.polyfit(x, y, 1)
+        return round(b, 3), round(1 - ((y - a - b * x) ** 2).sum() / ((y - y.mean()) ** 2).sum(), 3)
+    (b1, r1), (b3, r3), (b10, r10) = (fit(lf["fit_set"] + ["cl"]), fit(lf["fit_set"] + ["cl", "cf3", "so2cf3"]),
+                                      fit(list(cx)))
+    assert f"with Cl {b1:.3f} ({r1})".replace("-", "−") in res, (b1, r1)
+    assert f"with all three acceptors {b3:.3f} ({r3})".replace("-", "−") in res, (b3, r3)
+    assert f"over all ten {b10:.3f} ({r10})".replace("-", "−") in res, (b10, r10)
+    bh, rh = fit(lf["fit_set"] + ["nh2"])
+    assert f"with NH₂ it is {bh:.3f} eV per σ (r² 1.00)".replace("-", "−") in res and round(rh, 2) == 1.0, (bh, rh)
+    # Lever, as the text states it: on the ORGANIC line our NO₂ − H is above on every band, our Cl pairs above on every band
+    # but the full spread, our Me − H inside once any spread is allowed; the numbers it prints are the pair's own.
+    lev = {p["pair"]: p for p in C("dft/os_series_vs_lever.json")["pairs"]}
+    org = lambda pair: lev[pair]["sides"]["ours"]["organic"]  # noqa: E731
+    assert set(org("no2-bpy").values()) == {"above"}, org("no2-bpy")
+    assert all(org(p)["range"] == "inside" and {org(p)[b] for b in ("rounding", "half_range", "half_range_all")} == {"above"}
+               for p in ("cl-bpy", "cl-dmbpy")), (org("cl-bpy"), org("cl-dmbpy"))
+    assert org("dmbpy-bpy")["half_range"] == org("dmbpy-bpy")["range"] == "inside", org("dmbpy-bpy")
+    n2 = lev["no2-bpy"]
+    assert (f"our NO₂ − H (+{1e3 * n2['computed_b3lyp_V']:.0f} mV per substituent against "
+            f"+{1e3 * n2['lever']['organic']['shift_V']:.0f})" in res
+            and f"Its water line (+{1e3 * n2['lever']['water']['shift_V']:.0f} mV on NO₂ − H)" in res), "Lever's NO₂ numbers moved"
+    # the outer-sphere ordering the text states: the anode's scale lies above all three λ_o thresholds, the highest only just
+    ket = C("dft/cathode_ket_lambda.json")["outer_sphere_term"]
+    lo = ket["lambda_o_at_turnover_eV"]
+    thr = [lo["literature λ"]["favourable_corner"], lo["Ru-swap (Co→Ru, computed)"]["adverse_corner"],
+           lo["Ru-swap (Co→Ru, computed)"]["favourable_corner"]]
+    gap = ket["anode_outer_sphere_physical_end_eV"][0] - max(thr)
+    assert 0 < gap < 0.01 and "above all three thresholds, the highest only just" in res, f"anode scale − highest λ_o = {gap}"
 
 
 # ── HW.54 Р3(в) a point dendrometer on the anchor (114, 2026-10-31) ⟷ SUMMARY §«Can a Point Dendrometer Use the Anchor

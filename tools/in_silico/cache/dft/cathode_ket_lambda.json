@@ -520,8 +520,8 @@
     "t_ij_eV": 0.130422,
     "site_gap_eV": 0.0258,
     "t_ij_ratio_vs_shipped": 88.42,
-    "margin_adverse": 8651.4,
-    "margin_adverse_shipped": 0.133,
+    "margin_uphill_gap_unsourced": 8651.4,
+    "margin_uphill_gap_unsourced_shipped": 0.133,
     "margin_ratio": 65048.0,
     "flips_the_verdict": true,
     "why_not_t_squared": "the gap moves too, so the margin ratio is NOT the square of the coupling ratio \u2014 quoting |t|\u00b2 alone understates it",
@@ -656,7 +656,7 @@
   },
   "outer_sphere_term": {
     "included": false,
-    "lambda_hop_composition": "Marcus cross-relation mean \u00bd(\u03bb_i + \u03bb_j) of the sites' self-exchange \u03bb as read: computed inner-sphere (Nelsen, script 35) for Co, Ce and Ru; literature solution self-exchange totals (inner + outer) for Cu and for every node of the literature scenario; no outer-sphere term for the framework added",
+    "lambda_hop_composition": "Marcus cross-relation mean \u00bd(\u03bb_i + \u03bb_j) of the sites' self-exchange \u03bb as read: computed inner-sphere (Nelsen, script 35) for Co, Ce and Ru; for Cu and for every node of the literature scenario, literature values READ AS solution self-exchange totals (inner + outer) \u2014 only the 2.4 eV Cu(phen)2 reading is a sourced, measured total; no outer-sphere term for the framework added, so for the literature scenario an added \u03bb_o is a sensitivity, not a missing term",
     "gap_max_eV": 0.1299,
     "lambda_hop_min_eV": 0.8245,
     "every_gap_below_lambda_hop": true,
@@ -684,7 +684,7 @@
       0.469
     ],
     "anode_outer_sphere_estimate_is": "script 29c's two-sphere \u03bb_o for the anode flavin in its protein pocket over its radius \u00d7 dielectric grid, and at the grid's physical end (buried, delocalised) that the paper quotes for the anode \u2014 another medium, the only outer-sphere estimate in this tree; a scale, not this hop's value",
-    "direction": "an added outer-sphere term can only slow every hop (every applied |\u0394G| \u2264 0.1299 eV lies below every live \u03bb_hop \u2265 0.82 eV): it deepens the computed-\u03bb(Co) verdict, takes the literature-\u03bb(Co) favourable corner below turnover at \u03bb_o \u2248 0.305 eV, and the Ru swap's adverse and favourable corners at \u03bb_o \u2248 0.17 and \u2248 0.37 eV"
+    "direction": "an added outer-sphere term can only slow every hop (every applied |\u0394G| \u2264 0.1299 eV lies below every live \u03bb_hop \u2265 0.82 eV): it deepens the computed-\u03bb(Co) verdict, takes the literature-\u03bb(Co) favourable corner below turnover at \u03bb_o \u2248 0.305 eV, and the Ru swap's adverse and favourable corners at \u03bb_o \u2248 0.17 and \u2248 0.37 eV; the other direction \u2014 a framework-held site with less outer-sphere \u03bb than the solution couples \u03bb(Cu) and the literature \u03bb(Co) are read from \u2014 is covered by no corner: the bracket bounds the readings, not the site"
   },
   "ru_lambda_nelsen_halves": {
     "lambda_1_eV": -0.2564,

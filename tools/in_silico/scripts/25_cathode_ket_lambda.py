@@ -359,8 +359,8 @@ def main() -> int:
                     "script 23 (`bridge_out_of_plane` > `PLANARITY_TOL_A`) — a probe, not a candidate",
             "t_ij_eV": off["t_ij_eV"], "site_gap_eV": off["site_energy_gap_eV"],
             "t_ij_ratio_vs_shipped": round(off["t_ij_eV"] / t_fo, 2),
-            "margin_adverse": round(off_margin["dG=+gap"], 1),
-            "margin_adverse_shipped": round(fo_margin["dG=+gap"], 3),
+            "margin_uphill_gap_unsourced": round(off_margin["dG=+gap"], 1),
+            "margin_uphill_gap_unsourced_shipped": round(fo_margin["dG=+gap"], 3),
             "margin_ratio": round(off_margin["dG=+gap"] / fo_margin["dG=+gap"], 0),
             "flips_the_verdict": bool(
                 (fo_margin["dG=+gap"] < 1.0) != (off_margin["dG=+gap"] < 1.0)),
@@ -386,7 +386,7 @@ def main() -> int:
         g["by_lambda_co_key"] = ("<λ(Cu) reading>|<ΔG branch>, each geometry's OWN gap; adverse/favourable = the bracket's "
                                  "corners over the gap sign × the λ(Cu) reading, as in `scenarios`")
         print(f"\n  geometry sensitivity (REFUSED off-plane probe): t_ij ×{g['t_ij_ratio_vs_shipped']}, "
-              f"margin ×{g['margin_adverse_shipped']} → ×{g['margin_adverse']} "
+              f"margin ×{g['margin_uphill_gap_unsourced_shipped']} → ×{g['margin_uphill_gap_unsourced']} "
               f"(×{g['margin_ratio']:.0f}); flips the verdict: {g['flips_the_verdict']}")
         for k, b in g["by_lambda_co"].items():
             print(f"    λ(Co) {b['lambda_co_eV']:.2f} ({k}): shipped ×{b['shipped']['adverse']:.2g} … "
@@ -535,14 +535,16 @@ def main() -> int:
                           (("adverse_corner", min(ends)), ("favourable_corner", max(ends)))}
     osl = json.loads((CACHE / "outer_sphere_lambda.json").read_text())
     anode_lo = osl["lambda_o_range_eV"]
-    # the end the paper quotes for the anode (§3.1: buried, delocalised): 29c keeps it as a TOTAL, so λ_o = total − λ_i
+    # the end the paper quotes for the anode (§3.2: buried, delocalised): 29c keeps it as a TOTAL, so λ_o = total − λ_i
     anode_lo_phys = [t - osl["lambda_inner_eV"] for t in osl["lambda_total_physical_end_eV"]]
     lit_fav, ru = lo_cond.get("literature λ", {}), lo_cond.get("Ru-swap (Co→Ru, computed)", {})
     out["outer_sphere_term"] = {
         "included": False,
         "lambda_hop_composition": "Marcus cross-relation mean ½(λ_i + λ_j) of the sites' self-exchange λ as read: computed inner-sphere (Nelsen, script 35) for Co, "
-                                  "Ce and Ru; literature solution self-exchange totals (inner + outer) for Cu and for every "
-                                  "node of the literature scenario; no outer-sphere term for the framework added",
+                                  "Ce and Ru; for Cu and for every node of the literature scenario, literature values READ AS "
+                                  "solution self-exchange totals (inner + outer) — only the 2.4 eV Cu(phen)2 reading is a "
+                                  "sourced, measured total; no outer-sphere term for the framework added, so for the "
+                                  "literature scenario an added λ_o is a sensitivity, not a missing term",
         "gap_max_eV": max(gaps_applied), "lambda_hop_min_eV": round(lam_hop_min, 4),
         "every_gap_below_lambda_hop": below,
         "lambda_o_at_turnover_eV": lo_cond,
@@ -559,7 +561,9 @@ def main() -> int:
                       f"below every live λ_hop ≥ {lam_hop_min:.2f} eV): it deepens the computed-λ(Co) verdict, takes the "
                       f"literature-λ(Co) favourable corner below turnover at λ_o ≈ {lit_fav.get('favourable_corner')} eV, and "
                       f"the Ru swap's adverse and favourable corners at λ_o ≈ {ru.get('adverse_corner')} and "
-                      f"≈ {ru.get('favourable_corner')} eV" if below else
+                      f"≈ {ru.get('favourable_corner')} eV; the other direction — a framework-held site with less "
+                      f"outer-sphere λ than the solution couples λ(Cu) and the literature λ(Co) are read from — is covered "
+                      f"by no corner: the bracket bounds the readings, not the site" if below else
                       "NOT fixed — some applied |ΔG| reaches a λ_hop, where a larger λ can speed the hop"),
     }
     print(f"  outer-sphere term omitted: every |ΔG| ({max(gaps_applied)}) < every live λ_hop ({lam_hop_min:.3f}) = {below}")

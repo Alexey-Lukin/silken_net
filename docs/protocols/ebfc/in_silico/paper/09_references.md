@@ -266,6 +266,12 @@ legend line stays in each, as the criterion allows.
   our core and N-donor, [Os(X2-bpy)2(PVI)Cl]⁺ at one loading, X = OMe · Me · H · Cl — `83`'s `pvi_series`, now the lead
   comparison of §3.3 (Cl−H ×2.43; the measured sensitivity falls toward the acceptor end, ours much less). Ref 8 also
   prints +309 mV vs NHE and its +288 mV reference conversion (p. 336); only +21 mV vs Ag/AgCl is the other Zafar 2012.
+  📌 2026-11-01 (the records above are not rewritten): the Lever half has its instrument — script `113` reads E_L and two
+  Os(III)/Os(II) lines from the page images of the ONR report that is ref 23's submitted manuscript (the version of record
+  not read) and sets four pairs against them; §3.3 now says what the result is: which side of the scheme a reading falls on
+  changes with the line taken and the spread allowed, so the scheme does not decide it and the slope stays
+  untriangulated. The report itself has no numbered entry yet — it needs one at the ACS pass (the numbers are the
+  report's, not the version of record's).
 - §2.1 — ✅ 2026-09-25: Methods said the redox and PCET calculations ran on active-site clusters "carved"
   from the structure; `20` and `32` compute lumiflavin in C-PCM and no script carves a cluster (§3.6 itself
   says the cluster is only *defined*). §2.1 now says which model the energies stand on.

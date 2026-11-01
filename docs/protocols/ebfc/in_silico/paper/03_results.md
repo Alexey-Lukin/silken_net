@@ -54,9 +54,22 @@ depends on it.
 
 Varying the 4,4′-bipyridine substituents across the experimental potential range gives a **Hammett
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
-≈ **−0.92 eV per σ unit** per complex at B3LYP (r² = 1.00; Fig 2; Table 4) — four substituents per complex, ≈ 0.23 eV per σ
-per substituent, the unit in which the measured series below are read. This is a computed trend; it is
-not triangulated here against Lever's additive E_L parametrisation,<sup>23</sup> but three measured series test it pair
+≈ **−0.92 eV per σ unit** per complex at B3LYP (r² = 1.00 over its fit set — OMe, Me,
+H, COOH and NO₂; Fig 2; Table 4) — four substituents per complex, ≈ 0.23 eV per σ per substituent, the unit in which
+the measured series below are read. The fit set is fixed in the script ahead of the other points — NMe₂ and NH₂ left out as donor saturation, CF₃ and
+SO₂CF₃ as inert design candidates, Cl added later for the measured series below without refitting — and measured
+against the line they read as follows: NMe₂ falls 142 meV short (its shift equals NH₂'s despite 0.17 more donor σ),
+NH₂ lies 19 meV beyond it on the steeper side, and Cl, CF₃ and SO₂CF₃ lie above it by 48, 75 and 164 meV, against at most 12 meV inside
+the fit — every left-out point but NH₂ on the flatter side, so the quoted slope is the fit set's: with NH₂ it is
+−0.933 eV per σ (r² 1.00), with Cl −0.919 (0.997), with all three acceptors −0.838 (0.985), over all ten −0.830
+(0.989). This is a computed trend. Against Lever's additive E_L parametrisation<sup>23</sup> — read from the Office of
+Naval Research technical report that preceded ref 23, on the pairs its tables cover (Me − H; Cl − H and Cl − Me
+through 4,4′-Br₂-bpy; NO₂ − H through the mono-nitro ligand) — our acceptor shifts run high, as they do against the
+measured series below: on its organic Os(III)/Os(II) line our NO₂ − H (+183 mV per substituent against +83) lies above
+however much of the report's 20 mV between-complex spread is allowed, and our Cl pairs lie above it unless all of it
+is, while our Me − H sits inside once any of the spread is allowed. Its water line (+132 mV on NO₂ − H) is defined only for 2+ complexes and every
+aqueous reading here is of a +1 one, and the organic line carries a solvent transfer of its own; the comparison band
+by band is a Supporting Information record (script 113). Three measured series test the trend pair
 by pair, per 4,4′-substituent so that the reference electrode and the absolute offset cancel. The closest is the series
 behind the device mediator itself: the formal potentials of the osmium polymers [Os(4,4′-X₂-bpy)₂(PVI)Cl]⁺ — our core
 with the same imidazole N-donor — measured as films in phosphate buffer at pH 7.4 for X = OMe, Me, H and Cl at one Os
@@ -190,7 +203,7 @@ optimum (~+309 mV)<sup>8</sup> balances driving force against overpotential.
 
 ## 3.4 Direct electron transfer through the ZIF cathode
 
-Inter-metal couplings in the Co–Cu–Ce nanozyme were computed on clash-free cluster geometries (a
+Inter-metal couplings in the Co–Cu–Ce nanozyme were computed on clash-corrected cluster geometries (a
 bridging imidazole that had collided with the second metal was deprotonated to the imidazolate, restoring physical
 coordination). For the Cu–Co hop — the bottleneck in every live scenario below (Cu–Ru in the Ru swap) — the coupling is a two-state orbital
 diabatisation (the FO-DFT label of Methods §2.5; no specific published implementation is claimed):
@@ -200,20 +213,37 @@ same guess and differ only in their SCF settings, and their difference is 9.4 ti
 to, so it does not resolve a coupling (Table 3 prints it beside that ratio; Fig 3a). The other two hops carry that crude
 estimate — their differences lie 50 and 830 times above the tolerance, but they are not charge-localised states or a
 diabatic coupling either; on those couplings and at zero driving force on those hops (no gap was computed for them)
-they are not rate-limiting in any live scenario.
+they are not rate-limiting in any live scenario — for Co–Ce on a compressed Ce–N contact (§2.5), which can only
+have raised its coupling.
 
-Reorganisation energies come from the two-sphere Nelsen construction — computed for Co, Ce and Ru, while λ(Cu) is a
-bracket of two literature readings (2.0 and 2.4 eV, §2.5), a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so
-λ_hop(Cu–Co) is half computed and half cited. Every margin is a bracket over two axes — the sign of the computed gap,
+Each hop's reorganisation energy is λ_hop = ½(λ_i + λ_j), the additivity approximation behind the Marcus cross-relation,
+over the two sites' self-exchange values, and those are not of one kind: computed inner-sphere (Nelsen four-point) values for Co, Ce and Ru, while λ(Cu)
+is a bracket of two literature readings (2.0 and 2.4 eV, §2.5) — read as solution self-exchange totals, outer sphere
+included; only the 2.4 eV one is measured —
+a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. No outer-sphere
+term for the framework is added — for the literature scenario, whose values are read as totals, an added term is
+a sensitivity rather than a missing piece. Every driving force applied (|ΔG| ≤ 0.130 eV) lies below every λ_hop
+(≥ 0.82 eV), so an added outer-sphere term can only slow every hop, and what it costs is a threshold: the favourable
+corner at the literature λ(Co) falls to turnover at λ_o = 0.305 eV, the Ru swap (discussed below) at 0.17 eV (adverse corner) and
+0.37 eV (favourable), and the computed-λ(Co) corners lie below turnover already. A framework-held site could also carry less
+outer-sphere λ than the solution couples whose totals λ(Cu) and the literature λ(Co) are read as, which would speed
+the hop; no corner covers that, since the bracket bounds the readings, not the site. The one outer-sphere estimate in this
+work, the anode flavin's (§3.2's totals less its inner-sphere λ), is 0.375–0.469 eV at its buried, delocalised end — another medium, a scale only, and
+above all three thresholds, the highest only just. Every margin is a bracket over two axes — the sign of the computed gap,
 which the diabatisation does not fix, and the λ(Cu) reading — and we quote its adverse corner. **The cathode verdict
 is conditional on λ(Co).** At the computed λ(Co) = 3.09 eV the Cu–Co hop runs at **×4.1×10⁻⁶ to ×0.0046** of
-enzymatic turnover (×0.00039 at zero driving force): below turnover at every corner — ×0.0046 at the kindest, ×4.1×10⁻⁶ at the adverse. At the
+enzymatic turnover (×0.00039 at zero driving force): below turnover at every corner — ×0.0046 at the kindest, ×4.1×10⁻⁶ at the adverse. Because the site-energy gap is an
+orbital-energy difference rather than a free energy (§2.5), we also state this against the driving force itself: at
+the computed λ(Co) the hop stays below turnover for any downhill ΔG smaller than 0.441 eV on the 2.0 eV λ(Cu) reading
+(0.562 eV on the 2.4 eV one). At the
 literature λ(Co) = 1.4 eV — an assumption, with no primary source in our tree — the bracket is **×0.018 to ×21**
 (×1.8 at zero driving force; Fig 3b): rate-limiting at its adverse corner, above turnover at its favourable one. Reaching
 turnover at zero driving force needs **λ(Co) ≲ 1.5 eV** (on the 2.0 eV λ(Cu) reading), and at the adverse corner
 **λ(Co) ≲ 0.6 eV**. We have no benchmark that places the computed value above or below the true one: it is the
 [Co(NH₃)₆]³⁺/²⁺ couple — an N-donor field, the closer analogue of the ZIF node — with the low-spin Co(III) /
-high-spin Co(II) pair imposed, and a spin-state change of that kind carries a large inner-sphere λ. Both λ(Cu)
+high-spin Co(II) pair imposed, and a spin-state change of that kind carries a large inner-sphere λ. It is also
+octahedral, while the framework's cobalt sits in a tetrahedral CoN₄ node, and in which direction that moves λ(Co) is
+not known here; the measured cathode impedance is the test. Both λ(Cu)
 readings are for unconstrained solution couples; a framework-held Cu–N₄ site can lie below both (0.7 eV in
 azurin<sup>48</sup>), so the bracket bounds the readings, not the site.
 
@@ -222,7 +252,9 @@ This is a finding, not a failure, and we present it with its sensitivity. A low-
 figure on three counts: it is a zero-driving-force reading, because the minimal cluster yields no physical Cu–Ru
 diabatic pair and hence no site-energy gap for that node; for the same reason it borrows the Cu–Co coupling; and
 λ(Ru) sums two Nelsen halves of which one is negative (−0.26 and +1.04 eV), so one of the two optimised geometries is
-not the minimum of the state evaluated on it. (We also
+not the minimum of the state evaluated on it. Nor does it carry an outer-sphere term: the framework adding ≈ 0.17 eV
+of one would take its adverse corner to turnover, ≈ 0.37 eV its favourable one — both below the anode's outer-sphere
+scale (above), a comparison of scales, not of this hop's value. (We also
 probed whether Ru's diffuse 4d orbitals additionally raise the coupling: at the fixed cluster geometry
 both a crude ΔSCF and an FO-DFT diabatisation returned a large t_ij but failed their physicality check —
 the frontier orbitals localise entirely on Ru with no copper partner, so the minimal cluster cannot form
@@ -233,7 +265,8 @@ one — and whose three levers — a low-λ metal (computed indicatively above),
 acid-stable enzyme-free single-atom catalyst (named, not computed) — are listed; ranking them for the acidic cathode environment
 of the device (xylem sap, pH ≈ 5.75) is left to the experimental programme.
 
-Three model caveats frame this. First, the calculation places the enzyme's electron-entry site
+Three model caveats frame this, beside the one §2.5 states: t_ij and the gap are those of the +1 model cluster, not of
+the node's +3 hop (§4). First, the calculation places the enzyme's electron-entry site
 adjacent to the framework node. That adjacency is what an *oriented* immobilisation would deliver — a
 His/Cys anchor tethering laccase to the ZIF vertex — and it is an assumption of the model, not an
 outcome of it. A randomly adsorbed, arbitrarily oriented laccase does not deliver it: the T1 copper
@@ -246,10 +279,16 @@ on a clash-corrected programmatic cluster, not a DFT-relaxed geometry — these 
 did at the default displacement threshold), so t_ij is geometry-bounded — and we quantify that bound rather than assert it. The bridge ring's
 roll about its own N···N axis is a degree of freedom the cluster construction does not fix by energy;
 rolling it out of the metals' coordination plane (Cu 0.70 Å, Co 1.37 Å off-plane, everything else held)
-raises t_ij 88-fold *and* shrinks the site-energy gap to 0.026 eV, moving the adverse margin from ×0.13
-to ×8.7×10³ on the 2.0 eV λ(Cu) reading at the literature λ(Co) — i.e. across enzymatic turnover. That configuration is rejected on chemical grounds, since
+raises t_ij 88-fold *and* shrinks the site-energy gap to 0.026 eV, moving the uphill-gap margin from ×0.13
+to ×8.7×10³ on the 2.0 eV λ(Cu) reading at the literature λ(Co) (×0.018 to ×1.2×10³ at its adverse corner) — i.e.
+across enzymatic turnover; at the computed
+λ(Co) the same roll moves the whole bracket from ×4.1×10⁻⁶ … ×0.0046 to ×0.26 … ×5.1, to straddle turnover where it lay
+wholly below. (On
+that geometry the two sites are nearly resonant — the gap is small against 2t_ij ≈ 0.26 eV, the localising rotation
+is 2θ ≈ 84°, and a gap read off so complete a mixing is ill-conditioned, so we quote it and the margins built on it to
+two significant figures.) That configuration is rejected on chemical grounds, since
 a coordinating nitrogen binds through a lone pair lying **in** the ring plane and our cluster places the
-metals 0.000 Å from it; we report the number because it shows the cathode verdict rests on that single
+metals 0.000 Å from it; we report the numbers because they show the cathode verdict, at either λ(Co), rests on that single
 geometric criterion rather than on a tolerance band, and because the residual spread *within* the
 in-plane family (M–N–C angles, in-plane tilt) remains unquantified. Third, the single-hop bottleneck is a conservative estimate: we assume that the Co-noded
 framework is a wide-gap insulator — an assumption that errs on the conservative side, since band
@@ -418,14 +457,14 @@ single fixed geometry (§2.3) is not tested this way.
 ![Figure 3](figures/fig3_cathode_det.png)
 
 **Figure 3. Direct electron transfer through the Co–Cu–Ce ZIF cathode.** *(a)* Inter-metal
-electronic couplings |t_ij| (log scale) on clash-free cluster geometries: for Cu–Co, the two-state orbital
+electronic couplings |t_ij| (log scale) on clash-corrected cluster geometries: for Cu–Co, the two-state orbital
 diabatisation the margins use (FO-DFT label, Methods §2.5; 0.0015 eV) beside the crude two-solution ΔSCF estimate
 (0.0013 eV), which its SCF tolerance does not resolve; the other two hops carry the crude estimate. *(b)* Marcus k_DET
 margin of the Cu–Co bottleneck relative to enzymatic turnover (10³ s⁻¹, dashed) on the diabatised coupling, across
 reorganisation-energy scenarios: bars at ΔG = 0 on the 2.0 eV λ(Cu) reading, whiskers spanning each scenario's adverse
 and favourable corners over the sign of the computed site-energy gap and the two λ(Cu) readings — ×0.018 to ×21 at
 the assumed literature λ(Co) of 1.4 eV, ×4.1×10⁻⁶ to ×0.0046 at the computed λ(Co) of 3.09 eV. A low-λ metal (Co→Ru, computed λ 0.78 eV) reads
-×5.5–41 — indicative: a ΔG = 0 figure on the borrowed Cu–Co coupling, with one negative Nelsen half in its λ (§3.4).
+×5.5–41 — indicative: a ΔG = 0 figure on the borrowed Cu–Co coupling, with one negative Nelsen half in its λ and no outer-sphere term (§3.4).
 
 ![Figure 4](figures/fig4_cascade_like_for_like.png)
 

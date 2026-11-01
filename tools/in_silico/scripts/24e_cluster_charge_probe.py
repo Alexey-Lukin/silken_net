@@ -29,7 +29,7 @@ from lib.constants import BASIS_LIGHT, LIGANDS_DIR, REPO_ROOT
 
 SI_DESCRIPTION = ("Charge probe of the deposited Cu–Co cluster: the two-orbital diabatisation of script 24b repeated at the "
                   "cluster's physical charge (+3) and on its imidazolate form (−1), two spin states each, in the gas phase; a "
-                  "record of why no variant yields a readable diabatic pair, not a cache the manuscript quotes.")
+                  "record of why no variant yields a readable diabatic pair, whose findings Methods §2.5 states; not a cache.")
 OUT_DEFAULT = REPO_ROOT / "tools" / "in_silico" / "cache" / "reproduction" / "cluster_charge_probe_2026-10-23.json"
 
 _spec = importlib.util.spec_from_file_location("s24b", Path(__file__).resolve().parent / "24b_fodft_coupling.py")

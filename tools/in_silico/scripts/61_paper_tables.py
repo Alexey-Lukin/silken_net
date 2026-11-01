@@ -231,9 +231,9 @@ def build() -> str:
     # Self-review round 1, cluster 8: the coupling the margins use is printed as such, and the crude ΔSCF one beside it
     # with its resolution — two unconstrained SCF solutions whose difference is read against their tolerance.
     res = {k.split()[0]: v["delta_E_over_scf_tol"] for k, v in ket["dscf_coupling_resolution"]["pairs"].items()}
-    md.append("| Hop | t_ij used (eV) | crude ΔSCF t_ij (eV) | crude ΔE ÷ SCF tolerance | λ_hop lit (eV) | λ_hop computed (eV) |")
+    md.append("| Hop | t_ij used (eV) | crude ΔSCF t_ij (eV) | crude ΔE ÷ SCF tolerance | λ_hop, literature scenario (eV) | λ_hop, computed scenario (eV) |")
     md.append("|---|---|---|---|---|---|")
-    md.append(f"| **Cu–Co** (T1↔node, bottleneck) | **{fodft['t_ij_eV']:.6f}** (FO-DFT) | {p['Cu-Co']['t_ij_eV']:.5f} | {res['Cu-Co']:.1f} | {_hop_band(lam_lit['Co'])} | {_hop_band(lam_comp['Co'])} |")
+    md.append(f"| **Cu–Co** (framework Cu for T1 ↔ node, bottleneck) | **{fodft['t_ij_eV']:.6f}** (FO-DFT) | {p['Cu-Co']['t_ij_eV']:.5f} | {res['Cu-Co']:.1f} | {_hop_band(lam_lit['Co'])} | {_hop_band(lam_comp['Co'])} |")
     md.append(f"| Co–Ce (node↔vacancy) | {p['Co-Ce']['t_ij_eV']:.5f} (crude) | {p['Co-Ce']['t_ij_eV']:.5f} | {res['Co-Ce']:.0f} | {(lam_lit['Co']+lam_lit['Ce'])/2:.2f} | {(lam_comp['Co']+lam_comp['Ce'])/2:.2f} |")
     md.append(f"| Ce–graphene (vacancy↔MWCNT, multi-walled carbon nanotube) | {p['Ce-graphene']['t_ij_eV']:.5f} (crude) | {p['Ce-graphene']['t_ij_eV']:.5f} | {res['Ce-graphene']:.0f} | — | — |")
     md.append("\n**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario, on the FO-DFT coupling** — "
@@ -260,10 +260,14 @@ def build() -> str:
     lit, comp = sc["literature λ"], sc["computed λ (B3LYP)"]
     co = ket["cobalt_lambda_condition"]
     co_dg0 = co["lambda_co_at_turnover_eV"][f"fodft|{ket['lambda_cu_base_reading']}|dG=0"]
-    md.append("\n*Inner-sphere λ via Nelsen 4-point (35) on [Co(NH₃)₆] for Co and on [M(H₂O)₆] for Ce and Ru; λ(Cu) is a "
+    md.append("\n*Inner-sphere λ via Nelsen 4-point (script 35) on [Co(NH₃)₆] for Co and on [M(H₂O)₆] for Ce and Ru; λ(Cu) is a "
               f"literature bracket of two solution readings — {cu_lo:.1f} eV (textbook value, source not "
               f"found) and {cu_hi:.1f} eV (Cu(phen)₂²⁺/⁺ self-exchange, Gray & Winkler) — a Cu(I) d¹⁰ "
               "hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. "
+              "λ_hop = ½(λ_i + λ_j), the additivity approximation behind the Marcus cross-relation, over self-exchange values of "
+              "two kinds — the computed ones inner-sphere, λ(Cu) and the literature-scenario values read as solution totals, "
+              "outer sphere included — and no outer-sphere term for the framework is added (§3.4 gives the one at which "
+              "each corner reaches turnover). "
               "Both readings are unconstrained solution couples; a framework-held Cu–N₄ site can lie below "
               "both (0.7 eV in azurin, same source), so the favourable corner is no floor. The adverse corner is "
               "the uphill gap sign at the higher λ(Cu). The crude ΔSCF couplings are half the energy difference of "
@@ -338,7 +342,7 @@ def build() -> str:
     md.append(f"\n*Koopmans trend: the Koopmans offset rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '+.2f')} "
               f"{lbl[ends_casc[0]['name']]} → {m(ends_casc[1]['cascade_delta_eV'], '+.2f')} "
               f"{lbl[ends_casc[1]['name']]}){undecided}; ΔE_red "
-              f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 2). Higher E°(Os) lowers OCV, so "
+              f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over the fit set OMe, Me, H, COOH and NO₂ (Fig 2). Higher E°(Os) lowers OCV, so "
               f"the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: "
               f"over {sub} the slope is {m(vs['slope_wb97x_eV_per_sigma'], '.2f')} against "
               f"{m(vs['slope_b3lyp_eV_per_sigma'], '.2f')} eV/σ at B3LYP (×{vs['slope_ratio_wb97x_over_b3lyp']:.2f}, "
