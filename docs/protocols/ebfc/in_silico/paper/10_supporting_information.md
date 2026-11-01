@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 389 · 28,484,889 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 389 · 28,495,857 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -78,13 +78,13 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/21f_dft_os_dimethyl.py` | `b0b775688b351a12aea77d9d948af89d23280d3c625d4f981394d3cce2fa5464` | L3 — Os mediator on the real 4,4'-dimethyl-2,2'-bipyridine ligand of the device mediator. |
 | `tools/in_silico/scripts/21g_adiabatic_dscf.py` | `d224a45da5c04cc8e60101328bc2c33ba29f180142cdfb379fe15b01835f2ae3` | L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade. |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | `e902887fd1f5222fc81e82649061fe92b45081562a929c4519d8690138ff4685` | L3 step 3 — aggregate frontier orbital energies from script 20 (FAD) and the canonical Os owner. |
-| `tools/in_silico/scripts/23_build_zif_clusters.py` | `837a527eeb06554da97343c12bf2424b6e186122d9eb209355580e8ea63d3b79` | L3b step 1 — build two-metal ZIF cluster models for hopping integral calculations. |
+| `tools/in_silico/scripts/23_build_zif_clusters.py` | `6a4e615d676e8e4fb06db2979e3d63d9de19c200cab75241471e708ce71637db` | L3b step 1 — build two-metal ZIF cluster models for hopping integral calculations. |
 | `tools/in_silico/scripts/24_dft_hopping_integrals.py` | `dd7fb931b0bf0df99f84954aeebea70d7856a45a46b6ac1131245a8a4a4f1f85` | L3b step 2 — ΔSCF hopping integrals for DET through ZIF nanozyme cathode. |
 | `tools/in_silico/scripts/24b_fodft_coupling.py` | `218bd2344cc80d5913e8b2fa4e910dc9ba1d508c21502b67c425ee65cdc767c3` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
 | `tools/in_silico/scripts/24c_cu_ru_coupling.py` | `eb68eeed348a769a8fb516382d09e3f844cda32baaf792f2a79683cdb2f3fa1c` | 24c — Cu–Ru direct-electron-transfer coupling: does a Ru node also raise the Cu–node coupling? (energy-splitting estimate) |
 | `tools/in_silico/scripts/24d_fodft_cu_ru.py` | `d6df4c79ff7f3c0d96c5bd4901676f96d41e02e165e6d29c29b2499609927751` | 24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (rigour check of 24c). |
 | `tools/in_silico/scripts/24e_cluster_charge_probe.py` | `e486eab9da07cb130a237cb739a7d3387696eecb89da25d1e183a33114c70397` | Charge probe of the deposited Cu–Co cluster: the two-orbital diabatisation of script 24b repeated at the cluster's physical charge (+3) and on its imidazolate form (−1), two spin states each, in the gas phase; a record of why no variant yields a readable diabatic pair, whose findings Methods §2.5 states; not a cache. |
-| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `d18b223692ff7fc37b3c4689bb559a03ae651807509c9ade24c7fe8c37618cfb` | ③ Cathode DET k_ET vs reorganization energy λ — margin analysis with its brackets. |
+| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `7c0240ae152a3f4d6899d432b21dbabeb71694a763bbe6c7365fd0900a3caa0d` | ③ Cathode DET k_ET vs reorganization energy λ — margin analysis with its brackets. |
 | `tools/in_silico/scripts/27_md_dft_ensemble.py` | `f3019d5817827988e29625ecffabe5ddf50dfda5ac9cdf354000bc7ed2d63f63` | MD-to-DFT bridge: frontier orbital of a flavin fragment over molecular-dynamics snapshots — withdrawn as a flavin measure (the fragment is not the closed isoalloxazine ring; three of the five snapshots are one frame); kept as a record. |
 | `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | `3e262532435d44044f24a7a434b46b78abb8eca464988fc147db1da53e811fce` | L3 — contact-graph shortest path from FAD to the protein surface (NOT a Beratan–Onuchic pathway analysis). |
 | `tools/in_silico/scripts/28b_tunneling_ensemble.py` | `506a7f28954cbf681363be110094b74073653bff30cf6d663df662ca42aad188` | L3 — A contact-graph cost over the MD ensemble from source atoms other than the single-structure search's; it records no path and is not reported (not a Beratan–Onuchic analysis). |
@@ -156,7 +156,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `6d8b2cb8357f55c70ed4ff04bc818b1e3d41f7706e082b5ac73ba4fc2eef7bb0` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `579c49e1b6cdbebbd46388c10a976b19edf2b886a146bc28645c856f29ebb3ed` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `af99bd3c7a5882e5df41dca3731ee3c6a42ade1841a1970528404fcab046d0ec` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -187,7 +187,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | File | SHA-256 | Bytes |
 |---|---|---|
 | `tools/in_silico/cache/dft/cascade_like_for_like.json` | `0d32cf1051c14aea593d398c3b748777b9a8eb9d2edbb660220e57fa9bbf0070` | 39,272 |
-| `tools/in_silico/cache/dft/cathode_ket_lambda.json` | `80c19a7ae1ed28aaae6e635d3337a73429a98cb25b7e60484e2f959710907560` | 27,945 |
+| `tools/in_silico/cache/dft/cathode_ket_lambda.json` | `e1066ca78a86ca68b7dbf0fc00b205741acb0791a03803f10fd13e47c87d13cd` | 31,080 |
 | `tools/in_silico/cache/dft/coating_cluster_cost.json` | `6eb279a3e95b856e32713dbb9ce2025449a349dd0a5fe555427c38331c9b56d4` | 19,289 |
 | `tools/in_silico/cache/dft/comparison.json` | `c63c59502434933b0f60f63825efa7c000d02f08b6148094ccd1dd33a8c3088b` | 2,697 |
 | `tools/in_silico/cache/dft/cu_ru_coupling.json` | `92706686ed1bff60bdea3b02db8543a1a03a492cfedb794ce2afaa0450226cbc` | 1,330 |

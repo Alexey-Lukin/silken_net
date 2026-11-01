@@ -161,7 +161,11 @@
       "margin_vs_turnover_adverse": 3037.232215860327,
       "margin_vs_turnover_at_dG0": 48109.189201598674,
       "margin_vs_turnover_favourable": 476697.08895793627,
-      "bottleneck_hop_is_branch_invariant": true
+      "bottleneck_hop_is_branch_invariant": true,
+      "coupling_drop_for_other_hops_to_limit": {
+        "Co-Ce": 1.5,
+        "Ce-C": 24.3
+      }
     },
     "literature \u03bb": {
       "lambda_hop_eV": {
@@ -258,7 +262,11 @@
       "margin_vs_turnover_adverse": 0.018152569569522835,
       "margin_vs_turnover_at_dG0": 1.8351766792074682,
       "margin_vs_turnover_favourable": 20.874427463056133,
-      "bottleneck_hop_is_branch_invariant": true
+      "bottleneck_hop_is_branch_invariant": true,
+      "coupling_drop_for_other_hops_to_limit": {
+        "Co-Ce": 17.2,
+        "Ce-C": 781.2
+      }
     },
     "computed \u03bb (B3LYP)": {
       "lambda_hop_eV": {
@@ -355,7 +363,11 @@
       "margin_vs_turnover_adverse": 4.084525709732346e-06,
       "margin_vs_turnover_at_dG0": 0.0003949771630238464,
       "margin_vs_turnover_favourable": 0.004639354866225667,
-      "bottleneck_hop_is_branch_invariant": true
+      "bottleneck_hop_is_branch_invariant": true,
+      "coupling_drop_for_other_hops_to_limit": {
+        "Co-Ce": 22.7,
+        "Ce-C": 102974.4
+      }
     },
     "Ru-swap (Co\u2192Ru, computed)": {
       "lambda_hop_eV": {
@@ -450,7 +462,91 @@
       "margin_vs_turnover_adverse": 5.517486372828839,
       "margin_vs_turnover_at_dG0": 41.314402889811376,
       "margin_vs_turnover_favourable": 41.314402889811376,
-      "bottleneck_hop_is_branch_invariant": true
+      "bottleneck_hop_is_branch_invariant": true,
+      "coupling_drop_for_other_hops_to_limit": {
+        "Ru-Ce": 83.3,
+        "Ce-C": 1091.2
+      }
+    }
+  },
+  "other_hops_threshold_sensitivity": {
+    "what": "coupling_drop_for_other_hops_to_limit recomputed with (a) the other hop uphill by the computed Cu\u2013Co gap and (b) \u03bb(Cu) at the azurin value; < 1 = that hop already limits at its shipped coupling",
+    "cu_co_gap_eV": 0.1299,
+    "lambda_cu_azurin_eV": 0.7,
+    "lambda_cu_azurin_source": "Gray & Winkler 2005 (PMC553296), the paragraph of the cu_phen2 reading \u2014 azurin, a protein-held Cu(II/I); an example below both readings, not this site's value",
+    "by_scenario": {
+      "literature \u03bb": {
+        "other_hop_uphill_by_the_cu_co_gap": {
+          "Co-Ce": 4.5,
+          "Ce-C": 203.3
+        },
+        "lambda_cu_at_azurin": {
+          "Co-Ce": 0.66,
+          "Ce-C": 30.2
+        },
+        "verdict_at_azurin_by_dG": {
+          "adverse (+gap, uphill)": {
+            "bottleneck_hop": "Cu-Co",
+            "margin_vs_turnover": 88.9881437181221
+          },
+          "dG=0 (ASSUMPTION)": {
+            "bottleneck_hop": "Cu-Co",
+            "margin_vs_turnover": 1303.545689303092
+          },
+          "favourable (\u2212gap, downhill)": {
+            "bottleneck_hop": "Co-Ce",
+            "margin_vs_turnover": 6145.762519117169
+          }
+        }
+      },
+      "computed \u03bb (B3LYP)": {
+        "other_hop_uphill_by_the_cu_co_gap": {
+          "Co-Ce": 6.2,
+          "Ce-C": 26468.6
+        },
+        "lambda_cu_at_azurin": {
+          "Co-Ce": 0.9,
+          "Ce-C": 4093.79
+        },
+        "verdict_at_azurin_by_dG": {
+          "adverse (+gap, uphill)": {
+            "bottleneck_hop": "Cu-Co",
+            "margin_vs_turnover": 0.018702493697119297
+          },
+          "dG=0 (ASSUMPTION)": {
+            "bottleneck_hop": "Cu-Co",
+            "margin_vs_turnover": 0.25548850090385017
+          },
+          "favourable (\u2212gap, downhill)": {
+            "bottleneck_hop": "Co-Ce",
+            "margin_vs_turnover": 2.3902807300664604
+          }
+        }
+      },
+      "Ru-swap (Co\u2192Ru, computed)": {
+        "other_hop_uphill_by_the_cu_co_gap": {
+          "Ru-Ce": 21.3,
+          "Ce-C": 280.5
+        },
+        "lambda_cu_at_azurin": {
+          "Ru-Ce": 3.01,
+          "Ce-C": 39.45
+        },
+        "verdict_at_azurin_by_dG": {
+          "adverse (+gap, uphill)": {
+            "bottleneck_hop": "Cu-Ru",
+            "margin_vs_turnover": 31606.065220996592
+          },
+          "dG=0 (ASSUMPTION)": {
+            "bottleneck_hop": "Cu-Ru",
+            "margin_vs_turnover": 31606.065220996592
+          },
+          "favourable (\u2212gap, downhill)": {
+            "bottleneck_hop": "Cu-Ru",
+            "margin_vs_turnover": 31606.065220996592
+          }
+        }
+      }
     }
   },
   "scenarios_crude_dscf": {

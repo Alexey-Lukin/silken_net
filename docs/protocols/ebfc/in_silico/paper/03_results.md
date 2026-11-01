@@ -213,8 +213,10 @@ same guess and differ only in their SCF settings, and their difference is 9.4 ti
 to, so it does not resolve a coupling (Table 3 prints it beside that ratio; Fig 3a). The other two hops carry that crude
 estimate — their differences lie 50 and 830 times above the tolerance, but they are not charge-localised states or a
 diabatic coupling either; on those couplings and at zero driving force on those hops (no gap was computed for them)
-they are not rate-limiting in any live scenario — for Co–Ce on a compressed Ce–N contact (§2.5), which can only
-have raised its coupling.
+they are not rate-limiting in any live scenario on the two λ(Cu) readings — for Co–Ce on a compressed Ce–N contact
+(§2.5) whose effect on its coupling is not computed: Co–Ce would limit only were that coupling at least 17 times
+smaller (23 times at the computed λ(Co)), 4.5 (6.2) times if it ran uphill by a site difference the size of
+Cu–Co's, and at a protein-held λ(Cu) it limits already (below).
 
 Each hop's reorganisation energy is λ_hop = ½(λ_i + λ_j), the additivity approximation behind the Marcus cross-relation,
 over the two sites' self-exchange values, and those are not of one kind: computed inner-sphere (Nelsen four-point) values for Co, Ce and Ru, while λ(Cu)
@@ -245,7 +247,10 @@ high-spin Co(II) pair imposed, and a spin-state change of that kind carries a la
 octahedral, while the framework's cobalt sits in a tetrahedral CoN₄ node, and in which direction that moves λ(Co) is
 not known here; the measured cathode impedance is the test. Both λ(Cu)
 readings are for unconstrained solution couples; a framework-held Cu–N₄ site can lie below both (0.7 eV in
-azurin<sup>48</sup>), so the bracket bounds the readings, not the site.
+azurin<sup>48</sup>), so the bracket bounds the readings, not the site. At that value, on the shipped couplings,
+the computed-λ(Co) hop would straddle turnover (×0.019 to ×2.4, its favourable corner set by Co–Ce instead of
+Cu–Co) and the literature-λ(Co) one would clear it (×89 and above) — and the enzyme's own T1 copper, which the
+framework copper stands in for, is a protein-held site.
 
 This is a finding, not a failure, and we present it with its sensitivity. A low-λ metal removes the dependence on
 λ(Co): replacing Co by **Ru** (computed λ 0.78 eV) gives ×5.5 to ×41 across the λ(Cu) readings — an indicative

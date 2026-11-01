@@ -290,12 +290,60 @@ def main() -> int:
             "margin_vs_turnover_favourable": kind[2],
             "bottleneck_hop_is_branch_invariant":
                 len({grid[r][b]["bottleneck_hop"] for r in grid for b in BRANCHES}) == 1,
+            # ⊕ 2026-11-01: how far each OTHER hop's coupling would have to fall (k ∝ t²) before it limits, at the cell
+            # where it comes closest — the price of a coupling the minimal cluster may misstate (the Co–Ce bridge sits on a
+            # compressed Ce–N contact, 1.92 against 2.45 Å, from 23's one M–N target); a threshold, not a direction
+            # (in-silico §When Modifying #40), and relative to that hop's own crude coupling.
+            "coupling_drop_for_other_hops_to_limit": {
+                ident.get(h, h): round(min((grid[r][b]["k_ET_per_s"][h] / grid[r][b]["bottleneck_s"]) ** 0.5
+                                           for r in grid for b in BRANCHES), 1)
+                for h in tij if all(min(grid[r][b]["k_ET_per_s"], key=grid[r][b]["k_ET_per_s"].get) != h
+                                    for r in grid for b in BRANCHES)},
         }
         flag = "" if measured else "   [no computed gap on any hop — all three columns are ΔG=0]"
         print(f"  {name:32s} {grid[worst[0]][worst[1]]['bottleneck_hop']:>11}"
               f" {'×' + format(worst[2], '.2g'):>11}"
               f" {'×' + format(zero['margin_vs_turnover'], '.2g'):>11}"
               f" {'×' + format(kind[2], '.2g'):>11}{flag}")
+
+    # ⊕ 2026-11-01 (adversary on the Co–Ce threshold): `coupling_drop_for_other_hops_to_limit` stands on two quantities
+    # nobody measured — the other hop's driving force (taken as 0) and λ(Cu) (its two readings) — so it is printed at one
+    # value of each that moves it: the other hop uphill by the computed Cu–Co gap (a site difference of the size computed
+    # for this node pair, not one computed for that hop), and λ(Cu) at the protein-held Cu(II/I) value the cu_phen2 source
+    # gives in the same paragraph (azurin 0.7 eV — an EXAMPLE of «below both readings», not this site's value). A value
+    # below 1 means that hop already limits at its shipped coupling.
+    LAMBDA_CU_AZURIN_EV = 0.7
+    scen_az = _scenarios(LAMBDA_CU_AZURIN_EV)
+    sens = {}
+    for name in scenarios:
+        if name == "canon λ=0.7 (old assumption)":
+            continue
+        ident, others = NODE_IDENTITY.get(name, {}), [h for h in tij if h != "Cu-Co"]
+        up, az = {}, {}
+        for h in others:
+            up[ident.get(h, h)] = round(min(
+                (marcus_rate(tij[h], scen_by_cu[r][name][h], GAP_EV["Cu-Co"])
+                 / marcus_rate(tij["Cu-Co"], scen_by_cu[r][name]["Cu-Co"], _dg(name, _BRANCH_KEY[b])["Cu-Co"])) ** 0.5
+                for r in LAMBDA_CU_READINGS for b in BRANCHES), 1)
+            az[ident.get(h, h)] = round(min(
+                (marcus_rate(tij[h], scen_az[name][h], _dg(name, _BRANCH_KEY[b])[h])
+                 / marcus_rate(tij["Cu-Co"], scen_az[name]["Cu-Co"], _dg(name, _BRANCH_KEY[b])["Cu-Co"])) ** 0.5
+                for b in BRANCHES), 2)
+        at_az = {}
+        for b in BRANCHES:
+            ks = {h: marcus_rate(tij[h], scen_az[name][h], _dg(name, _BRANCH_KEY[b])[h]) for h in tij}
+            hop = min(ks, key=ks.get)
+            at_az[b] = {"bottleneck_hop": ident.get(hop, hop), "margin_vs_turnover": ks[hop] / TURNOVER_S}
+        sens[name] = {"other_hop_uphill_by_the_cu_co_gap": up, "lambda_cu_at_azurin": az,
+                      "verdict_at_azurin_by_dG": at_az}
+    out["other_hops_threshold_sensitivity"] = {
+        "what": "coupling_drop_for_other_hops_to_limit recomputed with (a) the other hop uphill by the computed Cu–Co gap and "
+                "(b) λ(Cu) at the azurin value; < 1 = that hop already limits at its shipped coupling",
+        "cu_co_gap_eV": GAP_EV["Cu-Co"], "lambda_cu_azurin_eV": LAMBDA_CU_AZURIN_EV,
+        "lambda_cu_azurin_source": "Gray & Winkler 2005 (PMC553296), the paragraph of the cu_phen2 reading — azurin, a "
+                                   "protein-held Cu(II/I); an example below both readings, not this site's value",
+        "by_scenario": sens}
+    print(f"  other hops' coupling-drop threshold, sensitivity: {sens}")
 
     # The pre-2026-10-15 table on the crude coupling — a RECORD of what was published, never a consumer reading.
     out["scenarios_crude_dscf"] = {}

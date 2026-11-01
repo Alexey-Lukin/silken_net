@@ -458,6 +458,10 @@ def bridge_out_of_plane(atoms: list[tuple[str, np.ndarray]]) -> tuple[float, flo
     direct metal-d ⇄ ring-π channel. Measured: 0.70 / 1.37 Å off-plane moved the FO-DFT
     coupling 24× while every other check in the pipeline stayed green.
 
+    ⚠️ The pair search below takes M–N < 2.3 Å for EVERY metal, so a bridge on Ce at BOND_CE_N (2.45 Å) is not found and
+    the caller prints «not a bridged dimer» — a per-metal cutoff comes before any rebuild of the Co–Ce bridge (00_07
+    HW.5.IS; the shipped Co–Ce passes only because its bridge sits at a compressed 1.92 Å).
+
     CAN catch a bridge rolled out of its own coordination plane, whatever put it there.
     CANNOT judge the M–N–C angles inside the plane, nor say that the in-plane geometry
     is right — it only refuses the failure mode that has actually bitten.

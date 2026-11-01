@@ -9122,6 +9122,8 @@ _KET = "dft/cathode_ket_lambda.json"
 _PM = "docs/protocols/ebfc/in_silico/paper/02_methods.md"
 _OFF = lambda d: d["geometry_sensitivity_refused_offplane"]  # noqa: E731
 _LO = lambda d: d["outer_sphere_term"]["lambda_o_at_turnover_eV"]  # noqa: E731
+_SENS = lambda d, sc: d["other_hops_threshold_sensitivity"]["by_scenario"][sc]  # noqa: E731
+_AZ = lambda d, sc, br: _SENS(d, sc)["verdict_at_azurin_by_dG"][br]["margin_vs_turnover"]  # noqa: E731
 CHECKS += [
     ("paper §3.4 largest applied |ΔG| → 25", PAPER_RESULTS, rf"applied \(\|ΔG\| ≤ {N} eV\)", _KET,
      lambda d: d["outer_sphere_term"]["gap_max_eV"], 0.0006),
@@ -9173,6 +9175,38 @@ CHECKS += [
      lambda d: _OFF(d)["by_lambda_co"]["literature_assumed"]["shipped"]["adverse"], 0.0005),
     ("paper §3.4 off-plane, adverse corner probe → 25", PAPER_RESULTS, rf"\(×[\d.]+ to ×{N}×10³ at its adverse corner\)", _KET,
      lambda d: _OFF(d)["by_lambda_co"]["literature_assumed"]["offplane"]["adverse"] / 1e3, 0.05),
+    # ⊕ 2026-11-01: the price of the compressed Co–Ce contact — how far each non-bottleneck coupling must fall to limit
+    ("paper §3.4 Co–Ce drop to limit, literature λ → 25", PAPER_RESULTS, rf"coupling at least {N} times\s+smaller", _KET,
+     lambda d: d["scenarios"]["literature λ"]["coupling_drop_for_other_hops_to_limit"]["Co-Ce"], 0.5),
+    ("paper §3.4 Co–Ce drop to limit, computed λ → 25", PAPER_RESULTS, rf"smaller \({N} times\s+at the computed λ\(Co\)\)", _KET,
+     lambda d: d["scenarios"]["computed λ (B3LYP)"]["coupling_drop_for_other_hops_to_limit"]["Co-Ce"], 0.5),
+    ("SUMMARY Co–Ce drop to limit, literature λ → 25", SUMMARY, rf"at least \*\*{N}\*\* times smaller at the closest corner", _KET,
+     lambda d: d["scenarios"]["literature λ"]["coupling_drop_for_other_hops_to_limit"]["Co-Ce"], 0.0),
+    ("SUMMARY Co–Ce drop to limit, computed λ → 25", SUMMARY, rf"\(\*\*{N}\*\* at the computed λ\(Co\); Ru–Ce", _KET,
+     lambda d: d["scenarios"]["computed λ (B3LYP)"]["coupling_drop_for_other_hops_to_limit"]["Co-Ce"], 0.0),
+    ("SUMMARY Ru–Ce drop to limit → 25", SUMMARY, rf"Ru–Ce in the swap \*\*{N}\*\*, on the borrowed", _KET,
+     lambda d: d["scenarios"]["Ru-swap (Co→Ru, computed)"]["coupling_drop_for_other_hops_to_limit"]["Ru-Ce"], 0.0),
+    *[(f"{where} threshold sensitivity {key} → 25", doc_, rx, _KET, f, tol) for where, doc_, key, rx, f, tol in (
+        ("paper", PAPER_RESULTS, "uphill, literature", rf"\), {N} \([\d.]+\) times if it ran uphill",
+         lambda d: _SENS(d, "literature λ")["other_hop_uphill_by_the_cu_co_gap"]["Co-Ce"], 0.0),
+        ("paper", PAPER_RESULTS, "uphill, computed", rf"\), [\d.]+ \({N}\) times if it ran uphill",
+         lambda d: _SENS(d, "computed λ (B3LYP)")["other_hop_uphill_by_the_cu_co_gap"]["Co-Ce"], 0.0),
+        ("paper", PAPER_RESULTS, "azurin computed adverse", rf"straddle turnover \(×{N} to ×[\d.]+, its favourable",
+         lambda d: _AZ(d, "computed λ (B3LYP)", "adverse (+gap, uphill)"), 0.0005),
+        ("paper", PAPER_RESULTS, "azurin computed favourable", rf"straddle turnover \(×[\d.]+ to ×{N}, its favourable",
+         lambda d: _AZ(d, "computed λ (B3LYP)", "favourable (−gap, downhill)"), 0.05),
+        ("paper", PAPER_RESULTS, "azurin literature adverse", rf"would clear it \(×{N} and above\)",
+         lambda d: _AZ(d, "literature λ", "adverse (+gap, uphill)"), 0.5),
+        ("SUMMARY", SUMMARY, "uphill, literature", rf"it falls to \*\*{N}\*\* \(\*\*[\d.]+\*\*\)",
+         lambda d: _SENS(d, "literature λ")["other_hop_uphill_by_the_cu_co_gap"]["Co-Ce"], 0.0),
+        ("SUMMARY", SUMMARY, "uphill, computed", rf"it falls to \*\*[\d.]+\*\* \(\*\*{N}\*\*\)",
+         lambda d: _SENS(d, "computed λ (B3LYP)")["other_hop_uphill_by_the_cu_co_gap"]["Co-Ce"], 0.0),
+        ("SUMMARY", SUMMARY, "azurin ratio, literature", rf"at the shipped coupling \(\*\*{N}\*\* · \*\*[\d.]+\*\*\)",
+         lambda d: _SENS(d, "literature λ")["lambda_cu_at_azurin"]["Co-Ce"], 0.0),
+        ("SUMMARY", SUMMARY, "azurin ratio, computed", rf"at the shipped coupling \(\*\*[\d.]+\*\* · \*\*{N}\*\*\)",
+         lambda d: _SENS(d, "computed λ (B3LYP)")["lambda_cu_at_azurin"]["Co-Ce"], 0.0),
+        ("SUMMARY", SUMMARY, "azurin computed favourable", rf"straddles turnover, \*\*×[\d.]+ … ×{N}\*\*",
+         lambda d: _AZ(d, "computed λ (B3LYP)", "favourable (−gap, downhill)"), 0.05))],
 ]
 
 
@@ -9187,12 +9221,15 @@ def test_paper_categorical_claims_of_commit_g_match_their_instruments():
     spins = dict(re.findall(r'\("(\w\w)_\w+\.xyz", "\w+", "\w+", "[^"]+", \+1, (\d)\)', src))
     assert spins == {"cu": "2", "co": "3", "ce": "1"}, f"24's cluster spins moved: {spins}"
     assert "Cu–Co a triplet and Co–Ce a quartet (2S = 2 and 3;" in meth and "Ce–graphene a doublet" in meth
-    # the compressed Ce–N bridge contact §2.5 discloses — read from the deposited geometry, so a rebuilt bridge reds here
-    rows = (REPO / "docs/protocols/ebfc/in_silico/ligands/co_ce_zif.xyz").read_text().split("\n")
-    atoms = [(r.split()[0], np.array([float(v) for v in r.split()[1:4]])) for r in rows[2:2 + int(rows[0])]]
-    ce = next(x for e, x in atoms if e == "Ce")
-    ce_n = sorted(round(float(np.linalg.norm(x - ce)), 2) for e, x in atoms if e == "N")[:3]
-    assert f"sits {ce_n[0]:.2f} Å from cerium against {ce_n[1]:.2f} Å from cerium's terminal donors" in meth, ce_n
+    # the compressed bridge contacts §2.5 discloses — read from the deposited geometries, so a rebuilt bridge reds here
+    def m_n(xyz, metal):
+        rows = (REPO / f"docs/protocols/ebfc/in_silico/ligands/{xyz}.xyz").read_text().split("\n")
+        atoms = [(r.split()[0], np.array([float(v) for v in r.split()[1:4]])) for r in rows[2:2 + int(rows[0])]]
+        mp = next(x for e, x in atoms if e == metal)
+        return sorted(round(float(np.linalg.norm(x - mp)), 2) for e, x in atoms if e == "N")[:3]
+    co_n, ce_n = m_n("cu_co_zif", "Co"), m_n("co_ce_zif", "Ce")
+    assert (f"{co_n[0]:.2f} Å from cobalt in the Cu–Co cluster against {co_n[1]:.2f} Å" in meth
+            and f"{ce_n[0]:.2f} Å from cerium in the Co–Ce cluster against {ce_n[1]:.2f} Å" in meth), (co_n, ce_n)
     fo = C("dft/fodft_coupling.json")
     assert fo["picked_rel_HOMO"] == [-5, -3] and fo["pick_at_window_edge"] and "picked is HOMO−5 and HOMO−3" in meth
     assert fo["window"][1] - fo["window"][0] == 10 and fo["window"][0] == fo["nocc_alpha"] - 6, "the window moved"

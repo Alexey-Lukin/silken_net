@@ -150,9 +150,10 @@ a triplet and Co–Ce a quartet (2S = 2 and 3; each with the four terminal 2-met
 an imidazolate, so their metals sum to +2) and Ce–graphene a doublet, its cerium carrying two protonated
 2-methylimidazoles above a neutral coronene and so formally +1, against Ce(III)/Ce(IV) in the framework. In the two ZIF
 clusters each metal is three-coordinate, its donors in one plane with the other metal (some terminal rings tilt well
-out of it), whereas the framework's node is tetrahedral; and the bridge was placed at one metal–nitrogen target for
-every metal, so in the Co–Ce cluster its nitrogen sits 1.92 Å from cerium against 2.45 Å from cerium's terminal donors —
-a compressed contact under that hop's coupling. The node's Cu(II)/Co(II) ⇄ Cu(I)/Co(III)
+out of it), whereas the framework's node is tetrahedral; and the bridge was placed from the first metal's nitrogen distance, so
+the second metal's falls where the ring's orientation puts it — 1.95 Å from cobalt in the Cu–Co cluster against
+2.05 Å for its terminal donors, and 1.92 Å from cerium in the Co–Ce cluster against 2.45 Å — a compressed contact
+under each hop's coupling. The node's Cu(II)/Co(II) ⇄ Cu(I)/Co(III)
 hop makes the Cu–Co cluster +3 on the same atoms; computed at +3, and at −1 with the four terminal imidazoles
 deprotonated as well (the same metal charges), two spin states each (the lower ones spin-contaminated, ⟨S²⟩ 3.0 and
 2.9 against 2.0), the diabatisation below yields no pair of the hop's two sites: at +3 it pairs an occupied orbital
