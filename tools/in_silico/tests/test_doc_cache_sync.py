@@ -678,7 +678,7 @@ CHECKS += [
     *[(f"{where} Hammett per substituent → os_series_vs_measured.json", f"docs/protocols/ebfc/in_silico/paper/{where}", pat,
        "dft/os_series_vs_measured.json", lambda d: d["computed_lfer_per_substituent_V_per_sigma"], 0.005)
       for where, pat in (("03_results.md", rf"≈ {N} eV per σ\s+per substituent, the unit"), ("07_cover_letter.md", rf"≈{N} eV per σ per substituent"))],
-    ("paper §4 R_ct band low → cathode_det_rct.json", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md", rf"\({N} Ω to [\d]+ MΩ\) over λ\(Co\)",
+    ("paper §4 R_ct band low → cathode_det_rct.json", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md", rf"\({N} Ω to [\d.]+ MΩ\) over λ\(Co\)",
      "kinetics/cathode_det_rct.json", lambda d: d["rct_band_ohm"][0], 0.0005),
     ("paper §4 R_ct band high → cathode_det_rct.json", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md", rf"\([\d.]+ Ω to {N} MΩ\) over λ\(Co\)",
      "kinetics/cathode_det_rct.json", lambda d: d["rct_band_ohm"][1] / 1e6, 0.1),
@@ -1201,9 +1201,96 @@ CHECKS += [
         # The margin the REFUSED geometry reads — the number that says the criterion is
         # load-bearing (it crosses turnover), not that ③ carries a band that wide.
         "off-plane margin (crosses turnover) → cathode_ket_lambda.json",
-        SUMMARY, r"margin goes \*\*×[\d.]+ → ×([\d]+) — a factor",
+        SUMMARY, r"margin goes \*\*×[\d.]+ → ×([\d.]+) × 10³ — a factor",
         "dft/cathode_ket_lambda.json",
-        lambda d: d["geometry_sensitivity_refused_offplane"]["margin_adverse"], 1.0,
+        # two figures: the probe's gap is the residue of a near-full mix (2θ ≈ 84°) and moved 0.0004 eV on re-run
+        lambda d: d["geometry_sensitivity_refused_offplane"]["margin_adverse"] / 1e3, 0.05,
+    ),
+    # ── К8 (self-review round 2, 2026-10-30): the numbers the review printed with no script behind them ──
+    (
+        "off-plane probe at the COMPUTED λ(Co), adverse corner → cathode_ket_lambda.json",
+        SUMMARY, r"to \*\*×([\d.]+) … ×[\d.]+ — across turnover as well",
+        "dft/cathode_ket_lambda.json",
+        lambda d: d["geometry_sensitivity_refused_offplane"]["by_lambda_co"]["computed"]["offplane"]["adverse"], 0.005,
+    ),
+    (
+        "off-plane probe at the COMPUTED λ(Co), favourable corner → cathode_ket_lambda.json",
+        SUMMARY, r"to \*\*×[\d.]+ … ×([\d.]+) — across turnover as well",
+        "dft/cathode_ket_lambda.json",
+        lambda d: d["geometry_sensitivity_refused_offplane"]["by_lambda_co"]["computed"]["offplane"]["favourable"], 0.05,
+    ),
+    (
+        "downhill-ΔG threshold at the computed λ(Co), 2.0 eV λ(Cu) → cathode_ket_lambda.json",
+        SUMMARY, r"below turnover for any downhill ΔG smaller than\s+([\d.]+) eV\*\* on the 2\.0 eV",
+        "dft/cathode_ket_lambda.json",
+        lambda d: d["downhill_gap_condition"]["downhill_gap_at_turnover_eV"]["unsourced"], 5e-4,
+    ),
+    (
+        "downhill-ΔG threshold at the computed λ(Co), 2.4 eV λ(Cu) → cathode_ket_lambda.json",
+        SUMMARY, r"\(\*\*([\d.]+) eV\*\* on the 2\.4 eV one\)",
+        "dft/cathode_ket_lambda.json",
+        lambda d: d["downhill_gap_condition"]["downhill_gap_at_turnover_eV"]["cu_phen2"], 5e-4,
+    ),
+    (
+        "smallest live λ_hop under the outer-sphere direction → cathode_ket_lambda.json",
+        SUMMARY, r"every live λ_hop \(≥ \*\*([\d.]+) eV\*\*\)",
+        "dft/cathode_ket_lambda.json",
+        lambda d: d["outer_sphere_term"]["lambda_hop_min_eV"], 0.005,
+    ),
+    (
+        "λ_o at which the literature-λ(Co) favourable corner reaches turnover → cathode_ket_lambda.json",
+        SUMMARY, r"literature-λ\(Co\) favourable corner reaches turnover at \*\*λ_o = ([\d.]+) eV\*\*",
+        "dft/cathode_ket_lambda.json", lambda d: d["outer_sphere_term"]["lambda_o_at_turnover_eV"]["literature λ"]["favourable_corner"], 5e-4,
+    ),
+    (
+        "λ_o at which the Ru swap's adverse corner reaches turnover → cathode_ket_lambda.json",
+        SUMMARY, r"the Ru swap — the mitigation below — at \*\*λ_o = ([\d.]+) eV\*\* on its adverse corner",
+        "dft/cathode_ket_lambda.json", lambda d: d["outer_sphere_term"]["lambda_o_at_turnover_eV"]["Ru-swap (Co→Ru, computed)"]["adverse_corner"], 5e-4,
+    ),
+    (
+        "λ_o at which the Ru swap's favourable corner reaches turnover → cathode_ket_lambda.json",
+        SUMMARY, r"\*\*([\d.]+) eV\*\* on its favourable one",
+        "dft/cathode_ket_lambda.json", lambda d: d["outer_sphere_term"]["lambda_o_at_turnover_eV"]["Ru-swap (Co→Ru, computed)"]["favourable_corner"], 5e-4,
+    ),
+    (
+        "the Ru lever's outer-sphere ceiling, rounded down → cathode_ket_lambda.json",
+        SUMMARY, r"while the framework adds less than ≈ ([\d.]+) eV of outer-sphere λ",
+        "dft/cathode_ket_lambda.json", lambda d: d["outer_sphere_term"]["lambda_o_at_turnover_eV"]["Ru-swap (Co→Ru, computed)"]["adverse_corner"], 0.005,
+    ),
+    (
+        "the anode's outer-sphere scale, low end → cathode_ket_lambda.json (from 29c)",
+        SUMMARY, r"\(`29c`: \*\*([\d.]+)–[\d.]+ eV\*\* over its",
+        "dft/cathode_ket_lambda.json", lambda d: d["outer_sphere_term"]["anode_outer_sphere_estimate_eV"][0], 5e-4,
+    ),
+    (
+        "the anode's outer-sphere scale, high end → cathode_ket_lambda.json (from 29c)",
+        SUMMARY, r"\(`29c`: \*\*[\d.]+–([\d.]+) eV\*\* over its",
+        "dft/cathode_ket_lambda.json", lambda d: d["outer_sphere_term"]["anode_outer_sphere_estimate_eV"][1], 5e-4,
+    ),
+    (
+        "the anode's outer-sphere physical end, high end → cathode_ket_lambda.json (29c total − λ_i)",
+        SUMMARY, r"\*\*[\d.]+–([\d.]+) eV\*\* at the buried, delocalised end",
+        "dft/cathode_ket_lambda.json", lambda d: d["outer_sphere_term"]["anode_outer_sphere_physical_end_eV"][1], 5e-4,
+    ),
+    (
+        "Cu–Ru doublet's ⟨S²⟩ (contaminated, flagged non-physical) → cu_ru_fodft.json",
+        SUMMARY, r"the doublet at ⟨S²⟩ \*\*([\d.]+)\*\* against a pure 0\.75",
+        "dft/cu_ru_fodft.json", lambda d: d["S2"], 0.005,
+    ),
+    (
+        "shipped cluster's localisation angle 2θ → fodft_coupling.json",
+        SUMMARY, r"pair by only \*\*2θ = ([\d.]+)°\*\*",
+        "dft/fodft_coupling.json", lambda d: d["localisation_2theta_deg"], 0.005,
+    ),
+    (
+        "shipped cluster's ⟨S²⟩ (a triplet) → fodft_coupling.json",
+        SUMMARY, r"⟨S²⟩ \*\*([\d.]+)\*\* against a pure 2\.000",
+        "dft/fodft_coupling.json", lambda d: d["S2"], 5e-4,
+    ),
+    (
+        "off-plane probe's localisation angle 2θ → fodft_coupling_offplane.json",
+        SUMMARY, r"localisation turns it by \*\*2θ = ([\d.]+)°\*\*",
+        "dft/fodft_coupling_offplane.json", lambda d: d["localisation_2theta_deg"], 0.05,
     ),
     # ── П4 (г) (self-review round 2, 2026-10-30): Lever's half of the triangulation, script 113 ──
     (
@@ -3394,9 +3481,9 @@ CHECKS += [
     for col, skip, field in _KET_COLS
 ] + [
     (
-        "L3b k_DET · the measured Cu-Co site-energy gap → cathode_ket_lambda (the bracket's cause)",
+        "L3b k_DET · the computed Cu-Co site-energy gap → cathode_ket_lambda (the bracket's cause)",
         SUMMARY, rf"carried a computed \*\*{N} eV\*\* Cu–Co",
-        KET, lambda d: d["driving_force"]["measured_magnitude_eV"]["Cu-Co"], 0.0006,
+        KET, lambda d: d["driving_force"]["computed_magnitude_eV"]["Cu-Co"], 0.0006,
     ),
     (
         "L3b k_DET · the REFUSED Cu-Ru gap → cathode_ket_lambda (a number that is not a measurement)",
@@ -3460,7 +3547,7 @@ CHECKS += [
     (
         "L3b k_DET · paper §3.4 site-energy gap → cathode_ket_lambda",
         PAPER_RESULTS, rf"with a \*\*{N} eV\*\* site-energy gap",
-        KET, lambda d: d["driving_force"]["measured_magnitude_eV"]["Cu-Co"], 0.0006,
+        KET, lambda d: d["driving_force"]["computed_magnitude_eV"]["Cu-Co"], 0.0006,
     ),
 ]
 
@@ -9474,10 +9561,16 @@ def test_paper_heavy_lock_rerun_is_stated_as_the_record_measured_it():
         assert f"{os_fields[end]:.4f}".replace("-", "−") in text, (
             f"§2.7 does not carry the {end} ΔE_red {os_fields[end]} that {REPRO_HEAVY} measured — "
             f"re-state the sentence from the record, never the record from the prose")
-    fodft = rec["dft/fodft_coupling.json"]
-    assert fodft["max_abs_delta_reported_outputs"] == 0.0, (
-        f"{REPRO_HEAVY} now shows 24b's reported fields moving by "
-        f"{fodft['max_abs_delta_reported_outputs']:.3g} — §2.7 says they reproduce exactly")
+    # ⊕ 2026-10-31: 24b's cache is a polished SCF (Critical Rule #47) and its lock re-run moves t_ij by less than the
+    # coupling's own SCF resolution, so §2.7 states both values and that resolution — «exactly» would now be false.
+    fodft = rec["dft/fodft_coupling.json"]["per_field"]
+    t, res = fodft["t_ij_eV"], fodft["grad_norm_over_t_ij"]
+    assert fodft["E_scf_Ha"]["delta"] == 0.0, f"{REPRO_HEAVY}: 24b's lock re-run left the committed energy (1e-8 Ha)"
+    assert abs(t["delta"]) <= max(res["committed"], res["lock_rerun"]) * t["committed"], (
+        f"{REPRO_HEAVY}: 24b's lock t_ij moved {t['delta']:+.2g} eV, beyond the SCF resolution §2.7 says it lies within")
+    flat = " ".join(text.split())
+    for end in ("committed", "lock_rerun"):
+        assert f"{t[end]:.6f} eV" in flat, f"§2.7 does not carry 24b's {end} t_ij {t[end]} that {REPRO_HEAVY} measured"
     # The split has a MEASURED cause (2026-10-01, script 75) — the sentence it replaced called it numerics.
     for token in ("PySCF 2.13.0", "pull request 3159", f"`cache/{REPRO_CAUSE}`"):
         assert token in text, (
@@ -10127,3 +10220,27 @@ def test_hw6_ratified_bark_criterion_still_sufficient():
     assert floor <= HW6_RATIFIED_BARK_MM + 1e-9, (
         f"78's dead-bark floor at h_c × 0.7 is {floor} mm, above the ratified {HW6_RATIFIED_BARK_MM} mm "
         "(⚖️ 2026-10-28, 01_04 §3.1) — re-submit ⚖️ HW.6; do not edit the ratified number")
+
+
+def test_summary_names_the_24b_picks_the_caches_hold():
+    """SUMMARY names the diabatisation's orbital pair, its window and which pick sits on the window's edge — a SET
+    sentence no numeric pin sees (in-silico §When Modifying #5 ⊕), so it is recomposed here from 24b's own record.
+
+    CAN catch: a re-run that moves the picks, the window or the edge while the prose stays · «the first» naming the
+    wrong pick · the off-plane probe's pair or its edge flag drifting from its cache.
+    CANNOT catch: whether the pair is the physically right one (the flag does not either — that is the point).
+    """
+    def rel(k: int) -> str:   # relative to the HOMO: 0 → HOMO, 1 → LUMO, −5 → HOMO−5, 4 → LUMO+3
+        return "HOMO" if k == 0 else "LUMO" if k == 1 else f"HOMO−{-k}" if k < 0 else f"LUMO+{k - 1}"
+    text = doc(SUMMARY)
+    ship, off = C("dft/fodft_coupling.json"), C("dft/fodft_coupling_offplane.json")
+    lo, hi = (w - (ship["nocc_alpha"] - 1) for w in ship["window"])
+    a, b = ship["picked_rel_HOMO"]
+    which = "first" if ship["frontier_MOs"][0] == ship["window"][0] else "second"
+    assert ship["pick_at_window_edge"], "the shipped pick left the window's edge — SUMMARY says it sits there"
+    want = f"The pair is **{rel(a)} · {rel(b)}** out of the fixed window {rel(lo)} … {rel(hi - 1)}, the {which} on the window's edge"
+    assert want in text, f"SUMMARY no longer says {want!r}"
+    oa, ob = off["picked_rel_HOMO"]
+    assert off["pick_at_window_edge"], "the probe's pick left the window's edge — SUMMARY says «again on the window's edge»"
+    want_off = f"the probe's pair is {rel(oa)} · {rel(ob)} (again on the window's edge)"
+    assert want_off in text, f"SUMMARY no longer says {want_off!r}"

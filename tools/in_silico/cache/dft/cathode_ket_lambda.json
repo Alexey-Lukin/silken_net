@@ -1,6 +1,6 @@
 {
   "t_ij_eV": {
-    "Cu-Co": 0.005462,
+    "Cu-Co": 0.001475,
     "Co-Ce": 0.006869978359831794,
     "Ce-C": 0.11294321131390209
   },
@@ -34,22 +34,22 @@
   },
   "turnover_s": 1000.0,
   "driving_force": {
-    "measured_magnitude_eV": {
-      "Cu-Co": 0.183
+    "computed_magnitude_eV": {
+      "Cu-Co": 0.1299
     },
-    "measured_source": {
+    "computed_source": {
       "Cu-Co": "fodft_coupling.json (24b) \u00b7 site_energy_gap_eV"
     },
-    "sign_is_unmeasured": true,
+    "sign_is_not_fixed": true,
     "sign_convention": "marcus_rate takes dG in eV; NEGATIVE is downhill and faster for |dG| < 2\u03bb, so the ADVERSE end is +|gap|",
     "hops_without_a_usable_gap": {
       "Co-Ce": "no FO-DFT diabatisation exists for this pair",
       "Ce-C": "no FO-DFT diabatisation exists for this pair"
     },
-    "unmeasured_treatment": "dG = 0, recorded per scenario as an ASSUMPTION (`driving_force_measured_for_bottleneck`), because a default that reads like a measurement is how the headline margins came to be quoted as if \u0394G were known",
+    "no_gap_treatment": "dG = 0, recorded per scenario as an ASSUMPTION (`driving_force_computed_for_bottleneck`), because a default that reads like a measurement is how the headline margins came to be quoted as if \u0394G were known",
     "ru_node_gap_refused": {
       "pair": "Cu-Ru (CHEM.32, Co\u2192Ru swap)",
-      "gap_eV_reported": 0.1279,
+      "gap_eV_reported": 0.0875,
       "usable": false,
       "reason": "24d self-flags localised=False / physically_reasonable=False \u2014 the minimal cluster cannot form a clean Cu\u2194Ru diabatic pair, so its site-energy gap is not a measurement any more than its t_ij was"
     }
@@ -77,25 +77,25 @@
         "Co-Ce": "Co-Ce",
         "Ce-C": "Ce-C"
       },
-      "hops_with_a_measured_gap": [
+      "hops_with_a_computed_gap": [
         "Cu-Co"
       ],
-      "driving_force_measured_for_bottleneck": true,
+      "driving_force_computed_for_bottleneck": true,
       "by_dG": {
         "adverse (+gap, uphill)": {
           "dG_eV": {
-            "Cu-Co": 0.183,
+            "Cu-Co": 0.1299,
             "Co-Ce": 0.0,
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 11762655.006010236,
+            "Cu-Co": 3037232.215860327,
             "Co-Ce": 1043649658.0347513,
             "Ce-C": 282074781746.6864
           },
           "bottleneck_hop": "Cu-Co",
-          "bottleneck_s": 11762655.006010236,
-          "margin_vs_turnover": 11762.655006010236
+          "bottleneck_s": 3037232.215860327,
+          "margin_vs_turnover": 3037.232215860327
         },
         "dG=0 (ASSUMPTION)": {
           "dG_eV": {
@@ -104,28 +104,28 @@
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 659701374.056328,
+            "Cu-Co": 48109189.201598674,
             "Co-Ce": 1043649658.0347513,
             "Ce-C": 282074781746.6864
           },
           "bottleneck_hop": "Cu-Co",
-          "bottleneck_s": 659701374.056328,
-          "margin_vs_turnover": 659701.3740563281
+          "bottleneck_s": 48109189.201598674,
+          "margin_vs_turnover": 48109.189201598674
         },
         "favourable (\u2212gap, downhill)": {
           "dG_eV": {
-            "Cu-Co": -0.183,
+            "Cu-Co": -0.1299,
             "Co-Ce": 0.0,
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 14582958876.32446,
+            "Cu-Co": 476697088.9579363,
             "Co-Ce": 1043649658.0347513,
             "Ce-C": 282074781746.6864
           },
-          "bottleneck_hop": "Co-Ce",
-          "bottleneck_s": 1043649658.0347513,
-          "margin_vs_turnover": 1043649.6580347513
+          "bottleneck_hop": "Cu-Co",
+          "bottleneck_s": 476697088.9579363,
+          "margin_vs_turnover": 476697.08895793627
         }
       },
       "by_lambda_cu": {
@@ -135,9 +135,9 @@
             "Co-Ce": 0.7,
             "Ce-C": 0.7
           },
-          "margin_vs_turnover_adverse": 11762.655006010236,
-          "margin_vs_turnover_zero": 659701.3740563281,
-          "margin_vs_turnover_favourable": 1043649.6580347513
+          "margin_vs_turnover_adverse": 3037.232215860327,
+          "margin_vs_turnover_zero": 48109.189201598674,
+          "margin_vs_turnover_favourable": 476697.08895793627
         },
         "cu_phen2": {
           "lambda_hop_eV": {
@@ -145,9 +145,9 @@
             "Co-Ce": 0.7,
             "Ce-C": 0.7
           },
-          "margin_vs_turnover_adverse": 11762.655006010236,
-          "margin_vs_turnover_zero": 659701.3740563281,
-          "margin_vs_turnover_favourable": 1043649.6580347513
+          "margin_vs_turnover_adverse": 3037.232215860327,
+          "margin_vs_turnover_zero": 48109.189201598674,
+          "margin_vs_turnover_favourable": 476697.08895793627
         }
       },
       "adverse_corner": {
@@ -158,10 +158,10 @@
         "lambda_cu_reading": "unsourced",
         "dG_branch": "favourable (\u2212gap, downhill)"
       },
-      "margin_vs_turnover_adverse": 11762.655006010236,
-      "margin_vs_turnover_at_dG0": 659701.3740563281,
-      "margin_vs_turnover_favourable": 1043649.6580347513,
-      "bottleneck_hop_is_branch_invariant": false
+      "margin_vs_turnover_adverse": 3037.232215860327,
+      "margin_vs_turnover_at_dG0": 48109.189201598674,
+      "margin_vs_turnover_favourable": 476697.08895793627,
+      "bottleneck_hop_is_branch_invariant": true
     },
     "literature \u03bb": {
       "lambda_hop_eV": {
@@ -174,25 +174,25 @@
         "Co-Ce": "Co-Ce",
         "Ce-C": "Ce-C"
       },
-      "hops_with_a_measured_gap": [
+      "hops_with_a_computed_gap": [
         "Cu-Co"
       ],
-      "driving_force_measured_for_bottleneck": true,
+      "driving_force_computed_for_bottleneck": true,
       "by_dG": {
         "adverse (+gap, uphill)": {
           "dG_eV": {
-            "Cu-Co": 0.183,
+            "Cu-Co": 0.1299,
             "Co-Ce": 0.0,
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 590.0378078769993,
+            "Cu-Co": 132.99951908040353,
             "Co-Ce": 6145762.519117169,
             "Ce-C": 12739455502.793663
           },
           "bottleneck_hop": "Cu-Co",
-          "bottleneck_s": 590.0378078769993,
-          "margin_vs_turnover": 0.5900378078769993
+          "bottleneck_s": 132.99951908040353,
+          "margin_vs_turnover": 0.13299951908040353
         },
         "dG=0 (ASSUMPTION)": {
           "dG_eV": {
@@ -201,28 +201,28 @@
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 25165.017265954357,
+            "Cu-Co": 1835.1766792074682,
             "Co-Ce": 6145762.519117169,
             "Ce-C": 12739455502.793663
           },
           "bottleneck_hop": "Cu-Co",
-          "bottleneck_s": 25165.017265954357,
-          "margin_vs_turnover": 25.165017265954358
+          "bottleneck_s": 1835.1766792074682,
+          "margin_vs_turnover": 1.8351766792074682
         },
         "favourable (\u2212gap, downhill)": {
           "dG_eV": {
-            "Cu-Co": -0.183,
+            "Cu-Co": -0.1299,
             "Co-Ce": 0.0,
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 731509.7725258763,
+            "Cu-Co": 20874.427463056134,
             "Co-Ce": 6145762.519117169,
             "Ce-C": 12739455502.793663
           },
           "bottleneck_hop": "Cu-Co",
-          "bottleneck_s": 731509.7725258763,
-          "margin_vs_turnover": 731.5097725258763
+          "bottleneck_s": 20874.427463056134,
+          "margin_vs_turnover": 20.874427463056133
         }
       },
       "by_lambda_cu": {
@@ -232,9 +232,9 @@
             "Co-Ce": 1.2,
             "Ce-C": 1.0
           },
-          "margin_vs_turnover_adverse": 0.5900378078769993,
-          "margin_vs_turnover_zero": 25.165017265954358,
-          "margin_vs_turnover_favourable": 731.5097725258763
+          "margin_vs_turnover_adverse": 0.13299951908040353,
+          "margin_vs_turnover_zero": 1.8351766792074682,
+          "margin_vs_turnover_favourable": 20.874427463056133
         },
         "cu_phen2": {
           "lambda_hop_eV": {
@@ -242,9 +242,9 @@
             "Co-Ce": 1.2,
             "Ce-C": 1.0
           },
-          "margin_vs_turnover_adverse": 0.0813421085524442,
-          "margin_vs_turnover_zero": 3.3999297986010926,
-          "margin_vs_turnover_favourable": 100.84531284201609
+          "margin_vs_turnover_adverse": 0.018152569569522835,
+          "margin_vs_turnover_zero": 0.24794228477548563,
+          "margin_vs_turnover_favourable": 2.849066668564494
         }
       },
       "adverse_corner": {
@@ -255,9 +255,9 @@
         "lambda_cu_reading": "unsourced",
         "dG_branch": "favourable (\u2212gap, downhill)"
       },
-      "margin_vs_turnover_adverse": 0.0813421085524442,
-      "margin_vs_turnover_at_dG0": 25.165017265954358,
-      "margin_vs_turnover_favourable": 731.5097725258763,
+      "margin_vs_turnover_adverse": 0.018152569569522835,
+      "margin_vs_turnover_at_dG0": 1.8351766792074682,
+      "margin_vs_turnover_favourable": 20.874427463056133,
       "bottleneck_hop_is_branch_invariant": true
     },
     "computed \u03bb (B3LYP)": {
@@ -271,25 +271,25 @@
         "Co-Ce": "Co-Ce",
         "Ce-C": "Ce-C"
       },
-      "hops_with_a_measured_gap": [
+      "hops_with_a_computed_gap": [
         "Cu-Co"
       ],
-      "driving_force_measured_for_bottleneck": true,
+      "driving_force_computed_for_bottleneck": true,
       "by_dG": {
         "adverse (+gap, uphill)": {
           "dG_eV": {
-            "Cu-Co": 0.183,
+            "Cu-Co": 0.1299,
             "Co-Ce": 0.0,
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 0.13534981247081931,
+            "Cu-Co": 0.02955922825396637,
             "Co-Ce": 2390.2807300664604,
             "Ce-C": 49194445681.99076
           },
           "bottleneck_hop": "Cu-Co",
-          "bottleneck_s": 0.13534981247081931,
-          "margin_vs_turnover": 0.00013534981247081932
+          "bottleneck_s": 0.02955922825396637,
+          "margin_vs_turnover": 2.955922825396637e-05
         },
         "dG=0 (ASSUMPTION)": {
           "dG_eV": {
@@ -298,28 +298,28 @@
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 5.416158149658506,
+            "Cu-Co": 0.3949771630238464,
             "Co-Ce": 2390.2807300664604,
             "Ce-C": 49194445681.99076
           },
           "bottleneck_hop": "Cu-Co",
-          "bottleneck_s": 5.416158149658506,
-          "margin_vs_turnover": 0.005416158149658506
+          "bottleneck_s": 0.3949771630238464,
+          "margin_vs_turnover": 0.0003949771630238464
         },
         "favourable (\u2212gap, downhill)": {
           "dG_eV": {
-            "Cu-Co": -0.183,
+            "Cu-Co": -0.1299,
             "Co-Ce": 0.0,
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 167.80231573327978,
+            "Cu-Co": 4.639354866225667,
             "Co-Ce": 2390.2807300664604,
             "Ce-C": 49194445681.99076
           },
           "bottleneck_hop": "Cu-Co",
-          "bottleneck_s": 167.80231573327978,
-          "margin_vs_turnover": 0.16780231573327978
+          "bottleneck_s": 4.639354866225667,
+          "margin_vs_turnover": 0.004639354866225667
         }
       },
       "by_lambda_cu": {
@@ -329,9 +329,9 @@
             "Co-Ce": 1.9811999999999999,
             "Ce-C": 0.8684
           },
-          "margin_vs_turnover_adverse": 0.00013534981247081932,
-          "margin_vs_turnover_zero": 0.005416158149658506,
-          "margin_vs_turnover_favourable": 0.16780231573327978
+          "margin_vs_turnover_adverse": 2.955922825396637e-05,
+          "margin_vs_turnover_zero": 0.0003949771630238464,
+          "margin_vs_turnover_favourable": 0.004639354866225667
         },
         "cu_phen2": {
           "lambda_hop_eV": {
@@ -339,9 +339,9 @@
             "Co-Ce": 1.9811999999999999,
             "Ce-C": 0.8684
           },
-          "margin_vs_turnover_adverse": 1.8789414858542297e-05,
-          "margin_vs_turnover_zero": 0.0007449061104661609,
-          "margin_vs_turnover_favourable": 0.023294508259599046
+          "margin_vs_turnover_adverse": 4.084525709732346e-06,
+          "margin_vs_turnover_zero": 5.432280485561578e-05,
+          "margin_vs_turnover_favourable": 0.0006410710071609515
         }
       },
       "adverse_corner": {
@@ -352,9 +352,9 @@
         "lambda_cu_reading": "unsourced",
         "dG_branch": "favourable (\u2212gap, downhill)"
       },
-      "margin_vs_turnover_adverse": 1.8789414858542297e-05,
-      "margin_vs_turnover_at_dG0": 0.005416158149658506,
-      "margin_vs_turnover_favourable": 0.16780231573327978,
+      "margin_vs_turnover_adverse": 4.084525709732346e-06,
+      "margin_vs_turnover_at_dG0": 0.0003949771630238464,
+      "margin_vs_turnover_favourable": 0.004639354866225667,
       "bottleneck_hop_is_branch_invariant": true
     },
     "Ru-swap (Co\u2192Ru, computed)": {
@@ -368,8 +368,8 @@
         "Co-Ce": "Ru-Ce",
         "Ce-C": "Ce-C"
       },
-      "hops_with_a_measured_gap": [],
-      "driving_force_measured_for_bottleneck": false,
+      "hops_with_a_computed_gap": [],
+      "driving_force_computed_for_bottleneck": false,
       "by_dG": {
         "adverse (+gap, uphill)": {
           "dG_eV": {
@@ -378,13 +378,13 @@
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 566527.2852659009,
+            "Cu-Co": 41314.402889811376,
             "Co-Ce": 286343298.2701855,
             "Ce-C": 49194445681.99076
           },
           "bottleneck_hop": "Cu-Ru",
-          "bottleneck_s": 566527.2852659009,
-          "margin_vs_turnover": 566.5272852659009
+          "bottleneck_s": 41314.402889811376,
+          "margin_vs_turnover": 41.314402889811376
         },
         "dG=0 (ASSUMPTION)": {
           "dG_eV": {
@@ -393,13 +393,13 @@
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 566527.2852659009,
+            "Cu-Co": 41314.402889811376,
             "Co-Ce": 286343298.2701855,
             "Ce-C": 49194445681.99076
           },
           "bottleneck_hop": "Cu-Ru",
-          "bottleneck_s": 566527.2852659009,
-          "margin_vs_turnover": 566.5272852659009
+          "bottleneck_s": 41314.402889811376,
+          "margin_vs_turnover": 41.314402889811376
         },
         "favourable (\u2212gap, downhill)": {
           "dG_eV": {
@@ -408,13 +408,13 @@
             "Ce-C": 0.0
           },
           "k_ET_per_s": {
-            "Cu-Co": 566527.2852659009,
+            "Cu-Co": 41314.402889811376,
             "Co-Ce": 286343298.2701855,
             "Ce-C": 49194445681.99076
           },
           "bottleneck_hop": "Cu-Ru",
-          "bottleneck_s": 566527.2852659009,
-          "margin_vs_turnover": 566.5272852659009
+          "bottleneck_s": 41314.402889811376,
+          "margin_vs_turnover": 41.314402889811376
         }
       },
       "by_lambda_cu": {
@@ -424,9 +424,9 @@
             "Co-Ce": 0.8245,
             "Ce-C": 0.8684
           },
-          "margin_vs_turnover_adverse": 566.5272852659009,
-          "margin_vs_turnover_zero": 566.5272852659009,
-          "margin_vs_turnover_favourable": 566.5272852659009
+          "margin_vs_turnover_adverse": 41.314402889811376,
+          "margin_vs_turnover_zero": 41.314402889811376,
+          "margin_vs_turnover_favourable": 41.314402889811376
         },
         "cu_phen2": {
           "lambda_hop_eV": {
@@ -434,9 +434,9 @@
             "Co-Ce": 0.8245,
             "Ce-C": 0.8684
           },
-          "margin_vs_turnover_adverse": 75.65900406759081,
-          "margin_vs_turnover_zero": 75.65900406759081,
-          "margin_vs_turnover_favourable": 75.65900406759081
+          "margin_vs_turnover_adverse": 5.517486372828839,
+          "margin_vs_turnover_zero": 5.517486372828839,
+          "margin_vs_turnover_favourable": 5.517486372828839
         }
       },
       "adverse_corner": {
@@ -447,27 +447,27 @@
         "lambda_cu_reading": "unsourced",
         "dG_branch": "adverse (+gap, uphill)"
       },
-      "margin_vs_turnover_adverse": 75.65900406759081,
-      "margin_vs_turnover_at_dG0": 566.5272852659009,
-      "margin_vs_turnover_favourable": 566.5272852659009,
+      "margin_vs_turnover_adverse": 5.517486372828839,
+      "margin_vs_turnover_at_dG0": 41.314402889811376,
+      "margin_vs_turnover_favourable": 41.314402889811376,
       "bottleneck_hop_is_branch_invariant": true
     }
   },
   "scenarios_crude_dscf": {
     "canon \u03bb=0.7 (old assumption)": {
-      "margin_vs_turnover_adverse": 647.1714623417458,
+      "margin_vs_turnover_adverse": 2291.4550776352967,
       "margin_vs_turnover_at_dG0": 36296.21907118282,
-      "margin_vs_turnover_favourable": 802342.2277060897
+      "margin_vs_turnover_favourable": 359646.5095037898
     },
     "literature \u03bb": {
-      "margin_vs_turnover_adverse": 0.004475374931505539,
+      "margin_vs_turnover_adverse": 0.013695297150806968,
       "margin_vs_turnover_at_dG0": 1.3845582494378559,
-      "margin_vs_turnover_favourable": 40.24705722993278
+      "margin_vs_turnover_favourable": 15.748816489291888
     },
     "computed \u03bb (B3LYP)": {
-      "margin_vs_turnover_adverse": 1.033777925505364e-06,
+      "margin_vs_turnover_adverse": 3.081590906491463e-06,
       "margin_vs_turnover_at_dG0": 0.00029799250153963156,
-      "margin_vs_turnover_favourable": 0.00923234337842515
+      "margin_vs_turnover_favourable": 0.003500184546196618
     },
     "Ru-swap (Co\u2192Ru, computed)": {
       "margin_vs_turnover_adverse": 4.1626952653736815,
@@ -476,39 +476,39 @@
     }
   },
   "fodft_cuco_rigor": {
-    "t_ij_eV": 0.005462,
+    "t_ij_eV": 0.001475,
     "t_ij_crude_eV": 0.001281,
-    "site_gap_eV": 0.183,
+    "site_gap_eV": 0.1299,
     "lambda_hop_eV": 1.7,
     "margin_vs_turnover_by_dG_sign": {
-      "dG=0": 25.165,
-      "dG=+gap": 0.59,
-      "dG=-gap": 731.51
+      "dG=0": 1.835,
+      "dG=+gap": 0.133,
+      "dG=-gap": 20.874
     },
     "by_lambda_cu": {
       "unsourced": {
         "lambda_hop_eV": 1.7,
         "margin_vs_turnover_by_dG_sign": {
-          "dG=0": 25.165,
-          "dG=+gap": 0.59,
-          "dG=-gap": 731.51
+          "dG=0": 1.835,
+          "dG=+gap": 0.133,
+          "dG=-gap": 20.874
         }
       },
       "cu_phen2": {
         "lambda_hop_eV": 1.9,
         "margin_vs_turnover_by_dG_sign": {
-          "dG=0": 3.4,
-          "dG=+gap": 0.081,
-          "dG=-gap": 100.845
+          "dG=0": 0.248,
+          "dG=+gap": 0.018,
+          "dG=-gap": 2.849
         }
       }
     },
-    "margin_adverse_corner": 0.081,
+    "margin_adverse_corner": 0.018,
     "adverse_corner": {
       "lambda_cu_reading": "cu_phen2",
       "dG_branch": "dG=+gap"
     },
-    "margin_favourable_corner": 731.51,
+    "margin_favourable_corner": 20.874,
     "favourable_corner": {
       "lambda_cu_reading": "unsourced",
       "dG_branch": "dG=-gap"
@@ -517,29 +517,90 @@
   },
   "geometry_sensitivity_refused_offplane": {
     "what": "bridge ring rolled out of the metals' coordination plane; REFUSED by script 23 (`bridge_out_of_plane` > `PLANARITY_TOL_A`) \u2014 a probe, not a candidate",
-    "t_ij_eV": 0.132733,
-    "site_gap_eV": 0.0264,
-    "t_ij_ratio_vs_shipped": 24.3,
-    "margin_adverse": 8855.1,
-    "margin_adverse_shipped": 0.59,
-    "margin_ratio": 15008.0,
+    "t_ij_eV": 0.130422,
+    "site_gap_eV": 0.0258,
+    "t_ij_ratio_vs_shipped": 88.42,
+    "margin_adverse": 8651.4,
+    "margin_adverse_shipped": 0.133,
+    "margin_ratio": 65048.0,
     "flips_the_verdict": true,
-    "why_not_t_squared": "the gap moves too, so the margin ratio is NOT the square of the coupling ratio \u2014 quoting |t|\u00b2 alone understates it"
+    "why_not_t_squared": "the gap moves too, so the margin ratio is NOT the square of the coupling ratio \u2014 quoting |t|\u00b2 alone understates it",
+    "by_lambda_co": {
+      "literature_assumed": {
+        "lambda_co_eV": 1.4,
+        "shipped": {
+          "margins": {
+            "unsourced|dG=+gap": 0.13299951908040353,
+            "unsourced|dG=0": 1.8351766792074682,
+            "unsourced|dG=-gap": 20.874427463056133,
+            "cu_phen2|dG=+gap": 0.018152569569522835,
+            "cu_phen2|dG=0": 0.24794228477548563,
+            "cu_phen2|dG=-gap": 2.849066668564494
+          },
+          "adverse": 0.018152569569522835,
+          "favourable": 20.874427463056133
+        },
+        "offplane": {
+          "margins": {
+            "unsourced|dG=+gap": 8651.3874783072,
+            "unsourced|dG=0": 14348.138249676576,
+            "unsourced|dG=-gap": 23615.439594215317,
+            "cu_phen2|dG=+gap": 1169.3180532580136,
+            "cu_phen2|dG=0": 1938.5110001701194,
+            "cu_phen2|dG=-gap": 3191.8533209130096
+          },
+          "adverse": 1169.3180532580136,
+          "favourable": 23615.439594215317
+        },
+        "offplane_crosses_turnover": false,
+        "shipped_side_of_turnover": "across"
+      },
+      "computed": {
+        "lambda_co_eV": 3.094,
+        "shipped": {
+          "margins": {
+            "unsourced|dG=+gap": 2.955922825396637e-05,
+            "unsourced|dG=0": 0.0003949771630238464,
+            "unsourced|dG=-gap": 0.004639354866225667,
+            "cu_phen2|dG=+gap": 4.084525709732346e-06,
+            "cu_phen2|dG=0": 5.432280485561578e-05,
+            "cu_phen2|dG=-gap": 0.0006410710071609515
+          },
+          "adverse": 4.084525709732346e-06,
+          "favourable": 0.004639354866225667
+        },
+        "offplane": {
+          "margins": {
+            "unsourced|dG=+gap": 1.8643614741906824,
+            "unsourced|dG=0": 3.088087923490069,
+            "unsourced|dG=-gap": 5.08909303691791,
+            "cu_phen2|dG=+gap": 0.25646064341741365,
+            "cu_phen2|dG=0": 0.4247172073454962,
+            "cu_phen2|dG=-gap": 0.7000531242073705
+          },
+          "adverse": 0.25646064341741365,
+          "favourable": 5.08909303691791
+        },
+        "offplane_crosses_turnover": true,
+        "shipped_side_of_turnover": "below"
+      }
+    },
+    "by_lambda_co_key": "<\u03bb(Cu) reading>|<\u0394G branch>, each geometry's OWN gap; adverse/favourable = the bracket's corners over the gap sign \u00d7 the \u03bb(Cu) reading, as in `scenarios`"
   },
   "coupling_gain_to_reach_turnover": {
     "definition": "|t_ij| multiplier the bottleneck hop needs for k_ET to reach enzymatic turnover at the consumer-rule (adverse) end; k_ET \u221d |t_ij|\u00b2, so 1/\u221amargin. A COUPLING lever only.",
     "by_lambda_co": {
       "literature_assumed": {
         "lambda_co_eV": 1.4,
-        "gain_fodft_t": 3.506
+        "gain_fodft_t": 7.422
       },
       "computed": {
         "lambda_co_eV": 3.094,
-        "gain_fodft_t": 230.698
+        "gain_fodft_t": 494.799
       }
     },
-    "at_literature_lambda_crude_t": 14.948,
-    "at_literature_lambda_fodft_t": 3.506,
+    "at_literature_lambda_crude_t": 8.545,
+    "at_literature_lambda_fodft_t": 7.422,
     "at_corner": "the adverse corner of BOTH axes (gap sign \u00d7 \u03bb(Cu) reading) \u2014 `adverse_corner` of the literature scenario and of `fodft_cuco_rigor`",
     "judge_against": "at_literature_lambda_fodft_t \u2014 the rigorous coupling, and the scale the canon quotes; the crude row exists so each published t_ij scale carries its OWN acceptance number instead of one being read onto the other"
   },
@@ -570,17 +631,60 @@
     "lambda_co_assumed_eV": 1.4,
     "lambda_co_assumed_source": "literature value with no primary in the tree (paper Methods names it an assumption)",
     "lambda_co_at_turnover_eV": {
-      "fodft|unsourced|dG=0": 2.045,
-      "fodft|unsourced|dG=+gap": 1.294,
-      "fodft|cu_phen2|dG=0": 1.645,
-      "fodft|cu_phen2|dG=+gap": 0.894,
+      "fodft|unsourced|dG=0": 1.521,
+      "fodft|unsourced|dG=+gap": 0.996,
+      "fodft|cu_phen2|dG=0": 1.121,
+      "fodft|cu_phen2|dG=+gap": 0.596,
       "crude_dscf|unsourced|dG=0": 1.465,
-      "crude_dscf|unsourced|dG=+gap": 0.709,
+      "crude_dscf|unsourced|dG=+gap": 0.939,
       "crude_dscf|cu_phen2|dG=0": 1.065,
-      "crude_dscf|cu_phen2|dG=+gap": 0.309
+      "crude_dscf|cu_phen2|dG=+gap": 0.539
     },
-    "lambda_co_at_turnover_adverse_corner_eV": 0.894,
-    "lambda_co_at_turnover_key": "<coupling>|<\u03bb(Cu) reading>|<\u0394G branch>; the \u03bb(Co) at which the Cu\u2013Co hop reaches turnover (two-sphere \u03bb_hop); null = unreachable at any \u03bb"
+    "lambda_co_at_turnover_adverse_corner_eV": 0.596,
+    "lambda_co_at_turnover_key": "<coupling>|<\u03bb(Cu) reading>|<\u0394G branch>; the \u03bb(Co) at which the Cu\u2013Co hop reaches turnover (cross-relation \u03bb_hop); null = unreachable at any \u03bb"
+  },
+  "downhill_gap_condition": {
+    "lambda_co_eV": 3.094,
+    "coupling": "24b two-state diabatisation (FO-DFT label)",
+    "downhill_gap_at_turnover_eV": {
+      "unsourced": 0.4408,
+      "cu_phen2": 0.5622
+    },
+    "computed_gap_eV": 0.1299,
+    "computed_gap_below_every_threshold": true,
+    "reading": "at the computed \u03bb(Co) the Cu\u2013Co hop stays below turnover for any downhill \u0394G smaller than the threshold of its \u03bb(Cu) reading; the diabatisation's gap is a gas-phase difference of two diagonal Fock elements whose sign it does not fix, so the verdict is stated against \u0394G, not against that gap"
+  },
+  "outer_sphere_term": {
+    "included": false,
+    "lambda_hop_composition": "Marcus cross-relation mean \u00bd(\u03bb_i + \u03bb_j) of the sites' self-exchange \u03bb as read: computed inner-sphere (Nelsen, script 35) for Co, Ce and Ru; literature solution self-exchange totals (inner + outer) for Cu and for every node of the literature scenario; no outer-sphere term for the framework added",
+    "gap_max_eV": 0.1299,
+    "lambda_hop_min_eV": 0.8245,
+    "every_gap_below_lambda_hop": true,
+    "lambda_o_at_turnover_eV": {
+      "literature \u03bb": {
+        "adverse_corner": 0.0,
+        "favourable_corner": 0.305
+      },
+      "computed \u03bb (B3LYP)": {
+        "adverse_corner": 0.0,
+        "favourable_corner": 0.0
+      },
+      "Ru-swap (Co\u2192Ru, computed)": {
+        "adverse_corner": 0.17,
+        "favourable_corner": 0.37
+      }
+    },
+    "lambda_o_at_turnover_key": "\u03bb_o added to every hop's \u03bb_hop at which a corner of a live scenario reaches turnover; 0.0 = below turnover already with none added; null = still above at 3.0 eV",
+    "anode_outer_sphere_estimate_eV": [
+      0.375,
+      1.428
+    ],
+    "anode_outer_sphere_physical_end_eV": [
+      0.375,
+      0.469
+    ],
+    "anode_outer_sphere_estimate_is": "script 29c's two-sphere \u03bb_o for the anode flavin in its protein pocket over its radius \u00d7 dielectric grid, and at the grid's physical end (buried, delocalised) that the paper quotes for the anode \u2014 another medium, the only outer-sphere estimate in this tree; a scale, not this hop's value",
+    "direction": "an added outer-sphere term can only slow every hop (every applied |\u0394G| \u2264 0.1299 eV lies below every live \u03bb_hop \u2265 0.82 eV): it deepens the computed-\u03bb(Co) verdict, takes the literature-\u03bb(Co) favourable corner below turnover at \u03bb_o \u2248 0.305 eV, and the Ru swap's adverse and favourable corners at \u03bb_o \u2248 0.17 and \u2248 0.37 eV"
   },
   "ru_lambda_nelsen_halves": {
     "lambda_1_eV": -0.2564,
@@ -588,5 +692,5 @@
     "negative_half": true,
     "reading": "a negative Nelsen half means one state's energy at the OTHER state's geometry lies below its own optimised one \u2014 the optimisation did not find that minimum \u2014 so \u03bb(Ru) is indicative, not computed"
   },
-  "verdict": "The bottleneck is Cu-Co, in every \u0394G branch of every live scenario (the withdrawn \u03bb = 0.7 row differs: favourable (\u2212gap, downhill) \u2192 Co-Ce). Its coupling is the two-state diabatisation (24b, t = 0.0055 eV): the crude \u0394SCF value (0.0013 eV) is half an energy difference of 9.4\u00d7 the SCF tolerance between two unconstrained solutions from one start, so it is not used (its table is kept as `scenarios_crude_dscf`). Every margin is a BRACKET over the sign of the measured 0.183 eV site-energy gap and the \u03bb(Cu) reading (unsourced 2.0 \u22a5 cu_phen2 2.4 eV); \u0394G = 0 is the function's DEFAULT, not a measurement. The verdict is CONDITIONAL ON \u03bb(Co). At the assumed literature \u03bb(Co) 1.4 eV (no primary): \u00d70.081 \u2026 \u00d7732 (\u00d725 at \u0394G = 0 on the unsourced reading). At the computed \u03bb(Co) 3.094 eV (computed \u2014 script 35 row `co_nh3` (ammine = the ZIF N-donor analogue)): \u00d71.9e-05 \u2026 \u00d70.17 (\u00d70.0054 at \u0394G = 0). Turnover needs \u03bb(Co) \u2272 2.045 eV at \u0394G = 0 on the unsourced reading and \u2272 0.894 eV at the adverse corner. \u26a0\ufe0f The adverse corner is below turnover on BOTH \u03bb(Co) values \u2014 rate-limiting, not borderline. The \u03bb(Cu) bracket bounds the READINGS, not the site: both are unconstrained solution couples, and a framework-held Cu\u2013N4 node can sit below both. The Ru-swap reads \u00d776 \u2026 \u00d75.7e+02 \u2014 across the \u03bb(Cu) reading only, on the borrowed Cu\u2013Co coupling, because no usable gap or coupling exists for the Cu-Ru (CHEM.32, Co\u2192Ru swap) node: 24d self-flags localised=False / physically_reasonable=False \u2014 the minimal cluster cannot form a clean Cu\u2194Ru diabatic pair, so its site-energy gap is not a measurement any more than its t_ij was; and its \u03bb(Ru) is a sum of Nelsen halves -0.256 and 1.037 eV \u2014 one negative \u2014 so that margin is indicative only."
+  "verdict": "The bottleneck is Cu-Co, in every \u0394G branch of every live scenario. Its coupling is the two-state diabatisation (24b, t = 0.0015 eV): the crude \u0394SCF value (0.0013 eV) is half an energy difference of 9.4\u00d7 the SCF tolerance between two unconstrained solutions from one start, so it is not used (its table is kept as `scenarios_crude_dscf`). Every margin is a BRACKET over the sign of the computed 0.1299 eV site-energy gap and the \u03bb(Cu) reading (unsourced 2.0 \u22a5 cu_phen2 2.4 eV); \u0394G = 0 is the function's DEFAULT, not a measurement. The verdict is CONDITIONAL ON \u03bb(Co). At the assumed literature \u03bb(Co) 1.4 eV (no primary): \u00d70.018 \u2026 \u00d720.9 (\u00d71.8 at \u0394G = 0 on the unsourced reading). At the computed \u03bb(Co) 3.094 eV (computed \u2014 script 35 row `co_nh3` (ammine = the ZIF N-donor analogue)): \u00d74.1e-06 \u2026 \u00d70.0046 (\u00d70.00039 at \u0394G = 0). Turnover needs \u03bb(Co) \u2272 1.521 eV at \u0394G = 0 on the unsourced reading and \u2272 0.596 eV at the adverse corner. \u26a0\ufe0f The adverse corner is below turnover on BOTH \u03bb(Co) values \u2014 rate-limiting, not borderline. The \u03bb(Cu) bracket bounds the READINGS, not the site: both are unconstrained solution couples, and a framework-held Cu\u2013N4 node can sit below both. The Ru-swap reads \u00d75.5 \u2026 \u00d741 \u2014 across the \u03bb(Cu) reading only, on the borrowed Cu\u2013Co coupling, because no usable gap or coupling exists for the Cu-Ru (CHEM.32, Co\u2192Ru swap) node: 24d self-flags localised=False / physically_reasonable=False \u2014 the minimal cluster cannot form a clean Cu\u2194Ru diabatic pair, so its site-energy gap is not a measurement any more than its t_ij was; and its \u03bb(Ru) is a sum of Nelsen halves -0.256 and 1.037 eV \u2014 one negative \u2014 so that margin is indicative only."
 }

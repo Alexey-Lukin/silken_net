@@ -56,14 +56,14 @@ def build() -> str:
     _close(dscf["dG_adiabatic_eV"], 0.0482, 0.01, "T2 ΔSCF adiabatic (dimethyl)")
     _close(koop_dm, 4.826, 0.01, "T2 Koopmans ωB97X (dimethyl)")
     _close(zif["pairs"][0]["t_ij_eV"], 0.00128, 1e-4, "T3 Cu-Co ΔSCF t_ij")
-    _close(fodft["t_ij_eV"], 0.005462, 1e-4, "T3 Cu-Co FO-DFT t_ij")
+    _close(fodft["t_ij_eV"], 0.001475, 2e-5, "T3 Cu-Co FO-DFT t_ij")   # 2026-10-31: 0.005462 was an SCF stop at |g| < 1e-3 (rules #47)
     # 505a1fac4 (2026-09-21) split the single margin into a bracket, and 2026-09-24 added the λ(Cu)
     # reading as its second axis — the asserts follow the fields that now carry each number.
     # ⊕ 2026-10-15 (self-review cluster 8): the table runs on the FO-DFT coupling — the old crude-t values (×1.385 ·
     # ×0.00448) now sit under `scenarios_crude_dscf`, and the computed-λ(Co) row carries the verdict's other end.
-    _close(ket["scenarios"]["literature λ"]["margin_vs_turnover_at_dG0"], 25.165, 0.1, "T3 lit-λ margin (ΔG=0)")
-    _close(ket["scenarios"]["literature λ"]["margin_vs_turnover_adverse"], 0.081, 0.002, "T3 lit-λ adverse corner")
-    _close(ket["scenarios"]["computed λ (B3LYP)"]["margin_vs_turnover_at_dG0"], 0.00542, 0.0002,
+    _close(ket["scenarios"]["literature λ"]["margin_vs_turnover_at_dG0"], 1.835, 0.01, "T3 lit-λ margin (ΔG=0)")
+    _close(ket["scenarios"]["literature λ"]["margin_vs_turnover_adverse"], 0.0182, 0.0005, "T3 lit-λ adverse corner")
+    _close(ket["scenarios"]["computed λ (B3LYP)"]["margin_vs_turnover_at_dG0"], 0.000395, 0.00002,
            "T3 computed-λ margin (ΔG=0)")
     names = [c["name"] for c in series["complexes"]]
     _close(series["complexes"][names.index("bpy")]["cascade_delta_eV"], 0.2097, 0.005, "T4 H cascade")
@@ -233,7 +233,7 @@ def build() -> str:
     res = {k.split()[0]: v["delta_E_over_scf_tol"] for k, v in ket["dscf_coupling_resolution"]["pairs"].items()}
     md.append("| Hop | t_ij used (eV) | crude ΔSCF t_ij (eV) | crude ΔE ÷ SCF tolerance | λ_hop lit (eV) | λ_hop computed (eV) |")
     md.append("|---|---|---|---|---|---|")
-    md.append(f"| **Cu–Co** (T1↔node, bottleneck) | **{fodft['t_ij_eV']:.5f}** (FO-DFT) | {p['Cu-Co']['t_ij_eV']:.5f} | {res['Cu-Co']:.1f} | {_hop_band(lam_lit['Co'])} | {_hop_band(lam_comp['Co'])} |")
+    md.append(f"| **Cu–Co** (T1↔node, bottleneck) | **{fodft['t_ij_eV']:.6f}** (FO-DFT) | {p['Cu-Co']['t_ij_eV']:.5f} | {res['Cu-Co']:.1f} | {_hop_band(lam_lit['Co'])} | {_hop_band(lam_comp['Co'])} |")
     md.append(f"| Co–Ce (node↔vacancy) | {p['Co-Ce']['t_ij_eV']:.5f} (crude) | {p['Co-Ce']['t_ij_eV']:.5f} | {res['Co-Ce']:.0f} | {(lam_lit['Co']+lam_lit['Ce'])/2:.2f} | {(lam_comp['Co']+lam_comp['Ce'])/2:.2f} |")
     md.append(f"| Ce–graphene (vacancy↔MWCNT, multi-walled carbon nanotube) | {p['Ce-graphene']['t_ij_eV']:.5f} (crude) | {p['Ce-graphene']['t_ij_eV']:.5f} | {res['Ce-graphene']:.0f} | — | — |")
     md.append("\n**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario, on the FO-DFT coupling** — "

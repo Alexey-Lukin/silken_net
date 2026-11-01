@@ -8,7 +8,7 @@ description: "Use when working on the silken_net in-silico surface — the EBFC 
 ## Critical Rules
 
 **Bodies live in `rules.md` — open it before running or changing DFT/MD, declaring an anchor dimension,
-or quoting a literature constant or a source.** #19–#35 are the DFT and MD gotchas, #36–#46 the citation rules (§Paper Citations below routes there). Below is one generated line per rule: the line is the CARRIER; the
+or quoting a literature constant or a source.** #19–#35 are the DFT and MD gotchas, #36–#46 the citation rules (§Paper Citations below routes there), and from #47 on DFT rules again, appended after them. Below is one generated line per rule: the line is the CARRIER; the
 mechanism, the incident and the bounds are in the companion. Numbering is append-only — cite
 `in-silico §Critical Rules #N` (the section name disambiguates from §When Modifying).
 
@@ -61,6 +61,7 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 44. A DATA attribution with no DOI and no artifact in the tree is an ASSUMPTION and is labelled one
 45. The same question for an INSTRUMENT: a canon number that cites a script must have its run in the tree — ask «where are its script and its cache?»
 46. Check each reference for the error classes already caught here — a wrong year, a wrong lead author, a result credited to the wrong group
+47. A single-SCF coupling is resolved only to the orbital gradient the SCF stopped at — |g| / t_ij is its resolution, and a run that reproduces bit for bit reproduces its STOPPING POINT, not the minimum
 
 <!-- /INSILICO-RULES-INDEX -->
 
@@ -212,6 +213,9 @@ L3 DFT anode (CPU):
 
 L3b DFT cathode (CPU):
   23 (ZIF clusters) → 24 · 24b      24 → 24b (FO-DFT, CHEM.14)      24 · 24b · 35 (metal λ) → 25 (k_ET vs λ ③)
+  24b (importlib: `couple`, the ONE home of the two-state diabatisation) → 24d · 24e — a change to it re-runs 24b and 24d
+     (24e is a dated record, re-run only as a new probe); 24d (cu_ru_fodft.json) · 29c (outer_sphere_lambda.json, the anode's
+     λ_o — a scale only) → 25
   24 (importlib) + 25 → 24c → 24d      25 + 31 → 31b
 
 L4 kinetics (CPU, seconds):

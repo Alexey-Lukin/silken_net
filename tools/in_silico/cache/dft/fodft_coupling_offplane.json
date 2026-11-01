@@ -2,17 +2,66 @@
   "geometry": "offplane",
   "geometry_note": "REFUSED probe \u2014 bridge ring rolled out of the metals' coordination plane; prices the model's geometric freedom, not a better cluster",
   "xyz": "cu_co_zif_solved_perp.xyz",
-  "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, manual 2\u00d72 Mulliken-Hush population diabatisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ",
+  "method": "FO-DFT-labelled two-state diabatisation (single UKS dimer SCF; the 2 \u03b1 MOs with the largest Cu + Co Mulliken population in the window HOMO\u22125 \u2026 LUMO+3, manual 2\u00d72 population localisation, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ",
   "pair": "Cu-Co (rate-limiting hop)",
-  "t_ij_eV": 0.132733,
+  "t_ij_eV": 0.130422,
   "t_ij_crude_script24_eV": 0.001281,
   "crude_is_shipped_geometry_only": true,
-  "site_energy_gap_eV": 0.0264,
+  "site_energy_gap_eV": 0.0258,
   "frontier_MOs": [
     122,
     123
   ],
   "localised": true,
   "physically_reasonable": true,
-  "wall_seconds": 1194.5
+  "charge": 1,
+  "spin_2S": 2,
+  "n_electrons": 254,
+  "stage1_converged": true,
+  "E_stage1_Ha": -1668.22353581,
+  "scf_converged": true,
+  "newton_rescue": false,
+  "polish_cycles": 24,
+  "conv_tol": 1e-10,
+  "conv_tol_grad": 3e-07,
+  "level_shift": 0.3,
+  "E_scf_Ha": -1668.22353581,
+  "stable_internal": true,
+  "orbital_grad_norm_Ha": 2.66e-07,
+  "S2": 2.012,
+  "grad_norm_over_t_ij": 5.55e-05,
+  "S2_pure": 2.0,
+  "nocc_alpha": 128,
+  "window": [
+    122,
+    132
+  ],
+  "picked_rel_HOMO": [
+    -5,
+    -4
+  ],
+  "pick_at_window_edge": true,
+  "eps_picked_eV": [
+    -7.615,
+    -7.3529
+  ],
+  "pop_cu_picked": [
+    0.335,
+    0.277
+  ],
+  "pop_co_picked": [
+    0.508,
+    0.549
+  ],
+  "loc_pop_cu": [
+    0.007,
+    0.605
+  ],
+  "loc_pop_co": [
+    0.843,
+    0.214
+  ],
+  "site_energy_cu_minus_co_eV": -0.0258,
+  "localisation_2theta_deg": 84.36,
+  "wall_seconds": 4069.1
 }

@@ -1,9 +1,9 @@
 {
-  "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, manual 2\u00d72 Mulliken-Hush population diabatisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ; Co\u2192Ru @identical geom",
+  "method": "FO-DFT-labelled two-state diabatisation, 24b's `couple` (single UKS dimer SCF; the 2 \u03b1 MOs with the largest Cu + Ru Mulliken population in the window HOMO\u22125 \u2026 LUMO+3, manual 2\u00d72 population localisation, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ; Co\u2192Ru @identical geom",
   "pair": "Cu-Ru (CHEM.32, Co\u2192Ru swap)",
-  "t_ij_eV": 0.105307,
+  "t_ij_eV": 0.11331,
   "t_ij_crude_24c_eV": 0.103907,
-  "site_energy_gap_eV": 0.1279,
+  "site_energy_gap_eV": 0.0875,
   "frontier_MOs": [
     123,
     124
@@ -11,5 +11,54 @@
   "localised": false,
   "physically_reasonable": false,
   "caveat": "fixed-geom (Co\u2192Ru @identical coords) isolates 4d-diffuseness; real Ru-N longer \u2192 upper bound",
-  "wall_seconds": 1029.6
+  "charge": 1,
+  "spin_2S": 1,
+  "n_electrons": 253,
+  "stage1_converged": true,
+  "E_stage1_Ha": -1616.9011983,
+  "scf_converged": true,
+  "newton_rescue": false,
+  "polish_cycles": 12,
+  "conv_tol": 1e-10,
+  "conv_tol_grad": 3e-07,
+  "level_shift": 0.3,
+  "E_scf_Ha": -1616.9011983,
+  "stable_internal": true,
+  "orbital_grad_norm_Ha": 3.56e-07,
+  "S2": 0.9241,
+  "grad_norm_over_t_ij": 8.55e-05,
+  "S2_pure": 0.75,
+  "nocc_alpha": 127,
+  "window": [
+    121,
+    131
+  ],
+  "picked_rel_HOMO": [
+    -3,
+    -2
+  ],
+  "pick_at_window_edge": false,
+  "eps_picked_eV": [
+    -6.88,
+    -6.637
+  ],
+  "pop_cu_picked": [
+    0.002,
+    0.002
+  ],
+  "pop_ru_picked": [
+    0.857,
+    0.869
+  ],
+  "loc_pop_cu": [
+    0.001,
+    0.003
+  ],
+  "loc_pop_ru": [
+    0.884,
+    0.842
+  ],
+  "site_energy_cu_minus_ru_eV": 0.0875,
+  "localisation_2theta_deg": 68.89,
+  "wall_seconds": 3474.6
 }

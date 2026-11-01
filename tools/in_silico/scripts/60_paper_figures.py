@@ -218,9 +218,9 @@ def fig4() -> None:
     # bracket's two CORNERS as its whisker, so the figure says what the table and §3.4 say.
     # ⊕ 2026-10-15 (self-review cluster 8): the scenario table runs on the FO-DFT coupling, so its literature row IS the
     # FO-DFT reading, and the crude ΔSCF t is drawn as the unresolved value it is (`t_ij_crude_dscf_eV`).
-    _close(sc["literature λ"]["margin_vs_turnover_at_dG0"], 25.165, 0.1, "③ lit-λ margin (ΔG=0, FO-DFT t)")
-    _close(fo["margin_vs_turnover_by_dG_sign"]["dG=0"], 25.165, 0.1, "③ FO-DFT margin")
-    _close(fo["t_ij_eV"], 0.005462, 1e-4, "③ FO-DFT t_ij")
+    _close(sc["literature λ"]["margin_vs_turnover_at_dG0"], 1.835, 0.01, "③ lit-λ margin (ΔG=0, FO-DFT t)")
+    _close(fo["margin_vs_turnover_by_dG_sign"]["dG=0"], 1.835, 0.01, "③ FO-DFT margin")
+    _close(fo["t_ij_eV"], 0.001475, 2e-5, "③ FO-DFT t_ij")   # 2026-10-31: 0.005462 was an SCF stop at |g| < 1e-3 (rules #47)
 
     fig, (axa, axb) = plt.subplots(1, 2, figsize=(9.6, 4.3))
 

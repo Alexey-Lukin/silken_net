@@ -5,12 +5,12 @@
   "A_cm2": 2.0,
   "turnover_s": 1000.0,
   "k_scenarios_s": {
-    "lit-\u03bb(Co) adverse corner (\u00d70.081)": 81.3421085524442,
-    "lit-\u03bb(Co) \u0394G=0 (default) (\u00d725)": 25165.017265954357,
-    "lit-\u03bb(Co) favourable corner (\u00d77.3e+02)": 731509.7725258763,
-    "computed-\u03bb(Co) adverse corner (\u00d71.9e-05)": 0.018789414858542297,
-    "computed-\u03bb(Co) \u0394G=0 (default) (\u00d70.0054)": 5.416158149658506,
-    "computed-\u03bb(Co) favourable corner (\u00d70.17)": 167.80231573327978
+    "lit-\u03bb(Co) adverse corner (\u00d70.018)": 18.152569569522836,
+    "lit-\u03bb(Co) \u0394G=0 (default) (\u00d71.8)": 1835.1766792074682,
+    "lit-\u03bb(Co) favourable corner (\u00d721)": 20874.427463056134,
+    "computed-\u03bb(Co) adverse corner (\u00d74.1e-06)": 0.004084525709732346,
+    "computed-\u03bb(Co) \u0394G=0 (default) (\u00d70.00039)": 0.3949771630238464,
+    "computed-\u03bb(Co) favourable corner (\u00d70.0046)": 4.639354866225667
   },
   "gamma_grid_mol_cm2": {
     "sparse 1e-12": 1e-12,
@@ -20,135 +20,135 @@
   "anode_rct_ohm_context": 72.9,
   "grid": [
     {
-      "k_label": "lit-\u03bb(Co) adverse corner (\u00d70.081)",
-      "k_det_s": 81.3421085524442,
+      "k_label": "lit-\u03bb(Co) adverse corner (\u00d70.018)",
+      "k_det_s": 18.152569569522836,
       "gamma_label": "sparse 1e-12",
       "gamma_mol_cm2": 1e-12,
-      "rct_ohm": 1636.8202071637133
+      "rct_ohm": 7334.631411934305
     },
     {
-      "k_label": "lit-\u03bb(Co) adverse corner (\u00d70.081)",
-      "k_det_s": 81.3421085524442,
+      "k_label": "lit-\u03bb(Co) adverse corner (\u00d70.018)",
+      "k_det_s": 18.152569569522836,
       "gamma_label": "monolayer 1e-11",
       "gamma_mol_cm2": 1e-11,
-      "rct_ohm": 163.68202071637134
+      "rct_ohm": 733.4631411934305
     },
     {
-      "k_label": "lit-\u03bb(Co) adverse corner (\u00d70.081)",
-      "k_det_s": 81.3421085524442,
+      "k_label": "lit-\u03bb(Co) adverse corner (\u00d70.018)",
+      "k_det_s": 18.152569569522836,
       "gamma_label": "dense 1e-10",
       "gamma_mol_cm2": 1e-10,
-      "rct_ohm": 16.368202071637135
+      "rct_ohm": 73.34631411934305
     },
     {
-      "k_label": "lit-\u03bb(Co) \u0394G=0 (default) (\u00d725)",
-      "k_det_s": 25165.017265954357,
+      "k_label": "lit-\u03bb(Co) \u0394G=0 (default) (\u00d71.8)",
+      "k_det_s": 1835.1766792074682,
       "gamma_label": "sparse 1e-12",
       "gamma_mol_cm2": 1e-12,
-      "rct_ohm": 5.290773519638025
+      "rct_ohm": 72.550184666385
     },
     {
-      "k_label": "lit-\u03bb(Co) \u0394G=0 (default) (\u00d725)",
-      "k_det_s": 25165.017265954357,
+      "k_label": "lit-\u03bb(Co) \u0394G=0 (default) (\u00d71.8)",
+      "k_det_s": 1835.1766792074682,
       "gamma_label": "monolayer 1e-11",
       "gamma_mol_cm2": 1e-11,
-      "rct_ohm": 0.5290773519638025
+      "rct_ohm": 7.255018466638498
     },
     {
-      "k_label": "lit-\u03bb(Co) \u0394G=0 (default) (\u00d725)",
-      "k_det_s": 25165.017265954357,
+      "k_label": "lit-\u03bb(Co) \u0394G=0 (default) (\u00d71.8)",
+      "k_det_s": 1835.1766792074682,
       "gamma_label": "dense 1e-10",
       "gamma_mol_cm2": 1e-10,
-      "rct_ohm": 0.052907735196380236
+      "rct_ohm": 0.7255018466638499
     },
     {
-      "k_label": "lit-\u03bb(Co) favourable corner (\u00d77.3e+02)",
-      "k_det_s": 731509.7725258763,
+      "k_label": "lit-\u03bb(Co) favourable corner (\u00d721)",
+      "k_det_s": 20874.427463056134,
       "gamma_label": "sparse 1e-12",
       "gamma_mol_cm2": 1e-12,
-      "rct_ohm": 0.18201042825745056
+      "rct_ohm": 6.378254311768902
     },
     {
-      "k_label": "lit-\u03bb(Co) favourable corner (\u00d77.3e+02)",
-      "k_det_s": 731509.7725258763,
+      "k_label": "lit-\u03bb(Co) favourable corner (\u00d721)",
+      "k_det_s": 20874.427463056134,
       "gamma_label": "monolayer 1e-11",
       "gamma_mol_cm2": 1e-11,
-      "rct_ohm": 0.018201042825745056
+      "rct_ohm": 0.6378254311768903
     },
     {
-      "k_label": "lit-\u03bb(Co) favourable corner (\u00d77.3e+02)",
-      "k_det_s": 731509.7725258763,
+      "k_label": "lit-\u03bb(Co) favourable corner (\u00d721)",
+      "k_det_s": 20874.427463056134,
       "gamma_label": "dense 1e-10",
       "gamma_mol_cm2": 1e-10,
-      "rct_ohm": 0.0018201042825745054
+      "rct_ohm": 0.06378254311768902
     },
     {
-      "k_label": "computed-\u03bb(Co) adverse corner (\u00d71.9e-05)",
-      "k_det_s": 0.018789414858542297,
+      "k_label": "computed-\u03bb(Co) adverse corner (\u00d74.1e-06)",
+      "k_det_s": 0.004084525709732346,
       "gamma_label": "sparse 1e-12",
       "gamma_mol_cm2": 1e-12,
-      "rct_ohm": 7086032.63988362
+      "rct_ohm": 32596785.1431812
     },
     {
-      "k_label": "computed-\u03bb(Co) adverse corner (\u00d71.9e-05)",
-      "k_det_s": 0.018789414858542297,
+      "k_label": "computed-\u03bb(Co) adverse corner (\u00d74.1e-06)",
+      "k_det_s": 0.004084525709732346,
       "gamma_label": "monolayer 1e-11",
       "gamma_mol_cm2": 1e-11,
-      "rct_ohm": 708603.2639883619
+      "rct_ohm": 3259678.5143181197
     },
     {
-      "k_label": "computed-\u03bb(Co) adverse corner (\u00d71.9e-05)",
-      "k_det_s": 0.018789414858542297,
+      "k_label": "computed-\u03bb(Co) adverse corner (\u00d74.1e-06)",
+      "k_det_s": 0.004084525709732346,
       "gamma_label": "dense 1e-10",
       "gamma_mol_cm2": 1e-10,
-      "rct_ohm": 70860.32639883619
+      "rct_ohm": 325967.8514318119
     },
     {
-      "k_label": "computed-\u03bb(Co) \u0394G=0 (default) (\u00d70.0054)",
-      "k_det_s": 5.416158149658506,
+      "k_label": "computed-\u03bb(Co) \u0394G=0 (default) (\u00d70.00039)",
+      "k_det_s": 0.3949771630238464,
       "gamma_label": "sparse 1e-12",
       "gamma_mol_cm2": 1e-12,
-      "rct_ohm": 24582.444473180632
+      "rct_ohm": 337088.873575981
     },
     {
-      "k_label": "computed-\u03bb(Co) \u0394G=0 (default) (\u00d70.0054)",
-      "k_det_s": 5.416158149658506,
+      "k_label": "computed-\u03bb(Co) \u0394G=0 (default) (\u00d70.00039)",
+      "k_det_s": 0.3949771630238464,
       "gamma_label": "monolayer 1e-11",
       "gamma_mol_cm2": 1e-11,
-      "rct_ohm": 2458.2444473180635
+      "rct_ohm": 33708.887357598105
     },
     {
-      "k_label": "computed-\u03bb(Co) \u0394G=0 (default) (\u00d70.0054)",
-      "k_det_s": 5.416158149658506,
+      "k_label": "computed-\u03bb(Co) \u0394G=0 (default) (\u00d70.00039)",
+      "k_det_s": 0.3949771630238464,
       "gamma_label": "dense 1e-10",
       "gamma_mol_cm2": 1e-10,
-      "rct_ohm": 245.8244447318063
+      "rct_ohm": 3370.8887357598096
     },
     {
-      "k_label": "computed-\u03bb(Co) favourable corner (\u00d70.17)",
-      "k_det_s": 167.80231573327978,
+      "k_label": "computed-\u03bb(Co) favourable corner (\u00d70.0046)",
+      "k_det_s": 4.639354866225667,
       "gamma_label": "sparse 1e-12",
       "gamma_mol_cm2": 1e-12,
-      "rct_ohm": 793.447971144651
+      "rct_ohm": 28698.474423937005
     },
     {
-      "k_label": "computed-\u03bb(Co) favourable corner (\u00d70.17)",
-      "k_det_s": 167.80231573327978,
+      "k_label": "computed-\u03bb(Co) favourable corner (\u00d70.0046)",
+      "k_det_s": 4.639354866225667,
       "gamma_label": "monolayer 1e-11",
       "gamma_mol_cm2": 1e-11,
-      "rct_ohm": 79.3447971144651
+      "rct_ohm": 2869.8474423937005
     },
     {
-      "k_label": "computed-\u03bb(Co) favourable corner (\u00d70.17)",
-      "k_det_s": 167.80231573327978,
+      "k_label": "computed-\u03bb(Co) favourable corner (\u00d70.0046)",
+      "k_det_s": 4.639354866225667,
       "gamma_label": "dense 1e-10",
       "gamma_mol_cm2": 1e-10,
-      "rct_ohm": 7.934479711446508
+      "rct_ohm": 286.98474423937006
     }
   ],
   "rct_band_ohm": [
-    0.0018201042825745054,
-    7086032.63988362
+    0.06378254311768902,
+    32596785.1431812
   ],
-  "verdict": "the cathode DET R_ct is NOT a single value \u2014 it spans 0.0018\u20137.1e+06 \u03a9 across the k_DET bracket (gap sign \u00d7 \u03bb(Cu) reading \u00d7 \u03bb(Co) value) AND the unknown coverage \u0393. It can be negligible (fast/dense) or it exceeds the anode arc (~73 \u03a9) up to \u00d79.7e+04 (slow/sparse). \u2192 an EIS cathode arc cannot be predicted a priori; the robust statement stays the KINETIC COMPETITION k_DET vs turnover (SUMMARY \u00a7Cathode). The decisive test is the measured Ti-coin cathode EIS."
+  "verdict": "the cathode DET R_ct is NOT a single value \u2014 it spans 0.064\u20133.3e+07 \u03a9 across the k_DET bracket (gap sign \u00d7 \u03bb(Cu) reading \u00d7 \u03bb(Co) value) AND the unknown coverage \u0393. It can be negligible (fast/dense) or it exceeds the anode arc (~73 \u03a9) up to \u00d74.5e+05 (slow/sparse). \u2192 an EIS cathode arc cannot be predicted a priori; the robust statement stays the KINETIC COMPETITION k_DET vs turnover (SUMMARY \u00a7Cathode). The decisive test is the measured Ti-coin cathode EIS."
 }

@@ -2,17 +2,66 @@
   "geometry": "shipped",
   "geometry_note": "legacy centre-of-mass bridge orientation, 2-methylimidazolate \u2014 the shipped cathode stack",
   "xyz": "cu_co_zif.xyz",
-  "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, manual 2\u00d72 Mulliken-Hush population diabatisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ",
+  "method": "FO-DFT-labelled two-state diabatisation (single UKS dimer SCF; the 2 \u03b1 MOs with the largest Cu + Co Mulliken population in the window HOMO\u22125 \u2026 LUMO+3, manual 2\u00d72 population localisation, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ",
   "pair": "Cu-Co (rate-limiting hop)",
-  "t_ij_eV": 0.005462,
+  "t_ij_eV": 0.001475,
   "t_ij_crude_script24_eV": 0.001281,
   "crude_is_shipped_geometry_only": false,
-  "site_energy_gap_eV": 0.183,
+  "site_energy_gap_eV": 0.1299,
   "frontier_MOs": [
     122,
     124
   ],
   "localised": true,
   "physically_reasonable": true,
-  "wall_seconds": 569.2
+  "charge": 1,
+  "spin_2S": 2,
+  "n_electrons": 254,
+  "stage1_converged": true,
+  "E_stage1_Ha": -1668.2016456,
+  "scf_converged": true,
+  "newton_rescue": true,
+  "polish_cycles": 39,
+  "conv_tol": 1e-10,
+  "conv_tol_grad": 3e-07,
+  "level_shift": 0.3,
+  "E_scf_Ha": -1668.20164561,
+  "stable_internal": true,
+  "orbital_grad_norm_Ha": 2.71e-07,
+  "S2": 2.0139,
+  "grad_norm_over_t_ij": 0.005,
+  "S2_pure": 2.0,
+  "nocc_alpha": 128,
+  "window": [
+    122,
+    132
+  ],
+  "picked_rel_HOMO": [
+    -5,
+    -3
+  ],
+  "pick_at_window_edge": true,
+  "eps_picked_eV": [
+    -7.4982,
+    -7.3682
+  ],
+  "pop_cu_picked": [
+    0.594,
+    0.01
+  ],
+  "pop_co_picked": [
+    0.24,
+    0.879
+  ],
+  "loc_pop_cu": [
+    0.01,
+    0.594
+  ],
+  "loc_pop_co": [
+    0.879,
+    0.241
+  ],
+  "site_energy_cu_minus_co_eV": -0.1299,
+  "localisation_2theta_deg": 1.3,
+  "wall_seconds": 5570.5
 }

@@ -195,7 +195,7 @@ def build() -> str:
         "(S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. "
         "The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 "
         "and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT "
-        "coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its "
+        "coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its "
         "ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 "
         "fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number "
         "inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.\n>\n"

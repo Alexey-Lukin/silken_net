@@ -22,11 +22,10 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
 from pyscf import dft, gto
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import BASIS_LIGHT, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
+from lib.constants import BASIS_LIGHT, LIGANDS_DIR, REPO_ROOT
 
 SI_DESCRIPTION = ("Charge probe of the deposited Cu–Co cluster: the two-orbital diabatisation of script 24b repeated at the "
                   "cluster's physical charge (+3) and on its imidazolate form (−1), two spin states each, in the gas phase; a "
@@ -47,43 +46,6 @@ def strip_nh_protons(atoms, cutoff=1.15):
         else:
             keep.append((sym, xyz))
     return keep, removed
-
-
-def couple(mol, mf, cu_idx, co_idx):
-    """24b's window, pick, 2×2 localisation, t_ij, gap and physicality check — plus the window-edge diagnostic 24b lacks."""
-    S = mf.get_ovlp()
-    C, eps = mf.mo_coeff[0], mf.mo_energy[0]
-    nocc = int((mf.mo_occ[0] > 0).sum())
-    lo_i, hi_i = max(0, nocc - 6), min(C.shape[1], nocc + 4)
-    pop_cu = s24b.mo_metal_pop(mol, C, S, cu_idx)
-    pop_co = s24b.mo_metal_pop(mol, C, S, co_idx)
-    cand = sorted(range(lo_i, hi_i), key=lambda i: -(pop_cu[i] + pop_co[i]))[:2]
-    i, j = sorted(cand)
-    ao_atom = mol.ao_labels(fmt=None)
-    rows_cu = [a for a, lab in enumerate(ao_atom) if lab[0] in cu_idx]
-    SC = S @ C
-    mos = [i, j]
-    Pcu = np.array([[0.5 * sum(C[r, mos[x]] * SC[r, mos[y]] + C[r, mos[y]] * SC[r, mos[x]]
-                               for r in rows_cu) for y in range(2)] for x in range(2)])
-    _, R = np.linalg.eigh(Pcu)
-    Cloc = C[:, mos] @ R
-    Floc = R.T @ np.diag([eps[i], eps[j]]) @ R
-    t_ij = abs(Floc[0, 1]) * HARTREE_TO_EV
-    gap = abs(Floc[0, 0] - Floc[1, 1]) * HARTREE_TO_EV
-    p_cu = s24b.mo_metal_pop(mol, Cloc, S, cu_idx)
-    p_co = s24b.mo_metal_pop(mol, Cloc, S, co_idx)
-    localised = bool(max(p_cu[0], p_cu[1]) > 0.3 and max(p_co[0], p_co[1]) > 0.3)
-    physical = bool((1e-5 < t_ij < 1.0) and localised)
-    return {
-        "nocc_alpha": nocc, "window": [lo_i, hi_i], "picked_MOs": [int(i), int(j)],
-        "picked_rel_HOMO": [int(i) - (nocc - 1), int(j) - (nocc - 1)],
-        "pick_at_window_edge": bool(i == lo_i or j == hi_i - 1),
-        "eps_picked_eV": [float(eps[i] * HARTREE_TO_EV), float(eps[j] * HARTREE_TO_EV)],
-        "pop_cu_picked": [float(pop_cu[i]), float(pop_cu[j])], "pop_co_picked": [float(pop_co[i]), float(pop_co[j])],
-        "t_ij_eV": float(t_ij), "site_energy_gap_eV": float(gap),
-        "loc_pop_cu": [float(p_cu[0]), float(p_cu[1])], "loc_pop_co": [float(p_co[0]), float(p_co[1])],
-        "localised": localised, "physically_reasonable": physical,
-    }
 
 
 def run(atoms, charge, spin, rehearse):
@@ -110,7 +72,7 @@ def run(atoms, charge, spin, rehearse):
     rec = {"charge": charge, "spin_2S": spin, "n_atoms": len(atoms), "n_electrons": mol.nelectron,
            "E_Ha": float(e), "converged": bool(mf.converged), "newton_rescue": rescued,
            "S2": float(ss), "multiplicity": float(mult), "wall_s": round(time.time() - t0, 1)}
-    rec.update(couple(mol, mf, cu_idx, co_idx))
+    rec.update(s24b.couple(mol, mf, cu_idx, co_idx))
     return rec
 
 

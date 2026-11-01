@@ -1,0 +1,718 @@
+{
+  "what": "Run-to-run record of the two-state diabatisation's coupling t_ij (scripts 24b, 24d) against the orbital gradient the SCF stops at: Cu–Co on the shipped cluster and on the REFUSED off-plane probe, Cu–Ru on its swapped cluster; same scripts, inputs and functional, two environments. Assembled from the cache each run wrote.",
+  "date": "2026-10-31",
+  "assembled_by": "a session script over the per-run cache snapshots, which are not kept in the tree; every field a group spread or a test reads is copied into this record, so the record is the evidence",
+  "why": "t_ij is an off-diagonal Fock element, so it carries the residual Fock error of the point the SCF stops at — of the order of the orbital gradient there — and |g| / t_ij is its relative resolution. The committed 2026-09 caches were converged to conv_tol 1e-6 (|g| < 1e-3), where the shipped t_ij ≈ 5e-5 Ha is not resolved; at 1e-10 (|g| < 1e-5) two routes to one minimum still differed by 17 %. 24b's `converge` now polishes to a measured |g| (24d imports it).",
+  "shipped": [
+    {
+      "label": "default_1e-6_a",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 15:09:32",
+      "newton_rescue": false,
+      "scf_converged": true,
+      "S2": 2.0141,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 3.42,
+      "t_ij_eV": 0.005462,
+      "site_energy_gap_eV": 0.183,
+      "loc_pop_cu": [
+        0.002,
+        0.7
+      ],
+      "loc_pop_co": [
+        0.865,
+        0.149
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 587.2,
+      "conv_tol": 1e-06,
+      "level_shift": 0.3,
+      "E_scf_Ha": -1668.201593,
+      "E_source": "the run log's printed «dimer SCF: E=» line (1e-6 Ha); this code version's cache kept no E",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "default_1e-6_b",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 16:34:21",
+      "newton_rescue": false,
+      "scf_converged": true,
+      "S2": 2.0141,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 3.42,
+      "t_ij_eV": 0.005462,
+      "site_energy_gap_eV": 0.183,
+      "loc_pop_cu": [
+        0.002,
+        0.7
+      ],
+      "loc_pop_co": [
+        0.865,
+        0.149
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 621.2,
+      "conv_tol": 1e-06,
+      "level_shift": 0.3,
+      "E_scf_Ha": -1668.201593,
+      "E_source": "the run log's printed «dimer SCF: E=» line (1e-6 Ha); this code version's cache kept no E",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "default_1e-6_c",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 20:24:16",
+      "conv_tol": 1e-06,
+      "newton_rescue": false,
+      "scf_converged": true,
+      "E_scf_Ha": -1668.2015934,
+      "S2": 2.0141,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 3.42,
+      "t_ij_eV": 0.005462,
+      "site_energy_gap_eV": 0.183,
+      "loc_pop_cu": [
+        0.002,
+        0.7
+      ],
+      "loc_pop_co": [
+        0.865,
+        0.149
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 715.0,
+      "level_shift": 0.3,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "default_1e-6_d",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 20:57:16",
+      "conv_tol": 1e-06,
+      "level_shift": 0.3,
+      "newton_rescue": false,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1668.2015934,
+      "S2": 2.0141,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 3.42,
+      "t_ij_eV": 0.005462,
+      "site_energy_gap_eV": 0.183,
+      "loc_pop_cu": [
+        0.002,
+        0.7
+      ],
+      "loc_pop_co": [
+        0.865,
+        0.149
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 2330.4,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "tight_newton",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 19:17:16",
+      "conv_tol": 1e-10,
+      "newton_rescue": true,
+      "scf_converged": true,
+      "E_scf_Ha": -1668.20164561,
+      "S2": 2.0139,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 1.31,
+      "t_ij_eV": 0.001481,
+      "site_energy_gap_eV": 0.1299,
+      "loc_pop_cu": [
+        0.01,
+        0.594
+      ],
+      "loc_pop_co": [
+        0.879,
+        0.241
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 4019.0,
+      "level_shift": 0.3,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "tight_unshifted",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 21:36:07",
+      "conv_tol": 1e-10,
+      "level_shift": 0.0,
+      "newton_rescue": false,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1668.20164557,
+      "S2": 2.0139,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 1.09,
+      "t_ij_eV": 0.001241,
+      "site_energy_gap_eV": 0.1306,
+      "loc_pop_cu": [
+        0.009,
+        0.595
+      ],
+      "loc_pop_co": [
+        0.878,
+        0.241
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 3534.1,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "tight_newton_repeat",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 23:37:56",
+      "conv_tol": 1e-10,
+      "level_shift": 0.3,
+      "newton_rescue": true,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1668.20164561,
+      "S2": 2.0139,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 1.31,
+      "t_ij_eV": 0.001481,
+      "site_energy_gap_eV": 0.1299,
+      "loc_pop_cu": [
+        0.01,
+        0.594
+      ],
+      "loc_pop_co": [
+        0.879,
+        0.241
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 5031.9,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "tight_newton_lock",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_lock (PySCF 2.13.1)",
+      "started": "2026-10-31 01:01:49",
+      "conv_tol": 1e-10,
+      "level_shift": 0.3,
+      "newton_rescue": true,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1668.20164561,
+      "S2": 2.0139,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 1.32,
+      "t_ij_eV": 0.001495,
+      "site_energy_gap_eV": 0.1298,
+      "loc_pop_cu": [
+        0.01,
+        0.593
+      ],
+      "loc_pop_co": [
+        0.879,
+        0.241
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 5393.3,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "polished",
+      "stop": "unshifted DIIS polish to conv_tol_grad (24b `converge`)",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-31 10:52:02",
+      "conv_tol": 1e-10,
+      "conv_tol_grad": 3e-07,
+      "level_shift": 0.3,
+      "newton_rescue": true,
+      "polish_cycles": 39,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1668.20164561,
+      "orbital_grad_norm_Ha": 2.71e-07,
+      "grad_norm_over_t_ij": 0.005,
+      "S2": 2.0139,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 1.3,
+      "t_ij_eV": 0.001475,
+      "site_energy_gap_eV": 0.1299,
+      "loc_pop_cu": [
+        0.01,
+        0.594
+      ],
+      "loc_pop_co": [
+        0.879,
+        0.241
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 5570.5,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)"
+    },
+    {
+      "label": "polished_unshifted_first_stage",
+      "stop": "unshifted DIIS polish to conv_tol_grad (24b `converge`)",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-31 14:30:39",
+      "conv_tol": 1e-10,
+      "conv_tol_grad": 3e-07,
+      "level_shift": 0.0,
+      "newton_rescue": false,
+      "polish_cycles": 68,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1668.20164561,
+      "orbital_grad_norm_Ha": 2.19e-07,
+      "grad_norm_over_t_ij": 0.00405,
+      "S2": 2.0139,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 1.3,
+      "t_ij_eV": 0.001472,
+      "site_energy_gap_eV": 0.1299,
+      "loc_pop_cu": [
+        0.01,
+        0.594
+      ],
+      "loc_pop_co": [
+        0.879,
+        0.241
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 3704.0,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)"
+    },
+    {
+      "label": "polished_lock",
+      "stop": "unshifted DIIS polish to conv_tol_grad (24b `converge`)",
+      "environment": "silken_lock (PySCF 2.13.1)",
+      "started": "2026-10-31 15:32:24",
+      "conv_tol": 1e-10,
+      "conv_tol_grad": 3e-07,
+      "level_shift": 0.3,
+      "newton_rescue": true,
+      "polish_cycles": 6,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1668.20164561,
+      "orbital_grad_norm_Ha": 3.48e-07,
+      "grad_norm_over_t_ij": 0.00639,
+      "S2": 2.0139,
+      "picked_rel_HOMO": [
+        -5,
+        -3
+      ],
+      "localisation_2theta_deg": 1.31,
+      "t_ij_eV": 0.001481,
+      "site_energy_gap_eV": 0.1299,
+      "loc_pop_cu": [
+        0.01,
+        0.594
+      ],
+      "loc_pop_co": [
+        0.879,
+        0.241
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 5488.8,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)"
+    }
+  ],
+  "shipped_groups": {
+    "default_1e-6": {
+      "runs": [
+        "default_1e-6_a",
+        "default_1e-6_b",
+        "default_1e-6_c",
+        "default_1e-6_d"
+      ],
+      "spread_E_scf_Ha": 4e-07,
+      "spread_t_ij_eV": 0.0,
+      "spread_site_energy_gap_eV": 0.0,
+      "spread_localisation_2theta_deg": 0.0
+    },
+    "tight_1e-10_default_stop_silken_md": {
+      "runs": [
+        "tight_newton",
+        "tight_unshifted",
+        "tight_newton_repeat"
+      ],
+      "spread_E_scf_Ha": 4e-08,
+      "spread_t_ij_eV": 0.00024,
+      "spread_site_energy_gap_eV": 0.0007,
+      "spread_localisation_2theta_deg": 0.22
+    },
+    "polished_silken_md": {
+      "runs": [
+        "polished",
+        "polished_unshifted_first_stage"
+      ],
+      "spread_E_scf_Ha": 0.0,
+      "spread_t_ij_eV": 3e-06,
+      "spread_site_energy_gap_eV": 0.0,
+      "spread_localisation_2theta_deg": 0.0
+    },
+    "polished_both_environments": {
+      "runs": [
+        "polished",
+        "polished_unshifted_first_stage",
+        "polished_lock"
+      ],
+      "spread_E_scf_Ha": 0.0,
+      "spread_t_ij_eV": 9e-06,
+      "spread_site_energy_gap_eV": 0.0,
+      "spread_localisation_2theta_deg": 0.01
+    }
+  },
+  "offplane": [
+    {
+      "label": "default_1e-6_a",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 15:19:20",
+      "newton_rescue": false,
+      "scf_converged": true,
+      "S2": 2.0119,
+      "picked_rel_HOMO": [
+        -5,
+        -4
+      ],
+      "localisation_2theta_deg": 84.4,
+      "t_ij_eV": 0.13277,
+      "site_energy_gap_eV": 0.026,
+      "loc_pop_cu": [
+        0.006,
+        0.644
+      ],
+      "loc_pop_co": [
+        0.821,
+        0.169
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 1429.6,
+      "conv_tol": 1e-06,
+      "level_shift": 0.3,
+      "E_scf_Ha": -1668.223483,
+      "E_source": "the run log's printed «dimer SCF: E=» line (1e-6 Ha); this code version's cache kept no E",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "default_1e-6_b",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 16:44:43",
+      "newton_rescue": false,
+      "scf_converged": true,
+      "S2": 2.0124,
+      "picked_rel_HOMO": [
+        -5,
+        -4
+      ],
+      "localisation_2theta_deg": 88.1,
+      "t_ij_eV": 0.13353,
+      "site_energy_gap_eV": 0.0089,
+      "loc_pop_cu": [
+        0.008,
+        0.634
+      ],
+      "loc_pop_co": [
+        0.813,
+        0.183
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 1453.8,
+      "conv_tol": 1e-06,
+      "level_shift": 0.3,
+      "E_scf_Ha": -1668.223518,
+      "E_source": "the run log's printed «dimer SCF: E=» line (1e-6 Ha); this code version's cache kept no E",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "tight_a",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 17:53:20",
+      "conv_tol": 1e-10,
+      "newton_rescue": false,
+      "scf_converged": true,
+      "E_scf_Ha": -1668.22353581,
+      "S2": 2.012,
+      "picked_rel_HOMO": [
+        -5,
+        -4
+      ],
+      "localisation_2theta_deg": 84.37,
+      "t_ij_eV": 0.130422,
+      "site_energy_gap_eV": 0.0257,
+      "loc_pop_cu": [
+        0.007,
+        0.605
+      ],
+      "loc_pop_co": [
+        0.843,
+        0.214
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 2407.6,
+      "level_shift": 0.3,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "tight_b",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 18:33:28",
+      "conv_tol": 1e-10,
+      "newton_rescue": false,
+      "scf_converged": true,
+      "E_scf_Ha": -1668.22353581,
+      "S2": 2.012,
+      "picked_rel_HOMO": [
+        -5,
+        -4
+      ],
+      "localisation_2theta_deg": 84.37,
+      "t_ij_eV": 0.130422,
+      "site_energy_gap_eV": 0.0257,
+      "loc_pop_cu": [
+        0.007,
+        0.605
+      ],
+      "loc_pop_co": [
+        0.843,
+        0.214
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 2626.9,
+      "level_shift": 0.3,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "tight_c",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 22:35:02",
+      "conv_tol": 1e-10,
+      "level_shift": 0.3,
+      "newton_rescue": false,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1668.22353581,
+      "S2": 2.012,
+      "picked_rel_HOMO": [
+        -5,
+        -4
+      ],
+      "localisation_2theta_deg": 84.33,
+      "t_ij_eV": 0.130389,
+      "site_energy_gap_eV": 0.0259,
+      "loc_pop_cu": [
+        0.007,
+        0.605
+      ],
+      "loc_pop_co": [
+        0.843,
+        0.214
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 3772.6,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)",
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "polished",
+      "stop": "unshifted DIIS polish to conv_tol_grad (24b `converge`)",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-31 12:24:53",
+      "conv_tol": 1e-10,
+      "conv_tol_grad": 3e-07,
+      "level_shift": 0.3,
+      "newton_rescue": false,
+      "polish_cycles": 24,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1668.22353581,
+      "orbital_grad_norm_Ha": 2.66e-07,
+      "grad_norm_over_t_ij": 5.55e-05,
+      "S2": 2.012,
+      "picked_rel_HOMO": [
+        -5,
+        -4
+      ],
+      "localisation_2theta_deg": 84.36,
+      "t_ij_eV": 0.130422,
+      "site_energy_gap_eV": 0.0258,
+      "loc_pop_cu": [
+        0.007,
+        0.605
+      ],
+      "loc_pop_co": [
+        0.843,
+        0.214
+      ],
+      "physically_reasonable": true,
+      "wall_seconds": 4069.1,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)"
+    }
+  ],
+  "offplane_groups": {
+    "default_1e-6": {
+      "runs": [
+        "default_1e-6_a",
+        "default_1e-6_b"
+      ],
+      "spread_E_scf_Ha": 3.5e-05,
+      "spread_t_ij_eV": 0.00076,
+      "spread_site_energy_gap_eV": 0.0171,
+      "spread_localisation_2theta_deg": 3.7
+    },
+    "tight_and_polished": {
+      "runs": [
+        "tight_a",
+        "tight_b",
+        "tight_c",
+        "polished"
+      ],
+      "spread_E_scf_Ha": 0.0,
+      "spread_t_ij_eV": 3.3e-05,
+      "spread_site_energy_gap_eV": 0.0002,
+      "spread_localisation_2theta_deg": 0.04
+    }
+  },
+  "cu_ru": [
+    {
+      "label": "default_1e-6",
+      "stop": "PySCF default stop, |g| < √conv_tol",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-30 17:08:57",
+      "newton_rescue": false,
+      "scf_converged": true,
+      "S2": 0.9125,
+      "picked_rel_HOMO": [
+        -3,
+        -2
+      ],
+      "localisation_2theta_deg": 58.73,
+      "t_ij_eV": 0.105307,
+      "site_energy_gap_eV": 0.1279,
+      "loc_pop_cu": [
+        0.001,
+        0.003
+      ],
+      "loc_pop_ru": [
+        0.878,
+        0.846
+      ],
+      "physically_reasonable": false,
+      "wall_seconds": 1154.2,
+      "conv_tol": 1e-06,
+      "level_shift": 0.3,
+      "orbital_grad_norm_Ha": null,
+      "orbital_grad_norm_note": "not recorded — 24b measures the stop's gradient since 2026-10-31; PySCF's own stop for this run is |g| < √conv_tol in the loop, then a final check accepting |ΔE| < 10·conv_tol or |g| < 3·√conv_tol"
+    },
+    {
+      "label": "polished",
+      "stop": "unshifted DIIS polish to conv_tol_grad (24b `converge`)",
+      "environment": "silken_md (PySCF 2.11.0)",
+      "started": "2026-10-31 13:32:43",
+      "conv_tol": 1e-10,
+      "conv_tol_grad": 3e-07,
+      "level_shift": 0.3,
+      "newton_rescue": false,
+      "polish_cycles": 12,
+      "scf_converged": true,
+      "stable_internal": true,
+      "E_scf_Ha": -1616.9011983,
+      "orbital_grad_norm_Ha": 3.56e-07,
+      "grad_norm_over_t_ij": 8.55e-05,
+      "S2": 0.9241,
+      "picked_rel_HOMO": [
+        -3,
+        -2
+      ],
+      "localisation_2theta_deg": 68.89,
+      "t_ij_eV": 0.11331,
+      "site_energy_gap_eV": 0.0875,
+      "loc_pop_cu": [
+        0.001,
+        0.003
+      ],
+      "loc_pop_ru": [
+        0.884,
+        0.842
+      ],
+      "physically_reasonable": false,
+      "wall_seconds": 3474.6,
+      "E_source": "E_scf_Ha in the run's own cache (1e-8 Ha)"
+    }
+  ],
+  "head_t_ij_eV_before_this_record": {
+    "fodft_coupling.json": 0.005462,
+    "fodft_coupling_offplane.json": 0.132733,
+    "cu_ru_fodft.json": 0.105307
+  },
+  "committed_cache": {
+    "dft/fodft_coupling.json": "shipped · polished",
+    "dft/fodft_coupling_offplane.json": "offplane · polished",
+    "dft/cu_ru_fodft.json": "cu_ru · polished"
+  }
+}

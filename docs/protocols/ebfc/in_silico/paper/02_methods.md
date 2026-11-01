@@ -42,7 +42,9 @@ the recorded version switches the surface of an atom that carries an ECP is stat
 couplings and the molecular-dynamics snapshot orbitals (§2.5) were computed in the gas phase, without a continuum.
 SCF energies were converged to 10⁻⁶ E_h (10⁻⁷ E_h for the lumiflavin redox pair at the screening level and 10⁻⁸ E_h on the relaxed flavin minima and their
 single points, scripts 32b and 112; 10⁻⁵ E_h for the
-two-solution ΔSCF couplings of the ZIF clusters). A level shift stabilised the open-shell UKS SCF where it
+two-solution ΔSCF couplings of the ZIF clusters; 10⁻¹⁰ E_h, then an unshifted DIIS polish to an orbital gradient of
+3 × 10⁻⁷ E_h, for the diabatised couplings, because a coupling read off one SCF is resolved only to the orbital gradient
+that SCF stopped at — at 10⁻⁶ E_h the Cu–Co value came out 3.7 times too large). A level shift stabilised the open-shell UKS SCF where it
 oscillated — 0.3 E_h on the Os(III) states of the speciation series and of the ωB97X tier and in the Co/Ce/Ru
 reorganisation and ZIF-cluster calculations (0.5 E_h for the second SCF solution of each
 cluster), 0.2 E_h on the open-shell flavin species — and wherever it was applied, every energy difference was
@@ -206,7 +208,9 @@ to within 4 × 10⁻¹⁰ Ha in total electronic energy and 10⁻¹⁰ eV in orb
 identical; the field-by-field record is committed beside the caches
 (`cache/reproduction/lock_rerun_2026-10-16.json`). The two heavier caches re-run under the lock
 (`cache/reproduction/lock_rerun_2026-10-01.json`) behave differently from each other: the gas-phase FO-DFT Cu–Co
-coupling (script 24b) reproduces every reported field exactly at printed precision, whereas the B3LYP osmium
+coupling (script 24b) lands on the committed total energy to 10⁻⁸ Ha and on t_ij 0.001481 eV against the committed
+0.001475 eV — a 0.4 % difference, inside the coupling's own SCF resolution (orbital gradient over t_ij, 0.5 % and 0.6 %
+in the two runs) — whereas the B3LYP osmium
 couple (script 21f), converged on the same geometry in both environments (identical RDKit version), differs by
 5 × 10⁻⁵ to 2 × 10⁻⁴ Ha — far above its 10⁻⁶ Ha SCF tolerance — and under the lock (PySCF 2.13.1) gives
 ΔE_red(III→II) = −4.3841 eV against the committed −4.3808 eV, with the Os(III) LUMO 10 meV lower.
@@ -227,7 +231,7 @@ reorganisation energies — and on the quantities derived from them (the Koopman
 the PCET route of Table 2b, every E°(Os) of the like-for-like Table 2, the cathode λ — the emulation above was run for
 osmium only, so the cavities of Co, Ce and Ru, which enter λ(Co), λ(Ce) and λ(Ru) and through them the λ_hop of Table 3, are
 not attributed); the flavin chain (no ECP) and the gas-phase ZIF couplings lie outside it
-by construction, which is why scripts 20, 32 and 24b reproduced exactly. Of the committed caches in that class only
+by construction, which is why scripts 20 and 32 reproduced exactly and 24b within its SCF resolution. Of the committed caches in that class only
 the B3LYP device couple was re-run under the lock; for the others the size of the gap is bounded by this argument
 and by the device and closed-shell measurements above, not measured.
 

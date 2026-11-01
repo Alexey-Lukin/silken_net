@@ -8498,6 +8498,191 @@ def test_winter_pv_autonomy_invariants():
         assert abs(here[k] - v) <= (0 if k == "seasons" else 1.0), f"the desk number {k} is not reproduced"
 
 
+# ── 24b's diabatisation record and 25's К8 blocks (self-review round 2, К8 · in-silico §When Modifying #49, 2026-10-30) ──
+# (cache, charge, 2S, partner key suffix): each diabatisation cache, its model charge and imposed spin
+_DIABATISATION_CACHES = [("fodft_coupling.json", 1, 2, "co"), ("fodft_coupling_offplane.json", 1, 2, "co"),
+                         ("cu_ru_fodft.json", 1, 1, "ru")]
+
+
+@pytest.mark.parametrize("name,charge,spin,partner", _DIABATISATION_CACHES)
+def test_diabatisation_cache_records_what_its_physicality_flag_cannot_see(name, charge, spin, partner):
+    """The flag tests localisation and the t_ij band only, so every cache of 24b's `couple` (24b on both geometries, 24d)
+    records where the picks sit and in what spin state the coupling was taken — and its fields must describe ONE 2×2
+    rotation of the two picked canonical orbitals.
+
+    CAN catch: a run that drops the window / picks / ⟨S²⟩ again · ⟨S²⟩ off its pure value by ≥ 0.1 on a cache the flag calls
+    physical (a contaminated state — 24e's +3 run read 3.00 against 2.00; 24d's Cu–Ru reads 0.91 against 0.75 and is flagged
+    non-physical, its picks both on Ru, so a re-run that flips that flag with the same ⟨S²⟩ reds here) · relative picks inconsistent with the absolute ones and nocc · an edge flag that
+    disagrees with the window · a 2θ, gap and t_ij that are not gap = Δε·cos 2θ and t = ½·Δε·sin 2θ of the recorded ε · a
+    signed site difference whose size is not the gap · a model charge or spin other than the imposed one.
+    CANNOT catch: whether the picks are the physically right pair, whether the imposed spin is the ground state (no scan),
+    or whether +1 is the physical hop (it is not, paper §2.5).
+    """
+    d = json.loads((DFT / name).read_text())
+    nocc, (lo, hi), mos = d["nocc_alpha"], d["window"], d["frontier_MOs"]
+    assert (lo, hi) == (max(0, nocc - 6), nocc + 4), f"{name}: the window is not 24b's nocc−6 … nocc+4"
+    assert d["picked_rel_HOMO"] == [m - (nocc - 1) for m in mos], f"{name}: relative picks disagree with the indices"
+    assert d["pick_at_window_edge"] == (mos[0] == lo or mos[1] == hi - 1), f"{name}: the edge flag disagrees with the window"
+    assert (d["charge"], d["spin_2S"]) == (charge, spin), f"{name}: not the imposed charge and spin"
+    assert d["S2_pure"] == pytest.approx(spin / 2 * (spin / 2 + 1)), f"{name}: S2_pure is not S(S+1) of the imposed 2S"
+    if d["physically_reasonable"]:   # the flag cannot see ⟨S²⟩, so a «physical» coupling must also be spin-clean
+        assert abs(d["S2"] - d["S2_pure"]) < 0.1, f"{name}: ⟨S²⟩ {d['S2']} against pure {d['S2_pure']} — a contaminated state"
+    assert d["scf_converged"], f"{name}: the coupling was read off an unconverged SCF"
+    de = abs(d["eps_picked_eV"][1] - d["eps_picked_eV"][0])
+    two_theta = math.radians(d["localisation_2theta_deg"])
+    assert d["site_energy_gap_eV"] == pytest.approx(de * math.cos(two_theta), abs=2e-4), f"{name}: gap ≠ Δε·cos 2θ"
+    assert d["t_ij_eV"] == pytest.approx(0.5 * de * math.sin(two_theta), abs=6e-5), f"{name}: t_ij ≠ ½·Δε·sin 2θ"
+    assert abs(d[f"site_energy_cu_minus_{partner}_eV"]) == pytest.approx(d["site_energy_gap_eV"], abs=1e-4), (
+        f"{name}: the signed site difference is not the gap it folds")
+
+
+@pytest.mark.parametrize("name", [c[0] for c in _DIABATISATION_CACHES])
+def test_diabatisation_cache_resolves_its_coupling(name):
+    """t_ij is an off-diagonal Fock element, so it carries the residual Fock error of the point the SCF stopped at, and
+    |g| / t_ij is its relative resolution (in-silico Critical Rule #47; 24b `converge`; record `reproduction/fodft_scf_resolution_2026-10-31.json`: the
+    committed t_ij 0.0055 eV was a stop at |g| < 1e-3 on a coupling of 5e-5 Ha, and at |g| < 1e-5 two routes still differed 17 %).
+
+    CAN catch: a cache written by an SCF that stopped short of the coupling it reports (|g| / t_ij ≥ 1 %) · a recorded gradient
+    above the polish's own target (×3, PySCF's final-check slack), or a ratio that is not |g| / t_ij of the recorded pair · a
+    polish that slid into another state (its energy more than 1e-6 Ha from stage 1's, which stops at conv_tol 1e-10 within
+    ~1e-7 Ha of its minimum — two such stops differed by 4e-8) · a «physical» coupling read off an internally unstable solution.
+    CANNOT catch: a lower state the internal stability test does not reach (no external test, no spin scan), or an error of
+    t_ij that does not scale with the gradient (the window, the picks, the functional).
+    """
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import HARTREE_TO_EV
+    d = json.loads((DFT / name).read_text())
+    g, t = d["orbital_grad_norm_Ha"], d["t_ij_eV"] / HARTREE_TO_EV
+    assert g <= 3 * d["conv_tol_grad"], f"{name}: the polish stopped at |g| {g:.1e} Ha, above its target {d['conv_tol_grad']}"
+    assert d["grad_norm_over_t_ij"] == pytest.approx(g / t, rel=0.02), f"{name}: the ratio is not |g| / t_ij of the record"
+    assert g / t < 0.01, f"{name}: |g| / t_ij = {g / t:.1e} — the SCF's stop does not resolve the coupling"
+    assert abs(d["E_stage1_Ha"] - d["E_scf_Ha"]) < 1e-6, f"{name}: the polish moved the energy {d['E_stage1_Ha'] - d['E_scf_Ha']:+.1e} Ha"
+    if d["physically_reasonable"]:
+        assert d["stable_internal"], f"{name}: a «physical» coupling read off an internally unstable solution"
+
+
+def test_diabatisation_caches_are_the_polished_runs_of_their_resolution_record():
+    """The resolution record (in-silico Critical Rule #47) is evidence about the committed caches only while each cache IS
+    its «polished» run — a re-run of 24b/24d writes a new cache and leaves the record describing the old one.
+
+    CAN catch: a diabatisation cache regenerated (or hand-edited) without the record, in t_ij, the gap, the energy or the
+    stop's gradient · the record dropping a pair or its polished run · the shipped polished routes no longer agreeing within
+    their own resolution.
+    CANNOT catch: whether the per-run snapshots the record was assembled from were what it says (they are not in the tree).
+    """
+    rec = json.loads((CACHE / "reproduction/fodft_scf_resolution_2026-10-31.json").read_text())
+    for cache, rows in (("fodft_coupling.json", "shipped"), ("fodft_coupling_offplane.json", "offplane"),
+                        ("cu_ru_fodft.json", "cu_ru")):
+        d = json.loads((DFT / cache).read_text())
+        run = next(r for r in rec[rows] if r["label"] == "polished")
+        for k in ("t_ij_eV", "site_energy_gap_eV", "E_scf_Ha", "orbital_grad_norm_Ha", "S2"):
+            assert d[k] == run[k], f"{cache}: {k} {d[k]} ≠ the record's polished run {run[k]} — re-assemble the record"
+    pol = [r for r in rec["shipped"] if r["stop"].startswith("unshifted DIIS polish")]
+    t = [r["t_ij_eV"] for r in pol]
+    assert len(pol) >= 3 and max(t) - min(t) <= max(r["grad_norm_over_t_ij"] for r in pol) * min(t) * 2, (
+        f"the polished shipped routes spread {max(t) - min(t):.1e} eV — beyond twice their own |g| / t_ij")
+
+
+def test_24d_and_24e_take_the_diabatisation_from_24b():
+    """One home for the two-state diabatisation (2026-10-30): 24e carried a byte-for-byte copy of 24b's window, pick and
+    localisation and 24d a third, so a fix to one would have left the others measuring a different coupling.
+
+    CAN catch: a local `couple`, or the inline 2×2 localisation, re-appearing in 24d or 24e, or either no longer calling 24b's ·
+    24d building its own UKS object instead of calling 24b's `converge`.
+    CANNOT catch: a re-implementation that shares none of these tokens.
+    """
+    for script in ("24d_fodft_cu_ru.py", "24e_cluster_charge_probe.py"):
+        src = (Path(__file__).parents[1] / "scripts" / script).read_text()
+        assert "def couple(" not in src and "eigh(Pcu)" not in src, f"{script} carries its own diabatisation again"
+        assert "s24b.couple(" in src, f"{script} no longer takes the diabatisation from 24b"
+    # ⊕ 2026-10-31 — and 24d its SCF (24e keeps its own: it rebuilds the dated 2026-10-23 record, not a cache)
+    src = (Path(__file__).parents[1] / "scripts" / "24d_fodft_cu_ru.py").read_text()
+    assert "s24b.converge(" in src and "dft.UKS(" not in src, "24d runs its own SCF again, outside 24b's tolerances and polish"
+
+
+def test_25_k8_blocks_follow_from_the_24b_caches():
+    """The К8 numbers 25 owns — the off-plane probe per λ(Co), the downhill-ΔG threshold at the computed λ(Co), the
+    outer-sphere premise and the λ_o at which each live scenario's corners reach turnover — recomputed from 24b's caches,
+    25's λ readings and lib's Marcus rate, with a bisection of this test's own.
+
+    CAN catch: a block not re-run after 24b moved · a corner taken with the other geometry's gap · the shipped block
+    drifting from the scenario table it restates · a ΔG threshold that is not where k crosses turnover, or not the FIRST
+    crossing · a premise flag that fails, or whose «slows» is not what marcus_rate does there · a λ_o threshold that is not
+    where the corner's bottleneck (minimum over hops, every hop slowed) crosses turnover · an anode λ_o scale that is not
+    29c's grid, or a physical end that is not 29c's total there minus its λ_i.
+    CANNOT catch: whether the Marcus form, the cross-relation mean or the λ readings are the right physics — or how large λ_o is.
+    """
+    sys.path.insert(0, str(Path(__file__).parents[1]))
+    from lib.dft_utils import marcus_rate
+
+    ket = json.loads((DFT / "cathode_ket_lambda.json").read_text())
+    ship = json.loads((DFT / "fodft_coupling.json").read_text())
+    off = json.loads((DFT / "fodft_coupling_offplane.json").read_text())
+    turnover, cu = ket["turnover_s"], ket["lambda_cu_readings_eV"]
+    blk = ket["geometry_sensitivity_refused_offplane"]["by_lambda_co"]
+    scen = {"literature_assumed": ("literature λ", ket["lambda_lit_eV"]["Co"]),
+            "computed": ("computed λ (B3LYP)", ket["lambda_computed_eV"]["Co"])}
+    for key, (scen_name, lam_co) in scen.items():
+        b = blk[key]
+        assert b["lambda_co_eV"] == lam_co
+        for geom, src in (("shipped", ship), ("offplane", off)):
+            t, g = src["t_ij_eV"], src["site_energy_gap_eV"]
+            for r, lc in cu.items():
+                for tag, dg in (("dG=+gap", g), ("dG=0", 0.0), ("dG=-gap", -g)):
+                    want = marcus_rate(t, (lc + lam_co) / 2, dg) / turnover
+                    assert b[geom]["margins"][f"{r}|{tag}"] == pytest.approx(want, rel=1e-12), (key, geom, r, tag)
+            assert (b[geom]["adverse"], b[geom]["favourable"]) == (min(b[geom]["margins"].values()), max(b[geom]["margins"].values()))
+        assert b["offplane_crosses_turnover"] == (b["offplane"]["adverse"] < 1.0 <= b["offplane"]["favourable"])
+        sc = ket["scenarios"][scen_name]   # the shipped block restates the scenario table's own bracket
+        assert b["shipped"]["adverse"] == pytest.approx(sc["margin_vs_turnover_adverse"], rel=1e-12)
+        assert b["shipped"]["favourable"] == pytest.approx(sc["margin_vs_turnover_favourable"], rel=1e-12)
+
+    cond, t = ket["downhill_gap_condition"], ship["t_ij_eV"]
+    assert cond["lambda_co_eV"] == ket["lambda_computed_eV"]["Co"]
+    for r, thr in cond["downhill_gap_at_turnover_eV"].items():
+        lh = (cu[r] + cond["lambda_co_eV"]) / 2
+        if thr is None:     # unreachable at any ΔG: even the parabola's top is below turnover
+            assert marcus_rate(t, lh, -lh) < turnover, f"{r}: null threshold, but turnover is reachable"
+            continue
+        assert 0 <= thr < lh, f"{r}: the threshold is not the first crossing below the parabola's top"
+        if thr > 0:
+            assert marcus_rate(t, lh, -(thr - 2e-3)) < turnover < marcus_rate(t, lh, -(thr + 2e-3)), f"{r}: not where k crosses"
+    assert cond["computed_gap_below_every_threshold"] == all(
+        v is None or ship["site_energy_gap_eV"] < v for v in cond["downhill_gap_at_turnover_eV"].values())
+
+    o = ket["outer_sphere_term"]
+    live = {name: sc for name, sc in ket["scenarios"].items() if name != "canon λ=0.7 (old assumption)"}
+    lam_hops = [lh for sc in live.values() for by in sc["by_lambda_cu"].values() for lh in by["lambda_hop_eV"].values()]
+    assert o["lambda_hop_min_eV"] == pytest.approx(min(lam_hops), abs=5e-5)
+    assert o["gap_max_eV"] == max(ship["site_energy_gap_eV"], off["site_energy_gap_eV"])
+    assert o["every_gap_below_lambda_hop"] == (o["gap_max_eV"] < o["lambda_hop_min_eV"])
+    assert o["every_gap_below_lambda_hop"], "an applied |ΔG| reaches a λ_hop — «λ_o only slows» no longer holds"
+    osl = json.loads((DFT / "outer_sphere_lambda.json").read_text())
+    assert o["anode_outer_sphere_estimate_eV"] == [round(x, 3) for x in osl["lambda_o_range_eV"]]
+    assert o["anode_outer_sphere_physical_end_eV"] == pytest.approx(
+        [t - osl["lambda_inner_eV"] for t in osl["lambda_total_physical_end_eV"]], abs=5e-4)
+    t_map = ket["t_ij_eV"]
+
+    def margin(sc, r, branch, lo):   # every hop slowed by lo; the bottleneck is the slowest, as in the scenario table
+        dgs = sc["by_dG"][branch]["dG_eV"]   # the ΔG per hop of this branch (the same for every λ(Cu) reading)
+        return min(marcus_rate(t_map[h], sc["by_lambda_cu"][r]["lambda_hop_eV"][h] + lo, dgs[h]) for h in t_map) / turnover
+
+    for name, sc in live.items():
+        got = o["lambda_o_at_turnover_eV"][name]
+        branches = list(sc["by_dG"])
+        cells = [(r, b) for r in cu for b in branches]
+        for corner, pick in (("adverse_corner", min), ("favourable_corner", max)):
+            v = got[corner]
+            at0 = pick(margin(sc, r, b, 0.0) for r, b in cells)
+            if v == 0.0:
+                assert at0 < 1.0, f"{name} {corner}: 0.0 claims below turnover with no λ_o, but it reads ×{at0:.3g}"
+                continue
+            assert v is not None and v > 0, (name, corner, v)
+            lo_side = pick(margin(sc, r, b, v - 2e-3) for r, b in cells)
+            hi_side = pick(margin(sc, r, b, v + 2e-3) for r, b in cells)
+            assert lo_side > 1.0 > hi_side, f"{name} {corner}: λ_o {v} is not where the corner crosses turnover"
+
+
 def test_113_lever_rows_follow_from_its_constants_and_the_caches():
     """П4 (г), 2026-10-30: 113's cache recomputed with this test's OWN pair set, Table 2 copy, band widths and side rule.
 

@@ -154,14 +154,114 @@
     },
     "dft/fodft_coupling.json": {
       "owner_script": "24b_fodft_coupling.py",
-      "fields_compared": 14,
+      "date": "2026-10-31",
+      "basis": "committed = the shipped cache 24b wrote in the recorded environment on 2026-10-31 under its default SCF protocol (`converge`: conv_tol 1e-10 Ha, an unshifted DIIS polish to an orbital gradient of 3e-07 Ha); lock_rerun = the same script, inputs and tolerance under silken_lock in a scratch repo root, by this record's procedure",
+      "why_rechecked": "24b now records the window, the picks, their eps and populations, 2theta, the charge, <S2>, the SCF protocol, the SCF energy and the orbital gradient the SCF stopped at beside t_ij (in-silico When Modifying #49), and its SCF now polishes to a measured gradient (2026-10-31: at the old 1e-6 Ha tolerance t_ij was not resolved), so its committed cache was re-run and re-compared; the 2026-10-01 comparison is kept verbatim as previous_comparison_2026_10_01 \u2014 its max_abs_delta_total_energy_Ha of 0.0 compared no energy, because 24b's cache carried none",
+      "fields_compared": 49,
       "max_abs_delta_total_energy_Ha": 0.0,
-      "max_abs_delta_reported_outputs": 0.0,
+      "total_energy_source": "E_scf_Ha in both caches (24b records it since 2026-10-30, rounded to 1e-8 Ha)",
+      "diagnostics_not_reported_outputs": [
+        "E_stage1_Ha",
+        "conv_tol",
+        "conv_tol_grad",
+        "grad_norm_over_t_ij",
+        "level_shift",
+        "orbital_grad_norm_Ha",
+        "polish_cycles"
+      ],
+      "max_abs_delta_reported_outputs": 0.010000000000000009,
       "non_numeric_changes": {},
       "wall_seconds_delta": {
-        "wall_seconds": 25.09999999999991
+        "wall_seconds": -81.69999999999982
+      },
+      "previous_comparison_2026_10_01": {
+        "owner_script": "24b_fodft_coupling.py",
+        "fields_compared": 14,
+        "max_abs_delta_total_energy_Ha": 0.0,
+        "max_abs_delta_reported_outputs": 0.0,
+        "non_numeric_changes": {},
+        "wall_seconds_delta": {
+          "wall_seconds": 25.09999999999991
+        },
+        "per_field": {
+          "frontier_MOs[0]": {
+            "committed": 122,
+            "lock_rerun": 122,
+            "delta": 0
+          },
+          "frontier_MOs[1]": {
+            "committed": 124,
+            "lock_rerun": 124,
+            "delta": 0
+          },
+          "site_energy_gap_eV": {
+            "committed": 0.183,
+            "lock_rerun": 0.183,
+            "delta": 0.0
+          },
+          "t_ij_crude_script24_eV": {
+            "committed": 0.001281,
+            "lock_rerun": 0.001281,
+            "delta": 0.0
+          },
+          "t_ij_eV": {
+            "committed": 0.005462,
+            "lock_rerun": 0.005462,
+            "delta": 0.0
+          },
+          "wall_seconds": {
+            "committed": 569.2,
+            "lock_rerun": 594.3,
+            "delta": 25.09999999999991
+          }
+        }
       },
       "per_field": {
+        "E_scf_Ha": {
+          "committed": -1668.20164561,
+          "lock_rerun": -1668.20164561,
+          "delta": 0.0
+        },
+        "E_stage1_Ha": {
+          "committed": -1668.2016456,
+          "lock_rerun": -1668.20164561,
+          "delta": -1.000012161966879e-08
+        },
+        "S2": {
+          "committed": 2.0139,
+          "lock_rerun": 2.0139,
+          "delta": 0.0
+        },
+        "S2_pure": {
+          "committed": 2.0,
+          "lock_rerun": 2.0,
+          "delta": 0.0
+        },
+        "charge": {
+          "committed": 1,
+          "lock_rerun": 1,
+          "delta": 0
+        },
+        "conv_tol": {
+          "committed": 1e-10,
+          "lock_rerun": 1e-10,
+          "delta": 0.0
+        },
+        "conv_tol_grad": {
+          "committed": 3e-07,
+          "lock_rerun": 3e-07,
+          "delta": 0.0
+        },
+        "eps_picked_eV[0]": {
+          "committed": -7.4982,
+          "lock_rerun": -7.4982,
+          "delta": 0.0
+        },
+        "eps_picked_eV[1]": {
+          "committed": -7.3682,
+          "lock_rerun": -7.3682,
+          "delta": 0.0
+        },
         "frontier_MOs[0]": {
           "committed": 122,
           "lock_rerun": 122,
@@ -172,10 +272,105 @@
           "lock_rerun": 124,
           "delta": 0
         },
-        "site_energy_gap_eV": {
-          "committed": 0.183,
-          "lock_rerun": 0.183,
+        "grad_norm_over_t_ij": {
+          "committed": 0.005,
+          "lock_rerun": 0.00639,
+          "delta": 0.0013899999999999997
+        },
+        "level_shift": {
+          "committed": 0.3,
+          "lock_rerun": 0.3,
           "delta": 0.0
+        },
+        "loc_pop_co[0]": {
+          "committed": 0.879,
+          "lock_rerun": 0.879,
+          "delta": 0.0
+        },
+        "loc_pop_co[1]": {
+          "committed": 0.241,
+          "lock_rerun": 0.241,
+          "delta": 0.0
+        },
+        "loc_pop_cu[0]": {
+          "committed": 0.01,
+          "lock_rerun": 0.01,
+          "delta": 0.0
+        },
+        "loc_pop_cu[1]": {
+          "committed": 0.594,
+          "lock_rerun": 0.594,
+          "delta": 0.0
+        },
+        "localisation_2theta_deg": {
+          "committed": 1.3,
+          "lock_rerun": 1.31,
+          "delta": 0.010000000000000009
+        },
+        "n_electrons": {
+          "committed": 254,
+          "lock_rerun": 254,
+          "delta": 0
+        },
+        "nocc_alpha": {
+          "committed": 128,
+          "lock_rerun": 128,
+          "delta": 0
+        },
+        "orbital_grad_norm_Ha": {
+          "committed": 2.71e-07,
+          "lock_rerun": 3.48e-07,
+          "delta": 7.700000000000001e-08
+        },
+        "picked_rel_HOMO[0]": {
+          "committed": -5,
+          "lock_rerun": -5,
+          "delta": 0
+        },
+        "picked_rel_HOMO[1]": {
+          "committed": -3,
+          "lock_rerun": -3,
+          "delta": 0
+        },
+        "polish_cycles": {
+          "committed": 39,
+          "lock_rerun": 6,
+          "delta": -33
+        },
+        "pop_co_picked[0]": {
+          "committed": 0.24,
+          "lock_rerun": 0.24,
+          "delta": 0.0
+        },
+        "pop_co_picked[1]": {
+          "committed": 0.879,
+          "lock_rerun": 0.879,
+          "delta": 0.0
+        },
+        "pop_cu_picked[0]": {
+          "committed": 0.594,
+          "lock_rerun": 0.593,
+          "delta": -0.0010000000000000009
+        },
+        "pop_cu_picked[1]": {
+          "committed": 0.01,
+          "lock_rerun": 0.01,
+          "delta": 0.0
+        },
+        "site_energy_cu_minus_co_eV": {
+          "committed": -0.1299,
+          "lock_rerun": -0.1299,
+          "delta": 0.0
+        },
+        "site_energy_gap_eV": {
+          "committed": 0.1299,
+          "lock_rerun": 0.1299,
+          "delta": 0.0
+        },
+        "spin_2S": {
+          "committed": 2,
+          "lock_rerun": 2,
+          "delta": 0
         },
         "t_ij_crude_script24_eV": {
           "committed": 0.001281,
@@ -183,14 +378,24 @@
           "delta": 0.0
         },
         "t_ij_eV": {
-          "committed": 0.005462,
-          "lock_rerun": 0.005462,
-          "delta": 0.0
+          "committed": 0.001475,
+          "lock_rerun": 0.001481,
+          "delta": 5.999999999999929e-06
         },
         "wall_seconds": {
-          "committed": 569.2,
-          "lock_rerun": 594.3,
-          "delta": 25.09999999999991
+          "committed": 5570.5,
+          "lock_rerun": 5488.8,
+          "delta": -81.69999999999982
+        },
+        "window[0]": {
+          "committed": 122,
+          "lock_rerun": 122,
+          "delta": 0
+        },
+        "window[1]": {
+          "committed": 132,
+          "lock_rerun": 132,
+          "delta": 0
         }
       }
     }

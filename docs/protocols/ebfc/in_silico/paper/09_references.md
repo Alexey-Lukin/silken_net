@@ -95,9 +95,9 @@ which then becomes a revision-round edit. **Weakest link:** route (b) legalises 
 a primary — for *J. Phys. Chem. B* that is review surface (λ(Cu) 2.0 eV, λ(Co/Ce/Ru)). That is the axis
 the founder ruled on: route (b) was ratified **for exactly those numbers**, and the (c) alternative —
 dropping the 2.0 eV reading — was not taken, because it is a MODEL change (skill `in-silico` §When
-Modifying #13: §3.4 prints "×25 at zero driving force on the 2.0 eV reading"). So an unsourced number
+Modifying #13: §3.4 prints "×25 at zero driving force on the 2.0 eV reading" 📌). So an unsourced number
 stays printed, under its label and judged at the adverse end, and a referee who asks for the primary is a
-revision-round edit rather than a submit blocker. The authorship / corresponding-author verdict (⚖️ founder 2026-10-03, `00_02 §2.1`: one
+revision-round edit rather than a submit blocker. ⊕ 2026-10-31 (📌 above): §3.4 prints ×1.8 there since the coupling was converged; the reading and the ruling are untouched. The authorship / corresponding-author verdict (⚖️ founder 2026-10-03, `00_02 §2.1`: one
 author, also corresponding) is separate and is not touched by this rule.
 
 **Applied 2026-10-01 — route (b) for the λ set, and nothing beyond it.** Two clause markers left the body:

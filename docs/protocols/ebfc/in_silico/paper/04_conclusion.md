@@ -30,7 +30,7 @@ optimum is not the cell-voltage optimum. The **direct electron transfer** throug
 clash-free geometry, with reorganisation energies computed for Co, Ce and Ru (λ(Cu) cited), and with a framework copper standing in
 for the enzyme's T1 site beside the cobalt node (§3.4), a process whose verdict is conditional on the Co reorganisation energy:
 *rate-limiting* at every corner of its bracket at the computed λ(Co), straddling turnover only at an assumed
-literature value (turnover needs λ(Co) ≲ 2.0 eV at zero driving force on the 2.0 eV λ(Cu) reading, and ≲ 0.9 eV at the
+literature value (turnover needs λ(Co) ≲ 1.5 eV at zero driving force on the 2.0 eV λ(Cu) reading, and ≲ 0.6 eV at the
 adverse corner) — a conditional, quantitative finding (the λ(Co) thresholds on a minimal-cluster coupling) that motivates a
 low-reorganisation-energy metal, computed indicatively, and names conductive-MOF band transport and an acid-stable enzyme-free
 catalyst as levers not computed here.
@@ -59,9 +59,9 @@ magnitude takes explicit-water QM/MM of the chloro species and of the reduced fl
 and a model of the mediator film.
 
 The immediate experimental test is the EIS of the forthcoming Ti-coin half-cell, for which
-the present work supplies the bracket the measurement must narrow — the cathode charge-transfer resistance spans ≈ 9.6 decades
-(0.002 Ω to 7 MΩ) over λ(Co), the sign of the site-energy gap, the λ(Cu) reading and the unknown coverage, and the two λ(Co)
-branches overlap between ≈ 8 Ω and ≈ 1.6 kΩ, so only an arc outside that window excludes one of them; the QM/MM treatment of the cascade with spin–orbit coupling on osmium,
+the present work supplies the bracket the measurement must narrow — the cathode charge-transfer resistance spans ≈ 8.7 decades
+(0.064 Ω to 32.6 MΩ) over λ(Co), the sign of the site-energy gap, the λ(Cu) reading and the unknown coverage, and the two λ(Co)
+branches overlap between ≈ 287 Ω and ≈ 7.33 kΩ, so only an arc outside that window excludes one of them; the QM/MM treatment of the cascade with spin–orbit coupling on osmium,
 and the protein-bound cofactor potential, are the natural next computational steps. The broader message is that the
 electronic-structure level — under-used in the biofuel-cell literature relative to experimental and
 reaction-diffusion modelling — yields both mechanistic findings with their limits and a measured account of how far

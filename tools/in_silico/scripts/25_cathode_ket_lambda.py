@@ -4,7 +4,7 @@
 
 Combines the geometry-corrected hopping integrals t_ij (script 24, on the
 deprotonated / clash-free ZIF cluster) with the COMPUTED metal reorganization
-energies λ (script 35, Nelsen 4-point) under the two-sphere Marcus approximation
+energies λ (script 35, Nelsen 4-point) under the Marcus cross-relation
 λ_hop = (λ_i + λ_j)/2, to test whether the old "k_DET ≫ turnover (~10⁵×)" claim
 survives a realistic λ. It does NOT: that margin was a double artifact of
 (a) a broken bridging geometry (script 23 imidazole N–H clashing into the 2nd
@@ -116,7 +116,8 @@ def _load_lambda_computed() -> tuple[dict[str, float], dict[str, str]]:
     return values, provenance
 
 
-def _two_sphere(la: float, lb: float) -> float:
+def _cross_relation(la: float, lb: float) -> float:
+    """λ of a hop between two sites as the Marcus cross-relation reads it: the mean of the two self-exchange λ."""
     return 0.5 * (la + lb)
 
 
@@ -130,7 +131,7 @@ def main() -> int:
     for h, t in tij.items():
         print(f"  {h:8s} t_ij = {t:.5f} eV")
 
-    # Each scenario maps a hop → its two-sphere λ. The Ru-swap replaces the Co node.
+    # Each scenario maps a hop → its cross-relation λ_hop. The Ru-swap replaces the Co node.
     # ── driving force: what is MEASURED, what is a default wearing a measurement's clothes ──
     # `marcus_rate`'s dG defaults to 0. Until 2026-09-21 every scenario row below took that
     # default while the FO-DFT block at the bottom of this same script already knew a computed
@@ -140,7 +141,7 @@ def main() -> int:
     ru_fo = json.loads((CACHE / "cu_ru_fodft.json").read_text())
     # MAGNITUDE only. The 24b two-state diabatisation returns |ΔE| between two diabatic states;
     # which of them is the donor on the cathode's electron path is NOT fixed by that calculation,
-    # so the sign stays unmeasured and both ends are carried (§When Modifying #11).
+    # so the sign is not fixed by it and both ends are carried (§When Modifying #11).
     GAP_EV = {"Cu-Co": float(fo["site_energy_gap_eV"])}
     # ⛔ Self-review round 1, cluster 8 (2026-10-15): the crude t(Cu–Co) of script 24 is half the difference of two UNCONSTRAINED
     # SCF solutions of one cluster from one start (state B differs only in SCF settings: level shift, DIIS space, cycle cap) — not charge-localised states, and
@@ -164,7 +165,7 @@ def main() -> int:
                   "a measurement any more than its t_ij was",
     }
 
-    # Each scenario maps a hop → its two-sphere λ. The Ru-swap replaces the Co node.
+    # Each scenario maps a hop → its cross-relation λ_hop. The Ru-swap replaces the Co node.
     # ⚠️ The Ru-swap REUSES the "Cu-Co" / "Co-Ce" keys for what are physically the Cu-Ru / Ru-Ce
     # nodes, so `node_identity` says what each slot really is — without it the Cu-Co gap would be
     # applied to a pair it was never measured on.
@@ -176,16 +177,16 @@ def main() -> int:
             "canon λ=0.7 (old assumption)": {
                 "Cu-Co": 0.7, "Co-Ce": 0.7, "Ce-C": 0.7},
             "literature λ": {
-                "Cu-Co": _two_sphere(lit["Cu"], lit["Co"]),
-                "Co-Ce": _two_sphere(lit["Co"], lit["Ce"]),
+                "Cu-Co": _cross_relation(lit["Cu"], lit["Co"]),
+                "Co-Ce": _cross_relation(lit["Co"], lit["Ce"]),
                 "Ce-C": lit["Ce"]},
             "computed λ (B3LYP)": {
-                "Cu-Co": _two_sphere(comp["Cu"], comp["Co"]),
-                "Co-Ce": _two_sphere(comp["Co"], comp["Ce"]),
+                "Cu-Co": _cross_relation(comp["Cu"], comp["Co"]),
+                "Co-Ce": _cross_relation(comp["Co"], comp["Ce"]),
                 "Ce-C": comp["Ce"]},
             "Ru-swap (Co→Ru, computed)": {
-                "Cu-Co": _two_sphere(comp["Cu"], comp["Ru"]),   # Cu–Ru node
-                "Co-Ce": _two_sphere(comp["Ru"], comp["Ce"]),   # Ru–Ce node
+                "Cu-Co": _cross_relation(comp["Cu"], comp["Ru"]),   # Cu–Ru node
+                "Co-Ce": _cross_relation(comp["Ru"], comp["Ce"]),   # Ru–Ce node
                 "Ce-C": comp["Ce"]},
         }
     scen_by_cu = {r: _scenarios(v) for r, v in LAMBDA_CU_READINGS.items()}
@@ -195,7 +196,7 @@ def main() -> int:
     }
 
     def _dg(scenario: str, branch: str) -> dict[str, float]:
-        """ΔG per hop for one branch. A hop whose node has no USABLE measured gap gets 0.0 —
+        """ΔG per hop for one branch. A hop whose node has no USABLE computed gap gets 0.0 —
         and the caller records that as an assumption, never as a measurement."""
         ident = NODE_IDENTITY.get(scenario, {})
         out_dg = {}
@@ -218,15 +219,15 @@ def main() -> int:
            "lambda_computed_provenance": lam_prov,
            "lambda_lit_eV": LAMBDA_LIT, "turnover_s": TURNOVER_S,
            "driving_force": {
-               "measured_magnitude_eV": GAP_EV, "measured_source": GAP_SOURCE,
-               "sign_is_unmeasured": True,
+               "computed_magnitude_eV": GAP_EV, "computed_source": GAP_SOURCE,
+               "sign_is_not_fixed": True,
                "sign_convention": "marcus_rate takes dG in eV; NEGATIVE is downhill and faster "
                                   "for |dG| < 2λ, so the ADVERSE end is +|gap|",
                "hops_without_a_usable_gap": {
                    h: "no FO-DFT diabatisation exists for this pair" for h in tij
                    if h not in GAP_EV},
-               "unmeasured_treatment": "dG = 0, recorded per scenario as an ASSUMPTION "
-                                       "(`driving_force_measured_for_bottleneck`), because a "
+               "no_gap_treatment": "dG = 0, recorded per scenario as an ASSUMPTION "
+                                       "(`driving_force_computed_for_bottleneck`), because a "
                                        "default that reads like a measurement is how the headline "
                                        "margins came to be quoted as if ΔG were known",
                "ru_node_gap_refused": RU_GAP_REFUSED,
@@ -273,8 +274,8 @@ def main() -> int:
         out["scenarios"][name] = {
             "lambda_hop_eV": lam,
             "node_identity": {h: ident.get(h, h) for h in tij},
-            "hops_with_a_measured_gap": measured,
-            "driving_force_measured_for_bottleneck": grid[worst[0]][worst[1]]["bottleneck_hop"] in
+            "hops_with_a_computed_gap": measured,
+            "driving_force_computed_for_bottleneck": grid[worst[0]][worst[1]]["bottleneck_hop"] in
             [ident.get(h, h) for h in measured],
             "by_dG": per_branch,
             "by_lambda_cu": {
@@ -290,7 +291,7 @@ def main() -> int:
             "bottleneck_hop_is_branch_invariant":
                 len({grid[r][b]["bottleneck_hop"] for r in grid for b in BRANCHES}) == 1,
         }
-        flag = "" if measured else "   [no measured ΔG on any hop — all three columns are ΔG=0]"
+        flag = "" if measured else "   [no computed gap on any hop — all three columns are ΔG=0]"
         print(f"  {name:32s} {grid[worst[0]][worst[1]]['bottleneck_hop']:>11}"
               f" {'×' + format(worst[2], '.2g'):>11}"
               f" {'×' + format(zero['margin_vs_turnover'], '.2g'):>11}"
@@ -311,12 +312,12 @@ def main() -> int:
     # literature row; it is kept because 60 · 61 · 31b read its per-λ(Cu) shape. Kept as its own block because it answers a DIFFERENT question — whether the
     # verdict survives the coupling METHOD — while the table above answers it across λ.
     t_fo, dg_fo = fo["t_ij_eV"], fo["site_energy_gap_eV"]
-    lam_lit = _two_sphere(LAMBDA_LIT["Cu"], LAMBDA_LIT["Co"])
+    lam_lit = _cross_relation(LAMBDA_LIT["Cu"], LAMBDA_LIT["Co"])
 
     def _fo_margins(lam_hop: float) -> dict[str, float]:
         return {tag: marcus_rate(t_fo, lam_hop, dg) / TURNOVER_S
                 for tag, dg in (("dG=0", 0.0), ("dG=+gap", dg_fo), ("dG=-gap", -dg_fo))}
-    fo_by_cu = {r: _fo_margins(_two_sphere(v, LAMBDA_LIT["Co"]))
+    fo_by_cu = {r: _fo_margins(_cross_relation(v, LAMBDA_LIT["Co"]))
                 for r, v in LAMBDA_CU_READINGS.items()}
     fo_margin = fo_by_cu[LAMBDA_CU_BASE]
     fo_cells = [(r, tag, m) for r, ms in fo_by_cu.items() for tag, m in ms.items()]
@@ -325,7 +326,7 @@ def main() -> int:
         "t_ij_eV": t_fo, "t_ij_crude_eV": fo["t_ij_crude_script24_eV"], "site_gap_eV": dg_fo,
         "lambda_hop_eV": lam_lit,
         "margin_vs_turnover_by_dG_sign": {k: round(v, 3) for k, v in fo_margin.items()},
-        "by_lambda_cu": {r: {"lambda_hop_eV": _two_sphere(LAMBDA_CU_READINGS[r], LAMBDA_LIT["Co"]),
+        "by_lambda_cu": {r: {"lambda_hop_eV": _cross_relation(LAMBDA_CU_READINGS[r], LAMBDA_LIT["Co"]),
                              "margin_vs_turnover_by_dG_sign": {k: round(v, 3) for k, v in ms.items()}}
                          for r, ms in fo_by_cu.items()},
         "margin_adverse_corner": round(fo_worst[2], 3),
@@ -366,10 +367,32 @@ def main() -> int:
             "why_not_t_squared": "the gap moves too, so the margin ratio is NOT the square of "
                                  "the coupling ratio — quoting |t|² alone understates it",
         }
+        # ⊕ 2026-10-30 (self-review round 2, К8): the fields above are at the ASSUMED λ(Co) only, so they could not say
+        # whether the COMPUTED-λ(Co) verdict («below turnover at every corner») survives the same roll. The whole bracket
+        # per λ(Co) value, on both couplings, is computed here — the review printed it with no script behind it.
+        def _off_by_co(lam_co: float) -> dict:
+            per = {}
+            for geom, (t, g) in (("shipped", (t_fo, dg_fo)), ("offplane", (off["t_ij_eV"], off["site_energy_gap_eV"]))):
+                cells = {f"{r}|{tag}": marcus_rate(t, _cross_relation(lam_cu, lam_co), dg) / TURNOVER_S
+                         for r, lam_cu in LAMBDA_CU_READINGS.items()
+                         for tag, dg in (("dG=+gap", g), ("dG=0", 0.0), ("dG=-gap", -g))}
+                per[geom] = {"margins": cells, "adverse": min(cells.values()), "favourable": max(cells.values())}
+            return {"lambda_co_eV": lam_co, **per,
+                    "offplane_crosses_turnover": per["offplane"]["adverse"] < 1.0 <= per["offplane"]["favourable"],
+                    "shipped_side_of_turnover": ("below" if per["shipped"]["favourable"] < 1.0 else
+                                                 "above" if per["shipped"]["adverse"] >= 1.0 else "across")}
         g = out["geometry_sensitivity_refused_offplane"]
+        g["by_lambda_co"] = {"literature_assumed": _off_by_co(LAMBDA_LIT["Co"]), "computed": _off_by_co(lam_c["Co"])}
+        g["by_lambda_co_key"] = ("<λ(Cu) reading>|<ΔG branch>, each geometry's OWN gap; adverse/favourable = the bracket's "
+                                 "corners over the gap sign × the λ(Cu) reading, as in `scenarios`")
         print(f"\n  geometry sensitivity (REFUSED off-plane probe): t_ij ×{g['t_ij_ratio_vs_shipped']}, "
               f"margin ×{g['margin_adverse_shipped']} → ×{g['margin_adverse']} "
               f"(×{g['margin_ratio']:.0f}); flips the verdict: {g['flips_the_verdict']}")
+        for k, b in g["by_lambda_co"].items():
+            print(f"    λ(Co) {b['lambda_co_eV']:.2f} ({k}): shipped ×{b['shipped']['adverse']:.2g} … "
+                  f"×{b['shipped']['favourable']:.2g} ({b['shipped_side_of_turnover']} turnover) → off-plane "
+                  f"×{b['offplane']['adverse']:.2g} … ×{b['offplane']['favourable']:.2g}"
+                  f"{' — ACROSS turnover' if b['offplane_crosses_turnover'] else ''}")
 
     lit = out["scenarios"]["literature λ"]
 
@@ -448,8 +471,100 @@ def main() -> int:
         "lambda_co_at_turnover_eV": co_need,
         "lambda_co_at_turnover_adverse_corner_eV": min(v for k, v in co_need.items() if k.startswith("fodft|") and v is not None),
         "lambda_co_at_turnover_key": "<coupling>|<λ(Cu) reading>|<ΔG branch>; the λ(Co) at which the Cu–Co hop reaches "
-                                     "turnover (two-sphere λ_hop); null = unreachable at any λ",
+                                     "turnover (cross-relation λ_hop); null = unreachable at any λ",
     }
+    # ⊕ 2026-10-30 (self-review round 2, К8): the gap's SIGN is unmeasured, and the gap itself is a gas-phase difference of two
+    # diagonal Fock elements, not a free energy — so the computed-λ(Co) verdict is stated against ANY downhill ΔG: the |ΔG|
+    # at which the hop first reaches turnover. k rises as ΔG goes downhill until −ΔG = λ_hop (the parabola's top), so the
+    # first crossing lies in [0, λ_hop] and bisection there is exact; null = turnover unreachable at any ΔG.
+    def _downhill_gap_at_turnover(t: float, lam_hop: float) -> float | None:
+        if marcus_rate(t, lam_hop, -lam_hop) < TURNOVER_S:
+            return None
+        if marcus_rate(t, lam_hop, 0.0) >= TURNOVER_S:
+            return 0.0
+        a, b = 0.0, lam_hop
+        for _ in range(80):
+            m = (a + b) / 2
+            a, b = (m, b) if marcus_rate(t, lam_hop, -m) < TURNOVER_S else (a, m)
+        return (a + b) / 2
+    dg_need = {r: _downhill_gap_at_turnover(t_fo, _cross_relation(v, lam_c["Co"])) for r, v in LAMBDA_CU_READINGS.items()}
+    out["downhill_gap_condition"] = {
+        "lambda_co_eV": lam_c["Co"], "coupling": "24b two-state diabatisation (FO-DFT label)",
+        "downhill_gap_at_turnover_eV": {r: (None if v is None else round(v, 4)) for r, v in dg_need.items()},
+        "computed_gap_eV": dg_fo,
+        "computed_gap_below_every_threshold": all(v is None or dg_fo < v for v in dg_need.values()),   # None = unreachable
+        "reading": "at the computed λ(Co) the Cu–Co hop stays below turnover for any downhill ΔG smaller than the threshold "
+                   "of its λ(Cu) reading; the diabatisation's gap is a gas-phase difference of two diagonal Fock elements "
+                   "whose sign it does not fix, so the verdict is stated against ΔG, not against that gap",
+    }
+    # λ_hop is the mean of the two sites' λ AS READ: computed INNER-sphere Nelsen values for Co, Ce and Ru (script 35), but
+    # literature SELF-EXCHANGE values — totals, inner + outer sphere, in solution — for Cu and for every node of the
+    # literature scenario. No outer-sphere term for the framework is added on top. An added λ_o > 0 lowers every k_ET while
+    # |ΔG| < λ_hop (in `marcus_rate` the prefactor ∝ λ^-1/2 and the exponent −(ΔG+λ)²/4λkT both fall with λ there), so the
+    # flag below is the premise of «it only slows»; and since λ_o's size is unmeasured, the λ_o at which each corner of each
+    # live scenario reaches turnover is published as the condition (in-silico §When Modifying #40), never a direction alone.
+    off_gap = json.loads(off_path.read_text())["site_energy_gap_eV"] if off_path.exists() else None
+    gaps_applied = [*GAP_EV.values(), *([off_gap] if off_gap is not None else [])]
+    live = [n for n in scenarios if n != "canon λ=0.7 (old assumption)"]
+    lam_hop_min = min(x for r in scen_by_cu for n in live for x in scen_by_cu[r][n].values())
+    below = max(gaps_applied) < lam_hop_min
+    LO_MAX = 3.0
+
+    def _lo_at_turnover(name: str, r: str, bkey: str) -> float | None:
+        """λ_o added to every hop at which this cell's bottleneck reaches turnover; 0.0 = below it with none added,
+        None = still above it at LO_MAX. Monotone in λ_o only while `below` holds — the caller checks it first."""
+        lam, dg = scen_by_cu[r][name], _dg(name, bkey)
+        def f(lo: float) -> float:
+            return min(marcus_rate(tij[h], lam[h] + lo, dg[h]) for h in tij) / TURNOVER_S
+        if f(0.0) < 1.0:
+            return 0.0
+        if f(LO_MAX) >= 1.0:
+            return None
+        a, b = 0.0, LO_MAX
+        for _ in range(80):
+            m = (a + b) / 2
+            a, b = (m, b) if f(m) >= 1.0 else (a, m)
+        return (a + b) / 2
+    lo_cond = {}
+    if below:
+        for n in live:
+            cells = [_lo_at_turnover(n, r, _BRANCH_KEY[b]) for r in LAMBDA_CU_READINGS for b in BRANCHES]
+            # the adverse corner falls first (the smallest cell threshold), the favourable one last (the largest)
+            ends = [LO_MAX + 1 if c is None else c for c in cells]
+            lo_cond[n] = {k: (None if v > LO_MAX else round(v, 3)) for k, v in
+                          (("adverse_corner", min(ends)), ("favourable_corner", max(ends)))}
+    osl = json.loads((CACHE / "outer_sphere_lambda.json").read_text())
+    anode_lo = osl["lambda_o_range_eV"]
+    # the end the paper quotes for the anode (§3.1: buried, delocalised): 29c keeps it as a TOTAL, so λ_o = total − λ_i
+    anode_lo_phys = [t - osl["lambda_inner_eV"] for t in osl["lambda_total_physical_end_eV"]]
+    lit_fav, ru = lo_cond.get("literature λ", {}), lo_cond.get("Ru-swap (Co→Ru, computed)", {})
+    out["outer_sphere_term"] = {
+        "included": False,
+        "lambda_hop_composition": "Marcus cross-relation mean ½(λ_i + λ_j) of the sites' self-exchange λ as read: computed inner-sphere (Nelsen, script 35) for Co, "
+                                  "Ce and Ru; literature solution self-exchange totals (inner + outer) for Cu and for every "
+                                  "node of the literature scenario; no outer-sphere term for the framework added",
+        "gap_max_eV": max(gaps_applied), "lambda_hop_min_eV": round(lam_hop_min, 4),
+        "every_gap_below_lambda_hop": below,
+        "lambda_o_at_turnover_eV": lo_cond,
+        "lambda_o_at_turnover_key": "λ_o added to every hop's λ_hop at which a corner of a live scenario reaches turnover; "
+                                    "0.0 = below turnover already with none added; null = still above at "
+                                    f"{LO_MAX} eV",
+        "anode_outer_sphere_estimate_eV": [round(x, 3) for x in anode_lo],
+        "anode_outer_sphere_physical_end_eV": [round(x, 3) for x in anode_lo_phys],
+        "anode_outer_sphere_estimate_is": "script 29c's two-sphere λ_o for the anode flavin in its protein pocket over its "
+                                          "radius × dielectric grid, and at the grid's physical end (buried, delocalised) "
+                                          "that the paper quotes for the anode — another medium, the only outer-sphere "
+                                          "estimate in this tree; a scale, not this hop's value",
+        "direction": (f"an added outer-sphere term can only slow every hop (every applied |ΔG| ≤ {max(gaps_applied)} eV lies "
+                      f"below every live λ_hop ≥ {lam_hop_min:.2f} eV): it deepens the computed-λ(Co) verdict, takes the "
+                      f"literature-λ(Co) favourable corner below turnover at λ_o ≈ {lit_fav.get('favourable_corner')} eV, and "
+                      f"the Ru swap's adverse and favourable corners at λ_o ≈ {ru.get('adverse_corner')} and "
+                      f"≈ {ru.get('favourable_corner')} eV" if below else
+                      "NOT fixed — some applied |ΔG| reaches a λ_hop, where a larger λ can speed the hop"),
+    }
+    print(f"  outer-sphere term omitted: every |ΔG| ({max(gaps_applied)}) < every live λ_hop ({lam_hop_min:.3f}) = {below}")
+    for n, c in lo_cond.items():
+        print(f"    λ_o at turnover · {n}: adverse corner {c['adverse_corner']} · favourable corner {c['favourable_corner']} eV")
     ru35 = next(r for r in json.loads((CACHE / "metal_reorganization.json").read_text())["results"] if r["name"] == "ru")
     out["ru_lambda_nelsen_halves"] = {
         "lambda_1_eV": ru35["lambda_1_eV"], "lambda_2_eV": ru35["lambda_2_eV"],
@@ -477,7 +592,7 @@ def main() -> int:
         f"({tij_crude['Cu-Co']:.4f} eV) is half an energy difference of "
         f"{out['dscf_coupling_resolution']['pairs'][co_lbl]['delta_E_over_scf_tol']}× the SCF tolerance between two "
         "unconstrained solutions from one start, so it is not used (its table is kept as `scenarios_crude_dscf`). "
-        f"Every margin is a BRACKET over the sign of the measured {GAP_EV['Cu-Co']} eV site-energy gap and the λ(Cu) "
+        f"Every margin is a BRACKET over the sign of the computed {GAP_EV['Cu-Co']} eV site-energy gap and the λ(Cu) "
         f"reading ({' ⊥ '.join(f'{r} {v}' for r, v in LAMBDA_CU_READINGS.items())} eV); ΔG = 0 is the function's "
         "DEFAULT, not a measurement. The verdict is CONDITIONAL ON λ(Co). At the assumed literature λ(Co) "
         f"{LAMBDA_LIT['Co']} eV (no primary): ×{lit['margin_vs_turnover_adverse']:.2g} … "
