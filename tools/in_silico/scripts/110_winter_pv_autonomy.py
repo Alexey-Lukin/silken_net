@@ -77,8 +77,8 @@ infrared — a sign the sheet takes from an unverified abstract — an a-Si cell
 reading the measured R is biased high); the capacitance and the leak at frost (§12.1 rates neither, and
 the leak is an illustration) — the leg asks for both, and they stay inputs the tree does not have; what follows an
 outage — the VBAT_OK hysteresis, the warm-up cost and the cold start of an EMPTIED store (HW.44's subject; VIN(CS) is
-rated only above 0 °C, 02_03 §1.1); the canon's winter mode (§9.8: the MCU's sleep cut by a PFET, TX only at VSTOR ≥
-4.6 V) — a state-dependent demand whose floor lies below the Standby sleep; winter light under a canopy on a vertical
+rated only above 0 °C, 02_03 §1.1); the canon's winter mode (§9.8: TX only at VSTOR ≥ 4.6 V; the PFET it names for the MCU cut is not in the
+BOM, and the VBAT_OK → VOUT_EN wire re-powers the MCU at 3.40 V — 02_03 §9.8 ⚠️ 2026-11-02) — a state-dependent demand whose floor lies below the Standby sleep; winter light under a canopy on a vertical
 face (T is a summer horizontal reading); the reflected ends are open-field ones, and neither is an extreme of the real
 ground (01_04 §3.1: 0.80 is a mean of fresh snow, wet ground falls below 0.18) — under the canopy the ground's light
 is not modelled; ERA5's open cell instead of the stand; a winter worse than the worst of the record's whole winters.
