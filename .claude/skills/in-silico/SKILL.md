@@ -246,8 +246,9 @@ Anchor mechanics (CPU):
   92 (importlib: `rigid_points`, `solve`, `drag_path`, `exit_cycle_peak`, each with `depth` and `pad_nmm` — through it 91's rod and
      kernels and 55's geometry) · 91 (importlib: `drag_path`, `rigid_point`, `touchdown_drag`, `slide_um`) · 86 (importlib: `soderberg`;
      coaxiality_allocation.json: the alloys) · 68 (the plays) · 91's and 92's caches (controls) → 116 (countersink_ring_exit.json —
-     the countersunk exit: the ring bore's clearance, the exit radius's floor, the depth's cost); a change to 92's solve or path,
-     91's kernels or 86's line re-runs 116, and its cache test re-reads 68's, 86's, 91's and 92's CURRENT caches
+     the countersunk exit: the ring bore's clearance, the exit radius's floor, the depth's cost, (d) the ratified r 0.2 checked on
+     every depth); a change to 92's solve or path, 91's kernels or 86's line re-runs 116 — so does a stiffer pin spring than 55's
+     1.0 N or a chosen countersink depth off its 0–2.0 mm grid — and its cache test re-reads 68's, 86's, 91's and 92's CURRENT caches
   55 (importlib: spans from the CEMs, the liner, SF; bus_mechanical.json: the grip rows) · 86 (importlib: soderberg;
      coaxiality_allocation.json) · 87 (pogo_sway_transfer.json: the shift) · 90 (importlib: DAILY_*; pogo_thermal_gap.json:
      the L1 margins) · 77 (anchor_torque_path.json) · 78 · 79 (flange_cambium_heat/frost.json: the cambium extremes) → 102
