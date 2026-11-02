@@ -11024,6 +11024,7 @@ _LETTER_EXIT_PINS = (
     ("CNC п. 5 floor band high", _CNC, rf"наша модель вимагає там [\d,]+–{_D} мм", lambda d: max(_floors(d))),
     ("CNC п. 1 depth cap", _CNC, rf"глибину якої ще не задано \(вона буде не більше {_D} мм\)", lambda d: max(d["inputs"]["depths_mm"])),
     ("tribo п. 10 exit radius", _TRIBO, rf"\(на виході — {_D} мм\)", lambda d: d["summary"]["ratified_exit_radius"]["r_exit_mm"]),
+    ("tribo п. 10 second test radius", _TRIBO, rf"окремою ціною — другий радіус, {_D} мм", lambda d: d["summary"]["ratified_exit_radius"]["r_exit_mm"]),
 )
 
 
