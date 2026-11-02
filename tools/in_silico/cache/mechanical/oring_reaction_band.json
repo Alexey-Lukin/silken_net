@@ -38,8 +38,8 @@
     "lug_root_capacity_N_at_print_floor_73": 457.0,
     "safety_factor_73": 2.0,
     "o_ring_reaction_N_needed_87": {
-      "initial_with_clamp_at_52_requirement": 10.57,
-      "after_20_years_with_a_weaker_clamp": 10.57
+      "initial_with_clamp_at_52_requirement": 10.571074863764254,
+      "after_20_years_with_a_weaker_clamp": 10.571074863764254
     }
   },
   "chart_70_shore_a_lbf_per_in": {
@@ -238,8 +238,8 @@
   "rim_premise_A": {
     "reaction_N_low_at_window_floor": 58.0,
     "needs_87": {
-      "initial_with_clamp_at_52_requirement": 10.57,
-      "after_20_years_with_a_weaker_clamp": 10.57
+      "initial_with_clamp_at_52_requirement": 10.571074863764254,
+      "after_20_years_with_a_weaker_clamp": 10.571074863764254
     },
     "margin_x": {
       "initial_with_clamp_at_52_requirement": 5.49

@@ -119,16 +119,16 @@
       "ceiling_full_depth_77__anode_bond_soft": null
     },
     "ta_k1_sway_alone": {
-      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 5395.790132,
+      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 5395.817247,
       "nominal_anode_centroid_to_flange_77__anode_bond_soft": null,
-      "ceiling_full_depth_77__anode_bond_stiff": 3604.11686,
+      "ceiling_full_depth_77__anode_bond_stiff": 3604.132414,
       "ceiling_full_depth_77__anode_bond_soft": null
     },
     "ta_k1_hot_preload": {
-      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 1296.882323,
-      "nominal_anode_centroid_to_flange_77__anode_bond_soft": 4136.714489,
-      "ceiling_full_depth_77__anode_bond_stiff": 970.33866,
-      "ceiling_full_depth_77__anode_bond_soft": 1995.108861
+      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 1296.886734,
+      "nominal_anode_centroid_to_flange_77__anode_bond_soft": 4136.759376,
+      "ceiling_full_depth_77__anode_bond_stiff": 970.341835,
+      "ceiling_full_depth_77__anode_bond_soft": 1995.122285
     },
     "hot_flip_25.832": {
       "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 10263.110298,
@@ -176,7 +176,7 @@
     },
     "ta_k1_hot_preload": {
       "nominal_anode_centroid_to_flange_77__anode_bond_stiff": "deepest",
-      "nominal_anode_centroid_to_flange_77__anode_bond_soft": 6.8024,
+      "nominal_anode_centroid_to_flange_77__anode_bond_soft": 6.8023,
       "ceiling_full_depth_77__anode_bond_stiff": "deepest",
       "ceiling_full_depth_77__anode_bond_soft": 12.0753
     },
@@ -212,12 +212,12 @@
         "yes_above": null
       },
       "ta_k1_sway_alone": {
-        "no_below": 3604.11686,
+        "no_below": 3604.132414,
         "yes_above": null
       },
       "ta_k1_hot_preload": {
-        "no_below": 970.33866,
-        "yes_above": 4136.714489
+        "no_below": 970.341835,
+        "yes_above": 4136.759376
       },
       "hot": {
         "no_below": 4984.36374,
@@ -525,7 +525,7 @@
       "state3_least_any_depth_and_bearing": {
         "anode_bond_stiff": {
           "adverse_reversed": 0.93,
-          "adverse_reversed_hot_preload": 1.1866
+          "adverse_reversed_hot_preload": 1.1865
         },
         "anode_bond_soft": {
           "adverse_reversed": 0.4866,
@@ -647,15 +647,15 @@
         "ceiling_full_depth_77__anode_bond_soft": null
       },
       "ta_k1_sway_alone": {
-        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 10919.231439,
+        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 10919.296114,
         "nominal_anode_centroid_to_flange_77__anode_bond_soft": null,
-        "ceiling_full_depth_77__anode_bond_stiff": 6885.033231,
+        "ceiling_full_depth_77__anode_bond_stiff": 6885.066291,
         "ceiling_full_depth_77__anode_bond_soft": null
       },
       "ta_k1_hot_preload": {
-        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 2635.651045,
+        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 2635.660588,
         "nominal_anode_centroid_to_flange_77__anode_bond_soft": null,
-        "ceiling_full_depth_77__anode_bond_stiff": 1940.573908,
+        "ceiling_full_depth_77__anode_bond_stiff": 1940.58056,
         "ceiling_full_depth_77__anode_bond_soft": null
       },
       "hot_flip_39.235": {
@@ -728,11 +728,11 @@
           "yes_above": null
         },
         "ta_k1_sway_alone": {
-          "no_below": 6885.033231,
+          "no_below": 6885.066291,
           "yes_above": null
         },
         "ta_k1_hot_preload": {
-          "no_below": 1940.573908,
+          "no_below": 1940.58056,
           "yes_above": null
         },
         "hot": {
@@ -1041,7 +1041,7 @@
         "state3_least_any_depth_and_bearing": {
           "anode_bond_stiff": {
             "adverse_reversed": 0.93,
-            "adverse_reversed_hot_preload": 1.1866
+            "adverse_reversed_hot_preload": 1.1865
           },
           "anode_bond_soft": {
             "adverse_reversed": 0.4866,

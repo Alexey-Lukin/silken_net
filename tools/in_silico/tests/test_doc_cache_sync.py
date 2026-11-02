@@ -1839,8 +1839,11 @@ CHECKS += [
            lambda d: d["by_slope_reading"]["median"]["B_inertia_coaxial"]["force_ratio_per_gram"] * 100, 0.005),
           ("whisker ratio per gram", rf"\(median\) … {N} % \(whisker\) per gram",
            lambda d: d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["force_ratio_per_gram"] * 100, 0.005),
+          # a requirement «≥ X» — rounded UP and pinned exactly, at both readings (in-silico §When Modifying #43)
           ("initial O-ring reaction for the rim at 52's clamp", rf"initial O-ring reaction ≥ \*\*{N}\*\* N \(median reading\)",
-           lambda d: d["by_slope_reading"]["median"]["A_rim"]["o_ring_reaction_N_needed"]["initial_with_clamp_at_52_requirement"], 0.005),
+           lambda d: _up2(d["by_slope_reading"]["median"]["A_rim"]["o_ring_reaction_N_needed"]["initial_with_clamp_at_52_requirement"]), 0.0),
+          ("initial O-ring reaction, whisker", rf"N \(median reading\) … {N} N with the clamp at `52`'s printed form",
+           lambda d: _up2(d["by_slope_reading"]["upper_whisker"]["A_rim"]["o_ring_reaction_N_needed"]["initial_with_clamp_at_52_requirement"]), 0.0),
           ("stack mass estimate, low", rf"— \*\*{N}–[\d.]+ g\*\*\. At that mass",
            lambda d: d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"][0], 0.005),
           ("stack mass estimate, high", rf"— \*\*[\d.]+–{N} g\*\*\. At that mass",
@@ -6958,9 +6961,9 @@ CHECKS += [
     ("sway105 bracket axial closes → 105", SUMMARY, rf"the axial bracket closes to {N} %", SWAY105,
      lambda d: round(abs(d["inputs"]["fe_bracket"]["axial"]["locked"] / d["inputs"]["fe_bracket"]["axial"]["unlocked"] - 1) * 100, 2), 0.0),
     ("sway105 source strain → 105", SUMMARY, rf"one gust of one January day\), {N} µε at", SWAY105,
-     lambda d: d["inputs"]["stem_readings_87"]["upper_whisker"]["surface_strain_ue"], 0.0),
+     lambda d: round(d["inputs"]["stem_readings_87"]["upper_whisker"]["surface_strain_ue"]), 0.0),
     ("sway105 median strain → 105", SUMMARY, rf"and its median \({N} µε\) for [^()]+ only, on both", SWAY105,
-     lambda d: d["inputs"]["stem_readings_87"]["median"]["surface_strain_ue"], 0.0),
+     lambda d: round(d["inputs"]["stem_readings_87"]["median"]["surface_strain_ue"]), 0.0),
     ("sway105 junction mismatch → 105", SUMMARY, rf"junction absorbs {N} µm of radial mismatch", SWAY105,
      lambda d: round(d["junction"]["mismatch_um_at_tL1_sensor_on_bark"]["upper_whisker"], 1), 0.0),
     ("sway105 junction ratio → 105", SUMMARY, rf"{N}× the wood's strain over one", SWAY105,
@@ -7036,7 +7039,7 @@ CHECKS += [
     ("sway105 field rungs hi → 105", SUMMARY, rf"\(`106`'s rule, /\d+–/{N}\)", SWAY105,
      lambda d: max(d["gyroid_ligament_field_uniaxial_reading"]["rungs_steps_per_period"]), 0.0),
     ("sway105 field median → 105", SUMMARY, rf"source day's median \({N} µε\) binds every alloy", SWAY105,
-     lambda d: d["inputs"]["stem_readings_87"]["median"]["surface_strain_ue"], 0.0),
+     lambda d: round(d["inputs"]["stem_readings_87"]["median"]["surface_strain_ue"]), 0.0),
     ("sway105 field knife margin → 105", SUMMARY, rf"which sits at ×{N} of its threshold", SWAY105,
      lambda d: _ceil_n(min(v["p99"]["any_sampled_angle"]["margin_over_threshold"]
                            for v in d["gyroid_ligament_field_uniaxial_reading"]["source_day_large_stem_sf2"]["median"].values()

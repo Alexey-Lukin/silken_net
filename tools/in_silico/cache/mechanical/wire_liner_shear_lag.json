@@ -39,12 +39,12 @@
   "sway_input": {
     "shift_um_87": {
       "median": [
-        18.0,
-        32.4
+        17.999948013554786,
+        32.39990642439861
       ],
       "upper_whisker": [
-        36.0,
-        64.8
+        35.99989602710957,
+        64.79981284879722
       ]
     },
     "x_min_mm": 0.7,
@@ -64,7 +64,7 @@
     "Ti-15Zr": {
       "E_GPa": 100.0,
       "seam_k_86": 0.1331,
-      "seam_k_at_wall_ceiling_87": 0.5041,
+      "seam_k_at_wall_ceiling_87": 0.5041239494625325,
       "by_share": {
         "0": {
           "adverse": {
@@ -141,7 +141,7 @@
         "0.5": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 40.947,
+              "F_amp_N": 40.946,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
               "seam_k": 0.4163
@@ -153,8 +153,8 @@
               "seam_k": 0.319
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 40.947,
-              "F_mean_N": 12.703,
+              "F_amp_N": 40.946,
+              "F_mean_N": 12.704,
               "wall_or_slip_reached": true,
               "seam_k": 0.4314
             },
@@ -219,8 +219,8 @@
               "seam_k": 0.5041
             },
             "sway_one_sided": {
-              "F_amp_N": 40.947,
-              "F_mean_N": 12.703,
+              "F_amp_N": 40.946,
+              "F_mean_N": 12.704,
               "wall_or_slip_reached": true,
               "seam_k": 0.4314
             },
@@ -231,8 +231,8 @@
               "seam_k": 0.5041
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 40.947,
-              "F_mean_N": 12.703,
+              "F_amp_N": 40.946,
+              "F_mean_N": 12.704,
               "wall_or_slip_reached": true,
               "seam_k": 0.4314
             }
@@ -271,7 +271,7 @@
     "beta-Ti-13Nb-13Zr": {
       "E_GPa": 80.0,
       "seam_k_86": 0.1408,
-      "seam_k_at_wall_ceiling_87": 0.5331,
+      "seam_k_at_wall_ceiling_87": 0.5330766228752669,
       "by_share": {
         "0": {
           "adverse": {
@@ -478,7 +478,7 @@
     "Ti-6Al-4V": {
       "E_GPa": 110.0,
       "seam_k_86": 0.1441,
-      "seam_k_at_wall_ceiling_87": 0.5456,
+      "seam_k_at_wall_ceiling_87": 0.5456107546146336,
       "by_share": {
         "0": {
           "adverse": {
@@ -685,7 +685,7 @@
     "Ti-6Al-7Nb": {
       "E_GPa": 103.0,
       "seam_k_86": 0.1493,
-      "seam_k_at_wall_ceiling_87": 0.5656,
+      "seam_k_at_wall_ceiling_87": 0.5655575284855074,
       "by_share": {
         "0": {
           "adverse": {
@@ -892,7 +892,7 @@
     "CP-Ti-Gr4": {
       "E_GPa": 104.0,
       "seam_k_86": 0.272,
-      "seam_k_at_wall_ceiling_87": 1.03,
+      "seam_k_at_wall_ceiling_87": 1.0299523033182587,
       "by_share": {
         "0": {
           "adverse": {
@@ -939,7 +939,7 @@
               "seam_k": 0.6293
             },
             "sway_one_sided": {
-              "F_amp_N": 14.736,
+              "F_amp_N": 14.735,
               "F_mean_N": 10.555,
               "wall_or_slip_reached": false,
               "seam_k": 0.5106
@@ -951,8 +951,8 @@
               "seam_k": 0.7494
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 14.736,
-              "F_mean_N": 38.914,
+              "F_amp_N": 14.735,
+              "F_mean_N": 38.915,
               "wall_or_slip_reached": true,
               "seam_k": 0.6155
             }
@@ -1099,7 +1099,7 @@
     "Ta": {
       "E_GPa": 186.0,
       "seam_k_86": 0.3883,
-      "seam_k_at_wall_ceiling_87": 1.4705,
+      "seam_k_at_wall_ceiling_87": 1.4705212543574377,
       "by_share": {
         "0": {
           "adverse": {
@@ -1388,7 +1388,7 @@
       "capped": false
     },
     "window_ceiling_relaxed__mu0.4": {
-      "pad_amp_um": 44.29,
+      "pad_amp_um": 44.28,
       "fraction_of_shift": 0.683,
       "force_ratio_over_min_preload": 0.0633,
       "F_amp_N": 53.65,

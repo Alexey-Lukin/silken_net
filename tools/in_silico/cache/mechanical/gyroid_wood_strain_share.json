@@ -3300,12 +3300,12 @@
       "median": {
         "exceeds": [],
         "margin_over_threshold": {
-          "Ti-6Al-4V": 0.20247022496691663,
-          "Ti-6Al-7Nb": 0.2009632224168126,
-          "CP-Ti-Gr4": 0.36327661258409183,
-          "beta-Ti-13Nb-13Zr": 0.17034700315457413,
-          "Ta": 0.6805040770941438,
-          "Ti-15Zr": 0.17919187975795434
+          "Ti-6Al-4V": 0.2025506604695901,
+          "Ti-6Al-7Nb": 0.2010430592314189,
+          "CP-Ti-Gr4": 0.363420931764591,
+          "beta-Ti-13Nb-13Zr": 0.1704146770401042,
+          "Ta": 0.6807744214745156,
+          "Ti-15Zr": 0.17926306745444495
         }
       },
       "upper_whisker": {
@@ -3313,12 +3313,12 @@
           "Ta"
         ],
         "margin_over_threshold": {
-          "Ti-6Al-4V": 0.4051610057344508,
-          "Ti-6Al-7Nb": 0.40214535901926446,
-          "CP-Ti-Gr4": 0.7269489513256826,
-          "beta-Ti-13Nb-13Zr": 0.3408795694934125,
-          "Ta": 1.3617494440326168,
-          "Ti-15Zr": 0.35857895764200665
+          "Ti-6Al-4V": 0.4051013209391802,
+          "Ti-6Al-7Nb": 0.4020861184628378,
+          "CP-Ti-Gr4": 0.726841863529182,
+          "beta-Ti-13Nb-13Zr": 0.3408293540802084,
+          "Ta": 1.3615488429490312,
+          "Ti-15Zr": 0.3585261349088899
         }
       }
     },
@@ -3326,12 +3326,12 @@
       "median": {
         "exceeds": [],
         "margin_over_threshold": {
-          "Ti-6Al-4V": 0.19913232104121475,
-          "Ti-6Al-7Nb": 0.19763186221743811,
-          "CP-Ti-Gr4": 0.35719844357976654,
-          "beta-Ti-13Nb-13Zr": 0.16754882277787916,
-          "Ta": 0.6695842450765864,
-          "Ti-15Zr": 0.17623344211940872
+          "Ti-6Al-4V": 0.19921143049221726,
+          "Ti-6Al-7Nb": 0.19771037558000462,
+          "CP-Ti-Gr4": 0.3573403480813702,
+          "beta-Ti-13Nb-13Zr": 0.1676153850281295,
+          "Ta": 0.6698502513268574,
+          "Ti-15Zr": 0.1763034545150934
         }
       },
       "upper_whisker": {
@@ -3339,12 +3339,12 @@
           "Ta"
         ],
         "margin_over_threshold": {
-          "Ti-6Al-4V": 0.3984815618221258,
-          "Ti-6Al-7Nb": 0.3954790096878364,
-          "CP-Ti-Gr4": 0.7147859922178988,
-          "beta-Ti-13Nb-13Zr": 0.3352801606132506,
-          "Ta": 1.3398978847556529,
-          "Ti-15Zr": 0.3526588596659628
+          "Ti-6Al-4V": 0.3984228609844345,
+          "Ti-6Al-7Nb": 0.39542075116000924,
+          "CP-Ti-Gr4": 0.7146806961627404,
+          "beta-Ti-13Nb-13Zr": 0.335230770056259,
+          "Ta": 1.3397005026537148,
+          "Ti-15Zr": 0.3526069090301868
         }
       }
     }
@@ -11880,23 +11880,23 @@
       "median": {
         "exceeds": [],
         "margin_over_threshold": {
-          "Ti-6Al-4V": 0.11112456119113909,
-          "Ti-6Al-7Nb": 0.10928571428571429,
-          "CP-Ti-Gr4": 0.1998258598171528,
-          "beta-Ti-13Nb-13Zr": 0.09321689683184403,
-          "Ta": 0.38522870331514897,
-          "Ti-15Zr": 0.098150326098578
+          "Ti-6Al-4V": 0.11116870773140317,
+          "Ti-6Al-7Nb": 0.1093291303058478,
+          "CP-Ti-Gr4": 0.19990524479084057,
+          "beta-Ti-13Nb-13Zr": 0.09325392918045507,
+          "Ta": 0.3853817434196901,
+          "Ti-15Zr": 0.09818931835444472
         }
       },
       "upper_whisker": {
         "exceeds": [],
         "margin_over_threshold": {
-          "Ti-6Al-4V": 0.22237017310252996,
-          "Ti-6Al-7Nb": 0.21869047619047619,
-          "CP-Ti-Gr4": 0.3998693948628646,
-          "beta-Ti-13Nb-13Zr": 0.18653533712428919,
-          "Ta": 0.7708770457406631,
-          "Ti-15Zr": 0.19640756976371218
+          "Ti-6Al-4V": 0.22233741546280633,
+          "Ti-6Al-7Nb": 0.2186582606116956,
+          "CP-Ti-Gr4": 0.39981048958168114,
+          "beta-Ti-13Nb-13Zr": 0.18650785836091013,
+          "Ta": 0.7707634868393802,
+          "Ti-15Zr": 0.19637863670888944
         }
       }
     },
@@ -11904,23 +11904,23 @@
       "median": {
         "exceeds": [],
         "margin_over_threshold": {
-          "Ti-6Al-4V": 0.10928571428571429,
-          "Ti-6Al-7Nb": 0.10748155953635406,
-          "CP-Ti-Gr4": 0.19653179190751446,
-          "beta-Ti-13Nb-13Zr": 0.09168081494057725,
-          "Ta": 0.3788691704498556,
-          "Ti-15Zr": 0.09652996845425868
+          "Ti-6Al-4V": 0.1093291303058478,
+          "Ti-6Al-7Nb": 0.10752425881853665,
+          "CP-Ti-Gr4": 0.19660986824429919,
+          "beta-Ti-13Nb-13Zr": 0.09171723704874878,
+          "Ta": 0.3790196840978628,
+          "Ti-15Zr": 0.09656831698939237
         }
       },
       "upper_whisker": {
         "exceeds": [],
         "margin_over_threshold": {
-          "Ti-6Al-4V": 0.21869047619047619,
-          "Ti-6Al-7Nb": 0.21508020138157125,
-          "CP-Ti-Gr4": 0.39327767073431813,
-          "beta-Ti-13Nb-13Zr": 0.18346150004993508,
-          "Ta": 0.7581510524143623,
-          "Ti-15Zr": 0.19316508937960042
+          "Ti-6Al-4V": 0.2186582606116956,
+          "Ti-6Al-7Nb": 0.2150485176370733,
+          "CP-Ti-Gr4": 0.39321973648859837,
+          "beta-Ti-13Nb-13Zr": 0.18343447409749755,
+          "Ta": 0.7580393681957256,
+          "Ti-15Zr": 0.19313663397878475
         }
       }
     }
@@ -11949,8 +11949,8 @@
         "radial_reading": []
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 0.7708770457406631,
-        "radial_reading": 0.7581510524143623
+        "axial_reading": 0.7707634868393802,
+        "radial_reading": 0.7580393681957256
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -11997,8 +11997,8 @@
         ]
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 1.0171650055370987,
-        "radial_reading": 1.0005446623093681
+        "axial_reading": 1.0170151656357935,
+        "radial_reading": 1.0003972707724635
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12041,8 +12041,8 @@
         "radial_reading": []
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 0.8710289236605027,
-        "radial_reading": 0.8568097014925373
+        "axial_reading": 0.8709006112556866,
+        "radial_reading": 0.8566834837398521
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12085,8 +12085,8 @@
         "radial_reading": []
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 0.9367669556348802,
-        "radial_reading": 0.9212637913741224
+        "axial_reading": 0.9366289592749837,
+        "radial_reading": 0.9211280788055382
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12131,8 +12131,8 @@
         "radial_reading": []
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 1.0027292576419213,
-        "radial_reading": 0.9865735767991407
+        "axial_reading": 1.002581544289434,
+        "radial_reading": 0.9864282433610327
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12175,8 +12175,8 @@
         "radial_reading": []
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 0.9208020050125313,
-        "radial_reading": 0.905372104484968
+        "axial_reading": 0.9206663604702973,
+        "radial_reading": 0.9052387329414702
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12219,8 +12219,8 @@
         "radial_reading": []
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 0.8823246878001921,
-        "radial_reading": 0.867737364194615
+        "axial_reading": 0.8821947114016537,
+        "radial_reading": 0.8676095366737095
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12267,8 +12267,8 @@
         ]
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 1.0711370262390671,
-        "radial_reading": 1.0533256880733946
+        "axial_reading": 1.0709792356491212,
+        "radial_reading": 1.053170521294864
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12315,8 +12315,8 @@
         ]
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 1.1431238332296203,
-        "radial_reading": 1.124235006119951
+        "axial_reading": 1.1429554381694107,
+        "radial_reading": 1.124069393597456
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12363,8 +12363,8 @@
         ]
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 2.0875,
-        "radial_reading": 2.0548098434004474
+        "axial_reading": 2.087192487657094,
+        "radial_reading": 2.054507146687073
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12407,8 +12407,8 @@
         "radial_reading": []
       },
       "ta_upper_whisker_margin": {
-        "axial_reading": 0.9871037076840409,
-        "radial_reading": 0.9704173269941891
+        "axial_reading": 0.9869582961516621,
+        "radial_reading": 0.9702743735542753
       },
       "upper_whisker_flips_above_ue": {
         "axial_reading": {
@@ -12435,12 +12435,12 @@
     "nu_LR_cv_printed": 1.64,
     "per_fe_reading": {
       "axial_reading": {
-        "margin_at_printed": 0.9871037076840409,
+        "margin_at_printed": 0.9869582961516621,
         "nu_LR_first_exceeds": 0.3082797562655046,
         "scanned_to": 0.6
       },
       "radial_reading": {
-        "margin_at_printed": 0.9704173269941891,
+        "margin_at_printed": 0.9702743735542753,
         "nu_LR_first_exceeds": 0.3187085538556586,
         "scanned_to": 0.6
       }
@@ -12469,8 +12469,8 @@
       "radial_reading": []
     },
     "ta_upper_whisker_margin": {
-      "axial_reading": 0.8823246878001921,
-      "radial_reading": 0.867737364194615
+      "axial_reading": 0.8821947114016537,
+      "radial_reading": 0.8676095366737095
     }
   },
   "consumer_ceiling_binding_claim": {

@@ -10,7 +10,7 @@
       "upper_whisker": 0.06
     },
     "f0_upper_hz": 0.74,
-    "pin_force_min_N": 0.392,
+    "pin_force_min_N": 0.392266,
     "pin_count": 2,
     "working_compression_min_mm": 0.7,
     "mu_rim": 0.1,
@@ -19,8 +19,8 @@
       29.8,
       18.0
     ],
-    "mass_ceiling_g": 112.5,
-    "drag_ceiling_N": 0.145,
+    "mass_ceiling_g": 112.48715278458526,
+    "drag_ceiling_N": 0.14482799999999998,
     "mu_lr_pines": {
       "loblolly": 0.328,
       "lodgepole": 0.316,
@@ -101,11 +101,11 @@
         "slope_deg_per_m2s2": 0.03,
         "tilt_deg": 0.93,
         "nos_displacement_mm": 30.8,
-        "accel_m_s2": 0.826,
+        "accel_m_s2": 0.8258804489623195,
         "accel_oscillation_m_s2": 0.667,
         "accel_gravity_tilt_m_s2": 0.159,
         "mean_curvature_rad_per_m": 0.00854,
-        "surface_strain_microstrain_source_tree": 918.0
+        "surface_strain_microstrain_source_tree": 918.3646945691215
       },
       "A_rim": {
         "capsule_weight_N_at_ceiling": 1.103,
@@ -113,8 +113,8 @@
         "capacity_N_initial_at_52_requirement": 21.2,
         "normal_force_N_needed_at_end_of_life": 11.12,
         "o_ring_reaction_N_needed": {
-          "initial_with_clamp_at_52_requirement": 10.34,
-          "after_20_years_with_a_weaker_clamp": 10.34
+          "initial_with_clamp_at_52_requirement": 10.336169968913092,
+          "after_20_years_with_a_weaker_clamp": 10.336169968913092
         },
         "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is at least L0 for a clamp at 52's printed form for the ring's own reaction (it never lifts while L ≤ L0), and only L(20) for a weaker clamp (it can lift, and a lift is taken as not undone — conservative); the pogo pair alone does not hold even the weight — below the needed reaction the pins slide (55's regime); the reaction is 88's; temperature is not modelled"
       },
@@ -127,12 +127,12 @@
         "unloads_at_mass_ceiling": false,
         "at_estimated_stack_mass": {
           "stack_mass_g": [
-            5.97,
-            7.76
+            5.965785662864029,
+            7.761009816635452
           ],
           "ratio_over_reduced_mean": [
-            0.0129,
-            0.0169
+            0.012894367366780757,
+            0.016909829729117223
           ],
           "is": "the coaxial ratio at the part-by-part estimate (inputs.stack_parts_g, low … high), before the pair factor the layout sets; a scale reading checks the mass"
         },
@@ -146,8 +146,8 @@
           "mu_lr_hi_dx_ceiling": 0.0504
         },
         "imposed_shift_um_at_source_strain": [
-          18.0,
-          32.4
+          17.999948013554786,
+          32.39990642439861
         ],
         "ratio_at_source_strain": [
           0.0257,
@@ -160,11 +160,11 @@
         "slope_deg_per_m2s2": 0.06,
         "tilt_deg": 1.86,
         "nos_displacement_mm": 61.7,
-        "accel_m_s2": 1.652,
+        "accel_m_s2": 1.6517189632750233,
         "accel_oscillation_m_s2": 1.333,
         "accel_gravity_tilt_m_s2": 0.318,
         "mean_curvature_rad_per_m": 0.01709,
-        "surface_strain_microstrain_source_tree": 1837.0
+        "surface_strain_microstrain_source_tree": 1836.729389138243
       },
       "A_rim": {
         "capsule_weight_N_at_ceiling": 1.103,
@@ -172,8 +172,8 @@
         "capacity_N_initial_at_52_requirement": 21.2,
         "normal_force_N_needed_at_end_of_life": 11.36,
         "o_ring_reaction_N_needed": {
-          "initial_with_clamp_at_52_requirement": 10.57,
-          "after_20_years_with_a_weaker_clamp": 10.57
+          "initial_with_clamp_at_52_requirement": 10.571074863764254,
+          "after_20_years_with_a_weaker_clamp": 10.571074863764254
         },
         "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is at least L0 for a clamp at 52's printed form for the ring's own reaction (it never lifts while L ≤ L0), and only L(20) for a weaker clamp (it can lift, and a lift is taken as not undone — conservative); the pogo pair alone does not hold even the weight — below the needed reaction the pins slide (55's regime); the reaction is 88's; temperature is not modelled"
       },
@@ -186,12 +186,12 @@
         "unloads_at_mass_ceiling": false,
         "at_estimated_stack_mass": {
           "stack_mass_g": [
-            5.97,
-            7.76
+            5.965785662864029,
+            7.761009816635452
           ],
           "ratio_over_reduced_mean": [
-            0.0258,
-            0.0338
+            0.02578808001316194,
+            0.03381880084996295
           ],
           "is": "the coaxial ratio at the part-by-part estimate (inputs.stack_parts_g, low … high), before the pair factor the layout sets; a scale reading checks the mass"
         },
@@ -205,8 +205,8 @@
           "mu_lr_hi_dx_ceiling": 0.0504
         },
         "imposed_shift_um_at_source_strain": [
-          36.0,
-          64.8
+          35.99989602710957,
+          64.79981284879722
         ],
         "ratio_at_source_strain": [
           0.0514,
@@ -256,80 +256,80 @@
       "Ti-15Zr": {
         "endurance_MPa": 380.0,
         "yield_MPa": 950.0,
-        "seam_k_86": 0.1331,
-        "seam_k_at_route_capacity": 0.5041,
+        "seam_k_86": 0.13311970454051705,
+        "seam_k_at_route_capacity": 0.5041239494625325,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.4885,
-          "loose_50": 0.5041,
-          "loose_100": 0.5481
+          "tight": 0.48852263986863936,
+          "loose_50": 0.5041239494625325,
+          "loose_100": 0.5480591732111565
         },
-        "sf_wire_86": 12.504,
-        "sf_wire_at_route_capacity": 3.85
+        "sf_wire_86": 12.504113195129976,
+        "sf_wire_at_route_capacity": 3.8500779026393053
       },
       "beta-Ti-13Nb-13Zr": {
         "endurance_MPa": 360.0,
         "yield_MPa": 900.0,
-        "seam_k_86": 0.1408,
-        "seam_k_at_route_capacity": 0.5331,
+        "seam_k_86": 0.14076498966230186,
+        "seam_k_at_route_capacity": 0.5330766228752669,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.5157,
-          "loose_50": 0.5331,
-          "loose_100": 0.5825
+          "tight": 0.5156627865280082,
+          "loose_50": 0.5330766228752669,
+          "loose_100": 0.5824504365903708
         },
-        "sf_wire_86": 11.846,
-        "sf_wire_at_route_capacity": 3.647
+        "sf_wire_86": 11.846001974333662,
+        "sf_wire_at_route_capacity": 3.6474422235530266
       },
       "Ti-6Al-4V": {
         "endurance_MPa": 352.0,
         "yield_MPa": 880.0,
-        "seam_k_86": 0.1441,
-        "seam_k_at_route_capacity": 0.5456,
+        "seam_k_86": 0.14407477075005878,
+        "seam_k_at_route_capacity": 0.5456107546146336,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.5274,
-          "loose_50": 0.5456,
-          "loose_100": 0.5974
+          "tight": 0.5273823953127357,
+          "loose_50": 0.5456107546146336,
+          "loose_100": 0.5974465858331712
         },
-        "sf_wire_86": 11.583,
-        "sf_wire_at_route_capacity": 3.566
+        "sf_wire_86": 11.582757486015135,
+        "sf_wire_at_route_capacity": 3.5663879519185144
       },
       "Ti-6Al-7Nb": {
         "endurance_MPa": 340.0,
         "yield_MPa": 850.0,
-        "seam_k_86": 0.1493,
-        "seam_k_at_route_capacity": 0.5656,
+        "seam_k_86": 0.14934194491835243,
+        "seam_k_at_route_capacity": 0.5655575284855074,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.546,
-          "loose_50": 0.5656,
-          "loose_100": 0.6214
+          "tight": 0.5459958916178911,
+          "loose_50": 0.5655575284855074,
+          "loose_100": 0.6214468503952963
         },
-        "sf_wire_86": 11.188,
-        "sf_wire_at_route_capacity": 3.445
+        "sf_wire_86": 11.187890753537348,
+        "sf_wire_at_route_capacity": 3.4448065444667466
       },
       "CP-Ti-Gr4": {
         "endurance_MPa": 192.0,
         "yield_MPa": 480.0,
-        "seam_k_86": 0.272,
-        "seam_k_at_route_capacity": 1.03,
+        "seam_k_86": 0.2719707057256991,
+        "seam_k_at_route_capacity": 1.0299523033182587,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.9669,
-          "loose_50": 1.03,
-          "loose_100": 1.2317
+          "tight": 0.9668677247400154,
+          "loose_50": 1.0299523033182587,
+          "loose_100": 1.231678630242058
         },
-        "sf_wire_86": 6.318,
-        "sf_wire_at_route_capacity": 1.945
+        "sf_wire_86": 6.317867719644621,
+        "sf_wire_at_route_capacity": 1.945302519228281
       },
       "Ta": {
         "endurance_MPa": 138.0,
         "yield_MPa": 345.0,
-        "seam_k_86": 0.3883,
-        "seam_k_at_route_capacity": 1.4705,
+        "seam_k_86": 0.3883079847908745,
+        "seam_k_at_route_capacity": 1.4705212543574377,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 1.3452,
-          "loose_50": 1.4705,
-          "loose_100": 1.9193
+          "tight": 1.3452072692034998,
+          "loose_50": 1.4705212543574377,
+          "loose_100": 1.9193403965062341
         },
-        "sf_wire_86": 4.541,
-        "sf_wire_at_route_capacity": 1.398
+        "sf_wire_86": 4.540967423494569,
+        "sf_wire_at_route_capacity": 1.3981861856953266
       }
     }
   },

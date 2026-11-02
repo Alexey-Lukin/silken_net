@@ -2851,7 +2851,7 @@ def test_pogo_sway_transfer():
     cem = json.loads((REPO / "tools/cad/cem/radome.json").read_text(encoding="utf-8"))
     dia, h = cem["dome_diameter_mm"], cem["cavity_height_mm"] + cem["bell_radius_mm"]
     assert inp["capsule_envelope_mm"] == [dia, h]
-    assert abs(inp["mass_ceiling_g"] - math.pi * (dia / 2) ** 2 * h * 1e-3 * 8.96) <= 0.1
+    assert abs(inp["mass_ceiling_g"] - math.pi * (dia / 2) ** 2 * h * 1e-3 * 8.96) <= 1e-9   # cached unrounded
     ctl = d["controls"]["slope_times_flux_reproduces_12m_tilt"]
     assert abs(ctl["deg"] - ctl["text_deg"]) <= 1.0
     sin_i, cos_i = math.sin(math.radians(inp["install_angle_deg"])), math.cos(math.radians(inp["install_angle_deg"]))
@@ -2869,8 +2869,8 @@ def test_pogo_sway_transfer():
         assert abs(rim["normal_force_N_needed_at_end_of_life"] - normal) <= 0.01, name
         push, f_r = inp["pin_count"] * f, inp["rim_relax_fraction_at_service_from_52"]
         needs = rim["o_ring_reaction_N_needed"]
-        assert abs(needs["initial_with_clamp_at_52_requirement"] - max(0.0, normal - push)) <= 0.02, name      # N ≥ L0
-        assert abs(needs["after_20_years_with_a_weaker_clamp"] - max(0.0, normal - push)) <= 0.02, name  # lifted: N = L(20)
+        assert abs(needs["initial_with_clamp_at_52_requirement"] - max(0.0, normal - push)) <= 1e-9, name      # N ≥ L0
+        assert abs(needs["after_20_years_with_a_weaker_clamp"] - max(0.0, normal - push)) <= 1e-9, name  # lifted: N = L(20)
         assert set(needs) == {"initial_with_clamp_at_52_requirement", "after_20_years_with_a_weaker_clamp"}, name
         c0 = inp["rim_required_initial_clamp_N_from_52"]["with_generous_o_ring"]
         early = inp["mu_rim"] * (2 * c0 - c0 * f_r)                              # 2C − L with the lift C was sized for
@@ -2884,7 +2884,7 @@ def test_pogo_sway_transfer():
             assert b["ratio_at_mass_ceiling_over_reduced_mean"] < 1.0, name
         est = b["at_estimated_stack_mass"]                                        # the part-by-part stack, low … high
         for k, ms in enumerate(est["stack_mass_g"]):
-            assert abs(est["ratio_over_reduced_mean"][k] - ms * 1e-3 * a / (f - ms * 1e-3 * g * sin_i)) <= 1e-4, name
+            assert abs(est["ratio_over_reduced_mean"][k] - ms * 1e-3 * a / (f - ms * 1e-3 * g * sin_i)) <= 1e-9, name
     pcb = inp["fr4_board"]
     area = math.pi * (pcb["disc_diameter_mm_rim_cavity_52"] / 2) ** 2
     boards = [pcb["count"] * area * (pcb["thickness_mm"] * rho + pcb["copper_layers"] * pcb["copper_thickness_mm"] * fill
@@ -2893,7 +2893,7 @@ def test_pogo_sway_transfer():
     assert all(abs(x - y) <= 0.001 for x, y in zip(inp["fr4_boards_g"], boards, strict=True))
     stack = [sum(v[k] for v in inp["stack_parts_g"].values()) + boards[k] for k in (0, 1)]
     for r in d["by_slope_reading"].values():
-        assert all(abs(x - y) <= 0.01 for x, y in zip(r["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"],
+        assert all(abs(x - y) <= 1e-9 for x, y in zip(r["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"],
                                                        stack, strict=True))
     z52 = json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))
     assert pcb["disc_diameter_mm_rim_cavity_52"] == z52["applied_gland"]["rim_cavity_mm"]
@@ -2955,10 +2955,10 @@ def test_pogo_sway_transfer_wire_behind_liner():
             m_b = next(p["mean_MPa"] for p in r86["by_offset"] if p["offset_um"] == br["radial_offset_budget_um"])
             own[bname] = sod(g86["amplitude_MPa"], m_b, r86["endurance_MPa"], r86["yield_MPa"])
             capped[bname] = sod(g86["amplitude_MPa"] + f_wall / a_wire, m_b, r86["endurance_MPa"], r86["yield_MPa"])
-            assert abs(x["seam_k_at_route_capacity_by_branch"][bname] - capped[bname][1]) <= 1e-4, (name, bname)
+            assert abs(x["seam_k_at_route_capacity_by_branch"][bname] - capped[bname][1]) <= 1e-9, (name, bname)
         b0 = next(b for b, br in d86["branches"].items() if br["radial_offset_budget_um"] == e86)
-        assert abs(x["seam_k_86"] - own[b0][1]) <= 1e-4 and abs(x["seam_k_at_route_capacity"] - capped[b0][1]) <= 1e-4
-        assert abs(x["sf_wire_86"] - own[b0][0]) <= 1e-3 and abs(x["sf_wire_at_route_capacity"] - capped[b0][0]) <= 1e-3
+        assert abs(x["seam_k_86"] - own[b0][1]) <= 1e-9 and abs(x["seam_k_at_route_capacity"] - capped[b0][1]) <= 1e-9
+        assert abs(x["sf_wire_86"] - own[b0][0]) <= 1e-9 and abs(x["sf_wire_at_route_capacity"] - capped[b0][0]) <= 1e-9
         assert all(abs(capped[b][1] / capped["tight"][1] - own[b][1] / own["tight"][1]) <= 1e-9 for b in own), name
     b86 = d86["branches"]["loose_50"]["by_geometry"][key]
     assert abs(w["by_alloy"][b86["binding_alloy"]]["seam_k_86"] - b86["k_break_even_binding"]) <= 1e-3

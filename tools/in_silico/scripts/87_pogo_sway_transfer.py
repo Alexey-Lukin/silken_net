@@ -164,11 +164,13 @@ def stem_at_anchor(slope2: float) -> dict:
     a_osc = (2 * math.pi * SWAY_F0_HZ_HIGH_READING) ** 2 * x
     a = a_osc + G * math.sin(theta2)
     kappa = theta2 / (H2_M - H1_M)
+    # the acceleration and the strain are INPUTS downstream (here and in 105), so they are cached unrounded — a number
+    # rounded for display is output (in-silico §When Modifying #6); the rest of the row is display
     return {"slope_deg_per_m2s2": slope2, "tilt_deg": round(math.degrees(theta2), 2),
-            "nos_displacement_mm": round(x * 1000, 1), "accel_m_s2": round(a, 3),
+            "nos_displacement_mm": round(x * 1000, 1), "accel_m_s2": a,
             "accel_oscillation_m_s2": round(a_osc, 3), "accel_gravity_tilt_m_s2": round(a - a_osc, 3),
             "mean_curvature_rad_per_m": round(kappa, 5),
-            "surface_strain_microstrain_source_tree": round(kappa * DBH_SOURCE_TREE_M / 2 * 1e6, 0)}
+            "surface_strain_microstrain_source_tree": kappa * DBH_SOURCE_TREE_M / 2 * 1e6}
 
 
 # ── (C) behind the liner (2026-10-17, the HW.43 leg (1) «осьова ємність посадки Zone 1↔2 і хвата лайнера» — the leg's
@@ -235,13 +237,13 @@ def wire_behind_liner() -> dict:
             return s86.soderberg(shipped["amplitude_MPa"] + sig_ax, mean, r86["endurance_MPa"], r86["yield_MPa"])
 
         (sf86, k86), (sf_cap, k_cap) = sod(0.0, e86), sod(sig_wall, e86)
+        # unrounded: the verdict below rounds the capacity k and SF again one-sidedly (up · down) and 102 rounds
+        # seam_k_at_route_capacity again (up2) — a second rounding is a computation (in-silico §When Modifying #6, #43)
         by_alloy[name] = {"endurance_MPa": r86["endurance_MPa"], "yield_MPa": r86["yield_MPa"],
-                          "seam_k_86": None if k86 is None else round(k86, 4),
-                          "seam_k_at_route_capacity": None if k_cap is None else round(k_cap, 4),
+                          "seam_k_86": k86, "seam_k_at_route_capacity": k_cap,
                           "seam_k_at_route_capacity_by_branch": {
-                              b: (lambda k: None if k is None else round(k, 4))(sod(sig_wall, br["radial_offset_budget_um"])[1])
-                              for b, br in d86["branches"].items()},
-                          "sf_wire_86": round(sf86, 3), "sf_wire_at_route_capacity": round(sf_cap, 3)}
+                              b: sod(sig_wall, br["radial_offset_budget_um"])[1] for b, br in d86["branches"].items()},
+                          "sf_wire_86": sf86, "sf_wire_at_route_capacity": sf_cap}
     # Control: 86's own Soderberg on 86's own inputs must give back the k and SF 86 cached — it fails if this block reads
     # the wrong offset, geometry or alloy row; it cannot see an error 86 itself makes.
     b86 = d86["branches"]["loose_50"]["by_geometry"][shipped_key]
@@ -306,8 +308,9 @@ def main() -> int:
         lift_needed = demand / MU_RIM                              # the normal force the end of life needs
         # a clamp at 52's printed form for the ring's own reaction never lifts (while L ≤ L0): an INITIAL reaction;
         # a weaker clamp can lift; a lift is taken as not undone (conservative), and then the normal force is what is left
-        oring_needed = {"initial_with_clamp_at_52_requirement": round(max(0.0, lift_needed - push), 2),
-                        "after_20_years_with_a_weaker_clamp": round(max(0.0, lift_needed - push), 2)}
+        # unrounded: 88 computes from these (in-silico §When Modifying #6)
+        oring_needed = {"initial_with_clamp_at_52_requirement": max(0.0, lift_needed - push),
+                        "after_20_years_with_a_weaker_clamp": max(0.0, lift_needed - push)}
         clamp0 = rim["required_initial_clamp_N"]["with_generous_o_ring"]
         per_g = a * 1e-3 / PIN_FORCE_MIN_N
         mean_at_ceiling = PIN_FORCE_MIN_N - m * G * sin_i
@@ -338,9 +341,9 @@ def main() -> int:
                                                             if mean_at_ceiling > 0 else None),
                 "unloads_at_mass_ceiling": m * (a + G * sin_i) >= PIN_FORCE_MIN_N,
                 "at_estimated_stack_mass": {
-                    "stack_mass_g": [round(x, 2) for x in stack_g],
-                    "ratio_over_reduced_mean": [round(x * 1e-3 * a / (PIN_FORCE_MIN_N - x * 1e-3 * G * sin_i), 4)
-                                                for x in stack_g],
+                    "stack_mass_g": stack_g,                 # unrounded: the cache-integrity test computes from it
+                    "ratio_over_reduced_mean": [x * 1e-3 * a / (PIN_FORCE_MIN_N - x * 1e-3 * G * sin_i)
+                                                for x in stack_g],   # unrounded: the verdict computes from it
                     "is": "the coaxial ratio at the part-by-part estimate (inputs.stack_parts_g, low … high), before the "
                           "pair factor the layout sets; a scale reading checks the mass"},
                 "pair_factor_h_over_s": "NOT COMPUTED — layout (HW.9): pin spacing and the stack's centre-of-mass height",
@@ -353,27 +356,27 @@ def main() -> int:
                       "locally in the liner's grip near the liner's held end; zero for an anchor at right "
                       "angles to the wind",
                 "ratio_per_1000_microstrain": poisson_per_1000,
-                "imposed_shift_um_at_source_strain": [round(du_lo, 1), round(du_hi, 1)],
+                "imposed_shift_um_at_source_strain": [du_lo, du_hi],        # unrounded: 102 computes from it
                 "ratio_at_source_strain": [round(du_lo * 1e-3 / X_PRELOAD_MIN_MM, 4),
                                            round(du_hi * 1e-3 / X_PRELOAD_MIN_MM, 4)]},
         }
         r = rows[name]
         b, c = r["B_inertia_coaxial"], r["C_centre_pad_poisson"]
         print(f"\n  [{name}: slope at 2 m {s2}] tilt ≤ {st['tilt_deg']}° · NOS x ≤ {st['nos_displacement_mm']} mm · "
-              f"a ≈ {a} m/s² · stem strain {st['surface_strain_microstrain_source_tree']:.0f} µε (source DBH)")
+              f"a ≈ {a:.3f} m/s² · stem strain {st['surface_strain_microstrain_source_tree']:.0f} µε (source DBH)")
         print(f"    (A) rim: early capacity {r['A_rim']['capacity_N_initial_at_52_requirement']} N at 52's clamp; at the end of "
               f"life it holds the copper ceiling with an initial O-ring reaction ≥ "
-              f"{r['A_rim']['o_ring_reaction_N_needed']['initial_with_clamp_at_52_requirement']} N (clamp at 52's "
-              f"requirement) · ≥ {r['A_rim']['o_ring_reaction_N_needed']['after_20_years_with_a_weaker_clamp']} N left "
+              f"{r['A_rim']['o_ring_reaction_N_needed']['initial_with_clamp_at_52_requirement']:.2f} N (clamp at 52's "
+              f"requirement) · ≥ {r['A_rim']['o_ring_reaction_N_needed']['after_20_years_with_a_weaker_clamp']:.2f} N left "
               f"after 20 years (weaker clamp) "
               f"(weight {m * G:.2f} N, drag {drag:.3f} N, µ {MU_RIM})")
         print(f"    (B) {b['force_ratio_per_gram'] * 100:.2f} %/g · 10 % at {b['stack_mass_g_for_ratio_10pct']} g · weakest pin "
               f"unloads at {b['stack_mass_g_where_weakest_pin_unloads']:.0f} g (static share in) · copper ceiling unloads: "
               f"{b['unloads_at_mass_ceiling']} · × pair factor h/s NOT computed")
         est = b["at_estimated_stack_mass"]
-        print(f"        at the estimated stack {est['stack_mass_g'][0]}…{est['stack_mass_g'][1]} g: "
+        print(f"        at the estimated stack {est['stack_mass_g'][0]:.2f}…{est['stack_mass_g'][1]:.2f} g: "
               f"{est['ratio_over_reduced_mean'][0] * 100:.2f}…{est['ratio_over_reduced_mean'][1] * 100:.2f} % of the reduced mean")
-        print(f"    (C) ceiling — imposed Δu {c['imposed_shift_um_at_source_strain'][0]}…{c['imposed_shift_um_at_source_strain'][1]} µm → "
+        print(f"    (C) ceiling — imposed Δu {c['imposed_shift_um_at_source_strain'][0]:.1f}…{c['imposed_shift_um_at_source_strain'][1]:.1f} µm → "
               f"{c['ratio_at_source_strain'][0] * 100:.1f}…{c['ratio_at_source_strain'][1] * 100:.1f} % of the working "
               f"compression; per 1000 µε {c['ratio_per_1000_microstrain']['mu_lr_lo_dx_nominal'] * 100:.2f}…"
               f"{c['ratio_per_1000_microstrain']['mu_lr_hi_dx_ceiling'] * 100:.2f} %")
@@ -385,8 +388,12 @@ def main() -> int:
     print(f"  (C) behind the liner: the wall caps the axial force at {wbl['route']['wall_capacity_N_at_23C']} N "
           f"({wbl['route']['wire_stress_at_wall_capacity_MPa']} MPa on the wire, PEEK at 23 °C); the grip slips first at μ "
           f"{slips} — lower, the ceiling stands")
+    def fmt(v, spec):
+        return "none" if v is None else format(v, spec)
+
     print("      seam k (86's own → at the cap) · wire SF: " + " · ".join(
-        f"{n} {x['seam_k_86']}→{x['seam_k_at_route_capacity']} · {x['sf_wire_86']}→{x['sf_wire_at_route_capacity']}"
+        f"{n} {fmt(x['seam_k_86'], '.4f')}→{fmt(x['seam_k_at_route_capacity'], '.4f')} · "
+        f"{fmt(x['sf_wire_86'], '.3f')}→{fmt(x['sf_wire_at_route_capacity'], '.3f')}"
         for n, x in ba.items()))
     kr = {n: x["seam_k_at_route_capacity"] for n, x in ba.items()}
     bind = max(kr, key=lambda n: -1.0 if kr[n] is None else kr[n])
@@ -416,10 +423,11 @@ def main() -> int:
                   "(FPL-GTR-282) ch. 5 Table 5–2, nine pines at ≈ 12 % moisture",
         "inputs": {"h1_m": H1_M, "h2_m": H2_M, "flux_max_m2s2": FLUX_MAX_M2S2,
                    "slope_at_h2_read_from_figure9": SLOPE2_READ, "f0_upper_hz": SWAY_F0_HZ_HIGH_READING,
-                   "pin_force_min_N": round(PIN_FORCE_MIN_N, 3), "pin_count": POGO_PIN_COUNT,
+                   "pin_force_min_N": PIN_FORCE_MIN_N, "pin_count": POGO_PIN_COUNT,
                    "working_compression_min_mm": X_PRELOAD_MIN_MM, "mu_rim": MU_RIM,
                    "install_angle_deg": INSTALL_ANGLE_DEG, "capsule_envelope_mm": [d, h_cap],
-                   "mass_ceiling_g": round(mass_ceiling_g, 1), "drag_ceiling_N": round(drag, 3),
+                   # unrounded: 105 and the cache-integrity test compute from them
+                   "mass_ceiling_g": mass_ceiling_g, "drag_ceiling_N": drag,
                    "mu_lr_pines": MU_LR_PINES, "depth_span_m": {"nominal_anode_centroid_to_flange_77": dx_nominal,
                                                                "ceiling_full_depth_77": dx_ceiling},
                    "dbh_source_tree_m": DBH_SOURCE_TREE_M,
