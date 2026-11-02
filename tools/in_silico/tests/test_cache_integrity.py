@@ -2395,7 +2395,9 @@ def test_countersink_ring_and_exit():
     clearance that is not the band's rigid maximum within the tolerance plus its depth's largest measured increment,
     a negative increment, a margin row below its band row; an exit verdict its grids do not give, a floor at the limit
     its rows do not give, a floor over the tolerance below the floor at the limit or standing on an interior row that
-    crosses 1·σ_y; a seam k not 86's formula on 86's alloys, or not below 86's binding k where the summary says so.
+    crosses 1·σ_y; a seam k not 86's formula on 86's alloys, or not below 86's binding k where the summary says so;
+    the ratified radius's (d) verdict per depth not given by its every-play × couple cells, its cycle and its interior
+    rows at that radius, or a depth with fewer cells than plays × couples.
     CANNOT catch: the ring's position tolerance, the closure element, thermal terms, friction and wear, a stiffer
     spring, an interior cycle peak away from the drag's ends or at an unswept offset — the declared ceilings.
     """
@@ -2518,6 +2520,30 @@ def test_countersink_ring_and_exit():
             rr = next(r for r in d["ring_clearance"] if r["depth_mm"] == row["depth_mm"] and r["r_exit_mm"] == fb["floor_mm"])
             assert row["ring_clearance_at_floor_um"] == rr["needed_radial_clearance_um"]
     assert summ["adverse_corner_for_exit"] == corners[0]
+    # (d) the ratified radius — every depth judged from the rows AT it, recomputed here, never read off the summary
+    ra = summ["ratified_exit_radius"]
+    r_rat = ra["r_exit_mm"]
+    n_cells = len(inp["radial_plays_um"]) * len(inp["pad_ecc_mm"])
+    assert [p["depth_mm"] for p in ra["per_depth"]] == inp["depths_mm"]
+    for p in ra["per_depth"]:
+        dep = p["depth_mm"]
+        cells = [g for g in d["exit_corner_check"] if g["depth_mm"] == dep and g["r_exit_mm"] == r_rat]
+        assert len(cells) == p["corner_check_cells"] == n_cells, (dep, len(cells))     # every play × couple loaded the exit
+        cyc = [c for c in d["exit_cycles"] if c.get("role") and c["depth_mm"] == dep and c["r_exit_mm"] == r_rat]
+        assert len(cyc) == 1 and cyc[0]["peak_MPa"] == p["cycle_peak_MPa"]
+        assert cyc[0]["peak_MPa"] >= max(g["peak_MPa"] for g in cells if (g["play"], g["pad_ecc_mm"]) == (cyc[0]["play"], cyc[0]["pad_ecc_mm"])) - 0.01
+        rows = [r for r in d["exit_interior_offsets"] if r["depth_mm"] == dep and r["r_exit_mm"] == r_rat]
+        solved = [r for r in rows if r.get("exit_loaded")]
+        assert len(rows) == p["interior_rows"] == 4 * len(inp["interior_offsets_um"])
+        assert p["interior_rows_not_solved"] == sum("not_solved" in r for r in rows)
+        assert p["interior_max_MPa"] == max((r["peak_MPa"] for r in solved), default=None)
+        holds = (all(g["flow_verdict"]["1.0"] == "below" for g in cells) and cyc[0]["flow_verdict"]["1.0"] == "below"
+                 and all(r["below_1_sigma_y_on_every_grid"] for r in solved))
+        assert p["holds"] == holds, dep
+        assert p["ring_clearance_um" if dep > 0 else "depth_mm"] == (
+            next(r["needed_radial_clearance_um"] for r in d["ring_clearance"] if r["depth_mm"] == dep and r["r_exit_mm"] == r_rat) if dep > 0 else dep)
+    assert ra["holds_on_every_depth"] == all(p["holds"] for p in ra["per_depth"])
+    assert ra["peak_max_MPa"] == max(max(p["corner_check_max_MPa"], p["cycle_peak_MPa"], p["interior_max_MPa"] or 0.0) for p in ra["per_depth"])
 
 
 def test_wire_under_liner_edges():

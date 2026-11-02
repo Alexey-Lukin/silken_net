@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 391 · 29,772,826 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 391 · 29,858,341 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -63,7 +63,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/113_os_series_vs_lever.py` | `bba7c31217ab6c4633da379dbf14e8e941c9f31d4e97b6ebc2c18831fa7c696e` | Shift of the Os(III/II) potential per 4,4'-bipyridine substituent predicted by Lever's additive ligand electrochemical parameters (E_L, S_M), read from the Office of Naval Research report that is the submitted manuscript of paper ref 23, beside the computed shift and the three measured series of script 83. |
 | `tools/in_silico/scripts/114_dendrometer_support_budget.py` | `f37ff7fd2cea74d9fdabc661a06085fe1150ca77c60fb6e895b1e820f06be37d` | Whether a point dendrometer that uses the anchor as its support can hold its reading: the thermal artefact of the support per fixation depth, the period a magnetic scale needs behind the capsule wall and the error terms of a two-axis Hall sensor reading it, the unwrap margin through winter swings and power outages, the energy of a read, and how soon the growing bark passes the capsule. |
 | `tools/in_silico/scripts/115_pv_face_snow_frost_azimuth.py` | `67308152bb63b8381366d2f09d3650e8d8409b35dc4b40ed936d39e9ec1f7bc1` | How far snow and hoarfrost on the sensor capsule's dome, and a face azimuth set by the radio gateway rather than by the sun, can raise the aperture a small photovoltaic cell on the dome needs to keep the node's supercapacitor from running empty through thirty winters — four readings of the cover named by how they are built, their order measured on the thresholds, on the hourly climate record. |
-| `tools/in_silico/scripts/116_countersink_ring_and_exit.py` | `49777676ae6d0de43dca976000449fe6a4a94eda7c706f45ae6aec0f10065f75` | A countersunk exit of the bus rod's channel: the clearance a PEEK ring's bore needs so the rod never bears on it, the floor of the exit-edge radius under an axis offset, and what the countersink's depth costs the rod's root cycle. |
+| `tools/in_silico/scripts/116_countersink_ring_and_exit.py` | `803bc94056fa564f5821202d8264905dd83990cd3942635ed289b344f006f743` | A countersunk exit of the bus rod's channel: the clearance a PEEK ring's bore needs so the rod never bears on it, the floor of the exit-edge radius under an axis offset, and what the countersink's depth costs the rod's root cycle. |
 | `tools/in_silico/scripts/11_full_matrix_md.py` | `28c8a0919352ea39c45ea353f1764bf90a12cb12bef5ce397970e4a62d174ac7` | L2-extended — full matrix stability MD: protein + FAD + genipin + chitosan + CNC. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `21c4b260195f62e079d7505e26cc41cd3519417d8f2047ddec96976b02c062fc` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
 | `tools/in_silico/scripts/13_psbma_diffusion_md.py` | `1df7d7778e3fc058fa5f00cc181eaf242148a6dfbffd262543e0c617c50828c8` | L2 — glucose diffusion through PSBMA membrane layer. |
@@ -156,8 +156,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `90234e44c702b6e8cf23c82f0934705525ea9f9d93205f4f8f6168327e2bc335` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `7062a50d05200bca46ce9b1b9ba657c05a25541d58f849493cca58063edecf31` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `87e31267392a0d155aa59ca8df8dc3f3dfb0f2e55dacb2b64b8b82177ab3aac4` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `db1d9bcd4c9d065008d60863b33f0467d0def9fdca6b178280da070fad591c36` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -282,7 +282,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/collar_running_clearance.json` | `3b9f44aa783c38fc39ee18bfb5eff2ae2dd3a46d38982ccfe242e68d67cd05c3` | 4,209 |
 | `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `0cb6ea63053fb6a149ccc21e26e00ded17decd1aa7d14ca797b72e4ce136d5b9` | 5,541 |
 | `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `4008c4cf748d3a44c80b9ab3e49677e532beba9b99081a5eff5bd5c769fc4b1c` | 9,991 |
-| `tools/in_silico/cache/mechanical/countersink_ring_exit.json` | `b49614e1f06fafe2045fde4afe5c14fec7fb7df56c7303348cba95d2c137604e` | 1,163,234 |
+| `tools/in_silico/cache/mechanical/countersink_ring_exit.json` | `6ee3862f2734ff89c952f5ddda40f397323076cfd7b8288a6c25d8362db8d49e` | 1,228,539 |
 | `tools/in_silico/cache/mechanical/dendrometer_support_budget.json` | `e3e254f287d32c948ebbfbda2ac369a83d757bc93f8c8ac222584db90cb650bc` | 41,329 |
 | `tools/in_silico/cache/mechanical/field_strain_campaign.json` | `cd262b585a5c6c63d5f05fd564a46ec68cc5940d2c96ea28a530a57e1e246c49` | 76,422 |
 | `tools/in_silico/cache/mechanical/gyroid_interface_contact_map.json` | `119d22e84bb15ca1b1ac11613376ced6fff4f7406b53dc0c25930d21902dd7fe` | 1,180,588 |

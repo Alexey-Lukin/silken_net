@@ -4178,6 +4178,109 @@ CHECKS += [
      lambda d: math.ceil(d["summary"]["k_seam_needed_max_all_rows"] * 1e4 - 1e-9) / 1e4, 1e-9),
 ]
 
+# ── HW.34 · ⚖️ founder 2026-11-02 — the ratified exit radius (116 block (d)). A peak is read off the rows at r 0.2; a
+# one-sided margin «at least X %» is rounded DOWN and «X % or less» UP (#43); the price is what r 0.2 adds over each
+# depth's floor where the two differ, from the same rows the floor table reads.
+def _rat(d: dict, depth: float) -> dict:
+    return next(p for p in d["summary"]["ratified_exit_radius"]["per_depth"] if p["depth_mm"] == depth)
+
+
+def _rat_peak(p: dict) -> float:
+    return max(p["corner_check_max_MPa"], p["cycle_peak_MPa"], p["interior_max_MPa"] or 0.0)
+
+
+def _rat_cost(d: dict, field) -> list:
+    """field(rat_row, floor_row) on every depth whose floor sits below the ratified radius."""
+    r = d["summary"]["ratified_exit_radius"]["r_exit_mm"]
+    return [field(_rat(d, p["depth_mm"]), p) for p in d["summary"]["per_depth"] if p["exit_radius_floor_over_tolerance_mm"] != r]
+
+
+def _coax_add(key: str, rel: bool = False):
+    return lambda a, b: 100 * (a["coaxial"][key] / b["coaxial_at_floor"][key] - 1) if rel else a["coaxial"][key] - b["coaxial_at_floor"][key]
+
+
+def _ring_add(d: dict) -> list:
+    """The ring's clearance r 0.2 adds over the floor's, on the countersunk depths whose floor sits below r 0.2."""
+    r = d["summary"]["ratified_exit_radius"]["r_exit_mm"]
+    return [_rat(d, p["depth_mm"])["ring_clearance_um"] - p["ring_clearance_at_floor_um"] for p in d["summary"]["per_depth"]
+            if p["depth_mm"] > 0 and p["exit_radius_floor_over_tolerance_mm"] != r]
+
+
+def _rat_margin_down(d: dict) -> float:
+    sy = d["inputs"]["sigma_yield_PEEK_MPa_tensile_23C"]
+    return math.floor((sy - d["summary"]["ratified_exit_radius"]["peak_max_MPa"]) / sy * 1000 + 1e-9) / 10
+
+
+_UNSOLVED = ((0.0, rf"\*\*{N} · \d+ · \d+\*\*"), (0.25, rf"\*\*\d+ · {N} · \d+\*\*"), (0.5, rf"\*\*\d+ · \d+ · {N}\*\*"))
+CHECKS += [(f"HW.34 · 01_01 §1.4 ⚖️ (d) unsolved at D {dep:g}", ANCHOR, rf"Лишаються: .*?{pat} з 8 на D 0", CRE,
+            (lambda d, dep=dep: _rat(d, dep)["interior_rows_not_solved"]), 1e-9) for dep, pat in _UNSOLVED]
+CHECKS += [(f"HW.34 · SUMMARY 116 (E) unsolved at D {dep:g}", SUMMARY, rf"the −µF end leaves {pat} of 8 interior rows", CRE,
+            (lambda d, dep=dep: _rat(d, dep)["interior_rows_not_solved"]), 1e-9) for dep, pat in _UNSOLVED]
+_UNSOLVED_PLAIN = ((0.0, rf"{N} · \d+ · \d+"), (0.25, rf"\d+ · {N} · \d+"), (0.5, rf"\d+ · \d+ · {N}"))
+CHECKS += [(f"HW.34 · 01_01 §1.4 ⚖️ floor's unsolved at D {dep:g}", ANCHOR, rf"на межі 0.15 їх було {pat}\)", CRE,
+            (lambda d, dep=dep: _pd(d, dep)["interior_rows_not_solved_at_the_floor"]), 1e-9) for dep, pat in _UNSOLVED_PLAIN]
+CHECKS += [
+    ("HW.34 · 01_01 §1.4 ⚖️ ratified radius", ANCHOR, rf"\(2\) радіус виходу — \*\*{N}\*\* мм на будь-якій", CRE,
+     lambda d: d["summary"]["ratified_exit_radius"]["r_exit_mm"], 1e-9),
+    ("HW.34 · 01_01 §1.4 ⚖️ depth cap", ANCHOR, rf"і не більша за \*\*{N}\*\* мм \(глибше", CRE, lambda d: max(d["inputs"]["depths_mm"]), 1e-9),
+    ("HW.34 · 01_01 §1.4 ⚖️ floor 0.15 margin at D 1.0–1.5 (up)", ANCHOR, rf"лишає до 1·σ_y {N} % запасу чи менше", CRE,
+     lambda d: math.ceil((100 - min(_cyc(d, 1.0, "at the floor"), _cyc(d, 1.5, "at the floor"))) * 10 - 1e-9) / 10, 1e-9),
+    ("HW.34 · 01_01 §1.4 ⚖️ r 0.2 peak, low end", ANCHOR, rf"пік на кромці — \*\*{N}–[\d.]+\*\* МПа", CRE,
+     lambda d: min(_rat_peak(p) for p in d["summary"]["ratified_exit_radius"]["per_depth"]), 0.005),
+    ("HW.34 · 01_01 §1.4 ⚖️ r 0.2 peak, high end", ANCHOR, rf"пік на кромці — \*\*[\d.]+–{N}\*\* МПа", CRE,
+     lambda d: d["summary"]["ratified_exit_radius"]["peak_max_MPa"], 0.005),
+    ("HW.34 · 01_01 §1.4 ⚖️ r 0.2 margin (down)", ANCHOR, rf"запас щонайменше \*\*{N}\*\* %", CRE, _rat_margin_down, 1e-9),
+    ("HW.34 · 01_01 §1.4 ⚖️ ring added, low", ANCHOR, rf"зазор кільця більший на {N}–[\d.]+ мкм", CRE,
+     lambda d: min(_ring_add(d)), 0.005),
+    ("HW.34 · 01_01 §1.4 ⚖️ ring added, high", ANCHOR, rf"зазор кільця більший на [\d.]+–{N} мкм", CRE,
+     lambda d: max(_ring_add(d)), 0.005),
+    ("HW.34 · 01_01 §1.4 ⚖️ sub-cycle added", ANCHOR, rf"розмах підциклу кореня \+{N} МПа", CRE,
+     lambda d: max(_rat_cost(d, _coax_add("subcycle_range_MPa"))), 0.005),
+    ("HW.34 · 01_01 §1.4 ⚖️ sub-cycle added %, low", ANCHOR, rf"\(\+{N}…\d+ %, найбільше на рівному", CRE,
+     lambda d: min(_rat_cost(d, _coax_add("subcycle_range_MPa", True))), 0.5),
+    ("HW.34 · 01_01 §1.4 ⚖️ sub-cycle added %, high", ANCHOR, rf"\(\+\d+…{N} %, найбільше на рівному", CRE,
+     lambda d: max(_rat_cost(d, _coax_add("subcycle_range_MPa", True))), 0.5),
+    ("HW.34 · 01_01 §1.4 ⚖️ slide added, at most", ANCHOR, rf"ковзання \+{N} мкм за цикл щонайбільше", CRE,
+     lambda d: max(_rat_cost(d, _coax_add("slide_per_cycle_um_at_mu_max"))), 0.005),
+    ("HW.34 · 01_01 §1.4 ⚖️ slide added %, low", ANCHOR, rf"\(\+{N}…\d+ %; межу", CRE,
+     lambda d: min(_rat_cost(d, _coax_add("slide_per_cycle_um_at_mu_max", True))), 0.5),
+    ("HW.34 · 01_01 §1.4 ⚖️ slide added %, high", ANCHOR, rf"\(\+\d+…{N} %; межу", CRE,
+     lambda d: max(_rat_cost(d, _coax_add("slide_per_cycle_um_at_mu_max", True))), 0.5),
+    ("HW.34 · 01_01 §1.4 ⚖️ reversal at r 0.2", ANCHOR, rf"розвертається мілкіше — за \*\*{N}\*\* мм", CRE,
+     lambda d: d["summary"]["coaxial_root_reverses_at_depth_mm_by_r_exit"]["0.2"], 1e-9),
+    ("HW.34 · 01_01 §1.4 ⚖️ seam k added, at most", ANCHOR, rf"`k` шва — щонайбільше \+{N},", CRE,
+     lambda d: round(max(_rat_cost(d, lambda a, b: a["k_seam_needed"] - b["k_seam_needed_at_floor"])), 4), 1e-9),
+    ("HW.34 · 01_01 §1.4 ⚖️ (d) peak", ANCHOR, rf"r 0.2 тримає на кожній: пік ≤ \*\*{N}\*\* МПа", CRE,
+     lambda d: d["summary"]["ratified_exit_radius"]["peak_max_MPa"], 0.005),
+    ("HW.34 · 01_01 §1.4 ⚖️ ring at r 0.5, D 2.0 (up)", ANCHOR, rf"зазор кільця на 2.0 мм росте до \*\*{N}\*\* мкм при r 0.5", CRE,
+     lambda d: _up2(next(r["needed_radial_clearance_um"] for r in d["ring_clearance"] if r["depth_mm"] == 2.0 and r["r_exit_mm"] == 0.5)), 1e-9),
+    ("HW.34 · 01_01 §1.4 ⚖️ ring at r 0.2, D 2.0 (up)", ANCHOR, rf"мкм при r 0.5 проти \*\*{N}\*\* при r 0.2", CRE,
+     lambda d: _up2(_rat(d, 2.0)["ring_clearance_um"]), 1e-9),
+    ("HW.34 · 01_01 §1.4 ⚖️ reversal at r 0.5", ANCHOR, rf"розвертається вже за \*\*{N}\*\* мм", CRE,
+     lambda d: d["summary"]["coaxial_root_reverses_at_depth_mm_by_r_exit"]["0.5"], 1e-9),
+    ("HW.34 · SUMMARY 116 (E) ratified radius", SUMMARY, rf"the exit radius is \*\*{N}\*\* mm at every depth", CRE,
+     lambda d: d["summary"]["ratified_exit_radius"]["r_exit_mm"], 1e-9),
+    ("HW.34 · SUMMARY 116 (E) cells per depth", SUMMARY, rf"every play × couple \(\*\*{N}\*\* cells\)", CRE,
+     lambda d: _one({p["corner_check_cells"] for p in d["summary"]["ratified_exit_radius"]["per_depth"]}), 1e-9),
+    ("HW.34 · SUMMARY 116 (E) peak", SUMMARY, rf"r 0.2 holds on each: peak ≤ \*\*{N}\*\* MPa", CRE,
+     lambda d: d["summary"]["ratified_exit_radius"]["peak_max_MPa"], 0.005),
+    ("HW.34 · SUMMARY 116 (E) peak at the flush exit", SUMMARY, rf"\(\*\*{N}\*\* at the flush exit\)", CRE,
+     lambda d: _rat_peak(_rat(d, 0.0)), 0.005),
+    ("HW.34 · SUMMARY 116 (E) margin (down)", SUMMARY, rf"at least \*\*{N}\*\* % under 1·σ_y", CRE, _rat_margin_down, 1e-9),
+    ("HW.34 · SUMMARY 116 (E) reversal at r 0.2", SUMMARY, rf"the full-drag reversal at \*\*{N}\*\* mm against", CRE,
+     lambda d: d["summary"]["coaxial_root_reverses_at_depth_mm_by_r_exit"]["0.2"], 1e-9),
+    ("HW.34 · SUMMARY 116 (E) ring added, low", SUMMARY, rf"the ring's clearance \+{N}–[\d.]+ µm, the coaxial", CRE, lambda d: min(_ring_add(d)), 0.005),
+    ("HW.34 · SUMMARY 116 (E) ring added, high", SUMMARY, rf"the ring's clearance \+[\d.]+–{N} µm, the coaxial", CRE, lambda d: max(_ring_add(d)), 0.005),
+    ("HW.34 · SUMMARY 116 (E) sub-cycle added", SUMMARY, rf"the coaxial sub-cycle \+{N} MPa, the slide", CRE,
+     lambda d: max(_rat_cost(d, _coax_add("subcycle_range_MPa"))), 0.005),
+    ("HW.34 · SUMMARY 116 (E) slide added, at most", SUMMARY, rf"the slide ≤ \+{N} µm per cycle", CRE,
+     lambda d: max(_rat_cost(d, _coax_add("slide_per_cycle_um_at_mu_max"))), 0.005),
+    ("HW.34 · SUMMARY 116 (E) seam k added, at most", SUMMARY, rf"the seam `k` ≤ \+{N}\.\n", CRE,
+     lambda d: round(max(_rat_cost(d, lambda a, b: a["k_seam_needed"] - b["k_seam_needed_at_floor"])), 4), 1e-9),
+    ("HW.34 · PIPELINE_STATUS 116 (d) peak", PSTAT, rf"block \(d\) holds it on each \(peak ≤ {N} MPa\)", CRE,
+     lambda d: d["summary"]["ratified_exit_radius"]["peak_max_MPa"], 0.005),
+]
+
 
 # Calendar dates are not numbers `N` can read, so they get their own pin: (label, doc, regex with ONE
 # capture group holding MM-DD, cache resolver returning the same MM-DD string).
@@ -10893,3 +10996,42 @@ def test_summary_names_the_24b_picks_the_caches_hold():
     assert off["pick_at_window_edge"], "the probe's pick left the window's edge — SUMMARY says «again on the window's edge»"
     want_off = f"the probe's pair is {rel(oa)} · {rel(ob)} (again on the window's edge)"
     assert want_off in text, f"SUMMARY no longer says {want_off!r}"
+
+
+# ── HW.34 · ⚖️ founder 2026-11-02 — the exit radius as the LETTERS state it to vendors. The DMLS pre-qual (EN,
+# `vendor_templates` §Processing 11(b)) and the CNC flange RFQ (UA, decimal comma, пп. 1 and 5) name the ratified
+# radius, the floor band it sits over and the countersink's depth cap; the tribo test (п. 10) names the radius. Each
+# number from 116's cache, and «0.2 mm holds at every depth» only while block (d) says it does.
+# CAN catch: a letter naming another radius, band or cap than the cache; a ratified radius that stopped holding on a
+# depth; a sentence reworded so its anchor no longer matches (it must match once). CANNOT: the words around them.
+_VT = "docs/protocols/procurement/vendor_templates.md"
+_CNC = "docs/protocols/procurement/anchor_flange_cnc_rfq.md"
+_TRIBO = "docs/protocols/procurement/anchor_liner_tribo_rfq.md"
+_D = r"(\d+(?:[.,]\d+)?)"
+
+
+def _floors(d: dict) -> list:
+    return [p["exit_radius_floor_over_tolerance_mm"] for p in d["summary"]["per_depth"]]
+
+
+_LETTER_EXIT_PINS = (
+    ("DMLS 11(b) ratified radius", _VT, rf"the radius is set: \*\*{_D} mm\*\*, with a one-sided tolerance — not below", lambda d: d["summary"]["ratified_exit_radius"]["r_exit_mm"]),
+    ("DMLS 11(b) floor band low", _VT, rf"our model needs {_D}–[\d.]+ mm at that edge", lambda d: min(_floors(d))),
+    ("DMLS 11(b) floor band high", _VT, rf"our model needs [\d.]+–{_D} mm at that edge", lambda d: max(_floors(d))),
+    ("DMLS 11(b) depth cap", _VT, rf"Its depth is not set yet; it will be {_D} mm or less", lambda d: max(d["inputs"]["depths_mm"])),
+    ("CNC п. 5 ratified radius", _CNC, rf"На виході радіус задано: \*\*{_D} мм\*\* з однобічним допуском, тобто не менше", lambda d: d["summary"]["ratified_exit_radius"]["r_exit_mm"]),
+    ("CNC п. 5 floor band low", _CNC, rf"наша модель вимагає там {_D}–[\d,]+ мм", lambda d: min(_floors(d))),
+    ("CNC п. 5 floor band high", _CNC, rf"наша модель вимагає там [\d,]+–{_D} мм", lambda d: max(_floors(d))),
+    ("CNC п. 1 depth cap", _CNC, rf"глибину якої ще не задано \(вона буде не більше {_D} мм\)", lambda d: max(d["inputs"]["depths_mm"])),
+    ("tribo п. 10 exit radius", _TRIBO, rf"\(на виході — {_D} мм\)", lambda d: d["summary"]["ratified_exit_radius"]["r_exit_mm"]),
+)
+
+
+@pytest.mark.parametrize("label,doc_rel,pattern,resolver", _LETTER_EXIT_PINS, ids=[p[0] for p in _LETTER_EXIT_PINS])
+def test_exit_radius_in_the_letters_is_116s(label, doc_rel, pattern, resolver):
+    d = C(CRE)
+    assert d["summary"]["ratified_exit_radius"]["holds_on_every_depth"] is True, \
+        "block (d) of 116 no longer holds on every depth — the letters' «0.2 mm holds at every depth» would be false"
+    m = re.findall(pattern, doc(doc_rel))
+    assert len(m) == 1, f"[{label}] anchor matched {len(m)} times in {doc_rel} — reworded? tighten or update the anchor"
+    assert abs(float(m[0].replace(",", ".")) - resolver(d)) <= 1e-9, f"[{label}] {doc_rel} says {m[0]}, the cache {resolver(d)}"

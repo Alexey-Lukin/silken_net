@@ -56,6 +56,8 @@ arguments that leave 92 unchanged at zero (control (1)).
       couple's reversing cycle in 91's closed form at touchdown (elastic = rigid there). Under the tolerance offset:
       the root's mean and amplitude along 92's drag path on the rigid model per depth × radius × couple × play → the
       seam's break-even k through 86's `soderberg` on 86's own alloys, against 86's binding k.
+  (d) the ratified exit radius: (b)'s procedure at RATIFIED_R_EXIT_MM on every depth, whatever that depth's floor —
+      and what it costs there, read from (a) and (c) at that radius.
 
 CONTROLS asserted in-run, with what each one can and cannot catch:
   (1) depth 0, no couple, the zero-interference play: (b) reproduces 92's cached exit rows at the tolerance offset bit
@@ -94,9 +96,12 @@ CONTROLS asserted in-run, with what each one can and cannot catch:
     two-window solve refuses (a line contact it cannot represent) is NOT a pass — it is named per depth in
     `interior_rows_not_solved_at_the_floor`, and the floor stands there only on the rows that did solve.
   * The ring's outer diameter (the pin tip's) enters nothing here.
-  * No verdict is taken here (00_07 HW.34).
+  * No verdict is taken here — the one it serves (⚖️ founder 2026-11-02, 00_07 HW.34) chose ONE exit radius,
+    RATIFIED_R_EXIT_MM, at every depth up to the deepest swept, and (d) runs the floor's procedure AT it: every play ×
+    couple at the limit, the full cycle at the adverse cell, the interior offsets at both drag ends. A depth beyond the
+    sweep is not covered — it re-runs this script.
 
-Run:  python tools/in_silico/scripts/116_countersink_ring_and_exit.py     # ≈ 1 h on 8 workers (one BLAS thread each)
+Run:  python tools/in_silico/scripts/116_countersink_ring_and_exit.py     # ≈ 1¾ h on 8 workers (one BLAS thread each)
       python tools/in_silico/scripts/116_countersink_ring_and_exit.py --smoke <out.json>   # every branch once, small
       sweeps, written to <out.json> (a rehearsal of the run path — never the cache)
 """
@@ -154,6 +159,7 @@ PAD_ECC_MM = (-0.5, 0.0, 0.5)                     # the pin's contact off the ro
 OFFSETS_A_UM = (0, 10, 25, 35, 50)                # (a) up to the tolerance limit
 OFFSETS_MARGIN_UM = (75, 100)                     # beyond the limit: margin rows, never a ground
 INTERIOR_OFFSETS_UM = (30, 40)                    # (b) the floor's check inside the tolerance (end points of the drag)
+RATIFIED_R_EXIT_MM = 0.2                          # (d) ⚖️ founder 2026-11-02 (00_07 HW.34): one exit radius at every depth ≤ 2.0
 DRAG_MARGIN_N = (0.75, 1.0)                       # (a) a larger drag at the band's corner: a stiffer spring or µ
 OVER_GRID = np.linspace(0.0, 1.0, 41)             # the overhang [L − D, L], sampled
 WORKERS = 8                                       # independent rows in parallel, one BLAS thread each (header)
@@ -508,6 +514,44 @@ def main() -> int:
         print(f"  D {depth:4.2f}: floor over 0…{m92.TOLERANCE_OFFSET_UM} µm {r_fl} (crossed inside at {crossed_at}); "
               f"worst interior end-point peak {worst_in} MPa")
 
+    # ── (d) the RATIFIED exit radius — the floor's procedure run AT it, on every depth ──────────────────────────────
+    # ⚖️ founder 2026-11-02: one exit radius at every depth up to the deepest swept, so that it does not hang on a depth
+    # the ring has not set yet. Before this block it was INFERRED there (the end point falls with r on every series at
+    # the limit); here every play × couple, the full cycle and the interior offsets run at it — cells already computed
+    # at that radius (a depth whose floor it is) are reused, not re-run.
+    banner(f"(d) the ratified exit radius {RATIFIED_R_EXIT_MM} mm — every play × couple, the cycle, the interior offsets")
+    r_rat = RATIFIED_R_EXIT_MM
+    corner_check([(depth, r_rat) for depth in DEPTHS_EXIT_MM if not any(g["depth_mm"] == depth and g["r_exit_mm"] == r_rat for g in checked)])
+    need_cyc = [depth for depth in DEPTHS_EXIT_MM if not any(c.get("role") and c["depth_mm"] == depth and c["r_exit_mm"] == r_rat for c in cycles)]
+    for depth, cyc in zip(need_cyc, pool.map(exit_task, [ver_task(dd, r_rat) for dd in need_cyc]), strict=True):
+        cycles.append({**cyc, "role": "at the ratified radius", "end_point_peak_MPa": adverse(depth, r_rat)["peak_MPa"]})
+    need_in = [depth for depth in DEPTHS_EXIT_MM if not any(r["depth_mm"] == depth and r["r_exit_mm"] == r_rat for r in interior)]
+    tasks = []
+    for depth in need_in:
+        g = adverse(depth, r_rat)
+        tasks += [(geo, liner, lab, plays[lab], e / 1000.0, r_rat, depth, ecc, f_band) for lab, ecc in corners for e in INTERIOR_OFFSETS_UM]
+        tasks += [(geo, liner, g["play"], plays[g["play"]], e / 1000.0, r_rat, depth, ecc, -f_band)
+                  for e in INTERIOR_OFFSETS_UM for ecc in (min(PAD_ECC_MM), max(PAD_ECC_MM))]
+    interior += list(pool.map(endpoint_task, tasks))
+    ratified = {}
+    for depth in DEPTHS_EXIT_MM:
+        cells = [g for g in checked if g["depth_mm"] == depth and g["r_exit_mm"] == r_rat]
+        cyc = next(c for c in cycles if c.get("role") and c["depth_mm"] == depth and c["r_exit_mm"] == r_rat)
+        rows = [r for r in interior if r["depth_mm"] == depth and r["r_exit_mm"] == r_rat]
+        solved = [r for r in rows if r.get("exit_loaded")]
+        ratified[f"{depth:g}"] = {
+            "corner_check_cells": len(cells), "corner_check_max_MPa": max(g["peak_MPa"] for g in cells),
+            "cycle_peak_MPa": cyc["peak_MPa"], "cycle_role": cyc["role"],
+            "cycle_corner": {"play": cyc["play"], "pad_ecc_mm": cyc["pad_ecc_mm"]},
+            "interior_rows": len(rows), "interior_max_MPa": max((r["peak_MPa"] for r in solved), default=None),
+            "interior_rows_not_solved": [r for r in rows if "not_solved" in r],   # a check NOT made, named
+            "holds": (all(g["flow_verdict"]["1.0"] == "below" for g in cells) and cyc["flow_verdict"]["1.0"] == "below"
+                      and all(r["below_1_sigma_y_on_every_grid"] for r in solved))}
+        v = ratified[f"{depth:g}"]
+        print(f"  D {depth:4.2f} r {r_rat}: every play × couple ≤ {v['corner_check_max_MPa']} MPa ({v['corner_check_cells']} cells), "
+              f"cycle {v['cycle_peak_MPa']} ({v['cycle_role']}), interior ≤ {v['interior_max_MPa']} "
+              f"({len(v['interior_rows_not_solved'])} of {v['interior_rows']} not solved) → holds {v['holds']}")
+
     # ── (c) what the depth costs ────────────────────────────────────────────────────────────────────────────────────
     banner("(c) the depth's cost — coaxial cycle (elastic, 91's path) and rigid closed forms; under the offset → 86's seam k")
     coax = list(pool.map(coaxial_task, [(geo, liner, zero, depth, r_ex, mu_max) for depth in DEPTHS_EXIT_MM for r_ex in R_EXIT_SWEEP_MM]))
@@ -591,8 +635,23 @@ def main() -> int:
         per_depth.append(row)
     rev = {f"{r:g}": reversal_depth(r) for r in R_EXIT_SWEEP_MM}
     k_max = max(o["worst"]["k_seam_needed"] for o in off_rows)
+    at_ratified = []                                      # what the ratified radius costs, per depth — the fields above, read at it
+    for depth in DEPTHS_EXIT_MM:
+        cc = next(c for c in coax if c["depth_mm"] == depth and c["r_exit_mm"] == r_rat)
+        row = {"depth_mm": depth, **ratified[f"{depth:g}"],
+               "interior_rows_not_solved": len(ratified[f"{depth:g}"]["interior_rows_not_solved"]),
+               "coaxial": {k: cc[k] for k in ("peak_sigma_MPa", "subcycle_range_MPa", "slide_per_cycle_um_at_mu_max")},
+               "k_seam_needed": next(o["worst"]["k_seam_needed"] for o in off_rows if o["depth_mm"] == depth and o["r_exit_mm"] == r_rat)}
+        if depth > 0:
+            row["ring_clearance_um"] = next(r["needed_radial_clearance_um"] for r in ring if r["depth_mm"] == depth and r["r_exit_mm"] == r_rat)
+        at_ratified.append(row)
     summary = {"per_depth": per_depth, "coaxial_root_reverses_at_depth_mm_by_r_exit": rev,
                "k_seam_needed_max_all_rows": k_max, "k_seam_86_binding": b86["k_break_even_binding"],
+               "ratified_exit_radius": {"r_exit_mm": r_rat, "verdict": "⚖️ founder 2026-11-02 (00_07 HW.34)",
+                                        "holds_on_every_depth": all(r["holds"] for r in at_ratified),
+                                        "peak_max_MPa": max(max(r["corner_check_max_MPa"], r["cycle_peak_MPa"], r["interior_max_MPa"] or 0.0)
+                                                            for r in at_ratified),
+                                        "per_depth": at_ratified},
                "adverse_corner_for_exit": {"play": corners[0][0], "pad_ecc_mm": corners[0][1]},
                "tolerance_offset_um": m92.TOLERANCE_OFFSET_UM,
                "pin_spring_force_N": s55.F_POGO_N,
@@ -643,6 +702,8 @@ def main() -> int:
         print(f"  D {row['depth_mm']:4.2f}: floor {row['exit_radius_floor_over_tolerance_mm']} (at the limit {row['exit_radius_floor_at_limit_mm']}) · ring at floor {row.get('ring_clearance_at_floor_um')} µm "
               f"(max over radii {row.get('ring_clearance_max_over_radii_um')}) · coaxial {row.get('coaxial_at_floor')} · k {row.get('k_seam_needed_at_floor')}")
     print(f"  coaxial root reverses at depth by r: {rev}; seam k needed ≤ {k_max} (86 binding {b86['k_break_even_binding']})")
+    ra = summary["ratified_exit_radius"]
+    print(f"  ratified r {r_rat} mm: holds on every depth {ra['holds_on_every_depth']}, peak ≤ {ra['peak_max_MPa']} MPa")
     print(f"\n  written {OUT_JSON} in {elapsed / 60:.1f} min")
     return 0
 

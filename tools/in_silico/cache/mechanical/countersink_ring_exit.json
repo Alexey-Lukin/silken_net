@@ -44417,6 +44417,141 @@
       },
       "role": "below the floor",
       "end_point_peak_MPa": 102.16
+    },
+    {
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "play": "interference window floor (wire carries)",
+      "play_um": 30.37,
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 84.44,
+      "peak_by_square_cell_MPa": {
+        "0.001": 84.44,
+        "0.0005": 84.32
+      },
+      "resolution_spread": 0.001,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.844,
+        "3.0": 0.281
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      },
+      "role": "at the ratified radius",
+      "end_point_peak_MPa": 84.44
+    },
+    {
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "play": "interference window floor (wire carries)",
+      "play_um": 30.37,
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 85.56,
+      "peak_by_square_cell_MPa": {
+        "0.001": 85.56,
+        "0.0005": 85.51
+      },
+      "resolution_spread": 0.001,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.856,
+        "3.0": 0.285
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      },
+      "role": "at the ratified radius",
+      "end_point_peak_MPa": 85.56
+    },
+    {
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "play": "interference window floor (wire carries)",
+      "play_um": 30.37,
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 86.66,
+      "peak_by_square_cell_MPa": {
+        "0.001": 86.65,
+        "0.0005": 86.66
+      },
+      "resolution_spread": 0.0,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.867,
+        "3.0": 0.289
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      },
+      "role": "at the ratified radius",
+      "end_point_peak_MPa": 86.66
+    },
+    {
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "play": "interference window floor (wire carries)",
+      "play_um": 30.37,
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 88.91,
+      "peak_by_square_cell_MPa": {
+        "0.001": 88.76,
+        "0.0005": 88.91
+      },
+      "resolution_spread": 0.002,
+      "points": 9,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.889,
+        "3.0": 0.296
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      },
+      "role": "at the ratified radius",
+      "end_point_peak_MPa": 88.91
+    },
+    {
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "play": "interference window floor (wire carries)",
+      "play_um": 30.37,
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 91.07,
+      "peak_by_square_cell_MPa": {
+        "0.001": 91.06,
+        "0.0005": 91.07
+      },
+      "resolution_spread": 0.0,
+      "points": 9,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.911,
+        "3.0": 0.304
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      },
+      "role": "at the ratified radius",
+      "end_point_peak_MPa": 91.07
     }
   ],
   "exit_corners": [
@@ -46499,6 +46634,1716 @@
         "1.0": "below",
         "3.0": "below"
       }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 70.44,
+      "peak_by_square_cell_MPa": {
+        "0.001": 70.44,
+        "0.0005": 70.35
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 75.97,
+      "peak_by_square_cell_MPa": {
+        "0.001": 75.97,
+        "0.0005": 75.85
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.95,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.95,
+        "0.0005": 79.86
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 70.48,
+      "peak_by_square_cell_MPa": {
+        "0.001": 70.48,
+        "0.0005": 70.38
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.0,
+        "0.0005": 75.89
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 80.0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 80.0,
+        "0.0005": 79.92
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 70.93,
+      "peak_by_square_cell_MPa": {
+        "0.001": 70.93,
+        "0.0005": 70.83
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.45,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.45,
+        "0.0005": 76.34
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 80.72,
+      "peak_by_square_cell_MPa": {
+        "0.001": 80.72,
+        "0.0005": 80.64
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 71.38,
+      "peak_by_square_cell_MPa": {
+        "0.001": 71.38,
+        "0.0005": 71.28
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.9,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.9,
+        "0.0005": 76.79
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 81.43,
+      "peak_by_square_cell_MPa": {
+        "0.001": 81.43,
+        "0.0005": 81.35
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 74.04,
+      "peak_by_square_cell_MPa": {
+        "0.001": 74.04,
+        "0.0005": 73.93
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.53,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.53,
+        "0.0005": 79.44
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 84.44,
+      "peak_by_square_cell_MPa": {
+        "0.001": 84.44,
+        "0.0005": 84.32
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 66.94,
+      "peak_by_square_cell_MPa": {
+        "0.001": 66.94,
+        "0.0005": 66.73
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 71.2,
+      "peak_by_square_cell_MPa": {
+        "0.001": 71.2,
+        "0.0005": 71.1
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 75.28,
+      "peak_by_square_cell_MPa": {
+        "0.001": 75.28,
+        "0.0005": 75.15
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 72.02,
+      "peak_by_square_cell_MPa": {
+        "0.001": 72.02,
+        "0.0005": 71.92
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 77.19,
+      "peak_by_square_cell_MPa": {
+        "0.001": 77.19,
+        "0.0005": 77.09
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 81.1,
+      "peak_by_square_cell_MPa": {
+        "0.001": 81.1,
+        "0.0005": 81.01
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 72.05,
+      "peak_by_square_cell_MPa": {
+        "0.001": 72.05,
+        "0.0005": 71.95
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 77.25,
+      "peak_by_square_cell_MPa": {
+        "0.001": 77.25,
+        "0.0005": 77.15
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 81.15,
+      "peak_by_square_cell_MPa": {
+        "0.001": 81.15,
+        "0.0005": 81.07
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 72.5,
+      "peak_by_square_cell_MPa": {
+        "0.001": 72.5,
+        "0.0005": 72.4
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 77.82,
+      "peak_by_square_cell_MPa": {
+        "0.001": 77.82,
+        "0.0005": 77.73
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 81.87,
+      "peak_by_square_cell_MPa": {
+        "0.001": 81.87,
+        "0.0005": 81.78
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 72.95,
+      "peak_by_square_cell_MPa": {
+        "0.001": 72.95,
+        "0.0005": 72.85
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 78.27,
+      "peak_by_square_cell_MPa": {
+        "0.001": 78.27,
+        "0.0005": 78.18
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.57,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.57,
+        "0.0005": 82.46
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 75.62,
+      "peak_by_square_cell_MPa": {
+        "0.001": 75.62,
+        "0.0005": 75.49
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 80.91,
+      "peak_by_square_cell_MPa": {
+        "0.001": 80.91,
+        "0.0005": 80.82
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 85.56,
+      "peak_by_square_cell_MPa": {
+        "0.001": 85.56,
+        "0.0005": 85.51
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 68.31,
+      "peak_by_square_cell_MPa": {
+        "0.001": 68.31,
+        "0.0005": 68.18
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 72.48,
+      "peak_by_square_cell_MPa": {
+        "0.001": 72.48,
+        "0.0005": 72.37
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.48,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.48,
+        "0.0005": 76.37
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 73.53,
+      "peak_by_square_cell_MPa": {
+        "0.001": 73.53,
+        "0.0005": 73.42
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 78.38,
+      "peak_by_square_cell_MPa": {
+        "0.001": 78.38,
+        "0.0005": 78.29
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.23,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.23,
+        "0.0005": 82.13
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 73.56,
+      "peak_by_square_cell_MPa": {
+        "0.001": 73.56,
+        "0.0005": 73.45
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 78.43,
+      "peak_by_square_cell_MPa": {
+        "0.001": 78.43,
+        "0.0005": 78.35
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.29,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.29,
+        "0.0005": 82.18
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 74.01,
+      "peak_by_square_cell_MPa": {
+        "0.001": 74.01,
+        "0.0005": 73.9
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.13,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.13,
+        "0.0005": 79.04
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 83.0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 83.0,
+        "0.0005": 82.86
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 74.47,
+      "peak_by_square_cell_MPa": {
+        "0.001": 74.47,
+        "0.0005": 74.34
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.6,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.6,
+        "0.0005": 79.51
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 83.67,
+      "peak_by_square_cell_MPa": {
+        "0.001": 83.67,
+        "0.0005": 83.53
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 77.12,
+      "peak_by_square_cell_MPa": {
+        "0.001": 77.12,
+        "0.0005": 77.01
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.24,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.24,
+        "0.0005": 82.15
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 86.66,
+      "peak_by_square_cell_MPa": {
+        "0.001": 86.65,
+        "0.0005": 86.66
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 69.65,
+      "peak_by_square_cell_MPa": {
+        "0.001": 69.65,
+        "0.0005": 69.55
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 73.74,
+      "peak_by_square_cell_MPa": {
+        "0.001": 73.74,
+        "0.0005": 73.62
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 77.66,
+      "peak_by_square_cell_MPa": {
+        "0.001": 77.66,
+        "0.0005": 77.57
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.37,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.37,
+        "0.0005": 76.26
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 80.69,
+      "peak_by_square_cell_MPa": {
+        "0.001": 80.69,
+        "0.0005": 80.6
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 84.36,
+      "peak_by_square_cell_MPa": {
+        "0.001": 84.36,
+        "0.0005": 84.25
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.4,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.4,
+        "0.0005": 76.29
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 80.74,
+      "peak_by_square_cell_MPa": {
+        "0.001": 80.74,
+        "0.0005": 80.66
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 84.41,
+      "peak_by_square_cell_MPa": {
+        "0.001": 84.41,
+        "0.0005": 84.31
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.85,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.85,
+        "0.0005": 76.75
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 81.43,
+      "peak_by_square_cell_MPa": {
+        "0.001": 81.43,
+        "0.0005": 81.35
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 85.04,
+      "peak_by_square_cell_MPa": {
+        "0.001": 85.04,
+        "0.0005": 84.97
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 77.3,
+      "peak_by_square_cell_MPa": {
+        "0.001": 77.3,
+        "0.0005": 77.2
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.11,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.11,
+        "0.0005": 82.01
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 85.65,
+      "peak_by_square_cell_MPa": {
+        "0.001": 85.65,
+        "0.0005": 85.62
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.95,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.95,
+        "0.0005": 79.86
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 84.68,
+      "peak_by_square_cell_MPa": {
+        "0.001": 84.68,
+        "0.0005": 84.58
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 88.91,
+      "peak_by_square_cell_MPa": {
+        "0.001": 88.76,
+        "0.0005": 88.91
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 72.21,
+      "peak_by_square_cell_MPa": {
+        "0.001": 72.21,
+        "0.0005": 72.11
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.17,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.17,
+        "0.0005": 76.06
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.95,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.95,
+        "0.0005": 79.87
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 78.99,
+      "peak_by_square_cell_MPa": {
+        "0.001": 78.99,
+        "0.0005": 78.91
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.94,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.94,
+        "0.0005": 82.8
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 86.33,
+      "peak_by_square_cell_MPa": {
+        "0.001": 86.32,
+        "0.0005": 86.33
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.02,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.02,
+        "0.0005": 78.94
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.99,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.99,
+        "0.0005": 82.85
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 86.38,
+      "peak_by_square_cell_MPa": {
+        "0.001": 86.37,
+        "0.0005": 86.38
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.48,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.48,
+        "0.0005": 79.39
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 83.63,
+      "peak_by_square_cell_MPa": {
+        "0.001": 83.63,
+        "0.0005": 83.49
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window mid-window",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 87.03,
+      "peak_by_square_cell_MPa": {
+        "0.001": 86.98,
+        "0.0005": 87.03
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.93,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.93,
+        "0.0005": 79.85
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 84.24,
+      "peak_by_square_cell_MPa": {
+        "0.001": 84.24,
+        "0.0005": 84.13
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 87.68,
+      "peak_by_square_cell_MPa": {
+        "0.001": 87.59,
+        "0.0005": 87.68
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.59,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.59,
+        "0.0005": 82.48
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 86.88,
+      "peak_by_square_cell_MPa": {
+        "0.001": 86.86,
+        "0.0005": 86.88
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 91.07,
+      "peak_by_square_cell_MPa": {
+        "0.001": 91.06,
+        "0.0005": 91.07
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 74.7,
+      "peak_by_square_cell_MPa": {
+        "0.001": 74.7,
+        "0.0005": 74.57
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 78.51,
+      "peak_by_square_cell_MPa": {
+        "0.001": 78.51,
+        "0.0005": 78.42
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window ceiling (wire carries)",
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.2,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.2,
+        "0.0005": 82.1
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
     }
   ],
   "exit_floor_at_limit": {
@@ -47359,6 +49204,716 @@
       "peak_by_square_cell_MPa": {
         "0.001": 53.39,
         "0.0005": 53.52
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 80.29,
+      "peak_by_square_cell_MPa": {
+        "0.001": 80.29,
+        "0.0005": 80.2
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.49,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.49,
+        "0.0005": 82.39
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 70.96,
+      "peak_by_square_cell_MPa": {
+        "0.001": 70.96,
+        "0.0005": 70.86
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 73.6,
+      "peak_by_square_cell_MPa": {
+        "0.001": 73.6,
+        "0.0005": 73.49
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 58.97,
+      "peak_by_square_cell_MPa": {
+        "0.001": 58.88,
+        "0.0005": 58.97
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "not_solved": "a contact patch outgrew every window (or the rod lies along the wall between them) — a line contact two end windows cannot represent; refusing"
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 54.87,
+      "peak_by_square_cell_MPa": {
+        "0.001": 54.74,
+        "0.0005": 54.87
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "not_solved": "a contact patch outgrew every window (or the rod lies along the wall between them) — a line contact two end windows cannot represent; refusing"
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 81.65,
+      "peak_by_square_cell_MPa": {
+        "0.001": 81.65,
+        "0.0005": 81.56
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 83.79,
+      "peak_by_square_cell_MPa": {
+        "0.001": 83.79,
+        "0.0005": 83.63
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 72.53,
+      "peak_by_square_cell_MPa": {
+        "0.001": 72.53,
+        "0.0005": 72.43
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 75.07,
+      "peak_by_square_cell_MPa": {
+        "0.001": 75.07,
+        "0.0005": 74.94
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 61.6,
+      "peak_by_square_cell_MPa": {
+        "0.001": 61.33,
+        "0.0005": 61.6
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "not_solved": "a contact patch outgrew every window (or the rod lies along the wall between them) — a line contact two end windows cannot represent; refusing"
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 56.76,
+      "peak_by_square_cell_MPa": {
+        "0.001": 56.69,
+        "0.0005": 56.76
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.25,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "not_solved": "a contact patch outgrew every window (or the rod lies along the wall between them) — a line contact two end windows cannot represent; refusing"
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 82.98,
+      "peak_by_square_cell_MPa": {
+        "0.001": 82.98,
+        "0.0005": 82.85
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 84.93,
+      "peak_by_square_cell_MPa": {
+        "0.001": 84.93,
+        "0.0005": 84.84
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 74.03,
+      "peak_by_square_cell_MPa": {
+        "0.001": 74.03,
+        "0.0005": 73.91
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.47,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.47,
+        "0.0005": 76.36
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 63.97,
+      "peak_by_square_cell_MPa": {
+        "0.001": 63.93,
+        "0.0005": 63.97
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "not_solved": "a contact patch outgrew every window (or the rod lies along the wall between them) — a line contact two end windows cannot represent; refusing"
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 58.48,
+      "peak_by_square_cell_MPa": {
+        "0.001": 58.43,
+        "0.0005": 58.48
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 0.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 38.05,
+      "peak_by_square_cell_MPa": {
+        "0.001": 38.05,
+        "0.0005": 38.03
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 85.34,
+      "peak_by_square_cell_MPa": {
+        "0.001": 85.34,
+        "0.0005": 85.26
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 87.15,
+      "peak_by_square_cell_MPa": {
+        "0.001": 87.11,
+        "0.0005": 87.15
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 76.85,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.85,
+        "0.0005": 76.75
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.12,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.12,
+        "0.0005": 79.03
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 68.35,
+      "peak_by_square_cell_MPa": {
+        "0.001": 68.35,
+        "0.0005": 68.19
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 44.07,
+      "peak_by_square_cell_MPa": {
+        "0.001": 44.07,
+        "0.0005": 44.02
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 63.37,
+      "peak_by_square_cell_MPa": {
+        "0.001": 63.26,
+        "0.0005": 63.37
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.0,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 44.48,
+      "peak_by_square_cell_MPa": {
+        "0.001": 44.48,
+        "0.0005": 44.43
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 87.54,
+      "peak_by_square_cell_MPa": {
+        "0.001": 87.49,
+        "0.0005": 87.54
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 89.37,
+      "peak_by_square_cell_MPa": {
+        "0.001": 89.24,
+        "0.0005": 89.37
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 79.46,
+      "peak_by_square_cell_MPa": {
+        "0.001": 79.46,
+        "0.0005": 79.38
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "zero interference",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.0,
+      "drag_N": 0.5,
+      "exit_loaded": true,
+      "peak_MPa": 81.61,
+      "peak_by_square_cell_MPa": {
+        "0.001": 81.61,
+        "0.0005": 81.53
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 71.85,
+      "peak_by_square_cell_MPa": {
+        "0.001": 71.85,
+        "0.0005": 71.77
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 30,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 52.14,
+      "peak_by_square_cell_MPa": {
+        "0.001": 52.01,
+        "0.0005": 52.14
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": -0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 67.79,
+      "peak_by_square_cell_MPa": {
+        "0.001": 67.79,
+        "0.0005": 67.6
+      },
+      "below_1_sigma_y_on_every_grid": true,
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "play": "interference window floor (wire carries)",
+      "offset_um": 40,
+      "r_exit_mm": 0.2,
+      "depth_mm": 1.5,
+      "pad_ecc_mm": 0.5,
+      "drag_N": -0.5,
+      "exit_loaded": true,
+      "peak_MPa": 49.4,
+      "peak_by_square_cell_MPa": {
+        "0.001": 49.3,
+        "0.0005": 49.4
       },
       "below_1_sigma_y_on_every_grid": true,
       "flow_verdict": {
@@ -48859,6 +51414,145 @@
     },
     "k_seam_needed_max_all_rows": 0.0856,
     "k_seam_86_binding": 0.3883,
+    "ratified_exit_radius": {
+      "r_exit_mm": 0.2,
+      "verdict": "⚖️ founder 2026-11-02 (00_07 HW.34)",
+      "holds_on_every_depth": true,
+      "peak_max_MPa": 93.13,
+      "per_depth": [
+        {
+          "depth_mm": 0.0,
+          "corner_check_cells": 18,
+          "corner_check_max_MPa": 84.44,
+          "cycle_peak_MPa": 84.44,
+          "cycle_role": "at the ratified radius",
+          "cycle_corner": {
+            "play": "interference window floor (wire carries)",
+            "pad_ecc_mm": 0.5
+          },
+          "interior_rows": 8,
+          "interior_max_MPa": 82.49,
+          "interior_rows_not_solved": 2,
+          "holds": true,
+          "coaxial": {
+            "peak_sigma_MPa": 3.4266,
+            "subcycle_range_MPa": 0.6324,
+            "slide_per_cycle_um_at_mu_max": 0.58531
+          },
+          "k_seam_needed": 0.0707
+        },
+        {
+          "depth_mm": 0.25,
+          "corner_check_cells": 18,
+          "corner_check_max_MPa": 85.56,
+          "cycle_peak_MPa": 85.56,
+          "cycle_role": "at the ratified radius",
+          "cycle_corner": {
+            "play": "interference window floor (wire carries)",
+            "pad_ecc_mm": 0.5
+          },
+          "interior_rows": 8,
+          "interior_max_MPa": 83.79,
+          "interior_rows_not_solved": 2,
+          "holds": true,
+          "coaxial": {
+            "peak_sigma_MPa": 3.4632,
+            "subcycle_range_MPa": 1.2183,
+            "slide_per_cycle_um_at_mu_max": 1.0488
+          },
+          "k_seam_needed": 0.0721,
+          "ring_clearance_um": 2.802
+        },
+        {
+          "depth_mm": 0.5,
+          "corner_check_cells": 18,
+          "corner_check_max_MPa": 86.66,
+          "cycle_peak_MPa": 86.66,
+          "cycle_role": "at the ratified radius",
+          "cycle_corner": {
+            "play": "interference window floor (wire carries)",
+            "pad_ecc_mm": 0.5
+          },
+          "interior_rows": 8,
+          "interior_max_MPa": 84.93,
+          "interior_rows_not_solved": 1,
+          "holds": true,
+          "coaxial": {
+            "peak_sigma_MPa": 3.5009,
+            "subcycle_range_MPa": 1.8083,
+            "slide_per_cycle_um_at_mu_max": 1.50834
+          },
+          "k_seam_needed": 0.0735,
+          "ring_clearance_um": 4.127
+        },
+        {
+          "depth_mm": 1.0,
+          "corner_check_cells": 18,
+          "corner_check_max_MPa": 88.91,
+          "cycle_peak_MPa": 88.91,
+          "cycle_role": "at the ratified radius",
+          "cycle_corner": {
+            "play": "interference window floor (wire carries)",
+            "pad_ecc_mm": 0.5
+          },
+          "interior_rows": 8,
+          "interior_max_MPa": 87.15,
+          "interior_rows_not_solved": 0,
+          "holds": true,
+          "coaxial": {
+            "peak_sigma_MPa": 3.5792,
+            "subcycle_range_MPa": 2.9958,
+            "slide_per_cycle_um_at_mu_max": 2.41256
+          },
+          "k_seam_needed": 0.076,
+          "ring_clearance_um": 7.122
+        },
+        {
+          "depth_mm": 1.5,
+          "corner_check_cells": 18,
+          "corner_check_max_MPa": 91.07,
+          "cycle_peak_MPa": 91.07,
+          "cycle_role": "at the ratified radius",
+          "cycle_corner": {
+            "play": "interference window floor (wire carries)",
+            "pad_ecc_mm": 0.5
+          },
+          "interior_rows": 8,
+          "interior_max_MPa": 89.37,
+          "interior_rows_not_solved": 0,
+          "holds": true,
+          "coaxial": {
+            "peak_sigma_MPa": 3.661,
+            "subcycle_range_MPa": 4.1895,
+            "slide_per_cycle_um_at_mu_max": 3.29399
+          },
+          "k_seam_needed": 0.0781,
+          "ring_clearance_um": 10.581
+        },
+        {
+          "depth_mm": 2.0,
+          "corner_check_cells": 18,
+          "corner_check_max_MPa": 93.13,
+          "cycle_peak_MPa": 93.13,
+          "cycle_role": "at the floor",
+          "cycle_corner": {
+            "play": "interference window floor (wire carries)",
+            "pad_ecc_mm": 0.5
+          },
+          "interior_rows": 8,
+          "interior_max_MPa": 91.51,
+          "interior_rows_not_solved": 0,
+          "holds": true,
+          "coaxial": {
+            "peak_sigma_MPa": 3.7466,
+            "subcycle_range_MPa": 5.3871,
+            "slide_per_cycle_um_at_mu_max": 4.15063
+          },
+          "k_seam_needed": 0.0816,
+          "ring_clearance_um": 14.508
+        }
+      ]
+    },
     "adverse_corner_for_exit": {
       "play": "interference window floor (wire carries)",
       "pad_ecc_mm": 0.5
@@ -48877,5 +51571,5 @@
     "brackets": "(b) and (c) run bonded, short-term; 91's and 92's other brackets (frictionless, 20-year) are not re-run",
     "friction_wear": "no contact friction in (b), no wear; slides are frictionless kinematic ceilings (91's)"
   },
-  "elapsed_s": 3925.2
+  "elapsed_s": 6287.9
 }
