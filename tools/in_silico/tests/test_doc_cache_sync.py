@@ -7282,9 +7282,9 @@ _C108_READ = (("turgor of free root cells (p. 15)", "turgor_free_root_cells"),
 
 
 def _c108_row(glabel, rlabel, j):
-    num = [_U if j == k else r"[\d.]+" for k in range(10)]
+    num = [_U if j == k else r"[\d.]+" for k in range(10)] + [N if j == k else rf"[+{_DASHES}][\d.]+" for k in (10, 11)]
     cells = [f"{re.escape(glabel)}, {num[0]} bare-lattice cells", re.escape(rlabel), num[1], f"{num[2]}–{num[3]}",
-             f"{num[4]} ⊥ {num[5]} · {num[6]}–{num[7]} ⊥ {num[8]}–{num[9]}"]
+             f"{num[4]} ⊥ {num[5]} · {num[6]}–{num[7]} ⊥ {num[8]}–{num[9]}", f"{num[10]} ⊥ {num[11]}"]
     return r"(?m)^\| " + r" \| ".join(cells) + r" \|$"
 
 
@@ -7298,7 +7298,39 @@ def _c108_cell(d, g, n, j):
     return [d["summary_bare_lattice"][g]["cells"], d["inputs"]["p0_readings"][n]["MPa"], _ceil_n(t[0], 0),
             _ceil_n(t[1], 0), lo["cells_open"], hi["cells_open"], _floor_n(lo["mu_req_max_closed"][0], 2),
             _floor_n(lo["mu_req_max_closed"][1], 2), _floor_n(hi["mu_req_max_closed"][0], 2),
-            _floor_n(hi["mu_req_max_closed"][1], 2)][j]
+            _floor_n(hi["mu_req_max_closed"][1], 2), _down_sig2(lo["nearest_cell_flips_at_pct"]),
+            _down_sig2(hi["nearest_cell_flips_at_pct"])][j]
+
+
+def _down_sig2(x):
+    """«the count holds while the strain moves by less than X» — a harmless-region sentence, so the MAGNITUDE rounds DOWN
+    to two significant figures, the sign kept (in-silico §When Modifying #43)."""
+    d = 1 - math.floor(math.log10(abs(x)))
+    return math.copysign(math.floor(round(abs(x) * 10 ** d, 9)) / 10 ** d, x)
+
+
+def _c108_excl_knife(d):
+    return _down_sig2(min(abs(d["p0_excluded_price"][g]["low"]["nearest_cell_flips_at_pct"]) for g in ("scots_pine", "green")))
+
+
+def test_contact108_knife_column_lies_inside_the_input_slope_read():
+    """SUMMARY says every value of 108's knife column lies inside the uncertainty of reading the input slope off the
+    source's figure — ±0.01 on the two Figure-9 slopes (`87`'s comment over its Figure-9 constants: «a PLOT read, ±0.01»; it
+    lives in that comment only, not in a cache); the strain is
+    linear in the slope, the day's low end is the median reading and its high end the upper whisker. CAN catch: a re-run
+    that puts a column value outside that read, a moved slope in 87, a sentence that lost its slopes; CANNOT: the ±0.01
+    itself, a reading of a printed figure that no cache holds."""
+    d, slopes = C(CONTACT108), C("mechanical/pogo_sway_transfer.json")["inputs"]["slope_at_h2_read_from_figure9"]
+    read = {"low": 100.0 * 0.01 / slopes["median"], "high": 100.0 * 0.01 / slopes["upper_whisker"]}
+    assert d["inputs"]["strain_ends"]["low"].startswith("median|")
+    assert d["inputs"]["strain_ends"]["high"].startswith("upper_whisker|")
+    for _, g in _C108_GROUPS:
+        for _, n in _C108_READ:
+            for end in ("low", "high"):
+                x = d["summary_bare_lattice"][g]["theta0"]["at_source_day"]["compression"][end][n]["nearest_cell_flips_at_pct"]
+                assert abs(x) < read[end], (g, n, end, x, read[end])
+    assert (f"(±0.01 on {slopes['median']:g} ⊥ {slopes['upper_whisker']:g} at 2 m — the median sets the day's low end, "
+            "the upper whisker its high end; `87`)") in doc(SUMMARY)
 
 
 def _c108_end(d, end):
@@ -7344,7 +7376,14 @@ def _c108_excl(d, g, field):
 CHECKS += [
     *[(f"contact108 {g} {key} col {j} → 108", SUMMARY, _c108_row(glabel, rlabel, j), CONTACT108,
        (lambda gg, k, jj: lambda d: _c108_cell(d, gg, k, jj))(g, key, j), 0.0)
-      for glabel, g in _C108_GROUPS for rlabel, key in _C108_READ for j in range(10)],
+      for glabel, g in _C108_GROUPS for rlabel, key in _C108_READ for j in range(12)],
+    ("contact108 excluded price knife → 108", SUMMARY,
+     rf"no holding claim, and counts that hold while the strain moves by less than {N} % either way\.",
+     CONTACT108, _c108_excl_knife, 0.0),
+    ("contact108 threshold-state knife → 108", SUMMARY,
+     rf"rest reaching p₀ at any ratio \(counts that hold while the strain moves by less than {N} % either way\)",
+     CONTACT108, lambda d: _down_sig2(abs(d["measured_C44_106"]["finite_zener_thresholds"]["nearest_state_flips_at_pct"])),
+     0.0),
     ("contact108 strain low → 108", SUMMARY, rf"carries from `87`, {_U}–\d+ µε at the gyroid", CONTACT108,
      lambda d: round(_c108_end(d, "low")), 0.0),
     ("contact108 strain high → 108", SUMMARY, rf"carries from `87`, \d+–{_U} µε at the gyroid", CONTACT108,

@@ -33210,14 +33210,18 @@
                 "cells": 180,
                 "bare_lattice_cells_open": 60,
                 "open_share": [0.7013222747361424, 0.8439750563611784],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -90.72880456473531,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 180,
                 "cells": 180,
                 "bare_lattice_cells_open": 60,
                 "open_share": [0.6739191667889309, 0.819901091210575],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -86.64947857321886,
+                "nearest_closed_cell_opens_at_pct": null
               }
             },
             "high": {
@@ -33226,14 +33230,18 @@
                 "cells": 180,
                 "bare_lattice_cells_open": 60,
                 "open_share": [0.7440783358470814, 0.8967938598374102],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -96.58429641858669,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 180,
                 "cells": 180,
                 "bare_lattice_cells_open": 60,
                 "open_share": [0.7326242726488977, 0.8794516392685623],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -95.08138684276484,
+                "nearest_closed_cell_opens_at_pct": null
               }
             }
           },
@@ -33244,14 +33252,18 @@
                 "cells": 180,
                 "bare_lattice_cells_open": 36,
                 "open_share": [0.0, 0.16482254591542683],
-                "mu_req_max_closed": [1.9877058936735603, 3.5435227442147714]
+                "mu_req_max_closed": [1.9877058936735603, 3.5435227442147714],
+                "nearest_cell_flips_at_pct": -11.627277551827353,
+                "nearest_closed_cell_opens_at_pct": 52.01728475494933
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 63,
                 "cells": 180,
                 "bare_lattice_cells_open": 19,
                 "open_share": [0.0, 0.1358484490749948],
-                "mu_req_max_closed": [1.586877145205119, 105.86231941775095]
+                "mu_req_max_closed": [1.586877145205119, 105.86231941775095],
+                "nearest_cell_flips_at_pct": 0.03383166606090171,
+                "nearest_closed_cell_opens_at_pct": 0.03383166606090171
               }
             },
             "high": {
@@ -33260,14 +33272,18 @@
                 "cells": 180,
                 "bare_lattice_cells_open": 53,
                 "open_share": [0.0, 0.2067390762834839],
-                "mu_req_max_closed": [3.489367417065218, 7.929528409434195]
+                "mu_req_max_closed": [3.489367417065218, 7.929528409434195],
+                "nearest_cell_flips_at_pct": -3.1315085413433197,
+                "nearest_closed_cell_opens_at_pct": 24.40438914001519
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 115,
                 "cells": 180,
                 "bare_lattice_cells_open": 43,
                 "open_share": [0.0, 0.19561940458066743],
-                "mu_req_max_closed": [2.830490613091384, 24.18331314918485]
+                "mu_req_max_closed": [2.830490613091384, 24.18331314918485],
+                "nearest_cell_flips_at_pct": -0.5270905804888204,
+                "nearest_closed_cell_opens_at_pct": 1.5780172462241948
               }
             }
           }
@@ -33393,14 +33409,18 @@
                 "cells": 468,
                 "bare_lattice_cells_open": 156,
                 "open_share": [0.6193955701206377, 0.8441590323190488],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -71.86258974364468,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 468,
                 "cells": 468,
                 "bare_lattice_cells_open": 156,
                 "open_share": [0.5504086447177088, 0.8095461906131215],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -59.482129230848344,
+                "nearest_closed_cell_opens_at_pct": null
               }
             },
             "high": {
@@ -33409,14 +33429,18 @@
                 "cells": 468,
                 "bare_lattice_cells_open": 156,
                 "open_share": [0.7319371791397297, 0.9412628774783222],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -89.633585695027,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 468,
                 "cells": 468,
                 "bare_lattice_cells_open": 156,
                 "open_share": [0.7004748038540329, 0.9000294107018063],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -85.07236340083887,
+                "nearest_closed_cell_opens_at_pct": null
               }
             }
           },
@@ -33427,14 +33451,18 @@
                 "cells": 468,
                 "bare_lattice_cells_open": 5,
                 "open_share": [0.0, 0.07038624952025724],
-                "mu_req_max_closed": [0.8716259066539899, 84.5263564978099]
+                "mu_req_max_closed": [0.8716259066539899, 84.5263564978099],
+                "nearest_cell_flips_at_pct": 0.04489118886399357,
+                "nearest_closed_cell_opens_at_pct": 0.04489118886399357
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 0,
                 "cells": 468,
                 "bare_lattice_cells_open": 0,
                 "open_share": [0.0, 0.0],
-                "mu_req_max_closed": [0.6875575061176705, 3.949790093193508]
+                "mu_req_max_closed": [0.6875575061176705, 3.949790093193508],
+                "nearest_cell_flips_at_pct": 20.840690878176748,
+                "nearest_closed_cell_opens_at_pct": 20.840690878176748
               }
             },
             "high": {
@@ -33443,14 +33471,18 @@
                 "cells": 468,
                 "bare_lattice_cells_open": 24,
                 "open_share": [0.0, 0.14688150761591348],
-                "mu_req_max_closed": [1.490719098207191, 10.76887667754591]
+                "mu_req_max_closed": [1.490719098207191, 10.76887667754591],
+                "nearest_cell_flips_at_pct": 2.740829479022522,
+                "nearest_closed_cell_opens_at_pct": 2.740829479022522
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 51,
                 "cells": 468,
                 "bare_lattice_cells_open": 16,
                 "open_share": [0.0, 0.13139416786275168],
-                "mu_req_max_closed": [1.248107757765384, 54.49233239344854]
+                "mu_req_max_closed": [1.248107757765384, 54.49233239344854],
+                "nearest_cell_flips_at_pct": 0.20586667846433926,
+                "nearest_closed_cell_opens_at_pct": 0.20586667846433926
               }
             }
           }
@@ -33576,14 +33608,18 @@
                 "cells": 648,
                 "bare_lattice_cells_open": 216,
                 "open_share": [0.6193955701206377, 0.8441590323190488],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -71.86258974364468,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 648,
                 "cells": 648,
                 "bare_lattice_cells_open": 216,
                 "open_share": [0.5504086447177088, 0.819901091210575],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -59.482129230848344,
+                "nearest_closed_cell_opens_at_pct": null
               }
             },
             "high": {
@@ -33592,14 +33628,18 @@
                 "cells": 648,
                 "bare_lattice_cells_open": 216,
                 "open_share": [0.7319371791397297, 0.9412628774783222],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -89.633585695027,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 648,
                 "cells": 648,
                 "bare_lattice_cells_open": 216,
                 "open_share": [0.7004748038540329, 0.9000294107018063],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -85.07236340083887,
+                "nearest_closed_cell_opens_at_pct": null
               }
             }
           },
@@ -33610,14 +33650,18 @@
                 "cells": 648,
                 "bare_lattice_cells_open": 41,
                 "open_share": [0.0, 0.16482254591542683],
-                "mu_req_max_closed": [0.8716259066539899, 84.5263564978099]
+                "mu_req_max_closed": [0.8716259066539899, 84.5263564978099],
+                "nearest_cell_flips_at_pct": 0.04489118886399357,
+                "nearest_closed_cell_opens_at_pct": 0.04489118886399357
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 63,
                 "cells": 648,
                 "bare_lattice_cells_open": 19,
                 "open_share": [0.0, 0.1358484490749948],
-                "mu_req_max_closed": [0.6875575061176705, 105.86231941775095]
+                "mu_req_max_closed": [0.6875575061176705, 105.86231941775095],
+                "nearest_cell_flips_at_pct": 0.03383166606090171,
+                "nearest_closed_cell_opens_at_pct": 0.03383166606090171
               }
             },
             "high": {
@@ -33626,14 +33670,18 @@
                 "cells": 648,
                 "bare_lattice_cells_open": 77,
                 "open_share": [0.0, 0.2067390762834839],
-                "mu_req_max_closed": [1.490719098207191, 10.76887667754591]
+                "mu_req_max_closed": [1.490719098207191, 10.76887667754591],
+                "nearest_cell_flips_at_pct": 2.740829479022522,
+                "nearest_closed_cell_opens_at_pct": 2.740829479022522
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 166,
                 "cells": 648,
                 "bare_lattice_cells_open": 59,
                 "open_share": [0.0, 0.19561940458066743],
-                "mu_req_max_closed": [1.248107757765384, 54.49233239344854]
+                "mu_req_max_closed": [1.248107757765384, 54.49233239344854],
+                "nearest_cell_flips_at_pct": 0.20586667846433926,
+                "nearest_closed_cell_opens_at_pct": 0.20586667846433926
               }
             }
           }
@@ -33761,14 +33809,18 @@
                 "cells": 60,
                 "bare_lattice_cells_open": 60,
                 "open_share": [0.7013222747361424, 0.8306912149767334],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -90.72880456473531,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 60,
                 "cells": 60,
                 "bare_lattice_cells_open": 60,
                 "open_share": [0.6739191667889309, 0.8066676929647557],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -86.64947857321886,
+                "nearest_closed_cell_opens_at_pct": null
               }
             },
             "high": {
@@ -33777,14 +33829,18 @@
                 "cells": 60,
                 "bare_lattice_cells_open": 60,
                 "open_share": [0.7440783358470814, 0.8822688547564733],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -96.58429641858669,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 60,
                 "cells": 60,
                 "bare_lattice_cells_open": 60,
                 "open_share": [0.7326242726488977, 0.8642580950494351],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -95.08138684276484,
+                "nearest_closed_cell_opens_at_pct": null
               }
             }
           },
@@ -33795,14 +33851,18 @@
                 "cells": 60,
                 "bare_lattice_cells_open": 36,
                 "open_share": [0.0, 0.16343470092860976],
-                "mu_req_max_closed": [2.0044025472020723, 3.5435227442147714]
+                "mu_req_max_closed": [2.0044025472020723, 3.5435227442147714],
+                "nearest_cell_flips_at_pct": -12.144210643540475,
+                "nearest_closed_cell_opens_at_pct": 52.01728475494933
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 19,
                 "cells": 60,
                 "bare_lattice_cells_open": 19,
                 "open_share": [0.0, 0.1294811133329722],
-                "mu_req_max_closed": [1.586877145205119, 13.207096462785033]
+                "mu_req_max_closed": [1.586877145205119, 13.207096462785033],
+                "nearest_cell_flips_at_pct": 1.9093402153753214,
+                "nearest_closed_cell_opens_at_pct": 1.9093402153753214
               }
             },
             "high": {
@@ -33811,14 +33871,18 @@
                 "cells": 60,
                 "bare_lattice_cells_open": 53,
                 "open_share": [0.0, 0.2067390762834839],
-                "mu_req_max_closed": [3.9165163456148497, 7.929528409434195]
+                "mu_req_max_closed": [3.9165163456148497, 7.929528409434195],
+                "nearest_cell_flips_at_pct": -3.1315085413433197,
+                "nearest_closed_cell_opens_at_pct": 24.40438914001519
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 43,
                 "cells": 60,
                 "bare_lattice_cells_open": 43,
                 "open_share": [0.0, 0.19561940458066743],
-                "mu_req_max_closed": [3.0021546784576727, 24.18331314918485]
+                "mu_req_max_closed": [3.0021546784576727, 24.18331314918485],
+                "nearest_cell_flips_at_pct": -0.5270905804888204,
+                "nearest_closed_cell_opens_at_pct": 1.5780172462241948
               }
             }
           }
@@ -33944,14 +34008,18 @@
                 "cells": 156,
                 "bare_lattice_cells_open": 156,
                 "open_share": [0.6193955701206377, 0.8352790074400398],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -71.86258974364468,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 156,
                 "cells": 156,
                 "bare_lattice_cells_open": 156,
                 "open_share": [0.5504086447177088, 0.7999243754220251],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -59.482129230848344,
+                "nearest_closed_cell_opens_at_pct": null
               }
             },
             "high": {
@@ -33960,14 +34028,18 @@
                 "cells": 156,
                 "bare_lattice_cells_open": 156,
                 "open_share": [0.7319371791397297, 0.9141035100908683],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -89.633585695027,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 156,
                 "cells": 156,
                 "bare_lattice_cells_open": 156,
                 "open_share": [0.7004748038540329, 0.8830715160328255],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -85.07236340083887,
+                "nearest_closed_cell_opens_at_pct": null
               }
             }
           },
@@ -33978,14 +34050,18 @@
                 "cells": 156,
                 "bare_lattice_cells_open": 5,
                 "open_share": [0.0, 0.055049367040338505],
-                "mu_req_max_closed": [0.8716259066539899, 84.5263564978099]
+                "mu_req_max_closed": [0.8716259066539899, 84.5263564978099],
+                "nearest_cell_flips_at_pct": 0.04489118886399357,
+                "nearest_closed_cell_opens_at_pct": 0.04489118886399357
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 0,
                 "cells": 156,
                 "bare_lattice_cells_open": 0,
                 "open_share": [0.0, 0.0],
-                "mu_req_max_closed": [0.6875575061176705, 3.2627491290682142]
+                "mu_req_max_closed": [0.6875575061176705, 3.2627491290682142],
+                "nearest_cell_flips_at_pct": 29.975764577230592,
+                "nearest_closed_cell_opens_at_pct": 29.975764577230592
               }
             },
             "high": {
@@ -33994,14 +34070,18 @@
                 "cells": 156,
                 "bare_lattice_cells_open": 24,
                 "open_share": [0.0, 0.1451899368357011],
-                "mu_req_max_closed": [1.490719098207191, 7.453573141599923]
+                "mu_req_max_closed": [1.490719098207191, 7.453573141599923],
+                "nearest_cell_flips_at_pct": 5.6967806625948025,
+                "nearest_closed_cell_opens_at_pct": 5.6967806625948025
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 16,
                 "cells": 156,
                 "bare_lattice_cells_open": 16,
                 "open_share": [0.0, 0.12804504189192348],
-                "mu_req_max_closed": [1.248107757765384, 54.49233239344854]
+                "mu_req_max_closed": [1.248107757765384, 54.49233239344854],
+                "nearest_cell_flips_at_pct": 0.20586667846433926,
+                "nearest_closed_cell_opens_at_pct": 0.20586667846433926
               }
             }
           }
@@ -34127,14 +34207,18 @@
                 "cells": 216,
                 "bare_lattice_cells_open": 216,
                 "open_share": [0.6193955701206377, 0.8352790074400398],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -71.86258974364468,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 216,
                 "cells": 216,
                 "bare_lattice_cells_open": 216,
                 "open_share": [0.5504086447177088, 0.8066676929647557],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -59.482129230848344,
+                "nearest_closed_cell_opens_at_pct": null
               }
             },
             "high": {
@@ -34143,14 +34227,18 @@
                 "cells": 216,
                 "bare_lattice_cells_open": 216,
                 "open_share": [0.7319371791397297, 0.9141035100908683],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -89.633585695027,
+                "nearest_closed_cell_opens_at_pct": null
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 216,
                 "cells": 216,
                 "bare_lattice_cells_open": 216,
                 "open_share": [0.7004748038540329, 0.8830715160328255],
-                "mu_req_max_closed": null
+                "mu_req_max_closed": null,
+                "nearest_cell_flips_at_pct": -85.07236340083887,
+                "nearest_closed_cell_opens_at_pct": null
               }
             }
           },
@@ -34161,14 +34249,18 @@
                 "cells": 216,
                 "bare_lattice_cells_open": 41,
                 "open_share": [0.0, 0.16343470092860976],
-                "mu_req_max_closed": [0.8716259066539899, 84.5263564978099]
+                "mu_req_max_closed": [0.8716259066539899, 84.5263564978099],
+                "nearest_cell_flips_at_pct": 0.04489118886399357,
+                "nearest_closed_cell_opens_at_pct": 0.04489118886399357
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 19,
                 "cells": 216,
                 "bare_lattice_cells_open": 19,
                 "open_share": [0.0, 0.1294811133329722],
-                "mu_req_max_closed": [0.6875575061176705, 13.207096462785033]
+                "mu_req_max_closed": [0.6875575061176705, 13.207096462785033],
+                "nearest_cell_flips_at_pct": 1.9093402153753214,
+                "nearest_closed_cell_opens_at_pct": 1.9093402153753214
               }
             },
             "high": {
@@ -34177,14 +34269,18 @@
                 "cells": 216,
                 "bare_lattice_cells_open": 77,
                 "open_share": [0.0, 0.2067390762834839],
-                "mu_req_max_closed": [1.490719098207191, 7.929528409434195]
+                "mu_req_max_closed": [1.490719098207191, 7.929528409434195],
+                "nearest_cell_flips_at_pct": -3.1315085413433197,
+                "nearest_closed_cell_opens_at_pct": 5.6967806625948025
               },
               "spring_clamps_on_poplar_roots": {
                 "cells_open": 59,
                 "cells": 216,
                 "bare_lattice_cells_open": 59,
                 "open_share": [0.0, 0.19561940458066743],
-                "mu_req_max_closed": [1.248107757765384, 54.49233239344854]
+                "mu_req_max_closed": [1.248107757765384, 54.49233239344854],
+                "nearest_cell_flips_at_pct": 0.20586667846433926,
+                "nearest_closed_cell_opens_at_pct": 0.20586667846433926
               }
             }
           }
@@ -34444,6 +34540,7 @@
     "finite_zener_thresholds": {
       "states": 1728,
       "with_a_threshold": 401,
+      "nearest_state_flips_at_pct": 0.06840337512459271,
       "all_bare_lattice": true,
       "is": "lattice cell × end of the day × named p₀ states whose tension half needs a Zener ratio to reach p₀ on every angle; the rest reach it at any ratio"
     },
@@ -34451,19 +34548,21 @@
   },
   "p0_excluded_price": {
     "MPa": 2.5,
-    "is": "cells (θ = 0) whose averaged tension traction ε·σ₁ stays below the excluded 2.5 MPa at each of the source day's two ends — what the «every cell» headline stands on; a fact about the averaged traction, no holding claim",
+    "is": "cells (θ = 0) whose averaged tension traction ε·σ₁ stays below the excluded 2.5 MPa at each of the source day's two ends — what the «every cell» headline stands on; a fact about the averaged traction, no holding claim; nearest_cell_flips_at_pct — the % change of the strain below which these counts hold, + a rise or − a fall flipping a cell first",
     "scots_pine": {
       "low": {
         "cells_below": 0,
         "cells": 180,
         "bare_lattice_cells_below": 0,
-        "bare_lattice_cells": 60
+        "bare_lattice_cells": 60,
+        "nearest_cell_flips_at_pct": -53.64402282367657
       },
       "high": {
         "cells_below": 0,
         "cells": 180,
         "bare_lattice_cells_below": 0,
-        "bare_lattice_cells": 60
+        "bare_lattice_cells": 60,
+        "nearest_cell_flips_at_pct": -82.92148209293347
       }
     },
     "green": {
@@ -34471,13 +34570,15 @@
         "cells_below": 166,
         "cells": 468,
         "bare_lattice_cells_below": 58,
-        "bare_lattice_cells": 156
+        "bare_lattice_cells": 156,
+        "nearest_cell_flips_at_pct": -0.023788408433245145
       },
       "high": {
         "cells_below": 0,
         "cells": 468,
         "bare_lattice_cells_below": 0,
-        "bare_lattice_cells": 156
+        "bare_lattice_cells": 156,
+        "nearest_cell_flips_at_pct": -48.16792847513496
       }
     },
     "union": {
@@ -34485,13 +34586,15 @@
         "cells_below": 166,
         "cells": 648,
         "bare_lattice_cells_below": 58,
-        "bare_lattice_cells": 216
+        "bare_lattice_cells": 216,
+        "nearest_cell_flips_at_pct": -0.023788408433245145
       },
       "high": {
         "cells_below": 0,
         "cells": 648,
         "bare_lattice_cells_below": 0,
-        "bare_lattice_cells": 216
+        "bare_lattice_cells": 216,
+        "nearest_cell_flips_at_pct": -48.16792847513496
       }
     }
   },
@@ -34962,5 +35065,5 @@
   },
   "homogenisation": "the traction is the average over the cut lattice on the envelope; for a SMOOTH contact whose local normal is the envelope's, full stick needs |τ_loc| ≤ μ·p_loc at every point, so μ_req of the averages is a lower bound on the friction it needs and an averaged opening forces a local one — that contact can be shown failing, never holding. A contact that is not smooth has no guaranteed direction (an inclined facet carries averaged shear with zero friction, an undercut one averaged tension under positive pressure), and with tissue in the macropores (01_04 §2, Phase 2) the envelope is crossed by an interlocked composite: the traction is its demand, and neither failing nor holding follows. On a Voigt cell σᴵ is a bound tensor's stress, not the average of an admissible local traction. So the smooth-contact statements are taken over the bare-lattice cells (`summary_bare_lattice`); `summary` over all cells is the demand, and a field named «opens» there means the averaged traction reaches p₀",
   "not_computed": ["the unbonded and the interlocked ends — slip with the normal contact kept, opening, and the internal Ti–tissue faces of an interlock — and what each does to t_L (the leg's step 2: a slipping interface keeps no uniform field in an anisotropic matrix)", "the traction on the ligament ends and on the ligament surfaces inside the pores (the homogenised traction is their average), and the O(cell/radius) error of that average", "the Ø15 interface, callus against the old wood of the drilled wall — no interface in 106's model", "p₀ for a conifer's stem callus, its distribution around the gyroid and its relaxation", "the finite length: the ends' axial shear and the anode bond force's distribution along the gyroid", "the part's own C44 (106's measured C44 is the infinite lattice's, carried onto the part body — read here off the axis, not at θ = 0, which is free of it), the tissue's stiffness, the bark and S5 — as in 106", "the change of σ_n the anode's axial bond force makes through the gyroid's Poisson strain (its sign alternates with the sway), so the axial force's net effect on the friction needed"],
-  "verdict": "Read as a SMOOTH contact on the gyroid's envelope — its local normal the envelope's, pressed by a growth pressure p₀ and held by friction, with no adhesion; consistent only with the bare-lattice cells (60 ⊥ 156), the cells with tissue in the pores giving the demand on an interlocked composite — the bonded field of 106 is carried around the interface by normal traction and in-plane shear; the infinite cylinder's axial shear is zero. With a cube axis on the stem's axis (θ = 0, free of C44) the tension half of a bare-lattice cell stays closed at the source day's strain (677–1837 µε at the gyroid) only under p₀ of at least 5.39 MPa (the Scots pine group) ⊥ 1.77 MPa (the green group) — 7.4× ⊥ 2.4× the higher named root reading (0.72 MPa, Bruder's clamps; the turgor reading is 0.5 MPa); the 2.5 MPa Bruder uses in two senses is not taken — had it been taken, the averaged tension traction at the day's 677 µε would stay below it in 0 of 180 cells (the Scots pine group; 0 of 60 bare lattice) and 166 of 468 cells (the green group; 58 of 156 bare lattice), a fact about the averaged traction and no holding claim — and the highest further root figure on his pages (1.45 MPa) stays below the lowest p₀ needed. On both named readings the tension half's averaged traction exceeds p₀ at both ends of the day in every one of its 60 bare-lattice cells (the Scots pine group) and every one of its 156 bare-lattice cells (the green group) — an opening on a smooth envelope — and, as a demand, in every one of its 180 cells (the Scots pine group) and every one of its 468 cells (the green group); on a bare-lattice cell it opens the poles facing along the stem above 33–91 µε (the Scots pine group) ⊥ 47–275 µε (the green group), and at half that strain the friction needed is already at least 0.34–0.39 (no p₀). In the compression half the averaged traction at the poles facing around the stem first reaches p₀ at 307 µε on a bare-lattice cell, and where it stays below p₀ at the source day's strain the friction a bare-lattice cell needs is at least 0.68–84.52. Off the axis the pole traction falls as C44 falls: on a bare-lattice cell the tension half's averaged traction reaches p₀ at the source day's strain on every install angle once the Zener ratio exceeds 0.030, against the Voigt ceiling 3.755; on 106's measured C44 — the part body's Zener ratio 1.49–1.62 (its absolute modulus ⊥ its Zener form over the FE rungs, at least ×51 the threshold) and the material tensor, another body off this axis, read whole — it does so on 106's θ grid (0–45° in 2.5° steps) at both ends of the day on both named p₀ readings in all 120 lattice cells of the Scots pine group (60 of them bare) and in all 312 lattice cells of the green group (156 of them bare), the smallest σ₁·ε/p₀ ×2.46; on every lattice cell and every measured reading the least pole traction over the install angles sits on the cube axis (θ = 0), which C44 does not enter: off the axis a bare-lattice cell's opening (the demand, on a cell with tissue in the pores) is a finding on these readings, not a condition on C44 — the measured C44 is the infinite lattice's, carried onto the part body (an assumption, 106). At 106's binding cell (the union's lowest θ = 0 share, the pores_voigt_phase_bound reading, which puts tissue in the pores: the envelope is no contact surface there and σᴵ a bound tensor's stress) the averaged envelope traction reaches p₀ 16.1× below the binding strain (Ta), and only a p₀ of at least 11.6 MPa would offset it up to that strain — a demand on the interlocked composite, with no direction. At the union's C44 → 0 supremum, a bare-lattice cell, the in-plane stress is isotropic — the bending field puts no averaged in-plane shear there, which is no holding claim; its tension half opens at the source day's upper whisker on a large stem on 2 of 2 named readings and at its median on a DBH-38 bark on 1; on the published sets only (the founder-ratified companion) its averaged traction reaches p₀ at the source day's upper whisker on a large stem on 2 of 2 named readings and at its median on a DBH-38 bark on 0 (below p₀ elsewhere — no holding claim). With tissue in the macropores (01_04 §2, Phase 2) the lattice interlocks with it: the envelope traction is then the demand on that composite, and neither failing nor holding follows from it; the anode's axial bond force also moves σ_n through the gyroid's Poisson strain, with a sign that alternates with the sway, and what that, opening, slip and interlock do to the share is not computed."
+  "verdict": "Read as a SMOOTH contact on the gyroid's envelope — its local normal the envelope's, pressed by a growth pressure p₀ and held by friction, with no adhesion; consistent only with the bare-lattice cells (60 ⊥ 156), the cells with tissue in the pores giving the demand on an interlocked composite — the bonded field of 106 is carried around the interface by normal traction and in-plane shear; the infinite cylinder's axial shear is zero. With a cube axis on the stem's axis (θ = 0, free of C44) the tension half of a bare-lattice cell stays closed at the source day's strain (677–1837 µε at the gyroid) only under p₀ of at least 5.39 MPa (the Scots pine group) ⊥ 1.77 MPa (the green group) — 7.4× ⊥ 2.4× the higher named root reading (0.72 MPa, Bruder's clamps; the turgor reading is 0.5 MPa); the 2.5 MPa Bruder uses in two senses is not taken — had it been taken, the averaged tension traction at the day's 677 µε would stay below it in 0 of 180 cells (the Scots pine group; 0 of 60 bare lattice) and 166 of 468 cells (the green group; 58 of 156 bare lattice), a fact about the averaged traction and no holding claim, and counts that hold while the strain moves by less than 0.023 % either way — and the highest further root figure on his pages (1.45 MPa) stays below the lowest p₀ needed. On both named readings the tension half's averaged traction exceeds p₀ at both ends of the day in every one of its 60 bare-lattice cells (the Scots pine group) and every one of its 156 bare-lattice cells (the green group) — an opening on a smooth envelope — and, as a demand, in every one of its 180 cells (the Scots pine group) and every one of its 468 cells (the green group); on a bare-lattice cell it opens the poles facing along the stem above 33–91 µε (the Scots pine group) ⊥ 47–275 µε (the green group), and at half that strain the friction needed is already at least 0.34–0.39 (no p₀). In the compression half the averaged traction at the poles facing around the stem first reaches p₀ at 307 µε on a bare-lattice cell, and where it stays below p₀ at the source day's strain the friction a bare-lattice cell needs is at least 0.68–84.52 — its upper end diverges at every flip of the open count (as a closed cell nears its opening on a rise, and just after an open one closes on a fall), and no flip lies within 0.044 % of the strain. Off the axis the pole traction falls as C44 falls: on a bare-lattice cell the tension half's averaged traction reaches p₀ at the source day's strain on every install angle once the Zener ratio exceeds 0.030, against the Voigt ceiling 3.755; on 106's measured C44 — the part body's Zener ratio 1.49–1.62 (its absolute modulus ⊥ its Zener form over the FE rungs, at least ×51 the threshold) and the material tensor, another body off this axis, read whole — it does so on 106's θ grid (0–45° in 2.5° steps) at both ends of the day on both named p₀ readings in all 120 lattice cells of the Scots pine group (60 of them bare) and in all 312 lattice cells of the green group (156 of them bare), the smallest σ₁·ε/p₀ ×2.46; on every lattice cell and every measured reading the least pole traction over the install angles sits on the cube axis (θ = 0), which C44 does not enter: off the axis a bare-lattice cell's opening (the demand, on a cell with tissue in the pores) is a finding on these readings, not a condition on C44 — the measured C44 is the infinite lattice's, carried onto the part body (an assumption, 106). At 106's binding cell (the union's lowest θ = 0 share, the pores_voigt_phase_bound reading, which puts tissue in the pores: the envelope is no contact surface there and σᴵ a bound tensor's stress) the averaged envelope traction reaches p₀ 16.1× below the binding strain (Ta), and only a p₀ of at least 11.6 MPa would offset it up to that strain — a demand on the interlocked composite, with no direction. At the union's C44 → 0 supremum, a bare-lattice cell, the in-plane stress is isotropic — the bending field puts no averaged in-plane shear there, which is no holding claim; its tension half opens at the source day's upper whisker on a large stem on 2 of 2 named readings and at its median on a DBH-38 bark on 1; on the published sets only (the founder-ratified companion) its averaged traction reaches p₀ at the source day's upper whisker on a large stem on 2 of 2 named readings and at its median on a DBH-38 bark on 0 (below p₀ elsewhere — no holding claim). With tissue in the macropores (01_04 §2, Phase 2) the lattice interlocks with it: the envelope traction is then the demand on that composite, and neither failing nor holding follows from it; the anode's axial bond force also moves σ_n through the gyroid's Poisson strain, with a sign that alternates with the sway, and what that, opening, slip and interlock do to the share is not computed."
 }

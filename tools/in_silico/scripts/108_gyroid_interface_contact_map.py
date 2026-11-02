@@ -235,6 +235,19 @@ def down(x: float, digits: int = 0) -> float:
     return math.floor(round(x * f, 9)) / f
 
 
+def down_sig2(x: float) -> float:
+    """A distance to a threshold quoted in a harmless-region sentence — «holds while it moves by less than X»: the
+    MAGNITUDE rounded DOWN to two significant figures, the sign kept (in-silico §When Modifying #43)."""
+    if x == 0.0:
+        return 0.0
+    return math.copysign(down(abs(x), 1 - math.floor(math.log10(abs(x)))), x)
+
+
+def sig2(x: float) -> str:
+    """Two significant figures with a trailing zero kept («0.20», «1.9», «12»; «150», never «1.5e+02»)."""
+    return f"{x:.0f}" if abs(x) >= 100.0 else f"{x:#.2g}".rstrip(".")
+
+
 def fingerprint(d: dict, paths: tuple[str, ...]) -> str:
     """sha256 of the canonical JSON of the fields at the dotted `paths` — what this script read of an upstream cache.
     The cache test recomputes it from the CURRENT upstream cache: a re-run upstream that moved any field read here, and
@@ -617,16 +630,27 @@ def main() -> int:
                 ek: rng(max(0.0, e * 1e-6 * (b["sigma1"] if s > 0 else -b["sigma2"])) for b in th0.values())
                 for ek, e in strains.items()}
             summ["theta0"]["at_source_day"][h] = {}
-            for end in ("low", "high"):
+            for end, ek in (("low", LOW_END), ("high", HIGH_END)):
                 per = {}
                 for idx, n in enumerate(P0_NAMES):
                     shares = [b["at_source_day"][h]["open_share"][end][idx] for b in th0.values()]
                     mus = [b["at_source_day"][h]["mu_req_max"][end][idx] for b in th0.values()]
                     fin = [m for m in mus if m is not None]
+                    # the knife (in-silico §When Modifying #53): μ diverges as (1 − ε/ε*)^−½ at a cell's opening, so the
+                    # open count holds while the strain moves by less than the nearest cell's distance, either way (a
+                    # sufficient condition), and the upper end of the friction needed — the largest μ over the closed
+                    # cells — diverges at EVERY flip of the count: as a closed cell nears its opening on a rise, and just
+                    # after an open one closes on a fall; % of the day's strain: + a rise flips first, − a fall
+                    ons = [b["opening_onset_ue"][h][idx] for b in th0.values()]
+                    flips = [(on / strains[ek] - 1.0) * 100.0 for on in ons if on]
+                    shut = [(on / strains[ek] - 1.0) * 100.0 for m, on in zip(mus, ons, strict=True)
+                            if m is not None and on]
                     per[n] = {"cells_open": sum(m is None for m in mus), "cells": len(mus),
                               "bare_lattice_cells_open": sum(th0[k]["at_source_day"][h]["mu_req_max"][end][idx] is None
                                                              for k in bare),
-                              "open_share": rng(shares), "mu_req_max_closed": rng(fin) if fin else None}
+                              "open_share": rng(shares), "mu_req_max_closed": rng(fin) if fin else None,
+                              "nearest_cell_flips_at_pct": min(flips, key=abs) if flips else None,
+                              "nearest_closed_cell_opens_at_pct": min(shut) if shut else None}
                 summ["theta0"]["at_source_day"][h][end] = per
         # the pole traction against the wood's own bending stress σ_L = E_L·ε — what the opening does not hang on
         summ["theta0"]["sigma1_over_E_L"] = rng(b["sigma1"] / wood[k.split("|", 1)[1].rsplit("|", 1)[0]]["E_L"]
@@ -772,8 +796,18 @@ def main() -> int:
     states = [(k, x) for k in lattice_keys for e in ("low", "high")
               for x in out_cells[k]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][e]]
     finite = [k for k, x in states if x is not None]
+    # a state has a threshold exactly when σ₁ at the lowest Zener ratio is below p₀/ε on some angle (a_star returns None
+    # only when σ₁(θ, A₀) ≥ p₀/ε on every θ; σ₁ non-decreasing in A) — i.e. when ε·grid σ₁ minimum < p₀: a closed form,
+    # checked against a_star's count; the count holds while the strain moves by less than the nearest state's distance
+    z_flip = [(p0v[n] / (strains[ek] * 1e-6 * out_cells[k]["grid"]["sigma1"][0]) - 1.0) * 100.0
+              for k in lattice_keys for ek in (LOW_END, HIGH_END) for n in P0_NAMES
+              if out_cells[k]["grid"]["sigma1"][0] > 0.0]
+    if [strains[ek] * 1e-6 * out_cells[k]["grid"]["sigma1"][0] < p0v[n] for k in lattice_keys
+            for ek in (LOW_END, HIGH_END) for n in P0_NAMES] != [x is not None for _, x in states]:
+        raise SystemExit("control: the closed form disagrees with a_star on a threshold state")
     measured["finite_zener_thresholds"] = {
         "states": len(states), "with_a_threshold": len(finite),
+        "nearest_state_flips_at_pct": min(z_flip, key=abs) if z_flip else None,
         "all_bare_lattice": all(k.endswith(f"|{BARE}") for k in finite),
         "is": "lattice cell × end of the day × named p₀ states whose tension half needs a Zener ratio to reach p₀ on "
               "every angle; the rest reach it at any ratio"}
@@ -899,7 +933,9 @@ def main() -> int:
     excl = P0_EXCLUDED["MPa"]
     excluded_price = {"MPa": excl, "is": "cells (θ = 0) whose averaged tension traction ε·σ₁ stays below the excluded "
                                          "2.5 MPa at each of the source day's two ends — what the «every cell» headline "
-                                         "stands on; a fact about the averaged traction, no holding claim"}
+                                         "stands on; a fact about the averaged traction, no holding claim; "
+                                         "nearest_cell_flips_at_pct — the % change of the strain below which these counts "
+                                         "hold, + a rise or − a fall flipping a cell first"}
     for grp in GROUP_ORDER:
         bare_k = [k for k in keys_of[grp] if k.endswith(f"|{BARE}")]
         excluded_price[grp] = {end: {"cells_below": sum(strains[ek] * 1e-6 * th0_all[k]["sigma1"] < excl
@@ -907,7 +943,12 @@ def main() -> int:
                                      "cells": len(keys_of[grp]),
                                      "bare_lattice_cells_below": sum(strains[ek] * 1e-6 * th0_all[k]["sigma1"] < excl
                                                                      for k in bare_k),
-                                     "bare_lattice_cells": len(bare_k)}
+                                     "bare_lattice_cells": len(bare_k),
+                                     # the counts hold while the strain moves by less than this, % — a cell crosses
+                                     # where ε·σ₁ = the excluded p₀ (in-silico §When Modifying #53); + a rise, − a fall
+                                     "nearest_cell_flips_at_pct": min(
+                                         ((excl / (strains[ek] * 1e-6 * th0_all[k]["sigma1"]) - 1.0) * 100.0
+                                          for k in keys_of[grp] if th0_all[k]["sigma1"] > 0.0), key=abs, default=None)}
                                for end, ek in (("low", LOW_END), ("high", HIGH_END))}
 
     # ── The verdict's smallest margin against the homogenisation error. A smooth envelope opens wherever a patch average
@@ -955,9 +996,14 @@ def main() -> int:
     need_min = {grp: need[grp][LOW_END][0] for grp in GROUP_ORDER}
     half_t = sb[UNION]["theta0"]["mu_req_max_at_half_onset"]["tension"]
     on_c = sb[UNION]["theta0"]["opening_onset_ue"]["compression"]
-    comp_mu = [sb[UNION]["theta0"]["at_source_day"]["compression"][end][n]["mu_req_max_closed"]
-               for end in ("low", "high") for n in P0_NAMES]
-    comp_mu = [x for x in comp_mu if x is not None]
+    comp_rows = [r for r in (sb[UNION]["theta0"]["at_source_day"]["compression"][end][n]
+                             for end in ("low", "high") for n in P0_NAMES) if r["mu_req_max_closed"] is not None]
+    comp_mu = [r["mu_req_max_closed"] for r in comp_rows]
+    flip_x = [abs(r["nearest_cell_flips_at_pct"]) for r in comp_rows if r["nearest_cell_flips_at_pct"] is not None]
+    # «no flip lies within X» is a SUFFICIENT condition — X rounds DOWN (§When Modifying #43, #53)
+    knife_clause = (" — its upper end diverges at every flip of the open count (as a closed cell nears its opening on a "
+                    "rise, and just after an open one closes on a fall), and no flip lies within "
+                    f"{sig2(down_sig2(min(flip_x)))} % of the strain" if flip_x else "")
     zstar = [sb[UNION]["grid"]["zener_above_which_tension_half_opens_on_every_angle"][end][n]["max"]
              for end in ("low", "high") for n in P0_NAMES]
     zstar_fin = [z for z in zstar if z is not None]
@@ -989,12 +1035,17 @@ def main() -> int:
     sup = junction[UNION]["sup_C44_zero"]
     sup_pub = junction[UNION]["sup_C44_zero_published_sets_only"]
     ep = excluded_price
+    ex_knife = min((abs(x) for g in GROUPS_READ if (x := ep[g]["low"]["nearest_cell_flips_at_pct"]) is not None),
+                   default=None)
     excl_clause = (f" — had it been taken, the averaged tension traction at the day's {strains[LOW_END]:.0f} µε would "
                    f"stay below it in "
                    + " and ".join(f"{ep[g]['low']['cells_below']} of {ep[g]['low']['cells']} cells ({label[g]}; "
                                   f"{ep[g]['low']['bare_lattice_cells_below']} of {ep[g]['low']['bare_lattice_cells']} "
                                   f"bare lattice)" for g in GROUPS_READ)
-                   + ", a fact about the averaged traction and no holding claim —")
+                   + ", a fact about the averaged traction and no holding claim"
+                   + (f", and counts that hold while the strain moves by less than {sig2(down_sig2(ex_knife))} % either way"
+                      if ex_knife is not None else "")
+                   + " —")
     further_max = max(P0_FURTHER_ON_THE_PAGES["primary_growth_near_root_tip_ref85_MPa"]["axial_range"][1],
                       P0_FURTHER_ON_THE_PAGES["primary_growth_near_root_tip_ref85_MPa"]["radial_range"][1],
                       P0_FURTHER_ON_THE_PAGES["bottle_neck_root_ref87_MPa"]["range"][1])
@@ -1041,7 +1092,7 @@ def main() -> int:
         f"{down(half_t[1], 2):.2f} (no p₀). In the compression half the averaged traction at the poles facing around the "
         f"stem first reaches p₀ at {down(on_c[lo_n]['range'][0]):.0f} µε on a bare-lattice cell, and where it stays "
         f"below p₀ at the source day's strain the friction a bare-lattice cell needs is at least "
-        f"{down(min(x[0] for x in comp_mu), 2):.2f}–{down(max(x[1] for x in comp_mu), 2):.2f}. "
+        f"{down(min(x[0] for x in comp_mu), 2):.2f}–{down(max(x[1] for x in comp_mu), 2):.2f}{knife_clause}. "
         f"Off the axis the pole traction falls as C44 falls: on a bare-lattice cell the tension half's averaged traction "
         f"reaches p₀ at the source day's strain on every install angle once the Zener ratio exceeds "
         f"{f'{up(max(zstar_fin), 3):.3f}' if zstar_fin else 'none'}, against the Voigt ceiling {up(a_voigt, 3):.3f}; on "

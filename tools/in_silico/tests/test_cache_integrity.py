@@ -6926,6 +6926,16 @@ def test_printed_part_sway_stress_bound_premise_static_modulus():
             f"at {where('between')} on every measured step") in d["verdict"]
 
 
+def down_sig2(x):
+    """«holds while it moves by less than X» — the MAGNITUDE rounded DOWN to two significant figures (§When Modifying #43)."""
+    d = 1 - math.floor(math.log10(abs(x)))
+    return math.copysign(math.floor(round(abs(x) * 10 ** d, 9)) / 10 ** d, x)
+
+
+def sig2(x):
+    return f"{x:.0f}" if abs(x) >= 100.0 else f"{x:#.2g}".rstrip(".")
+
+
 def test_gyroid_interface_contact_map_invariants():
     """108 (00_07 HW.23, the leg on 106's bonded interface, step 1): the validity map rebuilt HERE by another ARITHMETIC,
     on BOTH of 106's wood groups (Scots pine ⊥ green Pinaceae). σᴵ of every θ = 0 cell is recomputed through 4th-order
@@ -7177,12 +7187,29 @@ def test_gyroid_interface_contact_map_invariants():
                         mus = [b["at_source_day"][h]["mu_req_max"][end][idx] for b in th0.values()]
                         fm = [x for x in mus if x is not None]
                         shares = [b["at_source_day"][h]["open_share"][end][idx] for b in th0.values()]
-                        assert sm_["at_source_day"][h][end][n] == {
-                            "cells_open": len(mus) - len(fm), "cells": len(mus),
-                            "bare_lattice_cells_open": sum(th0[k]["at_source_day"][h]["mu_req_max"][end][idx] is None
-                                                           for k in bare),
-                            "open_share": [min(shares), max(shares)],
-                            "mu_req_max_closed": [min(fm), max(fm)] if fm else None}
+                        ons = [b["opening_onset_ue"][h][idx] for b in th0.values()]
+                        flips = [(on / ends[end] - 1.0) * 100.0 for on in ons if on]
+                        shut = [(on / ends[end] - 1.0) * 100.0 for m, on in zip(mus, ons, strict=True)
+                                if m is not None and on]
+                        exp = {"cells_open": len(mus) - len(fm), "cells": len(mus),
+                               "bare_lattice_cells_open": sum(th0[k]["at_source_day"][h]["mu_req_max"][end][idx] is None
+                                                              for k in bare),
+                               "open_share": [min(shares), max(shares)],
+                               "mu_req_max_closed": [min(fm), max(fm)] if fm else None,
+                               "nearest_cell_flips_at_pct": min(flips, key=abs) if flips else None,
+                               "nearest_closed_cell_opens_at_pct": min(shut) if shut else None}
+                        assert sm_["at_source_day"][h][end][n] == exp
+                        # the printed sign is bound, not copied: recount the open cells at the strain moved by the
+                        # field itself — unchanged at ±0.999·|X|, changed at +1.001·X WITH ITS SIGN. CAN catch a sign or
+                        # direction slip in the published field even if copied into `exp` above; CANNOT: an error in the
+                        # onsets themselves (those are rebuilt above from σᴵ by another arithmetic)
+                        x = exp["nearest_cell_flips_at_pct"]
+                        if x is not None:
+                            def n_open(f, ons=ons, e0=ends[end]):
+                                return sum(1 for on in ons if on is not None and on <= e0 * (1.0 + f / 100.0))
+                            assert n_open(0.0) == exp["cells_open"], (h, end, n)
+                            assert n_open(0.999 * x) == n_open(-0.999 * x) == exp["cells_open"], (h, end, n, x)
+                            assert n_open(1.001 * x) != exp["cells_open"], (h, end, n, x)
                 hv = [b["mu_req_max_at_half_onset"][h] for b in th0.values() if b["mu_req_max_at_half_onset"][h] is not None]
                 assert sm_["mu_req_max_at_half_onset"][h] == [min(hv), max(hv)]
                 for ek, e in strains.items():
@@ -7286,6 +7313,9 @@ def test_gyroid_interface_contact_map_invariants():
     fin = [k for k, x in states if x is not None]
     ft = mz["finite_zener_thresholds"]
     assert (ft["states"], ft["with_a_threshold"]) == (len(states), len(fin))
+    zf = [(p0[names.index(n)] / (ends[e] * 1e-6 * all_cells[k]["grid"]["sigma1"][0]) - 1.0) * 100.0
+          for k in lat_keys for e in ("low", "high") for n in names if all_cells[k]["grid"]["sigma1"][0] > 0.0]
+    assert ft["nearest_state_flips_at_pct"] == (min(zf, key=abs) if zf else None)
     assert ft["all_bare_lattice"] == all(k.endswith("|pores_carry_nothing") for k in fin)
     assert mz["part_body_zener_over_threshold_min"] == pytest.approx(
         mz["part_body_zener_range"][0] / mz["zener_threshold_max_bare_lattice"], rel=1e-12)
@@ -7382,7 +7412,10 @@ def test_gyroid_interface_contact_map_invariants():
             assert ex_p[grp][end] == {
                 "cells_below": sum(e * all_cells[k]["theta0"]["sigma1"] < ex["MPa"] for k in keys), "cells": len(keys),
                 "bare_lattice_cells_below": sum(e * all_cells[k]["theta0"]["sigma1"] < ex["MPa"] for k in bare),
-                "bare_lattice_cells": len(bare)}, (grp, end)
+                "bare_lattice_cells": len(bare),
+                "nearest_cell_flips_at_pct": min(((ex["MPa"] / (e * all_cells[k]["theta0"]["sigma1"]) - 1.0) * 100.0
+                                                  for k in keys if all_cells[k]["theta0"]["sigma1"] > 0.0),
+                                                 key=abs, default=None)}, (grp, end)
     bare_all = [k for k in keys_all["union"] if k.endswith("|pores_carry_nothing")]
     mg = pr["margin_vs_homogenisation_error"]
     for tag, per in (("rim", periods[0]), ("core", periods[1])):
@@ -7435,6 +7468,9 @@ def test_gyroid_interface_contact_map_invariants():
         ep = d["p0_excluded_price"][grp]["low"]
         assert (f"{ep['cells_below']} of {ep['cells']} cells ({lab}; {ep['bare_lattice_cells_below']} of "
                 f"{ep['bare_lattice_cells']} bare lattice)") in v
+    knife_ex = min(abs(d["p0_excluded_price"][g]["low"]["nearest_cell_flips_at_pct"]) for g in ("scots_pine", "green"))
+    assert (f"no holding claim, and counts that hold while the strain moves by less than {sig2(down_sig2(knife_ex))} "
+            "% either way —") in v
     needs = [sb[g]["theta0"]["p0_to_stay_closed_MPa"]["tension"][lo_k][0] for g in ("scots_pine", "green")]
     assert (" — " + " ⊥ ".join(f"{down(x / max(p0), 1):.1f}×" for x in needs)
             + f" the higher named root reading ({max(p0)} MPa") in v
@@ -7452,10 +7488,15 @@ def test_gyroid_interface_contact_map_invariants():
         return f"first reaches p₀ at {down(summ['union']['theta0']['opening_onset_ue']['compression'][lo_n]['range'][0]):.0f} µε"
 
     def comp_mu(summ):
-        mus = [summ["union"]["theta0"]["at_source_day"]["compression"][e][n]["mu_req_max_closed"]
-               for e in ("low", "high") for n in names]
-        mus = [x for x in mus if x is not None]
-        return f"is at least {down(min(x[0] for x in mus), 2):.2f}–{down(max(x[1] for x in mus), 2):.2f}."
+        rows = [summ["union"]["theta0"]["at_source_day"]["compression"][e][n] for e in ("low", "high") for n in names]
+        rows = [r for r in rows if r["mu_req_max_closed"] is not None]
+        mus = [r["mu_req_max_closed"] for r in rows]
+        flips = [abs(r["nearest_cell_flips_at_pct"]) for r in rows if r["nearest_cell_flips_at_pct"] is not None]
+        knife = ("" if not flips else
+                 " — its upper end diverges at every flip of the open count (as a closed cell nears its opening on a "
+                 "rise, and just after an open one closes on a fall), and no flip lies within "
+                 f"{sig2(down_sig2(min(flips)))} % of the strain")
+        return f"is at least {down(min(x[0] for x in mus), 2):.2f}–{down(max(x[1] for x in mus), 2):.2f}{knife}."
 
     def half(summ):
         h = summ["union"]["theta0"]["mu_req_max_at_half_onset"]["tension"]

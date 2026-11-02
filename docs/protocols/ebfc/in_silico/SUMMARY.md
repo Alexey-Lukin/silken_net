@@ -1438,18 +1438,20 @@ and Voigt pore readings — the same averaged traction exceeds p₀ in every cel
 demand on an interlocked composite, which needs no adhesion to carry tension and for which the map has no direction.
 The green headline stands on excluding Bruder's 2.5 MPa: had it been taken, at the day's 677 µε the averaged tension
 traction would stay below it in 166 of the green group's 468 cells (58 of its 156 bare-lattice cells) and in 0 of the
-Scots pine group's 180 — a fact about the averaged traction, no holding claim. The tension half opens the poles facing
+Scots pine group's 180 — a fact about the averaged traction, no holding claim, and counts that hold while the strain moves by less than 0.023 % either way. The tension half opens the poles facing
 along the stem; the compression half — where the wood's lateral expansion outruns the gyroid's — those facing around it
 (in 35 bare-lattice green cells — 107 over all cells, as a demand — σᴵ stays tensile across the stem, so the averaged
 compression-half traction never reaches p₀ there — no holding claim; a local opening is not excluded). The table is the
 smooth contact, so its cells are the bare lattice:
 
-| group | p₀ reading (Bruder 1998) | p₀, MPa | tension half opens above, µε | compression half at the day's two ends, 677 ⊥ 1837 µε: cells open · friction needed where closed, at least |
-|---|---|---|---|---|
-| Scots pine, 60 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 33–63 | 36 ⊥ 53 · 2.00–3.54 ⊥ 3.91–7.92 |
-| Scots pine, 60 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 47–91 | 19 ⊥ 43 · 1.58–13.20 ⊥ 3.00–24.18 |
-| green, 156 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 47–191 | 5 ⊥ 24 · 0.87–84.52 ⊥ 1.49–7.45 |
-| green, 156 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 67–275 | 0 ⊥ 16 · 0.68–3.26 ⊥ 1.24–54.49 |
+| group | p₀ reading (Bruder 1998) | p₀, MPa | tension half opens above, µε | compression half at the day's two ends, 677 ⊥ 1837 µε: cells open · friction needed where closed, at least | there, the change of the day's strain below which the open count holds, % (sign: + a rise, − a fall flips first) |
+|---|---|---|---|---|---|
+| Scots pine, 60 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 33–63 | 36 ⊥ 53 · 2.00–3.54 ⊥ 3.91–7.92 | −12 ⊥ −3.1 |
+| Scots pine, 60 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 47–91 | 19 ⊥ 43 · 1.58–13.20 ⊥ 3.00–24.18 | +1.9 ⊥ −0.52 |
+| green, 156 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 47–191 | 5 ⊥ 24 · 0.87–84.52 ⊥ 1.49–7.45 | +0.044 ⊥ +5.6 |
+| green, 156 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 67–275 | 0 ⊥ 16 · 0.68–3.26 ⊥ 1.24–54.49 | +29 ⊥ +0.20 |
+
+Near a cell's opening the friction it needs diverges, as (1 − ε/ε*)^−½, so the upper ends and the open counts are values AT the stated strains, not smooth in them: the open counts hold while the strain moves by less than the last column, and the upper ends are not held even inside it: each rises with the strain while the count holds, and diverges at every flip of the count — as a closed cell nears its opening on a rise, and just after an open one closes on a fall — so a printed upper end bounds nothing at another strain. Every value of the last column lies inside the uncertainty of reading the input slope off the source's figure (±0.01 on 0.03 ⊥ 0.06 at 2 m — the median sets the day's low end, the upper whisker its high end; `87`). The lower ends move continuously.
 
 On a smooth envelope the friction needed below the onset rises from zero with the strain, and at half the opening
 strain it is already at least 0.34–0.39 on either reading (a lower bound; that ratio needs no p₀). At the source day's
@@ -1463,7 +1465,7 @@ cell the tension half's averaged traction reaches p₀ at the source day's strai
 ratio exceeds 0.030 (on the clamp reading at the day's 677 µε), against the Voigt ceiling 3.755 — and **on `106`'s
 measured C44** (read 2026-10-27: the part body's Zener ratio 1.49–1.62 on its absolute modulus ⊥ its Zener form over the
 FE rungs — at least ×51 the threshold, which exists on only 401 of the 1728 cell × end × p₀ states, all bare lattice, the
-rest reaching p₀ at any ratio — and the material tensor, another body off this axis, read whole on its own solid
+rest reaching p₀ at any ratio (counts that hold while the strain moves by less than 0.068 % either way) — and the material tensor, another body off this axis, read whole on its own solid
 fraction) every lattice cell of both groups — 432, 216 of them bare — has its tension half reach p₀ on every install
 angle of `106`'s θ grid (0–45° in 2.5° steps) at both ends of the day on both named p₀ readings, the smallest σ₁·ε/p₀ ×2.46
 (the green group; ×7.49 on Scots pine), and on all 432 the least pole traction over the angles sits, on every reading,

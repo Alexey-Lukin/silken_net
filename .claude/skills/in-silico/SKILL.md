@@ -126,6 +126,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 50. A NECESSARY threshold is a minimum over the WHOLE band of EVERY input — «nominal» is not «favourable», and the band belongs to the PHYSICAL event the model asks about
 51. A threshold computed on an AREA is a claim about whatever that area IS — a housing's face bounds a cell behind it, it is not one; take the part's envelope from its CEM, publish the threshold per NAMED area, and call an outline an upper bound on active area
 52. Two thresholds a model prints at the SAME pinned value of a shared input are COUPLED — accepting one at its limit spends the other's headroom; a submission that picks one names the coupling in its price, never as a side note «no change proposed»
+53. An extremum over cells, or a count against a threshold, of a quantity that DIVERGES at that threshold is not smooth in the input — print the count with the input change below which it holds, and the extremum as unbounded at every crossing
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
