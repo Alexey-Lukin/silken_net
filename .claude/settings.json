@@ -24,6 +24,17 @@
         ]
       },
       {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/edit_glue_guard.sh",
+            "timeout": 5,
+            "statusMessage": "Checking for a line-gluing deletion..."
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {

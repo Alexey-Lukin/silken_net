@@ -561,6 +561,14 @@ jobs:
         # stop only once and only inside the repo — and each was mutation-verified.
         run: bash .claude/hooks/compact_lock.sh --selftest
 
+      - name: Docs · edit-glue hook self-test
+        # The line-gluing deletion (an Edit of a *.md with an empty new_string) is
+        # invisible to every gate — the glued line parses as one item — so the carrier
+        # is the moment of the edit, and a hook that stops matching fails SILENT. The
+        # battery pins both arms (the glue form stops ⊥ a kept neighbour, code, a Write
+        # pass) and was mutation-verified both ways (a dead detector, a widened scope).
+        run: bash .claude/hooks/edit_glue_guard.sh --selftest
+
       - name: Docs · Generated skill indexes ⇄ their sources
         # One engine, a TABLE of targets (scripts/guard_craft_index.rb TARGETS) — a
         # copy per skill would be the second-home defect the engine exists to prevent.
