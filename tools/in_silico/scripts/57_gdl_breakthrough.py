@@ -18,6 +18,10 @@ than to confirm a guess.
       that forces water in. Reported in Pa and in metres of water head, which is the unit the
       bench actually builds.
 
+  (1b) THE STAND'S POSITIVE CONTROL (gdl_rain_dew_stand §4.3 p. 4; printed as block (2b)) — the aperture the phase-I layer
+      passes at ANY contact angle: a pinned meniscus on a round aperture holds at most 4 * gamma / d
+      (a hemisphere), so d > 4 * gamma / (rho * g * h) passes, given chamber pressure behind it.
+
   (2) O2 SUPPLY — steady Fickian diffusion through the porous membrane with a Bosanquet
       (bulk + Knudsen) diffusivity, compared against the O2 the cathode consumes at the
       literature peak current density (lib.constants J_MAX_25C, 4 electrons per O2).
@@ -98,6 +102,10 @@ CONTACT_ANGLE_DEG = (110.0, 115.0, 120.0)   # §5.3 table ">110"; §5.2 prose "~
 CANON_UPPER_PORE_UM = 15.0              # §5.3 prose "why not pores > 15 um"
 CANON_LOWER_PORE_UM = 0.02              # §5.3 prose "why not pores < 0.02 um"
 BENCH_COLUMN_M = 0.30                   # §5.6 apparatus as written
+SUBMERSION_HEAD_M = 0.050               # the hand-set full submersion — also the rain/dew stand's phase-I layer
+#                                         (gdl_rain_dew_stand §3.2 cites this cache for it)
+POSITIVE_CONTROL_PUNCH_MM = 1.0         # the stand's positive control (gdl_rain_dew_stand §4.3 p. 4): the sheet's PROPOSAL
+#                                         inside a [вибір стенда] — mirror, the sheet is the home; block (2b) prices its margin
 # §5.6 acceptance criterion — DERIVED from the capsule's IP68 immersion depth, not typed: ratified by
 # the founder 2026-09-26 (00_07 HW.25). It was 1.0 m with no stated ground, i.e. below the flood the
 # same node is rated for, so a membrane entering between 1.0 and 1.5 m passed acceptance and flooded.
@@ -222,13 +230,57 @@ def main() -> int:
           f"NOT a bubble point): "
           + " · ".join(f"{d} um -> {water_entry[f'{d}um']['pressure_kPa']:.0f} kPa" for d in PORE_SPEC_UM))
 
+    # ── (2b) the stand's positive control: an aperture the phase-I layer passes at ANY contact angle ──
+    # The largest pressure a meniscus pinned on a round aperture of diameter d can hold is that of a
+    # hemisphere, 4*gamma/d — whatever the contact angle and the edge's shape. Above d = 4*gamma/(rho*g*h)
+    # the layer therefore enters at any theta; the Young-Laplace pore at one theta is not that bound.
+    banner("(2b) The rain/dew stand's positive control — an aperture the phase-I layer passes at any angle")
+    p_layer = m_h2o_to_pa(SUBMERSION_HEAD_M)
+    d_any = 4.0 * GAMMA_WATER / p_layer * 1e6
+    held = {f"CA_{int(th)}": pore_for_head(SUBMERSION_HEAD_M, th) for th in CONTACT_ANGLE_DEG}
+    punch_um = POSITIVE_CONTROL_PUNCH_MM * 1000.0
+    assert all(v < d_any for v in held.values()), "a contact-angle pore above the any-angle bound"
+    assert punch_um > d_any, "the stand's punch does not clear the any-angle bound"
+    positive_control = {
+        "source": "gdl_rain_dew_stand §4.3 p. 4 (the detector's positive control) and §3.2 (the phase-I layer)",
+        "layer_m": SUBMERSION_HEAD_M, "pressure_Pa": p_layer,
+        "aperture_passing_at_any_theta_above_um": d_any,
+        "pore_held_by_theta_um": held,
+        "punch_mm": POSITIVE_CONTROL_PUNCH_MM,
+        "punch_over_bound_x": punch_um / d_any,
+        "punch_passes_any_layer_from_mm": 4.0 * GAMMA_WATER / (RHO_WATER * G_ACCEL * punch_um * 1e-6) * 1e3,
+        "punch_passes_up_to_gamma_N_m": p_layer * punch_um * 1e-6 / 4.0,
+        "cavity_overpressure_stopping_the_punch_Pa": p_layer - 4.0 * GAMMA_WATER / (punch_um * 1e-6),
+        "cavity_overpressure_stopping_the_punch_mm_H2O": pa_to_m_h2o(p_layer - 4.0 * GAMMA_WATER / (punch_um * 1e-6)) * 1e3,
+        "reading": "the bound is on the pressure difference ACROSS the aperture: a meniscus pinned on a round aperture "
+                   "holds at most a hemisphere's pressure, 4*gamma/d, whatever the contact angle and the edge — at the "
+                   "entry and at the exit alike — so an aperture above the bound passes the layer at any theta, provided "
+                   "the cavity behind it is at chamber pressure (an overpressure above the stopping value halts the "
+                   "punch). The pore the layer holds at one theta is the threshold for ENTRY into a pore; at the exit a "
+                   "meniscus nothing touches is held by the edge up to 4*gamma/d, so a hole sized at theta 110 deg (the "
+                   "spec floor; 120 deg is only the prose estimate's upper end, the spec is open above) can be held at "
+                   "any theta",
+        "ceilings": "static layer at 20 C water (the margin's gamma is computed, water's at other temperatures is not "
+                    "in this script); the punched hole's diameter is the tool's, not measured — the sheet asks for it to "
+                    "be measured; no leak rate is computed",
+    }
+    print(f"  phase-I layer {SUBMERSION_HEAD_M * 1000:.0f} mm = {p_layer:.1f} Pa -> any aperture wider than "
+          f"{d_any:.1f} um passes at ANY contact angle (hemisphere limit 4*gamma/d)")
+    print("  the pore the layer holds at one angle (NOT the control's size): "
+          + " · ".join(f"{k} {v:.1f} um" for k, v in held.items()))
+    print(f"  the stand's punch {POSITIVE_CONTROL_PUNCH_MM} mm: x{positive_control['punch_over_bound_x']:.3f} the bound; "
+          f"passes any layer from {positive_control['punch_passes_any_layer_from_mm']:.2f} mm, any gamma up to "
+          f"{positive_control['punch_passes_up_to_gamma_N_m'] * 1000:.1f} mN/m at 50 mm; a cavity overpressure of "
+          f"{positive_control['cavity_overpressure_stopping_the_punch_Pa']:.1f} Pa "
+          f"({positive_control['cavity_overpressure_stopping_the_punch_mm_H2O']:.1f} mm H2O) stops it")
+
     # ── (3) the field demand the membrane actually faces ────────────────────
     banner("(3) The pressure the field actually applies")
     field = {
         "dew_film_1mm": m_h2o_to_pa(0.001),
         "standing_droplet_5mm": m_h2o_to_pa(0.005),
         "driven_rain_wind_20ms_stagnation": 0.5 * 1.2 * 20.0 ** 2,
-        "submersion_50mm": m_h2o_to_pa(0.050),
+        "submersion_50mm": m_h2o_to_pa(SUBMERSION_HEAD_M),
     }
     for k, v in field.items():
         print(f"  {k:<36s} {v:>10.1f} Pa   ({worst / v:,.0f}x below the worst-case LEP)")
@@ -399,6 +451,7 @@ def main() -> int:
             "column_height_to_challenge_widest_spec_pore_m": d_at_spec,
             "water_entry_pressure_kPa": water_entry,
         },
+        "stand_positive_control": positive_control,
         "field_pressures_Pa": field,
         "field_pressure_note": "hand-set scenarios, not site data; the upper bound is "
                                "submersion_50mm, not the wind-driven rain; droplet impact "

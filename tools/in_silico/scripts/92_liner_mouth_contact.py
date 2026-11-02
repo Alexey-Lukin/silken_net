@@ -183,13 +183,14 @@ def pk_window(h0: np.ndarray, conv, p0: np.ndarray | None = None) -> np.ndarray:
 
 
 # ── the rigid references: point contacts at the edges' tangent points ───────────────────────────────────────────
-def rigid_points(rod, play: float, off: float, drag: float, x_m: float, x_x: float) -> dict:
+def rigid_points(rod, play: float, off: float, drag: float, x_m: float, x_x: float, pad_nmm: float = 0.0) -> dict:
     """RIGID walls touching the rod at points: the mouth on −, the exit on + and on −. Exact small LCP by active-set
-    enumeration (the rod is linear, so exactly one set satisfies every sign and gap)."""
+    enumeration (the rod is linear, so exactly one set satisfies every sign and gap). `pad_nmm` — a couple at the rod
+    end (the pogo off the rod axis, 91 §pad_couple); 0 here, used by 116."""
     st = ((x_m, -1), (x_x, +1), (x_x, -1))
 
     def v_free(x):
-        return drag * rod.defl(x, rod.L)
+        return drag * rod.defl(x, rod.L) + pad_nmm * rod.defl_c(x)
     for active in ((), (0,), (1,), (2,), (0, 1), (0, 2)):    # both exit sides at one station cannot both close
         react = np.zeros(3)
         if active:
@@ -205,7 +206,7 @@ def rigid_points(rod, play: float, off: float, drag: float, x_m: float, x_x: flo
         gaps = [play - st[i][1] * (v(st[i][0]) - off) for i in range(3)]
         if min(gaps) < -1e-9:
             continue
-        m_root = drag * rod.L - sum(st[j][1] * react[j] * st[j][0] for j in range(3))
+        m_root = drag * rod.L + pad_nmm - sum(st[j][1] * react[j] * st[j][0] for j in range(3))
         return {"R_N": react.tolist(), "gaps_mm": gaps, "m_root_Nmm": m_root, "sigma_signed_MPa": m91.signed_sigma(m_root)}
     raise RuntimeError("no rigid active set satisfies the contact conditions")
 
@@ -215,16 +216,18 @@ def solve(geo, liner_row: dict, play: float, off: float, drag: float, r_in: floa
           base: str = "bonded", e_peek_mpa: float = m91.E_PEEK_MPA, scale: float = 1.0, ds: float = m91.DS_MM,
           dy: float = m91.DY_MM, tables: dict | None = None, s_len: float = m91.WINDOW_S_MM,
           y_half: float = m91.WINDOW_Y_MM, refine: tuple = (), refine_windows: tuple = ("mouth",),
-          with_field: bool = False) -> dict:
+          with_field: bool = False, depth: float = 0.0, pad_nmm: float = 0.0) -> dict:
     """One equilibrium: mouth window on −, exit window on the side the rigid same-edge solution approaches first.
     `with_field` (97 reads it, no cache of this script does): each active window also returns its pressure field on its
-    grid and the wire's nominal fibre stress and pose along it — nothing else in the result changes."""
+    grid and the wire's nominal fibre stress and pose along it — nothing else in the result changes.
+    `depth` (mm) — the Ti exit edge that far below the rod end (a countersunk exit, 91's overhang), `pad_nmm` — a couple
+    at the rod end (the pogo off the rod axis); both 0 here (the flush exit, no couple) and both used by 116."""
     rod = m91.Rod(geo, liner_row)
     x_m0 = geo.gap_mm
-    rig = rigid_points(rod, play, off, drag, x_m0 + r_in, rod.L - r_ex)
+    rig = rigid_points(rod, play, off, drag, x_m0 + r_in, rod.L - depth - r_ex, pad_nmm)
     exit_side = +1 if rig["gaps_mm"][1] <= rig["gaps_mm"][2] else -1
     r_rig = np.array([rig["R_N"][0], rig["R_N"][1] if exit_side > 0 else rig["R_N"][2]])
-    x_ref = np.array([x_m0 + r_in, rod.L - r_ex])                   # each window's pose is read at its rigid contact
+    x_ref = np.array([x_m0 + r_in, rod.L - depth - r_ex])           # each window's pose is read at its rigid contact
     for _attempt in range(WINDOW_ATTEMPTS):
         ns, ny = round(s_len / ds), round(2 * y_half / dy)
         y = (np.arange(ny) - (ny - 1) / 2.0) * dy
@@ -232,10 +235,10 @@ def solve(geo, liner_row: dict, play: float, off: float, drag: float, r_in: floa
         w = cphi[None, :] * ds * dy
         g_lay, g_ti = m91.kernel(ns, ny, ds, dy, base, ALLOY_BASELINE, tables)
         conv = m91.Conv((g_lay / e_peek_mpa + g_ti) * scale)
-        s0 = (max(0.0, r_in - m91.WINDOW_LEAD_MM), max(0.0, r_ex - m91.WINDOW_LEAD_MM))
+        s0 = (max(0.0, r_in - m91.WINDOW_LEAD_MM), max(0.0, depth + r_ex - m91.WINDOW_LEAD_MM))
         s_m = s0[0] + (np.arange(ns) + 0.5) * ds
         s_x = s0[1] + (np.arange(ns) + 0.5) * ds
-        windows = [(-1, x_m0 + s_m, m91.recession_mm(s_m, r_in, 0.0)), (exit_side, rod.L - s_x, m91.recession_mm(s_x, r_ex, 0.0))]
+        windows = [(-1, x_m0 + s_m, m91.recession_mm(s_m, r_in, 0.0)), (exit_side, rod.L - s_x, m91.recession_mm(s_x, r_ex, depth))]
         windows = [(sg, x, np.where(np.isfinite(rec), rec, 1e3)) for sg, x, rec in windows]
         flex = [[rod.defl(windows[k][1][:, None], windows[j][1][None, :]) for j in range(2)] for k in range(2)]
         at_ref = [[(rod.defl(x_ref[k], windows[j][1]), rod.rot(x_ref[k], windows[j][1])) for j in range(2)] for k in range(2)]
@@ -245,9 +248,9 @@ def solve(geo, liner_row: dict, play: float, off: float, drag: float, r_in: floa
             out = []
             for k in range(2):
                 x = windows[k][1]
-                v = drag * rod.defl(x, rod.L) - sum(windows[j][0] * (flex[k][j] @ q[j]) for j in range(2))
-                a = drag * rod.defl(x_ref[k], rod.L) - sum(windows[j][0] * (at_ref[k][j][0] @ q[j]) for j in range(2))
-                b = drag * rod.rot(x_ref[k], rod.L) - sum(windows[j][0] * (at_ref[k][j][1] @ q[j]) for j in range(2))
+                v = drag * rod.defl(x, rod.L) + pad_nmm * rod.defl_c(x) - sum(windows[j][0] * (flex[k][j] @ q[j]) for j in range(2))
+                a = drag * rod.defl(x_ref[k], rod.L) + pad_nmm * rod.defl_c(x_ref[k]) - sum(windows[j][0] * (at_ref[k][j][0] @ q[j]) for j in range(2))
+                b = drag * rod.rot(x_ref[k], rod.L) + pad_nmm * rod.rot_c(x_ref[k]) - sum(windows[j][0] * (at_ref[k][j][1] @ q[j]) for j in range(2))
                 out.append((a, b, v - (a + b * (x - x_ref[k]))))
             return out
 
@@ -299,10 +302,11 @@ def solve(geo, liner_row: dict, play: float, off: float, drag: float, r_in: floa
         act = react > 0.0
 
         def pose(x, q=q, windows=windows):
-            return drag * rod.defl(x, rod.L) - sum(windows[k][0] * (rod.defl(x[:, None], windows[k][1][None, :]) @ q[k]) for k in range(2))
+            return (drag * rod.defl(x, rod.L) + pad_nmm * rod.defl_c(x)
+                    - sum(windows[k][0] * (rod.defl(x[:, None], windows[k][1][None, :]) @ q[k]) for k in range(2)))
         # the whole channel between the windows: where the rod lies almost parallel to a wall, the give carries the patch
         # past the window's end — the same truncation as a patch at the edge, so the windows grow and the solve restarts
-        x_run = np.linspace(x_m0 + r_in, rod.L - r_ex, 400)
+        x_run = np.linspace(x_m0 + r_in, rod.L - depth - r_ex, 400)
         covered = np.zeros_like(x_run, dtype=bool)
         for k in np.nonzero(act)[0]:
             covered |= (x_run >= windows[k][1].min()) & (x_run <= windows[k][1].max())
@@ -314,9 +318,10 @@ def solve(geo, liner_row: dict, play: float, off: float, drag: float, r_in: floa
     else:
         raise RuntimeError("a contact patch outgrew every window (or the rod lies along the wall between them) — "
                            "a line contact two end windows cannot represent; refusing")
-    assert play + exit_side * (pose(np.array([rod.L]))[0] - off) >= -m91.SEP_TOL_MM, "the exit side not modelled was reached"
+    # the opposite exit wall at ITS edge — the rod end on a flush exit, the countersink's Ti edge below it otherwise
+    assert play + exit_side * (pose(np.array([rod.L - depth]))[0] - off) >= -m91.SEP_TOL_MM, "the exit side not modelled was reached"
     assert play - (pose(np.array([x_m0]))[0] - off) >= -m91.SEP_TOL_MM, "the mouth's far wall was reached"
-    m_root = drag * rod.L - sum(windows[k][0] * float(q[k] @ windows[k][1]) for k in range(2))
+    m_root = drag * rod.L + pad_nmm - sum(windows[k][0] * float(q[k] @ windows[k][1]) for k in range(2))
     out = {"contact": bool(act.any()), "R_N": react.tolist(), "exit_side": exit_side, "m_root_Nmm": m_root,
            "sigma_signed_MPa": m91.signed_sigma(m_root), "outer_iterations": iters, "rigid": rig}
     for k, name in enumerate(("mouth", "exit")):
@@ -349,7 +354,7 @@ def solve(geo, liner_row: dict, play: float, off: float, drag: float, r_in: floa
             yf = (np.arange(nyf) - (nyf - 1) / 2.0) * cell
             cf = np.cos(yf / m91.R_OD_MM)
             xf = x_m0 + sf if k == 0 else rod.L - sf
-            rec = m91.recession_mm(sf, r_k, 0.0)
+            rec = m91.recession_mm(sf, r_k, (0.0, depth)[k])
             g_lay_f, g_ti_f = m91.kernel(nsf, nyf, cell, cell, base, ALLOY_BASELINE, tables)
             conv_f = m91.Conv((g_lay_f / e_peek_mpa + g_ti_f) * scale)
             pf = pk_window(play + np.where(np.isfinite(rec), rec, 1e3)[:, None] - sg * (pose(xf) - off)[:, None] * cf[None, :], conv_f)
@@ -364,13 +369,13 @@ def solve(geo, liner_row: dict, play: float, off: float, drag: float, r_in: floa
     out["section_sigma_signed_MPa"] = {}
     for k, name in enumerate(("mouth", "exit")):
         xs = float(q[k] @ windows[k][1] / react[k]) if act[k] else x_ref[k]
-        m_sec = drag * (rod.L - xs) - sum(windows[j][0] * float(q[j] @ np.maximum(windows[j][1] - xs, 0.0)) for j in range(2))
+        m_sec = drag * (rod.L - xs) + pad_nmm - sum(windows[j][0] * float(q[j] @ np.maximum(windows[j][1] - xs, 0.0)) for j in range(2))
         out["section_sigma_signed_MPa"][name] = wire_sigma(geo, liner_row, xs, m_sec)
     if with_field:   # the same moment as the section stress above, at every x of BOTH windows (a lifted patch: p = 0)
         out["fields"] = {}
         for k, name in enumerate(("mouth", "exit")):
             xw = windows[k][1]
-            m_x = drag * (rod.L - xw) - sum(windows[j][0] * (np.maximum(windows[j][1][None, :] - xw[:, None], 0.0) @ q[j])
+            m_x = drag * (rod.L - xw) + pad_nmm - sum(windows[j][0] * (np.maximum(windows[j][1][None, :] - xw[:, None], 0.0) @ q[j])
                                             for j in range(2))
             out["fields"][name] = {"p_MPa": pres[k] if act[k] else np.zeros((ns, ny)), "s_mm": s_m if k == 0 else s_x,
                                    "y_mm": y, "x_mm": xw, "ds_mm": ds, "dy_mm": dy, "window_sign": windows[k][0],
@@ -419,11 +424,11 @@ def row(st: dict) -> dict:
     return out
 
 
-def drag_path(rod, play: float, off: float, x_m: float, x_x: float, f: float) -> list:
+def drag_path(rod, play: float, off: float, x_m: float, x_x: float, f: float, pad_nmm: float = 0.0) -> list:
     """DRAG_PATH × f plus every change of the rigid same-edge active set along it — the kinks where the cycle's extremes
     sit (a contact lifting off or touching down) — bisected and taken at the kink and TRANSITION_SIDE·f either side."""
     def key(d):
-        return tuple(v > 0.0 for v in rigid_points(rod, play, off, d, x_m, x_x)["R_N"])
+        return tuple(v > 0.0 for v in rigid_points(rod, play, off, d, x_m, x_x, pad_nmm)["R_N"])
     pts = {round(fr * f, 6) for fr in DRAG_PATH}
     grid = np.linspace(-f, f, PATH_SCAN)
     keys = [key(d) for d in grid]
@@ -440,10 +445,11 @@ def drag_path(rod, play: float, off: float, x_m: float, x_x: float, f: float) ->
     return sorted(pts)
 
 
-def _path_row(geo, liner_row: dict, play: float, off: float, d: float, r_in: float, tables, r_ex: float = R_EX_MM) -> dict:
+def _path_row(geo, liner_row: dict, play: float, off: float, d: float, r_in: float, tables, r_ex: float = R_EX_MM,
+              depth: float = 0.0, pad_nmm: float = 0.0) -> dict:
     """One point of a path; a point the two windows cannot represent is RECORDED as such, never dropped silently."""
     try:
-        return {"drag_N": d, **row(solve(geo, liner_row, play, off, d, r_in, r_ex=r_ex, tables=tables))}
+        return {"drag_N": d, **row(solve(geo, liner_row, play, off, d, r_in, r_ex=r_ex, tables=tables, depth=depth, pad_nmm=pad_nmm))}
     except RuntimeError as err:
         return {"drag_N": d, "not_solved": str(err)[:160]}
 
@@ -478,21 +484,24 @@ def rigid_swing(geo, liner_row: dict, play: float, off: float, r_in: float, f: f
             "mouth_over_root_amplitude": round(swing(mo)[1] / swing(root)[1], 3)}
 
 
-def exit_cycle_peak(geo, liner_row: dict, play: float, off: float, r_ex: float, f: float, tables=None) -> dict:
+def exit_cycle_peak(geo, liner_row: dict, play: float, off: float, r_ex: float, f: float, tables=None,
+                    depth: float = 0.0, pad_nmm: float = 0.0) -> dict:
     """The EXIT-edge peak over the drag cycle at exit radius r_ex (entry at the reference radius): located on the working
-    grid where the exit carries load (rigid same-edge model), refined at that drag on the exit window."""
+    grid where the exit carries load (rigid same-edge model), refined at that drag on the exit window. `depth` and
+    `pad_nmm` as in `solve` (116 sweeps them; this script runs both at 0)."""
     rod = m91.Rod(geo, liner_row)
-    x_m, x_x = geo.gap_mm + R_IN_REFERENCE_MM, rod.L - r_ex
-    drags = [d for d in drag_path(rod, play, off, x_m, x_x, f) if max(rigid_points(rod, play, off, d, x_m, x_x)["R_N"][1:]) > 0.0]
-    path_all = [_path_row(geo, liner_row, play, off, d, R_IN_REFERENCE_MM, tables, r_ex) for d in drags]
+    x_m, x_x = geo.gap_mm + R_IN_REFERENCE_MM, rod.L - depth - r_ex
+    drags = [d for d in drag_path(rod, play, off, x_m, x_x, f, pad_nmm)
+             if max(rigid_points(rod, play, off, d, x_m, x_x, pad_nmm)["R_N"][1:]) > 0.0]
+    path_all = [_path_row(geo, liner_row, play, off, d, R_IN_REFERENCE_MM, tables, r_ex, depth, pad_nmm) for d in drags]
     path = [p for p in path_all if "not_solved" not in p and p.get("exit")]
     at = max(path, key=lambda p: p["exit"]["p_max_working_grid_MPa"])
     st = solve(geo, liner_row, play, off, at["drag_N"], R_IN_REFERENCE_MM, r_ex=r_ex, refine=REFINE_CELLS_MM,
-               refine_windows=("exit",), tables=tables)
+               refine_windows=("exit",), tables=tables, depth=depth, pad_nmm=pad_nmm)
     ref = st["exit"]["p_max_MPa_refined"]
     if max(ref.values()) / min(ref.values()) - 1.0 > MAX_SPREAD:
         ref.update(solve(geo, liner_row, play, off, at["drag_N"], R_IN_REFERENCE_MM, r_ex=r_ex, refine=(REFINE_CELLS_MM[-1] / 2,),
-                         refine_windows=("exit",), tables=tables)["exit"]["p_max_MPa_refined"])
+                         refine_windows=("exit",), tables=tables, depth=depth, pad_nmm=pad_nmm)["exit"]["p_max_MPa_refined"])
     vals = list(ref.values())
     return {"offset_um": round(off * 1000.0), "r_exit_mm": r_ex, "drag_at_peak_N": at["drag_N"], "peak_MPa": round(max(vals), 2),
             "peak_by_square_cell_MPa": {c: round(v, 2) for c, v in ref.items()},

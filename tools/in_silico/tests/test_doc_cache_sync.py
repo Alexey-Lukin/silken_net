@@ -4001,6 +4001,184 @@ CHECKS += [
      CODIT, rf"останнього повернення нижче нього на ≥ {N} діб", SITE, lambda d: d["inputs"]["ours"]["run_days"], 0.5),
 ]
 
+# ── HW.25 · the stand's positive control (§4.3 p. 4, §8.1) → 57 `stand_positive_control`. The punch Ø is the SHEET's
+# proposal inside a [вибір стенда] and 57 mirrors it. «Passes above / from X» rounds UP (the bound, the layer, the
+# measured-hole acceptance); a margin, a stopping overpressure and the γ the margin covers round DOWN (#43).
+GDL = "kinetics/gdl_breakthrough.json"
+_PC = "stand_positive_control"
+
+
+def _up(x: float) -> float:
+    return math.ceil(x - 1e-9)
+
+
+def _down(x: float) -> float:
+    return math.floor(x + 1e-9)
+
+
+CHECKS += [
+    ("HW.25 · stand §4.3 p.4 proposed punch Ø = 57's mirror", STAND, rf"пропозиція аркуша — Ø {N} мм пробійником", GDL,
+     lambda d: d[_PC]["punch_mm"], 1e-9),
+    ("HW.25 · stand §4.3 p.4 dew-film load an overpressure cancels", STAND, rf"{N} Па — уже весь тиск плівки роси", GDL,
+     lambda d: d["field_pressures_Pa"]["dew_film_1mm"], 0.005),
+    ("HW.25 · stand §4.3 p.4 droplet load an overpressure cancels", STAND, rf"{N} Па — краплі", GDL,
+     lambda d: d["field_pressures_Pa"]["standing_droplet_5mm"], 0.05),
+    ("HW.25 · stand §4.3 p.4 any-angle aperture bound (up)", STAND, rf"ширший за \*\*{N} µm\*\*", GDL,
+     lambda d: _up(d[_PC]["aperture_passing_at_any_theta_above_um"]), 1e-9),
+    ("HW.25 · stand §4.3 p.4 punch margin (down)", STAND, rf"запас ×\*\*{N}\*\*: пропускає", GDL,
+     lambda d: _down2(d[_PC]["punch_over_bound_x"]), 1e-9),
+    ("HW.25 · stand §4.3 p.4 thinnest layer the punch passes (up)", STAND, rf"будь-який шар від \*\*{N}\*\* мм", GDL,
+     lambda d: _up(d[_PC]["punch_passes_any_layer_from_mm"]), 1e-9),
+    ("HW.25 · stand §4.3 p.4 γ the margin covers (down)", STAND, rf"за будь-якого γ нижче \*\*{N}\*\* Н/м", GDL,
+     lambda d: _down(d[_PC]["punch_passes_up_to_gamma_N_m"] * 1000.0) / 1000.0, 1e-9),
+    ("HW.25 · stand §4.3 p.4 stopping cavity overpressure, Pa (down)", STAND, rf"нижчий за \*\*{N}\*\* Па \(≈", GDL,
+     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
+    ("HW.25 · stand §4.3 p.4 stopping cavity overpressure, mm H₂O (down)", STAND, rf"\(≈ \*\*{N}\*\* мм H₂O\)", GDL,
+     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
+    ("HW.25 · stand §4.3 p.4 pore held at θ 110°", STAND, rf"підлозі специфікації, \*\*{N} µm\*\*", GDL,
+     lambda d: d[_PC]["pore_held_by_theta_um"]["CA_110"], 0.05),
+    ("HW.25 · stand §4.3 p.4 pore held at θ 120°", STAND, rf"при θ = 120° — \*\*{N} µm\*\*", GDL,
+     lambda d: d[_PC]["pore_held_by_theta_um"]["CA_120"], 0.05),
+    ("HW.25 · stand §8.1 row punch Ø", STAND, rf"\| Ø {N} мм · [\d.]+ µm · ×", GDL, lambda d: d[_PC]["punch_mm"], 1e-9),
+    ("HW.25 · stand §8.1 row bound (up)", STAND, rf"\| Ø [\d.]+ мм · {N} µm · ×", GDL,
+     lambda d: _up(d[_PC]["aperture_passing_at_any_theta_above_um"]), 1e-9),
+    ("HW.25 · stand §8.1 row margin (down)", STAND, rf"µm · ×{N} · [\d.]+ мм · ", GDL, lambda d: _down2(d[_PC]["punch_over_bound_x"]), 1e-9),
+    ("HW.25 · stand §8.1 row thinnest layer (up)", STAND, rf"· ×[\d.]+ · {N} мм · [\d.]+ Н/м", GDL,
+     lambda d: _up(d[_PC]["punch_passes_any_layer_from_mm"]), 1e-9),
+    ("HW.25 · stand §8.1 row γ (down)", STAND, rf"мм · {N} Н/м · ", GDL,
+     lambda d: _down(d[_PC]["punch_passes_up_to_gamma_N_m"] * 1000.0) / 1000.0, 1e-9),
+    ("HW.25 · stand §8.1 row stopping overpressure, Pa (down)", STAND, rf"Н/м · {N} Па \(≈", GDL,
+     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
+    ("HW.25 · stand §8.1 row stopping overpressure, mm H₂O (down)", STAND, rf"Па \(≈ {N} мм H₂O\) · ", GDL,
+     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
+    ("HW.25 · stand §8.1 row pore held at θ 110°", STAND, rf"H₂O\) · {N} / [\d.]+ µm \|", GDL,
+     lambda d: d[_PC]["pore_held_by_theta_um"]["CA_110"], 0.05),
+    ("HW.25 · stand §8.1 row pore held at θ 120°", STAND, rf"H₂O\) · [\d.]+ / {N} µm \|", GDL,
+     lambda d: d[_PC]["pore_held_by_theta_um"]["CA_120"], 0.05),
+    ("HW.25 · SUMMARY positive-control bound (up)", SUMMARY, rf"\| \*\*> {N} µm\*\*; the sheet's proposed Ø", GDL,
+     lambda d: _up(d[_PC]["aperture_passing_at_any_theta_above_um"]), 1e-9),
+    ("HW.25 · SUMMARY proposed punch Ø", SUMMARY, rf"the sheet's proposed Ø {N} mm punch", GDL, lambda d: d[_PC]["punch_mm"], 1e-9),
+    ("HW.25 · SUMMARY positive-control margin (down)", SUMMARY, rf"mm punch ×\*\*{N}\*\*, passes", GDL,
+     lambda d: _down2(d[_PC]["punch_over_bound_x"]), 1e-9),
+    ("HW.25 · SUMMARY positive-control thinnest layer (up)", SUMMARY, rf"passes any layer from \*\*{N}\*\* mm", GDL,
+     lambda d: _up(d[_PC]["punch_passes_any_layer_from_mm"]), 1e-9),
+    ("HW.25 · SUMMARY stopping cavity overpressure (down)", SUMMARY, rf"cavity.s overpressure stays below \*\*{N}\*\* Pa", GDL,
+     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
+    ("HW.25 · SUMMARY pore held at θ 110°", SUMMARY, rf"\(110° · 120°: \*\*{N} · [\d.]+ µm\*\*\)", GDL,
+     lambda d: d[_PC]["pore_held_by_theta_um"]["CA_110"], 0.05),
+    ("HW.25 · SUMMARY pore held at θ 120°", SUMMARY, rf"\(110° · 120°: \*\*[\d.]+ · {N} µm\*\*\)", GDL,
+     lambda d: d[_PC]["pore_held_by_theta_um"]["CA_120"], 0.05),
+]
+# ── HW.34 · the countersunk exit (116) → `countersink_ring_exit.json`. Floors are swept radii (exact); a ring
+# clearance is a NECESSARY minimum — rounded UP; the seam k needed is a maximum — rounded UP (#43).
+CRE = "mechanical/countersink_ring_exit.json"
+ANCHOR = "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md"
+PSTAT = "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md"
+
+
+def _pd(d: dict, depth: float) -> dict:
+    return next(r for r in d["summary"]["per_depth"] if r["depth_mm"] == depth)
+
+
+def _cyc(d: dict, depth: float, role: str) -> float:
+    return next(c["peak_MPa"] for c in d["exit_cycles"] if c.get("role") == role and c["depth_mm"] == depth)
+
+
+def _grid(d: dict, depth: float, r: float) -> float:
+    return max(g["peak_MPa"] for g in d["exit_end_points_at_limit"] if g["depth_mm"] == depth and g["r_exit_mm"] == r)
+
+
+def _one(values: set) -> float:
+    """The one value a set holds — NaN (a pin that cannot match) when the rows disagree."""
+    return values.pop() if len(values) == 1 else float("nan")
+
+
+def _unsolved_deepest(d: dict) -> float:
+    return max((p["depth_mm"] for p in d["summary"]["per_depth"] if p["interior_rows_not_solved_at_the_floor"]),
+               default=float("nan"))
+
+
+def _inc_by_depth(d: dict) -> dict:
+    """The elastic increment the ring's clearance adds at each depth — the largest measured there."""
+    out: dict = {}
+    for r in d["ring_increments"]:
+        out[r["depth_mm"]] = max(out.get(r["depth_mm"], 0.0), r["increment_um"])
+    return out
+
+
+_ROWS = (("D 0 \\(flush\\)", 0.0), ("D 0.25", 0.25), ("D 0.5", 0.5), ("D 1.0", 1.0), ("D 1.5", 1.5), ("D 2.0", 2.0))
+CHECKS += [(f"HW.34 · SUMMARY 116 row {lab} floor", SUMMARY, rf"\| {lab} \| \*\*{N}\*\* \| ", CRE,
+            (lambda d, dep=dep: _pd(d, dep)["exit_radius_floor_over_tolerance_mm"]), 1e-9) for lab, dep in _ROWS]
+CHECKS += [(f"HW.34 · SUMMARY 116 row {lab} peak at the floor", SUMMARY, rf"\| {lab} \| \*\*[\d.]+\*\* \| {N} · ", CRE,
+            (lambda d, dep=dep: _cyc(d, dep, "at the floor")), 0.005) for lab, dep in _ROWS]
+CHECKS += [(f"HW.34 · SUMMARY 116 row {lab} peak one radius below", SUMMARY, rf"\| {lab} \| \*\*[\d.]+\*\* \| [\d.]+ · {N} \| ", CRE,
+            (lambda d, dep=dep: _cyc(d, dep, "below the floor")), 0.005) for lab, dep in _ROWS]
+CHECKS += [(f"HW.34 · SUMMARY 116 row {lab} ring at the floor (up)", SUMMARY, rf"\| {lab} \| .*?\| \*\*{N}\*\* · ≤", CRE,
+            (lambda d, dep=dep: _up2(_pd(d, dep)["ring_clearance_at_floor_um"])), 1e-9) for lab, dep in _ROWS[1:]]
+CHECKS += [(f"HW.34 · SUMMARY 116 row {lab} ring over the radii (up)", SUMMARY, rf"\| {lab} \| .*?\*\* · ≤ {N} \| ", CRE,
+            (lambda d, dep=dep: _up2(_pd(d, dep)["ring_clearance_max_over_radii_um"])), 1e-9) for lab, dep in _ROWS[1:]]
+CHECKS += [
+    ("HW.34 · SUMMARY 116 (A) ring at most (up)", SUMMARY, rf"at most \*\*{N}\*\* µm radially", CRE,
+     lambda d: _up2(max(r["ring_clearance_max_over_radii_um"] for r in d["summary"]["per_depth"] if "ring_clearance_max_over_radii_um" in r)), 1e-9),
+    ("HW.34 · SUMMARY 116 (A) ring at the floor, low end (up)", SUMMARY, rf"\*\*{N}–[\d.]+\*\* at the floor radius", CRE,
+     lambda d: _up2(_pd(d, 0.25)["ring_clearance_at_floor_um"]), 1e-9),
+    ("HW.34 · SUMMARY 116 (A) ring at the floor, high end (up)", SUMMARY, rf"\*\*[\d.]+–{N}\*\* at the floor radius", CRE,
+     lambda d: _up2(_pd(d, 2.0)["ring_clearance_at_floor_um"]), 1e-9),
+    ("HW.34 · SUMMARY 116 (B) reversal depth at r 0.15", SUMMARY, rf"reverses past \*\*{N}\*\* mm at r 0.15", CRE,
+     lambda d: d["summary"]["coaxial_root_reverses_at_depth_mm_by_r_exit"]["0.15"], 1e-9),
+    ("HW.34 · SUMMARY 116 (C) peak at D 1.5 floor", SUMMARY, rf"at \*\*{N}\*\* MPa there, a hair", CRE, lambda d: _cyc(d, 1.5, "at the floor"), 0.005),
+    ("HW.34 · SUMMARY 116 (D) seam k needed (up)", SUMMARY, rf"needs `k` ≤ \*\*{N}\*\* on", CRE,
+     lambda d: math.ceil(d["summary"]["k_seam_needed_max_all_rows"] * 1e4 - 1e-9) / 1e4, 1e-9),
+    ("HW.34 · SUMMARY 116 (D) 86's binding k", SUMMARY, rf"against its binding \*\*{N}\*\*", CRE, lambda d: d["summary"]["k_seam_86_binding"], 1e-9),
+    ("HW.34 · SUMMARY 92 ⊕ flush at r 0.1 on the adverse corner", SUMMARY, rf"exit edge reaches \*\*{N}\*\* MPa at r 0.1 mm", CRE,
+     lambda d: _grid(d, 0.0, 0.1), 0.005),
+    ("HW.34 · SUMMARY 92 ⊕ flush floor at the tolerance limit", SUMMARY, rf"the floor at the tolerance limit is \*\*{N}\*\* mm", CRE,
+     lambda d: _pd(d, 0.0)["exit_radius_floor_over_tolerance_mm"], 1e-9),
+    # The interior check is pinned as what it DID: rows per floor, the deepest depth where some did not solve, and
+    # each count — a solve that starts failing deeper, or a count that grows, reds the sentence (#43: «not made» ≠ pass).
+    ("HW.34 · SUMMARY 116 interior rows at each floor", SUMMARY, rf"the −µF end on both couples, \*\*{N}\*\* rows at each depth", CRE,
+     lambda d: _one({len([r for r in d["exit_interior_offsets"] if r["depth_mm"] == p["depth_mm"]
+                          and r["r_exit_mm"] == p["exit_radius_floor_over_tolerance_mm"]]) for p in d["summary"]["per_depth"]}), 1e-9),
+    ("HW.34 · SUMMARY 116 interior unsolved, deepest depth", SUMMARY, rf"on D ≤ \*\*{N}\*\* mm some do not solve", CRE,
+     lambda d: _unsolved_deepest(d), 1e-9),
+    ("HW.34 · SUMMARY 116 interior unsolved at D 0", SUMMARY, rf"\*\*{N} · \d+ · \d+\*\* rows at D 0 · 0.25 · 0.5", CRE,
+     lambda d: _pd(d, 0.0)["interior_rows_not_solved_at_the_floor"], 1e-9),
+    ("HW.34 · SUMMARY 116 interior unsolved at D 0.25", SUMMARY, rf"\*\*\d+ · {N} · \d+\*\* rows at D 0 · 0.25 · 0.5", CRE,
+     lambda d: _pd(d, 0.25)["interior_rows_not_solved_at_the_floor"], 1e-9),
+    ("HW.34 · SUMMARY 116 interior unsolved at D 0.5", SUMMARY, rf"\*\*\d+ · \d+ · {N}\*\* rows at D 0 · 0.25 · 0.5", CRE,
+     lambda d: _pd(d, 0.5)["interior_rows_not_solved_at_the_floor"], 1e-9),
+    ("HW.34 · SUMMARY 116 ring elastic increment, low end (up)", SUMMARY, rf"measured at that depth, \*\*{N}–[\d.]+\*\* µm", CRE,
+     lambda d: _up2(min(_inc_by_depth(d).values())), 1e-9),
+    ("HW.34 · SUMMARY 116 ring elastic increment, high end (up)", SUMMARY, rf"measured at that depth, \*\*[\d.]+–{N}\*\* µm", CRE,
+     lambda d: _up2(max(_inc_by_depth(d).values())), 1e-9),
+    ("HW.34 · 01_01 §1.4 interior unsolved, deepest depth", ANCHOR, rf"кінця −µF на глибині до \*\*{N}\*\* мм не розв", CRE,
+     lambda d: _unsolved_deepest(d), 1e-9),
+    ("HW.34 · 01_01 §1.4 ring at the floor, low end (up)", ANCHOR, rf"лише на \*\*{N}–[\d.]+\*\* мкм", CRE,
+     lambda d: _up2(_pd(d, 0.25)["ring_clearance_at_floor_um"]), 1e-9),
+    ("HW.34 · 01_01 §1.4 ring at the floor, high end (up)", ANCHOR, rf"лише на \*\*[\d.]+–{N}\*\* мкм", CRE,
+     lambda d: _up2(_pd(d, 2.0)["ring_clearance_at_floor_um"]), 1e-9),
+    ("HW.34 · 01_01 §1.4 ring over any radius (up)", ANCHOR, rf"\(до \*\*{N}\*\* мкм на будь-якому", CRE,
+     lambda d: _up2(max(r["ring_clearance_max_over_radii_um"] for r in d["summary"]["per_depth"] if "ring_clearance_max_over_radii_um" in r)), 1e-9),
+    ("HW.34 · 01_01 §1.4 floor flush…1.5", ANCHOR, rf"осі стрижня, — \*\*{N}\*\* мм від рівного виходу", CRE,
+     lambda d: (lambda v: v.pop() if len(v) == 1 else float("nan"))(
+         {_pd(d, x)["exit_radius_floor_over_tolerance_mm"] for x in (0.0, 0.25, 0.5, 1.0, 1.5)}), 1e-9),
+    ("HW.34 · 01_01 §1.4 peak at D 1.5 floor", ANCHOR, rf"\(там \*\*{N}\*\* МПа, на межі", CRE, lambda d: _cyc(d, 1.5, "at the floor"), 0.005),
+    ("HW.34 · 01_01 §1.4 floor at 2.0", ANCHOR, rf"\*\*{N}\*\* мм на 2.0 мм\. Кожна", CRE, lambda d: _pd(d, 2.0)["exit_radius_floor_over_tolerance_mm"], 1e-9),
+    ("HW.34 · 01_01 §1.4 reversal at r 0.15", ANCHOR, rf"розвертається за \*\*{N}\*\* мм при r 0.15", CRE,
+     lambda d: d["summary"]["coaxial_root_reverses_at_depth_mm_by_r_exit"]["0.15"], 1e-9),
+    ("HW.34 · 01_01 §1.4 seam k needed (up)", ANCHOR, rf"`k` ≤ \*\*{N}\*\* проти", CRE,
+     lambda d: math.ceil(d["summary"]["k_seam_needed_max_all_rows"] * 1e4 - 1e-9) / 1e4, 1e-9),
+    ("HW.34 · 01_01 §1.4 0.1 ⊕ flush floor on the band", ANCHOR, rf"межа рівного виходу — \*\*{N}\*\* мм, дописка", CRE,
+     lambda d: _pd(d, 0.0)["exit_radius_floor_over_tolerance_mm"], 1e-9),
+    ("HW.34 · PIPELINE_STATUS 116 ring low (up)", PSTAT, rf"over the channel {N}–[\d.]+ µm radially", CRE,
+     lambda d: _up2(_pd(d, 0.25)["ring_clearance_at_floor_um"]), 1e-9),
+    ("HW.34 · PIPELINE_STATUS 116 ring high (up)", PSTAT, rf"over the channel [\d.]+–{N} µm radially", CRE,
+     lambda d: _up2(_pd(d, 2.0)["ring_clearance_at_floor_um"]), 1e-9),
+    ("HW.34 · PIPELINE_STATUS 116 seam k (up)", PSTAT, rf"the seam `k` ≤ {N} against", CRE,
+     lambda d: math.ceil(d["summary"]["k_seam_needed_max_all_rows"] * 1e4 - 1e-9) / 1e4, 1e-9),
+]
+
+
 # Calendar dates are not numbers `N` can read, so they get their own pin: (label, doc, regex with ONE
 # capture group holding MM-DD, cache resolver returning the same MM-DD string).
 _DATE_PINS = (

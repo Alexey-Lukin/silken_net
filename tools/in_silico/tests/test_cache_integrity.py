@@ -1818,6 +1818,21 @@ def test_gdl_breakthrough():
     assert lep["0.2um"]["CA_110"]["pressure_Pa"] > lep["1.0um"]["CA_110"]["pressure_Pa"]
     assert lep["1.0um"]["CA_120"]["pressure_Pa"] > lep["1.0um"]["CA_110"]["pressure_Pa"]
 
+    # The stand's positive control (gdl_rain_dew_stand §4.3 p. 4). CAN catch: a bound not equal to 4γ/(ρ·g·h) of the
+    # cache's own inputs, a layer that is not the hand-set submersion, a contact-angle pore at or above the any-angle
+    # bound, a punch that does not clear it, a margin or layer floor not derived from the punch. CANNOT catch: a wrong
+    # punch Ø in the sheet (the doc pin ties the sheet to this mirror) or the as-cut hole differing from the tool.
+    pc, inp = d["stand_positive_control"], d["inputs"]
+    assert abs(pc["pressure_Pa"] - d["field_pressures_Pa"]["submersion_50mm"]) < 1e-9
+    bound = 4.0 * inp["gamma_water_N_m"] / pc["pressure_Pa"] * 1e6
+    assert abs(pc["aperture_passing_at_any_theta_above_um"] - bound) < 1e-9
+    assert all(v < bound for v in pc["pore_held_by_theta_um"].values())
+    assert pc["punch_mm"] * 1000.0 > bound and abs(pc["punch_over_bound_x"] - pc["punch_mm"] * 1000.0 / bound) < 1e-9
+    floor_mm = 4.0 * inp["gamma_water_N_m"] / (inp["rho_water_kg_m3"] * inp["g_m_s2"] * pc["punch_mm"] * 1e-3) * 1e3
+    assert abs(pc["punch_passes_any_layer_from_mm"] - floor_mm) < 1e-9 and floor_mm < pc["layer_m"] * 1e3
+    stop = pc["pressure_Pa"] - 4.0 * inp["gamma_water_N_m"] / (pc["punch_mm"] * 1e-3)   # the cavity overpressure that halts it
+    assert abs(pc["cavity_overpressure_stopping_the_punch_Pa"] - stop) < 1e-9 and 0.0 < stop < pc["pressure_Pa"]
+
     # The RATIFIED flood (02_02 §3.3) stands BESIDE the hand-set set, never inside it. CAN catch: the
     # flood folded into field_pressures_Pa (the headline would then be recomputed from it and move),
     # a head not equal to ρ·g·depth of the cache's own inputs, a threshold not on the Young–Laplace
@@ -2369,6 +2384,140 @@ def test_liner_mouth_contact():
     assert v86["shanks_with_mean_beyond_86"] == [z["shank_mm"] for z in sorted(d["shank"], key=lambda z: z["shank_mm"])
                                                  if z["root_mean_amplitude_MPa"][0] > v86["mean_MPa_86"]]
     assert "through its AMPLITUDE, not its mean" in summ["text"]
+
+
+def test_countersink_ring_and_exit():
+    """116 (HW.34): the countersunk exit — the ring bore's clearance, the exit radius's floor, the depth's cost.
+
+    CAN catch (each re-derived from the rows or re-read from the CURRENT 68/86/91/92 caches): the flush exit's rows
+    leaving 92's, the elastic or rigid depth/couple threading leaving 91's, the coaxial rows leaving 91's, the rigid
+    swing leaving 92's — and any of those controls covering fewer radii or depths than the source has; a ring
+    clearance that is not the band's rigid maximum within the tolerance plus its depth's largest measured increment,
+    a negative increment, a margin row below its band row; an exit verdict its grids do not give, a floor at the limit
+    its rows do not give, a floor over the tolerance below the floor at the limit or standing on an interior row that
+    crosses 1·σ_y; a seam k not 86's formula on 86's alloys, or not below 86's binding k where the summary says so.
+    CANNOT catch: the ring's position tolerance, the closure element, thermal terms, friction and wear, a stiffer
+    spring, an interior cycle peak away from the drag's ends or at an unswept offset — the declared ceilings.
+    """
+    path = MECHANICAL / "countersink_ring_exit.json"
+    d = json.loads(path.read_text(encoding="utf-8"))
+    d68 = json.loads((MECHANICAL / "bus_contact_equilibrium.json").read_text(encoding="utf-8"))
+    d86 = json.loads((MECHANICAL / "coaxiality_allocation.json").read_text(encoding="utf-8"))
+    d91 = json.loads((MECHANICAL / "liner_exit_contact.json").read_text(encoding="utf-8"))
+    d92 = json.loads((MECHANICAL / "liner_mouth_contact.json").read_text(encoding="utf-8"))
+    ctl, inp, summ = d["controls"], d["inputs"], d["summary"]
+    sy = inp["sigma_yield_PEEK_MPa_tensile_23C"]
+    tol = inp["tolerance_offset_um"]
+    assert inp["radial_plays_um"] == d68["inputs"]["radial_plays_um"]
+
+    # (1) the flush exit at the limit: 92's own rows, every one of them
+    rows92 = [x for x in d92["exit_cycle_peak"] if x["offset_um"] == tol]
+    assert sorted(ctl["flush_exit_rows_reproduce_92"]["r_exit_mm"]) == sorted(x["r_exit_mm"] for x in rows92)
+    for x92 in rows92:
+        mine = next(x for x in d["exit_cycles"] if "role" not in x and x["depth_mm"] == 0.0 and x["pad_ecc_mm"] == 0.0
+                    and x["play"] == "zero interference" and x["r_exit_mm"] == x92["r_exit_mm"])
+        assert all(mine[k] == x92[k] for k in ("peak_MPa", "peak_by_square_cell_MPa", "points", "drag_at_peak_N"))
+    # (2)/(3)/(3′) the depth and the couple threaded through 92
+    assert ctl["rigid_depth_couple_vs_91_closed_form"]["max_abs_diff_MPa"] < 1e-9
+    c3 = ctl["elastic_depth_vs_91_countersink"]
+    assert sorted(float(k) for k in c3["sigma_signed_MPa_92_vs_91_by_depth_mm"]) == sorted(o["overhang_mm"] for o in d91["countersink"])
+    for k, (ours, theirs) in c3["sigma_signed_MPa_92_vs_91_by_depth_mm"].items():
+        assert theirs == next(o["sigma_at_mu_MPa"][f"{inp['mu_max']:g}"] for o in d91["countersink"] if o["overhang_mm"] == float(k))
+        assert abs(ours - theirs) <= c3["tolerance_MPa"]
+    for ours, theirs in ctl["elastic_couple_vs_91_exit_only_depth_1mm"]["sigma_signed_MPa_92_vs_91_by_ecc_mm"].values():
+        assert abs(ours - theirs) <= c3["tolerance_MPa"]
+    # (5) the coaxial rows: every 91 flush radius in the sweep and every 91 countersink depth
+    c5 = ctl["coaxial_rows_reproduce_91"]
+    assert sorted(c5["flush_vs_91_cycle"]) == sorted(c["r_edge_mm"] for c in d91["cycle"] if c["base"] == "bonded"
+                                                     and c["modulus"] == "short-term" and c["r_edge_mm"] in inp["r_exit_sweep_mm"])
+    assert sorted(c5["countersink_vs_91"]) == sorted(o["overhang_mm"] for o in d91["countersink"])
+    w92 = next(w for w in d92["rigid_swing"] if w["offset_um"] == tol)["root_mean_amplitude_MPa"]
+    assert ctl["rigid_swing_reproduces_92"]["mean_amplitude_MPa"] == w92
+
+    # (a) the ring: the band's rigid maximum within the tolerance + the depth's largest measured increment
+    inc = d["ring_increments"]
+    solved = [i for i in inc if "increment_um" in i]
+    assert all(i["increment_um"] >= -1e-3 for i in solved)
+    for r in d["ring_clearance"]:
+        band = [b for b in d["ring_band_rows"] if b["depth_mm"] == r["depth_mm"] and b["r_exit_mm"] == r["r_exit_mm"]]
+        assert abs(r["rigid_band_max_um"] - max(b["excursion_um"] for b in band if b["offset_um"] <= tol)) <= 1e-3
+        inc_d = max(i["increment_um"] for i in solved if i["depth_mm"] == r["depth_mm"])
+        assert abs(r["elastic_increment_um"] - inc_d) <= 1e-3
+        assert abs(r["needed_radial_clearance_um"] - (r["rigid_band_max_um"] + r["elastic_increment_um"])) <= 2e-3
+        assert all(v >= r["rigid_band_max_um"] - 1e-3 for v in r["rigid_at_larger_drag_um"].values())
+    # (b) verdicts from the grids; the floor at the limit from the rows; the floor over the tolerance from the interior
+    def verdict(vals, c):
+        return "above" if min(vals) > c * sy else "below" if max(vals) < c * sy else "at, within the grids"
+    grid, corners = d["exit_end_points_at_limit"], d["exit_corners"]
+    assert len(grid) == len(inp["depths_mm"]) * len(inp["r_exit_sweep_mm"]) * len(corners)
+    plays = inp["radial_plays_um"]
+    assert corners[0] == {"play": max(plays, key=plays.get), "pad_ecc_mm": max(inp["pad_ecc_mm"])}
+    for x in [*grid, *d["exit_cycles"], *d["exit_corner_check"]]:
+        vals = list(x["peak_by_square_cell_MPa"].values())
+        assert x["peak_MPa"] == round(max(vals), 2)
+        for c in inp["flow_constraint_factors_55"]:
+            assert x["flow_verdict"][f"{c:.1f}"] == verdict(vals, c)
+    radii = sorted(inp["r_exit_sweep_mm"])
+
+    def smallest_safe(rows):
+        ok = [r for i, r in enumerate(radii) if all(x["flow_verdict"]["1.0"] == "below" for x in rows if x["r_exit_mm"] in radii[i:])]
+        return min(ok) if ok else None
+    for c in corners:
+        by_depth = d["exit_floor_at_limit_by_corner_mm"][f"{c['play']} / e {c['pad_ecc_mm']:+g} mm"]
+        for depth_s, fl in by_depth.items():
+            assert fl == smallest_safe([x for x in grid if x["play"] == c["play"] and x["pad_ecc_mm"] == c["pad_ecc_mm"]
+                                        and x["depth_mm"] == float(depth_s)]), (c, depth_s)
+    f_band = inp["drag_band_N"]
+    for depth_s, fl in d["exit_floor_at_limit"].items():
+        first = smallest_safe([x for x in grid if x["depth_mm"] == float(depth_s)])
+        if fl["floor_mm"] is None:
+            continue
+        assert first is not None and fl["floor_mm"] >= first
+        at = [c for c in d["exit_cycles"] if c.get("role") and c["depth_mm"] == float(depth_s) and c["r_exit_mm"] == fl["floor_mm"]]
+        assert at and at[0]["flow_verdict"]["1.0"] == "below"          # the floor's cycle verifies it
+        here = [g for g in d["exit_corner_check"] if g["depth_mm"] == float(depth_s) and g["r_exit_mm"] == fl["floor_mm"]]
+        assert len({(g["play"], g["pad_ecc_mm"]) for g in here}) == len(plays) * len(inp["pad_ecc_mm"])   # every play × couple
+        assert all(g["flow_verdict"]["1.0"] == "below" for g in here)
+        for m in fl["moved_up_from_mm"]:                               # a radius the floor left did cross somewhere
+            crossed = [x for x in [*d["exit_cycles"], *d["exit_corner_check"]] if x["depth_mm"] == float(depth_s) and x["r_exit_mm"] == m]
+            assert any(x["flow_verdict"]["1.0"] != "below" for x in crossed if "flow_verdict" in x)
+    for c in (c for c in d["exit_cycles"] if c.get("role")):         # the cycle never hides below its loading end point
+        if c["drag_at_peak_N"] == f_band:
+            assert c["peak_MPa"] == c["end_point_peak_MPa"], c
+        else:
+            assert c["peak_MPa"] >= c["end_point_peak_MPa"], c
+    for depth_s, fb in d["exit_floor_over_tolerance"].items():
+        if fb["floor_mm"] is None:
+            continue
+        assert fb["floor_mm"] >= d["exit_floor_at_limit"][depth_s]["floor_mm"]
+        final = [r for r in d["exit_interior_offsets"] if r["depth_mm"] == float(depth_s) and r["r_exit_mm"] == fb["floor_mm"]]
+        assert final and all(r["below_1_sigma_y_on_every_grid"] for r in final if r.get("exit_loaded"))
+        assert sorted({r["offset_um"] for r in final}) == sorted(inp["interior_offsets_um"])
+    # (c) the seam k under the tolerance offset: 86's formula on 86's alloys, re-derived
+    g86 = d86["by_geometry"][inp["geometry"]]
+    b86 = d86["branches"]["loose_50"]["by_geometry"][inp["geometry"]]
+    def k_needed(mean, amp):
+        return max(amp / (a["endurance_MPa"] * (1.0 / d86["inputs"]["sf_target"] - abs(mean) / a["yield_MPa"])) for a in g86["by_alloy"].values())
+    for o in d["offset_root_cycle"]:
+        w = o["worst"]
+        assert abs(w["k_seam_needed"] - k_needed(w["mean_MPa"], w["amplitude_MPa"])) <= 6e-5
+    assert summ["k_seam_86_binding"] == b86["k_break_even_binding"]
+    assert summ["k_seam_needed_max_all_rows"] == max(o["worst"]["k_seam_needed"] for o in d["offset_root_cycle"])
+    assert summ["k_seam_needed_max_all_rows"] < summ["k_seam_86_binding"]      # «the depth does not move the seam»
+    # the summary per depth from the rows, not from itself; an interior row that did not solve is named, never a pass
+    for row in summ["per_depth"]:
+        ds = f"{row['depth_mm']:g}"
+        fb = d["exit_floor_over_tolerance"][ds]
+        assert row["exit_radius_floor_over_tolerance_mm"] == fb["floor_mm"]
+        assert row["exit_radius_floor_at_limit_mm"] == d["exit_floor_at_limit"][ds]["floor_mm"]
+        unsolved = [r for r in d["exit_interior_offsets"] if r["depth_mm"] == row["depth_mm"] and r["r_exit_mm"] == fb["floor_mm"] and "not_solved" in r]
+        assert row["interior_rows_not_solved_at_the_floor"] == len(unsolved) == len(fb["interior_rows_not_solved_at_the_floor"])
+        # SUMMARY says every unsolved interior row sits at the −µF end (the line contact on the unload) — hold it.
+        assert all(r["drag_N"] < 0 for r in unsolved), [(r["offset_um"], r["pad_ecc_mm"], r["drag_N"]) for r in unsolved]
+        if row["depth_mm"] > 0 and fb["floor_mm"] is not None:
+            rr = next(r for r in d["ring_clearance"] if r["depth_mm"] == row["depth_mm"] and r["r_exit_mm"] == fb["floor_mm"])
+            assert row["ring_clearance_at_floor_um"] == rr["needed_radial_clearance_um"]
+    assert summ["adverse_corner_for_exit"] == corners[0]
 
 
 def test_wire_under_liner_edges():

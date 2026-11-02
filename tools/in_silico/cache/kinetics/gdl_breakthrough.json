@@ -97,6 +97,25 @@
       }
     }
   },
+  "stand_positive_control": {
+    "source": "gdl_rain_dew_stand \u00a74.3 p. 4 (the detector's positive control) and \u00a73.2 (the phase-I layer)",
+    "layer_m": 0.05,
+    "pressure_Pa": 489.4499015,
+    "aperture_passing_at_any_theta_above_um": 594.9536389885249,
+    "pore_held_by_theta_um": {
+      "CA_110": 203.4861288789834,
+      "CA_115": 251.43827272563388,
+      "CA_120": 297.4768194942623
+    },
+    "punch_mm": 1.0,
+    "punch_over_bound_x": 1.6808032331730767,
+    "punch_passes_any_layer_from_mm": 29.747681949426237,
+    "punch_passes_up_to_gamma_N_m": 0.122362475375,
+    "cavity_overpressure_stopping_the_punch_Pa": 198.24990150000002,
+    "cavity_overpressure_stopping_the_punch_mm_H2O": 20.252318050573763,
+    "reading": "the bound is on the pressure difference ACROSS the aperture: a meniscus pinned on a round aperture holds at most a hemisphere's pressure, 4*gamma/d, whatever the contact angle and the edge \u2014 at the entry and at the exit alike \u2014 so an aperture above the bound passes the layer at any theta, provided the cavity behind it is at chamber pressure (an overpressure above the stopping value halts the punch). The pore the layer holds at one theta is the threshold for ENTRY into a pore; at the exit a meniscus nothing touches is held by the edge up to 4*gamma/d, so a hole sized at theta 110 deg (the spec floor; 120 deg is only the prose estimate's upper end, the spec is open above) can be held at any theta",
+    "ceilings": "static layer at 20 C water (the margin's gamma is computed, water's at other temperatures is not in this script); the punched hole's diameter is the tool's, not measured \u2014 the sheet asks for it to be measured; no leak rate is computed"
+  },
   "field_pressures_Pa": {
     "dew_film_1mm": 9.78899803,
     "standing_droplet_5mm": 48.94499015,
