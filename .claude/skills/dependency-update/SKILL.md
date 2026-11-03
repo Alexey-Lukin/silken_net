@@ -175,6 +175,7 @@ the pre-split order, append-only since — cite `dependency-update #N`.
 60. A maintainer's REPO-level security advisory is invisible to BOTH our channels until GitHub reviews it into the global DB — so «zero alerts» is a statement about the DATABASE, not about the lock
 61. A Go binary vendored inside a gem is judged by its SYMBOLS and our TOPOLOGY, not by the module version the scanner reads
 62. Closing a Dependabot SECURITY PR does nothing while its alert is open — the bot reopens the same update, same branch, same diff
+63. A platform-scoped advisory carries an UNSCOPED range — «not applicable to us» is not «free to wait»
 
 <!-- /DEPUPDATE-GOTCHAS-INDEX -->
 
