@@ -40,9 +40,9 @@ solc_pragma:
   source: contracts/foundry.toml
   consts:
   - solc_version
-  sha256: f31945990900e61974de64b9273d5203fa926e22c862859b7383d611d0e3f6e1
+  sha256: 4aee499b61865662c569c6d61b0ea4fb2764defb9ae02994589fa6ca5d8ceac1
   mirrors:
-  - docs/05_03_Tokenomics_SCC_and_SFC.md §Pragma-таблиця + OpenZeppelin-рядок («0.8.37
+  - docs/05_03_Tokenomics_SCC_and_SFC.md §Pragma-таблиця + OpenZeppelin-рядок («0.8.38
     locked» ×2)
   - contracts/*.sol — `pragma solidity` кожного контракту (не пінується — інший синтаксис;
     звіряй грепом на хіт)
@@ -51,7 +51,7 @@ solc_pragma:
     тож бамп лишав 05_03 stale і зеленим (прецедент: 9 stale-копій 0.8.28 пережили
     бамп на 0.8.35). TOML парситься тим самим `NAME = value`-регексом, що й Ruby —
     рушій не чіпано. On drift: reconcile 05_03 + pragma всіх *.sol, then `rake docs:repin`.'
-  repinned: '2026-10-16'
+  repinned: '2026-11-03'
 slashing_curve:
   source: app/services/blockchain_burning_service.rb
   consts:
