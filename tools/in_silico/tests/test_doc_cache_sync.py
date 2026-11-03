@@ -14,9 +14,13 @@ number legitimately appears against different owners (cascade Δ −1.051 = comp
 script 22, vs −1.054 = microsolvation_dmbpy.json k0 / script 34), so each check anchors on
 the surrounding label text, never a bare number.
 
-Runs without the conda env (stdlib + json only) — safe for CI.
+Runs without the conda env (stdlib + json only) — safe for CI. It runs ONLY in the bare-python `cache_doc_sync` job,
+so a numpy import reds it there while every conda run stays green; mirror that job locally with
+`python -c "import sys; sys.modules['numpy'] = None; import pytest; sys.exit(pytest.main([...]))"`.
 Add a row to CHECKS when you add a headline number with a clean single cache-owner.
-Tolerance rule: ~1 unit in the doc's last displayed digit (honours "within display rounding").
+Tolerance rule: ~1 unit in the doc's last displayed digit (honours "within display rounding"); where the cache carries
+the value unrounded, prefer zero tolerance on the display's OWN rounding of it — nearest for a reading, up for a
+requirement «≥», down for a floor or a ceiling on a capacity (`_up2` · `_down2`; in-silico §When Modifying #6, #43).
 """
 import fnmatch
 import itertools
@@ -10081,7 +10085,9 @@ def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
     elif "premise" in label:
         remedy = "CANON is the source for this row — re-run the owning script so its cache mirrors canon again."
     else:
-        remedy = "Cache is SSOT — fix the doc, or (if the cache is wrong) re-run the owning script."
+        remedy = ("Cache is SSOT — fix the doc, or (if the cache is wrong) re-run the owning script. ⛔ Unless the number sits in "
+                  "a ratified verdict — its submission, the verdict itself or a ⊕ addendum (00_05 §7): keep it, add a dated "
+                  "⊕ beside it with the new value, and move this pin to the ⊕.")
     if math.isinf(doc_val) or math.isinf(cache_val):
         assert doc_val == cache_val, (
             f"[{label}] DOC↔CACHE DRIFT: {doc_rel} says {doc_val} but {cache_rel} says {cache_val} — "
