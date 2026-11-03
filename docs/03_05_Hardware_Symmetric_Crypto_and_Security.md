@@ -16,7 +16,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — апаратне шифрування налаштовано; host-based тести проходять
+- **Поточний TRL:** TRL 4 (⚖️ founder 2026-11-03, 6→4 — [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond)) — апаратне шифрування налаштовано в коді, host-тести проходять; на кремнії CRYP не атестовано (CCM — за гейтом FW.2, клас C)
 - **Архітектурне рішення ARCH.42 (2026-05-23):** Варіант B — LoRa-канал переведено на **AES-128-CCM** (ARCH.42 LoRa-вибір; SE = SE050 — §3.7); CoAP-магістраль залишається на **AES-256-CBC**. Глобальний SSOT-патч виконано.
 - **Відкрите:** ECB→AES-128-CCM (FW.2), MAC/MIC, ротація ключів → [`00_07`](00_07_Action_Plan_Tracker) (SEC.*).
 
@@ -67,7 +67,7 @@
 
 ### Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
-✅ Firmware ЗАКРИТО (FW.1, 2026-05-02): `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR`, magic `"KEYL"`); hardcoded ідентичний ключ видалено. Factory Flashing Pipeline (SEC.3) та RDP Level 2 activation (SEC.2) залишаються (трекер → [`00_07`](00_07_Action_Plan_Tracker)).
+✅ Firmware ЗАКРИТО (FW.1, 2026-05-02; ⊕ 2026-11-03: у коді й host-тестах `test_load_key_*`, на кремнії не виконувалось — RUNBOOK §1): `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR`, magic `"KEYL"`); hardcoded ідентичний ключ видалено. Factory Flashing Pipeline (SEC.3) та RDP Level 2 activation (SEC.2) залишаються (трекер → [`00_07`](00_07_Action_Plan_Tracker)).
 
 **Файли (historical pre-FW.1):** `firmware/soldier/main.c`, `firmware/queen/main.c` (топ-рівневе оголошення `aes_key[]` до FW.1)
 
@@ -85,7 +85,7 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 
 **Виконані дії (FW.1, 2026-05-02):**
 
-- ✅ `HKDF(PROVISIONING_MASTER_KEY, device_uid, "silken-aes-128-lora-key")` → Protected Flash (`FLASH_KEY_ADDR`) — per-device unique key.
+- ✅ `HKDF(PROVISIONING_MASTER_KEY, device_uid, "silken-aes-128-lora-key")` → Protected Flash (`FLASH_KEY_ADDR`) — per-device unique key (⊕ 2026-11-03: деривація й розкладка — у коді, host-тестах і dry-run SEC.3; запис у справжню Flash чекає стенда, RUNBOOK §1).
 - ✅ `Load_AES_Key()` + magic `"KEYL"` guard — boot відмовляє без provisioning (infinite reset loop; тест: `test_load_key_unprovisioned_flash_error`).
 - ✅ Per-device ізоляція: злам одного Soldier не розкриває ключі сусідів.
 - ✅ `Security::WeakKeyDetector` + boot-time guard (§3.1а, SEC.9) — FIPS-197 test vector не може потрапити в production.
@@ -320,7 +320,7 @@ backward secrecy + чесна модель загроз + ECDH-alt ADR) — по
 
 ### Захист від ECB Restoration Race — реалізовано (SEC.8)
 
-✅ Виправлено (SEC.8): ECB-відновлення захищене RCC-скиданням та `NVIC_SystemReset()`.
+✅ Виправлено в коді (SEC.8, host-тести): ECB-відновлення захищене RCC-скиданням та `NVIC_SystemReset()`; на кремнії — стенд, RUNBOOK §2.
 **Файл:** `firmware/queen/main.c`
 
 **Реалізація:**
@@ -1427,7 +1427,7 @@ hcryp.Init.pInitVect = NULL;
 HAL_CRYP_Init(&hcryp);
 ```
 
-Це виправлено (`[FIX: CRITICAL — ECB Restoration]`). Без цього виправлення всі наступні `HAL_CRYP_Decrypt()` від Солдатів повертали сміття, що призводило до втрати всієї телеметрії до наступного перезапуску Queen.
+Це виправлено (`[FIX: CRITICAL — ECB Restoration]`). Без цього виправлення всі наступні `HAL_CRYP_Decrypt()` від Солдатів повертали б сміття, що призводило б до втрати всієї телеметрії до наступного перезапуску Queen — висновок із коду, не спостереження на кремнії.
 
 ---
 
@@ -1460,8 +1460,8 @@ HAL_CRYP_Init(&hcryp);
 | **Розмір ключа LoRa** | ✅ 128 біт | ARCH.42 — свідомий вибір (golden-standard LoRaWAN/Zigbee/BLE), **не** SE-constraint (SE050 вміє і 256; §3.7) |
 | **Розмір ключа CoAP** | ✅ 256 біт | Без змін |
 | **Апаратне прискорення** | ✅ STM32 AES Block | Без програмної крипто-бібліотеки; підтримує і 128B, і 256B через runtime re-init |
-| **CBC IV для CoAP** | ✅ HRNG (тепловий шум) | Унікальний IV на кожен батч |
-| **Зберігання ключа** | ✅ Protected Flash Sector (session `"KEYL"`, cluster control-plane `"KEYB"`, CoAP `"KEYC"`, L1-сім'я `"EDSK"`), RDP Level 1/2 protected. SE050 Slot 0 (Гілка B, §3.7) ⚫ **RESERVED і НЕ використовується** — post-SEC.14 ключ лишається у Protected Flash в обох гілках |
+| **CBC IV для CoAP** | ✅ HRNG-шлях у коді (host-тест із моком RNG; шуму справжнього HRNG на кремнії не міряли — стенд) + HMAC-fallback при відмові RNG (SEC.12) | Унікальний IV на кожен батч |
+| **Зберігання ключа** | ✅ Protected Flash Sector (session `"KEYL"`, cluster control-plane `"KEYB"`, CoAP `"KEYC"`, L1-сім'я `"EDSK"`), RDP Level 1/2 — ціль, не поточний стан: кремнію ще немає; стенд палить лише L1 (RUNBOOK 1.4), а незворотний L2 — останній крок mass-deploy під pre-L2 hard-gate (RUNBOOK §1; SEC.2 🟡); розкладку слотів перевірено host-тестами й dry-run конвеєра, на кремнії не записувалась. SE050 Slot 0 (Гілка B, §3.7) ⚫ **RESERVED і НЕ використовується** — post-SEC.14 ключ лишається у Protected Flash в обох гілках |
 | **Унікальність ключа** | ✅ Двоключова модель (FW.2 (в), §3.1) | Session per-device: `HKDF(MASTER, uid, "silken-aes-128-lora-key")` — money-path ізольований (злам 1 вузла ≠ підробка мінта сусідів); control-plane per-cluster: `HKDF(MASTER, "cluster:<id>", "silken-aes-128-broadcast-key")` — свідомий broadcast-структурний per-cluster секрет; CoAP per-gateway. Domain separation 03_06 §2 |
 | **ECB для LoRa** | 🟡 Transitional після ARCH.42 | AES-128-ECB → AES-128-CCM (target FW.2, 30B wire-rev2.2 packet + Frame Counter + 8B MIC) |
 | **MAC/MIC (LoRa)** | 🟡 OPEN — закривається з FW.2 CCM | 8-byte MIC (64-bit, forge probability $5.4×10^{-20}$) |
@@ -1472,7 +1472,7 @@ HAL_CRYP_Init(&hcryp);
 | **Secure Element (SE050)** | ✅ SEC.6 RESOLVED (true-DePIN) | §3.7 ADR — SE = **SE050** (Ed25519 on-chip keygen; реверс ATECC), soft-freeze DNP, populate post-FW.2; slot-map §3.7. Residuals → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) |
 | **Key Rotation** | 🟡 host-готово | Hash-Ratchet freeze-contract §3.8 (backward secrecy, ключ не летить ефіром); активація CCM-gated — `[FW.17]` |
 | **HRNG Fallback** | ✅ Harden (SEC.12) | `coap_fallback_iv` (HMAC-SHA256 під `coap_key`, `coap_iv.h`) — унікальність І непередбачуваність; §4.2 |
-| **Runtime memory-safety** | 🟡 PARTIAL (SEC.21) | ✅ `-fstack-protector-strong` (`arm-none-eabi.cmake`) інструментує canary на attacker-reachable парсери (LoRa-RX / AT-токенайзер жують untrusted байти в сирому C ДО MIC-чеку); CI flag-gate (`firmware_arm_build`) стереже прапор. ✅ **Fielded-варта (2026-07-12):** власні strong `__stack_chk_fail`/`__stack_chk_guard` в обох main.c перекривають newlib (lazy-archive; дефолт був guard=0x00000000 з .bss — `__stack_chk_init` ніхто не кличе — і fail→abort→вічний wfi-hang): Soldier = слід у `DR0[10]` (пряме `TAMP->BKP0R`) + `NVIC_SystemReset`, Queen = reset-only (backup-domain нема; persist-слід → QATT-health, bench); HRNG-сів guard'а at-boot (`common/stack_canary.h`, I-CG: ніколи не нуль, NUL-LSB; Queen — Wu-Wei ДО старту UART-кільця) + CI source-gate обох TU. ✅ **MPU-draft:** NX-stack (SRAM 64K XN) + RO-code (Flash 256K RO, RW-хвіст стор. 122-127 через 16K-вікно+SRD — `common/mpu_regions.h`, golden-host-тести) за гейтом `SEC21_MPU_ENABLED` (компайл = `hal_check_ccm`; PRIVDEFENA=1, HFNMIENA=0 — canary-варта пише TAMP без trap'а). Residuals → [`00_07`](00_07_Action_Plan_Tracker) SEC.21: MPU-АКТИВАЦІЯ (реальний MemManage-trap; QEMU не моделює) [bench] (canary wire-винос ✅ L1 device-event — §2.2а) |
+| **Runtime memory-safety** | 🟡 PARTIAL (SEC.21) | ✅ `-fstack-protector-strong` (`arm-none-eabi.cmake`) інструментує canary на attacker-reachable парсери (LoRa-RX / AT-токенайзер жують untrusted байти в сирому C ДО MIC-чеку); CI flag-gate (`firmware_arm_build`) стереже прапор. ✅ **Варта в коді (2026-07-12):** власні strong `__stack_chk_fail`/`__stack_chk_guard` в обох main.c перекривають newlib (lazy-archive; дефолт був guard=0x00000000 з .bss — `__stack_chk_init` ніхто не кличе — і fail→abort→вічний wfi-hang): Soldier = слід у `DR0[10]` (пряме `TAMP->BKP0R`) + `NVIC_SystemReset`, Queen = reset-only (backup-domain нема; persist-слід → QATT-health, bench); HRNG-сів guard'а at-boot (`common/stack_canary.h`, I-CG: ніколи не нуль, NUL-LSB; Queen — Wu-Wei ДО старту UART-кільця) + CI source-gate обох TU. ✅ **MPU-draft:** NX-stack (SRAM 64K XN) + RO-code (Flash 256K RO, RW-хвіст стор. 122-127 через 16K-вікно+SRD — `common/mpu_regions.h`, golden-host-тести) за гейтом `SEC21_MPU_ENABLED` (компайл = `hal_check_ccm`; PRIVDEFENA=1, HFNMIENA=0 — canary-варта пише TAMP без trap'а). Residuals → [`00_07`](00_07_Action_Plan_Tracker) SEC.21: MPU-АКТИВАЦІЯ (реальний MemManage-trap; QEMU не моделює) [bench] (canary wire-винос ✅ L1 device-event — §2.2а) |
 | **PQC Migration Roadmap** | ✅ Документовано | §10 — TRL-stratified layering (2026 → 2028 → 2035); LoRa поточно квантово-стійкий через симетрію + ratchet, асиметричні шари мігрують через hybrid Cloudflare X25519+Kyber → ML-KEM/ML-DSA |
 
 ---
@@ -1483,7 +1483,7 @@ HAL_CRYP_Init(&hcryp);
 
 ### 10.1 Чому це **не** аварійне питання, але **обов'язково** має план
 
-Квантовий комп'ютер достатньої потужності для злому ECC/RSA через алгоритм Шора — реальний ризик на горизонті 2035–2045. Для нашого 20–25-річного deployment-горизонту (2026–2046+) ми **зобов'язані** мати міграційний шлях, але **не зобов'язані** ламати поточну архітектуру у TRL 6.
+Квантовий комп'ютер достатньої потужності для злому ECC/RSA через алгоритм Шора — реальний ризик на горизонті 2035–2045. Для нашого 20–25-річного deployment-горизонту (2026–2046+) ми **зобов'язані** мати міграційний шлях, але **не зобов'язані** ламати поточну архітектуру зараз.
 
 **Ключове рознесення:**
 
@@ -1553,7 +1553,7 @@ HAL_CRYP_Init(&hcryp);
 
 ### 10.5 Висновок
 
-> **Наше поточне рішення** — 30-байтний LoRa packet (wire-rev2.1) з AES-128-CCM + 8-байтним MIC + Hash Ratchet rotation — це ідеальна **інженерна точка паритету** (Sweet Spot) для фізичної реальності TRL 6:
+> **Наше поточне рішення** — 30-байтний LoRa packet (wire-rev2.1) з AES-128-CCM + 8-байтним MIC + Hash Ratchet rotation — це ідеальна **інженерна точка паритету** (Sweet Spot) для фізичної реальності поля:
 >
 > ```
 > [Абсолютна теорія: PQC + Ed25519 на кожен пакет + Arithmetic] ─── Несумісно з EBFC-живленням та 64KB SRAM
@@ -1569,4 +1569,4 @@ HAL_CRYP_Init(&hcryp);
 > [STM32 PQC + LMS OTA + ML-DSA peaq DID] ─── ✅ Wholesale crypto refresh via PCB revision.
 > ```
 >
-> ARCH.42 (AES-128 baseline) + FW.2 (CCM upgrade) + §10 PQC layering plan разом утворюють криптографічну дорожню карту, яка **не зачіпає поточний firmware у TRL 6**, але **гарантує квантовий імунітет** до 2046+.
+> ARCH.42 (AES-128 baseline) + FW.2 (CCM upgrade) + §10 PQC layering plan разом утворюють криптографічну дорожню карту, яка **не зачіпає поточної прошивки**, але **гарантує квантовий імунітет** до 2046+.

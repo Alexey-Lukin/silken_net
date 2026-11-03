@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — backend provisioning + HKDF + K_seed + OTA-печатку Ed25519 реалізовано (host-тести зелені); фабрична Rake-CLI dry-run ✅. Відкрите: real `STM32_Programmer_CLI` + live SE05x/`sss` I²C на bench (SEC.3; SE = **SE050**, `cryptoauthlib` — ATECC-ери, superseded SEC.6), RDP Level 2 (SEC.2), bench OTA-печатки (FW.23) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 4 (⚖️ founder 2026-11-03, 6→4 — [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond)) — backend provisioning + HKDF + K_seed + OTA-печатку Ed25519 реалізовано (host-тести зелені); фабрична Rake-CLI dry-run ✅, живого прошивання ще не було. Відкрите: real `STM32_Programmer_CLI` + live SE05x/`sss` I²C на bench (SEC.3; SE = **SE050**, `cryptoauthlib` — ATECC-ери, superseded SEC.6), RDP Level 2 (SEC.2), bench OTA-печатки (FW.23) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -161,7 +161,7 @@
 - Деривовані device-ключі ніколи не в репозиторії — лише `HardwareKey` (AR-encrypted у Vault); сам `master_key` custody = deploy-ENV Тір-0 (§5.A), **НЕ** Vault
 - Якщо Backend-side master key компрометовано → задумано перевипуск всіх ключів через field re-flash. 🔴 **Три межі:** (1) **re-flash досяжний лише в L1-партіях** — пілотній і spare-резерві серії (регресія = mass erase); пілот покривають у себе вручну (⚖️ founder 2026-09-27), тож його SWD-пади захищає ручна маска, а не зовнішній coater; spare лишається під серійним Parylene з відкритими SWD-падами, якщо coater маскує дрібні пади, і їде на покриття без ключів — провіжн після повернення, інакше йде маршрутом пілоту (⚖️ founder 2026-09-27, провіжн після покриття — делеговано; [`03_05 §3.3`](03_05_Hardware_Symmetric_Crypto_and_Security) і §3.6); серійна плата — RDP L2 під Parylene, SWD мертвий назавжди, тож сьогодні її ключі не перевипускаються нічим, крім заміни плати; (2) re-provision дерева з 2026-09-28 пише НОВИЙ KEYL — корінь нової епохи від поточного master ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)) — і наново деривує KPUB/KEYB, а з 2026-09-29 і K_seed: сесія деривує його поточним master і пише в рядок тією ж транзакцією (⚖️ founder, врізка «Провіжн дерева» в §5); доти LSED брався з рядка й під новим master лишався старим; KEYC Королеви — випадковий, ротується окремо; (3) Гілка B відрізняється від A не ключами (runtime-ключі в обох у Protected Flash — врізка «Набір ключів Гілки B», §1), а хвостом у SE: копія KPUB у Slot 3 лежить під data zone, замкненою назавжди, і «re-lock» фізично неможливий — lock односторонній, тож після ротації кореня копія застаріває назавжди (з 2026-10-06 це публічний ключ, а MCU перевіряє з Protected Flash, тож застаріла копія — сміття в слоті, не витік)
 
-**Для поточного прототипу (TRL 6):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref [`02_06 §8.1`](02_06_Unit_Economics_and_BOM)).
+**Для прототипу й пілота (до TRL 6/7):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref [`02_06 §8.1`](02_06_Unit_Economics_and_BOM)).
 
 **Зворотність:**
 - Гілка A → B: можлива (re-flash MCU + добавити ATECC до PCBA = новий PCB revision)
@@ -405,7 +405,7 @@ void Load_Lorenz_Seed(void)
 }
 ```
 
-> **Відмінності від Load_AES_Key():** (1) відсутність K_seed не є фатальною — `Error_Handler()` НЕ викликається (warm continuation через RTC все ще працює); (2) big-endian byte order для сумісності з HMAC-SHA256; (3) magic marker `"LSED"` відрізняється від `"SKEY"` для захисту від помилкового cross-read.
+> **Відмінності від Load_AES_Key():** (1) відсутність K_seed не є фатальною — `Error_Handler()` НЕ викликається (warm continuation через RTC — за кодом; на кремнії не ганялось); (2) big-endian byte order для сумісності з HMAC-SHA256; (3) magic marker `"LSED"` відрізняється від `"SKEY"` для захисту від помилкового cross-read.
 
 ### [ARCH.27] Node Role — окремий Flash slot після K_seed (2026-05-03)
 
@@ -432,7 +432,7 @@ void Load_Node_Role(void)
 }
 ```
 
-> **Чому fallback на Soldier:** більшість вузлів — звичайні датчики (Soldier=TX-only). Provisioner (TX+CAD) — еліта з надлишком енергії, яку factory pipeline мусить прошивати явно; ⚠️ сьогодні `CommandBuilder` `FLASH_ROLE_ADDR` не пише зовсім, тож кожен фабричний юніт вантажиться Солдатом через цей fallback (роль Провідника — ARCH.26); а re-flash конвеєром стирає й раніше записану роль — стор. 124 стирається перед записом ключів, тож роль пишеться після кожного прогону. Корупція/erase Flash (`0xFFFFFFFF` unprovisioned, `0x00000000` erased, бітові помилки) → безпечний дефолт без CAD-режиму, який спалив би слабкого Солдата енерго-голодним радіо.
+> **Чому fallback на Soldier:** більшість вузлів — звичайні датчики (Soldier=TX-only). Provisioner (TX+CAD) — еліта з надлишком енергії, яку factory pipeline мусить прошивати явно; ⚠️ сьогодні `CommandBuilder` `FLASH_ROLE_ADDR` не пише зовсім, тож кожен фабричний юніт вантажиться Солдатом через цей fallback (роль Провідника — ARCH.26); а re-flash конвеєром стирає й раніше записану роль — стор. 124 стирається перед записом ключів, тож роль пишуть уручну після кожного прогону, до WRP (процедура — [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security), RUNBOOK §1). Корупція/erase Flash (`0xFFFFFFFF` unprovisioned, `0x00000000` erased, бітові помилки) → безпечний дефолт без CAD-режиму, який спалив би слабкого Солдата енерго-голодним радіо.
 
 > **Споживачі прапорця:** ARCH.26 L3 (CAD relay), повний FW.20-S2 (mesh time-sync relay) — без додаткової логіки в `HardwareKeyService`/backend; це чистий firmware-flag. Backend не повинен довіряти claimed role з пакету (TX-сторона може брехати) — `g_node_role` локально визначає поведінку, серверна сторона вирішує доверу через ECC підпис при provisioning.
 
@@ -454,7 +454,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
   (зняття стирає відповідну сторінку Flash!)
 ```
 
-> **Семантика двох сторінок (FW.2 (в)):** 124 = **per-device identity** (KEYL session · LSED · ROLE; Queen: KEYC · EDSK), 125 = **cluster membership** (KPUB · KEYB @+40, dw-align) — переїзд дерева між кластерами міняє вміст лише 125-ї. ⚠️ Інструмента, що стирав би лише її, немає: конвеєр стирає й переписує 124 і 125 разом (per-device ключі повертаються тими самими — HKDF детермінований), тож роль на стор. 124 після кожного прогону пишеться наново.
+> **Семантика двох сторінок (FW.2 (в)):** 124 = **per-device identity** (KEYL session · LSED · ROLE; Queen: KEYC · EDSK), 125 = **cluster membership** (KPUB · KEYB @+40, dw-align) — переїзд дерева між кластерами міняє вміст лише 125-ї. ⚠️ Інструмента, що стирав би лише її, немає: конвеєр стирає й переписує 124 і 125 разом (per-device ключі повертаються тими самими — HKDF детермінований), тож роль на стор. 124 після кожного прогону пишуть наново, уручну (процедура ↑).
 
 ### Безпекові параметри (post-ARCH.42)
 
@@ -852,7 +852,7 @@ Ota_Seal_Try_Finalize(buf, bytes_received, chunks_received, total_chunks,
 
 1. **HSM injection (рекомендовано для > 1 000 unit):** `PROVISIONING_MASTER_KEY` ніколи не покидає HSM (AWS CloudHSM / Thales Luna). Інструмент викликає HSM API для деривації `device_key = HKDF(master_key, device_uid)` всередині апаратного модуля → отримує лише готовий `device_key`. `master_key` у RAM інструменту не з'являється жодного разу.
 
-2. **Envelope encryption (TRL 6/7, pilot batch):** `PROVISIONING_MASTER_KEY` зберігається у Bitwarden Secrets Manager або 1Password Secrets Automation. Перед кожною сесією — short-lived token (TTL 15 хв) генерується через API і передається інструменту через `PROVISIONING_SESSION_TOKEN` ENV. Після закінчення TTL — інструмент не може деривувати нові ключі без нового токена.
+2. **Envelope encryption (TRL 6/7, pilot batch):** `PROVISIONING_MASTER_KEY` зберігається у Bitwarden Secrets Manager або 1Password Secrets Automation. Задум, не реалізований (`BitwardenAdapter` поки кидає `NotImplementedError`): перед кожною сесією short-lived token (TTL 15 хв) генерується через API і передається інструменту через `PROVISIONING_SESSION_TOKEN` ENV. Після закінчення TTL — інструмент не може деривувати нові ключі без нового токена.
 
 3. **Direct ENV (development/lab only):** `PROVISIONING_MASTER_KEY` встановлюється в ENV вручну перед запуском. Недопустимо у field-batch. `Security::WeakKeyDetector` блокує запуск з тест-векторами ([`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security), SEC.9).
 
@@ -915,7 +915,7 @@ __DSB(); __ISB();  // barrier — унеможливлює оптимізаці�
 
 **1. `AuditLog` (chain-hashed, `pg_advisory_xact_lock(827549841, org_id)`):** `action: "factory_flash"`, `auditable` = `HardwareKey`, актор = оператор; `metadata` несе оператора й **supervisor'а** (2-person rule), batch, адресу й RDP-рівень прошивки, серійник SE (Гілка B), версію прошивки й розмір транскрипту — сирі байти ключа **ніколи**. Дім точного переліку ключів — `FactoryFlashing::AuditTrail#audit_metadata` (`app/services/factory_flashing/audit_trail.rb`), не цей документ; ⛔ перейменовувати ключі можна лише до першого прод-запису — далі вони живуть у хеші ланцюга ([`04_01 §7`](04_01_Data_Models_and_Entities), ARCH.57).
 
-**2. `MaintenanceRecord(action_type: :installation)`** — закриває loop «фізично прошито ↔ DB-зареєстровано»; `system_generated: true`, бо на стенді немає камери (Evidence Protocol — [`04_01 §7`](04_01_Data_Models_and_Entities)). Обидва записи пишуться в одній транзакції з `HardwareKey`: невдалий ключ відкочує й аудит, тож у ланцюг не потрапляє рядок без пристрою.
+**2. `MaintenanceRecord(action_type: :installation)`** — задуманий закрити loop «фізично прошито ↔ DB-зареєстровано» (живого прошивання ще не було); `system_generated: true`, бо на стенді немає камери (Evidence Protocol — [`04_01 §7`](04_01_Data_Models_and_Entities)). Обидва записи пишуться в одній транзакції з `HardwareKey`: невдалий ключ відкочує й аудит, тож у ланцюг не потрапляє рядок без пристрою.
 
 **Tamper-evident retention policy:**
 - `AuditLog` — заборонено видаляти (Rails guard: `before_destroy` кидає `ActiveRecord::ReadOnlyRecord`, [`04_01 §7`](04_01_Data_Models_and_Entities)).

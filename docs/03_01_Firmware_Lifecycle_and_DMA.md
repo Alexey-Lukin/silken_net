@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — увесь C-код Soldier+Queen реалізований, host-based тести зелені (`make -C firmware/test`). Відкриті обмеження (чому не вище): silicon-bench UART/CoAP (`FW.3`, AT/DMA закрито host-рівнем), key-rotation активація (`FW.17`, gated FW.2 CCM), RDP-2 (`SEC.2`) — реєстр у [`00_07 §03a`](00_07_Action_Plan_Tracker)
+- **Поточний TRL:** TRL 4 (⚖️ founder 2026-11-03, 6→4 — [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond)) — логіку Soldier+Queen реалізовано й перевірено host-тестами (`make -C firmware/test`); тіла board-freeze (`MX_*`, RTC/WUT-армінг, `Standby_Load_Pulls`) порожні до `.ioc` (FW.46 · FW.49 · SEC.15), а на кремнії прошивка ще не працювала. Відкриті обмеження (чому не вище): silicon-bench UART/CoAP (`FW.3`, AT/DMA закрито host-рівнем), key-rotation активація (`FW.17`, gated FW.2 CCM), RDP-2 (`SEC.2`) — реєстр у [`00_07 §03a`](00_07_Action_Plan_Tracker)
 
 ---
 
@@ -57,7 +57,7 @@
 | **Призначення** | Повноцінна C/C++ IDE для STM32WLE5xx (ARM Cortex-M4 + радіо SX126x на кристалі) |
 | **Включає** | STM32CubeMX — графічний конфігуратор GPIO, тактових дерев, периферії |
 | **Порт** | Налаштування GPIO pinout (PA9/PA10 UART, ADC, DMA USART1-RX Королеви, RNG, CRYP) до отримання плат |
-| **Clock Tree** | Конфігурація HSE/LSE для ultra-low-power сну (ціль — Standby з RTC на LSE low drive, ≈ 300 nA — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power), ⚖️ 2026-10-05 — §1.10; на TRL 6 baseline: STOP2, 1.07 µA за паспортом) |
+| **Clock Tree** | Конфігурація HSE/LSE для ultra-low-power сну (ціль — Standby з RTC на LSE low drive, ≈ 300 nA — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power), ⚖️ 2026-10-05 — §1.10; до фліпу FW.54 baseline: STOP2, 1.07 µA за паспортом) |
 | **HAL drivers** | Auto-генерація ініціалізаційного коду для I2C/SPI/ADC/UART/RTC/CRYP |
 | **Debugger** | Інтеграція з STLINK-V3MINIE: breakpoints, live variable watch, SWO trace |
 | **Збірка** | GCC ARM Embedded toolchain (вбудований у CubeIDE); той самий компілятор що й для host-тестів |
@@ -541,7 +541,7 @@ _rx_payload[0] == OTA_MARKER (0x99)
 
 > **Проблема Рандеву (Rendezvous Problem):** Якщо Солдат прокинеться і "вистрілить" пакетом, а приймач у цей момент перебуває в STOP2, пакет розчиниться в ефірі. SX1262 у режимі RX споживає ~4.5 мА — неприйнятно для EBFC біобатарейки.
 
-**Поточне рішення (TRL 6)** складається з двох механізмів:
+**Поточне рішення** складається з двох механізмів:
 
 1. **Queen Always-On:** Королева має зовнішнє живлення (сонячна панель / акумулятор) і **ніколи не спить**. Її SX1262 завжди у `Radio.Rx(LORA_RX_INFINITE)`. Будь-який Солдат у радіусі 150–200 м може передати дані в будь-яку секунду — Королева завжди зловить. Це вирішує Рандеву для прямої видимості.
 
@@ -860,7 +860,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 ### 2.4 Helper macros sketch (RTC_BKUP_Read32 / Write32) [ARCH.28]
 
-Поточний код використовує `HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DRn)` / `HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DRn, val)` напряму у ~12 місцях `firmware/soldier/main.c` + ~3 у `firmware/queen/main.c`. Це робоче рішення для TRL-6, але втрачаємо логування. Майбутній рефакторинг (deferred):
+Поточний код використовує `HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DRn)` / `HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DRn, val)` напряму у ~12 місцях `firmware/soldier/main.c` + ~3 у `firmware/queen/main.c`. Це робоче рішення для нинішньої стадії, але втрачаємо логування. Майбутній рефакторинг (deferred):
 
 ```c
 // Запропоновані обгортки (ще НЕ застосовані — це freeze-контракт SSOT для §2):
@@ -875,7 +875,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 #endif
 ```
 
-> **Чому НЕ застосовуємо зараз:** заміна 15 викликів торкається hot path (Phase 5 STOP2-write і ARCH.21 PVD callback) — кожне торкання потребує перевірки **всієї** родини `test_arch21_pvd_*` і `test_sec10_*` (перелік дає сам глоб по `firmware/test/`; числа тут не наводимо — вони дублюють патерн і тухнуть окремо від нього) + усього існуючого test-bank. Користь — лише консистентність + опційне трасування. ROI на TRL-6 негативний; повернутися до цього при рефакторингу під RTOS (ARCH.29) або при першому реальному debug-сесії з польового пристрою.
+> **Чому НЕ застосовуємо зараз:** заміна 15 викликів торкається hot path (Phase 5 STOP2-write і ARCH.21 PVD callback) — кожне торкання потребує перевірки **всієї** родини `test_arch21_pvd_*` і `test_sec10_*` (перелік дає сам глоб по `firmware/test/`; числа тут не наводимо — вони дублюють патерн і тухнуть окремо від нього) + усього існуючого test-bank. Користь — лише консистентність + опційне трасування. ROI на нинішній стадії негативний; повернутися до цього при рефакторингу під RTOS (ARCH.29) або при першому реальному debug-сесії з польового пристрою.
 
 > **Cross-link:** `00_07 ARCH.28` — RTC Backup Domain allocation policy.
 

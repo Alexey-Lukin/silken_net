@@ -18,7 +18,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — це TRL **активу**, не можливості вузла: DSP Path B зафіксовано + **self-owned baseline приземлено** (`FW.4`, 2026-06-12): `silken_net_audio_model.h` (INT8 forward-pass, §4.1), arena виміряно (§4.3). ⚠️ З 2026-09-29 носія на Солдаті немає (шапка).
+- **Поточний TRL:** TRL 4 (⚖️ founder 2026-11-03, 6→4 — [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond)) — це TRL **активу**, не можливості вузла: DSP Path B зафіксовано + **self-owned baseline приземлено** (`FW.4`, 2026-06-12): `silken_net_audio_model.h` (INT8 forward-pass, §4.1) перевірено host-golden-векторами, arena оцінено (§4.3). ⚠️ З 2026-09-29 носія на Солдаті немає (шапка).
 
 ---
 
