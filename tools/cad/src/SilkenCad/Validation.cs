@@ -233,7 +233,9 @@ internal static class Validation
         // walk tortuosity (reuses this SAME grid) + the as-printed opening (its own finer grid, tied to
         // the print floor rather than to the design period — that IS the manufacturability question).
         TopologyCrossChecks.EulerCrossCheckResult euler = TopologyCrossChecks.EulerCrossCheck(grid, conn);
-        TopologyCrossChecks.TortuosityResult tort = TopologyCrossChecks.EstimateAxialTortuosity(grid);
+        // Seeded: an unseeded walk made metrics.json differ run to run, so a toolchain bump could not be judged by bytes.
+        const int nTortuositySeed = 25;
+        TopologyCrossChecks.TortuosityResult tort = TopologyCrossChecks.EstimateAxialTortuosity(grid, seed: nTortuositySeed);
         TopologyCrossChecks.PrintFidelityResult fidelity = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(cem), cem);
 
         return oBase with
