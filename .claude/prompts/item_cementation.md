@@ -144,7 +144,7 @@
 
 <!-- CEMENT-RULES-INDEX:Фаза 3:AUTO — generated from item_cementation_rules.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
-24. Архівуючи ID, спитай не «на кого чекаю Я», а «ХТО ЧЕКАВ НА МЕНЕ»: `grep -n "<ID>" docs/00_07*.md` і контекст кожного хіта — слова блокування ⊕ гліф `🔗`; «резолвиться» ≠ «ще актуальний»
+24. Архівуючи ID чи закриваючи його НОГУ, спитай не «на кого чекаю Я», а «ХТО ЧЕКАВ НА МЕНЕ»: `grep -n "<ID>" docs/00_07*.md` і контекст кожного хіта — слова блокування ⊕ гліф `🔗`; «резолвиться» ≠ «ще актуальний»
 
 <!-- /CEMENT-RULES-INDEX:Фаза 3 -->
 
