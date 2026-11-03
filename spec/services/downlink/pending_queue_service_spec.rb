@@ -373,7 +373,8 @@ RSpec.describe Downlink::PendingQueueService do
   end
 
   describe "0x9E ratchet (gated FW.17)" do
-    let!(:tree) { create(:tree, cluster: cluster) }
+    # Дерево, яке чули, — як його пише продакшн: grace закривають кадри живого вузла.
+    let!(:tree) { create(:tree, cluster: cluster, last_seen_at: 1.hour.ago) }
     let!(:tree_key) do
       create(:hardware_key, :for_tree, tree: tree, key_version: 3,
              previous_aes_key_hex: "cd" * 16, downlink_frame_counter: 7)
@@ -431,6 +432,36 @@ RSpec.describe Downlink::PendingQueueService do
       tree_key.update!(previous_aes_key_hex: nil)
 
       expect(decrypt_inner(poll).bytes).to all(eq(0))
+    end
+
+    # [FW.17] Межа живучості: Королева стріляє `0x9E` лише в почутий DID, тож grace
+    # мовчазного дерева кадру не дає — ні тому, кого не чули довше за поріг тиші, ні
+    # тому, кого не чули ніколи.
+    it "мовчить про grace дерева, якого не чули довше за поріг тиші або не чули ніколи" do
+      allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(true)
+
+      tree.update_column(:last_seen_at, (Tree::SILENCE_THRESHOLD + 1.hour).ago)
+      expect(decrypt_inner(poll).bytes).to all(eq(0))
+
+      tree.update_column(:last_seen_at, nil)
+      expect(decrypt_inner(poll).bytes).to all(eq(0))
+    end
+
+    it "мертвий Солдат із давнішим grace сходинку не тримає — живе дерево кластера дістає свій 0x9E" do
+      allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(true)
+      dead = create(:tree, cluster: cluster, last_seen_at: 3.days.ago)
+      create(:hardware_key, :for_tree, tree: dead, key_version: 2,
+             previous_aes_key_hex: "ab" * 16, downlink_frame_counter: 5)
+        .update_column(:updated_at, 2.days.ago) # найстаріший grace — доти саме він займав сходинку
+
+      inner = decrypt_inner(poll)
+
+      expected = Cryptography::LoraCcm.encrypt_downlink(
+        key: [ "cd" * 16 ].pack("H*"), opcode: 0x9E,
+        did_bytes: [ Cryptography::KeyRatchet.did_to_u32(tree.did) ].pack("N"),
+        dlfc: 7, body: [ 3 ].pack("v")
+      )
+      expect(inner.byteslice(0, expected.bytesize)).to eq(expected)
     end
   end
 

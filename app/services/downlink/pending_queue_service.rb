@@ -218,8 +218,13 @@ module Downlink
       # валив би poll-деривацію всього кластера. Той самий клас — grace без
       # виданого DLFC (0 — рядок до міграції 2026-09-29): Солдат DLFC 0 не прийме,
       # тож кадру в такого grace немає, а виняток тут глушив би весь кластер.
+      # Межа живучості: Королева стріляє кадр лише в ПОЧУТИЙ DID, тож grace дерева, якого
+      # не чули довше за поріг тиші, сходинку не займає — інакше мертвий чи знятий Солдат
+      # тримав би `0x9E` і нижчий OTA-hint кластера до ручного зняття grace. Черговість
+      # живих лишається: ротацію за міткою подачі судять разом із глибиною черги Королеви.
       key = HardwareKey.joins(:tree)
-                       .where(trees: { cluster_id: @gateway.cluster_id })
+                       .where(trees: { cluster_id: @gateway.cluster_id,
+                                       last_seen_at: Tree::SILENCE_THRESHOLD.ago.. })
                        .where.not(previous_aes_key_hex: nil)
                        .where(key_version: 1.., downlink_frame_counter: 1..)
                        .order(:updated_at).first
