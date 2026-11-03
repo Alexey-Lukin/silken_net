@@ -250,8 +250,8 @@ module SilkenNet
                  "recurrence predicted from the previous frame of the same tree, seconds; side=short means the EMA " \
                  "is shorter than allowed, i.e. towards more points [SEC.42; diagnostic tier: no alert until a " \
                  "strictness verdict picks the threshold from this field distribution — a frost-deferred TX moves " \
-                 "the EMA without a frame (either side), a short PVD coma reads short on an honest node once per " \
-                 "brownout, a KEYL forger holding the EMA below the raw stream reads short on every judged pair]",
+                 "the EMA without a frame (either side), a reset before the save loses one EMA step (near zero), " \
+                 "a KEYL forger holding the EMA below the raw stream reads short on every judged pair]",
       labels: [ :side ],
       buckets: [ 1, 10, 60, 600, 3600 ]
     )

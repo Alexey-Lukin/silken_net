@@ -2443,7 +2443,6 @@ static uint32_t test_soldier_unix_ts_local_tick = 0;
 static uint32_t test_wall_now                   = 946684800u + 100u; /* RTC-календар; від 2000-01-01 до синку */
 static uint32_t test_wake_base                  = 0;                 /* last_wakeup_timestamp */
 static uint16_t test_beacon_wakeups             = 0;
-static volatile uint8_t test_beacon_applying    = 0; /* soldier_beacon_applying */
 static uint32_t test_read_wall(void)          { return test_wall_now; }
 static void     test_write_wall(uint32_t ts)  { test_wall_now = ts; }
 static const SilkenCalendarOps test_calendar_ops = { test_read_wall, test_write_wall };
@@ -2455,28 +2454,9 @@ static const SilkenCalendarOps test_calendar_ops = { test_read_wall, test_write_
 static int Recv_Time_Beacon(const uint8_t* plaintext, uint16_t size)
 {
     const SilkenBeaconRx rx = Silken_Beacon_Receive(&test_calendar_ops, plaintext, size, &test_soldier_unix_ts,
-                                                    &test_wake_base, &test_beacon_wakeups, &test_beacon_applying);
+                                                    &test_wake_base, &test_beacon_wakeups);
     if (rx.committed) test_soldier_unix_ts_local_tick = 12345;
     return rx.is_beacon;
-}
-
-/* [SEC.42] Прапорець «коміт триває» стоїть рівно поки календар пишуть і база ще не зсунута —
- * під ним PVD-рятівник пише в DR1 нуль (сентинел «не виміряно»), а не нескориговану базу. */
-static uint8_t sec42_flag_at_write;
-static void    sec42_flag_write(uint32_t ts) { sec42_flag_at_write = test_beacon_applying; test_wall_now = ts; }
-static const SilkenCalendarOps sec42_flag_ops = { test_read_wall, sec42_flag_write };
-
-TEST(test_beacon_receive_raises_applying_only_around_the_commit) {
-    test_wall_now = 1781267000u; test_soldier_unix_ts = 0u; test_wake_base = 1781266990u;
-    sec42_flag_at_write = 0u; test_beacon_applying = 0u;
-    const uint32_t ts = 1781267696u;
-    uint8_t plain[16] = { 0x9C, (uint8_t)(ts >> 24), (uint8_t)(ts >> 16), (uint8_t)(ts >> 8),
-                          (uint8_t)ts, 0,0,0,0, 0x82, 'B', 0,0,0,0,0 };
-    const SilkenBeaconRx rx = Silken_Beacon_Receive(&sec42_flag_ops, plain, 16, &test_soldier_unix_ts,
-                                                    &test_wake_base, &test_beacon_wakeups, &test_beacon_applying);
-    ASSERT_EQ(rx.committed, 1);
-    ASSERT_EQ(sec42_flag_at_write, 1);   /* під час запису календаря — стоїть */
-    ASSERT_EQ(test_beacon_applying, 0);  /* після зсуву бази — знятий */
 }
 
 TEST(test_beacon_receive_parses_frame_and_applies_only_a_nonzero_ts) {
@@ -2489,18 +2469,18 @@ TEST(test_beacon_receive_parses_frame_and_applies_only_a_nonzero_ts) {
     uint8_t plain[16] = { 0x9C, (uint8_t)(ts >> 24), (uint8_t)(ts >> 16), (uint8_t)(ts >> 8),
                           (uint8_t)ts, 0,0,0,0, 0x82, 'B', 0,0,0,0,0 };
     SilkenBeaconRx rx = Silken_Beacon_Receive(&test_calendar_ops, plain, 15, &test_soldier_unix_ts,
-                                              &test_wake_base, &test_beacon_wakeups, &test_beacon_applying);
+                                              &test_wake_base, &test_beacon_wakeups);
     ASSERT_EQ(rx.is_beacon, 0);
     plain[10] = 'X';
-    rx = Silken_Beacon_Receive(&test_calendar_ops, plain, 16, &test_soldier_unix_ts, &test_wake_base, &test_beacon_wakeups, &test_beacon_applying);
+    rx = Silken_Beacon_Receive(&test_calendar_ops, plain, 16, &test_soldier_unix_ts, &test_wake_base, &test_beacon_wakeups);
     ASSERT_EQ(rx.is_beacon, 0);
     plain[10] = 'B'; plain[0] = 0x99;
-    rx = Silken_Beacon_Receive(&test_calendar_ops, plain, 16, &test_soldier_unix_ts, &test_wake_base, &test_beacon_wakeups, &test_beacon_applying);
+    rx = Silken_Beacon_Receive(&test_calendar_ops, plain, 16, &test_soldier_unix_ts, &test_wake_base, &test_beacon_wakeups);
     ASSERT_EQ(rx.is_beacon, 0);
     ASSERT_EQ(test_wall_now, 1781267000u);              /* жоден не-маяк календаря не чіпав */
 
     plain[0] = 0x9C;
-    rx = Silken_Beacon_Receive(&test_calendar_ops, plain, 16, &test_soldier_unix_ts, &test_wake_base, &test_beacon_wakeups, &test_beacon_applying);
+    rx = Silken_Beacon_Receive(&test_calendar_ops, plain, 16, &test_soldier_unix_ts, &test_wake_base, &test_beacon_wakeups);
     ASSERT_EQ(rx.is_beacon, 1);
     ASSERT_EQ(rx.committed, 1);
     ASSERT_EQ(rx.authoritative, 1);
@@ -2509,7 +2489,7 @@ TEST(test_beacon_receive_parses_frame_and_applies_only_a_nonzero_ts) {
     ASSERT_EQ(test_soldier_unix_ts, ts);
 
     uint8_t zero[16] = { 0x9C, 0,0,0,0, 0,0,0,0, 0x02, 'B', 0,0,0,0,0 };
-    rx = Silken_Beacon_Receive(&test_calendar_ops, zero, 16, &test_soldier_unix_ts, &test_wake_base, &test_beacon_wakeups, &test_beacon_applying);
+    rx = Silken_Beacon_Receive(&test_calendar_ops, zero, 16, &test_soldier_unix_ts, &test_wake_base, &test_beacon_wakeups);
     ASSERT_EQ(rx.is_beacon, 1);
     ASSERT_EQ(rx.committed, 0);
     ASSERT_EQ(rx.authoritative, 0);
@@ -5337,7 +5317,6 @@ int main(void)
 
     printf("\n  Time-Sync Beacon RX (FW.20-S1):\n");
     RUN(test_beacon_rx_sets_unix_ts);
-    RUN(test_beacon_receive_raises_applying_only_around_the_commit);
     RUN(test_beacon_receive_parses_frame_and_applies_only_a_nonzero_ts);
     RUN(test_beacon_rx_replay_is_clamped_through_shared_commit);
     RUN(test_beacon_rx_rejects_wrong_marker);

@@ -732,9 +732,6 @@ static void FW17_Restore_Key_Version(uint32_t did)
 // правильно: cold-boot перезапускає grace). Сатуруються, не обертаються.
 uint16_t wakeups_since_boot         = 0; // [ARCH.41-C] grace-вікно cold-boot
 uint16_t wakeups_since_sync         = 0; // тиша від останнього beacon'а (drift-watchdog)
-// [SEC.42] Коміт маяка триває: база в RAM неузгоджена з календарем — рятівник пише в DR1 нуль.
-// Група B інвентаря (03_01 §2.3.1): після скиду застосування не триває за побудовою.
-static volatile uint8_t soldier_beacon_applying = 0;
 uint16_t wakeups_since_sync_request = 0; // cooldown зойків 0x56
 uint8_t  sync_request_ever          = 0; // 0 = ще не просили (перший зойк без cooldown)
 
@@ -2295,12 +2292,11 @@ int main(void)
                 // delta_t; назад календар іде не далі за дрейф від синку, база delta_t — за ФАКТИЧНИМ
                 // кроком, мітка синку й сторож — лише за записом, що ліг. [FW.49 S1] UTC у RTC-календар:
                 // delta_t/epoch_day переживають STOP2 без tick-екстраполяції.
-                // 🔒 Поки коміт триває, `soldier_beacon_applying` стоїть, і PVD-рятівник пише в DR1 нуль
-                // (див. HAL_PWR_PVDCallback) — не нескориговану базу й не пропуск запису.
+                // 🔒 Брауноут посеред коміту безпечний без прапорця: PVD-рятівник пише в DR1 нуль ЗАВЖДИ
+                // (HAL_PWR_PVDCallback, FW.49) — не нескориговану базу й не пропуск запису.
                 const SilkenBeaconRx beacon = Silken_Beacon_Receive(&soldier_calendar_ops, decrypted_rx_payload,
                                                                     incoming_lora_size, &soldier_unix_ts,
-                                                                    &last_wakeup_timestamp, &wakeups_since_sync,
-                                                                    &soldier_beacon_applying);
+                                                                    &last_wakeup_timestamp, &wakeups_since_sync);
 
                 if (beacon.is_beacon) {
                     if (beacon.committed) soldier_unix_ts_local_tick = HAL_GetTick();
@@ -2825,14 +2821,14 @@ void HAL_PWR_PVDCallback(void)
     //    не зник при брауноуті між Phase 5 циклами.
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word());
 
-    // 2. [ARCH.21] Зберігаємо timestamp пробудження, щоб delta_t після
-    //    відновлення живлення не стрибнув на гігантське значення.
-    //    [SEC.42] Посеред коміту маяка база неузгоджена з календарем — і нуль тут не «пропуск», а
-    //    сентинел «не виміряно» (ARCH.102): пропуск лишив би в DR1 базу ПОПЕРЕДНЬОГО пробудження
-    //    (DR1 пишуть лише Фаза 5 і рятівник), і після скиду delta_t двічі лічив би вже зарахований
-    //    інтервал. Маска IRQ на час коміту гірша: init-режим RTC — мілісекунди, а рятує цей
-    //    обробник і DR0, і стан Лоренца.
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, soldier_beacon_applying ? 0u : last_wakeup_timestamp);
+    // 2. [FW.49 ⚖️ founder 2026-11-03] У DR1 — сентинел «не виміряно» (ARCH.102), а не база
+    //    перерваного пробудження: інтервал, перерваний брауноутом, не є виміряним перезарядом.
+    //    З базою перше пробудження після скиду міряло б тривалість коми й годувало нею EMA —
+    //    коротка кома вкорочувала її й давала чесному вузлу бали за брауноут. Нуль, не пропуск:
+    //    пропуск лишив би в DR1 базу ПОПЕРЕДНЬОГО пробудження (DR1 пишуть лише Фаза 5 і рятівник),
+    //    і delta_t двічі лічив би вже зарахований інтервал. Той самий нуль покриває вікно коміту
+    //    маяка (SEC.42), де база в RAM неузгоджена з календарем, — окремого прапорця не треба.
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, 0u);
 
     // 3. [ARCH.21] Зберігаємо стан Лоренца (DR16-DR19) симетрично до
     //    Phase 5. Без цього rescue брауноут = втрата траєкторії =

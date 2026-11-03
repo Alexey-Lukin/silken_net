@@ -168,14 +168,13 @@ typedef struct {
  * Доти розбір жив у main.c, а тест носив його ручну копію, тож дисципліну гілки тримав лише
  * текстовий носій (`check_sec42_calendar.py`), і п'ять раундів адверсара над ним щоразу
  * знаходили нові форми. Тепер носій пінить один виклик із тим самим станом.
- * `applying` стоїть увесь коміт — від запису календаря до зсуву бази (init-режим RTC:
- * мілісекунди, на збої RTCCLK — до таймаутів HAL): база в RAM тоді неузгоджена з
- * календарем, і PVD-рятівник під прапорцем пише в DR1 нуль — сентинел «не виміряно».
+ * Увесь коміт — від запису календаря до зсуву бази (init-режим RTC: мілісекунди, на збої
+ * RTCCLK — до таймаутів HAL) — база в RAM неузгоджена з календарем; брауноут у цьому вікні
+ * прапорця не потребує: PVD-рятівник пише в DR1 сентинел «не виміряно» ЗАВЖДИ (FW.49).
  */
 static inline SilkenBeaconRx Silken_Beacon_Receive(const SilkenCalendarOps *ops, const uint8_t *plain,
                                                    uint16_t size, volatile uint32_t *sync_mark,
-                                                   uint32_t *wake_base, uint16_t *watchdog_wakeups,
-                                                   volatile uint8_t *applying)
+                                                   uint32_t *wake_base, uint16_t *watchdog_wakeups)
 {
     SilkenBeaconRx rx = { 0u, 0u, 0u, 0u };
     if (size != SILKEN_BEACON_PLAINTEXT_SIZE || plain[0] != SILKEN_BEACON_MARKER ||
@@ -187,9 +186,7 @@ static inline SilkenBeaconRx Silken_Beacon_Receive(const SilkenCalendarOps *ops,
     rx.beacon_ts     = ((uint32_t)plain[1] << 24) | ((uint32_t)plain[2] << 16) |
                        ((uint32_t)plain[3] << 8)  | (uint32_t)plain[4];
     if (rx.beacon_ts != 0u) {
-        *applying    = 1u;
         rx.committed = Silken_Beacon_Commit(ops, rx.beacon_ts, sync_mark, wake_base, watchdog_wakeups);
-        *applying    = 0u;
     }
     return rx;
 }

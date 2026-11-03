@@ -9,10 +9,10 @@ Wall_Calendar_Set} і зсуває базу delta_t за кроком, ПЕРЕ�
 у тому ж заголовку, під host-тестами, тож про саму гілку носій пінить лише виклик.
 Дисципліна тримається, доки (03_05 §2.4, врізка [SEC.42]; механізм — 03_02 §5а):
   · main.c кличе `Silken_Beacon_Receive` рівно раз — одразу після розшифрування RX-пакета,
-    із тим самим кадром, станом (мітка синку · база delta_t · сторож), прапорцем «коміт
-    триває» і дослівним швом, — і `Silken_Beacon_Commit` напряму не кличе ніде;
-  · прапорець `soldier_beacon_applying` лише оголошено, передано в той виклик і прочитано
-    рятівником, а рятівник пише в DR1 під ним НУЛЬ (сентинел «не виміряно»), не базу;
+    із тим самим кадром, станом (мітка синку · база delta_t · сторож) і дослівним швом, — і
+    `Silken_Beacon_Commit` напряму не кличе ніде;
+  · PVD-рятівник пише в DR1 НУЛЬ безумовно (сентинел «не виміряно», FW.49), не базу — той самий
+    нуль покриває й вікно коміту маяка, тож прапорця «коміт триває» немає;
   · читач шва — одне визначення, і віддає календар як є, без кешу, клемпу чи
     монотонного сторожа (тіло пінене дослівно: «час не йде назад» у читачі мовчки
     повертав би крок назад маяка у гроші);
@@ -69,7 +69,7 @@ FOREIGN_RTC = re.compile(
 # Макрос-аліас бази, шва чи DR1 — інакше лічба нижче бачила б лише псевдонім.
 ALIAS_DEFINE = re.compile(
     r"^\s*#\s*define\b.*(?<!\w)(?:last_wakeup_timestamp|Wall_Calendar_Set|Wall_Seconds_Now"
-    r"|soldier_calendar_ops|Silken_Beacon_Commit|Silken_Beacon_Receive|soldier_beacon_applying|RTC_BKP_DR1)(?!\w)"
+    r"|soldier_calendar_ops|Silken_Beacon_Commit|Silken_Beacon_Receive|RTC_BKP_DR1)(?!\w)"
 )
 CALENDAR_SET = re.compile(r"HAL_RTC_Set(?:Time|Date)\s*\(")
 BASE = r"last_wakeup_timestamp"
@@ -137,13 +137,13 @@ one = flat(main)
 units = {MAIN: main, **{path: strip(path.read_text(encoding="utf-8")) for path in INCLUDERS}}
 
 # 1. RX-гілка маяка — рівно один виклик Silken_Beacon_Receive: одразу після розшифрування RX,
-#    із тим самим кадром, станом, прапорцем і дослівним швом, і першим споживачем — відміткою
+#    із тим самим кадром, станом і дослівним швом, і першим споживачем — відміткою
 #    локального тіку; Silken_Beacon_Commit напряму — ніде.
 receive = re.compile(r"(?<!\w)Silken_Beacon_Receive\(")
 pinned_call = (
     "HAL_CRYP_Decrypt(&hcryp,(uint32_t*)incoming_lora_payload,blocks,(uint32_t*)decrypted_rx_payload,1000);"
     "const SilkenBeaconRx beacon=Silken_Beacon_Receive(&soldier_calendar_ops,decrypted_rx_payload,incoming_lora_size,"
-    f"&soldier_unix_ts,&{BASE},&wakeups_since_sync,&soldier_beacon_applying);"
+    f"&soldier_unix_ts,&{BASE},&wakeups_since_sync);"
     "if(beacon.is_beacon){if(beacon.committed)soldier_unix_ts_local_tick=HAL_GetTick();"
 )
 receive_lines = hits(main, re.compile(r"Silken_Beacon_Receive\s*\("), MAIN)
@@ -222,18 +222,16 @@ dr1_lines = [h for path, code in units.items() for h in hits(code, re.compile(r"
 expect("записів DR1 (збереження бази delta_t)", 2, dr1_total, dr1_lines)
 expect("записів DR1 саме значенням бази (Фаза 5)", 1, one.count(f"HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR1,{BASE});"), dr1_lines)
 
-# 7. Рятівник посеред коміту маяка пише в DR1 НУЛЬ — сентинел «не виміряно», — а не базу:
-#    пропуск лишив би там базу попереднього пробудження. Форма — дослівно, і лише в його тілі.
+# 7. [FW.49] Рятівник пише в DR1 НУЛЬ безумовно — сентинел «не виміряно», — а не базу: перерваний
+#    брауноутом інтервал не є виміряним перезарядом, а пропуск запису лишив би в DR1 базу
+#    попереднього пробудження. Той самий нуль покриває вікно коміту маяка. Форма — дослівно, і лише
+#    в його тілі (записи DR1 загалом лічить крок 6).
 rescuer = body(main, r"void\s+HAL_PWR_PVDCallback\s*\(\s*void\s*\)")
-guarded = f"HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR1,soldier_beacon_applying?0u:{BASE});"
+sentinel = "HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR1,0u);"
 if rescuer is None:
     failures.append("FAIL [SEC.42]: не знайдено визначення «void HAL_PWR_PVDCallback(void)»")
 else:
-    expect("записів DR1 рятівником під прапорцем коміту (нуль ⊥ база)", 1, flat(rescuer[1]).count(guarded), dr1_lines)
-flag = re.compile(r"(?<!\w)soldier_beacon_applying(?!\w)")
-flag_lines = hits(main, flag, MAIN)
-expect("згадок soldier_beacon_applying (оголошення, виклик, рятівник)", 3, len(flag.findall(main)), flag_lines)
-expect("оголошень прапорця коміту маяка", 1, one.count("static volatile uint8_t soldier_beacon_applying=0;"), flag_lines)
+    expect("записів DR1 рятівником — безумовний нуль (FW.49)", 1, flat(rescuer[1]).count(sentinel), dr1_lines)
 
 if failures:
     print("\n".join(failures))
