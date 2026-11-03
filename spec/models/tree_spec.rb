@@ -256,13 +256,18 @@ RSpec.describe Tree, type: :model do
         freeze_time do
           seen = [ 1.hour.ago, Tree::SILENCE_THRESHOLD.ago, (Tree::SILENCE_THRESHOLD + 1.second).ago, nil ]
           trees = seen.map { |at| create(:tree).tap { |t| t.update_columns(last_seen_at: at) } }
+          # Предикат статусу не читає, тож і двійник не сміє: `active.` від сусіда `silent`
+          # мовчки викинув би приспане дерево зі свіжим сигналом.
+          dormant = create(:tree).tap { |t| t.update_columns(status: :dormant, last_seen_at: 1.hour.ago) }
 
-          trees.each do |tree|
-            expect(described_class.fresh_signal.include?(tree))
-              .to eq(tree.fresh_signal?), "last_seen_at=#{tree.last_seen_at.inspect}"
+          [ *trees, dormant ].product([ Tree::SILENCE_THRESHOLD, 30.minutes ]).each do |tree, threshold|
+            expect(described_class.fresh_signal(threshold).include?(tree))
+              .to eq(tree.fresh_signal?(threshold)),
+                  "last_seen_at=#{tree.last_seen_at.inspect} status=#{tree.status} threshold=#{threshold.inspect}"
           end
           expect(trees.map(&:fresh_signal?)).to eq([ true, true, false, false ])
-          expect(described_class.fresh_signal(30.minutes)).not_to include(trees.first)
+          expect(dormant).to be_fresh_signal
+          expect(trees.first.fresh_signal?(30.minutes)).to be(false)
         end
       end
     end
