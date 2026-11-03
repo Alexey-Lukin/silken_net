@@ -69,7 +69,10 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 
 **Bodies live in `modifying.md` — open it before editing a script, a shared constant, a cache or a doc
 that quotes one.** One generated line per item below; numbered 2026-09-18 in the pre-split order,
-append-only since — cite `in-silico §When Modifying #N`.
+append-only since — cite `in-silico §When Modifying #N`. 🔴 **Citing a number as the GROUND of a choice is a claim
+about its BODY — open it first:** a line below is the rule's head, compressed, and what the rule forbids is in the
+body (2026-11-02: the `108` change cited #43 in four places — the script twice, its test, a skill ⊕ — for up-rounding
+a «a further X % opens it» sentence, the form #43's body says to rewrite, not round).
 
 <!-- INSILICO-MODIFYING-INDEX:AUTO — generated from modifying.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
