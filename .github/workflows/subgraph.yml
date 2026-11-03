@@ -78,7 +78,13 @@ jobs:
     name: graph codegen + build
     needs: changes
     if: ${{ needs.changes.outputs.subgraph == 'true' }}
-    runs-on: ubuntu-latest
+    # 🔒 Раннер ЗАПІНЕНО, бо `graph test` качає бінар matchstick за МАЖОРОМ ОС, і
+    # `graph-cli` 0.98.1 (dist/commands/test.js) знає лише Linux 18/19/20/22/24 — на
+    # будь-якому іншому кидає «Unsupported platform: Linux x64 <N>». `ubuntu-latest`
+    # переїхав на 26.04, і перший же прогін смуги на ньому (2026-11-03) упав саме так,
+    # на незмінному субграфі. ⚠️ Стеля: пін ставить смугу на образ, що старітиме; знімати
+    # разом із бампом `graph-cli`, який знає мажор 26 (тригер — WATCH субграфа, 00_07 OPS.22).
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Harden runner (egress audit)
