@@ -12,32 +12,32 @@
     "margins_um_90": {
       "isothermal_low_stack": {
         "L1": [
-          19.3,
-          14.8
+          19.352214951977185,
+          14.760146744000057
         ],
         "L2": [
-          60.3,
-          55.8
+          60.35221495197713,
+          55.760146744000004
         ]
       },
       "isothermal_high_stack": {
         "L1": [
-          17.4,
-          11.8
+          17.444588571987094,
+          11.839549943999959
         ],
         "L2": [
-          58.4,
-          52.8
+          58.44458857198704,
+          52.839549943999906
         ]
       },
       "radome_leads_reading": {
         "L1": [
-          8.5,
-          -1.8
+          8.526896768044633,
+          -1.8135334999999972
         ],
         "L2": [
-          49.5,
-          39.2
+          49.52689676804458,
+          39.186466499999945
         ]
       }
     },
@@ -56,11 +56,11 @@
     "temperatures_c": {
       "capsule_model_edges_90": [
         -33.53,
-        55.0
+        54.9638266127217
       ],
       "cambium_under_flange_79": [
         -31.73,
-        46.62
+        46.623958295395774
       ]
     },
     "assembly_c": 20.0,
@@ -89,167 +89,167 @@
     "32": {
       "travel_um_max": {
         "capsule_model_edges_90": {
-          "cold": 62.878892,
-          "hot": 43.008
+          "cold": 62.854835,
+          "hot": 42.96355
         },
         "cambium_under_flange_79": {
-          "cold": 60.738215,
-          "hot": 32.710656
+          "cold": 60.714768,
+          "hot": 32.71552
         }
       },
       "need_um": {
         "capsule_model_edges_90__isothermal_low_stack": {
-          "cold_over_upper": 48.078892,
-          "hot_over_lower": 23.708,
-          "need": 48.078892
+          "cold_over_upper": 48.094688,
+          "hot_over_lower": 23.611335,
+          "need": 48.094688
         },
         "capsule_model_edges_90__isothermal_high_stack": {
-          "cold_over_upper": 51.078892,
-          "hot_over_lower": 25.608,
-          "need": 51.078892
+          "cold_over_upper": 51.015285,
+          "hot_over_lower": 25.518962,
+          "need": 51.015285
         },
         "cambium_under_flange_79__isothermal_low_stack": {
-          "cold_over_upper": 45.938215,
-          "hot_over_lower": 13.410656,
-          "need": 45.938215
+          "cold_over_upper": 45.954621,
+          "hot_over_lower": 13.363305,
+          "need": 45.954621
         },
         "cambium_under_flange_79__isothermal_high_stack": {
-          "cold_over_upper": 48.938215,
-          "hot_over_lower": 15.310656,
-          "need": 48.938215
+          "cold_over_upper": 48.875218,
+          "hot_over_lower": 15.270931,
+          "need": 48.875218
         }
       },
-      "need_um_isothermal_worst": 51.078892,
+      "need_um_isothermal_worst": 51.015285,
       "need_um_isothermal_worst_shank_as_ti": null,
-      "need_um_radome_leads": 64.678892,
+      "need_um_radome_leads": 64.668368,
       "need_um_radome_leads_by_temp": {
         "capsule_model_edges_90__radome_leads_reading": {
-          "cold_over_upper": 64.678892,
-          "hot_over_lower": 34.508,
-          "need": 64.678892
+          "cold_over_upper": 64.668368,
+          "hot_over_lower": 34.436653,
+          "need": 64.668368
         },
         "cambium_under_flange_79__radome_leads_reading": {
-          "cold_over_upper": 62.538215,
-          "hot_over_lower": 24.210656,
-          "need": 62.538215
+          "cold_over_upper": 62.528301,
+          "hot_over_lower": 24.188623,
+          "need": 62.528301
         }
       },
       "need_um_held_plus_sway": {
         "median": {
-          "need": 51.371078,
+          "need": 51.316598,
           "cte_ppm_K": 42.02378,
           "share": 0.268663,
-          "sway_shift_um": 8.704656,
-          "cold_over_upper": 51.371078,
-          "hot_over_lower": 28.73929,
-          "need_on_kept_points": 51.078892,
-          "free_sleeve_need": 51.078892
+          "sway_shift_um": 8.704672,
+          "cold_over_upper": 51.316598,
+          "hot_over_lower": 28.656027,
+          "need_on_kept_points": 51.015285,
+          "free_sleeve_need": 51.015285
         },
         "upper_whisker": {
-          "need": 60.350448,
+          "need": 60.296295,
           "cte_ppm_K": 40.709883,
           "share": 0.307021,
-          "sway_shift_um": 19.894903,
-          "cold_over_upper": 60.350448,
-          "hot_over_lower": 39.94191,
-          "need_on_kept_points": 59.737766,
-          "free_sleeve_need": 51.078892
+          "sway_shift_um": 19.894932,
+          "cold_over_upper": 60.296295,
+          "hot_over_lower": 39.867822,
+          "need_on_kept_points": 59.683591,
+          "free_sleeve_need": 51.015285
         }
       },
       "need_um_held_plus_sway_radome_leads": {
         "median": {
-          "need": 64.971078,
+          "need": 64.969681,
           "cte_ppm_K": 42.02378,
           "share": 0.268663,
-          "sway_shift_um": 8.704656,
-          "cold_over_upper": 64.971078,
-          "hot_over_lower": 37.63929,
-          "need_on_kept_points": 64.678892,
-          "free_sleeve_need": 64.678892
+          "sway_shift_um": 8.704672,
+          "cold_over_upper": 64.969681,
+          "hot_over_lower": 37.573719,
+          "need_on_kept_points": 64.668368,
+          "free_sleeve_need": 64.668368
         },
         "upper_whisker": {
-          "need": 73.950448,
+          "need": 73.949378,
           "cte_ppm_K": 40.709883,
           "share": 0.307021,
-          "sway_shift_um": 19.894903,
-          "cold_over_upper": 73.950448,
-          "hot_over_lower": 48.84191,
-          "need_on_kept_points": 73.337766,
-          "free_sleeve_need": 64.678892
+          "sway_shift_um": 19.894932,
+          "cold_over_upper": 73.949378,
+          "hot_over_lower": 48.785514,
+          "need_on_kept_points": 73.336674,
+          "free_sleeve_need": 64.668368
         }
       },
       "window_breach_pct_of_stroke": {
         "held": {
-          "over_upper_edge": 3.648492,
-          "under_lower_edge": 1.829143
+          "over_upper_edge": 3.643949,
+          "under_lower_edge": 1.822783
         },
         "held_plus_sway_median": {
-          "over_upper_edge": 3.669363,
-          "under_lower_edge": 2.052806
+          "over_upper_edge": 3.665471,
+          "under_lower_edge": 2.046859
         },
         "held_plus_sway_upper_whisker": {
-          "over_upper_edge": 4.310746,
-          "under_lower_edge": 2.852994
+          "over_upper_edge": 4.306878,
+          "under_lower_edge": 2.847702
         }
       },
       "window_side": {
         "L2 bayonet hard-stop (CNC member 0.10 → 0.05 mm)": {
           "gain_um": 41.0,
-          "spare_um_held": -10.078892,
-          "spare_um_radome_leads": -23.678892,
-          "spare_um_held_plus_sway_median": -10.371078,
-          "spare_um_held_plus_sway_upper_whisker": -19.350448,
-          "spare_um_held_plus_sway_median_radome_leads": -23.971078,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": -32.950448
+          "spare_um_held": -10.015285,
+          "spare_um_radome_leads": -23.668368,
+          "spare_um_held_plus_sway_median": -10.316598,
+          "spare_um_held_plus_sway_upper_whisker": -19.296295,
+          "spare_um_held_plus_sway_median_radome_leads": -23.969681,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": -32.949378
         },
         "the CNC member at ±0.05 mm by a tolerance class (if it is machining tolerance)": {
           "gain_um": 41.0,
-          "spare_um_held": -10.078892,
-          "spare_um_radome_leads": -23.678892,
-          "spare_um_held_plus_sway_median": -10.371078,
-          "spare_um_held_plus_sway_upper_whisker": -19.350448,
-          "spare_um_held_plus_sway_median_radome_leads": -23.971078,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": -32.950448
+          "spare_um_held": -10.015285,
+          "spare_um_radome_leads": -23.668368,
+          "spare_um_held_plus_sway_median": -10.316598,
+          "spare_um_held_plus_sway_upper_whisker": -19.296295,
+          "spare_um_held_plus_sway_median_radome_leads": -23.969681,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": -32.949378
         },
         "spacer step 0.05 mm": {
           "gain_um": 8.0,
-          "spare_um_held": -43.078892,
-          "spare_um_radome_leads": -56.678892,
-          "spare_um_held_plus_sway_median": -43.371078,
-          "spare_um_held_plus_sway_upper_whisker": -52.350448,
-          "spare_um_held_plus_sway_median_radome_leads": -56.971078,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": -65.950448
+          "spare_um_held": -43.015285,
+          "spare_um_radome_leads": -56.668368,
+          "spare_um_held_plus_sway_median": -43.316598,
+          "spare_um_held_plus_sway_upper_whisker": -52.296295,
+          "spare_um_held_plus_sway_median_radome_leads": -56.969681,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": -65.949378
         },
         "spacer step → 0 (the lever's bound)": {
           "gain_um": 12.0,
-          "spare_um_held": -39.078892,
-          "spare_um_radome_leads": -52.678892,
-          "spare_um_held_plus_sway_median": -39.371078,
-          "spare_um_held_plus_sway_upper_whisker": -48.350448,
-          "spare_um_held_plus_sway_median_radome_leads": -52.971078,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": -61.950448
+          "spare_um_held": -39.015285,
+          "spare_um_radome_leads": -52.668368,
+          "spare_um_held_plus_sway_median": -39.316598,
+          "spare_um_held_plus_sway_upper_whisker": -48.296295,
+          "spare_um_held_plus_sway_median_radome_leads": -52.969681,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": -61.949378
         },
         "L2 hard-stop + spacer step 0.05 mm": {
           "gain_um": 56.0,
-          "spare_um_held": 4.921108,
-          "spare_um_radome_leads": -8.678892,
-          "spare_um_held_plus_sway_median": 4.628922,
-          "spare_um_held_plus_sway_upper_whisker": -4.350448,
-          "spare_um_held_plus_sway_median_radome_leads": -8.971078,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": -17.950448
+          "spare_um_held": 4.984715,
+          "spare_um_radome_leads": -8.668368,
+          "spare_um_held_plus_sway_median": 4.683402,
+          "spare_um_held_plus_sway_upper_whisker": -4.296295,
+          "spare_um_held_plus_sway_median_radome_leads": -8.969681,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": -17.949378
         }
       },
       "stroke": {
-        "stroke_mm_closing_held": 1.910789,
-        "stroke_mm_closing_radome_leads": 2.046789,
-        "stroke_mm_closing_held_plus_sway_median": 1.913711,
-        "stroke_mm_closing_held_plus_sway_upper_whisker": 2.003504,
-        "stroke_mm_closing_held_plus_sway_median_radome_leads": 2.049711,
-        "stroke_mm_closing_held_plus_sway_upper_whisker_radome_leads": 2.139504,
-        "stroke_mm_with_L2_held": 1.500789,
-        "stroke_mm_with_fine_step_held_plus_sway_upper_whisker": 1.923504,
-        "stroke_mm_with_L2_held_plus_sway_median": 1.503711,
-        "stroke_mm_with_L2_held_plus_sway_upper_whisker": 1.593504,
+        "stroke_mm_closing_held": 1.910153,
+        "stroke_mm_closing_radome_leads": 2.046684,
+        "stroke_mm_closing_held_plus_sway_median": 1.913166,
+        "stroke_mm_closing_held_plus_sway_upper_whisker": 2.002963,
+        "stroke_mm_closing_held_plus_sway_median_radome_leads": 2.049697,
+        "stroke_mm_closing_held_plus_sway_upper_whisker_radome_leads": 2.139494,
+        "stroke_mm_with_L2_held": 1.500153,
+        "stroke_mm_with_fine_step_held_plus_sway_upper_whisker": 1.922963,
+        "stroke_mm_with_L2_held_plus_sway_median": 1.503166,
+        "stroke_mm_with_L2_held_plus_sway_upper_whisker": 1.592963,
         "pin_body_um_per_mm_extra_free_length_at_far_edge": 1.098436,
         "stroke_nominal_mm": 1.4,
         "window_half_width_of_stroke": 0.1,
@@ -257,116 +257,116 @@
       },
       "run_length": {
         "gap_mm_closing": 1.5,
-        "shank_mm_closing": 4.357214,
-        "peek_run_mm_closing": 5.857214,
+        "shank_mm_closing": 4.377847,
+        "peek_run_mm_closing": 5.877847,
         "route": "gap then shank",
         "peek_run_mm_today": 32.0
       },
       "run_cte": {
-        "cte_ppm_K_closing": 16.371677,
+        "cte_ppm_K_closing": 16.400212,
         "cte_ppm_K_free_peek": 47.0,
-        "cte_ppm_K_closing_grade_in_the_shank_composite_too": 16.371677
+        "cte_ppm_K_closing_grade_in_the_shank_composite_too": 16.400212
       },
       "seam_hot_preload": {
         "Ti-6Al-4V": {
           "today": {
-            "F_hot_N": 42.456092,
-            "seam_k_no_sway": 0.165054,
+            "F_hot_N": 42.431799,
+            "seam_k_no_sway": 0.16504,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 20.138622,
-            "seam_k_no_sway": 0.153318,
+            "F_hot_N": 20.162049,
+            "seam_k_no_sway": 0.15333,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 14.317924,
-            "seam_k_no_sway": 0.150527,
+            "F_hot_N": 14.346783,
+            "seam_k_no_sway": 0.150541,
             "capped": false
           }
         },
         "Ti-6Al-7Nb": {
           "today": {
-            "F_hot_N": 41.939142,
-            "seam_k_no_sway": 0.171686,
+            "F_hot_N": 41.914761,
+            "seam_k_no_sway": 0.171671,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 20.048962,
-            "seam_k_no_sway": 0.15925,
+            "F_hot_N": 20.07196,
+            "seam_k_no_sway": 0.159262,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 14.15532,
-            "seam_k_no_sway": 0.156203,
+            "F_hot_N": 14.183118,
+            "seam_k_no_sway": 0.156218,
             "capped": false
           }
         },
         "CP-Ti-Gr4": {
           "today": {
-            "F_hot_N": 41.888961,
-            "seam_k_no_sway": 0.356322,
+            "F_hot_N": 41.864651,
+            "seam_k_no_sway": 0.356258,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 19.985264,
-            "seam_k_no_sway": 0.306599,
+            "F_hot_N": 20.008316,
+            "seam_k_no_sway": 0.306644,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 13.928283,
-            "seam_k_no_sway": 0.295207,
+            "F_hot_N": 13.95672,
+            "seam_k_no_sway": 0.295259,
             "capped": false
           }
         },
         "beta-Ti-13Nb-13Zr": {
           "today": {
-            "F_hot_N": 38.784903,
-            "seam_k_no_sway": 0.158777,
+            "F_hot_N": 38.760695,
+            "seam_k_no_sway": 0.158765,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 19.075151,
-            "seam_k_no_sway": 0.149083,
+            "F_hot_N": 19.096234,
+            "seam_k_no_sway": 0.149093,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 11.776068,
-            "seam_k_no_sway": 0.145787,
+            "F_hot_N": 11.802667,
+            "seam_k_no_sway": 0.145798,
             "capped": false
           }
         },
         "Ta": {
           "today": {
-            "F_hot_N": 48.324688,
-            "seam_k_no_sway": 0.636484,
+            "F_hot_N": 48.300052,
+            "seam_k_no_sway": 0.636277,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 22.201819,
-            "seam_k_no_sway": 0.47305,
+            "F_hot_N": 22.228198,
+            "seam_k_no_sway": 0.473173,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 20.809172,
-            "seam_k_no_sway": 0.466662,
+            "F_hot_N": 20.834575,
+            "seam_k_no_sway": 0.466777,
             "capped": false
           }
         },
         "Ti-15Zr": {
           "today": {
-            "F_hot_N": 41.553942,
-            "seam_k_no_sway": 0.150408,
+            "F_hot_N": 41.529589,
+            "seam_k_no_sway": 0.150397,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 19.919124,
-            "seam_k_no_sway": 0.140882,
+            "F_hot_N": 19.941911,
+            "seam_k_no_sway": 0.140891,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 13.799258,
-            "seam_k_no_sway": 0.138403,
+            "F_hot_N": 13.827104,
+            "seam_k_no_sway": 0.138414,
             "capped": false
           }
         }
@@ -374,178 +374,178 @@
       "sway_alone_at_the_largest_share": {
         "median": {
           "share": 0.714233,
-          "amp_um": 22.358619,
-          "over_l1_um": 10.558619
+          "amp_um": 22.352712,
+          "over_l1_um": 10.513162
         },
         "upper_whisker": {
           "share": 0.714233,
-          "amp_um": 45.499701,
-          "over_l1_um": 33.699701
+          "amp_um": 45.493802,
+          "over_l1_um": 33.654253
         }
       }
     },
     "18": {
       "travel_um_max": {
         "capsule_model_edges_90": {
-          "cold": 35.48219,
-          "hot": 24.75858
+          "cold": 35.470209,
+          "hot": 24.732991
         },
         "cambium_under_flange_79": {
-          "cold": 34.276054,
-          "hot": 18.830669
+          "cold": 34.264436,
+          "hot": 18.833469
         }
       },
       "need_um": {
         "capsule_model_edges_90__isothermal_low_stack": {
-          "cold_over_upper": 20.68219,
-          "hot_over_lower": 5.45858,
-          "need": 20.68219
+          "cold_over_upper": 20.710063,
+          "hot_over_lower": 5.380776,
+          "need": 20.710063
         },
         "capsule_model_edges_90__isothermal_high_stack": {
-          "cold_over_upper": 23.68219,
-          "hot_over_lower": 7.35858,
-          "need": 23.68219
+          "cold_over_upper": 23.630659,
+          "hot_over_lower": 7.288403,
+          "need": 23.630659
         },
         "cambium_under_flange_79__isothermal_low_stack": {
-          "cold_over_upper": 19.476054,
-          "hot_over_lower": -0.469331,
-          "need": 19.476054
+          "cold_over_upper": 19.50429,
+          "hot_over_lower": -0.518746,
+          "need": 19.50429
         },
         "cambium_under_flange_79__isothermal_high_stack": {
-          "cold_over_upper": 22.476054,
-          "hot_over_lower": 1.430669,
-          "need": 22.476054
+          "cold_over_upper": 22.424887,
+          "hot_over_lower": 1.38888,
+          "need": 22.424887
         }
       },
-      "need_um_isothermal_worst": 23.68219,
-      "need_um_isothermal_worst_shank_as_ti": 22.837528,
-      "need_um_radome_leads": 37.28219,
+      "need_um_isothermal_worst": 23.630659,
+      "need_um_isothermal_worst_shank_as_ti": 22.786146,
+      "need_um_radome_leads": 37.283743,
       "need_um_radome_leads_by_temp": {
         "capsule_model_edges_90__radome_leads_reading": {
-          "cold_over_upper": 37.28219,
-          "hot_over_lower": 16.25858,
-          "need": 37.28219
+          "cold_over_upper": 37.283743,
+          "hot_over_lower": 16.206095,
+          "need": 37.283743
         },
         "cambium_under_flange_79__radome_leads_reading": {
-          "cold_over_upper": 36.076054,
-          "hot_over_lower": 10.330669,
-          "need": 36.076054
+          "cold_over_upper": 36.07797,
+          "hot_over_lower": 10.306572,
+          "need": 36.07797
         }
       },
       "need_um_held_plus_sway": {
         "median": {
-          "need": 24.737765,
+          "need": 24.687417,
           "cte_ppm_K": 40.99847,
           "share": 0.232264,
-          "sway_shift_um": 7.525332,
-          "cold_over_upper": 24.737765,
-          "hot_over_lower": 10.536368,
-          "need_on_kept_points": 24.571359,
-          "free_sleeve_need": 23.682189
+          "sway_shift_um": 7.525325,
+          "cold_over_upper": 24.687417,
+          "hot_over_lower": 10.470677,
+          "need_on_kept_points": 24.521002,
+          "free_sleeve_need": 23.630659
         },
         "upper_whisker": {
-          "need": 37.767459,
+          "need": 37.722666,
           "cte_ppm_K": 17.686054,
           "share": 0.648924,
-          "sway_shift_um": 42.050154,
-          "cold_over_upper": 37.767459,
-          "hot_over_lower": 30.374368,
-          "need_on_kept_points": 37.735188,
-          "free_sleeve_need": 23.682189
+          "sway_shift_um": 42.050186,
+          "cold_over_upper": 37.722666,
+          "hot_over_lower": 30.323895,
+          "need_on_kept_points": 37.690407,
+          "free_sleeve_need": 23.630659
         }
       },
       "need_um_held_plus_sway_radome_leads": {
         "median": {
-          "need": 38.337765,
+          "need": 38.340501,
           "cte_ppm_K": 40.99847,
           "share": 0.232264,
-          "sway_shift_um": 7.525332,
-          "cold_over_upper": 38.337765,
-          "hot_over_lower": 19.436368,
-          "need_on_kept_points": 38.171359,
-          "free_sleeve_need": 37.282189
+          "sway_shift_um": 7.525325,
+          "cold_over_upper": 38.340501,
+          "hot_over_lower": 19.388369,
+          "need_on_kept_points": 38.174086,
+          "free_sleeve_need": 37.283743
         },
         "upper_whisker": {
-          "need": 51.367459,
+          "need": 51.37575,
           "cte_ppm_K": 17.686054,
           "share": 0.648924,
-          "sway_shift_um": 42.050154,
-          "cold_over_upper": 51.367459,
-          "hot_over_lower": 39.274368,
-          "need_on_kept_points": 51.335188,
-          "free_sleeve_need": 37.282189
+          "sway_shift_um": 42.050186,
+          "cold_over_upper": 51.37575,
+          "hot_over_lower": 39.241587,
+          "need_on_kept_points": 51.343491,
+          "free_sleeve_need": 37.283743
         }
       },
       "window_breach_pct_of_stroke": {
         "held": {
-          "over_upper_edge": 1.691585,
-          "under_lower_edge": 0.525613
+          "over_upper_edge": 1.687904,
+          "under_lower_edge": 0.5206
         },
         "held_plus_sway_median": {
-          "over_upper_edge": 1.766983,
-          "under_lower_edge": 0.752598
+          "over_upper_edge": 1.763387,
+          "under_lower_edge": 0.747906
         },
         "held_plus_sway_upper_whisker": {
-          "over_upper_edge": 2.697676,
-          "under_lower_edge": 2.169598
+          "over_upper_edge": 2.694476,
+          "under_lower_edge": 2.165993
         }
       },
       "window_side": {
         "L2 bayonet hard-stop (CNC member 0.10 → 0.05 mm)": {
           "gain_um": 41.0,
-          "spare_um_held": 17.31781,
-          "spare_um_radome_leads": 3.71781,
-          "spare_um_held_plus_sway_median": 16.262235,
-          "spare_um_held_plus_sway_upper_whisker": 3.232541,
-          "spare_um_held_plus_sway_median_radome_leads": 2.662235,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": -10.367459
+          "spare_um_held": 17.369341,
+          "spare_um_radome_leads": 3.716257,
+          "spare_um_held_plus_sway_median": 16.312583,
+          "spare_um_held_plus_sway_upper_whisker": 3.277334,
+          "spare_um_held_plus_sway_median_radome_leads": 2.659499,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": -10.37575
         },
         "the CNC member at ±0.05 mm by a tolerance class (if it is machining tolerance)": {
           "gain_um": 41.0,
-          "spare_um_held": 17.31781,
-          "spare_um_radome_leads": 3.71781,
-          "spare_um_held_plus_sway_median": 16.262235,
-          "spare_um_held_plus_sway_upper_whisker": 3.232541,
-          "spare_um_held_plus_sway_median_radome_leads": 2.662235,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": -10.367459
+          "spare_um_held": 17.369341,
+          "spare_um_radome_leads": 3.716257,
+          "spare_um_held_plus_sway_median": 16.312583,
+          "spare_um_held_plus_sway_upper_whisker": 3.277334,
+          "spare_um_held_plus_sway_median_radome_leads": 2.659499,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": -10.37575
         },
         "spacer step 0.05 mm": {
           "gain_um": 8.0,
-          "spare_um_held": -15.68219,
-          "spare_um_radome_leads": -29.28219,
-          "spare_um_held_plus_sway_median": -16.737765,
-          "spare_um_held_plus_sway_upper_whisker": -29.767459,
-          "spare_um_held_plus_sway_median_radome_leads": -30.337765,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": -43.367459
+          "spare_um_held": -15.630659,
+          "spare_um_radome_leads": -29.283743,
+          "spare_um_held_plus_sway_median": -16.687417,
+          "spare_um_held_plus_sway_upper_whisker": -29.722666,
+          "spare_um_held_plus_sway_median_radome_leads": -30.340501,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": -43.37575
         },
         "spacer step → 0 (the lever's bound)": {
           "gain_um": 12.0,
-          "spare_um_held": -11.68219,
-          "spare_um_radome_leads": -25.28219,
-          "spare_um_held_plus_sway_median": -12.737765,
-          "spare_um_held_plus_sway_upper_whisker": -25.767459,
-          "spare_um_held_plus_sway_median_radome_leads": -26.337765,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": -39.367459
+          "spare_um_held": -11.630659,
+          "spare_um_radome_leads": -25.283743,
+          "spare_um_held_plus_sway_median": -12.687417,
+          "spare_um_held_plus_sway_upper_whisker": -25.722666,
+          "spare_um_held_plus_sway_median_radome_leads": -26.340501,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": -39.37575
         },
         "L2 hard-stop + spacer step 0.05 mm": {
           "gain_um": 56.0,
-          "spare_um_held": 32.31781,
-          "spare_um_radome_leads": 18.71781,
-          "spare_um_held_plus_sway_median": 31.262235,
-          "spare_um_held_plus_sway_upper_whisker": 18.232541,
-          "spare_um_held_plus_sway_median_radome_leads": 17.662235,
-          "spare_um_held_plus_sway_upper_whisker_radome_leads": 4.632541
+          "spare_um_held": 32.369341,
+          "spare_um_radome_leads": 18.716257,
+          "spare_um_held_plus_sway_median": 31.312583,
+          "spare_um_held_plus_sway_upper_whisker": 18.277334,
+          "spare_um_held_plus_sway_median_radome_leads": 17.659499,
+          "spare_um_held_plus_sway_upper_whisker_radome_leads": 4.62425
         }
       },
       "stroke": {
-        "stroke_mm_closing_held": 1.636822,
-        "stroke_mm_closing_radome_leads": 1.772822,
-        "stroke_mm_closing_held_plus_sway_median": 1.647378,
-        "stroke_mm_closing_held_plus_sway_upper_whisker": 1.777675,
-        "stroke_mm_closing_held_plus_sway_median_radome_leads": 1.783378,
-        "stroke_mm_closing_held_plus_sway_upper_whisker_radome_leads": 1.913675,
+        "stroke_mm_closing_held": 1.636307,
+        "stroke_mm_closing_radome_leads": 1.772837,
+        "stroke_mm_closing_held_plus_sway_median": 1.646874,
+        "stroke_mm_closing_held_plus_sway_upper_whisker": 1.777227,
+        "stroke_mm_closing_held_plus_sway_median_radome_leads": 1.783405,
+        "stroke_mm_closing_held_plus_sway_upper_whisker_radome_leads": 1.913757,
         "stroke_mm_with_L2_held": 1.4,
-        "stroke_mm_with_fine_step_held_plus_sway_upper_whisker": 1.697675,
+        "stroke_mm_with_fine_step_held_plus_sway_upper_whisker": 1.697227,
         "stroke_mm_with_L2_held_plus_sway_median": 1.4,
         "stroke_mm_with_L2_held_plus_sway_upper_whisker": 1.4,
         "pin_body_um_per_mm_extra_free_length_at_far_edge": 1.098436,
@@ -554,118 +554,118 @@
         "pin_travel_tolerance_mm_not_in_52_chain": 0.127
       },
       "run_length": {
-        "gap_mm_closing": 5.679171,
-        "shank_mm_closing": 26.320829,
-        "peek_run_mm_closing": 5.679171,
+        "gap_mm_closing": 5.703669,
+        "shank_mm_closing": 26.296331,
+        "peek_run_mm_closing": 5.703669,
         "route": "gap",
         "peek_run_mm_today": 18.0
       },
       "run_cte": {
-        "cte_ppm_K_closing": 21.51698,
+        "cte_ppm_K_closing": 21.56771,
         "cte_ppm_K_free_peek": 47.0,
-        "cte_ppm_K_closing_grade_in_the_shank_composite_too": 22.100139,
+        "cte_ppm_K_closing_grade_in_the_shank_composite_too": 22.149707,
         "cte_ppm_K_free_gap_with_bonded_shank": 47.899333
       },
       "seam_hot_preload": {
         "Ti-6Al-4V": {
           "today": {
-            "F_hot_N": 29.800463,
-            "seam_k_no_sway": 0.158187,
+            "F_hot_N": 29.782106,
+            "seam_k_no_sway": 0.158178,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 14.35015,
-            "seam_k_no_sway": 0.150542,
+            "F_hot_N": 14.378962,
+            "seam_k_no_sway": 0.150556,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 14.317924,
-            "seam_k_no_sway": 0.150527,
+            "F_hot_N": 14.346783,
+            "seam_k_no_sway": 0.150541,
             "capped": false
           }
         },
         "Ti-6Al-7Nb": {
           "today": {
-            "F_hot_N": 29.382817,
-            "seam_k_no_sway": 0.164325,
+            "F_hot_N": 29.364396,
+            "seam_k_no_sway": 0.164315,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 14.191644,
-            "seam_k_no_sway": 0.156222,
+            "F_hot_N": 14.219392,
+            "seam_k_no_sway": 0.156236,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 14.15532,
-            "seam_k_no_sway": 0.156203,
+            "F_hot_N": 14.183118,
+            "seam_k_no_sway": 0.156218,
             "capped": false
           }
         },
         "CP-Ti-Gr4": {
           "today": {
-            "F_hot_N": 29.281135,
-            "seam_k_no_sway": 0.325899,
+            "F_hot_N": 29.262803,
+            "seam_k_no_sway": 0.325859,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 13.963527,
-            "seam_k_no_sway": 0.295271,
+            "F_hot_N": 13.991916,
+            "seam_k_no_sway": 0.295323,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 13.928283,
-            "seam_k_no_sway": 0.295207,
+            "F_hot_N": 13.95672,
+            "seam_k_no_sway": 0.295259,
             "capped": false
           }
         },
         "beta-Ti-13Nb-13Zr": {
           "today": {
-            "F_hot_N": 26.443821,
-            "seam_k_no_sway": 0.152566,
+            "F_hot_N": 26.425863,
+            "seam_k_no_sway": 0.152557,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 11.825804,
-            "seam_k_no_sway": 0.145809,
+            "F_hot_N": 11.852363,
+            "seam_k_no_sway": 0.14582,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 11.776068,
-            "seam_k_no_sway": 0.145787,
+            "F_hot_N": 11.802667,
+            "seam_k_no_sway": 0.145798,
             "capped": false
           }
         },
         "Ta": {
           "today": {
-            "F_hot_N": 35.880605,
-            "seam_k_no_sway": 0.546535,
+            "F_hot_N": 35.861415,
+            "seam_k_no_sway": 0.546416,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 20.821402,
-            "seam_k_no_sway": 0.466717,
+            "F_hot_N": 20.846761,
+            "seam_k_no_sway": 0.466832,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 20.809172,
-            "seam_k_no_sway": 0.466662,
+            "F_hot_N": 20.834575,
+            "seam_k_no_sway": 0.466777,
             "capped": false
           }
         },
         "Ti-15Zr": {
           "today": {
-            "F_hot_N": 29.004081,
-            "seam_k_no_sway": 0.144731,
+            "F_hot_N": 28.985726,
+            "seam_k_no_sway": 0.144723,
             "capped": false
           },
           "run_length": {
-            "F_hot_N": 13.836969,
-            "seam_k_no_sway": 0.138418,
+            "F_hot_N": 13.864766,
+            "seam_k_no_sway": 0.138429,
             "capped": false
           },
           "run_cte": {
-            "F_hot_N": 13.799258,
-            "seam_k_no_sway": 0.138403,
+            "F_hot_N": 13.827104,
+            "seam_k_no_sway": 0.138414,
             "capped": false
           }
         }
@@ -673,184 +673,184 @@
       "sway_alone_at_the_largest_share": {
         "median": {
           "share": 0.648924,
-          "amp_um": 20.242613,
-          "over_l1_um": 8.442613
+          "amp_um": 20.236714,
+          "over_l1_um": 8.397164
         },
         "upper_whisker": {
           "share": 0.648924,
-          "amp_um": 41.26769,
-          "over_l1_um": 29.46769
+          "amp_um": 41.261807,
+          "over_l1_um": 29.422257
         }
       },
       "need_um_by_placeholder_shank": {
-        "10": 31.613072,
-        "18": 15.931016,
-        "14": 23.68219
+        "10": 31.553372,
+        "18": 15.880945,
+        "14": 23.630659
       },
       "placeholder_shank_estimate": {
-        "slope_um_per_mm_held": 1.982721,
-        "l2fine_worst_spare_um": 4.632541,
-        "shortest_shank_mm_closing_with_l2fine": 11.663543
+        "slope_um_per_mm_held": 1.980678,
+        "l2fine_worst_spare_um": 4.62425,
+        "shortest_shank_mm_closing_with_l2fine": 11.66532
       },
       "seam_with_sway": {
         "Ta": {
           "state2_at_air_dry_readings_max": {
             "today": {
-              "k": 0.863894,
+              "k": 0.863508,
               "cap_binds": false
             },
             "run_length": {
-              "k": 0.738491,
+              "k": 0.738501,
               "cap_binds": false
             },
             "run_cte": {
-              "k": 0.73764,
+              "k": 0.737653,
               "cap_binds": false
             },
             "sway_alone": {
-              "k": 0.613788,
+              "k": 0.613648,
               "cap_binds": false
             },
-            "share": 0.058
+            "share": 0.057951
           },
           "state3_least_stiff_bond": {
             "today": {
-              "k": 1.186613,
+              "k": 1.186625,
               "cap_binds": true
             },
             "run_length": {
-              "k": 1.119041,
+              "k": 1.119232,
               "cap_binds": false
             },
             "run_cte": {
-              "k": 1.117789,
+              "k": 1.117981,
               "cap_binds": false
             },
             "sway_alone": {
-              "k": 0.930109,
+              "k": 0.93004,
               "cap_binds": false
             },
-            "share": 0.1966
+            "share": 0.19655
           },
           "state3_least_soft_bond": {
             "today": {
-              "k": 0.68483,
+              "k": 0.684704,
               "cap_binds": false
             },
             "run_length": {
-              "k": 0.585262,
+              "k": 0.585425,
               "cap_binds": false
             },
             "run_cte": {
-              "k": 0.584746,
+              "k": 0.584909,
               "cap_binds": false
             },
             "sway_alone": {
-              "k": 0.486565,
+              "k": 0.486582,
               "cap_binds": false
             },
-            "share": 0.0211
+            "share": 0.021104
           },
           "state2_cap_stiff_bond": {
             "today": {
-              "k": 1.470521,
+              "k": 1.470618,
               "cap_binds": true
             },
             "run_length": {
-              "k": 1.470521,
+              "k": 1.470618,
               "cap_binds": true
             },
             "run_cte": {
-              "k": 1.470521,
+              "k": 1.470618,
               "cap_binds": true
             },
             "sway_alone": {
-              "k": 1.470521,
+              "k": 1.470618,
               "cap_binds": true
             },
-            "share": 0.5928
+            "share": 0.59279
           },
           "state2_cap_soft_bond": {
             "today": {
-              "k": 0.992599,
+              "k": 0.992358,
               "cap_binds": false
             },
             "run_length": {
-              "k": 0.848542,
+              "k": 0.848728,
               "cap_binds": false
             },
             "run_cte": {
-              "k": 0.847536,
+              "k": 0.847724,
               "cap_binds": false
             },
             "sway_alone": {
-              "k": 0.705232,
+              "k": 0.705215,
               "cap_binds": false
             },
-            "share": 0.0912
+            "share": 0.091189
           },
           "state3_cap_stiff_bond": {
             "today": {
-              "k": 1.470521,
+              "k": 1.470618,
               "cap_binds": true
             },
             "run_length": {
-              "k": 1.470521,
+              "k": 1.470618,
               "cap_binds": true
             },
             "run_cte": {
-              "k": 1.470521,
+              "k": 1.470618,
               "cap_binds": true
             },
             "sway_alone": {
-              "k": 1.470521,
+              "k": 1.470618,
               "cap_binds": true
             },
-            "share": 0.6489
+            "share": 0.648924
           },
           "state3_cap_soft_bond": {
             "today": {
-              "k": 1.289902,
+              "k": 1.290019,
               "cap_binds": true
             },
             "run_length": {
-              "k": 1.290477,
+              "k": 1.290593,
               "cap_binds": true
             },
             "run_cte": {
-              "k": 1.289902,
+              "k": 1.290019,
               "cap_binds": true
             },
             "sway_alone": {
-              "k": 1.097372,
+              "k": 1.097474,
               "cap_binds": false
             },
-            "share": 0.2969
+            "share": 0.296946
           }
         },
         "Ti-6Al-4V": {
           "state2_at_air_dry_readings_max": {
             "today": {
-              "k": 0.224009,
+              "k": 0.223949,
               "cap_binds": false
             },
             "run_length": {
-              "k": 0.213587,
+              "k": 0.213561,
               "cap_binds": false
             },
             "run_cte": {
-              "k": 0.213161,
+              "k": 0.213136,
               "cap_binds": false
             },
             "sway_alone": {
-              "k": 0.204024,
+              "k": 0.203981,
               "cap_binds": false
             },
-            "share": 0.058
+            "share": 0.057951
           },
           "state3_least_stiff_bond": {
             "today": {
-              "k": 0.336437,
+              "k": 0.336388,
               "cap_binds": false
             },
             "run_length": {
@@ -858,120 +858,120 @@
               "cap_binds": false
             },
             "run_cte": {
-              "k": 0.320145,
+              "k": 0.320146,
               "cap_binds": false
             },
             "sway_alone": {
-              "k": 0.306422,
+              "k": 0.306396,
               "cap_binds": false
             },
-            "share": 0.1966
+            "share": 0.19655
           },
           "state3_least_soft_bond": {
             "today": {
-              "k": 0.184459,
+              "k": 0.184452,
               "cap_binds": false
             },
             "run_length": {
-              "k": 0.175735,
+              "k": 0.175755,
               "cap_binds": false
             },
             "run_cte": {
-              "k": 0.175526,
+              "k": 0.175547,
               "cap_binds": false
             },
             "sway_alone": {
-              "k": 0.168003,
+              "k": 0.168007,
               "cap_binds": false
             },
-            "share": 0.0211
+            "share": 0.021104
           },
           "state2_cap_stiff_bond": {
             "today": {
-              "k": 0.508626,
+              "k": 0.508643,
               "cap_binds": true
             },
             "run_length": {
-              "k": 0.509444,
+              "k": 0.509459,
               "cap_binds": true
             },
             "run_cte": {
-              "k": 0.508626,
+              "k": 0.508643,
               "cap_binds": true
             },
             "sway_alone": {
-              "k": 0.499179,
+              "k": 0.499191,
               "cap_binds": false
             },
-            "share": 0.5928
+            "share": 0.59279
           },
           "state2_cap_soft_bond": {
             "today": {
-              "k": 0.254977,
+              "k": 0.254954,
               "cap_binds": false
             },
             "run_length": {
-              "k": 0.243184,
+              "k": 0.243197,
               "cap_binds": false
             },
             "run_cte": {
-              "k": 0.242629,
+              "k": 0.242644,
               "cap_binds": false
             },
             "sway_alone": {
-              "k": 0.232229,
+              "k": 0.232222,
               "cap_binds": false
             },
-            "share": 0.0912
+            "share": 0.091189
           },
           "state3_cap_stiff_bond": {
             "today": {
-              "k": 0.526215,
+              "k": 0.526243,
               "cap_binds": true
             },
             "run_length": {
-              "k": 0.527034,
+              "k": 0.527061,
               "cap_binds": true
             },
             "run_cte": {
-              "k": 0.526215,
+              "k": 0.526243,
               "cap_binds": true
             },
             "sway_alone": {
-              "k": 0.521044,
+              "k": 0.52107,
               "cap_binds": false
             },
-            "share": 0.6489
+            "share": 0.648924
           },
           "state3_cap_soft_bond": {
             "today": {
-              "k": 0.392738,
+              "k": 0.392774,
               "cap_binds": true
             },
             "run_length": {
-              "k": 0.381476,
+              "k": 0.381542,
               "cap_binds": false
             },
             "run_cte": {
-              "k": 0.380559,
+              "k": 0.380627,
               "cap_binds": false
             },
             "sway_alone": {
-              "k": 0.364247,
+              "k": 0.364279,
               "cap_binds": false
             },
-            "share": 0.2969
+            "share": 0.296946
           }
         }
       }
     }
   },
   "controls": {
-    "pad_travel_vs_102_max_miss_um": 0.00488,
-    "seam_vs_102_103_max_miss": 4.6e-05,
-    "seam_sway_corners_vs_103_max_miss": 0.00019,
+    "pad_travel_vs_102_max_miss_um": 0.0,
+    "seam_vs_102_103_max_miss": 0.0,
+    "seam_sway_corners_vs_103_max_miss": 0.0,
     "residuals_and_l2_step_vs_90_max_miss_um": 0.0,
     "reading": "(a) a drifted input, grip rule, span or temperature; (b) a wrong preload corner or alloy row; (b2) a wrong sway corner or share; (c) a residual read off the wrong member; (e) the closing geometry off 55's relations; (f) 103's CTE convention off this script's — none sees an error 102 or 103 shares"
   },
-  "verdict": "Need on the held reading (the pad's free-sleeve travel over `90`'s isothermal L1 margin, worst grip, temperature and stack): 23.7 µm on the 18 mm span (the Zone-3 fit, shank bonded — 22.9 with it as Ti) and 51.1 on the 32 mm span; where the radome leads, 37.3 and 64.7. On the held + sway reading (`103`'s front, the sway's increment bounded by its shift — an upper end) 24.8 ⊥ 37.8 µm on 18 mm at `87`'s median ⊥ upper-whisker shift (the latter at a share of 0.65, CTE 17.7), 38.4 ⊥ 51.4 with the radome leading too; 51.4 ⊥ 60.4 on 32 mm. Left as is, the stroke leaves the window on both sides on 18 mm — 1.7 % of the stroke past 70 % and 0.6 % under 50 % held, 2.7 ⊥ 2.2 % with the upper-whisker sway. Window side (δ and the seam unchanged; the outer pad lifted too): the bayonet hard-stop (L2) adds 41.0 µm to both margins — on 18 mm spare 17.3 held (spare 3.7 with the radome leading), spare 16.2 ⊥ spare 3.2 with the sway, short 10.4 with both; on 32 mm short 10.1 held. L2 with a 0.05 mm spacer step adds 56.0 — on 18 mm spare 32.3 held, spare 18.2 with the upper-whisker sway, spare 4.6 with the radome leading too — every reading closed on the 14 mm placeholder shank, the worst while the shank stays above about 11.7 mm (the held reading's slope, 2.0 µm per mm, an estimate); on 32 mm spare 4.9 held. A tolerance class holding the CNC member to ±0.05 mm adds what L2 does if the member is machining tolerance; a 0.05 mm step alone adds 8.0 and no step 12.0. A longer stroke, the deck re-spaced to keep 60 % nominal, closes the held need from 1.637 mm on 18 mm (1.778 with the upper-whisker sway) and 1.911 on 32 mm, against the 1.4 mm nominal. δ side (closes the held need only): on 18 mm a gap of 5.6 mm (from 18 — the Zone-3 shank 26.4 mm) or a PEEK-run CTE of 21.5 ppm/K (free PEEK 47; 22.1 if the grade fills the shank's composite too); on 32 mm a PEEK run of 5.8 mm (the shank cut to 4.3) or 16.3 ppm/K. Where the wire–liner pair stays as it is — both CTE routes and the length route on 18 mm — the need fixes the shift per kelvin and with it one hot preload, on Ta 20.9 N; the length route on 32 mm cuts the shank and the liner run with it, landing at 22.3 N — against 35.9 today on 18 mm. `86`'s requirement with no sway 0.547 → 0.467; with `103`'s sway on top, at its least state-3 corner on a stiff bond at least 1.187 → 1.120 (the sway alone 0.931), and at its caps unchanged where the liner wall binds (1.471). On held + sway the sway alone at `103`'s largest share (0.65) swings ±20.3 ⊥ ±41.3 µm on 18 mm — past L1's smaller margin at both shift readings, so there no δ route closes the need by itself. Sensitivity: the placeholder shank at `92`'s 10 ⊥ 18 mm moves the held need on 18 mm to 31.7 ⊥ 16.0 µm. Not priced: the pin's own height — its datasheet's ±0.127 mm on the travel, which, as far as it is the plunger's free length, moves the compression at a fixed gap by as much, past every spare here — has no member in `52`'s chain (HW.8.7)."
+  "verdict": "Need on the held reading (the pad's free-sleeve travel over `90`'s isothermal L1 margin, worst grip, temperature and stack): 23.7 µm on the 18 mm span (the Zone-3 fit, shank bonded — 22.8 with it as Ti) and 51.1 on the 32 mm span; where the radome leads, 37.3 and 64.7. On the held + sway reading (`103`'s front, the sway's increment bounded by its shift — an upper end) 24.7 ⊥ 37.8 µm on 18 mm at `87`'s median ⊥ upper-whisker shift (the latter at a share of 0.65, CTE 17.7), 38.4 ⊥ 51.4 with the radome leading too; 51.4 ⊥ 60.3 on 32 mm. Left as is, the stroke leaves the window on both sides on 18 mm — 1.7 % of the stroke past 70 % and 0.6 % under 50 % held, 2.7 ⊥ 2.2 % with the upper-whisker sway. Window side (δ and the seam unchanged; the outer pad lifted too): the bayonet hard-stop (L2) adds 41.0 µm to both margins — on 18 mm spare 17.3 held (spare 3.7 with the radome leading), spare 16.3 ⊥ spare 3.2 with the sway, short 10.4 with both; on 32 mm short 10.1 held. L2 with a 0.05 mm spacer step adds 56.0 — on 18 mm spare 32.3 held, spare 18.2 with the upper-whisker sway, spare 4.6 with the radome leading too — every reading closed on the 14 mm placeholder shank, the worst while the shank stays above about 11.7 mm (the held reading's slope, 2.0 µm per mm, an estimate); on 32 mm spare 4.9 held. A tolerance class holding the CNC member to ±0.05 mm adds what L2 does if the member is machining tolerance; a 0.05 mm step alone adds 8.0 and no step 12.0. A longer stroke, the deck re-spaced to keep 60 % nominal, closes the held need from 1.637 mm on 18 mm (1.778 with the upper-whisker sway) and 1.911 on 32 mm, against the 1.4 mm nominal. δ side (closes the held need only): on 18 mm a gap of 5.7 mm (from 18 — the Zone-3 shank 26.3 mm) or a PEEK-run CTE of 21.5 ppm/K (free PEEK 47; 22.1 if the grade fills the shank's composite too); on 32 mm a PEEK run of 5.8 mm (the shank cut to 4.3) or 16.4 ppm/K. Where the wire–liner pair stays as it is — both CTE routes and the length route on 18 mm — the need fixes the shift per kelvin and with it one hot preload, on Ta 20.9 N; the length route on 32 mm cuts the shank and the liner run with it, landing at 22.3 N — against 35.9 today on 18 mm. `86`'s requirement with no sway 0.547 → 0.467; with `103`'s sway on top, at its least state-3 corner on a stiff bond at least 1.187 → 1.120 (the sway alone 0.931), and at its caps unchanged where the liner wall binds (1.471). On held + sway the sway alone at `103`'s largest share (0.65) swings ±20.3 ⊥ ±41.3 µm on 18 mm — past L1's smaller margin at both shift readings, so there no δ route closes the need by itself. Sensitivity: the placeholder shank at `92`'s 10 ⊥ 18 mm moves the held need on 18 mm to 31.6 ⊥ 15.9 µm. Not priced: the pin's own height — its datasheet's ±0.127 mm on the travel, which, as far as it is the plunger's free length, moves the compression at a fixed gap by as much, past every spare here — has no member in `52`'s chain (HW.8.7)."
 }

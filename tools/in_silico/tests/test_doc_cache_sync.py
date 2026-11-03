@@ -202,6 +202,11 @@ def _up2(x: float) -> float:
 def _down2(x: float) -> float:
     """A floor «SF drops to X» rounded DOWN to the doc's two decimals (in-silico §When Modifying #43)."""
     return math.floor(x * 100 + 1e-9) / 100
+
+
+def _up4(x: float) -> float:
+    """A requirement «k ≥ X» rounded UP to the doc's four decimals (in-silico §When Modifying #43)."""
+    return math.ceil(round(x * 1e4, 9)) / 1e4
 NSCI =rf"([{_DASHES}\-]?[\d.]+(?:×10[{_SUP_MINUS}]?[{_SUP}]+)?)"
 CHECKS = [
     # ── PRIMARY: the provenance-mix the guard exists to catch ──
@@ -1906,10 +1911,11 @@ CHECKS += [
            lambda d: _up2(_wbl(d)["by_alloy"]["Ta"]["seam_k_at_route_capacity"]), 0),
           ("wire SF at the ceiling, Ta", rf"SF дроту на Ta падає з [\d.]+ до \*\*{N}\*\*",
            lambda d: _down2(_wbl(d)["by_alloy"]["Ta"]["sf_wire_at_route_capacity"]), 0),
-          ("Ti-15Zr tight branch at the ceiling", rf"тугою гілкою \(\*\*{N}\*\*\)",
-           lambda d: _wbl(d)["by_alloy"]["Ti-15Zr"]["seam_k_at_route_capacity_by_branch"]["tight"], 0.00005),
-          ("Ti-15Zr ⌀0.10 at the ceiling", rf"і ⌀0\.10 \(\*\*{N}\*\*\)",
-           lambda d: _wbl(d)["by_alloy"]["Ti-15Zr"]["seam_k_at_route_capacity_by_branch"]["loose_50"], 0.00005))],
+          # the ⊕ of 2026-10-17 keeps its preserved 0.4885 · 0.5041 (00_05 §7, Маркес) — these read the dated ⊕ after it
+          ("Ti-15Zr tight branch at the ceiling", rf"; ⊕ 2026-11-03: \*\*{N}\*\* і \*\*[\d.]+\*\* — вимога",
+           lambda d: _up4(_wbl(d)["by_alloy"]["Ti-15Zr"]["seam_k_at_route_capacity_by_branch"]["tight"]), 0),
+          ("Ti-15Zr ⌀0.10 at the ceiling", rf"; ⊕ 2026-11-03: \*\*[\d.]+\*\* і \*\*{N}\*\* — вимога",
+           lambda d: _up4(_wbl(d)["by_alloy"]["Ti-15Zr"]["seam_k_at_route_capacity_by_branch"]["loose_50"]), 0))],
     ("pogo sway transfer, NOS displacement in the 01_02 bench table → pogo_sway_transfer.json",
      "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"сягає до [\d.]+–{N} мм", "mechanical/pogo_sway_transfer.json",
      lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"], 0.5),
@@ -1998,7 +2004,7 @@ CHECKS += [
           ("SUMMARY force-controlled wall", SUMMARY, rf"a\n?\*\*{N}\*\* mm wall with a zero force band",
            lambda d: d ["by_squeeze_point"]["window_top"]["force_controlled_wall_mm_zero_band"], 0.005),
           ("SUMMARY spring stiffness", SUMMARY, rf"no stiffer than \*\*{N}\*\* N/µm",
-           lambda d: d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["k_spring_max_N_per_um_zero_tolerance"], 0.006),
+           lambda d: _down2(d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["k_spring_max_N_per_um_zero_tolerance"]), 0),
           ("SUMMARY spring deflection", SUMMARY, rf"≈ \*\*{N}\*\* mm of working deflection",
            lambda d: d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["working_deflection_mm_at_band_centre"], 0.05),
           ("SUMMARY force band", SUMMARY, rf"fits ±\*\*{N}\*\* %",
@@ -2021,7 +2027,7 @@ CHECKS += [
           ("02_02 §4.4 force-controlled wall", BLIND_MATE, rf"стінка \*\*{N} мм\*\* за нульової смуги",
            lambda d: d ["by_squeeze_point"]["window_top"]["force_controlled_wall_mm_zero_band"], 0.005),
           ("02_02 §4.4 spring stiffness", BLIND_MATE, rf"пружині треба k ≤ \*\*{N} Н/мкм\*\*",
-           lambda d: d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["k_spring_max_N_per_um_zero_tolerance"], 0.006),
+           lambda d: _down2(d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["k_spring_max_N_per_um_zero_tolerance"]), 0),
           ("02_02 §4.4 contact p0 top", BLIND_MATE, rf"на верху вікна він дає \*\*{N} МПа\*\*",
            lambda d: d ["by_squeeze_point"]["window_top"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]["socket_pocket_minus_clearance"], 0.5))],
     # ── HW.33 · HW.43 the O-ring's own reaction — Parker Figure 2-4 + Table 2-3 over 52's window (script 88, 2026-10-13) ──
@@ -3719,7 +3725,7 @@ CHECKS += [
     ("HW.37 · 02_03 aging T_eff sunlit, high end → capsule_envelope.json",
      POWER, rf"у тіні й \*\*[\d.]+–{N} °C\*\* на сонці", THERMAL, _aging_span("sunlit", "t_eff_c", max), 0.05),
     ("HW.37 · 02_03 life in open air, conservative → capsule_envelope.json",
-     POWER, rf"строк у повітрі — \*\*{N}–[\d.]+ року\*\*", THERMAL,
+     POWER, rf"\(⊕ 2026-11-03: \*\*{N}\*\*–[\d.]+ на сирому T_eff", THERMAL,     # the measurement appended to the derate verdict keeps its 19.1 (00_05 §7)
      lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["conservative_yr"], 0.05),
     ("HW.37 · 02_03 life in open air, optimistic → capsule_envelope.json",
      POWER, rf"строк у повітрі — \*\*[\d.]+–{N} року\*\*", THERMAL,
@@ -6312,12 +6318,12 @@ CHECKS += [
      lambda d: math.floor(d["readings"]["state3"]["cold"]["holds_only_deeper_than_mm"] * 10) / 10, 0.0),
     ("share s3 hot depth → 103", SUMMARY, rf"deeper than [\d.]+ mm \(cold\) ⊥ {N}\s+mm \(hot\)", SHARE,
      lambda d: math.floor(d["readings"]["state3"]["hot"]["holds_only_deeper_than_mm"] * 10) / 10, 0.0),
-    ("share annulus → 103", SUMMARY, rf"\(A = {N} mm²\)", SHARE, lambda d: d["geometry"]["flange_annulus_mm2"], 0.0),
+    ("share annulus → 103", SUMMARY, rf"\(A = {N} mm²\)", SHARE, lambda d: round(d["geometry"]["flange_annulus_mm2"], 1), 0.0),
     ("share bark E low → 103", SUMMARY, rf"readings — {N} MPa \(giant", SHARE, lambda d: d["inputs"]["E_bark_radial_MPa_air_dry"]["sequoia_whole_bark_air_dry"], 0.0),
     ("share bark E mid → 103", SUMMARY, rf"whole bark\) and\s+{N} MPa \(\*P\. taeda\*", SHARE, lambda d: d["inputs"]["E_bark_radial_MPa_air_dry"]["p_taeda_outer_bark_air_dry"], 0.0),
     ("share read kF low → 103", SUMMARY, rf"give {N} – [\d.]+ N/mm and bound", SHARE, lambda d: math.floor(min(d["stiffness_N_per_mm"]["bark_bearing_at_air_dry_readings"].values())), 0.0),
     ("share read kF high → 103", SUMMARY, rf"give [\d.]+ – {N} N/mm and bound", SHARE, lambda d: math.ceil(max(d["stiffness_N_per_mm"]["bark_bearing_at_air_dry_readings"].values())), 0.0),
-    ("share Ta state1 → 103", SUMMARY, rf"corner needs {N} on the sway alone in state 1", SHARE, lambda d: d["seam_on_102_closed_form"]["Ta"]["state1"]["sway"], 0.0),
+    ("share Ta state1 → 103", SUMMARY, rf"corner needs {N} on the sway alone in state 1", SHARE, lambda d: round(d["seam_on_102_closed_form"]["Ta"]["state1"]["sway"], 4), 0.0),
     ("share Ta state1 preload → 103", SUMMARY, rf"state 1 and {N} with `102`'s seasonal", SHARE, lambda d: _up2(d["seam_on_102_closed_form"]["Ta"]["state1"]["hot_preload"]), 0.0),
     ("share Ta state2 sway → 103", SUMMARY, rf"up\s+to {N} on the sway alone and up to", SHARE,
      lambda d: _up2(d["seam_on_102_closed_form"]["Ta"]["state2_at_air_dry_readings_max"]["adverse_reversed"]), 0.0),
@@ -6631,9 +6637,9 @@ CHECKS += [
     ("104 cte both → 104", SUMMARY, r"ppm/K \(" + N + r" if the grade fills", REMEDY, lambda d: _d1(_rs(d, "18")["run_cte"]["cte_ppm_K_closing_grade_in_the_shank_composite_too"]), 0.0),
     ("104 cte 32 → 104", SUMMARY, r"\| ≤ " + N + r" ppm/K — held only \|", REMEDY, lambda d: _d1(_rs(d, "32")["run_cte"]["cte_ppm_K_closing"]), 0.0),
     ("104 outer L1 → 90", SUMMARY, r"radome-leading upper margin from " + N + r" µm to", _P90,
-     lambda d: d["seasonal"]["model_edges"]["radome_leads_reading"]["window"]["L1 spacer only"]["margin_um"][1], 0.0),
+     lambda d: round(d["seasonal"]["model_edges"]["radome_leads_reading"]["window"]["L1 spacer only"]["margin_um"][1], 1), 0.0),
     ("104 outer L2 → 90", SUMMARY, r"upper margin from \S+ µm to " + N + r"\)", _P90,
-     lambda d: d["seasonal"]["model_edges"]["radome_leads_reading"]["window"]["L2 spacer + bayonet hard-stop"]["margin_um"][1], 0.0),
+     lambda d: round(d["seasonal"]["model_edges"]["radome_leads_reading"]["window"]["L2 spacer + bayonet hard-stop"]["margin_um"][1], 1), 0.0),
     ("104 recentring lo → 90", SUMMARY, r"at today's gap " + N + r" ⊥", _P90, lambda d: -d["inputs"]["window"][0], 0.0),
     ("104 recentring hi → 90", SUMMARY, r"at today's gap \S+ ⊥ \+" + N + r" µm per µm", _P90, lambda d: d["inputs"]["window"][1], 0.0),
     ("104 F same → 104", SUMMARY, r"one hot preload, " + N + r" N on Ta;", REMEDY, lambda d: _u1(_f_same(d)), 0.0),
@@ -6681,7 +6687,8 @@ CHECKS += [
     ("104 P corner route → 104", PIPELINE, r"corner at least\s+[\d.]+ → " + N + r", past k 1", REMEDY, lambda d: _u3(max(_c3(d)["run_length"]["k"], _c3(d)["run_cte"]["k"])), 0.0),
     # 02_02 §3.5 ⊕ 2026-10-21
     ("104 B held → 104", BLIND_MATE, r"запас L1 на " + N + r" мкм утримуваним", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_isothermal_worst"]), 0.0),
-    ("104 B med → 104", BLIND_MATE, r"утримуваним і на\s+" + N + r" ⊥", REMEDY, lambda d: _u1(_hs(d, "18", "median")), 0.0),
+    # the 2026-10-21 machine half is the submission the ⚖️ ratified — its numbers stay (00_05 §7); these read the ⊕ beside it
+    ("104 B med → 104", BLIND_MATE, r"гойдання з медіаною зсуву дає " + N + r", зазор", REMEDY, lambda d: _u1(_hs(d, "18", "median")), 0.0),
     ("104 B uw → 104", BLIND_MATE, r"утримуваним і на\s+[\d.]+ ⊥ " + N + r" з гойданням", REMEDY, lambda d: _u1(_hs(d, "18", "upper_whisker")), 0.0),
     ("104 B 32 → 104", BLIND_MATE, r"на 32-мм плейсхолдері — на " + N + r" утримуваним", REMEDY, lambda d: _u1(_rs(d, "32")["need_um_isothermal_worst"]), 0.0),
     ("104 B L2 → 104", BLIND_MATE, r"навпіл: \+" + N + r" мкм до обох", REMEDY, lambda d: _d1(d["window_side_gain_um"][_L2]), 0.0),
@@ -6697,14 +6704,14 @@ CHECKS += [
     ("104 B leads+sway → 104", BLIND_MATE, r"; " + N + r", коли ще й радом випереджає\)", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_held_plus_sway_radome_leads"]["upper_whisker"]["need"]), 0.0),
     ("104 B stroke → 104", BLIND_MATE, r"хід від " + N + r" ⊥", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held")), 0.0),
     ("104 B stroke uw → 104", BLIND_MATE, r"хід від [\d.]+ ⊥ " + N + r" мм", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_upper_whisker")), 0.0),
-    ("104 B gap → 104", BLIND_MATE, r"зазор ≤ " + N + r" мм \(хвостовик", REMEDY, lambda d: _d1(_rs(d, "18")["run_length"]["gap_mm_closing"]), 0.0),
-    ("104 B shank → 104", BLIND_MATE, r"хвостовик Zone 3 ≥ " + N + r"\s+мм — нижче", REMEDY, lambda d: _u1(_rs(d, "18")["run_length"]["shank_mm_closing"]), 0.0),
+    ("104 B gap → 104", BLIND_MATE, r"зазор сам δ ≤ " + N + r" мм, хвостовик", REMEDY, lambda d: _d1(_rs(d, "18")["run_length"]["gap_mm_closing"]), 0.0),
+    ("104 B shank → 104", BLIND_MATE, r"хвостовик\s+Zone 3 ≥ " + N + r" мм, хвостовик 10 мм", REMEDY, lambda d: _u1(_rs(d, "18")["run_length"]["shank_mm_closing"]), 0.0),
     ("104 B cte → 104", BLIND_MATE, r"або КТР\s+PEEK у прогоні ≤ " + N + r" ppm/K", REMEDY, lambda d: _d1(_rs(d, "18")["run_cte"]["cte_ppm_K_closing"]), 0.0),
     ("104 B F lo → 104", BLIND_MATE, r"приземляються на " + N + r"–", REMEDY, lambda d: _u1(_f_same(d)), 0.0),
     ("104 B F hi → 104", BLIND_MATE, r"приземляються на [\d.]+–" + N + r" Н", REMEDY, lambda d: _u1(_ta(d, "32", "run_length")["F_hot_N"]), 0.0),
     ("104 B F today → 104", BLIND_MATE, r"на Ta замість " + N + r", але", REMEDY, lambda d: _u1(_ta(d, "18", "today")["F_hot_N"]), 0.0),
     ("104 B alone → 104", BLIND_MATE, r"саме гойдання вже просить " + N + r",", REMEDY, lambda d: _u3(_c3(d)["sway_alone"]["k"]), 0.0),
-    ("104 B shank 10 → 104", BLIND_MATE, r"на 10 мм піднімає утримувану потребу до " + N + r"\s+мкм", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_by_placeholder_shank"]["10"]), 0.0),
+    ("104 B shank 10 → 104", BLIND_MATE, r"хвостовик 10 мм — " + N + r" мкм; присуду", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_by_placeholder_shank"]["10"]), 0.0),
     ("104 B pin tol → 104", BLIND_MATE, r"— допуск ходу ±" + N + r" мм, наскільки він вихід плунжера, перекриває кожен резерв тут", REMEDY,
      lambda d: round(_st(d, "18", "pin_travel_tolerance_mm_not_in_52_chain"), 3), 0.0),
     # the verdict's full form (⚖️ founder 2026-10-21) in the same paragraph
@@ -6720,7 +6727,8 @@ CHECKS += [
     ("104 V a both → 104", BLIND_MATE, r"випередженням радома бракує " + N + r"; \(в\)", REMEDY, lambda d: _u1(-_sp(d, "18", _L2, "spare_um_held_plus_sway_upper_whisker_radome_leads")), 0.0),
     ("104 V c uw → 104", BLIND_MATE, r"довший хід — від " + N + r" мм \(", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_upper_whisker")), 0.0),
     ("104 V c both → 104", BLIND_MATE, r"мм \(" + N + r" у\s+найгіршому куті\)", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_upper_whisker_radome_leads")), 0.0),
-    ("104 V g gap → 104", BLIND_MATE, r"коротший PEEK — зазор ≤ " + N + r" мм, нижче розриву", REMEDY, lambda d: _d1(_rs(d, "18")["run_length"]["gap_mm_closing"]), 0.0),
+    # the ratified block keeps its preserved 5.6 (00_05 §7, Маркес) — the pin reads the dated ⊕ beside it
+    ("104 V g gap → 104", BLIND_MATE, r"\(⊕ 2026-11-03: " + N + r" на сирих входах `104`", REMEDY, lambda d: _d1(_rs(d, "18")["run_length"]["gap_mm_closing"]), 0.0),
 ]
 
 
@@ -6754,7 +6762,7 @@ CHECKS += [
     *[(f"shear {key} col {j} → 102", SUMMARY, _shear_row(label, j), SHEAR, res, 0.0)
       for label, key in _SHEAR_ROWS
       for j, res in enumerate((
-          (lambda k: lambda d: d["seam_by_alloy"][k]["seam_k_86"])(key),
+          (lambda k: lambda d: round(d["seam_by_alloy"][k]["seam_k_86"], 4))(key),
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["0.25"]["gentle_one_sided"]["seam_k"]))(key),
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["1"]["gentle_one_sided"]["seam_k"]))(key),
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["0.25"]["seam_k_adverse_sway"]))(key),
@@ -6816,14 +6824,14 @@ CHECKS += [
      lambda d: math.floor(round(min(v["hot"]["pad_recedes_um"] for k, v in d["thermal"]["by_reading"].items() if "__window_floor__" in k) * 10, 9)) / 10, 0.0),
     ("shear hot floor high → 102", SUMMARY, rf"pad\s+recedes\s+[\d.]+\s+–\s+{N}\s+µm\s+against", SHEAR,
      lambda d: math.ceil(round(max(v["hot"]["pad_recedes_um"] for k, v in d["thermal"]["by_reading"].items() if "__window_floor__" in k) * 10, 9)) / 10, 0.0),
-    ("shear L1 lower small → 102", SUMMARY, rf"against\s+{N}\s+–\s+[\d.]+\s+µm\s+to\s+the\s+lower\s+edge", SHEAR, lambda d: d["thermal"]["l1_margin_to_lower_edge_min_um"], 0.0),
+    ("shear L1 lower small → 102", SUMMARY, rf"against\s+{N}\s+–\s+[\d.]+\s+µm\s+to\s+the\s+lower\s+edge", SHEAR, lambda d: round(d["thermal"]["l1_margin_to_lower_edge_min_um"], 1), 0.0),
     ("shear L1 lower large → 102", SUMMARY, rf"against\s+[\d.]+\s+–\s+{N}\s+µm\s+to\s+the\s+lower\s+edge", SHEAR,
-     lambda d: max(m[0] for m in d["thermal"]["l1_margin_um_90_model_edges"].values()), 0.0),
+     lambda d: round(max(m[0] for m in d["thermal"]["l1_margin_um_90_model_edges"].values()), 1), 0.0),
     ("shear cold min → 102", SUMMARY, rf"protrudes\s+at\s+least\s+{N}\s+µm\s+on\s+every\s+part", SHEAR,
      lambda d: math.floor(round(d["thermal"]["against_l1"]["cold_min_protrusion_um"] * 10, 9)) / 10, 0.0),
-    ("shear L1 upper small → 102", SUMMARY, rf"upper\s+edge\s+of\s+{N}\s+–\s+[\d.]+\s+µm", SHEAR, lambda d: d["thermal"]["l1_margin_to_upper_edge_min_um"], 0.0),
+    ("shear L1 upper small → 102", SUMMARY, rf"upper\s+edge\s+of\s+{N}\s+–\s+[\d.]+\s+µm", SHEAR, lambda d: round(d["thermal"]["l1_margin_to_upper_edge_min_um"], 1), 0.0),
     ("shear L1 upper large → 102", SUMMARY, rf"upper\s+edge\s+of\s+[\d.]+\s+–\s+{N}\s+µm", SHEAR,
-     lambda d: max(m[1] for m in d["thermal"]["l1_margin_um_90_model_edges"].values()), 0.0),
+     lambda d: round(max(m[1] for m in d["thermal"]["l1_margin_um_90_model_edges"].values()), 1), 0.0),
 ]
 
 
@@ -9813,9 +9821,9 @@ _PVW_ROWS = (("one package in the crown", "one_package_in_the_crown_KXOB25-07X1T
 _B = ("by_alpha_cell", "1.00")
 _PVW_COLS = ((("area_cm2",), None, 0.005), ((*_B, "alpha_beam"), 3, 0.0), ((*_B, "alpha_diffuse"), 3, 0.0),
              ((*_B, "sunlit_nominal", "t_cap_max_c"), None, 0.0), ((*_B, "sunlit_h_c_x0_7", "t_cap_max_c"), None, 0.0),
-             ((*_B, "sunlit_nominal", "cambium_thin", "cambium_max_C"), None, 0.0),
+             ((*_B, "sunlit_nominal", "cambium_thin", "cambium_max_C"), 2, 0.0),
              ((*_B, "sunlit_nominal", "cambium_thin", "hours_above_gate"), None, 0.0),
-             ((*_B, "sunlit_h_c_x0_7", "cambium_thin", "cambium_max_C"), None, 0.0),
+             ((*_B, "sunlit_h_c_x0_7", "cambium_thin", "cambium_max_C"), 2, 0.0),
              ((*_B, "sunlit_h_c_x0_7", "cambium_thin", "hours_above_gate"), None, 0.0))
 
 
@@ -9852,7 +9860,7 @@ def _pvw_cross(ac, hk):
 
 
 def _pvw_bare(hk):
-    return lambda d: d["crossing_worst_cell_thin_sunlit_still"]["1.00"][hk]["cambium_max_C_at_no_window"]
+    return lambda d: round(d["crossing_worst_cell_thin_sunlit_still"]["1.00"][hk]["cambium_max_C_at_no_window"], 2)   # cached unrounded
 
 
 def _pvw_outline_headroom(d):
@@ -9866,9 +9874,9 @@ CHECKS += [
        _pvw_get(key, _PVW_COLS[j][0], _PVW_COLS[j][1]), _PVW_COLS[j][2])
       for label, key, kind in _PVW_ROWS for j in range(9)],
     ("PV window plumbing no window → 111", SUMMARY, rf"no window reproduces `71`'s α 0\.50 row \({N} °C\)", PVW,
-     lambda d: d["controls"]["plumbing_capsule_no_window_c"], 0.0),
+     lambda d: round(d["controls"]["plumbing_capsule_no_window_c"], 1), 0.0),
     ("PV window plumbing no window h_c x0.7 → 111", SUMMARY, rf"reproduces `71`'s cached sensitivity row \({N} °C\)", PVW,
-     lambda d: d["controls"]["plumbing_capsule_no_window_low_h_c_c"], 0.0),
+     lambda d: round(d["controls"]["plumbing_capsule_no_window_low_h_c_c"], 1), 0.0),
     ("PV window hottest capsule → 111", SUMMARY, rf"the hottest hour is {N} °C, [\d.]+ °C with h_c × 0\.7", PVW,
      _pvw_hottest("sunlit_nominal"), 0.0),
     ("PV window hottest capsule h_c x0.7 → 111", SUMMARY, rf"the hottest hour is [\d.]+ °C, {N} °C with h_c × 0\.7", PVW,

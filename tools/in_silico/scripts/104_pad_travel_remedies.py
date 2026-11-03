@@ -261,7 +261,7 @@ def main() -> int:
         for key, v in travel(sp, gap0, ALPHA_PEEK_1K, shank_bonded=False, grips=GRIPS_102).items():
             row = d102["thermal"]["by_reading"][f"{sname}__{key}"]
             miss_a = max(miss_a, abs(v["cold"] - row["cold"]["pad_protrudes_um"]), abs(v["hot"] - row["hot"]["pad_recedes_um"]))
-    if miss_a > 0.006:
+    if miss_a > 1e-9:                     # 102 caches the travel unrounded: the rebuilt pair reproduces it exactly
         raise RuntimeError(f"control (a): the rebuilt pair misses `102`'s cached pad travel by {miss_a:.4f} µm")
 
     # ── the seam: `102`'s hot preload corner (the tightest part at μ max, relaxed liner, the capsule's hot edge) ──
@@ -302,7 +302,7 @@ def main() -> int:
                                  - d102["seam_by_alloy"][alloy]["by_share"]["0"]["seam_k_adverse_with_preload"]),
                      abs(preload(alloy, "18", gap0, ALPHA_PEEK_1K)["seam_k_no_sway"]
                          - d103["zone3_fit"]["seam_on_102_closed_form"][alloy]["state1"]["hot_preload"]))
-    if miss_b > 2e-4:
+    if miss_b > 1e-9:                     # both caches carry the seam unrounded
         raise RuntimeError(f"control (b): the seam misses `102`/`103`'s cached requirement by {miss_b:.5f}")
     sh3 = d103["zone3_fit"]["share"]
     corners = {"state2_at_air_dry_readings_max": sh3["state2_at_air_dry_readings"]["max"],
@@ -312,7 +312,7 @@ def main() -> int:
                "state2_cap_soft_bond": sh3["state2_cap_rigid_bark"]["anode_bond_soft"],
                "state3_cap_stiff_bond": sh3["state3_cap_rigid_bark_of_102_shift"]["anode_bond_stiff"],
                "state3_cap_soft_bond": sh3["state3_cap_rigid_bark_of_102_shift"]["anode_bond_soft"]}
-    # control (b2): today's least corners re-derive `103`'s cached ones (its shares are rounded to 1e-4)
+    # control (b2): today's least corners re-derive `103`'s cached ones (shares and requirements both unrounded)
     z3 = d103["zone3_fit"]["seam_on_102_closed_form"]
     miss_b2 = 0.0
     for alloy in ("Ta", ALLOY_BASELINE):
@@ -322,7 +322,7 @@ def main() -> int:
                              ("state3_least_soft_bond", z3[alloy]["state3_least_any_depth_and_bearing"]["anode_bond_soft"])):
             miss_b2 = max(miss_b2, abs(seam_sway(alloy, corners[name], 0.0, gap0)["k"] - cached["adverse_reversed"]),
                           abs(seam_sway(alloy, corners[name], pre, gap0)["k"] - cached["adverse_reversed_hot_preload"]))
-    if miss_b2 > 2e-3:
+    if miss_b2 > 1e-9:
         raise RuntimeError(f"control (b2): the sway corners miss `103`'s cached requirement by {miss_b2:.4f}")
 
     # ── the window side: `90`'s margins on `52`'s residuals as `52` caches them ──
@@ -344,7 +344,7 @@ def main() -> int:
     miss_c = max(abs(ceil3(s52.rss([cnc, half_step])) - res90["L1 spacer only"]) * 1e3,
                  abs(residual[L2] - res90["L2 spacer + bayonet hard-stop"]) * 1e3, abs(residual[L2FINE] - res90[L3_90]) * 1e3,
                  *(abs(s - gain[L2]) for s in l2_step), *(abs(s - gain[L2FINE]) for s in l3_step))
-    if miss_c > 0.05 + 1e-9:
+    if miss_c > 1e-9:                     # 90 caches its margins unrounded
         raise RuntimeError(f"control (c): `52`'s residual rule misses `90`'s residuals or L2 step by {miss_c:.3f} µm")
 
     l1 = {s: tuple(win90[s]["window"]["L1 spacer only"]["margin_um"]) for s in STACKS}

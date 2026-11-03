@@ -244,11 +244,13 @@ def main() -> int:
             for k in WIND_K:
                 t_cap = solve_t_cap(h["t_air"], q, a_exp, d_m, k * h["u10"])
                 i = int(np.argmax(t_cap))
+                # unrounded: 89 computes from the hottest hour, this script's verdict from its differences and margins
+                # (in-silico §When Modifying #6)
                 hot[case][f"{alpha:.2f}"][f"{k:.1f}"] = {
-                    "t_cap_max_c": round(float(t_cap[i]), 1),
+                    "t_cap_max_c": float(t_cap[i]),
                     "at": str(h["time"][i]),
                     "t_air_c": float(h["t_air"][i]),
-                    "margin_to_rating_k": round(EDLC_OPERATING_MAX_C - float(t_cap[i]), 1),
+                    "margin_to_rating_k": EDLC_OPERATING_MAX_C - float(t_cap[i]),
                 }
     worst = hot["sunlit"][f"{ALPHA_EDGES[1]:.2f}"]["0.0"]
     lightest = hot["sunlit"][f"{ALPHA_EDGES[0]:.2f}"]["0.0"]
@@ -259,8 +261,8 @@ def main() -> int:
         q = alpha * (h["dni"] * a_proj + SKY_VIEW * h["dif"] * a_exp)
         t_cap = solve_t_cap(h["t_air"], q, a_exp, d_m, 0.0, h_c_scale=H_C_SENSITIVITY)
         i = int(np.argmax(t_cap))
-        sens[f"{alpha:.2f}"] = {"t_cap_max_c": round(float(t_cap[i]), 1), "at": str(h["time"][i]),
-                                "margin_to_rating_k": round(EDLC_OPERATING_MAX_C - float(t_cap[i]), 1)}
+        sens[f"{alpha:.2f}"] = {"t_cap_max_c": float(t_cap[i]), "at": str(h["time"][i]),
+                                "margin_to_rating_k": EDLC_OPERATING_MAX_C - float(t_cap[i])}
     sens_worst = sens[f"{ALPHA_EDGES[1]:.2f}"]
     print("\n  1. Hottest hour of the capsule (still air = the bound; adiabatic base):")
     for case in ("sunlit", "shaded"):
@@ -274,14 +276,15 @@ def main() -> int:
 
     # ── 2. the temperature the EDLC ages at (vendor doubling rule), and its life at the ratified VBAT_OV ──
     kernel = load_capacitor_kernel()
-    aging = {"air": {"t_eff_c": round(t_eff_doubling(h["t_air"]), 2), "mean_c": round(float(h["t_air"].mean()), 2)}}
+    # t_eff unrounded: the life below is computed from it (in-silico §When Modifying #6)
+    aging = {"air": {"t_eff_c": t_eff_doubling(h["t_air"]), "mean_c": round(float(h["t_air"].mean()), 2)}}
     for case, beam in (("shaded", 0.0), ("sunlit", 1.0)):
         for alpha in ALPHA_EDGES:
             for k in (0.0, WIND_K_TYPICAL):
                 q = alpha * (beam * h["dni"] * a_proj + SKY_VIEW * h["dif"] * a_exp)
                 t_cap = solve_t_cap(h["t_air"], q, a_exp, d_m, k * h["u10"])
                 aging[f"{case}_alpha{alpha:.2f}_k{k:.1f}"] = {
-                    "t_eff_c": round(t_eff_doubling(t_cap), 2),
+                    "t_eff_c": t_eff_doubling(t_cap),
                     "mean_c": round(float(t_cap.mean()), 2),
                     "hours_above_60c": int((t_cap > 60.0).sum()),
                 }

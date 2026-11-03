@@ -200,12 +200,12 @@ def main() -> int:
     if sens["h_c_scale"] != S71.H_C_SENSITIVITY:
         raise SystemExit(f"71's cached h_c sensitivity is × {sens['h_c_scale']}, its code says × {S71.H_C_SENSITIVITY}")
     want_l = sens["sunlit_still_air"][f"{ALPHA_R:.2f}"]["t_cap_max_c"]
-    got_r, got_u, got_l = (round(float(cols[i].max()), 1) for i in (0, 1, 2))
-    if abs(got_r - want_r) > 0.05 or abs(got_u - want_u) > 0.05 or abs(got_l - want_l) > 0.05:
+    got_r, got_u, got_l = (float(cols[i].max()) for i in (0, 1, 2))
+    if abs(got_r - want_r) > 1e-9 or abs(got_u - want_u) > 1e-9 or abs(got_l - want_l) > 1e-9:   # 71 caches them unrounded
         raise SystemExit(f"capsule identity failed: no window {got_r} vs 71's {want_r}; uniform {got_u} vs {want_u}; "
                          f"no window at h_c × {S71.H_C_SENSITIVITY} {got_l} vs {want_l}")
-    print(f"  plumbing identities on 71: no window {got_r} °C (cache {want_r}) · uniform α {UNIFORM_CONTROL_ALPHA:.2f} "
-          f"{got_u} °C (cache {want_u}) · no window at h_c × {S71.H_C_SENSITIVITY} {got_l} °C (cache {want_l})")
+    print(f"  plumbing identities on 71: no window {got_r:.1f} °C (cache {want_r:.1f}) · uniform α {UNIFORM_CONTROL_ALPHA:.2f} "
+          f"{got_u:.1f} °C (cache {want_u:.1f}) · no window at h_c × {S71.H_C_SENSITIVITY} {got_l:.1f} °C (cache {want_l:.1f})")
 
     # ── the cambium: 78's column — every column on the thin side, the non-grid ones on the thick side too ────────────
     cam_thin = S78.run(np.column_stack(cols), S78.layers(bark["thin_mm"]), bark["thin_mm"] + S78.S58.T_PHLOEM,
@@ -219,8 +219,8 @@ def main() -> int:
                     == ("sunlit", alpha, STILL, side))
     for col, alpha in ((0, ALPHA_R), (1, UNIFORM_CONTROL_ALPHA)):
         for side in cam:
-            got, want = round(float(cam[side][:, col].max()), 2), c78_cell(alpha, side)["cambium_max_C"]
-            if abs(got - want) > 0.005:
+            got, want = float(cam[side][:, col].max()), c78_cell(alpha, side)["cambium_max_C"]
+            if abs(got - want) > 1e-9:                     # 78 caches it unrounded
                 raise SystemExit(f"cambium identity failed ({side}, α {alpha}): {got} vs 78's {want}")
     print("  plumbing identities on 78: both bark sides reproduce its cached cambium maxima at α "
           f"{ALPHA_R:.2f} and {UNIFORM_CONTROL_ALPHA:.2f}")
@@ -259,7 +259,7 @@ def main() -> int:
             "largest_dark_aperture_under_gate_cm2": None if x is None else math.floor(x) / 100.0,
             "crossing_interpolated_mm2": x,
             "is_nowhere_on_the_crown": x is None, "is_already_at_no_window": x == xs[0],
-            "cambium_max_C_at_no_window": round(ys[0], 2)}
+            "cambium_max_C_at_no_window": ys[0]}          # unrounded, as 78 caches the same quantity
 
     # ── the verdict, from the data ───────────────────────────────────────────────────────────────────────────────────
     def cell(name, ac, key):

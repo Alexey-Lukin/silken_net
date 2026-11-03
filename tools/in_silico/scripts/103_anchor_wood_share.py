@@ -317,6 +317,12 @@ def main() -> int:
         e_up, e_lo = (sl.free(0.0, d_t), sl.free(d_t, span)) if load == "slow" else (0.0, 0.0)
         x0, _, x2 = tridiag3(k_f + k_up, -k_up, -k_up, k_up + k_lo + k_t, -k_lo, -k_lo, k_lo + ka,
                              (-k_up * e_up, k_t * w_t + k_up * e_up - k_lo * e_lo, ka * w_a + k_lo * e_lo))
+        if k_f == 0.0 and k_t == 0.0:
+            # hung from the anode bond alone: no force in the sleeve, each segment at its free length — the degenerate
+            # root returned exactly, the elimination held to it (in-silico §When Modifying #32)
+            if abs((x2 - x0) - (e_up + e_lo)) > 1e-12:
+                raise RuntimeError(f"control: the free chain stretches {x2 - x0} against its free length {e_up + e_lo}")
+            return e_up + e_lo
         return x2 - x0
 
     def share(sl: Sleeve, k_f: float, k_t: float, ka: float, d_t: float, dv: float) -> float:
@@ -457,7 +463,7 @@ def main() -> int:
             for c102, c103 in grid_corner.items():
                 ctrl_miss = max(ctrl_miss, abs(seam_k(alloy, float(sh), c103) - g["adverse"][c102]["seam_k"]))
             ctrl_miss = max(ctrl_miss, abs(seam_k(alloy, float(sh), "gentle") - g["gentle_one_sided"]["seam_k"]))
-    if ctrl_miss > 2e-4:
+    if ctrl_miss > 1e-9:                     # both sides unrounded, on the same inputs: the closed form reproduces it exactly
         raise RuntimeError(f"control: the seam function misses `102`'s cached grid by {ctrl_miss}")
 
     # control: the pad's travel on `102`'s Pair never falls as the shift grows — every cached grip (and a decade either
@@ -507,9 +513,13 @@ def main() -> int:
             if name.startswith("ta_k1_"):
                 corner = "adverse_reversed_hot_preload" if name.endswith("hot_preload") else "adverse_reversed"
                 return seam_k("Ta", share(sl, k_f, k_t, ka, d_t, dv) * dv / dv_ceil, corner, premise) - 1.0
-            return float(name.split("_")[2]) - a_eff(sl, k_f, k_t, ka, d_t, dv)
-        names = ([f"share_{row:g}" for row in SHARE_ROWS] + ["ta_k1_sway_alone", "ta_k1_hot_preload"]
-                 + [f"hot_flip_{x:g}" for x in hot_thr] + [f"cold_flip_{x:g}" for x in cold_thr])
+            return flip_cte[name] - a_eff(sl, k_f, k_t, ka, d_t, dv)
+        # a flip's name is a LABEL of `102`'s threshold; the threshold itself rides beside it, never parsed back out of the
+        # label (in-silico §When Modifying #6 — `102` caches it unrounded, so the label is a display of it)
+        flip_cte = {**{f"hot_flip_{x:g}": x for x in hot_thr}, **{f"cold_flip_{x:g}": x for x in cold_thr}}
+        if len(flip_cte) != len(set(hot_thr)) + len(set(cold_thr)):
+            raise RuntimeError(f"control: two different flip thresholds share a label: {hot_thr} · {cold_thr}")
+        names = [f"share_{row:g}" for row in SHARE_ROWS] + ["ta_k1_sway_alone", "ta_k1_hot_preload"] + list(flip_cte)
 
         # state 2: the bearing at which each is reached, per bond end and `87` depth reading (the tie's depth is moot there)
         thr2 = {n: {f"{dk}__{b}": r6(threshold(lambda kf, n=n, ka=ka, dv=dv: event(n, kf, 0.0, ka, 5.0, dv)))
@@ -587,14 +597,15 @@ def main() -> int:
         seam = {}
         for alloy in ("Ta", ALLOY_BASELINE):
             # the least state-3 requirement: the deepest tie (the thick bark's install-day cambium), no bearing, the nominal depth
-            least3 = {b: {c: round(min(seam_k(alloy, share(sl, 0.0, TIE_RIGID, ka, d_deep, dv) * dv / dv_ceil, c, premise)
-                                       for dv in dx_mm.values()), 4)
+            # unrounded: 104 computes from the seam requirements (in-silico §When Modifying #6)
+            least3 = {b: {c: min(seam_k(alloy, share(sl, 0.0, TIE_RIGID, ka, d_deep, dv) * dv / dv_ceil, c, premise)
+                                 for dv in dx_mm.values())
                           for c in ("adverse_reversed", "adverse_reversed_hot_preload")} for b, ka in bonds}
             seam[alloy] = {"state1": {"sway": d102["seam_by_alloy"][alloy]["seam_k_86"],
-                                      "hot_preload": round(seam_k(alloy, 0.0, "adverse_reversed_hot_preload", premise), 4)},
-                           "state2_at_air_dry_readings_max": {c: round(seam_k(alloy, max(s2_read), c, premise), 4) for c in corners},
+                                      "hot_preload": seam_k(alloy, 0.0, "adverse_reversed_hot_preload", premise)},
+                           "state2_at_air_dry_readings_max": {c: seam_k(alloy, max(s2_read), c, premise) for c in corners},
                            "state3_least_any_depth_and_bearing": least3,
-                           "at_share_1": {c: round(seam_k(alloy, 1.0, c, premise), 4) for c in corners}}
+                           "at_share_1": {c: seam_k(alloy, 1.0, c, premise) for c in corners}}
 
         # state 2: «no» below the lowest stiff-bond bearing, «yes» above the highest soft-bond one, over every reading
         table2 = {}
@@ -640,7 +651,7 @@ def main() -> int:
             kept[-1] = full[-1]          # the end replaces a near neighbour: the dropped point lies in their box
         else:
             kept.append(full[-1])
-        front = {"cte_ppm_K": [round(a, 6) for a, _ in kept], "share_of_102_shift": [round(sh, 6) for _, sh in kept],
+        front = {"cte_ppm_K": [a for a, _ in kept], "share_of_102_shift": [sh for _, sh in kept],     # unrounded: 104
                  "points_on_the_full_front": len(full), "step": FRONT_STEP,
                  "reading": "non-dominated (CTE, share) pairs over the model's grids, every FRONT_STEP of share; a dropped "
                             "point lies between two kept neighbours on both axes"}
@@ -791,10 +802,11 @@ def main() -> int:
     def shares_block(r: dict) -> dict:
         return {"state1_anode_free": 0.0,
                 "state1_ties_not_bounded": ["the sleeve's grip in the Ø15 channel", "ice in the 2 mm gap at the cold edge"],
-                "state2_at_air_dry_readings": {"min": round(min(r["s2_read"]), 4), "max": round(max(r["s2_read"]), 4)},
-                "state2_cap_rigid_bark": {k: round(v, 4) for k, v in r["cap2"].items()},
-                "state3_no_bearing_any_depth_of_102_shift": {b: {"min": round(min(v), 4), "max": round(max(v), 4)} for b, v in r["s3_free"].items()},
-                "state3_cap_rigid_bark_of_102_shift": {k: round(v, 4) for k, v in r["cap3"].items()}}
+                # unrounded: 104 and 105 compute from the shares (in-silico §When Modifying #6)
+                "state2_at_air_dry_readings": {"min": min(r["s2_read"]), "max": max(r["s2_read"])},
+                "state2_cap_rigid_bark": dict(r["cap2"]),
+                "state3_no_bearing_any_depth_of_102_shift": {b: {"min": min(v), "max": max(v)} for b, v in r["s3_free"].items()},
+                "state3_cap_rigid_bark_of_102_shift": dict(r["cap3"])}
 
     heat_bark = dict(bark["heat"])
     heat_bark = {"thresholds_102_ppm_K": heat_bark.pop("thresholds_102_ppm_K"),
@@ -804,20 +816,21 @@ def main() -> int:
         "script": Path(__file__).name,
         "geometry": {"span_mm": span, "sleeve_area_mm2": round(a_sleeve, 2), "anode_radius_mm": r_anode,
                      "anode_length_mm": l_anode, "channel_radius_mm": r_sleeve, "anode_radial_clearance_mm": gap_radial,
-                     "flange_annulus_mm2": round(a_annulus, 1), "bark_mm_78": bark_t, "phloem_mm_78": phloem,
+                     "flange_annulus_mm2": a_annulus, "bark_mm_78": bark_t, "phloem_mm_78": phloem,     # unrounded: 105
                      "flange_seat_to_install_day_cambium_mm": tie_mm, "shift_span_mm_87": dx_mm,
                      "zone1_shank_in_sleeve": {"length_mm": l_z1, "ti_section_mm2": round(a_z1, 2),
-                                               "alpha_bonded_ppm_K": round(alpha_z1 * 1e6, 4)},
+                                               "alpha_bonded_ppm_K": alpha_z1 * 1e6},          # unrounded: 114
                      "source": "55 · 77 · 78 · 87 caches; 01_04 §3.3 Ø15 narrow step = the sleeve's OD"},
         "inputs": {"E_bark_radial_MPa_air_dry": E_BARK_RADIAL_MPA,
                    "G_pairs_LR_RT_MPa": {k: list(v) for k, v in G_PAIRS_MPA.items()},
                    "G_eff_MPa": {k: round(v, 2) for k, v in G_EFF_MPA.items()},
                    "ln_R_over_r": list(LN_R_OVER_R), "alpha_xylem_green_ppm_K": ALPHA_XYLEM_GREEN_1K * 1e6,
                    "alpha_anode_ppm_K": round(alpha_anode * 1e6, 3)},
-        "stiffness_N_per_mm": {"sleeve": {k: round(v, 1) for k, v in k_sleeve.items()},
-                               "anode_bond": {k: round(v, 1) for k, v in k_a.items()},
+        # unrounded: 105 and 114 compute from the stiffnesses (in-silico §When Modifying #6)
+        "stiffness_N_per_mm": {"sleeve": dict(k_sleeve),
+                               "anode_bond": dict(k_a),
                                "bark_bearing_per_MPa": {t: round(a_annulus / tv, 3) for t, tv in bark_t.items()},
-                               "bark_bearing_at_air_dry_readings": {k: round(v, 3) for k, v in kf_read.items()}},
+                               "bark_bearing_at_air_dry_readings": dict(kf_read)},
         "share": shares_block(bark),
         "state2_bearing_N_per_mm": bark["thr2"],
         "state3_tie_depth_mm_no_bearing": bark["dep3"],
@@ -829,12 +842,13 @@ def main() -> int:
             "premise": "the Zone-3 shank fitted RIGIDLY in the sleeve over its run (01_01 §1: Ø11 under interference; the "
                        "CEM's placeholder diameter and length are read, HW.8.9) — a fit that slips returns the bark reading",
             "shank": {"diameter_mm_cem": d_shank, "length_mm": l_shank, "channel_mm": s55.D_CHANNEL_MM,
-                      "ti_section_mm2": round(a_shank, 2), "alloy": ALLOY_BASELINE},
+                      "ti_section_mm2": a_shank, "alloy": ALLOY_BASELINE},             # unrounded: 105
             "sections_mm": {"composite_run": [0.0, l_shank], "peek_gap": [l_shank, span]},
-            "stiffness_N_per_mm": {"composite_run": {ld: round(v / l_shank, 1) for ld, v in ea_comp.items()},
+            # unrounded: 105 and 114 compute from these (in-silico §When Modifying #6)
+            "stiffness_N_per_mm": {"composite_run": {ld: v / l_shank for ld, v in ea_comp.items()},
                                    "peek_gap": {ld: round(v / (span - l_shank), 1) for ld, v in ea_peek.items()},
-                                   "sleeve_whole": {ld: round(1.0 / sleeves["zone3_fit"].comp(0.0, span, ld), 1) for ld in ("sway", "slow")}},
-            "alpha_composite_ppm_K": round(alpha_comp * 1e6, 4),
+                                   "sleeve_whole": {ld: 1.0 / sleeves["zone3_fit"].comp(0.0, span, ld) for ld in ("sway", "slow")}},
+            "alpha_composite_ppm_K": alpha_comp * 1e6,
             "composite_vs_102_gap_only_offset_ppm_K": round(comp_offset, 4),
             "cte_free_sleeve_ppm_K": round(z3["cte_free"], 4),
             "share": shares_block(z3),

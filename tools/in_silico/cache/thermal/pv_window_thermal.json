@@ -25,7 +25,7 @@
     "crown_disc_mm2": 697.46,
     "bark": {
       "flange_diameter_mm": 29.8,
-      "facing_spread_mm": 5.175,
+      "facing_spread_mm": 5.174715694474524,
       "thin_mm": 8.325,
       "thick_mm": 21.0
     },
@@ -39,9 +39,9 @@
   "controls": {
     "two_zone_beam_closed_form_vs_brute_force_rel": 2.4142610586199766e-11,
     "psi_grid": 90001,
-    "plumbing_capsule_no_window_c": 52.9,
-    "plumbing_capsule_uniform_c": 58.1,
-    "plumbing_capsule_no_window_low_h_c_c": 55.0,
+    "plumbing_capsule_no_window_c": 52.901622820107306,
+    "plumbing_capsule_uniform_c": 58.13820531761594,
+    "plumbing_capsule_no_window_low_h_c_c": 54.9638266127217,
     "uniform_control_alpha": 0.7,
     "plumbing_note": "the three plumbing identities pass for any formula returning α_r when Δα·A_dark = 0 — they check the wiring, not the two-zone term"
   },
@@ -59,12 +59,12 @@
             "margin_to_rating_k": 16.1,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 47.44,
+              "cambium_max_C": 47.4384099458539,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 43.51,
+              "cambium_max_C": 43.51209503591342,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -74,12 +74,12 @@
             "margin_to_rating_k": 13.9,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 49.22,
+              "cambium_max_C": 49.223086552196605,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 44.9,
+              "cambium_max_C": 44.90205452728705,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -89,12 +89,12 @@
             "margin_to_rating_k": 27.0,
             "at": "2010-08-06T13:00",
             "cambium_thin": {
-              "cambium_max_C": 38.55,
+              "cambium_max_C": 38.55180172785208,
               "at": "2010-08-06T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 35.69,
+              "cambium_max_C": 35.69092255105141,
               "at": "2010-08-06T17:00",
               "hours_above_gate": 0
             }
@@ -108,12 +108,12 @@
             "margin_to_rating_k": 16.3,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 47.27,
+              "cambium_max_C": 47.273882719270276,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 43.38,
+              "cambium_max_C": 43.38479034592051,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -123,12 +123,12 @@
             "margin_to_rating_k": 14.1,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 49.04,
+              "cambium_max_C": 49.03525069315568,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 44.76,
+              "cambium_max_C": 44.7566878181796,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -138,12 +138,12 @@
             "margin_to_rating_k": 27.0,
             "at": "2010-08-06T13:00",
             "cambium_thin": {
-              "cambium_max_C": 38.51,
+              "cambium_max_C": 38.51354852061273,
               "at": "2010-08-06T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 35.66,
+              "cambium_max_C": 35.661625911684254,
               "at": "2010-08-06T17:00",
               "hours_above_gate": 0
             }
@@ -164,12 +164,12 @@
             "margin_to_rating_k": 15.5,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 47.92,
+              "cambium_max_C": 47.92423744480548,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 43.89,
+              "cambium_max_C": 43.88800352417726,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -179,12 +179,12 @@
             "margin_to_rating_k": 13.2,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 49.78,
+              "cambium_max_C": 49.777709354978164,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 45.33,
+              "cambium_max_C": 45.3312897068218,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -194,12 +194,12 @@
             "margin_to_rating_k": 26.8,
             "at": "2010-08-06T13:00",
             "cambium_thin": {
-              "cambium_max_C": 38.66,
+              "cambium_max_C": 38.66365195156536,
               "at": "2010-08-06T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 35.78,
+              "cambium_max_C": 35.7765886503,
               "at": "2010-08-06T17:00",
               "hours_above_gate": 0
             }
@@ -213,12 +213,12 @@
             "margin_to_rating_k": 15.8,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 47.66,
+              "cambium_max_C": 47.66056479330036,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 43.68,
+              "cambium_max_C": 43.68398749365269,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -228,12 +228,12 @@
             "margin_to_rating_k": 13.6,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 49.48,
+              "cambium_max_C": 49.47670581298622,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 45.1,
+              "cambium_max_C": 45.098333430994835,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -243,12 +243,12 @@
             "margin_to_rating_k": 26.9,
             "at": "2010-08-06T13:00",
             "cambium_thin": {
-              "cambium_max_C": 38.6,
+              "cambium_max_C": 38.603140707139104,
               "at": "2010-08-06T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 35.73,
+              "cambium_max_C": 35.73024227375921,
               "at": "2010-08-06T17:00",
               "hours_above_gate": 0
             }
@@ -269,12 +269,12 @@
             "margin_to_rating_k": 13.6,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 49.45,
+              "cambium_max_C": 49.446777605207124,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 45.07,
+              "cambium_max_C": 45.066166732504705,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -284,12 +284,12 @@
             "margin_to_rating_k": 11.0,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 51.52,
+              "cambium_max_C": 51.51543648390899,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 31
             },
             "cambium_thick": {
-              "cambium_max_C": 46.68,
+              "cambium_max_C": 46.676439056146776,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -299,12 +299,12 @@
             "margin_to_rating_k": 26.3,
             "at": "2010-08-06T13:00",
             "cambium_thin": {
-              "cambium_max_C": 39.01,
+              "cambium_max_C": 39.00631503785088,
               "at": "2010-08-06T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 36.04,
+              "cambium_max_C": 36.039074352061334,
               "at": "2010-08-06T17:00",
               "hours_above_gate": 0
             }
@@ -318,12 +318,12 @@
             "margin_to_rating_k": 14.3,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 48.87,
+              "cambium_max_C": 48.87122962216697,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 44.62,
+              "cambium_max_C": 44.620767277431185,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -333,12 +333,12 @@
             "margin_to_rating_k": 11.8,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 50.86,
+              "cambium_max_C": 50.85862837663864,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 11
             },
             "cambium_thick": {
-              "cambium_max_C": 46.17,
+              "cambium_max_C": 46.16794645463005,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -348,12 +348,12 @@
             "margin_to_rating_k": 26.5,
             "at": "2010-08-06T13:00",
             "cambium_thin": {
-              "cambium_max_C": 38.88,
+              "cambium_max_C": 38.87791157345337,
               "at": "2010-08-06T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 35.94,
+              "cambium_max_C": 35.94070813340824,
               "at": "2010-08-06T17:00",
               "hours_above_gate": 0
             }
@@ -374,12 +374,12 @@
             "margin_to_rating_k": 11.1,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 51.47,
+              "cambium_max_C": 51.47146975140995,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 26
             },
             "cambium_thick": {
-              "cambium_max_C": 46.63,
+              "cambium_max_C": 46.633539179159534,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -389,12 +389,12 @@
             "margin_to_rating_k": 8.2,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 53.82,
+              "cambium_max_C": 53.82494471657664,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 309
             },
             "cambium_thick": {
-              "cambium_max_C": 48.47,
+              "cambium_max_C": 48.465318739240644,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -404,12 +404,12 @@
             "margin_to_rating_k": 25.6,
             "at": "2010-08-06T13:00",
             "cambium_thin": {
-              "cambium_max_C": 39.45,
+              "cambium_max_C": 39.4513138980434,
               "at": "2010-08-06T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 36.38,
+              "cambium_max_C": 36.3800387605326,
               "at": "2010-08-06T17:00",
               "hours_above_gate": 0
             }
@@ -423,12 +423,12 @@
             "margin_to_rating_k": 12.3,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 50.48,
+              "cambium_max_C": 50.48429033138714,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 3
             },
             "cambium_thick": {
-              "cambium_max_C": 45.87,
+              "cambium_max_C": 45.869219865152964,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -438,12 +438,12 @@
             "margin_to_rating_k": 9.6,
             "at": "2010-08-08T13:00",
             "cambium_thin": {
-              "cambium_max_C": 52.7,
+              "cambium_max_C": 52.699119142850854,
               "at": "2007-07-19T16:00",
               "hours_above_gate": 115
             },
             "cambium_thick": {
-              "cambium_max_C": 47.59,
+              "cambium_max_C": 47.59309820934951,
               "at": "2010-08-08T17:00",
               "hours_above_gate": 0
             }
@@ -453,12 +453,12 @@
             "margin_to_rating_k": 25.9,
             "at": "2010-08-06T13:00",
             "cambium_thin": {
-              "cambium_max_C": 39.24,
+              "cambium_max_C": 39.235369535212456,
               "at": "2010-08-06T16:00",
               "hours_above_gate": 0
             },
             "cambium_thick": {
-              "cambium_max_C": 36.21,
+              "cambium_max_C": 36.21456694684235,
               "at": "2010-08-06T17:00",
               "hours_above_gate": 0
             }
@@ -474,14 +474,14 @@
         "crossing_interpolated_mm2": 366.818,
         "is_nowhere_on_the_crown": false,
         "is_already_at_no_window": false,
-        "cambium_max_C_at_no_window": 46.62
+        "cambium_max_C_at_no_window": 46.623958295395774
       },
       "h_c_x0_7": {
         "largest_dark_aperture_under_gate_cm2": 1.65,
         "crossing_interpolated_mm2": 165.169,
         "is_nowhere_on_the_crown": false,
         "is_already_at_no_window": false,
-        "cambium_max_C_at_no_window": 48.29
+        "cambium_max_C_at_no_window": 48.29320928365043
       }
     },
     "0.90": {
@@ -490,14 +490,14 @@
         "crossing_interpolated_mm2": 458.523,
         "is_nowhere_on_the_crown": false,
         "is_already_at_no_window": false,
-        "cambium_max_C_at_no_window": 46.62
+        "cambium_max_C_at_no_window": 46.623958295395774
       },
       "h_c_x0_7": {
         "largest_dark_aperture_under_gate_cm2": 2.06,
         "crossing_interpolated_mm2": 206.463,
         "is_nowhere_on_the_crown": false,
         "is_already_at_no_window": false,
-        "cambium_max_C_at_no_window": 48.29
+        "cambium_max_C_at_no_window": 48.29320928365043
       }
     }
   },

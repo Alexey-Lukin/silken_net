@@ -170,7 +170,7 @@ SF_LINES = (1.0, 2.0)      # 1 = σ_e itself · 2 = `55`'s INFINITE_LIFE_SF (ass
 NU_SOLID = 0.342           # the solid phase's ν in the voxel FE, asserted against its cache
 DEPTH_MIN_MM = 0.5         # the shallowest tie on `103`'s depth axis (its DEPTH_MIN), asserted by reproducing its caps
 DEPTH_POINTS = 40          # `103`'s depth grid: DEPTH_MIN … each tie depth in 40 steps (its `depths`)
-CAP_TOL = 1e-4             # `103` caches its shares at four decimals
+CAP_TOL = 1e-6             # `103` caches its shares unrounded; these closed forms reproduce its solver to ≈ 1e-7 (measured)
 CYCLES = ("one_sided", "reversed", "on_preload")
 # the periodic field's quantiles read as the ligament peak — NAMED readings, not a pick (01_01 §5.2 ceiling (3)): p99 is
 # the one a binding claim takes (the lower peak of the two that hold a band over the rungs), p99.9 its price; the max

@@ -170,24 +170,28 @@ def main() -> int:
     sf73 = c73["safety_factor"]
     lug_rows = c73["case_b_lug_root_shear"]["rows"]
 
-    band = {}
+    band, lose_raw, floor_lo = {}, {}, None
     for name, pct in points.items():
         lo, hi = band_at(pct)
         bar_lo, _ = bar_at(pct)
         r_hi = hi * to_n
         need_asm, need_20 = r_hi + p52, (r_hi + p52) / f_t     # requirement bracket: at assembly ⊥ ring never relaxes
         # share of R0 the ring must have LOST by year t for SF 2 to hold then — f(t) floors early, so most is due early
-        lose = {str(y): round(max(1.0 - (lug_cap * f_of(y) - p52) / r_hi, 0.0), 3) for y in years}
+        lose_raw[name] = {str(y): max(1.0 - (lug_cap * f_of(y) - p52) / r_hi, 0.0) for y in years}
+        lose = {y: round(v, 3) for y, v in lose_raw[name].items()}
+        if name == "window_floor":
+            floor_lo = lo * to_n                      # the margins below divide by it — taken before its display rounding
         band[name] = {"squeeze_pct": pct,
                       "bar_lbf_per_in": [round(bar_lo, 2), round(hi, 2)],
                       "lbf_per_in": [round(lo, 2), round(hi, 2)],
                       "reaction_N": [round(lo * to_n, 1), round(r_hi, 1)],
-                      "required_clamp_N_at_band_high": {"at_assembly": round(need_asm, 1),
-                                                        "after_20_years_ring_never_relaxes": round(need_20, 1)},
+                      # unrounded: 89 computes from the clamp and the wall (in-silico §When Modifying #6)
+                      "required_clamp_N_at_band_high": {"at_assembly": need_asm,
+                                                        "after_20_years_ring_never_relaxes": need_20},
                       "lug_root_margin_x_at_print_floor": {"at_assembly": round(lug_cap / need_asm, 2),
                                                            "after_20_years_ring_never_relaxes": round(lug_cap / need_20, 2)},
                       "ring_must_have_lost_share_of_R0_by_year": lose,
-                      "collar_wall_strength_asks_mm_ring_never_relaxes": round(wall_for_force(lug_rows, need_20), 3)}
+                      "collar_wall_strength_asks_mm_ring_never_relaxes": wall_for_force(lug_rows, need_20)}
 
     # Inversion (no datum needed): the reaction at which 52's requirement (ring never relaxing) meets 73's capacity.
     r_bind = lug_cap * f_t - p52
@@ -196,17 +200,17 @@ def main() -> int:
     sq_bind_reads = [squeeze_where_high_reaches(bind_lbf_in, 1 + s * GRID_PRECISION_FRACTION) for s in (1, -1)]
     sq_generous = squeeze_where_high_reaches(GENEROUS_ORING_BOUND_N / to_n)
 
-    floor_lo = band["window_floor"]["reaction_N"][0]
     a_rows = {k: r["A_rim"] for k, r in s87["by_slope_reading"].items()}
     need = {k: max(a["o_ring_reaction_N_needed"][k] for a in a_rows.values())
             for k in next(iter(a_rows.values()))["o_ring_reaction_N_needed"]}
     # a margin only where the need is an INITIAL reaction; after 20 years the ring's reaction is unknown → a share
-    a_margin = {k: round(floor_lo / v, 2) if v > 0 else None for k, v in need.items() if k.startswith("initial")}
-    retained = round(need["after_20_years_with_a_weaker_clamp"] / floor_lo, 3)
+    # unrounded, so the prose rounds once (in-silico §When Modifying #6: a quote rounded again is a computation)
+    a_margin = {k: floor_lo / v if v > 0 else None for k, v in need.items() if k.startswith("initial")}
+    retained = need["after_20_years_with_a_weaker_clamp"] / floor_lo
 
     top, chain_hi, nom = band["window_top"], band["chain_high"], band["nominal"]
     end, early, mid = str(years[-1]), "2", "5"
-    lost = lambda b, y: b["ring_must_have_lost_share_of_R0_by_year"][y] * 100  # noqa: E731
+    lost = lambda name, y: lose_raw[name][y] * 100  # noqa: E731 — the prose rounds once, from the raw share
     verdict = (
         f"The «generous» {GENEROUS_ORING_BOUND_N:.0f} N is not an upper bound: for a ring under 1\" Parker's Table 2-3 puts "
         f"the 70 Shore A load in the middle or upper third of the Figure 2-4 bar, so the reaction is "
@@ -216,10 +220,10 @@ def main() -> int:
         f"clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF {sf73:.0f} inside) carries it "
         f"at the nominal at both ends ({nom['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× "
         f"at the worse), at the chain 52 models today ({chain[1]:.1f} %) only if the ring has lost about "
-        f"{lost(chain_hi, '10'):.0f} % of its reaction by year 10 "
+        f"{lost('chain_high', '10'):.0f} % of its reaction by year 10 "
         f"({chain_hi['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× if it never does), and at "
-        f"the window top only if it has lost about {lost(top, early):.0f} % by year {early} and about "
-        f"{lost(top, mid):.0f} % already by year {mid} — the PEEK clamp floors within a few years, so the ring's loss is due "
+        f"the window top only if it has lost about {lost('window_top', early):.0f} % by year {early} and about "
+        f"{lost('window_top', mid):.0f} % already by year {mid} — the PEEK clamp floors within a few years, so the ring's loss is due "
         f"early "
         f"({top['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× if it never does, "
         f"{top['lug_root_margin_x_at_print_floor']['at_assembly']:.2f}× at assembly); a ring that does not relax makes the "
@@ -303,7 +307,8 @@ def main() -> int:
               f"  ring must have lost {b['ring_must_have_lost_share_of_R0_by_year']}")
     print(f"  ring never relaxing: lug binds at {r_bind:.0f} N — band top at {sq_bind:.2f} % "
           f"({min(sq_bind_reads):.2f}–{max(sq_bind_reads):.2f} % over ±4 %)")
-    print(f"  (A): floor {floor_lo:.1f} N vs needs {need} → margins {a_margin}; a weaker clamp's ring keeps {retained * 100:.0f} %")
+    print(f"  (A): floor {floor_lo:.1f} N vs needs { {k: round(v, 2) for k, v in need.items()} } → margins "
+          f"{ {k: None if v is None else round(v, 2) for k, v in a_margin.items()} }; a weaker clamp's ring keeps {retained * 100:.0f} %")
     print(f"\n  VERDICT: {verdict}")
     print(f"  → {OUT_JSON.relative_to(HERE.parent.parent.parent)}")
     return 0

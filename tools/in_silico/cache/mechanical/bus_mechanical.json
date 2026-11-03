@@ -1362,7 +1362,7 @@
         0.3,
         0.4
       ],
-      "tube_section_mm2": 0.5365,
+      "tube_section_mm2": 0.5365478969176201,
       "rows": [
         {
           "delta_T_K": 40,
@@ -1445,7 +1445,7 @@
       "question": "01_01 1.4 rules cold assembly out and names a \u00b5 below which it returns. Both numbers lived in PROSE ONLY until 2026-09-24; here they are derived from the same fields as the rest of the window",
       "peek_yield_MPa": 100.0,
       "contact_area_mm2": 55.9034,
-      "tube_section_mm2": 0.5365,
+      "tube_section_mm2": 0.5365478969176201,
       "mu_sweep": [
         0.1,
         0.2,
@@ -1455,28 +1455,28 @@
       "rows": [
         {
           "at": "ratified_nominal",
-          "interference_radial_um": 5.705,
+          "interference_radial_um": 5.705000000000016,
           "contact_pressure_MPa": 10.83,
           "normal_force_N": 605.7,
           "mu_crit": 0.0886,
           "by_mu": {
             "0.1": {
-              "friction_N": 60.6,
+              "friction_N": 60.56741749391297,
               "wall_axial_MPa": 112.9,
               "wall_yields": true
             },
             "0.2": {
-              "friction_N": 121.1,
+              "friction_N": 121.13483498782594,
               "wall_axial_MPa": 225.8,
               "wall_yields": true
             },
             "0.3": {
-              "friction_N": 181.7,
+              "friction_N": 181.7022524817389,
               "wall_axial_MPa": 338.7,
               "wall_yields": true
             },
             "0.4": {
-              "friction_N": 242.3,
+              "friction_N": 242.26966997565188,
               "wall_axial_MPa": 451.5,
               "wall_yields": true
             }
@@ -1484,28 +1484,28 @@
         },
         {
           "at": "window_floor",
-          "interference_radial_um": 0.38,
+          "interference_radial_um": 0.37961856,
           "contact_pressure_MPa": 0.72,
           "normal_force_N": 40.3,
           "mu_crit": 1.3313,
           "by_mu": {
             "0.1": {
-              "friction_N": 4.0,
+              "friction_N": 4.030239406127604,
               "wall_axial_MPa": 7.5,
               "wall_yields": false
             },
             "0.2": {
-              "friction_N": 8.1,
+              "friction_N": 8.060478812255209,
               "wall_axial_MPa": 15.0,
               "wall_yields": false
             },
             "0.3": {
-              "friction_N": 12.1,
+              "friction_N": 12.090718218382811,
               "wall_axial_MPa": 22.5,
               "wall_yields": false
             },
             "0.4": {
-              "friction_N": 16.1,
+              "friction_N": 16.120957624510417,
               "wall_axial_MPa": 30.0,
               "wall_yields": false
             }
@@ -1513,28 +1513,28 @@
         },
         {
           "at": "window_ceiling",
-          "interference_radial_um": 10.894,
+          "interference_radial_um": 10.893740465244102,
           "contact_pressure_MPa": 20.69,
           "normal_force_N": 1156.5,
           "mu_crit": 0.0464,
           "by_mu": {
             "0.1": {
-              "friction_N": 115.7,
+              "friction_N": 115.65393984728684,
               "wall_axial_MPa": 215.6,
               "wall_yields": true
             },
             "0.2": {
-              "friction_N": 231.3,
+              "friction_N": 231.30787969457367,
               "wall_axial_MPa": 431.1,
               "wall_yields": true
             },
             "0.3": {
-              "friction_N": 347.0,
+              "friction_N": 346.96181954186045,
               "wall_axial_MPa": 646.7,
               "wall_yields": true
             },
             "0.4": {
-              "friction_N": 462.6,
+              "friction_N": 462.61575938914734,
               "wall_axial_MPa": 862.2,
               "wall_yields": true
             }

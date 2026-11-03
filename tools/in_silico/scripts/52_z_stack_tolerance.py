@@ -448,15 +448,17 @@ def applied_gland() -> dict:
         "gland_fill": GLAND_FILL_DESIGN_TO,
         "flange_groove_depth_mm": round(depth, 4),
         "flange_groove_width_mm": round(width, 4),
-        "flange_groove_r_mm": [round(groove_in, 4), round(groove_out, 4)],
-        "radome_seal_land_r_mm": [round(land[0], 4), round(land[1], 4)],
+        # unrounded: 87 · 88 · 89 · 105 and this script's own rim model compute from the gland fields below
+        # (in-silico §When Modifying #6)
+        "flange_groove_r_mm": [groove_in, groove_out],
+        "radome_seal_land_r_mm": [land[0], land[1]],
         "seal_land_margin_mm": [round(groove_in - land[0], 4), round(land[1] - groove_out, 4)],
         "socket_band_mm": round(socket_band, 4),
-        "socket_pocket_r_mm": [round(pocket[0], 4), round(pocket[1], 4)],
+        "socket_pocket_r_mm": [pocket[0], pocket[1]],            # unrounded: 89 computes its sections from it
         "socket_skin_mm": round(skin, 4),
-        "rim_cavity_mm": round(dome_r * 2.0 - 2.0 * boss, 4),
-        "rim_contact_area_mm2": round(contact, 2),
-        "entry_slot_opening_mm2_each": round(slot_opening, 3),
+        "rim_cavity_mm": dome_r * 2.0 - 2.0 * boss,
+        "rim_contact_area_mm2": contact,
+        "entry_slot_opening_mm2_each": slot_opening,
         "note": "the seal land backs the groove by one socket clearance on each side, so the ring stays backed with "
                 "the radome one clearance off-centre; the socket pocket is `socket_band − skin` deep, not the full "
                 "band — the budget above counts no skin, and a pocket cut to the dome OD would breach the shell. "
@@ -560,11 +562,11 @@ def rim_datum_creep(applied: dict) -> dict:
         "relax_floor": PEEK_RELAX_FLOOR,
         "relax_tau_years": PEEK_RELAX_TAU_YEARS,
         "service_years": RIM_SERVICE_YEARS,
-        "relax_fraction_at_service": round(f_t, 4),
-        "pogo_pair_force_N_upper_bound": round(pogo, 2),
+        "relax_fraction_at_service": f_t,                     # unrounded: 87, 88 and 89 compute from it
+        "pogo_pair_force_N_upper_bound": pogo,                # unrounded: 88 and 89 compute the lift from it
         "o_ring_force_N": None,
         "o_ring_generous_bound_N_assumed": GENEROUS_ORING_BOUND_N,
-        "required_initial_clamp_N": {k: round(v, 1) for k, v in need.items()},
+        "required_initial_clamp_N": need,                     # unrounded: 87 computes from it
         "lug_root_capacity_N_from_73": lug_cap,
         "lug_root_margin_x_over_required": round(lug_cap / worst, 1) if lug_cap else None,
         "rim_contact_area_mm2": round(area, 1),
@@ -996,7 +998,7 @@ def main() -> int:
                                                           and pre_hi <= ORING_WIN_PARKER_FACE[1]),
             "intersection_window_pct": [round(lo_both * 100, 1), round(hi_both * 100, 1)],
             "recommended_nominal_pct": round(nominal_both * 100, 1),
-            "band_at_recommended_pct": [round(band_lo * 100, 1), round(band_hi * 100, 1)],
+            "band_at_recommended_pct": [band_lo * 100, band_hi * 100],   # unrounded: 88 computes from it
             "recommended_holds_both": bool(fits_both),
             "applied_in_cad": bool(applied_nominal),
             "oring_gap_mm_applied": round(GAP_OR, 3),

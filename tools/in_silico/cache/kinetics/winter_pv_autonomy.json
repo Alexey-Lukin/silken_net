@@ -112,7 +112,7 @@
         "adverse": 17.056
       }
     },
-    "cadence_c_interval_s": 5536.5,
+    "cadence_c_interval_s": 5536.544850498338,
     "dome_face_cm2": 6.975,
     "desk_eta_pv_assumed": [
       0.03,

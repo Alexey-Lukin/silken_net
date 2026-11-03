@@ -3098,7 +3098,10 @@ def test_bayonet_thermal_clamp():
     assert inp["lug_root_capacity_N_at_print_floor_73"] == cap and inp["print_floor_wall_mm_73"] == floor
     member = b88["band"]["window_top"]["collar_wall_strength_asks_mm_ring_never_relaxes"]
     assert inp["member_wall_mm_88"] == member
-    cap_m = cap * member / floor
+    # the member wall's capacity IS 88's window-top requirement (as 89 reads it); 73's line gives the same to 1e-9
+    cap_m = b88["band"]["window_top"]["required_clamp_N_at_band_high"]["after_20_years_ring_never_relaxes"]
+    assert abs(cap * member / floor - cap_m) <= 1e-9 * cap_m
+    assert cap_m - b88["band"]["window_top"]["required_clamp_N_at_band_high"]["at_assembly"] / f == 0.0   # k = 0 exactly there
     temps = inp["temperature_readings_c"]
     assert temps["capsule_requirement"] == [c82["inputs"]["t_min_requirement_c"], c82["inputs"]["t_max_requirement_c"]]
     assert temps["model_edges"][0] == c82["inputs"]["t_min_model_edge_c"]
@@ -3173,7 +3176,12 @@ def test_bayonet_thermal_clamp():
     e_star = 1 / ((1 - NU_PEEK ** 2) / E_PEEK_PA + (1 - ti["nu"] ** 2) / (ti["E_GPa"] * 1e9))
     assert abs(lc["e_star_pa"] / e_star - 1) <= 1e-3
     tr = top["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]
-    assert tr["0.05"]["k_max_N_per_um"]["member_wall"] < tr["0.0"]["k_max_N_per_um"]["member_wall"]   # δ binds harder
+    # the member wall IS the window top's requirement (88 inverts 73's line), so there it tolerates exactly k = 0 for
+    # every δ — rounded, the wall once showed a k it does not tolerate (in-silico §When Modifying #6, #32); «δ binds
+    # harder» lives where the wall has room, the nominal squeeze
+    assert all(v["k_max_N_per_um"]["member_wall"] == 0.0 for v in tr.values())
+    trn = d["by_squeeze_point"]["nominal"]["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]
+    assert 0.0 < trn["0.05"]["k_max_N_per_um"]["member_wall"] < trn["0.0"]["k_max_N_per_um"]["member_wall"]   # δ binds harder
     assert tr["0.05"]["thermal_share_of_slope"] < 0.5
 
 def test_pogo_thermal_gap():
@@ -5563,7 +5571,7 @@ def test_anchor_wood_share_invariants():
     ea1_ti = ALLOY_PROPERTIES[ALLOY_BASELINE]["E_GPa"] * 1e3 * math.pi / 4 * (lock1["shank_diameter_mm"] ** 2 - lock1["bore_diameter_mm"] ** 2)
     ea1_p = E_PEEK_PA / 1e6 * PEEK_RELAX_FLOOR * math.pi * (r_s ** 2 - r_b ** 2)
     al_z1 = (ea1_ti * aa + ea1_p * ap) / (ea1_ti + ea1_p)
-    assert d["geometry"]["zone1_shank_in_sleeve"]["alpha_bonded_ppm_K"] == pytest.approx(al_z1 * 1e6, abs=1e-4)
+    assert d["geometry"]["zone1_shank_in_sleeve"]["alpha_bonded_ppm_K"] == pytest.approx(al_z1 * 1e6, abs=1e-6)
 
     def w_a(dv, ax=aw, bonded=True):
         return ax * dv - (al_z1 if bonded else aa) * l_z1 - aa * (dv - span - l_z1)
@@ -5592,15 +5600,15 @@ def test_anchor_wood_share_invariants():
 
     sh = d["share"]
     read2 = [sh2(kf, ka) for kf in kf_read.values() for ka in k_a.values()]
-    assert (sh["state2_at_air_dry_readings"]["min"], sh["state2_at_air_dry_readings"]["max"]) == pytest.approx((min(read2), max(read2)), abs=1e-4)
+    assert (sh["state2_at_air_dry_readings"]["min"], sh["state2_at_air_dry_readings"]["max"]) == pytest.approx((min(read2), max(read2)), abs=1e-6)
     depths = {t: [s103.DEPTH_MIN + (dd - s103.DEPTH_MIN) * i / 40 for i in range(41)] for t, dd in tie.items()}
     for b, ka in bonds.items():
-        assert sh["state2_cap_rigid_bark"][b] == pytest.approx(ka / (ka + ks["sway"]), abs=1e-4), b
+        assert sh["state2_cap_rigid_bark"][b] == pytest.approx(ka / (ka + ks["sway"]), abs=1e-6), b
         free = [sh3(ka, dd, dv) * dv / dv_ceil for ds in depths.values() for dd in ds for dv in dvs.values()]
         got = sh["state3_no_bearing_any_depth_of_102_shift"][b]
-        assert (got["min"], got["max"]) == pytest.approx((min(free), max(free)), abs=1e-4), b
+        assert (got["min"], got["max"]) == pytest.approx((min(free), max(free)), abs=1e-6), b
         assert sh["state3_cap_rigid_bark_of_102_shift"][b] == pytest.approx(
-            max(sh3(ka, dd, dv, True) * dv / dv_ceil for ds in depths.values() for dd in ds for dv in dvs.values()), abs=2e-4), b
+            max(sh3(ka, dd, dv, True) * dv / dv_ceil for ds in depths.values() for dd in ds for dv in dvs.values()), abs=1e-6), b
 
     # Ta's seam rebuilt on `102`'s own closed form and cached inputs
     geo = d102["geometry"]
@@ -5619,15 +5627,17 @@ def test_anchor_wood_share_invariants():
         if preload:
             f_mean = min(f_mean + d102["seam_by_alloy"][alloy]["hot_preload"]["F_N_relaxed_liner"], pair.cap - f_amp)
         return s103.s102.soderberg_k(amp86, mean86, f_amp, f_mean, geo["wire_area_mm2"], row86)
-    assert seam("Ta", 0.0, True) == pytest.approx(d102["seam_by_alloy"]["Ta"]["by_share"]["0"]["seam_k_adverse_with_preload"], abs=2e-4)
+    assert seam("Ta", 0.0, True) == pytest.approx(d102["seam_by_alloy"]["Ta"]["by_share"]["0"]["seam_k_adverse_with_preload"], abs=1e-6)
 
     def event(name, share, cte):
         if name.startswith("share_"):
             return share - float(name.split("_")[1])
         if name.startswith("ta_k1_"):
             return seam("Ta", share, name.endswith("hot_preload")) - 1.0
-        return float(name.split("_")[2]) - cte
+        return flip_cte[name] - cte                       # the threshold rides beside its label, never parsed out of it
     thr_flip = d102["thermal"]["flip_vs_larger_margin_ppm_K"]
+    flip_cte = {**{f"hot_flip_{x:g}": x for x in thr_flip["hot_floor_part_flange_on_bark"]},
+                **{f"cold_flip_{x:g}": x for x in thr_flip["cold_flange_on_bark"]}}
     names = {f"share_{r:g}" for r in s103.SHARE_ROWS} | {"ta_k1_sway_alone", "ta_k1_hot_preload"} | \
         {f"hot_flip_{x:g}" for x in thr_flip["hot_floor_part_flange_on_bark"]} | {f"cold_flip_{x:g}" for x in thr_flip["cold_flange_on_bark"]}
     T2, T3 = d["state2_bearing_N_per_mm"], d["state3_tie_depth_mm_no_bearing"]
@@ -5675,18 +5685,18 @@ def test_anchor_wood_share_invariants():
     sv = d["seam_on_102_closed_form"]
     for alloy in ("Ta", ALLOY_BASELINE):
         assert sv[alloy]["state1"]["sway"] == d102["seam_by_alloy"][alloy]["seam_k_86"]
-        assert sv[alloy]["state1"]["hot_preload"] == pytest.approx(seam(alloy, 0.0, True), abs=2e-4)
+        assert sv[alloy]["state1"]["hot_preload"] == pytest.approx(seam(alloy, 0.0, True), abs=1e-6)
         r = sv[alloy]["state2_at_air_dry_readings_max"]
         assert (r["adverse_reversed"], r["adverse_reversed_hot_preload"], r["adverse_one_sided"]) == pytest.approx(
-            (seam(alloy, max(read2), False), seam(alloy, max(read2), True), seam(alloy, max(read2), False, False)), abs=2e-4)
+            (seam(alloy, max(read2), False), seam(alloy, max(read2), True), seam(alloy, max(read2), False, False)), abs=1e-6)
         for b, ka in bonds.items():
             least = sv[alloy]["state3_least_any_depth_and_bearing"][b]
             for corner, pre in (("adverse_reversed", False), ("adverse_reversed_hot_preload", True)):
-                assert least[corner] == pytest.approx(min(seam(alloy, sh3(ka, d_deep, dv) * dv / dv_ceil, pre) for dv in dvs.values()), abs=2e-4)
+                assert least[corner] == pytest.approx(min(seam(alloy, sh3(ka, d_deep, dv) * dv / dv_ceil, pre) for dv in dvs.values()), abs=1e-6)
         one = d102["seam_by_alloy"][alloy]["by_share"]["1"]["adverse"]
         a1 = sv[alloy]["at_share_1"]
         assert (a1["adverse_reversed"], a1["adverse_reversed_hot_preload"], a1["adverse_one_sided"]) == pytest.approx(
-            (one["sway_reversed"]["seam_k"], one["sway_reversed_hot_preload"]["seam_k"], one["sway_one_sided"]["seam_k"]), abs=2e-4)
+            (one["sway_reversed"]["seam_k"], one["sway_reversed_hot_preload"]["seam_k"], one["sway_one_sided"]["seam_k"]), abs=1e-6)
 
     # the heat floor over the ends of every axis (state 2: no tie; state 3: a rigid tie, bearing released or rigid) and
     # the depth axis, against the travel's sign change on `102`'s span; the floor of the span following the wood outright
@@ -5802,8 +5812,8 @@ def test_wire_liner_shear_lag_invariants():
         r86 = shipped["by_alloy"][alloy]
         mean86 = next(o["mean_MPa"] for o in r86["by_offset"] if o["offset_um"] == 50)
         k86 = next(o["k_break_even"] for o in r86["by_offset"] if o["offset_um"] == 50)
-        assert row["gentle_grip_N_per_mm"] == pytest.approx(q_gentle, abs=1e-3)
-        assert row["seam_k_86"] == pytest.approx(k86, abs=1e-4), alloy
+        assert row["gentle_grip_N_per_mm"] == pytest.approx(q_gentle, abs=1e-6)
+        assert row["seam_k_86"] == pytest.approx(k86, abs=1e-4), alloy     # 86 caches its k to four decimals (left so: 87 reads it in a control only)
         assert row["seam_k_at_wall_ceiling_87"] == d87["C_wire_behind_liner"]["by_alloy"][alloy]["seam_k_at_route_capacity"]
         ea_w = ALLOY_PROPERTIES[alloy]["E_GPa"] * 1e3 * area
         q_adv = rows["window_ceiling"]["by_mu"]["0.4"]["friction_N"] / L
@@ -5817,24 +5827,24 @@ def test_wire_liner_shear_lag_invariants():
             assert g["gentle_one_sided"]["seam_k"] <= g["seam_k_adverse_sway"] + 1e-9, (alloy, sh)
             for cname, cell in g["adverse"].items():
                 if cname.startswith("sway_reversed") and cell["wall_or_slip_reached"] and cell["F_mean_N"] == 0.0:
-                    assert cell["seam_k"] == pytest.approx(row["seam_k_at_wall_ceiling_87"], abs=2e-4), (alloy, sh, cname)
+                    assert cell["seam_k"] == pytest.approx(row["seam_k_at_wall_ceiling_87"], abs=1e-6), (alloy, sh, cname)
                 expected = k_sod(cell["F_amp_N"], cell["F_mean_N"], r86, mean86)
                 assert (cell["seam_k"] is None) == (expected is None), (alloy, sh, cname)
                 if expected is not None:
-                    assert cell["seam_k"] == pytest.approx(expected, abs=2e-4), (alloy, sh, cname)
+                    assert cell["seam_k"] == pytest.approx(expected, abs=1e-6), (alloy, sh, cname)
             adv = g["adverse"]
             assert g["seam_k_adverse_sway"] == max(adv["sway_reversed"]["seam_k"], adv["sway_one_sided"]["seam_k"])
             assert g["seam_k_adverse_with_preload"] == max(c["seam_k"] for c in adv.values())
             gen = g["gentle_one_sided"]
-            assert gen["seam_k"] == pytest.approx(k_sod(gen["F_amp_N"], gen["F_mean_N"], r86, mean86), abs=2e-4), (alloy, sh)
+            assert gen["seam_k"] == pytest.approx(k_sod(gen["F_amp_N"], gen["F_mean_N"], r86, mean86), abs=1e-6), (alloy, sh)
             if prev is not None:
                 assert g["seam_k_adverse_sway"] >= prev - 1e-9, (alloy, sh)
             prev = g["seam_k_adverse_sway"]
             ks.append(g["seam_k_adverse_sway"])
-        assert ks[0] == pytest.approx(row["seam_k_86"], abs=1e-4)
-        assert row["wire_stretch_at_wall_cap_um_max"] == pytest.approx(cap * (a + L) / ea_w * 1e3, abs=0.006), alloy
+        assert ks[0] == pytest.approx(row["seam_k_86"], abs=1e-6)
+        assert row["wire_stretch_at_wall_cap_um_max"] == pytest.approx(cap * (a + L) / ea_w * 1e3, abs=1e-6), alloy
         if row["adverse_share_at_wall_cap_exact"] is not None:
-            assert row["adverse_share_at_wall_cap_exact"] == pytest.approx(delta_of(cap, q_adv, ea_w) / (shift_hi * 1e-3), abs=1e-4)
+            assert row["adverse_share_at_wall_cap_exact"] == pytest.approx(delta_of(cap, q_adv, ea_w) / (shift_hi * 1e-3), abs=1e-6)
     # the pad
     pads = d["pad_sway_share1_upper_whisker_high"]
     assert all(0.0 <= v["fraction_of_shift"] <= 1.0 for v in pads.values())
@@ -5865,6 +5875,10 @@ def test_wire_liner_shear_lag_invariants():
     t_ref = d90["inputs"]["assembly_temperature_c"]
     dalpha_r = (ALPHA_PEEK_1K - a_fl) * D_BUS_ROD_MM / 2 * 1e3
     temps = th["temperatures_c"]
+    # the flip keys are the margins' DISPLAY (a label); the margin itself is the cached unrounded value (in-silico
+    # §When Modifying #6 — a label is not a number to compute from)
+    margin_of = {f"{m:.1f}": m for pair in th["l1_margin_um_90_model_edges"].values() for m in pair}
+    assert len(margin_of) == 2 * len(th["l1_margin_um_90_model_edges"])
     for key, v in th["flip_effective_cte_ppm_K"].items():
         sname, tname = key.split("__")
         peek = spans[sname][0]
@@ -5886,14 +5900,14 @@ def test_wire_liner_shear_lag_invariants():
             f = (-lin + math.sqrt(lin ** 2 + 4 * quad * dlt)) / (2 * quad)
             assert f < cap
             pad = f * (1 - r) / q_cold * f * ((1 + r) / (2 * ea_lr) - (1 - r) / (2 * ea_wb)) * 1e3
-            assert pad == pytest.approx(float(m_key), abs=0.01), (key, m_key)
+            assert pad == pytest.approx(margin_of[m_key], abs=1e-6), (key, m_key)
         # hot: a floor part grips with nothing there, so the threshold is analytic — α_Ti + m/(L_PEEK·ΔT)
         for m_key, alpha in v["hot_floor_part_vs_lower_margin_ppm_K"].items():
-            exact = (a_fl + float(m_key) * 1e-3 / (peek * (t_hi - t_ref))) * 1e6
+            exact = (a_fl + margin_of[m_key] * 1e-3 / (peek * (t_hi - t_ref))) * 1e6
             if exact > ALPHA_PEEK_1K * 1e6:
                 assert alpha is None, (key, m_key)
             else:
-                assert alpha == pytest.approx(exact, abs=2e-3), (key, m_key)
+                assert alpha == pytest.approx(exact, abs=1e-6), (key, m_key)
     c = d["controls"]
     for v in c["virgin"]:
         assert v["F_fe_wall_shear_N"] <= v["F_closed_N"] * (1 + 1e-3) and v["pad_fe_wall_shear_um"] >= v["pad_closed_um"] * (1 - 1e-3)
@@ -6080,7 +6094,7 @@ def test_anchor_wood_share_cte_share_front():
         assert all(b - a >= fr["step"] - 1e-9 for a, b in itertools.pairwise(shs[:-1]))
         assert ctes[0] == pytest.approx(cte_free, abs=1e-3) and shs[0] == 0.0
         cap = max(*sh["state2_cap_rigid_bark"].values(), *sh["state3_cap_rigid_bark_of_102_shift"].values())
-        assert shs[-1] == pytest.approx(cap, abs=1e-4)
+        assert shs[-1] == pytest.approx(cap, abs=1e-6)
         assert min(ctes) >= cte_min - 1e-3
 
 
@@ -6127,8 +6141,8 @@ def test_anchor_wood_share_zone3_fit_invariants():
     ea_ti = ti["E_GPa"] * 1e3 * a_sh
     ea_c = {ld: ea_ti + v for ld, v in ea_p.items()}
     al_c = (ea_ti * aa + ea_p["slow"] * ap) / ea_c["slow"]
-    assert z["shank"]["ti_section_mm2"] == pytest.approx(a_sh, abs=0.006)
-    assert z["alpha_composite_ppm_K"] == pytest.approx(al_c * 1e6, abs=1e-4)
+    assert z["shank"]["ti_section_mm2"] == pytest.approx(a_sh, abs=1e-6)
+    assert z["alpha_composite_ppm_K"] == pytest.approx(al_c * 1e6, abs=1e-6)
     assert z["composite_vs_102_gap_only_offset_ppm_K"] == pytest.approx((al_c - aa) * l_sh / gap * 1e6, abs=1e-4)
 
     def comp(d1, d2, ld):
@@ -6185,15 +6199,15 @@ def test_anchor_wood_share_zone3_fit_invariants():
 
     sh = z["share"]
     read2 = [sh2(kf, ka) for kf in kf_read for ka in k_a]
-    assert (sh["state2_at_air_dry_readings"]["min"], sh["state2_at_air_dry_readings"]["max"]) == pytest.approx((min(read2), max(read2)), abs=1e-4)
+    assert (sh["state2_at_air_dry_readings"]["min"], sh["state2_at_air_dry_readings"]["max"]) == pytest.approx((min(read2), max(read2)), abs=1e-6)
     depths = [s103.DEPTH_MIN + (dd - s103.DEPTH_MIN) * i / 40 for dd in tie.values() for i in range(41)]
     for b, ka in bonds.items():
-        assert sh["state2_cap_rigid_bark"][b] == pytest.approx(ka / (ka + ks["sway"]), abs=1e-4), b
+        assert sh["state2_cap_rigid_bark"][b] == pytest.approx(ka / (ka + ks["sway"]), abs=1e-6), b
         free3 = [sh3(ka, dd, dv) * dv / dv_ceil for dd in depths for dv in dvs.values()]
         got = sh["state3_no_bearing_any_depth_of_102_shift"][b]
-        assert (got["min"], got["max"]) == pytest.approx((min(free3), max(free3)), abs=1e-4), b
+        assert (got["min"], got["max"]) == pytest.approx((min(free3), max(free3)), abs=1e-6), b
         assert sh["state3_cap_rigid_bark_of_102_shift"][b] == pytest.approx(
-            max(sh3(ka, dd, dv, True) * dv / dv_ceil for dd in depths for dv in dvs.values()), abs=2e-4), b
+            max(sh3(ka, dd, dv, True) * dv / dv_ceil for dd in depths for dv in dvs.values()), abs=1e-6), b
 
     # Ta's seam on `102`'s own closed form with `102`'s preload on the gap-only span
     geo = d102["geometry"]
@@ -6218,8 +6232,10 @@ def test_anchor_wood_share_zone3_fit_invariants():
             return share - float(name.split("_")[1])
         if name.startswith("ta_k1_"):
             return seam("Ta", share, name.endswith("hot_preload")) - 1.0
-        return float(name.split("_")[2]) - c
+        return flip_cte[name] - c                         # the threshold rides beside its label, never parsed out of it
     thr_flip = d102["thermal"]["flip_vs_larger_margin_ppm_K"]
+    flip_cte = {**{f"hot_flip_{x:g}": x for x in thr_flip["hot_floor_part_zone3_fit_gap_only"]},
+                **{f"cold_flip_{x:g}": x for x in thr_flip["cold_zone3_fit_gap_only"]}}
     names = {f"share_{r:g}" for r in s103.SHARE_ROWS} | {"ta_k1_sway_alone", "ta_k1_hot_preload"} | \
         {f"hot_flip_{x:g}" for x in thr_flip["hot_floor_part_zone3_fit_gap_only"]} | \
         {f"cold_flip_{x:g}" for x in thr_flip["cold_zone3_fit_gap_only"]}
@@ -6259,11 +6275,11 @@ def test_anchor_wood_share_zone3_fit_invariants():
         dep = [v for k, v in group(T3, name).items() if k.endswith("anode_bond_stiff")]
         assert cell["reached_at_any_depth"] == ("deepest" in dep), name
     sv = z["seam_on_102_closed_form"]["Ta"]
-    assert sv["state1"]["hot_preload"] == pytest.approx(seam("Ta", 0.0, True), abs=2e-4)
+    assert sv["state1"]["hot_preload"] == pytest.approx(seam("Ta", 0.0, True), abs=1e-6)
     for b, ka in bonds.items():
         least = sv["state3_least_any_depth_and_bearing"][b]
         for corner, pre in (("adverse_reversed", False), ("adverse_reversed_hot_preload", True)):
-            assert least[corner] == pytest.approx(min(seam("Ta", sh3(ka, d_deep, dv) * dv / dv_ceil, pre) for dv in dvs.values()), abs=2e-4)
+            assert least[corner] == pytest.approx(min(seam("Ta", sh3(ka, d_deep, dv) * dv / dv_ceil, pre) for dv in dvs.values()), abs=1e-6)
 
     # the heat: the CTE floor over the ends of every axis and the depth axis, against the sign change on the gap
     h = z["heat"]
@@ -8572,7 +8588,7 @@ def test_winter_pv_autonomy_invariants():
     def demand(dk, c):
         return (0.0 if dk == "standby_sleep" else wake[c] / h_c) + sleep[dk]
 
-    assert d["inputs"]["cadence_c_interval_s"] == round(h_c, 1)
+    assert d["inputs"]["cadence_c_interval_s"] == pytest.approx(h_c, rel=1e-12)     # cached unrounded: 114 computes from it
     for c in corners:
         k = d["inputs"]["corners"][c]
         top, floor = window[c]

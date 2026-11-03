@@ -31,7 +31,7 @@
   },
   "bark": {
     "flange_diameter_mm": 29.8,
-    "facing_spread_mm": 5.175,
+    "facing_spread_mm": 5.174715694474524,
     "thin_mm": 8.325,
     "thick_mm": 21.0
   },
@@ -43,8 +43,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 52.9,
-      "cambium_max_C": 46.62,
+      "flange_max_C": 52.901622820107306,
+      "cambium_max_C": 46.623958295395774,
       "at": "2007-07-19T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -55,8 +55,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 51.4,
-      "cambium_max_C": 45.52,
+      "flange_max_C": 51.423610648188756,
+      "cambium_max_C": 45.51651730261357,
       "at": "2007-08-24T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -67,8 +67,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 55.6,
-      "cambium_max_C": 48.77,
+      "flange_max_C": 55.55822679306401,
+      "cambium_max_C": 48.77330181835307,
       "at": "2007-07-19T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -79,8 +79,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 54.2,
-      "cambium_max_C": 47.73,
+      "flange_max_C": 54.1946366414116,
+      "cambium_max_C": 47.72736532769047,
       "at": "2007-08-24T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -91,8 +91,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 58.1,
-      "cambium_max_C": 50.86,
+      "flange_max_C": 58.13820531761594,
+      "cambium_max_C": 50.86204932629559,
       "at": "2007-07-19T16:00",
       "hours_above_gate": 11,
       "hours_above_upper": 0
@@ -103,8 +103,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 56.8,
-      "cambium_max_C": 49.85,
+      "flange_max_C": 56.756588803826446,
+      "cambium_max_C": 49.850786003587395,
       "at": "2007-08-24T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -115,8 +115,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 60.7,
-      "cambium_max_C": 52.9,
+      "flange_max_C": 60.65142167836737,
+      "cambium_max_C": 52.8980244095262,
       "at": "2007-07-19T16:00",
       "hours_above_gate": 136,
       "hours_above_upper": 0
@@ -127,8 +127,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 59.4,
-      "cambium_max_C": 51.92,
+      "flange_max_C": 59.440115885899274,
+      "cambium_max_C": 51.92264043643351,
       "at": "2007-08-24T16:00",
       "hours_above_gate": 5,
       "hours_above_upper": 0
@@ -139,8 +139,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 63.1,
-      "cambium_max_C": 54.89,
+      "flange_max_C": 63.10537855621449,
+      "cambium_max_C": 54.88717507456482,
       "at": "2007-07-19T16:00",
       "hours_above_gate": 633,
       "hours_above_upper": 0
@@ -151,8 +151,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 61.8,
-      "cambium_max_C": 53.87,
+      "flange_max_C": 61.84231480239204,
+      "cambium_max_C": 53.86565230274383,
       "at": "2007-08-24T16:00",
       "hours_above_gate": 31,
       "hours_above_upper": 0
@@ -163,8 +163,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 64.3,
-      "cambium_max_C": 55.87,
+      "flange_max_C": 64.31203007419087,
+      "cambium_max_C": 55.86569321858574,
       "at": "2007-07-19T16:00",
       "hours_above_gate": 1157,
       "hours_above_upper": 0
@@ -175,8 +175,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 63.0,
-      "cambium_max_C": 54.82,
+      "flange_max_C": 63.023658985288,
+      "cambium_max_C": 54.81757762699388,
       "at": "2007-08-24T16:00",
       "hours_above_gate": 47,
       "hours_above_upper": 0
@@ -187,8 +187,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 42.8,
-      "cambium_max_C": 38.36,
+      "flange_max_C": 42.7630348629913,
+      "cambium_max_C": 38.360158903742025,
       "at": "2010-08-06T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -199,8 +199,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 40.4,
-      "cambium_max_C": 36.73,
+      "flange_max_C": 40.352607695584226,
+      "cambium_max_C": 36.72766643359028,
       "at": "2010-08-08T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -211,8 +211,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 44.2,
-      "cambium_max_C": 39.36,
+      "flange_max_C": 44.230438273176716,
+      "cambium_max_C": 39.35588965253881,
       "at": "2010-08-06T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -223,8 +223,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 40.9,
-      "cambium_max_C": 37.06,
+      "flange_max_C": 40.93813960464478,
+      "cambium_max_C": 37.06187660394708,
       "at": "2010-08-08T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -235,8 +235,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 45.7,
-      "cambium_max_C": 40.33,
+      "flange_max_C": 45.66250169766555,
+      "cambium_max_C": 40.329026022844154,
       "at": "2010-08-06T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -247,8 +247,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 41.9,
-      "cambium_max_C": 37.4,
+      "flange_max_C": 41.946735867950565,
+      "cambium_max_C": 37.395633072525726,
       "at": "2010-08-08T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -259,8 +259,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 47.1,
-      "cambium_max_C": 41.28,
+      "flange_max_C": 47.06379520443037,
+      "cambium_max_C": 41.282486373004765,
       "at": "2010-08-06T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -271,8 +271,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 42.9,
-      "cambium_max_C": 37.97,
+      "flange_max_C": 42.935746194125336,
+      "cambium_max_C": 37.9686598495629,
       "at": "2010-08-06T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -283,8 +283,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 48.4,
-      "cambium_max_C": 42.22,
+      "flange_max_C": 48.437792669953375,
+      "cambium_max_C": 42.21848963982324,
       "at": "2010-08-06T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -295,8 +295,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 43.9,
-      "cambium_max_C": 38.62,
+      "flange_max_C": 43.90737960791981,
+      "cambium_max_C": 38.616158896936874,
       "at": "2010-08-06T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -307,8 +307,8 @@
       "wind_k": 0.0,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 49.1,
-      "cambium_max_C": 42.68,
+      "flange_max_C": 49.115432410635044,
+      "cambium_max_C": 42.68050517699149,
       "at": "2010-08-06T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -319,8 +319,8 @@
       "wind_k": 0.1,
       "bark_side": "thin",
       "bark_mm": 8.325,
-      "flange_max_C": 44.4,
-      "cambium_max_C": 38.94,
+      "flange_max_C": 44.38723780313374,
+      "cambium_max_C": 38.93926898403714,
       "at": "2010-08-06T16:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -331,8 +331,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 52.9,
-      "cambium_max_C": 42.88,
+      "flange_max_C": 52.901622820107306,
+      "cambium_max_C": 42.8818710040481,
       "at": "2010-08-08T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -343,8 +343,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 51.4,
-      "cambium_max_C": 41.4,
+      "flange_max_C": 51.423610648188756,
+      "cambium_max_C": 41.39744742872247,
       "at": "2007-08-24T18:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -355,8 +355,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 55.6,
-      "cambium_max_C": 44.57,
+      "flange_max_C": 55.55822679306401,
+      "cambium_max_C": 44.57421466735992,
       "at": "2010-08-08T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -367,8 +367,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 54.2,
-      "cambium_max_C": 43.19,
+      "flange_max_C": 54.1946366414116,
+      "cambium_max_C": 43.18914223054171,
       "at": "2007-08-24T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -379,8 +379,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 58.1,
-      "cambium_max_C": 46.22,
+      "flange_max_C": 58.13820531761594,
+      "cambium_max_C": 46.22035451010537,
       "at": "2010-08-08T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -391,8 +391,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 56.8,
-      "cambium_max_C": 44.95,
+      "flange_max_C": 56.756588803826446,
+      "cambium_max_C": 44.948018215151116,
       "at": "2007-08-24T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -403,8 +403,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 60.7,
-      "cambium_max_C": 47.83,
+      "flange_max_C": 60.65142167836737,
+      "cambium_max_C": 47.82625703488327,
       "at": "2010-08-08T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -415,8 +415,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 59.4,
-      "cambium_max_C": 46.67,
+      "flange_max_C": 59.440115885899274,
+      "cambium_max_C": 46.66959609624405,
       "at": "2007-08-24T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -427,8 +427,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 63.1,
-      "cambium_max_C": 49.4,
+      "flange_max_C": 63.10537855621449,
+      "cambium_max_C": 49.39645813961704,
       "at": "2010-08-08T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -439,8 +439,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 61.8,
-      "cambium_max_C": 48.32,
+      "flange_max_C": 61.84231480239204,
+      "cambium_max_C": 48.31602063712673,
       "at": "2007-08-24T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -451,8 +451,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 64.3,
-      "cambium_max_C": 50.2,
+      "flange_max_C": 64.31203007419087,
+      "cambium_max_C": 50.204674069045154,
       "at": "2007-07-19T17:00",
       "hours_above_gate": 5,
       "hours_above_upper": 0
@@ -463,8 +463,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 63.0,
-      "cambium_max_C": 49.12,
+      "flange_max_C": 63.023658985288,
+      "cambium_max_C": 49.1205064981493,
       "at": "2007-08-24T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -475,8 +475,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 42.8,
-      "cambium_max_C": 35.58,
+      "flange_max_C": 42.7630348629913,
+      "cambium_max_C": 35.57799625859832,
       "at": "2010-08-08T18:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -487,8 +487,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 40.4,
-      "cambium_max_C": 34.56,
+      "flange_max_C": 40.352607695584226,
+      "cambium_max_C": 34.56440299522737,
       "at": "2010-08-08T18:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -499,8 +499,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 44.2,
-      "cambium_max_C": 36.31,
+      "flange_max_C": 44.230438273176716,
+      "cambium_max_C": 36.306915158686664,
       "at": "2010-08-06T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -511,8 +511,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 40.9,
-      "cambium_max_C": 34.83,
+      "flange_max_C": 40.93813960464478,
+      "cambium_max_C": 34.83231142099434,
       "at": "2010-08-08T18:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -523,8 +523,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 45.7,
-      "cambium_max_C": 37.05,
+      "flange_max_C": 45.66250169766555,
+      "cambium_max_C": 37.05283265020278,
       "at": "2010-08-06T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -535,8 +535,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 41.9,
-      "cambium_max_C": 35.1,
+      "flange_max_C": 41.946735867950565,
+      "cambium_max_C": 35.09987212532497,
       "at": "2010-08-08T18:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -547,8 +547,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 47.1,
-      "cambium_max_C": 37.78,
+      "flange_max_C": 47.06379520443037,
+      "cambium_max_C": 37.78408726804243,
       "at": "2010-08-06T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -559,8 +559,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 42.9,
-      "cambium_max_C": 35.37,
+      "flange_max_C": 42.935746194125336,
+      "cambium_max_C": 35.36708579769215,
       "at": "2010-08-08T18:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -571,8 +571,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 48.4,
-      "cambium_max_C": 38.5,
+      "flange_max_C": 48.437792669953375,
+      "cambium_max_C": 38.50233367111165,
       "at": "2010-08-06T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -583,8 +583,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 43.9,
-      "cambium_max_C": 35.73,
+      "flange_max_C": 43.90737960791981,
+      "cambium_max_C": 35.73024391796592,
       "at": "2010-08-06T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -595,8 +595,8 @@
       "wind_k": 0.0,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 49.1,
-      "cambium_max_C": 38.86,
+      "flange_max_C": 49.115432410635044,
+      "cambium_max_C": 38.85699660287117,
       "at": "2010-08-06T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -607,8 +607,8 @@
       "wind_k": 0.1,
       "bark_side": "thick",
       "bark_mm": 21.0,
-      "flange_max_C": 44.4,
-      "cambium_max_C": 35.98,
+      "flange_max_C": 44.38723780313374,
+      "cambium_max_C": 35.976715363071705,
       "at": "2010-08-06T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -617,14 +617,14 @@
   "reference_no_flange_surface_at_air": {
     "thin": {
       "bark_mm": 8.325,
-      "cambium_max_C": 35.18,
+      "cambium_max_C": 35.17532547961827,
       "at": "2010-08-08T17:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
     },
     "thick": {
       "bark_mm": 21.0,
-      "cambium_max_C": 33.25,
+      "cambium_max_C": 33.246901530596055,
       "at": "2010-08-08T19:00",
       "hours_above_gate": 0,
       "hours_above_upper": 0
@@ -635,20 +635,20 @@
       "h_c_scale": 0.7,
       "cambium_max_C_sunlit_still_by_alpha": {
         "thin": {
-          "0.50": 48.29,
-          "0.60": 50.75,
-          "0.70": 53.13,
-          "0.80": 55.45,
-          "0.90": 57.72,
-          "0.95": 58.83
+          "0.50": 48.29320928365043,
+          "0.60": 50.74684963766198,
+          "0.70": 53.12995582277786,
+          "0.80": 55.45094485661585,
+          "0.90": 57.716308920995274,
+          "0.95": 58.829790010179835
         },
         "thick": {
-          "0.50": 44.18,
-          "0.60": 46.11,
-          "0.70": 47.99,
-          "0.80": 49.86,
-          "0.90": 51.79,
-          "0.95": 52.74
+          "0.50": 44.18241104188708,
+          "0.60": 46.11475456564626,
+          "0.70": 47.99376913665097,
+          "0.80": 49.86078121372026,
+          "0.90": 51.790614796580826,
+          "0.95": 52.73948585245564
         }
       },
       "alpha_crossing_sunlit_still_air": {
@@ -656,7 +656,7 @@
         "thick": 0.807
       },
       "specified_alpha_thin": {
-        "cambium_max_C": 48.29,
+        "cambium_max_C": 48.29320928365043,
         "at": "2007-07-19T16:00",
         "hours_above_gate": 0
       },
@@ -669,8 +669,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 52.9,
-        "cambium_max_C": 46.62,
+        "flange_max_C": 52.901622820107306,
+        "cambium_max_C": 46.623958295395774,
         "at": "2007-07-19T16:00",
         "hours_above_gate": 0,
         "hours_above_upper": 0
@@ -681,8 +681,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 55.6,
-        "cambium_max_C": 48.77,
+        "flange_max_C": 55.55822679306401,
+        "cambium_max_C": 48.77330181835307,
         "at": "2007-07-19T16:00",
         "hours_above_gate": 0,
         "hours_above_upper": 0
@@ -693,8 +693,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 58.1,
-        "cambium_max_C": 50.86,
+        "flange_max_C": 58.13820531761594,
+        "cambium_max_C": 50.86204932629559,
         "at": "2007-07-19T16:00",
         "hours_above_gate": 11,
         "hours_above_upper": 0
@@ -705,8 +705,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 60.7,
-        "cambium_max_C": 52.9,
+        "flange_max_C": 60.65142167836737,
+        "cambium_max_C": 52.8980244095262,
         "at": "2007-07-19T16:00",
         "hours_above_gate": 136,
         "hours_above_upper": 0
@@ -717,8 +717,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 63.1,
-        "cambium_max_C": 54.89,
+        "flange_max_C": 63.10537855621449,
+        "cambium_max_C": 54.88717507456482,
         "at": "2007-07-19T16:00",
         "hours_above_gate": 633,
         "hours_above_upper": 0
@@ -729,8 +729,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 64.3,
-        "cambium_max_C": 55.87,
+        "flange_max_C": 64.31203007419087,
+        "cambium_max_C": 55.86569321858574,
         "at": "2007-07-19T16:00",
         "hours_above_gate": 1157,
         "hours_above_upper": 0
@@ -741,8 +741,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 42.8,
-        "cambium_max_C": 38.36,
+        "flange_max_C": 42.7630348629913,
+        "cambium_max_C": 38.360158903742025,
         "at": "2010-08-06T16:00",
         "hours_above_gate": 0,
         "hours_above_upper": 0
@@ -753,8 +753,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 44.2,
-        "cambium_max_C": 39.36,
+        "flange_max_C": 44.230438273176716,
+        "cambium_max_C": 39.35588965253881,
         "at": "2010-08-06T16:00",
         "hours_above_gate": 0,
         "hours_above_upper": 0
@@ -765,8 +765,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 45.7,
-        "cambium_max_C": 40.33,
+        "flange_max_C": 45.66250169766555,
+        "cambium_max_C": 40.329026022844154,
         "at": "2010-08-06T16:00",
         "hours_above_gate": 0,
         "hours_above_upper": 0
@@ -777,8 +777,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 47.1,
-        "cambium_max_C": 41.28,
+        "flange_max_C": 47.06379520443037,
+        "cambium_max_C": 41.282486373004765,
         "at": "2010-08-06T16:00",
         "hours_above_gate": 0,
         "hours_above_upper": 0
@@ -789,8 +789,8 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 48.4,
-        "cambium_max_C": 42.22,
+        "flange_max_C": 48.437792669953375,
+        "cambium_max_C": 42.21848963982324,
         "at": "2010-08-06T16:00",
         "hours_above_gate": 0,
         "hours_above_upper": 0
@@ -801,21 +801,21 @@
         "wind_k": 0.0,
         "bark_side": "thin",
         "bark_mm": 8.325,
-        "flange_max_C": 49.1,
-        "cambium_max_C": 42.68,
+        "flange_max_C": 49.115432410635044,
+        "cambium_max_C": 42.68050517699149,
         "at": "2010-08-06T16:00",
         "hours_above_gate": 0,
         "hours_above_upper": 0
       }
     },
-    "no_flange_max_C": 35.18,
+    "no_flange_max_C": 35.17532547961827,
     "shift_under_crown_K": {
       "0.50": 3.18,
       "0.60": 4.18,
       "0.70": 5.15,
-      "0.80": 6.1,
+      "0.80": 6.11,
       "0.90": 7.04,
-      "0.95": 7.5
+      "0.95": 7.51
     },
     "alpha_crossing_sunlit_still_air": {
       "thin": 0.659,

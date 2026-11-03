@@ -35,7 +35,7 @@
       ],
       "model_edges": [
         -33.53,
-        55.0
+        54.9638266127217
       ]
     },
     "daily_series": "71: sunlit, α 0.5, wind factor 0.1, ERA5 1991–2020 hourly; no night-sky cooling — a reading whose error on the range has no known sign",
@@ -80,8 +80,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              11.9,
-              13.2
+              11.923211999999994,
+              13.15988800000001
             ]
           },
           "L2 spacer + bayonet hard-stop": {
@@ -91,8 +91,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              52.9,
-              54.2
+              52.92321199999994,
+              54.15988799999995
             ]
           },
           "L3 spacer 0.05 mm + bayonet hard-stop": {
@@ -102,8 +102,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              67.9,
-              69.2
+              67.92321199999988,
+              69.1598879999999
             ]
           }
         }
@@ -121,8 +121,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              8.4,
-              9.9
+              8.376812000000088,
+              9.886287999999976
             ]
           },
           "L2 spacer + bayonet hard-stop": {
@@ -132,8 +132,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              49.4,
-              50.9
+              49.37681200000004,
+              50.886287999999915
             ]
           },
           "L3 spacer 0.05 mm + bayonet hard-stop": {
@@ -143,8 +143,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              64.4,
-              65.9
+              64.37681199999997,
+              65.88628799999987
             ]
           }
         }
@@ -162,8 +162,8 @@
             ],
             "holds_window": false,
             "margin_um": [
-              -8.2,
-              -5.4
+              -8.201749999999985,
+              -5.41699999999996
             ]
           },
           "L2 spacer + bayonet hard-stop": {
@@ -173,8 +173,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              32.8,
-              35.6
+              32.79824999999996,
+              35.582999999999984
             ]
           },
           "L3 spacer 0.05 mm + bayonet hard-stop": {
@@ -184,8 +184,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              47.8,
-              50.6
+              47.7982499999999,
+              50.582999999999934
             ]
           }
         }
@@ -196,7 +196,7 @@
         "gap_um_cold": -14.9,
         "gap_um_hot": 9.7,
         "stroke_um_cold": -13.2,
-        "stroke_um_hot": 8.7,
+        "stroke_um_hot": 8.6,
         "window": {
           "L1 spacer only": {
             "compression_pct_range": [
@@ -205,8 +205,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              19.3,
-              14.8
+              19.352214951977185,
+              14.760146744000057
             ]
           },
           "L2 spacer + bayonet hard-stop": {
@@ -216,8 +216,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              60.3,
-              55.8
+              60.35221495197713,
+              55.760146744000004
             ]
           },
           "L3 spacer 0.05 mm + bayonet hard-stop": {
@@ -227,8 +227,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              75.3,
-              70.8
+              75.35221495197707,
+              70.76014674399994
             ]
           }
         }
@@ -246,8 +246,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              17.4,
-              11.8
+              17.444588571987094,
+              11.839549943999959
             ]
           },
           "L2 spacer + bayonet hard-stop": {
@@ -257,8 +257,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              58.4,
-              52.8
+              58.44458857198704,
+              52.839549943999906
             ]
           },
           "L3 spacer 0.05 mm + bayonet hard-stop": {
@@ -268,8 +268,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              73.4,
-              67.8
+              73.444588571987,
+              67.83954994399986
             ]
           }
         }
@@ -287,8 +287,8 @@
             ],
             "holds_window": false,
             "margin_um": [
-              8.5,
-              -1.8
+              8.526896768044633,
+              -1.8135334999999972
             ]
           },
           "L2 spacer + bayonet hard-stop": {
@@ -298,8 +298,8 @@
             ],
             "holds_window": true,
             "margin_um": [
-              49.5,
-              39.2
+              49.52689676804458,
+              39.186466499999945
             ]
           },
           "L3 spacer 0.05 mm + bayonet hard-stop": {
@@ -309,15 +309,15 @@
             ],
             "holds_window": true,
             "margin_um": [
-              64.5,
-              54.2
+              64.52689676804454,
+              54.18646649999989
             ]
           }
         }
       }
     }
   },
-  "radome_lead_tolerated_by_L1_K": 32.9,
+  "radome_lead_tolerated_by_L1_K": 32.8,
   "spacer_alpha_1K_at_zero_L1_margin": {
     "fr4_40": -4.05e-06,
     "fr4_44": -5.65e-06

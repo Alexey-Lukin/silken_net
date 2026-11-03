@@ -22,32 +22,32 @@
       {
         "wall_mm": 0.2,
         "net_area_mm2": 15.67,
-        "breakeven_force_N": 6894.0
+        "breakeven_force_N": 6893.59226774207
       },
       {
         "wall_mm": 0.3,
         "net_area_mm2": 23.5,
-        "breakeven_force_N": 10340.0
+        "breakeven_force_N": 10340.388401613103
       },
       {
         "wall_mm": 0.5,
         "net_area_mm2": 39.17,
-        "breakeven_force_N": 17234.0
+        "breakeven_force_N": 17233.980669355173
       },
       {
         "wall_mm": 0.8,
         "net_area_mm2": 62.67,
-        "breakeven_force_N": 27574.0
+        "breakeven_force_N": 27574.36907096828
       },
       {
         "wall_mm": 1.0,
         "net_area_mm2": 78.34,
-        "breakeven_force_N": 34468.0
+        "breakeven_force_N": 34467.961338710345
       },
       {
         "wall_mm": 1.6,
         "net_area_mm2": 125.34,
-        "breakeven_force_N": 55149.0
+        "breakeven_force_N": 55148.73814193656
       }
     ],
     "idealisation": "призматичне кільце на чистий розтяг; згину від ексцентриситету вушка немає"
@@ -58,32 +58,32 @@
       {
         "wall_mm": 0.2,
         "shear_area_all_lugs_mm2": 1.8,
-        "breakeven_force_N": 457.0
+        "breakeven_force_N": 457.26141319818373
       },
       {
         "wall_mm": 0.3,
         "shear_area_all_lugs_mm2": 2.7,
-        "breakeven_force_N": 686.0
+        "breakeven_force_N": 685.8921197972754
       },
       {
         "wall_mm": 0.5,
         "shear_area_all_lugs_mm2": 4.5,
-        "breakeven_force_N": 1143.0
+        "breakeven_force_N": 1143.1535329954593
       },
       {
         "wall_mm": 0.8,
         "shear_area_all_lugs_mm2": 7.2,
-        "breakeven_force_N": 1829.0
+        "breakeven_force_N": 1829.045652792735
       },
       {
         "wall_mm": 1.0,
         "shear_area_all_lugs_mm2": 9.0,
-        "breakeven_force_N": 2286.0
+        "breakeven_force_N": 2286.3070659909185
       },
       {
         "wall_mm": 1.6,
         "shear_area_all_lugs_mm2": 14.4,
-        "breakeven_force_N": 3658.0
+        "breakeven_force_N": 3658.09130558547
       }
     ],
     "idealisation": "чистий зріз по кореню; концентрації в галтелі НЕ модельовано (жоден прилад; FEA HW.26 — про PEEK біля барба, не про Ti)"
@@ -131,7 +131,7 @@
   },
   "verdict": {
     "binding_static_case": "B — зріз кореня вушка",
-    "capacity_at_print_floor_N": 457.0,
+    "capacity_at_print_floor_N": 457.26141319818373,
     "margin_x_over_generous_oring_bound": 4.6,
     "margin_x_over_pogo_pair": 238.0,
     "static": "СТАТИКА СТІНКИ НЕ ЗАДАЄ: уже на друкованій підлозі звʼязувальний випадок тримає 457 Н — це 4.6× ЩЕДРОЇ межі 100 Н і 238× єдиної пружини, яку канон задає. ⚠️ Запас проти щедрої межі — кілька разів, НЕ «порядки»: порядки є лише проти pogo. Але він уже містить SF 2.0, тож до самої текучості вдвічі більше. Тож стінку задає ДРУКОВНІСТЬ (SLM-підлога) або механообробка на CNC-маршруті, не міцність — і відсутній датум O-ring перестає бути блокером САМЕ ТОМУ, що щедра межа вже перекрита.",

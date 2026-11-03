@@ -691,9 +691,9 @@
     }
   },
   "flange_hot_hour_78": {
-    "flange_max_C": 52.9,
-    "cambium_under_flange_max_C": 46.62,
-    "cambium_no_flange_max_C": 35.18,
+    "flange_max_C": 52.901622820107306,
+    "cambium_under_flange_max_C": 46.623958295395774,
+    "cambium_no_flange_max_C": 35.17532547961827,
     "case": "78: sunlit, α 0.5, still air"
   },
   "bark_bearing": {
@@ -710,7 +710,7 @@
     "U_rows_premise_b": {
       "sway:green_p_radiata_lowest_group__ln2.3:sequoia_whole_bark_air_dry__thin_contact_78": 0.0229,
       "sway:green_p_radiata_lowest_group__ln2.3:sequoia_whole_bark_air_dry__thick_side_78": 0.0092,
-      "sway:green_p_radiata_lowest_group__ln2.3:p_taeda_outer_bark_air_dry__thin_contact_78": 0.3266,
+      "sway:green_p_radiata_lowest_group__ln2.3:p_taeda_outer_bark_air_dry__thin_contact_78": 0.3265,
       "sway:green_p_radiata_lowest_group__ln2.3:p_taeda_outer_bark_air_dry__thick_side_78": 0.1612,
       "sway:green_p_radiata_lowest_group__ln3.5:sequoia_whole_bark_air_dry__thin_contact_78": 0.0329,
       "sway:green_p_radiata_lowest_group__ln3.5:sequoia_whole_bark_air_dry__thick_side_78": 0.0133,
@@ -1214,7 +1214,7 @@
     "count_home": "the server unwraps the delivered phases — nothing persisted on the device (03_01: the RTC backup domain does not survive an outage on our board). What breaks it: a maintenance event that moves the sensor against the scale (radome off/on, a board re-seat) — a step the server must mark as a discontinuity; a ledger whose old readings are archived or expire — the server keeps a persisted running unwrapped position, not a recompute over history; creep of the sensor's mount; and the phase needs a field on the wire."
   },
   "energy": {
-    "cadence_c_s": 5536.5,
+    "cadence_c_s": 5536.544850498338,
     "demand_uW_110_nominal": {
       "standby_sleep": 4.18,
       "cadence_c": 10.2,

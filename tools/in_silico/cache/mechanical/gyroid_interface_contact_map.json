@@ -14,7 +14,7 @@
         "fields": ["inputs.lattice_reading", "inputs.solid_fraction_105", "inputs.theta_deg", "inputs.zener_grid", "inputs.groups", "wood_readings", "green_wood_readings", "cells", "green_cells", "theta0_share_over_modelled_set", "green_theta0_share", "union_theta0_share", "gyroid_binds_above_surface_strain_ue_theta0_lowest_share", "union_gyroid_binds_above_surface_strain_ue_theta0_lowest_share", "junction_share_sup_at_C44_zero", "green_junction_share_sup_at_C44_zero", "union_junction_share_sup_at_C44_zero", "consumer_ceiling_binding_claim", "consumer_ceiling_junction", "measured_C44"]
       },
       "105": {
-        "sha256": "9561c40e2ecce67acf04fea90ccf4e1cdbdaa126cee1268ffc4664a8c0475a3c",
+        "sha256": "76cb958f94cf9b519a5b8d4bb50b9c2b800abf25100a516a7d8f241bb1f0660d",
         "fields": ["inputs.stem_readings_87", "inputs.depth_fraction", "inputs.solid_fraction", "zone1_members"]
       },
       "cem_anode": {
@@ -34999,39 +34999,39 @@
     "effect_on_friction_needed": "no direction: the force adds axial shear (|τ| = √(τ_ψ² + τ_R²) ≥ |τ_ψ| at a FIXED σ_n), and it also moves σ_n through the gyroid's Poisson strain, with a sign that alternates with the sway — not computed (the 2026-10-22 review, finding 4)",
     "states": {
       "anode_bond_stiff|state3_rigid_tie_max|median": {
-        "force_N": 373.16127484110734,
-        "mean_shear_MPa": 0.2699566430065253
+        "force_N": 373.16110425021594,
+        "mean_shear_MPa": 0.26995651959569067
       },
       "anode_bond_stiff|state3_rigid_tie_max|upper_whisker": {
-        "force_N": 746.3225496822147,
-        "mean_shear_MPa": 0.5399132860130506
+        "force_N": 746.3222085004319,
+        "mean_shear_MPa": 0.5399130391913813
       },
       "anode_bond_stiff|rigid_sleeve|median": {
-        "force_N": 826.8099720535857,
-        "mean_shear_MPa": 0.5981404275000002
+        "force_N": 826.8093579022282,
+        "mean_shear_MPa": 0.5981399832035258
       },
       "anode_bond_stiff|rigid_sleeve|upper_whisker": {
-        "force_N": 1653.6199441071715,
-        "mean_shear_MPa": 1.1962808550000004
+        "force_N": 1653.6187158044563,
+        "mean_shear_MPa": 1.1962799664070516
       },
       "anode_bond_soft|state3_rigid_tie_max|median": {
-        "force_N": 51.50958540147271,
-        "mean_shear_MPa": 0.037263659696629606
+        "force_N": 51.51026364082005,
+        "mean_shear_MPa": 0.037264150356378374
       },
       "anode_bond_soft|state3_rigid_tie_max|upper_whisker": {
-        "force_N": 103.01917080294542,
-        "mean_shear_MPa": 0.07452731939325921
+        "force_N": 103.0205272816401,
+        "mean_shear_MPa": 0.07452830071275675
       },
       "anode_bond_soft|rigid_sleeve|median": {
-        "force_N": 56.98819540987472,
-        "mean_shear_MPa": 0.04122705907894738
+        "force_N": 56.989021003711166,
+        "mean_shear_MPa": 0.041227656339584
       },
       "anode_bond_soft|rigid_sleeve|upper_whisker": {
-        "force_N": 113.97639081974944,
-        "mean_shear_MPa": 0.08245411815789476
+        "force_N": 113.97804200742233,
+        "mean_shear_MPa": 0.082455312679168
       }
     },
-    "mean_shear_MPa_range": [0.037263659696629606, 1.1962808550000004]
+    "mean_shear_MPa_range": [0.037264150356378374, 1.1962799664070516]
   },
   "psi_resolution": {
     "envelope_radius_mm": 5.5,

@@ -170,7 +170,7 @@ def case_a_axial_retention(g: dict) -> dict:
         rows.append({
             "wall_mm": t,
             "net_area_mm2": round(area_net, 2),
-            "breakeven_force_N": round(sigma_allow * area_net, 0),
+            "breakeven_force_N": sigma_allow * area_net,      # unrounded: 88 and 89 compute from it (in-silico §When Modifying #6)
         })
     return {
         "sigma_allow_MPa": sigma_allow,
@@ -194,7 +194,7 @@ def case_b_lug_root_shear(g: dict) -> dict:
         rows.append({
             "wall_mm": t,
             "shear_area_all_lugs_mm2": round(area_one * g["bayonet_lugs"], 2),
-            "breakeven_force_N": round(tau_allow * area_one * g["bayonet_lugs"], 0),
+            "breakeven_force_N": tau_allow * area_one * g["bayonet_lugs"],   # unrounded: 88 and 89 compute from it
         })
     return {
         "tau_allow_MPa": round(tau_allow, 1),

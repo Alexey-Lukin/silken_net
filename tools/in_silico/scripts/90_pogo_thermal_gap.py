@@ -156,7 +156,8 @@ def main() -> int:
                 lo = nominal_pct - res / travel + comp_hot_pct
                 checks[label] = {"compression_pct_range": [round(lo * 100, 2), round(hi * 100, 2)],
                                  "holds_window": bool(win[0] <= lo and hi <= win[1]),
-                                 "margin_um": [round((lo - win[0]) * travel * 1e3, 1), round((win[1] - hi) * travel * 1e3, 1)]}
+                                 # unrounded: 102, 104 and the radome lead below compute from it (in-silico §When Modifying #6)
+                                 "margin_um": [(lo - win[0]) * travel * 1e3, (win[1] - hi) * travel * 1e3]}
             per[cname] = {"gap_um_cold": round(cold_um, 1), "gap_um_hot": round(hot_um, 1),
                           "stroke_um_cold": round(s_cold, 1), "stroke_um_hot": round(s_hot, 1), "window": checks}
         seasonal[rname] = per
@@ -169,7 +170,7 @@ def main() -> int:
     q = DAILY_ALPHA * (1.0 * h["dni"] * a_proj + S71.SKY_VIEW * h["dif"] * a_exp)
     t_cap = S71.solve_t_cap(h["t_air"], q, a_exp, d_m, k_wind * h["u10"])
     want = c71["hot_bound"][DAILY_CASE][f"{DAILY_ALPHA:.2f}"][f"{k_wind:.1f}"]["t_cap_max_c"]
-    if abs(round(float(t_cap.max()), 1) - want) > 0.05:
+    if abs(float(t_cap.max()) - want) > 1e-9:                      # 71 caches it unrounded: the same code, the same number
         raise SystemExit(f"71 does not reproduce its own cache: {t_cap.max():.2f} vs {want}")
     days = np.array([t[:10] for t in h["time"]])
     _, idx = np.unique(days, return_index=True)

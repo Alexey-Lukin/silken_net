@@ -370,33 +370,36 @@ def main() -> int:
             ks = {c: soderberg_k(amp86, mean86, v["F_amp"], v["F_mean"], area_w, row86) for c, v in cases.items()}
             g_cyc = gentle.cycle(sh * shift_lo * 1e-3 / 2.0, sh * shift_lo * 1e-3 / 2.0)
             k_sway = [ks["sway_reversed"], ks["sway_one_sided"]]
-            grid[f"{sh:g}"] = {"adverse": {c: {"F_amp_N": round(v["F_amp"], 3), "F_mean_N": round(v["F_mean"], 3),
+            # seam k and the forces unrounded: 103, 104 and the cache-integrity test compute from them, the verdict rounds
+            # once, up (in-silico §When Modifying #6)
+            grid[f"{sh:g}"] = {"adverse": {c: {"F_amp_N": v["F_amp"], "F_mean_N": v["F_mean"],
                                                "wall_or_slip_reached": v["capped"],
-                                               "seam_k": None if ks[c] is None else round(ks[c], 4)}
+                                               "seam_k": ks[c]}
                                            for c, v in cases.items()},
-                               "seam_k_adverse_sway": None if None in k_sway else round(max(k_sway), 4),
-                               "seam_k_adverse_with_preload": None if None in ks.values() else round(max(ks.values()), 4),
+                               "seam_k_adverse_sway": None if None in k_sway else max(k_sway),
+                               "seam_k_adverse_with_preload": None if None in ks.values() else max(ks.values()),
                                "adverse_sway_capped": cases["sway_reversed"]["capped"],
-                               "gentle_one_sided": {"F_amp_N": round(g_cyc["F_amp"], 3), "F_mean_N": round(g_cyc["F_mean"], 3),
-                                                    "seam_k": round(soderberg_k(amp86, mean86, g_cyc["F_amp"], g_cyc["F_mean"],
-                                                                                area_w, row86), 4)}}
+                               "gentle_one_sided": {"F_amp_N": g_cyc["F_amp"], "F_mean_N": g_cyc["F_mean"],
+                                                    "seam_k": soderberg_k(amp86, mean86, g_cyc["F_amp"], g_cyc["F_mean"],
+                                                                          area_w, row86)}}
         share_at_cap = adverse.delta_of(adverse.cap) / (shift_hi * 1e-3) if adverse.cap_kind == "liner wall" else None
         wire_stretch_at_cap_um = adverse.cap * (a + L) / ea_w * 1e3     # the most the wire can stretch: the bare run and
         #                                                                 the liner run at the cap, as bare wire (an upper end)
-        by_alloy[alloy] = {"E_GPa": p["E_GPa"], "seam_k_86": round(k86, 4), "seam_k_at_wall_ceiling_87": cap87[alloy],
+        # unrounded where 103 or the verdict computes from it (in-silico §When Modifying #6)
+        by_alloy[alloy] = {"E_GPa": p["E_GPa"], "seam_k_86": k86, "seam_k_at_wall_ceiling_87": cap87[alloy],
                            "by_share": grid,
-                           "adverse_share_at_wall_cap_exact": None if share_at_cap is None else round(share_at_cap, 4),
-                           "wire_stretch_at_wall_cap_um_max": round(wire_stretch_at_cap_um, 2),
-                           "adverse_grip_N_per_mm": round(adverse.q, 3), "gentle_grip_N_per_mm": round(gentle.q, 3),
-                           "hot_preload": {"shift_um_span32": round(d_th_hot * 1e3, 2), "F_N_relaxed_liner": round(f_th, 2),
-                                           "wall_stress_share_of_23C_yield": round(f_th / wall_cap, 3),
-                                           "F_N_gentle_nominal_relaxed_mu_low": round(f_th_gentle, 2),
+                           "adverse_share_at_wall_cap_exact": share_at_cap,
+                           "wire_stretch_at_wall_cap_um_max": wire_stretch_at_cap_um,
+                           "adverse_grip_N_per_mm": adverse.q, "gentle_grip_N_per_mm": gentle.q,
+                           "hot_preload": {"shift_um_span32": round(d_th_hot * 1e3, 2), "F_N_relaxed_liner": f_th,
+                                           "wall_stress_share_of_23C_yield": f_th / wall_cap,
+                                           "F_N_gentle_nominal_relaxed_mu_low": f_th_gentle,
                                            "capped": th_capped, "t_c": t_hot,
                                            "zone3_fit_bonded_shank": {"shift_um": round(d_th_hot_gap * 1e3, 2),
                                                                       "alpha_shank_run_ppm_K": round(alpha_shank3 * 1e6, 4),
-                                                                  "F_N_relaxed_liner": round(f_th_gap, 2),
-                                                                  "wall_stress_share_of_23C_yield": round(f_th_gap / wall_cap, 3),
-                                                                  "F_N_gentle_nominal_relaxed_mu_low": round(f_th_gap_gentle, 2),
+                                                                  "F_N_relaxed_liner": f_th_gap,
+                                                                  "wall_stress_share_of_23C_yield": f_th_gap / wall_cap,
+                                                                  "F_N_gentle_nominal_relaxed_mu_low": f_th_gap_gentle,
                                                                   "capped": th_capped_gap}}}
 
     # ── sway: how much of the shift reaches the pad (share 1, the upper whisker's high end, reversed) ──
@@ -408,7 +411,7 @@ def main() -> int:
                 pr = Pair(q_of(part, mu, relaxed), ea_base, ea_l, a, L, wall_cap)
                 c = pr.cycle(shift_hi * 1e-3, 0.0)
                 pad_sway[f"{part}{'_relaxed' if relaxed else ''}__mu{mu:g}"] = {
-                    "pad_amp_um": round(c["pad_amp"] * 1e3, 2), "fraction_of_shift": round(c["pad_amp"] / (shift_hi * 1e-3), 3),
+                    "pad_amp_um": round(c["pad_amp"] * 1e3, 2), "fraction_of_shift": c["pad_amp"] / (shift_hi * 1e-3),
                     "force_ratio_over_min_preload": round(c["pad_amp"] / x_min, 4), "F_amp_N": round(c["F_amp"], 2),
                     "capped": c["capped"]}
     floor_hot_grip = q_of("window_floor", max(mu_sweep), t_c=temps["capsule_model_edges_90"][1])
@@ -427,9 +430,10 @@ def main() -> int:
                 f_h, pad_h, cap_h = hot.virgin(per_k * (t_hi - t_ref) * 1e-3)
                 f_c, pad_c, cap_c = cold.virgin(per_k * (t_lo - t_ref) * 1e-3)
                 thermal[key] = {"shift_um_per_K": round(per_k, 4),
-                                "hot": {"t_c": t_hi, "shift_um": round(per_k * (t_hi - t_ref), 2), "pad_recedes_um": round(pad_h * 1e3, 2),
+                                # the pad's travel unrounded: 104 and the counts and verdict below compute from it
+                                "hot": {"t_c": t_hi, "shift_um": round(per_k * (t_hi - t_ref), 2), "pad_recedes_um": pad_h * 1e3,
                                         "root_F_N": round(f_h, 2), "grip_N_per_mm": round(hot.q, 3), "capped": cap_h},
-                                "cold": {"t_c": t_lo, "shift_um": round(per_k * (t_lo - t_ref), 2), "pad_protrudes_um": round(-pad_c * 1e3, 2),
+                                "cold": {"t_c": t_lo, "shift_um": round(per_k * (t_lo - t_ref), 2), "pad_protrudes_um": -pad_c * 1e3,
                                          "root_F_N": round(f_c, 2), "grip_N_per_mm": round(cold.q, 3), "capped": cap_c}}
     l1_lo, l1_hi = min(m[0] for m in l1.values()), min(m[1] for m in l1.values())
     l1_lo_max, l1_hi_max = max(m[0] for m in l1.values()), max(m[1] for m in l1.values())
@@ -456,19 +460,20 @@ def main() -> int:
     for sname, span in spans.items():
         for tname, (t_lo, t_hi) in temps.items():
             flip[f"{sname}__{tname}"] = {
+                # keyed by the margin's display (a label), valued unrounded: 103 computes from it (in-silico §When Modifying #6)
                 "cold_tightest_grip_vs_upper_margin_ppm_K": {
-                    f"{m:g}": round(bisect(lambda al, m=m, span=span, t_lo=t_lo: pad_at(al, span, t_lo, "window_ceiling", max(mu_sweep)) - m,
-                                           a_base, ALPHA_PEEK_1K) * 1e6, 3) for m in (l1_hi, l1_hi_max)},
+                    f"{m:.1f}": bisect(lambda al, m=m, span=span, t_lo=t_lo: pad_at(al, span, t_lo, "window_ceiling", max(mu_sweep)) - m,
+                                       a_base, ALPHA_PEEK_1K) * 1e6 for m in (l1_hi, l1_hi_max)},
                 "hot_floor_part_vs_lower_margin_ppm_K": {
-                    f"{m:g}": (round(bisect(lambda al, m=m, span=span, t_hi=t_hi: pad_at(al, span, t_hi, "window_floor", min(mu_sweep)) - m,
-                                            a_base, ALPHA_PEEK_1K) * 1e6, 3)
+                    f"{m:.1f}": (bisect(lambda al, m=m, span=span, t_hi=t_hi: pad_at(al, span, t_hi, "window_floor", min(mu_sweep)) - m,
+                                        a_base, ALPHA_PEEK_1K) * 1e6
                                if pad_at(ALPHA_PEEK_1K, span, t_hi, "window_floor", min(mu_sweep)) > m else None)
                     for m in (l1_lo, l1_lo_max)}}
     # «a bonded anode and a flange on the bark»: the wood sets the anode-to-bark distance, so only the disc stays Ti —
     # the gap-plus-shank span's geometry; the gap-only span belongs to another premise (a Zone-3 fit locating the flange
     # with only the gap following the wood)
     def flip_range(span_key: str, side: str, margin: float) -> list[float]:
-        vals = [v[side][f"{margin:g}"] for k, v in flip.items() if k.startswith(span_key)]
+        vals = [v[side][f"{margin:.1f}"] for k, v in flip.items() if k.startswith(span_key)]
         return [min(x for x in vals if x is not None), max(x for x in vals if x is not None)] if any(x is not None for x in vals) else []
 
     bark, gap_only = "gap_and_shank_disc_on_sleeve_top", "gap_only_shank_held_at_its_end"
@@ -544,7 +549,7 @@ def main() -> int:
              f"{up2(ti['adverse_share_at_wall_cap_exact']):.2f}. Gentle corner (the nominal part after creep at μ {min(mu_sweep):g}, "
              f"the median shift one-sided): Ta {kg(ta, '0.25')}–{kg(ta, '1')}, {ALLOY_BASELINE} {kg(ti, '0.25')}–{kg(ti, '1')} "
              f"over shares 0.25–1 — above `86`'s {ta['seam_k_86']:.4f} on Ta at every share above zero."]
-    lines.append(f"A seasonal preload at the hot edge ({t_hot:g} °C) on the relaxed liner adds "
+    lines.append(f"A seasonal preload at the hot edge ({t_hot:.0f} °C) on the relaxed liner adds "
                  f"{down1(ta['hot_preload']['F_N_gentle_nominal_relaxed_mu_low']):.1f}–{up1(ta['hot_preload']['F_N_relaxed_liner']):.1f} N "
                  f"of mean on Ta (gentle to adverse grip) — up to {math.ceil(round(ta['hot_preload']['wall_stress_share_of_23C_yield'] * 100, 9))} % of "
                  f"the wall's 23 °C yield, where creep is not modelled, so the upper end is a ceiling — and raises its "
@@ -557,9 +562,9 @@ def main() -> int:
     lines.append(f"Heat, on the free-sleeve reading (the wood holding nothing): the sleeve grows "
                  f"{min(v['shift_um_per_K'] for v in thermal.values()):.2f}–{max(v['shift_um_per_K'] for v in thermal.values()):.2f} µm/K "
                  f"over the wire; at the cold edge the pad protrudes at least {down1(against_l1['cold_min_protrusion_um']):.1f} µm on "
-                 f"every part and grip against `90`'s isothermal L1 margin to the upper edge of {l1_hi:g}–{l1_hi_max:g} µm, and at the "
+                 f"every part and grip against `90`'s isothermal L1 margin to the upper edge of {l1_hi:.1f}–{l1_hi_max:.1f} µm, and at the "
                  f"hot edge a floor part recedes {down1(min(floor_hot.values())):.1f}–{up1(max(floor_hot.values())):.1f} µm against "
-                 f"{l1_lo:g}–{l1_lo_max:g} µm to the lower edge (past the larger in "
+                 f"{l1_lo:.1f}–{l1_lo_max:.1f} µm to the lower edge (past the larger in "
                  f"{against_l1['hot_floor_part_past_larger_lower_margin']} of {len(floor_hot)}); on the shipped span at the capsule "
                  f"edge even the tightest grip recedes {down1(tight_hot_bark):.1f} µm. With a bonded anode and the flange on the bark "
                  f"the span follows the wood's radial expansion instead, and the cold result holds while its effective CTE "
@@ -575,9 +580,10 @@ def main() -> int:
     result = {
         "script": Path(__file__).name,
         "geometry": {"bare_run_mm": a, "liner_run_mm": L, "liner_id_mm": round(l_id, 5), "liner_od_mm": round(l_od, 5),
-                     "wire_area_mm2": round(area_w, 5), "liner_EA_N": round(ea_l, 1), "wall_cap_N_23C": round(wall_cap, 2),
+                     # unrounded: 103 builds 102's Pair from them (in-silico §When Modifying #6)
+                     "wire_area_mm2": area_w, "liner_EA_N": ea_l, "wall_cap_N_23C": wall_cap,
                      "source": "55 (spans from the CEMs; Zone-3 shank a placeholder, HW.8.9)"},
-        "grip": {"by_part_N_per_mm_at_20C": {part: {f"{m:g}": round(q_of(part, m), 3) for m in mu_sweep} for part in PARTS},
+        "grip": {"by_part_N_per_mm_at_20C": {part: {f"{m:g}": q_of(part, m) for m in mu_sweep} for part in PARTS},   # unrounded: 103
                  "radial_fit_change_um_per_K": round(dalpha_r, 5), "relax_floor": PEEK_RELAX_FLOOR,
                  "floor_part_grip_at_hot_edge_N_per_mm": round(floor_hot_grip, 3),
                  "source": "55 interference_window.cold_press_fit rows (friction at 20 °C) × fit change with temperature"},

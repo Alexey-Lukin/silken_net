@@ -5,30 +5,30 @@
     "liner_run_mm": 18.0,
     "liner_id_mm": 0.98859,
     "liner_od_mm": 1.28859,
-    "wire_area_mm2": 0.7854,
-    "liner_EA_N": 2146.0,
-    "wall_cap_N_23C": 53.65,
+    "wire_area_mm2": 0.7853981633974483,
+    "liner_EA_N": 2146.19158767048,
+    "wall_cap_N_23C": 53.654789691762005,
     "source": "55 (spans from the CEMs; Zone-3 shank a placeholder, HW.8.9)"
   },
   "grip": {
     "by_part_N_per_mm_at_20C": {
       "window_floor": {
-        "0.1": 0.222,
-        "0.2": 0.45,
-        "0.3": 0.672,
-        "0.4": 0.894
+        "0.1": 0.22390218922931135,
+        "0.2": 0.4478043784586227,
+        "0.3": 0.6717065676879339,
+        "0.4": 0.8956087569172454
       },
       "ratified_nominal": {
-        "0.1": 3.367,
-        "0.2": 6.728,
-        "0.3": 10.094,
-        "0.4": 13.461
+        "0.1": 3.3648565274396094,
+        "0.2": 6.729713054879219,
+        "0.3": 10.094569582318828,
+        "0.4": 13.459426109758438
       },
       "window_ceiling": {
-        "0.1": 6.428,
-        "0.2": 12.85,
-        "0.3": 19.278,
-        "0.4": 25.7
+        "0.1": 6.425218880404824,
+        "0.2": 12.850437760809648,
+        "0.3": 19.275656641214468,
+        "0.4": 25.700875521619295
       }
     },
     "radial_fit_change_um_per_K": 0.0192,
@@ -63,8 +63,8 @@
   "seam_by_alloy": {
     "Ti-15Zr": {
       "E_GPa": 100.0,
-      "seam_k_86": 0.1331,
-      "seam_k_at_wall_ceiling_87": 0.5041239494625325,
+      "seam_k_86": 0.13311970454051705,
+      "seam_k_at_wall_ceiling_87": 0.5041570714751247,
       "by_share": {
         "0": {
           "adverse": {
@@ -72,206 +72,206 @@
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1331
+              "seam_k": 0.13311970454051705
             },
             "sway_one_sided": {
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1331
+              "seam_k": 0.13311970454051705
             },
             "sway_reversed_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 41.554,
+              "F_mean_N": 41.52958938130928,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1504
+              "seam_k": 0.1503965592696728
             },
             "sway_one_sided_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 41.554,
+              "F_mean_N": 41.52958938130928,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1504
+              "seam_k": 0.1503965592696728
             }
           },
-          "seam_k_adverse_sway": 0.1331,
-          "seam_k_adverse_with_preload": 0.1504,
+          "seam_k_adverse_sway": 0.13311970454051705,
+          "seam_k_adverse_with_preload": 0.1503965592696728,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
             "F_amp_N": 0.0,
             "F_mean_N": 0.0,
-            "seam_k": 0.1331
+            "seam_k": 0.13311970454051705
           }
         },
         "0.25": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 24.819,
+              "F_amp_N": 24.819406342601514,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3047
+              "seam_k": 0.3047526049981043
             },
             "sway_one_sided": {
-              "F_amp_N": 14.385,
-              "F_mean_N": 10.434,
+              "F_amp_N": 14.384864415830663,
+              "F_mean_N": 10.434541926770851,
               "wall_or_slip_reached": false,
-              "seam_k": 0.2395
+              "seam_k": 0.23950786071666855
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 24.819,
-              "F_mean_N": 28.831,
+              "F_amp_N": 24.819406342601514,
+              "F_mean_N": 28.83538334916049,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3312
+              "seam_k": 0.3311670832154342
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 14.385,
-              "F_mean_N": 39.265,
+              "F_amp_N": 14.384864415830663,
+              "F_mean_N": 39.26992527593134,
               "wall_or_slip_reached": true,
-              "seam_k": 0.2609
+              "seam_k": 0.2609394375652279
             }
           },
-          "seam_k_adverse_sway": 0.3047,
-          "seam_k_adverse_with_preload": 0.3312,
+          "seam_k_adverse_sway": 0.3047526049981043,
+          "seam_k_adverse_with_preload": 0.3311670832154342,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 3.022,
-            "F_mean_N": 1.824,
-            "seam_k": 0.1548
+            "F_amp_N": 3.0219834824690994,
+            "F_mean_N": 1.8238833272498902,
+            "seam_k": 0.1547985042809419
           }
         },
         "0.5": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 40.946,
+              "F_amp_N": 40.948089140373234,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.4163
+              "seam_k": 0.4162868041215711
             },
             "sway_one_sided": {
-              "F_amp_N": 24.819,
-              "F_mean_N": 16.128,
+              "F_amp_N": 24.819406342601514,
+              "F_mean_N": 16.12868279777172,
               "wall_or_slip_reached": false,
-              "seam_k": 0.319
+              "seam_k": 0.3189836388763285
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 40.946,
-              "F_mean_N": 12.704,
+              "F_amp_N": 40.948089140373234,
+              "F_mean_N": 12.70670055138877,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4314
+              "seam_k": 0.43145150785986724
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 24.819,
-              "F_mean_N": 28.831,
+              "F_amp_N": 24.819406342601514,
+              "F_mean_N": 28.83538334916049,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3312
+              "seam_k": 0.3311670832154342
             }
           },
-          "seam_k_adverse_sway": 0.4163,
-          "seam_k_adverse_with_preload": 0.4314,
+          "seam_k_adverse_sway": 0.4162868041215711,
+          "seam_k_adverse_with_preload": 0.43145150785986724,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 4.847,
-            "F_mean_N": 2.668,
-            "seam_k": 0.1679
+            "F_amp_N": 4.84586680971899,
+            "F_mean_N": 2.667542863966859,
+            "seam_k": 0.16786883855201434
           }
         },
         "0.75": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5041
+              "seam_k": 0.5041570714751247
             },
             "sway_one_sided": {
-              "F_amp_N": 33.436,
-              "F_mean_N": 20.214,
+              "F_amp_N": 33.43724820736224,
+              "F_mean_N": 20.217541484399767,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3859
+              "seam_k": 0.3859300236732492
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5041
+              "seam_k": 0.5041570714751247
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 33.436,
-              "F_mean_N": 20.214,
+              "F_amp_N": 33.43724820736224,
+              "F_mean_N": 20.217541484399767,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3859
+              "seam_k": 0.3859300236732492
             }
           },
-          "seam_k_adverse_sway": 0.5041,
-          "seam_k_adverse_with_preload": 0.5041,
+          "seam_k_adverse_sway": 0.5041570714751247,
+          "seam_k_adverse_with_preload": 0.5041570714751247,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 6.286,
-            "F_mean_N": 3.306,
-            "seam_k": 0.1782
+            "F_amp_N": 6.28540209962727,
+            "F_mean_N": 3.3056893669739145,
+            "seam_k": 0.17821453302747764
           }
         },
         "1": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5041
+              "seam_k": 0.5041570714751247
             },
             "sway_one_sided": {
-              "F_amp_N": 40.946,
-              "F_mean_N": 12.704,
+              "F_amp_N": 40.948089140373234,
+              "F_mean_N": 12.70670055138877,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4314
+              "seam_k": 0.43145150785986724
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5041
+              "seam_k": 0.5041570714751247
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 40.946,
-              "F_mean_N": 12.704,
+              "F_amp_N": 40.948089140373234,
+              "F_mean_N": 12.70670055138877,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4314
+              "seam_k": 0.43145150785986724
             }
           },
-          "seam_k_adverse_sway": 0.5041,
-          "seam_k_adverse_with_preload": 0.5041,
+          "seam_k_adverse_sway": 0.5041570714751247,
+          "seam_k_adverse_with_preload": 0.5041570714751247,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 7.515,
-            "F_mean_N": 3.841,
-            "seam_k": 0.1871
+            "F_amp_N": 7.513409673685849,
+            "F_mean_N": 3.840008316294436,
+            "seam_k": 0.18706393264370172
           }
         }
       },
-      "adverse_share_at_wall_cap_exact": 0.7455,
-      "wire_stretch_at_wall_cap_um_max": 23.91,
-      "adverse_grip_N_per_mm": 25.7,
-      "gentle_grip_N_per_mm": 2.188,
+      "adverse_share_at_wall_cap_exact": 0.7455239249859179,
+      "wire_stretch_at_wall_cap_um_max": 23.910389999999985,
+      "adverse_grip_N_per_mm": 25.700875521619295,
+      "gentle_grip_N_per_mm": 2.187156742835746,
       "hot_preload": {
-        "shift_um_span32": 43.13,
-        "F_N_relaxed_liner": 41.55,
-        "wall_stress_share_of_23C_yield": 0.775,
-        "F_N_gentle_nominal_relaxed_mu_low": 14.33,
+        "shift_um_span32": 43.09,
+        "F_N_relaxed_liner": 41.52958938130928,
+        "wall_stress_share_of_23C_yield": 0.7740145776339816,
+        "F_N_gentle_nominal_relaxed_mu_low": 14.318828230410698,
         "capped": false,
-        "t_c": 55.0,
+        "t_c": 54.9638266127217,
         "zone3_fit_bonded_shank": {
-          "shift_um": 24.88,
+          "shift_um": 24.86,
           "alpha_shank_run_ppm_K": 9.7563,
-          "F_N_relaxed_liner": 29.0,
-          "wall_stress_share_of_23C_yield": 0.541,
-          "F_N_gentle_nominal_relaxed_mu_low": 10.61,
+          "F_N_relaxed_liner": 28.985725888618703,
+          "wall_stress_share_of_23C_yield": 0.5402262510977484,
+          "F_N_gentle_nominal_relaxed_mu_low": 10.606499325427572,
           "capped": false
         }
       }
     },
     "beta-Ti-13Nb-13Zr": {
       "E_GPa": 80.0,
-      "seam_k_86": 0.1408,
-      "seam_k_at_wall_ceiling_87": 0.5330766228752669,
+      "seam_k_86": 0.14076498966230186,
+      "seam_k_at_wall_ceiling_87": 0.5331116471399032,
       "by_share": {
         "0": {
           "adverse": {
@@ -279,206 +279,206 @@
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1408
+              "seam_k": 0.14076498966230186
             },
             "sway_one_sided": {
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1408
+              "seam_k": 0.14076498966230186
             },
             "sway_reversed_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 38.785,
+              "F_mean_N": 38.76069538557079,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1588
+              "seam_k": 0.15876476741831916
             },
             "sway_one_sided_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 38.785,
+              "F_mean_N": 38.76069538557079,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1588
+              "seam_k": 0.15876476741831916
             }
           },
-          "seam_k_adverse_sway": 0.1408,
-          "seam_k_adverse_with_preload": 0.1588,
+          "seam_k_adverse_sway": 0.14076498966230186,
+          "seam_k_adverse_with_preload": 0.15876476741831916,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
             "F_amp_N": 0.0,
             "F_mean_N": 0.0,
-            "seam_k": 0.1408
+            "seam_k": 0.14076498966230186
           }
         },
         "0.25": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 22.055,
+              "F_amp_N": 22.05510064121673,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.302
+              "seam_k": 0.30204127210837917
             },
             "sway_one_sided": {
-              "F_amp_N": 12.409,
-              "F_mean_N": 9.646,
+              "F_amp_N": 12.408834019577583,
+              "F_mean_N": 9.646266621639146,
               "wall_or_slip_reached": false,
-              "seam_k": 0.2382
+              "seam_k": 0.23822519935145453
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 22.055,
-              "F_mean_N": 31.595,
+              "F_amp_N": 22.05510064121673,
+              "F_mean_N": 31.599689050545276,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3328
+              "seam_k": 0.3328014989805774
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 12.409,
-              "F_mean_N": 41.241,
+              "F_amp_N": 12.408834019577583,
+              "F_mean_N": 41.24595567218442,
               "wall_or_slip_reached": true,
-              "seam_k": 0.2633
+              "seam_k": 0.26326476722873365
             }
           },
-          "seam_k_adverse_sway": 0.302,
-          "seam_k_adverse_with_preload": 0.3328,
+          "seam_k_adverse_sway": 0.30204127210837917,
+          "seam_k_adverse_with_preload": 0.3328014989805774,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 2.742,
-            "F_mean_N": 1.772,
-            "seam_k": 0.1617
+            "F_amp_N": 2.7416979432607804,
+            "F_mean_N": 1.771412665825935,
+            "seam_k": 0.1616510190442291
           }
         },
         "0.5": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 37.453,
+              "F_amp_N": 37.454437046068705,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.4146
+              "seam_k": 0.41464777379306417
             },
             "sway_one_sided": {
-              "F_amp_N": 22.055,
-              "F_mean_N": 15.399,
+              "F_amp_N": 22.05510064121673,
+              "F_mean_N": 15.399336404851976,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3163
+              "seam_k": 0.3162876923321577
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 37.453,
-              "F_mean_N": 16.197,
+              "F_amp_N": 37.454437046068705,
+              "F_mean_N": 16.2003526456933,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4353
+              "seam_k": 0.4352734451017758
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 22.055,
-              "F_mean_N": 31.595,
+              "F_amp_N": 22.05510064121673,
+              "F_mean_N": 31.599689050545276,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3328
+              "seam_k": 0.3328014989805774
             }
           },
-          "seam_k_adverse_sway": 0.4146,
-          "seam_k_adverse_with_preload": 0.4353,
+          "seam_k_adverse_sway": 0.41464777379306417,
+          "seam_k_adverse_with_preload": 0.4352734451017758,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 4.514,
-            "F_mean_N": 2.634,
-            "seam_k": 0.1751
+            "F_amp_N": 4.5131106090867155,
+            "F_mean_N": 2.6332905792405192,
+            "seam_k": 0.17511556723009233
           }
         },
         "0.75": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 50.02,
+              "F_amp_N": 50.021889429767874,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.5065
+              "seam_k": 0.5065463342772244
             },
             "sway_one_sided": {
-              "F_amp_N": 30.23,
-              "F_mean_N": 19.79,
+              "F_amp_N": 30.23061627317644,
+              "F_mean_N": 19.791273156591433,
               "wall_or_slip_reached": false,
-              "seam_k": 0.384
+              "seam_k": 0.38405673821101083
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 50.02,
-              "F_mean_N": 3.63,
+              "F_amp_N": 50.021889429767874,
+              "F_mean_N": 3.6329002619941306,
               "wall_or_slip_reached": true,
-              "seam_k": 0.512
+              "seam_k": 0.5119867697653722
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 30.23,
-              "F_mean_N": 23.42,
+              "F_amp_N": 30.23061627317644,
+              "F_mean_N": 23.424173418585564,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3884
+              "seam_k": 0.38843795208704335
             }
           },
-          "seam_k_adverse_sway": 0.5065,
-          "seam_k_adverse_with_preload": 0.512,
+          "seam_k_adverse_sway": 0.5065463342772244,
+          "seam_k_adverse_with_preload": 0.5119867697653722,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 5.931,
-            "F_mean_N": 3.284,
-            "seam_k": 0.1859
+            "F_amp_N": 5.930207117814895,
+            "F_mean_N": 3.2832139414647266,
+            "seam_k": 0.1859145820544492
           }
         },
         "1": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5331
+              "seam_k": 0.5331116471399032
             },
             "sway_one_sided": {
-              "F_amp_N": 37.453,
-              "F_mean_N": 16.197,
+              "F_amp_N": 37.454437046068705,
+              "F_mean_N": 16.2003526456933,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4353
+              "seam_k": 0.4352734451017758
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5331
+              "seam_k": 0.5331116471399032
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 37.453,
-              "F_mean_N": 16.197,
+              "F_amp_N": 37.454437046068705,
+              "F_mean_N": 16.2003526456933,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4353
+              "seam_k": 0.4352734451017758
             }
           },
-          "seam_k_adverse_sway": 0.5331,
-          "seam_k_adverse_with_preload": 0.5331,
+          "seam_k_adverse_sway": 0.5331116471399032,
+          "seam_k_adverse_with_preload": 0.5331116471399032,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 7.148,
-            "F_mean_N": 3.827,
-            "seam_k": 0.1952
+            "F_amp_N": 7.146401188327235,
+            "F_mean_N": 3.826114137342599,
+            "seam_k": 0.19520713234961887
           }
         }
       },
-      "adverse_share_at_wall_cap_exact": 0.8299,
-      "wire_stretch_at_wall_cap_um_max": 29.89,
-      "adverse_grip_N_per_mm": 25.7,
-      "gentle_grip_N_per_mm": 2.188,
+      "adverse_share_at_wall_cap_exact": 0.8299664523782655,
+      "wire_stretch_at_wall_cap_um_max": 29.88798749999998,
+      "adverse_grip_N_per_mm": 25.700875521619295,
+      "gentle_grip_N_per_mm": 2.187156742835746,
       "hot_preload": {
-        "shift_um_span32": 42.76,
-        "F_N_relaxed_liner": 38.78,
-        "wall_stress_share_of_23C_yield": 0.723,
-        "F_N_gentle_nominal_relaxed_mu_low": 14.04,
+        "shift_um_span32": 42.72,
+        "F_N_relaxed_liner": 38.76069538557079,
+        "wall_stress_share_of_23C_yield": 0.7224088587103714,
+        "F_N_gentle_nominal_relaxed_mu_low": 14.030445357426697,
         "capped": false,
-        "t_c": 55.0,
+        "t_c": 54.9638266127217,
         "zone3_fit_bonded_shank": {
-          "shift_um": 24.51,
+          "shift_um": 24.49,
           "alpha_shank_run_ppm_K": 9.7563,
-          "F_N_relaxed_liner": 26.44,
-          "wall_stress_share_of_23C_yield": 0.493,
-          "F_N_gentle_nominal_relaxed_mu_low": 10.3,
+          "F_N_relaxed_liner": 26.425863389434934,
+          "wall_stress_share_of_23C_yield": 0.4925163911972668,
+          "F_N_gentle_nominal_relaxed_mu_low": 10.289877042867527,
           "capped": false
         }
       }
     },
     "Ti-6Al-4V": {
       "E_GPa": 110.0,
-      "seam_k_86": 0.1441,
-      "seam_k_at_wall_ceiling_87": 0.5456107546146336,
+      "seam_k_86": 0.14407477075005878,
+      "seam_k_at_wall_ceiling_87": 0.5456466023983069,
       "by_share": {
         "0": {
           "adverse": {
@@ -486,206 +486,206 @@
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1441
+              "seam_k": 0.14407477075005878
             },
             "sway_one_sided": {
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1441
+              "seam_k": 0.14407477075005878
             },
             "sway_reversed_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 42.456,
+              "F_mean_N": 42.431799188557825,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1651
+              "seam_k": 0.165039766765813
             },
             "sway_one_sided_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 42.456,
+              "F_mean_N": 42.431799188557825,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1651
+              "seam_k": 0.165039766765813
             }
           },
-          "seam_k_adverse_sway": 0.1441,
-          "seam_k_adverse_with_preload": 0.1651,
+          "seam_k_adverse_sway": 0.14407477075005878,
+          "seam_k_adverse_with_preload": 0.165039766765813,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
             "F_amp_N": 0.0,
             "F_mean_N": 0.0,
-            "seam_k": 0.1441
+            "seam_k": 0.14407477075005878
           }
         },
         "0.25": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 25.956,
+              "F_amp_N": 25.95726455332385,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3383
+              "seam_k": 0.33834831708467106
             },
             "sway_one_sided": {
-              "F_amp_N": 15.237,
-              "F_mean_N": 10.719,
+              "F_amp_N": 15.237498945593174,
+              "F_mean_N": 10.719765607730675,
               "wall_or_slip_reached": false,
-              "seam_k": 0.2667
+              "seam_k": 0.266675946561382
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 25.956,
-              "F_mean_N": 27.694,
+              "F_amp_N": 25.95726455332385,
+              "F_mean_N": 27.697525138438156,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3689
+              "seam_k": 0.3689406202705225
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 15.237,
-              "F_mean_N": 38.413,
+              "F_amp_N": 15.237498945593174,
+              "F_mean_N": 38.41729074616883,
               "wall_or_slip_reached": true,
-              "seam_k": 0.2917
+              "seam_k": 0.29166224629732396
             }
           },
-          "seam_k_adverse_sway": 0.3383,
-          "seam_k_adverse_with_preload": 0.3689,
+          "seam_k_adverse_sway": 0.33834831708467106,
+          "seam_k_adverse_with_preload": 0.3689406202705225,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 3.134,
-            "F_mean_N": 1.841,
-            "seam_k": 0.1685
+            "F_amp_N": 3.1340464095361518,
+            "F_mean_N": 1.8405820627178762,
+            "seam_k": 0.16845935663301895
           }
         },
         "0.5": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 42.328,
+              "F_amp_N": 42.330117524874176,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.4609
+              "seam_k": 0.460888664272024
             },
             "sway_one_sided": {
-              "F_amp_N": 25.956,
-              "F_mean_N": 16.372,
+              "F_amp_N": 25.95726455332385,
+              "F_mean_N": 16.372852971550326,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3558
+              "seam_k": 0.35578765415050156
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 42.328,
-              "F_mean_N": 11.322,
+              "F_amp_N": 42.330117524874176,
+              "F_mean_N": 11.32467216688783,
               "wall_or_slip_reached": true,
-              "seam_k": 0.477
+              "seam_k": 0.47706260124758665
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 25.956,
-              "F_mean_N": 27.694,
+              "F_amp_N": 25.95726455332385,
+              "F_mean_N": 27.697525138438156,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3689
+              "seam_k": 0.3689406202705225
             }
           },
-          "seam_k_adverse_sway": 0.4609,
-          "seam_k_adverse_with_preload": 0.477,
+          "seam_k_adverse_sway": 0.460888664272024,
+          "seam_k_adverse_with_preload": 0.47706260124758665,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 4.975,
-            "F_mean_N": 2.678,
-            "seam_k": 0.1828
+            "F_amp_N": 4.974628472254028,
+            "F_mean_N": 2.677523760021514,
+            "seam_k": 0.1827717534386954
           }
         },
         "0.75": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5456
+              "seam_k": 0.5456466023983069
             },
             "sway_one_sided": {
-              "F_amp_N": 34.724,
-              "F_mean_N": 18.926,
+              "F_amp_N": 34.72532262193283,
+              "F_mean_N": 18.929467069829172,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4282
+              "seam_k": 0.42823998663119317
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5456
+              "seam_k": 0.5456466023983069
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 34.724,
-              "F_mean_N": 18.926,
+              "F_amp_N": 34.72532262193283,
+              "F_mean_N": 18.929467069829172,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4282
+              "seam_k": 0.42823998663119317
             }
           },
-          "seam_k_adverse_sway": 0.5456,
-          "seam_k_adverse_with_preload": 0.5456,
+          "seam_k_adverse_sway": 0.5456466023983069,
+          "seam_k_adverse_with_preload": 0.5456466023983069,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 6.422,
-            "F_mean_N": 3.312,
-            "seam_k": 0.1941
+            "F_amp_N": 6.420847707914746,
+            "F_mean_N": 3.3115716367974404,
+            "seam_k": 0.1940545717792507
           }
         },
         "1": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5456
+              "seam_k": 0.5456466023983069
             },
             "sway_one_sided": {
-              "F_amp_N": 42.328,
-              "F_mean_N": 11.322,
+              "F_amp_N": 42.330117524874176,
+              "F_mean_N": 11.32467216688783,
               "wall_or_slip_reached": true,
-              "seam_k": 0.477
+              "seam_k": 0.47706260124758665
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5456
+              "seam_k": 0.5456466023983069
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 42.328,
-              "F_mean_N": 11.322,
+              "F_amp_N": 42.330117524874176,
+              "F_mean_N": 11.32467216688783,
               "wall_or_slip_reached": true,
-              "seam_k": 0.477
+              "seam_k": 0.47706260124758665
             }
           },
-          "seam_k_adverse_sway": 0.5456,
-          "seam_k_adverse_with_preload": 0.5456,
+          "seam_k_adverse_sway": 0.5456466023983069,
+          "seam_k_adverse_with_preload": 0.5456466023983069,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 7.654,
-            "F_mean_N": 3.844,
-            "seam_k": 0.2037
+            "F_amp_N": 7.652152232275542,
+            "F_mean_N": 3.8429486620931055,
+            "seam_k": 0.20368965283826815
           }
         }
       },
-      "adverse_share_at_wall_cap_exact": 0.7146,
-      "wire_stretch_at_wall_cap_um_max": 21.73,
-      "adverse_grip_N_per_mm": 25.7,
-      "gentle_grip_N_per_mm": 2.188,
+      "adverse_share_at_wall_cap_exact": 0.7146956286722511,
+      "wire_stretch_at_wall_cap_um_max": 21.736718181818166,
+      "adverse_grip_N_per_mm": 25.700875521619295,
+      "gentle_grip_N_per_mm": 2.187156742835746,
       "hot_preload": {
-        "shift_um_span32": 43.01,
-        "F_N_relaxed_liner": 42.46,
-        "wall_stress_share_of_23C_yield": 0.791,
-        "F_N_gentle_nominal_relaxed_mu_low": 14.39,
+        "shift_um_span32": 42.96,
+        "F_N_relaxed_liner": 42.431799188557825,
+        "wall_stress_share_of_23C_yield": 0.7908296618497915,
+        "F_N_gentle_nominal_relaxed_mu_low": 14.378316560419409,
         "capped": false,
-        "t_c": 55.0,
+        "t_c": 54.9638266127217,
         "zone3_fit_bonded_shank": {
-          "shift_um": 24.76,
+          "shift_um": 24.73,
           "alpha_shank_run_ppm_K": 9.7563,
-          "F_N_relaxed_liner": 29.8,
-          "wall_stress_share_of_23C_yield": 0.555,
-          "F_N_gentle_nominal_relaxed_mu_low": 10.67,
+          "F_N_relaxed_liner": 29.782106038293037,
+          "wall_stress_share_of_23C_yield": 0.555068917600579,
+          "F_N_gentle_nominal_relaxed_mu_low": 10.6622966175851,
           "capped": false
         }
       }
     },
     "Ti-6Al-7Nb": {
       "E_GPa": 103.0,
-      "seam_k_86": 0.1493,
-      "seam_k_at_wall_ceiling_87": 0.5655575284855074,
+      "seam_k_86": 0.14934194491835243,
+      "seam_k_at_wall_ceiling_87": 0.5655946868145257,
       "by_share": {
         "0": {
           "adverse": {
@@ -693,206 +693,206 @@
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1493
+              "seam_k": 0.14934194491835243
             },
             "sway_one_sided": {
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1493
+              "seam_k": 0.14934194491835243
             },
             "sway_reversed_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 41.939,
+              "F_mean_N": 41.91476080230007,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1717
+              "seam_k": 0.17167112917768346
             },
             "sway_one_sided_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 41.939,
+              "F_mean_N": 41.91476080230007,
               "wall_or_slip_reached": false,
-              "seam_k": 0.1717
+              "seam_k": 0.17167112917768346
             }
           },
-          "seam_k_adverse_sway": 0.1493,
-          "seam_k_adverse_with_preload": 0.1717,
+          "seam_k_adverse_sway": 0.14934194491835243,
+          "seam_k_adverse_with_preload": 0.17167112917768346,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
             "F_amp_N": 0.0,
             "F_mean_N": 0.0,
-            "seam_k": 0.1493
+            "seam_k": 0.14934194491835243
           }
         },
         "0.25": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 25.175,
+              "F_amp_N": 25.175742826678338,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3446
+              "seam_k": 0.34465483387161505
             },
             "sway_one_sided": {
-              "F_amp_N": 14.649,
-              "F_mean_N": 10.526,
+              "F_amp_N": 14.649376253389228,
+              "F_mean_N": 10.52636657328911,
               "wall_or_slip_reached": false,
-              "seam_k": 0.2719
+              "seam_k": 0.27187230030348436
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 25.175,
-              "F_mean_N": 28.475,
+              "F_amp_N": 25.175742826678338,
+              "F_mean_N": 28.479046865083667,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3781
+              "seam_k": 0.3780668473325088
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 14.649,
-              "F_mean_N": 39.001,
+              "F_amp_N": 14.649376253389228,
+              "F_mean_N": 39.00541343837278,
               "wall_or_slip_reached": true,
-              "seam_k": 0.2992
+              "seam_k": 0.2992080212162026
             }
           },
-          "seam_k_adverse_sway": 0.3446,
-          "seam_k_adverse_with_preload": 0.3781,
+          "seam_k_adverse_sway": 0.34465483387161505,
+          "seam_k_adverse_with_preload": 0.3780668473325088,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 3.058,
-            "F_mean_N": 1.83,
-            "seam_k": 0.1741
+            "F_amp_N": 3.0572735289136266,
+            "F_mean_N": 1.8293888112744967,
+            "seam_k": 0.1740482716495125
           }
         },
         "0.5": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 41.383,
+              "F_amp_N": 41.38417698375634,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.4704
+              "seam_k": 0.4703995287718579
             },
             "sway_one_sided": {
-              "F_amp_N": 25.175,
-              "F_mean_N": 16.208,
+              "F_amp_N": 25.175742826678338,
+              "F_mean_N": 16.208434157078003,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3629
+              "seam_k": 0.3629083539703136
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 41.383,
-              "F_mean_N": 12.267,
+              "F_amp_N": 41.38417698375634,
+              "F_mean_N": 12.270612708005665,
               "wall_or_slip_reached": true,
-              "seam_k": 0.489
+              "seam_k": 0.48902048158405625
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 25.175,
-              "F_mean_N": 28.475,
+              "F_amp_N": 25.175742826678338,
+              "F_mean_N": 28.479046865083667,
               "wall_or_slip_reached": true,
-              "seam_k": 0.3781
+              "seam_k": 0.3780668473325088
             }
           },
-          "seam_k_adverse_sway": 0.4704,
-          "seam_k_adverse_with_preload": 0.489,
+          "seam_k_adverse_sway": 0.4703995287718579,
+          "seam_k_adverse_with_preload": 0.48902048158405625,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 4.887,
-            "F_mean_N": 2.671,
-            "seam_k": 0.1888
+            "F_amp_N": 4.886662340188123,
+            "F_mean_N": 2.670891651605749,
+            "seam_k": 0.18881754398822787
           }
         },
         "0.75": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5656
+              "seam_k": 0.5655946868145257
             },
             "sway_one_sided": {
-              "F_amp_N": 33.841,
-              "F_mean_N": 19.809,
+              "F_amp_N": 33.8425212662624,
+              "F_mean_N": 19.812268425499603,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4389
+              "seam_k": 0.4388740532672071
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5656
+              "seam_k": 0.5655946868145257
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 33.841,
-              "F_mean_N": 19.809,
+              "F_amp_N": 33.8425212662624,
+              "F_mean_N": 19.812268425499603,
               "wall_or_slip_reached": true,
-              "seam_k": 0.4389
+              "seam_k": 0.4388740532672071
             }
           },
-          "seam_k_adverse_sway": 0.5656,
-          "seam_k_adverse_with_preload": 0.5656,
+          "seam_k_adverse_sway": 0.5655946868145257,
+          "seam_k_adverse_with_preload": 0.5655946868145257,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 6.329,
-            "F_mean_N": 3.308,
-            "seam_k": 0.2005
+            "F_amp_N": 6.328429937056481,
+            "F_mean_N": 3.307710835356187,
+            "seam_k": 0.20049575346648427
           }
         },
         "1": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5656
+              "seam_k": 0.5655946868145257
             },
             "sway_one_sided": {
-              "F_amp_N": 41.383,
-              "F_mean_N": 12.267,
+              "F_amp_N": 41.38417698375634,
+              "F_mean_N": 12.270612708005665,
               "wall_or_slip_reached": true,
-              "seam_k": 0.489
+              "seam_k": 0.48902048158405625
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 0.5656
+              "seam_k": 0.5655946868145257
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 41.383,
-              "F_mean_N": 12.267,
+              "F_amp_N": 41.38417698375634,
+              "F_mean_N": 12.270612708005665,
               "wall_or_slip_reached": true,
-              "seam_k": 0.489
+              "seam_k": 0.48902048158405625
             }
           },
-          "seam_k_adverse_sway": 0.5656,
-          "seam_k_adverse_with_preload": 0.5656,
+          "seam_k_adverse_sway": 0.5655946868145257,
+          "seam_k_adverse_with_preload": 0.5655946868145257,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 7.559,
-            "F_mean_N": 3.842,
-            "seam_k": 0.2105
+            "F_amp_N": 7.557553991793872,
+            "F_mean_N": 3.8410752280901814,
+            "seam_k": 0.21048215304708043
           }
         }
       },
-      "adverse_share_at_wall_cap_exact": 0.7356,
-      "wire_stretch_at_wall_cap_um_max": 23.21,
-      "adverse_grip_N_per_mm": 25.7,
-      "gentle_grip_N_per_mm": 2.188,
+      "adverse_share_at_wall_cap_exact": 0.7356540299225571,
+      "wire_stretch_at_wall_cap_um_max": 23.21397087378639,
+      "adverse_grip_N_per_mm": 25.700875521619295,
+      "gentle_grip_N_per_mm": 2.187156742835746,
       "hot_preload": {
-        "shift_um_span32": 43.25,
-        "F_N_relaxed_liner": 41.94,
-        "wall_stress_share_of_23C_yield": 0.782,
-        "F_N_gentle_nominal_relaxed_mu_low": 14.38,
+        "shift_um_span32": 43.21,
+        "F_N_relaxed_liner": 41.91476080230007,
+        "wall_stress_share_of_23C_yield": 0.7811932735752674,
+        "F_N_gentle_nominal_relaxed_mu_low": 14.366803256030115,
         "capped": false,
-        "t_c": 55.0,
+        "t_c": 54.9638266127217,
         "zone3_fit_bonded_shank": {
-          "shift_um": 25.0,
+          "shift_um": 24.98,
           "alpha_shank_run_ppm_K": 9.7563,
-          "F_N_relaxed_liner": 29.38,
-          "wall_stress_share_of_23C_yield": 0.548,
-          "F_N_gentle_nominal_relaxed_mu_low": 10.67,
+          "F_N_relaxed_liner": 29.364396210205328,
+          "wall_stress_share_of_23C_yield": 0.5472837817257132,
+          "F_N_gentle_nominal_relaxed_mu_low": 10.662339264674952,
           "capped": false
         }
       }
     },
     "CP-Ti-Gr4": {
       "E_GPa": 104.0,
-      "seam_k_86": 0.272,
-      "seam_k_at_wall_ceiling_87": 1.0299523033182587,
+      "seam_k_86": 0.2719707057256991,
+      "seam_k_at_wall_ceiling_87": 1.030019973368841,
       "by_share": {
         "0": {
           "adverse": {
@@ -900,206 +900,206 @@
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.272
+              "seam_k": 0.2719707057256991
             },
             "sway_one_sided": {
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.272
+              "seam_k": 0.2719707057256991
             },
             "sway_reversed_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 41.889,
+              "F_mean_N": 41.86465085135531,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3563
+              "seam_k": 0.35625772373057474
             },
             "sway_one_sided_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 41.889,
+              "F_mean_N": 41.86465085135531,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3563
+              "seam_k": 0.35625772373057474
             }
           },
-          "seam_k_adverse_sway": 0.272,
-          "seam_k_adverse_with_preload": 0.3563,
+          "seam_k_adverse_sway": 0.2719707057256991,
+          "seam_k_adverse_with_preload": 0.35625772373057474,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
             "F_amp_N": 0.0,
             "F_mean_N": 0.0,
-            "seam_k": 0.272
+            "seam_k": 0.2719707057256991
           }
         },
         "0.25": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 25.291,
+              "F_amp_N": 25.291573842609548,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.6293
+              "seam_k": 0.6292968482578776
             },
             "sway_one_sided": {
-              "F_amp_N": 14.735,
-              "F_mean_N": 10.555,
+              "F_amp_N": 14.735848906362827,
+              "F_mean_N": 10.55572493624672,
               "wall_or_slip_reached": false,
-              "seam_k": 0.5106
+              "seam_k": 0.5106232735359881
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 25.291,
-              "F_mean_N": 28.359,
+              "F_amp_N": 25.291573842609548,
+              "F_mean_N": 28.363215849152457,
               "wall_or_slip_reached": true,
-              "seam_k": 0.7494
+              "seam_k": 0.7494209741760969
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 14.735,
-              "F_mean_N": 38.915,
+              "F_amp_N": 14.735848906362827,
+              "F_mean_N": 38.91894078539918,
               "wall_or_slip_reached": true,
-              "seam_k": 0.6155
+              "seam_k": 0.6155481837002857
             }
           },
-          "seam_k_adverse_sway": 0.6293,
-          "seam_k_adverse_with_preload": 0.7494,
+          "seam_k_adverse_sway": 0.6292968482578776,
+          "seam_k_adverse_with_preload": 0.7494209741760969,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 3.069,
-            "F_mean_N": 1.831,
-            "seam_k": 0.3186
+            "F_amp_N": 3.0687059760192694,
+            "F_mean_N": 1.8311230227513722,
+            "seam_k": 0.318623398350409
           }
         },
         "0.5": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 41.524,
+              "F_amp_N": 41.52527742327995,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.8586
+              "seam_k": 0.858650968946053
             },
             "sway_one_sided": {
-              "F_amp_N": 25.291,
-              "F_mean_N": 16.233,
+              "F_amp_N": 25.291573842609548,
+              "F_mean_N": 16.233703580670404,
               "wall_or_slip_reached": false,
-              "seam_k": 0.6928
+              "seam_k": 0.692861064324792
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 41.524,
-              "F_mean_N": 12.126,
+              "F_amp_N": 41.52527742327995,
+              "F_mean_N": 12.129512268482053,
               "wall_or_slip_reached": true,
-              "seam_k": 0.9218
+              "seam_k": 0.9218409556697648
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 25.291,
-              "F_mean_N": 28.359,
+              "F_amp_N": 25.291573842609548,
+              "F_mean_N": 28.363215849152457,
               "wall_or_slip_reached": true,
-              "seam_k": 0.7494
+              "seam_k": 0.7494209741760969
             }
           },
-          "seam_k_adverse_sway": 0.8586,
-          "seam_k_adverse_with_preload": 0.9218,
+          "seam_k_adverse_sway": 0.858650968946053,
+          "seam_k_adverse_with_preload": 0.9218409556697648,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 4.901,
-            "F_mean_N": 2.672,
-            "seam_k": 0.3464
+            "F_amp_N": 4.899828998770642,
+            "F_mean_N": 2.671935107870068,
+            "seam_k": 0.34642783966184243
           }
         },
         "0.75": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 1.03
+              "seam_k": 1.030019973368841
             },
             "sway_one_sided": {
-              "F_amp_N": 33.973,
-              "F_mean_N": 19.677,
+              "F_amp_N": 33.97388329929325,
+              "F_mean_N": 19.680906392468756,
               "wall_or_slip_reached": true,
-              "seam_k": 0.846
+              "seam_k": 0.8460645584476901
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 1.03
+              "seam_k": 1.030019973368841
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 33.973,
-              "F_mean_N": 19.677,
+              "F_amp_N": 33.97388329929325,
+              "F_mean_N": 19.680906392468756,
               "wall_or_slip_reached": true,
-              "seam_k": 0.846
+              "seam_k": 0.8460645584476901
             }
           },
-          "seam_k_adverse_sway": 1.03,
-          "seam_k_adverse_with_preload": 1.03,
+          "seam_k_adverse_sway": 1.030019973368841,
+          "seam_k_adverse_with_preload": 1.030019973368841,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 6.343,
-            "F_mean_N": 3.309,
-            "seam_k": 0.3685
+            "F_amp_N": 6.342294136545098,
+            "F_mean_N": 3.308331567410665,
+            "seam_k": 0.3684653136460627
           }
         },
         "1": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 1.03
+              "seam_k": 1.030019973368841
             },
             "sway_one_sided": {
-              "F_amp_N": 41.524,
-              "F_mean_N": 12.126,
+              "F_amp_N": 41.52527742327995,
+              "F_mean_N": 12.129512268482053,
               "wall_or_slip_reached": true,
-              "seam_k": 0.9218
+              "seam_k": 0.9218409556697648
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 1.03
+              "seam_k": 1.030019973368841
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 41.524,
-              "F_mean_N": 12.126,
+              "F_amp_N": 41.52527742327995,
+              "F_mean_N": 12.129512268482053,
               "wall_or_slip_reached": true,
-              "seam_k": 0.9218
+              "seam_k": 0.9218409556697648
             }
           },
-          "seam_k_adverse_sway": 1.03,
-          "seam_k_adverse_with_preload": 1.03,
+          "seam_k_adverse_sway": 1.030019973368841,
+          "seam_k_adverse_with_preload": 1.030019973368841,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 7.573,
-            "F_mean_N": 3.842,
-            "seam_k": 0.3874
+            "F_amp_N": 7.5717641066407095,
+            "F_mean_N": 3.8413923480692125,
+            "seam_k": 0.3873556824260134
           }
         }
       },
-      "adverse_share_at_wall_cap_exact": 0.7324,
-      "wire_stretch_at_wall_cap_um_max": 22.99,
-      "adverse_grip_N_per_mm": 25.7,
-      "gentle_grip_N_per_mm": 2.188,
+      "adverse_share_at_wall_cap_exact": 0.7324891809886921,
+      "wire_stretch_at_wall_cap_um_max": 22.9907596153846,
+      "adverse_grip_N_per_mm": 25.700875521619295,
+      "gentle_grip_N_per_mm": 2.187156742835746,
       "hot_preload": {
-        "shift_um_span32": 43.01,
-        "F_N_relaxed_liner": 41.89,
-        "wall_stress_share_of_23C_yield": 0.781,
-        "F_N_gentle_nominal_relaxed_mu_low": 14.34,
+        "shift_um_span32": 42.96,
+        "F_N_relaxed_liner": 41.86465085135531,
+        "wall_stress_share_of_23C_yield": 0.7802593410925824,
+        "F_N_gentle_nominal_relaxed_mu_low": 14.33128777558577,
         "capped": false,
-        "t_c": 55.0,
+        "t_c": 54.9638266127217,
         "zone3_fit_bonded_shank": {
-          "shift_um": 24.76,
+          "shift_um": 24.73,
           "alpha_shank_run_ppm_K": 9.7563,
-          "F_N_relaxed_liner": 29.28,
-          "wall_stress_share_of_23C_yield": 0.546,
-          "F_N_gentle_nominal_relaxed_mu_low": 10.62,
+          "F_N_relaxed_liner": 29.262803310071202,
+          "wall_stress_share_of_23C_yield": 0.5453903272789107,
+          "F_N_gentle_nominal_relaxed_mu_low": 10.613383306330936,
           "capped": false
         }
       }
     },
     "Ta": {
       "E_GPa": 186.0,
-      "seam_k_86": 0.3883,
-      "seam_k_at_wall_ceiling_87": 1.4705212543574377,
+      "seam_k_86": 0.3883079847908745,
+      "seam_k_at_wall_ceiling_87": 1.4706178707224327,
       "by_share": {
         "0": {
           "adverse": {
@@ -1107,198 +1107,198 @@
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3883
+              "seam_k": 0.3883079847908745
             },
             "sway_one_sided": {
               "F_amp_N": 0.0,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 0.3883
+              "seam_k": 0.3883079847908745
             },
             "sway_reversed_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 48.325,
+              "F_mean_N": 48.30005199032708,
               "wall_or_slip_reached": false,
-              "seam_k": 0.6365
+              "seam_k": 0.6362765560350877
             },
             "sway_one_sided_hot_preload": {
               "F_amp_N": 0.0,
-              "F_mean_N": 48.325,
+              "F_mean_N": 48.30005199032708,
               "wall_or_slip_reached": false,
-              "seam_k": 0.6365
+              "seam_k": 0.6362765560350877
             }
           },
-          "seam_k_adverse_sway": 0.3883,
-          "seam_k_adverse_with_preload": 0.6365,
+          "seam_k_adverse_sway": 0.3883079847908745,
+          "seam_k_adverse_with_preload": 0.6362765560350877,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
             "F_amp_N": 0.0,
             "F_mean_N": 0.0,
-            "seam_k": 0.3883
+            "seam_k": 0.3883079847908745
           }
         },
         "0.25": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 31.465,
+              "F_amp_N": 31.46619063426356,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 1.023
+              "seam_k": 1.0230354600399172
             },
             "sway_one_sided": {
-              "F_amp_N": 19.697,
-              "F_mean_N": 11.768,
+              "F_amp_N": 19.69732821168307,
+              "F_mean_N": 11.76886242258049,
               "wall_or_slip_reached": false,
-              "seam_k": 0.868
+              "seam_k": 0.8680683353978921
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 31.465,
-              "F_mean_N": 22.185,
+              "F_amp_N": 31.46619063426356,
+              "F_mean_N": 22.188599057498443,
               "wall_or_slip_reached": true,
-              "seam_k": 1.2461
+              "seam_k": 1.2461346382001626
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 19.697,
-              "F_mean_N": 33.953,
+              "F_amp_N": 19.69732821168307,
+              "F_mean_N": 33.95746148007893,
               "wall_or_slip_reached": true,
-              "seam_k": 1.0821
+              "seam_k": 1.0821333437557226
             }
           },
-          "seam_k_adverse_sway": 1.023,
-          "seam_k_adverse_with_preload": 1.2461,
+          "seam_k_adverse_sway": 1.0230354600399172,
+          "seam_k_adverse_with_preload": 1.2461346382001626,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 3.654,
-            "F_mean_N": 1.892,
-            "seam_k": 0.4692
+            "F_amp_N": 3.653743069215487,
+            "F_mean_N": 1.8915490338192535,
+            "seam_k": 0.46917094021555894
           }
         },
         "0.5": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 48.641,
+              "F_amp_N": 48.643514254867846,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": false,
-              "seam_k": 1.3695
+              "seam_k": 1.3695317798508608
             },
             "sway_one_sided": {
-              "F_amp_N": 31.465,
-              "F_mean_N": 17.176,
+              "F_amp_N": 31.46619063426356,
+              "F_mean_N": 17.177323620604284,
               "wall_or_slip_reached": false,
-              "seam_k": 1.1876
+              "seam_k": 1.1876407148165458
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 48.641,
-              "F_mean_N": 5.009,
+              "F_amp_N": 48.643514254867846,
+              "F_mean_N": 5.011275436894159,
               "wall_or_slip_reached": true,
-              "seam_k": 1.4272
+              "seam_k": 1.4272414848230612
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 31.465,
-              "F_mean_N": 22.185,
+              "F_amp_N": 31.46619063426356,
+              "F_mean_N": 22.188599057498443,
               "wall_or_slip_reached": true,
-              "seam_k": 1.2461
+              "seam_k": 1.2461346382001626
             }
           },
-          "seam_k_adverse_sway": 1.3695,
-          "seam_k_adverse_with_preload": 1.4272,
+          "seam_k_adverse_sway": 1.3695317798508608,
+          "seam_k_adverse_with_preload": 1.4272414848230612,
           "adverse_sway_capped": false,
           "gentle_one_sided": {
-            "F_amp_N": 5.546,
-            "F_mean_N": 2.704,
-            "seam_k": 0.5113
+            "F_amp_N": 5.545292103034741,
+            "F_mean_N": 2.702974072208179,
+            "seam_k": 0.5113176799410251
           }
         },
         "0.75": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 1.4705
+              "seam_k": 1.4706178707224327
             },
             "sway_one_sided": {
-              "F_amp_N": 40.737,
-              "F_mean_N": 12.913,
+              "F_amp_N": 40.73910176558309,
+              "F_mean_N": 12.915687926178919,
               "wall_or_slip_reached": true,
-              "seam_k": 1.3508
+              "seam_k": 1.350863220186629
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 1.4705
+              "seam_k": 1.4706178707224327
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 40.737,
-              "F_mean_N": 12.913,
+              "F_amp_N": 40.73910176558309,
+              "F_mean_N": 12.915687926178919,
               "wall_or_slip_reached": true,
-              "seam_k": 1.3508
+              "seam_k": 1.350863220186629
             }
           },
-          "seam_k_adverse_sway": 1.4705,
-          "seam_k_adverse_with_preload": 1.4705,
+          "seam_k_adverse_sway": 1.4706178707224327,
+          "seam_k_adverse_with_preload": 1.4706178707224327,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 7.011,
-            "F_mean_N": 3.323,
-            "seam_k": 0.5443
+            "F_amp_N": 7.009493181623308,
+            "F_mean_N": 3.3221013648499342,
+            "seam_k": 0.5442913179030233
           }
         },
         "1": {
           "adverse": {
             "sway_reversed": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 1.4705
+              "seam_k": 1.4706178707224327
             },
             "sway_one_sided": {
-              "F_amp_N": 48.641,
-              "F_mean_N": 5.009,
+              "F_amp_N": 48.643514254867846,
+              "F_mean_N": 5.011275436894159,
               "wall_or_slip_reached": true,
-              "seam_k": 1.4272
+              "seam_k": 1.4272414848230612
             },
             "sway_reversed_hot_preload": {
-              "F_amp_N": 53.65,
+              "F_amp_N": 53.654789691762005,
               "F_mean_N": 0.0,
               "wall_or_slip_reached": true,
-              "seam_k": 1.4705
+              "seam_k": 1.4706178707224327
             },
             "sway_one_sided_hot_preload": {
-              "F_amp_N": 48.641,
-              "F_mean_N": 5.009,
+              "F_amp_N": 48.643514254867846,
+              "F_mean_N": 5.011275436894159,
               "wall_or_slip_reached": true,
-              "seam_k": 1.4272
+              "seam_k": 1.4272414848230612
             }
           },
-          "seam_k_adverse_sway": 1.4705,
-          "seam_k_adverse_with_preload": 1.4705,
+          "seam_k_adverse_sway": 1.4706178707224327,
+          "seam_k_adverse_with_preload": 1.4706178707224327,
           "adverse_sway_capped": true,
           "gentle_one_sided": {
-            "F_amp_N": 8.25,
-            "F_mean_N": 3.844,
-            "seam_k": 0.5725
+            "F_amp_N": 8.24826617524292,
+            "F_mean_N": 3.8428126226741295,
+            "seam_k": 0.5724390917657928
           }
         }
       },
-      "adverse_share_at_wall_cap_exact": 0.588,
-      "wire_stretch_at_wall_cap_um_max": 12.85,
-      "adverse_grip_N_per_mm": 25.7,
-      "gentle_grip_N_per_mm": 2.188,
+      "adverse_share_at_wall_cap_exact": 0.5880419185167678,
+      "wire_stretch_at_wall_cap_um_max": 12.855048387096765,
+      "adverse_grip_N_per_mm": 25.700875521619295,
+      "gentle_grip_N_per_mm": 2.187156742835746,
       "hot_preload": {
-        "shift_um_span32": 45.58,
-        "F_N_relaxed_liner": 48.32,
-        "wall_stress_share_of_23C_yield": 0.901,
-        "F_N_gentle_nominal_relaxed_mu_low": 15.18,
+        "shift_um_span32": 45.53,
+        "F_N_relaxed_liner": 48.30005199032708,
+        "wall_stress_share_of_23C_yield": 0.9002001921506538,
+        "F_N_gentle_nominal_relaxed_mu_low": 15.166515430635323,
         "capped": false,
-        "t_c": 55.0,
+        "t_c": 54.9638266127217,
         "zone3_fit_bonded_shank": {
-          "shift_um": 27.33,
+          "shift_um": 27.3,
           "alpha_shank_run_ppm_K": 9.7563,
-          "F_N_relaxed_liner": 35.88,
-          "wall_stress_share_of_23C_yield": 0.669,
-          "F_N_gentle_nominal_relaxed_mu_low": 11.61,
+          "F_N_relaxed_liner": 35.86141523259324,
+          "wall_stress_share_of_23C_yield": 0.6683730462575886,
+          "F_N_gentle_nominal_relaxed_mu_low": 11.603611051078442,
           "capped": false
         }
       }
@@ -1311,85 +1311,85 @@
   },
   "pad_sway_share1_upper_whisker_high": {
     "window_floor__mu0.1": {
-      "pad_amp_um": 63.6,
-      "fraction_of_shift": 0.981,
-      "force_ratio_over_min_preload": 0.0909,
-      "F_amp_N": 4.0,
+      "pad_amp_um": 63.59,
+      "fraction_of_shift": 0.9812824985714446,
+      "force_ratio_over_min_preload": 0.0908,
+      "F_amp_N": 4.03,
       "capped": true
     },
     "window_floor__mu0.4": {
       "pad_amp_um": 60.1,
-      "fraction_of_shift": 0.928,
+      "fraction_of_shift": 0.9274649380429225,
       "force_ratio_over_min_preload": 0.0859,
-      "F_amp_N": 15.38,
+      "F_amp_N": 15.39,
       "capped": false
     },
     "window_floor_relaxed__mu0.1": {
-      "pad_amp_um": 64.02,
-      "fraction_of_shift": 0.988,
-      "force_ratio_over_min_preload": 0.0915,
-      "F_amp_N": 2.6,
+      "pad_amp_um": 64.01,
+      "fraction_of_shift": 0.9878336240714389,
+      "force_ratio_over_min_preload": 0.0914,
+      "F_amp_N": 2.62,
       "capped": true
     },
     "window_floor_relaxed__mu0.4": {
       "pad_amp_um": 61.65,
-      "fraction_of_shift": 0.951,
+      "fraction_of_shift": 0.9513344962857563,
       "force_ratio_over_min_preload": 0.0881,
-      "F_amp_N": 10.47,
+      "F_amp_N": 10.48,
       "capped": true
     },
     "ratified_nominal__mu0.1": {
       "pad_amp_um": 54.74,
-      "fraction_of_shift": 0.845,
+      "fraction_of_shift": 0.8447239773227727,
       "force_ratio_over_min_preload": 0.0782,
-      "F_amp_N": 28.47,
+      "F_amp_N": 28.46,
       "capped": false
     },
     "ratified_nominal__mu0.4": {
       "pad_amp_um": 45.2,
-      "fraction_of_shift": 0.698,
+      "fraction_of_shift": 0.6975103461800952,
       "force_ratio_over_min_preload": 0.0646,
       "F_amp_N": 51.73,
       "capped": false
     },
     "ratified_nominal_relaxed__mu0.1": {
       "pad_amp_um": 56.82,
-      "fraction_of_shift": 0.877,
+      "fraction_of_shift": 0.8768848441902648,
       "force_ratio_over_min_preload": 0.0812,
-      "F_amp_N": 23.39,
+      "F_amp_N": 23.38,
       "capped": false
     },
     "ratified_nominal_relaxed__mu0.4": {
       "pad_amp_um": 48.66,
-      "fraction_of_shift": 0.751,
+      "fraction_of_shift": 0.7510035474323948,
       "force_ratio_over_min_preload": 0.0695,
       "F_amp_N": 43.28,
       "capped": false
     },
     "window_ceiling__mu0.1": {
       "pad_amp_um": 50.86,
-      "fraction_of_shift": 0.785,
+      "fraction_of_shift": 0.7849230634204986,
       "force_ratio_over_min_preload": 0.0727,
       "F_amp_N": 37.92,
       "capped": false
     },
     "window_ceiling__mu0.4": {
       "pad_amp_um": 43.95,
-      "fraction_of_shift": 0.678,
+      "fraction_of_shift": 0.6782567664821341,
       "force_ratio_over_min_preload": 0.0628,
       "F_amp_N": 53.65,
       "capped": true
     },
     "window_ceiling_relaxed__mu0.1": {
       "pad_amp_um": 53.55,
-      "fraction_of_shift": 0.826,
+      "fraction_of_shift": 0.8263693311513709,
       "force_ratio_over_min_preload": 0.0765,
       "F_amp_N": 31.37,
       "capped": false
     },
     "window_ceiling_relaxed__mu0.4": {
       "pad_amp_um": 44.28,
-      "fraction_of_shift": 0.683,
+      "fraction_of_shift": 0.6833824944528523,
       "force_ratio_over_min_preload": 0.0633,
       "F_amp_N": 53.65,
       "capped": true
@@ -1399,11 +1399,11 @@
     "temperatures_c": {
       "capsule_model_edges_90": [
         -33.53,
-        55.0
+        54.9638266127217
       ],
       "cambium_under_flange_79": [
         -31.73,
-        46.62
+        46.623958295395774
       ]
     },
     "assembly_c": 20.0,
@@ -1421,9 +1421,9 @@
       "gap_and_shank_disc_on_sleeve_top__capsule_model_edges_90__window_floor__mu0.1": {
         "shift_um_per_K": 1.2288,
         "hot": {
-          "t_c": 55.0,
-          "shift_um": 43.01,
-          "pad_recedes_um": 43.01,
+          "t_c": 54.9638266127217,
+          "shift_um": 42.96,
+          "pad_recedes_um": 42.96355014171242,
           "root_F_N": 0.0,
           "grip_N_per_mm": 0.0,
           "capped": false
@@ -1431,75 +1431,75 @@
         "cold": {
           "t_c": -33.53,
           "shift_um": -65.78,
-          "pad_protrudes_um": 61.93,
-          "root_F_N": -12.02,
-          "grip_N_per_mm": 0.823,
+          "pad_protrudes_um": 61.91108535122975,
+          "root_F_N": -12.07,
+          "grip_N_per_mm": 0.83,
           "capped": false
         }
       },
       "gap_and_shank_disc_on_sleeve_top__capsule_model_edges_90__ratified_nominal_relaxed__mu0.1": {
         "shift_um_per_K": 1.2288,
         "hot": {
-          "t_c": 55.0,
-          "shift_um": 43.01,
-          "pad_recedes_um": 37.83,
-          "root_F_N": 14.39,
-          "grip_N_per_mm": 1.931,
+          "t_c": 54.9638266127217,
+          "shift_um": 42.96,
+          "pad_recedes_um": 37.786482703270345,
+          "root_F_N": 14.38,
+          "grip_N_per_mm": 1.93,
           "capped": false
         },
         "cold": {
           "t_c": -33.53,
           "shift_um": -65.78,
-          "pad_protrudes_um": 58.4,
-          "root_F_N": -20.68,
-          "grip_N_per_mm": 2.583,
+          "pad_protrudes_um": 58.39893012069138,
+          "root_F_N": -20.67,
+          "grip_N_per_mm": 2.581,
           "capped": false
         }
       },
       "gap_and_shank_disc_on_sleeve_top__capsule_model_edges_90__ratified_nominal__mu0.1": {
         "shift_um_per_K": 1.2288,
         "hot": {
-          "t_c": 55.0,
-          "shift_um": 43.01,
-          "pad_recedes_um": 36.54,
-          "root_F_N": 17.54,
-          "grip_N_per_mm": 2.97,
+          "t_c": 54.9638266127217,
+          "shift_um": 42.96,
+          "pad_recedes_um": 36.50047506075186,
+          "root_F_N": 17.53,
+          "grip_N_per_mm": 2.969,
           "capped": false
         },
         "cold": {
           "t_c": -33.53,
           "shift_um": -65.78,
-          "pad_protrudes_um": 56.54,
+          "pad_protrudes_um": 56.53838004356892,
           "root_F_N": -25.23,
-          "grip_N_per_mm": 3.973,
+          "grip_N_per_mm": 3.971,
           "capped": false
         }
       },
       "gap_and_shank_disc_on_sleeve_top__capsule_model_edges_90__window_ceiling__mu0.4": {
         "shift_um_per_K": 1.2288,
         "hot": {
-          "t_c": 55.0,
-          "shift_um": 43.01,
-          "pad_recedes_um": 26.37,
-          "root_F_N": 42.46,
-          "grip_N_per_mm": 24.115,
+          "t_c": 54.9638266127217,
+          "shift_um": 42.96,
+          "pad_recedes_um": 26.33232125085041,
+          "root_F_N": 42.43,
+          "grip_N_per_mm": 24.117,
           "capped": false
         },
         "cold": {
           "t_c": -33.53,
           "shift_um": -65.78,
-          "pad_protrudes_um": 44.79,
+          "pad_protrudes_um": 44.792141465291316,
           "root_F_N": -53.65,
-          "grip_N_per_mm": 28.125,
+          "grip_N_per_mm": 28.126,
           "capped": true
         }
       },
       "gap_and_shank_disc_on_sleeve_top__cambium_under_flange_79__window_floor__mu0.1": {
         "shift_um_per_K": 1.2288,
         "hot": {
-          "t_c": 46.62,
-          "shift_um": 32.71,
-          "pad_recedes_um": 32.71,
+          "t_c": 46.623958295395774,
+          "shift_um": 32.72,
+          "pad_recedes_um": 32.715519953382326,
           "root_F_N": 0.0,
           "grip_N_per_mm": 0.0,
           "capped": false
@@ -1507,75 +1507,75 @@
         "cold": {
           "t_c": -31.73,
           "shift_um": -63.57,
-          "pad_protrudes_um": 59.83,
-          "root_F_N": -11.67,
-          "grip_N_per_mm": 0.803,
+          "pad_protrudes_um": 59.807822210526155,
+          "root_F_N": -11.72,
+          "grip_N_per_mm": 0.81,
           "capped": false
         }
       },
       "gap_and_shank_disc_on_sleeve_top__cambium_under_flange_79__ratified_nominal_relaxed__mu0.1": {
         "shift_um_per_K": 1.2288,
         "hot": {
-          "t_c": 46.62,
-          "shift_um": 32.71,
-          "pad_recedes_um": 28.1,
+          "t_c": 46.623958295395774,
+          "shift_um": 32.72,
+          "pad_recedes_um": 28.101102464419412,
           "root_F_N": 12.6,
-          "grip_N_per_mm": 1.992,
+          "grip_N_per_mm": 1.991,
           "capped": false
         },
         "cold": {
           "t_c": -31.73,
           "shift_um": -63.57,
-          "pad_protrudes_um": 56.32,
+          "pad_protrudes_um": 56.323991469843044,
           "root_F_N": -20.25,
-          "grip_N_per_mm": 2.569,
+          "grip_N_per_mm": 2.568,
           "capped": false
         }
       },
       "gap_and_shank_disc_on_sleeve_top__cambium_under_flange_79__ratified_nominal__mu0.1": {
         "shift_um_per_K": 1.2288,
         "hot": {
-          "t_c": 46.62,
-          "shift_um": 32.71,
-          "pad_recedes_um": 26.99,
+          "t_c": 46.623958295395774,
+          "shift_um": 32.72,
+          "pad_recedes_um": 26.992222125141314,
           "root_F_N": 15.31,
-          "grip_N_per_mm": 3.065,
+          "grip_N_per_mm": 3.063,
           "capped": false
         },
         "cold": {
           "t_c": -31.73,
           "shift_um": -63.57,
-          "pad_protrudes_um": 54.5,
+          "pad_protrudes_um": 54.50386547725791,
           "root_F_N": -24.71,
-          "grip_N_per_mm": 3.953,
+          "grip_N_per_mm": 3.951,
           "capped": false
         }
       },
       "gap_and_shank_disc_on_sleeve_top__cambium_under_flange_79__window_ceiling__mu0.4": {
         "shift_um_per_K": 1.2288,
         "hot": {
-          "t_c": 46.62,
-          "shift_um": 32.71,
-          "pad_recedes_um": 18.58,
-          "root_F_N": 35.91,
-          "grip_N_per_mm": 24.494,
+          "t_c": 46.623958295395774,
+          "shift_um": 32.72,
+          "pad_recedes_um": 18.578079580219832,
+          "root_F_N": 35.92,
+          "grip_N_per_mm": 24.495,
           "capped": false
         },
         "cold": {
           "t_c": -31.73,
           "shift_um": -63.57,
-          "pad_protrudes_um": 42.58,
+          "pad_protrudes_um": 42.58196901401123,
           "root_F_N": -53.65,
-          "grip_N_per_mm": 28.043,
+          "grip_N_per_mm": 28.044,
           "capped": true
         }
       },
       "gap_only_shank_held_at_its_end__capsule_model_edges_90__window_floor__mu0.1": {
         "shift_um_per_K": 0.6912,
         "hot": {
-          "t_c": 55.0,
-          "shift_um": 24.19,
-          "pad_recedes_um": 24.19,
+          "t_c": 54.9638266127217,
+          "shift_um": 24.17,
+          "pad_recedes_um": 24.166996954713234,
           "root_F_N": 0.0,
           "grip_N_per_mm": 0.0,
           "capped": false
@@ -1583,75 +1583,75 @@
         "cold": {
           "t_c": -33.53,
           "shift_um": -37.0,
-          "pad_protrudes_um": 33.96,
-          "root_F_N": -8.9,
-          "grip_N_per_mm": 0.823,
+          "pad_protrudes_um": 33.94775678862845,
+          "root_F_N": -8.94,
+          "grip_N_per_mm": 0.83,
           "capped": false
         }
       },
       "gap_only_shank_held_at_its_end__capsule_model_edges_90__ratified_nominal_relaxed__mu0.1": {
         "shift_um_per_K": 0.6912,
         "hot": {
-          "t_c": 55.0,
-          "shift_um": 24.19,
-          "pad_recedes_um": 20.28,
-          "root_F_N": 10.54,
-          "grip_N_per_mm": 1.931,
+          "t_c": 54.9638266127217,
+          "shift_um": 24.17,
+          "pad_recedes_um": 20.258585613288027,
+          "root_F_N": 10.53,
+          "grip_N_per_mm": 1.93,
           "capped": false
         },
         "cold": {
           "t_c": -33.53,
           "shift_um": -37.0,
-          "pad_protrudes_um": 31.41,
+          "pad_protrudes_um": 31.407302208808073,
           "root_F_N": -15.16,
-          "grip_N_per_mm": 2.583,
+          "grip_N_per_mm": 2.581,
           "capped": false
         }
       },
       "gap_only_shank_held_at_its_end__capsule_model_edges_90__ratified_nominal__mu0.1": {
         "shift_um_per_K": 0.6912,
         "hot": {
-          "t_c": 55.0,
-          "shift_um": 24.19,
-          "pad_recedes_um": 19.37,
-          "root_F_N": 12.77,
-          "grip_N_per_mm": 2.97,
+          "t_c": 54.9638266127217,
+          "shift_um": 24.17,
+          "pad_recedes_um": 19.34680608657595,
+          "root_F_N": 12.76,
+          "grip_N_per_mm": 2.969,
           "capped": false
         },
         "cold": {
           "t_c": -33.53,
           "shift_um": -37.0,
-          "pad_protrudes_um": 30.08,
-          "root_F_N": -18.41,
-          "grip_N_per_mm": 3.973,
+          "pad_protrudes_um": 30.083159580593723,
+          "root_F_N": -18.4,
+          "grip_N_per_mm": 3.971,
           "capped": false
         }
       },
       "gap_only_shank_held_at_its_end__capsule_model_edges_90__window_ceiling__mu0.4": {
         "shift_um_per_K": 0.6912,
         "hot": {
-          "t_c": 55.0,
-          "shift_um": 24.19,
-          "pad_recedes_um": 12.6,
-          "root_F_N": 29.35,
-          "grip_N_per_mm": 24.115,
+          "t_c": 54.9638266127217,
+          "shift_um": 24.17,
+          "pad_recedes_um": 12.581660230058342,
+          "root_F_N": 29.33,
+          "grip_N_per_mm": 24.117,
           "capped": false
         },
         "cold": {
           "t_c": -33.53,
           "shift_um": -37.0,
-          "pad_protrudes_um": 20.92,
+          "pad_protrudes_um": 20.920851336343805,
           "root_F_N": -40.84,
-          "grip_N_per_mm": 28.125,
+          "grip_N_per_mm": 28.126,
           "capped": false
         }
       },
       "gap_only_shank_held_at_its_end__cambium_under_flange_79__window_floor__mu0.1": {
         "shift_um_per_K": 0.6912,
         "hot": {
-          "t_c": 46.62,
+          "t_c": 46.623958295395774,
           "shift_um": 18.4,
-          "pad_recedes_um": 18.4,
+          "pad_recedes_um": 18.40247997377756,
           "root_F_N": 0.0,
           "grip_N_per_mm": 0.0,
           "capped": false
@@ -1659,160 +1659,160 @@
         "cold": {
           "t_c": -31.73,
           "shift_um": -35.76,
-          "pad_protrudes_um": 32.8,
-          "root_F_N": -8.64,
-          "grip_N_per_mm": 0.803,
+          "pad_protrudes_um": 32.79056379491324,
+          "root_F_N": -8.68,
+          "grip_N_per_mm": 0.81,
           "capped": false
         }
       },
       "gap_only_shank_held_at_its_end__cambium_under_flange_79__ratified_nominal_relaxed__mu0.1": {
         "shift_um_per_K": 0.6912,
         "hot": {
-          "t_c": 46.62,
+          "t_c": 46.623958295395774,
           "shift_um": 18.4,
-          "pad_recedes_um": 14.95,
+          "pad_recedes_um": 14.94879037260815,
           "root_F_N": 9.19,
-          "grip_N_per_mm": 1.992,
+          "grip_N_per_mm": 1.991,
           "capped": false
         },
         "cold": {
           "t_c": -31.73,
           "shift_um": -35.76,
-          "pad_protrudes_um": 30.27,
+          "pad_protrudes_um": 30.271618473902482,
           "root_F_N": -14.85,
-          "grip_N_per_mm": 2.569,
+          "grip_N_per_mm": 2.568,
           "capped": false
         }
       },
       "gap_only_shank_held_at_its_end__cambium_under_flange_79__ratified_nominal__mu0.1": {
         "shift_um_per_K": 0.6912,
         "hot": {
-          "t_c": 46.62,
+          "t_c": 46.623958295395774,
           "shift_um": 18.4,
-          "pad_recedes_um": 14.17,
+          "pad_recedes_um": 14.170095148482492,
           "root_F_N": 11.09,
-          "grip_N_per_mm": 3.065,
+          "grip_N_per_mm": 3.063,
           "capped": false
         },
         "cold": {
           "t_c": -31.73,
           "shift_um": -35.76,
-          "pad_protrudes_um": 28.98,
+          "pad_protrudes_um": 28.97727237389972,
           "root_F_N": -18.02,
-          "grip_N_per_mm": 3.953,
+          "grip_N_per_mm": 3.951,
           "capped": false
         }
       },
       "gap_only_shank_held_at_its_end__cambium_under_flange_79__window_ceiling__mu0.4": {
         "shift_um_per_K": 0.6912,
         "hot": {
-          "t_c": 46.62,
+          "t_c": 46.623958295395774,
           "shift_um": 18.4,
-          "pad_recedes_um": 8.68,
-          "root_F_N": 24.54,
-          "grip_N_per_mm": 24.494,
+          "pad_recedes_um": 8.67692738434769,
+          "root_F_N": 24.55,
+          "grip_N_per_mm": 24.495,
           "capped": false
         },
         "cold": {
           "t_c": -31.73,
           "shift_um": -35.76,
-          "pad_protrudes_um": 20.04,
+          "pad_protrudes_um": 20.036536455173724,
           "root_F_N": -39.91,
-          "grip_N_per_mm": 28.043,
+          "grip_N_per_mm": 28.044,
           "capped": false
         }
       }
     },
     "l1_margin_um_90_model_edges": {
       "isothermal_low_stack": [
-        19.3,
-        14.8
+        19.352214951977185,
+        14.760146744000057
       ],
       "isothermal_high_stack": [
-        17.4,
-        11.8
+        17.444588571987094,
+        11.839549943999959
       ]
     },
-    "l1_margin_to_lower_edge_min_um": 17.4,
-    "l1_margin_to_upper_edge_min_um": 11.8,
+    "l1_margin_to_lower_edge_min_um": 17.444588571987094,
+    "l1_margin_to_upper_edge_min_um": 11.839549943999959,
     "against_l1": {
       "hot_floor_part_past_smaller_lower_margin": 4,
       "hot_floor_part_past_larger_lower_margin": 3,
       "hot_floor_part_readings": 4,
       "cold_every_part_past_larger_upper_margin": 16,
       "cold_readings": 16,
-      "cold_min_protrusion_um": 20.04
+      "cold_min_protrusion_um": 20.036536455173724
     },
     "premise": "the sleeve's FREE growth — the wood holding nothing (CANNOT 11)",
     "flip_effective_cte_ppm_K": {
       "gap_and_shank_disc_on_sleeve_top__capsule_model_edges_90": {
         "cold_tightest_grip_vs_upper_margin_ppm_K": {
-          "11.8": 22.574,
-          "14.8": 25.161
+          "11.8": 22.6093269281774,
+          "14.8": 25.127252623559947
         },
         "hot_floor_part_vs_lower_margin_ppm_K": {
-          "17.4": 24.136,
-          "19.3": 25.832
+          "17.4": 24.191639865764717,
+          "19.4": 25.89663986576471
         }
       },
       "gap_and_shank_disc_on_sleeve_top__cambium_under_flange_79": {
         "cold_tightest_grip_vs_upper_margin_ppm_K": {
-          "11.8": 23.05,
-          "14.8": 25.725
+          "11.8": 23.08597794421543,
+          "14.8": 25.69025666176949
         },
         "hot_floor_part_vs_lower_margin_ppm_K": {
-          "17.4": 29.026,
-          "19.3": 31.257
+          "17.4": 29.075670327686453,
+          "19.4": 31.31475603061889
         }
       },
       "gap_only_shank_held_at_its_end__capsule_model_edges_90": {
         "cold_tightest_grip_vs_upper_margin_ppm_K": {
-          "11.8": 33.443,
-          "14.8": 38.041
+          "11.8": 33.50547009453761,
+          "14.8": 37.98178244188434
         },
         "hot_floor_part_vs_lower_margin_ppm_K": {
-          "17.4": 36.219,
-          "19.3": 39.235
+          "17.4": 36.3184708724706,
+          "19.4": 39.34958198358169
         }
       },
       "gap_only_shank_held_at_its_end__cambium_under_flange_79": {
         "cold_tightest_grip_vs_upper_margin_ppm_K": {
-          "11.8": 34.288,
-          "14.8": 39.044
+          "11.8": 34.352849678605196,
+          "14.8": 38.98267850981242
         },
         "hot_floor_part_vs_lower_margin_ppm_K": {
-          "17.4": 44.914,
-          "19.3": null
+          "17.4": 45.00119169366481,
+          "19.4": null
         }
       }
     },
     "alpha_peek_free_ppm_K": 47.0,
     "flip_vs_larger_margin_ppm_K": {
       "cold_flange_on_bark": [
-        25.161,
-        25.725
+        25.127252623559947,
+        25.69025666176949
       ],
       "cold_zone3_fit_gap_only": [
-        38.041,
-        39.044
+        37.98178244188434,
+        38.98267850981242
       ],
       "hot_floor_part_flange_on_bark": [
-        25.832,
-        31.257
+        25.89663986576471,
+        31.31475603061889
       ],
       "hot_floor_part_zone3_fit_gap_only": [
-        39.235,
-        39.235
+        39.34958198358169,
+        39.34958198358169
       ]
     },
-    "tightest_grip_hot_recession_um_bark_span_capsule_edge": 26.37,
+    "tightest_grip_hot_recession_um_bark_span_capsule_edge": 26.33232125085041,
     "l1_margin_basis": "isothermal readings of 90 — the radome-leads reading breaks L1 at the same edges",
     "liner_modulus": "relaxed (× PEEK_RELAX_FLOOR) — a seasonal load"
   },
   "sleeve_vs_wire": {
     "sleeve_area_mm2": 81.68,
     "sleeve_k_N_per_mm": 10210.2,
-    "wire_secant_k_N_per_mm_at_share1_adverse": 827.9,
+    "wire_secant_k_N_per_mm_at_share1_adverse": 828.0,
     "wire_tangent_k_N_per_mm_initial": 2499.6,
     "ratio": 12.3,
     "ratio_at_initial_tangent": 4.08
@@ -1822,47 +1822,47 @@
     "virgin": [
       {
         "delta_um": 5.0,
-        "F_closed_N": 7.6608,
-        "F_fe_rigid_N": 7.6622,
-        "F_fe_wall_shear_N": 7.5538,
-        "pad_closed_um": 1.9832,
-        "pad_fe_rigid_um": 1.9826,
-        "pad_fe_wall_shear_um": 2.0265
+        "F_closed_N": 7.6616,
+        "F_fe_rigid_N": 7.6631,
+        "F_fe_wall_shear_N": 7.5546,
+        "pad_closed_um": 1.9828,
+        "pad_fe_rigid_um": 1.9823,
+        "pad_fe_wall_shear_um": 2.0262
       },
       {
         "delta_um": 15.0,
-        "F_closed_N": 16.1081,
-        "F_fe_rigid_N": 16.108,
-        "F_fe_wall_shear_N": 16.0411,
-        "pad_closed_um": 8.768,
-        "pad_fe_rigid_um": 8.768,
-        "pad_fe_wall_shear_um": 8.7945
+        "F_closed_N": 16.1103,
+        "F_fe_rigid_N": 16.1103,
+        "F_fe_wall_shear_N": 16.0433,
+        "pad_closed_um": 8.7671,
+        "pad_fe_rigid_um": 8.7671,
+        "pad_fe_wall_shear_um": 8.7936
       },
       {
         "delta_um": 30.0,
-        "F_closed_N": 24.7007,
-        "F_fe_rigid_N": 24.701,
-        "F_fe_wall_shear_N": 24.6523,
-        "pad_closed_um": 20.6173,
-        "pad_fe_rigid_um": 20.6173,
-        "pad_fe_wall_shear_um": 20.6358
+        "F_closed_N": 24.7045,
+        "F_fe_rigid_N": 24.7048,
+        "F_fe_wall_shear_N": 24.656,
+        "pad_closed_um": 20.6158,
+        "pad_fe_rigid_um": 20.6158,
+        "pad_fe_wall_shear_um": 20.6343
       }
     ],
     "masing_loop": {
       "delta_mean_um": 12.0,
       "delta_amp_um": 10.0,
-      "F_amp_fe_N": 12.3746,
-      "F_amp_masing_N": 12.3746,
-      "F_mean_fe_N": 8.0926,
-      "F_mean_masing_N": 8.0919
+      "F_amp_fe_N": 12.3762,
+      "F_amp_masing_N": 12.3762,
+      "F_mean_fe_N": 8.094,
+      "F_mean_masing_N": 8.0934
     },
     "stick_compliance_effect_on_F_max": 0.014,
-    "stick_compliance_effect_on_pad_max": 0.0218,
+    "stick_compliance_effect_on_pad_max": 0.0219,
     "stick_compliance_at_tightest_grip": [
       {
         "delta_um": 5.0,
         "F_rel": -0.0628,
-        "pad_rel": 0.2838
+        "pad_rel": 0.2839
       },
       {
         "delta_um": 15.0,
@@ -1878,5 +1878,5 @@
     "stick_direction": "the closed form OVERSTATES the force and UNDERSTATES the pad's travel — conservative for the seam and the pad's travel; the CTE flip thresholds move by a fraction of a ppm/K with it",
     "reading": "near-rigid FE must reproduce the closed form and its Masing loop to 0.2 %; the wall-shear FE shows what rigid stick leaves out"
   },
-  "verdict": "Seam, adverse corner (the tightest part at μ 0.4, `87`'s upper-whisker shift reversed): `86`'s requirement on Ta is 1.03 at a quarter of the shift and 1.37 at half, and from share 0.59 the liner wall's cap binds — the wall reaches its 23 °C yield every sway cycle and the requirement is `87`'s ceiling reading, 1.48; on Ti-6Al-4V 0.34 · 0.47 → 0.55 from share 0.72. Gentle corner (the nominal part after creep at μ 0.1, the median shift one-sided): Ta 0.47–0.58, Ti-6Al-4V 0.17–0.21 over shares 0.25–1 — above `86`'s 0.3883 on Ta at every share above zero. A seasonal preload at the hot edge (55 °C) on the relaxed liner adds 15.1–48.4 N of mean on Ta (gentle to adverse grip) — up to 91 % of the wall's 23 °C yield, where creep is not modelled, so the upper end is a ceiling — and raises its requirement to 0.64 with no sway at all. Pad: the wire's own stretch is capped with the force — at most 12.8–29.9 µm at the wall's cap — so the rest of any shift goes into the pad: with the part gripping 67–88 % of a sway shift reaches it, on a part at the window floor 92–99 %, and at the hot edge a floor part grips with 0.00 N/mm. Heat, on the free-sleeve reading (the wood holding nothing): the sleeve grows 0.69–1.23 µm/K over the wire; at the cold edge the pad protrudes at least 20.0 µm on every part and grip against `90`'s isothermal L1 margin to the upper edge of 11.8–14.8 µm, and at the hot edge a floor part recedes 18.4–43.1 µm against 17.4–19.3 µm to the lower edge (past the larger in 3 of 4); on the shipped span at the capsule edge even the tightest grip recedes 26.3 µm. With a bonded anode and the flange on the bark the span follows the wood's radial expansion instead, and the cold result holds while its effective CTE stays above 25.2–25.8 ppm/K (38.1–39.1 if a Zone-3 fit locates the flange and only the gap follows the wood), the hot one above 25.9–31.3 (free PEEK 47; a «holds while above X» threshold rounds up); the wood's radial CTE is not in `102` (`103` takes xylem's). The sleeve is 12× stiffer axially than the wire at the adverse share-1 point and 4.0× at the first micron, so the wire adds between a twelfth and a quarter to the anchor's stiffness and does not set the share."
+  "verdict": "Seam, adverse corner (the tightest part at μ 0.4, `87`'s upper-whisker shift reversed): `86`'s requirement on Ta is 1.03 at a quarter of the shift and 1.37 at half, and from share 0.59 the liner wall's cap binds — the wall reaches its 23 °C yield every sway cycle and the requirement is `87`'s ceiling reading, 1.48; on Ti-6Al-4V 0.34 · 0.47 → 0.55 from share 0.72. Gentle corner (the nominal part after creep at μ 0.1, the median shift one-sided): Ta 0.47–0.58, Ti-6Al-4V 0.17–0.21 over shares 0.25–1 — above `86`'s 0.3883 on Ta at every share above zero. A seasonal preload at the hot edge (55 °C) on the relaxed liner adds 15.1–48.4 N of mean on Ta (gentle to adverse grip) — up to 91 % of the wall's 23 °C yield, where creep is not modelled, so the upper end is a ceiling — and raises its requirement to 0.64 with no sway at all. Pad: the wire's own stretch is capped with the force — at most 12.8–29.9 µm at the wall's cap — so the rest of any shift goes into the pad: with the part gripping 67–88 % of a sway shift reaches it, on a part at the window floor 92–99 %, and at the hot edge a floor part grips with 0.00 N/mm. Heat, on the free-sleeve reading (the wood holding nothing): the sleeve grows 0.69–1.23 µm/K over the wire; at the cold edge the pad protrudes at least 20.0 µm on every part and grip against `90`'s isothermal L1 margin to the upper edge of 11.8–14.8 µm, and at the hot edge a floor part recedes 18.4–43.0 µm against 17.4–19.4 µm to the lower edge (past the larger in 3 of 4); on the shipped span at the capsule edge even the tightest grip recedes 26.3 µm. With a bonded anode and the flange on the bark the span follows the wood's radial expansion instead, and the cold result holds while its effective CTE stays above 25.2–25.7 ppm/K (38.0–39.0 if a Zone-3 fit locates the flange and only the gap follows the wood), the hot one above 25.9–31.4 (free PEEK 47; a «holds while above X» threshold rounds up); the wood's radial CTE is not in `102` (`103` takes xylem's). The sleeve is 12× stiffer axially than the wire at the adverse share-1 point and 4.0× at the first micron, so the wire adds between a twelfth and a quarter to the anchor's stiffness and does not set the share."
 }

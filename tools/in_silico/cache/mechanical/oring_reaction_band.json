@@ -30,12 +30,12 @@
     ],
     "nominal_pct": 24.5,
     "chain_pct_as_modelled_by_52": [
-      21.7,
-      27.3
+      21.691011235955056,
+      27.308988764044944
     ],
     "pogo_pair_N_upper_bound_52": 1.92,
-    "relax_fraction_at_service_52": 0.65,
-    "lug_root_capacity_N_at_print_floor_73": 457.0,
+    "relax_fraction_at_service_52": 0.6500000007214037,
+    "lug_root_capacity_N_at_print_floor_73": 457.26141319818373,
     "safety_factor_73": 2.0,
     "o_ring_reaction_N_needed_87": {
       "initial_with_clamp_at_52_requirement": 10.571074863764254,
@@ -80,11 +80,11 @@
         118.9
       ],
       "required_clamp_N_at_band_high": {
-        "at_assembly": 120.8,
-        "after_20_years_ring_never_relaxes": 185.8
+        "at_assembly": 120.7867588633802,
+        "after_20_years_ring_never_relaxes": 185.82578266049967
       },
       "lug_root_margin_x_at_print_floor": {
-        "at_assembly": 3.78,
+        "at_assembly": 3.79,
         "after_20_years_ring_never_relaxes": 2.46
       },
       "ring_must_have_lost_share_of_R0_by_year": {
@@ -95,29 +95,29 @@
         "10": 0.0,
         "20": 0.0
       },
-      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.081
+      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.0812777012434942
     },
     "chain_low": {
-      "squeeze_pct": 21.7,
+      "squeeze_pct": 21.691011235955056,
       "bar_lbf_per_in": [
         4.07,
-        12.65
+        12.64
       ],
       "lbf_per_in": [
         5.94,
-        12.65
+        12.64
       ],
       "reaction_N": [
-        74.4,
-        158.4
+        74.3,
+        158.2
       ],
       "required_clamp_N_at_band_high": {
-        "at_assembly": 160.3,
-        "after_20_years_ring_never_relaxes": 246.6
+        "at_assembly": 160.12828855201073,
+        "after_20_years_ring_never_relaxes": 246.35121288352622
       },
       "lug_root_margin_x_at_print_floor": {
-        "at_assembly": 2.85,
-        "after_20_years_ring_never_relaxes": 1.85
+        "at_assembly": 2.86,
+        "after_20_years_ring_never_relaxes": 1.86
       },
       "ring_must_have_lost_share_of_R0_by_year": {
         "1": 0.0,
@@ -127,7 +127,7 @@
         "10": 0.0,
         "20": 0.0
       },
-      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.108
+      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.10775071141931411
     },
     "nominal": {
       "squeeze_pct": 24.5,
@@ -144,8 +144,8 @@
         218.1
       ],
       "required_clamp_N_at_band_high": {
-        "at_assembly": 220.0,
-        "after_20_years_ring_never_relaxes": 338.5
+        "at_assembly": 220.03894241696338,
+        "after_20_years_ring_never_relaxes": 338.5214494965427
       },
       "lug_root_margin_x_at_print_floor": {
         "at_assembly": 2.08,
@@ -159,25 +159,25 @@
         "10": 0.0,
         "20": 0.0
       },
-      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.148
+      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.1480647348434024
     },
     "chain_high": {
-      "squeeze_pct": 27.3,
+      "squeeze_pct": 27.308988764044944,
       "bar_lbf_per_in": [
-        6.42,
-        24.0
+        6.43,
+        24.02
       ],
       "lbf_per_in": [
-        9.97,
-        24.0
+        9.98,
+        24.02
       ],
       "reaction_N": [
-        124.8,
-        300.4
+        124.9,
+        300.7
       ],
       "required_clamp_N_at_band_high": {
-        "at_assembly": 302.3,
-        "after_20_years_ring_never_relaxes": 465.1
+        "at_assembly": 302.6366911198467,
+        "after_20_years_ring_never_relaxes": 465.5949088984074
       },
       "lug_root_margin_x_at_print_floor": {
         "at_assembly": 1.51,
@@ -191,7 +191,7 @@
         "10": 0.018,
         "20": 0.018
       },
-      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.204
+      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.2036449590801627
     },
     "window_top": {
       "squeeze_pct": 30.0,
@@ -208,43 +208,43 @@
         409.0
       ],
       "required_clamp_N_at_band_high": {
-        "at_assembly": 411.0,
-        "after_20_years_ring_never_relaxes": 632.2
+        "at_assembly": 410.95850319611685,
+        "after_20_years_ring_never_relaxes": 632.243850369252
       },
       "lug_root_margin_x_at_print_floor": {
         "at_assembly": 1.11,
         "after_20_years_ring_never_relaxes": 0.72
       },
       "ring_must_have_lost_share_of_R0_by_year": {
-        "1": 0.135,
-        "2": 0.226,
+        "1": 0.134,
+        "2": 0.225,
         "3": 0.259,
-        "5": 0.276,
+        "5": 0.275,
         "10": 0.278,
         "20": 0.278
       },
-      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.277
+      "collar_wall_strength_asks_mm_ring_never_relaxes": 0.276534967578919
     }
   },
   "inversion": {
-    "reaction_N_at_which_lug_binds_ring_never_relaxes": 295.1,
-    "squeeze_pct_band_high_binds": 27.14,
+    "reaction_N_at_which_lug_binds_ring_never_relaxes": 295.3,
+    "squeeze_pct_band_high_binds": 27.15,
     "squeeze_pct_band_high_binds_over_transcription": [
-      26.8,
-      27.5
+      26.81,
+      27.51
     ],
     "squeeze_pct_band_high_exceeds_generous_bound": 17.13
   },
   "rim_premise_A": {
-    "reaction_N_low_at_window_floor": 58.0,
+    "reaction_N_low_at_window_floor": 57.991617953192204,
     "needs_87": {
       "initial_with_clamp_at_52_requirement": 10.571074863764254,
       "after_20_years_with_a_weaker_clamp": 10.571074863764254
     },
     "margin_x": {
-      "initial_with_clamp_at_52_requirement": 5.49
+      "initial_with_clamp_at_52_requirement": 5.485877141214566
     },
-    "share_retained_needed_with_a_weaker_clamp": 0.182,
+    "share_retained_needed_with_a_weaker_clamp": 0.18228625509805008,
     "is": "a clamp at the form 52 prints for the ring's own reaction, (R0 + p) / f(20 y), never lets the rim lift while the lift stays at L0, so the needed reaction is an initial one; a weaker clamp can let the rim lift (it does when R(t) + p > f(t)·C0), a lift is taken as not undone (conservative for (A): lifted, the normal force is L; reseated, 2C − L ≥ L), and the normal force is then what the ring has left — less than a constant-squeeze relaxation datum says, because the ledge PEEK creeping under a lift takes squeeze (52); the friction bound runs through the lug ledge (the rim's share can be zero), with µ from 55's dry PEEK–Ti sweep — the ring is greased; temperature is not modelled here — 89"
   },
   "missing_data": [

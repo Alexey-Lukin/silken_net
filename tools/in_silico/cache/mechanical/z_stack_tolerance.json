@@ -212,8 +212,8 @@
     ],
     "recommended_nominal_pct": 24.5,
     "band_at_recommended_pct": [
-      21.7,
-      27.3
+      21.691011235955056,
+      27.308988764044944
     ],
     "recommended_holds_both": true,
     "applied_in_cad": true,
@@ -414,11 +414,11 @@
     "flange_groove_depth_mm": 1.3439,
     "flange_groove_width_mm": 2.3146,
     "flange_groove_r_mm": [
-      10.4854,
-      12.8
+      10.485416008530699,
+      12.799999999999999
     ],
     "radome_seal_land_r_mm": [
-      10.1854,
+      10.185416008530698,
       13.1
     ],
     "seal_land_margin_mm": [
@@ -428,12 +428,12 @@
     "socket_band_mm": 1.8,
     "socket_pocket_r_mm": [
       13.1,
-      14.7
+      14.700000000000001
     ],
     "socket_skin_mm": 0.2,
-    "rim_cavity_mm": 20.3708,
-    "rim_contact_area_mm2": 189.12,
-    "entry_slot_opening_mm2_each": 4.371,
+    "rim_cavity_mm": 20.370832017061396,
+    "rim_contact_area_mm2": 189.11565185398277,
+    "entry_slot_opening_mm2_each": 4.370864335950778,
     "note": "the seal land backs the groove by one socket clearance on each side, so the ring stays backed with the radome one clearance off-centre; the socket pocket is `socket_band \u2212 skin` deep, not the full band \u2014 the budget above counts no skin, and a pocket cut to the dome OD would breach the shell. \u26a0\ufe0f The lugs still sit at mid-disc: the ratified collar (02_02 \u00a74.4) is not modelled on either part."
   },
   "depth_tolerance_budget": {
@@ -492,15 +492,15 @@
     "relax_floor": 0.65,
     "relax_tau_years": 1.0,
     "service_years": 20.0,
-    "relax_fraction_at_service": 0.65,
+    "relax_fraction_at_service": 0.6500000007214037,
     "pogo_pair_force_N_upper_bound": 1.92,
     "o_ring_force_N": null,
     "o_ring_generous_bound_N_assumed": 100.0,
     "required_initial_clamp_N": {
-      "pogo_pair_only": 3.0,
-      "with_generous_o_ring": 156.8
+      "pogo_pair_only": 2.953846150567822,
+      "with_generous_o_ring": 156.79999982597522
     },
-    "lug_root_capacity_N_from_73": 457.0,
+    "lug_root_capacity_N_from_73": 457.26141319818373,
     "lug_root_margin_x_over_required": 2.9,
     "rim_contact_area_mm2": 189.1,
     "seat_bearing_MPa_at_required_clamp": 0.829,

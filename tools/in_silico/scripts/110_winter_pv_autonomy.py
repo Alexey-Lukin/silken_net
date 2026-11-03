@@ -698,7 +698,7 @@ def main() -> int:
                         for c in CORNERS},
             "boost_eta_ceiling": ETA_CAP,
             "demand_uw": {d: {c: round(demand_w(d, c) * 1e6, 3) for c in CORNERS} for d in DEMANDS},
-            "cadence_c_interval_s": round(H_CADENCE_C_S, 1),
+            "cadence_c_interval_s": H_CADENCE_C_S,      # unrounded: 114 computes from it (in-silico §When Modifying #6)
             "dome_face_cm2": round(a_face, 3), "desk_eta_pv_assumed": list(DESK_ETA_PV),
             "desk_canopy_t": list(DESK_CANOPY_T), "reflected_ends": ends, "sources": SOURCES,
         },

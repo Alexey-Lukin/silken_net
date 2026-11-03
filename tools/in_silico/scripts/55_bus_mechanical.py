@@ -1396,11 +1396,12 @@ def main() -> int:
             continue
         p_c = per_um["P_c"] * delta                       # Pa at full engagement
         f_norm = p_c * peri                               # N — the whole contact carries it
-        by_mu = {mu: {"friction_N": round(mu * f_norm, 1),
+        # unrounded: 87, 102 and 104 compute from friction_N and the interference (in-silico §When Modifying #6)
+        by_mu = {mu: {"friction_N": mu * f_norm,
                       "wall_axial_MPa": round(mu * f_norm / a_tube / 1e6, 1),
                       "wall_yields": bool(mu * f_norm / a_tube > SIGMA_YIELD_PEEK_PA)}
                  for mu in MU_PEEK_TI_SWEEP}
-        cold_rows.append({"at": label, "interference_radial_um": round(delta * 1e6, 3),
+        cold_rows.append({"at": label, "interference_radial_um": delta * 1e6,
                           "contact_pressure_MPa": round(p_c / 1e6, 2),
                           "normal_force_N": round(f_norm, 1),
                           "mu_crit": round(SIGMA_YIELD_PEEK_PA * a_tube / f_norm, 4),
@@ -1532,7 +1533,7 @@ def main() -> int:
                                                          "which makes EDGE bearing more likely, not less")},
         "axial_friction_lock": {"mu_is_swept_not_measured": True,
                                 "mu_sweep": list(MU_PEEK_TI_SWEEP),
-                                "tube_section_mm2": round(a_tube / (MM_M ** 2), 4),
+                                "tube_section_mm2": a_tube / (MM_M ** 2),      # unrounded, as in cold_press_fit
                                 "rows": lock_rows,
                                 "locked_over_whole_window": bool(locked_everywhere),
                                 "locked_below_ceiling_on_every_mu": bool(locked_above_floor),
@@ -1576,7 +1577,7 @@ def main() -> int:
                         "same fields as the rest of the window",
             "peek_yield_MPa": SIGMA_YIELD_PEEK_PA / 1e6,
             "contact_area_mm2": round(peri / MM_M ** 2, 4),
-            "tube_section_mm2": round(a_tube / MM_M ** 2, 4),
+            "tube_section_mm2": a_tube / MM_M ** 2,          # unrounded: 87, 102 and 104 compute from it
             "mu_sweep": list(MU_PEEK_TI_SWEEP),
             "rows": cold_rows,
             "buckling_first_order": buckling,

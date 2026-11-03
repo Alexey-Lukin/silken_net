@@ -120,7 +120,13 @@ def main() -> int:
     floor_wall = min(r["wall_mm"] for r in rows73)
     cap_floor = c73["verdict"]["capacity_at_print_floor_N"]
     member_wall = b88["band"]["window_top"]["collar_wall_strength_asks_mm_ring_never_relaxes"]
-    cap_member = cap_floor * member_wall / floor_wall          # `73`: pure shear, linear in the wall
+    # the member wall IS the wall whose lug-root capacity is 88's window-top requirement (88 inverts `73`'s line), so the
+    # capacity is read, not re-scaled: the window top then sits at k = 0 exactly, a degenerate root (in-silico §When
+    # Modifying #32) — rounded, the wall manufactured a k the member does not tolerate (#6)
+    cap_member = b88["band"]["window_top"]["required_clamp_N_at_band_high"]["after_20_years_ring_never_relaxes"]
+    if abs(cap_floor * member_wall / floor_wall - cap_member) > 1e-9 * cap_member:      # `73`: pure shear, linear in t
+        raise SystemExit(f"control: 73's line at the member wall gives {cap_floor * member_wall / floor_wall} N, "
+                         f"88's requirement {cap_member} N")
 
     t_asm = c82["inputs"]["t_ref_c"]
     hot_model = c71["hot_bound_h_c_sensitivity"]["sunlit_still_air"][HOT_FINISH_ALPHA]["t_cap_max_c"]
@@ -156,7 +162,7 @@ def main() -> int:
         fl = force_per_lug / (length_mm * 1e-3)                                    # N/m
         return math.sqrt(fl * e_star / (math.pi * lug_r * 1e-3)) * 1e-6
 
-    points = {}
+    points, member_k_top = {}, {}
     for name, b in b88["band"].items():
         l0 = b["required_clamp_N_at_band_high"]["at_assembly"]
         per = {}
@@ -175,6 +181,8 @@ def main() -> int:
                         return v if v >= 0 else None
 
                     km = {"print_floor": k_max(cap_floor), "member_wall": k_max(cap_member)}
+                    if name == "window_top":
+                        member_k_top[(rname, aname, delta)] = km["member_wall"]       # unrounded, for the control below
                     by_delta[str(delta)] = {
                         "slope_um": round(slope_um, 2),
                         "thermal_share_of_slope": round(thermal_um / slope_um, 3),
@@ -200,7 +208,7 @@ def main() -> int:
                 req["dT_cold_K"] + req["dT_hot_K"])                      # a spring does not relax: no f, no ratchet
             ks = (cap_floor - l0) / spread_um if cap_floor > l0 else None
             spring[dstr] = {"spread_um": round(spread_um, 2),
-                            "k_spring_max_N_per_um_zero_tolerance": round(ks, 3) if ks else None,
+                            "k_spring_max_N_per_um_zero_tolerance": ks,     # unrounded: the doc pin rounds it down (#43)
                             "working_deflection_mm_at_band_centre": round((cap_floor + l0) / 2 / ks * 1e-3, 2) if ks else None}
         loads = {"PEEK_dominated_minimum": l0 / f, "force_controlled": l0}
         # a FLAT face inside the same R1.5 envelope (a pin with a flat underside): width ≤ 2R over the engaged length
@@ -223,6 +231,10 @@ def main() -> int:
                         "by_reading": per}
 
     top, flo, nom = points["window_top"], points["window_floor"], points["nominal"]
+    # control (#32): at the point that defines the member wall the wall tolerates exactly k = 0, on every reading —
+    # read before the cache's display rounding, which would let any k below 5e-4 pass
+    if any(v != 0.0 for v in member_k_top.values()):
+        raise SystemExit(f"control: the member wall at the window top tolerates k ≠ 0: {member_k_top}")
     key = "capsule_requirement|isothermal"
     t5, t0 = top["by_reading"][key]["by_delta_mm"]["0.05"], top["by_reading"][key]["by_delta_mm"]["0.0"]
     n5 = nom["by_reading"][key]["by_delta_mm"]["0.05"]
@@ -244,7 +256,8 @@ def main() -> int:
         f"continuously down to L0 — {top['force_controlled_lug_load_N']:.0f} N at the window top, a "
         f"{top['force_controlled_wall_mm_zero_band']:.2f} mm wall with a zero force band — so the ratified number is one "
         f"point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside "
-        f"the print floor its spring must be no stiffer than {sp['k_spring_max_N_per_um_zero_tolerance']:.2f} N/µm with "
+        f"the print floor its spring must be no stiffer than "
+        f"{math.floor(round(sp['k_spring_max_N_per_um_zero_tolerance'] * 100, 9)) / 100:.2f} N/µm with "   # a ceiling: down (#43)
         f"±0.05 mm and zero force tolerance (≈ {sp['working_deflection_mm_at_band_centre']:.1f} mm of working deflection), "
         f"its whole force band fits ±{top['force_band_half_width_to_print_floor'] * 100:.1f} %, and a soft clamp gives the "
         f"rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — "

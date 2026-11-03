@@ -809,7 +809,7 @@ shift one-sided.
 | β-Ti-13Nb-13Zr | 0.1408 | 0.17 – 0.20 | 0.31 | 0.42 | 0.54 from 0.83 |
 | Ti-6Al-4V | 0.1441 | 0.17 – 0.21 | 0.34 | 0.47 | 0.55 from 0.72 |
 | Ti-6Al-7Nb | 0.1493 | 0.18 – 0.22 | 0.35 | 0.48 | 0.57 from 0.74 |
-| CP-Ti Gr4 | 0.272 | 0.32 – 0.39 | 0.63 | 0.86 | 1.03 from 0.74 |
+| CP-Ti Gr4 | 0.272 | 0.32 – 0.39 | 0.63 | 0.86 | 1.04 from 0.74 |
 | Ta | 0.3883 | 0.47 – 0.58 | 1.03 | 1.37 | 1.48 from 0.59 |
 
 The requirement sits above `86`'s own k at every share above zero, even on the gentle corner, so the vendor's seam k
@@ -827,14 +827,14 @@ modelled, so the upper end is a ceiling — and lifts its requirement to 0.64 wi
 (the wood holding nothing), it outgrows the Ti wire by 0.69 – 1.23 µm/K (the gap alone ⊥ the gap plus the Zone-3
 shank, which is the span while the shank sits in clearance). At the cold edge the pad protrudes at least 20.0 µm on
 every part and grip — the tightest part at μ 0.4 included — against `90`'s isothermal L1 margin to the window's upper
-edge of 11.8 – 14.8 µm; at the hot edge a part at the window floor grips with nothing and its pad recedes 18.4 – 43.1 µm
-against 17.4 – 19.3 µm to the lower edge, past the larger margin on 3 of 4 readings; on the shipped span at the capsule edge even the tightest grip
+edge of 11.8 – 14.8 µm; at the hot edge a part at the window floor grips with nothing and its pad recedes 18.4 – 43.0 µm
+against 17.4 – 19.4 µm to the lower edge, past the larger margin on 3 of 4 readings; on the shipped span at the capsule edge even the tightest grip
 recedes 26.3 µm, past both. The smallest protrusion
 comes from a reading below the wall's cap, and a capture or wall that gives way moves the pad further. **The premise decides it** (📌 2026-10-20 — not for pricing a fix: within the model the wood only shortens the thermal travel, with the flange on the bark and on a rigid Zone-3 fit (the placeholder shank) alike, `103`,
 §«How Much of the Stem's Shift Reaches the Anchor?»): a bonded anode and a flange on the bark make the span follow the wood's own radial
-expansion instead, and the cold result then holds while the span's effective CTE stays above 25.2 – 25.8 ppm/K by
-reading (38.1 – 39.1 if a Zone-3 fit locates the flange and only the gap follows the wood), the hot one above
-25.9 – 31.3 — against 47 for free PEEK, and each threshold rounded up; the wood's radial CTE is not in `102` (📌 `103`
+expansion instead, and the cold result then holds while the span's effective CTE stays above 25.2 – 25.7 ppm/K by
+reading (38.0 – 39.0 if a Zone-3 fit locates the flange and only the gap follows the wood), the hot one above
+25.9 – 31.4 — against 47 for free PEEK, and each threshold rounded up; the wood's radial CTE is not in `102` (📌 `103`
 takes xylem's). So
 where L1 keeps the outer pins in their window — isothermally; at the same edges the radome-leads reading breaks it
 (`90`) — it keeps the centre one only if the wood holds the span below those thresholds.
@@ -888,8 +888,8 @@ the anode face (a rigid tie 31.25 mm below the flange seat, at a rigid bark and 
 wood side at xylem's CTE, the CTE cannot fall below 6.20 ppm/K, the span following the wood outright, so a reversed
 shift per kelvin stays under 6.3 % of the free sleeve's. Not in the tree, and of unsettled sign — able to lengthen the travel or to reverse it further: the bark's own
 thermal and humidity strain, its growth preload and frost. Whether the wood brings the pad back inside L1 stays open: in state 2, not while the bearing
-stays below 10091 N/mm (cold) ⊥ 4984 N/mm (hot) at the stiff bond, and never at any bearing at the soft one; in state 3
-at the stiff bond, the pad stays out only while the tie sits deeper than 9.5 mm (cold) ⊥ 14.4 mm (hot), even with no
+stays below 10140 N/mm (cold) ⊥ 4948 N/mm (hot) at the stiff bond, and never at any bearing at the soft one; in state 3
+at the stiff bond, the pad stays out only while the tie sits deeper than 9.4 mm (cold) ⊥ 14.4 mm (hot), even with no
 bearing, and at the soft bond with no bearing it stays out at every depth. Here the flange is located by the bark; a
 Zone-3 fit locating it is the paragraph below the seam.
 
@@ -905,10 +905,10 @@ above which it happens at any bond:
 | what happens in state 2 | not below (stiff bond) | at any bond above |
 |---|---|---|
 | the share reaches `102`'s 0.25 row | 3927 N/mm | never |
-| Ta's seam passes k 1 on the sway alone (adverse reversed corner) | 3604 N/mm | never |
-| Ta's seam passes k 1 with `102`'s hot preload (adverse reversed corner) | 970 N/mm | 4137 N/mm |
-| the centre pad's hot conclusion flips | 4984 N/mm | never |
-| the centre pad's cold conclusion flips | 10091 N/mm | never |
+| Ta's seam passes k 1 on the sway alone (adverse reversed corner) | 3603 N/mm | never |
+| Ta's seam passes k 1 with `102`'s hot preload (adverse reversed corner) | 969 N/mm | 4132 N/mm |
+| the centre pad's hot conclusion flips | 4948 N/mm | never |
+| the centre pad's cold conclusion flips | 10140 N/mm | never |
 
 In the mature state the tie's depth and stiffness, the anode bond and the bearing decide together, and of these only
 the bearing can be measured on a log — where it no longer settles anything alone.
@@ -933,13 +933,13 @@ bark's install-day cambium, sits below the shank, so the two premises share that
 at 47.9 ppm/K, 0.9 above `102`'s gap-only reading — about 2 % more travel per kelvin — so a fix priced on that span
 carries the offset. The gap following the wood outright gives 4.33 ppm/K, a reversed shift per kelvin under 10.9 % of
 the free sleeve's. At the stiff bond the wood brings the pad back inside L1 more readily than on the bark: in state 2
-the cold conclusion does not flip below 3324 N/mm and the hot one below 3223 N/mm, and never at the soft bond; in state 3
+the cold conclusion does not flip below 3357 N/mm and the hot one below 3164 N/mm, and never at the soft bond; in state 3
 with no bearing the cold one holds only while the tie sits deeper than 23.8 mm on the capsule-edge reading — the
 deepest tie is 24 mm, and at the anode's full bond depth not even there — and at no depth on the cambium reading, the
 hot one at no depth (a hot threshold exists on the capsule-edge reading only — at the cambium the free gap does not
 leave the window hot), while at the soft bond both hold at every depth. On the seam `102`'s hot preload on the fit's span is 35.9 N on Ta against 48.3 N on the 32 mm one, yet
 Ta still needs 0.55 in state 1 — not acceptable against 0.388 at a share of zero — and its seam passes k 1 with the
-preload in state 2 not below 1940 N/mm at the stiff bond; in state 3 it needs at least 0.93 on the sway alone and 1.18
+preload in state 2 not below 1941 N/mm at the stiff bond; in state 3 it needs at least 0.93 on the sway alone and 1.18
 with the preload at the stiff bond (the deepest tie sits below the shank, and with the preload the wall's cap binds),
 0.48 and 0.68 at the soft one.
 
@@ -963,10 +963,10 @@ not in the tree; it re-runs when HW.8.9 fixes the shank's diameter and length. C
 `102` leaves the centre pad outside `90`'s isothermal L1 margin on the free-sleeve reading, and `103` shows that within
 its model the wood only shortens that thermal travel. `104` prices each remedy, on both of `102`'s spans, in
 micrometres against the margin and in load on the bus wire's seam, on `102`'s own wire–liner pair (a control
-re-derives `102`'s cached pad travel to 0.005 µm) and on every grip of `102`'s window — the loosest, a part at the
+re-derives `102`'s cached pad travel to 0.000 µm) and on every grip of `102`'s window — the loosest, a part at the
 window floor relaxed at μ 0.1, is not among the four `102`'s heat reads, so the cold protrusion on the 18 mm span is
 35.5 µm, not 34.0. The Zone-3 shank there is read bonded to the PEEK over its run (the fits' one rule; with it as Ti
-the need is 22.9 µm instead of 23.7).
+the need is 22.8 µm instead of 23.7).
 
 **Two readings, both priced.** *Held:* the seasonal edges alone — the whole travel in state 1, the anchor's first
 winter before the callus, where `103`'s share is 0 (unless ice in the gap ties the anode at the cold edge — not
@@ -979,8 +979,8 @@ stretch, which never falls as the shift grows — so the sum is an upper end: th
 
 | span | held (high ⊥ low stack) | held, radome leading | held + sway (`87`'s median ⊥ upper whisker) | held + sway, radome leading |
 |---|---|---|---|---|
-| 18 mm — the Zone-3 fit, canon's Ø11 under interference | 23.7 ⊥ 20.7 µm | 37.3 µm | 24.8 ⊥ 37.8 µm | 38.4 ⊥ 51.4 µm |
-| 32 mm — the placeholder, the shank in the gap | 51.1 ⊥ 48.1 µm | 64.7 µm | 51.4 ⊥ 60.4 µm | 65.0 ⊥ 74.0 µm |
+| 18 mm — the Zone-3 fit, canon's Ø11 under interference | 23.7 ⊥ 20.8 µm | 37.3 µm | 24.7 ⊥ 37.8 µm | 38.4 ⊥ 51.4 µm |
+| 32 mm — the placeholder, the shank in the gap | 51.1 ⊥ 48.1 µm | 64.7 µm | 51.4 ⊥ 60.3 µm | 65.0 ⊥ 74.0 µm |
 
 Left as is, the stroke leaves the window on both sides on the 18 mm span — 1.7 % of the stroke past 70 % and 0.6 %
 under 50 % held, 2.7 ⊥ 2.2 % with the upper-whisker sway — and the low side is the canon's loss-of-force direction
@@ -994,13 +994,13 @@ What each remedy buys — the spare it leaves, a shortfall in parentheses:
 
 | family | remedy | 18 mm: held · radome leading · + sway (median ⊥ upper whisker) · both (upper whisker) | 32 mm: held · + sway (upper whisker) |
 |---|---|---|---|
-| L1 residual | bayonet hard-stop (L2 — `52`'s CNC member 0.10 → 0.05 mm), +41.0 µm | 17.3 · 3.7 · 16.2 ⊥ 3.2 · (10.4) | (10.1) · (19.4) |
-| | L2 with a 0.05 mm spacer step, +56.0 µm | 32.3 · 18.7 · 31.2 ⊥ 18.2 · 4.6 | 4.9 · (4.4) |
+| L1 residual | bayonet hard-stop (L2 — `52`'s CNC member 0.10 → 0.05 mm), +41.0 µm | 17.3 · 3.7 · 16.3 ⊥ 3.2 · (10.4) | (10.1) · (19.3) |
+| | L2 with a 0.05 mm spacer step, +56.0 µm | 32.3 · 18.7 · 31.3 ⊥ 18.2 · 4.6 | 4.9 · (4.3) |
 | | the CNC member at ±0.05 mm by a tolerance class | as L2, if the member is machining tolerance | as L2 |
 | | a 0.05 mm spacer step ⊥ none at all, +8.0 ⊥ +12.0 µm | short | short |
-| pin's window | a longer stroke, the deck re-spaced to keep 60 % nominal | from 1.637 mm · 1.773 · 1.648 ⊥ 1.778 · 1.914 | from 1.911 mm · 2.004; with L2 1.501 · 1.594 |
-| δ itself | the PEEK run's length | gap ≤ 5.6 mm — the Zone-3 shank ≥ 26.4 mm — held only | run ≤ 5.8 mm, the shank cut to 4.3 — held only |
-| | the PEEK run's effective CTE | ≤ 21.5 ppm/K (22.1 if the grade fills the shank's composite too) — held only | ≤ 16.3 ppm/K — held only |
+| pin's window | a longer stroke, the deck re-spaced to keep 60 % nominal | from 1.637 mm · 1.773 · 1.647 ⊥ 1.778 · 1.914 | from 1.911 mm · 2.003; with L2 1.501 · 1.593 |
+| δ itself | the PEEK run's length | gap ≤ 5.7 mm — the Zone-3 shank ≥ 26.3 mm — held only | run ≤ 5.8 mm, the shank cut to 4.3 — held only |
+| | the PEEK run's effective CTE | ≤ 21.5 ppm/K (22.1 if the grade fills the shank's composite too) — held only | ≤ 16.4 ppm/K — held only |
 
 **The window side is one member, and it lifts the outer pad too.** `52`'s residual is rss(CNC member, spacer
 half-step), carried to the micrometre as `52`'s cache and `90` carry it. The CNC member dominates: the spacer step
@@ -1024,7 +1024,7 @@ routes change nothing (Ta 1.471), the length route even raising some capped corn
 grips more); on Ti-6Al-4V no corner passes 0.528. The window side leaves the seam where it is.
 
 **Sensitivity, and what is not priced.** The placeholder shank (HW.8.9) at `92`'s 10 ⊥ 18 mm moves the held need on
-the 18 mm span to 31.7 ⊥ 16.0 µm — at the short end, past L2's radome-leading and upper-whisker spares. Not priced: the
+the 18 mm span to 31.6 ⊥ 15.9 µm — at the short end, past L2's radome-leading and upper-whisker spares. Not priced: the
 pin's own height — the datasheet's ±0.127 mm on its travel, which, as far as it is the plunger's free length, moves the
 compression at a fixed gap by its whole size, past every spare here — has no member in `52`'s chain (HW.8.7).
 
@@ -1157,12 +1157,12 @@ independent finite-difference solve at the shank root and inside the groove):
 | reaction | at the shank root, MPa | across the O-ring groove (radial moment, t − 1.34 mm), MPa |
 |---|---|---|
 | uniform over the bark annulus (`103`'s bearing area) | 72.59 | 20.38 |
-| at the rim only (a dished seat — adverse) | 97.12 | 68.60 |
+| at the rim only (a dished seat — adverse) | 97.11 | 68.60 |
 | at the channel's edge only | 37.65 | 2.60 |
 
 On the adverse seat, one-sided (a bearing without preload), the shank root reaches SF 2 at K_f 1.51 printed ⊥ 2.58 on the
 CNC route; the same number is its un-notched SF when a preload at least the force carries both halves — the only way a
-bearing reacts both. On `103`'s air-dry bark reading the force is 65.9 N, an order lower: the bark bearing
+bearing reacts both. On `103`'s air-dry bark reading the force is 65.8 N, an order lower: the bark bearing
 decides the disc. With the flange on the bark (`103`'s premise (a)) the disc carries the force only through a preloaded
 bearing, pressed by the sleeve's top face (31.9–49.1 MPa at 473 N). The Zone 3 shank carries 10.83 MPa and its barb root
 38.72 MPa (K_f at SF 2 one-sided 3.78 printed ⊥ 6.49 CNC). The capsule's mass on its lever arm stays below 0.33 MPa.
@@ -1860,7 +1860,7 @@ no FEA, no fabricated numbers where the open literature genuinely does not have 
 
 ⊕ **2026-10-13 — the stack's mass, part by part, before a scale (script `87`, `inputs.stack_parts_g`; revised the same day: solder, mask and coating, the pocket gasket and an optional desiccant joined the rest).** EDLC 1.4 g (Eaton product page) · two standoffs ≈ 1.7 g (Würth gives no mass; its geometry × steel, our calculation) · two FR-4 boards no larger than the rim cavity 2.24–2.72 g (Panasonic R-1755V/M specification sheets, 1.96–2.0 g/cm³; copper 4 × 35 µm at 30–100 % cover) · booster 0.19 g (Ignion datasheet) · B2B pair 0.04–0.25 g (the socket's 40.6 mg is a distributor's figure; the header has none) · pogo pair ≤ 0.2 g (solid-brass ceiling) · the rest 0.35–1.3 g, not from datasheets (MCU, PMIC, TCXO, inductor, sensors, passives, solder, mask and coating, the pocket gasket, an optional desiccant) — **5.97–7.76 g**. At that mass the coaxial inertia is **1.29 %** (median, light) … **3.38 %** (whisker, heavy) of the reduced mean — about a third of the 10 % at worst, the stack reaches only at 21.5–39.4 g; the pair factor of the layout is still unpriced, and a scale reading checks the mass. (`mechanical/pogo_sway_transfer.json` → `B_inertia_coaxial.at_estimated_stack_mass`)
 
-⊕ **2026-10-17 — (C) behind the liner: a ceiling on the axial force at the wire's root (script `87`, `C_wire_behind_liner`, HW.43 leg (1); revised the same day after two adversarial passes — the first capped the wire at the grip's friction and set a factor taken at SF 1 on Ti-6Al-4V beside `86`'s at SF 2 on Ta; the second showed that the yield threshold left the soft liner out of the route's stiffness, so the share of the shift that yields the wall is no longer computed).** No press-fit has to slip for (C) to load the wire: the PEEK sleeve between the anode and the flange is not a rigid body, and the wire spans the same distance beside it; and the tip moves as the wire slips inside the soft liner near its held end, before any yield. What is computed is a ceiling. Every axial force on the wire crosses the liner's own wall, held at its top only (`01_01 §1.4`), so the wall caps it at **53.6** N — **68.3** MPa on the wire, PEEK's 23 °C uniaxial yield — whatever the source: this term, the sleeve's thermal growth between the anode and the flange (the part of path (D) that `90` does not price), or both. A grip that slips first caps it lower (`55`'s window floor at every swept µ; the nominal grip at µ 0.1 if it relaxes to the tree's floor, a low reading). **What it does to the seam (HW.34).** On the tensile half Soderberg weighs amplitude above mean, so for a non-negative axial mean the worst split under the ceiling is all amplitude. Set on the same section as `86`'s bending amplitude and mean at ⌀0.10, in phase, `86`'s own formula raises the seam requirement from k ≥ 0.1441 to **0.55** on Ti-6Al-4V and from 0.3883 to **1.48** on Ta, and drops the wire's SF on Ta from 4.54 to **1.39**; on CP-Ti-Gr4 (**1.03**) and Ta not even an unweakened wire keeps SF 2. The added amplitude divides by each coaxiality branch's own room, so `86`'s three branches keep their ratios, but on Ta even the tightest needs k ≥ **1.35**. **Where the ceiling is not a bound** (named, not computed): the compressive half — PEEK's compressive yield and the capture's push-out capacity are not in the tree, and the sign of the shift at a given anchor is not assigned; a parallel tie — the gap and the channel are wet by design (`02_02 §3.1`), so ice or hardened resin can tie the wire or the liner to the sleeve beside the wall; PEEK below 23 °C (the source day is in January) and a multiaxial yield under the fit's hoop tension, which move the wall's axial yield either way; the beam-column coupling of the tension with `86`'s bending (a few per cent). **Not computed, and it decides where between `86`'s own k and this reading the requirement lies:** the axial load the root actually carries and how much of (C) reaches the pin instead — a shear-lag model with Coulomb slip of the wire in the liner, fed with the share of the shift the wood imposes (the sleeve and the wire resisting in parallel) and the sleeve's thermal growth (HW.43 leg) — computed since 2026-10-20 by `102`, §«The Bus Wire in Its Liner» below. Not in either: weld residual tension, a lower fatigue limit in axial loading than in bending, 20 years of the grip's relaxation, the creep and fatigue of the liner wall itself as an insulator. (`mechanical/pogo_sway_transfer.json` → `C_wire_behind_liner`)
+⊕ **2026-10-17 — (C) behind the liner: a ceiling on the axial force at the wire's root (script `87`, `C_wire_behind_liner`, HW.43 leg (1); revised the same day after two adversarial passes — the first capped the wire at the grip's friction and set a factor taken at SF 1 on Ti-6Al-4V beside `86`'s at SF 2 on Ta; the second showed that the yield threshold left the soft liner out of the route's stiffness, so the share of the shift that yields the wall is no longer computed).** No press-fit has to slip for (C) to load the wire: the PEEK sleeve between the anode and the flange is not a rigid body, and the wire spans the same distance beside it; and the tip moves as the wire slips inside the soft liner near its held end, before any yield. What is computed is a ceiling. Every axial force on the wire crosses the liner's own wall, held at its top only (`01_01 §1.4`), so the wall caps it at **53.7** N — **68.3** MPa on the wire, PEEK's 23 °C uniaxial yield — whatever the source: this term, the sleeve's thermal growth between the anode and the flange (the part of path (D) that `90` does not price), or both. A grip that slips first caps it lower (`55`'s window floor at every swept µ; the nominal grip at µ 0.1 if it relaxes to the tree's floor, a low reading). **What it does to the seam (HW.34).** On the tensile half Soderberg weighs amplitude above mean, so for a non-negative axial mean the worst split under the ceiling is all amplitude. Set on the same section as `86`'s bending amplitude and mean at ⌀0.10, in phase, `86`'s own formula raises the seam requirement from k ≥ 0.1441 to **0.55** on Ti-6Al-4V and from 0.3883 to **1.48** on Ta, and drops the wire's SF on Ta from 4.54 to **1.39**; on CP-Ti-Gr4 (**1.04**) and Ta not even an unweakened wire keeps SF 2. The added amplitude divides by each coaxiality branch's own room, so `86`'s three branches keep their ratios, but on Ta even the tightest needs k ≥ **1.35**. **Where the ceiling is not a bound** (named, not computed): the compressive half — PEEK's compressive yield and the capture's push-out capacity are not in the tree, and the sign of the shift at a given anchor is not assigned; a parallel tie — the gap and the channel are wet by design (`02_02 §3.1`), so ice or hardened resin can tie the wire or the liner to the sleeve beside the wall; PEEK below 23 °C (the source day is in January) and a multiaxial yield under the fit's hoop tension, which move the wall's axial yield either way; the beam-column coupling of the tension with `86`'s bending (a few per cent). **Not computed, and it decides where between `86`'s own k and this reading the requirement lies:** the axial load the root actually carries and how much of (C) reaches the pin instead — a shear-lag model with Coulomb slip of the wire in the liner, fed with the share of the shift the wood imposes (the sleeve and the wire resisting in parallel) and the sleeve's thermal growth (HW.43 leg) — computed since 2026-10-20 by `102`, §«The Bus Wire in Its Liner» below. Not in either: weld residual tension, a lower fatigue limit in axial loading than in bending, 20 years of the grip's relaxation, the creep and fatigue of the liner wall itself as an insulator. (`mechanical/pogo_sway_transfer.json` → `C_wire_behind_liner`)
 
 ⊕ **2026-10-13 — the gap's thermal travel (script `90`, path (D) of `87`; re-run 2026-10-18 with the pin body and the FR-4 sheets' own CTEs).** `52` budgets the pins' gap at one temperature, and the gap is the radome's PEEK column (11.85 mm to the pocket floor, a placeholder) minus the board stack hanging from it (two FR-4 decks, Z 40–44 ppm/K — Panasonic R-1755M / R-1755V data sheets, Jul. 2019, the range taking R-1755V's 44 over the 43 of a 2018 Panasonic specification sheet; steel standoffs, 12–17 ppm/K — Parker Table 2-5): it moves by **0.28–0.33** µm/K with both together and **0.56** µm/K when the radome leads, i.e. over the capsule requirement it closes by up to **20** µm in the cold and opens by **22** µm in the heat (**33** / **36** µm when the radome leads — a reading, not a bound: the floor hangs from the dome top through ~3 mm of chamber wall). The pins follow the working stroke — the gap less the growth of their own brass body (C36000, 20.5 ppm/K, Copper Development Association; **0.031** µm/K over the pin's **1.49** mm free length — the stroke is the free length less the gap, so the whole free length moves the tip): **0.25–0.30** µm/K together, the radome's 0.56 µm/K when it leads (the stack and the pin then stay put). Added linearly to `52`'s residual, its L1 (spacer only, ±0.112 mm, which leaves 28 µm to each edge of the 50–70 % window) holds isothermally with **8.4–9.9** µm to spare and breaks under the radome-leads reading (−8 / −5 µm) — it tolerates a radome leading the stack by about **33** K at the extremes, and its isothermal margin reaches zero only for a spacing member of CTE **−4.0…−5.6** ppm/K (should the B2B body, not the steel standoff, set the deck spacing — its LCP CTE is not in the tree) — all against `52`'s RSS residual; a linear sum of the same two terms (±0.15 mm) leaves no room even at the assembly temperature. This is the OUTER pad with the rim and the stack seated (the stack in fact floats on the pogo pair against the pocket gasket, springs of one order); the centre pad's axial position rides on the wire path (HW.34); only `52`'s L1 is judged here — the design's minimal mitigation since ⚖️ 2026-10-21 is L3, the bayonet hard-stop with a 0.05 mm spacer step (`52`'s ladder, its margins in `90`'s cache; why — §«What Each Remedy for the Centre Pad's Travel Buys and Costs»), and whether the hard-stop acts under branch (а) is `52`'s question (canon keeps it live). Daily, `71`'s capsule (a reading whose error on the range has no known sign — it takes the worst sun gain and omits the night sky — and, as one lump, no shell/stack lag) swings by a median **14.5** K and a 95th percentile **24.9** K — a pin stroke of **3.6–13.8** µm, **0.5–2.0** % of the minimum preload once a day (the ratio takes the force as the stroke times a fixed spring rate; the BeCu spring's modulus falls with temperature, and no figure for it is in the tree) — and, if the radome holds the stack in-plane, a pin at radius r slides by **0.95–1.17** µm per mm of r on a 95th-percentile day, **0.06–0.37** µm if the pins follow the board's own in-plane expansion instead (FR-4 11–15 ppm/K in-plane, the same Panasonic sheets); the centre pad, at r = 0, does not. The one axial term not computed, the pocket gasket (a placeholder), shrinks the swing — it expands with the PEEK and pushes the stack back — so, for a given temperature field and the seated premises, leaving it out keeps the stroke an upper estimate. Not computed: what centres the stack, the outer pad's radius (layout, HW.9), the centre pad's wire path inside the sleeve (HW.34) — computed since 2026-10-20 by `102`, §«The Bus Wire in Its Liner». (`mechanical/pogo_thermal_gap.json`)
 
@@ -1935,7 +1935,7 @@ ratified `VBAT_OV` (imported, not re-implemented — the 10/25 °C reference poi
 
 | Series | T_eff | Life, conservative–optimistic |
 |---|---|---|
-| Open air | 13.0 °C | 19.1–62.0 yr |
+| Open air | 13.0 °C | 19.2–62.0 yr |
 | Under the radome, shaded (α 0.50/0.95 × k 0/0.1) | 14.35–17.35 °C | 14.2–56.6 yr |
 | Under the radome, sunlit (α 0.50/0.95 × k 0/0.1) | 17.74–27.41 °C | 7.1–44.8 yr |
 
@@ -2043,8 +2043,8 @@ and Parker gives compression set, not stress relaxation, so the share the ring l
 |---|---|---|---|
 | 19 % — window floor | 58–119 | 3.78× … 2.46× | 0 · 0 · 0 % |
 | 21.7 % — `52`'s chain, low | 74–158 | 2.85× … 1.85× | 0 · 0 · 0 % |
-| 24.5 % — nominal | 96–218 | 2.08× … 1.35× | 0 · 0 · 0 % |
-| 27.3 % — `52`'s chain, high | 125–300 | 1.51× … 0.98× | 0 · 1 · 2 % |
+| 24.5 % — nominal | 96–218 | 2.07× … 1.35× | 0 · 0 · 0 % |
+| 27.3 % — `52`'s chain, high | 125–301 | 1.51× … 0.98× | 0 · 1 · 2 % |
 | 30 % — window top | 160–409 | 1.11× … 0.72× | 23 · 28 · 28 % |
 
 **Verdict** — the 100 N is not an upper bound: the band's top passes it from 17.1 % squeeze. With that top the lug root
@@ -2084,7 +2084,7 @@ the span 1.7 mm, a placeholder. The lug is a radial pin R1.5 on the groove's fla
 |---|---|---|---|---|
 | 19 % — window floor | 121 | 0.08 · 0.13 · 0.23 · 0.57 | 0.05 | 215 |
 | 24.5 % — nominal | 220 | 0.15 · 0.20 · 0.30 · 0.64 | 0.10 | 291 |
-| 27.3 % — `52`'s chain, high | 302 | 0.20 · 0.25 · 0.35 · 0.70 | 0.13 | 341 |
+| 27.3 % — `52`'s chain, high | 303 | 0.20 · 0.25 · 0.35 · 0.70 | 0.13 | 341 |
 | 30 % — window top | 411 | 0.28 · 0.33 · 0.42 · 0.77 | 0.18 | 397 |
 
 **Verdict** — in a PEEK-dominated loop every N/µm adds **0.049** mm of wall at the window top with ±0.05 mm of

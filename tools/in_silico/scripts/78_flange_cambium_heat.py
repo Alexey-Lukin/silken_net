@@ -92,7 +92,9 @@ ALPHAS, ALPHA_EDGES = S71.ALPHA_SWEEP, S71.ALPHA_EDGES   # 71's sweep and its tw
 def bark_bracket() -> dict:
     d_flange = json.loads(FLANGE_CEM.read_text(encoding="utf-8"))["flange_diameter_mm"]
     spread = d_flange * math.sin(math.radians(INSTALL_ANGLE_DEG))
-    return {"flange_diameter_mm": d_flange, "facing_spread_mm": round(spread, 3),
+    # the spread unrounded (114 computes from it, in-silico §When Modifying #6); the thin bark stays at the precision the
+    # model RUNS on — it is a layer input here and in 79, not a display
+    return {"flange_diameter_mm": d_flange, "facing_spread_mm": spread,
             "thin_mm": round(BARK_DEAD_RIDGE_DBH38_MM[0] - spread, 3), "thick_mm": BARK_DEAD_RIDGE_DBH38_MM[1]}
 
 
@@ -169,7 +171,7 @@ def verify_scheme() -> float:
 
 def summarise(series: np.ndarray, times: np.ndarray) -> dict:
     i = int(np.argmax(series))
-    return {"cambium_max_C": round(float(series[i]), 2), "at": str(times[i]),
+    return {"cambium_max_C": float(series[i]), "at": str(times[i]),     # unrounded: 102 and 114 compute from it
             "hours_above_gate": int(np.count_nonzero(series > GATE_C)),
             "hours_above_upper": int(np.count_nonzero(series > UPPER_C))}
 
@@ -219,7 +221,7 @@ def main() -> int:
             for k in WIND_K:
                 t_cap = S71.solve_t_cap(h["t_air"], q, a_exp, d_m, k * h["u10"])
                 want = cached[case][f"{alpha:.2f}"][f"{k:.1f}"]["t_cap_max_c"]
-                if abs(round(float(t_cap.max()), 1) - want) > 0.05:
+                if abs(float(t_cap.max()) - want) > 1e-9:          # 71 caches it unrounded: the same code, the same number
                     raise SystemExit(f"71 does not reproduce its own cache: {t_cap.max():.2f} vs {want} ({case}, α {alpha}, k {k})")
                 keys.append((case, alpha, k))
                 series.append(t_cap)
@@ -231,7 +233,7 @@ def main() -> int:
         reference[side] = {"bark_mm": b, **summarise(cam[:, -1], times)}
         for col, (case, alpha, k) in enumerate(keys):
             runs.append({"case": case, "alpha": alpha, "wind_k": k, "bark_side": side, "bark_mm": b,
-                         "flange_max_C": round(float(series[col].max()), 1), **summarise(cam[:, col], times)})
+                         "flange_max_C": float(series[col].max()), **summarise(cam[:, col], times)})
 
     def cell(case, alpha, k, side):
         return next(r for r in runs if (r["case"], r["alpha"], r["wind_k"], r["bark_side"]) == (case, alpha, k, side))
@@ -268,7 +270,7 @@ def main() -> int:
         want = sens["sunlit_still_air"].get(f"{alpha:.2f}")
         if want is not None:
             checked += 1
-            if abs(round(float(t_cap.max()), 1) - want["t_cap_max_c"]) > 0.05:
+            if abs(float(t_cap.max()) - want["t_cap_max_c"]) > 1e-9:
                 raise SystemExit(f"71's h_c × {S71.H_C_SENSITIVITY} row not reproduced: {t_cap.max():.2f} vs "
                                  f"{want['t_cap_max_c']} (α {alpha})")
         low.append(t_cap)
@@ -281,7 +283,8 @@ def main() -> int:
           f"(α {', '.join(sens['sunlit_still_air'])}); the rows between them are unchecked")
     low_cam = {side: run(np.column_stack(low), layers(b), b + S58.T_PHLOEM, SUBSTEPS_PER_HOUR)
                for side, b in (("thin", bark["thin_mm"]), ("thick", bark["thick_mm"]))}
-    low_max = {side: [round(float(low_cam[side][:, j].max()), 2) for j in range(len(ALPHAS))] for side in low_cam}
+    # unrounded: the crossing below is computed from it, and the cache carries the same quantity as specified_alpha_thin
+    low_max = {side: [float(low_cam[side][:, j].max()) for j in range(len(ALPHAS))] for side in low_cam}
     a_star_low = {side: crossing(ALPHAS, low_max[side], GATE_C) for side in low_cam}
     spec_low = {side: summarise(low_cam[side][:, 0], times) for side in low_cam}
     floor_low = bark_floor(low[0], bark["thin_mm"])
