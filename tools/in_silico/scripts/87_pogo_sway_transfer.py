@@ -165,9 +165,10 @@ def stem_at_anchor(slope2: float) -> dict:
     a = a_osc + G * math.sin(theta2)
     kappa = theta2 / (H2_M - H1_M)
     # the acceleration and the strain are INPUTS downstream (here and in 105), so they are cached unrounded — a number
-    # rounded for display is output (in-silico §When Modifying #6); the rest of the row is display
-    return {"slope_deg_per_m2s2": slope2, "tilt_deg": round(math.degrees(theta2), 2),
-            "nos_displacement_mm": round(x * 1000, 1), "accel_m_s2": a,
+    # rounded for display is output (in-silico §When Modifying #6); the tilt and the displacement are CEILINGS the docs
+    # quote «≤ X», rounded UP there, so they are cached at the precision that rounding needs (#43); the rest is display
+    return {"slope_deg_per_m2s2": slope2, "tilt_deg": math.degrees(theta2),
+            "nos_displacement_mm": x * 1000, "accel_m_s2": a,
             "accel_oscillation_m_s2": round(a_osc, 3), "accel_gravity_tilt_m_s2": round(a - a_osc, 3),
             "mean_curvature_rad_per_m": round(kappa, 5),
             "surface_strain_microstrain_source_tree": kappa * DBH_SOURCE_TREE_M / 2 * 1e6}
@@ -185,14 +186,15 @@ COAX86 = CACHE_DIR / "mechanical" / "coaxiality_allocation.json"
 s86 = _load("coax86", "86_coaxiality_allocation.py")   # its Soderberg form — the seam scale this compares on
 
 
-def up(x: float) -> float:
-    """A requirement «k ≥ X» rounds UP to two decimals (in-silico §When Modifying #43)."""
-    return math.ceil(x * 100 - 1e-9) / 100
+def up(x: float, n: int = 2) -> float:
+    """A requirement «k ≥ X» or a ceiling «caps it at X» rounds UP to n decimals (in-silico §When Modifying #43)."""
+    return math.ceil(x * 10 ** n - 1e-9) / 10 ** n
 
 
-def down(x: float) -> float:
-    """A floor «SF drops to X» rounds DOWN to two decimals (in-silico §When Modifying #43)."""
-    return math.floor(x * 100 + 1e-9) / 100
+def down(x: float, n: int = 2) -> float:
+    """A floor «SF drops to X», a capacity, or the edge of a harmless region «while below X» rounds DOWN to n decimals
+    (in-silico §When Modifying #43)."""
+    return math.floor(x * 10 ** n + 1e-9) / 10 ** n
 
 
 def wire_behind_liner() -> dict:
@@ -252,7 +254,8 @@ def wire_behind_liner() -> dict:
         raise SystemExit("control: 86's Soderberg on its own inputs no longer reproduces its cached binding k and SF")
     return {"is": "a CEILING on the axial force at the wire's root (the liner wall, 23 °C, tensile half) and 86's seam "
                   "requirement at it — where between 86's own k and this reading the requirement lies is not computed",
-            "route": {"wall_capacity_N_at_23C": round(f_wall, 1), "wire_stress_at_wall_capacity_MPa": round(sig_wall, 1),
+            # unrounded: a ceiling the verdict and the docs round UP (in-silico §When Modifying #43)
+            "route": {"wall_capacity_N_at_23C": f_wall, "wire_stress_at_wall_capacity_MPa": sig_wall,
                       "peek_yield_MPa_23C": cp["peek_yield_MPa"], "tube_section_mm2": cp["tube_section_mm2"],
                       "grip_friction_N_by_mu_ratified_nominal_as_fitted": nominal,
                       "mu_where_the_grip_slips_first": {
@@ -319,11 +322,12 @@ def main() -> int:
         du_lo, du_hi = mu_lr_lo * eps * dx_nominal * 1e6, mu_lr_hi * eps * dx_ceiling * 1e6
         rows[name] = {
             "stem_at_anchor_h_le_2m": st,
+            # the demand (a ceiling, UP) and the capacity (DOWN) are quoted one-sidedly, so they are cached unrounded (#43)
             "A_rim": {"capsule_weight_N_at_ceiling": round(m * G, 3),
-                      "demand_N_at_ceiling": round(demand, 3),
+                      "demand_N_at_ceiling": demand,
                       # 2C − L with the lift that clamp was sized for (pogo + the generous ring), not the pogo alone
-                      "capacity_N_initial_at_52_requirement": round(
-                          MU_RIM * (2 * clamp0 - clamp0 * rim["relax_fraction_at_service"]), 1),
+                      "capacity_N_initial_at_52_requirement":
+                          MU_RIM * (2 * clamp0 - clamp0 * rim["relax_fraction_at_service"]),
                       "normal_force_N_needed_at_end_of_life": round(lift_needed, 2),
                       "o_ring_reaction_N_needed": oring_needed,
                       "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is "
@@ -335,8 +339,9 @@ def main() -> int:
             "B_inertia_coaxial": {
                 "force_ratio_per_gram": round(per_g, 5),
                 "force_ratio_per_gram_is": "the slope at small mass — the static share lowers the mean, so it is not a bound",
-                "stack_mass_g_for_ratio_10pct": round(0.10 * PIN_FORCE_MIN_N / ((a + 0.10 * G * sin_i) * 1e-3), 1),
-                "stack_mass_g_where_weakest_pin_unloads": round(PIN_FORCE_MIN_N / ((a + G * sin_i) * 1e-3), 0),
+                # unrounded: each is the edge of a harmless region («below X g»), rounded DOWN where it is quoted (#43)
+                "stack_mass_g_for_ratio_10pct": 0.10 * PIN_FORCE_MIN_N / ((a + 0.10 * G * sin_i) * 1e-3),
+                "stack_mass_g_where_weakest_pin_unloads": PIN_FORCE_MIN_N / ((a + G * sin_i) * 1e-3),
                 "ratio_at_mass_ceiling_over_reduced_mean": (round(m * a / mean_at_ceiling, 3)
                                                             if mean_at_ceiling > 0 else None),
                 "unloads_at_mass_ceiling": m * (a + G * sin_i) >= PIN_FORCE_MIN_N,
@@ -362,16 +367,19 @@ def main() -> int:
         }
         r = rows[name]
         b, c = r["B_inertia_coaxial"], r["C_centre_pad_poisson"]
-        print(f"\n  [{name}: slope at 2 m {s2}] tilt ≤ {st['tilt_deg']}° · NOS x ≤ {st['nos_displacement_mm']} mm · "
+        print(f"\n  [{name}: slope at 2 m {s2}] tilt ≤ {up(st['tilt_deg']):.2f}° · NOS x ≤ "
+              f"{up(st['nos_displacement_mm'], 0):.0f} mm · "
               f"a ≈ {a:.3f} m/s² · stem strain {st['surface_strain_microstrain_source_tree']:.0f} µε (source DBH)")
-        print(f"    (A) rim: early capacity {r['A_rim']['capacity_N_initial_at_52_requirement']} N at 52's clamp; at the end of "
+        print(f"    (A) rim: early capacity {down(r['A_rim']['capacity_N_initial_at_52_requirement'], 1):.1f} N "
+              f"against a demand of {up(r['A_rim']['demand_N_at_ceiling'], 1):.1f} N at 52's clamp; at the end of "
               f"life it holds the copper ceiling with an initial O-ring reaction ≥ "
-              f"{r['A_rim']['o_ring_reaction_N_needed']['initial_with_clamp_at_52_requirement']:.2f} N (clamp at 52's "
-              f"requirement) · ≥ {r['A_rim']['o_ring_reaction_N_needed']['after_20_years_with_a_weaker_clamp']:.2f} N left "
+              f"{up(r['A_rim']['o_ring_reaction_N_needed']['initial_with_clamp_at_52_requirement']):.2f} N (clamp at 52's "
+              f"requirement) · ≥ {up(r['A_rim']['o_ring_reaction_N_needed']['after_20_years_with_a_weaker_clamp']):.2f} N left "
               f"after 20 years (weaker clamp) "
               f"(weight {m * G:.2f} N, drag {drag:.3f} N, µ {MU_RIM})")
-        print(f"    (B) {b['force_ratio_per_gram'] * 100:.2f} %/g · 10 % at {b['stack_mass_g_for_ratio_10pct']} g · weakest pin "
-              f"unloads at {b['stack_mass_g_where_weakest_pin_unloads']:.0f} g (static share in) · copper ceiling unloads: "
+        print(f"    (B) {b['force_ratio_per_gram'] * 100:.2f} %/g · below 10 % while lighter than "
+              f"{down(b['stack_mass_g_for_ratio_10pct'], 1):.1f} g · the weakest pin stays loaded below "
+              f"{down(b['stack_mass_g_where_weakest_pin_unloads'], 0):.0f} g (static share in) · copper ceiling unloads: "
               f"{b['unloads_at_mass_ceiling']} · × pair factor h/s NOT computed")
         est = b["at_estimated_stack_mass"]
         print(f"        at the estimated stack {est['stack_mass_g'][0]:.2f}…{est['stack_mass_g'][1]:.2f} g: "
@@ -385,29 +393,32 @@ def main() -> int:
     est_hi = max(r["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][1] for r in rows.values())
     wbl = wire_behind_liner()
     ba, slips = wbl["by_alloy"], wbl["route"]["mu_where_the_grip_slips_first"]
-    print(f"  (C) behind the liner: the wall caps the axial force at {wbl['route']['wall_capacity_N_at_23C']} N "
-          f"({wbl['route']['wire_stress_at_wall_capacity_MPa']} MPa on the wire, PEEK at 23 °C); the grip slips first at μ "
+    print(f"  (C) behind the liner: the wall caps the axial force at {up(wbl['route']['wall_capacity_N_at_23C'], 1):.1f} N "
+          f"({up(wbl['route']['wire_stress_at_wall_capacity_MPa'], 1):.1f} MPa on the wire, PEEK at 23 °C); the grip slips "
+          f"first at μ "
           f"{slips} — lower, the ceiling stands")
     def fmt(v, spec):
         return "none" if v is None else format(v, spec)
 
     print("      seam k (86's own → at the cap) · wire SF: " + " · ".join(
-        f"{n} {fmt(x['seam_k_86'], '.4f')}→{fmt(x['seam_k_at_route_capacity'], '.4f')} · "
-        f"{fmt(x['sf_wire_86'], '.3f')}→{fmt(x['sf_wire_at_route_capacity'], '.3f')}"
+        f"{n} {fmt(None if x['seam_k_86'] is None else up(x['seam_k_86'], 4), '.4f')}→"
+        f"{fmt(None if x['seam_k_at_route_capacity'] is None else up(x['seam_k_at_route_capacity'], 4), '.4f')} · "
+        f"{fmt(down(x['sf_wire_86'], 3), '.3f')}→{fmt(down(x['sf_wire_at_route_capacity'], 3), '.3f')}"
         for n, x in ba.items()))
     kr = {n: x["seam_k_at_route_capacity"] for n, x in ba.items()}
     bind = max(kr, key=lambda n: -1.0 if kr[n] is None else kr[n])
     above_one = [n for n, k in kr.items() if k is None or k > 1.0]
     wire_clause = (f"behind the liner the same term loads the bus wire whether the press-fit slips or not (the wire spans "
                    f"the anode-to-flange distance beside the PEEK sleeve), and every axial force on the wire crosses the "
-                   f"liner's wall, so the wall caps it at {wbl['route']['wall_capacity_N_at_23C']} N "
-                   f"({wbl['route']['wire_stress_at_wall_capacity_MPa']} MPa on the wire; PEEK's 23 °C uniaxial yield) "
+                   f"liner's wall, so the wall caps it at {up(wbl['route']['wall_capacity_N_at_23C'], 1):.1f} N "
+                   f"({up(wbl['route']['wire_stress_at_wall_capacity_MPa'], 1):.1f} MPa on the wire; PEEK's 23 °C "
+                   f"uniaxial yield) "
                    f"whatever the source — this term, the sleeve's thermal growth between the anode and the flange, or "
                    f"both — on its tensile half and barring a parallel tie (ice or hardened resin in the wet gap); a grip "
                    f"or a capture that gives way first caps it lower. At that cap 86's own formula on the same section "
-                   f"raises the seam requirement from k ≥ {ba[ALLOY_BASELINE]['seam_k_86']:.4f} to "
-                   f"{up(kr[ALLOY_BASELINE]):.2f} on {ALLOY_BASELINE} and from {ba[bind]['seam_k_86']:.4f} to "
-                   f"{up(kr[bind]):.2f} on {bind}, and drops the wire's SF from {ba[bind]['sf_wire_86']:.2f} to "
+                   f"raises the seam requirement from k ≥ {up(ba[ALLOY_BASELINE]['seam_k_86'], 4):.4f} to "
+                   f"{up(kr[ALLOY_BASELINE]):.2f} on {ALLOY_BASELINE} and from {up(ba[bind]['seam_k_86'], 4):.4f} to "
+                   f"{up(kr[bind]):.2f} on {bind}, and drops the wire's SF from {down(ba[bind]['sf_wire_86']):.2f} to "
                    f"{down(ba[bind]['sf_wire_at_route_capacity']):.2f} on {bind}"
                    + (f"; on {' and '.join(above_one)} not even an unweakened wire keeps SF {wbl['sf_target']:g}"
                       if above_one else "")

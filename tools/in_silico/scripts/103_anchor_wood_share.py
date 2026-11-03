@@ -686,6 +686,9 @@ def main() -> int:
     def up1(x: float) -> float:
         return math.ceil(round(x * 10, 9)) / 10
 
+    def up4(x: float) -> float:          # a requirement «needs X» at four decimals rounds UP (in-silico §When Modifying #43)
+        return math.ceil(round(x * 1e4, 9)) / 1e4
+
     def c2(n: str, table2: dict) -> str:
         no, yes = table2[n]["no_below"], table2[n]["yes_above"]
         a = "at any bearing" if no == 0.0 else ("at no bearing" if no is None else f"not below {math.floor(no)} N/mm")
@@ -715,7 +718,7 @@ def main() -> int:
         f"shift, up to {up2(bark['cap3']['anode_bond_stiff']):.2f} ⊥ {up2(bark['cap3']['anode_bond_soft']):.2f} at a rigid bark; at the "
         f"stiff bond {state3_phrase(bark['table3'])}, "
         f"with no bearing — a bearing flips them deeper still. Ta on the adverse reversed corner needs "
-        f"{ta['state1']['sway']:.4f} on the sway alone and {up2(ta['state1']['hot_preload']):.2f} with the preload in "
+        f"{up4(ta['state1']['sway']):.4f} on the sway alone and {up2(ta['state1']['hot_preload']):.2f} with the preload in "
         f"state 1, up to {up2(ta['state2_at_air_dry_readings_max']['adverse_reversed']):.2f} ⊥ "
         f"{up2(ta['state2_at_air_dry_readings_max']['adverse_reversed_hot_preload']):.2f} in state 2 at the air-dry readings, "
         f"and in state 3 at least {down2(l3['anode_bond_stiff']['adverse_reversed']):.2f} ⊥ "

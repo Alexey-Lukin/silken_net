@@ -2862,9 +2862,11 @@ def test_pogo_sway_transfer():
     for name, r in d["by_slope_reading"].items():
         a = r["stem_at_anchor_h_le_2m"]["accel_m_s2"]
         b, c, rim = r["B_inertia_coaxial"], r["C_centre_pad_poisson"], r["A_rim"]
-        assert abs(b["stack_mass_g_where_weakest_pin_unloads"] - f / ((a + g * sin_i) * 1e-3)) <= 1.0, name
+        # cached unrounded since 2026-11-03 (in-silico §When Modifying #43): the tolerances that were the display
+        # rounding (1 g · 0.1 g · 0.1 N · 0.002 N) tighten to what the same arithmetic reproduces (#6)
+        assert abs(b["stack_mass_g_where_weakest_pin_unloads"] - f / ((a + g * sin_i) * 1e-3)) <= 1e-9, name
         demand = math.hypot(m * g * cos_i, inp["drag_ceiling_N"] + m * a)       # the weight must be in it
-        assert abs(rim["demand_N_at_ceiling"] - demand) <= 0.002, name
+        assert abs(rim["demand_N_at_ceiling"] - demand) <= 1e-9, name
         normal = demand / inp["mu_rim"]                                           # end of life: capacity µ·N
         assert abs(rim["normal_force_N_needed_at_end_of_life"] - normal) <= 0.01, name
         push, f_r = inp["pin_count"] * f, inp["rim_relax_fraction_at_service_from_52"]
@@ -2874,9 +2876,9 @@ def test_pogo_sway_transfer():
         assert set(needs) == {"initial_with_clamp_at_52_requirement", "after_20_years_with_a_weaker_clamp"}, name
         c0 = inp["rim_required_initial_clamp_N_from_52"]["with_generous_o_ring"]
         early = inp["mu_rim"] * (2 * c0 - c0 * f_r)                              # 2C − L with the lift C was sized for
-        assert abs(rim["capacity_N_initial_at_52_requirement"] - early) <= 0.1, name
+        assert abs(rim["capacity_N_initial_at_52_requirement"] - early) <= 1e-9, name
         m10 = 0.1 * f / ((a + 0.1 * g * sin_i) * 1e-3)                           # 10 % over the REDUCED mean
-        assert abs(b["stack_mass_g_for_ratio_10pct"] - m10) <= 0.1, name
+        assert abs(b["stack_mass_g_for_ratio_10pct"] - m10) <= 1e-9, name
         assert b["stack_mass_g_for_ratio_10pct"] < 0.1 / b["force_ratio_per_gram"], name   # the slope is not a bound
         assert abs(c["ratio_per_1000_microstrain"]["mu_lr_lo_dx_nominal"] - per1000[0]) <= 1e-4, name
         assert abs(c["ratio_per_1000_microstrain"]["mu_lr_hi_dx_ceiling"] - per1000[1]) <= 1e-4, name
@@ -2938,8 +2940,8 @@ def test_pogo_sway_transfer_wire_behind_liner():
 
     w = d["C_wire_behind_liner"]
     r = w["route"]
-    assert abs(r["wall_capacity_N_at_23C"] - f_wall) <= 0.05
-    assert abs(r["wire_stress_at_wall_capacity_MPa"] - f_wall / a_wire) <= 0.05
+    assert abs(r["wall_capacity_N_at_23C"] - f_wall) <= 1e-9                 # cached unrounded (#43): no display step
+    assert abs(r["wire_stress_at_wall_capacity_MPa"] - f_wall / a_wire) <= 1e-9
     nominal = {m: v["friction_N"] for m, v in rows55["ratified_nominal"]["by_mu"].items()}
     assert r["grip_friction_N_by_mu_ratified_nominal_as_fitted"] == nominal and r["relax_floor"] == PEEK_RELAX_FLOOR
     assert r["mu_where_the_grip_slips_first"] == {
@@ -2969,14 +2971,19 @@ def test_pogo_sway_transfer_wire_behind_liner():
     def down(v):
         return math.floor(v * 100 + 1e-9) / 100
 
+    def up_n(v, n):                          # a ceiling or a requirement at n decimals — UP (#43)
+        return math.ceil(v * 10 ** n - 1e-9) / 10 ** n
+
     v, ba = d["verdict"], w["by_alloy"]
     kr = {n: x["seam_k_at_route_capacity"] for n, x in ba.items()}
     bind = max(kr, key=kr.get)
-    assert f"the wall caps it at {r['wall_capacity_N_at_23C']} N" in v
-    assert (f"from k ≥ {ba[ALLOY_BASELINE]['seam_k_86']:.4f} to {up(kr[ALLOY_BASELINE]):.2f} on {ALLOY_BASELINE} and from "
-            f"{ba[bind]['seam_k_86']:.4f} to {up(kr[bind]):.2f} on {bind}") in v
-    assert (f"drops the wire's SF from {ba[bind]['sf_wire_86']:.2f} to {down(ba[bind]['sf_wire_at_route_capacity']):.2f} "
-            f"on {bind}") in v
+    # each one-sided number of the verdict on its own side: the wall's cap and its stress UP, 86's own k UP, its SF DOWN
+    assert (f"the wall caps it at {up_n(r['wall_capacity_N_at_23C'], 1):.1f} N "
+            f"({up_n(r['wire_stress_at_wall_capacity_MPa'], 1):.1f} MPa on the wire") in v
+    assert (f"from k ≥ {up_n(ba[ALLOY_BASELINE]['seam_k_86'], 4):.4f} to {up(kr[ALLOY_BASELINE]):.2f} on {ALLOY_BASELINE} "
+            f"and from {up_n(ba[bind]['seam_k_86'], 4):.4f} to {up(kr[bind]):.2f} on {bind}") in v
+    assert (f"drops the wire's SF from {down(ba[bind]['sf_wire_86']):.2f} to "
+            f"{down(ba[bind]['sf_wire_at_route_capacity']):.2f} on {bind}") in v
     above = [n for n, k in kr.items() if k > 1.0]
     assert (f"on {' and '.join(above)} not even an unweakened wire keeps SF" in v) == bool(above)
     assert f"even the tightest coaxiality branch needs k ≥ {up(min(ba[bind]['seam_k_at_route_capacity_by_branch'].values())):.2f}" in v
@@ -3060,12 +3067,15 @@ def test_oring_reaction_band():
         for k, v in r["A_rim"]["o_ring_reaction_N_needed"].items():
             needs87[k] = max(needs87.get(k, 0.0), v)
     assert a["needs_87"] == needs87
-    floor_lo = d["band"]["window_floor"]["reaction_N"][0]
+    # (A) divides by the floor taken BEFORE its display rounding (#6) — read it raw, and the margin and the share then
+    # reproduce exactly; the band's own display of the same floor must sit within its 0.05 N rounding step
+    floor_lo = a["reaction_N_low_at_window_floor"]
+    assert abs(d["band"]["window_floor"]["reaction_N"][0] - floor_lo) <= 0.05 + 1e-9
     assert set(a["margin_x"]) == {"initial_with_clamp_at_52_requirement"}    # a margin only on an INITIAL need
     assert abs(a["margin_x"]["initial_with_clamp_at_52_requirement"]
-               - floor_lo / needs87["initial_with_clamp_at_52_requirement"]) <= 0.01
+               - floor_lo / needs87["initial_with_clamp_at_52_requirement"]) <= 1e-9
     assert abs(a["share_retained_needed_with_a_weaker_clamp"]
-               - needs87["after_20_years_with_a_weaker_clamp"] / floor_lo) <= 0.001
+               - needs87["after_20_years_with_a_weaker_clamp"] / floor_lo) <= 1e-9
 
 
 def test_bayonet_thermal_clamp():
@@ -3124,10 +3134,13 @@ def test_bayonet_thermal_clamp():
         l0 = p["lift_L0_N_at_band_top"]
         assert abs(l0 - b88["band"][name]["required_clamp_N_at_band_high"]["at_assembly"]) <= 1e-9, name
         assert abs(p["force_controlled_lug_load_N"] - l0) <= 0.1
-        assert abs(p["force_controlled_wall_mm_zero_band"] - wall(l0)) <= 0.002, name
-        assert abs(p["PEEK_dominated_lower_bound_wall_mm"] - wall(l0 / f)) <= 0.002, name
+        # cached unrounded since 2026-11-03 (#43): the walls, the band and k_max reproduce from L0, 73's line and the raw
+        # slope exactly (1e-9); the tolerances that stay guard only the rows 89 still ROUNDS for display — the lug load
+        # (0.1 N), dT (0.01 K), the slope and the thermal term (0.01 µm)
+        assert abs(p["force_controlled_wall_mm_zero_band"] - wall(l0)) <= 1e-9, name
+        assert abs(p["PEEK_dominated_lower_bound_wall_mm"] - wall(l0 / f)) <= 1e-9, name
         if cap > l0:
-            assert abs(p["force_band_half_width_to_print_floor"] - (cap - l0) / (cap + l0)) <= 0.001, name
+            assert abs(p["force_band_half_width_to_print_floor"] - (cap - l0) / (cap + l0)) <= 1e-9, name
         req = p["by_reading"]["capsule_requirement|isothermal"]
         for dstr, sp in p["spring_capsule_requirement"].items():
             spread = 2 * float(dstr) * 1e3 + da["isothermal"] * span * 1e3 * (req["dT_cold_K"] + req["dT_hot_K"])
@@ -3154,17 +3167,19 @@ def test_bayonet_thermal_clamp():
                 assert abs(v["slope_um"] - slope) <= 0.01, (name, rkey, dstr)
                 for kstr, load in v["lug_load_N_by_k"].items():
                     assert abs(load - (l0 / f + float(kstr) * slope)) <= 0.1, (name, rkey, dstr, kstr)
-                    assert abs(v["strength_wall_mm_by_k"][kstr] - wall(load)) <= 0.002
+                    # against the RAW load, not the 0.1 N display row: a 0.002 slack here could flip the wall's
+                    # two-decimal UP display the doc pins exactly (#43)
+                    assert abs(v["strength_wall_mm_by_k"][kstr] - wall(l0 / f + float(kstr) * slope)) <= 1e-9
                 walls = [v["strength_wall_mm_by_k"][k] for k in sorted(v["strength_wall_mm_by_k"], key=float)]
                 assert walls == sorted(walls), (name, rkey, dstr)            # stiffer loop → thicker wall
                 for wkey, c in (("print_floor", cap), ("member_wall", cap_m)):
                     want = (c - l0 / f) / slope
                     got = v["k_max_N_per_um"][wkey]
                     assert (got is None) == (want < 0), (name, rkey, dstr, wkey)
-                    if got is not None:
-                        assert abs(got - want) <= 0.002, (name, rkey, dstr, wkey)
+                    if got is not None:                                    # raw on both sides since 2026-11-03 (#43)
+                        assert abs(got - want) <= 1e-9 * max(1.0, abs(want)), (name, rkey, dstr, wkey)
     top = d["by_squeeze_point"]["window_top"]
-    assert abs(top["PEEK_dominated_lower_bound_wall_mm"] - member) <= 0.002   # the member is the PEEK-dominated floor
+    assert abs(top["PEEK_dominated_lower_bound_wall_mm"] - member) <= 1e-9    # 88's requirement (the member's ground) is the floor
     assert top["force_controlled_wall_mm_zero_band"] < floor                        # force control fits the floor
     lc = inp["lug_line_contact"]
     assert lc["yield_onset_p0_pa"] == lc["yield_onset_ratio"] * lc["sigma_yield_peek_pa"]

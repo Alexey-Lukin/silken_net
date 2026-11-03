@@ -84,8 +84,8 @@
         "after_20_years_ring_never_relaxes": 185.82578266049967
       },
       "lug_root_margin_x_at_print_floor": {
-        "at_assembly": 3.79,
-        "after_20_years_ring_never_relaxes": 2.46
+        "at_assembly": 3.7856915567656233,
+        "after_20_years_ring_never_relaxes": 2.460699514628667
       },
       "ring_must_have_lost_share_of_R0_by_year": {
         "1": 0.0,
@@ -116,8 +116,8 @@
         "after_20_years_ring_never_relaxes": 246.35121288352622
       },
       "lug_root_margin_x_at_print_floor": {
-        "at_assembly": 2.86,
-        "after_20_years_ring_never_relaxes": 1.86
+        "at_assembly": 2.8555942072013227,
+        "after_20_years_ring_never_relaxes": 1.8561362367408962
       },
       "ring_must_have_lost_share_of_R0_by_year": {
         "1": 0.0,
@@ -148,8 +148,8 @@
         "after_20_years_ring_never_relaxes": 338.5214494965427
       },
       "lug_root_margin_x_at_print_floor": {
-        "at_assembly": 2.08,
-        "after_20_years_ring_never_relaxes": 1.35
+        "at_assembly": 2.0780931237694054,
+        "after_20_years_ring_never_relaxes": 1.3507605319492575
       },
       "ring_must_have_lost_share_of_R0_by_year": {
         "1": 0.0,
@@ -180,16 +180,16 @@
         "after_20_years_ring_never_relaxes": 465.5949088984074
       },
       "lug_root_margin_x_at_print_floor": {
-        "at_assembly": 1.51,
-        "after_20_years_ring_never_relaxes": 0.98
+        "at_assembly": 1.510925233507474,
+        "after_20_years_ring_never_relaxes": 0.9821014028698453
       },
       "ring_must_have_lost_share_of_R0_by_year": {
         "1": 0.0,
         "2": 0.0,
         "3": 0.0,
-        "5": 0.014,
-        "10": 0.018,
-        "20": 0.018
+        "5": 0.0144269392446148,
+        "10": 0.01798871438850924,
+        "20": 0.018012875144992946
       },
       "collar_wall_strength_asks_mm_ring_never_relaxes": 0.2036449590801627
     },
@@ -212,28 +212,28 @@
         "after_20_years_ring_never_relaxes": 632.243850369252
       },
       "lug_root_margin_x_at_print_floor": {
-        "at_assembly": 1.11,
-        "after_20_years_ring_never_relaxes": 0.72
+        "at_assembly": 1.1126705242547816,
+        "after_20_years_ring_never_relaxes": 0.7232358415682928
       },
       "ring_must_have_lost_share_of_R0_by_year": {
-        "1": 0.134,
-        "2": 0.225,
-        "3": 0.259,
-        "5": 0.275,
-        "10": 0.278,
-        "20": 0.278
+        "1": 0.13412578176333434,
+        "2": 0.2251116285970437,
+        "3": 0.2585834510847391,
+        "5": 0.2754269650133203,
+        "10": 0.27804550881155843,
+        "20": 0.27806327130259045
       },
       "collar_wall_strength_asks_mm_ring_never_relaxes": 0.276534967578919
     }
   },
   "inversion": {
     "reaction_N_at_which_lug_binds_ring_never_relaxes": 295.3,
-    "squeeze_pct_band_high_binds": 27.15,
+    "squeeze_pct_band_high_binds": 27.149989216055936,
     "squeeze_pct_band_high_binds_over_transcription": [
-      26.81,
-      27.51
+      26.806915684700883,
+      27.507069561899897
     ],
-    "squeeze_pct_band_high_exceeds_generous_bound": 17.13
+    "squeeze_pct_band_high_exceeds_generous_bound": 17.133354360057645
   },
   "rim_premise_A": {
     "reaction_N_low_at_window_floor": 57.991617953192204,
@@ -254,5 +254,5 @@
     "temperature: the PEEK in the clamp loop sits between two Ti faces over the same span, so cold unloads the clamp and heat raises it (the loop's compliance sets how fast); the ring's own contraction takes squeeze in the cold, and its force below room temperature is not in the source — every margin here is at the assembly temperature",
     "resin swell — any swell raises the reaction (02_02 §3.2: up to 15 % keeps EPDM, 15–25 % is the founder's call, above 25 % reopens the material — bench thresholds on free rings, not a service bound)"
   ],
-  "verdict": "The «generous» 100 N is not an upper bound: for a ring under 1\" Parker's Table 2-3 puts the 70 Shore A load in the middle or upper third of the Figure 2-4 bar, so the reaction is 96–218 N at the 24.5 % nominal and 160–409 N at the 30 % window top, and the band's top passes 100 N from 17.1 % squeeze. With that top, 52's requirement lies between the clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF 2 inside) carries it at the nominal at both ends (1.35× at the worse), at the chain 52 models today (27.3 %) only if the ring has lost about 2 % of its reaction by year 10 (0.98× if it never does), and at the window top only if it has lost about 23 % by year 2 and about 28 % already by year 5 — the PEEK clamp floors within a few years, so the ring's loss is due early (0.72× if it never does, 1.11× at assembly); a ring that does not relax makes the lug bind from 27.1 % (26.8–27.5 % over the transcription's ±4 %), and strength, not printability, then sizes the collar wall — at least 0.28 mm at the window top against the 0.2 mm print floor (52's form at the assembly temperature with no fit tolerance; 89 shows it is the stiff loop's lower bound). From below, the ring starts at no less than 58 N at the 19 % floor — 5.5× what 87's (A) needs with a clamp at the form 52 prints, (R0 + p) / 0.65, which never lets the rim lift while the lift stays at its initial value; a weaker clamp can let the rim lift (whether it does depends on the ring's relaxation, not modelled), a lift is taken as not undone (conservative), and (A) then rests on the ring keeping 18 % of that floor for 20 years. Every margin here holds at the assembly temperature."
+  "verdict": "The «generous» 100 N is not an upper bound: for a ring under 1\" Parker's Table 2-3 puts the 70 Shore A load in the middle or upper third of the Figure 2-4 bar, so the reaction is 96–218 N at the 24.5 % nominal and 160–409 N at the 30 % window top, and the band's top stays below 100 N only while the squeeze is under 17.1 % — so it is no bound above that. With that top, 52's requirement lies between the clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF 2 inside) carries it at the nominal at both ends (1.35× at the worse), at the chain 52 models today (27.3 %) only if the ring has lost about 2 % of its reaction by year 10 (0.98× if it never does), and at the window top only if it has lost about 23 % by year 2 and about 28 % already by year 5 — the PEEK clamp floors within a few years, so the ring's loss is due early (0.72× if it never does, 1.11× at assembly); a ring that does not relax leaves the lug unbound only while the squeeze stays below 27.1 % (26.8 at +4 % and 27.5 at −4 % of the transcription), and strength, not printability, then sizes the collar wall — at least 0.28 mm at the window top against the 0.2 mm print floor (52's form at the assembly temperature with no fit tolerance; 89 shows the requirement itself, unrounded, is the k = 0 end of a stiff loop's wall — its lower bound). From below, the ring starts at no less than 57 N at the 19 % floor — 5.4× what 87's (A) needs with a clamp at the form 52 prints, (R0 + p) / 0.65, which never lets the rim lift while the lift stays at its initial value; a weaker clamp can let the rim lift (whether it does depends on the ring's relaxation, not modelled), a lift is taken as not undone (conservative), and (A) then rests on the ring keeping 19 % of that floor for 20 years. Every margin here holds at the assembly temperature."
 }

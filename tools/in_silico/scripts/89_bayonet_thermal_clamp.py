@@ -104,6 +104,7 @@ def _load(name: str, filename: str):
 
 
 S88 = _load("s88_band", "88_oring_reaction_band.py")
+up, down = S88.up, S88.down   # one-sided numbers carry their own direction (in-silico §When Modifying #43)
 
 
 def main() -> int:
@@ -183,13 +184,15 @@ def main() -> int:
                     km = {"print_floor": k_max(cap_floor), "member_wall": k_max(cap_member)}
                     if name == "window_top":
                         member_k_top[(rname, aname, delta)] = km["member_wall"]       # unrounded, for the control below
+                    # unrounded: the walls are requirements the docs quote UP and k_max a capacity they quote DOWN,
+                    # so both keep the precision that rounding needs (in-silico §When Modifying #43)
                     by_delta[str(delta)] = {
                         "slope_um": round(slope_um, 2),
                         "thermal_share_of_slope": round(thermal_um / slope_um, 3),
                         "lug_load_N_by_k": {k: round(v, 1) for k, v in need.items()},
-                        "strength_wall_mm_by_k": {k: round(wall_for(v), 3) for k, v in need.items()},
+                        "strength_wall_mm_by_k": {k: wall_for(v) for k, v in need.items()},
                         "wall_mm_per_N_per_um": round(wall_for(cap_floor + slope_um) - wall_for(cap_floor), 4),
-                        "k_max_N_per_um": {w: (round(v, 3) if v is not None else None) for w, v in km.items()},
+                        "k_max_N_per_um": dict(km),
                         "wall_mm_if_the_PEEK_column_were_the_loop": {
                             sec: round(wall_for(l0 / f + kc * slope_um), 2) for sec, kc in k_column.items()}}
                 per[f"{rname}|{aname}"] = {"dT_cold_K": round(dtc, 2), "dT_hot_K": round(dth, 2),
@@ -215,10 +218,11 @@ def main() -> int:
         flat_area_mm2 = 2.0 * lug_r * engaged["socket_pocket_minus_clearance"]
         points[name] = {"squeeze_pct": b["squeeze_pct"], "lift_L0_N_at_band_top": l0,
                         "PEEK_dominated_lower_bound_lug_load_N": round(l0 / f, 1),
-                        "PEEK_dominated_lower_bound_wall_mm": round(wall_for(l0 / f), 3),
+                        # unrounded: two wall requirements (UP) and an allowance «fits ±X %» (DOWN) — #43
+                        "PEEK_dominated_lower_bound_wall_mm": wall_for(l0 / f),
                         "force_controlled_lug_load_N": round(l0, 1),
-                        "force_controlled_wall_mm_zero_band": round(wall_for(l0), 3),
-                        "force_band_half_width_to_print_floor": round((cap_floor - l0) / (cap_floor + l0), 3)
+                        "force_controlled_wall_mm_zero_band": wall_for(l0),
+                        "force_band_half_width_to_print_floor": (cap_floor - l0) / (cap_floor + l0)
                         if cap_floor > l0 else None,
                         "spring_capsule_requirement": spring,
                         "flat_face_in_envelope_mean_reaches_yield": {"lug_load_N": round(flat_yield_load, 0),
@@ -251,15 +255,19 @@ def main() -> int:
         f"every N/µm adds {t5['wall_mm_per_N_per_um']:.3f} mm of wall at the window top with a ±0.05 mm interference over "
         f"the capsule requirement (temperature {t5['thermal_share_of_slope'] * 100:.0f} % of it), "
         f"{t0['wall_mm_per_N_per_um']:.4f} mm with no tolerance ({tg['wall_mm_per_N_per_um']:.4f} with a Ti–PEEK "
-        f"gradient) — so such a loop needs more than the ratified {member_wall:.2f} mm for any k, which is its lower bound, "
-        f"not an estimate. A compliant element in series makes the relaxation and the k-terms fade, and the lug load runs "
+        # 88's window-top requirement IS the k = 0 end of the wall line (the #32 control above), so the clause says that of
+        # the QUANTITY and prints no number a reader could take for the ratified member (in-silico §When Modifying #43)
+        f"gradient) — so 88's requirement at the window top, the ground of the ratified member, is the k = 0 end of that "
+        f"line: every PEEK-dominated k needs more, which makes it the loop's lower bound, not an estimate. A compliant "
+        f"element in series makes the relaxation and the k-terms fade, and the lug load runs "
         f"continuously down to L0 — {top['force_controlled_lug_load_N']:.0f} N at the window top, a "
-        f"{top['force_controlled_wall_mm_zero_band']:.2f} mm wall with a zero force band — so the ratified number is one "
-        f"point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside "
+        f"{up(top['force_controlled_wall_mm_zero_band']):.2f} mm wall with a zero force band — so the ratified member is "
+        f"one point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside "
         f"the print floor its spring must be no stiffer than "
-        f"{math.floor(round(sp['k_spring_max_N_per_um_zero_tolerance'] * 100, 9)) / 100:.2f} N/µm with "   # a ceiling: down (#43)
+        f"{down(sp['k_spring_max_N_per_um_zero_tolerance']):.2f} N/µm with "                     # a ceiling: down (#43)
         f"±0.05 mm and zero force tolerance (≈ {sp['working_deflection_mm_at_band_centre']:.1f} mm of working deflection), "
-        f"its whole force band fits ±{top['force_band_half_width_to_print_floor'] * 100:.1f} %, and a soft clamp gives the "
+        f"its whole force band fits ±{down(top['force_band_half_width_to_print_floor'] * 100, 1):.1f} %, and a soft clamp "
+        f"gives the "
         f"rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — "
         f"whose peak pressure on the mean lug is {pc_top:.0f} MPa at the window top ({pc_flo:.0f} at the window floor, "
         f"{pc_force:.0f} at the top even under the force-controlled L0) against {p0_yield * 1e-6:.0f} MPa for first yield at "
@@ -267,8 +275,9 @@ def main() -> int:
         f"the surface, contained — across the window, and local creep beyond `52`'s f is expected, not computed; a flat "
         f"contact would remove that, but the line contact is likely the loop's softest member, so removing it raises k. "
         f"With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to "
-        f"k = {f5['k_max_N_per_um']['print_floor']:.2f} N/µm and at the nominal up to "
-        f"{n5['k_max_N_per_um']['print_floor']:.2f}. k, δ and the PEEK's share of the compliance are not computed — the lug "
+        f"k = {down(f5['k_max_N_per_um']['print_floor']):.2f} N/µm and at the nominal up to "
+        f"{down(n5['k_max_N_per_um']['print_floor']):.2f}. k, δ and the PEEK's share of the compliance are not computed — "
+        f"the lug "
         f"geometry and both Z tolerances are placeholders; the founder ratified the member as a lower bound, with a flat lug "
         f"contact and a numbered interference tolerance required before the collar is drawn (02_02 §4.4, 2026-10-13).")
 
@@ -327,12 +336,13 @@ def main() -> int:
     print(f"  span {span_mm:.2f} mm (placeholder) · Δα {d_alpha} · f {f} · member wall {member_wall} mm")
     for name, p in points.items():
         print(f"  {name:13s} L0 {p['lift_L0_N_at_band_top']:6.1f} N · PEEK-dominated lower bound wall "
-              f"{p['PEEK_dominated_lower_bound_wall_mm']} · force-controlled wall {p['force_controlled_wall_mm_zero_band']} · "
-              f"line-contact p0 {p['lug_line_contact_p0_MPa']}")
+              f"{up(p['PEEK_dominated_lower_bound_wall_mm'], 3):.3f} · force-controlled wall "
+              f"{up(p['force_controlled_wall_mm_zero_band'], 3):.3f} · line-contact p0 {p['lug_line_contact_p0_MPa']}")
         r = p["by_reading"][key]["by_delta_mm"]
         for d, v in r.items():
             print(f"      δ ±{d} mm: slope {v['slope_um']} µm (thermal {v['thermal_share_of_slope']}) · "
-                  f"wall(k) {v['strength_wall_mm_by_k']} · k_max {v['k_max_N_per_um']}")
+                  f"wall(k) { {k: up(w, 3) for k, w in v['strength_wall_mm_by_k'].items()} } · "
+                  f"k_max { {w: None if c is None else down(c, 3) for w, c in v['k_max_N_per_um'].items()} }")
     print(f"\n  VERDICT: {verdict}")
     print(f"  → {OUT_JSON.relative_to(HERE.parent.parent.parent)}")
     return 0

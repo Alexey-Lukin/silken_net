@@ -212,6 +212,26 @@ def _down2(x: float) -> float:
 def _up4(x: float) -> float:
     """A requirement «k ≥ X» rounded UP to the doc's four decimals (in-silico §When Modifying #43)."""
     return math.ceil(round(x * 1e4, 9)) / 1e4
+
+
+def _up0(x: float) -> float:
+    """A ceiling «≤ X» or a requirement «must have lost X %» rounded UP to a whole number (#43)."""
+    return float(math.ceil(round(x, 9)))
+
+
+def _up1(x: float) -> float:
+    """A ceiling «caps it at X» or a demand rounded UP to one decimal (#43)."""
+    return math.ceil(round(x * 10, 9)) / 10
+
+
+def _down0(x: float) -> float:
+    """A floor «no less than X», or the edge of a harmless region «lighter than X», rounded DOWN to a whole number (#43)."""
+    return float(math.floor(round(x, 9)))
+
+
+def _down1(x: float) -> float:
+    """A margin «X×», a capacity, or the edge of a harmless region «from X %» rounded DOWN to one decimal (#43)."""
+    return math.floor(round(x * 10, 9)) / 10
 NSCI =rf"([{_DASHES}\-]?[\d.]+(?:×10[{_SUP_MINUS}]?[{_SUP}]+)?)"
 CHECKS = [
     # ── PRIMARY: the provenance-mix the guard exists to catch ──
@@ -1862,26 +1882,44 @@ CHECKS += [
            lambda d: d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][0] * 100, 0.005),
           ("inertia at the estimate, whisker heavy", rf"\*\*{N} %\*\* \(whisker, heavy\)",
            lambda d: d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][1] * 100, 0.005),
+          # one-sided, pinned EXACTLY on the display's own direction (in-silico §When Modifying #43): a capacity DOWN, a
+          # demand UP, and the edge of a harmless region («while lighter than X») DOWN — the «reached at» / «unloads at»
+          # forms were rewritten, not rounded, since rounded up they read as a harmless region the row does not have
           ("rim capacity early in life", rf"gives ≈ \*\*{N}\*\* N of capacity",
-           lambda d: d["by_slope_reading"]["median"]["A_rim"]["capacity_N_initial_at_52_requirement"], 0.05),
-          ("10 % stack mass", rf"10 % is reached at \*\*{N}\*\* \(whisker\)",
-           lambda d: d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["stack_mass_g_for_ratio_10pct"], 0.05),
-          ("weakest pin unloads", rf"unloads at \*\*{N}\*\* \(whisker\)",
-           lambda d: d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["stack_mass_g_where_weakest_pin_unloads"], 0.5),
+           lambda d: _down1(d["by_slope_reading"]["median"]["A_rim"]["capacity_N_initial_at_52_requirement"]), 0.0),
+          ("rim demand early in life", rf"N of capacity against ≈ {N} N of demand",
+           lambda d: _up1(max(r["A_rim"]["demand_N_at_ceiling"] for r in d["by_slope_reading"].values())), 0.0),
+          ("10 % stack mass, whisker", rf"stays below 10 % while the stack is lighter than \*\*{N}\*\* \(whisker\)",
+           lambda d: _down1(d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["stack_mass_g_for_ratio_10pct"]), 0.0),
+          ("10 % stack mass, median", rf"lighter than \*\*[\d.]+\*\* \(whisker\) … {N} g, and the weakest pin",
+           lambda d: _down1(d["by_slope_reading"]["median"]["B_inertia_coaxial"]["stack_mass_g_for_ratio_10pct"]), 0.0),
+          ("weakest pin stays loaded, whisker", rf"stays loaded while the stack is lighter than \*\*{N}\*\* \(whisker\)",
+           lambda d: _down0(d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["stack_mass_g_where_weakest_pin_unloads"]), 0.0),
+          ("weakest pin stays loaded, median", rf"stays loaded while the stack is lighter than \*\*[\d.]+\*\* \(whisker\) … {N} g",
+           lambda d: _down0(d["by_slope_reading"]["median"]["B_inertia_coaxial"]["stack_mass_g_where_weakest_pin_unloads"]), 0.0),
+          ("10 % stack mass in the mass paragraph, whisker", rf"stays below while the stack is lighter than {N}–[\d.]+ g",
+           lambda d: _down1(d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["stack_mass_g_for_ratio_10pct"]), 0.0),
+          ("10 % stack mass in the mass paragraph, median", rf"stays below while the stack is lighter than [\d.]+–{N} g",
+           lambda d: _down1(d["by_slope_reading"]["median"]["B_inertia_coaxial"]["stack_mass_g_for_ratio_10pct"]), 0.0),
+          ("O-ring reaction left after 20 years, median", rf"the same {N}–[\d.]+ N still present after 20 years",
+           lambda d: _up2(d["by_slope_reading"]["median"]["A_rim"]["o_ring_reaction_N_needed"]["after_20_years_with_a_weaker_clamp"]), 0.0),
+          ("O-ring reaction left after 20 years, whisker", rf"the same [\d.]+–{N} N still present after 20 years",
+           lambda d: _up2(d["by_slope_reading"]["upper_whisker"]["A_rim"]["o_ring_reaction_N_needed"]["after_20_years_with_a_weaker_clamp"]), 0.0),
           ("centre pad per 1000 µε, low", rf"\*\*{N} … [\d.]+ % of the working compression per 1000 µε",
            lambda d: d["by_slope_reading"]["median"]["C_centre_pad_poisson"]["ratio_per_1000_microstrain"]["mu_lr_lo_dx_nominal"] * 100, 0.005),
           ("centre pad on the source day, low", rf"{N}–[\d.]+ % on the source day",
            lambda d: d["by_slope_reading"]["median"]["C_centre_pad_poisson"]["ratio_at_source_strain"][0] * 100, 0.05),
           ("centre pad on the source day, high", rf"[\d.]+–{N} % on the source day",
            lambda d: d["by_slope_reading"]["upper_whisker"]["C_centre_pad_poisson"]["ratio_at_source_strain"][1] * 100, 0.05),
+          # «≤ X» ceilings — UP, exactly (#43)
           ("tilt at 2 m, median", rf"the tilt is ≤ {N}–[\d.]+°",
-           lambda d: d["by_slope_reading"]["median"]["stem_at_anchor_h_le_2m"]["tilt_deg"], 0.005),
+           lambda d: _up2(d["by_slope_reading"]["median"]["stem_at_anchor_h_le_2m"]["tilt_deg"]), 0.0),
           ("tilt at 2 m, whisker", rf"the tilt is ≤ [\d.]+–{N}°",
-           lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["tilt_deg"], 0.005),
+           lambda d: _up2(d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["tilt_deg"]), 0.0),
           ("NOS displacement, median", rf"non-oscillatory displacement ≤ {N}–[\d.]+ mm",
-           lambda d: d["by_slope_reading"]["median"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"], 0.5),
+           lambda d: _up0(d["by_slope_reading"]["median"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"]), 0.0),
           ("NOS displacement, whisker", rf"non-oscillatory displacement ≤ [\d.]+–{N} mm",
-           lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"], 0.5),
+           lambda d: _up0(d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"]), 0.0),
           ("stem strain, median", rf"is ≈ {N}–[\d.]+ µε at the source tree",
            lambda d: d["by_slope_reading"]["median"]["stem_at_anchor_h_le_2m"]["surface_strain_microstrain_source_tree"], 5),
           ("stem strain, whisker", rf"is ≈ [\d.]+–{N} µε at the source tree",
@@ -1891,15 +1929,19 @@ CHECKS += [
           # (C) behind the liner, 2026-10-17 — a CEILING; the requirements round UP and the SF floor DOWN (in-silico
           # §When Modifying #43), so they are pinned EXACTLY to the rounded value, never within a tolerance
           ("liner wall ceiling", rf"so the wall caps it at \*\*{N}\*\* N",
-           lambda d: _wbl(d)["route"]["wall_capacity_N_at_23C"], 0.05),
+           lambda d: _up1(_wbl(d)["route"]["wall_capacity_N_at_23C"]), 0.0),
           ("wire stress at the ceiling", rf"\*\*{N}\*\* MPa on the wire, PEEK's 23 °C uniaxial yield",
-           lambda d: _wbl(d)["route"]["wire_stress_at_wall_capacity_MPa"], 0.05),
+           lambda d: _up1(_wbl(d)["route"]["wire_stress_at_wall_capacity_MPa"]), 0.0),
           ("86's own k on Ti-6Al-4V", rf"from k ≥ {N} to \*\*[\d.]+\*\* on Ti-6Al-4V",
-           lambda d: _wbl(d)["by_alloy"]["Ti-6Al-4V"]["seam_k_86"], 0.00005),
+           lambda d: _up4(_wbl(d)["by_alloy"]["Ti-6Al-4V"]["seam_k_86"]), 0.0),
           ("seam k at the ceiling, Ti-6Al-4V", rf"to \*\*{N}\*\* on Ti-6Al-4V",
            lambda d: _up2(_wbl(d)["by_alloy"]["Ti-6Al-4V"]["seam_k_at_route_capacity"]), 0),
-          ("seam k at the ceiling, Ta", rf"from 0\.3883 to \*\*{N}\*\* on Ta",
+          ("86's own k on Ta", rf"on Ti-6Al-4V and from {N} to \*\*[\d.]+\*\* on Ta",
+           lambda d: _up4(_wbl(d)["by_alloy"]["Ta"]["seam_k_86"]), 0.0),
+          ("seam k at the ceiling, Ta", rf"on Ti-6Al-4V and from [\d.]+ to \*\*{N}\*\* on Ta",
            lambda d: _up2(_wbl(d)["by_alloy"]["Ta"]["seam_k_at_route_capacity"]), 0),
+          ("86's own wire SF on Ta", rf"drops the wire's SF on Ta from {N} to \*\*",
+           lambda d: _down2(_wbl(d)["by_alloy"]["Ta"]["sf_wire_86"]), 0.0),
           ("wire SF at the ceiling, Ta", rf"drops the wire's SF on Ta from [\d.]+ to \*\*{N}\*\*",
            lambda d: _down2(_wbl(d)["by_alloy"]["Ta"]["sf_wire_at_route_capacity"]), 0),
           ("seam k at the ceiling, CP-Ti-Gr4", rf"on CP-Ti-Gr4 \(\*\*{N}\*\*\)",
@@ -1923,7 +1965,7 @@ CHECKS += [
            lambda d: _up4(_wbl(d)["by_alloy"]["Ti-15Zr"]["seam_k_at_route_capacity_by_branch"]["loose_50"]), 0))],
     ("pogo sway transfer, NOS displacement in the 01_02 bench table → pogo_sway_transfer.json",
      "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"сягає до [\d.]+–{N} мм", "mechanical/pogo_sway_transfer.json",
-     lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"], 0.5),
+     lambda d: _up0(d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"]), 0.0),
     # ── HW.43 the pogo gap's thermal travel (script 90, 2026-10-13) ──
     *[(f"pogo thermal gap, {label} → pogo_thermal_gap.json", doc, pattern,
        "mechanical/pogo_thermal_gap.json", resolver, tol)
@@ -2004,16 +2046,16 @@ CHECKS += [
            lambda d: d ["by_squeeze_point"]["window_top"] ["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]["0.05"]["thermal_share_of_slope"] * 100, 0.5),
           ("SUMMARY wall per N/µm, no tolerance", SUMMARY, rf"with no tolerance \*\*{N}\*\* mm",
            lambda d: d ["by_squeeze_point"]["window_top"] ["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]["0.0"]["wall_mm_per_N_per_um"], 0.00005),
-          ("SUMMARY force-controlled load", SUMMARY, rf"\*\*{N}\*\* N at the window top, a",
+          ("SUMMARY force-controlled load", SUMMARY, rf"\*\*{N}\*\* N\s+at the window top, a",
            lambda d: d ["by_squeeze_point"]["window_top"]["force_controlled_lug_load_N"], 0.5),
-          ("SUMMARY force-controlled wall", SUMMARY, rf"a\n?\*\*{N}\*\* mm wall with a zero force band",
-           lambda d: d ["by_squeeze_point"]["window_top"]["force_controlled_wall_mm_zero_band"], 0.005),
+          ("SUMMARY force-controlled wall", SUMMARY, rf"a\s+\*\*{N}\*\* mm wall with a zero force band",
+           lambda d: _up2(d ["by_squeeze_point"]["window_top"]["force_controlled_wall_mm_zero_band"]), 0.0),
           ("SUMMARY spring stiffness", SUMMARY, rf"no stiffer than \*\*{N}\*\* N/µm",
            lambda d: _down2(d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["k_spring_max_N_per_um_zero_tolerance"]), 0),
           ("SUMMARY spring deflection", SUMMARY, rf"≈ \*\*{N}\*\* mm of working deflection",
            lambda d: d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["working_deflection_mm_at_band_centre"], 0.05),
-          ("SUMMARY force band", SUMMARY, rf"fits ±\*\*{N}\*\* %",
-           lambda d: d ["by_squeeze_point"]["window_top"]["force_band_half_width_to_print_floor"] * 100, 0.05),
+          ("SUMMARY force band", SUMMARY, rf"fits ±\*\*{N}\*\* %",            # an allowance «fits ±X %» — DOWN (#43)
+           lambda d: _down1(d ["by_squeeze_point"]["window_top"]["force_band_half_width_to_print_floor"] * 100), 0.0),
           ("SUMMARY contact p0 top", SUMMARY, rf"peaks on the mean lug at \*\*{N}\*\* MPa at the window top",
            lambda d: d ["by_squeeze_point"]["window_top"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]["socket_pocket_minus_clearance"], 0.5),
           ("SUMMARY contact p0 floor", SUMMARY, rf"\({N} at the window\nfloor; ",
@@ -2021,10 +2063,6 @@ CHECKS += [
                "socket_pocket_minus_clearance"], 0.5),
           ("SUMMARY yield onset", SUMMARY, rf"against \*\*{N}\*\* MPa for first yield",
            lambda d: d["inputs"]["lug_line_contact"]["yield_onset_p0_pa"] * 1e-6, 0.5),
-          ("SUMMARY table floor k=3", SUMMARY, rf"\| 121 \| 0\.08 · 0\.13 · {N} · ",
-           lambda d: d["by_squeeze_point"]["window_floor"]["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]["0.05"]["strength_wall_mm_by_k"]["3.0"], 0.005),
-          ("SUMMARY table top k=10", SUMMARY, rf"\| 411 \| 0\.28 · 0\.33 · 0\.42 · {N} \|",
-           lambda d: d ["by_squeeze_point"]["window_top"] ["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]["0.05"]["strength_wall_mm_by_k"]["10.0"], 0.005),
           ("02_02 §4.4 wall per N/µm", BLIND_MATE, rf"кожен Н/мкм додає \*\*{N} мм\*\* стінки",
            lambda d: d ["by_squeeze_point"]["window_top"] ["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]["0.05"]["wall_mm_per_N_per_um"], 0.0005),
           ("02_02 §4.4 force-controlled load", BLIND_MATE, rf"аж до L₀ — \*\*{N} Н\*\*",
@@ -2041,41 +2079,28 @@ CHECKS += [
     *[(f"O-ring reaction band, {label} → oring_reaction_band.json", doc, pattern,
        "mechanical/oring_reaction_band.json", resolver, tol)
       for label, doc, pattern, resolver, tol in (
+          # (A), both copies — a floor and a margin DOWN, a requirement UP, exactly (in-silico §When Modifying #43)
           ("SUMMARY (A) floor", SUMMARY, rf"no less than \*\*{N}\*\* N at the 19 % window floor",
-           lambda d: d["band"]["window_floor"]["reaction_N"][0], 0.6),
+           lambda d: _down0(d["rim_premise_A"]["reaction_N_low_at_window_floor"]), 0.0),
           ("SUMMARY (A) margin, clamp at 52's requirement", SUMMARY, rf"— \*\*{N}×\*\* the reaction \(A\) needs",
-           lambda d: d["rim_premise_A"]["margin_x"]["initial_with_clamp_at_52_requirement"], 0.05),
+           lambda d: _down1(d["rim_premise_A"]["margin_x"]["initial_with_clamp_at_52_requirement"]), 0.0),
           ("SUMMARY (A) weaker-clamp share", SUMMARY, rf"keeping {N} % of its reaction for 20 years",
-           lambda d: d["rim_premise_A"]["share_retained_needed_with_a_weaker_clamp"] * 100, 0.5),
+           lambda d: _up0(d["rim_premise_A"]["share_retained_needed_with_a_weaker_clamp"] * 100), 0.0),
+          ("SUMMARY 88 section (A) floor", SUMMARY, rf"the ring starts at no less than {N} N at the\nfloor",
+           lambda d: _down0(d["rim_premise_A"]["reaction_N_low_at_window_floor"]), 0.0),
+          ("SUMMARY 88 section (A) margin", SUMMARY, rf"\(A\) holds {N}× with a clamp at the form",
+           lambda d: _down1(d["rim_premise_A"]["margin_x"]["initial_with_clamp_at_52_requirement"]), 0.0),
+          ("SUMMARY 88 section (A) weaker-clamp share", SUMMARY, rf"keeping {N} % of that floor for 20 years",
+           lambda d: _up0(d["rim_premise_A"]["share_retained_needed_with_a_weaker_clamp"] * 100), 0.0),
           ("SUMMARY nominal band low", SUMMARY, rf"\| 24\.5 % — nominal \| {N}–[\d.]+ \|",
            lambda d: d["band"]["nominal"]["reaction_N"][0], 0.6),
           ("SUMMARY nominal band high", SUMMARY, rf"\| 24\.5 % — nominal \| [\d.]+–{N} \|",
            lambda d: d["band"]["nominal"]["reaction_N"][1], 0.6),
-          ("SUMMARY window-top margin at assembly", SUMMARY, rf"\| 30 % — window top \| [\d.]+–[\d.]+ \| {N}× …",
-           lambda d: d["band"]["window_top"]["lug_root_margin_x_at_print_floor"]["at_assembly"], 0.005),
-          ("SUMMARY window-top margin, ring never relaxes", SUMMARY, rf"\| 30 % — window top \| [\d.]+–[\d.]+ \| [\d.]+× … {N}× \|",
-           lambda d: d["band"]["window_top"]["lug_root_margin_x_at_print_floor"]["after_20_years_ring_never_relaxes"], 0.005),
-          ("SUMMARY chain-high margin, ring never relaxes", SUMMARY, rf"\| 27\.3 % — `52`'s chain, high \| [\d.]+–[\d.]+ \| [\d.]+× … {N}× \|",
-           lambda d: d["band"]["chain_high"]["lug_root_margin_x_at_print_floor"]["after_20_years_ring_never_relaxes"], 0.005),
-          ("SUMMARY window-top loss by year 2", SUMMARY,
-           rf"\| 30 % — window top \| [\d.]+–[\d.]+ \| [\d.]+× … [\d.]+× \| {N} · [\d.]+ · [\d.]+ %",
-           lambda d: d["band"]["window_top"]["ring_must_have_lost_share_of_R0_by_year"]["2"] * 100, 0.5),
-          ("SUMMARY window-top loss by year 5", SUMMARY,
-           rf"\| 30 % — window top \| [\d.]+–[\d.]+ \| [\d.]+× … [\d.]+× \| [\d.]+ · {N} · [\d.]+ %",
-           lambda d: d["band"]["window_top"]["ring_must_have_lost_share_of_R0_by_year"]["5"] * 100, 0.5),
-          ("SUMMARY window-top loss by year 20", SUMMARY,
-           rf"\| 30 % — window top \| [\d.]+–[\d.]+ \| [\d.]+× … [\d.]+× \| [\d.]+ · [\d.]+ · {N} %",
-           lambda d: d["band"]["window_top"]["ring_must_have_lost_share_of_R0_by_year"]["20"] * 100, 0.5),
-          ("SUMMARY chain-top loss by year 5", SUMMARY,
-           rf"\| 27\.3 % — `52`'s chain, high \| [\d.]+–[\d.]+ \| [\d.]+× … [\d.]+× \| [\d.]+ · {N} · [\d.]+ %",
-           lambda d: d["band"]["chain_high"]["ring_must_have_lost_share_of_R0_by_year"]["5"] * 100, 0.5),
-          ("SUMMARY chain-top loss by year 20", SUMMARY,
-           rf"\| 27\.3 % — `52`'s chain, high \| [\d.]+–[\d.]+ \| [\d.]+× … [\d.]+× \| [\d.]+ · [\d.]+ · {N} %",
-           lambda d: d["band"]["chain_high"]["ring_must_have_lost_share_of_R0_by_year"]["20"] * 100, 0.5),
-          ("SUMMARY binding squeeze", SUMMARY, rf"binds the lug from {N} %",
-           lambda d: d["inversion"]["squeeze_pct_band_high_binds"], 0.05),
-          ("SUMMARY generous crossing", SUMMARY, rf"passes it from {N} % squeeze",
-           lambda d: d["inversion"]["squeeze_pct_band_high_exceeds_generous_bound"], 0.05),
+          # the table's one-sided cells are pinned by the generated block _ORING_ROWS below; the band is a reading
+          ("SUMMARY binding squeeze", SUMMARY, rf"leaves the lug unbound only while the squeeze stays below {N} %",
+           lambda d: _down1(d["inversion"]["squeeze_pct_band_high_binds"]), 0.0),
+          ("SUMMARY generous crossing", SUMMARY, rf"stays below it only while the squeeze is under {N} %",
+           lambda d: _down1(d["inversion"]["squeeze_pct_band_high_exceeds_generous_bound"]), 0.0),
           ("02_02 §3.2 floor", BLIND_MATE, rf"\*\*{N}–[\d.]+ Н\*\* на підлозі вікна 19 %",
            lambda d: d["band"]["window_floor"]["reaction_N"][0], 0.6),
           ("02_02 §3.2 window top", BLIND_MATE, rf"\*\*[\d.]+–{N} Н\*\* на верху 30 %",
@@ -2091,7 +2116,16 @@ CHECKS += [
           ("02_02 §4.4 window-top loss by year 5", BLIND_MATE, rf"й ≈ {N} % уже до 5-го \(0\.72×",
            lambda d: d["band"]["window_top"]["ring_must_have_lost_share_of_R0_by_year"]["5"] * 100, 0.5),
           ("SUMMARY window-top loss by year 5", SUMMARY, rf"about {N} % already by year 5; a ring",
-           lambda d: d["band"]["window_top"]["ring_must_have_lost_share_of_R0_by_year"]["5"] * 100, 0.5),
+           lambda d: _up0(d["band"]["window_top"]["ring_must_have_lost_share_of_R0_by_year"]["5"] * 100), 0.0),
+          ("SUMMARY window-top loss by year 2, verdict", SUMMARY, rf"only if it has lost about\s+{N} % by year 2",
+           lambda d: _up0(d["band"]["window_top"]["ring_must_have_lost_share_of_R0_by_year"]["2"] * 100), 0.0),
+          ("SUMMARY chain-top loss, verdict", SUMMARY, rf"once the ring has lost about {N} % of its reaction",
+           lambda d: _up0(d["band"]["chain_high"]["ring_must_have_lost_share_of_R0_by_year"]["20"] * 100), 0.0),
+          # the requirement itself, unrounded, named the loop's LOWER bound — a lower bound shows DOWN (#43 ⊕)
+          ("SUMMARY 88 requirement as the lower bound", SUMMARY, rf"found that requirement itself, unrounded \*\*{N}\*\* mm",
+           lambda d: math.floor(round(d["band"]["window_top"]["collar_wall_strength_asks_mm_ring_never_relaxes"] * 1e4, 9)) / 1e4, 0.0),
+          ("SUMMARY 88 wall at the window top", SUMMARY, rf"sizes the collar wall — at least {N} mm at the window top",
+           lambda d: _up2(d["band"]["window_top"]["collar_wall_strength_asks_mm_ring_never_relaxes"]), 0.0),
           ("02_02 §4.4 window-top wall", BLIND_MATE, rf"до {N} мм на верху вікна \(SF 2",
            lambda d: d["band"]["window_top"]["collar_wall_strength_asks_mm_ring_never_relaxes"], 0.005))],
     # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
@@ -6328,7 +6362,7 @@ CHECKS += [
     ("share bark E mid → 103", SUMMARY, rf"whole bark\) and\s+{N} MPa \(\*P\. taeda\*", SHARE, lambda d: d["inputs"]["E_bark_radial_MPa_air_dry"]["p_taeda_outer_bark_air_dry"], 0.0),
     ("share read kF low → 103", SUMMARY, rf"give {N} – [\d.]+ N/mm and bound", SHARE, lambda d: math.floor(min(d["stiffness_N_per_mm"]["bark_bearing_at_air_dry_readings"].values())), 0.0),
     ("share read kF high → 103", SUMMARY, rf"give [\d.]+ – {N} N/mm and bound", SHARE, lambda d: math.ceil(max(d["stiffness_N_per_mm"]["bark_bearing_at_air_dry_readings"].values())), 0.0),
-    ("share Ta state1 → 103", SUMMARY, rf"corner needs {N} on the sway alone in state 1", SHARE, lambda d: round(d["seam_on_102_closed_form"]["Ta"]["state1"]["sway"], 4), 0.0),
+    ("share Ta state1 → 103", SUMMARY, rf"corner needs {N} on the sway alone in state 1", SHARE, lambda d: _up4(d["seam_on_102_closed_form"]["Ta"]["state1"]["sway"]), 0.0),
     ("share Ta state1 preload → 103", SUMMARY, rf"state 1 and {N} with `102`'s seasonal", SHARE, lambda d: _up2(d["seam_on_102_closed_form"]["Ta"]["state1"]["hot_preload"]), 0.0),
     ("share Ta state2 sway → 103", SUMMARY, rf"up\s+to {N} on the sway alone and up to", SHARE,
      lambda d: _up2(d["seam_on_102_closed_form"]["Ta"]["state2_at_air_dry_readings_max"]["adverse_reversed"]), 0.0),
@@ -6737,6 +6771,54 @@ CHECKS += [
 ]
 
 
+# ── HW.33 · HW.43 the tables of 88 and 89, EVERY one-sided cell (in-silico §When Modifying #43, 2026-11-03): until then
+# a row of either table was held by an anchor on two of its cells, and the rest by nothing. 88: the lug-root margins
+# DOWN, the share the ring must have lost UP (×100, whole %); the band is a reading. 89: every wall a requirement, UP;
+# L0 and the line-contact peak are readings, to the nearest.
+ORING = "mechanical/oring_reaction_band.json"
+CLAMP = "mechanical/bayonet_thermal_clamp.json"
+_ORING_ROWS = (("19 % — window floor", "window_floor"), ("21.7 % — `52`'s chain, low", "chain_low"),
+               ("24.5 % — nominal", "nominal"), ("27.3 % — `52`'s chain, high", "chain_high"),
+               ("30 % — window top", "window_top"))
+_CLAMP_ROWS = (("19 % — window floor", "window_floor"), ("24.5 % — nominal", "nominal"),
+               ("27.3 % — `52`'s chain, high", "chain_high"), ("30 % — window top", "window_top"))
+
+
+def _oring_row(label, j):
+    c = [N if j == k else r"[\d.]+" for k in range(5)]
+    return (rf"(?m)^\| {re.escape(label)} \| [\d.]+–[\d.]+ \| {c[0]}× … {c[1]}× \| {c[2]} · {c[3]} · {c[4]} % \|$")
+
+
+def _clamp_row(label, j):
+    c = [N if j == k else r"[\d.]+" for k in range(7)]
+    return (rf"(?m)^\| {re.escape(label)} \| {c[0]} \| {c[1]} · {c[2]} · {c[3]} · {c[4]} \| {c[5]} \| {c[6]} \|$")
+
+
+def _clamp_wall(d, key, k):
+    return d["by_squeeze_point"][key]["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]["0.05"][
+        "strength_wall_mm_by_k"][k]
+
+
+CHECKS += [
+    *[(f"O-ring table {key} col {j} → 88", SUMMARY, _oring_row(label, j), ORING, res, 0.0)
+      for label, key in _ORING_ROWS
+      for j, res in enumerate((
+          (lambda k: lambda d: _down2(d["band"][k]["lug_root_margin_x_at_print_floor"]["at_assembly"]))(key),
+          (lambda k: lambda d: _down2(d["band"][k]["lug_root_margin_x_at_print_floor"]["after_20_years_ring_never_relaxes"]))(key),
+          *((lambda k, yr: lambda d: _up0(d["band"][k]["ring_must_have_lost_share_of_R0_by_year"][yr] * 100))(key, y)
+            for y in ("2", "5", "20"))))],
+    *[(f"clamp table {key} col {j} → 89", SUMMARY, _clamp_row(label, j), CLAMP, res, 0.0)
+      for label, key in _CLAMP_ROWS
+      for j, res in enumerate((
+          (lambda k: lambda d: float(round(d["by_squeeze_point"][k]["lift_L0_N_at_band_top"])))(key),
+          (lambda k: lambda d: _up2(d["by_squeeze_point"][k]["PEEK_dominated_lower_bound_wall_mm"]))(key),
+          *((lambda k, kv: lambda d: _up2(_clamp_wall(d, k, kv)))(key, kk) for kk in ("1.0", "3.0", "10.0")),
+          (lambda k: lambda d: _up2(d["by_squeeze_point"][k]["force_controlled_wall_mm_zero_band"]))(key),
+          (lambda k: lambda d: d["by_squeeze_point"][k]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"][
+              "socket_pocket_minus_clearance"])(key)))],
+]
+
+
 # ── HW.43 wire–liner shear lag (102, 2026-10-20) ⟷ SUMMARY §«The Bus Wire in Its Liner». Requirements «k ≥ X» round UP;
 # ranges of shares and ratios round OUTWARD; «at least» travel rounds DOWN (in-silico §When Modifying #43).
 SHEAR = "mechanical/wire_liner_shear_lag.json"
@@ -6767,7 +6849,7 @@ CHECKS += [
     *[(f"shear {key} col {j} → 102", SUMMARY, _shear_row(label, j), SHEAR, res, 0.0)
       for label, key in _SHEAR_ROWS
       for j, res in enumerate((
-          (lambda k: lambda d: round(d["seam_by_alloy"][k]["seam_k_86"], 4))(key),
+          (lambda k: lambda d: _up4(d["seam_by_alloy"][k]["seam_k_86"]))(key),     # «`86` alone», a requirement — UP (#43)
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["0.25"]["gentle_one_sided"]["seam_k"]))(key),
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["1"]["gentle_one_sided"]["seam_k"]))(key),
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["0.25"]["seam_k_adverse_sway"]))(key),

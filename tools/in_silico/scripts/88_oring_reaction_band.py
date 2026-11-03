@@ -145,6 +145,17 @@ def wall_for_force(rows: list[dict], force_n: float) -> float:
     return w0 * force_n / f0
 
 
+def up(x: float, n: int = 2) -> float:
+    """A requirement or a ceiling quoted «≥ X» / «at least X» rounds UP to n decimals (in-silico §When Modifying #43)."""
+    return math.ceil(x * 10 ** n - 1e-9) / 10 ** n
+
+
+def down(x: float, n: int = 2) -> float:
+    """A floor or a margin quoted «no less than X» / «X×», or the edge of a harmless region «from X», rounds DOWN to n
+    decimals (in-silico §When Modifying #43)."""
+    return math.floor(x * 10 ** n + 1e-9) / 10 ** n
+
+
 def main() -> int:
     banner("O-ring reaction — Parker Figure 2-4 + Table 2-3 over the squeeze window: 52's clamp · 73's lug root · 87's (A)")
     z52 = json.loads(ZSTACK52.read_text(encoding="utf-8"))
@@ -178,7 +189,6 @@ def main() -> int:
         need_asm, need_20 = r_hi + p52, (r_hi + p52) / f_t     # requirement bracket: at assembly ⊥ ring never relaxes
         # share of R0 the ring must have LOST by year t for SF 2 to hold then — f(t) floors early, so most is due early
         lose_raw[name] = {str(y): max(1.0 - (lug_cap * f_of(y) - p52) / r_hi, 0.0) for y in years}
-        lose = {y: round(v, 3) for y, v in lose_raw[name].items()}
         if name == "window_floor":
             floor_lo = lo * to_n                      # the margins below divide by it — taken before its display rounding
         band[name] = {"squeeze_pct": pct,
@@ -188,9 +198,11 @@ def main() -> int:
                       # unrounded: 89 computes from the clamp and the wall (in-silico §When Modifying #6)
                       "required_clamp_N_at_band_high": {"at_assembly": need_asm,
                                                         "after_20_years_ring_never_relaxes": need_20},
-                      "lug_root_margin_x_at_print_floor": {"at_assembly": round(lug_cap / need_asm, 2),
-                                                           "after_20_years_ring_never_relaxes": round(lug_cap / need_20, 2)},
-                      "ring_must_have_lost_share_of_R0_by_year": lose,
+                      # unrounded: a margin (a floor) and a share the ring must lose (a requirement) are quoted
+                      # one-sidedly — DOWN and UP — so they keep the precision that rounding needs (#43)
+                      "lug_root_margin_x_at_print_floor": {"at_assembly": lug_cap / need_asm,
+                                                           "after_20_years_ring_never_relaxes": lug_cap / need_20},
+                      "ring_must_have_lost_share_of_R0_by_year": lose_raw[name],
                       "collar_wall_strength_asks_mm_ring_never_relaxes": wall_for_force(lug_rows, need_20)}
 
     # Inversion (no datum needed): the reaction at which 52's requirement (ring never relaxing) meets 73's capacity.
@@ -215,28 +227,35 @@ def main() -> int:
         f"The «generous» {GENEROUS_ORING_BOUND_N:.0f} N is not an upper bound: for a ring under 1\" Parker's Table 2-3 puts "
         f"the 70 Shore A load in the middle or upper third of the Figure 2-4 bar, so the reaction is "
         f"{nom['reaction_N'][0]:.0f}–{nom['reaction_N'][1]:.0f} N at the {nominal:.1f} % nominal and "
-        f"{top['reaction_N'][0]:.0f}–{top['reaction_N'][1]:.0f} N at the {win[1]:.0f} % window top, and the band's top passes "
-        f"{GENEROUS_ORING_BOUND_N:.0f} N from {sq_generous:.1f} % squeeze. With that top, 52's requirement lies between the "
-        f"clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF {sf73:.0f} inside) carries it "
-        f"at the nominal at both ends ({nom['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× "
+        f"{top['reaction_N'][0]:.0f}–{top['reaction_N'][1]:.0f} N at the {win[1]:.0f} % window top, and the band's top stays "
+        f"below "
+        # each one-sided number carries its own direction (in-silico §When Modifying #43): the edge of a harmless region
+        # («from X %») and a margin («X×») or a floor («no less than») DOWN; a requirement («at least», «lost about») UP;
+        # the band and the transcription's bracket are readings, to the nearest
+        f"{GENEROUS_ORING_BOUND_N:.0f} N only while the squeeze is under {down(sq_generous, 1):.1f} % — so it is no "
+        f"bound above that. With that top, 52's requirement lies "
+        f"between the clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF {sf73:.0f} "
+        f"inside) carries it at the nominal at both ends "
+        f"({down(nom['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']):.2f}× "
         f"at the worse), at the chain 52 models today ({chain[1]:.1f} %) only if the ring has lost about "
-        f"{lost('chain_high', '10'):.0f} % of its reaction by year 10 "
-        f"({chain_hi['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× if it never does), and at "
-        f"the window top only if it has lost about {lost('window_top', early):.0f} % by year {early} and about "
-        f"{lost('window_top', mid):.0f} % already by year {mid} — the PEEK clamp floors within a few years, so the ring's loss is due "
-        f"early "
-        f"({top['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× if it never does, "
-        f"{top['lug_root_margin_x_at_print_floor']['at_assembly']:.2f}× at assembly); a ring that does not relax makes the "
-        f"lug bind from {sq_bind:.1f} % ({min(sq_bind_reads):.1f}–{max(sq_bind_reads):.1f} % over the transcription's ±4 %), "
-        f"and strength, not printability, then sizes the collar wall — at least "
-        f"{top['collar_wall_strength_asks_mm_ring_never_relaxes']:.2f} mm at the window top against the 0.2 mm print floor "
-        f"(52's form at the assembly temperature with no fit tolerance; 89 shows it is the stiff loop's lower bound). "
-        f"From below, the ring starts at no less than {floor_lo:.0f} N at the {win[0]:.0f} % floor — "
-        f"{a_margin['initial_with_clamp_at_52_requirement']:.1f}× what 87's (A) needs with a clamp at the form 52 prints, "
-        f"(R0 + p) / {f_t:.2f}, which never lets the rim lift while the lift stays at its initial value; a weaker clamp can "
-        f"let the rim lift (whether it does depends on the ring's relaxation, not modelled), a lift is taken as not undone "
-        f"(conservative), and (A) then rests on the ring keeping "
-        f"{retained * 100:.0f} % of that floor for {end} years. Every margin here holds at the assembly temperature.")
+        f"{up(lost('chain_high', '10'), 0):.0f} % of its reaction by year 10 "
+        f"({down(chain_hi['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']):.2f}× if it never "
+        f"does), and at the window top only if it has lost about {up(lost('window_top', early), 0):.0f} % by year {early} "
+        f"and about {up(lost('window_top', mid), 0):.0f} % already by year {mid} — the PEEK clamp floors within a few "
+        f"years, so the ring's loss is due early "
+        f"({down(top['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']):.2f}× if it never does, "
+        f"{down(top['lug_root_margin_x_at_print_floor']['at_assembly']):.2f}× at assembly); a ring that does not relax "
+        f"leaves the lug unbound only while the squeeze stays below {down(sq_bind, 1):.1f} % ({min(sq_bind_reads):.1f} at "
+        f"+4 % and {max(sq_bind_reads):.1f} at −4 % of the transcription), and strength, not printability, then sizes the "
+        f"collar wall — at least {up(top['collar_wall_strength_asks_mm_ring_never_relaxes']):.2f} mm at the window top "
+        f"against the 0.2 mm print floor (52's form at the assembly temperature with no fit tolerance; 89 shows the "
+        f"requirement itself, unrounded, is the k = 0 end of a stiff loop's wall — its lower bound). "
+        f"From below, the ring starts at no less than {down(floor_lo, 0):.0f} N at the {win[0]:.0f} % floor — "
+        f"{down(a_margin['initial_with_clamp_at_52_requirement'], 1):.1f}× what 87's (A) needs with a clamp at the form 52 "
+        f"prints, (R0 + p) / {f_t:.2f}, which never lets the rim lift while the lift stays at its initial value; a weaker "
+        f"clamp can let the rim lift (whether it does depends on the ring's relaxation, not modelled), a lift is taken as "
+        f"not undone (conservative), and (A) then rests on the ring keeping "
+        f"{up(retained * 100, 0):.0f} % of that floor for {end} years. Every margin here holds at the assembly temperature.")
 
     out = {
         "question": "The O-ring's compression reaction over the squeeze window — the datum 52 replaced with a "
@@ -266,11 +285,11 @@ def main() -> int:
         "chart_70_shore_a_lbf_per_in": {str(p): [round(v, 2) for v in (lbf_per_in(a), lbf_per_in(b))]
                                         for p, (a, b) in sorted(BARS_070_PT[SHORE_A].items())},
         "band": band,
+        # unrounded: «binds from X %» and «passes it from X %» are edges of a harmless region, quoted DOWN (#43)
         "inversion": {"reaction_N_at_which_lug_binds_ring_never_relaxes": round(r_bind, 1),
-                      "squeeze_pct_band_high_binds": round(sq_bind, 2) if sq_bind else None,
-                      "squeeze_pct_band_high_binds_over_transcription": [round(min(sq_bind_reads), 2),
-                                                                          round(max(sq_bind_reads), 2)],
-                      "squeeze_pct_band_high_exceeds_generous_bound": round(sq_generous, 2) if sq_generous else None},
+                      "squeeze_pct_band_high_binds": sq_bind,
+                      "squeeze_pct_band_high_binds_over_transcription": [min(sq_bind_reads), max(sq_bind_reads)],
+                      "squeeze_pct_band_high_exceeds_generous_bound": sq_generous},
         "rim_premise_A": {"reaction_N_low_at_window_floor": floor_lo,
                           "needs_87": need,
                           "margin_x": a_margin,
@@ -303,12 +322,14 @@ def main() -> int:
     for name, b in band.items():
         m = b["lug_root_margin_x_at_print_floor"]
         print(f"  {name:13s} {b['squeeze_pct']:5.1f} %  reaction {b['reaction_N'][0]:6.1f}–{b['reaction_N'][1]:6.1f} N"
-              f"  lug {m['at_assembly']:.2f}× (assembly) … {m['after_20_years_ring_never_relaxes']:.2f}× (no ring relaxation)"
-              f"  ring must have lost {b['ring_must_have_lost_share_of_R0_by_year']}")
-    print(f"  ring never relaxing: lug binds at {r_bind:.0f} N — band top at {sq_bind:.2f} % "
+              f"  lug {down(m['at_assembly']):.2f}× (assembly) … {down(m['after_20_years_ring_never_relaxes']):.2f}× "
+              f"(no ring relaxation)  ring must have lost "
+              f"{ {y: up(v * 100, 0) for y, v in b['ring_must_have_lost_share_of_R0_by_year'].items()} } %")
+    print(f"  ring never relaxing: lug binds at {r_bind:.0f} N — band top from {down(sq_bind, 2):.2f} % "
           f"({min(sq_bind_reads):.2f}–{max(sq_bind_reads):.2f} % over ±4 %)")
-    print(f"  (A): floor {floor_lo:.1f} N vs needs { {k: round(v, 2) for k, v in need.items()} } → margins "
-          f"{ {k: None if v is None else round(v, 2) for k, v in a_margin.items()} }; a weaker clamp's ring keeps {retained * 100:.0f} %")
+    print(f"  (A): floor {down(floor_lo, 1):.1f} N vs needs { {k: up(v) for k, v in need.items()} } → margins "
+          f"{ {k: None if v is None else down(v) for k, v in a_margin.items()} }; a weaker clamp's ring keeps "
+          f"{up(retained * 100, 0):.0f} %")
     print(f"\n  VERDICT: {verdict}")
     print(f"  → {OUT_JSON.relative_to(HERE.parent.parent.parent)}")
     return 0
