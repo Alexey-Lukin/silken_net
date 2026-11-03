@@ -31,7 +31,7 @@ jobs:
       contents: write # push to the repo's sibling wiki git repo
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: audit
 
@@ -41,7 +41,7 @@ jobs:
       - name: Set up Ruby
         # stdlib-only script (rake + tmpdir + fileutils + the pure normalizer) → a
         # plain pinned Ruby, no bundler-cache; decoupled from the app's Ruby/Gemfile.
-        uses: ruby/setup-ruby@26e5b7d197ebf60545ee9667bcbace0be11ccaec # v1
+        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1
         with:
           ruby-version: "3.3"
 
