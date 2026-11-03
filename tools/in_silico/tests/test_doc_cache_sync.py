@@ -23,6 +23,7 @@ import itertools
 import json
 import math
 import re
+import statistics
 from pathlib import Path
 
 import pytest
@@ -9605,7 +9606,6 @@ def test_paper_categorical_claims_of_commit_g_match_their_instruments():
     clusters' spins against script 24's own table, the diabatised pair and window, what 24e's probe found, the Hammett fit
     set and its exclusions with their residuals and the alternative fits, and Lever's verdict per band. CAN catch a re-run,
     a table edit or a prose edit that moves any of these apart; CANNOT catch a claim worded outside these clauses."""
-    import numpy as np
     meth, res = " ".join(doc(_PM).split()), " ".join(doc(PAPER_RESULTS).split())
     # ⚖️ 2026-11-01: «no λ(Cu) reaches it at the adverse corner» at the computed λ(Co) — the threshold's null branch
     ket = C(_KET)
@@ -9634,22 +9634,22 @@ def test_paper_categorical_claims_of_commit_g_match_their_instruments():
     # the compressed bridge contacts §2.5 discloses — read from the deposited geometries, so a rebuilt bridge reds here
     def m_n(xyz, metal):
         rows = (REPO / f"docs/protocols/ebfc/in_silico/ligands/{xyz}.xyz").read_text().split("\n")
-        atoms = [(r.split()[0], np.array([float(v) for v in r.split()[1:4]])) for r in rows[2:2 + int(rows[0])]]
+        atoms = [(r.split()[0], tuple(float(v) for v in r.split()[1:4])) for r in rows[2:2 + int(rows[0])]]
         mp = next(x for e, x in atoms if e == metal)
-        return sorted(round(float(np.linalg.norm(x - mp)), 2) for e, x in atoms if e == "N")[:3]
+        return sorted(round(math.dist(x, mp), 2) for e, x in atoms if e == "N")[:3]
     co_n, ce_n = m_n("cu_co_zif", "Co"), m_n("co_ce_zif", "Ce")
     # the xyz title names the ligands as the coordinates carry them (§2.5: terminals protonated, bridge bare), per RING —
     # a cluster-wide count could not see a protonated bridge; the SI's solved/perpendicular probes are titled too
     for xyz, n_term in (("cu_co_zif", 4), ("co_ce_zif", 4), ("ce_graphene", 2),
                         ("cu_co_zif_solved_perp", 4), ("co_ce_zif_solved_perp", 4), ("ce_graphene_solved_perp", 2)):
         rows = (REPO / f"docs/protocols/ebfc/in_silico/ligands/{xyz}.xyz").read_text().split("\n")
-        at = [(r.split()[0], np.array([float(v) for v in r.split()[1:4]])) for r in rows[2:2 + int(rows[0])]]
+        at = [(r.split()[0], tuple(float(v) for v in r.split()[1:4])) for r in rows[2:2 + int(rows[0])]]
         mets = [x for e, x in at if e in ("Cu", "Co", "Ce")]
         ns = [x for e, x in at if e == "N"]
-        bound = [{k for k, m in enumerate(mets) if np.linalg.norm(x - m) <= 2.7} for x in ns]
-        bridge = {i for i in range(len(ns)) for j in range(len(ns)) if i != j and np.linalg.norm(ns[i] - ns[j]) <= 2.4
+        bound = [{k for k, m in enumerate(mets) if math.dist(x, m) <= 2.7} for x in ns]
+        bridge = {i for i in range(len(ns)) for j in range(len(ns)) if i != j and math.dist(ns[i], ns[j]) <= 2.4
                   and bound[i] and bound[j] and not (bound[i] & bound[j])}
-        with_h = {i for i, x in enumerate(ns) if any(e == "H" and np.linalg.norm(y - x) < 1.15 for e, y in at)}
+        with_h = {i for i, x in enumerate(ns) if any(e == "H" and math.dist(y, x) < 1.15 for e, y in at)}
         assert len(with_h & bridge) == 0 and len(with_h - bridge) == n_term, (xyz, with_h, bridge)
         assert len(bridge) == (2 if len(mets) == 2 else 0), (xyz, bridge)
         assert f"2-methylimidazole (N–H ×{n_term})" in rows[1] and "bridge N–H" not in rows[1], (xyz, rows[1])
@@ -9680,10 +9680,12 @@ def test_paper_categorical_claims_of_commit_g_match_their_instruments():
     assert all((resid[n] > 0) == (cx[n]["sigma_para"] > 0) for n in left_out if n != "nh2") and resid["nh2"] > 0, resid
 
     def fit(names):
-        x = np.array([cx[n]["sigma_para"] for n in names])
-        y = np.array([cx[n]["dE_red_eV"] for n in names])
-        b, a = np.polyfit(x, y, 1)
-        return round(b, 3), round(1 - ((y - a - b * x) ** 2).sum() / ((y - y.mean()) ** 2).sum(), 3)
+        x = [cx[n]["sigma_para"] for n in names]
+        y = [cx[n]["dE_red_eV"] for n in names]
+        b, a = statistics.linear_regression(x, y)            # least squares, as np.polyfit(x, y, 1)
+        y_bar = statistics.fmean(y)
+        return round(b, 3), round(1 - sum((yi - a - b * xi) ** 2 for xi, yi in zip(x, y, strict=True))
+                                  / sum((yi - y_bar) ** 2 for yi in y), 3)
     (b1, r1), (b3, r3), (b10, r10) = (fit(lf["fit_set"] + ["cl"]), fit(lf["fit_set"] + ["cl", "cf3", "so2cf3"]),
                                       fit(list(cx)))
     assert f"with Cl {b1:.3f} ({r1})".replace("-", "−") in res, (b1, r1)
