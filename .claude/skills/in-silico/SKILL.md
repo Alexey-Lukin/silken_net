@@ -349,7 +349,7 @@ Anchor mechanics (CPU):
      timed SCFs and relaxations) · 21f's ωB97X extremes (os_mediator_series_wb97x.json) · 34 (microsolvation_dmbpy.json —
      the open-shell upper reading) · 96 (os_couple_thermo.json — the RKS Hessian ratio) → 99 (coating_cluster_cost.json —
      basis sizes of coating clusters, SCF, relaxation and Hessian cost extrapolated from them, no SCF); a re-run of any re-runs 99
-  52 · 71 · 73 · 82 · 88 → 89 (caches only, plus 88's `wall_for_force` by importlib and the radome CEM's lock-groove span:
+  52 · 71 · 73 · 82 · 88 → 89 (caches only, plus 88's `wall_for_force` and its directional `up`/`down` by importlib and the radome CEM's lock-groove span:
      the bayonet clamp over its fit and temperature) — a change to any of the five re-runs 89
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·
      81's cold edge; tools/cad/cem → 82, the slot clearance) — a change to any of the four caches re-runs 82
