@@ -248,6 +248,24 @@ RSpec.describe Tree, type: :model do
         end
       end
     end
+
+    # [FW.17] SQL-двійник `#fresh_signal?`: пінимо ЗГОДУ двох, а не кожного окремо (скіл
+    # `backend` #10) — межа, NULL і власний поріг, усе під одним замороженим «зараз».
+    describe ".fresh_signal" do
+      it "agrees with #fresh_signal? on every side of the threshold" do
+        freeze_time do
+          seen = [ 1.hour.ago, Tree::SILENCE_THRESHOLD.ago, (Tree::SILENCE_THRESHOLD + 1.second).ago, nil ]
+          trees = seen.map { |at| create(:tree).tap { |t| t.update_columns(last_seen_at: at) } }
+
+          trees.each do |tree|
+            expect(described_class.fresh_signal.include?(tree))
+              .to eq(tree.fresh_signal?), "last_seen_at=#{tree.last_seen_at.inspect}"
+          end
+          expect(trees.map(&:fresh_signal?)).to eq([ true, true, false, false ])
+          expect(described_class.fresh_signal(30.minutes)).not_to include(trees.first)
+        end
+      end
+    end
   end
 
   # =========================================================================

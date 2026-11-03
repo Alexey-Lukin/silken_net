@@ -173,6 +173,10 @@ class Tree < ApplicationRecord
   # delta_t навмисно варіативний, поріг НЕ виводиться з конфіга). Стеля: індексу на
   # last_seen_at нема — на тисячах рядків seq-scan дешевий, scale → індекс.
   scope :silent, ->(threshold = SILENCE_THRESHOLD) { active.where(last_seen_at: ...threshold.ago) }
+  # [FW.17] SQL-двійник `#fresh_signal?` — та сама межа (`>=`) і той самий NULL (ненароджений
+  # свіжого сигналу не має) для вибірок, що питають «чи почутий вузол» у WHERE. Міняєш
+  # предикат — міняй обидва (скіл `backend` #10); згоду пінить `tree_spec`.
+  scope :fresh_signal, ->(threshold = SILENCE_THRESHOLD) { where(last_seen_at: threshold.ago..) }
   # ⛔ [SLASH-1, 2026-08-25] Тут стояв `scope :critical_stress` — знято як мертву гілку
   # (нуль викликачів поза власною спекою). Ніс ТРИ пастки одночасно, і кожна коштувала б
   # першому ж читачеві: сирий `0.8` замість DAO-live `AiInsight.slash_stress_threshold`
@@ -253,6 +257,7 @@ class Tree < ApplicationRecord
   # NULL` («мовчання ненародженого» — sweeper не має гнати Field Audit на вузол,
   # який ще не виходив в ефір), а глядачеві «жодного пакета» і «пакетів давно» —
   # однакова відсутність свіжого сигналу. Різниця названа, не випадкова.
+  # SQL-двійник — `scope :fresh_signal`, і міняються вони разом.
   def fresh_signal?(threshold = SILENCE_THRESHOLD)
     last_seen_at.present? && last_seen_at >= threshold.ago
   end

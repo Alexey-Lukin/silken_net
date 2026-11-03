@@ -222,9 +222,8 @@ module Downlink
       # не чули довше за поріг тиші, сходинку не займає — інакше мертвий чи знятий Солдат
       # тримав би `0x9E` і нижчий OTA-hint кластера до ручного зняття grace. Черговість
       # живих лишається: ротацію за міткою подачі судять разом із глибиною черги Королеви.
-      key = HardwareKey.joins(:tree)
-                       .where(trees: { cluster_id: @gateway.cluster_id,
-                                       last_seen_at: Tree::SILENCE_THRESHOLD.ago.. })
+      key = HardwareKey.joins(:tree).merge(Tree.fresh_signal)
+                       .where(trees: { cluster_id: @gateway.cluster_id })
                        .where.not(previous_aes_key_hex: nil)
                        .where(key_version: 1.., downlink_frame_counter: 1..)
                        .order(:updated_at).first
