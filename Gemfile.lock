@@ -249,7 +249,7 @@ GEM
       google-cloud-core (~> 1.6)
       googleauth (~> 1.9)
       mini_mime (~> 1.0)
-    google-logging-utils (0.2.1)
+    google-logging-utils (0.2.2)
     google-protobuf (4.35.1)
       bigdecimal
       rake (~> 13.3)
@@ -268,7 +268,7 @@ GEM
     google-protobuf (4.35.1-x86_64-linux-musl)
       bigdecimal
       rake (~> 13.3)
-    googleauth (1.17.6)
+    googleauth (1.17.7)
       faraday (>= 1.0, < 3.a)
       google-cloud-env (~> 2.2)
       google-logging-utils (~> 0.1)
@@ -620,7 +620,7 @@ GEM
     sidekiq-scheduler (6.0.2)
       rufus-scheduler (~> 3.2)
       sidekiq (>= 7.3, < 9)
-    signet (0.22.1)
+    signet (0.22.2)
       addressable (~> 2.8)
       faraday (>= 0.17.5, < 3.a)
       jwt (>= 1.5, < 4.0)
