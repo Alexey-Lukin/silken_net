@@ -20,7 +20,7 @@
    `voxBounding.voxIntersectImplicit(impl)`, which dies with an **uncatchable native abort**
    (`libc++abi … ValueError: expected grid A outside value > 0, got 0` — a process kill, not a
    .NET exception). ✅ **The cause is ARITHMETIC, not geometry** (measured by `dotnet run -- probe <voxel>` and verified against the runtime source): `Source/PicoGKVdbVoxels.h` line ~390 does `Voxels oVox(oVoxelSize(), fBackgroundMM());` while that constructor's second parameter is `int nNarrowBand` (a VOXEL COUNT) and `fBackgroundMM()` returns MILLIMETRES — so below 1/3 mm `3 × voxel` truncates to 0 and the grid is born invalid: **0.34 mm survives, 0.33 mm aborts** (exit 134), whatever the part. Wrong unit AND a truncating type in one line, and `VoxelSize ⇄ float` implicit conversion plus an `int`-only `fToMM` overload make the mix-up compile silently.
-   ⛔ **DO NOT file this upstream: it is ALREADY reported, with the fix** — [`leap71/PicoGKRuntime#26`](https://github.com/leap71/PicoGKRuntime/issues/26), still live in 2.2.0 (`probe` re-measures it).
+   ⛔ **DO NOT file this upstream: it is ALREADY reported, with the fix** — [`leap71/PicoGKRuntime#26`](https://github.com/leap71/PicoGKRuntime/issues/26), still live in 2.3.0 — whose native runtime is byte-identical to 2.2.0's — re-measured by `probe` on .NET 10 2026-11-04: 0.34 → exit 0, 0.33 → exit 134.
    🔴 **That report names a SIBLING INSTANCE that is SILENT where ours is loud — `voxProjectZSlice` is unsafe at OUR voxel sizes.** `ProjectZSliceDn`/`Up` use `m_roGrid->background()` (mm) as a SLICE COUNT, so below ~0.167 mm the loop body never runs, the end cap is never sealed and the projected solid is **non-watertight with no error at all**. ⛔ **We do not call it today — verified by grep, the only mention in the tree is an obsolete wrapper in the vendored ShapeKernel — and we must not start:** the parts run at 0.05–0.1 mm and the three `anchor_assembly*` manifests at their 0.15 mm record default, all inside that regime; only the axial stack (0.2 mm) sits outside it. A third and fourth candidate of the same family (imported grids hard-coding band 3, `vecToMM` truncating fractional voxel coords) are named there too; we use neither.
    🔑 **Portable: before writing an upstream report, search their issues — the answer may be there with more in it than you had.** A belief about someone else's kernel that nothing re-runs survives their next release, which is why `probe` is a permanent verb. ⊕ And when you do write one, hand over the PREDICTION, never the symptom: «0.34 survives / 0.33 aborts» they verify in a minute, «it crashes at fine voxel» sends them looking for a defect in YOUR geometry.
 
@@ -31,8 +31,8 @@
 3. **Run headless through `Library.Go(voxel, task, bEndAppWithTask:true)`, never `new Library()` — and headless CI cannot run it at all**
    (the v1.6 headless pattern → "relies on Library::Go" abort in v2.2). It briefly inits a
    Metal/GL viewer then closes with the task, so it needs a display: the hosted macOS runner has
-   none (`Library.Go` SIGSEGV, exit 139 — `cad_smoke.yml`), and PicoGK 2.2 bundles no Linux runtime
-   (osx-arm64 · win-x64 only — `Directory.Packages.props`), so xvfb is no way out. CI `verify` is
+   none (`Library.Go` SIGSEGV, exit 139 — `cad_smoke.yml`), and PicoGK bundles no Linux runtime
+   (osx-arm64 · win-x64 only in 2.2 AND 2.3 — read off the 2.3.0 `.nupkg` 2026-11-04; `Directory.Packages.props`), so xvfb is no way out. CI `verify` is
    therefore best-effort (`continue-on-error`) and **local `verify` is the gate** (#10).
 
 4. **Gyroid `wallParam` is a DIMENSIONLESS level of the gyroid equation, and the sheet and network branches read it differently** (gyroid eq ∈ [-1.5, 1.5]), not mm: `|eq| <

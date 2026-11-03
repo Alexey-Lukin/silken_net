@@ -72,7 +72,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Set up .NET 9
+      - name: Set up .NET 10
         # 🔒 [OPS.21] SDK береться з `tools/cad/global.json` — ЄДИНОГО дому піну,
         # який `dotnet build` читає й локально. Літерал `9.0.x` тут був другим
         # домом того самого факту, ще й ШИРШИМ за нього (будь-який 9.0.*), тож
@@ -90,7 +90,7 @@ jobs:
         with:
           global-json-file: tools/cad/global.json
 
-      - name: Build (LEAP source vs PicoGK 2.2 — 0W/0E gate)
+      - name: Build (LEAP source vs PicoGK 2.3 — 0W/0E gate)
         run: dotnet build tools/cad/SilkenCad.sln -c Release
 
       - name: Test (pure-logic xUnit — CEM / SDF / mate math, PicoGK-runtime-free)
@@ -112,7 +112,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Set up .NET 9
+      - name: Set up .NET 10
         # 🔒 [OPS.21] SDK береться з `tools/cad/global.json` — ЄДИНОГО дому піну,
         # який `dotnet build` читає й локально. Літерал `9.0.x` тут був другим
         # домом того самого факту, ще й ШИРШИМ за нього (будь-який 9.0.*), тож
@@ -137,7 +137,7 @@ jobs:
         # CONFIRMED 2026-06-20 (this PR): Library.Go SIGSEGVs (exit 139) on headless hosted macos-14 — it
         # inits a Metal viewer and the runner has no window-server/GPU context. So render-verify stays
         # best-effort here; the HARD gates are `logic` (the full PicoGK-runtime-free xUnit suite on Linux)
-        # + `Build` above (LEAP source vs PicoGK 2.2 on both OSes). Local `dotnet run -- verify` is the
+        # + `Build` above (LEAP source vs PicoGK 2.3 on both OSes). Local `dotnet run -- verify` is the
         # primary metrics gate (home of that policy: tools/cad/README.md); a self-hosted
         # macOS-with-display runner would re-arm it.
         # ⊕ Re-measured 2026-10-16 on macos-15 (run 38967423445): the same exit 139 here, and the build

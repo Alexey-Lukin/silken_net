@@ -62,7 +62,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 ## Verify locally
 
 ```bash
-export PATH="$HOME/.dotnet:$PATH"            # .NET 9 SDK (pinned in global.json)
+export PATH="$HOME/.dotnet:$PATH"            # .NET 10 SDK (pinned in global.json)
 cd tools/cad
 dotnet build SilkenCad.sln                                                  # 0W/0E
 dotnet run --project src/SilkenCad -- smoke                                 # foundation self-test

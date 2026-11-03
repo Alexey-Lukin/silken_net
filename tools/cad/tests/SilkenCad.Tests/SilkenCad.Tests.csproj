@@ -5,7 +5,7 @@
        gradient, min-wall, manifold) run in the verify/sweep CLI. The .NET peer of
        `make -C firmware/test`. Package versions come from ../../Directory.Packages.props. -->
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

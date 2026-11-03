@@ -768,7 +768,7 @@ STM32WLE5CC
 
 | Елемент | Статус | Примітки |
 |---|---|---|
-| **PicoGK Code-as-CAD** (`tools/cad`) | ✅ SHIPPED 2026-06-20 | **Primary** code-CAD: анкер v1 + Ti-coin + per-species 5-SKU, .NET 9 ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) |
+| **PicoGK Code-as-CAD** (`tools/cad`) | ✅ SHIPPED 2026-06-20 | **Primary** code-CAD: анкер v1 + Ti-coin + per-species 5-SKU, .NET 10 ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) |
 | nTop (CAD гіроїдного анкера) | 🟡 Ліцензія є, роботи ~0 | Опційний reference / escape-hatch (GUI параметрична модель); PicoGK — primary |
 | Перша партія DMLS (100 шт) | 🔴 Не розпочато | Перемовин не було: pre-qual лист виробникам Київ/Дніпро написано, не надіслано ([`00_07`](00_07_Action_Plan_Tracker) HW.1); сама партія — лише після Stage 1–3 ([`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) |
 | Тестування BQ25570 (макетна плата) | 🟡 Частково | MPPT підтверджено від лабораторного джерела з низьким R_source. **Cold-start від реального EBFC ще НЕ верифіковано** — [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power). Lab test обов'язковий, і він міряє ДВА числа: `V_OC` (перший гейт, ≥700 мВ worst-case) і `R_int` при ≈25 мкА. |

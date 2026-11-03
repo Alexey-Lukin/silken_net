@@ -5,11 +5,11 @@
     their own (source-only), so the canonical integration is to compile their
     source directly from the git submodules under tools/cad/extern/ and pull the
     PicoGK kernel from NuGet. We do NOT own or lint this code → strict knobs off.
-    Pinned commits: ShapeKernel 166a459 (ShapeKernel-v2.1.0+5), LatticeLibrary
+    Pinned commits: ShapeKernel 8058729 (ShapeKernel-v2.1.0+16), LatticeLibrary
     81c3c7b. See ../../extern + .gitmodules.
   -->
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <!-- LEAP source relies on implicit global usings (System, Collections.Generic,
          Linq) — it has no per-file `using System;`. Must stay ENABLED here. -->
     <ImplicitUsings>enable</ImplicitUsings>

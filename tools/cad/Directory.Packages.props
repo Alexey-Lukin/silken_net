@@ -9,15 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup Label="Geometry kernel">
-    <!-- PicoGK 2.2.0 (2026-06-05) targets net9.0 and bundles the osx-arm64 / win-x64
-         native runtime inside the NuGet package — the standalone installer was retired
+    <!-- PicoGK 2.3.0 (2026-08-04) targets net9.0 (a net10.0 app consumes it as a lower,
+         compatible target) and bundles the osx-arm64 / win-x64 native runtime inside
+         the NuGet package — byte-identical to 2.2.0's: 2.3 changed only the managed API
+         (the `Rad` angle type) — the standalone installer was retired
          in the v1.7.x line. Pulls SkiaSharp transitively. -->
-    <PackageVersion Include="PicoGK" Version="2.2.0" />
+    <PackageVersion Include="PicoGK" Version="2.3.0" />
   </ItemGroup>
 
   <ItemGroup Label="Engineering drawings (DXF)">
     <!-- netDxf 3.0.1 (2024-05-20) — read/write AutoCAD DXF (2000–2018), MIT, ZERO
-         dependencies. Targets netstandard2.0 / net6 / net8 → runs on net9.0 (backward-
+         dependencies. Targets netstandard2.0 / net6 / net8 → runs on net10.0 (backward-
          compatible; "computed" on NuGet, build-verified here). Gives native dimension
          entities (linear/radial/diametric) so the `draw` verb emits a CAD-native factory
          deliverable the shop opens in AutoCAD/Fusion — not a hand-rolled SVG dim-engine.
@@ -26,10 +28,10 @@
   </ItemGroup>
 
   <ItemGroup Label="Test">
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
   </ItemGroup>
 
 </Project>
