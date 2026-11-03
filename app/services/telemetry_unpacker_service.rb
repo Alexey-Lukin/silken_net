@@ -177,6 +177,10 @@ class TelemetryUnpackerService < ApplicationService
     # [SEC.42 (б)] Попередній прийом — ДО обробки: `mark_seen!` нижче рухає його на кожному кадрі.
     @seen_before = @trees_cache.transform_values(&:last_seen_at)
     @frame_delta_ts = Hash.new { |h, did| h[did] = [] }
+    # [SEC.42 (б), друга вісь] Попередній кадр CCM кожного дерева — теж ДО обробки (рядки цього конверта
+    # стали б «останніми» самі собі); ECB-кадр EMA не несе, тож ECB-ера цього запиту не платить.
+    @previous_ccm_frames = ccm_enabled? ? preload_previous_ccm_frames : {}
+    @ccm_ema_frames = Hash.new { |h, tree_id| h[tree_id] = [] }
 
     @committed = 0
     @statuses  = Hash.new(0)
@@ -195,6 +199,7 @@ class TelemetryUnpackerService < ApplicationService
     end
 
     observe_delta_t_coverage
+    observe_ema_recurrence
     Summary.new(records: records, committed: @committed, statuses: @statuses.dup, panics: @panics)
   end
 
@@ -207,6 +212,62 @@ class TelemetryUnpackerService < ApplicationService
       ratio = Telemetry::DeltaTCoverage.ratio(delta_ts, since: @seen_before[did], now: now)
       SilkenNet::Metrics::TELEMETRY_DELTA_T_COVERAGE.observe(ratio) if ratio
     end
+  end
+
+  # [SEC.42 (б), друга вісь] Спостереження, не вердикт — механізм і стеля в шапці `Telemetry::EmaRecurrence`.
+  # Кадри дерева — за FC: суміжну пару дає попередній кадр із БД або сусід у тому ж конверті.
+  def observe_ema_recurrence
+    @ccm_ema_frames.each do |tree_id, frames|
+      prev = @previous_ccm_frames[tree_id]
+      frames.sort_by { |frame| frame[:fc] }.each do |frame|
+        if prev && frame[:fc] == prev[:fc] + 1
+          deviation = Telemetry::EmaRecurrence.deviation(prev_ema: prev[:ema], raw: frame[:raw], ema: frame[:ema])
+          observe_ema_deviation(frame, prev, deviation) if deviation
+        end
+        prev = frame
+      end
+    end
+  end
+
+  # Гістограма — розподіл без атрибуції (мітка дерева неможлива за кардинальністю), тож вузол називає лог:
+  # лише на ненульовому відхиленні, щоб чесний вузол у сталому каденсі не шумів.
+  def observe_ema_deviation(frame, prev, deviation)
+    SilkenNet::Metrics::TELEMETRY_EMA_RECURRENCE_DEVIATION
+      .observe(deviation.abs, labels: { side: Telemetry::EmaRecurrence.side(deviation) })
+    return if deviation.zero?
+
+    Rails.logger.info "[SEC.42 (б)] EMA ⊥ рекурентність: #{frame[:did]} fc=#{frame[:fc]} raw=#{frame[:raw]} " \
+                      "ema=#{frame[:ema]} prev_ema=#{prev[:ema]} відхилення=#{deviation}s"
+  end
+
+  # Попередній кадр CCM кожного дерева конверта, або порожньо: спостереження не сміє валити конверт —
+  # без попередніх кадрів пари лише не судяться, а бали й допуск ідуть своїм шляхом.
+  def preload_previous_ccm_frames
+    return {} if @trees_cache.empty?
+
+    previous_ccm_rows.each_with_object({}) do |log, frames|
+      fc = ccm_frame_counter(log.raw_record)
+      frames[log.tree_id] = { fc: fc, ema: log.ema_delta_t_s } if fc && log.ema_delta_t_s
+    end
+  rescue StandardError => e
+    Rails.logger.warn "⚠️ [SEC.42 (б)] попередні кадри CCM не прочитано (#{e.class}: #{e.message}) — " \
+                      "пари цього конверта не судяться."
+    {}
+  end
+
+  # Останній рядок кожного дерева конверта — One-Home `latest_per_tree` (один `DISTINCT ON`) у вікні
+  # `EmaRecurrence::PREVIOUS_FRAME_WINDOW` (чому межа тут законна — шапка того модуля). Береться лише рядок
+  # CCM-кадру телеметрії: FC із `raw_record`, EMA є.
+  def previous_ccm_rows
+    TelemetryLog.where(created_at: Telemetry::EmaRecurrence::PREVIOUS_FRAME_WINDOW.ago..)
+                .latest_per_tree(@trees_cache.values.map(&:id))
+  end
+
+  # FC — байти 5..7 збереженого кадру ефіру: [DID:4][gossip:1][FC:3 BE] (AAD).
+  def ccm_frame_counter(raw_record)
+    return nil unless raw_record && raw_record.bytesize >= 8
+
+    ("\x00".b + raw_record.b.byteslice(5, 3)).unpack1("N")
   end
 
   # Створюємо Hash-мапу DID -> Tree для миттєвого доступу без N+1 запитів
@@ -1090,6 +1151,12 @@ class TelemetryUnpackerService < ApplicationService
     # їх означало б завести другу відповідь на одне питання.
     tally_for_summary(attributes)
     @frame_delta_ts[tree.did] << log.metabolism_s
+    # [SEC.42 (б), друга вісь] Лише збір — пари судяться після циклу, бо виняток тут, між комітом рядка й
+    # кредитом нижче, губив би бали (абзац «СПОВІЩЕННЯ ⊥ ГРОШІ»). Паніка EMA не несе (NULL) — не кадр пари.
+    if (ccm_frame = attributes[:ccm_frame]) && log.ema_delta_t_s
+      @ccm_ema_frames[tree.id] << { did: tree.did, fc: ccm_frame[:frame_counter], raw: log.metabolism_s,
+                                    ema: log.ema_delta_t_s }
+    end
 
     # [BUG FIX: Phantom Sidekiq Jobs via EmergencyResponseService]:
     # AlertDispatchService.analyze_and_trigger! виноситься ЗА межі транзакції.

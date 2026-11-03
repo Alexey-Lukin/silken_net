@@ -1658,90 +1658,51 @@ TEST(test_tx_defer_unmeasured_temp_transmits) {
 /* ════════════════════════════════════════════════════════════════════
  * FW.21 — EXPONENTIAL MOVING AVERAGE (delta_t / vcap)
  *
- * Mirrors the production EMA in firmware/soldier/main.c.
- * α = 0.2 (integer fixed-point: 2/10), warmup = 3 cycles, state in SRAM.
- * Cross-ref: docs/03_01 §13 (EMA home), docs/00_07 FW.21.
+ * Exercises the production filter itself — firmware/common/ema_filter.h, the header
+ * firmware/soldier/main.c includes; never a copy of it here (firmware gotcha #19).
+ * α = 0.2 (integer fixed-point: 2/10), warmup = 3 samples, state in RTC DR10/DR12.
+ * Cross-ref: docs/03_01 §13 (EMA home).
  * ════════════════════════════════════════════════════════════════════ */
 
-#define FW21_EMA_ALPHA_NUM     2
-#define FW21_EMA_ALPHA_DEN     10
-#define FW21_EMA_VALID_MAGIC   0x45
-#define FW21_EMA_WARMUP_CYCLES 3
-
-typedef struct {
-    uint32_t delta_t_x100;
-    uint32_t vcap_x10;
-    uint8_t  valid;
-    uint8_t  count;
-} Fw21EmaState;
-
-static void Fw21_EMA_Update(Fw21EmaState *ema, uint32_t raw_dt_sec, uint16_t raw_vcap_mv) {
-    uint32_t raw_dt_x100  = raw_dt_sec * 100u;
-    uint32_t raw_vcap_x10 = (uint32_t)raw_vcap_mv * 10u;
-
-    if (ema->valid != FW21_EMA_VALID_MAGIC || ema->count == 0) {
-        ema->delta_t_x100 = raw_dt_x100;
-        ema->vcap_x10     = raw_vcap_x10;
-        ema->valid        = FW21_EMA_VALID_MAGIC;
-        ema->count        = 1;
-        return;
-    }
-
-    ema->delta_t_x100 = (FW21_EMA_ALPHA_NUM * raw_dt_x100 +
-                         (FW21_EMA_ALPHA_DEN - FW21_EMA_ALPHA_NUM) * ema->delta_t_x100)
-                        / FW21_EMA_ALPHA_DEN;
-    ema->vcap_x10     = (FW21_EMA_ALPHA_NUM * raw_vcap_x10 +
-                         (FW21_EMA_ALPHA_DEN - FW21_EMA_ALPHA_NUM) * ema->vcap_x10)
-                        / FW21_EMA_ALPHA_DEN;
-    if (ema->count < 255) ema->count++;
-}
-
-static uint32_t Fw21_EMA_Get_DeltaT_Sec(const Fw21EmaState *ema) {
-    return ema->delta_t_x100 / 100u;
-}
-static uint16_t Fw21_EMA_Get_Vcap_Mv(const Fw21EmaState *ema) {
-    return (uint16_t)(ema->vcap_x10 / 10u);
-}
-static uint8_t Fw21_EMA_Is_Warmed_Up(const Fw21EmaState *ema) {
-    return (ema->valid == FW21_EMA_VALID_MAGIC) && (ema->count >= FW21_EMA_WARMUP_CYCLES);
-}
+#include "../common/ema_filter.h"
+#include "../common/wall_time.h"   /* Silken_Wake_Lorenz_Delta_T — the wire selector main.c calls */
 
 TEST(test_ema_cold_start) {
     /* First call on uninitialised state: EMA equals raw input, no smoothing. */
-    Fw21EmaState ema = {0};
-    Fw21_EMA_Update(&ema, 3600u, 4500);
-    ASSERT_EQ(Fw21_EMA_Get_DeltaT_Sec(&ema), 3600u);
-    ASSERT_EQ(Fw21_EMA_Get_Vcap_Mv(&ema), 4500);
-    ASSERT_EQ(ema.valid, FW21_EMA_VALID_MAGIC);
+    SilkenEma ema = {0};
+    EMA_Update(&ema, 3600u, 4500);
+    ASSERT_EQ(EMA_Get_DeltaT_Sec(&ema), 3600u);
+    ASSERT_EQ(EMA_Get_Vcap_Mv(&ema), 4500);
+    ASSERT_EQ(ema.valid, EMA_VALID_MAGIC);
     ASSERT_EQ(ema.count, 1);
     /* count < 3 → not warmed up yet */
-    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
+    ASSERT_FALSE(EMA_Is_Warmed_Up(&ema));
 }
 
 TEST(test_ema_second_cycle_smoothing) {
     /* After cold start with 3600s/4500mV, feed 4000s/5000mV.
        Expected: EMA_dt = 0.2·4000 + 0.8·3600 = 3680
                  EMA_vcap = 0.2·5000 + 0.8·4500 = 4600 */
-    Fw21EmaState ema = {0};
-    Fw21_EMA_Update(&ema, 3600u, 4500);
-    Fw21_EMA_Update(&ema, 4000u, 5000);
-    ASSERT_EQ(Fw21_EMA_Get_DeltaT_Sec(&ema), 3680u);
-    ASSERT_EQ(Fw21_EMA_Get_Vcap_Mv(&ema), 4600);
+    SilkenEma ema = {0};
+    EMA_Update(&ema, 3600u, 4500);
+    EMA_Update(&ema, 4000u, 5000);
+    ASSERT_EQ(EMA_Get_DeltaT_Sec(&ema), 3680u);
+    ASSERT_EQ(EMA_Get_Vcap_Mv(&ema), 4600);
     ASSERT_EQ(ema.count, 2);
 }
 
 TEST(test_ema_convergence) {
     /* After ~20 iterations of constant input, EMA converges to that input. */
-    Fw21EmaState ema = {0};
+    SilkenEma ema = {0};
     for (int i = 0; i < 20; i++) {
-        Fw21_EMA_Update(&ema, 1000u, 4000);
+        EMA_Update(&ema, 1000u, 4000);
     }
     /* Within 1% of the steady-state value (geometric decay (0.8)^20 ≈ 0.012). */
-    uint32_t dt = Fw21_EMA_Get_DeltaT_Sec(&ema);
-    uint16_t vc = Fw21_EMA_Get_Vcap_Mv(&ema);
+    uint32_t dt = EMA_Get_DeltaT_Sec(&ema);
+    uint16_t vc = EMA_Get_Vcap_Mv(&ema);
     ASSERT_TRUE(dt >= 990u && dt <= 1010u);
     ASSERT_TRUE(vc >= 3960  && vc <= 4040);
-    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&ema));
+    ASSERT_TRUE(EMA_Is_Warmed_Up(&ema));
 }
 
 TEST(test_ema_noise_rejection) {
@@ -1749,33 +1710,33 @@ TEST(test_ema_noise_rejection) {
        far less than the raw spike — verifies smoothing strength.
        After warm-up at 1000s, one shot of 5000s yields:
          EMA = 0.2·5000 + 0.8·1000 = 1800 (vs raw 5000 → 5×). */
-    Fw21EmaState ema = {0};
-    for (int i = 0; i < 10; i++) Fw21_EMA_Update(&ema, 1000u, 4000);
-    Fw21_EMA_Update(&ema, 5000u, 4000);
+    SilkenEma ema = {0};
+    for (int i = 0; i < 10; i++) EMA_Update(&ema, 1000u, 4000);
+    EMA_Update(&ema, 5000u, 4000);
     /* EMA jumped only to ~1800, raw was 5000 — at least 3× rejection. */
-    ASSERT_TRUE(Fw21_EMA_Get_DeltaT_Sec(&ema) <= 1800u + 5);
+    ASSERT_TRUE(EMA_Get_DeltaT_Sec(&ema) <= 1800u + 5);
     /* And the spike was attenuated by far more than half. */
-    ASSERT_TRUE(Fw21_EMA_Get_DeltaT_Sec(&ema) < 5000u / 2u);
+    ASSERT_TRUE(EMA_Get_DeltaT_Sec(&ema) < 5000u / 2u);
 }
 
 TEST(test_ema_warmup_flag) {
     /* count < 3 ⇒ not warmed up; count ≥ 3 ⇒ warmed up. */
-    Fw21EmaState ema = {0};
-    Fw21_EMA_Update(&ema, 1000u, 4000);
-    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
-    Fw21_EMA_Update(&ema, 1000u, 4000);
-    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
-    Fw21_EMA_Update(&ema, 1000u, 4000);
-    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&ema));
+    SilkenEma ema = {0};
+    EMA_Update(&ema, 1000u, 4000);
+    ASSERT_FALSE(EMA_Is_Warmed_Up(&ema));
+    EMA_Update(&ema, 1000u, 4000);
+    ASSERT_FALSE(EMA_Is_Warmed_Up(&ema));
+    EMA_Update(&ema, 1000u, 4000);
+    ASSERT_TRUE(EMA_Is_Warmed_Up(&ema));
 }
 
 TEST(test_ema_count_saturates_at_255) {
     /* Counter must saturate at 255 — must never wrap to 0 (which would
        reset the warmup flag and make EMA_Is_Warmed_Up() flap). */
-    Fw21EmaState ema = {0};
-    for (int i = 0; i < 300; i++) Fw21_EMA_Update(&ema, 1000u, 4000);
+    SilkenEma ema = {0};
+    for (int i = 0; i < 300; i++) EMA_Update(&ema, 1000u, 4000);
     ASSERT_EQ(ema.count, 255);
-    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&ema));
+    ASSERT_TRUE(EMA_Is_Warmed_Up(&ema));
 }
 
 TEST(test_ema_zero_inputs_are_valid) {
@@ -1784,13 +1745,13 @@ TEST(test_ema_zero_inputs_are_valid) {
        Cold-start with zeros: EMA = 0; subsequent 1000/4000 sample:
          EMA_dt = 0.2·1000 + 0.8·0 = 200
          EMA_vcap = 0.2·4000 + 0.8·0 = 800 */
-    Fw21EmaState ema = {0};
-    Fw21_EMA_Update(&ema, 0u, 0);
-    ASSERT_EQ(Fw21_EMA_Get_DeltaT_Sec(&ema), 0u);
-    ASSERT_EQ(Fw21_EMA_Get_Vcap_Mv(&ema), 0);
-    Fw21_EMA_Update(&ema, 1000u, 4000);
-    ASSERT_EQ(Fw21_EMA_Get_DeltaT_Sec(&ema), 200u);
-    ASSERT_EQ(Fw21_EMA_Get_Vcap_Mv(&ema), 800);
+    SilkenEma ema = {0};
+    EMA_Update(&ema, 0u, 0);
+    ASSERT_EQ(EMA_Get_DeltaT_Sec(&ema), 0u);
+    ASSERT_EQ(EMA_Get_Vcap_Mv(&ema), 0);
+    EMA_Update(&ema, 1000u, 4000);
+    ASSERT_EQ(EMA_Get_DeltaT_Sec(&ema), 200u);
+    ASSERT_EQ(EMA_Get_Vcap_Mv(&ema), 800);
 }
 
 TEST(test_ema_no_overflow_at_max_inputs) {
@@ -1799,47 +1760,32 @@ TEST(test_ema_no_overflow_at_max_inputs) {
        Max raw_dt_x100 = 86400·100 = 8_640_000.
        Worst-case numerator = 2·8_640_000 + 8·8_640_000 = 86_400_000 ≈ 0.02·2^32.
        After 50 iterations the EMA must converge to the input. */
-    Fw21EmaState ema = {0};
+    SilkenEma ema = {0};
     for (int i = 0; i < 50; i++) {
-        Fw21_EMA_Update(&ema, 86400u, 5500);
+        EMA_Update(&ema, 86400u, 5500);
     }
-    uint32_t dt = Fw21_EMA_Get_DeltaT_Sec(&ema);
-    uint16_t vc = Fw21_EMA_Get_Vcap_Mv(&ema);
+    uint32_t dt = EMA_Get_DeltaT_Sec(&ema);
+    uint16_t vc = EMA_Get_Vcap_Mv(&ema);
     /* Within 1% of 86400 / 5500. */
     ASSERT_TRUE(dt >= 85500u && dt <= 86400u);
     ASSERT_TRUE(vc >= 5440  && vc <= 5500);
 }
 
-/* ---------- RTC DR10+DR12 pack/unpack mirrors firmware boot/save logic ----------
+/* ---------- RTC DR10+DR12: the two-line HAL glue main.c wraps around the header's pack/restore ----------
+ * The glue below mirrors main.c by hand (two reads / two writes); the packing itself is the header's.
  * NOTE: DR11 is owned by the 3rd anti-pingpong slot (mesh DID cache 8→3).
  * EMA vcap_x10 (≤55000 ≤ 2^16) is packed into the LOW 16 bits of DR12.
- * DR12 layout: [valid:8 | count:8 | ema_vcap_x10:16].
+ * DR12 layout: [valid:8 | count:8 | vcap_x10:16] — EMA_Pack_Dr12 / EMA_Restore.
  */
 
-#define FW21_EMA_VCAP_X10_MASK 0xFFFFu
-
-static void Fw21_EMA_Save_To_RTC(const Fw21EmaState *ema, RTC_HandleTypeDef *h) {
+static void Fw21_EMA_Save_To_RTC(const SilkenEma *ema, RTC_HandleTypeDef *h) {
     HAL_RTCEx_BKUPWrite(h, RTC_BKP_DR10, ema->delta_t_x100);
-    HAL_RTCEx_BKUPWrite(h, RTC_BKP_DR12,
-        ((uint32_t)ema->valid << 24) |
-        ((uint32_t)ema->count << 16) |
-        (ema->vcap_x10 & FW21_EMA_VCAP_X10_MASK));
+    HAL_RTCEx_BKUPWrite(h, RTC_BKP_DR12, EMA_Pack_Dr12(ema));
 }
 
-static void Fw21_EMA_Load_From_RTC(Fw21EmaState *ema, RTC_HandleTypeDef *h) {
+static void Fw21_EMA_Load_From_RTC(SilkenEma *ema, RTC_HandleTypeDef *h) {
     uint32_t meta = HAL_RTCEx_BKUPRead(h, RTC_BKP_DR12);
-    uint8_t  v    = (uint8_t)((meta >> 24) & 0xFFu);
-    if (v == FW21_EMA_VALID_MAGIC) {
-        ema->delta_t_x100 = HAL_RTCEx_BKUPRead(h, RTC_BKP_DR10);
-        ema->vcap_x10     = (uint32_t)(meta & FW21_EMA_VCAP_X10_MASK);
-        ema->valid        = v;
-        ema->count        = (uint8_t)((meta >> 16) & 0xFFu);
-    } else {
-        ema->delta_t_x100 = 0;
-        ema->vcap_x10     = 0;
-        ema->valid        = 0;
-        ema->count        = 0;
-    }
+    EMA_Restore(ema, HAL_RTCEx_BKUPRead(h, RTC_BKP_DR10), meta);
 }
 
 TEST(test_ema_rtc_save_load_roundtrip) {
@@ -1848,18 +1794,18 @@ TEST(test_ema_rtc_save_load_roundtrip) {
     _rtc_bkp_reset_all();
     RTC_HandleTypeDef hrtc_mock = {0};
 
-    Fw21EmaState ema = {0};
-    for (int i = 0; i < 5; i++) Fw21_EMA_Update(&ema, 3600u, 4500);
+    SilkenEma ema = {0};
+    for (int i = 0; i < 5; i++) EMA_Update(&ema, 3600u, 4500);
     Fw21_EMA_Save_To_RTC(&ema, &hrtc_mock);
 
-    Fw21EmaState restored = {0};
+    SilkenEma restored = {0};
     Fw21_EMA_Load_From_RTC(&restored, &hrtc_mock);
 
     ASSERT_EQ(restored.delta_t_x100, ema.delta_t_x100);
     ASSERT_EQ(restored.vcap_x10,     ema.vcap_x10);
     ASSERT_EQ(restored.valid,        ema.valid);
     ASSERT_EQ(restored.count,        ema.count);
-    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&restored));
+    ASSERT_TRUE(EMA_Is_Warmed_Up(&restored));
 }
 
 TEST(test_ema_rtc_first_boot_no_magic) {
@@ -1867,12 +1813,73 @@ TEST(test_ema_rtc_first_boot_no_magic) {
     _rtc_bkp_reset_all();
     RTC_HandleTypeDef hrtc_mock = {0};
 
-    Fw21EmaState restored = {0xDEADBEEFu, 0xCAFE, 0xFFu, 0xFFu};
+    SilkenEma restored = {0xDEADBEEFu, 0xCAFE, 0xFFu, 0xFFu};
     Fw21_EMA_Load_From_RTC(&restored, &hrtc_mock);
 
     ASSERT_EQ(restored.valid, 0);
     ASSERT_EQ(restored.count, 0);
-    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&restored));
+    ASSERT_FALSE(EMA_Is_Warmed_Up(&restored));
+}
+
+TEST(test_ema_feed_skips_unmeasured) {
+    /* [ARCH.102] The sentinel never enters the filter: EMA_Feed on DELTA_T_UNKNOWN_S (0) leaves
+       the state as it was — a cold filter stays cold, a warm one keeps its value and count. */
+    SilkenEma ema = {0};
+    EMA_Feed(&ema, 0u, 3300, 0u);
+    ASSERT_EQ(ema.valid, 0);
+    ASSERT_EQ(ema.count, 0);
+
+    for (int i = 0; i < 3; i++) EMA_Feed(&ema, 6500u, 3300, 0u);
+    SilkenEma before = ema;
+    EMA_Feed(&ema, 0u, 4000, 0u);
+    ASSERT_EQ(ema.delta_t_x100, before.delta_t_x100);
+    ASSERT_EQ(ema.vcap_x10, before.vcap_x10);
+    ASSERT_EQ(ema.count, before.count);
+}
+
+/* [SEC.42 (б), second axis] Golden vectors of the server mirror Telemetry::EmaRecurrence —
+ * spec/services/telemetry/ema_recurrence_spec.rb READS this table (and α from ema_filter.h), so
+ * a one-sided change reds the other suite. A row is one wake: the raw delta_t fed in, the filter state behind it and what the
+ * CCM wire carries as EMA for it (the selector main.c calls — the sentinel until warm). */
+TEST(test_ema_golden_wire_sequence) {
+    static const struct { uint32_t raw, x100, count, wire_ema; } gold[] = {
+        {  6500u,  650000u, 1u,     0u },  /* cold start: EMA = sample, not yet warm */
+        {  6400u,  648000u, 2u,     0u },
+        {  6611u,  650620u, 3u,  6506u },  /* warm: the wire starts carrying EMA */
+        {  7003u,  660556u, 4u,  6605u },
+        {     0u,  660556u, 4u,  6605u },  /* sentinel: skipped, EMA unchanged */
+        {  5000u,  628444u, 5u,  6284u },
+        { 70000u, 1902755u, 6u, 19027u },  /* raw rides the u16 wire as 65535, the EMA took all */
+        {  6500u, 1652204u, 7u, 16522u },
+        {  6517u, 1452103u, 8u, 14521u },
+        {  3000u, 1221682u, 9u, 12216u },
+    };
+    SilkenEma ema = {0};
+    for (size_t i = 0; i < sizeof gold / sizeof gold[0]; i++) {
+        EMA_Feed(&ema, gold[i].raw, 3300, 0u);
+        ASSERT_EQ(ema.delta_t_x100, gold[i].x100);
+        ASSERT_EQ(ema.count, gold[i].count);
+        ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(EMA_Is_Warmed_Up(&ema), EMA_Get_DeltaT_Sec(&ema), 0u),
+                  gold[i].wire_ema);
+    }
+}
+
+TEST(test_ema_warm_step_pins) {
+    /* The warm step the server mirror reproduces (EmaRecurrence.step_x100) — its spec reads this
+       table: (prev_x100, raw) → next_x100 — incl. prev at the top of its one-second bucket
+       (the wire's truncation edge) and the plausibility ceiling (7 days, no u32 overflow). */
+    static const uint32_t pins[][3] = {
+        {   650000u,   6400u,   648000u },
+        {   650099u,   6400u,   648079u },
+        {      100u,      1u,      100u },
+        {  6553599u,  65535u,  6553579u },
+        { 60480000u, 604800u, 60480000u },
+    };
+    for (size_t i = 0; i < sizeof pins / sizeof pins[0]; i++) {
+        SilkenEma s = { pins[i][0], 0u, EMA_VALID_MAGIC, 5 };
+        EMA_Update(&s, pins[i][1], 0);
+        ASSERT_EQ(s.delta_t_x100, pins[i][2]);
+    }
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -1894,24 +1901,21 @@ TEST(test_ema_rtc_first_boot_no_magic) {
 #define FW5_UNKNOWN_DELTA_T_S 0u     /* DELTA_T_UNKNOWN_S in metabolic_core.rb / main.c */
 #define FW5_DEFAULT_VCAP_MV   3300u  /* NOMINAL_VCAP_MV     in bio_contract.rb */
 
-/* Pure-function mirror of the firmware selection — no globals, no HAL. */
-static void Fw5_Select_Lorenz_Inputs(const Fw21EmaState *ema,
+/* The delta_t half is the real selector main.c calls (Silken_Wake_Lorenz_Delta_T, wall_time.h);
+ * the vcap half mirrors an inline expression of the ECB build only (vcap is reserved). */
+static void Fw5_Select_Lorenz_Inputs(const SilkenEma *ema,
                                      uint32_t *out_dt_s,
                                      uint16_t *out_vcap_mv) {
-    if (Fw21_EMA_Is_Warmed_Up(ema)) {
-        *out_dt_s    = Fw21_EMA_Get_DeltaT_Sec(ema);
-        *out_vcap_mv = Fw21_EMA_Get_Vcap_Mv(ema);
-    } else {
-        *out_dt_s    = FW5_UNKNOWN_DELTA_T_S;
-        *out_vcap_mv = FW5_DEFAULT_VCAP_MV;
-    }
+    *out_dt_s    = Silken_Wake_Lorenz_Delta_T(EMA_Is_Warmed_Up(ema), EMA_Get_DeltaT_Sec(ema),
+                                              FW5_UNKNOWN_DELTA_T_S);
+    *out_vcap_mv = EMA_Is_Warmed_Up(ema) ? EMA_Get_Vcap_Mv(ema) : FW5_DEFAULT_VCAP_MV;
 }
 
 TEST(test_fw5_cold_boot_uses_unknown_sentinel) {
     /* Fresh EMA (count=0) → the sentinel must be selected so the contract reports
        «homeostasis measured, metabolism not» (status 0, GP 0) on the very first
        wakeup after VBAT loss — never the old neutral 60 s (ARCH.102). */
-    Fw21EmaState ema = {0};
+    SilkenEma ema = {0};
     uint32_t dt_s = 0; uint16_t vcap_mv = 0;
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
     ASSERT_EQ(dt_s, FW5_UNKNOWN_DELTA_T_S);
@@ -1921,28 +1925,28 @@ TEST(test_fw5_cold_boot_uses_unknown_sentinel) {
 TEST(test_fw5_warmup_phase_uses_unknown_sentinel) {
     /* count = 1 and count = 2 are still below EMA_WARMUP_CYCLES (3) —
        EMA is initialised but not trusted yet, so the sentinel is used. */
-    Fw21EmaState ema = {0};
-    Fw21_EMA_Update(&ema, 1000u, 4500);
+    SilkenEma ema = {0};
+    EMA_Update(&ema, 1000u, 4500);
     uint32_t dt_s = 0; uint16_t vcap_mv = 0;
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
-    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
+    ASSERT_FALSE(EMA_Is_Warmed_Up(&ema));
     ASSERT_EQ(dt_s, FW5_UNKNOWN_DELTA_T_S);
     ASSERT_EQ(vcap_mv, FW5_DEFAULT_VCAP_MV);
 
-    Fw21_EMA_Update(&ema, 1000u, 4500);
+    EMA_Update(&ema, 1000u, 4500);
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
-    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
+    ASSERT_FALSE(EMA_Is_Warmed_Up(&ema));
     ASSERT_EQ(dt_s, FW5_UNKNOWN_DELTA_T_S);
     ASSERT_EQ(vcap_mv, FW5_DEFAULT_VCAP_MV);
 }
 
 TEST(test_fw5_after_warmup_forwards_ema_values) {
     /* count == 3 → warmed up → real EMA must be forwarded. */
-    Fw21EmaState ema = {0};
-    Fw21_EMA_Update(&ema, 1000u, 4500);
-    Fw21_EMA_Update(&ema, 1000u, 4500);
-    Fw21_EMA_Update(&ema, 1000u, 4500);
-    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&ema));
+    SilkenEma ema = {0};
+    EMA_Update(&ema, 1000u, 4500);
+    EMA_Update(&ema, 1000u, 4500);
+    EMA_Update(&ema, 1000u, 4500);
+    ASSERT_TRUE(EMA_Is_Warmed_Up(&ema));
 
     uint32_t dt_s = 0; uint16_t vcap_mv = 0;
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
@@ -1960,8 +1964,8 @@ TEST(test_fw5_extreme_high_vcap_clamped_by_backend_beta) {
        (BETA_MIN..BETA_MAX = 2.0..4.0) lives in bio_contract.rb and
        protects the attractor from explosion. We assert the firmware
        does not silently muffle this signal here. */
-    Fw21EmaState ema = {0};
-    for (int i = 0; i < 10; i++) Fw21_EMA_Update(&ema, 60u, 5500);
+    SilkenEma ema = {0};
+    for (int i = 0; i < 10; i++) EMA_Update(&ema, 60u, 5500);
 
     uint32_t dt_s = 0; uint16_t vcap_mv = 0;
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
@@ -1973,8 +1977,8 @@ TEST(test_fw5_extreme_fast_charge_forwarded) {
     /* Boundary input: delta_t_s = 1 (EBFC charging in 1 second — much
        faster than baseline 60). [E.63] delta_t this fast → max growth_points;
        the firmware-side selection still forwards the raw EMA. */
-    Fw21EmaState ema = {0};
-    for (int i = 0; i < 10; i++) Fw21_EMA_Update(&ema, 1u, 3300);
+    SilkenEma ema = {0};
+    for (int i = 0; i < 10; i++) EMA_Update(&ema, 1u, 3300);
 
     uint32_t dt_s = 0; uint16_t vcap_mv = 0;
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
@@ -1988,8 +1992,8 @@ TEST(test_fw5_zero_inputs_after_warmup_still_forwarded) {
        value rather than masking with defaults. Backend/`bio_contract.rb`
        β-clamp will keep the attractor stable, but anomaly visibility
        is preserved (server sees vcap=0 → flagged in DCI divergence). */
-    Fw21EmaState ema = {0};
-    for (int i = 0; i < 10; i++) Fw21_EMA_Update(&ema, 0u, 0);
+    SilkenEma ema = {0};
+    for (int i = 0; i < 10; i++) EMA_Update(&ema, 0u, 0);
 
     uint32_t dt_s = 99; uint16_t vcap_mv = 99;
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
@@ -5282,6 +5286,9 @@ int main(void)
     RUN(test_ema_no_overflow_at_max_inputs);
     RUN(test_ema_rtc_save_load_roundtrip);
     RUN(test_ema_rtc_first_boot_no_magic);
+    RUN(test_ema_feed_skips_unmeasured);
+    RUN(test_ema_golden_wire_sequence);
+    RUN(test_ema_warm_step_pins);
 
     printf("\n  EMA → mruby calculate_state args[5..6] (FW.5 B+):\n");
     RUN(test_fw5_cold_boot_uses_unknown_sentinel);

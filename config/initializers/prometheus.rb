@@ -239,6 +239,23 @@ module SilkenNet
       buckets: [ 0.1, 0.25, 0.5, 0.75, 0.9, 1.1, 1.5, 2.5 ]
     )
 
+    # [SEC.42 (б), друга вісь] Відхилення EMA delta_t CCM-кадру від рекурентності фільтра прошивки,
+    # передбаченої з попереднього кадру того ж дерева (`Telemetry::EmaRecurrence`). Значення — МОДУЛЬ
+    # відхилення, знак — мітка `side` (short — EMA коротша за дозволену, тобто в бік більших балів · long ·
+    # exact): від'ємні спостереження ламали б монотонність `_sum`. Спостереження без алерту під тим самим
+    # присудом, що й частка вище; вузол називає лог розпакувальника, не мітка.
+    TELEMETRY_EMA_RECURRENCE_DEVIATION = REGISTRY.histogram(
+      :silkennet_telemetry_ema_recurrence_deviation_seconds,
+      docstring: "SEC.42 (b), second axis: how far a CCM frame's wire EMA delta_t sits from the firmware EMA " \
+                 "recurrence predicted from the previous frame of the same tree, seconds; side=short means the EMA " \
+                 "is shorter than allowed, i.e. towards more points [SEC.42; diagnostic tier: no alert until a " \
+                 "strictness verdict picks the threshold from this field distribution — a frost-deferred TX moves " \
+                 "the EMA without a frame (either side), a short PVD coma reads short on an honest node once per " \
+                 "brownout, a KEYL forger holding the EMA below the raw stream reads short on every judged pair]",
+      labels: [ :side ],
+      buckets: [ 1, 10, 60, 600, 3600 ]
+    )
+
     # [FW.2] CCM MIC verification failed — wrong key, tampered ciphertext,
     # mutilated AAD, or wrong DID/FrameCounter pairing. Any nonzero rate
     # in production is a security signal worth paging on.

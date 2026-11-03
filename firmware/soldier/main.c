@@ -1069,64 +1069,13 @@ static uint32_t Soldier_Try_Apply_Gossip_Ts(uint32_t local_ts, uint8_t gossip_ls
     return refined;
 }
 
-// Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
-// та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
-// тим, як ці сигнали потраплять до mruby-контракту ([E.63] метаболізм).
-// Зберігаємо стан між циклами STOP2 у RTC Backup Registers DR10 та DR12,
-// щільно упакованих, щоб звільнити DR11 під 3-й слот anti-pingpong.
-// DR10 = ema_delta_t × 100 (fixed-point 0.01 с, full uint32)
-// DR12 = [valid:8 | count:8 | ema_vcap_x10:16],  EMA_VALID_MAGIC = 0x45 ('E')
-//   - vcap_x10 ∈ [0..55000] для реального діапазону 0..5500 мВ ⊆ uint16 [0..65535]
-// При першому старті (DR12 != MAGIC) — ініціалізуємо EMA = raw поточного циклу.
-// Перші 3 цикли warmup — споживач (mruby) має брати raw-значення.
-#define EMA_ALPHA_NUM     2       // α = 2/10 = 0.2
-#define EMA_ALPHA_DEN     10
-#define EMA_VALID_MAGIC   0x45    // 'E' — маркер ініціалізованого фільтра
-#define EMA_WARMUP_CYCLES 3       // циклів до повного довіри EMA
-#define EMA_VCAP_X10_MASK 0xFFFFu // нижні 16 біт DR12 — упакований ema_vcap_x10
+// [FW.21] Пульс крізь EMA — delta_t (швидкість перезаряду EBFC) і vcap. Сам фільтр живе в
+// ../common/ema_filter.h (One-Home з host-тестами й серверним дзеркалом SEC.42 (б)); тут —
+// лише його стан, що між пробудженнями спить у RTC: DR10 = delta_t × 100,
+// DR12 = [valid | count | vcap × 10] (карта — docs/03_01 §2).
+#include "../common/ema_filter.h"
 
-uint32_t ema_delta_t_x100 = 0;    // EMA delta_t × 100 (DR10 full u32)
-uint32_t ema_vcap_x10     = 0;    // EMA vcap × 10 (DR12 [15:0]; внутрішньо u32 для overflow-safety)
-uint8_t  ema_valid        = 0;    // EMA_VALID_MAGIC після першого Update (DR12 [31:24])
-uint8_t  ema_count        = 0;    // saturating counter @ 255 (DR12 [23:16])
-
-// Оновлюємо фільтр одним новим зразком.
-// Cold-path (valid != MAGIC) — EMA = raw; warm-path — α-згладжування.
-// Чисто цілочисельна арифметика, без FPU. delta_t обмежено інтервалом
-// сну (~1 год = 360 000 у × 100), тож множення не переповнюють uint32_t.
-// vcap_x10 обмежено реальним діапазоном EBFC: max 5500 × 10 = 55 000 ⊆ uint16.
-static void EMA_Update(uint32_t raw_dt_sec, uint16_t raw_vcap_mv) {
-    uint32_t raw_dt_x100  = raw_dt_sec * 100u;
-    uint32_t raw_vcap_x10 = (uint32_t)raw_vcap_mv * 10u;
-
-    if (ema_valid != EMA_VALID_MAGIC || ema_count == 0) {
-        ema_delta_t_x100 = raw_dt_x100;
-        ema_vcap_x10     = raw_vcap_x10;
-        ema_valid        = EMA_VALID_MAGIC;
-        ema_count        = 1;
-        return;
-    }
-
-    ema_delta_t_x100 = (EMA_ALPHA_NUM * raw_dt_x100 +
-                        (EMA_ALPHA_DEN - EMA_ALPHA_NUM) * ema_delta_t_x100)
-                       / EMA_ALPHA_DEN;
-    ema_vcap_x10     = (EMA_ALPHA_NUM * raw_vcap_x10 +
-                        (EMA_ALPHA_DEN - EMA_ALPHA_NUM) * ema_vcap_x10)
-                       / EMA_ALPHA_DEN;
-    if (ema_count < 255) ema_count++;
-}
-
-// Зчитуємо згладжені значення в оригінальних одиницях (секунди / мВ).
-// [E.63] delta_t → growth_points напряму у mruby (метаболічна m(delta_t),
-// 03_04 §4.3); β більше не збурюється. vcap reserved (FW.50 raw-ADC).
-static inline uint32_t EMA_Get_DeltaT_Sec(void) { return ema_delta_t_x100 / 100u; }
-static inline uint16_t EMA_Get_Vcap_Mv  (void) { return (uint16_t)(ema_vcap_x10 / 10u); }
-
-// Прапорець "фільтр прогрівся" — true після ≥ EMA_WARMUP_CYCLES зразків.
-// До того споживач (mruby calculate_state) має використовувати raw-значення.
-static inline uint8_t EMA_Is_Warmed_Up(void) {
-    return (ema_valid == EMA_VALID_MAGIC) && (ema_count >= EMA_WARMUP_CYCLES);
-}
+SilkenEma soldier_ema = {0};
 
 // =====================================================================
 // === 1.12. FW.27-B · FW.68 Magic Re-Request — голос Солдата у бік Королеви ===
@@ -1672,18 +1621,11 @@ int main(void)
   // =========================================================================
   // [FW.21] ВІДНОВЛЕННЯ EMA-ФІЛЬТРА (RTC DR10 + DR12 packed)
   // =========================================================================
-  // DR12 [valid:8 | count:8 | ema_vcap_x10:16]. Якщо EMA_VALID_MAGIC ('E') —
-  // продовжуємо згладжувати з попередніх wakeup-циклів. Інакше — cold-start
-  // на наступному EMA_Update (warmup 3 цикли).
+  // Є маркер 'E' у DR12 — продовжуємо згладжувати з попередніх пробуджень; немає —
+  // холодний старт на першому зразку, далі прогрів (EMA_Restore, ema_filter.h).
   {
       uint32_t ema_meta = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR12);
-      uint8_t  v        = (uint8_t)((ema_meta >> 24) & 0xFFu);
-      if (v == EMA_VALID_MAGIC) {
-          ema_delta_t_x100 = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR10);
-          ema_vcap_x10     = (uint32_t)(ema_meta & EMA_VCAP_X10_MASK);
-          ema_valid        = v;
-          ema_count        = (uint8_t)((ema_meta >> 16) & 0xFFu);
-      }
+      EMA_Restore(&soldier_ema, HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR10), ema_meta);
   }
 
 #if !FW2_CCM_ENABLED  // [FW.66 (Б) · S5] стан Лоренца — лише ECB-збірка
@@ -1912,12 +1854,9 @@ int main(void)
     // [FW.21] Оновлюємо фільтр пульсу (delta_t / vcap) — стан живе в RTC DR10-12,
     // зчитано в Phase 0 (BOOT). delta_t чесний лише після FW.49 (wall-clock);
     // vcap — VDDA-проксі мВ до живого Vcap-каналу (FW.50 bench).
-    // [ARCH.102] Не годуємо фільтр НЕвиміром: інакше EMA «прогрівається» на
-    // сентинелі й починає віддавати число, за яким виміру не стояло — тобто
-    // фабрикація повертається на крок пізніше, вже під виглядом згладженої.
-    if (delta_t_seconds != DELTA_T_UNKNOWN_S) {
-        EMA_Update(delta_t_seconds, vcap_voltage);
-    }
+    // [ARCH.102] Невимір фільтр пропускає сам (EMA_Feed): інакше EMA «прогрівалась» би на
+    // сентинелі й віддавала число, за яким виміру не стояло — фабрикація на крок пізніше.
+    EMA_Feed(&soldier_ema, delta_t_seconds, vcap_voltage, DELTA_T_UNKNOWN_S);
 
     // 3. Квантовий Хаос (Зерно для mesh anti-pingpong, TX jitter, CoAP nonce)
     // [SEC.11 / FW.30] chaos_seed більше НЕ використовується для Lorenz attractor.
@@ -2025,12 +1964,13 @@ int main(void)
     // [ARCH.102] До прогріву EMA метаболізм НЕ виміряно — і це сентинел, а не
     // baseline: `BASELINE_DELTA_T_S` тут давав GP = максимум на кожному вузлі,
     // що ще не набрав `EMA_WARMUP_CYCLES` зразків.
-    uint32_t delta_t_for_lorenz = Silken_Wake_Lorenz_Delta_T(EMA_Is_Warmed_Up(), EMA_Get_DeltaT_Sec(),
+    uint32_t delta_t_for_lorenz = Silken_Wake_Lorenz_Delta_T(EMA_Is_Warmed_Up(&soldier_ema),
+                                                             EMA_Get_DeltaT_Sec(&soldier_ema),
                                                              DELTA_T_UNKNOWN_S);
 #if !FW2_CCM_ENABLED
     // vcap — аргумент лише ECB-контракту (reserved); CCM-контракт бачить plaintext (FW.66 S4).
-    uint16_t vcap_for_lorenz    = EMA_Is_Warmed_Up() ? EMA_Get_Vcap_Mv()
-                                                     : 3300u;  // nominal (NOMINAL_VCAP_MV; reserved)
+    uint16_t vcap_for_lorenz    = EMA_Is_Warmed_Up(&soldier_ema) ? EMA_Get_Vcap_Mv(&soldier_ema)
+                                                                 : 3300u;  // nominal (NOMINAL_VCAP_MV; reserved)
 #endif
 #if FW2_CCM_ENABLED
     wire_ema_delta_t_s = (uint16_t)delta_t_for_lorenz;
@@ -2719,15 +2659,10 @@ int main(void)
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR9, recent_mesh_dids[1]);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR11, recent_mesh_dids[2]);
 
-    // [FW.21] Зберігаємо стан EMA-фільтра перед STOP2.
-    // DR10 = ema_delta_t_x100 (full u32),
-    // DR12 = [valid:8 | count:8 | ema_vcap_x10:16]. Без перевірки valid —
-    // навіть cold-state коректно записується (на BOOT його просто проігнорують).
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR10, ema_delta_t_x100);
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR12,
-        ((uint32_t)ema_valid << 24) |
-        ((uint32_t)ema_count << 16) |
-        (ema_vcap_x10 & EMA_VCAP_X10_MASK));
+    // [FW.21] Стан EMA-фільтра — у RTC перед сном. Без перевірки маркера: холодний стан
+    // пишеться так само, а на старті його впізнає відсутній 'E' (EMA_Pack_Dr12).
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR10, soldier_ema.delta_t_x100);
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR12, EMA_Pack_Dr12(&soldier_ema));
 
 #if !FW2_CCM_ENABLED
     // [FW.6] Зберігаємо стан Атрактора Лоренца перед STOP2 (лише ECB-збірка — FW.66 (Б) · S5)
@@ -3035,7 +2970,7 @@ void Trigger_Emergency_LoRa_TX(void)
     // зловить. Контекст: main-loop — блокуючий SetTxConfig/HAL_Delay
     // безпечні; НЕ кликати цю функцію з ISR.
     panic_preamble = Cad_Panic_Preamble_Symbols(
-        EMA_Get_Vcap_Mv(), CAD_PANIC_PREAMBLE_VCAP_MIN_MV,
+        EMA_Get_Vcap_Mv(&soldier_ema), CAD_PANIC_PREAMBLE_VCAP_MIN_MV,
         Cad_Preamble_Symbols_For_Ms(CAD_PANIC_PREAMBLE_MS,
                                     CAD_T_SYM_SF9_BW125_US));
     Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, panic_preamble);

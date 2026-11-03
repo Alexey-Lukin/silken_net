@@ -2298,6 +2298,74 @@ end
         .to all(be_nil)
       expect(SilkenNet::Attractor).not_to have_received(:calculate_z_from_state)
     end
+
+    # [SEC.42 (б), друга вісь] Узгодженість EMA з потоком сирих — спостереження на справжньому шляху
+    # конверта: попередній кадр дає БД (у вікні) або сусід у тому ж конверті, а судить лише суміжний FC.
+    describe "[SEC.42 (б), друга вісь] узгодженість EMA з потоком сирих" do
+      let(:metric) { SilkenNet::Metrics::TELEMETRY_EMA_RECURRENCE_DEVIATION }
+
+      before do
+        allow(metric).to receive(:observe)
+        allow(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).to receive(:increment)
+      end
+
+      # Заява балів узгоджена з EMA кадру — щоб приклади не лічили чужої розбіжності.
+      def ema_frame(fc:, dt:, ema:)
+        build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: dt, ema: ema, ttl: 3, fc: fc,
+                        status: SilkenNet::Attractor.expected_homeostasis_gp(ema))
+      end
+
+      it "чесна пара з попереднім кадром у БД — 0 (golden-рядки прошивки 3 → 4)" do
+        described_class.call(ema_frame(fc: 30, dt: 6611, ema: 6506))
+        described_class.call(ema_frame(fc: 31, dt: 7003, ema: 6605))
+
+        expect(metric).to have_received(:observe).with(0, labels: { side: "exact" }).once
+      end
+
+      it "фальсифікатор, що тримає EMA нижче сирого, читається боком short, а лог називає вузол" do
+        allow(Rails.logger).to receive(:info).and_call_original
+        described_class.call(ema_frame(fc: 30, dt: 6500, ema: 3000))
+        described_class.call(ema_frame(fc: 31, dt: 6500, ema: 3000))
+
+        expect(metric).to have_received(:observe).with(700, labels: { side: "short" }).once
+        expect(Rails.logger).to have_received(:info).with(a_string_including("[SEC.42 (б)]", tree.did, "fc=31"))
+      end
+
+      it "пару дає й сусід у тому ж конверті — за FC, а не за порядком кадрів" do
+        described_class.call(ema_frame(fc: 41, dt: 7003, ema: 6605) + ema_frame(fc: 40, dt: 6611, ema: 6506))
+
+        expect(metric).to have_received(:observe).with(0, labels: { side: "exact" }).once
+      end
+
+      # Спостереження не сміє валити конверт: збій читання попередніх кадрів лишає пари без суду, а рядок і
+      # допуск кадру — на своєму шляху.
+      it "збій читання попередніх кадрів не зупиняє конверт" do
+        described_class.call(ema_frame(fc: 30, dt: 6611, ema: 6506))
+        allow(Rails.logger).to receive(:warn).and_call_original
+        allow_any_instance_of(described_class).to receive(:previous_ccm_rows)
+          .and_raise(ActiveRecord::StatementInvalid, "canceling statement due to statement timeout")
+
+        expect { described_class.call(ema_frame(fc: 31, dt: 7003, ema: 6605)) }.to change(TelemetryLog, :count).by(1)
+        expect(metric).not_to have_received(:observe)
+        expect(Rails.logger).to have_received(:warn).with(a_string_including("[SEC.42 (б)]"))
+      end
+
+      it "розрив FC (втрата чи паніка між кадрами) пари не дає" do
+        described_class.call(ema_frame(fc: 30, dt: 6611, ema: 6506))
+        described_class.call(ema_frame(fc: 32, dt: 7003, ema: 6605))
+
+        expect(metric).not_to have_received(:observe)
+      end
+
+      it "попередній кадр за вікном не шукається" do
+        travel_to(Telemetry::EmaRecurrence::PREVIOUS_FRAME_WINDOW.ago - 1.hour) do
+          described_class.call(ema_frame(fc: 30, dt: 6611, ema: 6506))
+        end
+        described_class.call(ema_frame(fc: 31, dt: 7003, ema: 6605))
+
+        expect(metric).not_to have_received(:observe)
+      end
+    end
   end
 
   # [FW.50 · ARCH.102] 0 мВ VDDA — слід відмови АЦП, не вимір: живий MCU нижче ~1.8 В кадру

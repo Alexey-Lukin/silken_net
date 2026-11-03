@@ -585,7 +585,7 @@ Mesh-relay у §1.9 повторює прийнятий 16-байтний шиф
 | `recent_mesh_dids[1]` | `DR9` | shift з [0] |
 | `recent_mesh_dids[2]` | `DR11` | shift з [1] (eviction) |
 
-> **Чому 3 слоти, а не 8 (як було у v1.x):** EMA-блок `FW.21` ([§13](#-13-ema-exponential-moving-average-на-soldier--fw21-)) забрав DR10/DR12 під `ema_delta_t_x100` і запакований `ema_vcap_x10`. Скорочення кешу до 3-х слотів вистачає для типової щільності 2-3 сусідні Солдати в радіусі — більше слотів давало б маргінальний appendix, але блокувало EMA.
+> **Чому 3 слоти, а не 8 (як було у v1.x):** EMA-блок `FW.21` ([§13](#-13-ema-exponential-moving-average-на-soldier--fw21-)) забрав DR10/DR12 під `delta_t_x100` і запакований `vcap_x10` (стан `soldier_ema`). Скорочення кешу до 3-х слотів вистачає для типової щільності 2-3 сусідні Солдати в радіусі — більше слотів давало б маргінальний appendix, але блокувало EMA.
 
 **Псевдокод (виконується у фазі 1.9, гілка "Сценарій Б: Mesh Relay"):**
 
@@ -716,9 +716,9 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `DR7` | `SILKEN_STANDBY_WAKE_MAGIC` | uint32 | **[FW.54 · FW.66 (Б) · S5, 2026-10-11]** Маркер пробудження зі Standby, обидві збірки: пише перший крок `Silken_Standby_Enter` (`firmware/common/standby_wake.h`) на КОЖНОМУ вході — кінець циклу й рятувальний шлях PVD, — читає `Silken_Wake_From_Standby` разом із C1SBF. Доти маркером був DR19 стану Лоренца, який пишуть лише за валідного стану: до першого маяка й без `K_seed` кожне пробудження читалось холодним стартом, а CCM-збірка без Лоренца маркера не мала б зовсім. Маркер ОДНОРАЗОВИЙ: `main()` гасить його одразу після читання, тож він означає «цей сон почався з `Silken_Standby_Enter` у цьому втіленні» — понад C1SBF ловить вхід повз шов, бітфліп і стендовий скид домену при зміні джерела годинника RTC (уже після зняття C1SBF); вмісту DR він не засвідчує (рятувальний шлях PVD може поставити його на частково переписаний Фазою 5 домен). ⚠️ Читача поки немає: `soldier_woke_from_standby` споживе відновлення живого набору з RTC (⚖️ founder 2026-10-13, §2.3.2) разом зі сторожами на wall-мітках, а доти кожен блок DR відновлюється за власним гардом, і маркер поведінки не змінює. Проводку в `main.c` стереже awk-пін `make -C firmware/test standby_wake`. **Аудит пакування (§2.2 п. 2):** `DR0[15:14]` — два біти, а маркер мусить відрізняти і нуль, і `0xFFFFFFFF` стертого домену; `DR2[31:8]` вільні, але DR2 пише Фаза 5 цілим словом (`has_mesh_relay`), тож спільний регістр зробив би маркер залежним від порядку двох писачів; `DR12` повний — отже вільний регістр, і саме DR7, який звільнив той самий FW.54. До фліпу FW.54 (сон STOP2) не пишеться. Історія регістра: до 2026-06-12 — `tree_did` (FW.54 Вісь 2, нота нижче) |
 | `DR8` | `recent_mesh_dids[0]` | uint32 | Anti-pingpong DID cache, слот 0 |
 | `DR9` | `recent_mesh_dids[1]` | uint32 | Anti-pingpong DID cache, слот 1 |
-| `DR10` | `ema_delta_t_x100` | uint32 | [FW.21] EMA delta_t × 100 (fixed-point 0.01 с) |
+| `DR10` | `soldier_ema.delta_t_x100` | uint32 | [FW.21] EMA delta_t × 100 (fixed-point 0.01 с) |
 | `DR11` | `recent_mesh_dids[2]` | uint32 | Anti-pingpong DID cache, слот 2 (FW.21 fallback: vcap_x10 запаковано в DR12) |
-| `DR12` | `[valid:8 \| count:8 \| ema_vcap_x10:16]` | uint32 | [FW.21] Метадані EMA + упакований vcap_x10 (max 55000 ≤ 2^16) |
+| `DR12` | `[valid:8 \| count:8 \| vcap_x10:16]` | uint32 | [FW.21] Метадані EMA + упакований vcap_x10 (max 55000 ≤ 2^16); стан `soldier_ema`, слово пакує `EMA_Pack_Dr12` |
 | `DR13` | **(зарезервовано FW.54)** — мітка останнього ПОВНОГО синку (wall-сек) | uint32 | **[FW.54, ⚖️ founder 2026-10-13, §2.3.2]** Сторож дрейфу на wall-мітках, обидві збірки; пише реалізація сторожів, яку гейтує календар на кремнії ([`03_02 §5а`](03_02_Queen_Gateway_Firmware)), — доти регістр не пишеться. 0 = мітки немає (cold-boot після VBAT-loss), restore-гард — діапазон UTC і не в майбутньому. До HW.30 (2026-09-29) тримав TinyML-поріг WARNING, FW.18 |
 | `DR14` | **(зарезервовано FW.54)** — мітка останнього зойку `0x56` (wall-сек) | uint32 | **[FW.54, ⚖️ founder 2026-10-13, §2.3.2]** Cooldown зойку на wall-мітці, обидві збірки; та сама реалізація й той самий гард, що DR13. До HW.30 тримав TinyML-поріг CRITICAL, FW.18 |
 | `DR15` | `[FW2_FC_MAGIC:8 \| frame_counter:24]` | uint32 packed | **[FW.2 / ARCH.42, freeze-contract 2026-05-24]** CCM LoRa Frame Counter (uint24, monotonic, ~16.7M cycles ≈ 64× longevity @ 1 TX/h × 25y). Magic `0x46` ("F") у high 8 бітах захищає від cold-boot junk; невалідний magic → cold-boot політика [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) 📐 (Flash high-water floor з KV `0x14`, §2.3.1; fallback — HRNG reseed). Активний лише при `#define FW2_CCM_ENABLED 1` (deferred до HW bench для `CRYP_AES_CCM` HAL верифікації) — до flip DR15 залишається 0 та panic anti-replay тримається на DR0[31:16] (SEC.10 transitional). |
@@ -741,11 +741,11 @@ RTC Backup Domain не скидається при STOP2 та більшості
 |-----------------|----------------|-------|----------------|--------------|----------|
 | `SILKEN_STANDBY_WAKE_MAGIC` | `0x5342574B` | `"SBWK"` | `DR7` | що сон почався з `Silken_Standby_Enter` у цьому втіленні (одноразовий — `main()` гасить після читання); вмісту DR не засвідчує, Flash-KV — тим паче; обидві збірки | `firmware/common/standby_wake.h`, §1.10 |
 | `LORENZ_STATE_MAGIC` | `0x4C5A5354` | `"LZST"` | `DR19` | `DR16/DR17/DR18` (lorenz_x/y/z) — лише ECB-збірка | [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor#21-звідки-беруться-вхідні-параметри) |
-| `EMA_VALID_MAGIC` (8 біт у DR12) | `0x45` ('E', high byte) | — | `DR12[31:24]` | `DR10` (ema_delta_t), `DR12[15:0]` (ema_vcap_x10) | [§13.3](#133-persistence--rtc-backup-registers-dr10--dr12-packed) |
+| `EMA_VALID_MAGIC` (8 біт у DR12) | `0x45` ('E', high byte) | — | `DR12[31:24]` | `DR10` (delta_t_x100), `DR12[15:0]` (vcap_x10) | [§13.3](#133-persistence--rtc-backup-registers-dr10--dr12-packed) |
 
 > Маркер `tree_did != 0` (захист DID у DR7) знято [FW.54 Вісь 2]: DID тепер деривується з UID на кожному boot ([§7](#-7-did-derivation-імя-з-кремнію)) — захищати в RTC нічого.
 
-> **DR12 packed format (FW.21):** `[valid:8 | count:8 | ema_vcap_x10:16]`. `valid == 0x45` (`EMA_VALID_MAGIC`, 'E') означає що EMA fields ініціалізовано та накопичено ≥1 семпл. При cold boot DR12 == 0 → `valid != 0x45` → EMA reset.
+> **DR12 packed format (FW.21):** `[valid:8 | count:8 | vcap_x10:16]`. `valid == 0x45` (`EMA_VALID_MAGIC`, 'E') означає що EMA fields ініціалізовано та накопичено ≥1 семпл. При cold boot DR12 == 0 → `valid != 0x45` → EMA reset.
 
 > **Чому різні маркери:** Lorenz (`"LZST"`) використовує цілий 32-бітний маркер у виділеному регістрі тому що `(0.0, 0.0, 0.0)` — валідний (хоч і нетиповий) стан атрактора, тому zero-check недостатній. EMA використовує 8-бітний sentinel у packed-регістрі через дефіцит DR-простору.
 
@@ -754,7 +754,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 > **Кенозис інженерії:** перш ніж претендувати на регістр — перевір, чи можна щільніше упакувати існуючий, або **звільнити** під-використаний/mis-allocated DR (§2.3.2 reclamation menu — ширина/частота-запису/durability-клас). STM32WLE5 (обидва корпуси) має ЛИШЕ 20 backup-регістрів (`DR0..DR19`); після `[SEC.10]` + `[FW.2]` (DR15 → CCM Frame Counter, freeze-contract) DR13/DR14 і в CCM-збірці DR16 зарезервовано FW.54 (⚖️ 2026-10-13, §2.3.2), тож без власника лишились лише **DR17/DR18 CCM-збірки** (FW.66 (Б) · S5, 2026-10-11); DR7 — маркер пробудження Standby. Реальні приклади того, як ми відмовилися від нового регістра на користь packing'у:
 >
 > - **`[SEC.10]` panic frame counter (uint16) → DR0[31:16]** — спакували поряд з `acoustic_events` у DR0[7:0]. Без packing'у пішов би DR15, і ми залишилися б без жодного резерву.
-> - **`[FW.21]` EMA `ema_vcap_x10` (max 55000 ≤ 2¹⁶) → DR12[15:0]** — спакували разом з `valid:8 | count:8`. Це звільнило DR11 під 3-й слот anti-pingpong (без packing'у `MESH_DID_CACHE_SIZE` упав би з 3 до 2).
+> - **`[FW.21]` EMA `vcap_x10` (max 55000 ≤ 2¹⁶) → DR12[15:0]** — спакували разом з `valid:8 | count:8`. Це звільнило DR11 під 3-й слот anti-pingpong (без packing'у `MESH_DID_CACHE_SIZE` упав би з 3 до 2).
 > - **`[ARCH.27]` Node Role flag → Flash, не RTC** — magic-word `"SOLD"`/`"PROV"` живе у Protected Flash sector (`FLASH_KEY_ADDR + 56`), бо при cold-boot/VBAT-loss роль не повинна змінюватися. RTC було б помилкою. Повний спец — **§1.11**.
 
 **Чек-листа ПЕРЕД тим, як просити регістр:**
@@ -1460,7 +1460,7 @@ Latency QEMU **не** міряє (не цикло-точний) — то кла�
 
 ## 📈 13. EMA (Exponential Moving Average) на Soldier — FW.21 🤖
 
-> **Cross-ref:** [`00_07` — FW.21](00_07_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + тести у `firmware/test/test_soldier_logic.c`)
+> **Cross-ref:** [`00_07` — FW.21](00_07_Action_Plan_Tracker) — ✅ реалізовано: фільтр живе в `firmware/common/ema_filter.h` (One-Home: його кличуть `firmware/soldier/main.c` і host-тести `firmware/test/test_soldier_logic.c`, а теплу гілку дзеркалить сервер — `Telemetry::EmaRecurrence`, §13.6)
 
 ### 13.1 Мета та контекст
 
@@ -1493,13 +1493,13 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 
 ### 13.3 Persistence — RTC Backup Registers DR10 + DR12 (packed)
 
-> **🔄 Дизайн уточнено під час імплементації (FW.21 fallback):** STM32WLE5 має лише 20 RTC backup регістрів (DR0..DR19). Оригінальна специфікація (DR24-DR26) фізично неможлива. Перша ітерація FW.21 звільнила 6 регістрів через `MESH_DID_CACHE_SIZE` 8→2 (DR8..DR9 mesh, DR10..DR12 EMA). Подальший аналіз показав: `ema_vcap_x10` має фізичний максимум **5500 × 10 = 55 000 ≤ 2¹⁶** і вкладається в **16 біт**, тому ми пакуємо його в low 16 біт DR12, звільняючи DR11 під 3-й mesh-слот. Поточна розкладка:
+> **🔄 Дизайн уточнено під час імплементації (FW.21 fallback):** STM32WLE5 має лише 20 RTC backup регістрів (DR0..DR19). Оригінальна специфікація (DR24-DR26) фізично неможлива. Перша ітерація FW.21 звільнила 6 регістрів через `MESH_DID_CACHE_SIZE` 8→2 (DR8..DR9 mesh, DR10..DR12 EMA). Подальший аналіз показав: `vcap_x10` має фізичний максимум **5500 × 10 = 55 000 ≤ 2¹⁶** і вкладається в **16 біт**, тому ми пакуємо його в low 16 біт DR12, звільняючи DR11 під 3-й mesh-слот. Поточна розкладка:
 >
 > | DR | Власник |
 > |----|---------|
 > | DR8, DR9, **DR11** | `recent_mesh_dids[3]` (3 слоти, fallback від 8→3) |
-> | DR10 | `ema_delta_t_x100` (full uint32) |
-> | **DR12** | `[valid:8 \| count:8 \| ema_vcap_x10:16]` (packed) |
+> | DR10 | `delta_t_x100` (full uint32) |
+> | **DR12** | `[valid:8 \| count:8 \| vcap_x10:16]` (packed) |
 >
 > (DR15..DR19 пізніше зайнято FW.2 Frame Counter / Lorenz-станом — канонічна розкладка §2; DR13/DR14, що тримали TinyML-пороги до HW.30, і DR16 CCM-збірки з 2026-10-13 зарезервовано FW.54, у CCM-збірці без власника — DR17/DR18; DR7, звільнений FW.54, з 2026-10-11 — маркер пробудження Standby.)
 
@@ -1508,118 +1508,45 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 - Глибші ring-и (4+ унікальних реле) захищаються через TTL (DEFAULT_TTL=3, PANIC_TTL=5).
 - При 100 деревах у кластері частота 4-relay колізій вкрай низька (TTL=3 уже обмежує глибину); ризик прийнятний.
 
-**Розкладка DR10 + DR12:**
+**Розкладка DR10 + DR12** (поля `SilkenEma`, `firmware/common/ema_filter.h`):
 | RTC Reg | Поле | Тип | Призначення |
 |---------|------|-----|-------------|
-| DR10 | `ema_delta_t_x100` | uint32 | EMA delta_t × 100 (fixed-point 0.01 с, full 32 bits) |
-| DR12 [31:24] | `ema_valid` | uint8 | Magic `0x45` ('E') — маркер ініціалізованого фільтра |
-| DR12 [23:16] | `ema_count` | uint8 | Saturating counter @ 255 (warmup після ≥ `EMA_WARMUP_CYCLES`) |
-| DR12 [15:0] | `ema_vcap_x10` | uint16 | EMA vcap × 10 (fixed-point 0.1 мВ; max 55000 ≤ 2¹⁶) |
+| DR10 | `delta_t_x100` | uint32 | EMA delta_t × 100 (fixed-point 0.01 с, full 32 bits) |
+| DR12 [31:24] | `valid` | uint8 | Magic `0x45` ('E') — маркер ініціалізованого фільтра |
+| DR12 [23:16] | `count` | uint8 | Saturating counter @ 255 (warmup після ≥ `EMA_WARMUP_CYCLES`) |
+| DR12 [15:0] | `vcap_x10` | uint16 | EMA vcap × 10 (fixed-point 0.1 мВ; max 55000 ≤ 2¹⁶) |
 
-**Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `ema_valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up()`. Споживач ([E.63] метаболізм: `delta_t`→`growth_points`) у ці 3 цикли дістає **дві РІЗНІ відповіді на дві різні відсутності**: `delta_t` = `DELTA_T_UNKNOWN_S` (сентинел `0` → GP=0), `vcap` = nominal 3300 мВ. Після прогріву — з EMA: **передавання у mruby `calculate_state()` wired** (FW.49-S1: `delta_t_for_lorenz = EMA_Get_DeltaT_Sec()` при `EMA_Is_Warmed_Up()`). 🔴 **Асиметрія навмисна й несуча:** метаболізм не виміряно взагалі, тож будь-яке число тут = вигаданий GP (`BASELINE_DELTA_T_S` давав рівно `GP_HOMEO_MAX` — максимум балів за відмову міряти, [ARCH.102](00_07_Action_Plan_Tracker)); шину живлення натомість стабілізує BQ25570, тож 3300 — не здогад, а специфікація. silicon-residual: на незатактованому календарі застигла мітка RTC дає `delta_t` = 0, тобто сентинел, кожен цикл (FW.49 bench; механізм — [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). `SilkenNet::Attractor` backend-mirror вже E.63-compliant (β фіксований, метаболізм → `growth_points`).
+**Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up`. Споживач ([E.63] метаболізм: `delta_t`→`growth_points`) у ці 3 цикли дістає **дві РІЗНІ відповіді на дві різні відсутності**: `delta_t` = `DELTA_T_UNKNOWN_S` (сентинел `0` → GP=0), `vcap` = nominal 3300 мВ. Після прогріву — з EMA: **передавання у mruby `calculate_state()` wired** (FW.49-S1: `delta_t_for_lorenz` = `EMA_Get_DeltaT_Sec` при `EMA_Is_Warmed_Up`, крізь селектор `Silken_Wake_Lorenz_Delta_T`). 🔴 **Асиметрія навмисна й несуча:** метаболізм не виміряно взагалі, тож будь-яке число тут = вигаданий GP (`BASELINE_DELTA_T_S` давав рівно `GP_HOMEO_MAX` — максимум балів за відмову міряти, [ARCH.102](00_07_Action_Plan_Tracker)); шину живлення натомість стабілізує BQ25570, тож 3300 — не здогад, а специфікація. silicon-residual: на незатактованому календарі застигла мітка RTC дає `delta_t` = 0, тобто сентинел, кожен цикл (FW.49 bench; механізм — [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). `SilkenNet::Attractor` backend-mirror вже E.63-compliant (β фіксований, метаболізм → `growth_points`).
 
 ### 13.4 Firmware — реалізація
 
-```c
-// firmware/soldier/main.c — секція 1.10 (стиль матчить FW.6 Lorenz state)
+Один дім фільтра — `firmware/common/ema_filter.h`: стан `SilkenEma` (`delta_t_x100` · `vcap_x10` · `valid` · `count`), `EMA_Update` (холодна гілка — EMA = зразок; тепла — `(2·x + 8·EMA) / 10` у цілих ×100 / ×10), `EMA_Feed` (сентинел «не виміряно» у фільтр не йде, [ARCH.102](00_07_Action_Plan_Tracker)), гетери, `EMA_Is_Warmed_Up` і слово DR12 (`EMA_Pack_Dr12` / `EMA_Restore`; без маркера — холодний стан). ⛔ **Коду фільтра в каноні не тримаємо:** копія не компілюється й розходиться з прошивкою мовчки (виміряно 2026-11-03: копія фази SENSE не мала гарда сентинела ARCH.102, а BOOT стояв не на своєму місці в порядку відновлення; той самий клас для host-тестів — гоча `firmware` #19). Читай заголовок.
 
-#define EMA_ALPHA_NUM     2       // α = 2/10 = 0.2
-#define EMA_ALPHA_DEN     10
-#define EMA_VALID_MAGIC   0x45    // 'E' — маркер ініціалізованого фільтра
-#define EMA_WARMUP_CYCLES 3
+`firmware/soldier/main.c` тримає лише стан `soldier_ema` і три точки його життя: **BOOT** (Фаза 0) — `EMA_Restore` з DR10/DR12 одразу після відновлення mesh-кешу (⚠️ DR11 належить `recent_mesh_dids[2]`, §2); **SENSE** (Фаза 1) — `EMA_Feed(&soldier_ema, delta_t_seconds, vcap_voltage, DELTA_T_UNKNOWN_S)` після зчитування `vcap_voltage`; **SAVE** (Фаза 5, перед сном) — DR10 і `EMA_Pack_Dr12` одразу після збереження mesh-кешу.
 
-uint32_t ema_delta_t_x100 = 0;
-uint32_t ema_vcap_x10     = 0;
-uint8_t  ema_valid        = 0;
-uint8_t  ema_count        = 0;
-
-static void EMA_Update(uint32_t raw_dt_sec, uint16_t raw_vcap_mv) {
-    uint32_t raw_dt_x100  = raw_dt_sec * 100u;
-    uint32_t raw_vcap_x10 = (uint32_t)raw_vcap_mv * 10u;
-
-    if (ema_valid != EMA_VALID_MAGIC || ema_count == 0) {
-        ema_delta_t_x100 = raw_dt_x100;
-        ema_vcap_x10     = raw_vcap_x10;
-        ema_valid        = EMA_VALID_MAGIC;
-        ema_count        = 1;
-        return;
-    }
-
-    ema_delta_t_x100 = (EMA_ALPHA_NUM * raw_dt_x100 +
-                        (EMA_ALPHA_DEN - EMA_ALPHA_NUM) * ema_delta_t_x100) / EMA_ALPHA_DEN;
-    ema_vcap_x10     = (EMA_ALPHA_NUM * raw_vcap_x10 +
-                        (EMA_ALPHA_DEN - EMA_ALPHA_NUM) * ema_vcap_x10) / EMA_ALPHA_DEN;
-    if (ema_count < 255) ema_count++;
-}
-
-static inline uint32_t EMA_Get_DeltaT_Sec(void) { return ema_delta_t_x100 / 100u; }
-static inline uint16_t EMA_Get_Vcap_Mv  (void) { return (uint16_t)(ema_vcap_x10 / 10u); }
-static inline uint8_t  EMA_Is_Warmed_Up(void) {
-    return (ema_valid == EMA_VALID_MAGIC) && (ema_count >= EMA_WARMUP_CYCLES);
-}
-```
-
-**BOOT — відновлення EMA з RTC** (одразу після відновлення Lorenz state):
-
-```c
-// [FW.21] ВІДНОВЛЕННЯ EMA-ФІЛЬТРА (RTC DR10 + DR12 packed)
-// УВАГА: DR11 НЕ ЧЕПАЄМО — це recent_mesh_dids[2]. ema_vcap_x10 живе у low 16 біт DR12.
-#define EMA_VCAP_X10_MASK 0xFFFFu
-{
-    uint32_t ema_meta = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR12);
-    uint8_t  v        = (uint8_t)((ema_meta >> 24) & 0xFFu);
-    if (v == EMA_VALID_MAGIC) {
-        ema_delta_t_x100 = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR10);
-        ema_vcap_x10     = (uint32_t)(ema_meta & EMA_VCAP_X10_MASK); // НЕ DR11!
-        ema_valid        = v;
-        ema_count        = (uint8_t)((ema_meta >> 16) & 0xFFu);
-    }
-}
-```
-
-**SAVE — збереження EMA перед STOP2** (одразу після збереження mesh DIDs):
-
-```c
-// УВАГА: DR11 належить recent_mesh_dids[2] (§2 canonical SSOT). НЕ перезаписуємо.
-HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR10, ema_delta_t_x100);
-HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR12,
-      ((uint32_t)ema_valid  << 24)
-    | ((uint32_t)ema_count  << 16)
-    | (ema_vcap_x10 & EMA_VCAP_X10_MASK));
-```
-
-**Інтеграція в Phase 1 (SENSE)** — викликається після зчитування `vcap_voltage`:
-
-```c
-HAL_ADC_Stop(&hadc);
-
-// [FW.21] Оновлюємо фільтр пульсу. Стан живе в RTC DR10-12, зчитано в Phase 0 (BOOT).
-EMA_Update(delta_t_seconds, vcap_voltage);
-```
-
-> Згладжені значення їдуть у mruby: прогрітий фільтр (`EMA_Is_Warmed_Up()`) віддає `EMA_Get_DeltaT_Sec()` у `calculate_state` замість сирого `delta_t` (§13.3; E.63 — вхід GP).
+> Згладжені значення їдуть у контракт: прогрітий фільтр віддає `EMA_Get_DeltaT_Sec` крізь селектор `Silken_Wake_Lorenz_Delta_T` (`firmware/common/wall_time.h`; до прогріву — сентинел), і в CCM-кадрі це те саме число, що в байтах EMA (§13.3; E.63 — вхід GP).
 
 ### 13.5 RAM Footprint
 
 | Компонент | RAM | Коментар |
 |-----------|-----|---------|
-| 4 globals (`ema_*`) | **10 байтів** SRAM (2 × uint32 + 2 × uint8) | Статичні, BSS-розміщення |
-| 3 RTC регістри (DR10-12) | 12 байтів у RTC backup domain (≠ SRAM) | Survives STOP2 + VBAT (поки RTC живиться) |
+| Стан `soldier_ema` (`SilkenEma`) | **12 байтів** SRAM (2 × uint32 + 2 × uint8 + 2 байти вирівнювання структури — `arm-none-eabi-nm` на образі mini) | Статичний, BSS |
+| 2 RTC регістри (DR10, DR12) | 8 байтів у RTC backup domain (≠ SRAM; DR11 — mesh, §2) | Survives STOP2 + VBAT (поки RTC живиться) |
 | Локальні в `EMA_Update` | ~16 байтів стек | Звільняються після виклику |
-| CPU code | ~250 байтів Flash | 4 функції + load/save inline |
-| **Net SRAM impact** | **10 байтів** | 0.015% від 64KB SRAM |
+| CPU code | ~250 байтів Flash | inline-функції `ema_filter.h` + load/save у `main.c` |
+| **Net SRAM impact** | **12 байтів** | 0.018% від 64KB SRAM |
 
 ### 13.6 Вплив на Backend
 
-**TelemetryLog:** поле `metabolism_s` (`delta_t`) в payload залишається **raw** значенням (не EMA). EMA — тільки для внутрішнього використання firmware (Lorenz input). Це дозволяє backend:
-- Бачити реальний raw `delta_t` для діагностики
-- Самостійно рахувати EMA server-side якщо потрібно (через TimescaleDB continuous aggregates, E.37)
+**TelemetryLog:** поле `metabolism_s` (`delta_t`) лишається **raw** значенням (не EMA); EMA CCM-кадр несе окремим полем `ema_delta_t_s` (абзац нижче). Пара дає backend:
+- реальний raw `delta_t` для діагностики й частки Σ SEC.42 (б);
+- звірку EMA кадру з потоком сирих — друга вісь SEC.42 (б): `Telemetry::EmaRecurrence` дзеркалить теплу гілку `EMA_Update` і судить пари кадрів дерева із суміжним FC; спостереження без алерту й грошової дії (⊕ SEC.42 у [`03_05 §2.4`](03_05_Hardware_Symmetric_Crypto_and_Security)), механізм і стеля — картка `TelemetryUnpackerService` у [`04_02`](04_02_Business_Logic_and_Services).
 
 **Dual Computation Integrity (метаболічний канал):** [E.63] FW.5 B+ β-пертурбацію **реверсовано** — raw `delta_t` більше не входить у Z. Wire несе **raw** `delta_t` (діагностика + server-side EMA), а `growth_points` пакуються з **EMA-згладженого**. **✅ Розрив закрито wire-rev2.1 (30B CCM, founder 2026-07-03, E.63 гейт (г)):** wire ДОДАТКОВО несе `ema_delta_t_s` (bytes 20..21) за контрактом **«wire = вхід GP»** — Soldier сатурує EMA до wire-u16 ПЕРЕД викликом mruby (Фаза 3, до гілкування — VM_ERROR-кадр теж несе чесне поточне значення) і пакує ТЕ САМЕ число → backend `Attractor.expected_homeostasis_gp(ema)` перераховує GP **stateless байт-точно**. У CCM-ері перерахунок вирішує бали сам — `ccm_growth_points` (⚖️ «утримання» GP, FW.66 (Б), застосовано 2026-10-11, [`03_04 §7.3`](03_04_mruby_Lorenz_Attractor)): заява пристрою, що розійшлась, лишає кадр без балів і лічиться `silkennet_gp_conformance_mismatch_total`; структурний band-check `check_metabolic_divergence!` лишається для ECB-шляху (ema відсутній, observational). Wire-дім + ухвала — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security); трекер — [`00_07` — E.63](00_07_Action_Plan_Tracker).
 
 ### 13.7 Тести (`firmware/test/test_soldier_logic.c` — секція FW.21)
 
-10 host-based тестів (компілюються x86 gcc, без ARM toolchain):
+Host-тести (x86 gcc, без ARM toolchain) судять сам `firmware/common/ema_filter.h`, не його копію:
 
 | # | Тест | Перевірка |
 |---|------|----------|
@@ -1633,5 +1560,8 @@ EMA_Update(delta_t_seconds, vcap_voltage);
 | 8 | `test_ema_no_overflow_at_max_inputs` | delta_t=86400s (24h), vcap=5500mV — fixed-point не переповнюється |
 | 9 | `test_ema_rtc_save_load_roundtrip` | Save до DR10-12 → wipe RAM → load назад → значення збігаються |
 | 10 | `test_ema_rtc_first_boot_no_magic` | Порожній RTC → load повертає cold state, не warmed up |
+| 11 | `test_ema_feed_skips_unmeasured` | Сентинел «не виміряно» стану не змінює — ні холодного, ні теплого (ARCH.102) |
+| 12 | `test_ema_golden_wire_sequence` | Golden-послідовність прогрів · сентинел · сатурований сирий — її читає звідси `spec/services/telemetry/ema_recurrence_spec.rb` (паритет із серверним дзеркалом) |
+| 13 | `test_ema_warm_step_pins` | Піни теплого кроку ×100 для серверного дзеркала (читає той самий спек), з межею зрізання дроту й стелею 7 діб |
 
-**Результат:** ✅ 102 passed (10 EMA tests + оновлений mesh-test набір під 3 слоти: `test_mesh_3_slots_all_known`, `test_mesh_4th_evicts_oldest`, `test_mesh_pingpong_scenario`).
+Поруч — mesh-тести під 3 слоти (`test_mesh_3_slots_all_known`, `test_mesh_4th_evicts_oldest`, `test_mesh_pingpong_scenario`).
