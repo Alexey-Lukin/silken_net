@@ -69,7 +69,7 @@
   here is not proof that a real pair mates.
 - **Graded gyroid (v2, SHIPPED)**: own SDF, **NOT** LEAP `ImplicitModular` (`FunctionalScaleTrafo`
   is a hard-coded Z-demo, not radial; LatticeLibrary upstream is DORMANT — our pin IS `HEAD main`, so
-  re-check it by `git ls-remote`, never by age; the one that IS behind is `LEAP71_ShapeKernel` — skill
+  re-check it by `git ls-remote`, never by age; the one that MOVES is `LEAP71_ShapeKernel`, and its bumps go through skill
   `dependency-update`). Three CEM-driven axes
   in `Zone1Anode`: `GradedCartesianGyroid` (continuous period+wall taper) + `ZonedGyroid` (stepped
   zones). Pick by goal — continuous-gentle (≤~0.8× period ratio — a POROSITY bound only; its cell-shape half was the phase's z·k′(r) term, which sheared the pre-verdict field by height until ⚖️ `00_07` HW.33 (в) 2026-10-22 gave the part ONE axial period, the rim's — measure with `cellshape`, gotcha #5), `GyroidWallParamRim`
