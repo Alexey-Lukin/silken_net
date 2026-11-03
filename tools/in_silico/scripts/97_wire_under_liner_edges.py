@@ -99,7 +99,9 @@ KH_MAX = 15.0            # above it the 6×6 system loses its digits (e^{kh}); t
 KH_TAIL = 1e-4
 PADS_MM = (1.0, 2.0)     # zero padding of the field: the transmitted traction decays over ~h, asserted on two paddings
 OFFSETS_UM = (0, 30, 35, 40, 45, 50, 75, 100)   # coaxial · the band inside ⌀0.10 where 92's mouth/root ratio peaks · its limit · beyond
-K_READINGS = (0.388, 1.0)   # 86's threshold on Ta at ⌀0.10 (a different path, so a reading, not a comparison) · a perfect seam
+K_READINGS = (0.388, 1.0)   # the display of 86's Ta requirement at ⌀0.10 this reading was taken at (arithmetic 0.38831,
+#                             shown 0.389 since ⊕ 2026-11-03, 01_01 §1.4; a different path, so a reading, not the threshold)
+#                             · a perfect seam
 BASES = m91.BASES
 WORKERS = 2
 

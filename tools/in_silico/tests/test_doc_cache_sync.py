@@ -214,6 +214,23 @@ def _up4(x: float) -> float:
     return math.ceil(round(x * 1e4, 9)) / 1e4
 
 
+def _up3(x: float) -> float:
+    """A requirement «k ≥ X» rounded UP to three decimals (in-silico §When Modifying #43)."""
+    return math.ceil(round(x * 1e3, 9)) / 1e3
+
+
+def _sod86(d: dict, branch: str, geo: int = 0) -> tuple:
+    """86's own Soderberg on its OWN cached inputs, for the alloy it names binding at a branch: (SF, k) unrounded — its
+    cache keeps k to 4 and SF to 3 decimals, too coarse to round directionally from (in-silico §When Modifying #43 ⊕)."""
+    gk = list(d["by_geometry"])[geo]
+    g, br = d["by_geometry"][gk], d["branches"][branch]
+    r = g["by_alloy"][br["by_geometry"][gk]["binding_alloy"]]
+    m = next(p["mean_MPa"] for p in r["by_offset"] if p["offset_um"] == br["radial_offset_budget_um"])
+    room = 1.0 / d["inputs"]["sf_target"] - m / r["yield_MPa"]
+    sf = 1.0 / (g["amplitude_MPa"] / r["endurance_MPa"] + m / r["yield_MPa"])
+    return sf, (g["amplitude_MPa"] / (r["endurance_MPa"] * room) if room > 0 else None)
+
+
 def _up0(x: float) -> float:
     """A ceiling «≤ X» or a requirement «must have lost X %» rounded UP to a whole number (#43)."""
     return float(math.ceil(round(x, 9)))
@@ -1849,10 +1866,42 @@ CHECKS += [
     #    hand the verdict a price nobody computed.
     *[(f"coaxiality, {branch} {what} → coaxiality_allocation.json", SUMMARY,
        rf"\| {re.escape(label)} \|" + "".join(r" [^|]*\|" for _ in range(k)) + rf" \*\*{N}\*\* \|",
-       "mechanical/coaxiality_allocation.json", lambda d, b=branch, key=key: d["branches"][b]["by_geometry"][next(iter(d["by_geometry"]))][key], tol)
+       "mechanical/coaxiality_allocation.json", res, tol)
       for branch, label in (("tight", "tight ⌀0.04"), ("loose_50", "loose ⌀0.10"), ("loose_100", "loose ⌀0.20"))
-      for k, (what, key, tol) in enumerate((("mean", "mean_MPa", 0.05), ("wire SF", "sf_wire_binding", 0.005),
-                                           ("seam k", "k_break_even_binding", 0.0005)))],
+      for k, (what, res, tol) in enumerate((
+          ("mean", (lambda b: lambda d: d["branches"][b]["by_geometry"][next(iter(d["by_geometry"]))]["mean_MPa"])(branch), 0.05),
+          # a floor DOWN and a requirement UP, exactly, from 86's own arithmetic (⚖️ founder 2026-11-03, 01_01 §1.4 ⊕)
+          ("wire SF", (lambda b: lambda d: _down2(_sod86(d, b)[0]))(branch), 0.0),
+          ("seam k", (lambda b: lambda d: _up3(_sod86(d, b)[1]))(branch), 0.0)))],
+    ("coaxiality, the flip — loose ⌀0.10 over tight", SUMMARY, rf"the seam must carry by {N} % and leaves the wire",
+     "mechanical/coaxiality_allocation.json", lambda d: round((_sod86(d, "loose_50")[1] / _sod86(d, "tight")[1] - 1) * 100, 1), 0.0),
+    *[(f"coaxiality, lock window shallow end, {b} → coaxiality_allocation.json", SUMMARY, pat,
+       "mechanical/coaxiality_allocation.json", (lambda bb: lambda d: _up3(_sod86(d, bb, geo=1)[1]))(b), 0.0)
+      for b, pat in (("tight", rf"every branch is softer \(`k` {N} · [\d.]+ · [\d.]+\)"),
+                     ("loose_50", rf"every branch is softer \(`k` [\d.]+ · {N} · [\d.]+\)"),
+                     ("loose_100", rf"every branch is softer \(`k` [\d.]+ · [\d.]+ · {N}\)"))],
+    ("coaxiality, the acceptance threshold under the seam table", SUMMARY, rf"cannot be accepted against {N} on Ta in any corner",
+     "mechanical/coaxiality_allocation.json", lambda d: _up3(_sod86(d, "loose_50")[1]), 0.0),
+    # the ⊕ of 2026-11-03 (⚖️ founder) beside the ratified «Співвісність» — the preserved «≥ 0.388» keeps no pin
+    *[(f"coaxiality ⊕ 2026-11-03 in 01_01 §1.4, {what}", COAXIAL, pat, "mechanical/coaxiality_allocation.json", res, 0.0)
+      for what, pat, res in (
+          ("tight UP", rf"вгору — \*\*{N}\*\* → \*\*[\d.]+\*\*, на", lambda d: _up3(_sod86(d, "tight")[1])),
+          ("⌀0.10 UP", rf"вгору — \*\*[\d.]+\*\* → \*\*{N}\*\*, на", lambda d: _up3(_sod86(d, "loose_50")[1])),
+          ("the rise", rf"\*\*, на {N} % \(арифметика `86`",
+           lambda d: round((_up3(_sod86(d, "loose_50")[1]) / _up3(_sod86(d, "tight")[1]) - 1) * 100, 1)),
+          ("the acceptance threshold", rf"Ta нижче {N} не приймається", lambda d: _up3(_sod86(d, "loose_50")[1])))],
+    # the ⊕'s own 5-digit arithmetic sits on `68`'s display-rounded inputs, whose band the ⊕ itself declares (±0.0002 at
+    # ⌀0.10, ±0.0001 tight) — pinned within THAT band, so the `68` → `86` re-run moves them without forcing a rewrite of a
+    # ratified form; the 3-decimal UP displays above clear the band and stay exact (00_07 HW.43, the `68` leg)
+    ("coaxiality ⊕ 2026-11-03 in 01_01 §1.4, tight arithmetic", COAXIAL, rf"арифметика `86` {N} · [\d.]+ на закешованих",
+     "mechanical/coaxiality_allocation.json", lambda d: round(_sod86(d, "tight")[1], 5), 1e-4),
+    ("coaxiality ⊕ 2026-11-03 in 01_01 §1.4, ⌀0.10 arithmetic", COAXIAL, rf"арифметика `86` [\d.]+ · {N} на закешованих",
+     "mechanical/coaxiality_allocation.json", lambda d: round(_sod86(d, "loose_50")[1], 5), 2e-4),
+    ("coaxiality ⊕ 2026-11-03 in 01_01 §1.4, what «≥ 0.388» accepted", COAXIAL, rf"приймає відповідь вендора 0\.3880–{N}",
+     "mechanical/coaxiality_allocation.json", lambda d: math.floor(round(_sod86(d, "loose_50")[1] * 1e4, 9)) / 1e4, 2e-4),
+    ("coaxiality ⊕ 2026-11-03 in 01_01 §1.4, the gentle corner's hot preload", COAXIAL,
+     rf"тепловим навантаженням `102` \({N} Н\)", "mechanical/wire_liner_shear_lag.json",
+     lambda d: round(d["seam_by_alloy"]["Ta"]["hot_preload"]["F_N_gentle_nominal_relaxed_mu_low"], 2), 0.0),
     # ── HW.43 stem sway → load through the pogo pins (script 87, 2026-10-13) ──
     # ⛔ The per-gram ratio is what the spring's amplitude is read from once the drawing and the scale give τ_m and m;
     #    a SUMMARY figure drifted off the cache would hand framing B of 59 a fraction nobody computed.
@@ -6455,7 +6504,7 @@ CHECKS += [
                 if _z(d)["seam_on_102_closed_form"]["Ta"]["state1"]["hot_preload"] > _z(d)["seam_on_102_closed_form"]["Ta"]["state1"]["sway"]
                 else float("nan")), 0.0),
     ("z3 Ta 86 → 103", SUMMARY, rf"not acceptable against {N} at a share of zero", SHARE,
-     lambda d: round(_z(d)["seam_on_102_closed_form"]["Ta"]["state1"]["sway"], 3), 0.0),
+     lambda d: _up3(_z(d)["seam_on_102_closed_form"]["Ta"]["state1"]["sway"]), 0.0),   # ⊕ 2026-11-03, 01_01 §1.4
     ("z3 Ta s2 preload → 103", SUMMARY, rf"preload in state 2 not below {N} N/mm", SHARE,
      lambda d: math.floor(_z(d)["readings"]["state2"]["ta_k1_hot_preload"]["no_below"]), 0.0),
     ("z3 Ta s3 stiff sway → 103", SUMMARY, rf"it needs at least {N} on the sway alone and [\d.]+\s+with the preload at the stiff bond", SHARE,
