@@ -165,6 +165,11 @@ esac
 # removes. For a Write the «before» is the file on disk. ⚠️ Ceiling, named: an item MOVED
 # between sections by two edits fires on the cut — a move is not an archive, and telling
 # the two apart needs the second edit, which this hook never sees together with the first.
+# ⚠️ Second ceiling, named 2026-11-03: closing a LEG (a `- [ ]` line) is not an archive act,
+# so this branch stays silent — and a foreign `🔗` leg waiting on exactly that leg is woken
+# only by reading (`ssot-maintenance` §«Closing ANY item», sweep (2); cementation rule 24).
+# The leg sits under its item's `####` heading, which the edit usually does not carry, so
+# a branch for it would have to resolve the enclosing item from the file, not from the edit.
 if [[ "$class" == "tracker" ]]; then
   new_text=$(printf '%s' "$input" | jq -r '.tool_input.new_string // .tool_input.content // empty' 2>/dev/null)
   if printf '%s' "$input" | jq -e '.tool_input | has("content")' >/dev/null 2>&1; then
