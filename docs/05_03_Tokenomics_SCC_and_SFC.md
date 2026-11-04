@@ -718,7 +718,7 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 | `SFC.batchMint()` | `BlockchainMintingService` | `MintCarbonCoinWorker` | `web3_critical` | 5 |
 | `SCC.slash()` | `BlockchainBurningService` | `BurnCarbonTokensWorker` | `critical` | 5 |
 | TX підтвердження | — | `BlockchainConfirmationWorker` | `web3_critical` | 10 |
-| Tokenomics eval | — | `TokenomicsEvaluatorWorker` | `default` | — |
+| Tokenomics eval | — | `TokenomicsEvaluatorWorker` | `web3_emission` | — |
 | Events indexing | `TheGraph::QueryService` | — | — | — |
 | Rollback | `MintingRollbackService` | — | — | — |
 

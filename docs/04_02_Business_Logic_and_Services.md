@@ -839,7 +839,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 
 ## ⚙️ 11. Реєстр Воркерів (Workers Registry)
 
-### Пріоритети черг (9 рівнів, строге дотримання)
+### Пріоритети черг (10 рівнів, строге дотримання)
 
 | Черга | Порядок (Strict) | Призначення |
 |-------|-----------------|-------------|
@@ -847,11 +847,12 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | `alerts` | 2 | EWS тривоги, супутникова верифікація, **лист про critical-тривогу** (`AlertMailer`) |
 | `critical` | 3 | Slashing, страхові виплати, реанімація екосистеми |
 | `downlink` | 4 | команди актуаторів |
-| `default` | 5 | Агрегація, перевірка контрактів, токеноміка, **усі ActiveJob-джоби** (Turbo-броадкасти · ActiveStorage · `PasswordMailer`) |
+| `default` | 5 | Агрегація, перевірка контрактів, **усі ActiveJob-джоби** (Turbo-броадкасти · ActiveStorage · `PasswordMailer`) |
 | `web3_critical` | 6 | Blockchain confirmation, мінтинг, IoTeX, Chainlink |
 | `web3` | 7 | peaq DID, Celo, Solana, Puro.earth |
 | `web3_low` | 8 | Ethereum L1, Hadron, Governance Parameter Sync |
-| `low` | 9 (найнижчий) | Аудит, Filecoin |
+| `web3_emission` | 9 | Голова мінт-DAG: `TokenomicsEvaluator` → `EvaluateTreeBatch` (`lock_and_mint!`) + зонд `MintStallProbe` — найнижча черга грошового процесу (ARCH.59, ⚖️ 2026-11-04 — межа й підстава в [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)) |
+| `low` | 10 (найнижчий) | Аудит, Filecoin |
 
 > **Примітка:** Sidekiq `:strict: true` дренує черги послідовно згори-донизу. Числа — порядок дренування, не ваги.
 
@@ -876,7 +877,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 >
 > ⚠️ Сюїта до цієї осі сліпа за побудовою: `spec/callbacks/*` викликають `on_success` РУКАМИ, конструюючи шим-клас `Sidekiq::Batch::Status.new(…)` — перевірено реалізацію колбека, ніколи його ВИКЛИК. Той самий маскувальник, що вже одного разу тримав тут мертвий `sidekiq_retries_exhausted` під `retry: false`.
 >
-> 3. **[OSS — ліцензії НЕ потребує]** Розщепити Sidekiq на 4 процеси з queue-pinning (uplink окремо, web3_* окремо, critical/alerts/downlink окремо, default/low окремо) — single-process × 15 threads не витягне peak ~ N_trees / 3600 jobs/sec. Механізм рядовий (`sidekiq -q`, капсули), тож крок виконуваний сьогодні; чекає він не гема, а власного тригера — [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy). ⚠️ **Периметр цього кроку РОЗХОДИТЬСЯ з домом рішення, і жоден із двох домів цього не позначав** (виміряно 2026-08-26): [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy) приписує **два** процеси (money `critical, web3_critical, web3, alerts` ⊥ intake `uplink, downlink, default, …`), тут названо **чотири** з іншою розкладкою — `alerts` їде з `critical/downlink`, а не з money. Різниця не косметична: дім тримає `alerts` у money-процесі СВІДОМО, бо тією чергою їде єдиний формальний лист про critical-тривогу [ARCH.60], і в 4-процесній формі він знову опиняється за межами money-ізоляції. Яка розкладка чинна — ⚖️ у [`00_07`](00_07_Action_Plan_Tracker) ARCH.59; доти дім рішення = [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy), а це число — його дзеркало, правити там.
+> 3. **[OSS — ліцензії НЕ потребує]** Розщепити Sidekiq на ДВА процеси з queue-pinning за розкладкою [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy) (дзеркало, правити там) — single-process × 15 threads не витягне peak ~ N_trees / 3600 jobs/sec. Механізм рядовий (`sidekiq -q`, капсули), тож крок виконуваний сьогодні; чекає він не гема, а власного тригера — [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy). ⚖️ **Чотири процеси (форма, що стояла тут) відкинуто присудом founder 2026-11-04 разом із межею money-DAG:** ключі підписання розповзлися б на дві ролі, а MINTER опинився б у процесі з OTA-`downlink`; підстава, ціна й найслабша ланка — [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy).
 > 4. Увімкнути `super_fetch` (zero job-loss на SIGKILL/OOM) для `uplink`, `web3_critical`, `critical`.
 > 5. Увімкнути `reliable_push` у клієнті (захист enqueue-у від Redis failover).
 > 6. ✅ **ЗАКРИТО 2026-08-25 — приписану форму спростовано виміром, номер лишається зайнятим** (на нього посилаються сусідні кроки). Відкинута форма — «збільшити Redis pool: `pool_size = concurrency + 5` (зараз буфер = 0)»: премісу купував Sidekiq ≤6, де пул був ОДИН на процес. У 8.1.7 їх **два**, і гем виводить обидва сам: капсульний = `:concurrency`, internal — окремий (heartbeat · `sidekiq-scheduler` · Web UI). Тобто буфер, заради якого просили `+5`, уже існує й стоїть окремо, а «буфер = 0» вимірювало не ту величину. Наш явний `size:` ішов через `.merge(@redis_config)` і перекривав **обидва**: прибивав капсульний до константи незалежно від `:concurrency` **і роздував internal**. 🔴 Приписана форма дефекту не лікувала, а пересувала: при `:concurrency` вищій за константу капсульний пул лишався **меншим за concurrency** — тобто `+5` зберігав саме те розчеплення, проти якого ставився, і найгостріше воно на кроці 3, який розщеплює процеси per-queue. Лік — **зняти `size:` із серверного блоку** (`config/initializers/sidekiq.rb`): стеля стала похідною, з'єднань на job-процес 30 → 25. Носій — `spec/initializers/sidekiq_spec.rb` (капсульний пул слідує `:concurrency` ⊥ internal дорівнює гемовому — другий пін порівнює з конфігом БЕЗ наших опцій, щоб не тримати число гема третім домом). ⚠️ Клієнтський `size:` лишається СВІДОМО й це не виняток із правила, а інший випадок: капсул у клієнтському процесі немає, тож вивести стелю Sidekiq'у нізвідки — вона = треди Puma + запас на Web UI (дзеркало `config/database.yml`, але БЕЗ `PUMA_MAX_IO_THREADS`: io-позначених шляхів нуль [ARCH.80], а Redis у нас managed, тож стеля з'єднань не безкоштовна).
@@ -1667,7 +1668,7 @@ Sidekiq Cron 01:00 UTC
 
 ```
 Sidekiq Cron (кожну годину)
-  └─→ TokenomicsEvaluatorWorker [default]
+  └─→ TokenomicsEvaluatorWorker [web3_emission]
         └─→ Sidekiq::Batch → EvaluateTreeBatchWorker [default] ×N
               └─→ wallet.lock_and_mint!
                     └─→ MintCarbonCoinWorker [web3_critical]

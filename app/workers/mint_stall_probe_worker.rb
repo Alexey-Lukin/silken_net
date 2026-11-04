@@ -32,10 +32,13 @@
 class MintStallProbeWorker
   include Sidekiq::Job
 
-  # `low` — прилад спостережності: він не сміє тіснити ані uplink, ані money-черги.
+  # `web3_emission` [ARCH.59, ⚖️ 2026-11-04] — прилад спостережності: він не сміє тіснити
+  # ані uplink, ані money-черги — і не тіснить: це НАЙНИЖЧА черга грошового процесу, а
+  # порядок strict. Живе в тому самому процесі, що й голова, яку міряє: у `low` intake-
+  # процесу він голодував би першим, поки голова мінту жива.
   # `retry: 1` — пропущений зріз не втрачає даних (наступний за годину), тож
   # наполегливий ретрай купував би лише шум.
-  sidekiq_options queue: "low", retry: 1
+  sidekiq_options queue: "web3_emission", retry: 1
 
   def perform
     depth = TokenomicsEvaluatorWorker.eligible_wallets.count

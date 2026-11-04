@@ -277,7 +277,7 @@ IoT-телеметрія (мільйони дерев, пакети щогоди
 
 | Підсистема | Сховище | Префікс ключів | ENV змінна | Конфігурація | TTL / Eviction |
 |-----------|---------|----------------|------------|--------------|----------------|
-| **Sidekiq** (9 черг, scheduler) | Upstash Redis | — (власні імена; namespace неможливий у Sidekiq 7+) | `REDIS_URL` | `config/initializers/sidekiq.rb` | Persistent (no eviction) |
+| **Sidekiq** (черги — `config/sidekiq.yml`, scheduler) | Upstash Redis | — (власні імена; namespace неможливий у Sidekiq 7+) | `REDIS_URL` | `config/initializers/sidekiq.rb` | Persistent (no eviction) |
 | **Kredis** (distributed locks) | Upstash Redis | `silken:*` | `REDIS_URL`; override → окремий інстанс `KREDIS_REDIS_URL` [B1] | `config/redis/shared.yml` + `config/initializers/kredis.rb` | 1–300 sec (lock TTL) |
 | **Rack::Attack** (rate limiting) | Upstash Redis | `rack-attack:*` | `REDIS_URL`; override → окремий інстанс `RACK_ATTACK_REDIS_URL` | `config/initializers/rack_attack.rb` | 10 min |
 | **Rails.cache** (Solid Cache) | PostgreSQL | — | — | `config/cache.yml` + `config/environments/production.rb` | ⚠️ **Розмірна стеля, НЕ вікова** — живе лише `max_size` (256 MB, LRU); `max_age` у `cache.yml` закоментований, тож віку запису ніхто не обмежує |

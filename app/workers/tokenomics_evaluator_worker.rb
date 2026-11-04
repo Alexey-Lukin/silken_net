@@ -13,7 +13,11 @@ class TokenomicsEvaluatorWorker
   # на тому самому гаманці бачить уже заблоковані бали й не мінтить удруге.
   # ⚠️ Що перетин справді коштує — зайві чанки й другий батч-колбек, тобто РОБОТА,
   # не гроші. Різниця несуча: без неї цей напис читався б як «money-path без гарда».
-  sidekiq_options queue: "default", retry: 3, unique_for: 60.minutes
+  # ⚖️ [ARCH.59, founder 2026-11-04] `web3_emission` — найнижча черга ГРОШОВОГО процесу:
+  # голова мінт-DAG живе по той бік межі розщеплення, що й мінт, а не на intake-боці
+  # (`default`), де під голодом вона падала б МОВЧКИ — `:pending` не народжується, тож
+  # mint-SLO (`attempts > 0`) не бачить нічого. Межа й розкладка — `06_08 §2.5`.
+  sidekiq_options queue: "web3_emission", retry: 3, unique_for: 60.minutes
 
   # Дефолт конверсії: 1 SCC (Silken Carbon Coin) = 10,000 балів гомеостазу.
   # Живе значення DAO-керується → .emission_threshold (GOV.1 read-path).

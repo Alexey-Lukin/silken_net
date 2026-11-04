@@ -153,7 +153,7 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
       "id": 101,
-      "title": "⚙️ Sidekiq Queues (9 черг)",
+      "title": "⚙️ Sidekiq Queues",
       "type": "row"
     },
     {

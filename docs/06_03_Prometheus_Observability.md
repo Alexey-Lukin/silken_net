@@ -222,8 +222,8 @@ end
 
 | Metric Name | Ruby Constant | Labels | Де оновлюється | Бізнес-значення |
 |-------------|--------------|--------|----------------|-----------------|
-| `silkennet_sidekiq_queue_size` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_SIZE` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Поточна кількість задач у кожній Sidekiq черзі |
-| `silkennet_sidekiq_queue_latency_seconds` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Вік найстарішої задачі в черзі (секунди) |
+| `silkennet_sidekiq_queue_size` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_SIZE` | `queue` (усі черги `config/sidekiq.yml`) | `PrometheusCollector#refresh_sidekiq_gauges` | Поточна кількість задач у кожній Sidekiq черзі |
+| `silkennet_sidekiq_queue_latency_seconds` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY` | `queue` (усі черги `config/sidekiq.yml`) | `PrometheusCollector#refresh_sidekiq_gauges` | Вік найстарішої задачі в черзі (секунди) |
 | `silkennet_sidekiq_dead_set_size` | `SilkenNet::Metrics::SIDEKIQ_DEAD_SET_SIZE` | — | `PrometheusCollector#refresh_sidekiq_gauges` | **[ARCH.45]** Розмір Sidekiq DeadSet (job-и, що вичерпали retry) — money-path тут = stranded funds/tx без авто-відновлення |
 | `silkennet_mint_eligible_unminted_depth` | `SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH` | `sn-alert-mint-stall-depth` | `MintStallProbeWorker` (cron `55 * * * *` — зріз ПЕРЕД наступним циклом емісії) | **[ARCH.94]** Глибина застряглої популяції: гаманці над порогом емісії, які цикл НЕ змінтував. Дискримінатор точний — мінт піднімає `locked_balance`, тож після здорового циклу множина порожня **за побудовою**. 🔴 Несучий ОКРЕМО від лічильника помилок: відмова, що не кидає винятку (порожній селектор, знятий cron, хибний фільтр), лишає той у нулі, а нуль спроб для SLO-відношення невідрізненний від спокою — алерт `sn-alert-mint-slo-breach` несе гард `and attempts > 0`. Лічильник СТАНУ бачить обидва режими; форма — прецедент `hadron_kyc_pending_depth` [ARCH.65]. 🔴 **Писач переїхав із `TokenomicsBatchCallbacks#on_success` [ARCH.59, 2026-08-25], і це не косметика:** той колбек вішається на `Sidekiq::Batch#on(:success)`, тобто (а) у проді не виконується взагалі (`sidekiq-pro` поза Gemfile — [`04_02 §11`](04_02_Business_Logic_and_Services) DOC-R.10), і (б) навіть із ліцензією `:success` означає «всі джоби завершились БЕЗ ПОМИЛОК» — детектор застрягання емісії мовчав би саме тоді, коли чанки падають. Час зрізу несучий: цикл стартує о `:00`, а `lock_and_mint!` виводить гаманець із множини синхронно в чанку, тож `:55` міряє залишок здорового проходу — зсув часу міняє ЗНАЧЕННЯ, не лише свіжість |
 
@@ -703,7 +703,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 1. **Lean** — Один gem, нуль транзитивного bloat. Gemfile залишається чистим.
 2. **Офіційний** — Підтримується самою організацією Prometheus (не community wrapper).
-3. **Thread-safe** — Критично для Sidekiq workers (15 потоків × 9 черг; SSOT числа — `config/sidekiq.yml`).
+3. **Thread-safe** — Критично для Sidekiq workers (15 потоків × усі черги `config/sidekiq.yml`).
 4. **Кастомні метрики** — Нам потрібні domain-specific counters (`scc_minted_total`, `rpc_errors_total`), а не generic Rails request histograms. Авто-інструментація Yabeda додає шум.
 5. **Rails 8.1 native** — Працює з `ActiveSupport::Notifications`. Немає конфліктів з framework.
 6. **Без Redis залежності** — Метрики живуть у пам'яті процесу. Без зайвої інфраструктури.

@@ -62,7 +62,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | Секція | Метрики | S2.2 item |
 |--------|---------|-----------|
 | Telemetry Ingest + Fraud | processed_total, fraud_total, panic_replay, coap_packets by status (acoustic_overflow і tinyml_threshold_invalid_reports знято з HW.30 — пʼєзо й TinyML на Солдаті немає) | Telemetry ingest rate + fraud detection |
-| Sidekiq Queues | queue_size × 9, queue_latency × 9 | Sidekiq queues (9 черг, size + latency) |
+| Sidekiq Queues | queue_size × черга, queue_latency × черга | Sidekiq queues (усі черги `config/sidekiq.yml`, size + latency) |
 | Web3 RPC | rpc_errors by network/type, circuit_breaker_open, scc_minted, oracle_dispatch latency | Web3 RPC errors by network |
 | Treasury / Oracle | oracle_balance_ratio, oracle_balance by network+signer (INF.22 per-signer: Polygon minter/slasher + activation-gated aux) | Treasury / Oracle balance monitoring |
 | Database Pool | db_pool_connections / db_pool_size, db_pool_waiting | Database connection pool stats |

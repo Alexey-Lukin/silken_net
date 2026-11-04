@@ -106,7 +106,7 @@ class PrometheusCollector
   # [PLAN 1.3]: Monitor ALL 9 queues (strict priority order), not just web3.
   # The `uplink` queue has the highest priority but was previously invisible.
   def refresh_sidekiq_gauges
-    all_queues = %w[uplink alerts critical downlink default web3_critical web3 web3_low low]
+    all_queues = %w[uplink alerts critical downlink default web3_critical web3 web3_low web3_emission low]
 
     all_queues.each do |queue_name|
       queue = Sidekiq::Queue.new(queue_name)

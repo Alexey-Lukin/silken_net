@@ -46,6 +46,10 @@
   - web3      
   # [WEB3 НИЗЬКИЙ]: Некритичні Web3 задачі — L1 anchoring (раз/тиждень), Hadron.
   - web3_low
+  # [ЕМІСІЯ — ГОЛОВА МІНТ-DAG]: TokenomicsEvaluator → EvaluateTreeBatch → `lock_and_mint!`
+  # + MintStallProbe. Найнижча черга ГРОШОВОГО процесу (⚖️ ARCH.59, founder 2026-11-04):
+  # голова мусить бути по той бік межі розщеплення, що й мінт → `06_08 §2.5`.
+  - web3_emission
   # [АНАЛІТИКА]: Важка нічна агрегація (InsightGenerator).
   - low       
 

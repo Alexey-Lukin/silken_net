@@ -13,8 +13,8 @@
 # TokenomicsBatchCallbacks#on_success тільки після завершення ВСІХ чанків.
 class EvaluateTreeBatchWorker
   include Sidekiq::Job
-  # Та сама черга, що й TokenomicsEvaluatorWorker — фінансовий аудит.
-  sidekiq_options queue: "default", retry: 3
+  # Та сама черга, що й TokenomicsEvaluatorWorker — голова мінт-DAG [ARCH.59, ⚖️ 2026-11-04].
+  sidekiq_options queue: "web3_emission", retry: 3
 
   # @param wallet_ids [Array<Integer>] масив ID гаманців для обробки
   # @param cycle_id [String] UUID циклу токеноміки (для аудиту та логування)

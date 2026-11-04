@@ -160,14 +160,21 @@ RSpec.describe PrometheusCollector, type: :request do
     describe "Sidekiq gauge refresh (job-process scrape)" do
       before { allow(Sidekiq).to receive(:server?).and_return(true) }
 
-      it "refreshes all nine strict-priority queue gauges on scrape" do
-        # Один Sidekiq::Queue.new на кожну з 9 черг (uplink…low) — не-вакуумний доказ, що
+      it "refreshes a gauge for EVERY queue config/sidekiq.yml declares" do
+        # Один Sidekiq::Queue.new на кожну чергу — не-вакуумний доказ, що
         # refresh_sidekiq_gauges справді відпрацював, а не лише зареєстровані імена метрик.
+        # 🔴 [ARCH.59, 2026-11-04] Перелік ДЕРИВУЄТЬСЯ з `config/sidekiq.yml`, а не пишеться
+        # числом: колектор тримає власний літеральний перелік черг, і нова черга, якої він не
+        # знає, невидима і для gauge, і для `sn-alert-sidekiq-latency`. Число тут уже раз
+        # протухло б мовчки — пін судить ПАРНІСТЬ поіменно.
+        declared = YAML.load_file(Rails.root.join("config/sidekiq.yml"), permitted_classes: [ Symbol ])[:queues]
+        expect(declared).not_to be_empty
         allow(Sidekiq::Queue).to receive(:new).and_call_original
 
         get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
 
-        expect(Sidekiq::Queue).to have_received(:new).exactly(9).times
+        declared.each { |queue| expect(Sidekiq::Queue).to have_received(:new).with(queue) }
+        expect(Sidekiq::Queue).to have_received(:new).exactly(declared.size).times
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("silkennet_sidekiq_queue_size")
         expect(response.body).to include("silkennet_sidekiq_queue_latency_seconds")

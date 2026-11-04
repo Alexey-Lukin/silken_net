@@ -75,7 +75,7 @@ bundle exec i18n-tasks missing   # i18n-парність (+`check-consistent-int
 
 **Sidekiq strict-priority** (`:strict: true` — послідовний дренаж згори-вниз, НЕ зважений; дім `04_02`). Не міняй чергу воркера без обґрунтування:
 ```
-uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6) > web3(7) > web3_low(8) > low(9)
+uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6) > web3(7) > web3_low(8) > web3_emission(9) > low(10)
 ```
 ⚠️ **Правило — про ВОРКЕРІВ; ActiveJob-джоби з гемів приходять БЕЗ `queue_as`, і `default`(5) їм призначає фреймворк** (ARCH.60). Довговічний канал несе пріоритет своєї події, ефемерний — ні (`AlertMailer`→`alerts`; `PasswordMailer` і Turbo-редрави свідомо `default`). Носій — `spec/quality/activejob_queue_declaration_spec.rb`; ⛔ черга поза `sidekiq.yml` не слухається жодним процесом → джоби тонуть мовчки. Механізм — `backend`-скіл #72.
 
