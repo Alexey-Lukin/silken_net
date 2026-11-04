@@ -7507,11 +7507,15 @@ def test_gyroid_interface_contact_map_invariants():
             + f" the higher named root reading ({max(p0)} MPa") in v
     zb = sb["union"]["grid"]["zener_above_which_tension_half_opens_on_every_angle"]
     zmax = max(x["max"] for e in ("low", "high") for x in zb[e].values() if x["max"] is not None)
-    assert f"on every install angle once the Zener ratio exceeds {up(zmax, 3):.3f}" in v
+    # a threshold quoted «at most X» rounds UP; the «once it exceeds X» form would read as a harmless region below X that
+    # this row does not have — the other cells open below it (in-silico §When Modifying #43)
+    assert f"on every install angle is at most {up(zmax, 3):.3f}, against the Voigt ceiling" in v
+    assert "once the Zener ratio exceeds" not in v
     lo_n, hi_n = min(names, key=lambda n: p0[names.index(n)]), max(names, key=lambda n: p0[names.index(n)])
 
+    # a bracket of onsets over the cells rounds OUTWARD: below its lower end no cell opens, so that end rounds DOWN
     def onsets(summ):
-        return " ⊥ ".join(f"{up(summ[g]['theta0']['opening_onset_ue']['tension'][lo_n]['range'][0]):.0f}–"
+        return " ⊥ ".join(f"{down(summ[g]['theta0']['opening_onset_ue']['tension'][lo_n]['range'][0]):.0f}–"
                           f"{up(summ[g]['theta0']['opening_onset_ue']['tension'][hi_n]['range'][1]):.0f} µε ({lab})"
                           for g, lab in (("scots_pine", "the Scots pine group"), ("green", "the green group")))
 
@@ -7943,10 +7947,11 @@ def test_gyroid_wood_strain_share_invariants():
                                           max(r[g] for r in liu_rows.values()) / min(dv)), rel=1e-12)
 
     # the union's thresholds, source day, per-set verdicts, the reading without Davies' Table 2 and the ceiling
-    def binds(fk, share):
+    def binds(fk, share, raw=False):
         ratio = r_a if fk == "axial_reading" else r_r
-        return {al: {f"{dk}|{sk}|sf{sf}": math.ceil(round(d105["alloys"][al]["endurance_strain_printed_ue"] / sf * div
-                                                          / (math.sqrt(ratio / phi) * frac * share[al]), 9))
+        rnd = (lambda x: x) if raw else (lambda x: math.ceil(round(x, 9)))
+        return {al: {f"{dk}|{sk}|sf{sf}": rnd(d105["alloys"][al]["endurance_strain_printed_ue"] / sf * div
+                                              / (math.sqrt(ratio / phi) * frac * share[al]))
                      for dk, frac in d105["inputs"]["depth_fraction"].items()
                      for sk, div in d105["inputs"]["stress_state_divisor"].items() for sf in (1, 2)}
                 for al in ALLOY_PROPERTIES}
@@ -7982,15 +7987,24 @@ def test_gyroid_wood_strain_share_invariants():
              key=lambda k: gcells[k]["t_L_at_C44_zero_max_over_theta"])
     assert pub["cell"] == pk and pub["share"] == gcells[pk]["t_L_at_C44_zero_max_over_theta"]
     assert f"alone it reaches {math.ceil(round(pub['share'] * 1000, 9)) / 1000:.3f}" in d["verdict"]
-    # Korean pine's knife-edge: Ta's margin straddles 1 across the cached ν_LR edge, through THIS arithmetic
+    # Korean pine's knife-edge, two numbers on two arithmetics, through THIS one (00_07 HW.23): the margin at the printed
+    # ν_LR is over the ROUNDED cell (the bound's convention), and the edge is where Ta's UNROUNDED threshold MEETS the
+    # strain — on the rounded cell (⌈t⌉ < s ⇔ t ≤ ⌈s⌉ − 1) it would land where the threshold meets ⌈strain⌉ − 1, a step of
+    # the µε grid. CAN catch: an edge bisected on the rounded cell — the threshold there misses the strain by the strain's
+    # distance above ⌈s⌉ − 1, whatever its fractional part (the straddle alone is blind below ≈ 1e-3 µε of it); a margin
+    # taken off the raw threshold. CANNOT: whether the convention is the right one for the margin — the bound's choice (`105`)
+    def kp_ratio(fk, nu, raw):
+        name = f"probe_kp_{fk}_{nu!r}_{raw}"
+        allsets[name] = kp | {"nu_LR": nu}
+        low = {al: min(t_l(al, name, "stiff", fill, 0.0, a_v) for fill in s106.FILLS) for al in ALLOY_PROPERTIES}
+        return stem["upper_whisker"]["surface_strain_ue"] / binds(fk, low, raw=raw)["Ta"][cell_ls]
+
+    s_uw = stem["upper_whisker"]["surface_strain_ue"]
     for fk, e in d["green_korean_pine_ta_knife_edge"]["per_fe_reading"].items():
-        margins = []
-        for f in (1 - 1e-6, 1 + 1e-6):
-            name = f"probe_kp_{fk}_{f}"
-            allsets[name] = kp | {"nu_LR": e["nu_LR_first_exceeds"] * f}
-            low = {al: min(t_l(al, name, "stiff", fill, 0.0, a_v) for fill in s106.FILLS) for al in ALLOY_PROPERTIES}
-            margins.append(stem["upper_whisker"]["surface_strain_ue"] / binds(fk, low)["Ta"][cell_ls])
-        assert margins[0] <= 1 < margins[1], (fk, margins)
+        assert kp_ratio(fk, kp["nu_LR"], raw=False) == pytest.approx(e["margin_at_printed"], abs=1e-12), fk
+        assert abs(s_uw / kp_ratio(fk, e["nu_LR_first_exceeds"], raw=True) - s_uw) < 1e-6, fk   # threshold = strain
+        ratios = [kp_ratio(fk, e["nu_LR_first_exceeds"] * f, raw=True) for f in (1 - 1e-6, 1 + 1e-6)]
+        assert ratios[0] <= 1 < ratios[1], (fk, ratios)
 
 
 RADIO = CACHE / "radio"

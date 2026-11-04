@@ -1073,36 +1073,45 @@ def main() -> int:
 
     # Korean pine's Ta verdict against its own ν_LR (printed 0.30 at a CV of 1.64): the source day's upper whisker over Ta's
     # threshold at that set's lowest θ = 0 share, as a function of ν_LR alone — the ν_LR at which it first exceeds, per FE
-    # reading (bisection on a bracket whose ends are asserted; the margin is held non-decreasing on a coarse scan)
+    # reading (bisection on [ν, 2ν], an edge recorded only when the ratio crosses 1 inside it; the ratio is held
+    # non-decreasing on a coarse scan). The MARGIN at the printed ν_LR is over the rounded cell, the bound's convention
+    # (`source_day_at`, `105`); the EDGE is the UNROUNDED threshold's crossing, which a «stays below while ν_LR is below X»
+    # sentence names — bisected on the rounded cell (⌈t⌉ < s ⇔ t ≤ ⌈s⌉ − 1) it lands where the threshold meets ⌈strain⌉ − 1,
+    # a step of the µε grid that a strain move inside one µε leaves byte-identical (00_07 HW.23; in-silico §When Modifying
+    # #6, #43)
     kp = "jeong2026_korean_pine_green"
 
-    def kp_ta_margin(nu_lr: float, fk: str) -> float:
+    def kp_ta_threshold(nu_lr: float, fk: str) -> float:
         wv2 = build_reading(wood_compliance(gsets[kp]["w"] | {"nu_LR": nu_lr}, "stiff"), f"{kp} ν_LR {nu_lr}", checks=False)
         assert wv2["positive_definite"], f"Korean pine is not a material at ν_LR {nu_lr}"
         t_low = min(t_l_on(wv2, "Ta", fill, 0.0, a_voigt) for fill in FILLS)
         dk, sk, _ = CELL_LS.split("|")
-        thr = up0(d105["alloys"]["Ta"]["endurance_strain_printed_ue"] / 2.0 * d105["inputs"]["stress_state_divisor"][sk]
-                  / (f_read[fk] * d105["inputs"]["depth_fraction"][dk] * t_low))
-        return stem["upper_whisker"]["surface_strain_ue"] / thr
+        return (d105["alloys"]["Ta"]["endurance_strain_printed_ue"] / 2.0 * d105["inputs"]["stress_state_divisor"][sk]
+                / (f_read[fk] * d105["inputs"]["depth_fraction"][dk] * t_low))
+
+    def kp_ta_ratio(nu_lr: float, fk: str) -> float:
+        return stem["upper_whisker"]["surface_strain_ue"] / kp_ta_threshold(nu_lr, fk)
 
     kp_nu = gsets[kp]["w"]["nu_LR"]
     kp_edge = {}
     for fk in f_read:
-        assert abs(kp_ta_margin(kp_nu, fk) - per_set[kp]["ta_upper_whisker_margin"][fk]) < 1e-12, "Korean pine's margin moved"
-        scan = [kp_ta_margin(x, fk) for x in np.linspace(kp_nu, 2 * kp_nu, 11)]
-        assert all(b >= a for a, b in itertools.pairwise(scan)), f"Korean pine's Ta margin is not monotone in ν_LR ({fk})"
+        margin = stem["upper_whisker"]["surface_strain_ue"] / up0(kp_ta_threshold(kp_nu, fk))
+        assert abs(margin - per_set[kp]["ta_upper_whisker_margin"][fk]) < 1e-12, "Korean pine's margin moved"
+        scan = [kp_ta_ratio(x, fk) for x in np.linspace(kp_nu, 2 * kp_nu, 11)]
+        assert all(b >= a for a, b in itertools.pairwise(scan)), f"Korean pine's Ta ratio is not monotone in ν_LR ({fk})"
         lo, hi = kp_nu, 2 * kp_nu
         if scan[0] > 1 or scan[-1] <= 1:
-            kp_edge[fk] = {"margin_at_printed": scan[0], "nu_LR_first_exceeds": None, "scanned_to": hi}
+            kp_edge[fk] = {"margin_at_printed": margin, "nu_LR_first_exceeds": None, "scanned_to": hi}
             continue
         for _ in range(50):
             mid = 0.5 * (lo + hi)
-            lo, hi = (mid, hi) if kp_ta_margin(mid, fk) <= 1 else (lo, mid)
-        kp_edge[fk] = {"margin_at_printed": scan[0], "nu_LR_first_exceeds": hi, "scanned_to": 2 * kp_nu}
+            lo, hi = (mid, hi) if kp_ta_ratio(mid, fk) <= 1 else (lo, mid)
+        kp_edge[fk] = {"margin_at_printed": margin, "nu_LR_first_exceeds": hi, "scanned_to": 2 * kp_nu}
     kp_edge_record = {"nu_LR_printed": kp_nu, "nu_LR_cv_printed": float(JEONG_KOREAN_PINE_GREEN_CV["nu_LR"]),
                       "per_fe_reading": kp_edge,
                       "is": "the ν_LR above which the source day's upper whisker exceeds Ta's large-stem SF 2 threshold "
-                            "at Korean pine's own lowest θ = 0 share, every other constant as printed (G_RT borrowed)"}
+                            "at Korean pine's own lowest θ = 0 share, every other constant as printed (G_RT borrowed); "
+                            "the edge is the unrounded threshold's crossing, the margin is over the rounded cell"}
 
     def citation(cell_key: str) -> str:
         _, name, rd, fill = cell_key.split("|")

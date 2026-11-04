@@ -12436,16 +12436,16 @@
     "per_fe_reading": {
       "axial_reading": {
         "margin_at_printed": 0.9869582961516621,
-        "nu_LR_first_exceeds": 0.3082797562655046,
+        "nu_LR_first_exceeds": 0.3080329677861223,
         "scanned_to": 0.6
       },
       "radial_reading": {
         "margin_at_printed": 0.9702743735542753,
-        "nu_LR_first_exceeds": 0.3187085538556586,
+        "nu_LR_first_exceeds": 0.31845766728535885,
         "scanned_to": 0.6
       }
     },
-    "is": "the ν_LR above which the source day's upper whisker exceeds Ta's large-stem SF 2 threshold at Korean pine's own lowest θ = 0 share, every other constant as printed (G_RT borrowed)"
+    "is": "the ν_LR above which the source day's upper whisker exceeds Ta's large-stem SF 2 threshold at Korean pine's own lowest θ = 0 share, every other constant as printed (G_RT borrowed); the edge is the unrounded threshold's crossing, the margin is over the rounded cell"
   },
   "union_without_davies_table2": {
     "lowest": {

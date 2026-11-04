@@ -7413,8 +7413,9 @@ CHECKS += [
 
 # ── 108: 106's bonded interface read as a pressed frictional contact, per wood group (Scots pine ⊥ green ⊥ union).
 #    Every number is positive by construction and its ranges are joined by an en dash, so the class is UNSIGNED (a
-#    signed class would read «29–66» as 29 and −66). «opens above» rounds UP, «at least» / «only under p₀ of at least»
-#    DOWN, «only below a Zener ratio» UP, «first reaches» and «while C stays below» DOWN (in-silico §When Modifying #43).
+#    signed class would read «29–66» as 29 and −66). A single «opens above» rounds UP, a bracket of onsets OUTWARD (its
+#    lower end DOWN: below it no cell opens), «at least» / «only under p₀ of at least» DOWN, «a Zener ratio … is at most»
+#    UP, «first reaches» and «while C stays below» DOWN (in-silico §When Modifying #43).
 #    A smooth envelope is consistent only with the bare lattice, so the smooth-contact numbers — the table, the need,
 #    the friction — come from `summary_bare_lattice`; the demand over all cells from `summary` (the 2026-10-22 review,
 #    finding 3). This engine reads the RAW doc, so an anchor across a line break carries `\s+`. ──
@@ -7434,12 +7435,12 @@ def _c108_row(glabel, rlabel, j):
 
 def _c108_cell(d, g, n, j):
     """Column j of a (group, p₀) row of the smooth-contact table — the bare lattice: the group's bare cell count · the
-    reading · the tension half's opening («opens above» — UP) · the compression half's open cells at the day's two
-    ends · the friction needed where closed («at least» — DOWN)."""
+    reading · the tension half's opening over the cells («opens above X–Y» — OUTWARD: X DOWN, Y UP) · the compression
+    half's open cells at the day's two ends · the friction needed where closed («at least» — DOWN)."""
     s = d["summary_bare_lattice"][g]["theta0"]
     t = s["opening_onset_ue"]["tension"][n]["range"]
     lo, hi = (s["at_source_day"]["compression"][e][n] for e in ("low", "high"))
-    return [d["summary_bare_lattice"][g]["cells"], d["inputs"]["p0_readings"][n]["MPa"], _ceil_n(t[0], 0),
+    return [d["summary_bare_lattice"][g]["cells"], d["inputs"]["p0_readings"][n]["MPa"], _floor_n(t[0], 0),
             _ceil_n(t[1], 0), lo["cells_open"], hi["cells_open"], _floor_n(lo["mu_req_max_closed"][0], 2),
             _floor_n(lo["mu_req_max_closed"][1], 2), _floor_n(hi["mu_req_max_closed"][0], 2),
             _floor_n(hi["mu_req_max_closed"][1], 2), _down_sig2(lo["nearest_cell_flips_at_pct"]),
@@ -7503,8 +7504,9 @@ def _c108_bind(d, g):
 
 
 def _c108_jn(d, i, f):
-    return f(_ceil_n(v["opening_onset_tension_ue"][i], 0)
-             for v in d["consumer_junction"]["union"]["theta0_highest"].values())
+    """An end of the junction's «opens above X–Y» bracket over the alloys — OUTWARD: X DOWN, Y UP."""
+    xs = [v["opening_onset_tension_ue"][i] for v in d["consumer_junction"]["union"]["theta0_highest"].values()]
+    return _floor_n(min(xs), 0) if f is min else _ceil_n(max(xs), 0)
 
 
 def _c108_further(d):
@@ -7584,7 +7586,7 @@ CHECKS += [
      lambda d: _floor_n(d["summary"]["union"]["theta0"]["sigma1_over_E_L"][0], 2), 0.0),
     ("contact108 pole over E_L high → 108", SUMMARY, rf"pole traction\s+is [\d.]+–{_U}× the wood's own", CONTACT108,
      lambda d: _ceil_n(d["summary"]["union"]["theta0"]["sigma1_over_E_L"][1], 2), 0.0),
-    ("contact108 zener → 108", SUMMARY, rf"once the Zener\s+ratio exceeds {_U} \(on the", CONTACT108,
+    ("contact108 zener → 108", SUMMARY, rf"on\s+every\s+install\s+angle\s+is\s+at\s+most\s+{_U}\s+\(on\s+the", CONTACT108,
      lambda d: _ceil_n(_c108_zstar(d)[0], 3), 0.0),
     ("contact108 zener strain → 108", SUMMARY, rf"reading at the\s+day's {_U} µε\),", CONTACT108,
      lambda d: round(_c108_end(d, _c108_zstar(d)[1])), 0.0),
@@ -7733,8 +7735,9 @@ def test_contact108_categorical_sentences_follow_the_cache():
     assert "no install angle on a bare-lattice cell opens the tension half later than θ = 0 does" in sec
     _, end, n = _c108_zstar(d)
     assert n == "spring_clamps_on_poplar_roots" and end == "low" and "(on the clamp reading at the day's" in sec
-    assert ("cell the tension half's averaged traction reaches p₀ at the source day's strain on every install angle once "
-            "the Zener ratio exceeds") in sec
+    assert ("The Zener ratio above which a bare-lattice cell's tension-half averaged traction reaches p₀ at the source "
+            "day's strain on every install angle is at most") in sec
+    assert "once the Zener ratio exceeds" not in sec
     assert d["summary"]["scots_pine"]["grid"]["lattice_cells_with_sigma1_nonpositive_somewhere"] == 0
     nonpos = [k for k, v in d["green_cells"].items() if "grid" in v and v["grid"]["sigma1"][0] <= 0]
     assert {k.split("|", 1)[1] for k in nonpos} == {"jeong2026_red_pine_green|stiff|pores_carry_nothing",
@@ -7794,7 +7797,9 @@ def test_contact108_categorical_sentences_follow_the_cache():
     assert "on both readings it is open in every bare-lattice cell of both groups" in row
     assert "the green group's headline standing on excluding the ambiguous 2.5 MPa" in row
     assert _c108_zstar(d)[0] < 0.05 * d["inputs"]["lattice_reading_106"]["zener_voigt_ceiling"]
-    assert "once the Zener ratio exceeds a small fraction of its Voigt ceiling" in row and "no direction follows" in row
+    assert ("the Zener ratio above which its averaged traction reaches p₀ on every install angle is a small fraction of its "
+            "Voigt ceiling") in row and "no direction follows" in row
+    assert "once the Zener ratio exceeds" not in row
     assert "stays closed only below a Zener ratio" not in row
     assert "published-sets-only companion" in row
 

@@ -224,7 +224,10 @@ def _load(name: str, file: str):
 
 
 def up(x: float, digits: int = 0) -> float:
-    """Rounded UP — an «opens above X» / «only below X» sentence (in-silico §When Modifying #43)."""
+    """Rounded UP — a single «opens above X» onset, the UPPER end of a bracket rounded OUTWARD (a range of onsets or
+    readings; an «at least X–Y» bracket is a floor and takes `down` at both ends), a threshold quoted «at most X» (in-silico
+    §When Modifying #43). An outward bracket's LOWER end is `down`; a «once it exceeds X» sentence is rewritten, never
+    rounded — it reads as a harmless region below X that the row need not have."""
     f = 10.0 ** digits
     return math.ceil(round(x * f, 9)) / f
 
@@ -1085,7 +1088,7 @@ def main() -> int:
         + " — an opening on a smooth envelope — and, as a demand, in "
         + " and ".join(f"{open_clause(g, summary, 'cells')} ({label[g]})" for g in GROUPS_READ)
         + "; on a bare-lattice cell it opens the poles facing along the stem above "
-        + " ⊥ ".join(f"{up(sb[g]['theta0']['opening_onset_ue']['tension'][lo_n]['range'][0]):.0f}–"
+        + " ⊥ ".join(f"{down(sb[g]['theta0']['opening_onset_ue']['tension'][lo_n]['range'][0]):.0f}–"
                       f"{up(sb[g]['theta0']['opening_onset_ue']['tension'][hi_n]['range'][1]):.0f} µε ({label[g]})"
                       for g in GROUPS_READ)
         + f", and at half that strain the friction needed is already at least {down(half_t[0], 2):.2f}–"
@@ -1093,12 +1096,14 @@ def main() -> int:
         f"stem first reaches p₀ at {down(on_c[lo_n]['range'][0]):.0f} µε on a bare-lattice cell, and where it stays "
         f"below p₀ at the source day's strain the friction a bare-lattice cell needs is at least "
         f"{down(min(x[0] for x in comp_mu), 2):.2f}–{down(max(x[1] for x in comp_mu), 2):.2f}{knife_clause}. "
-        f"Off the axis the pole traction falls as C44 falls: on a bare-lattice cell the tension half's averaged traction "
-        f"reaches p₀ at the source day's strain on every install angle once the Zener ratio exceeds "
-        f"{f'{up(max(zstar_fin), 3):.3f}' if zstar_fin else 'none'}, against the Voigt ceiling {up(a_voigt, 3):.3f}; on "
-        f"106's measured C44 — the part body's Zener ratio {down(zr[0], 2):.2f}–{up(zr[1], 2):.2f} (its absolute modulus ⊥ "
-        f"its Zener form over the FE rungs, at least ×{down(z_over, 0):.0f} the threshold) and the material tensor, "
-        f"another body off this axis, read whole — it does so on 106's θ grid ({tg[0]:g}–{tg[1]:g}° in {tg[2]:g}° steps) "
+        f"Off the axis the pole traction falls as C44 falls: the Zener ratio above which a bare-lattice cell's tension-half "
+        f"averaged traction reaches p₀ at the source day's strain on every install angle is "
+        f"{f'at most {up(max(zstar_fin), 3):.3f}' if zstar_fin else '0 — every bare-lattice cell reaches it at any ratio'}"
+        f", against the Voigt ceiling "
+        f"{up(a_voigt, 3):.3f}; on 106's measured C44 — the part body's Zener ratio {down(zr[0], 2):.2f}–{up(zr[1], 2):.2f} "
+        f"(its absolute modulus ⊥ its Zener form over the FE rungs, at least ×{down(z_over, 0):.0f} the threshold) and the "
+        f"material tensor, another body off this axis, read whole — the traction does so on 106's θ grid "
+        f"({tg[0]:g}–{tg[1]:g}° in {tg[2]:g}° steps) "
         f"at both ends of the day on both named p₀ readings in " + " and in ".join(meas_clause(g) for g in GROUPS_READ)
         + f", the smallest σ₁·ε/p₀ ×{down(m_min, 2):.2f}; {axis_clause}: off the axis a bare-lattice cell's opening (the "
         f"demand, on a cell with tissue in the pores) is a finding on these readings, not a condition on C44 — the "

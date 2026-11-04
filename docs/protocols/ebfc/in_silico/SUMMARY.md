@@ -1446,10 +1446,10 @@ smooth contact, so its cells are the bare lattice:
 
 | group | p₀ reading (Bruder 1998) | p₀, MPa | tension half opens above, µε | compression half at the day's two ends, 677 ⊥ 1837 µε: cells open · friction needed where closed, at least | there, the change of the day's strain below which the open count holds, % (sign: + a rise, − a fall flips first) |
 |---|---|---|---|---|---|
-| Scots pine, 60 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 33–63 | 36 ⊥ 53 · 2.00–3.54 ⊥ 3.91–7.92 | −12 ⊥ −3.1 |
-| Scots pine, 60 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 47–91 | 19 ⊥ 43 · 1.58–13.20 ⊥ 3.00–24.18 | +1.9 ⊥ −0.52 |
-| green, 156 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 47–191 | 5 ⊥ 24 · 0.87–84.52 ⊥ 1.49–7.45 | +0.044 ⊥ +5.6 |
-| green, 156 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 67–275 | 0 ⊥ 16 · 0.68–3.26 ⊥ 1.24–54.49 | +29 ⊥ +0.20 |
+| Scots pine, 60 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 32–63 | 36 ⊥ 53 · 2.00–3.54 ⊥ 3.91–7.92 | −12 ⊥ −3.1 |
+| Scots pine, 60 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 46–91 | 19 ⊥ 43 · 1.58–13.20 ⊥ 3.00–24.18 | +1.9 ⊥ −0.52 |
+| green, 156 bare-lattice cells | turgor of free root cells (p. 15) | 0.5 | 46–191 | 5 ⊥ 24 · 0.87–84.52 ⊥ 1.49–7.45 | +0.044 ⊥ +5.6 |
+| green, 156 bare-lattice cells | his spring clamps on poplar roots (p. 100) | 0.72 | 66–275 | 0 ⊥ 16 · 0.68–3.26 ⊥ 1.24–54.49 | +29 ⊥ +0.20 |
 
 Near a cell's opening the friction it needs diverges, as (1 − ε/ε*)^−½, so the upper ends and the open counts are values AT the stated strains, not smooth in them: the open counts hold while the strain moves by less than the last column, and the upper ends are not held even inside it: each rises with the strain while the count holds, and diverges at every flip of the count — as a closed cell nears its opening on a rise, and just after an open one closes on a fall — so a printed upper end bounds nothing at another strain. Every value of the last column lies inside the uncertainty of reading the input slope off the source's figure (±0.01 on 0.03 ⊥ 0.06 at 2 m — the median sets the day's low end, the upper whisker its high end; `87`). The lower ends move continuously.
 
@@ -1460,9 +1460,9 @@ is 0.74–1.24× the wood's own bending stress E_L·ε, so at θ = 0 the size of
 readings holds — its direction does — and the p₀ it needs scales with the wood's E_L.
 
 **Off the cube axis C44 enters**, and the pole traction never falls as C44 rises (asserted on `106`'s grid); at C44's
-Voigt ceiling no install angle on a bare-lattice cell opens the tension half later than θ = 0 does. On a bare-lattice
-cell the tension half's averaged traction reaches p₀ at the source day's strain on every install angle once the Zener
-ratio exceeds 0.030 (on the clamp reading at the day's 677 µε), against the Voigt ceiling 3.755 — and **on `106`'s
+Voigt ceiling no install angle on a bare-lattice cell opens the tension half later than θ = 0 does. The Zener ratio
+above which a bare-lattice cell's tension-half averaged traction reaches p₀ at the source day's strain on every install
+angle is at most 0.030 (on the clamp reading at the day's 677 µε), against the Voigt ceiling 3.755 — and **on `106`'s
 measured C44** (read 2026-10-27: the part body's Zener ratio 1.49–1.62 on its absolute modulus ⊥ its Zener form over the
 FE rungs — at least ×51 the threshold, which exists on only 401 of the 1728 cell × end × p₀ states, all bare lattice, the
 rest reaching p₀ at any ratio (counts that hold while the strain moves by less than 0.068 % either way) — and the material tensor, another body off this axis, read whole on its own solid
@@ -1485,7 +1485,7 @@ composite, with no direction; the Scots pine group's binding cell, printed besid
 least 15.8 MPa. Net tension
 across the envelope is carried by any load-bearing composite, bonded or interlocked, so this shows no need for adhesion.
 The junction's adverse end is the highest share: at θ = 0 (the bare lattice on the driest Scots softer-axis reading) the
-tension half opens above 36–44 ⊥ 51–63 µε, below the source day; at the union's C44 → 0 supremum (θ = 45°, Davies'
+tension half opens above 35–44 ⊥ 50–63 µε, below the source day; at the union's C44 → 0 supremum (θ = 45°, Davies'
 stiff outerwood from the raw ESM means, bare lattice) the in-plane stress is isotropic — the bending field puts no
 averaged in-plane shear on the envelope there, which is no holding claim — and the tension half opens above 628 ⊥ 905
 µε: at the day's median on a DBH-38 bark on the turgor reading, at its upper whisker on a large stem on both. That
