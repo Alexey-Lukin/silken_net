@@ -765,7 +765,7 @@ app/services/
 app/workers/
 ├── mint_carbon_coin_worker.rb        # queue: web3_critical, retry: 5
 ├── burn_carbon_tokens_worker.rb      # queue: critical, retry: 5
-├── blockchain_confirmation_worker.rb # queue: web3_critical, retry: 5
+├── blockchain_confirmation_worker.rb # queue: web3_critical, retry: 10
 ├── tokenomics_evaluator_worker.rb    # cron: 0 * * * *, queue: web3_emission (ARCH.59 «(a1)», 06_08 §2.5)
 └── governance/
     └── parameter_sync_worker.rb      # ✅ [ARCH.4] queue: web3_low, cron: 30 3 * * *, sync on-chain → SystemParameter
