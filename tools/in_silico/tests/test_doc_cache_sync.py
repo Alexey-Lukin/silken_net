@@ -2197,6 +2197,12 @@ CHECKS += [
            lambda d: _down0(d["band"]["window_top"]["reaction_N"][0]), 0.0),
           ("02_02 §3.2 window_top high", BLIND_MATE, rf"\*\*[\d.]+–{N} Н\*\* на верху 30 %",
            lambda d: _up0(d["band"]["window_top"]["reaction_N"][1]), 0.0),
+          # «від X %» in the preserved ⊕ of 02_02 §4.4 is the edge of a harmless region — marked on spot 2026-11-04
+          # (00_05 §7), the mark carries the number DOWN (#43); the preserved «від 17.1 / 27.1» stay frozen text
+          ("02_02 §4.4 ⊕ generous crossing", BLIND_MATE, rf"доки стиск менший за \*\*{N}\*\* %, верх смуги лишається під 100 Н",
+           lambda d: _down1(d["inversion"]["squeeze_pct_band_high_exceeds_generous_bound"]), 0.0),
+          ("02_02 §4.4 ⊕ binding squeeze", BLIND_MATE, rf"доки стиск нижче \*\*{N}\*\* %, стінку задає друкованість",
+           lambda d: _down1(d["inversion"]["squeeze_pct_band_high_binds"]), 0.0),
           ("02_02 §3.5 nominal clamp", BLIND_MATE, rf"≈ \*\*{N} Н\*\* на номіналі 24\.5 %",
            lambda d: d["band"]["nominal"]["required_clamp_N_at_band_high"]["after_20_years_ring_never_relaxes"], 0.6),
           ("02_02 §3.5 chain-top clamp", BLIND_MATE, rf"≈ \*\*{N} Н\*\* на верху ланцюга",
