@@ -54,10 +54,9 @@ RSpec.describe Gdpr::AnonymizeUserService do
       expect(JSON.generate(trail.metadata)).not_to include("Тарас", "203.0.113.7")
     end
 
-    # 🔴 КЛЮЧОВИЙ пін половини: append-only ланцюг журналу ПЕРЕЖИВАЄ анонімізацію
-    # неушкодженим — бо ip/user_agent старих рядків ця половина свідомо НЕ чіпає
-    # (їхня доля — окремий ⚖️, докблок сервісу). Без цього піна «безсуперечна
-    # половина» не мала б доказу власної безсуперечності.
+    # 🔴 КЛЮЧОВИЙ пін: append-only ланцюг журналу ПЕРЕЖИВАЄ анонімізацію неушкодженим,
+    # хоч ip/user_agent тепер СТЕРТО [SEC.18 форма B] — ланцюг хешує шифротекст, а
+    # стирає знищення ключа, не переписування рядка. Пара з прикладом нижче.
     it "leaves the audit chain integrity intact" do
       AuditLog.create!(
         user_id: user.id, organization_id: organization.id,
@@ -69,6 +68,29 @@ RSpec.describe Gdpr::AnonymizeUserService do
       described_class.call(user)
 
       expect(AuditLog.verify_chain_integrity(organization.id)).to include(valid: true)
+    end
+
+    # [SEC.18 форма B] Стирання = знищення ключа. ⚠️ Фікстура свідомо через `user_id:`:
+    # тоді ключ народжує ВЛАСНИЙ інстанс субʼєкта всередині `AuditLog`, а `user`, який
+    # іде в сервіс, тримає `nil` у памʼяті — рівно та форма, на якій `update!(key: nil)`
+    # dirty-трекінг мовчки викидав би з UPDATE (звідси `shred_audit_pii_key!`).
+    it "erases the subject's audit ip/user_agent by destroying the key, leaving the row untouched" do
+      log = AuditLog.create!(
+        user_id: user.id, organization_id: organization.id,
+        action: "acting_organization_switched",
+        auditable_type: "Organization", auditable_id: organization.id,
+        ip_address: "198.51.100.4", user_agent: "Chrome", metadata: {}
+      )
+      expect(log.readable_ip_address).to eq("198.51.100.4") # ліхтар: до стирання читається
+      ciphertext = log.reload.ip_address
+
+      described_class.call(user)
+      log.reload
+
+      expect(user.reload.audit_pii_key).to be_nil
+      expect(log.ip_address).to eq(ciphertext), "стирання не переписує рядок"
+      expect(log.readable_ip_address).to be_nil
+      expect(log.readable_user_agent).to be_nil
     end
 
     it "does not touch evidence-backed maintenance records" do

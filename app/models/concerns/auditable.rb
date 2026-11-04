@@ -25,6 +25,10 @@ module Auditable
   # ip_address/user_agent заповнюються лише там, де є request-контекст (майбутні
   # controller-виклики); system-шляхи пишуть порожньо — колонки все одно В хеші
   # (tamper-evident), тож задня підміна ламає verify_chain_integrity.
+  # ⚠️ [SEC.18] Печатка ключем субʼєкта стоїть на `create!`, тобто ПІСЛЯ черги: цей
+  # async-шлях везе ip/ua відкритим текстом в аргументах Sidekiq-джоби (Redis, а при
+  # збої — retry/dead-набори). Сьогодні жоден виклик їх сюди не передає; request-
+  # контекст пише синхронним `AuditLog.create!` (обидва наявні писачі так і роблять).
   def record_audit_trail!(action:, organization_id:, auditable: self, user_id: nil,
                           ip_address: nil, user_agent: nil, metadata: {}, archive: false)
     actor_id = user_id || Auditable.system_actor_id

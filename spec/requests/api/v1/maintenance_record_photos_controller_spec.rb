@@ -100,8 +100,11 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       # 🔴 [SEC.28] Пін на ІДЕНТИЧНІСТЬ у сліді, не на факт. Підстава: після
       # `purge_later` блоба не існує, тож запис «фото видалено» дає нуль для
       # розслідування — чим саме він був, установити вже нічим. Тому ассерт
-      # цілить у `checksum`/`filename`, а не в наявність рядка: слід без них
+      # цілить у `checksum`/`byte_size`, а не в наявність рядка: слід без них
       # виглядав би написаним і не був би придатним.
+      # ⚖️ [SEC.18, founder 2026-11-04] `filename` — навпаки, ЗАБОРОНЕНИЙ: вільний
+      # текст із пристрою техніка в рядку, який не переписується ніколи; нитку до
+      # зовнішньої копії несе `checksum` (хеш вмісту), не імʼя.
       #
       # ⚠️ Ліхтар обовʼязковий: `record_audit_trail!` мовчки виходить, коли
       # актора не знайдено (WARN-skip) — тобто «нуль записів» могло б означати
@@ -119,7 +122,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
 
         trail = AuditLog.where(action: "maintenance_photo_purged").last
         expect(trail.user_id).to eq(forester.id), "слід мусить називати АКТОРА, не систему"
-        expect(trail.metadata["filename"]).to eq("evidence.jpg")
+        expect(trail.metadata).not_to have_key("filename")
         expect(trail.metadata["checksum"]).to eq(checksum)
         expect(trail.metadata["byte_size"]).to be_positive
       end

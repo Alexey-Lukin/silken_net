@@ -68,9 +68,20 @@ RSpec.describe AuditLogBlueprint, type: :model do
       expect(parsed["metadata"]).to be_a(Hash)
     end
 
-    it "includes security fields" do
+    # [SEC.18 форма B] Ліхтар перший: колонка несе шифротекст — тож рівність відкритому
+    # тексту нижче доводить, що вигляд віддає ЧИТАЧА, а не сиру колонку.
+    it "includes security fields, decrypted with the subject's key" do
+      expect(audit_log.reload.ip_address).not_to eq("192.168.1.42")
       expect(parsed["ip_address"]).to eq("192.168.1.42")
       expect(parsed["user_agent"]).to eq("Mozilla/5.0 (X11; Linux)")
+    end
+
+    it "renders erased security fields as null once the subject key is destroyed" do
+      audit_log
+      user.update_column(:audit_pii_key, nil)
+
+      erased = JSON.parse(described_class.render(audit_log.reload, view: :show))
+      expect(erased).to include("ip_address" => nil, "user_agent" => nil)
     end
 
     it "includes chain_hash" do

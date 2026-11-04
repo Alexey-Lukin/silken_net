@@ -1943,7 +1943,8 @@ CREATE TABLE public.users (
     recovery_codes text,
     locale character varying,
     otp_secret character varying,
-    otp_last_used_at timestamp(6) without time zone
+    otp_last_used_at timestamp(6) without time zone,
+    audit_pii_key character varying
 );
 
 
@@ -5438,6 +5439,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261104120000'),
 ('20261026150100'),
 ('20261026150000'),
 ('20261025120000'),

@@ -44,7 +44,10 @@ RSpec.describe Gdpr::DataExportService do
       expect(trail.first).to include(ip_address: "203.0.113.7", user_agent: "FieldTablet/1.0")
     end
 
-    it "includes audit rows where the subject is the actor" do
+    # [SEC.18 форма B] ip/ua лежать шифротекстом, тож віддача мусить іти ЧИТАЧЕМ.
+    # `user.reload` несучий: ключ народжує інстанс, який `AuditLog` вантажить сам
+    # (`user_id:`), а цей — старший — тримав би `nil` у памʼяті.
+    it "includes audit rows where the subject is the actor, ip/ua decrypted" do
       AuditLog.create!(
         user_id: user.id, organization_id: organization.id,
         action: "acting_organization_switched",
@@ -52,11 +55,27 @@ RSpec.describe Gdpr::DataExportService do
         ip_address: "198.51.100.4", user_agent: "Chrome", metadata: {}
       )
 
-      audit = described_class.call(user)[:audit_trail]
+      export = described_class.call(user.reload)
+      audit = export[:audit_trail]
       expect(audit.size).to eq(1)
       expect(audit.first).to include(
-        action: "acting_organization_switched", ip_address: "198.51.100.4"
+        action: "acting_organization_switched", ip_address: "198.51.100.4", user_agent: "Chrome"
       )
+      # Ключ — секрет стирання, не дані про особу: у DSAR він не їде.
+      expect(JSON.generate(export)).not_to include(user.audit_pii_key)
+    end
+
+    it "exports the erased audit ip/user_agent as null once the subject key is gone" do
+      AuditLog.create!(
+        user_id: user.id, organization_id: organization.id,
+        action: "acting_organization_switched",
+        auditable_type: "Organization", auditable_id: organization.id,
+        ip_address: "198.51.100.4", user_agent: "Chrome", metadata: {}
+      )
+      user.update_column(:audit_pii_key, nil)
+
+      audit = described_class.call(user.reload)[:audit_trail]
+      expect(audit.first).to include(ip_address: nil, user_agent: nil)
     end
 
     it "includes authored maintenance records with photo METADATA only" do

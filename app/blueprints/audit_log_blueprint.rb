@@ -21,7 +21,11 @@ class AuditLogBlueprint < Blueprinter::Base
     # Ціна названа: ключ будь-якого МАЙБУТНЬОГО писача поїде сюди без ревʼю. Іменований
     # виняток із #58a — там же.
     fields :action, :auditable_type, :auditable_id, :metadata,
-           :ip_address, :user_agent, :chain_hash, :ipfs_cid, :created_at
+           :chain_hash, :ipfs_cid, :created_at
+    # [SEC.18 форма B] ip/ua — ЧИТАЧЕМ, не сирою колонкою: колонка несе шифротекст під
+    # ключем субʼєкта, а після стирання (ключ знищено) поле віддає `null`. Ключі JSON ті самі.
+    field(:ip_address) { |log, _options| log.readable_ip_address }
+    field(:user_agent) { |log, _options| log.readable_user_agent }
     # ⚖️ [SEC.36, 2026-09-06] `ip_address`/`user_agent` лишаються СВІДОМО, і це
     # ВІДМОВА з виміром, не недогляд. Формально вони підпадають під той самий
     # клас, що вузькі поля `:profile` нижче (`mfa_enabled`/`has_password`):

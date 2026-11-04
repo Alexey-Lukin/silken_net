@@ -68,8 +68,8 @@ module Gdpr
     end
 
     # Субʼєкт як АКТОР журналу: «хто і звідки прийшов» — персональні дані
-    # саме актора, тож рядки віддаються цілком (append-only ланцюг при
-    # ЧИТАННІ не зачіпається — це erasure-половина має з ним напругу).
+    # саме актора, тож рядки віддаються цілком. ip/ua — розшифровані його ж
+    # ключем [SEC.18 форма B]; сирі колонки несуть шифротекст і не віддаються.
     def audit_logs_payload
       @user.audit_logs.order(:created_at).map do |log|
         {
@@ -77,8 +77,8 @@ module Gdpr
           auditable_type: log.auditable_type,
           auditable_id: log.auditable_id,
           metadata: log.metadata,
-          ip_address: log.ip_address,
-          user_agent: log.user_agent,
+          ip_address: log.readable_ip_address,
+          user_agent: log.readable_user_agent,
           created_at: log.created_at.iso8601
         }
       end

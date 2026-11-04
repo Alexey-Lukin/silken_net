@@ -130,10 +130,6 @@ RSpec.describe "Audit log chain integrity and reporting" do
       expect(AuditLog.by_user(user.id).count).to eq(2)
     end
 
-    it "filters by IP" do
-      expect(AuditLog.by_ip("192.168.1.1").count).to eq(1)
-    end
-
     it "filters by period" do
       expect(AuditLog.for_period(3.days.ago, Time.current).count).to eq(2)
       expect(AuditLog.for_period(1.5.days.ago, Time.current).count).to eq(1)

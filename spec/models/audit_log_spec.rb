@@ -101,6 +101,9 @@ RSpec.describe AuditLog, type: :model do
         .to raise_error(ActiveRecord::ReadOnlyRecord, /append-only/)
     end
 
+    # ⊕ [SEC.18] Фабричний рядок несе ip/ua, тобто ЗАПЕЧАТАНИЙ (≈64+ символи), тож цей
+    # приклад заразом пінить відсутність колишньої 45-символьної стелі на `ip_address`:
+    # повернена, вона відкидала б архівний `update!` кожного запечатаного рядка.
     it "allows the Filecoin archival fields" do
       expect { log.update!(ipfs_cid: "bafybeigdyrzt5example") }.not_to raise_error
     end
@@ -137,22 +140,6 @@ RSpec.describe AuditLog, type: :model do
 
     it "is valid with an auditable target" do
       expect(build(:audit_log, :with_auditable)).to be_valid
-    end
-
-    it "allows blank ip_address" do
-      expect(build(:audit_log, ip_address: nil)).to be_valid
-      expect(build(:audit_log, ip_address: "")).to be_valid
-    end
-
-    it "rejects ip_address longer than 45 characters" do
-      log = build(:audit_log, ip_address: "a" * 46)
-      expect(log).not_to be_valid
-      expect(log.errors[:ip_address]).to be_present
-    end
-
-    it "accepts valid IPv4 and IPv6 addresses" do
-      expect(build(:audit_log, ip_address: "192.168.1.1")).to be_valid
-      expect(build(:audit_log, ip_address: "::ffff:192.168.1.1")).to be_valid
     end
   end
 
@@ -207,22 +194,6 @@ RSpec.describe AuditLog, type: :model do
       end
     end
 
-    describe ".by_ip" do
-      it "filters logs by ip_address" do
-        log_a = create(:audit_log, ip_address: "10.0.0.1")
-        log_b = create(:audit_log, ip_address: "10.0.0.2")
-
-        expect(described_class.by_ip("10.0.0.1")).to include(log_a)
-        expect(described_class.by_ip("10.0.0.1")).not_to include(log_b)
-      end
-
-      it "returns all logs when ip is blank" do
-        log = create(:audit_log)
-        expect(described_class.by_ip(nil)).to include(log)
-        expect(described_class.by_ip("")).to include(log)
-      end
-    end
-
     describe ".for_period" do
       it "filters logs within a time range" do
         old_log = create(:audit_log, created_at: 10.days.ago)
@@ -264,15 +235,80 @@ RSpec.describe AuditLog, type: :model do
   end
 
   # =========================================================================
-  # SECURITY CONTEXT
+  # CRYPTO-SHREDDING ip/ua [SEC.18 форма B, ⚖️ founder 2026-11-04]
+  # ip/ua печатаються ключем субʼєкта ДО хешу; ланцюг хешує шифротекст, тож
+  # знищення ключа стирає дані й не ламає verify_chain_integrity.
   # =========================================================================
-  describe "security context" do
-    it "stores ip_address and user_agent" do
-      log = create(:audit_log, ip_address: "203.0.113.42", user_agent: "curl/7.88.1")
+  describe "crypto-shredding of ip/user_agent [SEC.18]" do
+    let(:organization) { create(:organization) }
+    let(:user) { create(:user, organization: organization) }
+
+    def sealed_log(**overrides)
+      described_class.create!({ user: user, organization: organization, action: "acting_organization_switched",
+                                ip_address: "203.0.113.42", user_agent: "curl/7.88.1" }.merge(overrides))
+    end
+
+    # `reload` несучий: читач бере ключ зі СВІЖО завантаженого субʼєкта, тож прохід
+    # доводить і round-trip ключа через AR-encryption, а не памʼять інстанса.
+    it "stores ciphertext on the single-row path and reads it back with the subject's key" do
+      log = sealed_log.reload
+
+      expect(log.ip_address).to be_present
+      expect(log.ip_address).not_to include("203.0.113.42")
+      expect(log.user_agent).not_to include("curl")
+      expect(log.readable_ip_address).to eq("203.0.113.42")
+      expect(log.readable_user_agent).to eq("curl/7.88.1")
+    end
+
+    it "seals on the bulk path too — insert_all skips callbacks, so the seal is explicit" do
+      described_class.bulk_record!([ { user_id: user.id, organization_id: organization.id,
+                                       action: "bulk_sealed", ip_address: "198.51.100.4", user_agent: "Bulk/1.0" } ])
+      log = described_class.find_by!(action: "bulk_sealed")
+
+      expect(log.ip_address).not_to include("198.51.100.4")
+      expect(log.user_agent).not_to include("Bulk")
+      expect(log.readable_ip_address).to eq("198.51.100.4")
+      expect(log.readable_user_agent).to eq("Bulk/1.0")
+      expect(described_class.verify_chain_integrity(organization.id)).to include(valid: true, verified_count: 1)
+    end
+
+    # 🔴 Регресійний пін: Rack віддає заголовки як ASCII-8BIT, а JSON-серіалізатор
+    # шифратора на такому рядку з не-ASCII байтом кидає — до печатки цей самий UA
+    # відкритим текстом ліг би в колонку без помилки.
+    it "seals a binary-tagged non-ASCII user agent the way Rack hands headers over" do
+      log = sealed_log(user_agent: "SilkenNetMobile/2.1 (Україна)".b).reload
+
+      expect(log.readable_user_agent).to eq("SilkenNetMobile/2.1 (Україна)")
+    end
+
+    it "keeps the chain verifiable after the subject key is destroyed — and the data unreadable" do
+      log = sealed_log
+      sealed_log(action: "maintenance_photo_purged")
+      ciphertext = log.reload.ip_address
+
+      user.update_column(:audit_pii_key, nil)
       log.reload
 
-      expect(log.ip_address).to eq("203.0.113.42")
-      expect(log.user_agent).to eq("curl/7.88.1")
+      expect(described_class.verify_chain_integrity(organization.id)).to include(valid: true, verified_count: 2)
+      expect(log.ip_address).to eq(ciphertext), "стирання не переписує рядок"
+      expect(log.readable_ip_address).to be_nil
+      expect(log.readable_user_agent).to be_nil
+    end
+
+    it "does not resurrect erased rows when the subject later gets a fresh key" do
+      erased = sealed_log
+      user.update_column(:audit_pii_key, nil)
+      sealed_log(action: "maintenance_photo_purged")
+
+      expect(user.reload.audit_pii_key).to be_present # ліхтар: новий ключ справді народився
+      expect(erased.reload.readable_ip_address).to be_nil
+    end
+
+    it "mints no key for a row without ip/ua (data minimisation) and reads such a row as nil" do
+      log = described_class.create!(user: user, organization: organization, action: "system_parameter_changed")
+
+      expect(user.reload.audit_pii_key).to be_nil
+      expect(log.readable_ip_address).to be_nil
     end
   end
 

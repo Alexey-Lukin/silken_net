@@ -128,9 +128,12 @@ module Api
           auditable_id: @record.id,
           ip_address: request.remote_ip,
           user_agent: request.user_agent,
+          # ⚖️ [SEC.18, founder 2026-11-04] `filename` знято: вільний текст із пристрою
+          # техніка (імʼя, дата, місце) у рядку, який не переписується ніколи. Нитку до
+          # зовнішньої копії знищеного несе `checksum` — хеш ВМІСТУ, і він звіряється
+          # незалежно від того, як ту копію назвали.
           metadata: {
             attachment_id: @photo.id,
-            filename: blob.filename.to_s,
             byte_size: blob.byte_size,
             checksum: blob.checksum,
             content_type: blob.content_type

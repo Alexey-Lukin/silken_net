@@ -18,9 +18,19 @@ class AuditLog < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :action, presence: true
-  validates :ip_address, length: { maximum: 45 }, allow_blank: true
+  # ⚠️ [SEC.18] Стелі довжини на `ip_address` НЕМАЄ свідомо: колонка несе шифротекст
+  # (≈64 символи вже для IPv4), і колишні 45 відкидали б КОЖЕН запечатаний рядок на
+  # його архівному `update!(ipfs_cid:)`.
 
   # --- КОЛБЕКИ ---
+  # ⚖️ [SEC.18 форма B — crypto-shredding, founder 2026-11-04] ip/ua шифруються ключем
+  # СУБʼЄКТА (актора `user_id` — це його запит і його адреса) ДО хешу: ланцюг хешує
+  # ШИФРОТЕКСТ, тож знищення ключа (`Gdpr::AnonymizeUserService`) стирає дані, не
+  # зсунувши жодного байта payload. Порядок оголошення несучий — печатка ПЕРЕД хешем.
+  # Рядка «без субʼєкта», для якого ip/ua треба було б просто не писати, не існує:
+  # `user_id` — NOT NULL + FK + обовʼязковий `belongs_to`, тож відкритого тексту
+  # шлях запису не має взагалі (без ключа запис падає, а не пише як є).
+  before_create :seal_subject_pii
   # Immutable Integrity Chain: кожен запис містить SHA-256 хеш
   # попереднього запису + payload, утворюючи локальний блокчейн per organization
   before_create :compute_chain_hash
@@ -61,7 +71,6 @@ class AuditLog < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :by_action, ->(action) { where(action: action) if action.present? }
   scope :by_user, ->(user_id) { where(user_id: user_id) if user_id.present? }
-  scope :by_ip, ->(ip) { where(ip_address: ip) if ip.present? }
   scope :for_period, ->(from, to) { where(created_at: from..to) if from.present? && to.present? }
   scope :archived, -> { where.not(ipfs_cid: nil) }
   scope :not_archived, -> { where(ipfs_cid: nil) }
@@ -111,6 +120,12 @@ class AuditLog < ApplicationRecord
     end
 
     transaction do
+      # [SEC.18] Та сама печатка, що `before_create :seal_subject_pii`, і так само ДО
+      # хешу — `insert_all` колбеків не кличе, тож без цього рядка bulk писав би ip/ua
+      # відкритим текстом у ланцюг, який уже не переписати.
+      users = User.where(id: rows.pluck("user_id").uniq).index_by(&:id)
+      rows.each { |row| seal_pii!(row, users.fetch(row["user_id"])) }
+
       rows_by_org = rows.group_by { |r| r["organization_id"] }
 
       rows_by_org.each do |org_id, org_rows|
@@ -162,6 +177,8 @@ class AuditLog < ApplicationRecord
   # Канонічний payload для chain hash — детермінований рядок з бізнес-полів.
   # [ARCH.57] created_at/ip_address/user_agent У ЛАНЦЮЗІ: без них timestamp/actor-tamper
   # через update_all (повз append-only колбек) був невидимий для verify_chain_integrity.
+  # [SEC.18] ip/ua тут — сирі колонки, тобто ШИФРОТЕКСТ: саме тому знищений ключ
+  # субʼєкта верифікації не ламає. ⛔ Не підставляти сюди `readable_*`.
   def chain_payload
     self.class.chain_payload_from_row(
       "organization_id" => organization_id,
@@ -209,7 +226,57 @@ class AuditLog < ApplicationRecord
     time.utc.iso8601(6)
   end
 
+  # [SEC.18] Колонки, що несуть персональне актора і тому печатаються його ключем.
+  PII_COLUMNS = %w[ip_address user_agent].freeze
+
+  # AES-256-GCM через `MessageEncryptor` — stdlib Rails, не власна обгортка OpenSSL;
+  # AEAD, тож підмінений шифротекст не розшифровується криво, а відмовляє. Шифр
+  # заданий ЯВНО, щоб формат рядка не залежав від `use_authenticated_message_encryption`;
+  # серіалізатор JSON — Marshal на читанні рядка з бази не вантажимо.
+  def self.pii_encryptor(key)
+    ActiveSupport::MessageEncryptor.new(Base64.strict_decode64(key), cipher: "aes-256-gcm", serializer: JSON)
+  end
+
+  # Мутує ip/ua в `row` (Hash зі string-ключами) на шифротекст ключем `user`.
+  # Порожній рядок ключа НЕ народжує: субʼєкт без ip/ua-сліду ключа не має.
+  # 🔴 `force_encoding` + `scrub` несучі: Rack віддає заголовки як ASCII-8BIT, а JSON
+  # (json 3.x) кидає на БУДЬ-ЯКОМУ не-ASCII байті такого рядка — навіть валідному UTF-8,
+  # тож UA з кирилицею валив би перемикання організації й purge фото в 500.
+  def self.seal_pii!(row, user)
+    present = PII_COLUMNS.select { |col| row[col].present? }
+    return if present.empty?
+
+    box = pii_encryptor(user.audit_pii_key!)
+    present.each { |col| row[col] = box.encrypt_and_sign(row[col].dup.force_encoding(Encoding::UTF_8).scrub) }
+  end
+
+  # [SEC.18] ЄДИНИЙ легальний вихід ip/ua назовні (`AuditLogBlueprint :show`, DSAR):
+  # сира колонка несе шифротекст і як є не віддається.
+  def readable_ip_address = unseal(ip_address)
+  def readable_user_agent = unseal(user_agent)
+
   private
+
+  # `nil` = стерто. Відмова розшифрування — теж стерто, а не 500: так читаються
+  # (а) рядки під ключем, знищеним анонімізацією, якщо субʼєкт потім дістав новий;
+  # (б) рядки, записані відкритим текстом ДО печатки (2026-11-04) — вони живуть лише
+  # на слотах, що існували до неї; production-бази тоді ще не було.
+  def unseal(ciphertext)
+    return if ciphertext.blank?
+
+    key = user.audit_pii_key
+    return if key.blank?
+
+    self.class.pii_encryptor(key).decrypt_and_verify(ciphertext)
+  rescue ActiveSupport::MessageEncryptor::InvalidMessage
+    nil
+  end
+
+  def seal_subject_pii
+    sealed = attributes.slice(*PII_COLUMNS)
+    self.class.seal_pii!(sealed, user)
+    assign_attributes(sealed)
+  end
 
   def forbid_business_field_mutation!
     illegal = changed - ARCHIVAL_MUTABLE_COLUMNS

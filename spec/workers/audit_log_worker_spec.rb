@@ -59,8 +59,10 @@ RSpec.describe AuditLogWorker, type: :worker do
 
       log = AuditLog.last
       expect(log.action).to eq("login")
-      expect(log.ip_address).to eq("203.0.113.42")
-      expect(log.user_agent).to eq("Mozilla/5.0")
+      # [SEC.18] Колонки несуть шифротекст; відкритий текст — лише через читач.
+      expect(log.ip_address).not_to eq("203.0.113.42")
+      expect(log.readable_ip_address).to eq("203.0.113.42")
+      expect(log.readable_user_agent).to eq("Mozilla/5.0")
       expect(log.metadata).to eq("source" => "api")
     end
 

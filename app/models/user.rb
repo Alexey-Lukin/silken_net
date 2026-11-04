@@ -11,6 +11,11 @@ class User < ApplicationRecord
   # (AR-encryption з ENV, SEC.22; boot-guard fail-closed без ключів).
   encrypts :otp_secret
 
+  # ⚖️ [SEC.18 форма B — crypto-shredding, founder 2026-11-04] Ключ, яким журнал
+  # шифрує ip/user_agent ЦЬОГО субʼєкта (`AuditLog.seal_pii!`). Знищити ключ = стерти:
+  # шифротекст в append-only рядку лишається, ланцюг верифікується, прочитати нічим.
+  encrypts :audit_pii_key
+
   # --- ЗВ'ЯЗКИ (The Neural Links) ---
   has_many :sessions, dependent: :destroy
   belongs_to :organization, optional: true
@@ -236,6 +241,23 @@ class User < ApplicationRecord
   def touch_visit!
     return if last_seen_at.present? && last_seen_at > 5.minutes.ago
     update_columns(last_seen_at: Time.current)
+  end
+
+  # [SEC.18] Ключ народжується ЛИНИВО — при першому записі ip/ua субʼєкта, тож
+  # користувач без такого сліду ключа не має і backfill не потрібен. 32 випадкові
+  # байти (base64) і Є ключем AES-256 — це не пароль, тож KDF тут зайвий.
+  # 🔴 Запис — умовний `UPDATE … WHERE audit_pii_key IS NULL`, не `update_column`:
+  # два перші конкурентні записи інакше видали б два ключі, і другий мовчки «стер» би
+  # рядок, запечатаний першим. Хто програв гонку — читає ключ переможця.
+  # (`update_all` серіалізує через encrypted-тип — at-rest шифрування тримається.)
+  def audit_pii_key!
+    return audit_pii_key if audit_pii_key.present?
+
+    fresh = SecureRandom.base64(32)
+    won = self.class.where(id: id, audit_pii_key: nil).update_all(audit_pii_key: fresh) == 1
+    self.audit_pii_key = won ? fresh : self.class.where(id: id).pick(:audit_pii_key)
+    clear_attribute_changes([ :audit_pii_key ])
+    audit_pii_key
   end
 
   # --- MFA / TOTP (Зона 4: Security) ---

@@ -581,6 +581,34 @@ RSpec.describe User, type: :model do
   end
 
   # [ARCH.57] Зміна ролі → audit-ланцюг (model-layer ловить і console-шлях).
+  # [SEC.18 форма B] Ключ субʼєкта для crypto-shredding журналу.
+  describe "#audit_pii_key! [SEC.18]" do
+    it "is born lazily, is a 256-bit key, stays put on repeat calls and is encrypted at rest" do
+      user = create(:user)
+      expect(user.audit_pii_key).to be_nil
+
+      key = user.audit_pii_key!
+
+      expect(Base64.strict_decode64(key).bytesize).to eq(32)
+      expect(user.audit_pii_key!).to eq(key)
+      expect(user).not_to be_changed
+      expect(user.reload.audit_pii_key).to eq(key)
+      expect(user.audit_pii_key_before_type_cast).not_to include(key)
+    end
+
+    # 🔴 Пін гонки: два перші записи інакше видали б ДВА ключі, і другий мовчки
+    # «стер» би рядок, запечатаний першим. `stale` — той самий субʼєкт, завантажений
+    # ДО ключа, тобто рівно той, хто програє умовний UPDATE.
+    it "makes a racer that lost the conditional write adopt the winner's key, never mint a second" do
+      user = create(:user)
+      stale = described_class.find(user.id)
+      winner = user.audit_pii_key!
+
+      expect(stale.audit_pii_key!).to eq(winner)
+      expect(user.reload.audit_pii_key).to eq(winner)
+    end
+  end
+
   describe "role-change audit-trail [ARCH.57]" do
     let!(:oracle) do
       create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",

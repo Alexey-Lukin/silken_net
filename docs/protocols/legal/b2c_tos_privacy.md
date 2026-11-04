@@ -289,7 +289,7 @@ DPO обов'язковий (Art. 37) лише за: (а) публічний о�
 | §A.11 Застосовне право | token-контур юрисдикція (Phase-2) gated на securities-ВИСНОВОК юриста (не на присуд — той ухвалено 08-28) | `UNI.16`; entity-вісь → `BIZ.20` |
 | §B.7 Anchor-геолокація | re-identification власника через кадастр — design-review відкритий | `SEC.18` (деталь → «Compliance-gaps» нижче) |
 | §B.8 Retention | TTL/auto-expiry retention-політика не формалізована | `SEC.18` |
-| §B.9 DSAR | self-serve export **і** erasure відвантажені (сторінка безпеки; erasure зі step-up на пароль, ⚖️ 2026-08-21). Відкритим лишається **форма стирання там, де запис незнищенний**: `audit_logs` (append-only ланцюг) і оригінали фото `maintenance_records` (Evidence Protocol) | `SEC.18` |
+| §B.9 DSAR | self-serve export **і** erasure відвантажені (сторінка безпеки; erasure зі step-up на пароль, ⚖️ 2026-08-21). Відкритим лишається **строк там, де запис незнищенний**: оригінали фото `maintenance_records` (Evidence Protocol; їхній «строк» — частина retention-питання). Для `audit_logs` форму ухвалено ⚖️ 2026-11-04: `ip_address`/`user_agent` стираються знищенням ключа субʼєкта (crypto-shredding), рядок лишається; відкрита лише юр-кваліфікація — [`dpia_art35 §4 R3`](dpia_art35.md) | `SEC.18` |
 
 Повний трекер — [`00_07`](../../00_07_Action_Plan_Tracker.md).
 

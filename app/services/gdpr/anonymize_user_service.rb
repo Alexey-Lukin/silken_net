@@ -2,8 +2,8 @@
 # frozen_string_literal: true
 
 module Gdpr
-  # [SEC.18] Анонімізація субʼєкта (GDPR Art.17 erasure) — БЕЗСУПЕРЕЧНА половина:
-  # рівно ті поверхні, чиє стирання не потребує жодного присуду.
+  # [SEC.18] Анонімізація субʼєкта (GDPR Art.17 erasure): рівно ті поверхні, чиє
+  # стирання не потребує присуду АБО вже його дістало (журнал — 2026-11-04).
   #
   #   · sessions.destroy_all   — слід входу (ip/user_agent), не append-only;
   #     заразом гасить усі живі входи (той самий ефект, що change_password)
@@ -11,12 +11,14 @@ module Gdpr
   #     неможливий за побудовою (email затерто, digest знято — `authenticate`
   #     має nil-гард, — сесії вбиті), тобто анонімізація
   #     Є ефективним offboarding-ом без окремого механізму деактивації
+  #   · audit_logs ip/user_agent — стираються ЗНИЩЕННЯМ КЛЮЧА субʼєкта
+  #     (`shred_audit_pii_key!`, та сама транзакція), ⚖️ форма B, founder 2026-11-04:
+  #     журнал зберігав їх шифротекстом, і ланцюг хешує саме шифротекст — тож
+  #     жоден рядок не переписується і `verify_chain_integrity` лишається зеленим.
+  #     ⚠️ Стерто з БАЗИ, не з бекапів: копія ключа в знімку живе стільки, скільки
+  #     сам знімок. `user_id` у рядках лишається — він тепер вказує на tombstone.
   #
-  # 🔒 Стелі названі СВІДОМО, і кожна чекає власного присуду (`00_07` SEC.18):
-  #   · audit_logs НЕ чіпаються: ip_address/user_agent ВХОДЯТЬ у chain_payload
-  #     append-only ланцюга (ARCH.57), тож псевдонімізація поля вимагає
-  #     перехешування ланцюга від рядка до хвоста — форма (re-hash ⊥
-  #     crypto-shredding ⊥ Art.17(3)-виняток) є ⚖️-рішенням, не кодом
+  # 🔒 Стеля названа СВІДОМО й чекає власного присуду (`00_07` SEC.18):
   #   · maintenance_records НЕ чіпаються: Evidence Protocol (гард
   #     `guard_evidence_purge!`) тримає фотодокази незнищенними для
   #     repair/installation — напруга «доказ ⊥ erasure» теж ⚖️.
@@ -44,6 +46,7 @@ module Gdpr
         record_anonymization_trail!
         @user.sessions.destroy_all
         scrub_user_row!
+        shred_audit_pii_key!
       end
       @user
     end
@@ -79,6 +82,15 @@ module Gdpr
         password_digest: nil,
         organization_id: nil
       )
+    end
+
+    # [SEC.18 форма B] Знищення ключа = стирання ip/ua з журналу. Окремим
+    # `update_columns`, а НЕ ключем у `update!` вище: ключ народжує ІНШИЙ інстанс
+    # субʼєкта (`AuditLog` вантажить його сам за `user_id`), тож у цьому він може
+    # бути `nil` у памʼяті — і dirty-трекінг мовчки викинув би `audit_pii_key: nil`
+    # з UPDATE, лишивши ключ у базі. `update_columns` пише безумовно.
+    def shred_audit_pii_key!
+      @user.update_columns(audit_pii_key: nil)
     end
   end
 end
