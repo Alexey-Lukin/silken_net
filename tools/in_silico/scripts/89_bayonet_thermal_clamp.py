@@ -90,8 +90,8 @@ OUT_JSON = CACHE_DIR / "mechanical" / "bayonet_thermal_clamp.json"
 K_GRID_N_PER_UM = (0.3, 1.0, 3.0, 10.0, 30.0)   # PEEK-dominated loop stiffnesses printed; the real one is unmeasured
 DELTA_MM = (0.0, 0.05, 0.10)   # ±interference tolerance: none · the ±0.05 class the shop is asked for a MACHINED Ti
 #                                groove depth (`52` DEPTH_TOL_ASKED, unanswered — HW.23), borrowed here for one Z dimension ·
-#                                both Z dimensions at it, summed arithmetically (RSS would be ±0.071; `52`'s face flatness,
-#                                ±84 µm, sits in the same loop and is NOT in either reading)
+#                                both Z dimensions at it, summed arithmetically (RSS would be ±0.071; the face-flatness
+#                                remainder of `52`'s O-ring chain sits in the same loop and is NOT in either reading)
 YIELD_ONSET_LINE_CONTACT = 1.67  # p0 / Y at first yield under a line contact (Tresca; Johnson, Contact Mechanics, §6.2)
 HOT_FINISH_ALPHA = "0.50"      # canon finish α ≤ 0.5 (02_01, ⚖️ delegated 2026-09-27); `71`'s still-air h_c × 0.7 row
 
