@@ -55,7 +55,13 @@ class InsurancePayoutWorker
       tx = insurance.create_blockchain_transaction!(
         wallet: audit_wallet,
         amount: insurance.payout_amount,
-        token_type: insurance.token_type, # Тип токена обирається при підписанні контракту
+        # ⛔ [INS.1, SEC.36-свіп 2026-11-04] Etherisc-виплата — це ЗОВНІШНІЙ USDC з пулу DIP,
+        # не наша емісія, тож рядок несе ВЛАСНУ валюту: під `insurance.token_type`
+        # (= `carbon_coin`) підтверджена виплата рахувалась би в
+        # `net_minted_supply(:carbon_coin)` — базу слешингу, `total_scc_supply` L1-якоря,
+        # героя кластера. Лік за прецедентом ARCH.120 — `token_type`, не фільтр мережі
+        # (скіл `web3-pipeline` #34). Internal-mode мінтить SCC — тип береться з контракту.
+        token_type: insurance.uses_etherisc? ? :usdc : insurance.token_type,
         to_address: organization.crypto_public_address,
         status: :pending,
         notes: "Страхове відшкодування ##{insurance.id}. Подія: #{insurance.trigger_event}."

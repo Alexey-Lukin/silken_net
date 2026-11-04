@@ -529,6 +529,18 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String)) # [ARCH.52] +created_at
       end
 
+      # ⛔ [INS.1, SEC.36-свіп 2026-11-04] Зовнішній USDC — не наша емісія: рядок несе власну
+      # валюту, тож навіть ПІДТВЕРДЖЕНИЙ він не рухає `net_minted_supply(:carbon_coin)` —
+      # базу слешингу і `total_scc_supply` L1-якоря (вісь ARCH.120, скіл `web3-pipeline` #34).
+      it "records the external payout in its own currency — confirmed, it stays out of SCC supply" do
+        described_class.new.perform(etherisc_insurance.id)
+
+        tx = etherisc_insurance.reload.blockchain_transaction
+        expect(tx.token_type).to eq("usdc")
+        tx.update_columns(status: BlockchainTransaction.statuses[:confirmed])
+        expect(BlockchainTransaction.for_cluster(cluster.id).net_minted_supply(:carbon_coin)).to eq(0)
+      end
+
       context "when an orphaned :pending Etherisc tx is recovered (claim may already be sent) [ARCH.45]" do
         let!(:orphaned_tx) do
           etherisc_insurance.update!(status: :paid, paid_at: Time.current)
@@ -591,6 +603,15 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
 
           expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String)) # [ARCH.52] +created_at
         end
+      end
+    end
+
+    # Дзеркальна половина Etherisc-піна вище: без неї мутант «завжди `:usdc`» пройшов би зеленим.
+    context "when insurance pays in Internal mode" do
+      it "keeps the internal payout in the contract own token" do
+        described_class.new.perform(insurance.id)
+
+        expect(insurance.reload.blockchain_transaction.token_type).to eq("carbon_coin")
       end
     end
   end
