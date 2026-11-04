@@ -2169,19 +2169,25 @@ CHECKS += [
            lambda d: _down1(d["rim_premise_A"]["margin_x"]["initial_with_clamp_at_52_requirement"]), 0.0),
           ("SUMMARY 88 section (A) weaker-clamp share", SUMMARY, rf"keeping {N} % of that floor for 20 years",
            lambda d: _up0(d["rim_premise_A"]["share_retained_needed_with_a_weaker_clamp"] * 100), 0.0),
-          ("SUMMARY nominal band low", SUMMARY, rf"\| 24\.5 % — nominal \| {N}–[\d.]+ \|",
-           lambda d: d["band"]["nominal"]["reaction_N"][0], 0.6),
-          ("SUMMARY nominal band high", SUMMARY, rf"\| 24\.5 % — nominal \| [\d.]+–{N} \|",
-           lambda d: d["band"]["nominal"]["reaction_N"][1], 0.6),
-          # the table's one-sided cells are pinned by the generated block _ORING_ROWS below; the band is a reading
+          # the table's one-sided cells are pinned by the generated block _ORING_ROWS below — the reaction column too:
+          # its ends are LIMITS of the bar's middle-and-upper thirds (no lower third under 1″), so the bracket goes
+          # OUTWARD, low end down, high end up (in-silico §When Modifying #43; 00_07 HW.43, 2026-11-04)
           ("SUMMARY binding squeeze", SUMMARY, rf"leaves the lug unbound only while the squeeze stays below {N} %",
            lambda d: _down1(d["inversion"]["squeeze_pct_band_high_binds"]), 0.0),
           ("SUMMARY generous crossing", SUMMARY, rf"stays below it only while the squeeze is under {N} %",
            lambda d: _down1(d["inversion"]["squeeze_pct_band_high_exceeds_generous_bound"]), 0.0),
-          ("02_02 §3.2 floor", BLIND_MATE, rf"\*\*{N}–[\d.]+ Н\*\* на підлозі вікна 19 %",
-           lambda d: d["band"]["window_floor"]["reaction_N"][0], 0.6),
-          ("02_02 §3.2 window top", BLIND_MATE, rf"\*\*[\d.]+–{N} Н\*\* на верху 30 %",
-           lambda d: d["band"]["window_top"]["reaction_N"][1], 0.6),
+          ("02_02 §3.2 window_floor low", BLIND_MATE, rf"\*\*{N}–[\d.]+ Н\*\* на підлозі вікна 19 %",
+           lambda d: _down0(d["band"]["window_floor"]["reaction_N"][0]), 0.0),
+          ("02_02 §3.2 window_floor high", BLIND_MATE, rf"\*\*[\d.]+–{N} Н\*\* на підлозі вікна 19 %",
+           lambda d: _up0(d["band"]["window_floor"]["reaction_N"][1]), 0.0),
+          ("02_02 §3.2 nominal low", BLIND_MATE, rf"\*\*{N}–[\d.]+ Н\*\* на номіналі 24\.5 %",
+           lambda d: _down0(d["band"]["nominal"]["reaction_N"][0]), 0.0),
+          ("02_02 §3.2 nominal high", BLIND_MATE, rf"\*\*[\d.]+–{N} Н\*\* на номіналі 24\.5 %",
+           lambda d: _up0(d["band"]["nominal"]["reaction_N"][1]), 0.0),
+          ("02_02 §3.2 window_top low", BLIND_MATE, rf"\*\*{N}–[\d.]+ Н\*\* на верху 30 %",
+           lambda d: _down0(d["band"]["window_top"]["reaction_N"][0]), 0.0),
+          ("02_02 §3.2 window_top high", BLIND_MATE, rf"\*\*[\d.]+–{N} Н\*\* на верху 30 %",
+           lambda d: _up0(d["band"]["window_top"]["reaction_N"][1]), 0.0),
           ("02_02 §3.5 nominal clamp", BLIND_MATE, rf"≈ \*\*{N} Н\*\* на номіналі 24\.5 %",
            lambda d: d["band"]["nominal"]["required_clamp_N_at_band_high"]["after_20_years_ring_never_relaxes"], 0.6),
           ("02_02 §3.5 chain-top clamp", BLIND_MATE, rf"≈ \*\*{N} Н\*\* на верху ланцюга",
@@ -6850,7 +6856,8 @@ CHECKS += [
 
 # ── HW.33 · HW.43 the tables of 88 and 89, EVERY one-sided cell (in-silico §When Modifying #43, 2026-11-03): until then
 # a row of either table was held by an anchor on two of its cells, and the rest by nothing. 88: the lug-root margins
-# DOWN, the share the ring must have lost UP (×100, whole %); the band is a reading. 89: every wall a requirement, UP;
+# DOWN, the share the ring must have lost UP (×100, whole %), the band's ends OUTWARD (low down, high up — limits of the
+# bar's thirds, 2026-11-04). 89: every wall a requirement, UP;
 # L0 and the line-contact peak are readings, to the nearest.
 ORING = "mechanical/oring_reaction_band.json"
 CLAMP = "mechanical/bayonet_thermal_clamp.json"
@@ -6864,6 +6871,11 @@ _CLAMP_ROWS = (("19 % — window floor", "window_floor"), ("24.5 % — nominal",
 def _oring_row(label, j):
     c = [N if j == k else r"[\d.]+" for k in range(5)]
     return (rf"(?m)^\| {re.escape(label)} \| [\d.]+–[\d.]+ \| {c[0]}× … {c[1]}× \| {c[2]} · {c[3]} · {c[4]} % \|$")
+
+
+def _oring_reaction(label, j):
+    c = [N if j == k else r"[\d.]+" for k in range(2)]
+    return rf"(?m)^\| {re.escape(label)} \| {c[0]}–{c[1]} \| "
 
 
 def _clamp_row(label, j):
@@ -6894,6 +6906,10 @@ CHECKS += [
           (lambda k: lambda d: _down2(d["band"][k]["lug_root_margin_x_at_print_floor"]["after_20_years_ring_never_relaxes"]))(key),
           *((lambda k, yr: lambda d: _up0(d["band"][k]["ring_must_have_lost_share_of_R0_by_year"][yr] * 100))(key, y)
             for y in ("2", "5", "20"))))],
+    *[(f"O-ring table {key} reaction {('low', 'high')[j]} → 88", SUMMARY, _oring_reaction(label, j), ORING, res, 0.0)
+      for label, key in _ORING_ROWS
+      for j, res in enumerate(((lambda k: lambda d: _down0(d["band"][k]["reaction_N"][0]))(key),
+                               (lambda k: lambda d: _up0(d["band"][k]["reaction_N"][1]))(key)))],
     *[(f"clamp table {key} col {j} → 89", SUMMARY, _clamp_row(label, j), CLAMP, res, 0.0)
       for label, key in _CLAMP_ROWS
       for j, res in enumerate((

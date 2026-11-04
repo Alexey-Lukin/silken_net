@@ -3037,10 +3037,11 @@ def test_oring_reaction_band():
     for name, b in d["band"].items():
         pct = b["squeeze_pct"]
         lo, hi = band(pct)
-        # the cache rounds lbf/in to 0.01, so the reaction it derives may sit one rounding step off this one
-        assert abs(b["bar_lbf_per_in"][0] - bar(pct, 0)) <= 0.011 and abs(b["lbf_per_in"][1] - hi) <= 0.011, name
-        assert abs(b["lbf_per_in"][0] - lo) <= 0.011, name                     # Table 2-3: no lower third under 1"
-        assert abs(b["reaction_N"][0] - lo * to_n) <= 0.15 and abs(b["reaction_N"][1] - hi * to_n) <= 0.15, name
+        # the chart and the band are cached raw (2026-11-04, 00_07 HW.43): the rebuild reproduces them to the float — the
+        # rounded chart let a floor of 57.99 N rebuild as 58.03, so the test could not tell the 57 cell from 58
+        assert abs(b["bar_lbf_per_in"][0] - bar(pct, 0)) <= 1e-9 and abs(b["lbf_per_in"][1] - hi) <= 1e-9, name
+        assert abs(b["lbf_per_in"][0] - lo) <= 1e-9, name                      # Table 2-3: no lower third under 1"
+        assert abs(b["reaction_N"][0] - lo * to_n) <= 1e-9 and abs(b["reaction_N"][1] - hi * to_n) <= 1e-9, name
         asm, n20 = hi * to_n + p52, (hi * to_n + p52) / f_t
         req, mar = b["required_clamp_N_at_band_high"], b["lug_root_margin_x_at_print_floor"]
         assert abs(req["at_assembly"] - asm) <= 0.2 and abs(req["after_20_years_ring_never_relaxes"] - n20) <= 0.2, name
@@ -3068,9 +3069,9 @@ def test_oring_reaction_band():
             needs87[k] = max(needs87.get(k, 0.0), v)
     assert a["needs_87"] == needs87
     # (A) divides by the floor taken BEFORE its display rounding (#6) — read it raw, and the margin and the share then
-    # reproduce exactly; the band's own display of the same floor must sit within its 0.05 N rounding step
+    # reproduce exactly; the band caches the same floor raw (2026-11-04), so the two copies are one number
     floor_lo = a["reaction_N_low_at_window_floor"]
-    assert abs(d["band"]["window_floor"]["reaction_N"][0] - floor_lo) <= 0.05 + 1e-9
+    assert d["band"]["window_floor"]["reaction_N"][0] == floor_lo
     assert set(a["margin_x"]) == {"initial_with_clamp_at_52_requirement"}    # a margin only on an INITIAL need
     assert abs(a["margin_x"]["initial_with_clamp_at_52_requirement"]
                - floor_lo / needs87["initial_with_clamp_at_52_requirement"]) <= 1e-9

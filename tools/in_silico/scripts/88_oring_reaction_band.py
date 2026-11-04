@@ -192,9 +192,11 @@ def main() -> int:
         if name == "window_floor":
             floor_lo = lo * to_n                      # the margins below divide by it — taken before its display rounding
         band[name] = {"squeeze_pct": pct,
-                      "bar_lbf_per_in": [round(bar_lo, 2), round(hi, 2)],
-                      "lbf_per_in": [round(lo, 2), round(hi, 2)],
-                      "reaction_N": [round(lo * to_n, 1), round(r_hi, 1)],
+                      "bar_lbf_per_in": [bar_lo, hi],
+                      "lbf_per_in": [lo, hi],
+                      # raw: the two ends are LIMITS of the bar's middle-and-upper thirds, quoted as a bracket OUTWARD — the low end
+                      # down, the high end up — so they keep the precision that rounding needs (#43; 00_07 HW.43)
+                      "reaction_N": [lo * to_n, r_hi],
                       # unrounded: 89 computes from the clamp and the wall (in-silico §When Modifying #6)
                       "required_clamp_N_at_band_high": {"at_assembly": need_asm,
                                                         "after_20_years_ring_never_relaxes": need_20},
@@ -226,12 +228,13 @@ def main() -> int:
     verdict = (
         f"The «generous» {GENEROUS_ORING_BOUND_N:.0f} N is not an upper bound: for a ring under 1\" Parker's Table 2-3 puts "
         f"the 70 Shore A load in the middle or upper third of the Figure 2-4 bar, so the reaction is "
-        f"{nom['reaction_N'][0]:.0f}–{nom['reaction_N'][1]:.0f} N at the {nominal:.1f} % nominal and "
-        f"{top['reaction_N'][0]:.0f}–{top['reaction_N'][1]:.0f} N at the {win[1]:.0f} % window top, and the band's top stays "
+        f"{down(nom['reaction_N'][0], 0):.0f}–{up(nom['reaction_N'][1], 0):.0f} N at the {nominal:.1f} % nominal and "
+        f"{down(top['reaction_N'][0], 0):.0f}–{up(top['reaction_N'][1], 0):.0f} N at the {win[1]:.0f} % window top, and the band's top stays "
         f"below "
         # each one-sided number carries its own direction (in-silico §When Modifying #43): the edge of a harmless region
         # («from X %») and a margin («X×») or a floor («no less than») DOWN; a requirement («at least», «lost about») UP;
-        # the band and the transcription's bracket are readings, to the nearest
+        # the band's ends are LIMITS of the bar's thirds, a bracket OUTWARD (low down, high up); the transcription's
+        # bracket reads «unbound only while below X» at each end — edges of a harmless region, DOWN (00_07 HW.43)
         f"{GENEROUS_ORING_BOUND_N:.0f} N only while the squeeze is under {down(sq_generous, 1):.1f} % — so it is no "
         f"bound above that. With that top, 52's requirement lies "
         f"between the clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF {sf73:.0f} "
@@ -245,8 +248,8 @@ def main() -> int:
         f"years, so the ring's loss is due early "
         f"({down(top['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']):.2f}× if it never does, "
         f"{down(top['lug_root_margin_x_at_print_floor']['at_assembly']):.2f}× at assembly); a ring that does not relax "
-        f"leaves the lug unbound only while the squeeze stays below {down(sq_bind, 1):.1f} % ({min(sq_bind_reads):.1f} at "
-        f"+4 % and {max(sq_bind_reads):.1f} at −4 % of the transcription), and strength, not printability, then sizes the "
+        f"leaves the lug unbound only while the squeeze stays below {down(sq_bind, 1):.1f} % ({down(min(sq_bind_reads), 1):.1f} at "
+        f"+4 % and {down(max(sq_bind_reads), 1):.1f} at −4 % of the transcription), and strength, not printability, then sizes the "
         f"collar wall — at least {up(top['collar_wall_strength_asks_mm_ring_never_relaxes']):.2f} mm at the window top "
         f"against the 0.2 mm print floor (52's form at the assembly temperature with no fit tolerance; 89 shows the "
         f"requirement itself, unrounded, is the k = 0 end of a stiff loop's wall — its lower bound). "
@@ -282,7 +285,7 @@ def main() -> int:
                    "pogo_pair_N_upper_bound_52": p52, "relax_fraction_at_service_52": f_t,
                    "lug_root_capacity_N_at_print_floor_73": lug_cap, "safety_factor_73": sf73,
                    "o_ring_reaction_N_needed_87": need},
-        "chart_70_shore_a_lbf_per_in": {str(p): [round(v, 2) for v in (lbf_per_in(a), lbf_per_in(b))]
+        "chart_70_shore_a_lbf_per_in": {str(p): [lbf_per_in(a), lbf_per_in(b)]   # raw: the test rebuilds the band from it
                                         for p, (a, b) in sorted(BARS_070_PT[SHORE_A].items())},
         "band": band,
         # unrounded: «binds from X %» and «passes it from X %» are edges of a harmless region, quoted DOWN (#43)

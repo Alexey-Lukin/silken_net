@@ -2041,11 +2041,11 @@ and Parker gives compression set, not stress relaxation, so the share the ring l
 
 | Squeeze | Reaction (N) | Lug root at the print floor: at assembly … ring never relaxes | Ring must have lost (for SF 2) by year 2 · 5 · 20 |
 |---|---|---|---|
-| 19 % — window floor | 58–119 | 3.78× … 2.46× | 0 · 0 · 0 % |
-| 21.7 % — `52`'s chain, low | 74–158 | 2.85× … 1.85× | 0 · 0 · 0 % |
-| 24.5 % — nominal | 96–218 | 2.07× … 1.35× | 0 · 0 · 0 % |
-| 27.3 % — `52`'s chain, high | 125–301 | 1.51× … 0.98× | 0 · 2 · 2 % |
-| 30 % — window top | 160–409 | 1.11× … 0.72× | 23 · 28 · 28 % |
+| 19 % — window floor | 57–119 | 3.78× … 2.46× | 0 · 0 · 0 % |
+| 21.7 % — `52`'s chain, low | 74–159 | 2.85× … 1.85× | 0 · 0 · 0 % |
+| 24.5 % — nominal | 96–219 | 2.07× … 1.35× | 0 · 0 · 0 % |
+| 27.3 % — `52`'s chain, high | 124–301 | 1.51× … 0.98× | 0 · 2 · 2 % |
+| 30 % — window top | 160–410 | 1.11× … 0.72× | 23 · 28 · 28 % |
 
 **Verdict** — the 100 N is not an upper bound: the band's top stays below it only while the squeeze is under 17.1 %. With that top the lug root
 (SF 2 inside; no fillet, no lug bending) carries `52`'s requirement at the nominal whatever the ring does, at the top of
