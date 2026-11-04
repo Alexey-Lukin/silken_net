@@ -50,7 +50,8 @@ edge is `71`'s lumped capsule mean for the canon finish α ≤ 0.5 (02_01, deleg
 sunlit base, so the 85 °C requirement governs; L0 at `88`'s band top with the ring never relaxing (the member's corner).
 
 CAN show: for each squeeze point of `88`, two temperature readings, two Δα readings and three δ readings, the collar
-wall as a function of k, the k the print floor and the member wall tolerate, the wall a PEEK-only column would need, and
+wall as a function of k, the k the print floor, the member wall (`88`'s requirement) and the ratified member (0.28, 02_02
+§4.4) tolerate, the wall a PEEK-only column would need, and
 the force-controlled lug load and wall. CANNOT show: k itself (paths 4 — FEA or bench; the lug geometry is a
 placeholder); δ (neither Z tolerance is specified); the ledge's local creep; seasonal ratcheting beyond one summer.
 """
@@ -70,6 +71,7 @@ from lib.constants import (
     ALLOY_PROPERTIES,
     ALPHA_PEEK_1K,
     CACHE_DIR,
+    COLLAR_WALL_MEMBER_MM,
     E_PEEK_PA,
     NU_PEEK,
     SIGMA_YIELD_PEEK_PA,
@@ -128,6 +130,11 @@ def main() -> int:
     if abs(cap_floor * member_wall / floor_wall - cap_member) > 1e-9 * cap_member:      # `73`: pure shear, linear in t
         raise SystemExit(f"control: 73's line at the member wall gives {cap_floor * member_wall / floor_wall} N, "
                          f"88's requirement {cap_member} N")
+    # the RATIFIED member is that requirement rounded up (02_02 §4.4), so unlike it the member carries a k > 0 — the same
+    # line `73` gives, at the canon's number (00_07 HW.43: «for any k» is a property of the requirement, not of 0.28)
+    cap_ratified = cap_floor * COLLAR_WALL_MEMBER_MM / floor_wall
+    if member_wall > COLLAR_WALL_MEMBER_MM:
+        raise SystemExit(f"control: the ratified member {COLLAR_WALL_MEMBER_MM} mm lies below 88's requirement {member_wall}")
 
     t_asm = c82["inputs"]["t_ref_c"]
     hot_model = c71["hot_bound_h_c_sensitivity"]["sunlit_still_air"][HOT_FINISH_ALPHA]["t_cap_max_c"]
@@ -181,7 +188,8 @@ def main() -> int:
                         v = (cap - l0 / f) / slope_um
                         return v if v >= 0 else None
 
-                    km = {"print_floor": k_max(cap_floor), "member_wall": k_max(cap_member)}
+                    km = {"print_floor": k_max(cap_floor), "member_wall": k_max(cap_member),
+                          "ratified_member_wall": k_max(cap_ratified)}
                     if name == "window_top":
                         member_k_top[(rname, aname, delta)] = km["member_wall"]       # unrounded, for the control below
                     # unrounded: the walls are requirements the docs quote UP and k_max a capacity they quote DOWN,
@@ -249,6 +257,13 @@ def main() -> int:
     pc_top = top["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"][ek]
     pc_flo = flo["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"][ek]
     pc_force = top["lug_line_contact_p0_MPa"]["force_controlled"][ek]
+    # the ratified member's k over every reading × tolerance at the window top — a BRACKET of thresholds over cells, so it
+    # rounds OUTWARD: the low end DOWN, the high end UP (in-silico §When Modifying #43 ⊕ 2026-11-04)
+    rat_k = [d["k_max_N_per_um"]["ratified_member_wall"] for r in top["by_reading"].values()
+             for d in r["by_delta_mm"].values()]
+    # a «holds while k stays below X» sentence at ±0.05 takes the LEAST over the temperature readings — the isothermal
+    # one alone sits above the gradient-bound one, and the sentence would be false there
+    rat_k5 = min(r["by_delta_mm"]["0.05"]["k_max_N_per_um"]["ratified_member_wall"] for r in top["by_reading"].values())
     verdict = (
         f"A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop "
         f"stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) "
@@ -258,7 +273,11 @@ def main() -> int:
         # 88's window-top requirement IS the k = 0 end of the wall line (the #32 control above), so the clause says that of
         # the QUANTITY and prints no number a reader could take for the ratified member (in-silico §When Modifying #43)
         f"gradient) — so 88's requirement at the window top, the ground of the ratified member, is the k = 0 end of that "
-        f"line: every PEEK-dominated k needs more, which makes it the loop's lower bound, not an estimate. A compliant "
+        f"line: every PEEK-dominated k needs more, which makes it the loop's lower bound, not an estimate. The ratified "
+        f"member rounds it up to {COLLAR_WALL_MEMBER_MM} mm and so carries such a loop at the window top on every "
+        f"temperature reading while k stays below {down(rat_k5, 3):.3f} N/µm with ±0.05 mm ("
+        f"{down(min(rat_k), 3):.3f}–{up(max(rat_k), 3):.3f} over every reading and tolerance) — «for any k» "
+        f"is a property of the requirement, not of that number. A compliant "
         f"element in series makes the relaxation and the k-terms fade, and the lug load runs "
         f"continuously down to L0 — {top['force_controlled_lug_load_N']:.0f} N at the window top, a "
         f"{up(top['force_controlled_wall_mm_zero_band']):.2f} mm wall with a zero force band — so the ratified member is "
@@ -305,6 +324,8 @@ def main() -> int:
                                  "(52 DEPTH_TOL_ASKED) on one Z dimension, 0.10 = both at it; neither is specified",
                    "lug_root_capacity_N_at_print_floor_73": cap_floor, "print_floor_wall_mm_73": floor_wall,
                    "member_wall_mm_88": member_wall, "lug_root_capacity_N_at_member_wall": round(cap_member, 1),
+                   "ratified_member_wall_mm_02_02": COLLAR_WALL_MEMBER_MM,
+                   "lug_root_capacity_N_at_ratified_member_wall": cap_ratified,
                    "span_mm_placeholder": round(span_mm, 3),
                    "span_from": "radome.json lock_groove_z_mm − (lug_radius_mm + slot_clearance_mm); lock_groove_z "
                                 "is a placeholder (HW.8)",

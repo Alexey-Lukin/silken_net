@@ -2084,7 +2084,8 @@ CHECKS += [
            lambda d: min(v["median"]["force_ratio_over_min_preload"] for v in d["daily"].values()) * 100, 0.05),
           ("02_02 §3.5 daily force ratio high", BLIND_MATE, rf"Добовий хід — [\d.]+–{N} %",
            lambda d: d["daily"]["radome_leads_reading"]["p95"]["force_ratio_over_min_preload"] * 100, 0.05))],
-    # ── HW.33 the bayonet clamp over its fit and temperature — the ratified member is a lower bound (script 89, 2026-10-13) ──
+    # ── HW.33 the bayonet clamp over its fit and temperature — 88's requirement is the loop's lower bound and the ratified
+    #    member rounds it up (script 89, 2026-10-13; the ratified member's own k — HW.43, 2026-11-04) ──
     # ⛔ These numbers returned a founder verdict; a doc copy drifted off the cache would re-price it silently.
     *[(f"bayonet thermal clamp, {label} → bayonet_thermal_clamp.json", doc, pattern,
        "mechanical/bayonet_thermal_clamp.json", resolver, tol)
@@ -2121,7 +2122,34 @@ CHECKS += [
           ("02_02 §4.4 spring stiffness", BLIND_MATE, rf"пружині треба k ≤ \*\*{N} Н/мкм\*\*",
            lambda d: _down2(d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["k_spring_max_N_per_um_zero_tolerance"]), 0),
           ("02_02 §4.4 contact p0 top", BLIND_MATE, rf"на верху вікна він дає \*\*{N} МПа\*\*",
-           lambda d: d ["by_squeeze_point"]["window_top"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]["socket_pocket_minus_clearance"], 0.5))],
+           lambda d: d ["by_squeeze_point"]["window_top"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]["socket_pocket_minus_clearance"], 0.5),
+          # ⊕ 2026-11-04 (00_07 HW.43): the ratified member canon → cache (cache = lib.constants, test_cache_integrity), and
+          # the numbers of the on-spot marks (00_05 §7) — k a capacity under a «holds while below» sentence, DOWN; the
+          # wall at k 30 a requirement, UP (in-silico §When Modifying #43)
+          ("HW.43 premise · ratified collar-wall member (canon 02_02 §4.4 → lib/constants.py → 89's cache)", BLIND_MATE, rf"щонайменше \*\*{N} мм\*\* \(0\.277 — `88`",
+           lambda d: d["inputs"]["ratified_member_wall_mm_02_02"], 0),
+          ("02_02 §4.4 mark: ratified wall k at ±0.05", BLIND_MATE,
+           rf"на всіх прочитаннях температури, доки k нижче \*\*{N}\*\* Н/мкм за ±0\.05 мм", lambda d: _floor_n(_c89_rat_k(d, "0.05"), 3), 0),
+          ("02_02 §4.4 mark: ratified wall k, all, low", BLIND_MATE, rf"\({N}–[\d.]+ по всіх прочитаннях і δ; `89`\)",
+           lambda d: _floor_n(_c89_rat_k(d), 3), 0),
+          ("02_02 §4.4 mark: ratified wall k, all, high", BLIND_MATE, rf"\([\d.]+–{N} по всіх прочитаннях і δ; `89`\)",
+           lambda d: _ceil_n(_c89_rat_k(d, hi=True), 3), 0),   # a bracket over cells rounds OUTWARD (#43 ⊕)
+          ("02_02 §4.4 mark: price only above k", BLIND_MATE, rf"лише за k понад {N} Н/мкм за ±0\.05 мм \(понад",
+           lambda d: _floor_n(_c89_rat_k(d, "0.05"), 3), 0),
+          ("02_02 §4.4 mark: price only above k at ±0.10", BLIND_MATE, rf"\(понад {N} за ±0\.10\)",
+           lambda d: _floor_n(_c89_rat_k(d, "0.1"), 3), 0),
+          ("02_02 §4.4 mark: the stake", BLIND_MATE, rf"ставка — щонайбільше {N} мм стінки",
+           lambda d: _ceil_n(d["inputs"]["ratified_member_wall_mm_02_02"] - d["inputs"]["member_wall_mm_88"], 4), 0),
+          ("02_02 §4.4 mark: wall at k 30", BLIND_MATE, rf"округлено вгору — {N} мм, `89`; висновок не рухається",
+           lambda d: _ceil_n(d["by_squeeze_point"]["window_top"]["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]["0.05"]["strength_wall_mm_by_k"]["30.0"], 2), 0),
+          ("02_01 mark: ratified wall k at ±0.05", "docs/02_01_Hardware_Architecture_and_BOM.md", rf"член 0\.28 на верху вікна тримає контур на всіх прочитаннях температури, доки k нижче {N} Н/мкм",
+           lambda d: _floor_n(_c89_rat_k(d, "0.05"), 3), 0),
+          ("SUMMARY ratified wall k at ±0.05", SUMMARY, rf"on every temperature reading while k stays below \*\*{N}\*\* N/µm",
+           lambda d: _floor_n(_c89_rat_k(d, "0.05"), 3), 0),
+          ("SUMMARY ratified wall k, all, low", SUMMARY, rf"\(\*\*{N}\*\*–\*\*[\d.]+\*\* over every reading and tolerance\)",
+           lambda d: _floor_n(_c89_rat_k(d), 3), 0),
+          ("SUMMARY ratified wall k, all, high", SUMMARY, rf"\(\*\*[\d.]+\*\*–\*\*{N}\*\* over every reading and tolerance\)",
+           lambda d: _ceil_n(_c89_rat_k(d, hi=True), 3), 0))],
     # ── HW.33 · HW.43 the O-ring's own reaction — Parker Figure 2-4 + Table 2-3 over 52's window (script 88, 2026-10-13) ──
     # ⛔ These numbers took the «generous» 100 N out of the role of an upper bound; a doc copy drifted off the cache would
     #    put the lug root's margin, or (A)'s margin, back on a number nobody computed.
@@ -6846,6 +6874,16 @@ def _clamp_row(label, j):
 def _clamp_wall(d, key, k):
     return d["by_squeeze_point"][key]["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]["0.05"][
         "strength_wall_mm_by_k"][k]
+
+
+def _c89_rat_k(d, delta=None, hi=False):
+    """The k the RATIFIED member wall carries at the window top (89, 00_07 HW.43): at one tolerance the least over the
+    temperature readings (a «holds while below» sentence must hold on each); with none, the least — or the most — over
+    every reading and tolerance."""
+    cells = [v["k_max_N_per_um"]["ratified_member_wall"]
+             for r in d["by_squeeze_point"]["window_top"]["by_reading"].values()
+             for dk, v in r["by_delta_mm"].items() if delta is None or dk == delta]
+    return max(cells) if hi else min(cells)
 
 
 CHECKS += [

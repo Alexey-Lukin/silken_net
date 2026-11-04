@@ -2090,7 +2090,10 @@ the span 1.7 mm, a placeholder. The lug is a radial pin R1.5 on the groove's fla
 **Verdict** — in a PEEK-dominated loop every N/µm adds **0.049** mm of wall at the window top with ±0.05 mm of
 interference (temperature is **11** % of it; with no tolerance **0.0055** mm, 0.0067 with a gradient), so `88`'s
 requirement at the window top — the ground of the ratified member, which rounds it up to 0.28 mm (`02_02 §4.4`) — is the
-k = 0 end of that line: every PEEK-dominated k needs more, which makes it the loop's lower bound, not an estimate. A
+k = 0 end of that line: every PEEK-dominated k needs more, which makes it the loop's lower bound, not an estimate. The
+ratified member carries such a loop at the window top on every temperature reading while k stays below **0.068** N/µm
+with ±0.05 mm (**0.036**–**0.892** over every reading and tolerance) — «for any k» is a property of the
+requirement, not of 0.28 (`02_02 §4.4`, marked 2026-11-04). A
 compliant element in series fades the relaxation and the k-terms, and the load runs continuously down to L0 — **411** N
 at the window top, a **0.18** mm wall with a zero force band — so the ratified member is one point on a curve of an
 unmeasured k, bounding nothing. The force-controlled end is not cheap: inside the print floor its spring must be no stiffer than **0.42** N/µm

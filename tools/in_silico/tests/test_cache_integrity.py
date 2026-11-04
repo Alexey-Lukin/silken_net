@@ -3086,7 +3086,8 @@ def test_bayonet_thermal_clamp():
     leaving L0/f + k·[2δ + Δα·L·((ΔT_c + (1 − f)·ΔT_h)/f + ΔT_h)]; L0 leaving 88's band-top requirement at assembly;
     the readings leaving 82's requirement and cold edge and 71's canon-finish hot edge; the summer increment dropping
     out of the cold condition; the Δα readings leaving α_PEEK − α_Ti and α_PEEK; the wall leaving 73's linear shear;
-    k_max leaving (cap − L0/f)/slope for the print floor and 88's member wall; the force-controlled lug load leaving L0;
+    k_max leaving (cap − L0/f)/slope for the print floor, 88's member wall and the ratified member (02_02 §4.4 → lib → cache, and
+    the member being 88's requirement rounded up); the force-controlled lug load leaving L0;
     the span leaving lock_groove_z − (lug radius + slot clearance); the PEEK column leaving E·A/L; the member wall
     ceasing to be the window top's k = 0 end. CANNOT catch: whether f applies (the PEEK's share of the compliance), what
     k and δ the real bayonet has, or whether the loop is isothermal — the script does not compute them.
@@ -3112,6 +3113,13 @@ def test_bayonet_thermal_clamp():
     cap_m = b88["band"]["window_top"]["required_clamp_N_at_band_high"]["after_20_years_ring_never_relaxes"]
     assert abs(cap * member / floor - cap_m) <= 1e-9 * cap_m
     assert cap_m - b88["band"]["window_top"]["required_clamp_N_at_band_high"]["at_assembly"] / f == 0.0   # k = 0 exactly there
+    # the RATIFIED member (02_02 §4.4 → lib, pinned by test_doc_cache_sync) reaches the cache unchanged, lies at or above
+    # 88's requirement, and its capacity is 73's line at it — so unlike the requirement it carries a k > 0 (00_07 HW.43)
+    from lib.constants import COLLAR_WALL_MEMBER_MM
+    assert inp["ratified_member_wall_mm_02_02"] == COLLAR_WALL_MEMBER_MM >= member
+    assert math.ceil(round(member * 100, 9)) / 100 == COLLAR_WALL_MEMBER_MM   # the member IS 88's requirement rounded UP
+    cap_r = cap * COLLAR_WALL_MEMBER_MM / floor
+    assert abs(inp["lug_root_capacity_N_at_ratified_member_wall"] - cap_r) <= 1e-9 * cap_r
     temps = inp["temperature_readings_c"]
     assert temps["capsule_requirement"] == [c82["inputs"]["t_min_requirement_c"], c82["inputs"]["t_max_requirement_c"]]
     assert temps["model_edges"][0] == c82["inputs"]["t_min_model_edge_c"]
@@ -3172,7 +3180,7 @@ def test_bayonet_thermal_clamp():
                     assert abs(v["strength_wall_mm_by_k"][kstr] - wall(l0 / f + float(kstr) * slope)) <= 1e-9
                 walls = [v["strength_wall_mm_by_k"][k] for k in sorted(v["strength_wall_mm_by_k"], key=float)]
                 assert walls == sorted(walls), (name, rkey, dstr)            # stiffer loop → thicker wall
-                for wkey, c in (("print_floor", cap), ("member_wall", cap_m)):
+                for wkey, c in (("print_floor", cap), ("member_wall", cap_m), ("ratified_member_wall", cap_r)):
                     want = (c - l0 / f) / slope
                     got = v["k_max_N_per_um"][wkey]
                     assert (got is None) == (want < 0), (name, rkey, dstr, wkey)
@@ -3180,6 +3188,14 @@ def test_bayonet_thermal_clamp():
                         assert abs(got - want) <= 1e-9 * max(1.0, abs(want)), (name, rkey, dstr, wkey)
     top = d["by_squeeze_point"]["window_top"]
     assert abs(top["PEEK_dominated_lower_bound_wall_mm"] - member) <= 1e-9    # 88's requirement (the member's ground) is the floor
+    # the verdict's ratified-member sentence follows the cells (00_07 HW.43): «holds while below» at ±0.05 takes the LEAST
+    # over the temperature readings, DOWN; the bracket over every cell rounds OUTWARD (in-silico §When Modifying #43 ⊕)
+    rat = [v["k_max_N_per_um"]["ratified_member_wall"] for r in top["by_reading"].values() for v in r["by_delta_mm"].values()]
+    rat5 = min(r["by_delta_mm"]["0.05"]["k_max_N_per_um"]["ratified_member_wall"] for r in top["by_reading"].values())
+    dn, upc = (lambda x: math.floor(round(x * 1e3, 9)) / 1e3), (lambda x: math.ceil(round(x * 1e3, 9)) / 1e3)
+    assert (f"on every temperature reading while k stays below {dn(rat5):.3f} N/µm with ±0.05 mm ({dn(min(rat)):.3f}–"
+            f"{upc(max(rat)):.3f} over every reading and tolerance)") in d["verdict"]
+    assert "only while k stays below" not in d["verdict"]
     assert top["force_controlled_wall_mm_zero_band"] < floor                        # force control fits the floor
     lc = inp["lug_line_contact"]
     assert lc["yield_onset_p0_pa"] == lc["yield_onset_ratio"] * lc["sigma_yield_peek_pa"]

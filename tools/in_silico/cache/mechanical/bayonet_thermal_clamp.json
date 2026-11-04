@@ -38,6 +38,8 @@
     "print_floor_wall_mm_73": 0.2,
     "member_wall_mm_88": 0.276534967578919,
     "lug_root_capacity_N_at_member_wall": 632.2,
+    "ratified_member_wall_mm_02_02": 0.28,
+    "lug_root_capacity_N_at_ratified_member_wall": 640.1659784774572,
     "span_mm_placeholder": 1.7,
     "span_from": "radome.json lock_groove_z_mm − (lug_radius_mm + slot_clearance_mm); lock_groove_z is a placeholder (HW.8)",
     "peek_sections_mm2": {
@@ -138,7 +140,8 @@
               "wall_mm_per_N_per_um": 0.0055,
               "k_max_N_per_um": {
                 "print_floor": 21.621710789866334,
-                "member_wall": 35.560262785874585
+                "member_wall": 35.560262785874585,
+                "ratified_member_wall": 36.191314657939344
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.72,
@@ -166,7 +169,8 @@
               "wall_mm_per_N_per_um": 0.0492,
               "k_max_N_per_um": {
                 "print_floor": 2.41160688725171,
-                "member_wall": 3.966262220429319
+                "member_wall": 3.966262220429319,
+                "ratified_member_wall": 4.036647448299342
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.75,
@@ -194,7 +198,8 @@
               "wall_mm_per_N_per_um": 0.093,
               "k_max_N_per_um": {
                 "print_floor": 1.277020554871597,
-                "member_wall": 2.1002587147489127
+                "member_wall": 2.1002587147489127,
+                "ratified_member_wall": 2.137529873338019
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.78,
@@ -230,7 +235,8 @@
               "wall_mm_per_N_per_um": 0.0067,
               "k_max_N_per_um": {
                 "print_floor": 17.665397751720583,
-                "member_wall": 29.053491297395414
+                "member_wall": 29.053491297395414,
+                "ratified_member_wall": 29.569074103507898
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 2.08,
@@ -258,7 +264,8 @@
               "wall_mm_per_N_per_um": 0.0505,
               "k_max_N_per_um": {
                 "print_floor": 2.3528342707194527,
-                "member_wall": 3.8696015209679233
+                "member_wall": 3.8696015209679233,
+                "ratified_member_wall": 3.9382714095639506
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 15.12,
@@ -286,7 +293,8 @@
               "wall_mm_per_N_per_um": 0.0942,
               "k_max_N_per_um": {
                 "print_floor": 1.2603493873629086,
-                "member_wall": 2.072840389560966
+                "member_wall": 2.072840389560966,
+                "ratified_member_wall": 2.1096249829763862
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 28.15,
@@ -322,7 +330,8 @@
               "wall_mm_per_N_per_um": 0.0039,
               "k_max_N_per_um": {
                 "print_floor": 30.54126996407629,
-                "member_wall": 50.229863690800265
+                "member_wall": 50.229863690800265,
+                "ratified_member_wall": 51.12124207308344
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.24,
@@ -350,7 +359,8 @@
               "wall_mm_per_N_per_um": 0.0476,
               "k_max_N_per_um": {
                 "print_floor": 2.492807924575285,
-                "member_wall": 4.099809942613509
+                "member_wall": 4.099809942613509,
+                "ratified_member_wall": 4.172565106290861
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.27,
@@ -378,7 +388,8 @@
               "wall_mm_per_N_per_um": 0.0914,
               "k_max_N_per_um": {
                 "print_floor": 1.299434511637535,
-                "member_wall": 2.1371219491346736
+                "member_wall": 2.1371219491346736,
+                "ratified_member_wall": 2.175047282109655
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.3,
@@ -414,7 +425,8 @@
               "wall_mm_per_N_per_um": 0.0048,
               "k_max_N_per_um": {
                 "print_floor": 24.952867374904887,
-                "member_wall": 41.03886735588788
+                "member_wall": 41.03886735588788,
+                "ratified_member_wall": 41.767142459710726
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.5,
@@ -442,7 +454,8 @@
               "wall_mm_per_N_per_um": 0.0485,
               "k_max_N_per_um": {
                 "print_floor": 2.448058167273813,
-                "member_wall": 4.0262120139061155
+                "member_wall": 4.0262120139061155,
+                "ratified_member_wall": 4.097661109881703
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.53,
@@ -470,7 +483,8 @@
               "wall_mm_per_N_per_um": 0.0922,
               "k_max_N_per_um": {
                 "print_floor": 1.2871694354399845,
-                "member_wall": 2.1169501256877483
+                "member_wall": 2.1169501256877483,
+                "ratified_member_wall": 2.1545174897965884
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.56,
@@ -554,7 +568,8 @@
               "wall_mm_per_N_per_um": 0.0055,
               "k_max_N_per_um": {
                 "print_floor": 16.80044489665181,
-                "member_wall": 30.73899689266006
+                "member_wall": 30.73899689266006,
+                "ratified_member_wall": 31.37004876472482
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.74,
@@ -582,7 +597,8 @@
               "wall_mm_per_N_per_um": 0.0492,
               "k_max_N_per_um": {
                 "print_floor": 1.873860445892534,
-                "member_wall": 3.4285157790701435
+                "member_wall": 3.4285157790701435,
+                "ratified_member_wall": 3.4989010069401663
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.78,
@@ -610,7 +626,8 @@
               "wall_mm_per_N_per_um": 0.093,
               "k_max_N_per_um": {
                 "print_floor": 0.9922671555697289,
-                "member_wall": 1.8155053154470444
+                "member_wall": 1.8155053154470444,
+                "ratified_member_wall": 1.852776474036151
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.81,
@@ -646,7 +663,8 @@
               "wall_mm_per_N_per_um": 0.0067,
               "k_max_N_per_um": {
                 "print_floor": 13.72632093683893,
-                "member_wall": 25.11441448251376
+                "member_wall": 25.11441448251376,
+                "ratified_member_wall": 25.629997288626246
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 2.11,
@@ -674,7 +692,8 @@
               "wall_mm_per_N_per_um": 0.0505,
               "k_max_N_per_um": {
                 "print_floor": 1.828193101847538,
-                "member_wall": 3.3449603520960083
+                "member_wall": 3.3449603520960083,
+                "ratified_member_wall": 3.4136302406920356
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 15.14,
@@ -702,7 +721,8 @@
               "wall_mm_per_N_per_um": 0.0942,
               "k_max_N_per_um": {
                 "print_floor": 0.9793133688035198,
-                "member_wall": 1.791804371001577
+                "member_wall": 1.791804371001577,
+                "ratified_member_wall": 1.8285889644169973
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 28.17,
@@ -738,7 +758,8 @@
               "wall_mm_per_N_per_um": 0.0039,
               "k_max_N_per_um": {
                 "print_floor": 23.73109732582834,
-                "member_wall": 43.41969105255231
+                "member_wall": 43.41969105255231,
+                "ratified_member_wall": 44.31106943483548
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.27,
@@ -766,7 +787,8 @@
               "wall_mm_per_N_per_um": 0.0476,
               "k_max_N_per_um": {
                 "print_floor": 1.9369550625194976,
-                "member_wall": 3.5439570805577207
+                "member_wall": 3.5439570805577207,
+                "ratified_member_wall": 3.6167122442350736
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.3,
@@ -794,7 +816,8 @@
               "wall_mm_per_N_per_um": 0.0914,
               "k_max_N_per_um": {
                 "print_floor": 1.0096831893527063,
-                "member_wall": 1.847370626849845
+                "member_wall": 1.847370626849845,
+                "ratified_member_wall": 1.8852959598248262
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.33,
@@ -830,7 +853,8 @@
               "wall_mm_per_N_per_um": 0.0048,
               "k_max_N_per_um": {
                 "print_floor": 19.388811432166136,
-                "member_wall": 35.474811413149126
+                "member_wall": 35.474811413149126,
+                "ratified_member_wall": 36.20308651697197
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.53,
@@ -858,7 +882,8 @@
               "wall_mm_per_N_per_um": 0.0485,
               "k_max_N_per_um": {
                 "print_floor": 1.902183723702299,
-                "member_wall": 3.480337570334601
+                "member_wall": 3.480337570334601,
+                "ratified_member_wall": 3.551786666310189
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.56,
@@ -886,7 +911,8 @@
               "wall_mm_per_N_per_um": 0.0922,
               "k_max_N_per_um": {
                 "print_floor": 1.000153012077985,
-                "member_wall": 1.8299337023257487
+                "member_wall": 1.8299337023257487,
+                "ratified_member_wall": 1.8675010664345888
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.59,
@@ -970,7 +996,8 @@
               "wall_mm_per_N_per_um": 0.0055,
               "k_max_N_per_um": {
                 "print_floor": 9.458453001437025,
-                "member_wall": 23.397004997445276
+                "member_wall": 23.397004997445276,
+                "ratified_member_wall": 24.028056869510035
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.78,
@@ -998,7 +1025,8 @@
               "wall_mm_per_N_per_um": 0.0492,
               "k_max_N_per_um": {
                 "print_floor": 1.0549614053529364,
-                "member_wall": 2.609616738530546
+                "member_wall": 2.609616738530546,
+                "ratified_member_wall": 2.6800019664005683
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.82,
@@ -1026,7 +1054,8 @@
               "wall_mm_per_N_per_um": 0.093,
               "k_max_N_per_um": {
                 "print_floor": 0.558634745303459,
-                "member_wall": 1.3818729051807745
+                "member_wall": 1.3818729051807745,
+                "ratified_member_wall": 1.419144063769881
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.85,
@@ -1062,7 +1091,8 @@
               "wall_mm_per_N_per_um": 0.0067,
               "k_max_N_per_um": {
                 "print_floor": 7.727757345854933,
-                "member_wall": 19.11585089152976
+                "member_wall": 19.11585089152976,
+                "ratified_member_wall": 19.631433697642247
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 2.15,
@@ -1090,7 +1120,8 @@
               "wall_mm_per_N_per_um": 0.0505,
               "k_max_N_per_um": {
                 "print_floor": 1.0292512274375805,
-                "member_wall": 2.546018477686051
+                "member_wall": 2.546018477686051,
+                "ratified_member_wall": 2.614688366282078
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 15.18,
@@ -1118,7 +1149,8 @@
               "wall_mm_per_N_per_um": 0.0942,
               "k_max_N_per_um": {
                 "print_floor": 0.5513419156151664,
-                "member_wall": 1.3638329178132236
+                "member_wall": 1.3638329178132236,
+                "ratified_member_wall": 1.4006175112286439
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 28.21,
@@ -1154,7 +1186,8 @@
               "wall_mm_per_N_per_um": 0.0039,
               "k_max_N_per_um": {
                 "print_floor": 13.360328854958366,
-                "member_wall": 33.04892258168234
+                "member_wall": 33.04892258168234,
+                "ratified_member_wall": 33.94030096396551
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.31,
@@ -1182,7 +1215,8 @@
               "wall_mm_per_N_per_um": 0.0476,
               "k_max_N_per_um": {
                 "print_floor": 1.0904829328887193,
-                "member_wall": 2.6974849509269423
+                "member_wall": 2.6974849509269423,
+                "ratified_member_wall": 2.770240114604295
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.34,
@@ -1210,7 +1244,8 @@
               "wall_mm_per_N_per_um": 0.0914,
               "k_max_N_per_um": {
                 "print_floor": 0.5684397676121574,
-                "member_wall": 1.4061272051092963
+                "member_wall": 1.4061272051092963,
+                "ratified_member_wall": 1.4440525380842775
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.37,
@@ -1246,7 +1281,8 @@
               "wall_mm_per_N_per_um": 0.0048,
               "k_max_N_per_um": {
                 "print_floor": 10.91567293681705,
-                "member_wall": 27.001672917800043
+                "member_wall": 27.001672917800043,
+                "ratified_member_wall": 27.72994802162289
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.57,
@@ -1274,7 +1310,8 @@
               "wall_mm_per_N_per_um": 0.0485,
               "k_max_N_per_um": {
                 "print_floor": 1.0709070778430554,
-                "member_wall": 2.6490609244753576
+                "member_wall": 2.6490609244753576,
+                "ratified_member_wall": 2.720510020450946
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.6,
@@ -1302,7 +1339,8 @@
               "wall_mm_per_N_per_um": 0.0922,
               "k_max_N_per_um": {
                 "print_floor": 0.5630743898258657,
-                "member_wall": 1.3928550800736295
+                "member_wall": 1.3928550800736295,
+                "ratified_member_wall": 1.4304224441824696
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.63,
@@ -1386,7 +1424,8 @@
               "wall_mm_per_N_per_um": 0.0055,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 13.274731872091925
+                "member_wall": 13.274731872091925,
+                "ratified_member_wall": 13.905783744156686
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.84,
@@ -1414,7 +1453,8 @@
               "wall_mm_per_N_per_um": 0.0492,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 1.4806152538198192
+                "member_wall": 1.4806152538198192,
+                "ratified_member_wall": 1.5510004816898417
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.87,
@@ -1442,7 +1482,8 @@
               "wall_mm_per_N_per_um": 0.093,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.7840316442034557
+                "member_wall": 0.7840316442034557,
+                "ratified_member_wall": 0.8213028027925622
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.9,
@@ -1478,7 +1519,8 @@
               "wall_mm_per_N_per_um": 0.0067,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 10.845738380602766
+                "member_wall": 10.845738380602766,
+                "ratified_member_wall": 11.361321186715253
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 2.21,
@@ -1506,7 +1548,8 @@
               "wall_mm_per_N_per_um": 0.0505,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 1.4445315815577404
+                "member_wall": 1.4445315815577404,
+                "ratified_member_wall": 1.5132014701537677
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 15.24,
@@ -1534,7 +1577,8 @@
               "wall_mm_per_N_per_um": 0.0942,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.7737963172756582
+                "member_wall": 0.7737963172756582,
+                "ratified_member_wall": 0.8105809106910786
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 28.27,
@@ -1570,7 +1614,8 @@
               "wall_mm_per_N_per_um": 0.0039,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 18.75092927412122
+                "member_wall": 18.75092927412122,
+                "ratified_member_wall": 19.64230765640439
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.36,
@@ -1598,7 +1643,8 @@
               "wall_mm_per_N_per_um": 0.0476,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 1.53046894063869
+                "member_wall": 1.53046894063869,
+                "ratified_member_wall": 1.6032241043160427
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.39,
@@ -1626,7 +1672,8 @@
               "wall_mm_per_N_per_um": 0.0914,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.7977927785166544
+                "member_wall": 0.7977927785166544,
+                "ratified_member_wall": 0.8357181114916357
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.43,
@@ -1662,7 +1709,8 @@
               "wall_mm_per_N_per_um": 0.0048,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 15.31990817289904
+                "member_wall": 15.31990817289904,
+                "ratified_member_wall": 16.048183276721886
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.62,
@@ -1690,7 +1738,8 @@
               "wall_mm_per_N_per_um": 0.0485,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 1.5029946563282808
+                "member_wall": 1.5029946563282808,
+                "ratified_member_wall": 1.5744437523038688
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.65,
@@ -1718,7 +1767,8 @@
               "wall_mm_per_N_per_um": 0.0922,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.7902625881679071
+                "member_wall": 0.7902625881679071,
+                "ratified_member_wall": 0.8278299522767472
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.68,
@@ -1802,7 +1852,8 @@
               "wall_mm_per_N_per_um": 0.0055,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.6310518720647622
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.91,
@@ -1830,7 +1881,8 @@
               "wall_mm_per_N_per_um": 0.0492,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.07038522787002247
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.94,
@@ -1858,7 +1910,8 @@
               "wall_mm_per_N_per_um": 0.093,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.03727115858910647
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.98,
@@ -1894,7 +1947,8 @@
               "wall_mm_per_N_per_um": 0.0067,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.5155828061124867
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 2.28,
@@ -1922,7 +1976,8 @@
               "wall_mm_per_N_per_um": 0.0505,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.0686698885960272
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 15.31,
@@ -1950,7 +2005,8 @@
               "wall_mm_per_N_per_um": 0.0942,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.03678459341542032
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 28.34,
@@ -1986,7 +2042,8 @@
               "wall_mm_per_N_per_um": 0.0039,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.891378382283171
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.43,
@@ -2014,7 +2071,8 @@
               "wall_mm_per_N_per_um": 0.0476,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.07275516367735271
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.47,
@@ -2042,7 +2100,8 @@
               "wall_mm_per_N_per_um": 0.0914,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.03792533297498129
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.5,
@@ -2078,7 +2137,8 @@
               "wall_mm_per_N_per_um": 0.0048,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.7282751038228462
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 1.69,
@@ -2106,7 +2166,8 @@
               "wall_mm_per_N_per_um": 0.0485,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.0714490959755882
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 14.73,
@@ -2134,7 +2195,8 @@
               "wall_mm_per_N_per_um": 0.0922,
               "k_max_N_per_um": {
                 "print_floor": null,
-                "member_wall": 0.0
+                "member_wall": 0.0,
+                "ratified_member_wall": 0.0375673641088401
               },
               "wall_mm_if_the_PEEK_column_were_the_loop": {
                 "socket_band_annulus": 27.76,
@@ -2156,5 +2218,5 @@
     "the PEEK's share of the loop compliance (it sets how much of f applies)",
     "a compliant element's force tolerance and space, if the clamp is made force-controlled"
   ],
-  "verdict": "A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) every N/µm adds 0.049 mm of wall at the window top with a ±0.05 mm interference over the capsule requirement (temperature 11 % of it), 0.0055 mm with no tolerance (0.0067 with a Ti–PEEK gradient) — so 88's requirement at the window top, the ground of the ratified member, is the k = 0 end of that line: every PEEK-dominated k needs more, which makes it the loop's lower bound, not an estimate. A compliant element in series makes the relaxation and the k-terms fade, and the lug load runs continuously down to L0 — 411 N at the window top, a 0.18 mm wall with a zero force band — so the ratified member is one point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside the print floor its spring must be no stiffer than 0.42 N/µm with ±0.05 mm and zero force tolerance (≈ 1.0 mm of working deflection), its whole force band fits ±5.3 %, and a soft clamp gives the rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — whose peak pressure on the mean lug is 397 MPa at the window top (215 at the window floor, 320 at the top even under the force-controlled L0) against 167 MPa for first yield at the PEEK's tensile yield (the compressive yield is higher and not in the tree): it exceeds first yield — below the surface, contained — across the window, and local creep beyond `52`'s f is expected, not computed; a flat contact would remove that, but the line contact is likely the loop's softest member, so removing it raises k. With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to k = 2.41 N/µm and at the nominal up to 1.05. k, δ and the PEEK's share of the compliance are not computed — the lug geometry and both Z tolerances are placeholders; the founder ratified the member as a lower bound, with a flat lug contact and a numbered interference tolerance required before the collar is drawn (02_02 §4.4, 2026-10-13)."
+  "verdict": "A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) every N/µm adds 0.049 mm of wall at the window top with a ±0.05 mm interference over the capsule requirement (temperature 11 % of it), 0.0055 mm with no tolerance (0.0067 with a Ti–PEEK gradient) — so 88's requirement at the window top, the ground of the ratified member, is the k = 0 end of that line: every PEEK-dominated k needs more, which makes it the loop's lower bound, not an estimate. The ratified member rounds it up to 0.28 mm and so carries such a loop at the window top on every temperature reading while k stays below 0.068 N/µm with ±0.05 mm (0.036–0.892 over every reading and tolerance) — «for any k» is a property of the requirement, not of that number. A compliant element in series makes the relaxation and the k-terms fade, and the lug load runs continuously down to L0 — 411 N at the window top, a 0.18 mm wall with a zero force band — so the ratified member is one point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside the print floor its spring must be no stiffer than 0.42 N/µm with ±0.05 mm and zero force tolerance (≈ 1.0 mm of working deflection), its whole force band fits ±5.3 %, and a soft clamp gives the rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — whose peak pressure on the mean lug is 397 MPa at the window top (215 at the window floor, 320 at the top even under the force-controlled L0) against 167 MPa for first yield at the PEEK's tensile yield (the compressive yield is higher and not in the tree): it exceeds first yield — below the surface, contained — across the window, and local creep beyond `52`'s f is expected, not computed; a flat contact would remove that, but the line contact is likely the loop's softest member, so removing it raises k. With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to k = 2.41 N/µm and at the nominal up to 1.05. k, δ and the PEEK's share of the compliance are not computed — the lug geometry and both Z tolerances are placeholders; the founder ratified the member as a lower bound, with a flat lug contact and a numbered interference tolerance required before the collar is drawn (02_02 §4.4, 2026-10-13)."
 }

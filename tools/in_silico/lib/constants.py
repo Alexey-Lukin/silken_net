@@ -420,6 +420,10 @@ POGO_PIN_COUNT = 2              # centre (GND) + outer ring (V+), 02_02 §1.2
 # squeeze, and at the window top even its bottom lies above it (numbers: oring_reaction_band.json). 52 and 73 keep
 # reading this value until they re-run with the root package (00_07 HW.9 · HW.33); a new consumer reads 88's cache.
 GENEROUS_ORING_BOUND_N = 100.0  # N
+# The ratified root-package member «стінка коміра за міцністю — щонайменше 0.28 мм» (⚖️ founder 2026-10-13, 02_02 §4.4 —
+# mirror, edit there): `88`'s window-top requirement rounded up. `89` prices the PEEK-dominated loop stiffness this wall
+# still carries; held canon → here by test_doc_cache_sync, here → 89's cache by test_cache_integrity (00_07 HW.43).
+COLLAR_WALL_MEMBER_MM = 0.28    # mm
 
 # The smallest host stem: the 4 % CODIT rule admits the Ø15 wound from DBH 38 cm (01_01 §1, Zone 2 — mirror, edit there).
 DBH_MIN_CM = 38.0               # cm
