@@ -31,7 +31,12 @@ class MintingRollbackService < ApplicationService
   end
 
   def perform
-    txs = resolve_transactions
+    # ⛔ Лише рядки НАШОЇ валюти (`BlockchainTransaction::OWN_TOKEN_TYPES`), і на ОБОХ
+    # входах — телеметричному й явному `transactions:`: у чужого рядка `locked_points`
+    # завжди `nil`, і legacy-гілка `perform_safe_rollback` зняла б `amount × 10 000`
+    # балів зі спільного холду гаманця, тобто чужі живі мінти. Його долю вирішує
+    # власний тракт (Solana · Celo · Etherisc), не відкат мінту.
+    txs = resolve_transactions.to_a.select(&:own_currency?)
     return if txs.blank?
 
     txs.each { |tx| rollback_transaction!(tx) }

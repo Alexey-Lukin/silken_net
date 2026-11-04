@@ -85,6 +85,9 @@ class BlockchainMintingService < ApplicationService
     @transactions = BlockchainTransaction
                       .where_ids_pruned(transaction_ids, created_at_span, metric_caller: "BlockchainMintingService")
                       .where.not(status: :confirmed)
+                      # ⛔ Чужа валюта сюди не входить (`BlockchainTransaction::OWN_TOKEN_TYPES`):
+                      # її рядок лишається `:pending` для власного тракту, а не валить групу.
+                      .own_currency
     @wallet_mapping = @transactions.includes(wallet: [ :tree, :organization ]).index_by(&:id)
     @telemetry_log = telemetry_log
   end

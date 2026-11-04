@@ -163,6 +163,21 @@ class BlockchainTransaction < ApplicationRecord
   # під `:carbon_coin` ([ARCH.120]) — див. `Solana::MintingService`.
   enum :token_type, { carbon_coin: 0, forest_coin: 1, cusd: 2, usdc: 3 }, prefix: true
 
+  # 💰 [INS.1 · ARCH.120-сиблінг, 2026-11-04] Валюти, які ЕМІТУЮТЬ наші контракти, — і лише
+  # їхні рядки мають право входити в мінт-воронку та в її відкат. `cusd`/`usdc` — чужі
+  # гроші (Celo-винагорода, Solana-виплата, Etherisc-USDC), і їхні рядки теж народжуються
+  # `:pending`: auto-discovery мережі не фільтрує, а claim фільтрує мережу, не валюту, тож
+  # Etherisc-рядок (`evm`, `direction: :mint` за дефолтом) під `carbon_coin` ЗМІНТИВСЯ б
+  # як SCC поверх зовнішньої виплати, а під власною валютою падав на «Невідомий тип
+  # токена» й обривав SCC-групи за собою. Відкат же читав `locked_points == nil` як
+  # legacy-мінт і знімав `amount × 10 000` балів зі СПІЛЬНОГО холду гаманця — тобто
+  # розблоковував бали чужих живих мінт-рядків. `forest_coin` тут свідомо: його тримає
+  # гард SFC у мінт-сервісі (гучно), а не мовчазний відсів на вході.
+  OWN_TOKEN_TYPES = %w[carbon_coin forest_coin].freeze
+  scope :own_currency, -> { where(token_type: OWN_TOKEN_TYPES) }
+
+  def own_currency? = OWN_TOKEN_TYPES.include?(token_type)
+
   # Тікер, яким сума транзакції підписується в UI. Дім — заморожена Ruby-мапа, а
   # НЕ локаль-файл: символ однаковий в усіх мовах, тож YAML змусив би тримати по
   # копії на кожну локаль каталогу плюс стільки ж зобовʼязань парності, і кожну з

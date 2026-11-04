@@ -143,6 +143,20 @@ RSpec.describe MintingRollbackService do
       expect(tx.notes).to include("Rollback")
     end
 
+    # 💰 [INS.1 · ARCH.120-сиблінг, 2026-11-04] У рядка чужої валюти `locked_points` завжди
+    # `nil`, і legacy-гілка читала це як «мінт до locked_points-ери»: `250 × 10 000` балів
+    # знімались зі СПІЛЬНОГО холду гаманця — тобто розблоковувались бали чужого живого мінту.
+    it "leaves a foreign-currency row and the wallet's hold alone" do
+      wallet.update!(balance: 10_000, locked_balance: 10_000) # холд ІНШОГО, живого SCC-мінту
+      usdc = create(:blockchain_transaction, wallet: wallet, token_type: :usdc, status: :pending,
+                                             locked_points: nil, tx_hash: nil, amount: 250)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: usdc.id))
+
+      expect(usdc.reload.status).to eq("pending")
+      expect(wallet.reload.locked_balance).to eq(10_000)
+    end
+
     it "does nothing when transactions are empty" do
       expect {
         described_class.call(transactions: BlockchainTransaction.none)

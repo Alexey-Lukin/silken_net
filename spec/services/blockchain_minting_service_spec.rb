@@ -700,23 +700,27 @@ end
     end
   end
 
-  describe "unknown token_type" do
-    it "raises ArgumentError for unknown token_type" do
-      tree = create(:tree)
-      wallet = tree.wallet
+  # 💰 [INS.1 · ARCH.120-сиблінг, 2026-11-04] Доти тут стояв пін «невідомий тип → гучний
+  # ArgumentError», і він боронив саме дефект: Etherisc-USDC, Solana-USDC і Celo-cUSD теж
+  # народжуються `:pending`, auto-discovery мережі не фільтрує, тож чужий рядок доходив до
+  # `case` і обривав SCC-групи того ж батча (а під `carbon_coin` — мінтився як SCC).
+  describe "foreign-currency rows in the funnel" do
+    it "leaves a USDC payout row untouched and still mints the SCC row beside it" do
+      wallet = create(:tree).wallet
       wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
-      tx = wallet.blockchain_transactions.create!(
+      usdc = wallet.blockchain_transactions.create!(
+        amount: 250, token_type: :usdc, status: :pending, to_address: wallet.crypto_public_address
+      )
+      scc = wallet.blockchain_transactions.create!(
         amount: 100, token_type: :carbon_coin, status: :pending,
         to_address: wallet.crypto_public_address, locked_points: 1000
       )
 
-      # Override token_type after creation
-      tx.update_column(:token_type, "unknown_token")
+      expect { described_class.call_batch([ usdc.id, scc.id ]) }.not_to raise_error
 
-      expect {
-        described_class.call(tx.id)
-      }.to raise_error(ArgumentError, /Невідомий тип токена/)
+      expect(scc.reload.status).to eq("sent")
+      expect(usdc.reload.status).to eq("pending")
     end
   end
 

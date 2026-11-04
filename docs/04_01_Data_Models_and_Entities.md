@@ -1149,7 +1149,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 | Enum | Значення |
 |------|----------|
-| `token_type` | `carbon_coin(0) / forest_coin(1) / cusd(2) / usdc(3)` — 🔴 **це ВАЛЮТА рядка, і вона ⊥ `blockchain_network` (транспорт)** [ARCH.120]: агрегат `net_minted_supply` фільтрує саме тут і мережі не читає, тож чужа валюта під `:carbon_coin` мовчки підсумується намінтованим SCC. `usdc(3)` заведено рівно тому — Solana-мікровинагороди писались у USDC під `:carbon_coin` |
+| `token_type` | `carbon_coin(0) / forest_coin(1) / cusd(2) / usdc(3)` — 🔴 **це ВАЛЮТА рядка, і вона ⊥ `blockchain_network` (транспорт)** [ARCH.120]: агрегат `net_minted_supply` фільтрує саме тут і мережі не читає, тож чужа валюта під `:carbon_coin` мовчки підсумується намінтованим SCC. `usdc(3)` заведено рівно тому — Solana-мікровинагороди писались у USDC під `:carbon_coin`; другий писач `usdc` — Etherisc-виплата страховки (INS.1, 2026-11-04). ⛔ Валюти НАШИХ контрактів — `OWN_TOKEN_TYPES` (`carbon_coin` · `forest_coin`, скоуп `own_currency`): лише їхні рядки входять у мінт-воронку та її відкат, бо `:pending` чужої валюти теж бачать статус-сканери мінту ([`04_02`](04_02_Business_Logic_and_Services) `BlockchainMintingService`) |
 | `status` | `pending(0) / processing(1) / confirmed(2) / failed(3) / sent(4) / manual_review(5)` |
 
 **Ключові поля:**
