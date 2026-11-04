@@ -765,13 +765,23 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 ```json
 {
   "did": "SNET-80B12004",
-  "key_derivation": "hkdf-sha256",
   "device": {
     "id": 156,
     "did": "SNET-80B12004",
     "status": "active",
     "cluster_id": 7
-  }
+  },
+  "key_derivation": "hkdf-sha256"
+}
+```
+
+Для Gateway верхній `did` несе `uid` (нормалізований моделлю: `strip` + `upcase`), а `device` — лише `id` і `cluster_id`: `device` будує `as_json(only: [:id, :did, :status, :cluster_id])`, а в `Gateway` колонок `did` і `status` немає (стан — колонка `state`), і `only:` мовчки пропускає імена, яких схема не має:
+
+```json
+{
+  "did": "GW-UID-E5F6G7H8",
+  "device": { "id": 12, "cluster_id": 7 },
+  "key_derivation": "hkdf-sha256"
 }
 ```
 
@@ -780,15 +790,15 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 > DID на кожному boot (`did_derive.h`). Сирий UID зберігається у
 > `trees.silicon_uid_hex` (re-flash vs DID-колізія).
 
-> **Zero-Trust: жодних секретів у відповіді.** Бекенд та прошивка незалежно деривують однаковий 32-байтний AES-ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")` (cross-ref: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning)) **та** 32-байтний `K_seed` для атрактора Лоренца через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: "silken-lorenz-v1", info: "silken-lorenz-seed|<DID>")` ([SEC.11], cross-ref: [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning)). Обидва секрети зберігаються в `HardwareKey` (AR Encryption non-deterministic) і **ніколи не передаються** через HTTP/мережу. `PROVISIONING_MASTER_KEY` повинен бути встановлений у ENV — інакше endpoint повертає `503 Service Unavailable` (no fallback). Прошивка отримує обидва секрети під час physical Factory Flashing через окремий захищений канал (UART/JTAG, поза цим API).
+> **Zero-Trust: жодних секретів у відповіді.** Бекенд та прошивка незалежно деривують однаковий 32-байтний AES-ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")` (cross-ref: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning)) **та** 32-байтний `K_seed` для атрактора Лоренца через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: "silken-lorenz-v1", info: "silken-lorenz-seed|<DID>")` ([SEC.11], cross-ref: [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning)). Обидва секрети зберігаються в `HardwareKey` (AR Encryption non-deterministic) і **ніколи не передаються** через HTTP/мережу. `PROVISIONING_MASTER_KEY` повинен бути встановлений у ENV (no fallback): у проді без нього процес не бутиться (`config/initializers/master_key_strength_check.rb`, SEC.9), тож гілки `503` немає; поза цим гардом `HardwareKeyService` кидає `SecurityError`, який не є `StandardError` і минає обидва перехоплювачі, — транзакція відкочується, відповідь `500`. Прошивка отримує обидва секрети під час physical Factory Flashing через окремий захищений канал (UART/JTAG, поза цим API).
 
 > **Побічний ефект:** у тій самій транзакції створюється `MaintenanceRecord(action_type: :installation, system_generated: true)` — фіксація монтажу. Ознака провенансу тут несуча, бо `installation` вимагає фотодоказів, а провізія йде без камери; деталь і перелік машинних писачів — [`04_01 §7`](04_01_Data_Models_and_Entities). Запис народжується `hardware_verified: false`; підняти прапорець — окрема дія `PATCH /maintenance_records/:id/verify` (ендпоінт 64 у §4).
 
-**Conflict Response `409 Conflict`:**
+**Conflict Response `409 Conflict`** — у тексті ідентифікатор, під яким пишеться `HardwareKey`: для дерева деривований DID, не введений UID; для Gateway — `uid`:
 
 ```json
 {
-  "error": "Пристрій з UID STM32-UID-A1B2C3D4 вже зареєстрований в системі."
+  "error": "Пристрій з UID SNET-80B12004 вже зареєстрований в системі."
 }
 ```
 
@@ -798,7 +808,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 **Доступ:** `Authorization: Bearer <token>`
 
-**Призначення:** Повертає хронологічний список усіх значущих подій у житті дерева: AI-інсайти (homeostasis / stress / fraud), EWS-тривоги (з відновленням), записи технічного обслуговування та підтверджені blockchain-транзакції. Агрегується на льоту сервісом `TreeChronicleService` — без нових таблиць.
+**Призначення:** Повертає хронологічний список усіх значущих подій у житті дерева: AI-інсайти (homeostasis / stress / fraud), EWS-тривоги (з відновленням), записи технічного обслуговування та підтверджені blockchain-транзакції (мінт і спалення). Агрегується на льоту сервісом `TreeChronicleService` — без нових таблиць.
 
 **Content Negotiation:**
 - `Accept: application/json` — JSON масив entries з пагінацією
@@ -816,11 +826,11 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 {
   "data": [
     {
-      "date": "2026-03-15T10:30:00Z",
+      "date": "2026-03-15T00:00:00+00:00",
       "event_type": "homeostasis",
       "icon": "◉",
       "title": "Deep Homeostasis",
-      "description": "Tree entered deep homeostasis. Z-value stable: 4.2891 σ",
+      "description": "Tree entered deep homeostasis. Mean Z for the day: 4.2891",
       "severity": "stable",
       "source_type": "AiInsight",
       "source_id": 4512
@@ -829,8 +839,8 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
       "date": "2026-03-10T08:00:00Z",
       "event_type": "alert",
       "icon": "🔥",
-      "title": "Fire Alert: 65.2°C",
-      "description": "Critical temperature threshold exceeded. Sensor value: 65.2°C",
+      "title": "Fire Detected",
+      "description": "🔥 CATASTROPHE: Temperature 65.2°C (threshold: 60). Fire risk!",
       "severity": "critical",
       "source_type": "EwsAlert",
       "source_id": 88
@@ -847,7 +857,8 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 | Поле | Тип | Опис |
 |---|---|---|
-| `event_type` | String | `homeostasis / stress / fraud / alert / recovery / maintenance / minting` |
+| `date` | String | ISO 8601; зсув залежить від джерела: інсайт — північ своєї доби (`target_date`) у зоні процесу (у контейнері `+00:00`), обслуговування — у часовій зоні кластера, решта — UTC (`Z`) |
+| `event_type` | String | `homeostasis / stress / fraud / alert / recovery / maintenance / minting / burning` |
 | `severity` | String | `stable / info / warning / critical` |
 | `source_type` | String | `AiInsight / EwsAlert / MaintenanceRecord / BlockchainTransaction` |
 | `source_id` | Integer | ID вихідного запису |
@@ -907,17 +918,18 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 {
   "uid": "GW-UID-E5F6G7H8",
   "timestamps": [1710000000, 1710003600],
-  "voltage":    [3350, 3320],
+  "voltage":    [null, null],
   "signal":     [18, 22],
-  "temp":       [24.1, 25.3]
+  "temp":       [null, null]
 }
 ```
 
-| Поле | Опис |
-|---|---|
-| `voltage` | Напруга живлення (мВ) |
-| `signal` | Рівень сигналу LTE (CSQ, 0–31) |
-| `temp` | Температура модуля (°C) |
+| Поле | Тип | Опис |
+|---|---|---|
+| `timestamps` | Integer[] | Unix-секунди `created_at` рядка — серверний час запису воркером, не годинник Королеви |
+| `voltage` | Decimal (string) / null | Напруга живлення (мВ). ⚠️ **У живому тракті — `null` на кожній мітці:** єдиний писач (`GatewayTelemetryWorker`, джерело — health-блок QATT-v2, [ARCH.54]) колонки `voltage_mv` не пише, бо пульс v2 напруги не несе — ADC-тракту немає. Значення з'явиться з залізом; колонка `numeric`, тож у JSON це буде **рядок** |
+| `signal` | Integer / null | CSQ (3GPP 27.007): `0–31`, `99` — сигнал не визначено; `null` — Королева CSQ не прочитала |
+| `temp` | Decimal (string) / null | Температура модуля (°C). ⚠️ Так само `null` у живому тракті — датчика немає (DS18B20, HW.16); колонка `temperature_c` — `numeric`, тож значення буде **рядком** |
 
 ---
 
@@ -1188,7 +1200,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 **Доступ:** Роль `forester` або вище.
 
-> 📐 **Форму запису `visions` тримає `AiInsightBlueprint`** (стеля — те, що вже друкує HTML, ⚖️ founder 2026-09-07, [`00_07`](00_07_Action_Plan_Tracker) SEC.36): приклад нижче звірено з блупринтом 2026-10-24. Гейта на вісь «тіло §5 ⊥ блупринт» немає (§4 ↑) — правлячи блупринт, правиш і цей приклад.
+> 📐 **Форму запису `visions` тримає `AiInsightBlueprint`** (стеля — те, що вже друкує HTML, ⚖️ founder 2026-09-07, [`00_07`](00_07_Action_Plan_Tracker) SEC.36): приклад нижче звірено з блупринтом і `db/structure.sql` 2026-11-04. Гейта на вісь «тіло §5 ⊥ блупринт» немає (§4 ↑) — правлячи блупринт, правиш і цей приклад.
 
 **Success Response `200 OK`:**
 
@@ -1200,15 +1212,17 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
       "insight_type": "drought_probability",
       "target_date": "2026-04-01",
       "summary": "...",
-      "probability_score": 0.71,
-      "stress_index": 0.42,
+      "probability_score": "35.0",
+      "stress_index": null,
       "yield_impact": -8.5
     }
   ],
-  "emission_forecast": 12.5,
-  "emission_forecast_coverage": { "measured": 3, "total": 10 }
+  "emission_forecast": 0.0,
+  "emission_forecast_coverage": { "measured": 0, "total": 10 }
 }
 ```
+
+Типи полів запису: `probability_score` (шкала `0..100` — валідація моделі, не частка) і `stress_index` (`0..1`) — `numeric`-колонки, тож у JSON це **рядки** (BigDecimal серіалізується рядком), або `null`; у прогнозного запису `stress_index` — `null`: єдиний писач прогнозних рядків, `db/seeds.rb` (див. `visions` нижче), стресу не ставить, і приклад дзеркалить його рядок. `yield_impact` — **число** з JSONB `prediction_data` (оголошений ключ, не блоб), або `null`. `target_date` — дата без часу.
 
 | Поле | Тип | Опис |
 |---|---|---|
@@ -1375,6 +1389,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | `application/json` | JSON | API-відповідь |
 | `text/csv` | CSV | Стрімінговий CSV для аудиторів |
 | `application/pdf` | PDF | Prawn PDF для інвесторів |
+| `text/html` | HTML | Сторінка дашборда (`Reports::CarbonAbsorption`) з тим самим `data` |
 
 **Success Response `200 OK` (JSON):**
 
@@ -1384,13 +1399,15 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
   "organization": "Forest Corp",
   "generated_at": "2026-03-22T17:10:00Z",
   "data": {
-    "total_carbon_points": 1250000,
+    "total_carbon_points": "1250000.0",
     "wallets_count": 342,
     "trees_active": 8940,
     "trees_total": 9120
   }
 }
 ```
+
+`total_carbon_points` — сума `wallets.balance` гаманців організації, тобто **бали** росту, не SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)); колонка `numeric(24,6)`, тож у JSON це **рядок** (BigDecimal серіалізується рядком). Решта три — цілі числа. `trees_total` — кешований лічильник (`Organization#cached_trees_count`, до години), а `trees_active` рахується наживо, тож у вікні кешу вони можуть розходитись.
 
 ---
 
