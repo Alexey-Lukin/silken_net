@@ -147,7 +147,10 @@ namespace :docs do
       end
 
       # [dangling] every markdown link to a local NN_NN doc must resolve to a file.
-      text.scan(/\[([^\]]*)\]\((\d\d_\d\d_[A-Za-z0-9_]+)(?:#[^)]*)?\)/) do |_label, target|
+      # Anchored on `](` with no label at all: the target is all this check needs, and a
+      # `[^\]]*` label would hide a link whose label nests brackets — the very links
+      # `section_label_drift` hands to this check when their target is absent [DOC-T.128].
+      text.scan(DocsLinter::CANON_HREF_RE) do |target, _id|
         dangling << "#{base} → `#{target}` (doc not found)" unless existing.include?(target)
       end
 

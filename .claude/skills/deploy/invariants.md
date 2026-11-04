@@ -16,8 +16,8 @@
   Шість залежних кроків — [`06_01 §DEPLOY-DAY`](../../../docs/06_01_Deployment_Kamal_Terraform.md) Фаза −1а. 🔑 **І логінів ДВА, вони НЕ дубль:**
   `gcloud auth login` кладе user-credentials (їх уживає сам gcloud), `gcloud auth
   application-default login` кладе **ADC** — і terraform читає ЛИШЕ другий (`bootstrap.sh` пінить обидва окремо). Перелік тулчейну (+ ланки з ВЛАСНИМ: `solana`/
-  `spl-token` для Devnet, `arm-none-eabi`/`STM32_Programmer_CLI` для Фази 6) — [`06_01
-  §DEPLOY-DAY`](../../../docs/06_01_Deployment_Kamal_Terraform.md) Фаза −1а.
+  `spl-token` для Devnet, `arm-none-eabi`/`STM32_Programmer_CLI` для Фази 6) —
+  [`06_01 §DEPLOY-DAY`](../../../docs/06_01_Deployment_Kamal_Terraform.md) Фаза −1а.
 3. ⛔ **`§Quickstart` у `06_01` БІЛЬШЕ НЕ ІСНУЄ — не шли туди нікого** (⚖️ 2026-08-31). Це була
   ТРЕТЯ копія процедури, і саме вона протухла, при цьому читалась першою (розбір — `06_01`, секція «Перший деплой»).
   **Єдиний носій — `§DEPLOY-DAY`**; `DEPLOY-1` несе лише СТАН фаз.

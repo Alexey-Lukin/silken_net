@@ -761,10 +761,8 @@ module DocsLinter
   # 4933 files), and the class is illustrative-example-shaped, so it stays named
   # rather than fixed — a skip added without a case to justify it is a blind zone.
   def link_label_target_mismatch(text)
-    text.to_enum(:scan, LINK_HREF_RE).filter_map do
-      m         = Regexp.last_match
+    labelled_links(text, LINK_HREF_RE).filter_map do |label, m|
       target_id = m[1]
-      label     = balanced_link_label(text, m.begin(0)) or next
       label_id  = label[LABEL_DOC_RE]
       next unless label_id           # label cites no doc-ID → nothing to verify
       next if label_id == target_id  # label leads with the doc it links to → ok
@@ -774,26 +772,147 @@ module DocsLinter
   end
 
   # Anchored on `](` so the label is never part of the match — the label is then
-  # recovered by bracket-balance (above). Accepts all three written dialects:
+  # recovered by bracket-balance (below). Accepts all three written dialects:
   # wiki `](NN_NN_Name)` · path `](docs/NN_NN_Name.md)` · relative `](../docs/…)`.
   LINK_HREF_RE = %r{\]\((?:\.{1,2}/)*(?:docs/)?(\d\d_\d\d)_[A-Za-z0-9_]+(?:\.md)?(?:\#[^)]*)?\)}
 
-  # Walk back from the `]` at `close_idx` to its matching `[`, honouring nesting.
-  # Returns nil at a newline (a markdown label never spans lines) or if unbalanced,
-  # so an unmatched bracket makes the link INVISIBLE rather than mis-attributed —
-  # the safe direction for a guard that accuses.
-  def balanced_link_label(text, close_idx)
+  # Every match of `href_re` (anchored on `](`) whose label the walk recovers, as
+  # [label, MatchData]. Line by line on a char array, because String#[] on a multibyte
+  # string costs O(index): a walk indexing the whole file paid it per character on
+  # every link (measured at DOC-T.128: the four gates on this walk took ≈15 s over
+  # docs/*.md that way and under 1 s line by line). The walk is line-local anyway.
+  def labelled_links(text, href_re)
+    text.each_line.flat_map do |line|
+      next [] unless line.include?("](")
+
+      chars = runs = nil
+      line.to_enum(:scan, href_re).filter_map do
+        m       = Regexp.last_match
+        chars ||= line.chars
+        runs  ||= backtick_runs(chars)
+        label   = balanced_link_label(chars, runs, m.begin(0)) or next
+        [ label, m ]
+      end
+    end
+  end
+
+  # Walk back from the `]` at `close` to its matching `[`, honouring nesting. Returns nil
+  # at the start of the line (the walk is line-local) or if unbalanced, so an unmatched
+  # bracket makes the link INVISIBLE rather than mis-attributed — the safe direction for
+  # a guard that accuses.
+  #
+  # 🔴 A bracket inside a code span or escaped by `\` is TEXT, not structure — the way
+  # CommonMark counts it, with the one deviation named at `code_spans_before`
+  # [DOC-T.128, adversarial round]. Without that, the walk only
+  # moved the defect it was brought in to fix: a stray `[` BEFORE the label no longer
+  # stole it, but one INSIDE it (`` `a[i` `` in a code span, `\[draft`) cut the label
+  # down to its tail — the same opposite-direction pair of false red and false green,
+  # one bracket to the right.
+  def balanced_link_label(chars, runs, close)
+    return nil if close <= 0 || escaped_at?(chars, close)
+
+    spans = code_spans_before(chars, runs, close)
+    s     = spans.size - 1
     depth = 0
-    i     = close_idx
+    i     = close
     while i >= 0
-      case text[i]
-      when "]" then depth += 1
-      when "[" then (depth -= 1) == 0 and return text[(i + 1)...close_idx]
-      when "\n" then return nil
+      c = chars[i]
+      if c == "]" || c == "["
+        s -= 1 while s >= 0 && spans[s].first > i
+        unless (s >= 0 && spans[s].cover?(i)) || escaped_at?(chars, i)
+          if c == "]" then depth += 1
+          elsif (depth -= 1).zero? then return chars[(i + 1)...close].join
+          end
+        end
       end
       i -= 1
     end
     nil
+  end
+
+  # An odd run of backslashes right before `idx` escapes the character at `idx`.
+  def escaped_at?(chars, idx)
+    n = 0
+    n += 1 while idx - n - 1 >= 0 && chars[idx - n - 1] == "\\"
+    n.odd?
+  end
+
+  # Backtick runs of one line as [[start, length], …] plus, per run, the index of the
+  # next run of the same length — computed once per line, reused by every link on it.
+  def backtick_runs(chars)
+    runs = []
+    i    = 0
+    while i < chars.size
+      if chars[i] == "`"
+        j = i
+        j += 1 while j < chars.size && chars[j] == "`"
+        runs << [ i, j - i ]
+        i = j
+      else
+        i += 1
+      end
+    end
+    nxt  = Array.new(runs.size)
+    seen = {}
+    (runs.size - 1).downto(0) { |k| nxt[k] = seen[runs[k][1]]; seen[runs[k][1]] = k }
+    [ runs, nxt ]
+  end
+
+  # Code spans of chars[0...close] as exclusive ranges of their CONTENT. As in
+  # CommonMark, a run closes on the next run of the SAME length, a run preceded by an
+  # escaping `\` cannot OPEN one (it still closes: inside a span a backslash is text —
+  # `` `\` `` is a span), and a run with no partner is plain text. ⚠️ One DELIBERATE
+  # deviation: a partner is looked for only LEFT of the link, so a run whose partner
+  # lies past `close` counts as plain text, where CommonMark would open a span that
+  # swallows the link — that keeps a link quoted inside a code span (how the standard
+  # shows the canonical forms) checked, as it was before this walk; pinned. An escaped
+  # run longer than one backtick is treated as plain text whole (CommonMark would let
+  # its remainder open a span) — zero such runs in the tree at the fix.
+  def code_spans_before(chars, (runs, nxt), close)
+    spans = []
+    k     = 0
+    while k < runs.size && runs[k][0] < close
+      p = nxt[k]
+      if p && runs[p][0] < close && !escaped_at?(chars, runs[k][0])
+        spans << ((runs[k][0] + runs[k][1])...runs[p][0])
+        k = p + 1
+      else
+        k += 1
+      end
+    end
+    spans
+  end
+
+  # Canon links as [label, target-basename, doc-id] — the label extractor of
+  # `section_label_drift` and `crossref_label_form` [DOC-T.128]; `section_ref_after_doclink`
+  # walks the same `balanced_link_label`. All three used to take the label from the
+  # FIRST `[` to the first `]`, so an unpaired bracket earlier on the line or in the
+  # paragraph — a manuscript marker in a code span, a half-open interval — became the
+  # start of the NEXT canon link's label. On one line the two gates then failed in
+  # opposite directions (`crossref_label_form` falsely red, `section_label_drift`
+  # falsely green — a § from the prose stood in for the label's), and the red masked
+  # the green; across lines nothing was red at all. Fix them TOGETHER: fixing the red
+  # alone unmasks the silent green.
+  # Measured at the fix on the HEAD tree, keyed by the position of `](`: the docs/*.md
+  # label changed at five links — stray-bracket spans in 00_02 · 03_02 · 03_06, one
+  # nested-bracket label newly SEEN in 00_04, one wrapped label LOST in 06_01 — and no
+  # verdict of any gate on this walk moved; over the external perimeter of
+  # `link_label_target_mismatch` (code included) the walk changed no label at all.
+  #
+  # ⚠️ DECLARED CEILINGS: (1) a label wrapped across a line break is invisible — the
+  # walk is line-local (the safe direction). The two such labels at the fix (06_01, and
+  # the deploy skill's invariants outside docs/) were unwrapped instead of teaching the
+  # walk to cross lines; deliberately unpinned, since crossing lines would only widen
+  # coverage. (2) A code span broken across lines is not paired, so a bracket inside
+  # its second half counts as structure. (3) An unpaired backtick left of the label
+  # pairs with the label's own opening one, so its `[` lands in a code span and the
+  # link is invisible to every gate on this walk — which is how CommonMark renders it
+  # (no link at all); only `dangling` still checks its target. (4) An href whose
+  # `#fragment` wraps onto the next line is not seen (zero in the tree at the fix).
+  CANON_HREF_RE = /\]\(((\d\d_\d\d)_[A-Za-z0-9_]+)(?:#[^)]*)?\)/
+
+  def canon_links(text)
+    labelled_links(text, CANON_HREF_RE).map { |label, m| [ label, m[1], m[2] ] }
   end
 
   # [SSOT anti-drift] §-section label drift. A pure function carries NO severity —
@@ -813,7 +932,7 @@ module DocsLinter
   SECTION_REF_RE = /§\s*([0-9A-Za-zА-Яа-яІіЇїЄє.\-]+)/
 
   def section_label_drift(text, headings)
-    text.scan(/\[([^\]]*)\]\((\d\d_\d\d_[A-Za-z0-9_]+)(?:#[^)]*)?\)/).filter_map do |label, target|
+    canon_links(text).filter_map do |label, target, _id|
       next unless headings.key?(target) # target doc absent → dangling guard handles it
 
       ref = label[SECTION_REF_RE, 1]
@@ -899,16 +1018,14 @@ module DocsLinter
   # [`NN_NN_Full_Name`](Doc) is the SAME ref in a second spelling → flagged (caught
   # 445 such across 50 docs, unified 2026-06-01 via scripts/normalize_crossrefs.rb).
   # A pure prose-phrase label (no doc-id token at all) is a legit descriptive link →
-  # left alone. Skips fenced code. Pure: no I/O.
-  CANON_LINK_RE = /\[([^\]]*)\]\((\d\d_\d\d)_[A-Za-z0-9_]+(?:#[^)]*)?\)/
-
+  # left alone. Skips fenced code. Label extraction — `canon_links` [DOC-T.128]. Pure: no I/O.
   def crossref_label_form(text)
     in_fence = false
     text.each_line.flat_map do |line|
       in_fence = !in_fence if line.start_with?("```")
       next [] if in_fence
 
-      line.scan(CANON_LINK_RE).filter_map do |label, id|
+      canon_links(line).filter_map do |label, _target, id|
         l = label.strip
         next if l =~ /\A`#{id}(\s+§[^`]*)?`/                     # canonical: code-span leads with id (+ opt §)
         next if l !~ /#{id}/ && l !~ /#{id[0, 2]}\\_#{id[3, 2]}/ # prose-phrase (no doc-id) → legit
@@ -946,7 +1063,14 @@ module DocsLinter
   # twice in one family. Reflex: after widening a gate FOR a tree, open that tree
   # and read one real line — a perimeter extension that cannot match the dialect it
   # was extended for is a decoration that reports coverage.
-  SECTION_AFTER_DOCLINK_RE = %r{\[(`\d\d_\d\d[^`]*`[^\]]*)\]\((?:\.\./)*(\d\d_\d\d_[A-Za-z0-9_]+)(?:\.md)?(?:#[^)]*)?\)[ \t]*§[ \t]*(\S+)}
+  #
+  # 🔴 The label is recovered from the `](` anchor by `balanced_link_label`, not by a
+  # leading `\[(…)`: the same first-bracket capture DOC-T.128 retired from its two
+  # siblings made this one accuse a prose-label link that an unpaired bracket earlier
+  # on the line had dressed in a code-span doc-id (false red), and miss a real
+  # doc-id label carrying nested brackets (false green).
+  SECTION_AFTER_DOCLINK_RE = %r{\]\((?:\.\./)*(\d\d_\d\d_[A-Za-z0-9_]+)(?:\.md)?(?:#[^)]*)?\)[ \t]*§[ \t]*(\S+)}
+  DOCLINK_LABEL_RE = /\A`\d\d_\d\d[^`]*`/
 
   def section_ref_after_doclink(basename, text)
     return [] if basename.match?(BARE_REF_EXEMPT)
@@ -956,7 +1080,10 @@ module DocsLinter
       in_fence = !in_fence if line.start_with?("```")
       next [] if in_fence
 
-      line.scan(SECTION_AFTER_DOCLINK_RE).filter_map do |label, target, token|
+      labelled_links(line, SECTION_AFTER_DOCLINK_RE).filter_map do |label, m|
+        next unless label.match?(DOCLINK_LABEL_RE)
+
+        target, token = m[1], m[2]
         next if token.match?(PLACEHOLDER_SECTION_RE)
 
         id = label[/\d\d_\d\d/]

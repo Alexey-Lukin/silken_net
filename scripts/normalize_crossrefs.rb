@@ -57,6 +57,14 @@ files.each do |path|
 
     line.gsub(LINK) do
       label, href, anchor = Regexp.last_match.captures
+      # A `[` inside the captured label means this first-bracket regex cannot tell whose
+      # label it holds — an UNPAIRED bracket earlier on the line (then the "label" is
+      # prose) or one inside the label's own code span (then un-codespanning it strands
+      # a bare bracket). Either rewrite damages text while the href-multiset invariant
+      # below stays green. Refuse; `crossref_label_form`, which recovers the label by
+      # balance and treats code-span and escaped brackets as text, keeps such a line red.
+      next Regexp.last_match[0] if label.include?("[")
+
       id = href[0, 5]
       nl = norm_label(label, id)
       if nl && nl != label

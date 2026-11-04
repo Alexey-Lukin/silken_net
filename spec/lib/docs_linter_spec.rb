@@ -938,6 +938,57 @@ end
       expect(described_class.section_label_drift(
         "[`99_99 §1.3`](99_99_Missing_Doc)", headings)).to be_empty
     end
+
+    # [DOC-T.128] An unpaired `[` earlier (a manuscript marker in a code span, a
+    # half-open interval) must not start the canon link's label — its prose § would
+    # stand in for the label's, and the dead section would pass.
+    it "flags a dead §-label behind an unpaired bracket on the SAME line" do
+      md = "маркер `[finalise §1A` і далі [`08_02 §1.3`](08_02_Academic_Institutions_Registry)\n"
+      expect(described_class.section_label_drift(md, headings))
+        .to contain_exactly(a_string_matching(/§1\.3/))
+    end
+
+    it "flags a dead §-label a paragraph BELOW an unpaired bracket" do
+      md = "вікно `[start, start + §1A)` тут.\n\nабзацом нижче [`08_02 §1.3`](08_02_Academic_Institutions_Registry)\n"
+      expect(described_class.section_label_drift(md, headings))
+        .to contain_exactly(a_string_matching(/§1\.3/))
+    end
+
+    # [DOC-T.128, adversarial round] The mirror of the stray bracket: one INSIDE the
+    # label. A nested pair must be seen, and a bracket in the label's own code span is
+    # text — otherwise the walk cuts the label down to its tail and drops its §.
+    it "sees a label that nests a bracket pair and judges its §" do
+      md = "[`08_02 §1.3` [DOC.7]](08_02_Academic_Institutions_Registry)\n"
+      expect(described_class.section_label_drift(md, headings))
+        .to contain_exactly(a_string_matching(/§1\.3/))
+    end
+
+    it "treats a bracket inside the label's own code span as text" do
+      md = "[`08_02 §1.3` — `a[i`](08_02_Academic_Institutions_Registry)\n"
+      expect(described_class.section_label_drift(md, headings))
+        .to contain_exactly(a_string_matching(/§1\.3/))
+    end
+
+    # Code spans are paired only to the LEFT of the link, as before this walk existed:
+    # a link quoted inside a code span (how the standard shows the canonical forms)
+    # stays checked. Whole-line pairing would make it invisible.
+    it "does not let an ESCAPED backtick open a code span over the label" do
+      md = "ціна \\` і [`08_02 §1.3`](08_02_Academic_Institutions_Registry)\n"
+      expect(described_class.section_label_drift(md, headings))
+        .to contain_exactly(a_string_matching(/§1\.3/))
+    end
+
+    it "lets an escaped backtick CLOSE a span (inside one, a backslash is text)" do
+      md = "символ `\\` і [`08_02 §1.3`](08_02_Academic_Institutions_Registry)\n"
+      expect(described_class.section_label_drift(md, headings))
+        .to contain_exactly(a_string_matching(/§1\.3/))
+    end
+
+    it "still checks a canon link quoted inside a code span" do
+      md = "форма: `` [`08_02 §1.3`](08_02_Academic_Institutions_Registry) ``\n"
+      expect(described_class.section_label_drift(md, headings))
+        .to contain_exactly(a_string_matching(/§1\.3/))
+    end
   end
 
   describe ".bare_section_ref" do
@@ -1083,6 +1134,35 @@ end
       expect(described_class.crossref_label_form(
         "```\n[05_05 §3](05_05_Slashing_and_Risk_Policy)\n```\n")).to be_empty
     end
+
+    # [DOC-T.128] Measured on a tracker leg: an unpaired `[` in a code span before a
+    # canon link became the start of that link's label → a FALSE red.
+    it "does not take a canon label from an unpaired bracket earlier on the line" do
+      expect(described_class.crossref_label_form(
+        "маркер `[finalise …` і далі [`05_05 §3`](05_05_Slashing_and_Risk_Policy)\n")).to be_empty
+    end
+
+    it "still flags a non-canonical label behind an unpaired bracket" do
+      expect(described_class.crossref_label_form(
+        "маркер `[finalise …` і далі [05_05 §3](05_05_Slashing_and_Risk_Policy)\n"))
+        .to contain_exactly(a_string_matching(/label `05_05 §3`/))
+    end
+
+    it "is not misled when a NON-canon link comes first after the unpaired bracket" do
+      expect(described_class.crossref_label_form(
+        "маркер `[finalise` [опис](protocols/x.md) і [`05_05 §3`](05_05_Slashing_and_Risk_Policy)\n")).to be_empty
+    end
+
+    it "does not cut a canonical label at a bracket inside its own code span" do
+      expect(described_class.crossref_label_form(
+        "[`05_05 §3` — поле `[05_05`](05_05_Slashing_and_Risk_Policy)\n")).to be_empty
+    end
+
+    it "treats an escaped bracket inside the label as text" do
+      expect(described_class.crossref_label_form(
+        "[05_05 §3 \\[draft](05_05_Slashing_and_Risk_Policy)\n"))
+        .to contain_exactly(a_string_matching(/label `05_05 §3/))
+    end
   end
 
   describe ".section_ref_after_doclink" do
@@ -1091,6 +1171,17 @@ end
         "01_01_Coaxial", "див. [`01_04`](01_04_CODIT_and_Xylemointegration) §4 деталі\n")
       expect(hits.size).to eq(1)
       expect(hits.first).to include("01_04_CODIT_and_Xylemointegration")
+    end
+
+    # [DOC-T.128, adversarial round] Same first-bracket capture as its two siblings had.
+    it "does not accuse a prose-label link that an unpaired bracket dressed in a doc-id" do
+      expect(described_class.section_ref_after_doclink(
+        "01_01_Coaxial", "маркер [`01_04` чернетка і [опис](01_04_CODIT_and_Xylemointegration) §4 деталі\n")).to be_empty
+    end
+
+    it "sees a doc-id label that nests a bracket pair" do
+      expect(described_class.section_ref_after_doclink(
+        "01_01_Coaxial", "див. [`01_04` [DOC.7]](01_04_CODIT_and_Xylemointegration) §4 деталі\n").size).to eq(1)
     end
 
     it "flags the directory-form label too (`[`NN_NN` — Title](Doc) §X`)" do

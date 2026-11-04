@@ -955,8 +955,8 @@ PAP, retention 10в/30д; має разовий 30s IAM-sleep — не пере�
 рядок до 2026-08-31 велів `ssh_source_ranges=[<твій реальний CIDR>]` і стверджував «приклад у
 tfvars = TEST-NET-3, НЕ лишай!» — обидві половини хибні, і кожна по-своєму.** У
 `terraform/terraform.tfvars.example` там `[]` із приміткою «Optional break-glass DIRECT ssh
-(bypasses IAP). **Normally keep []**», тобто твердження про ЧУЖИЙ файл було вигадане ([`00_05
-§4`](00_05_AI_Native_Operating_Model) — «реф, що СТВЕРДЖУЄ про чужий документ»); а сама
+(bypasses IAP). **Normally keep []**», тобто твердження про ЧУЖИЙ файл було вигадане
+([`00_05 §4`](00_05_AI_Native_Operating_Model) — «реф, що СТВЕРДЖУЄ про чужий документ»); а сама
 інструкція наказувала **відкрити :22 в інтернет** повз ратифіковану IAP-модель INF.20 (в), що
 їй суперечить і таблиця фаєрволу §Firewall («break-glass-only; normally `[]` → правило не
 створюється») двома сторінками вище. Канонічний вхід — `gcloud compute ssh … --tunnel-through-iap`,
