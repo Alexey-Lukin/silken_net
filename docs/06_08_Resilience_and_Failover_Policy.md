@@ -281,7 +281,7 @@ end
 
 ### 2.6 Partition-prune scope — дім [`04_01 §11`](04_01_Data_Models_and_Entities)
 
-> 🏠 **One-Home:** дисципліна прунингу партицій (родина з ТРЬОХ моделей і різний інструмент у кожної · форма вікна · `⛔ status`-скан бере partial index, не `created_at`-вікно · перелік свідомо-непрунимих all-time агрегатів) живе під `⚡ PARTITION PRUNING INVARIANT` у [`04_01 §11`](04_01_Data_Models_and_Entities), поруч зі схемою, яку вона описує. Носій — `spec/quality/partition_key_discipline_spec.rb`.
+> 🏠 **One-Home:** дисципліна прунингу партицій (родина з ТРЬОХ моделей і різний інструмент у кожної · форма вікна · `⛔ status`-скан бере partial index, не `created_at`-вікно · перелік свідомо-непрунимих all-time агрегатів) живе під `⚡ PARTITION PRUNING INVARIANT` у [`04_01 §3`](04_01_Data_Models_and_Entities) (картка `TelemetryLog`), поруч зі схемою, яку вона описує. Носій — `spec/quality/partition_key_discipline_spec.rb`.
 >
 > ⛔ **Не відновлювати тут — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Предмет стоїть **поза оголошеною Метою цього документа**: вона про Queen як SPOF і про `Fallback / Retry / Buffer policy` кожної ланки, а вартість `EXPLAIN`-плану при ЖИВИХ ланках жодним із двох не є. Секція до того ж сиділа всередині матриці «що робити, коли ланка `down`» — тобто в контексті, який до її предмета не має стосунку.
 
