@@ -11,7 +11,7 @@ module Api
         org = acting_organization!
 
         # Використовуємо upcoming для прогнозів, оскільки strategic_forecasts може бути відсутнім.
-        # [SCOPE FIX]: Раніше повертали глобальні AiInsight — інвестор з org A бачив
+        # [SCOPE FIX]: Раніше повертали глобальні AiInsight — користувач з org A бачив
         # прогнози для org B. Саме правило належності живе на моделі
         # (`AiInsight.for_organization` — три гілки поліморфного `analyzable`), бо
         # [SEC.26] дало йому другого споживача поза цим контролером.

@@ -5,7 +5,8 @@ module Api
   module V1
     class ClustersController < BaseController
       # Дозволяємо перегляд усім автентифікованим користувачам
-      # (Інвестори бачать фінанси, Патрульні — загрози)
+      # (лише кластери організації запиту — `acting_organization!`; рольового
+      # розрізнення полів тут немає)
 
       # --- СПИСОК СЕКТОРІВ (The Map View / Dashboard Grid) ---
       # GET /clusters

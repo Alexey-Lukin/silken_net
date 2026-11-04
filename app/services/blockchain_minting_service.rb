@@ -12,7 +12,7 @@ class BlockchainMintingService < ApplicationService
 
   # [B-05 FIX]: Цільовий поріг балансу DAO Treasury (у токенах SCC).
   # Якщо баланс DAO Treasury < порогу — Dynamic Tax активний (2% від емісії).
-  # Якщо баланс >= порогу — податок вимикається, інвестори отримують 100%.
+  # Якщо баланс >= порогу — податок вимикається, бенефіціари емісії отримують 100%.
   # [S6.17]: Поріг тепер читається з SystemParameter (governance-aware).
   DEFAULT_INSURANCE_POOL_THRESHOLD = 100_000
 

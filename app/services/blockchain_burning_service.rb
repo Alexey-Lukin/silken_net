@@ -70,7 +70,7 @@ class BlockchainBurningService < ApplicationService
 
   # @param contractual [Boolean] true — це погоджена контрактна форфейтура (early-exit
   #   `burn_accrued_points`, `ContractTerminationService`), НЕ slash-за-провину → гейт
-  #   positive-A пропускається (інвестор сам розірвав, burn — погоджена умова, не Кат-A).
+  #   positive-A пропускається (замовник сам розірвав, burn — погоджена умова, не Кат-A).
   # @param stress_threshold [Numeric, nil] поріг «стресованого дерева», ЗАФІКСОВАНИЙ на
   #   момент тригера [SLASH-1, 2026-08-25]. Дзеркало `target_date`: ARCH.46 протягнув сюди
   #   ДАТУ, щоб обидві половини вироку міряли одну добу, — але поріг кожна половина й далі
@@ -746,7 +746,7 @@ class BlockchainBurningService < ApplicationService
   #   slash_ratio = clamp(damage_ratio^GAMMA × min(penalty_factor, PENALTY_FACTOR_MAX), 0, 1.0)
   # Replaces the old LINEAR burn (total × damage_ratio — no GAMMA, no penalty_factor; the
   # verified code↔doc divergence, 05_05 §3 / 04_02 §11). GAMMA>1 makes the curve convex:
-  # a small loss is punished gently (d=0.10 → ~5%) so an investor isn't wiped out over a
+  # a small loss is punished gently (d=0.10 → ~5%) so a holder isn't wiped out over a
   # minor incident, yet full negligent loss reaches 100% (d=1.0, pf=1.0 → 1.0) — the
   # "no dead-zone" property (the old min(…, 0.40) ceiling that flat-lined 40%→100% damage
   # is removed). penalty_factor — baseline; cause-driven uplift із comms-loss DE-correlation

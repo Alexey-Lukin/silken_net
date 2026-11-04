@@ -4,7 +4,7 @@
 class BurnCarbonTokensWorker
   include ApplicationWeb3Worker
   # Використовуємо чергу critical, бо фінансова відплата має бути негайною,
-  # щоб запобігти виводу токенів інвестором.
+  # щоб запобігти виводу токенів їхнім тримачем.
   # [ARCH.53] Job-dedup (`unique_for: SLASH_CLAIM_TTL`) додати з покупкою Sidekiq
   # Enterprise (шим no-op, 04_02 DOC-R.10); до того TOCTOU закриває per-contract
   # claim у BlockchainBurningService (defense-in-depth, не заміна).

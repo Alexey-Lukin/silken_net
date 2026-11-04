@@ -29,7 +29,7 @@ class Cluster < ApplicationRecord
 
   # [ВИПРАВЛЕНО]: Захист Фінансової Історії (Immutable Audit Trail).
   # Кластер неможливо видалити, поки в ньому є діючі NaaS-контракти чи страховки.
-  # Це критично для Web3-звітності та довіри інвесторів.
+  # Це критично для Web3-звітності та довіри замовників і аудиторів.
   has_many :naas_contracts, dependent: :restrict_with_error
   has_many :parametric_insurances, dependent: :restrict_with_error
 

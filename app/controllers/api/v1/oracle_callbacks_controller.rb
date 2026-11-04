@@ -53,7 +53,7 @@ module Api
           # due to partitioning. Pass both id_value and created_at for partition pruning.
           created_at_iso = log.created_at.iso8601(6)
 
-          # 1. EVM (Polygon) — мінтинг SCC/SFC для інституційних інвесторів (RWA)
+          # 1. EVM (Polygon) — мінтинг SCC на гаманець бенефіціара (SFC за ріст не мінтиться — 05_03)
           MintCarbonCoinWorker.perform_async(log.id_value, created_at_iso)
 
           # 2. Solana — миттєва мікро-винагорода для власника дерева (швидкість + 0 комісій)
