@@ -66,7 +66,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | Web3 RPC | rpc_errors by network/type, circuit_breaker_open, scc_minted, oracle_dispatch latency | Web3 RPC errors by network |
 | Treasury / Oracle | oracle_balance_ratio, oracle_balance by network+signer (INF.22 per-signer: Polygon minter/slasher + activation-gated aux) | Treasury / Oracle balance monitoring |
 | Database Pool | db_pool_connections / db_pool_size, db_pool_waiting | Database connection pool stats |
-| 🗂️ Partition Growth [ARCH.70] | partitions by table, partitioned_table_bytes by table, partition_sample_timestamp_seconds (свіжість), partition_default_occupied (поломка, не ріст) | Крива росту, на якій ухвалюється ⚖️ ширини вікна дропу — читати з поправкою 06_03 §2.8 |
+| 🗂️ Partition Growth [ARCH.70] | partitions by table, partitioned_table_bytes by table, partition_sample_timestamp_seconds (свіжість), partition_default_occupied (поломка, не ріст) | Крива росту під ухвалене вікно дропу (24 міс., 04_01 DOC.8; сам дроп ще не збудовано — ARCH.70) — читати з поправкою 06_03 §2.8 |
 | 💰 Money-Path Reliability [ARCH.45] | mint/slash/solana-payout/insurance-payout success-rate (SLO ratio), sidekiq_dead_set_size, manual_review_depth, limbo_locked_total, chain_audit_delta [G1/G2] | Money-path SLO + DeadSet + manual-review/limbo/chain-audit gauges |
 | ⚙️ Process / Runtime Health | process_resident_memory_bytes (RSS), ruby_gc_count/major_count, ruby_gc_heap_live_slots, ruby_threads, puma_running/max/pool_capacity/backlog | Runtime observability gap (RSS/GC/Puma) |
 | 👑 Gateway / Queen Fleet Health [ARCH.54] | gateways_faulty, gateway_attest_lapsed, helium_sos_received_total by outcome | Fleet-health dashboard-gap |

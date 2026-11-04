@@ -978,7 +978,10 @@ module SilkenNet
     # ⚠️ Тому й алерт-порога тут бути НЕ МОЖЕ у звичайній формі: «скільки прийнятно»
     # для монотонної-за-побудовою величини не визначене. Законна форма — операторська
     # стеля-дедлайн (як `> 24` у сусіда), і вона ратифікується РАЗОМ із шириною вікна.
-    # 🔒 Ярус — ДІАГНОСТИЧНИЙ (оголошено, [INF.26]): правила немає, доки немає вікна.
+    # 🔒 Ярус — ДІАГНОСТИЧНИЙ (оголошено, [INF.26]): правила немає, доки немає стелі.
+    # ⊕ Ширину ратифіковано 2026-11-04 (24 міс., `04_01` DOC.8) БЕЗ цієї стелі: маркер
+    # без закривача, будь-яке кінцеве вікно стирає його однаково — мінімуму вікну ця
+    # вісь не задає; стеля-дедлайн лишається неухваленою.
     # ⊕ Ціна лічби виміряна, не припущена: партіальний `idx_telemetry_logs_oracle_dispatched`
     # дає `Index Only Scan` по кожній партиції (EXPLAIN, 2026-08-29) — тобто це не скан
     # партицій, і важіль [ARCH.52] на місці. ⛔ Не розширювати на `group(:oracle_status)`:
@@ -986,7 +989,7 @@ module SilkenNet
     # на seq scan усіх партицій.
     TELEMETRY_ORACLE_DISPATCHED_ROWS = REGISTRY.gauge(
       :silkennet_telemetry_oracle_dispatched_rows,
-      docstring: "Retained telemetry rows carrying oracle_status=dispatched — the RETENTION cost of verified rows, NOT a backlog: the callback closing this state is unwired by construction (PATH 1 demoted, ARCH.53), so the population is monotonic by design [ARCH.70; diagnostic tier: no alert until the retention window is ratified]"
+      docstring: "Retained telemetry rows carrying oracle_status=dispatched — the RETENTION cost of verified rows, NOT a backlog: the callback closing this state is unwired by construction (PATH 1 demoted, ARCH.53), so the population is monotonic by design [ARCH.70; diagnostic tier: no alert until an operator ceiling-deadline is ratified]"
     )
 
     PARTITION_DEFAULT_OCCUPIED = REGISTRY.gauge(
