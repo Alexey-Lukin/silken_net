@@ -16,6 +16,14 @@
 # `insight_type` (через `insight_type_label`) · `target_date` · `summary` ·
 # `probability_score` · `prediction_data.dig("yield_impact")`, а хроніка друкує
 # прозою `stress_index` у відсотках.
+# ⊕ ⚠️ **Підстава вище хибна для ЄДИНОГО споживача цього файлу (виміряно 2026-11-04):**
+# `trees#show` віддає лише `daily_health_summary`, а `ForecastCard` живе на
+# `oracle_visions#index` (forester+) і показує тільки прогнози (`upcoming`) — щоденних
+# рядків, датованих учорашнім днем, він не показує нікому. Присуд тримається на іншій
+# опорі — стелі ⚖️ 2026-11-04 «будь-яка сторінка того самого глядача» (скіл `backend`
+# #58a): ЗМІСТ `summary` (фрод так/ні, стан здоровʼя) будь-яка роль читає в хроніці
+# свого дерева (гілки `fraud`/`stress`), а `probability_score`/`yield_impact` щоденний
+# писач не заповнює — у цьому екшені вони `null`.
 #
 # ⛔ **ДВІ JSONB-колонки свідомо НЕ віддаються блобом — `prediction_data` і
 # `reasoning`.** Реєстр PII класифікує КОЛОНКИ й до ВМІСТУ JSONB сліпий за

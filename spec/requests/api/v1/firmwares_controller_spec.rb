@@ -148,6 +148,20 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       expect(response.parsed_body["data"]).to be_an(Array)
     end
 
+    # [SEC.36] Каталог прошивок — платформний, а лічильник пристроїв на версії —
+    # ні: `deployment_count` рахував дерева й шлюзи ВСІХ тенантів, і адмін
+    # організації читав у JSON чужий парк, якого не показує жодна сторінка
+    # (HTML друкує інвентар лише своєї організації). Рівність МНОЖИНИ ключів, а не
+    # «немає `deployment_count`»: так почервоніє й будь-який інший агрегат.
+    it "carries no device count from other tenants in the firmware list" do
+      create(:tree, cluster: create(:cluster, organization: create(:organization)), firmware_version: firmware.version)
+
+      get "/firmwares", headers: headers, as: :json
+
+      row = response.parsed_body["data"].find { |f| f["id"] == firmware.id }
+      expect(row.keys).to match_array(%w[id version target_hardware_type wire_era created_at binary_sha256])
+    end
+
     it "renders HTML dashboard for firmware index" do
       get "/firmwares", headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
       expect(response).to have_http_status(:ok)

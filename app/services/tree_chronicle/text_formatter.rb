@@ -84,7 +84,7 @@ module TreeChronicle
 
     # [I18N.1] Дім міток `Entry#event_type` — синтетичного роду події, який
     # виробляє САМ сервіс (`:alert`/`:fraud`/`:stress`/`:maintenance`/`:minting`/
-    # `:recovery`/`:homeostasis`). ⚠️ Це НЕ enum моделі, і саме тому клас випав з
+    # `:burning`/`:recovery`/`:homeostasis`). ⚠️ Це НЕ enum моделі, і саме тому клас випав з
     # усіх переліків: гейт парності будується на `Model.enum.keys`, а тут enum'а
     # немає за побудовою — множину дає код сервісу.
     EVENT_TYPE_SCOPE = "trees.chronicle.event_types"

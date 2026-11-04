@@ -28,7 +28,9 @@ class BioContractFirmware < ApplicationRecord
   # Трекінг версій — per-device SemVer-РЯДОК, і це вся правда:
   #   * `Tree.firmware_version` + `Gateway.firmware_version` (рядок SemVer)
   #   * `BioContractFirmware.is_active` + `rollout_percentage` (global toggle)
-  #   * `deployment_count` рахує string-match: `Tree.where(firmware_version: ...)`
+  #   * інвентар — string-match `firmware_version`, і лише в межах організації
+  #     (`FirmwaresController#firmware_inventory_for`); глобального лічильника на
+  #     версії немає свідомо [SEC.36, 2026-11-04] — каталог платформний, парк ні
   #
   # 🔴 Тут стояв TODO про per-cluster трекінг через `clusters.active_firmware_id`
   # разом із закоментованою асоціацією — і його останній рядок ЦИТУВАВ ВЛАСНЕ
@@ -85,11 +87,6 @@ class BioContractFirmware < ApplicationRecord
   # Перетворення HEX у бінарний потік з мемоізацією
   def binary_payload
     @binary_payload ||= [ bytecode_payload ].pack("H*").freeze
-  end
-
-  # Number of devices currently running this firmware version
-  def deployment_count
-    Tree.where(firmware_version: version).count + Gateway.where(firmware_version: version).count
   end
 
   def payload_size

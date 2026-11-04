@@ -53,9 +53,11 @@ module Api
           # API Response
           format.json do
             render json: {
+              # ⛔ [SEC.36] Без лічильника пристроїв на версії: каталог платформний, а
+              # парк — ні, тож глобальний підрахунок віддавав адміну організації чужі
+              # пристрої. Інвентар СВОЄЇ організації сторінка друкує сама.
               data: @firmwares.as_json(
-                only: [ :id, :version, :target_hardware_type, :wire_era, :created_at, :binary_sha256 ],
-                methods: [ :deployment_count ]
+                only: [ :id, :version, :target_hardware_type, :wire_era, :created_at, :binary_sha256 ]
               ),
               pagy: pagy_metadata(@pagy)
             }
