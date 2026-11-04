@@ -143,7 +143,9 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       # Саме тієї організації, чиї дані читатимуть, — інакше вона бачила б наслідки
       # без запису про те, хто прийшов.
       expect(log.organization_id).to eq(other_organization.id)
-      expect(log.metadata["from_organization_id"]).to eq(organization.id)
+      # [SEC.36 ⚖️ 2026-11-04] Жодного id ЧУЖОГО тенанта в незмінному журналі цільової
+      # організації — її адмін читає блоб на показі запису.
+      expect(log.metadata).to eq({})
       # Ланцюг рахується в `before_create` — тобто рядок реальний, а не в черзі.
       expect(log.chain_hash).to be_present
     end
@@ -158,7 +160,7 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       post "/organizations/#{other_organization.id}/switch", as: :json
 
       expect(response).to have_http_status(:ok)
-      expect(AuditLog.order(:id).last.metadata["from_organization_id"]).to be_nil
+      expect(AuditLog.order(:id).last.metadata).to eq({})
     end
 
     # 🔴 Браузерна гілка — доти не виконана ЖОДНИМ прикладом, і саме тому в ній жив

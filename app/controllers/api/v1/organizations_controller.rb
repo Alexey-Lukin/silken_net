@@ -135,7 +135,11 @@ module Api
       # `organization_id` — та організація, КУДИ входять: ланцюг будується per-org
       # (`AuditLog.verify_chain_integrity`), тож слід має лежати в журналі саме тієї
       # організації, чиї дані читатимуть. Інакше вона побачила б наслідки дій без
-      # запису про те, хто і звідки прийшов.
+      # запису про те, хто прийшов.
+      # ⛔ [SEC.36, ⚖️ founder 2026-11-04] БЕЗ `from_organization_id`: це id ЧУЖОГО
+      # тенанта, а журнал незмінний і адмін цільової організації читає його блоб на
+      # показі запису. Розслідуванню вистачає факту перемикання і того, ХТО прийшов
+      # (`user_id`); «звідки» — властивість сесії співробітника, не цієї організації.
       def record_switch!(organization)
         AuditLog.create!(
           user_id: current_user.id,
@@ -144,8 +148,7 @@ module Api
           auditable_type: "Organization",
           auditable_id: organization.id,
           ip_address: request.remote_ip,
-          user_agent: request.user_agent,
-          metadata: { from_organization_id: acting_organization&.id }
+          user_agent: request.user_agent
         )
       end
 

@@ -221,6 +221,17 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         expect(response.parsed_body["contract"]["id"]).to eq(own_contract.id)
       end
 
+      # [SEC.36 ⚖️ 2026-11-04] Рівність МНОЖИНИ: `hadron_asset_id`/`cancelled_at` не друкує
+      # жодна сторінка будь-якого глядача, тож у JSON їх немає — і нова колонка теж не
+      # проскочить сюди мовчки.
+      it "returns exactly the contract fields some page of this viewer already shows" do
+        get "/contracts/#{own_contract.id}", headers: headers, as: :json
+        expect(response.parsed_body["contract"].keys).to match_array(
+          %w[id organization_id cluster_id total_service_fee start_date end_date status
+             cancellation_terms created_at updated_at]
+        )
+      end
+
       it "returns 404 for a contract from another organization" do
         get "/contracts/#{other_contract.id}", headers: headers, as: :json
         expect(response).to have_http_status(:not_found)

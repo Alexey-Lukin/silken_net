@@ -10,8 +10,8 @@ RSpec.describe ClusterBlueprint, type: :model do
 
   let(:cluster) { create(:cluster, name: "Korsun Forest", region: "Cherkasy Oblast") }
 
-  describe "default view" do
-    subject(:parsed) { JSON.parse(described_class.render(cluster)) }
+  describe ":index view" do
+    subject(:parsed) { JSON.parse(described_class.render(cluster, view: :index)) }
 
     it "includes identifier" do
       expect(parsed["id"]).to eq(cluster.id)
@@ -69,7 +69,7 @@ RSpec.describe ClusterBlueprint, type: :model do
   # (`00_04 §GET /contracts/stats` описує шкалу 0..1 для сусіднього поля).
   describe "health_index carries «not measured» as null" do
     it "renders null for a cluster that has no reading yet" do
-      parsed = JSON.parse(described_class.render(cluster))
+      parsed = JSON.parse(described_class.render(cluster, view: :index))
 
       expect(parsed).to have_key("health_index")
       expect(parsed["health_index"]).to be_nil
@@ -77,7 +77,7 @@ RSpec.describe ClusterBlueprint, type: :model do
 
     it "still renders a measured zero as 0.0, never as null" do
       cluster.update_column(:health_index, 0.0)
-      parsed = JSON.parse(described_class.render(cluster))
+      parsed = JSON.parse(described_class.render(cluster, view: :index))
 
       expect(parsed["health_index"]).to eq(0.0)
     end
@@ -85,14 +85,14 @@ RSpec.describe ClusterBlueprint, type: :model do
 
   describe "total_active_trees reflects denormalized counter" do
     it "returns 0 for a cluster with no trees" do
-      parsed = JSON.parse(described_class.render(cluster))
+      parsed = JSON.parse(described_class.render(cluster, view: :index))
       expect(parsed["total_active_trees"]).to be(0)
     end
   end
 
   describe "active_threats without alerts" do
     it "returns false when no critical alerts exist" do
-      parsed = JSON.parse(described_class.render(cluster))
+      parsed = JSON.parse(described_class.render(cluster, view: :index))
       expect(parsed["active_threats"]).to be false
     end
   end
@@ -105,6 +105,17 @@ RSpec.describe ClusterBlueprint, type: :model do
       expect(parsed).to be_an(Array)
       expect(parsed.size).to eq(3)
       expect(parsed).to all(include("name", "health_index"))
+    end
+  end
+
+  # [SEC.36 ⚖️ 2026-11-04] База — рядок сторінки ОРГАНІЗАЦІЇ, яку super_admin бачить для
+  # будь-якого тенанта; географія — лише в `:index`/`:show`, куди він доходить через
+  # аудитоване перемикання. Рівність МНОЖИНИ, бо поле верхнього рівня Blueprinter вкладає
+  # у КОЖЕН view — новий рядок тут тихо розширив би обидва.
+  describe "base view" do
+    it "carries exactly the organization page's cluster row" do
+      expect(JSON.parse(described_class.render(cluster)).keys)
+        .to match_array(%w[id name health_index total_active_trees])
     end
   end
 end

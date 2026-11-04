@@ -105,12 +105,14 @@ module Api
             render json: {
               # [ARCH.103] `only:` явний — доти тут був ГОЛИЙ `as_json`, тобто кожна
               # майбутня колонка публікувалась автоматично, а мертва `emitted_tokens`
-              # їхала назовні як факт про гроші. Список = живі колонки схеми; емісія
-              # героя — окремим ключем нижче, бо вона belongs КЛАСТЕРУ, не контракту.
+              # їхала назовні як факт про гроші. Емісія героя — окремим ключем нижче,
+              # бо вона belongs КЛАСТЕРУ, не контракту.
+              # ⚖️ [SEC.36, founder 2026-11-04] Критерій переліку — не «живі колонки
+              # схеми», а стеля #58a: те, що цей глядач бачить на БУДЬ-ЯКІЙ своїй
+              # сторінці. `hadron_asset_id` і `cancelled_at` не друкує жодна — знято.
               contract: @contract.as_json(
                 only: [ :id, :organization_id, :cluster_id, :total_service_fee, :start_date,
-                        :end_date, :status, :cancellation_terms, :cancelled_at,
-                        :hadron_asset_id, :created_at, :updated_at ]
+                        :end_date, :status, :cancellation_terms, :created_at, :updated_at ]
               ),
               # Дзеркало HTML-героя (`Contracts::Show#cluster_emission`); точність —
               # прецедент `#stats`.

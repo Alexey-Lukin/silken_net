@@ -19,7 +19,7 @@ module Api
           # 1. API Response (Mobile / Externals)
           format.json do
             render json: {
-              data: ClusterBlueprint.render_as_hash(@clusters),
+              data: ClusterBlueprint.render_as_hash(@clusters, view: :index),
               pagy: pagy_metadata(@pagy)
             }
           end

@@ -4,13 +4,25 @@
 class ClusterBlueprint < Blueprinter::Base
   identifier :id
 
-  fields :name, :region
+  # База — рівно рядок кластера на сторінці ОРГАНІЗАЦІЇ (`Organizations::Show`: назва ·
+  # здоровʼя · дерева · лінк). ⚖️ [SEC.36, 2026-11-04] `organizations#show` бачить
+  # super_admin для БУДЬ-ЯКОГО тенанта, а дзеркало решти полів (`clusters#show`) він
+  # відкриває лише після аудитованого перемикання — тож регіон, центроїд і загрози чужих
+  # кластерів у базі обходили б слід. Поля верхнього рівня Blueprinter вкладає в КОЖЕН
+  # view, тому вони живуть у `:index`, а не тут.
+  field :name
   field(:health_index) { |cluster| cluster.health_index }
   field(:total_active_trees) { |cluster| cluster.total_active_trees }
-  field(:geo_center) { |cluster| cluster.geo_center }
-  field(:active_threats) { |cluster| cluster.active_threats? }
+
+  # `clusters#index` — власна організація; дзеркало цих полів — `clusters#show`.
+  view :index do
+    field :region
+    field(:geo_center) { |cluster| cluster.geo_center }
+    field(:active_threats) { |cluster| cluster.active_threats? }
+  end
 
   view :show do
+    include_view :index
     # ⚖️ [SEC.36, 2026-09-07] `geojson_polygon` лишається в `:show` СВІДОМО, і напис
     # стоїть тут, бо доти цей кліренс не мав носія ніде — ні тесту, ні коментаря, ні
     # доку, тож наступний охайний прохід по звуженню payload'ів зрізав би його як
