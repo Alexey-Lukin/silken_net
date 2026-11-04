@@ -132,7 +132,8 @@ class ParametricInsurance < ApplicationRecord
   # ланцюга, за прапором :parametric_insurance_oracle_enabled). НЕ платить сам:
   # AI `stress_index` — це НАШ сигнал (Trigger-1, loss-proximate); за dual-trigger
   # (05_05 §6 «ніколи лише за одним внутрішнім сигналом») гроші рухає лише
-  # НЕЗАЛЕЖНЕ підтвердження (Trigger-2: dClimate satellite / Field-Audit людина).
+  # НЕЗАЛЕЖНЕ підтвердження (Trigger-2; сьогодні — лише людина/DAO, Field-Audit:
+  # супутникового постачальника немає, dClimate зрізано ⚖️ 2026-09-05, 05_05 §4).
   # Тому тут — лише arm-кандидат + field_audit; settlement — InsurancePayoutWorker.
   # [ARCH.100] Якір доби — `AiInsight.reporting_date` (доба, якою інсайти ЗАПИСАНІ).
   def evaluate_daily_health!(target_date = AiInsight.reporting_date)
@@ -195,7 +196,7 @@ class ParametricInsurance < ApplicationRecord
 
   # [INS.1 dual-trigger] AI-оракул перетнув поріг → озброюємо КАНДИДАТА (Trigger-1
   # спрацював), але НЕ платимо: гроші чекають НЕЗАЛЕЖНОГО підтвердження (Trigger-2 —
-  # dClimate satellite для пожежі / Field-Audit людина для решти). Settlement —
+  # сьогодні лише людина/DAO, Field-Audit; супутникового свідка немає, 05_05 §4). Settlement —
   # InsurancePayoutWorker, коли незалежний тригер підтвердить. Закриває basis-risk /
   # moral-hazard: не рухаємо гроші лише за власним сигналом (05_05 §6).
   def arm_candidate!(percentage)

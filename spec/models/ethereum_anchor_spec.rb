@@ -155,8 +155,9 @@ RSpec.describe EthereumAnchor, type: :model do
     # розходження шкал НЕ ВИРАЗИМЕ за жодної шкали. Тож кожне decimal-поле payload'а
     # мусить нести тут ВЛАСНЕ 6-значне значення, інакше приклад доводить менше, ніж
     # твердить його ім'я (`04_06 §B.2` BP #14 — фікстура ховає поверхню, не значення).
-    # SFC-шлях досяжний: `InsurancePayoutWorker` пише `amount: payout_amount` із
-    # `token_type: insurance.token_type`, а `payout_amount` — голий `numeric`.
+    # SFC-шлях досяжний: `InsurancePayoutWorker` у внутрішньому режимі пише
+    # `amount: payout_amount` із `token_type: insurance.token_type` (Etherisc-гілка — `:usdc`,
+    # INS.1), а `payout_amount` — голий `numeric`.
     it "round-trips EVERY evidence value at SOURCE precision (6dp) so verify stays true" do
       freeze_time do
         now = Time.current.utc

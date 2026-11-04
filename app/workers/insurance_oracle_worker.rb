@@ -4,9 +4,11 @@
 # = ===================================================================
 # 🛰️ INSURANCE ORACLE WORKER (Trigger-1 — денний обхід страховок кластера)
 # = ===================================================================
-# [INS.1] Per-cluster fan-out з денного ланцюга (`InsightBatchCallbacks#on_success`,
-# після `ClusterHealthCheckWorker`). Кожен job обходить активні `ParametricInsurance`
-# свого кластера й кличе `evaluate_daily_health!` — це Trigger-1 (arm-кандидат), НЕ
+# [INS.1] Per-cluster fan-out з денного ланцюга —
+# `ClusterHealthCheckWorker#enqueue_insurance_oracle`. ⛔ Не з
+# `InsightBatchCallbacks#on_success`: Batch-колбек у проді не виконується (ARCH.59),
+# тож сайт там мовчав би — підстава в шапці колбека. Кожен job обходить активні
+# `ParametricInsurance` свого кластера й кличе `evaluate_daily_health!` — це Trigger-1 (arm-кандидат), НЕ
 # виплата (settlement — окремо за незалежним підтвердженням, 05_05 §6). За майстер-
 # прапором :parametric_insurance_oracle_enabled (kill-switch).
 #

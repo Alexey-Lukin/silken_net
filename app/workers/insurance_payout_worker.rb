@@ -24,8 +24,10 @@ class InsurancePayoutWorker
     return unless insurance.status_triggered? || insurance.status_paid?
 
     # [INS.1 dual-trigger / COSMIC EYE] Trigger-2: гроші рухає лише НЕЗАЛЕЖНЕ verified-
-    # підтвердження (dClimate satellite fire/drought). Кандидат, озброєний AI-оракулом
-    # (Trigger-1), тримається, поки незалежне джерело не підтвердить — закриває basis-risk
+    # підтвердження ВЛАСНОГО перилу. ⛔ Сьогодні його дає лише людина/DAO (Field-Audit):
+    # супутникового постачальника немає — dClimate зрізано ⚖️ 2026-09-05 (05_05 §4).
+    # Кандидат, озброєний AI-оракулом (Trigger-1), тримається, поки незалежне джерело
+    # не підтвердить — закриває basis-risk
     # (не платимо лише за нашим сигналом, 05_05 §6).
     return if awaiting_independent_confirmation?(insurance)
 
