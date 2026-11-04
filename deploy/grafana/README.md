@@ -107,7 +107,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-m2m-nonce-fallback | m2m_nonce_fallback increase[1h] > 0 (Redis→DB, S6.1) | info | 0m |
 | sn-alert-qatt-nonce-fallback | qatt_nonce_fallback increase[1h] > 0 (Redis→DB на батч-стрімі, S6.1) | info | 0m |
 | sn-alert-telemetry-volume-approaching | telemetry_processed increase[30d] > 30M (scale-двигун ⚖️ E.37) | info | 1h |
-| sn-alert-partition-count-unbounded | max(partitions) > 24 ЛИСТІВ (⚠️ НЕ місяців: серед листів DEFAULT + створений наперед наступний місяць, тобто на 1-2 менше — 06_03 §2.8); механізму дропу немає — ⚖️ ARCH.70 | info | 1h |
+| sn-alert-partition-count-unbounded | max(partitions) > 24 ЛИСТІВ (⚠️ НЕ місяців: серед листів DEFAULT і все вікно воркера — поправку виводь із `PartitionMaintenanceWorker#perform`, 06_03 §2.8); механізму дропу немає — ширину ухвалено (24 міс., 04_01 DOC.8), будує нога ARCH.70 | info | 1h |
 | sn-alert-partitioned-table-growth | sum(partitioned_table_bytes) > 30 ГБ (60% початкового `db_disk_size_gb`; ціна, не crash — autoresize) | info | 1h |
 | sn-alert-partition-sampler-stale | time() − partition_sample_timestamp > 48h (два ARCH.70-алерти читають ЗАМЕРЗЛЕ значення) | info | 1h |
 | sn-alert-partition-default-occupied | max(partition_default_occupied) > 0 — DEFAULT-лист непорожній, створення партиції його місяця заблоковано НАЗАВЖДИ; ретраї не лікують → рунбук 06_06 §5.5 | warning | 1h |
