@@ -47,14 +47,9 @@ module Api
 
         respond_to do |format|
           format.json do
+            # [SEC.36] Курований вигляд — стеля й підстава в шапці `AlertBlueprint`.
             render json: {
-              data: @alerts.as_json(
-                include: {
-                  cluster: { only: [ :id, :name ] },
-                  tree: { only: [ :id, :did, :latitude, :longitude ] }
-                },
-                methods: [ :coordinates, :actionable? ]
-              ),
+              data: AlertBlueprint.render_as_hash(@alerts),
               pagy: pagy_metadata(@pagy)
             }
           end
@@ -72,15 +67,7 @@ module Api
       def show
         respond_to do |format|
           format.json do
-            render json: {
-              data: @alert.as_json(
-                include: {
-                  cluster: { only: [ :id, :name ] },
-                  tree: { only: [ :id, :did, :latitude, :longitude ] }
-                },
-                methods: [ :coordinates, :actionable? ]
-              )
-            }
+            render json: { data: AlertBlueprint.render_as_hash(@alert) }
           end
           format.html do
             # [ARCH.31] Show = рядок у ВАЛІДНІЙ table-обгортці + SOP-панель
@@ -104,7 +91,7 @@ module Api
         @alert.resolve!(user: current_user, notes: params[:notes])
 
         respond_to do |format|
-            format.json { render json: { message: I18n.t("flash.alerts.acknowledged", id: @alert.id), alert: @alert } }
+            format.json { render json: { message: I18n.t("flash.alerts.acknowledged", id: @alert.id), alert: AlertBlueprint.render_as_hash(@alert) } }
             format.turbo_stream do
               # `dom_id`, а НЕ рукописний `alert_#{id}`: рядок рендериться як
               # `ews_alert_{id}`, тож стара ціль не існувала в жодній сторінці
@@ -181,7 +168,7 @@ module Api
 
       def render_assignment_result(kind)
         respond_to do |format|
-          format.json { render json: { message: I18n.t("flash.alerts.#{kind}", id: @alert.id), alert: @alert } }
+          format.json { render json: { message: I18n.t("flash.alerts.#{kind}", id: @alert.id), alert: AlertBlueprint.render_as_hash(@alert) } }
           format.html { redirect_to alert_path(@alert), success: I18n.t("flash.alerts.#{kind}", id: @alert.id) }
         end
       end

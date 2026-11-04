@@ -1291,16 +1291,23 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
       "id": 55,
       "status": "active",
       "severity": "critical",
+      "alert_type": "fire_detected",
+      "message": "…рендер `message_key` + `message_params` мовою запиту…",
       "cluster": { "id": 7, "name": "Sector Alpha" },
-      "tree": { "id": 101, "did": "SNET-A1B2C3D4", "latitude": 50.4501, "longitude": 30.5234 },
-      "coordinates": [50.4501, 30.5234],
+      "tree": { "id": 101, "did": "SNET-A1B2C3D4", "latitude": "50.4501", "longitude": "30.5234" },
+      "coordinates": ["50.4501", "30.5234"],
       "actionable?": true,
-      "created_at": "2026-03-22T14:00:00Z"
+      "assigned_to_id": null,
+      "assigned_at": null,
+      "resolved_at": null,
+      "created_at": "2026-03-22T14:00:00.000Z"
     }
   ],
   "pagy": { "page": 1, "limit": 20, "count": 3, "pages": 1 }
 }
 ```
+
+Форма рядка — `AlertBlueprint` (той самий вигляд віддають `GET /alerts/:id` і ключ `alert` у відповідях `resolve`/`claim`/`release`; перелік і стеля — шапка блупринта). Тип координат залежить від гілки: координати дерева — `numeric`-колонки, тож у JSON це **рядки** (BigDecimal серіалізується рядком); у кластерної тривоги без дерева `tree` = `null`, а `coordinates` — центр кластера **числами** (Float із полігона), або `null`, якщо полігона немає. ⛔ JSONB блобом не віддається: `message` — оголошений рендер `message_key` + `message_params`, а `resolution_log` не віддається зовсім (його текстовий рендер, разом із нотатками оператора, — хроніка дерева, `GET /trees/:id/chronicle`).
 
 ---
 

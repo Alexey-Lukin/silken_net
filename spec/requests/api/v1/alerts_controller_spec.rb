@@ -102,6 +102,63 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     end
   end
 
+  # 🔒 [SEC.36, ⚖️ founder 2026-11-04] Контракт відповіді — `AlertBlueprint`. Доти п'ять
+  # JSON-гілок віддавали сирий `EwsAlert`, з `resolution_log` (нотатки оператора) і
+  # `message_params` блобом. Пін — РІВНІСТЬ набору ключів: оголошені Є і сирі колонки
+  # ВІДСУТНІ разом — поодинці кожна половина зелена при зламаній парі.
+  describe "JSON-контракт тривоги (SEC.36)" do
+    let(:contract_keys) do
+      %w[id status severity alert_type created_at resolved_at assigned_to_id assigned_at
+         message coordinates actionable? cluster tree]
+    end
+    let(:alert_tree) { create(:tree, cluster: own_cluster) }
+    let!(:curated_alert) do
+      create(:ews_alert, cluster: own_cluster, tree: alert_tree, severity: :medium, status: :active)
+    end
+
+    it "віддає курований вигляд в index і show — без сирих колонок і JSONB-блобів" do
+      get "/alerts", headers: headers, as: :json
+      row = response.parsed_body["data"].find { |a| a["id"] == curated_alert.id }
+      expect(row.keys).to match_array(contract_keys)
+      expect(row["tree"].keys).to match_array(%w[id did latitude longitude])
+      # Лише id і name: повний кластер віддав би `geojson_polygon` — JSONB, класифікований як PII.
+      expect(row["cluster"].keys).to match_array(%w[id name])
+
+      get "/alerts/#{curated_alert.id}", headers: headers, as: :json
+      expect(response.parsed_body["data"].keys).to match_array(contract_keys)
+    end
+
+    it "не віддає нотатку оператора у відповіді resolve, хоча записує її в журнал" do
+      note = "оператор: вогнище біля старого дуба"
+
+      patch resolve_alert_path(curated_alert), params: { notes: note }, headers: headers, as: :json
+
+      expect(curated_alert.reload.resolution_log.to_s).to include("вогнище")
+      expect(response.parsed_body["alert"].keys).to match_array(contract_keys)
+      expect(response.body).not_to include("вогнище")
+    end
+
+    it "каже у відповіді claim, кому призначено, тим самим контрактом" do
+      patch claim_alert_path(curated_alert), headers: headers, as: :json
+
+      body = response.parsed_body["alert"]
+      expect(body.keys).to match_array(contract_keys)
+      expect(body["assigned_to_id"]).to eq(user.id)
+    end
+
+    # `release` ділить із `claim` хелпер відповіді, але пін на гілку — окремий: інакше
+    # повернення лише `release` до сирого запису лишилось би зеленим.
+    it "відповідає на release тим самим контрактом" do
+      curated_alert.claim!(user)
+
+      patch release_alert_path(curated_alert), headers: headers, as: :json
+
+      body = response.parsed_body["alert"]
+      expect(body.keys).to match_array(contract_keys)
+      expect(body["assigned_to_id"]).to be_nil
+    end
+  end
+
   describe "PATCH /alerts/:id/resolve" do
     # Назва обіцяє ПОБІЧНИЙ ЕФЕКТ, а не доступ, тож пін іде на сам запис: `:ok`
     # переживає й повністю знятий `resolve!`.
