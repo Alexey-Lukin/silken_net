@@ -80,17 +80,17 @@
         "0.0": {
           "spread_um": 8.16,
           "k_spring_max_N_per_um_zero_tolerance": 41.23463901161808,
-          "working_deflection_mm_at_band_centre": 0.01
+          "working_deflection_mm_at_band_centre": 0.007009254669341179
         },
         "0.05": {
           "spread_um": 108.16,
           "k_spring_max_N_per_um_zero_tolerance": 3.110897321882429,
-          "working_deflection_mm_at_band_centre": 0.09
+          "working_deflection_mm_at_band_centre": 0.092906983460287
         },
         "0.1": {
           "spread_um": 208.16,
           "k_spring_max_N_per_um_zero_tolerance": 1.616423204913545,
-          "working_deflection_mm_at_band_centre": 0.18
+          "working_deflection_mm_at_band_centre": 0.17880471225123284
         }
       },
       "flat_face_in_envelope_mean_reaches_yield": {
@@ -508,17 +508,17 @@
         "0.0": {
           "spread_um": 8.16,
           "k_spring_max_N_per_um_zero_tolerance": 36.41337311840355,
-          "working_deflection_mm_at_band_centre": 0.01
+          "working_deflection_mm_at_band_centre": 0.008477513189215666
         },
         "0.05": {
           "spread_um": 108.16,
           "k_spring_max_N_per_um_zero_tolerance": 2.747162764849972,
-          "working_deflection_mm_at_band_centre": 0.11
+          "working_deflection_mm_at_band_centre": 0.11236860619430959
         },
         "0.1": {
           "spread_um": 208.16,
           "k_spring_max_N_per_um_zero_tolerance": 1.42742661724718,
-          "working_deflection_mm_at_band_centre": 0.22
+          "working_deflection_mm_at_band_centre": 0.21625969919940355
         }
       },
       "flat_face_in_envelope_mean_reaches_yield": {
@@ -936,17 +936,17 @@
         "0.0": {
           "spread_um": 8.16,
           "k_spring_max_N_per_um_zero_tolerance": 29.07138122318877,
-          "working_deflection_mm_at_band_centre": 0.01
+          "working_deflection_mm_at_band_centre": 0.011648919437561826
         },
         "0.05": {
           "spread_um": 108.16,
           "k_spring_max_N_per_um_zero_tolerance": 2.193255092281993,
-          "working_deflection_mm_at_band_centre": 0.15
+          "working_deflection_mm_at_band_centre": 0.15440528509395673
         },
         "0.1": {
           "spread_um": 208.16,
           "k_spring_max_N_per_um_zero_tolerance": 1.1396160202787295,
-          "working_deflection_mm_at_band_centre": 0.3
+          "working_deflection_mm_at_band_centre": 0.29716165075035167
         }
       },
       "flat_face_in_envelope_mean_reaches_yield": {
@@ -1364,17 +1364,17 @@
         "0.0": {
           "spread_um": 8.16,
           "k_spring_max_N_per_um_zero_tolerance": 18.949108097835417,
-          "working_deflection_mm_at_band_centre": 0.02
+          "working_deflection_mm_at_band_centre": 0.020051025631249487
         },
         "0.05": {
           "spread_um": 108.16,
           "k_spring_max_N_per_um_zero_tolerance": 1.4295924748366957,
-          "working_deflection_mm_at_band_centre": 0.27
+          "working_deflection_mm_at_band_centre": 0.26577437895538536
         },
         "0.1": {
           "spread_um": 208.16,
           "k_spring_max_N_per_um_zero_tolerance": 0.7428166894616498,
-          "working_deflection_mm_at_band_centre": 0.51
+          "working_deflection_mm_at_band_centre": 0.5114977322795212
         }
       },
       "flat_face_in_envelope_mean_reaches_yield": {
@@ -1792,17 +1792,17 @@
         "0.0": {
           "spread_um": 8.16,
           "k_spring_max_N_per_um_zero_tolerance": 5.67437622574349,
-          "working_deflection_mm_at_band_centre": 0.08
+          "working_deflection_mm_at_band_centre": 0.07650355579661457
         },
         "0.05": {
           "spread_um": 108.16,
           "k_spring_max_N_per_um_zero_tolerance": 0.42809643123212726,
-          "working_deflection_mm_at_band_centre": 1.01
+          "working_deflection_mm_at_band_centre": 1.0140471317355184
         },
         "0.1": {
           "spread_um": 208.16,
           "k_spring_max_N_per_um_zero_tolerance": 0.22243903728894543,
-          "working_deflection_mm_at_band_centre": 1.95
+          "working_deflection_mm_at_band_centre": 1.9515907076744226
         }
       },
       "flat_face_in_envelope_mean_reaches_yield": {
@@ -2218,5 +2218,5 @@
     "the PEEK's share of the loop compliance (it sets how much of f applies)",
     "a compliant element's force tolerance and space, if the clamp is made force-controlled"
   ],
-  "verdict": "A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) every N/µm adds 0.049 mm of wall at the window top with a ±0.05 mm interference over the capsule requirement (temperature 11 % of it), 0.0055 mm with no tolerance (0.0067 with a Ti–PEEK gradient) — so 88's requirement at the window top, the ground of the ratified member, is the k = 0 end of that line: every PEEK-dominated k needs more, which makes it the loop's lower bound, not an estimate. The ratified member rounds it up to 0.28 mm and so carries such a loop at the window top on every temperature reading while k stays below 0.068 N/µm with ±0.05 mm (0.036–0.892 over every reading and tolerance) — «for any k» is a property of the requirement, not of that number. A compliant element in series makes the relaxation and the k-terms fade, and the lug load runs continuously down to L0 — 411 N at the window top, a 0.18 mm wall with a zero force band — so the ratified member is one point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside the print floor its spring must be no stiffer than 0.42 N/µm with ±0.05 mm and zero force tolerance (≈ 1.0 mm of working deflection), its whole force band fits ±5.3 %, and a soft clamp gives the rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — whose peak pressure on the mean lug is 397 MPa at the window top (215 at the window floor, 320 at the top even under the force-controlled L0) against 167 MPa for first yield at the PEEK's tensile yield (the compressive yield is higher and not in the tree): it exceeds first yield — below the surface, contained — across the window, and local creep beyond `52`'s f is expected, not computed; a flat contact would remove that, but the line contact is likely the loop's softest member, so removing it raises k. With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to k = 2.41 N/µm and at the nominal up to 1.05. k, δ and the PEEK's share of the compliance are not computed — the lug geometry and both Z tolerances are placeholders; the founder ratified the member as a lower bound, with a flat lug contact and a numbered interference tolerance required before the collar is drawn (02_02 §4.4, 2026-10-13)."
+  "verdict": "A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) every N/µm adds 0.049 mm of wall at the window top with a ±0.05 mm interference over the capsule requirement (temperature 11 % of it), 0.0055 mm with no tolerance (0.0067 with a Ti–PEEK gradient) — so 88's requirement at the window top, the ground of the ratified member, is the k = 0 end of that line: every PEEK-dominated k needs more, which makes it the loop's lower bound, not an estimate. The ratified member rounds it up to 0.28 mm and so carries such a loop at the window top on every temperature reading while k stays below 0.068 N/µm with ±0.05 mm (0.036–0.892 over every reading and tolerance) — «for any k» is a property of the requirement, not of that number. A compliant element in series makes the relaxation and the k-terms fade, and the lug load runs continuously down to L0 — 411 N at the window top, a 0.18 mm wall with a zero force band — so the ratified member is one point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside the print floor its spring must be no stiffer than 0.42 N/µm with ±0.05 mm and zero force tolerance (so at the band's mid force every such spring deflects at least 1.01 mm), its whole force band fits ±5.3 %, and a soft clamp gives the rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — whose peak pressure on the mean lug is 397 MPa at the window top (215 at the window floor, 320 at the top even under the force-controlled L0) against 167 MPa for first yield at the PEEK's tensile yield (the compressive yield is higher and not in the tree): it exceeds first yield — below the surface, contained — across the window, and local creep beyond `52`'s f is expected, not computed; a flat contact would remove that, but the line contact is likely the loop's softest member, so removing it raises k. With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to k = 2.41 N/µm and at the nominal up to 1.05. k, δ and the PEEK's share of the compliance are not computed — the lug geometry and both Z tolerances are placeholders; the founder ratified the member as a lower bound, with a flat lug contact and a numbered interference tolerance required before the collar is drawn (02_02 §4.4, 2026-10-13)."
 }

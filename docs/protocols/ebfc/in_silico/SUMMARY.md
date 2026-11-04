@@ -2097,7 +2097,7 @@ requirement, not of 0.28 (`02_02 §4.4`, marked 2026-11-04). A
 compliant element in series fades the relaxation and the k-terms, and the load runs continuously down to L0 — **411** N
 at the window top, a **0.18** mm wall with a zero force band — so the ratified member is one point on a curve of an
 unmeasured k, bounding nothing. The force-controlled end is not cheap: inside the print floor its spring must be no stiffer than **0.42** N/µm
-with ±0.05 mm and zero force tolerance (≈ **1.0** mm of working deflection; 2.0 mm with ±0.10), its whole force band
+with ±0.05 mm and zero force tolerance (so at the band's mid force every such spring deflects at least **1.01** mm; **1.95** with ±0.10), its whole force band
 fits ±**5.3** % at the window top, and a soft clamp leaves the rim almost no stiffness against tipping. Separately, the
 radial-pin lug on a flat ledge (engaged 1.3 mm) peaks on the mean lug at **397** MPa at the window top (215 at the window
 floor; 320 at the top even under the force-controlled L0) against **167** MPa for first yield at the PEEK's tensile yield

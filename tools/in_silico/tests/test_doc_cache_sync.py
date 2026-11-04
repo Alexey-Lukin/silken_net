@@ -2102,8 +2102,17 @@ CHECKS += [
            lambda d: _up2(d ["by_squeeze_point"]["window_top"]["force_controlled_wall_mm_zero_band"]), 0.0),
           ("SUMMARY spring stiffness", SUMMARY, rf"no stiffer than \*\*{N}\*\* N/µm",
            lambda d: _down2(d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["k_spring_max_N_per_um_zero_tolerance"]), 0),
-          ("SUMMARY spring deflection", SUMMARY, rf"≈ \*\*{N}\*\* mm of working deflection",
-           lambda d: d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["working_deflection_mm_at_band_centre"], 0.05),
+          # the deflection at the STIFFEST admissible spring is the least any admissible spring gives at the band's mid
+          # force — a floor over springs, «at least», DOWN (#43; the ±0.10 figure stood typed and unpinned until
+          # 2026-11-04, 00_07 HW.43; the same two numbers carry the ⊕ in 02_02 §4.4)
+          ("SUMMARY spring deflection", SUMMARY, rf"every such spring deflects at least \*\*{N}\*\* mm;",
+           lambda d: _down2(d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["working_deflection_mm_at_band_centre"]), 0),
+          ("SUMMARY spring deflection ±0.10", SUMMARY, rf"deflects at least \*\*[\d.]+\*\* mm; \*\*{N}\*\* with ±0\.10\)",
+           lambda d: _down2(d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.1"]["working_deflection_mm_at_band_centre"]), 0),
+          ("02_02 §4.4 spring deflection ⊕", BLIND_MATE, rf"нижня межа серед допустимих пружин: щонайменше \*\*{N}\*\* мм",
+           lambda d: _down2(d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["working_deflection_mm_at_band_centre"]), 0),
+          ("02_02 §4.4 spring deflection ±0.10 ⊕", BLIND_MATE, rf"щонайменше \*\*[\d.]+\*\* мм \(\*\*{N}\*\* за ±0\.10\), `89`",
+           lambda d: _down2(d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.1"]["working_deflection_mm_at_band_centre"]), 0),
           ("SUMMARY force band", SUMMARY, rf"fits ±\*\*{N}\*\* %",            # an allowance «fits ±X %» — DOWN (#43)
            lambda d: _down1(d ["by_squeeze_point"]["window_top"]["force_band_half_width_to_print_floor"] * 100), 0.0),
           ("SUMMARY contact p0 top", SUMMARY, rf"peaks on the mean lug at \*\*{N}\*\* MPa at the window top",

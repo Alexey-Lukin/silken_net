@@ -3157,7 +3157,7 @@ def test_bayonet_thermal_clamp():
             if cap > l0:
                 ks = (cap - l0) / spread
                 assert abs(sp["k_spring_max_N_per_um_zero_tolerance"] - ks) <= 0.002, (name, dstr)
-                assert abs(sp["working_deflection_mm_at_band_centre"] - (cap + l0) / 2 / ks * 1e-3) <= 0.01
+                assert abs(sp["working_deflection_mm_at_band_centre"] - (cap + l0) / 2 / ks * 1e-3) <= 1e-6   # raw since 2026-11-04
         lc = inp["lug_line_contact"]
         for lk, load in (("PEEK_dominated_minimum", l0 / f), ("force_controlled", l0)):
             for ek, length in lc["engaged_length_mm"].items():

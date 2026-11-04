@@ -220,7 +220,9 @@ def main() -> int:
             ks = (cap_floor - l0) / spread_um if cap_floor > l0 else None
             spring[dstr] = {"spread_um": round(spread_um, 2),
                             "k_spring_max_N_per_um_zero_tolerance": ks,     # unrounded: the doc pin rounds it down (#43)
-                            "working_deflection_mm_at_band_centre": round((cap_floor + l0) / 2 / ks * 1e-3, 2) if ks else None}
+                            # unrounded: at the stiffest admissible spring this is the LEAST deflection any admissible spring gives at the
+                            # band's mid force — a floor over springs, «at least X», DOWN (#43; 00_07 HW.43)
+                            "working_deflection_mm_at_band_centre": (cap_floor + l0) / 2 / ks * 1e-3 if ks else None}
         loads = {"PEEK_dominated_minimum": l0 / f, "force_controlled": l0}
         # a FLAT face inside the same R1.5 envelope (a pin with a flat underside): width ≤ 2R over the engaged length
         flat_area_mm2 = 2.0 * lug_r * engaged["socket_pocket_minus_clearance"]
@@ -284,7 +286,8 @@ def main() -> int:
         f"one point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside "
         f"the print floor its spring must be no stiffer than "
         f"{down(sp['k_spring_max_N_per_um_zero_tolerance']):.2f} N/µm with "                     # a ceiling: down (#43)
-        f"±0.05 mm and zero force tolerance (≈ {sp['working_deflection_mm_at_band_centre']:.1f} mm of working deflection), "
+        f"±0.05 mm and zero force tolerance (so at the band's mid force every such spring deflects at least "
+        f"{down(sp['working_deflection_mm_at_band_centre']):.2f} mm), "                   # a floor over springs: down (#43)
         f"its whole force band fits ±{down(top['force_band_half_width_to_print_floor'] * 100, 1):.1f} %, and a soft clamp "
         f"gives the "
         f"rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — "
