@@ -155,9 +155,10 @@ RSpec.describe EthereumAnchor, type: :model do
     # розходження шкал НЕ ВИРАЗИМЕ за жодної шкали. Тож кожне decimal-поле payload'а
     # мусить нести тут ВЛАСНЕ 6-значне значення, інакше приклад доводить менше, ніж
     # твердить його ім'я (`04_06 §B.2` BP #14 — фікстура ховає поверхню, не значення).
-    # SFC-шлях досяжний: `InsurancePayoutWorker` у внутрішньому режимі пише
-    # `amount: payout_amount` із `token_type: insurance.token_type` (Etherisc-гілка — `:usdc`,
-    # INS.1), а `payout_amount` — голий `numeric`.
+    # ⚠️ Живого SFC-писача під цим полем сьогодні НЕМАЄ: `total_sfc` — Σ confirmed
+    # `forest_coin`, а страхова виплата SFC не пише ні в якому режимі (enum поліса — лише
+    # `carbon_coin`, DOC-T.89; Etherisc-гілка — `:usdc`, INS.1). Власне 6-знакове значення
+    # тут стереже ШКАЛУ колонки якоря проти джерела `blockchain_transactions.amount`.
     it "round-trips EVERY evidence value at SOURCE precision (6dp) so verify stays true" do
       freeze_time do
         now = Time.current.utc
