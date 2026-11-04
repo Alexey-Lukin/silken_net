@@ -128,7 +128,7 @@ SilkenNet не покладається на один блокчейн. Для �
 |----------|----------|
 | **Сервіси** | `Filecoin::ArchiveService`, `Filecoin::VerificationService` |
 | **Воркер** | `FilecoinArchiveWorker` |
-| **Черга** | `low` (пріоритет 9) |
+| **Черга** | `low` (пріоритет 10) |
 | **Retry** | 5 |
 | **Активація** | **ACTIVATION-GATED [ARCH.118-клас]** — `Filecoin::ArchiveService.configured?` (`FILECOIN_API_KEY`, ENV-first із credentials-фолбеком) стоїть на ТРЬОХ enqueue-сайтах: `AuditLogWorker` · `Mrv::TelemetryArchiveBatchService` · `FilecoinReconcileWorker` (ре-арм). ⛔ `raise` всередині `pin_json!` гардом НЕ є — він retry-драбина: джоба не може ані виконатись, ані здатись. ⚫ **Ключ ЗНЯТО 2026-09-07 (⚖️ founder — activation-gate, не демонтаж):** нога інертна, маркер `archive_requested_at` і далі ставиться атомарно з `create!`, тож ніщо не губиться; тригер повернення й ціни — [`00_07`](00_07_Action_Plan_Tracker) INF.22 |
 | **Тригер** | `AuditLogWorker` (після створення AuditLog запису) — **лише** за `configured?`; інакше жодного enqueue |
@@ -219,7 +219,7 @@ did:peaq:0x{SHA256("<hardware_identifier>:<tree_id>:<created_at.to_i>")[0:40]}  
 |----------|----------|
 | **Сервіси** | `BlockchainMintingService`, `BlockchainBurningService`, `ChainAuditService`, `MintingRollbackService` |
 | **Воркери** | `MintCarbonCoinWorker`, `BurnCarbonTokensWorker`, `BlockchainConfirmationWorker`, `TokenomicsEvaluatorWorker`, `Governance::ParameterSyncWorker` |
-| **Черги** | `web3_critical` (мінтинг, підтвердження), `critical` (спалювання), `default` (токеноміка), `web3_low` (governance sync) |
+| **Черги** | `web3_critical` (мінтинг, підтвердження), `critical` (спалювання), `web3_emission` (токеноміка), `web3_low` (governance sync) |
 | **ENV** | `ALCHEMY_POLYGON_RPC_URL`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY` (dedicated-only — legacy `ORACLE_PRIVATE_KEY` retired [INF.22]; [E.2] розділені ключі mint/slash, blast-radius), `CARBON_COIN_CONTRACT_ADDRESS`, `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` |
 | **Спеки** | `spec/services/blockchain_minting_service_spec.rb`, `spec/services/blockchain_burning_service_spec.rb`, `spec/services/chain_audit_service_spec.rb`, `spec/services/minting_rollback_service_spec.rb`, `spec/workers/governance/parameter_sync_worker_spec.rb` |
 

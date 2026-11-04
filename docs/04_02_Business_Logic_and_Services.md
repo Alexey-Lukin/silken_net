@@ -1669,10 +1669,10 @@ Sidekiq Cron 01:00 UTC
 ```
 Sidekiq Cron (кожну годину)
   └─→ TokenomicsEvaluatorWorker [web3_emission]
-        └─→ Sidekiq::Batch → EvaluateTreeBatchWorker [default] ×N
+        └─→ Sidekiq::Batch → EvaluateTreeBatchWorker [web3_emission] ×N
               └─→ wallet.lock_and_mint!
                     └─→ MintCarbonCoinWorker [web3_critical]
-   (о :55, ОКРЕМИЙ cron — не колбек) MintStallProbeWorker [low]
+   (о :55, ОКРЕМИЙ cron — не колбек) MintStallProbeWorker [web3_emission]
         └─→ MINT_ELIGIBLE_UNMINTED_DEPTH.set — зріз залишку перед наступним циклом
                           └─→ BlockchainMintingService
                                 └─→ BlockchainConfirmationWorker

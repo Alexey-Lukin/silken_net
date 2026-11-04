@@ -292,8 +292,8 @@ module SilkenNet
     # ⚙️ SIDEKIQ QUEUE METRICS (Gauges — sampled at scrape time)
     # -----------------------------------------------------------------------
     # [PLAN 1.3]: Renamed from WEB3_QUEUE_* to SIDEKIQ_QUEUE_* to reflect
-    # monitoring ALL 9 queues (uplink, alerts, critical, downlink, default,
-    # web3_critical, web3, web3_low, low), not just web3.
+    # monitoring ALL queues (uplink, alerts, critical, downlink, default,
+    # web3_critical, web3, web3_low, web3_emission, low), not just web3.
 
     # Sidekiq queue size (gauge — set on each scrape via collector callback)
     SIDEKIQ_QUEUE_SIZE = REGISTRY.gauge(

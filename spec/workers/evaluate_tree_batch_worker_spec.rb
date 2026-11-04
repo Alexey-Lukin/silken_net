@@ -140,7 +140,7 @@ RSpec.describe EvaluateTreeBatchWorker, type: :worker do
   end
 
   describe "sidekiq options" do
-    it "uses default queue" do
+    it "uses web3_emission queue" do
       expect(described_class.get_sidekiq_options["queue"]).to eq("web3_emission")
     end
 
