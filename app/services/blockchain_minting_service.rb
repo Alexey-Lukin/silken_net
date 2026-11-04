@@ -17,6 +17,11 @@ class BlockchainMintingService < ApplicationService
   DEFAULT_INSURANCE_POOL_THRESHOLD = 100_000
 
   WEI_MULTIPLIER = 10**18
+  # Ключі — рівно `BlockchainTransaction::OWN_TOKEN_TYPES`: валюта поза ними сюди не входить.
+  CONTRACT_ADDRESS_ENV = {
+    "carbon_coin" => "CARBON_COIN_CONTRACT_ADDRESS",
+    "forest_coin" => "FOREST_COIN_CONTRACT_ADDRESS"
+  }.freeze
 
   # [ARCH.62] One-Home Kredis-прапор money-path circuit-break, per-token (детекція per token_type
   # → відповідь per token_type: SFC-сплеск не гальмує SCC). Treasury::MonitorService детектор
@@ -243,17 +248,12 @@ class BlockchainMintingService < ApplicationService
       return
     end
 
-    contract_address = case token_type
-    when "carbon_coin" then ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
-    # [DOC-T.89 §B.4 leave] Гард вище повертає ДО цієї точки, тож гілка недосяжна й
-    # лишається непокритою свідомо: `04_06 §B.4` велить financial-safety-defensive
-    # лишати з поясненням, а не оживляти `send`-піном заради відсотка. Знімати НЕ можна —
-    # у день SEC.1 вона знадобиться, і `else raise ArgumentError` до того часу тримає
-    # SFC гучно. Ліхтар на подію: hold-пін ("тримає SFC-мінт") почервоніє в мить зняття
-    # гарда — грепай DOC-T.89, щоб зняти обидва надгробки одним комітом.
-    when "forest_coin" then ENV.fetch("FOREST_COIN_CONTRACT_ADDRESS")
-    else raise ArgumentError, "Невідомий тип токена: #{token_type}"
-    end
+    # Мапа, а не `case`: з 2026-11-04 (INS.1) сюди доходить лише `own_currency`, а SFC
+    # повертає гард вище, тож гілки `forest_coin`/`else` були недосяжні (backend #76).
+    # Невідомий тип падає так само гучно — `KeyError` замість `ArgumentError`.
+    # [DOC-T.89] Запис `forest_coin` знадобиться в день SEC.1 — знімаючи гард SFC, грепай
+    # DOC-T.89: hold-пін («тримає SFC-мінт») почервоніє в ту саму мить.
+    contract_address = ENV.fetch(CONTRACT_ADDRESS_ENV.fetch(token_type))
 
     contract = Eth::Contract.from_abi(name: "SilkenCoin", address: contract_address, abi: CONTRACT_ABI)
     lock_key = "lock:web3:oracle:#{signer.address}"

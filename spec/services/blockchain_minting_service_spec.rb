@@ -722,6 +722,10 @@ end
       expect(scc.reload.status).to eq("sent")
       expect(usdc.reload.status).to eq("pending")
     end
+
+    it "knows a contract for exactly the currencies the funnel admits" do
+      expect(described_class::CONTRACT_ADDRESS_ENV.keys).to match_array(BlockchainTransaction::OWN_TOKEN_TYPES)
+    end
   end
 
   describe "forest_coin transaction" do
