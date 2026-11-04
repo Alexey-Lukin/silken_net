@@ -29,6 +29,15 @@ RSpec.describe Api::V1::ClustersController, type: :request do
       expect(response.parsed_body["pagy"]).to be_present
     end
 
+    # [SEC.36 ⚖️ 2026-11-04] Географія живе у `ClusterBlueprint :index`, не в базі —
+    # без `view: :index` у контролері вона зникла б із власного списку мовчки.
+    it "carries the cluster geography for the viewer's own organization" do
+      get "/clusters", headers: headers, as: :json
+
+      row = response.parsed_body["data"].find { |c| c["id"] == own_cluster.id }
+      expect(row.keys).to include("region", "geo_center", "active_threats")
+    end
+
     it "returns 401 without authentication" do
       get "/clusters", as: :json
       expect(response).to have_http_status(:unauthorized)

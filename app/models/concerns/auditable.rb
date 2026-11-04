@@ -66,12 +66,16 @@ module Auditable
   #
   # Порожньо для системних шляхів: Sidekiq `Current` не виставляє, тож відсутність
   # мітки читається як «системна дія», а не як загублений слід.
+  #
+  # ⛔ [SEC.36, ⚖️ founder 2026-11-04 — та сама підстава, що для `record_switch!`] БЕЗ
+  # `actor_home_organization_id`: це id ЧУЖОГО тенанта, і він лягав у незмінний ланцюг
+  # цільової організації на КОЖНІЙ дії, а її адмін читає блоб на показі запису. Мітку
+  # «виконавець прийшов ззовні» (присуд SEC.25 Ф2) несе сама присутність
+  # `acting_organization_id` — ставиться лише в перемкнутому контексті; «звідки» —
+  # властивість сесії співробітника, не цієї організації.
   def with_acting_context(metadata)
     return metadata unless Current.switched_context?
 
-    metadata.merge(
-      acting_organization_id: Current.acting_organization_id,
-      actor_home_organization_id: Current.home_organization_id
-    )
+    metadata.merge(acting_organization_id: Current.acting_organization_id)
   end
 end

@@ -73,7 +73,9 @@ RSpec.describe Auditable do
 
       metadata = AuditLogWorker.jobs.last["args"].first["metadata"]
       expect(metadata["acting_organization_id"]).to eq(42)
-      expect(metadata["actor_home_organization_id"]).to eq(7)
+      # [SEC.36 ⚖️ 2026-11-04] Мітка — так; id ЧУЖОГО тенанта (домашньої організації
+      # співробітника) у незмінному ланцюгу цільової — ні: її адмін читає блоб на показі.
+      expect(metadata.keys).to eq([ "acting_organization_id" ])
     end
 
     it "НЕ додає мітки, коли людина працює у власній організації" do

@@ -59,6 +59,18 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["performance"]["total_trees"]).to be_a(Integer)
     end
+
+    # [SEC.36 ⚖️ 2026-11-04] super_admin бачить цю сторінку для БУДЬ-ЯКОГО тенанта, а
+    # географію кластерів (регіон · центроїд · загрози) — лише через аудитоване
+    # перемикання в `clusters#show`. Тож тут кластер — рівно рядок сторінки організації.
+    it "lists a tenant's clusters only as the organization page's row, without geography" do
+      create(:cluster, organization: organization)
+
+      get "/organizations/#{organization.id}", headers: headers, as: :json
+
+      expect(response.parsed_body["clusters"].first.keys)
+        .to match_array(%w[id name health_index total_active_trees])
+    end
   end
 
   context "with format.html responses" do

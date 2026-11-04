@@ -476,7 +476,7 @@ super_admin **з** організацією далі дістає 200 (інак�
 **Перемикання — привілейована дія**, тож лишає слід **синхронно й до мутації сесії**
 (`AuditLog.create!`, не `record_async!`: черга дала б лише порядок виклику), у журналі
 тієї організації, **куди** входять. Дії, виконані з перемкнутого контексту, несуть
-мітку `acting_organization_id` + `actor_home_organization_id` у `metadata` — її ставить
+мітку `acting_organization_id` у `metadata` (⊕ `actor_home_organization_id` знято 2026-11-04, ⚖️ SEC.36 — id чужого тенанта) — її ставить
 `Auditable` за `Current.switched_context?` ([`04_01 §5`](04_01_Data_Models_and_Entities)).
 
 ⚠️ **Що acting-org НЕ закриває — і чого епоха тут свідомо НЕ робить.** Підписане ім'я
