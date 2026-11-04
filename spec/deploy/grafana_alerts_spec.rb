@@ -55,6 +55,22 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
       "і його ганяють проти живого стека саме на цій підставі."
   end
 
+  # [ARCH.59 · 2026-11-04] Grafana повертає `for` нормалізованою Go-тривалістю — `75m`
+  # приїжджає як `1h15m`. Одноодиничний парсер `fail!`-ив, і `--verify` обривався одразу
+  # після шапки, не звіривши ні тексту, ні виразів. `import.rb` — скрипт, що виконується
+  # при завантаженні, тож тіло функції виймається текстом і рахується ізольовано.
+  it "parses the Go durations Grafana normalizes `for` into" do
+    src = REPO_ROOT.join("deploy/grafana/import.rb").read
+    body = src[/^def interval_seconds\(value\)$.*?^end$/m]
+    expect(body).not_to be_nil, "`interval_seconds` не знайдено — функцію перейменували?"
+
+    parser = Module.new
+    parser.module_eval("#{body}\nmodule_function :interval_seconds\ndef self.fail!(msg) = raise(msg)", __FILE__, __LINE__)
+
+    cases = { "1h15m" => 4500, "75m" => 4500, "0s" => 0, "1m" => 60, "2h" => 7200, 60 => 60 }
+    expect(cases.keys.to_h { [ _1, parser.interval_seconds(_1) ] }).to eq(cases)
+  end
+
 # [S2.4] Ruler API ЗБЕРІГАЄ правило, чиє data-вікно Mimir потім ВІДМОВИТЬСЯ рахувати:
 # ліміт 11 000 точок/серію при step 15s = стеля ~45 год на relativeTimeRange. Три правила
 # (8d/1w/30d) імпортувались зеленими і падали в DatasourceError на першій оцінці. Довгий

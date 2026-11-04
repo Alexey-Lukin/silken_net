@@ -99,7 +99,9 @@ module SilkenNet
     # (найчастіше 0): `sn-alert-mint-stall-depth` мовчить саме тоді, коли мінт стоїть —
     # а його `noDataState: NoData` недосяжний: безлейбловий гейдж живе в КОЖНОМУ процесі,
     # web тримає 0, і `max by (slot)` бере його — тож і смерть job-процесу там 0 → OK.
-    # Цей штамп ловить обидві смерті (після смерті job лишається web-0 → `time() - 0`). Пишеться ПІСЛЯ
+    # Цей штамп ловить обидві смерті (після смерті job лишається web-0 → `time() - 0`); NoData
+    # настає лише коли гасне ВЕСЬ слот — тоді мовчить і штамп, ловить `sn-alert-scrape-target-down`.
+    # Пишеться ПІСЛЯ
     # виміру: не просувається ні коли зонд не біг, ні коли кинув.
     MINT_STALL_PROBE_TIMESTAMP = REGISTRY.gauge(
       :silkennet_mint_stall_probe_timestamp_seconds,
