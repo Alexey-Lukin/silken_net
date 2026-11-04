@@ -94,6 +94,25 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
   end
 
+  # ⚖️ [SEC.36, founder 2026-11-04, «(c)»] JSONB `metadata` цілим — лише на показі запису
+  # (форензика); список віддає тільки `to`, який читає його HTML. Обидві половини в одному
+  # прикладі: поодинці кожна зелена при зламаній парі.
+  describe "metadata: список ⊥ показ" do
+    let!(:rich_log) do
+      create(:audit_log, user: admin_user, organization: organization,
+                         metadata: { "from" => "active", "to" => "breached", "operator_id" => 7 })
+    end
+
+    it "віддає в списку лише `to`, а на показі — увесь блоб" do
+      get "/audit_logs", headers: admin_headers, as: :json
+      row = response.parsed_body["data"].find { |l| l["id"] == rich_log.id }
+      expect(row["metadata"]).to eq("to" => "breached")
+
+      get "/audit_logs/#{rich_log.id}", headers: admin_headers, as: :json
+      expect(response.parsed_body["metadata"]).to include("from" => "active", "to" => "breached", "operator_id" => 7)
+    end
+  end
+
   describe "GET /audit_logs/:id" do
     it "returns a specific audit log from the user's organization" do
       get "/audit_logs/#{own_log.id}", headers: admin_headers, as: :json

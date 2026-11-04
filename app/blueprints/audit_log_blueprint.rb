@@ -5,11 +5,21 @@ class AuditLogBlueprint < Blueprinter::Base
   identifier :id
 
   view :index do
-    fields :action, :auditable_type, :auditable_id, :metadata, :created_at
+    fields :action, :auditable_type, :auditable_id, :created_at
+    # ⚖️ [SEC.36, founder 2026-11-04, «(c)»] У списку — лише `to`: рівно той ключ, який
+    # читає HTML-список (`ActionBadge`, стан переходу). Блоб цілим — лише в `:show`
+    # (форензика, нижче); `:index` — не форензична поверхня, і JSONB блобом тут — це
+    # саме те, проти чого стоїть скіл `backend` #58a.
+    field(:metadata) { |log| (log.metadata || {}).slice("to") }
     association :user, blueprint: UserBlueprint, view: :crew
   end
 
   view :show do
+    # ⚖️ [SEC.36, founder 2026-11-04, «(c)»] `metadata` тут ЦІЛИМ — СВІДОМО, та сама форма,
+    # що відмова для `ip_address`/`user_agent` нижче: показ запису — форензична поверхня
+    # (лише admin/super_admin, той самий гард, що в списку), і HTML-показ друкує кожен ключ.
+    # Ціна названа: ключ будь-якого МАЙБУТНЬОГО писача поїде сюди без ревʼю. Іменований
+    # виняток із #58a — там же.
     fields :action, :auditable_type, :auditable_id, :metadata,
            :ip_address, :user_agent, :chain_hash, :ipfs_cid, :created_at
     # ⚖️ [SEC.36, 2026-09-06] `ip_address`/`user_agent` лишаються СВІДОМО, і це
