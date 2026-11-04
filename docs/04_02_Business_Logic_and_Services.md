@@ -1346,6 +1346,17 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Вхід** | `cluster_id`, `target_date_string` |
 | **Сервіси** | `Celo::CommunityRewardService.new(cluster, date).reward_community!` |
 
+#### `CeloConfirmationWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3` |
+| **Retry** | 10 (`unique_for: 10.minutes` — на OSS-Sidekiq no-op, [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)) |
+| **Includes** | `ApplicationWeb3Worker` (`within_rpc_limit`) |
+| **Тригер** | `Celo::CommunityRewardService` — `perform_in(30.seconds, intent.id, created_at_iso)` після відправки cUSD |
+| **Вхід** | `tx_id`, `created_at_iso` (партиційна підказка) |
+| **Що робить** | Лише рядок `:sent`: receipt через `Web3::RpcConnectionPool.client_for("CELO_RPC_URL")` → `Web3::EvmReceiptClassifier` — `:confirmed` → `confirm!`, `:reverted` → `fail!` (re-payable наступного циклу), інакше `raise` на ретрай. Вичерпані ретраї → `escalate_to_review!` (double-pay guard: звірити на Celo explorer перед будь-яким re-pay). Картку дописано 2026-11-04 — воркер жив без неї; reconcile-сусід — `CeloRewardReconcileWorker` |
+
 #### `SolanaMicroRewardWorker`
 
 | Параметр | Значення |
@@ -1503,7 +1514,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | Параметр | Значення |
 |----------|----------|
 | **Черга** | `web3_emission` (⚖️ ARCH.59 «(a1)», founder 2026-11-04 — найнижча черга грошового процесу, [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)) |
-| **Retry** | 3, unique_for: 60 хвилин |
+| **Retry** | 3, unique_for: 60 хвилин ⊕ на OSS-Sidekiq `unique_for` — no-op (шапка воркера, [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)): голодна голова нашаровує цикли без дедупу |
 | **Тригер** | Sidekiq cron: щогодини |
 | **Вхід** | — |
 | **Сервіси** | — |
@@ -1516,7 +1527,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Файл** | `app/callbacks/tokenomics_batch_callbacks.rb` |
 | **Тип** | Sidekiq Pro Batch callback клас (не Worker; живе у `app/callbacks/`) |
 | **Тригер** | `TokenomicsEvaluatorWorker` (реєструє через `batch.on(:success, TokenomicsBatchCallbacks, ...)`) |
-| **`on_success`** | Спрацьовує тільки якщо **всі** `EvaluateTreeBatchWorker` jobs завершились успішно. Запускає РІВНО одне: `MintCarbonCoinWorker.perform_async` (без аргументів — auto-discovery всіх pending BlockchainTransaction). ⛔ Семпл ARCH.94-детектора звідси ЗНЯТО [ARCH.59, 2026-08-25] — дім `MintStallProbeWorker` нижче; носій зняття — негативний пін у `spec/callbacks/tokenomics_batch_callbacks_spec.rb`. |
+| **`on_success`** | Спрацьовує тільки якщо **всі** `EvaluateTreeBatchWorker` jobs завершились успішно. Запускає РІВНО одне: `MintCarbonCoinWorker.perform_async` (без аргументів — auto-discovery всіх pending BlockchainTransaction). ⛔ Семпл ARCH.94-детектора звідси ЗНЯТО [ARCH.59, 2026-08-25] — дім `MintStallProbeWorker` нижче; носій зняття — негативний пін у `spec/callbacks/tokenomics_batch_callbacks_spec.rb`. ⊕ ⚠️ **У проді не виконується:** Sidekiq Pro не куплено, і шим (`config/initializers/sidekiq_pro.rb`) лише дописує `on` в масив — розбір і дім семпла, що звідси переїхав, — картка `MintStallProbeWorker` нижче |
 
 #### `MintStallProbeWorker`
 
@@ -1536,7 +1547,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |----------|----------|
 | **Черга** | `web3_emission` (⚖️ ARCH.59 «(a1)», founder 2026-11-04 — найнижча черга грошового процесу, [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)) |
 | **Retry** | 3 |
-| **Тригер** | `TokenomicsEvaluatorWorker` (Sidekiq Pro Batch child) |
+| **Тригер** | `TokenomicsEvaluatorWorker` (Sidekiq Pro Batch child) ⊕ під шимом Batch — контейнер без колбеків: дітей ставлять у чергу, `on_success` не настає (див. `TokenomicsBatchCallbacks`) |
 | **Вхід** | `wallet_ids` (Array\<Integer>), `cycle_id` (String UUID) |
 | **Сервіси** | — |
 | **Side Effects** | `wallet.lock_and_mint!(points, threshold)` при `available_balance >= 10_000` (NET — [ARCH.94]). → `MintCarbonCoinWorker` (implicit через lock_and_mint!). |

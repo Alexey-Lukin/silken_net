@@ -7,7 +7,7 @@ require "rails_helper"
 # queue:`, і доти воно не мало носія. Переїзд трьох воркерів у `web3_emission` свіпнули
 # за ланцюжками викликів і прозою, а рядки `| **Черга** |` усіх трьох карток пережили
 # його на зеленому CI — у ДОМІ реєстру воркерів, де черга несуча (strict-priority,
-# CLAUDE.md §5). Виміряно до побудови: з 54 карток розходились рівно ці три.
+# CLAUDE.md §5). Виміряно до побудови: розходились рівно ці три.
 #
 # Судить: картка ДЖОБИ (Sidekiq::Job · ActiveJob) несе рядок черги, і він == коду;
 # картка класу, що не є джобою (`ActuatorCommandWorker`), звільнена; картка класу, якого
@@ -18,7 +18,8 @@ RSpec.describe "04_02 worker cards ⟷ the queue the code runs them in" do # rub
   let(:lines) { Rails.root.join("docs/04_02_Business_Logic_and_Services.md").readlines }
   let(:cards) do
     lines.each_with_index.filter_map do |line, i|
-      name = line[/\A#### `(\w+Worker)`/, 1] or next
+      # `[\w:]` — неймспейсні картки (`Governance::ParameterSyncWorker`) теж у периметрі.
+      name = line[/\A#### `([\w:]+Worker)`/, 1] or next
       row = lines[(i + 1)..(i + 12)].find { |l| l.start_with?("| **Черга** |") }
       { name:, line: i + 1, heading: line, queue: row&.[](/\A\| \*\*Черга\*\* \| *`([a-z0-9_]+)`/, 1) }
     end
