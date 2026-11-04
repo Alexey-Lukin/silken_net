@@ -1436,6 +1436,59 @@ groups:
           team: backend
 
       # -----------------------------------------------------------------------
+      # P2: Зонд застряглої емісії не завершується [ARCH.59 · S2.4, 2026-11-04] —
+      # dead-man над `sn-alert-mint-stall-depth`. Зонд і голова емісії сидять в ОДНІЙ
+      # черзі `web3_emission` (9/10 strict-priority, нижче `default` і всіх `web3_*`),
+      # тож голод черги зупиняє мінт І заморожує глибину на останньому значенні:
+      # правило вище мовчить у зелене саме тоді, коли мінт стоїть (його
+      # `noDataState: NoData` накриває смерть ПРОЦЕСУ, не голод ЧЕРГИ).
+      # Поріг 2 год = два пропущені зрізи крону `55 * * * *`. `for: 75m` ДОВШИЙ за
+      # крон свідомо: після рестарту job-процесу штамп = 0 до першого прогону, і
+      # здоровий рестарт мусить розвʼязатись у Pending. ⛔ Фільтр `> 0` НЕ ставити —
+      # він осліпив би правило саме для голоду від бута; форма й підстава —
+      # `sn-alert-tree-sweep-stale` (`max by (slot)` ковтає нульову web-серію).
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-mint-stall-probe-stale
+        title: "⚠️ Mint stall probe has not completed for 2h (mint stop by queue starvation is invisible)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: time() - max by (slot) (silkennet_mint_stall_probe_timestamp_seconds)
+              refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              expression: B
+              conditions:
+                - evaluator: { params: [7200], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 75m
+        annotations:
+          summary: "Зонд застряглої емісії не завершувався {{ $values.B.Value | printf \"%.0f\" }} с (>2 год) — sn-alert-mint-stall-depth зараз читає ЗАМЕРЗЛЕ число."
+          description: "MintStallProbeWorker (cron 55 * * * *, черга web3_emission) не доходить до штампа: або черга голодна — і тоді голова емісії (TokenomicsEvaluator → EvaluateTreeBatch) стоїть разом із ним, тобто мінт ЗУПИНЕНО, — або зонд кидає. Перевірити глибину й latency черги web3_emission (sn-alert-sidekiq-latency) і sidekiq-cron. 00_07 ARCH.59 / 06_08 §2.5."
+          runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
+        labels:
+          severity: warning
+          component: web3
+          team: backend
+      
+      # -----------------------------------------------------------------------
       # P1: Незворотне спалення відбулось [SLASH-1]. Лічильник інкрементиться
       # ВИКЛЮЧНО на `outcome == :slashed` — freeze/no-op сюди не потрапляють, тож
       # кожна подія тут означає реально спалені кошти оператора. Доти метрика не

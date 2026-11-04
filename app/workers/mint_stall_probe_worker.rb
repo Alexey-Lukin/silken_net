@@ -43,6 +43,8 @@ class MintStallProbeWorker
   def perform
     depth = TokenomicsEvaluatorWorker.eligible_wallets.count
     SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH.set(depth)
+    # [ARCH.59] Штамп — ПІСЛЯ виміру, тож `rescue` нижче його не просуває.
+    SilkenNet::Metrics::MINT_STALL_PROBE_TIMESTAMP.set(Time.current.to_i)
 
     # Голос на нульовій дії — конвенція sweep/probe-воркерів [PERF.1]: тиша тут
     # означала б «прилад не біг», а це рівно те, що метрика мала б виявляти.

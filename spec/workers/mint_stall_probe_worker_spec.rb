@@ -43,6 +43,27 @@ RSpec.describe MintStallProbeWorker, type: :worker do
       expect { described_class.new.perform }.not_to raise_error
     end
 
+    # 🔴 [ARCH.59 · S2.4, 2026-11-04] Штамп свіжості — єдине, що бачить голод черги
+    # `web3_emission`: без нього глибина застигає, і `sn-alert-mint-stall-depth` мовчить.
+    # Дві половини, бо смертей у писача дві: не біг (штамп старіє сам) і кинув (штамп
+    # НЕ сміє просунутись — інакше він свідчив би вимір, якого не було).
+    it "stamps its freshness after a completed measurement" do
+      allow(SilkenNet::Metrics::MINT_STALL_PROBE_TIMESTAMP).to receive(:set)
+
+      freeze_time { described_class.new.perform }
+
+      expect(SilkenNet::Metrics::MINT_STALL_PROBE_TIMESTAMP).to have_received(:set).with(Time.current.to_i)
+    end
+
+    it "does not stamp when the measurement raises" do
+      allow(TokenomicsEvaluatorWorker).to receive(:eligible_wallets).and_raise(StandardError, "db down")
+      allow(SilkenNet::Metrics::MINT_STALL_PROBE_TIMESTAMP).to receive(:set)
+
+      described_class.new.perform
+
+      expect(SilkenNet::Metrics::MINT_STALL_PROBE_TIMESTAMP).not_to have_received(:set)
+    end
+
     # 🔴 [PERF.1] Нуль — це ВИМІР, а не тиша: мовчазний прохід невідрізненний від
     # приладу, який не біг, і саме на нулі метрика найцінніша.
     it "speaks on a zero reading" do

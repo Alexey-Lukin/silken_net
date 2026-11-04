@@ -93,6 +93,17 @@ module SilkenNet
       docstring: "Wallets over the emission threshold that produced no mint in the last cycle (stall detector)"
     )
 
+    # 🔴 [ARCH.59 · S2.4, 2026-11-04] Свідок СВІЖОСТІ для gauge вище — форма
+    # `TREE_SWEEP_TIMESTAMP`. Зонд сидить у `web3_emission` FIFO разом із ГОЛОВОЮ
+    # емісії, тож голод черги зупиняє мінт і заморожує глибину на останньому значенні
+    # (найчастіше 0): `sn-alert-mint-stall-depth` мовчить саме тоді, коли мінт стоїть —
+    # його `noDataState: NoData` накриває смерть ПРОЦЕСУ, не голод. Пишеться ПІСЛЯ
+    # виміру: не просувається ні коли зонд не біг, ні коли кинув.
+    MINT_STALL_PROBE_TIMESTAMP = REGISTRY.gauge(
+      :silkennet_mint_stall_probe_timestamp_seconds,
+      docstring: "Unix time of the last completed mint stall probe (freshness witness for silkennet_mint_eligible_unminted_depth)"
+    )
+
     # Total tokens slashed (monotonic counter)
     SCC_SLASHED_TOTAL = REGISTRY.counter(
       :silkennet_scc_slashed_total,
