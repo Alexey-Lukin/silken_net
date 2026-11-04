@@ -67,6 +67,16 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       expect(BlockchainMintingService).to have_received(:call_batch)
     end
 
+    # [INS.1, 2026-11-04] Вікно auto-discovery (`limit(1000)`) — лише для НАШИХ валют: чужий
+    # `:pending` (Solana-USDC, Celo-cUSD) займав би слоти, а сервіс відсіював би його вже після.
+    it "does not spend the discovery window on foreign-currency rows" do
+      create(:blockchain_transaction, wallet: wallet, status: :pending, token_type: :usdc)
+
+      described_class.new.perform
+
+      expect(BlockchainMintingService).not_to have_received(:call_batch)
+    end
+
     it "does nothing when no pending transactions exist" do
       described_class.new.perform
 

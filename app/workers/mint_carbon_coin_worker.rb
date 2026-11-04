@@ -70,7 +70,7 @@ class MintCarbonCoinWorker
     # (сам `status`-скан прунити НЕ можна, підстава в `process_pending_transactions`),
     # а щоб віддати його далі партиційною підказкою. Без нього кожен батч перебирав
     # усі партиції наново.
-    rows = wallet.blockchain_transactions.status_pending.pluck(:id, :created_at)
+    rows = wallet.blockchain_transactions.status_pending.own_currency.pluck(:id, :created_at)
     return if rows.empty?
 
     Rails.logger.info "🔐 [Web3] Trustless мінтинг для TelemetryLog ##{telemetry_log_id}: #{rows.size} транзакцій..."
@@ -98,7 +98,10 @@ class MintCarbonCoinWorker
   # натомість усе, що ПІСЛЯ нього: там id уже відомі, тож несемо їхній
   # `created_at`-span далі.
   def process_pending_transactions
-    rows = BlockchainTransaction.status_pending.limit(1000).pluck(:id, :created_at)
+    # ⛔ [INS.1, 2026-11-04] Лише НАШІ валюти (`own_currency`): `:pending` — спільна черга
+    # трактів (Solana-USDC з годинним батчингом, Celo-cUSD), і без фільтра чужі рядки
+    # займали б вікно `limit(1000)`, а сервіс відсіяв би їх уже ПІСЛЯ — SCC сюди не дійшли б.
+    rows = BlockchainTransaction.status_pending.own_currency.limit(1000).pluck(:id, :created_at)
     return if rows.empty?
 
     rows.each_slice(100) do |slice|
