@@ -1214,49 +1214,6 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Сервіси** | `ParametricInsurance#evaluate_daily_health!` (Trigger-1 — **arm-кандидат**, НЕ payout) для кожної активної страховки кластера |
 | **Side Effects** | Озброює `:triggered`-кандидатів + `EwsAlert(:field_audit)`; per-insurance-збій ізольований (`rescue` → log → next). Kill-switch re-check на вході. Per-cluster fan-out тримає планетарний масштаб (як `InsightGeneratorOrchestratorWorker`). |
 
-#### `TokenomicsEvaluatorWorker`
-
-| Параметр | Значення |
-|----------|----------|
-| **Черга** | `default` |
-| **Retry** | 3, unique_for: 60 хвилин |
-| **Тригер** | Sidekiq cron: щогодини |
-| **Вхід** | — |
-| **Сервіси** | — |
-| **Side Effects** | `Sidekiq::Batch` → `EvaluateTreeBatchWorker` по 1000 гаманців. Callback `TokenomicsBatchCallbacks#on_success`. |
-
-#### `TokenomicsBatchCallbacks` _(Sidekiq Batch Callback — not a Worker)_
-
-| Параметр | Значення |
-|----------|-----------|
-| **Файл** | `app/callbacks/tokenomics_batch_callbacks.rb` |
-| **Тип** | Sidekiq Pro Batch callback клас (не Worker; живе у `app/callbacks/`) |
-| **Тригер** | `TokenomicsEvaluatorWorker` (реєструє через `batch.on(:success, TokenomicsBatchCallbacks, ...)`) |
-| **`on_success`** | Спрацьовує тільки якщо **всі** `EvaluateTreeBatchWorker` jobs завершились успішно. Запускає РІВНО одне: `MintCarbonCoinWorker.perform_async` (без аргументів — auto-discovery всіх pending BlockchainTransaction). ⛔ Семпл ARCH.94-детектора звідси ЗНЯТО [ARCH.59, 2026-08-25] — дім `MintStallProbeWorker` нижче; носій зняття — негативний пін у `spec/callbacks/tokenomics_batch_callbacks_spec.rb`. |
-
-#### `MintStallProbeWorker`
-
-| Параметр | Значення |
-|----------|----------|
-| **Черга** | `low` |
-| **Retry** | 1 — пропущений зріз не втрачає даних (наступний за годину), тож наполегливий ретрай купував би лише шум |
-| **Тригер** | Sidekiq cron `55 * * * *` (`mint_stall_probe`) — **зріз ПЕРЕД наступним циклом емісії**, який стартує о `:00` |
-| **Вхід** | — |
-| **Сервіси** | — (читає One-Home предикат `TokenomicsEvaluatorWorker.eligible_wallets`) |
-| **Side Effects** | `MINT_ELIGIBLE_UNMINTED_DEPTH.set(depth)` + `info`-рядок НАВІТЬ на нулі [PERF.1] — мовчазний прохід був би невідрізненний від приладу, який не біг, а на нулі метрика найцінніша. Нічого не мутує: це прилад, не гроші, тому `rescue StandardError` ковтає збій замість того, щоб валити розклад сусідів по черзі. |
-| **Чому окремий воркер** | [ARCH.94 / ARCH.59] Семпл жив у `TokenomicsBatchCallbacks#on_success`, тобто в Batch-колбеці, який у проді не виконується — метрика стояла порожня від народження. Розбір — DOC-R.10 §11 вище. Ключове для будь-якої майбутньої правки: **час зрізу несучий** — `lock_and_mint!` виводить гаманець із eligible-множини синхронно в чанку, тож `:55` міряє залишок здорового годинного проходу; зсув часу змінить ЗНАЧЕННЯ метрики, не лише її свіжість. Алерт — `sn-alert-mint-stall-depth` ([`06_03 §2.8`](06_03_Prometheus_Observability)). |
-
-#### `EvaluateTreeBatchWorker`
-
-| Параметр | Значення |
-|----------|----------|
-| **Черга** | `default` |
-| **Retry** | 3 |
-| **Тригер** | `TokenomicsEvaluatorWorker` (Sidekiq Pro Batch child) |
-| **Вхід** | `wallet_ids` (Array\<Integer>), `cycle_id` (String UUID) |
-| **Сервіси** | — |
-| **Side Effects** | `wallet.lock_and_mint!(points, threshold)` при `available_balance >= 10_000` (NET — [ARCH.94]). → `MintCarbonCoinWorker` (implicit через lock_and_mint!). |
-
 #### `PartitionMaintenanceWorker`
 
 | Параметр | Значення |
@@ -1536,6 +1493,53 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Side Effects** | [GOV.1] Зчитує 8 економічних on-chain параметрів (tokenomics/minting/insurance + slashing/alerts) з `ProtocolParameters.sol`. Fixed-point conversion (uint256/1e18 → BigDecimal). Порівнює з `SystemParameter` і оновлює змінені (source: `"governance"`, updated_by: `User.oracle_executioner`, `min_value`/`max_value` bounds) — out-of-bounds відхиляється (лог + `silkennet_governance_param_rejected_total`). 8 Lorenz-ключів — DCI-tripwire: WARN на голос, НЕ синхронізуються (FW.7 — [`05_06 §7`](05_06_Governance_and_DAO)). Timeout 10s per RPC call. |
 
 ---
+
+### 🌱 Web3 Emission — Голова Мінт-DAG
+
+> ⚖️ **[ARCH.59 «(a1)», founder 2026-11-04]** Голова емісії (`TokenomicsEvaluator` → `EvaluateTreeBatch` → `lock_and_mint!`) і її зонд — у `web3_emission`, найнижчій черзі грошового процесу: по той самий бік межі розщеплення, що й мінт. Ціна в одному процесі — голод `default`/`web3_*` відкладає емісію ([`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)). Черга кожної картки нижче судиться `spec/quality/worker_card_queue_parity_spec.rb`.
+
+#### `TokenomicsEvaluatorWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_emission` (⚖️ ARCH.59 «(a1)», founder 2026-11-04 — найнижча черга грошового процесу, [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)) |
+| **Retry** | 3, unique_for: 60 хвилин |
+| **Тригер** | Sidekiq cron: щогодини |
+| **Вхід** | — |
+| **Сервіси** | — |
+| **Side Effects** | `Sidekiq::Batch` → `EvaluateTreeBatchWorker` по 1000 гаманців. Callback `TokenomicsBatchCallbacks#on_success`. |
+
+#### `TokenomicsBatchCallbacks` _(Sidekiq Batch Callback — not a Worker)_
+
+| Параметр | Значення |
+|----------|-----------|
+| **Файл** | `app/callbacks/tokenomics_batch_callbacks.rb` |
+| **Тип** | Sidekiq Pro Batch callback клас (не Worker; живе у `app/callbacks/`) |
+| **Тригер** | `TokenomicsEvaluatorWorker` (реєструє через `batch.on(:success, TokenomicsBatchCallbacks, ...)`) |
+| **`on_success`** | Спрацьовує тільки якщо **всі** `EvaluateTreeBatchWorker` jobs завершились успішно. Запускає РІВНО одне: `MintCarbonCoinWorker.perform_async` (без аргументів — auto-discovery всіх pending BlockchainTransaction). ⛔ Семпл ARCH.94-детектора звідси ЗНЯТО [ARCH.59, 2026-08-25] — дім `MintStallProbeWorker` нижче; носій зняття — негативний пін у `spec/callbacks/tokenomics_batch_callbacks_spec.rb`. |
+
+#### `MintStallProbeWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_emission` (⚖️ ARCH.59 «(a1)», founder 2026-11-04 — найнижча черга грошового процесу, [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)) |
+| **Retry** | 1 — пропущений зріз не втрачає даних (наступний за годину), тож наполегливий ретрай купував би лише шум |
+| **Тригер** | Sidekiq cron `55 * * * *` (`mint_stall_probe`) — **зріз ПЕРЕД наступним циклом емісії**, який стартує о `:00` |
+| **Вхід** | — |
+| **Сервіси** | — (читає One-Home предикат `TokenomicsEvaluatorWorker.eligible_wallets`) |
+| **Side Effects** | `MINT_ELIGIBLE_UNMINTED_DEPTH.set(depth)` + `info`-рядок НАВІТЬ на нулі [PERF.1] — мовчазний прохід був би невідрізненний від приладу, який не біг, а на нулі метрика найцінніша. Нічого не мутує: це прилад, не гроші, тому `rescue StandardError` ковтає збій замість того, щоб валити розклад сусідів по черзі. ⊕ **Штамп свіжості** `MINT_STALL_PROBE_TIMESTAMP.set(Time.current.to_i)` — ПІСЛЯ виміру [ARCH.59 · S2.4, 2026-11-04]: зонд ділить FIFO з головою емісії, тож голод черги заморожує глибину, і лише штамп, що старіє, це видає (`sn-alert-mint-stall-probe-stale`, [`06_03 §2.8`](06_03_Prometheus_Observability)). |
+| **Чому окремий воркер** | [ARCH.94 / ARCH.59] Семпл жив у `TokenomicsBatchCallbacks#on_success`, тобто в Batch-колбеці, який у проді не виконується — метрика стояла порожня від народження. Розбір — DOC-R.10 §11 вище. Ключове для будь-якої майбутньої правки: **час зрізу несучий** — `lock_and_mint!` виводить гаманець із eligible-множини синхронно в чанку, тож `:55` міряє залишок здорового годинного проходу; зсув часу змінить ЗНАЧЕННЯ метрики, не лише її свіжість. Алерт — `sn-alert-mint-stall-depth` ([`06_03 §2.8`](06_03_Prometheus_Observability)). |
+
+#### `EvaluateTreeBatchWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_emission` (⚖️ ARCH.59 «(a1)», founder 2026-11-04 — найнижча черга грошового процесу, [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)) |
+| **Retry** | 3 |
+| **Тригер** | `TokenomicsEvaluatorWorker` (Sidekiq Pro Batch child) |
+| **Вхід** | `wallet_ids` (Array\<Integer>), `cycle_id` (String UUID) |
+| **Сервіси** | — |
+| **Side Effects** | `wallet.lock_and_mint!(points, threshold)` при `available_balance >= 10_000` (NET — [ARCH.94]). → `MintCarbonCoinWorker` (implicit через lock_and_mint!). |
 
 ### 📦 Low — Аудит та Зберігання
 
