@@ -51,15 +51,21 @@ fi
 # reported the only sentence it had. Verdict happened to be right that day;
 # the grounds were fabricated, and every push was blocked regardless of DCO.
 # Same fix and same reason as `.claude/hooks/memory_gate.sh` (00_06 §3, DARK).
+# ⊕ 2026-11-04: every path that does not `break` resets `_rb` — a bare `continue` on the last candidate (a
+# /usr/bin/ruby that is gone) left its path standing as «found», and the DCO step below would then fail on a
+# missing binary and print the DCO verdict again (memory_gate.sh returns from a function and has no such tail).
+# A SET `DCO_RUBY` is an instruction, not a hint (memory_gate.sh's rule): if it cannot parse the check, no
+# other ruby is tried.
 for _rb in "${DCO_RUBY:-}" "$(command -v ruby 2>/dev/null)" \
            "$HOME/.rvm/rubies/default/bin/ruby" /usr/bin/ruby; do
-  [ -n "$_rb" ] && [ -x "$_rb" ] || continue
-  "$_rb" -c "$root/scripts/dco_check.rb" >/dev/null 2>&1 && break
+  [ -n "$_rb" ] && [ -x "$_rb" ] && "$_rb" -c "$root/scripts/dco_check.rb" >/dev/null 2>&1 && break
+  [ -n "${DCO_RUBY:-}" ] && { _rb=""; break; }
   _rb=""
 done
 
 if [ -z "$_rb" ]; then
   echo "pre-push BLOCKED — no ruby able to parse scripts/dco_check.rb"
+  [ -n "${DCO_RUBY:-}" ] && echo "(DCO_RUBY=$DCO_RUBY is set and cannot parse it — no other ruby was tried.)"
   echo "This is NOT a DCO verdict: the check never ran, so its silence means nothing."
   echo "Fix the toolchain (rvm-heal), or set DCO_RUBY=/path/to/ruby."
   echo "(Emergency bypass: git push --no-verify — but that skips DCO entirely.)"
@@ -526,12 +532,31 @@ fi
 # `00_02` (назва статті), а `00_07` свідомо ні — `72` читає трекер лише для жаргон-гейта описів,
 # і правка трекера, що його зачепить, лишається на CI. NOT-RUN ⊥ FAILED: pytest exit 1 — вердикт,
 # будь-який інший (нема pytest · не зібрався тест · worktree не створився) — гучна нота й пропуск.
+# ⊕ 2026-11-04: інтерпретатор шукаємо за ФАЙЛОВОЮ СИСТЕМОЮ й за ЗДАТНІСТЮ, а не беремо перший `python3` з PATH
+# (форма — DCO-ruby вище). Пін ганяли на тому `python3`, що давав PATH шелу: 2026-10-16 він біг (1 passed),
+# 2026-11-03 пуш у периметр пройшов без NOTE, а 2026-11-04 о 11:01 змінено `~/.zshrc` — і першим на PATH став
+# Homebrew-івський 3.14 без pytest (його site-packages не змінювались з 2026-09-08, user-site немає); з чотирьох
+# пушів у периметр того дня NOTE «python3 has no pytest here» видно у трьох (вивід четвертого не зберігся),
+# хоча pytest на машині БУВ (miniforge base, з 2026-09-18). NOTE — твердження про середовище, правдиве про один
+# інтерпретатор і хибне про машину (скіл `ssot-maintenance` guard-craft #68; `in-silico` Critical Rules #0).
+# Здатність = pytest Є і numpy НЕМАЄ: пін ганяє `72` тим самим інтерпретатором, а голий CI-джоб `cache_doc_sync`
+# numpy не має, тож інтерпретатор із numpy дав би зелене там, де CI впаде, щойно `72` чи `lib/constants`
+# імпортують numpy на верхньому рівні. Кандидати — PATH і miniforge base (pytest = пін CI, numpy немає:
+# найближча заміна голого джоба, не дзеркало — інші плагіни, старіші pluggy · iniconfig · packaging). Явний
+# SI_PYTHON — наказ, не підказка: не пройшов перевірку — нота з його іменем, інших не пробуємо.
 if printf '%s\n' "$_changed" | grep -qE '^tools/in_silico/|^docs/protocols/ebfc/in_silico/|^docs/00_02_'; then
-  if python3 -m pytest --version >/dev/null 2>&1; then
+  for _si_py in "${SI_PYTHON:-}" "$(command -v python3 2>/dev/null)" "$HOME/miniforge3/bin/python3"; do
+    [ -n "$_si_py" ] && [ -x "$_si_py" ] && "$_si_py" -c \
+      'import importlib.util as u, sys; import pytest; sys.exit(u.find_spec("numpy") is not None)' \
+      >/dev/null 2>&1 && break
+    [ -n "${SI_PYTHON:-}" ] && { _si_py=""; break; }
+    _si_py=""
+  done
+  if [ -n "$_si_py" ]; then
     _si_dir=$(mktemp -d)
     trap 'rm -f "$_i18n_log"; git -C "$root" worktree remove --force "$_si_dir/wt" >/dev/null 2>&1; rm -rf "$_si_dir"' EXIT INT TERM
     if git -C "$root" worktree add -q --detach "$_si_dir/wt" HEAD >/dev/null 2>&1; then
-      python3 -m pytest -q -p no:cacheprovider \
+      "$_si_py" -m pytest -q -p no:cacheprovider \
         "$_si_dir/wt/tools/in_silico/tests/test_doc_cache_sync.py::test_paper_si_matches_its_generator" \
         >"$_si_dir/log" 2>&1
       _si_rc=$?
@@ -539,13 +564,13 @@ if printf '%s\n' "$_changed" | grep -qE '^tools/in_silico/|^docs/protocols/ebfc/
       if [ "$_si_rc" -eq 1 ]; then
         cat "$_si_dir/log"
         echo
-        echo "pre-push BLOCKED — the pushed commit's SI manifest is not what \`72\` renders from it."
-        echo "Fix:  python3 tools/in_silico/scripts/72_paper_supporting_information.py   # on a CLEAN tree"
+        echo "pre-push BLOCKED — the pushed commit's SI manifest is not what \`72\` renders from it (pin ran on $_si_py)."
+        echo "Fix:  $_si_py tools/in_silico/scripts/72_paper_supporting_information.py   # on a CLEAN tree"
         echo "      then commit docs/protocols/ebfc/in_silico/paper/10_supporting_information.md"
         echo "Then re-push.  (Emergency bypass: git push --no-verify)"
         exit 1
       elif [ "$_si_rc" -ne 0 ]; then
-        echo "pre-push NOTE — the SI-manifest pin could not RUN (pytest exit $_si_rc)."
+        echo "pre-push NOTE — the SI-manifest pin could not RUN on $_si_py (pytest exit $_si_rc)."
         echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
       fi
     else
@@ -553,8 +578,16 @@ if printf '%s\n' "$_changed" | grep -qE '^tools/in_silico/|^docs/protocols/ebfc/
       echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
     fi
   else
-    echo "pre-push NOTE — in-silico changed but python3 has no pytest here."
+    if [ -n "${SI_PYTHON:-}" ]; then
+      echo "pre-push NOTE — SI_PYTHON=$SI_PYTHON cannot run the SI-manifest pin (needs pytest and no numpy);"
+      echo "  no other python was tried."
+    else
+      echo "pre-push NOTE — in-silico changed but no python with pytest and without numpy was found"
+      echo "  (probed: python3 on PATH · ~/miniforge3/bin/python3)."
+    fi
     echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
+    echo "  Fix:  <a python without numpy> -m pip install --require-hashes -r tools/in_silico/requirements-pytest.txt"
+    echo "        (or set SI_PYTHON=/path/to/that/python)"
   fi
 fi
 
