@@ -852,7 +852,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Reports` | `Index`, `CarbonAbsorption`, `FinancialSummary` | `data:` |
 | `TreeFamilies` | `Index`, `Show`, `Form` | `family:` + **`current_user:`** (fail-closed `nil` — `Index`, UI.5/UI.6); `Index` бере ще `families:`/`pagy:` [DOC-T.79] |
 | `Organizations` | `Index`, `Show` | `organization:` · `Index` додатково `acting_organization:` — перемикач контексту [UI.6]: окрема колонка дії (мутуючий POST під заголовком «Audit» брехав би скрін-рідеру), `aria-current`-маркер замість кнопки на поточному рядку, `button_to` іде звичайним Turbo-візитом (`data: { turbo: "false" }` знято разом із причиною, UI.11 — врізка ⚙️ у «Навігації» вище). Роле-предиката тут НЕМА свідомо: гард контролера класовий, тож дія не глибша за сторінку |
-| `Users` | `Index`, `Profile` | `user:` |
+| `Users` | `Index`, `Profile` | `user:` · `Profile` додатково **`current_user:`** (fail-closed `nil`): панель безпеки — лише на власному профілі [SEC.36] |
 | `AuditLogs` | `Index`, `Show` | `log:` |
 | `SystemAudits` | `Index` | `audits:` |
 | `SystemHealth` | `Show` | `health:` |

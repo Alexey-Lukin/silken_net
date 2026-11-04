@@ -52,6 +52,7 @@ module Api
               title: I18n.t("users.show_title", name: @user.first_name),
               component: Users::Profile.new(
                 user: @user,
+                current_user: current_user,
                 maintenance_count: @user.maintenance_records.count
               )
             )
@@ -74,6 +75,7 @@ module Api
               title: I18n.t("users.show_title", name: @user.first_name),
               component: Users::Profile.new(
                 user: @user,
+                current_user: current_user,
                 maintenance_count: @user.maintenance_records.count
               )
             )

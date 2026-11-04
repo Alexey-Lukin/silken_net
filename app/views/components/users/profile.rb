@@ -3,9 +3,11 @@
 module Users
   class Profile < ApplicationComponent
     # @param user [User] the user to display
+    # @param current_user [User, nil] who is looking — gates the security panel (fail-closed: nil hides it)
     # @param maintenance_count [Integer] pre-computed count (eager-load in controller)
-    def initialize(user:, maintenance_count: 0)
+    def initialize(user:, current_user: nil, maintenance_count: 0)
       @user = user
+      @current_user = current_user
       @maintenance_count = maintenance_count
     end
 
@@ -18,11 +20,19 @@ module Users
           render_activity_stats
         end
 
-        render_security_status
+        render_security_status if own_profile?
       end
     end
 
     private
+
+    # 🔒 [SEC.36, ⚖️ founder 2026-11-04] MFA і «чи є пароль» — факти, які людина перевіряє
+    # про СЕБЕ, а `UserPolicy#show` пускає на цю сторінку всю організацію. Тож панель лише
+    # на власному профілі; без глядача — ніде (fail-closed, скіл `frontend` #12). JSON-двійник
+    # того самого рішення — актор `:crew`, не `:profile`, у `audit_log_blueprint.rb`.
+    def own_profile?
+      @current_user.present? && @current_user == @user
+    end
 
     def render_hero_profile
       div(class: "p-10 border border-gaia-border bg-gaia-surface relative overflow-hidden") do

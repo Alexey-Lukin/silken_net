@@ -25,9 +25,11 @@ RSpec.describe Users::Profile do
     )
   end
 
-  def render_component(user:, maintenance_count: 0)
+  # Глядач за замовчуванням — сам власник профілю: так рендерить `users#me`, і саме
+  # там панель безпеки існує. Чужий погляд — окремий describe нижче.
+  def render_component(user:, maintenance_count: 0, current_user: user)
     ApplicationController.renderer.render(
-      component_class.new(user: user, maintenance_count: maintenance_count),
+      component_class.new(user: user, current_user: current_user, maintenance_count: maintenance_count),
       layout: false
     )
   end
@@ -174,6 +176,27 @@ RSpec.describe Users::Profile do
 
     it "renders Manage link to account security" do
       expect(html).to include("Manage →")
+    end
+  end
+
+  # [SEC.36, ⚖️ founder 2026-11-04] `UserPolicy#show` пускає на чужий профіль усю
+  # організацію, а MFA і «чи є пароль» — постава, яку людина перевіряє про СЕБЕ.
+  # Обидві половини в одному прикладі: поодинці кожна зелена при зламаній парі.
+  describe "security posture is shown only on one's own profile" do
+    it "renders the panel for the owner and hides it from a colleague" do
+      colleague = mock_user(id: 43, first_name: "Taras", email_address: "taras@example.org")
+      colleague_view = render_component(user: user, current_user: colleague)
+
+      expect(html).to include("Security Status", "2FA", "Manage →")
+      expect(colleague_view).not_to include("Security Status")
+      expect(colleague_view).not_to include("2FA")
+      expect(colleague_view).not_to include("Manage →")
+    end
+
+    it "fails closed when no viewer is passed" do
+      rendered = ApplicationController.renderer.render(component_class.new(user: user), layout: false)
+
+      expect(rendered).not_to include("Security Status")
     end
   end
 end

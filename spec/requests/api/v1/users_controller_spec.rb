@@ -99,6 +99,26 @@ RSpec.describe Api::V1::UsersController, type: :request do
         expect(response).to have_http_status(:ok)
         expect(response.body).to include(extra_user.email_address)
       end
+
+      # 🔒 [SEC.36, ⚖️ founder 2026-11-04] Пін у ТОЧЦІ ДІЇ: компонентна спека сама передає
+      # глядача, тож проводку контролера (`current_user: current_user`) судить лише цей
+      # приклад. Та сама людина — `/users/me` ⊥ `/users/:свій_id` ⊥ профіль колеги. Середня
+      # половина несуча: там `@user` — ОКРЕМИЙ екземпляр, тож власник бачить панель лише
+      # тоді, коли рівність іде за id, а не за тотожністю об'єкта. Посилання на сторінку
+      # безпеки маркером бути не може — його ставить сайдбар на кожній сторінці.
+      it "показує панель безпеки лише на власному профілі, не на профілі колеги" do
+        heading = I18n.t("users.profile.sections.security")
+
+        get "/users/me", headers: subscriber_headers
+        expect(response.body).to include(heading)
+
+        get "/users/#{subscriber.id}", headers: subscriber_headers
+        expect(response.body).to include(heading)
+
+        get "/users/#{admin.id}", headers: subscriber_headers
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include(heading)
+      end
     end
 
     it "returns 404 for a user from another organization" do
