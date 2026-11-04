@@ -86,9 +86,17 @@ module Api
         # org-скоуплений INNER JOIN'ом по wallets — не бачив slash-інтентів «останнього
         # дерева» (wallet: nil), рівно тих, які герой ВІДНІМАЄ, і домішував чужі
         # кластери організації. Тепер множина під заголовком = множина героя.
+        # ⛔ [SEC.36-свіп 2026-11-04] Не знімати `token_type`: «та сама множина» означає
+        # той самий предикат, що в `net_minted_supply(:carbon_coin)`, а не лише той самий
+        # кластер. Celo-винагорода кластера (`token_type: :cusd`, `cluster:` без гаманця)
+        # проходить і `for_cluster`, і `confirmed`, а рядок локалі леджера підписує суму
+        # літералом «SCC» — без цього фільтра cUSD друкувалась би емісією SCC на сторінці
+        # інвестора (латентно: Celo-писач біжить лише для здорового чинного контракту;
+        # вісь валюти — скіл `web3-pipeline` #34). Пін — поіменно по осях кластера, валюти
+        # й статусу — `contracts_controller_spec`.
         @emission_history = BlockchainTransaction
           .for_cluster(@contract.cluster_id)
-          .where(status: :confirmed)
+          .where(token_type: :carbon_coin, status: :confirmed)
           .order(created_at: :desc)
           .limit(10)
 

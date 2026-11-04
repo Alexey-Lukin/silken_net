@@ -286,6 +286,40 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         expect(ids).not_to include(foreign_row.id)
       end
 
+      # [SEC.36-свіп 2026-11-04] Приклад вище судить вісь КЛАСТЕРА, а «та сама множина,
+      # що герой» — це ВЕСЬ предикат `net_minted_supply(:carbon_coin)`: ще ВАЛЮТА і СТАТУС.
+      # Celo-винагорода кластера (форма єдиного писача —
+      # `Celo::CommunityRewardService#create_reward_intent!`) проходить `for_cluster` і
+      # `confirmed`, а рядок локалі підписує суму «SCC». Тут по рядку на кожну вісь:
+      # поіменно — хто Є і кого НЕМАЄ; слеш — щоб гілка знаку в сумі справді виконалась.
+      # Рівність підписаної суми з героєм — ДОДАТКОВА перевірка, не доказ рівності
+      # множин (поки історія вміщає всі рядки — `limit(10)`; суми з ≤4 знаками, бо
+      # `cluster_emission` округлено до 4).
+      it "keeps the ledger on the hero's predicate: currency and status, not only the cluster" do
+        tree = create(:tree, cluster: own_cluster)
+        wallet = tree.wallet || create(:wallet, tree: tree)
+        scc_mint = create(:blockchain_transaction, wallet: wallet, amount: 12,
+                                                   token_type: :carbon_coin, status: :confirmed)
+        slash = create(:blockchain_transaction, wallet: wallet, amount: 3, token_type: :carbon_coin,
+                                                status: :confirmed, sourceable: own_contract, direction: :burn)
+        in_flight = create(:blockchain_transaction, wallet: wallet, amount: 7,
+                                                    token_type: :carbon_coin, status: :sent)
+        celo_reward = create(:blockchain_transaction, wallet: nil, cluster: own_cluster,
+                                                      sourceable: own_cluster,
+                                                      amount: Celo::CommunityRewardService::REWARD_AMOUNT,
+                                                      token_type: :cusd, blockchain_network: "celo",
+                                                      reward_date: Date.current, status: :confirmed)
+
+        get "/contracts/#{own_contract.id}", headers: headers, as: :json
+
+        body = response.parsed_body
+        ids = body["emission_history"].map { |row| row["id"] }
+        expect(ids).to include(scc_mint.id, slash.id)
+        expect(ids).not_to include(celo_reward.id, in_flight.id)
+        ledger_net = body["emission_history"].sum { |row| (row["burn"] ? -1 : 1) * row["amount"].to_d }
+        expect(ledger_net).to eq(body["cluster_emission"].to_d)
+      end
+
       # [SEC.36 2026-09-06] Пін на ФОРМУ рядка, і він потрібен саме тому, що сусідній
       # приклад вище його не дає: той судить МНОЖИНУ рядків (скоуп) і лишається зеленим
       # на сирій моделі з усіма 34 колонками. Доти гілка віддавала реляцію без
