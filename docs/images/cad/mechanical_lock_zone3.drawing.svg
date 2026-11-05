@@ -51,15 +51,15 @@
 <text x='20' y='387' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   only under the disc; the disc's underside (the shoulder, the axial datum) is faced on the channel's setup after they come off - see</text>
 <text x='20' y='401' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cathode_flange (ratified 2026-09-18, 00_07 HW.26)</text>
 <text x='20' y='415' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>4. Surface: ETCHED if the part is printed, as-machined if it is turned from bar - and that follows from the production ORDER, not from a</text>
-<text x='20' y='429' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   finish spec. The order INVERTED on 2026-09-17: canon forbids the bake after the PEEK press-fit (measured - at 250 C the O11 bore grows</text>
-<text x='20' y='443' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   180-217 um more than the shaft), and the bake must follow the etch it degasses, so BOTH surviving branches of 01_02 1.3 etch the BARE</text>
-<text x='20' y='457' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   part and assemble afterwards. This surface is therefore no longer inside the joint when the anchor is etched. The catalytic-face finish</text>
-<text x='20' y='471' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   of the flange (01_02 1.2, EAAE dual-scale) belongs to cem/cathode_flange.json and does NOT extend to this shank. (The consequence is</text>
-<text x='20' y='485' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   ours; the ORDER is canon.) ATTENTION - what ACCEPTANCE applies here is OPEN, and do not read the flange band onto it: the EAAE dual-scale</text>
-<text x='20' y='499' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   row of 01_02 1.2 is written for a catalytic face, whose duty is surface area, while this is a mating face of an interference fit. The</text>
-<text x='20' y='513' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   question the inversion OPENED, and which nothing has measured, is the mirror of the old one: whether an etched surface survives the</text>
-<text x='20' y='527' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   press-fit, and what the etch takes off the interference (00_07 HW.26). Until that is answered this note states the STATE of the surface,</text>
-<text x='20' y='541' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   never a requirement for it.</text>
+<text x='20' y='429' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   finish spec. The order INVERTED on 2026-09-17: canon forbids the bake after the PEEK press-fit (calculated from datasheet expansion</text>
+<text x='20' y='443' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   coefficients - at 250 C the O11 bore grows 180-217 um more than the shaft), and the bake must follow the etch it degasses, so BOTH</text>
+<text x='20' y='457' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   surviving branches of 01_02 1.3 etch the BARE part and assemble afterwards. This surface is therefore no longer inside the joint when the</text>
+<text x='20' y='471' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   anchor is etched. The catalytic-face finish of the flange (01_02 1.2, EAAE dual-scale) belongs to cem/cathode_flange.json and does NOT</text>
+<text x='20' y='485' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   extend to this shank. (The consequence is ours; the ORDER is canon.) ATTENTION - what ACCEPTANCE applies here is OPEN, and do not read</text>
+<text x='20' y='499' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the flange band onto it: the EAAE dual-scale row of 01_02 1.2 is written for a catalytic face, whose duty is surface area, while this is</text>
+<text x='20' y='513' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   a mating face of an interference fit. The question the inversion OPENED, and which nothing has measured, is the mirror of the old one:</text>
+<text x='20' y='527' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   whether an etched surface survives the press-fit, and what the etch takes off the interference (00_07 HW.26). Until that is answered this</text>
+<text x='20' y='541' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   note states the STATE of the surface, never a requirement for it.</text>
 <text x='20' y='555' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Post-process: NO DIN-471 groove on this end: the ring as a backup was removed on both ends and this groove from the geometry (ratified</text>
 <text x='20' y='569' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   2026-09-18, 00_07 HW.26) - in the assembled stack it sat about 2.0 mm inside the PEEK sleeve and could not take a ring once pressed</text>
 <text x='20' y='583' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Coating: NOT SPECIFIED, and deliberately so: the 01_02 3.6 map covers the flange catalytic face, the outer jacket and the pogo pad - this</text>
@@ -102,7 +102,7 @@
 <line x1='540' y1='945' x2='790' y2='945' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='945' x2='630' y2='961' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='956' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='956' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>394588c87</text>
+<text x='635' y='956' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>6f63d62a3-dirty</text>
 <line x1='540' y1='961' x2='790' y2='961' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='961' x2='630' y2='977' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='972' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -110,7 +110,7 @@
 <line x1='540' y1='977' x2='790' y2='977' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='977' x2='630' y2='993' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='988' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='988' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>db895b3a18bfb14bbd… → FOOTER</text>
-<text x='806' y='1009' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 394588c87 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
-<text x='806' y='1021' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): db895b3a18bfb14bbd8d8790e245ae747eb80dfc509620bee2dd025761730abd</text>
+<text x='635' y='988' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>666558c5bd34ba5461… → FOOTER</text>
+<text x='806' y='1009' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 6f63d62a3-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
+<text x='806' y='1021' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 666558c5bd34ba54616aa0820b77525396cc72a3ccd35b3c72fcb01556105159</text>
 </svg>
