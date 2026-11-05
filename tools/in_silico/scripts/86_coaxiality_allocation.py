@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import sys
 from itertools import pairwise
 from pathlib import Path
@@ -101,8 +102,9 @@ def main() -> int:
             per = []
             for e in grid:
                 sf, k = soderberg(amp, mean[e], se, sy)
-                per.append({"offset_um": e, "mean_MPa": mean[e], "sf_wire": round(sf, 3),
-                            "k_break_even": None if k is None else round(k, 4)})
+                # raw (00_07 HW.43 «68 → 86»): 87 · 92 · 102 · 103 · 104 · 116 read these k and SF and compute from them,
+                # and docs round them DIRECTIONALLY — a cache rounded here decides the side (in-silico §When Modifying #6 · #43)
+                per.append({"offset_um": e, "mean_MPa": mean[e], "sf_wire": sf, "k_break_even": k})
             for a, b in pairwise(per):
                 if b["mean_MPa"] < a["mean_MPa"] or b["sf_wire"] > a["sf_wire"] or (
                         a["k_break_even"] is not None and b["k_break_even"] is not None
@@ -115,7 +117,7 @@ def main() -> int:
 
     shipped = out_geo[geos[0]]
     binding = min(shipped["by_alloy"], key=lambda n: shipped["by_alloy"][n]["by_offset"][0]["sf_wire"])
-    sf0 = round(shipped["by_alloy"][binding]["endurance_MPa"] / shipped["amplitude_zero_interference_MPa"], 3)
+    sf0 = shipped["by_alloy"][binding]["endurance_MPa"] / shipped["amplitude_zero_interference_MPa"]
     s55_sf0 = d55["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["binding_alloy_sf_shipped_at_upper_end"]
     if abs(sf0 - s55_sf0) > 0.01:
         raise SystemExit(f"control 1: zero-mean SF {sf0:.3f} ≠ script 55's {s55_sf0} for {binding}")
@@ -137,9 +139,11 @@ def main() -> int:
     t = branches["tight"]["by_geometry"][geos[0]]
     for bname in ("loose_50", "loose_100"):
         b = branches[bname]["by_geometry"][geos[0]]
+        # a margin prints DOWN, a requirement UP (in-silico §When Modifying #43) — this line once fed «k ≥ 0.388» into canon
         print(f"  {bname:>9s} (⌀{branches[bname]['iso1101_coaxiality_zone_mm']:.2f}): binding {b['binding_alloy']} — mean "
-              f"{b['mean_MPa']:.1f} MPa · SF wire {t['sf_wire_binding']:.2f} → {b['sf_wire_binding']:.2f} · seam k ≥ "
-              f"{t['k_break_even_binding']:.3f} → {b['k_break_even_binding']:.3f}")
+              f"{b['mean_MPa']:.1f} MPa · SF wire {math.floor(t['sf_wire_binding'] * 100) / 100:.2f} → "
+              f"{math.floor(b['sf_wire_binding'] * 100) / 100:.2f} · seam k ≥ "
+              f"{math.ceil(t['k_break_even_binding'] * 1000) / 1000:.3f} → {math.ceil(b['k_break_even_binding'] * 1000) / 1000:.3f}")
     out = {
         "question": "00_07 HW.34 — what a channel-to-root misalignment costs the bus root once its static bending is a "
                     "MEAN stress, so that the coaxiality NUMBER can be allocated (⚖️ 2026-10-12 exception to the crown pause)",

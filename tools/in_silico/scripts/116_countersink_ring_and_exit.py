@@ -590,7 +590,7 @@ def main() -> int:
                 for ecc in PAD_ECC_MM:
                     mean, amp = offset_swing(rod, geo, pl, tol, f_band, depth, r_ex, s55.F_POGO_N * ecc)
                     cells.append({"play": lab, "pad_ecc_mm": ecc, "mean_MPa": mean, "amplitude_MPa": amp,
-                                  "k_seam_needed": round(k_seam(mean, amp, g86["by_alloy"]), 4)})
+                                  "k_seam_needed": k_seam(mean, amp, g86["by_alloy"])})
             worst = max(cells, key=lambda c: c["k_seam_needed"])
             off_rows.append({"depth_mm": depth, "r_exit_mm": r_ex, "worst": worst,
                              "k_seam_needed_no_couple_zero_interference": next(c["k_seam_needed"] for c in cells

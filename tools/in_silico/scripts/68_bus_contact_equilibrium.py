@@ -172,14 +172,14 @@ def main() -> int:
                                   tag=f"{r['branch']}/{play_label}/µ{mu}/upper")
                     assert bond["sigma_root_MPa"] - 1e-9 <= upper["sigma_root_MPa"] <= s55.bending_stress_MPa(f_lat, geo.pad_mm) * 1.0001, \
                         "the upper end left [rigid wall, free cantilever]"
-                    by_mu[str(mu)] = {"sigma_root_MPa_bare": round(bare["sigma_root_MPa"], 2),
-                                      "sigma_root_MPa_bonded": round(bond["sigma_root_MPa"], 2),
-                                      "sigma_root_MPa_upper_end": round(upper["sigma_root_MPa"], 2),
+                    by_mu[str(mu)] = {"sigma_root_MPa_bare": bare["sigma_root_MPa"],
+                                      "sigma_root_MPa_bonded": bond["sigma_root_MPa"],
+                                      "sigma_root_MPa_upper_end": upper["sigma_root_MPa"],
                                       "upper_end_is": ("Ti-bore stop — the polymer wall fully yielded" if upper["contacts"]
                                                        else "free cantilever — the drag cannot reach the Ti bore"),
                                       "contacts_bonded": bond["contacts"]}
                 drag.append({"geometry": geo.label, "branch": r["branch"], "play": play_label,
-                             "radial_play_um": round(play * 1000.0, 2),
+                             "radial_play_um": play * 1000.0,
                              "touchdown_drag_N": round(touchdown, 4), "rigid_wall_sigma_MPa_closed_form": round(rigid_closed, 2),
                              "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by "
                                                   "3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end "
@@ -201,7 +201,7 @@ def main() -> int:
                 exact[e_um] = res["sigma_root_MPa"]
                 if e_um / 1000.0 <= play:
                     assert not res["contacts"] and res["sigma_root_MPa"] < 1e-6, "an offset inside the play bent the rod"
-                per_e.append({"offset_um": e_um, "sigma_root_MPa": round(res["sigma_root_MPa"], 1), "contacts": res["contacts"]})
+                per_e.append({"offset_um": e_um, "sigma_root_MPa": res["sigma_root_MPa"], "contacts": res["contacts"]})
             past = [e for e in OFFSETS_UM if e / 1000.0 > play]
             # CONTROL on the MOUTH station: bare member, first offset past the play, mouth the only contact
             first = solve(geo, liner, play, offset_mm=past[0] / 1000.0, bonded=False, block="offset", tag=f"{play_label}/{past[0]} µm/bare")
@@ -209,7 +209,7 @@ def main() -> int:
                 closed = 3.0 * e_ti * c * ((past[0] / 1000.0 - play) * MM_M) / (geo.gap_mm * MM_M) ** 2 / 1e6
                 assert abs(first["sigma_root_MPa"] - closed) <= 0.005 * closed, "mouth-contact closed form fails"
             secant = (exact[past[-1]] - exact[past[0]]) / (past[-1] - past[0])
-            offsets.append({"geometry": geo.label, "play": play_label, "radial_play_um": round(play * 1000.0, 2),
+            offsets.append({"geometry": geo.label, "play": play_label, "radial_play_um": play * 1000.0,
                             "by_offset": per_e, "secant_MPa_per_um": round(secant, 3),
                             "secant_between_um": [past[0], past[-1]]})
             secants.append(secant)
@@ -228,9 +228,9 @@ def main() -> int:
             mn = solve(geo, liner, zero_play, drag_N=-mu_worst * s55.F_POGO_N, offset_mm=e_um / 1000.0, block="reversing", tag=f"{e_um} µm/-drag")["clamp_moment_Nmm_signed"]
             to_mpa = MM_M * c / s55.second_moment_m4(s55.D_BUS) / 1e6
             reversing.append({"geometry": geo.label, "offset_um": e_um,
-                              "sigma_no_drag_MPa": round(abs(m0) * to_mpa, 2),
-                              "sigma_peak_under_reversing_drag_MPa": round(max(abs(mp), abs(mn)) * to_mpa, 2),
-                              "sigma_amplitude_MPa": round(abs(mp - mn) / 2.0 * to_mpa, 2)})
+                              "sigma_no_drag_MPa": abs(m0) * to_mpa,
+                              "sigma_peak_under_reversing_drag_MPa": max(abs(mp), abs(mn)) * to_mpa,
+                              "sigma_amplitude_MPa": abs(mp - mn) / 2.0 * to_mpa})
         print(f"  {geo.label[:18]:<18s} offset µm → (static / peak / amplitude MPa): "
               + " · ".join(f"{r_['offset_um']}→{r_['sigma_no_drag_MPa']:.0f}/{r_['sigma_peak_under_reversing_drag_MPa']:.1f}/{r_['sigma_amplitude_MPa']:.1f}"
                            for r_ in reversing if r_["geometry"] == geo.label))
@@ -243,7 +243,7 @@ def main() -> int:
             res = solve(geo, liner, zero_play, drag_N=mu_worst * s55.F_POGO_N,
                         pad_moment_Nm=sgn * s55.F_POGO_N * pad_e_mm * MM_M, block="pad_moment", tag=f"e {sgn * pad_e_mm:+.1f} mm")
             pad.append({"geometry": geo.label, "eccentricity_mm": sgn * pad_e_mm,
-                        "sigma_root_MPa": round(res["sigma_root_MPa"], 2)})
+                        "sigma_root_MPa": res["sigma_root_MPa"]})
 
     # ── (e) tilt of the channel axis, three pivots ────────────────────────────────────────────────────
     tilts = []
@@ -301,13 +301,16 @@ def main() -> int:
                  for g in s55_cache["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"]}
     # CONTROL across the two scripts: the same solver on the same inputs must give the same bracket ends — a
     # divergence here means the two scripts disagree on geometry, member or play, never on physics.
-    assert s55_caps == cap_zero, f"script 55 and 68 disagree on the coaxial cap: {s55_caps} vs {cap_zero}"
-    assert s55_upper == upper_zero, f"script 55 and 68 disagree on the upper end: {s55_upper} vs {upper_zero}"
+    #    68 caches raw (00_07 HW.43 «68 → 86»), 55 to 2 decimals: the comparison is at 55's precision.
+    caps_agree = s55_caps == {k: round(v, 2) for k, v in cap_zero.items()}
+    upper_agree = s55_upper == {k: round(v, 2) for k, v in upper_zero.items()}
+    assert caps_agree, f"script 55 and 68 disagree on the coaxial cap: {s55_caps} vs {cap_zero}"
+    assert upper_agree, f"script 55 and 68 disagree on the upper end: {s55_upper} vs {upper_zero}"
     pad_peak = {g.label: max(p["sigma_root_MPa"] for p in pad if p["geometry"] == g.label) for g in geos}
     amp_max = {g.label: max(r_["sigma_amplitude_MPa"] for r_ in reversing if r_["geometry"] == g.label) for g in geos}
     amp_clause = "; ".join(
         f"{g.label}: up to {amp_max[g.label]:.2f} MPa against its cap {cap_zero[g.label]:.2f}"
-        + (" (within it)" if amp_max[g.label] <= cap_zero[g.label] + 0.005 else " (ABOVE it)")
+        + (" (within it)" if amp_max[g.label] <= cap_zero[g.label] else " (ABOVE it)")
         for g in geos)
     _exceptions = [f"{b} {p['geometry']} {p['row']}" for b, rows_ in peak_summary["rows_where_the_peak_leaves_the_root"].items() for p in rows_]
     peak_clause = ("the root is the peak-moment section in every drag, offset and reversing-drag row; it leaves the root only in "
@@ -327,7 +330,7 @@ def main() -> int:
             "lock_window_source": "cem/mechanical_lock.zone1.json, formula of MechanicalLock.InsertionWindowMm "
                                   "(tools/cad) — by-value crossing, not gated here",
             "geometries": [g.__dict__ for g in geos],
-            "radial_plays_um": {label: round(p * 1000.0, 2) for label, p in plays},
+            "radial_plays_um": {label: p * 1000.0 for label, p in plays},
             "radial_play_source": "zero interference from the CEM diameters; the rest loaded from 55's cache "
                                   "interference_window.od_growth_eats_channel_play",
             "rod_dia_mm": s55.D_BUS, "E_Ti_Pa": e_ti, "E_PEEK_Pa": s55.E_PEEK_PA,
@@ -347,11 +350,11 @@ def main() -> int:
                                               "(clearance_regime.supported_column_vs_equilibrium)",
             "script55_coaxial_cap_MPa_at_worst_mu_bonded": s55_caps,
             "equilibrium_coaxial_cap_MPa_at_worst_mu_bonded": cap_zero,
-            "caps_agree": s55_caps == cap_zero,
+            "caps_agree": caps_agree,
             "coaxial_cap_bound": "LOWER end — rigid wall; see drag_coaxial[].coaxial_cap_bound",
             "script55_upper_end_MPa_at_worst_mu": s55_upper,
             "equilibrium_upper_end_MPa_at_worst_mu": upper_zero,
-            "upper_ends_agree": s55_upper == upper_zero,
+            "upper_ends_agree": upper_agree,
         },
         "summary": (
             f"Coaxial channel: under pogo drag the rod meets the wall only at the pad plane, where the tube ends flush; "

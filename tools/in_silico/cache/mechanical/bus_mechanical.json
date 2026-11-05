@@ -1305,8 +1305,8 @@
         "wire_over_nominal": -0.8752
       },
       "play_range_radial_um": [
-        21.17,
-        30.37
+        21.170664785581813,
+        30.37275318209555
       ],
       "rows": [
         {
@@ -1314,7 +1314,7 @@
           "carried_by": "bore",
           "interference_radial_um": 0.38,
           "od_growth_radial_um": 0.33,
-          "channel_radial_play_um": 25.05,
+          "channel_radial_play_um": 25.04737174209553,
           "outer_surface_still_free": true
         },
         {
@@ -1322,7 +1322,7 @@
           "carried_by": "bore",
           "interference_radial_um": 5.64,
           "od_growth_radial_um": 4.93,
-          "channel_radial_play_um": 25.7,
+          "channel_radial_play_um": 25.70338849646071,
           "outer_surface_still_free": true
         },
         {
@@ -1330,7 +1330,7 @@
           "carried_by": "bore",
           "interference_radial_um": 10.89,
           "od_growth_radial_um": 9.53,
-          "channel_radial_play_um": 26.36,
+          "channel_radial_play_um": 26.359405250825898,
           "outer_surface_still_free": true
         },
         {
@@ -1339,7 +1339,7 @@
           "interference_radial_um": 0.38,
           "wire_over_nominal_radial_um": -5.33,
           "od_growth_radial_um": 0.33,
-          "channel_radial_play_um": 30.37,
+          "channel_radial_play_um": 30.37275318209555,
           "outer_surface_still_free": true
         },
         {
@@ -1348,7 +1348,7 @@
           "interference_radial_um": 10.89,
           "wire_over_nominal_radial_um": 5.19,
           "od_growth_radial_um": 9.53,
-          "channel_radial_play_um": 21.17,
+          "channel_radial_play_um": 21.170664785581813,
           "outer_surface_still_free": true
         }
       ],

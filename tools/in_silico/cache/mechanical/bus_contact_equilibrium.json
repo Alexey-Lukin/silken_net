@@ -25,12 +25,12 @@
       }
     ],
     "radial_plays_um": {
-      "zero interference": 25.0,
-      "interference window floor": 25.05,
-      "interference window mid-window": 25.7,
-      "interference window ceiling": 26.36,
-      "interference window floor (wire carries)": 30.37,
-      "interference window ceiling (wire carries)": 21.17
+      "zero interference": 25.00000000000002,
+      "interference window floor": 25.04737174209553,
+      "interference window mid-window": 25.70338849646071,
+      "interference window ceiling": 26.359405250825898,
+      "interference window floor (wire carries)": 30.37275318209555,
+      "interference window ceiling (wire carries)": 21.170664785581813
     },
     "radial_play_source": "zero interference from the CEM diameters; the rest loaded from 55's cache interference_window.od_growth_eats_channel_play",
     "rod_dia_mm": 1.0,
@@ -51,15 +51,15 @@
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "branch": "conformal 10 µm film",
       "play": "film",
-      "radial_play_um": 165.0,
+      "radial_play_um": 165.00000000000003,
       "touchdown_drag_N": 0.0623,
       "rigid_wall_sigma_MPa_closed_form": 22.22,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 22.22,
-          "sigma_root_MPa_bonded": 22.22,
-          "sigma_root_MPa_upper_end": 23.57,
+          "sigma_root_MPa_bare": 22.224496711776585,
+          "sigma_root_MPa_bonded": 22.224496711776585,
+          "sigma_root_MPa_upper_end": 23.571435906039998,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -69,9 +69,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 22.22,
-          "sigma_root_MPa_bonded": 22.22,
-          "sigma_root_MPa_upper_end": 23.57,
+          "sigma_root_MPa_bare": 22.224496711776585,
+          "sigma_root_MPa_bonded": 22.224496711776585,
+          "sigma_root_MPa_upper_end": 23.571435906039998,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -81,9 +81,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 22.22,
-          "sigma_root_MPa_bonded": 22.22,
-          "sigma_root_MPa_upper_end": 23.57,
+          "sigma_root_MPa_bare": 22.224496711776585,
+          "sigma_root_MPa_bonded": 22.224496711776585,
+          "sigma_root_MPa_upper_end": 23.571435906039998,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -93,9 +93,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 22.22,
-          "sigma_root_MPa_bonded": 22.22,
-          "sigma_root_MPa_upper_end": 23.57,
+          "sigma_root_MPa_bare": 22.224496711776585,
+          "sigma_root_MPa_bonded": 22.224496711776585,
+          "sigma_root_MPa_upper_end": 23.571435906039998,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -110,15 +110,15 @@
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "branch": "conformal TiO2 ~5 µm",
       "play": "film",
-      "radial_play_um": 170.0,
+      "radial_play_um": 170.00000000000003,
       "touchdown_drag_N": 0.0642,
       "rigid_wall_sigma_MPa_closed_form": 22.9,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 22.9,
-          "sigma_root_MPa_bonded": 22.9,
-          "sigma_root_MPa_upper_end": 23.57,
+          "sigma_root_MPa_bare": 22.89796630878006,
+          "sigma_root_MPa_bonded": 22.89796630878006,
+          "sigma_root_MPa_upper_end": 23.571435906039998,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -128,9 +128,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 22.9,
-          "sigma_root_MPa_bonded": 22.9,
-          "sigma_root_MPa_upper_end": 23.57,
+          "sigma_root_MPa_bare": 22.89796630878006,
+          "sigma_root_MPa_bonded": 22.89796630878006,
+          "sigma_root_MPa_upper_end": 23.571435906039998,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -140,9 +140,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 22.9,
-          "sigma_root_MPa_bonded": 22.9,
-          "sigma_root_MPa_upper_end": 23.57,
+          "sigma_root_MPa_bare": 22.89796630878006,
+          "sigma_root_MPa_bonded": 22.89796630878006,
+          "sigma_root_MPa_upper_end": 23.571435906039998,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -152,9 +152,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 22.9,
-          "sigma_root_MPa_bonded": 22.9,
-          "sigma_root_MPa_upper_end": 23.57,
+          "sigma_root_MPa_bare": 22.89796630878006,
+          "sigma_root_MPa_bonded": 22.89796630878006,
+          "sigma_root_MPa_upper_end": 23.571435906039998,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -169,15 +169,15 @@
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "branch": "PEEK liner 0.15 mm",
       "play": "zero interference",
-      "radial_play_um": 25.0,
+      "radial_play_um": 25.00000000000002,
       "touchdown_drag_N": 0.0094,
       "rigid_wall_sigma_MPa_closed_form": 3.37,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 3.37,
-          "sigma_root_MPa_bonded": 3.4,
-          "sigma_root_MPa_upper_end": 23.78,
+          "sigma_root_MPa_bare": 3.36734798671475,
+          "sigma_root_MPa_bonded": 3.396557892480503,
+          "sigma_root_MPa_upper_end": 23.775905247137743,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -187,9 +187,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 3.37,
-          "sigma_root_MPa_bonded": 3.4,
-          "sigma_root_MPa_upper_end": 23.78,
+          "sigma_root_MPa_bare": 3.36734798671475,
+          "sigma_root_MPa_bonded": 3.396557892480503,
+          "sigma_root_MPa_upper_end": 23.775905247137743,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -199,9 +199,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 3.37,
-          "sigma_root_MPa_bonded": 3.4,
-          "sigma_root_MPa_upper_end": 23.78,
+          "sigma_root_MPa_bare": 3.36734798671475,
+          "sigma_root_MPa_bonded": 3.396557892480503,
+          "sigma_root_MPa_upper_end": 23.775905247137743,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -211,9 +211,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 3.37,
-          "sigma_root_MPa_bonded": 3.4,
-          "sigma_root_MPa_upper_end": 23.78,
+          "sigma_root_MPa_bare": 3.36734798671475,
+          "sigma_root_MPa_bonded": 3.396557892480503,
+          "sigma_root_MPa_upper_end": 23.775905247137743,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -228,15 +228,15 @@
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window floor",
-      "radial_play_um": 25.05,
+      "radial_play_um": 25.04737174209553,
       "touchdown_drag_N": 0.0095,
       "rigid_wall_sigma_MPa_closed_form": 3.37,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 3.37,
-          "sigma_root_MPa_bonded": 3.4,
-          "sigma_root_MPa_upper_end": 23.78,
+          "sigma_root_MPa_bare": 3.3737286723419024,
+          "sigma_root_MPa_bonded": 3.402993927008122,
+          "sigma_root_MPa_upper_end": 23.782341282488133,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -246,9 +246,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 3.37,
-          "sigma_root_MPa_bonded": 3.4,
-          "sigma_root_MPa_upper_end": 23.78,
+          "sigma_root_MPa_bare": 3.3737286723419024,
+          "sigma_root_MPa_bonded": 3.402993927008122,
+          "sigma_root_MPa_upper_end": 23.782341282488133,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -258,9 +258,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 3.37,
-          "sigma_root_MPa_bonded": 3.4,
-          "sigma_root_MPa_upper_end": 23.78,
+          "sigma_root_MPa_bare": 3.3737286723419024,
+          "sigma_root_MPa_bonded": 3.402993927008122,
+          "sigma_root_MPa_upper_end": 23.782341282488133,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -270,9 +270,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 3.37,
-          "sigma_root_MPa_bonded": 3.4,
-          "sigma_root_MPa_upper_end": 23.78,
+          "sigma_root_MPa_bare": 3.3737286723419024,
+          "sigma_root_MPa_bonded": 3.402993927008122,
+          "sigma_root_MPa_upper_end": 23.782341282488133,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -287,15 +287,15 @@
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window mid-window",
-      "radial_play_um": 25.7,
+      "radial_play_um": 25.70338849646071,
       "touchdown_drag_N": 0.0097,
       "rigid_wall_sigma_MPa_closed_form": 3.46,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 3.46,
-          "sigma_root_MPa_bonded": 3.49,
-          "sigma_root_MPa_upper_end": 23.87,
+          "sigma_root_MPa_bare": 3.4620901399475956,
+          "sigma_root_MPa_bonded": 3.4921218824285933,
+          "sigma_root_MPa_upper_end": 23.871469236293176,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -305,9 +305,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 3.46,
-          "sigma_root_MPa_bonded": 3.49,
-          "sigma_root_MPa_upper_end": 23.87,
+          "sigma_root_MPa_bare": 3.4620901399475956,
+          "sigma_root_MPa_bonded": 3.4921218824285933,
+          "sigma_root_MPa_upper_end": 23.871469236293176,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -317,9 +317,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 3.46,
-          "sigma_root_MPa_bonded": 3.49,
-          "sigma_root_MPa_upper_end": 23.87,
+          "sigma_root_MPa_bare": 3.4620901399475956,
+          "sigma_root_MPa_bonded": 3.4921218824285933,
+          "sigma_root_MPa_upper_end": 23.871469236293176,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -329,9 +329,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 3.46,
-          "sigma_root_MPa_bonded": 3.49,
-          "sigma_root_MPa_upper_end": 23.87,
+          "sigma_root_MPa_bare": 3.4620901399475956,
+          "sigma_root_MPa_bonded": 3.4921218824285933,
+          "sigma_root_MPa_upper_end": 23.871469236293176,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -346,15 +346,15 @@
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window ceiling",
-      "radial_play_um": 26.36,
+      "radial_play_um": 26.359405250825898,
       "touchdown_drag_N": 0.01,
       "rigid_wall_sigma_MPa_closed_form": 3.55,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 3.55,
-          "sigma_root_MPa_bonded": 3.58,
-          "sigma_root_MPa_upper_end": 23.96,
+          "sigma_root_MPa_bare": 3.5504516080247184,
+          "sigma_root_MPa_bonded": 3.5812498378815536,
+          "sigma_root_MPa_upper_end": 23.9605971923261,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -364,9 +364,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 3.55,
-          "sigma_root_MPa_bonded": 3.58,
-          "sigma_root_MPa_upper_end": 23.96,
+          "sigma_root_MPa_bare": 3.5504516080247184,
+          "sigma_root_MPa_bonded": 3.5812498378815536,
+          "sigma_root_MPa_upper_end": 23.9605971923261,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -376,9 +376,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 3.55,
-          "sigma_root_MPa_bonded": 3.58,
-          "sigma_root_MPa_upper_end": 23.96,
+          "sigma_root_MPa_bare": 3.5504516080247184,
+          "sigma_root_MPa_bonded": 3.5812498378815536,
+          "sigma_root_MPa_upper_end": 23.9605971923261,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -388,9 +388,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 3.55,
-          "sigma_root_MPa_bonded": 3.58,
-          "sigma_root_MPa_upper_end": 23.96,
+          "sigma_root_MPa_bare": 3.5504516080247184,
+          "sigma_root_MPa_bonded": 3.5812498378815536,
+          "sigma_root_MPa_upper_end": 23.9605971923261,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -405,15 +405,15 @@
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window floor (wire carries)",
-      "radial_play_um": 30.37,
+      "radial_play_um": 30.37275318209555,
       "touchdown_drag_N": 0.0115,
       "rigid_wall_sigma_MPa_closed_form": 4.09,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 4.09,
-          "sigma_root_MPa_bonded": 4.13,
-          "sigma_root_MPa_upper_end": 24.51,
+          "sigma_root_MPa_bare": 4.09102517118362,
+          "sigma_root_MPa_bonded": 4.126512581592895,
+          "sigma_root_MPa_upper_end": 24.505859936773177,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -423,9 +423,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 4.09,
-          "sigma_root_MPa_bonded": 4.13,
-          "sigma_root_MPa_upper_end": 24.51,
+          "sigma_root_MPa_bare": 4.09102517118362,
+          "sigma_root_MPa_bonded": 4.126512581592895,
+          "sigma_root_MPa_upper_end": 24.505859936773177,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -435,9 +435,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 4.09,
-          "sigma_root_MPa_bonded": 4.13,
-          "sigma_root_MPa_upper_end": 24.51,
+          "sigma_root_MPa_bare": 4.09102517118362,
+          "sigma_root_MPa_bonded": 4.126512581592895,
+          "sigma_root_MPa_upper_end": 24.505859936773177,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -447,9 +447,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 4.09,
-          "sigma_root_MPa_bonded": 4.13,
-          "sigma_root_MPa_upper_end": 24.51,
+          "sigma_root_MPa_bare": 4.09102517118362,
+          "sigma_root_MPa_bonded": 4.126512581592895,
+          "sigma_root_MPa_upper_end": 24.505859936773177,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -464,15 +464,15 @@
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window ceiling (wire carries)",
-      "radial_play_um": 21.17,
+      "radial_play_um": 21.170664785581813,
       "touchdown_drag_N": 0.008,
       "rigid_wall_sigma_MPa_closed_form": 2.85,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.85,
-          "sigma_root_MPa_bonded": 2.88,
-          "sigma_root_MPa_upper_end": 23.26,
+          "sigma_root_MPa_bare": 2.851559817655892,
+          "sigma_root_MPa_bonded": 2.8762955427190717,
+          "sigma_root_MPa_upper_end": 23.255642897456173,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -482,9 +482,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.85,
-          "sigma_root_MPa_bonded": 2.88,
-          "sigma_root_MPa_upper_end": 23.26,
+          "sigma_root_MPa_bare": 2.851559817655892,
+          "sigma_root_MPa_bonded": 2.8762955427190717,
+          "sigma_root_MPa_upper_end": 23.255642897456173,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -494,9 +494,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.85,
-          "sigma_root_MPa_bonded": 2.88,
-          "sigma_root_MPa_upper_end": 23.26,
+          "sigma_root_MPa_bare": 2.851559817655892,
+          "sigma_root_MPa_bonded": 2.8762955427190717,
+          "sigma_root_MPa_upper_end": 23.255642897456173,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -506,9 +506,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.85,
-          "sigma_root_MPa_bonded": 2.88,
-          "sigma_root_MPa_upper_end": 23.26,
+          "sigma_root_MPa_bare": 2.851559817655892,
+          "sigma_root_MPa_bonded": 2.8762955427190717,
+          "sigma_root_MPa_upper_end": 23.255642897456173,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -523,15 +523,15 @@
       "geometry": "lock window, shallow end",
       "branch": "conformal 10 µm film",
       "play": "film",
-      "radial_play_um": 165.0,
+      "radial_play_um": 165.00000000000003,
       "touchdown_drag_N": 0.0451,
       "rigid_wall_sigma_MPa_closed_form": 17.9,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 17.9,
-          "sigma_root_MPa_bonded": 17.9,
-          "sigma_root_MPa_upper_end": 18.98,
+          "sigma_root_MPa_bare": 17.899415734719717,
+          "sigma_root_MPa_bonded": 17.899415734719717,
+          "sigma_root_MPa_upper_end": 18.984228809161582,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -541,9 +541,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 17.9,
-          "sigma_root_MPa_bonded": 17.9,
-          "sigma_root_MPa_upper_end": 18.98,
+          "sigma_root_MPa_bare": 17.899415734719717,
+          "sigma_root_MPa_bonded": 17.899415734719717,
+          "sigma_root_MPa_upper_end": 18.984228809161582,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -553,9 +553,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 17.9,
-          "sigma_root_MPa_bonded": 17.9,
-          "sigma_root_MPa_upper_end": 18.98,
+          "sigma_root_MPa_bare": 17.899415734719717,
+          "sigma_root_MPa_bonded": 17.899415734719717,
+          "sigma_root_MPa_upper_end": 18.984228809161582,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -565,9 +565,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 17.9,
-          "sigma_root_MPa_bonded": 17.9,
-          "sigma_root_MPa_upper_end": 18.98,
+          "sigma_root_MPa_bare": 17.899415734719717,
+          "sigma_root_MPa_bonded": 17.899415734719717,
+          "sigma_root_MPa_upper_end": 18.984228809161582,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -582,15 +582,15 @@
       "geometry": "lock window, shallow end",
       "branch": "conformal TiO2 ~5 µm",
       "play": "film",
-      "radial_play_um": 170.0,
+      "radial_play_um": 170.00000000000003,
       "touchdown_drag_N": 0.0464,
       "rigid_wall_sigma_MPa_closed_form": 18.44,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 18.44,
-          "sigma_root_MPa_bonded": 18.44,
-          "sigma_root_MPa_upper_end": 18.98,
+          "sigma_root_MPa_bare": 18.44182227181247,
+          "sigma_root_MPa_bonded": 18.44182227181247,
+          "sigma_root_MPa_upper_end": 18.984228809161582,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -600,9 +600,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 18.44,
-          "sigma_root_MPa_bonded": 18.44,
-          "sigma_root_MPa_upper_end": 18.98,
+          "sigma_root_MPa_bare": 18.44182227181247,
+          "sigma_root_MPa_bonded": 18.44182227181247,
+          "sigma_root_MPa_upper_end": 18.984228809161582,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -612,9 +612,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 18.44,
-          "sigma_root_MPa_bonded": 18.44,
-          "sigma_root_MPa_upper_end": 18.98,
+          "sigma_root_MPa_bare": 18.44182227181247,
+          "sigma_root_MPa_bonded": 18.44182227181247,
+          "sigma_root_MPa_upper_end": 18.984228809161582,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -624,9 +624,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 18.44,
-          "sigma_root_MPa_bonded": 18.44,
-          "sigma_root_MPa_upper_end": 18.98,
+          "sigma_root_MPa_bare": 18.44182227181247,
+          "sigma_root_MPa_bonded": 18.44182227181247,
+          "sigma_root_MPa_upper_end": 18.984228809161582,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -641,15 +641,15 @@
       "geometry": "lock window, shallow end",
       "branch": "PEEK liner 0.15 mm",
       "play": "zero interference",
-      "radial_play_um": 25.0,
+      "radial_play_um": 25.00000000000002,
       "touchdown_drag_N": 0.0068,
       "rigid_wall_sigma_MPa_closed_form": 2.71,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.71,
-          "sigma_root_MPa_bonded": 2.73,
-          "sigma_root_MPa_upper_end": 19.1,
+          "sigma_root_MPa_bare": 2.7120326871606903,
+          "sigma_root_MPa_bonded": 2.728995320651037,
+          "sigma_root_MPa_upper_end": 19.102967244331026,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -659,9 +659,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.71,
-          "sigma_root_MPa_bonded": 2.73,
-          "sigma_root_MPa_upper_end": 19.1,
+          "sigma_root_MPa_bare": 2.7120326871606903,
+          "sigma_root_MPa_bonded": 2.728995320651037,
+          "sigma_root_MPa_upper_end": 19.102967244331026,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -671,9 +671,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.71,
-          "sigma_root_MPa_bonded": 2.73,
-          "sigma_root_MPa_upper_end": 19.1,
+          "sigma_root_MPa_bare": 2.7120326871606903,
+          "sigma_root_MPa_bonded": 2.728995320651037,
+          "sigma_root_MPa_upper_end": 19.102967244331026,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -683,9 +683,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.71,
-          "sigma_root_MPa_bonded": 2.73,
-          "sigma_root_MPa_upper_end": 19.1,
+          "sigma_root_MPa_bare": 2.7120326871606903,
+          "sigma_root_MPa_bonded": 2.728995320651037,
+          "sigma_root_MPa_upper_end": 19.102967244331026,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -700,15 +700,15 @@
       "geometry": "lock window, shallow end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window floor",
-      "radial_play_um": 25.05,
+      "radial_play_um": 25.04737174209553,
       "touchdown_drag_N": 0.0068,
       "rigid_wall_sigma_MPa_closed_form": 2.72,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.72,
-          "sigma_root_MPa_bonded": 2.73,
-          "sigma_root_MPa_upper_end": 19.11,
+          "sigma_root_MPa_bare": 2.717171635693361,
+          "sigma_root_MPa_bonded": 2.7341664110990576,
+          "sigma_root_MPa_upper_end": 19.108138335603872,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -718,9 +718,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.72,
-          "sigma_root_MPa_bonded": 2.73,
-          "sigma_root_MPa_upper_end": 19.11,
+          "sigma_root_MPa_bare": 2.717171635693361,
+          "sigma_root_MPa_bonded": 2.7341664110990576,
+          "sigma_root_MPa_upper_end": 19.108138335603872,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -730,9 +730,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.72,
-          "sigma_root_MPa_bonded": 2.73,
-          "sigma_root_MPa_upper_end": 19.11,
+          "sigma_root_MPa_bare": 2.717171635693361,
+          "sigma_root_MPa_bonded": 2.7341664110990576,
+          "sigma_root_MPa_upper_end": 19.108138335603872,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -742,9 +742,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.72,
-          "sigma_root_MPa_bonded": 2.73,
-          "sigma_root_MPa_upper_end": 19.11,
+          "sigma_root_MPa_bare": 2.717171635693361,
+          "sigma_root_MPa_bonded": 2.7341664110990576,
+          "sigma_root_MPa_upper_end": 19.108138335603872,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -759,15 +759,15 @@
       "geometry": "lock window, shallow end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window mid-window",
-      "radial_play_um": 25.7,
+      "radial_play_um": 25.70338849646071,
       "touchdown_drag_N": 0.007,
       "rigid_wall_sigma_MPa_closed_form": 2.79,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.79,
-          "sigma_root_MPa_bonded": 2.81,
-          "sigma_root_MPa_upper_end": 19.18,
+          "sigma_root_MPa_bare": 2.788337190663128,
+          "sigma_root_MPa_bonded": 2.8057770772513595,
+          "sigma_root_MPa_upper_end": 19.17974900013629,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -777,9 +777,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.79,
-          "sigma_root_MPa_bonded": 2.81,
-          "sigma_root_MPa_upper_end": 19.18,
+          "sigma_root_MPa_bare": 2.788337190663128,
+          "sigma_root_MPa_bonded": 2.8057770772513595,
+          "sigma_root_MPa_upper_end": 19.17974900013629,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -789,9 +789,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.79,
-          "sigma_root_MPa_bonded": 2.81,
-          "sigma_root_MPa_upper_end": 19.18,
+          "sigma_root_MPa_bare": 2.788337190663128,
+          "sigma_root_MPa_bonded": 2.8057770772513595,
+          "sigma_root_MPa_upper_end": 19.17974900013629,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -801,9 +801,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.79,
-          "sigma_root_MPa_bonded": 2.81,
-          "sigma_root_MPa_upper_end": 19.18,
+          "sigma_root_MPa_bare": 2.788337190663128,
+          "sigma_root_MPa_bonded": 2.8057770772513595,
+          "sigma_root_MPa_upper_end": 19.17974900013629,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -818,15 +818,15 @@
       "geometry": "lock window, shallow end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window ceiling",
-      "radial_play_um": 26.36,
+      "radial_play_um": 26.359405250825898,
       "touchdown_drag_N": 0.0072,
       "rigid_wall_sigma_MPa_closed_form": 2.86,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.86,
-          "sigma_root_MPa_bonded": 2.88,
-          "sigma_root_MPa_upper_end": 19.25,
+          "sigma_root_MPa_bare": 2.859502746104235,
+          "sigma_root_MPa_bonded": 2.877387743436203,
+          "sigma_root_MPa_upper_end": 19.25135966690262,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -836,9 +836,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.86,
-          "sigma_root_MPa_bonded": 2.88,
-          "sigma_root_MPa_upper_end": 19.25,
+          "sigma_root_MPa_bare": 2.859502746104235,
+          "sigma_root_MPa_bonded": 2.877387743436203,
+          "sigma_root_MPa_upper_end": 19.25135966690262,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -848,9 +848,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.86,
-          "sigma_root_MPa_bonded": 2.88,
-          "sigma_root_MPa_upper_end": 19.25,
+          "sigma_root_MPa_bare": 2.859502746104235,
+          "sigma_root_MPa_bonded": 2.877387743436203,
+          "sigma_root_MPa_upper_end": 19.25135966690262,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -860,9 +860,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.86,
-          "sigma_root_MPa_bonded": 2.88,
-          "sigma_root_MPa_upper_end": 19.25,
+          "sigma_root_MPa_bare": 2.859502746104235,
+          "sigma_root_MPa_bonded": 2.877387743436203,
+          "sigma_root_MPa_upper_end": 19.25135966690262,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -877,15 +877,15 @@
       "geometry": "lock window, shallow end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window floor (wire carries)",
-      "radial_play_um": 30.37,
+      "radial_play_um": 30.37275318209555,
       "touchdown_drag_N": 0.0083,
       "rigid_wall_sigma_MPa_closed_form": 3.29,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 3.29,
-          "sigma_root_MPa_bonded": 3.32,
-          "sigma_root_MPa_upper_end": 19.69,
+          "sigma_root_MPa_bare": 3.294875977191372,
+          "sigma_root_MPa_bonded": 3.315484052481954,
+          "sigma_root_MPa_upper_end": 19.689455976686006,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -895,9 +895,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 3.29,
-          "sigma_root_MPa_bonded": 3.32,
-          "sigma_root_MPa_upper_end": 19.69,
+          "sigma_root_MPa_bare": 3.294875977191372,
+          "sigma_root_MPa_bonded": 3.315484052481954,
+          "sigma_root_MPa_upper_end": 19.689455976686006,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -907,9 +907,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 3.29,
-          "sigma_root_MPa_bonded": 3.32,
-          "sigma_root_MPa_upper_end": 19.69,
+          "sigma_root_MPa_bare": 3.294875977191372,
+          "sigma_root_MPa_bonded": 3.315484052481954,
+          "sigma_root_MPa_upper_end": 19.689455976686006,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -919,9 +919,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 3.29,
-          "sigma_root_MPa_bonded": 3.32,
-          "sigma_root_MPa_upper_end": 19.69,
+          "sigma_root_MPa_bare": 3.294875977191372,
+          "sigma_root_MPa_bonded": 3.315484052481954,
+          "sigma_root_MPa_upper_end": 19.689455976686006,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -936,15 +936,15 @@
       "geometry": "lock window, shallow end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window ceiling (wire carries)",
-      "radial_play_um": 21.17,
+      "radial_play_um": 21.170664785581813,
       "touchdown_drag_N": 0.0058,
       "rigid_wall_sigma_MPa_closed_form": 2.3,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.3,
-          "sigma_root_MPa_bonded": 2.31,
-          "sigma_root_MPa_upper_end": 18.68,
+          "sigma_root_MPa_bare": 2.296621396227041,
+          "sigma_root_MPa_bonded": 2.3109858054551298,
+          "sigma_root_MPa_upper_end": 18.684957729214716,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -954,9 +954,9 @@
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.3,
-          "sigma_root_MPa_bonded": 2.31,
-          "sigma_root_MPa_upper_end": 18.68,
+          "sigma_root_MPa_bare": 2.296621396227041,
+          "sigma_root_MPa_bonded": 2.3109858054551298,
+          "sigma_root_MPa_upper_end": 18.684957729214716,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -966,9 +966,9 @@
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.3,
-          "sigma_root_MPa_bonded": 2.31,
-          "sigma_root_MPa_upper_end": 18.68,
+          "sigma_root_MPa_bare": 2.296621396227041,
+          "sigma_root_MPa_bonded": 2.3109858054551298,
+          "sigma_root_MPa_upper_end": 18.684957729214716,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -978,9 +978,9 @@
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.3,
-          "sigma_root_MPa_bonded": 2.31,
-          "sigma_root_MPa_upper_end": 18.68,
+          "sigma_root_MPa_bare": 2.296621396227041,
+          "sigma_root_MPa_bonded": 2.3109858054551298,
+          "sigma_root_MPa_upper_end": 18.684957729214716,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
@@ -996,7 +996,7 @@
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "play": "zero interference",
-      "radial_play_um": 25.0,
+      "radial_play_um": 25.00000000000002,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1025,7 +1025,7 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 2.5,
+          "sigma_root_MPa": 2.5463242342792705,
           "contacts": [
             {
               "force_N": 0.0139,
@@ -1035,7 +1035,7 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 7.6,
+          "sigma_root_MPa": 7.638972702862336,
           "contacts": [
             {
               "force_N": 0.0417,
@@ -1045,7 +1045,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 12.7,
+          "sigma_root_MPa": 12.731621171414623,
           "contacts": [
             {
               "force_N": 0.0694,
@@ -1055,7 +1055,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 28.9,
+          "sigma_root_MPa": 28.91557742206011,
           "contacts": [
             {
               "force_N": 0.2353,
@@ -1069,7 +1069,7 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 47.5,
+          "sigma_root_MPa": 47.518768732564524,
           "contacts": [
             {
               "force_N": 0.4687,
@@ -1091,7 +1091,7 @@
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "play": "interference window floor",
-      "radial_play_um": 25.05,
+      "radial_play_um": 25.04737174209553,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1120,17 +1120,17 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 2.5,
+          "sigma_root_MPa": 2.5221994713008287,
           "contacts": [
             {
-              "force_N": 0.0137,
+              "force_N": 0.0138,
               "station_mm": 18.0
             }
           ]
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 7.6,
+          "sigma_root_MPa": 7.614847939885385,
           "contacts": [
             {
               "force_N": 0.0415,
@@ -1140,7 +1140,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 12.7,
+          "sigma_root_MPa": 12.707496408496304,
           "contacts": [
             {
               "force_N": 0.0693,
@@ -1150,7 +1150,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 28.9,
+          "sigma_root_MPa": 28.864616803757954,
           "contacts": [
             {
               "force_N": 0.2344,
@@ -1164,7 +1164,7 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 47.5,
+          "sigma_root_MPa": 47.467808114009536,
           "contacts": [
             {
               "force_N": 0.4678,
@@ -1186,7 +1186,7 @@
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "play": "interference window mid-window",
-      "radial_play_um": 25.7,
+      "radial_play_um": 25.70338849646071,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1215,7 +1215,7 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 2.2,
+          "sigma_root_MPa": 2.188113199344926,
           "contacts": [
             {
               "force_N": 0.0119,
@@ -1225,7 +1225,7 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 7.3,
+          "sigma_root_MPa": 7.2807616679404505,
           "contacts": [
             {
               "force_N": 0.0397,
@@ -1235,7 +1235,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 12.4,
+          "sigma_root_MPa": 12.373410136445202,
           "contacts": [
             {
               "force_N": 0.0675,
@@ -1245,10 +1245,10 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 28.2,
+          "sigma_root_MPa": 28.158900311593676,
           "contacts": [
             {
-              "force_N": 0.2223,
+              "force_N": 0.2222,
               "station_mm": 18.0
             },
             {
@@ -1259,14 +1259,14 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 46.8,
+          "sigma_root_MPa": 46.76209162188717,
           "contacts": [
             {
-              "force_N": 0.4557,
+              "force_N": 0.4556,
               "station_mm": 18.0
             },
             {
-              "force_N": -0.1032,
+              "force_N": -0.1031,
               "station_mm": 35.0
             }
           ]
@@ -1281,7 +1281,7 @@
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "play": "interference window ceiling",
-      "radial_play_um": 26.36,
+      "radial_play_um": 26.359405250825898,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1310,7 +1310,7 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 1.9,
+          "sigma_root_MPa": 1.8540269274101309,
           "contacts": [
             {
               "force_N": 0.0101,
@@ -1320,7 +1320,7 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 6.9,
+          "sigma_root_MPa": 6.946675395989033,
           "contacts": [
             {
               "force_N": 0.0379,
@@ -1330,7 +1330,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 12.0,
+          "sigma_root_MPa": 12.039323864527352,
           "contacts": [
             {
               "force_N": 0.0657,
@@ -1340,7 +1340,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 27.5,
+          "sigma_root_MPa": 27.453183819533887,
           "contacts": [
             {
               "force_N": 0.21,
@@ -1354,14 +1354,14 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 46.1,
+          "sigma_root_MPa": 46.05637512973291,
           "contacts": [
             {
               "force_N": 0.4434,
               "station_mm": 18.0
             },
             {
-              "force_N": -0.0988,
+              "force_N": -0.0989,
               "station_mm": 35.0
             }
           ]
@@ -1376,7 +1376,7 @@
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "play": "interference window floor (wire carries)",
-      "radial_play_um": 30.37,
+      "radial_play_um": 30.37275318209555,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1410,7 +1410,7 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 4.9,
+          "sigma_root_MPa": 4.902818376363412,
           "contacts": [
             {
               "force_N": 0.0267,
@@ -1420,7 +1420,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 10.0,
+          "sigma_root_MPa": 9.99546684497358,
           "contacts": [
             {
               "force_N": 0.0545,
@@ -1430,7 +1430,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 23.1,
+          "sigma_root_MPa": 23.135785209253193,
           "contacts": [
             {
               "force_N": 0.1354,
@@ -1444,7 +1444,7 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 41.7,
+          "sigma_root_MPa": 41.73897651969332,
           "contacts": [
             {
               "force_N": 0.3688,
@@ -1466,7 +1466,7 @@
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "play": "interference window ceiling (wire carries)",
-      "radial_play_um": 21.17,
+      "radial_play_um": 21.170664785581813,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1490,7 +1490,7 @@
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 2.0,
+          "sigma_root_MPa": 1.950145811532821,
           "contacts": [
             {
               "force_N": 0.0106,
@@ -1500,7 +1500,7 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 4.5,
+          "sigma_root_MPa": 4.496470045824492,
           "contacts": [
             {
               "force_N": 0.0245,
@@ -1510,7 +1510,7 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 9.6,
+          "sigma_root_MPa": 9.589118514408046,
           "contacts": [
             {
               "force_N": 0.0523,
@@ -1520,7 +1520,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 14.7,
+          "sigma_root_MPa": 14.681766982859237,
           "contacts": [
             {
               "force_N": 0.0801,
@@ -1530,7 +1530,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 33.0,
+          "sigma_root_MPa": 33.0350225377697,
           "contacts": [
             {
               "force_N": 0.3065,
@@ -1544,7 +1544,7 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 51.6,
+          "sigma_root_MPa": 51.63821384796403,
           "contacts": [
             {
               "force_N": 0.5399,
@@ -1566,7 +1566,7 @@
     {
       "geometry": "lock window, shallow end",
       "play": "zero interference",
-      "radial_play_um": 25.0,
+      "radial_play_um": 25.00000000000002,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1595,7 +1595,7 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 1.7,
+          "sigma_root_MPa": 1.704555667093913,
           "contacts": [
             {
               "force_N": 0.0076,
@@ -1605,7 +1605,7 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 5.1,
+          "sigma_root_MPa": 5.113667001253208,
           "contacts": [
             {
               "force_N": 0.0228,
@@ -1615,7 +1615,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 8.5,
+          "sigma_root_MPa": 8.522778335486308,
           "contacts": [
             {
               "force_N": 0.038,
@@ -1625,7 +1625,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 18.2,
+          "sigma_root_MPa": 18.241082672340408,
           "contacts": [
             {
               "force_N": 0.1059,
@@ -1639,7 +1639,7 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 31.1,
+          "sigma_root_MPa": 31.12240855554104,
           "contacts": [
             {
               "force_N": 0.2526,
@@ -1661,7 +1661,7 @@
     {
       "geometry": "lock window, shallow end",
       "play": "interference window floor",
-      "radial_play_um": 25.05,
+      "radial_play_um": 25.04737174209553,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1690,7 +1690,7 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 1.7,
+          "sigma_root_MPa": 1.6884061127974874,
           "contacts": [
             {
               "force_N": 0.0075,
@@ -1700,7 +1700,7 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 5.1,
+          "sigma_root_MPa": 5.097517446985368,
           "contacts": [
             {
               "force_N": 0.0227,
@@ -1710,7 +1710,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 8.5,
+          "sigma_root_MPa": 8.506628781221652,
           "contacts": [
             {
               "force_N": 0.038,
@@ -1720,21 +1720,21 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 18.2,
+          "sigma_root_MPa": 18.202421845323308,
           "contacts": [
             {
-              "force_N": 0.1052,
+              "force_N": 0.1053,
               "station_mm": 22.0
             },
             {
-              "force_N": -0.0135,
+              "force_N": -0.0136,
               "station_mm": 39.0
             }
           ]
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 31.1,
+          "sigma_root_MPa": 31.083747728316716,
           "contacts": [
             {
               "force_N": 0.252,
@@ -1756,7 +1756,7 @@
     {
       "geometry": "lock window, shallow end",
       "play": "interference window mid-window",
-      "radial_play_um": 25.7,
+      "radial_play_um": 25.70338849646071,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1785,7 +1785,7 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 1.5,
+          "sigma_root_MPa": 1.464762697530778,
           "contacts": [
             {
               "force_N": 0.0065,
@@ -1795,17 +1795,17 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 4.9,
+          "sigma_root_MPa": 4.873874031734992,
           "contacts": [
             {
-              "force_N": 0.0218,
+              "force_N": 0.0217,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 8.3,
+          "sigma_root_MPa": 8.282985365974994,
           "contacts": [
             {
               "force_N": 0.037,
@@ -1815,7 +1815,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 17.7,
+          "sigma_root_MPa": 17.667036207528508,
           "contacts": [
             {
               "force_N": 0.0965,
@@ -1829,10 +1829,10 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 30.6,
+          "sigma_root_MPa": 30.54836209050375,
           "contacts": [
             {
-              "force_N": 0.2433,
+              "force_N": 0.2432,
               "station_mm": 22.0
             },
             {
@@ -1842,7 +1842,7 @@
           ]
         }
       ],
-      "secant_MPa_per_um": 0.416,
+      "secant_MPa_per_um": 0.415,
       "secant_between_um": [
         30,
         100
@@ -1851,7 +1851,7 @@
     {
       "geometry": "lock window, shallow end",
       "play": "interference window ceiling",
-      "radial_play_um": 26.36,
+      "radial_play_um": 26.359405250825898,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1880,7 +1880,7 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 1.2,
+          "sigma_root_MPa": 1.2411192822482306,
           "contacts": [
             {
               "force_N": 0.0055,
@@ -1890,7 +1890,7 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 4.7,
+          "sigma_root_MPa": 4.650230616449978,
           "contacts": [
             {
               "force_N": 0.0208,
@@ -1900,7 +1900,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 8.1,
+          "sigma_root_MPa": 8.059341950587433,
           "contacts": [
             {
               "force_N": 0.036,
@@ -1910,7 +1910,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 17.1,
+          "sigma_root_MPa": 17.1316505698035,
           "contacts": [
             {
               "force_N": 0.0877,
@@ -1924,7 +1924,7 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 30.0,
+          "sigma_root_MPa": 30.012976452729664,
           "contacts": [
             {
               "force_N": 0.2345,
@@ -1946,7 +1946,7 @@
     {
       "geometry": "lock window, shallow end",
       "play": "interference window floor (wire carries)",
-      "radial_play_um": 30.37,
+      "radial_play_um": 30.37275318209555,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1980,17 +1980,17 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 3.3,
+          "sigma_root_MPa": 3.2820356243934388,
           "contacts": [
             {
-              "force_N": 0.0147,
+              "force_N": 0.0146,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 6.7,
+          "sigma_root_MPa": 6.691146958580581,
           "contacts": [
             {
               "force_N": 0.0299,
@@ -2000,7 +2000,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 15.2,
+          "sigma_root_MPa": 15.213925294077072,
           "contacts": [
             {
               "force_N": 0.0679,
@@ -2010,7 +2010,7 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 26.7,
+          "sigma_root_MPa": 26.737619798634423,
           "contacts": [
             {
               "force_N": 0.1808,
@@ -2032,7 +2032,7 @@
     {
       "geometry": "lock window, shallow end",
       "play": "interference window ceiling (wire carries)",
-      "radial_play_um": 21.17,
+      "radial_play_um": 21.170664785581813,
       "by_offset": [
         {
           "offset_um": 0,
@@ -2056,7 +2056,7 @@
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 1.3,
+          "sigma_root_MPa": 1.3054630081963594,
           "contacts": [
             {
               "force_N": 0.0058,
@@ -2066,7 +2066,7 @@
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 3.0,
+          "sigma_root_MPa": 3.0100186752747216,
           "contacts": [
             {
               "force_N": 0.0134,
@@ -2076,7 +2076,7 @@
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 6.4,
+          "sigma_root_MPa": 6.419130009444309,
           "contacts": [
             {
               "force_N": 0.0286,
@@ -2086,7 +2086,7 @@
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 9.8,
+          "sigma_root_MPa": 9.828241343655769,
           "contacts": [
             {
               "force_N": 0.0439,
@@ -2096,7 +2096,7 @@
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 21.4,
+          "sigma_root_MPa": 21.36626364068942,
           "contacts": [
             {
               "force_N": 0.1571,
@@ -2110,7 +2110,7 @@
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 34.2,
+          "sigma_root_MPa": 34.247589523592985,
           "contacts": [
             {
               "force_N": 0.3039,
@@ -2135,93 +2135,93 @@
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "offset_um": 0,
       "sigma_no_drag_MPa": 0.0,
-      "sigma_peak_under_reversing_drag_MPa": 3.4,
-      "sigma_amplitude_MPa": 3.4
+      "sigma_peak_under_reversing_drag_MPa": 3.3965578924805024,
+      "sigma_amplitude_MPa": 3.3965578924805024
     },
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "offset_um": 10,
       "sigma_no_drag_MPa": 0.0,
-      "sigma_peak_under_reversing_drag_MPa": 4.76,
-      "sigma_amplitude_MPa": 3.4
+      "sigma_peak_under_reversing_drag_MPa": 4.755181049609973,
+      "sigma_amplitude_MPa": 3.3965578925233073
     },
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "offset_um": 25,
       "sigma_no_drag_MPa": 0.0,
-      "sigma_peak_under_reversing_drag_MPa": 6.79,
-      "sigma_amplitude_MPa": 3.4
+      "sigma_peak_under_reversing_drag_MPa": 6.793115784762,
+      "sigma_amplitude_MPa": 3.3965578923810016
     },
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "offset_um": 50,
-      "sigma_no_drag_MPa": 12.73,
-      "sigma_peak_under_reversing_drag_MPa": 18.6,
-      "sigma_amplitude_MPa": 4.15
+      "sigma_no_drag_MPa": 12.731621171414623,
+      "sigma_peak_under_reversing_drag_MPa": 18.60319131025159,
+      "sigma_amplitude_MPa": 4.145402599047543
     },
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "offset_um": 100,
-      "sigma_no_drag_MPa": 47.52,
-      "sigma_peak_under_reversing_drag_MPa": 55.81,
-      "sigma_amplitude_MPa": 4.15
+      "sigma_no_drag_MPa": 47.51876873256452,
+      "sigma_peak_under_reversing_drag_MPa": 55.80957393070927,
+      "sigma_amplitude_MPa": 4.1454025990723755
     },
     {
       "geometry": "lock window, shallow end",
       "offset_um": 0,
       "sigma_no_drag_MPa": 0.0,
-      "sigma_peak_under_reversing_drag_MPa": 2.73,
-      "sigma_amplitude_MPa": 2.73
+      "sigma_peak_under_reversing_drag_MPa": 2.728995320651037,
+      "sigma_amplitude_MPa": 2.728995320651037
     },
     {
       "geometry": "lock window, shallow end",
       "offset_um": 10,
       "sigma_no_drag_MPa": 0.0,
-      "sigma_peak_under_reversing_drag_MPa": 3.82,
-      "sigma_amplitude_MPa": 2.73
+      "sigma_peak_under_reversing_drag_MPa": 3.820593449049053,
+      "sigma_amplitude_MPa": 2.7289953206939424
     },
     {
       "geometry": "lock window, shallow end",
       "offset_um": 25,
       "sigma_no_drag_MPa": 0.0,
-      "sigma_peak_under_reversing_drag_MPa": 5.46,
-      "sigma_amplitude_MPa": 2.73
+      "sigma_peak_under_reversing_drag_MPa": 5.457990641102554,
+      "sigma_amplitude_MPa": 2.7289953205512782
     },
     {
       "geometry": "lock window, shallow end",
       "offset_um": 50,
-      "sigma_no_drag_MPa": 8.52,
-      "sigma_peak_under_reversing_drag_MPa": 12.88,
-      "sigma_amplitude_MPa": 2.35
+      "sigma_no_drag_MPa": 8.522778335486306,
+      "sigma_peak_under_reversing_drag_MPa": 12.881325882981235,
+      "sigma_amplitude_MPa": 2.347169960781964
     },
     {
       "geometry": "lock window, shallow end",
       "offset_um": 100,
-      "sigma_no_drag_MPa": 31.12,
-      "sigma_peak_under_reversing_drag_MPa": 38.64,
-      "sigma_amplitude_MPa": 3.76
+      "sigma_no_drag_MPa": 31.122408555541035,
+      "sigma_peak_under_reversing_drag_MPa": 38.64397764909165,
+      "sigma_amplitude_MPa": 3.7607845467753074
     }
   ],
   "pad_moment_at_rod_radius": [
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "eccentricity_mm": 0.5,
-      "sigma_root_MPa": 0.91
+      "sigma_root_MPa": 0.9126690400360726
     },
     {
       "geometry": "shipped — the whole lock shank (HW.26 G1)",
       "eccentricity_mm": -0.5,
-      "sigma_root_MPa": 5.88
+      "sigma_root_MPa": 5.8804467449249325
     },
     {
       "geometry": "lock window, shallow end",
       "eccentricity_mm": 0.5,
-      "sigma_root_MPa": 0.24
+      "sigma_root_MPa": 0.238266035718469
     },
     {
       "geometry": "lock window, shallow end",
       "eccentricity_mm": -0.5,
-      "sigma_root_MPa": 5.22
+      "sigma_root_MPa": 5.219724605583616
     }
   ],
   "tilt_static_shipped_branch": [
@@ -2466,8 +2466,8 @@
       "lock window, shallow end": 2.73
     },
     "equilibrium_coaxial_cap_MPa_at_worst_mu_bonded": {
-      "shipped — the whole lock shank (HW.26 G1)": 3.4,
-      "lock window, shallow end": 2.73
+      "shipped — the whole lock shank (HW.26 G1)": 3.396557892480503,
+      "lock window, shallow end": 2.728995320651037
     },
     "caps_agree": true,
     "coaxial_cap_bound": "LOWER end — rigid wall; see drag_coaxial[].coaxial_cap_bound",
@@ -2476,8 +2476,8 @@
       "lock window, shallow end": 19.1
     },
     "equilibrium_upper_end_MPa_at_worst_mu": {
-      "shipped — the whole lock shank (HW.26 G1)": 23.78,
-      "lock window, shallow end": 19.1
+      "shipped — the whole lock shank (HW.26 G1)": 23.775905247137743,
+      "lock window, shallow end": 19.102967244331026
     },
     "upper_ends_agree": true
   },

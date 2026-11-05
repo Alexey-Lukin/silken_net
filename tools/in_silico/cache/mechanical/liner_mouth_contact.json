@@ -82,11 +82,11 @@
   },
   "controls": {
     "rigid_sharp_vs_68_offset_table": {
-      "max_abs_diff_MPa": 0.0463,
+      "max_abs_diff_MPa": 0.0,
       "rows": 10
     },
     "rigid_sharp_vs_68_reversing_table": {
-      "max_abs_diff_MPa": 0.0048,
+      "max_abs_diff_MPa": 0.0,
       "rows": 5
     },
     "no_offset_vs_91_exit": {
@@ -186,7 +186,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 2.5
+      "sigma_68_rigid_sharp_MPa": 2.5463242342792705
     },
     {
       "offset_um": 30,
@@ -226,7 +226,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 2.5
+      "sigma_68_rigid_sharp_MPa": 2.5463242342792705
     },
     {
       "offset_um": 30,
@@ -266,7 +266,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 2.5
+      "sigma_68_rigid_sharp_MPa": 2.5463242342792705
     },
     {
       "offset_um": 30,
@@ -306,7 +306,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 2.5
+      "sigma_68_rigid_sharp_MPa": 2.5463242342792705
     },
     {
       "offset_um": 30,
@@ -346,7 +346,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 2.5
+      "sigma_68_rigid_sharp_MPa": 2.5463242342792705
     },
     {
       "offset_um": 40,
@@ -386,7 +386,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 7.6
+      "sigma_68_rigid_sharp_MPa": 7.638972702862336
     },
     {
       "offset_um": 40,
@@ -426,7 +426,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 7.6
+      "sigma_68_rigid_sharp_MPa": 7.638972702862336
     },
     {
       "offset_um": 40,
@@ -466,7 +466,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 7.6
+      "sigma_68_rigid_sharp_MPa": 7.638972702862336
     },
     {
       "offset_um": 40,
@@ -506,7 +506,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 7.6
+      "sigma_68_rigid_sharp_MPa": 7.638972702862336
     },
     {
       "offset_um": 40,
@@ -546,7 +546,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 7.6
+      "sigma_68_rigid_sharp_MPa": 7.638972702862336
     },
     {
       "offset_um": 50,
@@ -586,7 +586,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 12.7
+      "sigma_68_rigid_sharp_MPa": 12.731621171414623
     },
     {
       "offset_um": 50,
@@ -626,7 +626,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 12.7
+      "sigma_68_rigid_sharp_MPa": 12.731621171414623
     },
     {
       "offset_um": 50,
@@ -666,7 +666,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 12.7
+      "sigma_68_rigid_sharp_MPa": 12.731621171414623
     },
     {
       "offset_um": 50,
@@ -706,7 +706,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 12.7
+      "sigma_68_rigid_sharp_MPa": 12.731621171414623
     },
     {
       "offset_um": 50,
@@ -746,7 +746,7 @@
         }
       },
       "exit": null,
-      "sigma_68_rigid_sharp_MPa": 12.7
+      "sigma_68_rigid_sharp_MPa": 12.731621171414623
     },
     {
       "offset_um": 75,
@@ -801,7 +801,7 @@
         ],
         "give_um": 0.113
       },
-      "sigma_68_rigid_sharp_MPa": 28.9
+      "sigma_68_rigid_sharp_MPa": 28.91557742206011
     },
     {
       "offset_um": 75,
@@ -856,7 +856,7 @@
         ],
         "give_um": 0.112
       },
-      "sigma_68_rigid_sharp_MPa": 28.9
+      "sigma_68_rigid_sharp_MPa": 28.91557742206011
     },
     {
       "offset_um": 75,
@@ -911,7 +911,7 @@
         ],
         "give_um": 0.111
       },
-      "sigma_68_rigid_sharp_MPa": 28.9
+      "sigma_68_rigid_sharp_MPa": 28.91557742206011
     },
     {
       "offset_um": 75,
@@ -966,7 +966,7 @@
         ],
         "give_um": 0.109
       },
-      "sigma_68_rigid_sharp_MPa": 28.9
+      "sigma_68_rigid_sharp_MPa": 28.91557742206011
     },
     {
       "offset_um": 75,
@@ -1021,7 +1021,7 @@
         ],
         "give_um": 0.106
       },
-      "sigma_68_rigid_sharp_MPa": 28.9
+      "sigma_68_rigid_sharp_MPa": 28.91557742206011
     },
     {
       "offset_um": 100,
@@ -1076,7 +1076,7 @@
         ],
         "give_um": 0.177
       },
-      "sigma_68_rigid_sharp_MPa": 47.5
+      "sigma_68_rigid_sharp_MPa": 47.518768732564524
     },
     {
       "offset_um": 100,
@@ -1131,7 +1131,7 @@
         ],
         "give_um": 0.177
       },
-      "sigma_68_rigid_sharp_MPa": 47.5
+      "sigma_68_rigid_sharp_MPa": 47.518768732564524
     },
     {
       "offset_um": 100,
@@ -1186,7 +1186,7 @@
         ],
         "give_um": 0.177
       },
-      "sigma_68_rigid_sharp_MPa": 47.5
+      "sigma_68_rigid_sharp_MPa": 47.518768732564524
     },
     {
       "offset_um": 100,
@@ -1241,7 +1241,7 @@
         ],
         "give_um": 0.177
       },
-      "sigma_68_rigid_sharp_MPa": 47.5
+      "sigma_68_rigid_sharp_MPa": 47.518768732564524
     },
     {
       "offset_um": 100,
@@ -1296,7 +1296,7 @@
         ],
         "give_um": 0.177
       },
-      "sigma_68_rigid_sharp_MPa": 47.5
+      "sigma_68_rigid_sharp_MPa": 47.518768732564524
     }
   ],
   "cycle_peak": [
@@ -2611,7 +2611,7 @@
         0.954
       ],
       "mouth_over_root_amplitude": 0.529,
-      "amplitude_68_rigid_sharp_ends_MPa": 3.4
+      "amplitude_68_rigid_sharp_ends_MPa": 3.3965578924805024
     },
     {
       "offset_um": 10,
@@ -2630,7 +2630,7 @@
         0.954
       ],
       "mouth_over_root_amplitude": 0.529,
-      "amplitude_68_rigid_sharp_ends_MPa": 3.4
+      "amplitude_68_rigid_sharp_ends_MPa": 3.3965578925233073
     },
     {
       "offset_um": 26,
@@ -2763,7 +2763,7 @@
         0.954
       ],
       "mouth_over_root_amplitude": 1.875,
-      "amplitude_68_rigid_sharp_ends_MPa": 4.15
+      "amplitude_68_rigid_sharp_ends_MPa": 4.145402599047543
     },
     {
       "offset_um": 60,
@@ -2820,7 +2820,7 @@
         0.954
       ],
       "mouth_over_root_amplitude": 1.875,
-      "amplitude_68_rigid_sharp_ends_MPa": 4.15
+      "amplitude_68_rigid_sharp_ends_MPa": 4.1454025990723755
     }
   ],
   "swing_by_entry_radius": [
@@ -6386,10 +6386,10 @@
       "100": 0.0288
     },
     "sharp_68_over_path_swing": {
-      "0": -0.0076,
-      "10": -0.0076,
-      "50": -0.0147,
-      "100": -0.0276
+      "0": -0.0086,
+      "10": -0.0086,
+      "50": -0.0158,
+      "100": -0.0287
     },
     "entry_radius_raises_root_swing": [
       -0.0414,
@@ -6418,16 +6418,16 @@
       ]
     },
     "versus_86_threshold": {
-      "k_break_even_binding": 0.3883,
-      "amplitude_MPa_86": 24.51,
-      "mean_MPa_86": 14.7,
+      "k_break_even_binding": 0.3881975401110906,
+      "amplitude_MPa_86": 24.505859936773177,
+      "mean_MPa_86": 14.681766982859237,
       "cycle_mean_MPa": 13.904,
       "cycle_amplitude_MPa": 4.09,
-      "k_needed_shipped": 0.0645,
+      "k_needed_shipped": 0.064471991727408,
       "k_needed_by_shank": {
-        "10": 0.0463,
-        "14": 0.0645,
-        "18": 0.055
+        "10": 0.046332498014321516,
+        "14": 0.064471991727408,
+        "18": 0.05501160795397194
       },
       "shanks_with_mean_beyond_86": [
         18.0
@@ -6440,7 +6440,7 @@
     },
     "elastic_points_not_solved": 5,
     "elastic_points": 882,
-    "text": "(A) The layer's give lowers the static root against a rigid wall at the same edges by 0.8–1.5 % on every row — 68's secant stands. (B) A larger entry radius lowers the static root and the static mouth-edge peak on every offset row; the beam's swing it moves only a little and not one way (rigid, r_in 0.05 → 0.5 mm: the root's by -4…+4 % over 35, 50, 100 µm). (C) The drag raises the mouth-edge peak above the static one on every shipped-shank row (by 2–18 %). WITHIN the ratified ⌀0.10 (offsets up to 50 µm) and at zero interference the cycle peak stays below 1·σ_y (23 °C tensile) on every swept shank and entry radius — the worst ×0.93; BEYOND it, at 75–100 µm, it passes 1·σ_y on 9 rows, the largest ×1.67 (shank 18 mm, 100 µm, r_in 0.05 mm), and at 100 µm the smallest swept radius that holds is 0.1 mm with the mouth at 22 mm · 0.2 mm with the mouth at 18 mm · 0.3 mm with the mouth at 14 mm; below 3·σ_y everywhere. (C′) The EXIT edge is the more loaded one under an offset: coaxially its cycle peak is 91's (within 0.9 %), and at 50 µm — on the shipped shank with entry radius 0.2 mm, the flush exit (no countersink) and zero interference — it is ×1.23–1.29 that, above 1·σ_y at r_exit 0.05 mm (×1.18) — the smallest swept exit radius that holds there is 0.1 mm. (D) Along the path with its contact kinks the root's swing is larger than its two ends give where the edges are rounded: the ends alone catch as little as 13 % of it (at 35 µm, where the swing itself is smallest); at the offsets 68 tabulates, its sharp-edge rows sit within 3 % of this path's swing. Against 86's threshold k ≥ 0.3883 (amplitude 24.51 MPa, the Ti-bore stop; mean 14.7 MPa, the worst play): at 50 µm and zero interference the root cycle runs at 13.90 ± 4.09 MPa on the shipped shank and needs k ≥ 0.064 (86's formula, binding over its six alloys), 0.046–0.064 over the swept shanks — the threshold covers these cycles through its AMPLITUDE, not its mean: on the 18 mm shank the cycle midpoint, 23.89 MPa (static 20.63), lies beyond 86's static mean 14.7. The cycle at the worst play and a pogo-pad couple on top of the offset are computed by no model. (E) The wire under the MOUTH edge swings ±7.90–8.00 MPa from 50 µm on, against the root's ±4.21–4.27 MPa (×1.88), around a mean of the opposite sign; the ratio crosses 1 at 30 µm (below it coaxially, ×0.53, and just past the play, ×0.58 at 26 µm, ×0.80 at 28 µm) and peaks at ×2.19 near 40 µm because the root's swing dips there (±2.47), not because the mouth section's grows. No notch factor under that edge is computed. The swings are on the rigid same-edge model; the give moves them by 0 µm +0.0 / +7.8 % · 10 µm +0.0 / +8.3 % · 50 µm -2.9 / -0.8 % · 75 µm -1.3 / -0.5 % · 100 µm -1.0 / -0.3 % (root / mouth section). (F) Bonded ⊥ frictionless base and the 20-year modulus move the static root by ≤ 0.03 MPa; the relaxed modulus lowers the mouth peak at the drag's ends from 46 to 33 MPa. (G) A mouth nearer the root makes the same offset dearer: the static root at 50 µm is 8.32 · 12.35 · 20.63 MPa for a shank of 10 · 14 · 18 mm. 5 of 882 elastic path points could not be represented by two end windows (the rod along the wall) and are excluded, not replaced."
+    "text": "(A) The layer's give lowers the static root against a rigid wall at the same edges by 0.8–1.5 % on every row — 68's secant stands. (B) A larger entry radius lowers the static root and the static mouth-edge peak on every offset row; the beam's swing it moves only a little and not one way (rigid, r_in 0.05 → 0.5 mm: the root's by -4…+4 % over 35, 50, 100 µm). (C) The drag raises the mouth-edge peak above the static one on every shipped-shank row (by 2–18 %). WITHIN the ratified ⌀0.10 (offsets up to 50 µm) and at zero interference the cycle peak stays below 1·σ_y (23 °C tensile) on every swept shank and entry radius — the worst ×0.93; BEYOND it, at 75–100 µm, it passes 1·σ_y on 9 rows, the largest ×1.67 (shank 18 mm, 100 µm, r_in 0.05 mm), and at 100 µm the smallest swept radius that holds is 0.1 mm with the mouth at 22 mm · 0.2 mm with the mouth at 18 mm · 0.3 mm with the mouth at 14 mm; below 3·σ_y everywhere. (C′) The EXIT edge is the more loaded one under an offset: coaxially its cycle peak is 91's (within 0.9 %), and at 50 µm — on the shipped shank with entry radius 0.2 mm, the flush exit (no countersink) and zero interference — it is ×1.23–1.29 that, above 1·σ_y at r_exit 0.05 mm (×1.18) — the smallest swept exit radius that holds there is 0.1 mm. (D) Along the path with its contact kinks the root's swing is larger than its two ends give where the edges are rounded: the ends alone catch as little as 13 % of it (at 35 µm, where the swing itself is smallest); at the offsets 68 tabulates, its sharp-edge rows sit within 3 % of this path's swing. Against 86's threshold k ≥ 0.389 (amplitude 24.51 MPa, the Ti-bore stop; mean 14.7 MPa, the worst play): at 50 µm and zero interference the root cycle runs at 13.90 ± 4.09 MPa on the shipped shank and needs k ≥ 0.065 (86's formula, binding over its six alloys), 0.046–0.065 over the swept shanks — the threshold covers these cycles through its AMPLITUDE, not its mean: on the 18 mm shank the cycle midpoint, 23.89 MPa (static 20.63), lies beyond 86's static mean 14.7. The cycle at the worst play and a pogo-pad couple on top of the offset are computed by no model. (E) The wire under the MOUTH edge swings ±7.90–8.00 MPa from 50 µm on, against the root's ±4.21–4.27 MPa (×1.88), around a mean of the opposite sign; the ratio crosses 1 at 30 µm (below it coaxially, ×0.53, and just past the play, ×0.58 at 26 µm, ×0.80 at 28 µm) and peaks at ×2.19 near 40 µm because the root's swing dips there (±2.47), not because the mouth section's grows. No notch factor under that edge is computed. The swings are on the rigid same-edge model; the give moves them by 0 µm +0.0 / +7.8 % · 10 µm +0.0 / +8.3 % · 50 µm -2.9 / -0.8 % · 75 µm -1.3 / -0.5 % · 100 µm -1.0 / -0.3 % (root / mouth section). (F) Bonded ⊥ frictionless base and the 20-year modulus move the static root by ≤ 0.03 MPa; the relaxed modulus lowers the mouth peak at the drag's ends from 46 to 33 MPa. (G) A mouth nearer the root makes the same offset dearer: the static root at 50 µm is 8.32 · 12.35 · 20.63 MPa for a shank of 10 · 14 · 18 mm. 5 of 882 elastic path points could not be represented by two end windows (the rod along the wall) and are excluded, not replaced."
   },
   "not_modelled": {
     "plasticity": "linear elastic; a peak above the flow pressure is flagged, never redistributed",

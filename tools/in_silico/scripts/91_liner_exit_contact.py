@@ -862,7 +862,7 @@ def main() -> int:
     w0 = wear[0]
     summary = (f"Coaxial pogo drag, unworn wall, flush exit with a rounding. (A) The liner gives {min(dc):.2f}–{max(dc):.2f} µm "
                f"at full drag against a {T_LINER_MM * 1e3:.0f} µm wall. (B) The cycle PEAK sits at or just after touchdown: "
-               f"{min(peak):.3f}–{max(peak):.3f} MPa, ×{min(peak_ratio):.3f}–{max(peak_ratio):.3f} of 68's {lo} MPa — on a rigid "
+               f"{min(peak):.3f}–{max(peak):.3f} MPa, ×{min(peak_ratio):.3f}–{max(peak_ratio):.3f} of 68's {lo:.3f} MPa — on a rigid "
                f"wall at the same edge it is F_td·L, the edge radius lifting it by ≤ {max(lift):.3f} MPa over the flush value, and "
                f"while the patch is tiny the give lifts it by ≤ {max(r_['peak_lift_by_compliance_MPa'] for r_ in cycle):.3f} MPa "
                f"more (68's sign). (C) On the LOADED part the sign turns: at full drag the compliance lowers the root by "
@@ -871,7 +871,7 @@ def main() -> int:
                f"×{sub_ratio:.1f} of the rigid one. (D) The bracket's upper end is not an elastic state: the peak climbs ≤ "
                f"{w0['slope_MPa_per_um_of_exit_wear_conformal_bound']:.3f} MPa per µm of exit wear (a conformal-flare bound), the "
                f"mouth engages after {w0['mouth_engages_at_exit_wear_um']:.0f} µm and the peak saturates at "
-               f"{w0['peak_saturates_at_MPa']:.2f} MPa; 68's {hi} MPa needs {w0['mouth_wear_to_reach_68_upper_end_um']:.0f} µm of "
+               f"{w0['peak_saturates_at_MPa']:.2f} MPa; 68's {round(hi, 2):g} MPa needs {w0['mouth_wear_to_reach_68_upper_end_um']:.0f} µm of "
                f"MOUTH wear on top. (E) Edge peak at µ {mu_max}, {DS_PEAK_MM} mm step, worst row: "
                + " · ".join(f"r {r} mm → {v:.0f} MPa" for r, v in pk_by_r.items())
                + (f"; above 1·σ_y at r {', '.join(str(v) for v in over_flow)} mm" if over_flow else "; below 1·σ_y (23 °C tensile) at every swept radius")

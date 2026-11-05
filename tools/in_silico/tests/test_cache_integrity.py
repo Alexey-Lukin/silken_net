@@ -2380,7 +2380,7 @@ def test_liner_mouth_contact():
         return max(amp / (a["endurance_MPa"] * (1.0 / d86["inputs"]["sf_target"] - mean / a["yield_MPa"])) for a in g86["by_alloy"].values())
     for z in d["shank"]:
         k = k_needed(*z["root_mean_amplitude_MPa"])
-        assert abs(v86["k_needed_by_shank"][f"{z['shank_mm']:g}"] - k) < 6e-5 and k < v86["k_break_even_binding"]
+        assert abs(v86["k_needed_by_shank"][f"{z['shank_mm']:g}"] - k) <= 1e-9 and k < v86["k_break_even_binding"]   # raw since 2026-11-05
     assert v86["shanks_with_mean_beyond_86"] == [z["shank_mm"] for z in sorted(d["shank"], key=lambda z: z["shank_mm"])
                                                  if z["root_mean_amplitude_MPa"][0] > v86["mean_MPa_86"]]
     assert "through its AMPLITUDE, not its mean" in summ["text"]
@@ -2502,7 +2502,7 @@ def test_countersink_ring_and_exit():
         return max(amp / (a["endurance_MPa"] * (1.0 / d86["inputs"]["sf_target"] - abs(mean) / a["yield_MPa"])) for a in g86["by_alloy"].values())
     for o in d["offset_root_cycle"]:
         w = o["worst"]
-        assert abs(w["k_seam_needed"] - k_needed(w["mean_MPa"], w["amplitude_MPa"])) <= 6e-5
+        assert abs(w["k_seam_needed"] - k_needed(w["mean_MPa"], w["amplitude_MPa"])) <= 1e-9   # raw since 2026-11-05
     assert summ["k_seam_86_binding"] == b86["k_break_even_binding"]
     assert summ["k_seam_needed_max_all_rows"] == max(o["worst"]["k_seam_needed"] for o in d["offset_root_cycle"])
     assert summ["k_seam_needed_max_all_rows"] < summ["k_seam_86_binding"]      # «the depth does not move the seam»
@@ -2787,8 +2787,10 @@ def test_bus_contact_equilibrium():
     # 7. One solver, two caches: the coaxial cap script 55 writes must equal the one this script writes.
     side = d["script55_side_by_side"]
     assert side["caps_agree"] is True and side["upper_ends_agree"] is True
-    assert side["script55_coaxial_cap_MPa_at_worst_mu_bonded"] == side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"]
-    assert side["script55_upper_end_MPa_at_worst_mu"] == side["equilibrium_upper_end_MPa_at_worst_mu"]
+    # 68 caches raw since 2026-11-05 (00_07 HW.43), 55 to two decimals — one solver, compared at 55's precision
+    r2 = lambda m: {k: round(v, 2) for k, v in m.items()}  # noqa: E731
+    assert side["script55_coaxial_cap_MPa_at_worst_mu_bonded"] == r2(side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"])
+    assert side["script55_upper_end_MPa_at_worst_mu"] == r2(side["equilibrium_upper_end_MPa_at_worst_mu"])
     assert side["coaxial_cap_bound"].startswith("LOWER")
     for g, lo in side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"].items():
         assert side["equilibrium_upper_end_MPa_at_worst_mu"][g] >= lo, g
@@ -2797,8 +2799,8 @@ def test_bus_contact_equilibrium():
         by_geo = json.loads(bus55.read_text())["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"]
         caps55 = {g["geometry"]: g["coaxial_cap_MPa_bonded"] for g in by_geo}
         upper55 = {g["geometry"]: g["bracket_MPa_worst_mu"][1] for g in by_geo}
-        assert caps55 == side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"], "scripts 55 and 68 drifted apart on the coaxial cap"
-        assert upper55 == side["equilibrium_upper_end_MPa_at_worst_mu"], "scripts 55 and 68 drifted apart on the upper end"
+        assert caps55 == r2(side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"]), "scripts 55 and 68 drifted apart on the coaxial cap"
+        assert upper55 == r2(side["equilibrium_upper_end_MPa_at_worst_mu"]), "scripts 55 and 68 drifted apart on the upper end"
 
 
 def test_coaxiality_allocation():
@@ -2824,10 +2826,10 @@ def test_coaxiality_allocation():
                 if r["offset_um"] < d["inputs"]["smallest_swept_play_um"]:
                     assert r["mean_MPa"] == 0.0, (geo, name, r)
                 sf = 1.0 / (g["amplitude_MPa"] / a["endurance_MPa"] + r["mean_MPa"] / a["yield_MPa"])
-                assert abs(sf - r["sf_wire"]) <= 0.001, (geo, name, r)
+                assert abs(sf - r["sf_wire"]) <= 1e-9, (geo, name, r)   # raw since 2026-11-05 (00_07 HW.43)
                 room = 1.0 / target - r["mean_MPa"] / a["yield_MPa"]
                 if r["k_break_even"] is not None:
-                    assert abs(g["amplitude_MPa"] / (a["endurance_MPa"] * room) - r["k_break_even"]) <= 1e-4, (geo, name, r)
+                    assert abs(g["amplitude_MPa"] / (a["endurance_MPa"] * room) - r["k_break_even"]) <= 1e-9, (geo, name, r)
             for x, y in itertools.pairwise(rows):
                 assert y["mean_MPa"] >= x["mean_MPa"] and y["sf_wire"] <= x["sf_wire"], (geo, name, y)
     for b in d["branches"].values():
@@ -2963,7 +2965,7 @@ def test_pogo_sway_transfer_wire_behind_liner():
         assert abs(x["sf_wire_86"] - own[b0][0]) <= 1e-9 and abs(x["sf_wire_at_route_capacity"] - capped[b0][0]) <= 1e-9
         assert all(abs(capped[b][1] / capped["tight"][1] - own[b][1] / own["tight"][1]) <= 1e-9 for b in own), name
     b86 = d86["branches"]["loose_50"]["by_geometry"][key]
-    assert abs(w["by_alloy"][b86["binding_alloy"]]["seam_k_86"] - b86["k_break_even_binding"]) <= 1e-3
+    assert abs(w["by_alloy"][b86["binding_alloy"]]["seam_k_86"] - b86["k_break_even_binding"]) <= 1e-9   # 86 raw since 2026-11-05
 
     def up(v):
         return math.ceil(v * 100 - 1e-9) / 100

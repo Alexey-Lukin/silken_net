@@ -119,16 +119,16 @@
       "ceiling_full_depth_77__anode_bond_soft": null
     },
     "ta_k1_sway_alone": {
-      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 5395.165464,
+      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 5399.417046,
       "nominal_anode_centroid_to_flange_77__anode_bond_soft": null,
-      "ceiling_full_depth_77__anode_bond_stiff": 3603.758526,
+      "ceiling_full_depth_77__anode_bond_stiff": 3606.197171,
       "ceiling_full_depth_77__anode_bond_soft": null
     },
     "ta_k1_hot_preload": {
-      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 1296.356983,
-      "nominal_anode_centroid_to_flange_77__anode_bond_soft": 4131.374202,
-      "ceiling_full_depth_77__anode_bond_stiff": 969.960534,
-      "ceiling_full_depth_77__anode_bond_soft": 1993.510981
+      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 1298.451982,
+      "nominal_anode_centroid_to_flange_77__anode_bond_soft": 4152.727318,
+      "ceiling_full_depth_77__anode_bond_stiff": 971.468392,
+      "ceiling_full_depth_77__anode_bond_soft": 1999.890717
     },
     "hot_flip_25.8966": {
       "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 10171.247202,
@@ -169,16 +169,16 @@
       "ceiling_full_depth_77__anode_bond_soft": null
     },
     "ta_k1_sway_alone": {
-      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 21.8699,
+      "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 21.8639,
       "nominal_anode_centroid_to_flange_77__anode_bond_soft": null,
       "ceiling_full_depth_77__anode_bond_stiff": "deepest",
       "ceiling_full_depth_77__anode_bond_soft": null
     },
     "ta_k1_hot_preload": {
       "nominal_anode_centroid_to_flange_77__anode_bond_stiff": "deepest",
-      "nominal_anode_centroid_to_flange_77__anode_bond_soft": 6.8092,
+      "nominal_anode_centroid_to_flange_77__anode_bond_soft": 6.7822,
       "ceiling_full_depth_77__anode_bond_stiff": "deepest",
-      "ceiling_full_depth_77__anode_bond_soft": 12.0812
+      "ceiling_full_depth_77__anode_bond_soft": 12.0577
     },
     "hot_flip_25.8966": {
       "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 9.4008,
@@ -212,12 +212,12 @@
         "yes_above": null
       },
       "ta_k1_sway_alone": {
-        "no_below": 3603.758526,
+        "no_below": 3606.197171,
         "yes_above": null
       },
       "ta_k1_hot_preload": {
-        "no_below": 969.960534,
-        "yes_above": 4131.374202
+        "no_below": 971.468392,
+        "yes_above": 4152.727318
       },
       "hot": {
         "no_below": 4948.895659,
@@ -513,58 +513,58 @@
   "seam_on_102_closed_form": {
     "Ta": {
       "state1": {
-        "sway": 0.3883079847908745,
-        "hot_preload": 0.6362765560350877
+        "sway": 0.3881975401110906,
+        "hot_preload": 0.6360486569423024
       },
       "state2_at_air_dry_readings_max": {
-        "adverse_reversed": 0.7161374222421234,
-        "adverse_reversed_hot_preload": 1.0256794626256653,
-        "adverse_one_sided": 0.6149937239451337,
-        "gentle": 0.43166962960941
+        "adverse_reversed": 0.715989102852694,
+        "adverse_reversed_hot_preload": 1.025415827463552,
+        "adverse_one_sided": 0.614849343758217,
+        "gentle": 0.4315531108496901
       },
       "state3_least_any_depth_and_bearing": {
         "anode_bond_stiff": {
-          "adverse_reversed": 0.9300400690207016,
-          "adverse_reversed_hot_preload": 1.1866254115989252
+          "adverse_reversed": 0.9298670370834846,
+          "adverse_reversed_hot_preload": 1.1863668286962061
         },
         "anode_bond_soft": {
-          "adverse_reversed": 0.4865815776014899,
-          "adverse_reversed_hot_preload": 0.7973064231299103
+          "adverse_reversed": 0.48645977920123945,
+          "adverse_reversed_hot_preload": 0.7970480419037503
         }
       },
       "at_share_1": {
-        "adverse_reversed": 1.4706178707224327,
-        "adverse_reversed_hot_preload": 1.4706178707224327,
-        "adverse_one_sided": 1.4272414848230612,
-        "gentle": 0.5724390917657928
+        "adverse_reversed": 1.470382384884067,
+        "adverse_reversed_hot_preload": 1.470382384884067,
+        "adverse_one_sided": 1.427001299706825,
+        "gentle": 0.572303159813318
       }
     },
     "Ti-6Al-4V": {
       "state1": {
-        "sway": 0.14407477075005878,
-        "hot_preload": 0.165039766765813
+        "sway": 0.14404425930045636,
+        "hot_preload": 0.1650037861441168
       },
       "state2_at_air_dry_readings_max": {
-        "adverse_reversed": 0.23568656819227038,
-        "adverse_reversed_hot_preload": 0.2690436839891482,
-        "adverse_one_sided": 0.19786472070958153,
-        "gentle": 0.15612360044599255
+        "adverse_reversed": 0.23565212942579464,
+        "adverse_reversed_hot_preload": 0.2690027389156415,
+        "adverse_one_sided": 0.19783135519276762,
+        "gentle": 0.15609247474280732
       },
       "state3_least_any_depth_and_bearing": {
         "anode_bond_stiff": {
-          "adverse_reversed": 0.30639600163887926,
-          "adverse_reversed_hot_preload": 0.3388212795078076
+          "adverse_reversed": 0.30635853162142024,
+          "adverse_reversed_hot_preload": 0.3387783071595581
         },
         "anode_bond_soft": {
-          "adverse_reversed": 0.16800670622921257,
-          "adverse_reversed_hot_preload": 0.19245415048595796
+          "adverse_reversed": 0.1679751688386654,
+          "adverse_reversed_hot_preload": 0.1924168236289389
         }
       },
       "at_share_1": {
-        "adverse_reversed": 0.5456466023983069,
-        "adverse_reversed_hot_preload": 0.5456466023983069,
-        "adverse_one_sided": 0.47706260124758665,
-        "gentle": 0.20368965283826815
+        "adverse_reversed": 0.5455988759188248,
+        "adverse_reversed_hot_preload": 0.5455988759188248,
+        "adverse_one_sided": 0.4770162432890667,
+        "gentle": 0.2036562009098388
       }
     }
   },
@@ -647,15 +647,15 @@
         "ceiling_full_depth_77__anode_bond_soft": null
       },
       "ta_k1_sway_alone": {
-        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 10917.741499,
+        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 10927.883463,
         "nominal_anode_centroid_to_flange_77__anode_bond_soft": null,
-        "ceiling_full_depth_77__anode_bond_stiff": 6884.271586,
+        "ceiling_full_depth_77__anode_bond_stiff": 6889.455294,
         "ceiling_full_depth_77__anode_bond_soft": null
       },
       "ta_k1_hot_preload": {
-        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 2637.598968,
+        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 2640.149022,
         "nominal_anode_centroid_to_flange_77__anode_bond_soft": null,
-        "ceiling_full_depth_77__anode_bond_stiff": 1941.931545,
+        "ceiling_full_depth_77__anode_bond_stiff": 1943.708686,
         "ceiling_full_depth_77__anode_bond_soft": null
       },
       "hot_flip_39.3496": {
@@ -691,7 +691,7 @@
         "ceiling_full_depth_77__anode_bond_soft": null
       },
       "ta_k1_sway_alone": {
-        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 21.8699,
+        "nominal_anode_centroid_to_flange_77__anode_bond_stiff": 21.8639,
         "nominal_anode_centroid_to_flange_77__anode_bond_soft": null,
         "ceiling_full_depth_77__anode_bond_stiff": "deepest",
         "ceiling_full_depth_77__anode_bond_soft": null
@@ -728,11 +728,11 @@
           "yes_above": null
         },
         "ta_k1_sway_alone": {
-          "no_below": 6884.271586,
+          "no_below": 6889.455294,
           "yes_above": null
         },
         "ta_k1_hot_preload": {
-          "no_below": 1941.931545,
+          "no_below": 1943.708686,
           "yes_above": null
         },
         "hot": {
@@ -1029,63 +1029,63 @@
     "seam_on_102_closed_form": {
       "Ta": {
         "state1": {
-          "sway": 0.3883079847908745,
-          "hot_preload": 0.5464160334038739
+          "sway": 0.3881975401110906,
+          "hot_preload": 0.5462349231850749
         },
         "state2_at_air_dry_readings_max": {
-          "adverse_reversed": 0.6136475905254232,
-          "adverse_reversed_hot_preload": 0.8635075647577213,
-          "adverse_one_sided": 0.5378898333245439,
-          "gentle": 0.41889312415970753
+          "adverse_reversed": 0.6135111119659327,
+          "adverse_reversed_hot_preload": 0.8632749064355212,
+          "adverse_one_sided": 0.5377569782015997,
+          "gentle": 0.41877835464857016
         },
         "state3_least_any_depth_and_bearing": {
           "anode_bond_stiff": {
-            "adverse_reversed": 0.9300400690207014,
-            "adverse_reversed_hot_preload": 1.186625411598925
+            "adverse_reversed": 0.9298670370834845,
+            "adverse_reversed_hot_preload": 1.1863668286962061
           },
           "anode_bond_soft": {
-            "adverse_reversed": 0.4865815776014899,
-            "adverse_reversed_hot_preload": 0.68470385872594
+            "adverse_reversed": 0.48645977920123945,
+            "adverse_reversed_hot_preload": 0.6845002676950915
           }
         },
         "at_share_1": {
-          "adverse_reversed": 1.4706178707224327,
-          "adverse_reversed_hot_preload": 1.4706178707224327,
-          "adverse_one_sided": 1.4272414848230612,
-          "gentle": 0.5724390917657928
+          "adverse_reversed": 1.470382384884067,
+          "adverse_reversed_hot_preload": 1.470382384884067,
+          "adverse_one_sided": 1.427001299706825,
+          "gentle": 0.572303159813318
         }
       },
       "Ti-6Al-4V": {
         "state1": {
-          "sway": 0.14407477075005878,
-          "hot_preload": 0.15817791643223555
+          "sway": 0.14404425930045636,
+          "hot_preload": 0.15814375465957978
         },
         "state2_at_air_dry_readings_max": {
-          "adverse_reversed": 0.20398135096592304,
-          "adverse_reversed_hot_preload": 0.22394861306283995,
-          "adverse_one_sided": 0.1782002482464378,
-          "gentle": 0.15215286391715557
+          "adverse_reversed": 0.20394827137411758,
+          "adverse_reversed_hot_preload": 0.22391135577404897,
+          "adverse_one_sided": 0.17816791485541356,
+          "gentle": 0.1521219358413038
         },
         "state3_least_any_depth_and_bearing": {
           "anode_bond_stiff": {
-            "adverse_reversed": 0.30639600163887926,
-            "adverse_reversed_hot_preload": 0.33638839673382565
+            "adverse_reversed": 0.30635853162142024,
+            "adverse_reversed_hot_preload": 0.3363458474353341
           },
           "anode_bond_soft": {
-            "adverse_reversed": 0.16800670622921257,
-            "adverse_reversed_hot_preload": 0.18445249365748995
+            "adverse_reversed": 0.1679751688386654,
+            "adverse_reversed_hot_preload": 0.18441709526454714
           }
         },
         "at_share_1": {
-          "adverse_reversed": 0.5456466023983069,
-          "adverse_reversed_hot_preload": 0.5456466023983069,
-          "adverse_one_sided": 0.47706260124758665,
-          "gentle": 0.20368965283826815
+          "adverse_reversed": 0.5455988759188248,
+          "adverse_reversed_hot_preload": 0.5455988759188248,
+          "adverse_one_sided": 0.4770162432890667,
+          "gentle": 0.2036562009098388
         }
       }
     },
     "preload_102": "hot_preload.zone3_fit_bonded_shank — `102`'s span with the Zone-3 shank's run bonded (lib.mechanics)",
-    "verdict": "With a Zone-3 fit locating the flange — the CEM's Ø9 × 14 mm shank taken as fitted rigidly in the sleeve (a placeholder, HW.8.9; a fit that slips returns the bark reading) — only the 18 mm gap below the shank is PEEK, and the shank's run grows at 9.76 ppm/K as the Ti bonded to the PEEK around it (`102`'s gap-only span takes the Ti's 8.6, an offset of 0.9 ppm/K on the gap). The share of the sway shift: in state 2 capped at 0.60 ⊥ 0.10, 0.00–0.06 at the air-dry readings; in state 3 with no bearing 0.02–0.59, up to 0.65 ⊥ 0.30 at a rigid bark. Heat: over every state, bond, bearing and tie depth the gap's effective CTE never falls below 14.73 ppm/K against the 8.6 at which the pad's travel changes sign on that span, so within the model the free sleeve stays the adverse end of the pad's thermal travel — the free gap at 47.9 ppm/K, 0.9 above `102`'s gap-only reading — while xylem's CTE stays above 5.95 ppm/K (the one reading taken is 7.9); the deciding corner (a rigid tie at the thick bark's install-day cambium, 24 mm, below the shank) leaves the shank's run unloaded; the span following the wood outright takes the gap's CTE to 4.33, a reversed shift per kelvin under 10.9 % of the free sleeve's. The cold conclusion holds while the gap's CTE stays above 38.0–39.0 ppm/K and the hot one above 39.4 (the cambium-under-the-flange (`79`) reading has no hot threshold: the free sleeve does not leave the window hot there); state 2: the centre pad's cold conclusion flips not below 3357 N/mm (stiff bond); the centre pad's hot conclusion flips not below 3164 N/mm (stiff bond); Ta's seam passes k 1 with the hot preload not below 1941 N/mm (stiff bond); state 3 with no bearing, at the stiff bond: the cold one (the pad out of L1) holds only while the tie sits deeper than 23.8 mm on the capsule-edge (`90`) reading, at no depth on the cambium-under-the-flange (`79`) reading; the hot one (the pad out of L1) holds at no depth on the capsule-edge (`90`) reading (the deepest tie sits at 24 mm); at the soft bond both hold at every depth. Ta on the adverse reversed corner needs 0.55 in state 1 with `102`'s preload on the bonded shank's span, and in state 3 at least 0.93 on the sway alone and 1.18 with the preload at the stiff bond, 0.48 and 0.68 at the soft one, whatever the tie's depth and the bearing."
+    "verdict": "With a Zone-3 fit locating the flange — the CEM's Ø9 × 14 mm shank taken as fitted rigidly in the sleeve (a placeholder, HW.8.9; a fit that slips returns the bark reading) — only the 18 mm gap below the shank is PEEK, and the shank's run grows at 9.76 ppm/K as the Ti bonded to the PEEK around it (`102`'s gap-only span takes the Ti's 8.6, an offset of 0.9 ppm/K on the gap). The share of the sway shift: in state 2 capped at 0.60 ⊥ 0.10, 0.00–0.06 at the air-dry readings; in state 3 with no bearing 0.02–0.59, up to 0.65 ⊥ 0.30 at a rigid bark. Heat: over every state, bond, bearing and tie depth the gap's effective CTE never falls below 14.73 ppm/K against the 8.6 at which the pad's travel changes sign on that span, so within the model the free sleeve stays the adverse end of the pad's thermal travel — the free gap at 47.9 ppm/K, 0.9 above `102`'s gap-only reading — while xylem's CTE stays above 5.95 ppm/K (the one reading taken is 7.9); the deciding corner (a rigid tie at the thick bark's install-day cambium, 24 mm, below the shank) leaves the shank's run unloaded; the span following the wood outright takes the gap's CTE to 4.33, a reversed shift per kelvin under 10.9 % of the free sleeve's. The cold conclusion holds while the gap's CTE stays above 38.0–39.0 ppm/K and the hot one above 39.4 (the cambium-under-the-flange (`79`) reading has no hot threshold: the free sleeve does not leave the window hot there); state 2: the centre pad's cold conclusion flips not below 3357 N/mm (stiff bond); the centre pad's hot conclusion flips not below 3164 N/mm (stiff bond); Ta's seam passes k 1 with the hot preload not below 1943 N/mm (stiff bond); state 3 with no bearing, at the stiff bond: the cold one (the pad out of L1) holds only while the tie sits deeper than 23.8 mm on the capsule-edge (`90`) reading, at no depth on the cambium-under-the-flange (`79`) reading; the hot one (the pad out of L1) holds at no depth on the capsule-edge (`90`) reading (the deepest tie sits at 24 mm); at the soft bond both hold at every depth. Ta on the adverse reversed corner needs 0.55 in state 1 with `102`'s preload on the bonded shank's span, and in state 3 at least 0.92 on the sway alone and 1.18 with the preload at the stiff bond, 0.48 and 0.68 at the soft one, whatever the tie's depth and the bearing."
   },
   "controls": {
     "solver_vs_closed_forms_max_miss": 2.3352686895350416e-07,
@@ -1103,7 +1103,7 @@
     },
     "solver_vs_element_chain_max_miss_of_load_scale": 8.712861543358486e-10,
     "pad_travel_monotone_in_shift_worst_step": 0.0,
-    "seam_vs_102_grid_max_miss": 1.1102230246251565e-16
+    "seam_vs_102_grid_max_miss": 1.6653345369377348e-16
   },
-  "verdict": "State 1 (the anode not bonded — a Ø11 gyroid with 2 mm of radial clearance in the Ø15 channel): share 0, unless the channel grips the sleeve or ice fills the gap (neither bounded). State 2 (anode bonded, the sleeve free below the bark): the anode bond caps the share at 0.72 (stiff bond) ⊥ 0.15 (soft); at the air-dry bark readings (a bearing of 21–1126 N/mm, which bounds the green one in neither direction) 0.00–0.10; the share reaches `102`'s 0.25 row not below 3927 N/mm (stiff bond); Ta's seam passes k 1 on the sway alone not below 3603 N/mm (stiff bond); Ta's seam passes k 1 with the hot preload not below 969 N/mm (stiff bond), whatever the bond above 4132 N/mm; the centre pad's hot conclusion flips not below 4948 N/mm (stiff bond); the centre pad's cold conclusion flips not below 10140 N/mm (stiff bond). State 3 (a rigid callus tie, its depth from the flange to the install-day cambium at 11.325, 24 mm, the bearing acting too): with no bearing 0.02–0.71 of `102`'s shift, up to 0.72 ⊥ 0.30 at a rigid bark; at the stiff bond the cold pad conclusion holds only while the tie sits deeper than 9.4 mm and the hot one only deeper than 14.4 mm, with no bearing — a bearing flips them deeper still. Ta on the adverse reversed corner needs 0.3884 on the sway alone and 0.64 with the preload in state 1, up to 0.72 ⊥ 1.03 in state 2 at the air-dry readings, and in state 3 at least 0.93 ⊥ 1.18 at the stiff bond and 0.48 ⊥ 0.79 at the soft one, whatever the tie's depth and the bearing. Ti-6Al-4V needs at most 0.55 at any share. Heat: within the model the free sleeve is the adverse end of the pad's thermal travel while xylem's CTE stays above 5.95 ppm/K (the one reading taken is 7.9)."
+  "verdict": "State 1 (the anode not bonded — a Ø11 gyroid with 2 mm of radial clearance in the Ø15 channel): share 0, unless the channel grips the sleeve or ice fills the gap (neither bounded). State 2 (anode bonded, the sleeve free below the bark): the anode bond caps the share at 0.72 (stiff bond) ⊥ 0.15 (soft); at the air-dry bark readings (a bearing of 21–1126 N/mm, which bounds the green one in neither direction) 0.00–0.10; the share reaches `102`'s 0.25 row not below 3927 N/mm (stiff bond); Ta's seam passes k 1 on the sway alone not below 3606 N/mm (stiff bond); Ta's seam passes k 1 with the hot preload not below 971 N/mm (stiff bond), whatever the bond above 4153 N/mm; the centre pad's hot conclusion flips not below 4948 N/mm (stiff bond); the centre pad's cold conclusion flips not below 10140 N/mm (stiff bond). State 3 (a rigid callus tie, its depth from the flange to the install-day cambium at 11.325, 24 mm, the bearing acting too): with no bearing 0.02–0.71 of `102`'s shift, up to 0.72 ⊥ 0.30 at a rigid bark; at the stiff bond the cold pad conclusion holds only while the tie sits deeper than 9.4 mm and the hot one only deeper than 14.4 mm, with no bearing — a bearing flips them deeper still. Ta on the adverse reversed corner needs 0.3882 on the sway alone and 0.64 with the preload in state 1, up to 0.72 ⊥ 1.03 in state 2 at the air-dry readings, and in state 3 at least 0.92 ⊥ 1.18 at the stiff bond and 0.48 ⊥ 0.79 at the soft one, whatever the tie's depth and the bearing. Ti-6Al-4V needs at most 0.55 at any share. Heat: within the model the free sleeve is the adverse end of the pad's thermal travel while xylem's CTE stays above 5.95 ppm/K (the one reading taken is 7.9)."
 }

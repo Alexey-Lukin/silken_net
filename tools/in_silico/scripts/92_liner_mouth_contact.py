@@ -89,6 +89,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -671,15 +672,15 @@ def summarise(static, cyc, swings, reversing, brackets, shank, ctl, exits, swing
             f"rounded: the ends alone catch as little as {100 * (1 - ends_short[worst_ends]):.0f} % of it (at {worst_ends} µm, where the "
             f"swing itself is smallest); at the offsets 68 tabulates, its sharp-edge rows sit within "
             f"{100 * max(abs(v) for v in v68.values()):.0f} % of this path's swing. Against 86's threshold k ≥ "
-            f"{b86['k_break_even_binding']:g} (amplitude {g86['amplitude_MPa']:g} MPa, the Ti-bore stop; mean {b86['mean_MPa']:g} MPa, "
+            f"{up(b86['k_break_even_binding']):.3f} (amplitude {g86['amplitude_MPa']:.2f} MPa, the Ti-bore stop; mean {b86['mean_MPa']:.1f} MPa, "
             f"the worst play): at {TOLERANCE_OFFSET_UM} µm and zero interference the root cycle runs at {r50['mean_MPa']:.2f} ± "
-            f"{r50['amplitude_MPa']:.2f} MPa on the shipped shank and needs k ≥ {k_ship:.3f} (86's formula, binding over its six alloys), "
-            f"{min(k_by_shank.values()):.3f}–{max(k_by_shank.values()):.3f} over the swept shanks — the threshold covers these cycles "
+            f"{r50['amplitude_MPa']:.2f} MPa on the shipped shank and needs k ≥ {up(k_ship):.3f} (86's formula, binding over its six alloys), "
+            f"{down(min(k_by_shank.values())):.3f}–{up(max(k_by_shank.values())):.3f} over the swept shanks — the threshold covers these cycles "
             "through its AMPLITUDE, not its "
             "mean" + ("" if not mean_beyond else ": on the " + " · ".join(f"{z['shank_mm']:g} mm" for z in mean_beyond)
                       + " shank the cycle midpoint, " + " · ".join(f"{z['root_mean_amplitude_MPa'][0]:.2f} MPa (static "
                                                                   f"{z['static_sigma_MPa']:.2f})" for z in mean_beyond)
-                      + f", lies beyond 86's static mean {b86['mean_MPa']:g}")
+                      + f", lies beyond 86's static mean {b86['mean_MPa']:.1f}")
             + ". The cycle at the worst play and a pogo-pad couple on top of the offset are computed by no model. "
             f"(E) The wire under the MOUTH edge swings ±"
             f"{min(mo_abs):.2f}–{max(mo_abs):.2f} MPa from 50 µm on, against the root's ±{min(root_abs):.2f}–{max(root_abs):.2f} MPa "
@@ -718,12 +719,22 @@ def summarise(static, cyc, swings, reversing, brackets, shank, ctl, exits, swing
             "elastic_over_rigid_swing_by_offset": {str(e): [round(c[0], 4), round(c[1], 4)] for e, c in corr.items()},
             "versus_86_threshold": {"k_break_even_binding": b86["k_break_even_binding"], "amplitude_MPa_86": g86["amplitude_MPa"],
                                     "mean_MPa_86": b86["mean_MPa"], "cycle_mean_MPa": r50["mean_MPa"], "cycle_amplitude_MPa": r50["amplitude_MPa"],
-                                    "k_needed_shipped": round(k_ship, 4),
-                                    "k_needed_by_shank": {f"{s:g}": round(k, 4) for s, k in k_by_shank.items()},
+                                    "k_needed_shipped": k_ship,
+                                    "k_needed_by_shank": {f"{s:g}": k for s, k in k_by_shank.items()},
                                     "shanks_with_mean_beyond_86": [z["shank_mm"] for z in mean_beyond]},
             "static_root_by_shank_MPa": {f"{z['shank_mm']:g}": z["static_sigma_MPa"] for z in sh},
             "elastic_points_not_solved": not_solved, "elastic_points": all_points,
             "text": text}
+
+
+def up(x: float, n: int = 3) -> float:
+    """A requirement quoted «needs k ≥ X», or the top of a bracket of requirements, rounds UP (in-silico §When Modifying #43)."""
+    return math.ceil(x * 10 ** n - 1e-9) / 10 ** n
+
+
+def down(x: float, n: int = 3) -> float:
+    """The bottom of a bracket of requirements over cells rounds DOWN — the bracket goes OUTWARD (§When Modifying #43)."""
+    return math.floor(x * 10 ** n + 1e-9) / 10 ** n
 
 
 def resummarise() -> int:

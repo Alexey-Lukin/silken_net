@@ -6,12 +6,12 @@
     "endurance": "script 55 endurance_MPa, welded branch (WROUGHT_DERATE), ratified ratio",
     "endurance_over_yield": 0.4,
     "sf_target": 2.0,
-    "smallest_swept_play_um": 21.17
+    "smallest_swept_play_um": 21.170664785581813
   },
   "by_geometry": {
     "shipped — the whole lock shank (HW.26 G1)": {
-      "amplitude_MPa": 24.51,
-      "amplitude_zero_interference_MPa": 23.78,
+      "amplitude_MPa": 24.505859936773177,
+      "amplitude_zero_interference_MPa": 23.775905247137743,
       "amplitude_is": "upper end of 68's coaxial bracket at the worst swept µ, worst over the six plays (Ti-bore stop)",
       "mean_is": "68's rigid-wall static root stress, worst over the six plays",
       "by_alloy": {
@@ -22,62 +22,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 15.504,
-              "k_break_even": 0.129
+              "sf_wire": 15.506495221160428,
+              "k_break_even": 0.12897821019354302
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 15.504,
-              "k_break_even": 0.129
+              "sf_wire": 15.506495221160428,
+              "k_break_even": 0.12897821019354302
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 15.504,
-              "k_break_even": 0.129
+              "sf_wire": 15.506495221160428,
+              "k_break_even": 0.12897821019354302
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 15.504,
-              "k_break_even": 0.129
+              "sf_wire": 15.506495221160428,
+              "k_break_even": 0.12897821019354302
             },
             {
               "offset_um": 25,
-              "mean_MPa": 2.0,
-              "sf_wire": 15.014,
-              "k_break_even": 0.1295
+              "mean_MPa": 1.950145811532821,
+              "sf_wire": 15.028127358154581,
+              "k_break_even": 0.12950992226186073
             },
             {
               "offset_um": 30,
-              "mean_MPa": 4.5,
-              "sf_wire": 14.443,
-              "k_break_even": 0.1302
+              "mean_MPa": 4.496470045824492,
+              "sf_wire": 14.446226001343673,
+              "k_break_even": 0.1302108187113916
             },
             {
               "offset_um": 40,
-              "mean_MPa": 9.6,
-              "sf_wire": 13.404,
-              "k_break_even": 0.1317
+              "mean_MPa": 9.589118514408046,
+              "sf_wire": 13.40789660222752,
+              "k_break_even": 0.13163561979121788
             },
             {
               "offset_um": 50,
-              "mean_MPa": 14.7,
-              "sf_wire": 12.504,
-              "k_break_even": 0.1331
+              "mean_MPa": 14.681766982859237,
+              "sf_wire": 12.50881924017091,
+              "k_break_even": 0.1330919469350058
             },
             {
               "offset_um": 75,
-              "mean_MPa": 33.0,
-              "sf_wire": 10.077,
-              "k_break_even": 0.1386
+              "mean_MPa": 33.0350225377697,
+              "sf_wire": 10.074266177455787,
+              "k_break_even": 0.13861878874139644
             },
             {
               "offset_um": 100,
-              "mean_MPa": 51.6,
-              "sf_wire": 8.416,
-              "k_break_even": 0.1447
+              "mean_MPa": 51.63821384796403,
+              "sf_wire": 8.414312701662766,
+              "k_break_even": 0.14470991914213963
             }
           ]
         },
@@ -88,62 +88,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 14.688,
-              "k_break_even": 0.1362
+              "sf_wire": 14.69036389373093,
+              "k_break_even": 0.13614366631540653
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 14.688,
-              "k_break_even": 0.1362
+              "sf_wire": 14.69036389373093,
+              "k_break_even": 0.13614366631540653
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 14.688,
-              "k_break_even": 0.1362
+              "sf_wire": 14.69036389373093,
+              "k_break_even": 0.13614366631540653
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 14.688,
-              "k_break_even": 0.1362
+              "sf_wire": 14.69036389373093,
+              "k_break_even": 0.13614366631540653
             },
             {
               "offset_um": 25,
-              "mean_MPa": 2.0,
-              "sf_wire": 14.224,
-              "k_break_even": 0.1368
+              "mean_MPa": 1.950145811532821,
+              "sf_wire": 14.23717328667276,
+              "k_break_even": 0.13673623430343235
             },
             {
               "offset_um": 30,
-              "mean_MPa": 4.5,
-              "sf_wire": 13.683,
-              "k_break_even": 0.1375
+              "mean_MPa": 4.496470045824492,
+              "sf_wire": 13.685898317062428,
+              "k_break_even": 0.13751776523125334
             },
             {
               "offset_um": 40,
-              "mean_MPa": 9.6,
-              "sf_wire": 12.698,
-              "k_break_even": 0.1391
+              "mean_MPa": 9.589118514408046,
+              "sf_wire": 12.702217833689229,
+              "k_break_even": 0.13910793855791054
             },
             {
               "offset_um": 50,
-              "mean_MPa": 14.7,
-              "sf_wire": 11.846,
-              "k_break_even": 0.1408
+              "mean_MPa": 14.681766982859237,
+              "sf_wire": 11.850460332793492,
+              "k_break_even": 0.14073531774057493
             },
             {
               "offset_um": 75,
-              "mean_MPa": 33.0,
-              "sf_wire": 9.547,
-              "k_break_even": 0.1469
+              "mean_MPa": 33.0350225377697,
+              "sf_wire": 9.54404164180022,
+              "k_break_even": 0.1469299657127257
             },
             {
               "offset_um": 100,
-              "mean_MPa": 51.6,
-              "sf_wire": 7.973,
-              "k_break_even": 0.1538
+              "mean_MPa": 51.63821384796403,
+              "sf_wire": 7.971454138417358,
+              "k_break_even": 0.15379148294749112
             }
           ]
         },
@@ -154,62 +154,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 14.361,
-              "k_break_even": 0.1393
+              "sf_wire": 14.363911362759133,
+              "k_break_even": 0.13923784054984759
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 14.361,
-              "k_break_even": 0.1393
+              "sf_wire": 14.363911362759133,
+              "k_break_even": 0.13923784054984759
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 14.361,
-              "k_break_even": 0.1393
+              "sf_wire": 14.363911362759133,
+              "k_break_even": 0.13923784054984759
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 14.361,
-              "k_break_even": 0.1393
+              "sf_wire": 14.363911362759133,
+              "k_break_even": 0.13923784054984759
             },
             {
               "offset_um": 25,
-              "mean_MPa": 2.0,
-              "sf_wire": 13.908,
-              "k_break_even": 0.1399
+              "mean_MPa": 1.950145811532821,
+              "sf_wire": 13.920791658080033,
+              "k_break_even": 0.13985771084305476
             },
             {
               "offset_um": 30,
-              "mean_MPa": 4.5,
-              "sf_wire": 13.379,
-              "k_break_even": 0.1407
+              "mean_MPa": 4.496470045824492,
+              "sf_wire": 13.38176724334993,
+              "k_break_even": 0.1406754380346339
             },
             {
               "offset_um": 40,
-              "mean_MPa": 9.6,
-              "sf_wire": 12.416,
-              "k_break_even": 0.1424
+              "mean_MPa": 9.589118514408046,
+              "sf_wire": 12.419946326273912,
+              "k_break_even": 0.14233991861561193
             },
             {
               "offset_um": 50,
-              "mean_MPa": 14.7,
-              "sf_wire": 11.583,
-              "k_break_even": 0.1441
+              "mean_MPa": 14.681766982859237,
+              "sf_wire": 11.587116769842526,
+              "k_break_even": 0.14404425930045636
             },
             {
               "offset_um": 75,
-              "mean_MPa": 33.0,
-              "sf_wire": 9.334,
-              "k_break_even": 0.1506
+              "mean_MPa": 33.0350225377697,
+              "sf_wire": 9.331951827537992,
+              "k_break_even": 0.15054034925552975
             },
             {
               "offset_um": 100,
-              "mean_MPa": 51.6,
-              "sf_wire": 7.796,
-              "k_break_even": 0.1578
+              "mean_MPa": 51.63821384796403,
+              "sf_wire": 7.794310713119194,
+              "k_break_even": 0.15775148849982126
             }
           ]
         },
@@ -220,62 +220,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 13.872,
-              "k_break_even": 0.1442
+              "sf_wire": 13.874232566301435,
+              "k_break_even": 0.14415211727513633
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 13.872,
-              "k_break_even": 0.1442
+              "sf_wire": 13.874232566301435,
+              "k_break_even": 0.14415211727513633
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 13.872,
-              "k_break_even": 0.1442
+              "sf_wire": 13.874232566301435,
+              "k_break_even": 0.14415211727513633
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 13.872,
-              "k_break_even": 0.1442
+              "sf_wire": 13.874232566301435,
+              "k_break_even": 0.14415211727513633
             },
             {
               "offset_um": 25,
-              "mean_MPa": 2.0,
-              "sf_wire": 13.433,
-              "k_break_even": 0.1449
+              "mean_MPa": 1.950145811532821,
+              "sf_wire": 13.44621921519094,
+              "k_break_even": 0.14481661968530016
             },
             {
               "offset_um": 30,
-              "mean_MPa": 4.5,
-              "sf_wire": 12.923,
-              "k_break_even": 0.1457
+              "mean_MPa": 4.496470045824492,
+              "sf_wire": 12.925570632781183,
+              "k_break_even": 0.14569354470962295
             },
             {
               "offset_um": 40,
-              "mean_MPa": 9.6,
-              "sf_wire": 11.993,
-              "k_break_even": 0.1475
+              "mean_MPa": 9.589118514408046,
+              "sf_wire": 11.996539065150937,
+              "k_break_even": 0.14747964623083143
             },
             {
               "offset_um": 50,
-              "mean_MPa": 14.7,
-              "sf_wire": 11.188,
-              "k_break_even": 0.1493
+              "mean_MPa": 14.681766982859237,
+              "sf_wire": 11.192101425416077,
+              "k_break_even": 0.1493100840083157
             },
             {
               "offset_um": 75,
-              "mean_MPa": 33.0,
-              "sf_wire": 9.016,
-              "k_break_even": 0.1563
+              "mean_MPa": 33.0350225377697,
+              "sf_wire": 9.013817106144652,
+              "k_break_even": 0.15630133650865885
             },
             {
               "offset_um": 100,
-              "mean_MPa": 51.6,
-              "sf_wire": 7.53,
-              "k_break_even": 0.1641
+              "mean_MPa": 51.63821384796403,
+              "sf_wire": 7.528595575171948,
+              "k_break_even": 0.16408923493039398
             }
           ]
         },
@@ -286,62 +286,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 7.834,
-              "k_break_even": 0.2553
+              "sf_wire": 7.834860743323163,
+              "k_break_even": 0.25526937434138725
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 7.834,
-              "k_break_even": 0.2553
+              "sf_wire": 7.834860743323163,
+              "k_break_even": 0.25526937434138725
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 7.834,
-              "k_break_even": 0.2553
+              "sf_wire": 7.834860743323163,
+              "k_break_even": 0.25526937434138725
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 7.834,
-              "k_break_even": 0.2553
+              "sf_wire": 7.834860743323163,
+              "k_break_even": 0.25526937434138725
             },
             {
               "offset_um": 25,
-              "mean_MPa": 2.0,
-              "sf_wire": 7.586,
-              "k_break_even": 0.2575
+              "mean_MPa": 1.950145811532821,
+              "sf_wire": 7.593159086225472,
+              "k_break_even": 0.25736058545714935
             },
             {
               "offset_um": 30,
-              "mean_MPa": 4.5,
-              "sf_wire": 7.298,
-              "k_break_even": 0.2602
+              "mean_MPa": 4.496470045824492,
+              "sf_wire": 7.299145769099963,
+              "k_break_even": 0.2601432337504829
             },
             {
               "offset_um": 40,
-              "mean_MPa": 9.6,
-              "sf_wire": 6.772,
-              "k_break_even": 0.266
+              "mean_MPa": 9.589118514408046,
+              "sf_wire": 6.774516177967588,
+              "k_break_even": 0.2658930404975858
             },
             {
               "offset_um": 50,
-              "mean_MPa": 14.7,
-              "sf_wire": 6.318,
-              "k_break_even": 0.272
+              "mean_MPa": 14.681766982859237,
+              "sf_wire": 6.320245510823196,
+              "k_break_even": 0.27190276180300205
             },
             {
               "offset_um": 75,
-              "mean_MPa": 33.0,
-              "sf_wire": 5.091,
-              "k_break_even": 0.296
+              "mean_MPa": 33.0350225377697,
+              "sf_wire": 5.09015554229345,
+              "k_break_even": 0.29601457499307254
             },
             {
               "offset_um": 100,
-              "mean_MPa": 51.6,
-              "sf_wire": 4.252,
-              "k_break_even": 0.3252
+              "mean_MPa": 51.63821384796403,
+              "sf_wire": 4.251442207155924,
+              "k_break_even": 0.3252498879602005
             }
           ]
         },
@@ -352,70 +352,70 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 5.63,
-              "k_break_even": 0.3552
+              "sf_wire": 5.631306159263523,
+              "k_break_even": 0.3551573903880171
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 5.63,
-              "k_break_even": 0.3552
+              "sf_wire": 5.631306159263523,
+              "k_break_even": 0.3551573903880171
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 5.63,
-              "k_break_even": 0.3552
+              "sf_wire": 5.631306159263523,
+              "k_break_even": 0.3551573903880171
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 5.63,
-              "k_break_even": 0.3552
+              "sf_wire": 5.631306159263523,
+              "k_break_even": 0.3551573903880171
             },
             {
               "offset_um": 25,
-              "mean_MPa": 2.0,
-              "sf_wire": 5.452,
-              "k_break_even": 0.3594
+              "mean_MPa": 1.950145811532821,
+              "sf_wire": 5.4575830932245575,
+              "k_break_even": 0.3592184240405861
             },
             {
               "offset_um": 30,
-              "mean_MPa": 4.5,
-              "sf_wire": 5.245,
-              "k_break_even": 0.3647
+              "mean_MPa": 4.496470045824492,
+              "sf_wire": 5.2462610215405965,
+              "k_break_even": 0.36466287261132807
             },
             {
               "offset_um": 40,
-              "mean_MPa": 9.6,
-              "sf_wire": 4.868,
-              "k_break_even": 0.3762
+              "mean_MPa": 9.589118514408046,
+              "sf_wire": 4.869183502914204,
+              "k_break_even": 0.37606235558519924
             },
             {
               "offset_um": 50,
-              "mean_MPa": 14.7,
-              "sf_wire": 4.541,
-              "k_break_even": 0.3883
+              "mean_MPa": 14.681766982859237,
+              "sf_wire": 4.542676460904172,
+              "k_break_even": 0.3881975401110906
             },
             {
               "offset_um": 75,
-              "mean_MPa": 33.0,
-              "sf_wire": 3.66,
-              "k_break_even": 0.4392
+              "mean_MPa": 33.0350225377697,
+              "sf_wire": 3.658549296023417,
+              "k_break_even": 0.439283402591339
             },
             {
               "offset_um": 100,
-              "mean_MPa": 51.6,
-              "sf_wire": 3.056,
-              "k_break_even": 0.5068
+              "mean_MPa": 51.63821384796403,
+              "sf_wire": 3.0557240863933206,
+              "k_break_even": 0.5068984316090294
             }
           ]
         }
       }
     },
     "lock window, shallow end": {
-      "amplitude_MPa": 19.69,
-      "amplitude_zero_interference_MPa": 19.1,
+      "amplitude_MPa": 19.689455976686006,
+      "amplitude_zero_interference_MPa": 19.102967244331026,
       "amplitude_is": "upper end of 68's coaxial bracket at the worst swept µ, worst over the six plays (Ti-bore stop)",
       "mean_is": "68's rigid-wall static root stress, worst over the six plays",
       "by_alloy": {
@@ -426,62 +426,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 19.299,
-              "k_break_even": 0.1036
+              "sf_wire": 19.29966985629021,
+              "k_break_even": 0.10362871566676846
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 19.299,
-              "k_break_even": 0.1036
+              "sf_wire": 19.29966985629021,
+              "k_break_even": 0.10362871566676846
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 19.299,
-              "k_break_even": 0.1036
+              "sf_wire": 19.29966985629021,
+              "k_break_even": 0.10362871566676846
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 19.299,
-              "k_break_even": 0.1036
+              "sf_wire": 19.29966985629021,
+              "k_break_even": 0.10362871566676846
             },
             {
               "offset_um": 25,
-              "mean_MPa": 1.3,
-              "sf_wire": 18.803,
-              "k_break_even": 0.1039
+              "mean_MPa": 1.3054630081963594,
+              "sf_wire": 18.801046219674998,
+              "k_break_even": 0.1039143078455362
             },
             {
               "offset_um": 30,
-              "mean_MPa": 3.0,
-              "sf_wire": 18.191,
-              "k_break_even": 0.1043
+              "mean_MPa": 3.0100186752747216,
+              "sf_wire": 18.187506392496868,
+              "k_break_even": 0.10428958640935548
             },
             {
               "offset_um": 40,
-              "mean_MPa": 6.4,
-              "sf_wire": 17.079,
-              "k_break_even": 0.105
+              "mean_MPa": 6.419130009444309,
+              "sf_wire": 17.073197485205473,
+              "k_break_even": 0.10504833443735577
             },
             {
               "offset_um": 50,
-              "mean_MPa": 9.8,
-              "sf_wire": 16.095,
-              "k_break_even": 0.1058
+              "mean_MPa": 9.828241343655769,
+              "sf_wire": 16.087548428966787,
+              "k_break_even": 0.10581820376176373
             },
             {
               "offset_um": 75,
-              "mean_MPa": 21.4,
-              "sf_wire": 13.451,
-              "k_break_even": 0.1085
+              "mean_MPa": 21.36626364068942,
+              "sf_wire": 13.458015265469228,
+              "k_break_even": 0.10850965436734263
             },
             {
               "offset_um": 100,
-              "mean_MPa": 34.2,
-              "sf_wire": 11.387,
-              "k_break_even": 0.1117
+              "mean_MPa": 34.247589523592985,
+              "sf_wire": 11.381166973164513,
+              "k_break_even": 0.11168093190575959
             }
           ]
         },
@@ -492,62 +492,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 18.283,
-              "k_break_even": 0.1094
+              "sf_wire": 18.283897758590722,
+              "k_break_even": 0.10938586653714448
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 18.283,
-              "k_break_even": 0.1094
+              "sf_wire": 18.283897758590722,
+              "k_break_even": 0.10938586653714448
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 18.283,
-              "k_break_even": 0.1094
+              "sf_wire": 18.283897758590722,
+              "k_break_even": 0.10938586653714448
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 18.283,
-              "k_break_even": 0.1094
+              "sf_wire": 18.283897758590722,
+              "k_break_even": 0.10938586653714448
             },
             {
               "offset_um": 25,
-              "mean_MPa": 1.3,
-              "sf_wire": 17.813,
-              "k_break_even": 0.1097
+              "mean_MPa": 1.3054630081963594,
+              "sf_wire": 17.81151747127105,
+              "k_break_even": 0.10970412136445107
             },
             {
               "offset_um": 30,
-              "mean_MPa": 3.0,
-              "sf_wire": 17.233,
-              "k_break_even": 0.1101
+              "mean_MPa": 3.0100186752747216,
+              "sf_wire": 17.2302692139444,
+              "k_break_even": 0.11012246806031982
             },
             {
               "offset_um": 40,
-              "mean_MPa": 6.4,
-              "sf_wire": 16.18,
-              "k_break_even": 0.111
+              "mean_MPa": 6.419130009444309,
+              "sf_wire": 16.174608143878867,
+              "k_break_even": 0.110968806979352
             },
             {
               "offset_um": 50,
-              "mean_MPa": 9.8,
-              "sf_wire": 15.248,
-              "k_break_even": 0.1118
+              "mean_MPa": 9.828241343655769,
+              "sf_wire": 15.24083535375801,
+              "k_break_even": 0.11182825561542996
             },
             {
               "offset_um": 75,
-              "mean_MPa": 21.4,
-              "sf_wire": 12.743,
-              "k_break_even": 0.1149
+              "mean_MPa": 21.36626364068942,
+              "sf_wire": 12.749698672549798,
+              "k_break_even": 0.1148384640924585
             },
             {
               "offset_um": 100,
-              "mean_MPa": 34.2,
-              "sf_wire": 10.788,
-              "k_break_even": 0.1184
+              "mean_MPa": 34.247589523592985,
+              "sf_wire": 10.782158185103222,
+              "k_break_even": 0.11839652327044858
             }
           ]
         },
@@ -558,62 +558,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 17.877,
-              "k_break_even": 0.1119
+              "sf_wire": 17.87758891951093,
+              "k_break_even": 0.11187190895844322
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 17.877,
-              "k_break_even": 0.1119
+              "sf_wire": 17.87758891951093,
+              "k_break_even": 0.11187190895844322
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 17.877,
-              "k_break_even": 0.1119
+              "sf_wire": 17.87758891951093,
+              "k_break_even": 0.11187190895844322
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 17.877,
-              "k_break_even": 0.1119
+              "sf_wire": 17.87758891951093,
+              "k_break_even": 0.11187190895844322
             },
             {
               "offset_um": 25,
-              "mean_MPa": 1.3,
-              "sf_wire": 17.417,
-              "k_break_even": 0.1122
+              "mean_MPa": 1.3054630081963594,
+              "sf_wire": 17.41570597190947,
+              "k_break_even": 0.11220481631535495
             },
             {
               "offset_um": 30,
-              "mean_MPa": 3.0,
-              "sf_wire": 16.85,
-              "k_break_even": 0.1126
+              "mean_MPa": 3.0100186752747216,
+              "sf_wire": 16.847374342523416,
+              "k_break_even": 0.1126424907786093
             },
             {
               "offset_um": 40,
-              "mean_MPa": 6.4,
-              "sf_wire": 15.82,
-              "k_break_even": 0.1135
+              "mean_MPa": 6.419130009444309,
+              "sf_wire": 15.815172407348225,
+              "k_break_even": 0.11352816359907024
             },
             {
               "offset_um": 50,
-              "mean_MPa": 9.8,
-              "sf_wire": 14.909,
-              "k_break_even": 0.1144
+              "mean_MPa": 9.828241343655769,
+              "sf_wire": 14.902150123674499,
+              "k_break_even": 0.1144278743343512
             },
             {
               "offset_um": 75,
-              "mean_MPa": 21.4,
-              "sf_wire": 12.46,
-              "k_break_even": 0.1176
+              "mean_MPa": 21.36626364068942,
+              "sf_wire": 12.466372035382022,
+              "k_break_even": 0.11758163680212025
             },
             {
               "offset_um": 100,
-              "mean_MPa": 34.2,
-              "sf_wire": 10.548,
-              "k_break_even": 0.1213
+              "mean_MPa": 34.247589523592985,
+              "sf_wire": 10.542554669878708,
+              "k_break_even": 0.12131447323731225
             }
           ]
         },
@@ -624,62 +624,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 17.268,
-              "k_break_even": 0.1158
+              "sf_wire": 17.26812566089124,
+              "k_break_even": 0.11582032927462356
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 17.268,
-              "k_break_even": 0.1158
+              "sf_wire": 17.26812566089124,
+              "k_break_even": 0.11582032927462356
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 17.268,
-              "k_break_even": 0.1158
+              "sf_wire": 17.26812566089124,
+              "k_break_even": 0.11582032927462356
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 17.268,
-              "k_break_even": 0.1158
+              "sf_wire": 17.26812566089124,
+              "k_break_even": 0.11582032927462356
             },
             {
               "offset_um": 25,
-              "mean_MPa": 1.3,
-              "sf_wire": 16.823,
-              "k_break_even": 0.1162
+              "mean_MPa": 1.3054630081963594,
+              "sf_wire": 16.821988722867104,
+              "k_break_even": 0.11617718814879892
             },
             {
               "offset_um": 30,
-              "mean_MPa": 3.0,
-              "sf_wire": 16.276,
-              "k_break_even": 0.1166
+              "mean_MPa": 3.0100186752747216,
+              "sf_wire": 16.273032035391935,
+              "k_break_even": 0.11664646584070668
             },
             {
               "offset_um": 40,
-              "mean_MPa": 6.4,
-              "sf_wire": 15.281,
-              "k_break_even": 0.1176
+              "mean_MPa": 6.419130009444309,
+              "sf_wire": 15.276018802552263,
+              "k_break_even": 0.1175964872518556
             },
             {
               "offset_um": 50,
-              "mean_MPa": 9.8,
-              "sf_wire": 14.401,
-              "k_break_even": 0.1186
+              "mean_MPa": 9.828241343655769,
+              "sf_wire": 14.394122278549231,
+              "k_break_even": 0.11856211053714653
             },
             {
               "offset_um": 75,
-              "mean_MPa": 21.4,
-              "sf_wire": 12.035,
-              "k_break_even": 0.122
+              "mean_MPa": 21.36626364068942,
+              "sf_wire": 12.041382079630365,
+              "k_break_even": 0.12195125309817174
             },
             {
               "offset_um": 100,
-              "mean_MPa": 34.2,
-              "sf_wire": 10.189,
-              "k_break_even": 0.126
+              "mean_MPa": 34.247589523592985,
+              "sf_wire": 10.183149397041934,
+              "k_break_even": 0.12597143004620584
             }
           ]
         },
@@ -690,62 +690,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 9.751,
-              "k_break_even": 0.2051
+              "sf_wire": 9.751412137915054,
+              "k_break_even": 0.2050984997571459
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 9.751,
-              "k_break_even": 0.2051
+              "sf_wire": 9.751412137915054,
+              "k_break_even": 0.2050984997571459
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 9.751,
-              "k_break_even": 0.2051
+              "sf_wire": 9.751412137915054,
+              "k_break_even": 0.2050984997571459
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 9.751,
-              "k_break_even": 0.2051
+              "sf_wire": 9.751412137915054,
+              "k_break_even": 0.2050984997571459
             },
             {
               "offset_um": 25,
-              "mean_MPa": 1.3,
-              "sf_wire": 9.5,
-              "k_break_even": 0.2062
+              "mean_MPa": 1.3054630081963594,
+              "sf_wire": 9.499475984677893,
+              "k_break_even": 0.2062202200438516
             },
             {
               "offset_um": 30,
-              "mean_MPa": 3.0,
-              "sf_wire": 9.191,
-              "k_break_even": 0.2077
+              "mean_MPa": 3.0100186752747216,
+              "sf_wire": 9.18947691410368,
+              "k_break_even": 0.20770346352434388
             },
             {
               "offset_um": 40,
-              "mean_MPa": 6.4,
-              "sf_wire": 8.629,
-              "k_break_even": 0.2107
+              "mean_MPa": 6.419130009444309,
+              "sf_wire": 8.626457676735397,
+              "k_break_even": 0.21073489427325645
             },
             {
               "offset_um": 50,
-              "mean_MPa": 9.8,
-              "sf_wire": 8.132,
-              "k_break_even": 0.2138
+              "mean_MPa": 9.828241343655769,
+              "sf_wire": 8.128445522004272,
+              "k_break_even": 0.21385612304943066
             },
             {
               "offset_um": 75,
-              "mean_MPa": 21.4,
-              "sf_wire": 6.796,
-              "k_break_even": 0.2252
+              "mean_MPa": 21.36626364068942,
+              "sf_wire": 6.799839292026559,
+              "k_break_even": 0.22514201495792535
             },
             {
               "offset_um": 100,
-              "mean_MPa": 34.2,
-              "sf_wire": 5.754,
-              "k_break_even": 0.2392
+              "mean_MPa": 34.247589523592985,
+              "sf_wire": 5.7504843653883855,
+              "k_break_even": 0.23923724552116163
             }
           ]
         },
@@ -756,62 +756,62 @@
             {
               "offset_um": 0,
               "mean_MPa": 0.0,
-              "sf_wire": 7.009,
-              "k_break_even": 0.2854
+              "sf_wire": 7.008827474126445,
+              "k_break_even": 0.2853544344447247
             },
             {
               "offset_um": 10,
               "mean_MPa": 0.0,
-              "sf_wire": 7.009,
-              "k_break_even": 0.2854
+              "sf_wire": 7.008827474126445,
+              "k_break_even": 0.2853544344447247
             },
             {
               "offset_um": 15,
               "mean_MPa": 0.0,
-              "sf_wire": 7.009,
-              "k_break_even": 0.2854
+              "sf_wire": 7.008827474126445,
+              "k_break_even": 0.2853544344447247
             },
             {
               "offset_um": 20,
               "mean_MPa": 0.0,
-              "sf_wire": 7.009,
-              "k_break_even": 0.2854
+              "sf_wire": 7.008827474126445,
+              "k_break_even": 0.2853544344447247
             },
             {
               "offset_um": 25,
-              "mean_MPa": 1.3,
-              "sf_wire": 6.828,
-              "k_break_even": 0.2875
+              "mean_MPa": 1.3054630081963594,
+              "sf_wire": 6.8277483639872365,
+              "k_break_even": 0.28753043646522275
             },
             {
               "offset_um": 30,
-              "mean_MPa": 3.0,
-              "sf_wire": 6.606,
-              "k_break_even": 0.2904
+              "mean_MPa": 3.0100186752747216,
+              "sf_wire": 6.6049365320120215,
+              "k_break_even": 0.2904221214551178
             },
             {
               "offset_um": 40,
-              "mean_MPa": 6.4,
-              "sf_wire": 6.202,
-              "k_break_even": 0.2964
+              "mean_MPa": 6.419130009444309,
+              "sf_wire": 6.200266455153567,
+              "k_break_even": 0.2963835626855408
             },
             {
               "offset_um": 50,
-              "mean_MPa": 9.8,
-              "sf_wire": 5.845,
-              "k_break_even": 0.3026
+              "mean_MPa": 9.828241343655769,
+              "sf_wire": 5.8423202189405705,
+              "k_break_even": 0.30259487171158883
             },
             {
               "offset_um": 75,
-              "mean_MPa": 21.4,
-              "sf_wire": 4.885,
-              "k_break_even": 0.3258
+              "mean_MPa": 21.36626364068942,
+              "sf_wire": 4.887384491144089,
+              "k_break_even": 0.3256959109691368
             },
             {
               "offset_um": 100,
-              "mean_MPa": 34.2,
-              "sf_wire": 4.135,
-              "k_break_even": 0.3559
+              "mean_MPa": 34.247589523592985,
+              "sf_wire": 4.133160637622903,
+              "k_break_even": 0.3560418206966099
             }
           ]
         }
@@ -826,16 +826,16 @@
         "shipped — the whole lock shank (HW.26 G1)": {
           "binding_alloy": "Ta",
           "mean_MPa": 0.0,
-          "sf_wire_binding": 5.63,
-          "k_break_even_binding": 0.3552,
-          "k_break_even_max_over_alloys": 0.3552
+          "sf_wire_binding": 5.631306159263523,
+          "k_break_even_binding": 0.3551573903880171,
+          "k_break_even_max_over_alloys": 0.3551573903880171
         },
         "lock window, shallow end": {
           "binding_alloy": "Ta",
           "mean_MPa": 0.0,
-          "sf_wire_binding": 7.009,
-          "k_break_even_binding": 0.2854,
-          "k_break_even_max_over_alloys": 0.2854
+          "sf_wire_binding": 7.008827474126445,
+          "k_break_even_binding": 0.2853544344447247,
+          "k_break_even_max_over_alloys": 0.2853544344447247
         }
       }
     },
@@ -845,17 +845,17 @@
       "by_geometry": {
         "shipped — the whole lock shank (HW.26 G1)": {
           "binding_alloy": "Ta",
-          "mean_MPa": 14.7,
-          "sf_wire_binding": 4.541,
-          "k_break_even_binding": 0.3883,
-          "k_break_even_max_over_alloys": 0.3883
+          "mean_MPa": 14.681766982859237,
+          "sf_wire_binding": 4.542676460904172,
+          "k_break_even_binding": 0.3881975401110906,
+          "k_break_even_max_over_alloys": 0.3881975401110906
         },
         "lock window, shallow end": {
           "binding_alloy": "Ta",
-          "mean_MPa": 9.8,
-          "sf_wire_binding": 5.845,
-          "k_break_even_binding": 0.3026,
-          "k_break_even_max_over_alloys": 0.3026
+          "mean_MPa": 9.828241343655769,
+          "sf_wire_binding": 5.8423202189405705,
+          "k_break_even_binding": 0.30259487171158883,
+          "k_break_even_max_over_alloys": 0.30259487171158883
         }
       }
     },
@@ -865,17 +865,17 @@
       "by_geometry": {
         "shipped — the whole lock shank (HW.26 G1)": {
           "binding_alloy": "Ta",
-          "mean_MPa": 51.6,
-          "sf_wire_binding": 3.056,
-          "k_break_even_binding": 0.5068,
-          "k_break_even_max_over_alloys": 0.5068
+          "mean_MPa": 51.63821384796403,
+          "sf_wire_binding": 3.0557240863933206,
+          "k_break_even_binding": 0.5068984316090294,
+          "k_break_even_max_over_alloys": 0.5068984316090294
         },
         "lock window, shallow end": {
           "binding_alloy": "Ta",
-          "mean_MPa": 34.2,
-          "sf_wire_binding": 4.135,
-          "k_break_even_binding": 0.3559,
-          "k_break_even_max_over_alloys": 0.3559
+          "mean_MPa": 34.247589523592985,
+          "sf_wire_binding": 4.133160637622903,
+          "k_break_even_binding": 0.3560418206966099,
+          "k_break_even_max_over_alloys": 0.3560418206966099
         }
       }
     }
@@ -883,7 +883,7 @@
   "controls": {
     "zero_mean_sf_equals_script55": {
       "alloy": "Ta",
-      "sf": 5.803,
+      "sf": 5.804195405624486,
       "script55": 5.8
     },
     "monotone_in_offset": true,

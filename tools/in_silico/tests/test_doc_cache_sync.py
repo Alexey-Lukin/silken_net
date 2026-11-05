@@ -220,8 +220,9 @@ def _up3(x: float) -> float:
 
 
 def _sod86(d: dict, branch: str, geo: int = 0) -> tuple:
-    """86's own Soderberg on its OWN cached inputs, for the alloy it names binding at a branch: (SF, k) unrounded — its
-    cache keeps k to 4 and SF to 3 decimals, too coarse to round directionally from (in-silico §When Modifying #43 ⊕)."""
+    """86's own Soderberg on its OWN cached inputs, for the alloy it names binding at a branch: (SF, k) unrounded — written
+    when 86 cached k to 4 and SF to 3 decimals; 86 caches raw since 2026-11-05, and the recompute stays so a pin reads the
+    formula, not a row (in-silico §When Modifying #6, #43 ⊕)."""
     gk = list(d["by_geometry"])[geo]
     g, br = d["by_geometry"][gk], d["branches"][branch]
     r = g["by_alloy"][br["by_geometry"][gk]["binding_alloy"]]
@@ -1890,15 +1891,14 @@ CHECKS += [
           ("the rise", rf"\*\*, на {N} % \(арифметика `86`",
            lambda d: round((_up3(_sod86(d, "loose_50")[1]) / _up3(_sod86(d, "tight")[1]) - 1) * 100, 1)),
           ("the acceptance threshold", rf"Ta нижче {N} не приймається", lambda d: _up3(_sod86(d, "loose_50")[1])))],
-    # the ⊕'s own 5-digit arithmetic sits on `68`'s display-rounded inputs, whose band the ⊕ itself declares (±0.0002 at
-    # ⌀0.10, ±0.0001 tight) — pinned within THAT band, so the `68` → `86` re-run moves them without forcing a rewrite of a
-    # ratified form; the 3-decimal UP displays above clear the band and stay exact (00_07 HW.43, the `68` leg)
-    ("coaxiality ⊕ 2026-11-03 in 01_01 §1.4, tight arithmetic", COAXIAL, rf"арифметика `86` {N} · [\d.]+ на закешованих",
-     "mechanical/coaxiality_allocation.json", lambda d: round(_sod86(d, "tight")[1], 5), 1e-4),
-    ("coaxiality ⊕ 2026-11-03 in 01_01 §1.4, ⌀0.10 arithmetic", COAXIAL, rf"арифметика `86` [\d.]+ · {N} на закешованих",
-     "mechanical/coaxiality_allocation.json", lambda d: round(_sod86(d, "loose_50")[1], 5), 2e-4),
-    ("coaxiality ⊕ 2026-11-03 in 01_01 §1.4, what «≥ 0.388» accepted", COAXIAL, rf"приймає відповідь вендора 0\.3880–{N}",
-     "mechanical/coaxiality_allocation.json", lambda d: math.floor(round(_sod86(d, "loose_50")[1] * 1e4, 9)) / 1e4, 2e-4),
+    # the ⊕ 2026-11-03 numbers stood on 68's display-rounded inputs and were pinned within that band; 68 caches raw since
+    # 2026-11-05 and the ⊕ beside them carries the raw arithmetic — the pins read the ⊕, exactly (00_05 §7; 00_07 HW.43)
+    ("coaxiality ⊕ 2026-11-05 in 01_01 §1.4, tight arithmetic", COAXIAL, rf"на сирих входах `68` арифметика `86` \*\*{N}\*\* · ",
+     "mechanical/coaxiality_allocation.json", lambda d: round(_sod86(d, "tight")[1], 5), 1e-9),
+    ("coaxiality ⊕ 2026-11-05 in 01_01 §1.4, ⌀0.10 arithmetic", COAXIAL, rf"арифметика `86` \*\*[\d.]+\*\* · \*\*{N}\*\*, показ",
+     "mechanical/coaxiality_allocation.json", lambda d: round(_sod86(d, "loose_50")[1], 5), 1e-9),
+    ("coaxiality ⊕ 2026-11-05 in 01_01 §1.4, what «≥ 0.388» accepted", COAXIAL, rf"приймало б без вимоги, — 0\.3880–\*\*{N}\*\*",
+     "mechanical/coaxiality_allocation.json", lambda d: math.floor(round(_sod86(d, "loose_50")[1] * 1e4, 9)) / 1e4, 1e-9),
     ("coaxiality ⊕ 2026-11-03 in 01_01 §1.4, the gentle corner's hot preload", COAXIAL,
      rf"тепловим навантаженням `102` \({N} Н\)", "mechanical/wire_liner_shear_lag.json",
      lambda d: round(d["seam_by_alloy"]["Ta"]["hot_preload"]["F_N_gentle_nominal_relaxed_mu_low"], 2), 0.0),
@@ -3226,10 +3226,13 @@ CHECKS += [
      lambda d: min(_lec(d, "cycle", "peak_sigma_MPa")), 0.0005),
     ("liner exit contact, (B) peak — high", SUMMARY, rf"sits at or just after touchdown\*\*: \*\*[\d.]+–{N}\*\* MPa", _LEC,
      lambda d: max(_lec(d, "cycle", "peak_sigma_MPa")), 0.0005),
-    ("liner exit contact, (B) peak over 68 — low", SUMMARY, rf"MPa, ×\*\*{N}–[\d.]+\*\* of `68`'s figure\. On a rigid", _LEC,
-     lambda d: min(_lec(d, "cycle", "peak_over_68_rigid_end")), 0.001),
-    ("liner exit contact, (B) peak over 68 — high", SUMMARY, rf"MPa, ×\*\*[\d.]+–{N}\*\* of `68`'s figure\. On a rigid", _LEC,
-     lambda d: max(_lec(d, "cycle", "peak_over_68_rigid_end")), 0.001),
+    ("liner exit contact, (B) 68's figure the ratios divide by", SUMMARY, rf"of `68`'s \*\*{N}\*\* MPa\. On a rigid",  # a reading
+     "mechanical/bus_contact_equilibrium.json", lambda d: round(d["script55_side_by_side"]["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"]
+                                                                [next(iter(d["script55_side_by_side"]["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"]))], 3), 1e-9),
+    ("liner exit contact, (B) peak over 68 — low", SUMMARY, rf"MPa, ×\*\*{N}–[\d.]+\*\* of `68`'s \*\*[\d.]+\*\* MPa\. On a rigid", _LEC,
+     lambda d: min(_lec(d, "cycle", "peak_over_68_rigid_end")), 0.0005 + 1e-9),   # half a display step (2026-11-04)
+    ("liner exit contact, (B) peak over 68 — high", SUMMARY, rf"MPa, ×\*\*[\d.]+–{N}\*\* of `68`'s \*\*[\d.]+\*\* MPa\. On a rigid", _LEC,
+     lambda d: max(_lec(d, "cycle", "peak_over_68_rigid_end")), 0.0005 + 1e-9),   # half a display step (2026-11-04)
     ("liner exit contact, (B) the radius's lift", SUMMARY, rf"the edge radius lifts it by ≤ \*\*{N}\*\* MPa", _LEC,
      lambda d: max(_lec(d, "cycle", "peak_lift_by_radius_over_flush_MPa")), 0.0005),
     ("liner exit contact, (B) the give's lift", SUMMARY, rf"the give lifts it by ≤ \*\*{N}\*\* MPa more", _LEC,
@@ -3271,9 +3274,9 @@ CHECKS += [
     ("liner exit contact, (I) tip at touchdown — high", SUMMARY, rf"already at touchdown \(\*\*[\d.]+–{N}\*\* µm", _LEC,
      lambda d: max(_lec(d, "countersink", "tip_past_bore_line_um_at_touchdown")), 0.05),
     ("liner exit contact, (I) countersink peak — low", SUMMARY, rf"the cycle peak ×\*\*{N}–[\d.]+\*\* of `68`'s figure, the full-drag", _LEC,
-     lambda d: min(_lec(d, "countersink", "peak_over_68_rigid_end")), 0.001),
+     lambda d: min(_lec(d, "countersink", "peak_over_68_rigid_end")), 0.0005 + 1e-9),   # half a display step (2026-11-04)
     ("liner exit contact, (I) countersink peak — high", SUMMARY, rf"the cycle peak ×\*\*[\d.]+–{N}\*\* of `68`'s figure, the full-drag", _LEC,
-     lambda d: max(_lec(d, "countersink", "peak_over_68_rigid_end")), 0.001),
+     lambda d: max(_lec(d, "countersink", "peak_over_68_rigid_end")), 0.0005 + 1e-9),   # half a display step (2026-11-04)
     ("liner exit contact, (I) reversal depth", SUMMARY, rf"reversing beyond e ≈ \*\*{N}\*\* mm", _LEC,
      lambda d: d["countersink_full_drag_reversal_overhang_mm"], 0.005),
     ("liner exit contact, (I) countersink sub-cycle", SUMMARY, rf"the sub-cycle up to \*\*{N}\*\* MPa", _LEC,
@@ -3328,7 +3331,8 @@ CHECKS += [
     for k, (col, tol, fn) in enumerate((
         ("elastic", 0.0051, lambda d, e: _lmc_static(d, e, 0.2)["sigma_signed_MPa"]),
         ("rigid same edges", 0.0051, lambda d, e: _lmc_static(d, e, 0.2)["rigid_same_edges_sigma_signed_MPa"]),
-        ("68 rigid sharp", 0.0, lambda d, e: _lmc_static(d, e, 0.2)["sigma_68_rigid_sharp_MPa"])))
+        # 68 caches its offset table raw since 2026-11-05 (00_07 HW.43); the doc quotes it as 68 printed it — a reading
+        ("68 rigid sharp", 0.0, lambda d, e: round(_lmc_static(d, e, 0.2)["sigma_68_rigid_sharp_MPa"], 1))))
 ] + [
     (f"liner mouth contact, cycle peak {lab} r_in {r}", SUMMARY,
      rf"(?m)^\| {lab} \| " + _LMC_PEAK + "{" + str(k) + "}" + rf"\*\*{N}\*\* \(×", _LMC,
@@ -3390,16 +3394,16 @@ CHECKS += [
         ("(C′) exit rise — high", rf"cycle peak is ×\*\*[\d.]+–{N}\*\* the coaxial", lambda d: max(d["summary"]["exit_rise_at_tolerance"].values()), 0.005),
         ("(C′) exit at r 0.05", rf"r_exit 0\.05 mm \(×\*\*{N}\*\*\)", lambda d: _lmc_exit(d, 50, 0.05)["peak_over_flow"]["1.0"], 0.005),
         ("(C′) exit floor", rf"smallest swept exit radius that holds there is \*\*{N}\*\* mm", lambda d: d["summary"]["smallest_r_exit_below_1_sigma_y_at_tolerance_mm"], 0.0),
-        ("(D) k needed, shipped", rf"needs k ≥ \*\*{N}\*\* \(`86`", lambda d: d["summary"]["versus_86_threshold"]["k_needed_shipped"], 0.00051),
-        ("(D) k needed, shanks — low", rf"\*\*{N}–[\d.]+\*\* over the swept shanks", lambda d: min(d["summary"]["versus_86_threshold"]["k_needed_by_shank"].values()), 0.00051),
-        ("(D) k needed, shanks — high", rf"\*\*[\d.]+–{N}\*\* over the swept shanks", lambda d: max(d["summary"]["versus_86_threshold"]["k_needed_by_shank"].values()), 0.00051),
+        ("(D) k needed, shipped", rf"needs k ≥ \*\*{N}\*\* \(`86`", lambda d: _ceil_n(d["summary"]["versus_86_threshold"]["k_needed_shipped"], 3), 0.0),   # a need: UP
+        ("(D) k needed, shanks — low", rf"\*\*{N}–[\d.]+\*\* over the swept shanks", lambda d: _floor_n(min(d["summary"]["versus_86_threshold"]["k_needed_by_shank"].values()), 3), 0.0),   # bracket OUTWARD
+        ("(D) k needed, shanks — high", rf"\*\*[\d.]+–{N}\*\* over the swept shanks", lambda d: _ceil_n(max(d["summary"]["versus_86_threshold"]["k_needed_by_shank"].values()), 3), 0.0),
         ("(D) midpoint beyond 86 on the 18 mm shank", rf"on the 18 mm shank the cycle midpoint, \*\*{N}\*\* MPa", lambda d: next(z["root_mean_amplitude_MPa"][0] for z in d["shank"] if z["shank_mm"] == 18.0), 0.0051),
         ("(D) static root on the 18 mm shank", rf"MPa \(static \*\*{N}\*\*\), lies beyond", lambda d: next(z["static_sigma_MPa"] for z in d["shank"] if z["shank_mm"] == 18.0), 0.0051),
         ("(D) ends catch", rf"the ends alone catch as little as \*\*{N}\*\* %", lambda d: 100 * (1 - max(d["summary"]["ends_only_understate_amplitude_by"].values())), 0.5),
         ("(D) 68 within", rf"sharp-edge rows sit within \*\*{N}\*\* %", lambda d: 100 * max(abs(v) for v in d["summary"]["sharp_68_over_path_swing"].values()), 0.5),
-        ("(D) 86 k", rf"threshold k ≥ \*\*{N}\*\*", lambda d: d["summary"]["versus_86_threshold"]["k_break_even_binding"], 0.00005),
+        ("(D) 86 k", rf"threshold k ≥ \*\*{N}\*\*", lambda d: _ceil_n(d["summary"]["versus_86_threshold"]["k_break_even_binding"], 4), 0.0),
         ("(D) 86 amplitude", rf"\(amplitude \*\*{N}\*\* MPa, the Ti-bore", lambda d: d["summary"]["versus_86_threshold"]["amplitude_MPa_86"], 0.005),
-        ("(D) 86 mean", rf"mean \*\*{N}\*\* MPa, the worst play", lambda d: d["summary"]["versus_86_threshold"]["mean_MPa_86"], 0.005),
+        ("(D) 86 mean", rf"mean \*\*{N}\*\* MPa, the worst play", lambda d: round(d["summary"]["versus_86_threshold"]["mean_MPa_86"], 1), 0.0),
         ("(D) cycle mean", rf"runs at \*\*{N}\*\* ± ", lambda d: d["summary"]["versus_86_threshold"]["cycle_mean_MPa"], 0.005),
         ("(D) cycle amplitude", rf"runs at \*\*[\d.]+\*\* ± \*\*{N}\*\* MPa", lambda d: d["summary"]["versus_86_threshold"]["cycle_amplitude_MPa"], 0.005),
         ("(E) mouth swing — low", rf"swings ±\*\*{N}–[\d.]+\*\* MPa against", lambda d: d["summary"]["mouth_section_swing_from_50um_MPa"][0], 0.005),
@@ -4275,7 +4279,17 @@ CHECKS += [
     ("HW.34 · SUMMARY 116 (C) peak at D 1.5 floor", SUMMARY, rf"at \*\*{N}\*\* MPa there, a hair", CRE, lambda d: _cyc(d, 1.5, "at the floor"), 0.005),
     ("HW.34 · SUMMARY 116 (D) seam k needed (up)", SUMMARY, rf"needs `k` ≤ \*\*{N}\*\* on", CRE,
      lambda d: math.ceil(d["summary"]["k_seam_needed_max_all_rows"] * 1e4 - 1e-9) / 1e4, 1e-9),
-    ("HW.34 · SUMMARY 116 (D) 86's binding k", SUMMARY, rf"against its binding \*\*{N}\*\*", CRE, lambda d: d["summary"]["k_seam_86_binding"], 1e-9),
+    # 01_01 §1.4 «Співвісність» — the ratified body quotes 92's and 86's k; marks beside them carry the raw caches'
+    # displays (00_05 §7; 00_07 HW.43, 2026-11-05): a requirement UP, a bracket over shanks OUTWARD
+    ("HW.34 · 01_01 §1.4 ⊕ 92 k shipped", "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md", rf"вимога вгору \*\*{N}\*\*, дужка по хвостовиках", _LMC,
+     lambda d: _ceil_n(d["summary"]["versus_86_threshold"]["k_needed_shipped"], 3), 0.0),
+    ("HW.34 · 01_01 §1.4 ⊕ 92 k shanks low", "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md", rf"дужка по хвостовиках назовні \*\*{N}–", _LMC,
+     lambda d: _floor_n(min(d["summary"]["versus_86_threshold"]["k_needed_by_shank"].values()), 3), 0.0),
+    ("HW.34 · 01_01 §1.4 ⊕ 92 k shanks high", "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md", rf"дужка по хвостовиках назовні \*\*[\d.]+–{N}\*\*", _LMC,
+     lambda d: _ceil_n(max(d["summary"]["versus_86_threshold"]["k_needed_by_shank"].values()), 3), 0.0),
+    ("HW.34 · 01_01 §1.4 ⊕ 86 binding k", "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md", rf"`86` кешує сирим — поріг угору \*\*{N}\*\*", CRE,
+     lambda d: _ceil_n(d["summary"]["k_seam_86_binding"], 4), 1e-9),
+    ("HW.34 · SUMMARY 116 (D) 86's binding k", SUMMARY, rf"against its binding \*\*{N}\*\*", CRE, lambda d: _ceil_n(d["summary"]["k_seam_86_binding"], 4), 1e-9),
     ("HW.34 · SUMMARY 92 ⊕ flush at r 0.1 on the adverse corner", SUMMARY, rf"exit edge reaches \*\*{N}\*\* MPa at r 0.1 mm", CRE,
      lambda d: _grid(d, 0.0, 0.1), 0.005),
     ("HW.34 · SUMMARY 92 ⊕ flush floor at the tolerance limit", SUMMARY, rf"the floor at the tolerance limit is \*\*{N}\*\* mm", CRE,
@@ -4320,6 +4334,12 @@ CHECKS += [
      lambda d: _up2(_pd(d, 0.25)["ring_clearance_at_floor_um"]), 1e-9),
     ("HW.34 · PIPELINE_STATUS 116 ring high (up)", PSTAT, rf"over the channel [\d.]+–{N} µm radially", CRE,
      lambda d: _up2(_pd(d, 2.0)["ring_clearance_at_floor_um"]), 1e-9),
+    ("HW.34 · PIPELINE_STATUS 86 control, zero-mean SF ⊥ 55", PSTAT, rf"zero-mean SF = `55` \({N} vs 5\.80\)",  # a margin: down
+     "mechanical/coaxiality_allocation.json", lambda d: _floor_n(d["controls"]["zero_mean_sf_equals_script55"]["sf"], 3), 1e-9),
+    ("HW.34 · SUMMARY 86 control, zero-mean SF ⊥ 55", SUMMARY, rf"zero-interference play \({N} vs 5\.80\)",
+     "mechanical/coaxiality_allocation.json", lambda d: _floor_n(d["controls"]["zero_mean_sf_equals_script55"]["sf"], 3), 1e-9),
+    ("HW.34 · PIPELINE_STATUS 116 86's binding k (up)", PSTAT, rf"against `86`'s {N};", CRE,       # unpinned until 2026-11-05
+     lambda d: _ceil_n(d["summary"]["k_seam_86_binding"], 4), 1e-9),
     ("HW.34 · PIPELINE_STATUS 116 seam k (up)", PSTAT, rf"the seam `k` ≤ {N} against", CRE,
      lambda d: math.ceil(d["summary"]["k_seam_needed_max_all_rows"] * 1e4 - 1e-9) / 1e4, 1e-9),
 ]
@@ -4422,7 +4442,7 @@ CHECKS += [
     ("HW.34 · SUMMARY 116 (E) slide added, at most", SUMMARY, rf"the slide ≤ \+{N} µm per cycle", CRE,
      lambda d: max(_rat_cost(d, _coax_add("slide_per_cycle_um_at_mu_max"))), 0.005),
     ("HW.34 · SUMMARY 116 (E) seam k added, at most", SUMMARY, rf"the seam `k` ≤ \+{N}\.\n", CRE,
-     lambda d: round(max(_rat_cost(d, lambda a, b: a["k_seam_needed"] - b["k_seam_needed_at_floor"])), 4), 1e-9),
+     lambda d: _ceil_n(max(_rat_cost(d, lambda a, b: a["k_seam_needed"] - b["k_seam_needed_at_floor"])), 4), 1e-9),
     ("HW.34 · PIPELINE_STATUS 116 (d) peak", PSTAT, rf"block \(d\) holds it on each \(peak ≤ {N} MPa\)", CRE,
      lambda d: d["summary"]["ratified_exit_radius"]["peak_max_MPa"], 0.005),
 ]
@@ -6847,7 +6867,10 @@ CHECKS += [
     ("104 B F lo → 104", BLIND_MATE, r"приземляються на " + N + r"–", REMEDY, lambda d: _u1(_f_same(d)), 0.0),
     ("104 B F hi → 104", BLIND_MATE, r"приземляються на [\d.]+–" + N + r" Н", REMEDY, lambda d: _u1(_ta(d, "32", "run_length")["F_hot_N"]), 0.0),
     ("104 B F today → 104", BLIND_MATE, r"на Ta замість " + N + r", але", REMEDY, lambda d: _u1(_ta(d, "18", "today")["F_hot_N"]), 0.0),
-    ("104 B alone → 104", BLIND_MATE, r"саме гойдання вже просить " + N + r",", REMEDY, lambda d: _u3(_c3(d)["sway_alone"]["k"]), 0.0),
+    # the preserved price «0.931» (⊕ 2026-10-21, a ratified verdict's body) stays frozen text; the pin reads the
+    # dated mark beside it (00_05 §7; 00_07 HW.43, 2026-11-05)
+    ("104 B alone → 104", BLIND_MATE, r"просить 0\.931 \[⊕ 2026-11-05: на сирих кешах `68`/`86` — " + N + r", `104`: це підлога", REMEDY,
+     lambda d: _floor_n(_c3(d)["sway_alone"]["k"], 3), 0.0),   # a floor over state-3 corners, down (in-silico §When Modifying #43 ⊕)
     ("104 B shank 10 → 104", BLIND_MATE, r"хвостовик 10 мм — " + N + r" мкм; присуду", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_by_placeholder_shank"]["10"]), 0.0),
     ("104 B pin tol → 104", BLIND_MATE, r"— допуск ходу ±" + N + r" мм, наскільки він вихід плунжера, перекриває кожен резерв тут", REMEDY,
      lambda d: round(_st(d, "18", "pin_travel_tolerance_mm_not_in_52_chain"), 3), 0.0),

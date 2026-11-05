@@ -1314,7 +1314,7 @@ def main() -> int:
         play_rows.append({"at": label, "carried_by": "bore" if bore_follows_fit else "wire (bore = rod dia)",
                           "interference_radial_um": round(d * 1e6, 2),
                           "od_growth_radial_um": round(growth * 1e6, 2),
-                          "channel_radial_play_um": round(play * 1e6, 2),
+                          "channel_radial_play_um": play * 1e6,
                           "outer_surface_still_free": bool(play > 0.0)})
         print(f"    {label:<11s} δ {d * 1e6:>5.2f} µm → OD +{growth * 1e6:>5.2f} µm radial → channel "
               f"play {play_nominal * 1e6:.1f} → {play * 1e6:>5.2f} µm   (δ carried by the bore)")
@@ -1326,7 +1326,7 @@ def main() -> int:
                               "interference_radial_um": round(d * 1e6, 2),
                               "wire_over_nominal_radial_um": round((d - delta_bore_nominal) * 1e6, 2),
                               "od_growth_radial_um": round(growth * 1e6, 2),
-                              "channel_radial_play_um": round(play * 1e6, 2),
+                              "channel_radial_play_um": play * 1e6,
                               "outer_surface_still_free": bool(play > 0.0)})
             print(f"    {label:<11s} δ {d * 1e6:>5.2f} µm → wire {(d - delta_bore_nominal) * 1e6:+.2f} µm over nominal, bore at "
                   f"nominal → play {play * 1e6:>5.2f} µm   (δ carried by the wire)")
@@ -1517,8 +1517,8 @@ def main() -> int:
                                         "k_od_growth_per_interference": round(k_growth, 4),
                                         "play_sensitivity_um_per_um": {"bore_under_nominal": round(1.0 - k_growth, 4),
                                                                        "wire_over_nominal": round(-k_growth, 4)},
-                                        "play_range_radial_um": [round(min(r["channel_radial_play_um"] for r in play_rows), 2),
-                                                                 round(max(r["channel_radial_play_um"] for r in play_rows), 2)],
+                                        "play_range_radial_um": [min(r["channel_radial_play_um"] for r in play_rows),
+                                                                 max(r["channel_radial_play_um"] for r in play_rows)],
                                         "rows": play_rows,
                                         "note": ("WHO carries the interference sets the direction (adversarial read 2026-09-18): "
                                                          "play = play_zero + delta_bore - k*(delta_bore + e_wire). Carried by the bore "

@@ -249,87 +249,87 @@
       "PEEK below 23 °C and a multiaxial yield under the fit's hoop tension (either way)",
       "the beam-column coupling of the axial tension with 86's bending (a few per cent)"
     ],
-    "amplitude_86_MPa": 24.51,
+    "amplitude_86_MPa": 24.505859936773177,
     "offset_86_um": 50,
     "sf_target": 2.0,
     "by_alloy": {
       "Ti-15Zr": {
         "endurance_MPa": 380.0,
         "yield_MPa": 950.0,
-        "seam_k_86": 0.13311970454051705,
-        "seam_k_at_route_capacity": 0.5041570714751247,
+        "seam_k_86": 0.1330919469350058,
+        "seam_k_at_route_capacity": 0.5041146172311013,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.48855473684210504,
-          "loose_50": 0.5041570714751247,
-          "loose_100": 0.5480951818611239
+          "tight": 0.48853294703564804,
+          "loose_50": 0.5041146172311013,
+          "loose_100": 0.5481202069536782
         },
-        "sf_wire_86": 12.504113195129976,
-        "sf_wire_at_route_capacity": 3.8498400290156383
+        "sf_wire_86": 12.50881924017091,
+        "sf_wire_at_route_capacity": 3.8502860163671144
       },
       "beta-Ti-13Nb-13Zr": {
         "endurance_MPa": 360.0,
         "yield_MPa": 900.0,
-        "seam_k_86": 0.14076498966230186,
-        "seam_k_at_route_capacity": 0.5331116471399032,
+        "seam_k_86": 0.14073531774057493,
+        "seam_k_at_route_capacity": 0.5330655420371415,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.5156966666666665,
-          "loose_50": 0.5331116471399032,
-          "loose_100": 0.582488704819277
+          "tight": 0.5156736663154062,
+          "loose_50": 0.5330655420371415,
+          "loose_100": 0.5825185996966312
         },
-        "sf_wire_86": 11.846001974333662,
-        "sf_wire_at_route_capacity": 3.6472168695937626
+        "sf_wire_86": 11.850460332793492,
+        "sf_wire_at_route_capacity": 3.6476393839267405
       },
       "Ti-6Al-4V": {
         "endurance_MPa": 352.0,
         "yield_MPa": 880.0,
-        "seam_k_86": 0.14407477075005878,
-        "seam_k_at_route_capacity": 0.5456466023983069,
+        "seam_k_86": 0.14404425930045636,
+        "seam_k_at_route_capacity": 0.5455988759188248,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.5274170454545453,
-          "loose_50": 0.5456466023983069,
-          "loose_100": 0.5974858393408855
+          "tight": 0.5273935223680292,
+          "loose_50": 0.5455988759188248,
+          "loose_100": 0.5975179796682896
         },
-        "sf_wire_86": 11.582757486015135,
-        "sf_wire_at_route_capacity": 3.5661676058250116
+        "sf_wire_86": 11.587116769842526,
+        "sf_wire_at_route_capacity": 3.56658073095059
       },
       "Ti-6Al-7Nb": {
         "endurance_MPa": 340.0,
         "yield_MPa": 850.0,
-        "seam_k_86": 0.14934194491835243,
-        "seam_k_at_route_capacity": 0.5655946868145257,
+        "seam_k_86": 0.1493100840083157,
+        "seam_k_at_route_capacity": 0.5655443291798319,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.5460317647058821,
-          "loose_50": 0.5655946868145257,
-          "loose_100": 0.6214876807712905
+          "tight": 0.5460074113927831,
+          "loose_50": 0.5655443291798319,
+          "loose_100": 0.6215235689584978
         },
-        "sf_wire_86": 11.187890753537348,
-        "sf_wire_at_route_capacity": 3.4445937101718864
+        "sf_wire_86": 11.192101425416077,
+        "sf_wire_at_route_capacity": 3.444992751486366
       },
       "CP-Ti-Gr4": {
         "endurance_MPa": 192.0,
         "yield_MPa": 480.0,
-        "seam_k_86": 0.2719707057256991,
-        "seam_k_at_route_capacity": 1.030019973368841,
+        "seam_k_86": 0.27190276180300205,
+        "seam_k_at_route_capacity": 1.0298906872054145,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 0.9669312499999996,
-          "loose_50": 1.030019973368841,
-          "loose_100": 1.231759554140127
+          "tight": 0.9668881243413868,
+          "loose_50": 1.0298906872054145,
+          "loose_100": 1.2319544987465314
         },
-        "sf_wire_86": 6.317867719644621,
-        "sf_wire_at_route_capacity": 1.9451823304500064
+        "sf_wire_86": 6.320245510823196,
+        "sf_wire_at_route_capacity": 1.9454076714275947
       },
       "Ta": {
         "endurance_MPa": 138.0,
         "yield_MPa": 345.0,
-        "seam_k_86": 0.3883079847908745,
-        "seam_k_at_route_capacity": 1.4706178707224327,
+        "seam_k_86": 0.3881975401110906,
+        "seam_k_at_route_capacity": 1.470382384884067,
         "seam_k_at_route_capacity_by_branch": {
-          "tight": 1.3452956521739126,
-          "loose_50": 1.4706178707224327,
-          "loose_100": 1.919466501240694
+          "tight": 1.3452356512575816,
+          "loose_50": 1.470382384884067,
+          "loose_100": 1.9199877581655598
         },
-        "sf_wire_86": 4.540967423494569,
-        "sf_wire_at_route_capacity": 1.3980998000109421
+        "sf_wire_86": 4.542676460904172,
+        "sf_wire_at_route_capacity": 1.398261763838584
       }
     }
   },
@@ -343,5 +343,5 @@
     "μ_LR of green P. sylvestris; stem strain and acceleration at anchor height on host-size pines"
   ],
   "not_computed": "(D) thermal cycling of the pogo contacts — script 90 (`00_07` HW.43)",
-  "verdict": "Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the end of life with a clamp at 52's printed form and the initial reaction in A_rim, or with what a weaker clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled here — 89) — the stack's inertia is a fraction of the preload (1.3–3.4 % at the part-by-part mass estimate of 6.0–7.8 g, × a pair factor the layout sets), and the centre-pad Poisson term is a ceiling at the pin; behind the liner the same term loads the bus wire whether the press-fit slips or not (the wire spans the anode-to-flange distance beside the PEEK sleeve), and every axial force on the wire crosses the liner's wall, so the wall caps it at 53.7 N (68.4 MPa on the wire; PEEK's 23 °C uniaxial yield) whatever the source — this term, the sleeve's thermal growth between the anode and the flange, or both — on its tensile half and barring a parallel tie (ice or hardened resin in the wet gap); a grip or a capture that gives way first caps it lower. At that cap 86's own formula on the same section raises the seam requirement from k ≥ 0.1441 to 0.55 on Ti-6Al-4V and from 0.3884 to 1.48 on Ta, and drops the wire's SF from 4.54 to 1.39 on Ta; on CP-Ti-Gr4 and Ta not even an unweakened wire keeps SF 2, and on Ta even the tightest coaxiality branch needs k ≥ 1.35. How much axial load the root carries (the share of Δu the wood imposes, the sleeve's thermal growth) and how much of the term reaches the pin instead (the wire slips inside the liner near its held end before the wall yields) are not computed, so the requirement lies between 86's own k and that reading. When the rim does not hold, the pins slide (55's regime). The input describes one January day of one smaller tree."
+  "verdict": "Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the end of life with a clamp at 52's printed form and the initial reaction in A_rim, or with what a weaker clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled here — 89) — the stack's inertia is a fraction of the preload (1.3–3.4 % at the part-by-part mass estimate of 6.0–7.8 g, × a pair factor the layout sets), and the centre-pad Poisson term is a ceiling at the pin; behind the liner the same term loads the bus wire whether the press-fit slips or not (the wire spans the anode-to-flange distance beside the PEEK sleeve), and every axial force on the wire crosses the liner's wall, so the wall caps it at 53.7 N (68.4 MPa on the wire; PEEK's 23 °C uniaxial yield) whatever the source — this term, the sleeve's thermal growth between the anode and the flange, or both — on its tensile half and barring a parallel tie (ice or hardened resin in the wet gap); a grip or a capture that gives way first caps it lower. At that cap 86's own formula on the same section raises the seam requirement from k ≥ 0.1441 to 0.55 on Ti-6Al-4V and from 0.3882 to 1.48 on Ta, and drops the wire's SF from 4.54 to 1.39 on Ta; on CP-Ti-Gr4 and Ta not even an unweakened wire keeps SF 2, and on Ta even the tightest coaxiality branch needs k ≥ 1.35. How much axial load the root carries (the share of Δu the wood imposes, the sleeve's thermal growth) and how much of the term reaches the pin instead (the wire slips inside the liner near its held end before the wall yields) are not computed, so the requirement lies between 86's own k and that reading. When the rim does not hold, the pins slide (55's regime). The input describes one January day of one smaller tree."
 }
