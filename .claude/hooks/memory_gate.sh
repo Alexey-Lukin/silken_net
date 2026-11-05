@@ -488,7 +488,8 @@ rb_dark() {
 # Опускання робить втрату git-видимою.
 # 2026-10-17: 177 → 178 — журнал `log_skill_tier` (DOC-T.123: прилад тригера скілів і його пастки); підлога за ним, щоб і він охоронявся.
 # 2026-10-23: 178 → 179 — журнал `log_ebfc_q1_paper_program` (хроніка Статті 1, виселена з роутера `project_ebfc_q1_paper_program`); підлога за ним.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-179}
+# 2026-11-05: 179 → 180 — `project_gmail_letters` (журнал надісланих листів; founder: «запамятовуй всі листи які шлемо в gmail»); підлога за ним.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-180}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -628,7 +629,8 @@ index_reach_expected() {
 # й sync-програми переписано під їхню нову роль. До факту.
 # 2026-10-17: 40668 → 40694 (+26) — ЗА КОРЕКТНІСТЬ: опис професії founder-а його словами (Senior Lead Full-Stack Engineer); перелік стеку
 # в описі стиснуто (−18 B), повний — у тілі файлу.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-40694}
+# 2026-11-05: 40694 → 40831 (+137) — опис нового дому `project_gmail_letters` (журнал надісланих листів): написано 339 B, стиснуто до 193 B, далі — манікюр; чужих тригерів не різали.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-40831}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
