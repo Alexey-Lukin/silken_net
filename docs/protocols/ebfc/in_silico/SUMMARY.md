@@ -1018,8 +1018,8 @@ since `103`'s front moves with the shank too.
 and the length route on 18 mm — it fixes the shift per kelvin and with it one hot preload, 20.9 N on Ta; the length
 route on 32 mm cuts the shank and the liner run with it and lands at 22.3 N — against 35.9 N today on the 18 mm span and
 48.4 N on the 32 mm one. `86`'s seam requirement on 18 mm with no sway falls from k 0.547
-to 0.467, and with `103`'s sway on top at its least state-3 corner on a stiff bond from at least 1.187 to 1.119 — the
-sway alone asks 0.930 there, so Ta's seam stays past k 1 either way; at `103`'s caps the liner wall binds and the δ
+to 0.467, and with `103`'s sway on top at its least state-3 corner on a stiff bond from at least 1.186 to 1.117 — the
+sway alone asks at least 0.929 there, so Ta's seam stays past k 1 either way; at `103`'s caps the liner wall binds and the δ
 routes change nothing (Ta 1.471), the length route even raising some capped corners slightly (its longer liner run
 grips more); on Ti-6Al-4V no corner passes 0.528. The window side leaves the seam where it is.
 

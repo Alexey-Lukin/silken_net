@@ -163,8 +163,15 @@ def spare(x: float) -> str:
 
 
 def up3(x: float) -> float:
-    """A requirement («k ≥ X», «a stroke of at least X») rounds up (in-silico §When Modifying #43)."""
+    """Rounds UP — for what a builder must meet at ONE configuration («k ≥ X»; a spec «a stroke of at least X») (in-silico
+    §When Modifying #43)."""
     return math.ceil(round(x * 1000, 9)) / 1000
+
+
+def down3(x: float) -> float:
+    """A FLOOR over a set («at its least corner at least X» — true for every member) rounds down; over alternatives
+    («either way») it is the least of them (in-silico §When Modifying #43 ⊕; 00_07 HW.43, 2026-11-05)."""
+    return math.floor(round(x * 1000, 9)) / 1000
 
 
 def main() -> int:
@@ -527,9 +534,9 @@ def main() -> int:
         f"with it one hot preload, on Ta {up1(f_same):.1f} N; the length route on 32 mm cuts the shank and the liner run with it, "
         f"landing at {up1(f_32len):.1f} N — against {up1(ta18['today']['F_hot_N']):.1f} today on 18 mm. `86`'s requirement with no sway "
         f"{up3(ta18['today']['seam_k_no_sway']):.3f} → {up3(max(ta18['run_length']['seam_k_no_sway'], ta18['run_cte']['seam_k_no_sway'])):.3f}; "
-        f"with `103`'s sway on top, at its least state-3 corner on a stiff bond at least {up3(st18['state3_least_stiff_bond']['today']['k']):.3f} → "
-        f"{up3(max(st18['state3_least_stiff_bond']['run_length']['k'], st18['state3_least_stiff_bond']['run_cte']['k'])):.3f} (the sway "
-        f"alone {up3(st18['state3_least_stiff_bond']['sway_alone']['k']):.3f}), and at its caps unchanged where the liner wall binds "
+        f"with `103`'s sway on top, at its least state-3 corner on a stiff bond at least {down3(st18['state3_least_stiff_bond']['today']['k']):.3f} → "
+        f"{down3(min(st18['state3_least_stiff_bond']['run_length']['k'], st18['state3_least_stiff_bond']['run_cte']['k'])):.3f} (the sway "
+        f"alone {down3(st18['state3_least_stiff_bond']['sway_alone']['k']):.3f}), and at its caps unchanged where the liner wall binds "
         f"({up3(st18['state3_cap_stiff_bond']['today']['k']):.3f}).",
         f"On held + sway the sway alone at `103`'s largest share ({s18['sway_alone_at_the_largest_share']['median']['share']:.2f}) "
         f"swings ±{up1(s18['sway_alone_at_the_largest_share']['median']['amp_um']):.1f} ⊥ "

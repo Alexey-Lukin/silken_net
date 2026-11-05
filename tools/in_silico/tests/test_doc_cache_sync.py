@@ -6806,9 +6806,12 @@ CHECKS += [
     ("104 k today → 104", SUMMARY, r"with no sway falls from k " + N + r"\s+to", REMEDY, lambda d: _u3(_ta(d, "18", "today")["seam_k_no_sway"]), 0.0),
     ("104 k route → 104", SUMMARY, r"falls from k [\d.]+\s+to " + N + r", and", REMEDY,
      lambda d: _u3(max(_ta(d, "18", "run_length")["seam_k_no_sway"], _ta(d, "18", "run_cte")["seam_k_no_sway"])), 0.0),
-    ("104 corner today → 104", SUMMARY, r"from at least " + N + r" to", REMEDY, lambda d: _u3(_c3(d)["today"]["k"]), 0.0),
-    ("104 corner route → 104", SUMMARY, r"from at least [\d.]+ to " + N + r" — the", REMEDY, lambda d: _u3(max(_c3(d)["run_length"]["k"], _c3(d)["run_cte"]["k"])), 0.0),
-    ("104 sway alone k → 104", SUMMARY, r"sway alone asks " + N + r" there", REMEDY, lambda d: _u3(_c3(d)["sway_alone"]["k"]), 0.0),
+    # the least state-3 corner is a FLOOR over the state («at least»), and «either way» over the two remedies is the
+    # lesser of them — down, as `103` prints the same quantity (in-silico §When Modifying #43 ⊕; 00_07 HW.43, 2026-11-05)
+    ("104 corner today → 104", SUMMARY, r"from at least " + N + r" to", REMEDY, lambda d: _floor_n(_c3(d)["today"]["k"], 3), 0.0),
+    ("104 corner route → 104", SUMMARY, r"from at least [\d.]+ to " + N + r" — the", REMEDY,
+     lambda d: _floor_n(min(_c3(d)["run_length"]["k"], _c3(d)["run_cte"]["k"]), 3), 0.0),
+    ("104 sway alone k → 104", SUMMARY, r"sway alone asks at least " + N + r" there", REMEDY, lambda d: _floor_n(_c3(d)["sway_alone"]["k"], 3), 0.0),
     ("104 cap → 104", SUMMARY, r"change nothing \(Ta " + N + r"\)", REMEDY, lambda d: _u3(_rs(d, "18")["seam_with_sway"]["Ta"]["state3_cap_stiff_bond"]["today"]["k"]), 0.0),
     ("104 ti → 104", SUMMARY, r"no corner passes " + N + r"\.", REMEDY,
      lambda d: _u3(max(c[r]["k"] for c in _rs(d, "18")["seam_with_sway"]["Ti-6Al-4V"].values() for r in ("today", "run_length", "run_cte"))), 0.0),
@@ -6840,8 +6843,9 @@ CHECKS += [
     ("104 P F lo → 104", PIPELINE, r"routes land at " + N + r"–", REMEDY, lambda d: _u1(_f_same(d)), 0.0),
     ("104 P F hi → 104", PIPELINE, r"routes land at [\d.]+–" + N + r" N", REMEDY, lambda d: _u1(_ta(d, "32", "run_length")["F_hot_N"]), 0.0),
     ("104 P F today → 104", PIPELINE, r"on Ta against " + N + r" — Ta's", REMEDY, lambda d: _u1(_ta(d, "18", "today")["F_hot_N"]), 0.0),
-    ("104 P corner → 104", PIPELINE, r"stiff-bond corner at least\s+" + N + r" →", REMEDY, lambda d: _u3(_c3(d)["today"]["k"]), 0.0),
-    ("104 P corner route → 104", PIPELINE, r"corner at least\s+[\d.]+ → " + N + r", past k 1", REMEDY, lambda d: _u3(max(_c3(d)["run_length"]["k"], _c3(d)["run_cte"]["k"])), 0.0),
+    ("104 P corner → 104", PIPELINE, r"stiff-bond corner at least\s+" + N + r" →", REMEDY, lambda d: _floor_n(_c3(d)["today"]["k"], 3), 0.0),
+    ("104 P corner route → 104", PIPELINE, r"corner at least\s+[\d.]+ → " + N + r" on 18 mm, past k 1", REMEDY,
+     lambda d: _floor_n(min(_c3(d)["run_length"]["k"], _c3(d)["run_cte"]["k"]), 3), 0.0),
     # 02_02 §3.5 ⊕ 2026-10-21
     ("104 B held → 104", BLIND_MATE, r"запас L1 на " + N + r" мкм утримуваним", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_isothermal_worst"]), 0.0),
     # the 2026-10-21 machine half is the submission the ⚖️ ratified — its numbers stay (00_05 §7); these read the ⊕ beside it
