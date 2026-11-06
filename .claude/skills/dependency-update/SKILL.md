@@ -41,6 +41,9 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
               🔴 A maintainer's REPO-level GHSA is in NEITHER channel until GitHub
               reviews it into the global DB — sweep the lock's repos, not the
               alert list: nine advisories, three high, sat behind zero alerts (`#60`).
+              🔴 Match open alerts to WATCH by GHSA + manifest, never by NUMBER:
+              a re-issued advisory withdraws the dismissed alert and reopens the
+              same GHSA under a new number, `open` (`#64`).
 1. INVENTORY  what's behind: the domain's "outdated" command (table below).
 2. RESEARCH   read THIS version's changelog/release-notes (web/gh). Classify:
               security(CVE) · breaking · behavior/default · feature · routine/regen.
@@ -176,6 +179,7 @@ the pre-split order, append-only since — cite `dependency-update #N`.
 61. A Go binary vendored inside a gem is judged by its SYMBOLS and our TOPOLOGY, not by the module version the scanner reads
 62. Closing a Dependabot SECURITY PR does nothing while its alert is open — the bot reopens the same update, same branch, same diff
 63. A platform-scoped advisory carries an UNSCOPED range — «not applicable to us» is not «free to wait»
+64. A Dependabot dismissal does not survive a RE-ISSUED advisory — GitHub withdraws the old alert and opens the same GHSA under a new number, so key a WATCH by GHSA + manifest, never by alert number
 
 <!-- /DEPUPDATE-GOTCHAS-INDEX -->
 
