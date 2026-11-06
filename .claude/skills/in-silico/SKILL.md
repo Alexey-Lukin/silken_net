@@ -8,7 +8,7 @@ description: "Use when working on the silken_net in-silico surface — the EBFC 
 ## Critical Rules
 
 **Bodies live in `rules.md` — open it before running or changing DFT/MD, declaring an anchor dimension,
-or quoting a literature constant or a source.** #19–#35 are the DFT and MD gotchas, #36–#46 the citation rules (§Paper Citations below routes there), and from #47 on DFT rules again, appended after them. Below is one generated line per rule: the line is the CARRIER; the
+or quoting a literature constant or a source.** #19–#35 are the DFT and MD gotchas, #36–#46 the citation rules (§Paper Citations below routes there), and from #47 on the rules appended after them, whatever their group (#47 DFT · #48 a vendor-datasheet input). Below is one generated line per rule: the line is the CARRIER; the
 mechanism, the incident and the bounds are in the companion. Numbering is append-only — cite
 `in-silico §Critical Rules #N` (the section name disambiguates from §When Modifying).
 
@@ -62,6 +62,7 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 45. The same question for an INSTRUMENT: a canon number that cites a script must have its run in the tree — ask «where are its script and its cache?»
 46. Check each reference for the error classes already caught here — a wrong year, a wrong lead author, a result credited to the wrong group
 47. A single-SCF coupling is resolved only to the orbital gradient the SCF stopped at — |g| / t_ij is its resolution, and a run that reproduces bit for bit reproduces its STOPPING POINT, not the minimum
+48. A vendor datasheet's rating is a TABLE of points, not one point — transcribe every row of its Life/Performance block and carry them all into the model, or write beside the constant why one row is THE input, because a single typed point is a silent default that can make the bracket's «conservative» end optimistic
 
 <!-- /INSILICO-RULES-INDEX -->
 
