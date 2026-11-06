@@ -152,12 +152,20 @@
   consuming the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text; `DrawingStandard` ISO/ASME
   param). Drawing carries fits, GD&T datums, post-process + coating-restriction notes, lattice-spec.
   ⊕ **A sheet that LEAVES for a vendor: `draw <cem> --vendor`** (→ `out/vendor/`; `ti_coin` only — every other kind
-  refuses, its form is open in `00_07` HW.1). Writing or editing a coupon note, mark what is ours — refs, verdict
+  refuses until the part-RFQ text applies the part form answered 2026-10-15 — 🔗 leg of `00_07` HW.1, gotcha #17 ⊕). Writing or editing a coupon note, mark what is ours — refs, verdict
   provenance, status, bake-off rationale, our-side tests — as `[[span]]`, or `[[full||vendor]]` where the cut would
   break the sentence; then READ the rendered vendor sheet whole, not the field you edited (gotcha #17, #11 ⊕) — `draw --vendor`
   prints every changed note as ours → vendor plus each dropped `extra` line, and that list is what the founder reads before
   dispatch. ⚠️ A cut can turn our REMARK into an ORDER («NOT SPECIFIED in canon» → «NOT SPECIFIED, vendor declares»):
   read each vendor sentence against the letter it rides with, not only against the marker list.
+  ⊕ **The coupon dispatch pack, rebuilt on the day of dispatch** (HW.24; first run 2026-11-05 — the next one is the
+  PO after the quotes): `git submodule status` (no `+`) → the letter's edits committed → `CAD_REV=$(git rev-parse --short HEAD)`
+  → `build` + `draw <cem> --vendor` for EVERY `cem/ti_coin*.json` (the coin manifests share one geometry, so the STLs are
+  one disc and the alloy lives in the notes) → STL bbox ≡ manifest, and the manifest SHA in the title block of EVERY
+  sheet against ITS manifest, not one representative → one archive, one entry per alloy, `unzip -t` → the ours → vendor
+  notes list `draw --vendor` prints goes to the founder beside the diff, before «шли». Before it, grep each sheet's
+  SVG text for every numeric field of the kind's manifest (gotcha #11 ⊕ — the loop radii); traps of the stamp and the
+  submodule — gotcha #17 ⊕.
   ⚠️ **«Lamé-µm, NOT a blind ISO-286 lookup» is the canon REQUIREMENT (`01_01 §4.2`), and the shipped band
   does not meet it yet** — `zone2_sleeve.json`'s 5–34 µm is an ISO 286 H7/r6 read (`tools/in_silico/lib/constants.py`),
   which Lamé merely consumes to get a contact pressure. The verdict is taken — no table class, the band is
