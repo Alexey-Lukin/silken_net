@@ -363,6 +363,28 @@
         "t_rated_c": 70.0,
         "v_rated_v": 5.5
       },
+      "readings": {
+        "two_row_bound": {
+          "dt_double_c": 10.0,
+          "dv_double_v": 0.76,
+          "built_from": "both Life rows of Technical Data 4327 as guaranteed minima + PS-5006's text thermal rule (2\u00d7 per 10 \u00b0C) \u2014 the SHORTEST life of every (anchor-row life \u2265 its rating, voltage step) pair that honours both rows under that rule (`bound_control`); a bound only while the true thermal step is no SHALLOWER than 10 K, and not a ceiling on any other reading"
+        },
+        "two_row_fig1_slope": {
+          "dt_double_c": 6.3,
+          "dv_double_v": 0.562,
+          "built_from": "both Life rows + PS-5006 Figure 1's thermal slope (its two 30 % lines); the figure plots nothing below 29 \u00b0C, so a field life from it is an extrapolation"
+        },
+        "unsourced_0v4_part": {
+          "dt_double_c": 10.0,
+          "dv_double_v": 0.4,
+          "built_from": "0.4 V per part \u2014 no primary in the tree; \u00abEaton's own points\u00bb give 0.76 V per part (0.38 V per cell) under the text rule, so the attribution does not hold for the part \u2014 where the 0.4 V came from, nothing in the tree says"
+        },
+        "unsourced_0v2_part": {
+          "dt_double_c": 10.0,
+          "dv_double_v": 0.2,
+          "built_from": "0.2 V per part \u2014 no primary in the tree"
+        }
+      },
       "at_rated_voltage": {
         "25.0": {
           "life_hours": 22627.0,
@@ -375,29 +397,149 @@
       },
       "voltage_derating": {
         "5.37": {
-          "optimistic_yr": 11.5,
-          "conservative_yr": 9.1
+          "two_row_bound_yr": 8.2,
+          "two_row_fig1_slope_yr": 98.5,
+          "unsourced_0v4_part_yr": 9.1,
+          "unsourced_0v2_part_yr": 11.5
         },
         "5.29": {
-          "optimistic_yr": 15.1,
-          "conservative_yr": 10.5
+          "two_row_bound_yr": 8.8,
+          "two_row_fig1_slope_yr": 108.8,
+          "unsourced_0v4_part_yr": 10.5,
+          "unsourced_0v2_part_yr": 15.1
         },
         "5.2": {
-          "optimistic_yr": 20.7,
-          "conservative_yr": 12.3
+          "two_row_bound_yr": 9.6,
+          "two_row_fig1_slope_yr": 121.5,
+          "unsourced_0v4_part_yr": 12.3,
+          "unsourced_0v2_part_yr": 20.7
         }
       },
       "ratified_vbat_ov": {
         "v_target": 4.822,
         "25.0": {
-          "optimistic_yr": 27.1,
-          "conservative_yr": 8.4
+          "two_row_bound_yr": 4.8,
+          "two_row_fig1_slope_yr": 37.2,
+          "unsourced_0v4_part_yr": 8.4,
+          "unsourced_0v2_part_yr": 27.1
         },
         "10.0": {
-          "optimistic_yr": 76.5,
-          "conservative_yr": 23.6
+          "two_row_bound_yr": 13.5,
+          "two_row_fig1_slope_yr": 193.7,
+          "unsourced_0v4_part_yr": 23.6,
+          "unsourced_0v2_part_yr": 76.5
         }
-      }
+      },
+      "vbat_ov_for_service_life": {
+        "years": 20.0,
+        "25.0": {
+          "two_row_bound": null,
+          "two_row_fig1_slope": 5.325,
+          "unsourced_0v4_part": 4.318,
+          "unsourced_0v2_part": 4.909
+        },
+        "10.0": {
+          "two_row_bound": 4.395,
+          "two_row_fig1_slope": 5.5,
+          "unsourced_0v4_part": 4.918,
+          "unsourced_0v2_part": 5.209
+        }
+      },
+      "life_rows": [
+        [
+          1000.0,
+          70.0,
+          5.5
+        ],
+        [
+          2000.0,
+          85.0,
+          3.6
+        ]
+      ],
+      "cells_in_series": 2,
+      "ps5006_fig1": {
+        "slopes_dec_per_c": {
+          "30pct_2v5": 0.0477,
+          "30pct_1v8": 0.0478,
+          "50pct_2v5": 0.0489
+        },
+        "doubling_interval_k": 6.3,
+        "factor_per_10k": 3.0,
+        "text_rule_factor_per_10k": 2.0,
+        "cell_voltage_check": {
+          "life_ratio_1v8_over_2v5_at_70c": 1.69,
+          "dv_double_v_per_cell": 0.92,
+          "dv_double_v_per_part": 1.85,
+          "predicts_row_b_hours": 721,
+          "row_b_rated_hours": 2000.0,
+          "admissible_with_rated_anchor": false,
+          "why": "paired with the RATED anchor (row A at exactly its rating) it predicts row B below its guarantee, so it is not a reading of the KR as that pair; with a free anchor it needs row A to outlive its rating several-fold, which nothing states (the figure's cells are a 2.5 V generic line, not the KR coin cell)"
+        }
+      },
+      "bound_control": [
+        {
+          "t_c": 25.0,
+          "v": 5.5,
+          "grid_min_years": 2.58,
+          "closed_form_years": 2.58
+        },
+        {
+          "t_c": 25.0,
+          "v": 4.822,
+          "grid_min_years": 4.8,
+          "closed_form_years": 4.79
+        },
+        {
+          "t_c": 25.0,
+          "v": 3.8,
+          "grid_min_years": 12.22,
+          "closed_form_years": 12.17
+        },
+        {
+          "t_c": 25.0,
+          "v": 3.6,
+          "grid_min_years": 14.6,
+          "closed_form_years": 14.6
+        },
+        {
+          "t_c": 25.0,
+          "v": 3.3,
+          "grid_min_years": 14.64,
+          "closed_form_years": 14.6
+        },
+        {
+          "t_c": 10.0,
+          "v": 5.5,
+          "grid_min_years": 7.3,
+          "closed_form_years": 7.3
+        },
+        {
+          "t_c": 10.0,
+          "v": 4.822,
+          "grid_min_years": 13.59,
+          "closed_form_years": 13.55
+        },
+        {
+          "t_c": 10.0,
+          "v": 3.8,
+          "grid_min_years": 34.57,
+          "closed_form_years": 34.41
+        },
+        {
+          "t_c": 10.0,
+          "v": 3.6,
+          "grid_min_years": 41.3,
+          "closed_form_years": 41.3
+        },
+        {
+          "t_c": 10.0,
+          "v": 3.3,
+          "grid_min_years": 41.4,
+          "closed_form_years": 41.3
+        }
+      ],
+      "bound_below_row_b_v": "below row B's voltage the rows give no voltage credit: the bound is row B carried by the thermal step alone (`bound_life_hours`)"
     },
     "KEMET_FG0H474ZF": {
       "rated": {
@@ -405,6 +547,18 @@
         "t_rated_c": 70.0,
         "v_rated_v": 5.5
       },
+      "readings": {
+        "unsourced_0v4_part": {
+          "dt_double_c": 10.0,
+          "dv_double_v": 0.4,
+          "built_from": "0.4 V per part \u2014 no primary in the tree; \u00abEaton's own points\u00bb give 0.76 V per part (0.38 V per cell) under the text rule, so the attribution does not hold for the part \u2014 where the 0.4 V came from, nothing in the tree says"
+        },
+        "unsourced_0v2_part": {
+          "dt_double_c": 10.0,
+          "dv_double_v": 0.2,
+          "built_from": "0.2 V per part \u2014 no primary in the tree"
+        }
+      },
       "at_rated_voltage": {
         "25.0": {
           "life_hours": 22627.0,
@@ -417,27 +571,38 @@
       },
       "voltage_derating": {
         "5.37": {
-          "optimistic_yr": 11.5,
-          "conservative_yr": 9.1
+          "unsourced_0v4_part_yr": 9.1,
+          "unsourced_0v2_part_yr": 11.5
         },
         "5.29": {
-          "optimistic_yr": 15.1,
-          "conservative_yr": 10.5
+          "unsourced_0v4_part_yr": 10.5,
+          "unsourced_0v2_part_yr": 15.1
         },
         "5.2": {
-          "optimistic_yr": 20.7,
-          "conservative_yr": 12.3
+          "unsourced_0v4_part_yr": 12.3,
+          "unsourced_0v2_part_yr": 20.7
         }
       },
       "ratified_vbat_ov": {
         "v_target": 4.822,
         "25.0": {
-          "optimistic_yr": 27.1,
-          "conservative_yr": 8.4
+          "unsourced_0v4_part_yr": 8.4,
+          "unsourced_0v2_part_yr": 27.1
         },
         "10.0": {
-          "optimistic_yr": 76.5,
-          "conservative_yr": 23.6
+          "unsourced_0v4_part_yr": 23.6,
+          "unsourced_0v2_part_yr": 76.5
+        }
+      },
+      "vbat_ov_for_service_life": {
+        "years": 20.0,
+        "25.0": {
+          "unsourced_0v4_part": 4.318,
+          "unsourced_0v2_part": 4.909
+        },
+        "10.0": {
+          "unsourced_0v4_part": 4.918,
+          "unsourced_0v2_part": 5.209
         }
       }
     }

@@ -17,6 +17,7 @@ All pure analytical (numpy), no FEA needed.
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -26,7 +27,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
     ALLOY_PROPERTIES,
     ALPHA_PEEK_1K,
+    ANCHOR_SERVICE_LIFE_YEARS,
     E_PEEK_PA,
+    EATON_KR_CELLS_IN_SERIES,
+    EATON_KR_LIFE_ROWS,
     EATON_KR_RATED_HOURS,
     EATON_KR_RATED_TEMP_C,
     EATON_KR_RATED_VOLTAGE_V,
@@ -38,6 +42,9 @@ from lib.constants import (
     KEMET_FG_RATED_VOLTAGE_V,
     KINETICS_DIR,
     NU_PEEK,
+    PS5006_FIG1_30PCT_1V8,
+    PS5006_FIG1_30PCT_2V5,
+    PS5006_FIG1_50PCT_2V5,
     R_INTERFACE_M,
     R_OUTER_M,
     REPO_ROOT,
@@ -45,8 +52,8 @@ from lib.constants import (
     T_ASSEMBLY_C,
     THERMAL_DOUBLING_INTERVAL_K,
     VBAT_OV_RATIFIED_V,
-    VOLTAGE_DOUBLING_CONSERVATIVE_V,
-    VOLTAGE_DOUBLING_OPTIMISTIC_V,
+    VOLTAGE_DOUBLING_UNSOURCED_0V2_V,
+    VOLTAGE_DOUBLING_UNSOURCED_0V4_V,
 )
 from lib.mechanics import thick_wall_hoop
 from lib.utils import banner
@@ -240,8 +247,9 @@ def capacitor_life_hours(
     v_rated_v: float,
     t_field_c: float,
     v_field_v: float,
-    dt_double_c: float = THERMAL_DOUBLING_INTERVAL_K,
-    dv_double_v: float = VOLTAGE_DOUBLING_CONSERVATIVE_V,
+    *,
+    dt_double_c: float,
+    dv_double_v: float,
 ) -> float:
     """HW.37 — vendor EDLC/electrolytic-capacitor endurance-hours doubling rule:
 
@@ -254,10 +262,164 @@ def capacitor_life_hours(
     Arrhenius over the same 70->10°C span gives a materially different, MORE
     conservative acceleration than a flat "2x per 10°C" applied uniformly — a
     known model-choice distinction, not an error in either model).
+    Both steps are REQUIRED: a default step is a silent reading (§Critical Rules #48), and
+    the one this kernel used to default to was a voltage step with no primary.
     """
     accel_t = 2.0 ** ((t_rated_c - t_field_c) / dt_double_c)
     accel_v = 2.0 ** ((v_rated_v - v_field_v) / dv_double_v)
     return rated_hours * accel_t * accel_v
+
+
+HOURS_PER_YEAR = 365.25 * 24.0  # consistent with kirkendall_diffusion()'s 365.25 d/yr below
+
+
+def fig1_slope_dec_per_c(line) -> float:
+    """Decades of life lost per °C along one PS-5006 Figure 1 line, from its two read ends."""
+    (t0, h0), (t1, h1) = line
+    return (math.log10(h0) - math.log10(h1)) / (t1 - t0)
+
+
+def fig1_doubling_interval_k() -> float:
+    """PS-5006 Figure 1's thermal step: the mean slope of its two 30 % lines — the KR's own end-of-life
+    criterion (ΔC 30 %); the 50 % line is printed beside it, never averaged in."""
+    s = 0.5 * (fig1_slope_dec_per_c(PS5006_FIG1_30PCT_2V5) + fig1_slope_dec_per_c(PS5006_FIG1_30PCT_1V8))
+    return math.log10(2.0) / s
+
+
+def two_row_dv_per_doubling(dt_double_c: float, rows=EATON_KR_LIFE_ROWS) -> float:
+    """The voltage step per doubling, per PART, that carries the anchor Life row exactly onto the other one at a
+    given thermal step: dV = (V_A − V_B) / (log2(H_B/H_A) + (T_B − T_A)/dT). Two rows are ONE equation in the two
+    steps, so dV is a function of the thermal step, never a number by itself. Both rows are guaranteed minima, so
+    at that step this is the WEAKEST voltage effect still honouring row B — any smaller dV honours it too."""
+    (h_a, t_a, v_a), (h_b, t_b, v_b) = rows
+    return (v_a - v_b) / (math.log2(h_b / h_a) + (t_b - t_a) / dt_double_c)
+
+
+def eaton_readings() -> dict:
+    """The named (thermal step, voltage step) readings of the surviving SKU, each by how it is BUILT
+    (in-silico §When Modifying #45): the adverse end is a measured property of the set, not of a name."""
+    dt_fig = fig1_doubling_interval_k()
+    return {
+        "two_row_bound": {
+            "dt_double_c": THERMAL_DOUBLING_INTERVAL_K,
+            "dv_double_v": two_row_dv_per_doubling(THERMAL_DOUBLING_INTERVAL_K),
+            "built_from": "both Life rows of Technical Data 4327 as guaranteed minima + PS-5006's text thermal rule "
+                          "(2× per 10 °C) — the SHORTEST life of every (anchor-row life ≥ its rating, voltage step) "
+                          "pair that honours both rows under that rule (`bound_control`); a bound only while the true "
+                          "thermal step is no SHALLOWER than 10 K, and not a ceiling on any other reading",
+        },
+        "two_row_fig1_slope": {
+            "dt_double_c": dt_fig,
+            "dv_double_v": two_row_dv_per_doubling(dt_fig),
+            "built_from": "both Life rows + PS-5006 Figure 1's thermal slope (its two 30 % lines); the figure plots "
+                          f"nothing below {min(PS5006_FIG1_30PCT_2V5[0][0], PS5006_FIG1_30PCT_1V8[0][0]):.0f} °C, so "
+                          "a field life from it is an extrapolation",
+        },
+        "unsourced_0v4_part": {
+            "dt_double_c": THERMAL_DOUBLING_INTERVAL_K,
+            "dv_double_v": VOLTAGE_DOUBLING_UNSOURCED_0V4_V,
+            "built_from": "0.4 V per part — no primary in the tree; «Eaton's own points» give 0.76 V per part (0.38 V per "
+                          "cell) under the text rule, so the attribution does not hold for the part — where the 0.4 V came "
+                          "from, nothing in the tree says",
+        },
+        "unsourced_0v2_part": {
+            "dt_double_c": THERMAL_DOUBLING_INTERVAL_K,
+            "dv_double_v": VOLTAGE_DOUBLING_UNSOURCED_0V2_V,
+            "built_from": "0.2 V per part — no primary in the tree",
+        },
+    }
+
+
+def bound_life_hours(t_field_c: float, v_field_v: float, dt_double_c: float = THERMAL_DOUBLING_INTERVAL_K,
+                     rows=EATON_KR_LIFE_ROWS) -> float:
+    """The two rows' lower bound at (T, V), PIECEWISE: log2 life = log2 L_A·(1 − (V_A − V)/(V_A − V_B)) + const, so
+    the minimum over anchor lives L_A ≥ H_A sits at L_A = H_A only while V ≥ V_B. Below row B's voltage the
+    coefficient turns negative and the minimum moves to the anchor at which row B needs NO voltage effect: the rows
+    give no voltage credit below V_B, and the bound is row B carried by the thermal step alone."""
+    (h_a, t_a, v_a), (h_b, t_b, v_b) = rows
+    assert v_field_v <= v_a, "above the anchor voltage the bound flips side — not modelled"
+    if v_field_v >= v_b:
+        return capacitor_life_hours(h_a, t_a, v_a, t_field_c, v_field_v, dt_double_c=dt_double_c,
+                                    dv_double_v=two_row_dv_per_doubling(dt_double_c, rows))
+    return h_b * 2.0 ** ((t_b - t_field_c) / dt_double_c)
+
+
+def reading_life_hours(t_field_c: float, v_field_v: float, name: str, r: dict, anchor=EATON_KR_LIFE_ROWS[0]) -> float:
+    if name == "two_row_bound":
+        return bound_life_hours(t_field_c, v_field_v, r["dt_double_c"])
+    return capacitor_life_hours(*anchor, t_field_c, v_field_v, dt_double_c=r["dt_double_c"], dv_double_v=r["dv_double_v"])
+
+
+def readings_years(t_field_c: float, v_field_v: float, readings: dict | None = None,
+                   anchor=EATON_KR_LIFE_ROWS[0]) -> dict:
+    """Life in years per named reading at one (temperature, voltage) — the one call `71` makes."""
+    readings = eaton_readings() if readings is None else readings
+    return {f"{name}_yr": round(reading_life_hours(t_field_c, v_field_v, name, r, anchor) / HOURS_PER_YEAR, 1)
+            for name, r in readings.items()}
+
+
+def vbat_ov_for_years(t_field_c: float, years: float, reading: dict, anchor=EATON_KR_LIFE_ROWS[0],
+                      name: str = "") -> float | None:
+    """The highest storage voltage at which `reading` still gives `years` at t_field — the derate lever priced.
+    Capped at the anchor voltage (the rated voltage already holds). For the BOUND, a voltage below row B's is no
+    answer: the bound stops growing there (`bound_life_hours`), so if the closed form lands below V_B no storage
+    voltage holds `years` on the bound — None, never a number."""
+    h_a, t_a, v_a = anchor
+    thermal = 2.0 ** ((t_a - t_field_c) / reading["dt_double_c"])
+    need = years * HOURS_PER_YEAR / (h_a * thermal)
+    if need <= 1.0:
+        return v_a
+    v = v_a - reading["dv_double_v"] * math.log2(need)
+    if name == "two_row_bound" and v < EATON_KR_LIFE_ROWS[1][2]:
+        return None
+    return math.floor(v * 1000.0) / 1000.0   # a CEILING: rounded down, never to nearest
+
+
+def bound_control(t_field_c: float, v_field_v: float) -> dict:
+    """A control that CAN fail (§When Modifying #8): over every anchor-row life L_A ≥ its rating (up to well past the
+    anchor at which row B needs no voltage effect) and every voltage step, keep the pairs that honour row B under the
+    text thermal rule, and find the shortest life at (T, V). It must not land below `bound_life_hours` and must come
+    within the grid's resolution of it. A coding error in the closed form, a row order swapped, or a voltage below row
+    B's taken by the unpiecewise form (it overstates the bound there) reds here — so it is run across the voltage
+    range, not only at the operating point."""
+    (h_a, t_a, v_a), (h_b, t_b, v_b) = EATON_KR_LIFE_ROWS
+    dt = THERMAL_DOUBLING_INTERVAL_K
+    best = math.inf
+    l_free = h_b * 2.0 ** ((t_b - t_a) / dt)          # the anchor at which row B needs no voltage effect
+    for l_a in np.geomspace(h_a, 2.0 * l_free, 121):
+        for dv in np.geomspace(0.05, 500.0, 2001):
+            if l_a * 2.0 ** ((t_a - t_b) / dt) * 2.0 ** ((v_a - v_b) / dv) < h_b * (1.0 - 1e-12):
+                continue
+            best = min(best, capacitor_life_hours(l_a, t_a, v_a, t_field_c, v_field_v, dt_double_c=dt, dv_double_v=dv))
+    bound = bound_life_hours(t_field_c, v_field_v)
+    assert bound * (1.0 - 1e-9) <= best <= bound * 1.02, (
+        f"bound_control: grid minimum {best:.0f} h against the closed-form bound {bound:.0f} h at {t_field_c} °C, {v_field_v} V")
+    return {"t_c": t_field_c, "v": round(v_field_v, 3), "grid_min_years": round(best / HOURS_PER_YEAR, 2),
+            "closed_form_years": round(bound / HOURS_PER_YEAR, 2)}
+
+
+def fig1_cell_voltage_check(dt_double_c: float = THERMAL_DOUBLING_INTERVAL_K) -> dict:
+    """PS-5006 Figure 1 also prints a CELL voltage effect (30 % at 1.8 V ⊥ at 2.5 V). Carried to the KR part
+    (× cells in series) it is a much weaker voltage effect than the rows allow; this asks whether it can be a
+    reading of the KR at all: it can only if it honours the KR's row B."""
+    (_, h25), (_, h18) = PS5006_FIG1_30PCT_2V5[1], PS5006_FIG1_30PCT_1V8[1]
+    assert PS5006_FIG1_30PCT_2V5[1][0] == PS5006_FIG1_30PCT_1V8[1][0], "the two 30 % lines must be read at one T"
+    ratio = h18 / h25
+    dv_cell = (2.5 - 1.8) / math.log2(ratio)
+    dv_part = dv_cell * EATON_KR_CELLS_IN_SERIES
+    (h_a, t_a, v_a), (h_b, t_b, v_b) = EATON_KR_LIFE_ROWS
+    row_b_pred = capacitor_life_hours(h_a, t_a, v_a, t_b, v_b, dt_double_c=dt_double_c, dv_double_v=dv_part)
+    return {
+        "life_ratio_1v8_over_2v5_at_70c": round(ratio, 2),
+        "dv_double_v_per_cell": round(dv_cell, 2),
+        "dv_double_v_per_part": round(dv_part, 2),
+        "predicts_row_b_hours": round(row_b_pred),
+        "row_b_rated_hours": h_b,
+        "admissible_with_rated_anchor": row_b_pred >= h_b,
+        "why": "paired with the RATED anchor (row A at exactly its rating) it predicts row B below its guarantee, so it is "
+               "not a reading of the KR as that pair; with a free anchor it needs row A to outlive its rating several-fold, "
+               "which nothing states (the figure's cells are a 2.5 V generic line, not the KR coin cell)",
+    }
 
 
 def edlc_endurance_hours():
@@ -267,122 +429,89 @@ def edlc_endurance_hours():
     ⚖️ 2026-09-22: the KEMET part is GEOMETRICALLY EXCLUDED (H 18.0 mm fits no
     configuration) and the Eaton one is the surviving SKU. Its row STAYS here on
     purpose — the electrical equivalence computed below is precisely WHY geometry
-    got to decide, so deleting it would erase the verdict's own ground. Confirms the
-    2026-09-09 hand-calc through the ACTUAL pipeline (it was hand-computed once,
-    not previously reused as code) and extends it to KEMET, whose OWN voltage
-    coefficient is not published — reported as a sensitivity bracket across the
-    ~2x vendor disagreement (Abracon/CDE 0.2 V vs Vishay/Eaton 0.4 V per doubling)
-    rather than a false-precise single number.
+    got to decide, so deleting it would erase the verdict's own ground.
+    2026-11-07 (00_07 HW.37): the Eaton row is judged on BOTH Life rows of its datasheet
+    (§Critical Rules #48) and on PS-5006 — the voltage step is no longer a pick from an
+    unsourced bracket; the vendor-grounded lower bound is `two_row_bound`. KEMET has one
+    row and its own coefficient unpublished, so it keeps the two unsourced readings only.
     """
     banner("4. EDLC Endurance-Hours — Temperature + Voltage Doubling (HW.37)")
-
-    hours_per_year = 365.25 * 24.0  # consistent with kirkendall_diffusion()'s 365.25 d/yr above
+    readings = eaton_readings()
+    unsourced = {k: v for k, v in readings.items() if k.startswith("unsourced_")}
+    cell_check = fig1_cell_voltage_check()
+    fig1 = {
+        "slopes_dec_per_c": {
+            "30pct_2v5": round(fig1_slope_dec_per_c(PS5006_FIG1_30PCT_2V5), 4),
+            "30pct_1v8": round(fig1_slope_dec_per_c(PS5006_FIG1_30PCT_1V8), 4),
+            "50pct_2v5": round(fig1_slope_dec_per_c(PS5006_FIG1_50PCT_2V5), 4),
+        },
+        "doubling_interval_k": round(fig1_doubling_interval_k(), 2),
+        "factor_per_10k": round(2.0 ** (10.0 / fig1_doubling_interval_k()), 2),
+        "text_rule_factor_per_10k": round(2.0 ** (10.0 / THERMAL_DOUBLING_INTERVAL_K), 2),
+        "cell_voltage_check": cell_check,
+    }
+    print("  Rule: life ∝ 2^(ΔT/dT) · 2^(ΔV/dV); Eaton's two Life rows fix ONE combination of dT and dV")
+    print(f"  PS-5006 thermal step: text {THERMAL_DOUBLING_INTERVAL_K:.0f} K (×{fig1['text_rule_factor_per_10k']}/10 K) "
+          f"⊥ Figure 1 {fig1['doubling_interval_k']} K (×{fig1['factor_per_10k']}/10 K)")
+    for name, r in readings.items():
+        print(f"    {name:<20s} dT {r['dt_double_c']:5.2f} K · dV {r['dv_double_v']:.3f} V/part "
+              f"({r['dv_double_v'] / EATON_KR_CELLS_IN_SERIES:.3f} V/cell)")
+    print(f"  Figure 1 cell voltage ×{cell_check['life_ratio_1v8_over_2v5_at_70c']} for 2.5→1.8 V → "
+          f"{cell_check['dv_double_v_per_part']} V/part; predicts row B {cell_check['predicts_row_b_hours']} h vs "
+          f"{cell_check['row_b_rated_hours']:.0f} h rated → admissible with the rated anchor: {cell_check['admissible_with_rated_anchor']}")
 
     skus = {
-        "Eaton_KR-5R5H474-R": {
-            "rated_hours": EATON_KR_RATED_HOURS,
-            "t_rated_c": EATON_KR_RATED_TEMP_C,
-            "v_rated_v": EATON_KR_RATED_VOLTAGE_V,
-        },
-        "KEMET_FG0H474ZF": {
-            "rated_hours": KEMET_FG_RATED_HOURS,
-            "t_rated_c": KEMET_FG_RATED_TEMP_C,
-            "v_rated_v": KEMET_FG_RATED_VOLTAGE_V,
-        },
+        "Eaton_KR-5R5H474-R": ({"rated_hours": EATON_KR_RATED_HOURS, "t_rated_c": EATON_KR_RATED_TEMP_C,
+                                "v_rated_v": EATON_KR_RATED_VOLTAGE_V}, readings),
+        "KEMET_FG0H474ZF": ({"rated_hours": KEMET_FG_RATED_HOURS, "t_rated_c": KEMET_FG_RATED_TEMP_C,
+                             "v_rated_v": KEMET_FG_RATED_VOLTAGE_V}, unsourced),
     }
-
-    print(f"  Doubling rule: life ∝ 2^(ΔT/{THERMAL_DOUBLING_INTERVAL_K:.0f}°C) · 2^(ΔV/dV_double)")
-    print(
-        f"  Voltage-coefficient bracket: optimistic {VOLTAGE_DOUBLING_OPTIMISTIC_V}V "
-        f"vs conservative {VOLTAGE_DOUBLING_CONSERVATIVE_V}V per 2×"
-    )
-
     results = {}
-    for name, sku in skus.items():
+    for name, (sku, rds) in skus.items():
+        anchor = (sku["rated_hours"], sku["t_rated_c"], sku["v_rated_v"])
         print(f"\n  {name}: rated {sku['rated_hours']:.0f} h @ {sku['t_rated_c']:.0f}°C @ {sku['v_rated_v']:.2f} V")
-        sku_result = {"rated": dict(sku), "at_rated_voltage": {}, "voltage_derating": {}}
-
-        # (a) At full rated voltage — temperature-only, matches the 2026-09-09 hand-calc.
-        print(f"    {'T_field(°C)':>12s}  {'life (h)':>12s}  {'life (yr)':>10s}")
+        res = {"rated": dict(sku), "readings": {k: {**v, "dv_double_v": round(v["dv_double_v"], 4),
+                                                    "dt_double_c": round(v["dt_double_c"], 3)} for k, v in rds.items()},
+               "at_rated_voltage": {}, "voltage_derating": {}}
+        # (a) At full rated voltage — temperature-only (PS-5006's text rule), matches the 2026-09-09 hand-calc.
         for t_field in FIELD_TEMPS_C:
-            life_h = capacitor_life_hours(
-                sku["rated_hours"],
-                sku["t_rated_c"],
-                sku["v_rated_v"],
-                t_field,
-                sku["v_rated_v"],  # v_field == v_rated -> the voltage term is a no-op
-                dt_double_c=THERMAL_DOUBLING_INTERVAL_K,
-                dv_double_v=VOLTAGE_DOUBLING_CONSERVATIVE_V,
-            )
-            life_yr = life_h / hours_per_year
-            print(f"    {t_field:>12.0f}  {life_h:>12.0f}  {life_yr:>10.2f}")
-            sku_result["at_rated_voltage"][str(t_field)] = {
-                "life_hours": round(life_h, 0),
-                "life_years": round(life_yr, 2),
-            }
-
-        # (b) Voltage-derating bracket at the coldest field point (10°C, HW.7's own working
-        # point) — optimistic vs conservative coefficient, at the three candidate VBAT_OV
-        # targets already live in the HW.7/HW.12 discussion.
+            life_h = capacitor_life_hours(*anchor, t_field, sku["v_rated_v"],
+                                          dt_double_c=THERMAL_DOUBLING_INTERVAL_K, dv_double_v=1.0)
+            res["at_rated_voltage"][str(t_field)] = {"life_hours": round(life_h, 0),
+                                                     "life_years": round(life_h / HOURS_PER_YEAR, 2)}
+            print(f"    @ {t_field:4.0f} °C, rated V: {life_h:8.0f} h = {life_h / HOURS_PER_YEAR:5.2f} yr")
+        # (b) The three pre-verdict VBAT_OV candidates at the coldest reference point — kept because a letter's
+        # repo note quotes them; every reading, never a pair.
         t_field = FIELD_TEMPS_C[-1]
-        print(f"    Voltage derating @ {t_field:.0f}°C:")
-        print(f"    {'V_target':>8s}  {'optimistic (yr)':>16s}  {'conservative (yr)':>18s}")
         for v_target in (5.37, 5.29, 5.20):
-            life_opt_yr = (
-                capacitor_life_hours(
-                    sku["rated_hours"],
-                    sku["t_rated_c"],
-                    sku["v_rated_v"],
-                    t_field,
-                    v_target,
-                    dt_double_c=THERMAL_DOUBLING_INTERVAL_K,
-                    dv_double_v=VOLTAGE_DOUBLING_OPTIMISTIC_V,
-                )
-                / hours_per_year
-            )
-            life_cons_yr = (
-                capacitor_life_hours(
-                    sku["rated_hours"],
-                    sku["t_rated_c"],
-                    sku["v_rated_v"],
-                    t_field,
-                    v_target,
-                    dt_double_c=THERMAL_DOUBLING_INTERVAL_K,
-                    dv_double_v=VOLTAGE_DOUBLING_CONSERVATIVE_V,
-                )
-                / hours_per_year
-            )
-            print(f"    {v_target:>8.2f}  {life_opt_yr:>16.1f}  {life_cons_yr:>18.1f}")
-            sku_result["voltage_derating"][str(v_target)] = {
-                "optimistic_yr": round(life_opt_yr, 1),
-                "conservative_yr": round(life_cons_yr, 1),
-            }
-        # (c) The RATIFIED operating point (VBAT_OV 4.822 V, Derate — founder 2026-09-09), at BOTH
-        # field temperatures. The three points above are the pre-verdict candidates, kept because
-        # canon quotes them; this block is the one a lifetime claim may be made from — and only as
-        # a bracket, because the vendor voltage coefficient is the unanswered FAE question.
+            res["voltage_derating"][str(v_target)] = readings_years(t_field, v_target, rds, anchor)
+        # (c) The RATIFIED operating point (VBAT_OV 4.822 V, Derate — founder 2026-09-09), at BOTH reference points,
+        # and the VBAT_OV each reading needs for the service life — the lever the derate verdict prices.
         ratified = {"v_target": VBAT_OV_RATIFIED_V}
-        print(f"    Ratified VBAT_OV {VBAT_OV_RATIFIED_V:.3f} V:")
-        print(f"    {'T_field(°C)':>12s}  {'optimistic (yr)':>16s}  {'conservative (yr)':>18s}")
+        for_life = {"years": ANCHOR_SERVICE_LIFE_YEARS}
         for t_f in FIELD_TEMPS_C:
-            yrs = {}
-            for label, dv in (("optimistic_yr", VOLTAGE_DOUBLING_OPTIMISTIC_V), ("conservative_yr", VOLTAGE_DOUBLING_CONSERVATIVE_V)):
-                yrs[label] = round(
-                    capacitor_life_hours(
-                        sku["rated_hours"], sku["t_rated_c"], sku["v_rated_v"], t_f, VBAT_OV_RATIFIED_V,
-                        dt_double_c=THERMAL_DOUBLING_INTERVAL_K, dv_double_v=dv,
-                    ) / hours_per_year,
-                    1,
-                )
-            print(f"    {t_f:>12.0f}  {yrs['optimistic_yr']:>16.1f}  {yrs['conservative_yr']:>18.1f}")
-            ratified[str(t_f)] = yrs
-        sku_result["ratified_vbat_ov"] = ratified
-        results[name] = sku_result
+            ratified[str(t_f)] = readings_years(t_f, VBAT_OV_RATIFIED_V, rds, anchor)
+            for_life[str(t_f)] = {k: vbat_ov_for_years(t_f, ANCHOR_SERVICE_LIFE_YEARS, r, anchor, k) for k, r in rds.items()}
+            print(f"    @ {t_f:4.0f} °C, {VBAT_OV_RATIFIED_V} V: " +
+                  " · ".join(f"{k} {v}" for k, v in ratified[str(t_f)].items()))
+            print(f"    @ {t_f:4.0f} °C, VBAT_OV for {ANCHOR_SERVICE_LIFE_YEARS:g} yr: " +
+                  " · ".join(f"{k} {v} V" for k, v in for_life[str(t_f)].items()))
+        res["ratified_vbat_ov"] = ratified
+        res["vbat_ov_for_service_life"] = for_life
+        if rds is readings:
+            res["life_rows"] = [list(r) for r in EATON_KR_LIFE_ROWS]
+            res["cells_in_series"] = EATON_KR_CELLS_IN_SERIES
+            res["ps5006_fig1"] = fig1
+            v_b = EATON_KR_LIFE_ROWS[1][2]
+            res["bound_control"] = [bound_control(t, v) for t in FIELD_TEMPS_C
+                                    for v in (EATON_KR_RATED_VOLTAGE_V, VBAT_OV_RATIFIED_V, v_b + 0.2, v_b, v_b - 0.3)]
+            res["bound_below_row_b_v"] = ("below row B's voltage the rows give no voltage credit: the bound is row B "
+                                          "carried by the thermal step alone (`bound_life_hours`)")
+        results[name] = res
 
     print()
-    print("  ⚖️  Derate RATIFIED 2026-09-09 (VBAT_OV 4.822 V) and SKU closed 2026-09-22 (Eaton KR) —")
-    print("      what stays open is the vendor voltage coefficient: the bracket above IS that openness.")
-
+    print("  ⚖️  Derate RATIFIED 2026-09-09 (VBAT_OV 4.822 V) and SKU closed 2026-09-22 (Eaton KR); since 2026-11-07")
+    print("      the lower bound is the datasheet's own two Life rows under PS-5006's text rule (two_row_bound).")
     return results
 
 

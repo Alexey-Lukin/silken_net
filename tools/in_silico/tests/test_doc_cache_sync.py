@@ -2567,27 +2567,74 @@ CHECKS += [
     # because a bracket quoted as its middle is exactly how that drift read. It is the 40 °C ISOTHERM,
     # which the protocol itself is since 2026-09-24 (⚖️ founder, 01_02 §2 «Концепція»; the earlier
     # 20–40 °C cycle never had a computed equivalence).
-    # EDLC life at the RATIFIED VBAT_OV (HW.37, 02_03 §12.1): a bracket over the vendor voltage coefficient,
-    # so all four ends are pinned — the 20-year claim holds at 10 °C only because BOTH ends clear it.
+    # EDLC life at the RATIFIED VBAT_OV (HW.37, 02_03 §12.1): the two UNSOURCED readings (0.4 · 0.2 V per part)
+    # the canon row still quotes, all four ends; since 2026-11-07 the vendor-grounded lower bound is pinned below.
     (
-        "EDLC life @ 10 °C, ratified VBAT_OV, conservative → gusak_degradation.json §edlc_endurance_hours",
+        "EDLC life @ 10 °C, ratified VBAT_OV, unsourced 0.4 V/part → gusak_degradation.json §edlc_endurance_hours",
         "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"\*\*{N}–[\d.]+ року @ 10 °C\*\*",
-        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["10.0"]["conservative_yr"], 0.05,
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["10.0"]["unsourced_0v4_part_yr"], 0.05,
     ),
     (
-        "EDLC life @ 10 °C, ratified VBAT_OV, optimistic → gusak_degradation.json §edlc_endurance_hours",
+        "EDLC life @ 10 °C, ratified VBAT_OV, unsourced 0.2 V/part → gusak_degradation.json §edlc_endurance_hours",
         "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"\*\*[\d.]+–{N} року @ 10 °C\*\*",
-        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["10.0"]["optimistic_yr"], 0.05,
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["10.0"]["unsourced_0v2_part_yr"], 0.05,
     ),
     (
-        "EDLC life @ 25 °C, ratified VBAT_OV, conservative → gusak_degradation.json §edlc_endurance_hours",
+        "EDLC life @ 25 °C, ratified VBAT_OV, unsourced 0.4 V/part → gusak_degradation.json §edlc_endurance_hours",
         "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"\*\*{N}–[\d.]+ року @ 25 °C\*\*",
-        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["25.0"]["conservative_yr"], 0.05,
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["25.0"]["unsourced_0v4_part_yr"], 0.05,
     ),
     (
-        "EDLC life @ 25 °C, ratified VBAT_OV, optimistic → gusak_degradation.json §edlc_endurance_hours",
+        "EDLC life @ 25 °C, ratified VBAT_OV, unsourced 0.2 V/part → gusak_degradation.json §edlc_endurance_hours",
         "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"\*\*[\d.]+–{N} року @ 25 °C\*\*",
-        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["25.0"]["optimistic_yr"], 0.05,
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["25.0"]["unsourced_0v2_part_yr"], 0.05,
+    ),
+    # The vendor-grounded LOWER bound (both datasheet Life rows under PS-5006's text rule, 2026-11-07) and the
+    # VBAT_OV that holds 20 years on it — the numbers the derate re-submission stands on.
+    (
+        "EDLC lower bound @ 10 °C, ratified VBAT_OV → gusak_degradation.json §two_row_bound",
+        "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"\*\*{N} року @ 10 °C\*\* і \*\*[\d.]+ року @ 25 °C\*\*, а 20 років на ній",
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["10.0"]["two_row_bound_yr"], 0.05,
+    ),
+    (
+        "EDLC lower bound @ 25 °C, ratified VBAT_OV → gusak_degradation.json §two_row_bound",
+        "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"\*\*[\d.]+ року @ 10 °C\*\* і \*\*{N} року @ 25 °C\*\*, а 20 років на ній",
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["25.0"]["two_row_bound_yr"], 0.05,
+    ),
+    (
+        "VBAT_OV for 20 yr @ 10 °C on the lower bound → gusak_degradation.json §vbat_ov_for_service_life",
+        "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"дає лише\s+`VBAT_OV` ≤ \*\*{N} В\*\*",
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["vbat_ov_for_service_life"]["10.0"]["two_row_bound"], 0.0005,
+    ),
+    (
+        "SUMMARY · VBAT_OV for 20 yr @ 10 °C on the lower bound → gusak_degradation.json",
+        SUMMARY, rf"lower bound \(both rows, PS-5006 text 2×/10°C\): ≤ {N} V",
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["vbat_ov_for_service_life"]["10.0"]["two_row_bound"], 0.0005,
+    ),
+    (
+        "SUMMARY · VBAT_OV for 20 yr @ 10 °C, unsourced 0.4 V/part → gusak_degradation.json",
+        SUMMARY, rf"unsourced 0\.4 V/part: ≤ {N} V",
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["vbat_ov_for_service_life"]["10.0"]["unsourced_0v4_part"], 0.0005,
+    ),
+    (
+        "SUMMARY · VBAT_OV for 20 yr @ 10 °C, unsourced 0.2 V/part → gusak_degradation.json",
+        SUMMARY, rf"unsourced 0\.2 V/part: ≤ {N} V",
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["vbat_ov_for_service_life"]["10.0"]["unsourced_0v2_part"], 0.0005,
+    ),
+    (
+        "SUMMARY · lower bound @ 10 °C → gusak_degradation.json",
+        SUMMARY, rf"At 4\.822 V the bound is {N} yr @ 10°C",
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["10.0"]["two_row_bound_yr"], 0.05,
+    ),
+    (
+        "SUMMARY · lower bound @ 25 °C → gusak_degradation.json",
+        SUMMARY, rf"yr @ 10°C and {N} yr @ 25°C\. PS-5006",
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["25.0"]["two_row_bound_yr"], 0.05,
+    ),
+    (
+        "SUMMARY · Figure-1 slope @ 10 °C → gusak_degradation.json",
+        SUMMARY, rf"same rows give {N} yr @ 10°C",
+        "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["10.0"]["two_row_fig1_slope_yr"], 0.05,
     ),
     # EDLC window at the ratified VBAT_OV (HW.37 → HW.42): `02_03 §8` is the window's home and script 63
     # divides it (history: `test_delta_t_aux_power_cache_on_ratified_window`). Both §8 rows are pinned,
@@ -3822,7 +3869,7 @@ def _sens(alpha, field="t_cap_max_c"):
 
 
 def _aging_span(prefix, field, pick):
-    """min/max over one series of `aging` — T_eff, or a life end (conservative / optimistic)."""
+    """min/max over one series of `aging` — T_eff, or one reading's life (`<reading>_yr`)."""
     def resolve(d):
         rows = [r for k, r in d["aging"].items() if k.startswith(prefix)]
         vals = [r["t_eff_c"] if field == "t_eff_c" else r["life_at_ratified_vbat_ov"][field] for r in rows]
@@ -3865,12 +3912,38 @@ CHECKS += [
      POWER, rf"у тіні й \*\*{N}–[\d.]+ °C\*\* на сонці", THERMAL, _aging_span("sunlit", "t_eff_c", min), 0.05),
     ("HW.37 · 02_03 aging T_eff sunlit, high end → capsule_envelope.json",
      POWER, rf"у тіні й \*\*[\d.]+–{N} °C\*\* на сонці", THERMAL, _aging_span("sunlit", "t_eff_c", max), 0.05),
-    ("HW.37 · 02_03 life in open air, conservative → capsule_envelope.json",
+    ("HW.37 · 02_03 life in open air, unsourced 0.4 V/part → capsule_envelope.json",
      POWER, rf"\(⊕ 2026-11-03: \*\*{N}\*\*–[\d.]+ на сирому T_eff", THERMAL,     # the measurement appended to the derate verdict keeps its 19.1 (00_05 §7)
-     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["conservative_yr"], 0.05),
-    ("HW.37 · 02_03 life in open air, optimistic → capsule_envelope.json",
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["unsourced_0v4_part_yr"], 0.05),
+    ("HW.37 · 02_03 life in open air, unsourced 0.2 V/part → capsule_envelope.json",
      POWER, rf"строк у повітрі — \*\*[\d.]+–{N} року\*\*", THERMAL,
-     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["optimistic_yr"], 0.05),
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["unsourced_0v2_part_yr"], 0.05),
+    ("HW.37 · 02_03 lower bound in open air → capsule_envelope.json",
+     POWER, rf"Нижня межа з обох рядків паспорта — \*\*{N} року\*\* в повітрі", THERMAL,
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["two_row_bound_yr"], 0.05),
+    ("HW.37 · 02_03 lower bound shaded α 0.5, low → capsule_envelope.json",
+     POWER, rf"в повітрі, \*\*{N}–[\d.]+\*\* у тіні", THERMAL, _aging_span("shaded_alpha0.50", "two_row_bound_yr", min), 0.05),
+    ("HW.37 · 02_03 lower bound shaded α 0.5, high → capsule_envelope.json",
+     POWER, rf"в повітрі, \*\*[\d.]+–{N}\*\* у тіні", THERMAL, _aging_span("shaded_alpha0.50", "two_row_bound_yr", max), 0.05),
+    ("HW.37 · 02_03 lower bound sunlit α 0.5, low → capsule_envelope.json",
+     POWER, rf"у тіні й\s+\*\*{N}–[\d.]+\*\* на сонці під радомом", THERMAL, _aging_span("sunlit_alpha0.50", "two_row_bound_yr", min), 0.05),
+    ("HW.37 · 02_03 lower bound sunlit α 0.5, high → capsule_envelope.json",
+     POWER, rf"у тіні й\s+\*\*[\d.]+–{N}\*\* на сонці під радомом", THERMAL, _aging_span("sunlit_alpha0.50", "two_row_bound_yr", max), 0.05),
+    ("HW.37 · 02_03 VBAT_OV for 20 yr on the bound, open air → capsule_envelope.json",
+     POWER, rf"мав би стати ≤ \*\*{N} В\*\* у повітрі", THERMAL,
+     lambda d: d["aging"]["air"]["vbat_ov_for_service_life_v"]["two_row_bound"], 0.005),
+    ("HW.37 · 02_03 Figure-1 slope, α ≤ 0.5 and air, low → capsule_envelope.json",
+     POWER, rf"рядки дають \*\*{N}–[\d.]+\*\* року в повітрі", THERMAL,
+     lambda d: min(r["life_at_ratified_vbat_ov"]["two_row_fig1_slope_yr"] for k, r in d["aging"].items() if k == "air" or "alpha0.50" in k), 0.05),
+    ("HW.37 · 02_03 Figure-1 slope, α ≤ 0.5 and air, high → capsule_envelope.json",
+     POWER, rf"рядки дають \*\*[\d.]+–{N}\*\* року в повітрі", THERMAL,
+     lambda d: max(r["life_at_ratified_vbat_ov"]["two_row_fig1_slope_yr"] for k, r in d["aging"].items() if k == "air" or "alpha0.50" in k), 0.05),
+    ("HW.37 · SUMMARY VBAT_OV for 20 yr on the bound, every case → capsule_envelope.json",
+     SUMMARY, rf"needs `VBAT_OV` ≤ {N}–[\d.]+ V where any voltage can", THERMAL,
+     lambda d: min(r["vbat_ov_for_service_life_v"]["two_row_bound"] for r in d["aging"].values() if r["vbat_ov_for_service_life_v"]["two_row_bound"] is not None), 0.005),
+    ("HW.37 · SUMMARY VBAT_OV for 20 yr on the bound, every case, high → capsule_envelope.json",
+     SUMMARY, rf"needs `VBAT_OV` ≤ [\d.]+–{N} V where any voltage can", THERMAL,
+     lambda d: max(r["vbat_ov_for_service_life_v"]["two_row_bound"] for r in d["aging"].values() if r["vbat_ov_for_service_life_v"]["two_row_bound"] is not None), 0.005),
     # SUMMARY §HW.37 — both tables, every cell.
     ("HW.37 · SUMMARY sunlit α 0.50 → capsule_envelope.json",
      SUMMARY, rf"\| Sunlit \(the beam reaches the capsule\) \| {N} °C \|", THERMAL, _hot("sunlit", "0.50"), 0.05),
@@ -3898,12 +3971,18 @@ CHECKS += [
      THERMAL, _hot("shaded", "0.95", "margin_to_rating_k"), 0.05),
     ("HW.37 · SUMMARY open-air T_eff → capsule_envelope.json",
      SUMMARY, rf"\| Open air \| {N} °C \|", THERMAL, lambda d: d["aging"]["air"]["t_eff_c"], 0.05),
-    ("HW.37 · SUMMARY open-air life, conservative → capsule_envelope.json",
-     SUMMARY, rf"\| Open air \| [\d.]+ °C \| {N}–[\d.]+ yr \|", THERMAL,
-     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["conservative_yr"], 0.05),
-    ("HW.37 · SUMMARY open-air life, optimistic → capsule_envelope.json",
-     SUMMARY, rf"\| Open air \| [\d.]+ °C \| [\d.]+–{N} yr \|", THERMAL,
-     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["optimistic_yr"], 0.05),
+    ("HW.37 · SUMMARY open-air lower bound → capsule_envelope.json",
+     SUMMARY, rf"\| Open air \| [\d.]+ °C \| {N} yr \|", THERMAL,
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["two_row_bound_yr"], 0.05),
+    ("HW.37 · SUMMARY open-air life, unsourced 0.4 V/part → capsule_envelope.json",
+     SUMMARY, rf"\| Open air \| [\d.]+ °C \| [\d.]+ yr \| {N}–[\d.]+ yr \|", THERMAL,
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["unsourced_0v4_part_yr"], 0.05),
+    ("HW.37 · SUMMARY open-air life, unsourced 0.2 V/part → capsule_envelope.json",
+     SUMMARY, rf"\| Open air \| [\d.]+ °C \| [\d.]+ yr \| [\d.]+–{N} yr \|", THERMAL,
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["unsourced_0v2_part_yr"], 0.05),
+    ("HW.37 · SUMMARY open-air life, Figure-1 slope → capsule_envelope.json",
+     SUMMARY, rf"\| Open air \| [\d.]+ °C \| [\d.]+ yr \| [\d.]+–[\d.]+ yr \| {N} yr \|", THERMAL,
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["two_row_fig1_slope_yr"], 0.05),
     # [E.63] L4's cycle cost and sleep drain are canon PREMISES the cache mirrors (via lib/constants.py):
     # a chain that moves (a CCM-era frame, a new term in §9.4) must re-run 30/30b, not leave L4 on the
     # old price. Anchored on Scenario C's own lines, so §9.4's +22 dBm point cannot match by accident.
@@ -3922,12 +4001,24 @@ for _case, _label in _SERIES.items():
          SUMMARY, rf"\| {_label} \| {N}–[\d.]+ °C \|", THERMAL, _aging_span(_case, "t_eff_c", min), 0.05),
         (f"HW.37 · SUMMARY {_case} T_eff high end → capsule_envelope.json",
          SUMMARY, rf"\| {_label} \| [\d.]+–{N} °C \|", THERMAL, _aging_span(_case, "t_eff_c", max), 0.05),
-        (f"HW.37 · SUMMARY {_case} life, conservative low end → capsule_envelope.json",
+        (f"HW.37 · SUMMARY {_case} lower bound, low end → capsule_envelope.json",
          SUMMARY, rf"\| {_label} \| [\d.]+–[\d.]+ °C \| {N}–[\d.]+ yr \|", THERMAL,
-         _aging_span(_case, "conservative_yr", min), 0.05),
-        (f"HW.37 · SUMMARY {_case} life, optimistic high end → capsule_envelope.json",
+         _aging_span(_case, "two_row_bound_yr", min), 0.05),
+        (f"HW.37 · SUMMARY {_case} lower bound, high end → capsule_envelope.json",
          SUMMARY, rf"\| {_label} \| [\d.]+–[\d.]+ °C \| [\d.]+–{N} yr \|", THERMAL,
-         _aging_span(_case, "optimistic_yr", max), 0.05),
+         _aging_span(_case, "two_row_bound_yr", max), 0.05),
+        (f"HW.37 · SUMMARY {_case} life, unsourced 0.4 V/part low end → capsule_envelope.json",
+         SUMMARY, rf"\| {_label} \| [\d.]+–[\d.]+ °C \| [\d.]+–[\d.]+ yr \| {N}–[\d.]+ yr \|", THERMAL,
+         _aging_span(_case, "unsourced_0v4_part_yr", min), 0.05),
+        (f"HW.37 · SUMMARY {_case} life, unsourced 0.2 V/part high end → capsule_envelope.json",
+         SUMMARY, rf"\| {_label} \| [\d.]+–[\d.]+ °C \| [\d.]+–[\d.]+ yr \| [\d.]+–{N} yr \|", THERMAL,
+         _aging_span(_case, "unsourced_0v2_part_yr", max), 0.05),
+        (f"HW.37 · SUMMARY {_case} life, Figure-1 slope low end → capsule_envelope.json",
+         SUMMARY, rf"\| {_label} \| [\d.]+–[\d.]+ °C \| [\d.]+–[\d.]+ yr \| [\d.]+–[\d.]+ yr \| {N}–[\d.]+ yr \|", THERMAL,
+         _aging_span(_case, "two_row_fig1_slope_yr", min), 0.05),
+        (f"HW.37 · SUMMARY {_case} life, Figure-1 slope high end → capsule_envelope.json",
+         SUMMARY, rf"\| {_label} \| [\d.]+–[\d.]+ °C \| [\d.]+–[\d.]+ yr \| [\d.]+–[\d.]+ yr \| [\d.]+–{N} yr \|", THERMAL,
+         _aging_span(_case, "two_row_fig1_slope_yr", max), 0.05),
     ]
 CHECKS += [
     ("HW.37 · SUMMARY air hours under the floor → capsule_envelope.json",
@@ -4113,13 +4204,17 @@ CHECKS += [
     ("HW.37 · 02_01 §5.2 T_eff dark, sunlit with breeze → capsule_envelope.json",
      HW_BOM, rf"зсуває T_eff старіння з [\d.]+ до {N} °C", THERMAL, _sunlit_breeze("0.95", "t_eff_c"), 0.05),
     ("HW.37 · 02_01 §5.2 life light, optimistic → capsule_envelope.json",
-     HW_BOM, rf"а строк — з {N} до [\d.]+ року", THERMAL, _sunlit_breeze("0.50", "optimistic_yr"), 0.05),
+     HW_BOM, rf"а строк — з {N} до [\d.]+ року", THERMAL, _sunlit_breeze("0.50", "unsourced_0v2_part_yr"), 0.05),
     ("HW.37 · 02_01 §5.2 life dark, optimistic → capsule_envelope.json",
-     HW_BOM, rf"а строк — з [\d.]+ до {N} року", THERMAL, _sunlit_breeze("0.95", "optimistic_yr"), 0.05),
+     HW_BOM, rf"а строк — з [\d.]+ до {N} року", THERMAL, _sunlit_breeze("0.95", "unsourced_0v2_part_yr"), 0.05),
     ("HW.37 · 02_01 §5.2 life light, conservative → capsule_envelope.json",
-     HW_BOM, rf"консервативний — з {N} до [\d.]+\)", THERMAL, _sunlit_breeze("0.50", "conservative_yr"), 0.05),
+     HW_BOM, rf"консервативний — з {N} до [\d.]+\)", THERMAL, _sunlit_breeze("0.50", "unsourced_0v4_part_yr"), 0.05),
     ("HW.37 · 02_01 §5.2 life dark, conservative → capsule_envelope.json",
-     HW_BOM, rf"консервативний — з [\d.]+ до {N}\)", THERMAL, _sunlit_breeze("0.95", "conservative_yr"), 0.05),
+     HW_BOM, rf"консервативний — з [\d.]+ до {N}\)", THERMAL, _sunlit_breeze("0.95", "unsourced_0v4_part_yr"), 0.05),
+    ("HW.37 · 02_01 §5.2 lower bound light → capsule_envelope.json",
+     HW_BOM, rf"скорочує строк із {N} до [\d.]+ року", THERMAL, _sunlit_breeze("0.50", "two_row_bound_yr"), 0.05),
+    ("HW.37 · 02_01 §5.2 lower bound dark → capsule_envelope.json",
+     HW_BOM, rf"скорочує строк із [\d.]+ до {N} року", THERMAL, _sunlit_breeze("0.95", "two_row_bound_yr"), 0.05),
 ]
 
 # ── HW.25 / HW.6 site climate (script 74) — rain/dew stand §7 pp. 3–4 and 01_04 §3.5 ──

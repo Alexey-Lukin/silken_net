@@ -53,7 +53,7 @@ SECOND OUTPUT — the temperature the EDLC AGES at. 02_03 §12.1 prices the EDLC
 10 °C and 25 °C (00_07 HW.37/HW.7). The rate that matters is the vendor's doubling rule, rate ∝ 2^(T/10),
 averaged over the hours, so the equivalent constant temperature is T_eff = 10·log2⟨2^(T/10)⟩ — the same
 construction as `51`'s Arrhenius-effective field temperature, with the vendor's rule in place of a fixed Ea.
-Life at T_eff comes from `51`'s own kernel (`capacitor_life_hours`), imported, never re-implemented.
+Life at T_eff comes from `51`'s own kernel and readings (`readings_years`, both datasheet Life rows), imported, never re-implemented.
 
 THIRD OUTPUT — cold hours below the EDLC operating floor (air; the lump tracks air at night in this model,
 and real sky cooling would make the capsule COLDER — so the count is a LOWER bound for the capsule).
@@ -74,17 +74,13 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
+    ANCHOR_SERVICE_LIFE_YEARS,
     CACHE_DIR,
-    EATON_KR_RATED_HOURS,
-    EATON_KR_RATED_TEMP_C,
-    EATON_KR_RATED_VOLTAGE_V,
     EDLC_OPERATING_MAX_C,
     EDLC_OPERATING_MIN_C,
     REPO_ROOT,
     THERMAL_DOUBLING_INTERVAL_K,
     VBAT_OV_RATIFIED_V,
-    VOLTAGE_DOUBLING_CONSERVATIVE_V,
-    VOLTAGE_DOUBLING_OPTIMISTIC_V,
 )
 from lib.utils import banner
 
@@ -198,27 +194,30 @@ def load_hours() -> dict:
     }
 
 
-def t_eff_doubling(series_c) -> float:
-    """Equivalent constant temperature under the vendor rule rate ∝ 2^(T/ΔT_double)."""
-    k = THERMAL_DOUBLING_INTERVAL_K
+def t_eff_doubling(series_c, k: float = THERMAL_DOUBLING_INTERVAL_K) -> float:
+    """Equivalent constant temperature under the vendor rule rate ∝ 2^(T/ΔT_double). It depends on the step:
+    a steeper step weighs the warm hours more, so each reading ages at ITS OWN T_eff."""
     return float(k * math.log2(np.mean(np.power(2.0, np.asarray(series_c) / k))))
 
 
-def load_capacitor_kernel():
+def load_script_51():
+    """`51` owns the kernel AND the readings (both Life rows, PS-5006) — imported, never re-implemented."""
     spec = importlib.util.spec_from_file_location("s51", SCRIPT_51)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return mod.capacitor_life_hours
+    return mod
 
 
-def life_years(kernel, t_c: float) -> dict:
-    hours_per_year = 365.25 * 24.0
-    out = {}
-    for label, dv in (("optimistic_yr", VOLTAGE_DOUBLING_OPTIMISTIC_V), ("conservative_yr", VOLTAGE_DOUBLING_CONSERVATIVE_V)):
-        h = kernel(EATON_KR_RATED_HOURS, EATON_KR_RATED_TEMP_C, EATON_KR_RATED_VOLTAGE_V, t_c,
-                   VBAT_OV_RATIFIED_V, dt_double_c=THERMAL_DOUBLING_INTERVAL_K, dv_double_v=dv)
-        out[label] = round(h / hours_per_year, 1)
-    return out
+def life_of_series(s51, readings: dict, series_c) -> dict:
+    """Life at the ratified VBAT_OV and the VBAT_OV that holds the service life, per reading, each at the T_eff
+    of its own thermal step (unrounded — §When Modifying #6)."""
+    life, need, t_effs = {}, {}, {}
+    for name, r in readings.items():
+        t = t_eff_doubling(series_c, r["dt_double_c"])
+        t_effs[name] = round(t, 2)
+        life.update(s51.readings_years(t, VBAT_OV_RATIFIED_V, {name: r}))
+        need[name] = s51.vbat_ov_for_years(t, ANCHOR_SERVICE_LIFE_YEARS, r, name=name)
+    return {"life_at_ratified_vbat_ov": life, "vbat_ov_for_service_life_v": need, "t_eff_c_by_reading": t_effs}
 
 
 def main() -> int:
@@ -275,9 +274,12 @@ def main() -> int:
     rating_exceeded = max(worst["t_cap_max_c"], sens_worst["t_cap_max_c"]) > EDLC_OPERATING_MAX_C
 
     # ── 2. the temperature the EDLC ages at (vendor doubling rule), and its life at the ratified VBAT_OV ──
-    kernel = load_capacitor_kernel()
-    # t_eff unrounded: the life below is computed from it (in-silico §When Modifying #6)
-    aging = {"air": {"t_eff_c": t_eff_doubling(h["t_air"]), "mean_c": round(float(h["t_air"].mean()), 2)}}
+    s51 = load_script_51()
+    readings = s51.eaton_readings()
+    # t_eff unrounded: the life below is computed from it (in-silico §When Modifying #6); `t_eff_c` is the text
+    # rule's (PS-5006, 2× per 10 K) — every reading carries its own beside it.
+    aging = {"air": {"t_eff_c": t_eff_doubling(h["t_air"]), "mean_c": round(float(h["t_air"].mean()), 2),
+                     **life_of_series(s51, readings, h["t_air"])}}
     for case, beam in (("shaded", 0.0), ("sunlit", 1.0)):
         for alpha in ALPHA_EDGES:
             for k in (0.0, WIND_K_TYPICAL):
@@ -287,23 +289,28 @@ def main() -> int:
                     "t_eff_c": t_eff_doubling(t_cap),
                     "mean_c": round(float(t_cap.mean()), 2),
                     "hours_above_60c": int((t_cap > 60.0).sum()),
+                    **life_of_series(s51, readings, t_cap),
                 }
-    for row in aging.values():
-        row["life_at_ratified_vbat_ov"] = life_years(kernel, row["t_eff_c"])
-    ref = {f"{t:.0f}": life_years(kernel, t) for t in (10.0, 25.0)}
-    print("\n  2. Aging temperature (vendor 2× per 10 K) and EDLC life at the ratified VBAT_OV "
-          f"{VBAT_OV_RATIFIED_V:.3f} V (conservative–optimistic):")
-    print(f"     reference points of 02_03 §12.1: 10 °C → {ref['10']['conservative_yr']}–{ref['10']['optimistic_yr']} yr · "
-          f"25 °C → {ref['25']['conservative_yr']}–{ref['25']['optimistic_yr']} yr")
+    ref = {f"{t:.0f}": s51.readings_years(t, VBAT_OV_RATIFIED_V, readings) for t in (10.0, 25.0)}
+    print("\n  2. Aging temperature and EDLC life at the ratified VBAT_OV "
+          f"{VBAT_OV_RATIFIED_V:.3f} V, per reading (two_row_bound = the vendor-grounded lower bound):")
+    print("     reference points of 02_03 §12.1: " + " · ".join(
+        f"{t} °C → " + ", ".join(f"{k[:-3]} {v}" for k, v in ref[t].items()) for t in ref))
     for key, row in aging.items():
         life = row["life_at_ratified_vbat_ov"]
-        print(f"     {key:<24s} T_eff {row['t_eff_c']:5.2f} °C → {life['conservative_yr']:5.1f}–{life['optimistic_yr']:5.1f} yr")
+        print(f"     {key:<24s} T_eff {row['t_eff_c']:5.2f} °C → " + " · ".join(f"{v:5.1f}" for v in life.values())
+              + f" yr · VBAT_OV for {ANCHOR_SERVICE_LIFE_YEARS:g} yr on the bound: "
+              + (f"≤ {row['vbat_ov_for_service_life_v']['two_row_bound']:.3f} V"
+                 if row['vbat_ov_for_service_life_v']['two_row_bound'] is not None else "none holds it"))
     t_eff_air = aging["air"]["t_eff_c"]
     life_air = aging["air"]["life_at_ratified_vbat_ov"]
     shaded_keys = [k for k in aging if k.startswith("shaded")]
     sunlit_keys = [k for k in aging if k.startswith("sunlit")]
-    cons_all = [aging[k]["life_at_ratified_vbat_ov"]["conservative_yr"] for k in aging]
-    opt_all = [aging[k]["life_at_ratified_vbat_ov"]["optimistic_yr"] for k in aging]
+    by_reading = {name: [aging[k]["life_at_ratified_vbat_ov"][f"{name}_yr"] for k in aging] for name in readings}
+    bound_all = by_reading["two_row_bound"]
+    need_bound = {k: aging[k]["vbat_ov_for_service_life_v"]["two_row_bound"] for k in aging}
+    reachable = [v for v in need_bound.values() if v is not None]
+    unreachable = [k for k, v in need_bound.items() if v is None]
 
     # ── 3. cold hours below the EDLC floor (air; a LOWER bound for the capsule) ─────────────────────────
     years = n / 8766.0
@@ -336,25 +343,31 @@ def main() -> int:
         f"{CAPSULE_ENVELOPE_C[1]:.0f} °C {capsule_upper} in this climate. NOT modelled and moving the hot answer "
         f"UP: sunlit bark conducting through the flange rim; ERA5 smoothing of station maxima."
     )
-    def _side(vals):
-        return ("stays BELOW 20 yr in every case" if max(vals) < 20 else
-                "stays ABOVE 20 yr in every case" if min(vals) >= 20 else "crosses 20 yr between cases")
-    if min(cons_all) >= 20:
-        claim = "so 20 years holds in every case at both ends of the voltage-coefficient bracket"
-    elif max(cons_all) < 20 <= min(opt_all):
-        claim = "so the 20-year claim now rests on the vendor voltage coefficient alone"
-    elif max(opt_all) < 20:
-        claim = "so 20 years fails in every case even at the optimistic coefficient"
+    def _span(keys, name="two_row_bound"):
+        vals = [aging[k]["life_at_ratified_vbat_ov"][f"{name}_yr"] for k in keys]
+        return f"{min(vals)}–{max(vals)}"
+    if min(bound_all) >= ANCHOR_SERVICE_LIFE_YEARS:
+        claim = f"so {ANCHOR_SERVICE_LIFE_YEARS:g} years holds in every case on the lower bound"
+    elif max(bound_all) < ANCHOR_SERVICE_LIFE_YEARS:
+        claim = f"so {ANCHOR_SERVICE_LIFE_YEARS:g} years fails in every case on the lower bound; holding it there "
+        claim += (f"needs VBAT_OV ≤ {math.floor(min(reachable) * 100) / 100:.2f}–"
+                  f"{math.floor(max(reachable) * 100) / 100:.2f} V where any voltage can"
+                  if reachable else "is out of reach of any VBAT_OV")
+        if unreachable:
+            claim += (f", and no VBAT_OV holds it in {len(unreachable)} case(s) ({', '.join(unreachable)}) — below row "
+                      f"B's voltage the rows give no voltage credit")
     else:
-        claim = "so the 20-year claim depends on the case (finish, sun, wind) as well as on the coefficient"
+        claim = f"so {ANCHOR_SERVICE_LIFE_YEARS:g} years on the lower bound depends on the case (finish, sun, wind)"
+    others = ", ".join(f"{name} {min(v)}–{max(v)}" for name, v in by_reading.items() if name != "two_row_bound")
     verdict_aging = (
         f"The EDLC ages at T_eff {t_eff_air:.1f} °C in open air (vendor 2×/10 K over {n} hours), not at the 10 °C "
         f"reference point; under the radome {min(aging[k]['t_eff_c'] for k in shaded_keys):.1f}–"
         f"{max(aging[k]['t_eff_c'] for k in shaded_keys):.1f} °C shaded and "
         f"{min(aging[k]['t_eff_c'] for k in sunlit_keys):.1f}–{max(aging[k]['t_eff_c'] for k in sunlit_keys):.1f} °C "
-        f"sunlit. At the ratified VBAT_OV the life is {life_air['conservative_yr']}–{life_air['optimistic_yr']} yr in "
-        f"air and {min(cons_all)}–{max(opt_all)} yr across every case: the conservative voltage coefficient "
-        f"{_side(cons_all)}, the optimistic one {_side(opt_all)} — {claim}."
+        f"sunlit. At the ratified VBAT_OV the vendor-grounded lower bound (both Life rows of the datasheet under "
+        f"PS-5006's text rule) is {life_air['two_row_bound_yr']} yr in air, {_span(shaded_keys)} yr shaded and "
+        f"{_span(sunlit_keys)} yr sunlit — {claim}. The other readings across every case, each at its own T_eff: "
+        f"{others} yr."
     )
     print("\n  VERDICT (hot):   " + verdict_hot)
     print("  VERDICT (aging): " + verdict_aging)
@@ -378,6 +391,9 @@ def main() -> int:
         "rating_exceeded": rating_exceeded,
         "aging": aging,
         "aging_reference_points_02_03": ref,
+        "aging_readings": {k: {"dt_double_c": round(r["dt_double_c"], 3), "dv_double_v": round(r["dv_double_v"], 4),
+                               "built_from": r["built_from"]} for k, r in readings.items()},
+        "service_life_years": ANCHOR_SERVICE_LIFE_YEARS,
         "cold_hours_below_edlc_floor": {"hours": int(cold.sum()), "days": len(cold_days), "years": round(years, 1),
                                         "coldest_air_c": float(h["t_air"].min()),
                                         "bound": "LOWER bound for the capsule (no sky cooling in the model)"},

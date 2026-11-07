@@ -1891,18 +1891,25 @@ temperature+voltage **endurance-hours** (electrolyte dry-out / ESR-rise). `arrhe
 T_field/T_lab/Ea as parameters (Ti numbers verified byte-identical after the refactor), and a
 sibling `capacitor_life_hours()` added for the vendor temperature+voltage doubling rule.
 
-| SKU (`02_01 §3` поз.3) | Rated point | Life @ 25°C | Life @ 10°C | 20-yr voltage-derating bracket @10°C |
+| SKU (`02_01 §3` поз.3) | Life rows | Life @ 25°C | Life @ 10°C | `VBAT_OV` for 20 yr @ 10°C, per reading |
 |---|---|---|---|---|
-| Eaton KR-5R5H474-R | 1000 h @ 70°C @ 5.5V | 2.58 yr | 7.30 yr | optimistic (0.2V/2×): 5.20V→20.7yr · conservative (0.4V/2×): needs ≤4.92V |
-| KEMET FG0H474ZF | 1000 h @ 70°C @ 5.5V (same rated point) | 2.58 yr | 7.30 yr | **same bracket as Eaton** — KEMET's own voltage coefficient not found in a public datasheet; reported as sensitivity, not a false-precise number |
+| Eaton KR-5R5H474-R | 1000 h @ 70°C @ 5.5V · 2000 h @ 85°C @ 3.6V | 2.58 yr | 7.30 yr | lower bound (both rows, PS-5006 text 2×/10°C): ≤ 4.395 V · unsourced 0.4 V/part: ≤ 4.918 V · unsourced 0.2 V/part: ≤ 5.209 V · Figure-1 slope: the rated 5.5 V already holds |
+| KEMET FG0H474ZF | 1000 h @ 70°C @ 5.5V (one row found) | 2.58 yr | 7.30 yr | the two unsourced readings only — KEMET's own coefficient and a second Life row not found in a public datasheet |
 
 **Verdict** — 🔴 Confirmed via the actual pipeline (not hand-math): the 20-year claim at full
 rated voltage does **not** hold for either SKU (2.6-7.3 yr, a 3-8× shortfall). Whether 20 years is
-reachable depended on the `VBAT_OV` target — at 10°C the conservative vendor coefficient needs
-≤4.92V, the optimistic one only ≤5.20V. **Derate RATIFIED 2026-09-09 (`VBAT_OV` = 4.822 V) and SKU
-closed 2026-09-22 (Eaton KR):** at the ratified point the same pipeline gives 23.6–76.5 yr @ 10°C and
-8.4–27.1 yr @ 25°C (conservative–optimistic), so 20 years holds at 10°C across the bracket and at 25°C
-only at its optimistic end; the bracket itself is the open vendor voltage coefficient (FAE, `00_07` HW.37).
+reachable depends on the `VBAT_OV` target. **Derate RATIFIED 2026-09-09 (`VBAT_OV` = 4.822 V) and SKU
+closed 2026-09-22 (Eaton KR).** Since 2026-11-07 the voltage step is no pick from an unsourced bracket: the
+datasheet's two Life rows are guaranteed minima, and under Eaton's own text rule (PS-5006 p. 2, 2× per 10 °C)
+they bound the life from below — 0.76 V per doubling per part (0.38 V per cell; PS-5006's «1.8 V per
+supercapacitor» at +85 °C against the row's 3.6 V makes the KR two cells, so the old «0.4 V, Eaton's points»
+matches that cell step applied to the part — where the 0.4 V came from, nothing in the tree says). At 4.822 V the bound is 13.5 yr @ 10°C and 4.8 yr @ 25°C. PS-5006's
+Figure 1 is steeper than its text (≈ 3× per 10 °C), and on it the same rows give 193.7 yr @ 10°C — so the cold
+life is set by the vendor's thermal step, which only the vendor can settle. Figure 1's cell voltage effect, paired
+with the rated 70 °C anchor, predicts the +85 °C row below its guarantee, so it is no reading of the KR. The bound's
+minimum is checked by brute force across the voltage range (`bound_control`), mutation-verified; it is a bound only
+while the true thermal step is no shallower than 10 K, and below row B's 3.6 V the rows give no voltage credit — so
+at 25 °C no `VBAT_OV` holds 20 yr on it. Decision → `00_07` HW.37.
 The
 cycle-count argument in `02_03 §12.1` is not wrong, only insufficient on its own; both axes now
 stand side by side there. (`kinetics/gusak_degradation.json` → `edlc_endurance_hours`)
@@ -1930,14 +1937,15 @@ the sweep became the basis of the delegated verdict 2026-09-27 that specifies α
 | Shaded (open-sky diffuse only — an upper bound under a crown) | 42.8 °C | 49.1 °C | 20.9 K |
 
 The second output is the temperature the EDLC AGES at: the vendor's doubling rule averaged over the
-hours, T_eff = 10·log2⟨2^(T/10)⟩, with the life taken from `51`'s own `capacitor_life_hours` at the
-ratified `VBAT_OV` (imported, not re-implemented — the 10/25 °C reference points reproduce `51`).
+hours, T_eff = 10·log2⟨2^(T/10)⟩, with the life taken from `51`'s own readings (`readings_years`) at the
+ratified `VBAT_OV` (imported, not re-implemented — the 10/25 °C reference points reproduce `51`); each reading
+ages at the T_eff of ITS OWN thermal step, so the Figure-1 column is not read against the T_eff column.
 
-| Series | T_eff | Life, conservative–optimistic |
-|---|---|---|
-| Open air | 13.0 °C | 19.2–62.0 yr |
-| Under the radome, shaded (α 0.50/0.95 × k 0/0.1) | 14.35–17.35 °C | 14.2–56.6 yr |
-| Under the radome, sunlit (α 0.50/0.95 × k 0/0.1) | 17.74–27.41 °C | 7.1–44.8 yr |
+| Series | T_eff | Lower bound (both Life rows) | Unsourced 0.4–0.2 V/part | Figure-1 slope |
+|---|---|---|---|---|
+| Open air | 13.0 °C | 11.0 yr | 19.2–62.0 yr | 112.9 yr |
+| Under the radome, shaded (α 0.50/0.95 × k 0/0.1) | 14.35–17.35 °C | 8.1–10.0 yr | 14.2–56.6 yr | 64.1–95.2 yr |
+| Under the radome, sunlit (α 0.50/0.95 × k 0/0.1) | 17.74–27.41 °C | 4.1–7.9 yr | 7.1–44.8 yr | 15.7–58.5 yr |
 
 Re-run 2026-09-30 on the Ø29.8 dome (the root verdict opened the Ø25 freeze for the board, `02_01 §3.5`): the larger solar area costs ≈ 1.4 K of hot margin (7.1 → 5.7 K at α 0.95, still air) and ≈ 0.4–0.9 °C of sunlit T_eff; every verdict stands.
 
@@ -1948,9 +1956,11 @@ so the count is a LOWER bound for the capsule. With the sky it is computed by sc
 **Verdict** — the hot side is not exceeded for any finish in the sweep, but for a DARK finish in full
 sun the margin is of the order of the model's own uncertainty, while a light one keeps ≥ 15.0 K. The
 aging side moves the 20-year claim: the site does not age the EDLC at the 10 °C reference point, and
-at its real T_eff the conservative voltage coefficient stays below 20 years in every case while the
-optimistic one stays above it in every case — so the claim now rests on the vendor voltage
-coefficient alone, which the FAE letter asks. NOT modelled: sunlit bark heating the flange rim and
+at its real T_eff the vendor-grounded lower bound stays below 20 years in every case — holding 20 years
+on it needs `VBAT_OV` ≤ 3.604–4.164 V where any voltage can and none can for the dark finish in full sun (below
+row B's 3.6 V the rows give no voltage credit), all under the winter TX-resume threshold, so the derate lever
+is spent there; on Figure 1's slope the same rows clear 20 years in every case but the dark finish in
+still-air sun. The claim now rests on the vendor's thermal step (`00_07` HW.37). NOT modelled: sunlit bark heating the flange rim and
 ERA5 smoothing of station maxima (both move the hot answer UP), canopy transmittance (the shaded case
 is an upper bound under a crown), sky cooling at night (the cold count is a lower bound).
 (`thermal/capsule_envelope.json` → `hot_bound`, `hot_bound_h_c_sensitivity`, `aging`,

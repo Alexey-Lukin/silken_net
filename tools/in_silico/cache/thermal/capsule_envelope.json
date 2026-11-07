@@ -306,8 +306,22 @@
       "t_eff_c": 13.03500724261973,
       "mean_c": 9.38,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 62.0,
-        "conservative_yr": 19.2
+        "two_row_bound_yr": 11.0,
+        "two_row_fig1_slope_yr": 112.9,
+        "unsourced_0v4_part_yr": 19.2,
+        "unsourced_0v2_part_yr": 62.0
+      },
+      "vbat_ov_for_service_life_v": {
+        "two_row_bound": 4.164,
+        "two_row_fig1_slope": 5.5,
+        "unsourced_0v4_part": 4.797,
+        "unsourced_0v2_part": 5.148
+      },
+      "t_eff_c_by_reading": {
+        "two_row_bound": 13.04,
+        "two_row_fig1_slope": 14.91,
+        "unsourced_0v4_part": 13.04,
+        "unsourced_0v2_part": 13.04
       }
     },
     "shaded_alpha0.50_k0.0": {
@@ -315,8 +329,22 @@
       "mean_c": 10.98,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 52.9,
-        "conservative_yr": 16.3
+        "two_row_bound_yr": 9.4,
+        "two_row_fig1_slope_yr": 83.9,
+        "unsourced_0v4_part_yr": 16.3,
+        "unsourced_0v2_part_yr": 52.9
+      },
+      "vbat_ov_for_service_life_v": {
+        "two_row_bound": 3.989,
+        "two_row_fig1_slope": 5.5,
+        "unsourced_0v4_part": 4.704,
+        "unsourced_0v2_part": 5.102
+      },
+      "t_eff_c_by_reading": {
+        "two_row_bound": 15.34,
+        "two_row_fig1_slope": 17.61,
+        "unsourced_0v4_part": 15.34,
+        "unsourced_0v2_part": 15.34
       }
     },
     "shaded_alpha0.50_k0.1": {
@@ -324,8 +352,22 @@
       "mean_c": 10.28,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 56.6,
-        "conservative_yr": 17.5
+        "two_row_bound_yr": 10.0,
+        "two_row_fig1_slope_yr": 95.2,
+        "unsourced_0v4_part_yr": 17.5,
+        "unsourced_0v2_part_yr": 56.6
+      },
+      "vbat_ov_for_service_life_v": {
+        "two_row_bound": 4.064,
+        "two_row_fig1_slope": 5.5,
+        "unsourced_0v4_part": 4.744,
+        "unsourced_0v2_part": 5.122
+      },
+      "t_eff_c_by_reading": {
+        "two_row_bound": 14.35,
+        "two_row_fig1_slope": 16.46,
+        "unsourced_0v4_part": 14.35,
+        "unsourced_0v2_part": 14.35
       }
     },
     "shaded_alpha0.95_k0.0": {
@@ -333,8 +375,22 @@
       "mean_c": 12.21,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 46.0,
-        "conservative_yr": 14.2
+        "two_row_bound_yr": 8.1,
+        "two_row_fig1_slope_yr": 64.1,
+        "unsourced_0v4_part_yr": 14.2,
+        "unsourced_0v2_part_yr": 46.0
+      },
+      "vbat_ov_for_service_life_v": {
+        "two_row_bound": 3.836,
+        "two_row_fig1_slope": 5.5,
+        "unsourced_0v4_part": 4.624,
+        "unsourced_0v2_part": 5.062
+      },
+      "t_eff_c_by_reading": {
+        "two_row_bound": 17.35,
+        "two_row_fig1_slope": 20.05,
+        "unsourced_0v4_part": 17.35,
+        "unsourced_0v2_part": 17.35
       }
     },
     "shaded_alpha0.95_k0.1": {
@@ -342,8 +398,22 @@
       "mean_c": 11.08,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 51.8,
-        "conservative_yr": 16.0
+        "two_row_bound_yr": 9.2,
+        "two_row_fig1_slope_yr": 80.3,
+        "unsourced_0v4_part_yr": 16.0,
+        "unsourced_0v2_part_yr": 51.8
+      },
+      "vbat_ov_for_service_life_v": {
+        "two_row_bound": 3.967,
+        "two_row_fig1_slope": 5.5,
+        "unsourced_0v4_part": 4.693,
+        "unsourced_0v2_part": 5.096
+      },
+      "t_eff_c_by_reading": {
+        "two_row_bound": 15.62,
+        "two_row_fig1_slope": 18.01,
+        "unsourced_0v4_part": 15.62,
+        "unsourced_0v2_part": 15.62
       }
     },
     "sunlit_alpha0.50_k0.0": {
@@ -351,8 +421,22 @@
       "mean_c": 13.5,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 37.2,
-        "conservative_yr": 11.5
+        "two_row_bound_yr": 6.6,
+        "two_row_fig1_slope_yr": 41.1,
+        "unsourced_0v4_part_yr": 11.5,
+        "unsourced_0v2_part_yr": 37.2
+      },
+      "vbat_ov_for_service_life_v": {
+        "two_row_bound": 3.604,
+        "two_row_fig1_slope": 5.405,
+        "unsourced_0v4_part": 4.502,
+        "unsourced_0v2_part": 5.001
+      },
+      "t_eff_c_by_reading": {
+        "two_row_bound": 20.4,
+        "two_row_fig1_slope": 24.1,
+        "unsourced_0v4_part": 20.4,
+        "unsourced_0v2_part": 20.4
       }
     },
     "sunlit_alpha0.50_k0.1": {
@@ -360,8 +444,22 @@
       "mean_c": 12.03,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 44.8,
-        "conservative_yr": 13.8
+        "two_row_bound_yr": 7.9,
+        "two_row_fig1_slope_yr": 58.5,
+        "unsourced_0v4_part_yr": 13.8,
+        "unsourced_0v2_part_yr": 44.8
+      },
+      "vbat_ov_for_service_life_v": {
+        "two_row_bound": 3.806,
+        "two_row_fig1_slope": 5.5,
+        "unsourced_0v4_part": 4.608,
+        "unsourced_0v2_part": 5.054
+      },
+      "t_eff_c_by_reading": {
+        "two_row_bound": 17.74,
+        "two_row_fig1_slope": 20.88,
+        "unsourced_0v4_part": 17.74,
+        "unsourced_0v2_part": 17.74
       }
     },
     "sunlit_alpha0.95_k0.0": {
@@ -369,8 +467,22 @@
       "mean_c": 16.55,
       "hours_above_60c": 197,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 22.9,
-        "conservative_yr": 7.1
+        "two_row_bound_yr": 4.1,
+        "two_row_fig1_slope_yr": 15.7,
+        "unsourced_0v4_part_yr": 7.1,
+        "unsourced_0v2_part_yr": 22.9
+      },
+      "vbat_ov_for_service_life_v": {
+        "two_row_bound": null,
+        "two_row_fig1_slope": 4.626,
+        "unsourced_0v4_part": 4.221,
+        "unsourced_0v2_part": 4.86
+      },
+      "t_eff_c_by_reading": {
+        "two_row_bound": 27.41,
+        "two_row_fig1_slope": 32.83,
+        "unsourced_0v4_part": 27.41,
+        "unsourced_0v2_part": 27.41
       }
     },
     "sunlit_alpha0.95_k0.1": {
@@ -378,21 +490,62 @@
       "mean_c": 14.34,
       "hours_above_60c": 10,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 31.3,
-        "conservative_yr": 9.7
+        "two_row_bound_yr": 5.5,
+        "two_row_fig1_slope_yr": 27.9,
+        "unsourced_0v4_part_yr": 9.7,
+        "unsourced_0v2_part_yr": 31.3
+      },
+      "vbat_ov_for_service_life_v": {
+        "two_row_bound": null,
+        "two_row_fig1_slope": 5.092,
+        "unsourced_0v4_part": 4.402,
+        "unsourced_0v2_part": 4.951
+      },
+      "t_eff_c_by_reading": {
+        "two_row_bound": 22.91,
+        "two_row_fig1_slope": 27.61,
+        "unsourced_0v4_part": 22.91,
+        "unsourced_0v2_part": 22.91
       }
     }
   },
   "aging_reference_points_02_03": {
     "10": {
-      "optimistic_yr": 76.5,
-      "conservative_yr": 23.6
+      "two_row_bound_yr": 13.5,
+      "two_row_fig1_slope_yr": 193.7,
+      "unsourced_0v4_part_yr": 23.6,
+      "unsourced_0v2_part_yr": 76.5
     },
     "25": {
-      "optimistic_yr": 27.1,
-      "conservative_yr": 8.4
+      "two_row_bound_yr": 4.8,
+      "two_row_fig1_slope_yr": 37.2,
+      "unsourced_0v4_part_yr": 8.4,
+      "unsourced_0v2_part_yr": 27.1
     }
   },
+  "aging_readings": {
+    "two_row_bound": {
+      "dt_double_c": 10.0,
+      "dv_double_v": 0.76,
+      "built_from": "both Life rows of Technical Data 4327 as guaranteed minima + PS-5006's text thermal rule (2× per 10 °C) — the SHORTEST life of every (anchor-row life ≥ its rating, voltage step) pair that honours both rows under that rule (`bound_control`); a bound only while the true thermal step is no SHALLOWER than 10 K, and not a ceiling on any other reading"
+    },
+    "two_row_fig1_slope": {
+      "dt_double_c": 6.3,
+      "dv_double_v": 0.562,
+      "built_from": "both Life rows + PS-5006 Figure 1's thermal slope (its two 30 % lines); the figure plots nothing below 29 °C, so a field life from it is an extrapolation"
+    },
+    "unsourced_0v4_part": {
+      "dt_double_c": 10.0,
+      "dv_double_v": 0.4,
+      "built_from": "0.4 V per part — no primary in the tree; «Eaton's own points» give 0.76 V per part (0.38 V per cell) under the text rule, so the attribution does not hold for the part — where the 0.4 V came from, nothing in the tree says"
+    },
+    "unsourced_0v2_part": {
+      "dt_double_c": 10.0,
+      "dv_double_v": 0.2,
+      "built_from": "0.2 V per part — no primary in the tree"
+    }
+  },
+  "service_life_years": 20.0,
   "cold_hours_below_edlc_floor": {
     "hours": 64,
     "days": 9,
@@ -407,5 +560,5 @@
     "sky long-wave cooling at night — makes the capsule colder than air, so cold hours are a LOWER bound"
   ],
   "verdict_hot": "Not exceeded: the hottest capsule hour of 30 ERA5 years is 64.3 °C (sunlit, α 0.95, still air, adiabatic base; 2010-08-08T13:00, air 37.4 °C) against the 70 °C EDLC rating — margin 5.7 K; 52.9 °C at α 0.5; shaded (open-sky diffuse only) 49.1 °C. With still-air h_c × 0.7 (the correlation off its home geometry) the sunlit worst is 68.0 °C — margin 2.0 K (the h_c shift alone is 3.6 K), so for a DARK finish in full sun the margin is of the order of the model's own uncertainty, while a light one keeps ≥ 15.0 K. The capsule requirement's upper 85 °C is not approached in this climate. NOT modelled and moving the hot answer UP: sunlit bark conducting through the flange rim; ERA5 smoothing of station maxima.",
-  "verdict_aging": "The EDLC ages at T_eff 13.0 °C in open air (vendor 2×/10 K over 262992 hours), not at the 10 °C reference point; under the radome 14.3–17.4 °C shaded and 17.7–27.4 °C sunlit. At the ratified VBAT_OV the life is 19.2–62.0 yr in air and 7.1–62.0 yr across every case: the conservative voltage coefficient stays BELOW 20 yr in every case, the optimistic one stays ABOVE 20 yr in every case — so the 20-year claim now rests on the vendor voltage coefficient alone."
+  "verdict_aging": "The EDLC ages at T_eff 13.0 °C in open air (vendor 2×/10 K over 262992 hours), not at the 10 °C reference point; under the radome 14.3–17.4 °C shaded and 17.7–27.4 °C sunlit. At the ratified VBAT_OV the vendor-grounded lower bound (both Life rows of the datasheet under PS-5006's text rule) is 11.0 yr in air, 8.1–10.0 yr shaded and 4.1–7.9 yr sunlit — so 20 years fails in every case on the lower bound; holding it there needs VBAT_OV ≤ 3.60–4.16 V where any voltage can, and no VBAT_OV holds it in 2 case(s) (sunlit_alpha0.95_k0.0, sunlit_alpha0.95_k0.1) — below row B's voltage the rows give no voltage credit. The other readings across every case, each at its own T_eff: two_row_fig1_slope 15.7–112.9, unsourced_0v4_part 7.1–19.2, unsourced_0v2_part 22.9–62.0 yr."
 }

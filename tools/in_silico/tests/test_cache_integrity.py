@@ -1680,9 +1680,11 @@ def test_edlc_endurance_hours_hw37():
     geometrically EXCLUDED since ⚖️ 2026-09-22, kept because this electrical equivalence
     is what let geometry decide). Sanity: confirms the
     2026-09-09 hand-calc (00_07 HW.37) — life@25°C ≈ 2.6 yr / life@10°C ≈ 7.3 yr at
-    full 5.5V — and that the voltage-derating bracket's optimistic coefficient always
-    yields MORE years than the conservative one (smaller dV-per-doubling accelerates
-    life faster as voltage drops below rated)."""
+    full 5.5V. Since 2026-11-07 the Eaton row is read on BOTH datasheet Life rows: the
+    bound's voltage step is reproduced from those rows here, the bound is the SHORTEST
+    reading at every derated point (a measured order, not a name — §When Modifying #45),
+    its brute-force control never lands below the closed form, and PS-5006 Figure 1's cell
+    voltage effect stays flagged inadmissible for the KR while it under-predicts row B."""
     path = KINETICS / "gusak_degradation.json"
     if not path.exists():
         pytest.skip("gusak_degradation.json not computed")
@@ -1693,9 +1695,32 @@ def test_edlc_endurance_hours_hw37():
         assert abs(at_rated["25.0"]["life_years"] - 2.6) < 0.1
         assert abs(at_rated["10.0"]["life_years"] - 7.3) < 0.1
         for v_target, row in edlc[sku]["voltage_derating"].items():
-            assert row["optimistic_yr"] > row["conservative_yr"], (
-                f"{sku}@{v_target}V: optimistic coefficient should out-live conservative"
+            assert row["unsourced_0v2_part_yr"] > row["unsourced_0v4_part_yr"], (
+                f"{sku}@{v_target}V: the smaller voltage step must out-live the larger one below rated voltage"
             )
+    kr = edlc["Eaton_KR-5R5H474-R"]
+    (h_a, t_a, v_a), (h_b, t_b, v_b) = kr["life_rows"]
+    dt = kr["readings"]["two_row_bound"]["dt_double_c"]
+    dv_rows = (v_a - v_b) / (math.log2(h_b / h_a) + (t_b - t_a) / dt)
+    assert abs(kr["readings"]["two_row_bound"]["dv_double_v"] - dv_rows) < 1e-3, "the bound's step is not the two rows'"
+    assert kr["cells_in_series"] * 1.8 == v_b, "the cell count no longer reproduces the +85 °C row"
+    for block in ("voltage_derating", "ratified_vbat_ov"):
+        for t, row in kr[block].items():
+            if isinstance(row, dict):
+                assert row["two_row_bound_yr"] == min(row.values()), f"{block} {t}: the bound is not the shortest reading"
+    for c in kr["bound_control"]:
+        assert c["grid_min_years"] >= c["closed_form_years"] - 0.01, f"{c}: a pair honouring both rows lives shorter"
+    assert min(c["v"] for c in kr["bound_control"]) < v_b, "the control never ran below row B's voltage"
+    years = kr["vbat_ov_for_service_life"]["years"]
+    for t, row in kr["vbat_ov_for_service_life"].items():
+        if not isinstance(row, dict):
+            continue
+        plateau_yr = h_b * 2.0 ** ((t_b - float(t)) / dt) / (365.25 * 24.0)   # the bound below row B's voltage
+        assert (row["two_row_bound"] is None) == (plateau_yr < years), f"{t}: None must mean the plateau misses {years} yr"
+        assert row["two_row_bound"] is None or row["two_row_bound"] >= v_b, f"{t}: a bound threshold below row B's voltage"
+    cell = kr["ps5006_fig1"]["cell_voltage_check"]
+    assert cell["admissible_with_rated_anchor"] == (cell["predicts_row_b_hours"] >= cell["row_b_rated_hours"])
+    assert cell["admissible_with_rated_anchor"] is False, "the prose says Figure 1's cell effect is no reading of the KR"
 
 
 def test_capsule_thermal_envelope_hw37():
@@ -1748,19 +1773,31 @@ def test_capsule_thermal_envelope_hw37():
     for name, r in aging.items():
         assert r["t_eff_c"] >= r["mean_c"], f"{name}: T_eff below the mean — not a doubling-rule average"
         life = r["life_at_ratified_vbat_ov"]
-        assert life["optimistic_yr"] > life["conservative_yr"]
+        assert life["two_row_bound_yr"] == min(life.values()), f"{name}: the bound is not the shortest reading"
         if name != "air":
             assert r["t_eff_c"] >= aging["air"]["t_eff_c"], f"{name}: the radome aged the EDLC slower than air"
     own = json.loads((KINETICS / "gusak_degradation.json").read_text())[
         "edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]
     for t, ref in d["aging_reference_points_02_03"].items():
-        for end in ("conservative_yr", "optimistic_yr"):
+        assert set(ref) == {k for k in own[f"{float(t):.1f}"] if k.endswith("_yr")}, f"{t} °C: 71 and 51 carry different readings"
+        for end in ref:
             assert abs(ref[end] - own[f"{float(t):.1f}"][end]) <= 0.051, f"{t} °C {end}: 71 and 51 disagree"
-    # 4. The verdict's «every case» sentence, held to every case it summarises.
-    cons = [r["life_at_ratified_vbat_ov"]["conservative_yr"] for r in aging.values()]
-    opt = [r["life_at_ratified_vbat_ov"]["optimistic_yr"] for r in aging.values()]
-    rests_on_coefficient = "rests on the vendor voltage coefficient alone" in d["verdict_aging"]
-    assert rests_on_coefficient == (max(cons) < 20.0 <= min(opt))
+    # 4. The verdict's «every case» sentence, held to every case it summarises — on the lower bound.
+    years = d["service_life_years"]
+    bound = [r["life_at_ratified_vbat_ov"]["two_row_bound_yr"] for r in aging.values()]
+    assert ("holds in every case on the lower bound" in d["verdict_aging"]) == (min(bound) >= years)
+    assert ("fails in every case on the lower bound" in d["verdict_aging"]) == (max(bound) < years)
+    # A bound threshold is a number only where some voltage at or above row B's reaches the years; elsewhere None.
+    out_of_reach = [name for name, r in aging.items() if r["vbat_ov_for_service_life_v"]["two_row_bound"] is None]
+    for name, r in aging.items():
+        v = r["vbat_ov_for_service_life_v"]["two_row_bound"]
+        plateau_yr = 2000.0 * 2.0 ** ((85.0 - r["t_eff_c_by_reading"]["two_row_bound"]) / 10.0) / (365.25 * 24.0)
+        assert (v is None) == (plateau_yr < years), f"{name}: None must mean row B's plateau misses {years} yr"
+        assert v is None or v >= 3.6, f"{name}: a bound threshold below row B's voltage"
+    if out_of_reach:
+        assert f"({', '.join(out_of_reach)})" in d["verdict_aging"], "the verdict does not name the out-of-reach cases"
+    else:
+        assert "no VBAT_OV holds it" not in d["verdict_aging"]
     # 5. Cold side: hours under the floor exist only if the coldest hour is under it.
     cold = d["cold_hours_below_edlc_floor"]
     assert (cold["hours"] > 0) == (cold["coldest_air_c"] < r_min)

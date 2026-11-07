@@ -558,18 +558,40 @@ E_CYCLE_HIGH = E_CYCLE + (6.7e-3 + _CORE_IDLE_J_PER_S * 0.175) / ETA_BUCK_ACTIVE
 # (`02_01 §3` поз.3), Arrhenius-style temperature+voltage life-doubling model
 # (generalized capacitor_life_hours(), NOT the same functional form as the
 # continuous fixed-Ea arrhenius_aging() above — see that function's docstring). ──
-EATON_KR_RATED_HOURS = 1000.0      # h — Eaton KR-5R5H474-R endurance rating (02_03 §12.1)
-EATON_KR_RATED_TEMP_C = 70.0       # °C — rated-life test temperature
-EATON_KR_RATED_VOLTAGE_V = 5.5     # V — rated-life test voltage
+# Eaton Technical Data 4327 (Effective June 2026), Performance block — EVERY Life row, never one (in-silico
+# §Critical Rules #48); the transcription's home is 02_03 §12.1, edit there first. (hours, °C, Vdc), each a
+# GUARANTEED minimum to the end of life ΔC ≤ 30 % · ESR ≤ 400 %. Row 0 is the anchor the kernel scales from.
+EATON_KR_LIFE_ROWS = ((1000.0, 70.0, 5.5), (2000.0, 85.0, 3.6))
+EATON_KR_RATED_HOURS, EATON_KR_RATED_TEMP_C, EATON_KR_RATED_VOLTAGE_V = EATON_KR_LIFE_ROWS[0]
 KEMET_FG_RATED_HOURS = 1000.0      # h — KEMET FG0H474ZF endurance rating (02_03 §12.1)
 KEMET_FG_RATED_TEMP_C = 70.0       # °C — rated-life test temperature (same as Eaton KR)
 KEMET_FG_RATED_VOLTAGE_V = 5.5     # V — rated voltage (0.47F/5.5V SKU, 02_03 §12.1)
-THERMAL_DOUBLING_INTERVAL_K = 10.0     # K — consensus "life doubles per 10°C" rule (lit., 02_03 §12.1)
-VOLTAGE_DOUBLING_OPTIMISTIC_V = 0.2    # V — Abracon/CDE-style: life doubles per 0.2V derating
-VOLTAGE_DOUBLING_CONSERVATIVE_V = 0.4  # V — Vishay/Eaton-style: life doubles per 0.4V derating
-# KEMET's OWN voltage-doubling coefficient was not confirmed from a public datasheet
-# (02_03 §12.1) — report the sensitivity across the Eaton-derived bracket above rather
-# than a false-precise single number.
+# Eaton Technical Note PS-5006 «Application guidelines» (Effective December 2017), p. 2 «Ambient temperature» — the
+# vendor's own words, read 2026-11-07 (02_03 §12.1):
+THERMAL_DOUBLING_INTERVAL_K = 10.0     # K — «raising the ambient temperature by 10 °C will decrease the lifetime of a
+                                       #     supercapacitor by a factor of two»; its Figure 1 is STEEPER (below)
+PS5006_V_PER_CELL_AT_85C = 1.8         # V — «+85 °C ambient temperature can be reached if the applied voltage is
+                                       #     reduced to 1.8 V per supercapacitor»
+# Cells in series in the KR — DERIVED, the datasheet does not print it: its +85 °C Life row (3.6 V) over PS-5006's
+# 1.8 V per cell at +85 °C. A voltage step quoted for a CELL is this many times smaller than for the part.
+EATON_KR_CELLS_IN_SERIES = round(EATON_KR_LIFE_ROWS[1][2] / PS5006_V_PER_CELL_AT_85C)
+assert abs(EATON_KR_LIFE_ROWS[1][2] / PS5006_V_PER_CELL_AT_85C - EATON_KR_CELLS_IN_SERIES) < 1e-9, \
+    "the KR's +85 °C row is no longer a whole number of PS-5006 cells — re-derive the cell count"
+# PS-5006 Figure 1 «Operating life vs. temperature and charge voltage» — the two ends of each line, READ from the
+# rendered page (Chrome's PDF viewer at 300 %, pixels calibrated on the printed log grid; ≈ ±0.01 decade, ±0.15 °C;
+# the PDF carries no data layer). Generic Eaton cells rated 2.5 V, not the KR coin cell: its SLOPES are a reading
+# for the KR, its hours are not. ((°C, hours) at the warm-life end, (°C, hours) at 70 °C).
+PS5006_FIG1_30PCT_2V5 = ((29.15, 2.56e5), (70.0, 2.87e3))   # ΔC 30 % at 2.5 V continuous (dotted)
+PS5006_FIG1_30PCT_1V8 = ((33.13, 2.81e5), (70.0, 4.85e3))   # ΔC 30 % at 1.8 V continuous (dash-dot)
+PS5006_FIG1_50PCT_2V5 = ((42.85, 3.17e5), (70.0, 1.49e4))   # ΔC 50 % at 2.5 V continuous (long dash)
+# ⚠️ Two voltage steps WITHOUT a primary in the tree — born 2026-09-09 as «Abracon/CDE» and «Vishay/Eaton», per PART.
+# The «Eaton» half of the second is refuted by Eaton's own rows (≈ 0.38 V per CELL under the text rule — script 51),
+# so 0.4 V per part is no conservative end. Named readings, kept until a primary or ⚖️ drops them
+# (in-silico §When Modifying #11); the vendor-grounded bound is script 51's `two_row_bound`.
+VOLTAGE_DOUBLING_UNSOURCED_0V2_V = 0.2  # V per part
+VOLTAGE_DOUBLING_UNSOURCED_0V4_V = 0.4  # V per part
+# KEMET's OWN voltage-doubling coefficient was not confirmed from a public datasheet (02_03 §12.1); its row carries
+# the two unsourced readings only — the two-row bound is Eaton's rows and does not transfer.
 FIELD_TEMPS_C = (25.0, 10.0)       # °C — reference points of the EDLC life bracket (02_03 §12.1; the derate was judged at 10 °C, §4.Б)
 # ⚠️ NOT the site: the aging T_eff there is 13.0 °C in open air and warmer under the radome (script 71, 02_03 §12.1).
 # The ratified operating voltage these ratings are derated to is VBAT_OV_RATIFIED_V (EDLC energy block above).
