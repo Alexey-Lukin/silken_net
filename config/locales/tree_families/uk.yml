@@ -14,12 +14,10 @@ uk:
       submit: ЗАПИСАТИ ГЕНЕТИЧНИЙ КОД
     index:
       audit: АУДИТ
-      audit_aria: Аудит виду %{name}
       columns:
         command: Команда
         population: Популяція
         species_name: Назва виду
-      define_aria: Визначити новий вид дерева
       define_dna: "+ Визначити ДНК"
       edit: РЕДАГ
       edit_aria: Редагувати вид %{name}

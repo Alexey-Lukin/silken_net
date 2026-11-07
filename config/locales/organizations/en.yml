@@ -15,7 +15,6 @@ en:
       switch: SWITCH_TO →
       switch_aria: Switch acting context to %{name}
       title: Global Clan Registry
-      view_aria: View %{name} profile
       view_profile: VIEW_PROFILE →
     index_title: Organization Registry // The Clans
     show:
@@ -27,7 +26,6 @@ en:
         title: Global Events
       clusters:
         matrix: Matrix
-        open_aria: Open %{name} cluster matrix
         open_matrix: Open Matrix →
         population: Population
         sector_name: Sector Name

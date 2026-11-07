@@ -51,8 +51,7 @@ module TreeFamilies
         if @current_user&.super_admin?
           a(
             href: new_tree_family_path,
-            class: "px-4 py-2 bg-gaia-primary/10 border border-gaia-primary-strong text-gaia-primary-strong hover:bg-gaia-primary hover:text-gaia-primary-text transition-all uppercase text-tiny tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
-            aria_label: t(".define_aria")
+            class: "px-4 py-2 bg-gaia-primary/10 border border-gaia-primary-strong text-gaia-primary-strong hover:bg-gaia-primary hover:text-gaia-primary-text transition-all uppercase text-tiny tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
           ) { t(".define_dna") }
         end
       end
@@ -69,7 +68,10 @@ module TreeFamilies
         end
         td(class: "p-4 text-gaia-text-subtle") { t(".soldiers_count", count: family.trees_count) }
         td(class: "p-4 text-right space-x-4") do
-          a(href: tree_family_path(family), class: "text-gaia-text-muted hover:text-gaia-text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".audit_aria", name: family.name)) { t(".audit") }
+          a(href: tree_family_path(family), class: "text-gaia-text-muted hover:text-gaia-text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") do
+            plain t(".audit")
+            span(class: "sr-only") { " #{family.name}" }
+          end
           if @current_user&.super_admin?
             a(href: edit_tree_family_path(family), class: "text-gaia-text-muted hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".edit_aria", name: family.name)) { t(".edit") }
           end

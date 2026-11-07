@@ -58,7 +58,10 @@ module Organizations
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end
         td(class: "p-4 text-right") do
-          a(href: organization_path(org), class: "text-gaia-primary-strong hover:text-gaia-text-strong transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".view_aria", name: org.name)) { t(".view_profile") }
+          a(href: organization_path(org), class: "text-gaia-primary-strong hover:text-gaia-text-strong transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") do
+            plain t(".view_profile")
+            span(class: "sr-only") { " #{org.name}" }
+          end
         end
         td(class: "p-4 text-right") { render_context_cell(org) }
       end

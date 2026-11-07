@@ -84,8 +84,7 @@ module Firmwares
           # Кнопка переходу до порталу завантаження
           a(
             href: new_firmware_path,
-            class: "text-tiny border border-gaia-primary-strong px-4 py-1 text-gaia-primary-strong hover:bg-gaia-primary hover:text-gaia-primary-text transition-all uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
-            aria_label: t(".upload_aria")
+            class: "text-tiny border border-gaia-primary-strong px-4 py-1 text-gaia-primary-strong hover:bg-gaia-primary hover:text-gaia-primary-text transition-all uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
           ) { t(".upload") }
         end
 

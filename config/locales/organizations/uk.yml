@@ -15,7 +15,6 @@ uk:
       switch: ПЕРЕМКНУТИСЬ →
       switch_aria: Перемкнути робочий контекст на %{name}
       title: Глобальний реєстр кланів
-      view_aria: Переглянути профіль %{name}
       view_profile: ВІДКРИТИ_ПРОФІЛЬ →
     index_title: Реєстр організацій // Клани
     show:
@@ -27,7 +26,6 @@ uk:
         title: Глобальні події
       clusters:
         matrix: Матриця
-        open_aria: Відкрити матрицю кластера %{name}
         open_matrix: Відкрити матрицю →
         population: Популяція
         sector_name: Назва сектору

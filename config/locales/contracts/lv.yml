@@ -2,7 +2,6 @@
 lv:
   contracts:
     index:
-      audit_aria: 'Skatīt līguma #%{id} detaļas'
       audit_details: AUDITA_DETAĻAS →
       columns:
         cluster_emission: Klastera emisija

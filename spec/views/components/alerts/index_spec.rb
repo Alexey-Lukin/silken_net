@@ -75,20 +75,14 @@ RSpec.describe Alerts::Index do
       expect(html).to include("Monitoring live telemetry")
     end
 
-    it "renders filter link for all alerts" do
-      expect(html).to include('aria-label="Show all alerts"')
-    end
-
-    it "renders filter links for critical severity" do
-      expect(html).to include("Filter alerts by critical severity")
-    end
-
-    it "renders filter links for medium severity" do
-      expect(html).to include("Filter alerts by medium severity")
-    end
-
-    it "renders filter links for low severity" do
-      expect(html).to include("Filter alerts by low severity")
+    # [UI.20] Фільтр іменує його видимий текст (WCAG 2.5.3): `aria-label` перекривав його
+    # фразою, яка в трьох мовах не містила навіть слова з кнопки.
+    %w[all critical medium low].each do |label|
+      it "names the «#{label}» filter link by its visible text — no aria-label" do
+        link = Nokogiri::HTML.fragment(html).css("a").find { |a| a.text.strip == label }
+        expect(link).not_to be_nil
+        expect(link["aria-label"]).to be_nil
+      end
     end
   end
 

@@ -3,8 +3,6 @@ lv:
   alerts:
     index:
       filter_all: visi
-      filter_aria_all: Rādīt visus brīdinājumus
-      filter_aria_severity: Filtrēt brīdinājumus pēc %{severity} smaguma
       filter_critical: kritisks
       filter_low: zems
       filter_medium: vidējs

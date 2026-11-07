@@ -80,7 +80,6 @@ uk:
         verified_balance: Баланс балів
       ledger:
         unknown_technician: Невідомий
-      locate_aria: Знайти вузол дерева на Google Maps
       metadata:
         cluster: Кластер
         coordinates: Координати

@@ -84,13 +84,11 @@ module Alerts
         div(class: "flex flex-wrap gap-2") do
           a(
             href: alerts_path,
-            aria_label: t(".filter_aria_all"),
             class: filter_link_classes
           ) { t(".filter_all") }
           FILTER_SEVERITIES.each do |s|
             a(
               href: alerts_path(severity: s),
-              aria_label: t(".filter_aria_severity", severity: s),
               class: filter_link_classes
             ) { t("alerts.index.filter_#{s}") }
           end

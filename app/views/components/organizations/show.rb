@@ -142,9 +142,11 @@ module Organizations
                   td(class: "p-4 text-right") do
                     a(
                       href: cluster_path(cluster),
-                      class: "text-gaia-primary-strong hover:text-gaia-text-strong transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
-                      aria_label: t(".clusters.open_aria", name: cluster.name)
-                    ) { t(".clusters.open_matrix") }
+                      class: "text-gaia-primary-strong hover:text-gaia-text-strong transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
+                    ) do
+                      plain t(".clusters.open_matrix")
+                      span(class: "sr-only") { " #{cluster.name}" }
+                    end
                   end
                 end
               end

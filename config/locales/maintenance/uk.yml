@@ -61,9 +61,7 @@ uk:
         clear: Очистити
         clear_aria: Очистити всі фільтри
         pending_attestation: "⏳ Черга засвідчення"
-        pending_attestation_aria: Показати лише заявки, що чекають на засвідчення
         verified: "✓ Тільки верифіковані"
-        verified_aria: Показати лише підтверджені записи
       heading: Журнал обслуговування
       hw_pending_title: Очікує верифікації
       hw_verified_title: Обладнання верифіковано
@@ -73,7 +71,6 @@ uk:
         one: "%{count} втручання · Сторінка %{page} з %{total}"
         other: "%{count} втручань · Сторінка %{page} з %{total}"
       register: "+ Реєстрація втручання"
-      register_aria: Зареєструвати нове втручання
       table:
         action: Дія
         cost: Вартість

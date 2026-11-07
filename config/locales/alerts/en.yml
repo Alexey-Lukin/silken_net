@@ -3,8 +3,6 @@ en:
   alerts:
     index:
       filter_all: all
-      filter_aria_all: Show all alerts
-      filter_aria_severity: Filter alerts by %{severity} severity
       filter_critical: critical
       filter_low: low
       filter_medium: medium

@@ -40,7 +40,6 @@ module Views
           if @pagy.previous
             a(
               href: @url_helper.call(page: @pagy.previous),
-              aria_label: t("pagination.previous_aria"),
               class: page_link_classes,
               rel: "prev"
             ) { t("pagination.previous") }
@@ -54,7 +53,6 @@ module Views
           if @pagy.next
             a(
               href: @url_helper.call(page: @pagy.next),
-              aria_label: t("pagination.next_aria"),
               class: page_link_classes,
               rel: "next"
             ) { t("pagination.next") }

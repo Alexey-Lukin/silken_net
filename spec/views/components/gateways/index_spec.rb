@@ -94,9 +94,11 @@ RSpec.describe Gateways::Index do
       expect(html).to include("77.4%")
     end
 
-    it "renders Open Relay link with aria-label" do
-      expect(html).to include("Open Relay →")
-      expect(html).to include("aria-label")
+    # [UI.20] Видимий текст іменує посилання; uid рядка — лише sr-only контекст (WCAG 2.5.3).
+    it "names the Open Relay link by its visible text and carries the uid only as sr-only context" do
+      link = Nokogiri::HTML.fragment(html).css("a").find { |a| a.text.include?("Open Relay →") }
+      expect(link["aria-label"]).to be_nil
+      expect(link.at_css(".sr-only").text.strip).to eq("SNET-Q-AAB01234")
     end
   end
 

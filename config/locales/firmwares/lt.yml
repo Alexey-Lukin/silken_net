@@ -32,7 +32,6 @@ lt:
         one: "%{count} vienetas"
         other: "%{count} vienetų"
       upload: "+ Injekuoti naują kodą"
-      upload_aria: Įkelti naują mikroprograminės įrangos dvejetainį failą
       version_label: v%{version}
     index_title: Programinės įrangos evoliucija
     new:

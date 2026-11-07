@@ -78,7 +78,6 @@ lv:
         verified_balance: Punktu atlikums
       ledger:
         unknown_technician: Nezināms
-      locate_aria: Atrast koka mezglu Google Maps
       metadata:
         cluster: Klasteris
         coordinates: Koordinātas

@@ -14,12 +14,10 @@ en:
       submit: WRITE GENETIC CODE
     index:
       audit: AUDIT
-      audit_aria: Audit %{name} species
       columns:
         command: Command
         population: Population
         species_name: Species Name
-      define_aria: Define new tree species
       define_dna: "+ Define DNA"
       edit: EDIT
       edit_aria: Edit %{name} species

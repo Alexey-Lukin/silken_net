@@ -61,9 +61,7 @@ lv:
         clear: Notīrīt
         clear_aria: Notīrīt visus filtrus
         pending_attestation: "⏳ Apliecinājumu rinda"
-        pending_attestation_aria: Rādīt tikai pieteikumus, kas gaida apliecinājumu
         verified: "✓ Tikai verificētie"
-        verified_aria: Rādīt tikai apstiprinātos ierakstus
       heading: Apkopes ieraksti
       hw_pending_title: Gaida verifikāciju
       hw_verified_title: Aparatūra verificēta
@@ -71,7 +69,6 @@ lv:
         one: "%{count} iejaukšanās · Lapa %{page} no %{total}"
         other: "%{count} iejaukšanās · Lapa %{page} no %{total}"
       register: "+ Reģistrēt iejaukšanos"
-      register_aria: Reģistrēt jaunu apkopes iejaukšanos
       table:
         action: Darbība
         cost: Izmaksas

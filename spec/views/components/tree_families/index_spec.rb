@@ -29,8 +29,10 @@ RSpec.describe TreeFamilies::Index do
       expect(html).to include("Global Species Constants")
     end
 
-    it "renders define new species link" do
-      expect(html).to include("Define new tree species")
+    # [UI.20] Видимий текст іменує посилання (WCAG 2.5.3) — без `aria-label`, що його перекривав.
+    it "names the define-species link by its visible text — no aria-label overrides it" do
+      link = Nokogiri::HTML.fragment(html).css("a").find { |a| a.text.include?("Define DNA") }
+      expect(link["aria-label"]).to be_nil
     end
 
     it "renders Define DNA button text" do
@@ -100,8 +102,11 @@ RSpec.describe TreeFamilies::Index do
       expect(html).to include("120 Soldiers")
     end
 
-    it "renders AUDIT link with aria-label" do
-      expect(html).to include("Audit Oak species")
+    # [UI.20] Видимий текст іменує посилання; назва виду — лише sr-only контекст.
+    it "names the AUDIT link by its visible text and carries the species name only as sr-only context" do
+      link = Nokogiri::HTML.fragment(html).css("a").find { |a| a.text.include?("AUDIT") && a.text.include?("Oak") }
+      expect(link["aria-label"]).to be_nil
+      expect(link.at_css(".sr-only").text.strip).to eq("Oak")
     end
 
     it "renders EDIT link" do

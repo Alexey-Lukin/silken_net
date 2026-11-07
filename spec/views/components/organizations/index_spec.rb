@@ -76,8 +76,11 @@ RSpec.describe Organizations::Index do
       expect(html).to include("VIEW_PROFILE")
     end
 
-    it "renders link with aria-label for org name" do
-      expect(html).to include("View EcoInvest DAO profile")
+    # [UI.20] Видимий текст іменує посилання; назва організації — лише sr-only контекст.
+    it "names the profile link by its visible text and carries the org name only as sr-only context" do
+      link = Nokogiri::HTML.fragment(html).css("a").find { |a| a.text.include?("VIEW_PROFILE") && a.text.include?("EcoInvest DAO") }
+      expect(link["aria-label"]).to be_nil
+      expect(link.at_css(".sr-only").text.strip).to eq("EcoInvest DAO")
     end
 
     it "renders second organization name" do

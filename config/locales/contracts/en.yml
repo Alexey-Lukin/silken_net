@@ -2,7 +2,6 @@
 en:
   contracts:
     index:
-      audit_aria: 'View contract #%{id} details'
       audit_details: AUDIT_DETAILS →
       columns:
         cluster_emission: Cluster Emission

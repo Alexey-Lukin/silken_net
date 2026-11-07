@@ -2,7 +2,6 @@
 uk:
   contracts:
     index:
-      audit_aria: 'Переглянути деталі контракту #%{id}'
       audit_details: АУДИТ_ДЕТАЛЕЙ →
       columns:
         cluster_emission: Емісія кластера

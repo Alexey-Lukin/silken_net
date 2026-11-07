@@ -3,8 +3,6 @@ uk:
   alerts:
     index:
       filter_all: усі
-      filter_aria_all: Показати всі тривоги
-      filter_aria_severity: Фільтрувати тривоги за рівнем %{severity}
       filter_critical: критичні
       filter_low: низькі
       filter_medium: середні

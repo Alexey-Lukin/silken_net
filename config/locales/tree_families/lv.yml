@@ -14,12 +14,10 @@ lv:
       submit: IERAKSTĪT ĢENĒTISKO KODU
     index:
       audit: AUDITS
-      audit_aria: Auditēt %{name} sugu
       columns:
         command: Komanda
         population: Populācija
         species_name: Sugas nosaukums
-      define_aria: Definēt jaunu koku sugu
       define_dna: "+ Definēt DNS"
       edit: REDIĢĒT
       edit_aria: Rediģēt %{name} sugu

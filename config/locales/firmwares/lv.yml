@@ -31,7 +31,6 @@ lv:
         one: "%{count} vienība"
         other: "%{count} vienības"
       upload: "+ Injicēt jaunu kodu"
-      upload_aria: Augšupielādēt jaunu programmaparatūras bināro failu
       version_label: v%{version}
     index_title: Programmaparatūras evolūcija
     new:

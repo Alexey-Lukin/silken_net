@@ -9,7 +9,6 @@ lt:
       cluster: 'Klasteris: %{name}'
       label: Queen // %{uid}
       open: Atidaryti relę →
-      open_aria: Atidaryti šliuzo %{uid} detales
       signal: Signalas
       silent: TYLUS
       soldiers: Kariai

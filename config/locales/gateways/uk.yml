@@ -9,7 +9,6 @@ uk:
       cluster: 'Кластер: %{name}'
       label: Королева // %{uid}
       open: Відкрити ретранслятор →
-      open_aria: Відкрити деталі шлюзу %{uid}
       signal: Сигнал
       silent: ТИША
       soldiers: Солдати

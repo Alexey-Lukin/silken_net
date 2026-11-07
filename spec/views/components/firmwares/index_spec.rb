@@ -145,8 +145,10 @@ RSpec.describe Firmwares::Index do
       expect(html).to include('role="table"')
     end
 
-    it "includes aria-label on upload link" do
-      expect(html).to include("Upload new firmware binary")
+    # [UI.20] Видимий текст іменує посилання (WCAG 2.5.3) — без `aria-label`, що його перекривав.
+    it "names the upload link by its visible text — no aria-label overrides it" do
+      link = Nokogiri::HTML.fragment(html).css("a").find { |a| a.text.include?("Inject New Code") }
+      expect(link["aria-label"]).to be_nil
     end
 
     it "includes focus-visible ring styling" do

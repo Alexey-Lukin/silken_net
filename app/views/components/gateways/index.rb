@@ -94,9 +94,11 @@ module Gateways
           p(class: "text-mini font-mono text-gaia-text-muted") { gateway.last_seen_at&.strftime("%H:%M // %d.%m") || t("gateways.item.silent") }
           a(
             href: gateway_path(gateway),
-            aria_label: t("gateways.item.open_aria", uid: gateway.uid),
             class: "text-tiny uppercase tracking-widest text-gaia-primary-strong hover:text-gaia-text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong transition-colors"
-          ) { t("gateways.item.open") }
+          ) do
+            plain t("gateways.item.open")
+            span(class: "sr-only") { " #{gateway.uid}" }
+          end
         end
       end
     end

@@ -9,7 +9,6 @@ en:
       cluster: 'Cluster: %{name}'
       label: Queen // %{uid}
       open: Open Relay →
-      open_aria: Open gateway %{uid} details
       signal: Signal
       silent: SILENT
       soldiers: Soldiers

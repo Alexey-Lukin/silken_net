@@ -110,12 +110,18 @@ RSpec.describe Views::Shared::UI::Pagination do
       expect(html).to include('aria-label="Pagination"')
     end
 
-    it "includes aria-label for previous page link" do
-      expect(html).to include("Go to previous page")
+    # [UI.20] Імʼя посилання — його видимий текст (WCAG 2.5.3): `aria-label` перекривав
+    # його фразою, якої на екрані немає.
+    it "names the previous-page link by its visible text — no aria-label overrides it" do
+      link = Nokogiri::HTML.fragment(html).at_css('a[rel="prev"]')
+      expect(link["aria-label"]).to be_nil
+      expect(link.text).to include("Previous")
     end
 
-    it "includes aria-label for next page link" do
-      expect(html).to include("Go to next page")
+    it "names the next-page link by its visible text — no aria-label overrides it" do
+      link = Nokogiri::HTML.fragment(html).at_css('a[rel="next"]')
+      expect(link["aria-label"]).to be_nil
+      expect(link.text).to include("Next")
     end
 
     it "includes aria-current for current page indicator" do

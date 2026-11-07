@@ -32,7 +32,6 @@ module Maintenance
         end
         a(
           href: new_maintenance_record_path,
-          aria_label: t(".register_aria"),
           class: register_button_classes
         ) { t(".register") }
       end
@@ -56,12 +55,10 @@ module Maintenance
         # взагалі, і застрягла заявка була видима лише ops-у як число в DeadSet.
         a(
           href: maintenance_records_path(pending_attestation: "1"),
-          aria_label: t(".filter.pending_attestation_aria"),
           class: filter_pending_classes
         ) { t(".filter.pending_attestation") }
         a(
           href: maintenance_records_path(verified: "1"),
-          aria_label: t(".filter.verified_aria"),
           class: filter_verified_classes
         ) { t(".filter.verified") }
         a(

@@ -15,7 +15,6 @@ lt:
       switch: PERJUNGTI →
       switch_aria: Perjungti darbo kontekstą į %{name}
       title: Globalus klanų registras
-      view_aria: Peržiūrėti %{name} profilį
       view_profile: PERŽIŪRĖTI_PROFILĮ →
     index_title: Organizacijų registras // Klanai
     show:
@@ -27,7 +26,6 @@ lt:
         title: Globalūs įvykiai
       clusters:
         matrix: Matrica
-        open_aria: Atidaryti %{name} klasterio matricą
         open_matrix: Atidaryti matricą →
         population: Populiacija
         sector_name: Sektoriaus pavadinimas

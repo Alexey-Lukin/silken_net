@@ -3,8 +3,6 @@ lt:
   alerts:
     index:
       filter_all: visi
-      filter_aria_all: Rodyti visus įspėjimus
-      filter_aria_severity: Filtruoti įspėjimus pagal %{severity} sunkumą
       filter_critical: kritinis
       filter_low: žemas
       filter_medium: vidutinis

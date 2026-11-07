@@ -79,7 +79,6 @@ lt:
         verified_balance: Taškų balansas
       ledger:
         unknown_technician: Nežinomas
-      locate_aria: Rasti medžio mazgą Google Maps
       metadata:
         cluster: Klasteris
         coordinates: Koordinatės

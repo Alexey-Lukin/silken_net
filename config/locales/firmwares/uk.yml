@@ -33,7 +33,6 @@ uk:
         one: "%{count} одиниця"
         other: "%{count} одиниць"
       upload: "+ Ввести новий код"
-      upload_aria: Завантажити нову бінарну прошивку
       version_label: v%{version}
     index_title: Еволюція прошивки
     new:

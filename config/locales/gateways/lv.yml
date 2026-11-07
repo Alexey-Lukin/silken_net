@@ -9,7 +9,6 @@ lv:
       cluster: 'Klasteris: %{name}'
       label: Queen // %{uid}
       open: Atvērt relēju →
-      open_aria: Atvērt vārtejas %{uid} detaļas
       signal: Signāls
       silent: KLUSS
       soldiers: Karavīri

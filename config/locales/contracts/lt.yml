@@ -2,7 +2,6 @@
 lt:
   contracts:
     index:
-      audit_aria: 'Peržiūrėti sutarties #%{id} detales'
       audit_details: AUDITO_DETALĖS →
       columns:
         cluster_emission: Klasterio emisija

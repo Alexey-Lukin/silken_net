@@ -222,17 +222,19 @@ class DashboardLayout < ApplicationComponent
   # побудований і недосяжний — `users_me_path` не згадувався в `app/` жодного разу.
   # Класика «право без переходу»: робота зроблена, дверей немає.
   def render_user_avatar
+    # [UI.20] Імʼя посилання — ВИДИМИЙ текст (WCAG 2.5.3): `aria-label` перекривав імʼя й роль
+    # фразою, якої на екрані немає. Ініціал — декорація; де імʼя сховане (< lg), імʼя несе sr-only.
     a(href: users_me_path,
-      aria_label: t("navigation.top_bar.profile_aria", name: @current_user&.full_name),
       class: "flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 " \
              "focus-visible:ring-gaia-primary-strong focus-visible:ring-offset-2 focus-visible:ring-offset-gaia-surface") do
       div(class: "text-right hidden lg:block") do
         p(class: "text-tiny text-gaia-text-strong leading-none") { @current_user&.full_name }
         p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest mt-1") { @current_user&.role_label }
       end
-      div(class: "h-10 w-10 border border-gaia-primary flex items-center justify-center text-gaia-primary-strong bg-gaia-surface-sunken transition-colors duration-300") do
+      div(class: "h-10 w-10 border border-gaia-primary flex items-center justify-center text-gaia-primary-strong bg-gaia-surface-sunken transition-colors duration-300", aria_hidden: "true") do
         @current_user&.first_name&.first || "A"
       end
+      span(class: "sr-only lg:hidden") { t("navigation.top_bar.profile_aria", name: @current_user&.full_name) }
     end
   end
 

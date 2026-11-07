@@ -78,7 +78,6 @@ en:
         verified_balance: Points Balance
       ledger:
         unknown_technician: Unknown
-      locate_aria: Locate tree node on Google Maps
       metadata:
         cluster: Cluster
         coordinates: Coordinates

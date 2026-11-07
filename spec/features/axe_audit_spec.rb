@@ -69,7 +69,9 @@ RSpec.describe "axe advisory audit", :advisory, :js, type: :feature do
       }).then(function(res) {
         window.__axeDone = { violations: res.violations.map(function(v) {
           return { id: v.id, impact: v.impact, help: v.help,
-                   nodes: v.nodes.slice(0, 5).map(function(n) { return n.target.join(" "); }),
+                   // Selector + HTML head: axe picks the SHORTEST unique selector (`.block`),
+                   // which alone does not say which element to fix.
+                   nodes: v.nodes.slice(0, 5).map(function(n) { return n.target.join(" ") + "  ⟶  " + n.html.slice(0, 200); }),
                    count: v.nodes.length };
         }), rulesRan: res.passes.length + res.violations.length + res.incomplete.length + res.inapplicable.length };
       }).catch(function(e) { window.__axeDone = { error: String(e) }; });

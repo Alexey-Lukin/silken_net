@@ -15,7 +15,6 @@ lv:
       switch: PĀRSLĒGT →
       switch_aria: Pārslēgt darba kontekstu uz %{name}
       title: Globālais klanu reģistrs
-      view_aria: Skatīt %{name} profilu
       view_profile: SKATĪT_PROFILU →
     index_title: Organizāciju reģistrs // Klani
     show:
@@ -27,7 +26,6 @@ lv:
         title: Globālie notikumi
       clusters:
         matrix: Matrica
-        open_aria: Atvērt %{name} klastera matricu
         open_matrix: Atvērt matricu →
         population: Populācija
         sector_name: Sektora nosaukums

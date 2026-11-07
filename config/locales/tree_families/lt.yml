@@ -14,12 +14,10 @@ lt:
       submit: ĮRAŠYTI GENETINĮ KODĄ
     index:
       audit: AUDITAS
-      audit_aria: Audituoti %{name} rūšį
       columns:
         command: Komanda
         population: Populiacija
         species_name: Rūšies pavadinimas
-      define_aria: Apibrėžti naują medžių rūšį
       define_dna: "+ Apibrėžti DNR"
       edit: REDAGUOTI
       edit_aria: Redaguoti %{name} rūšį
