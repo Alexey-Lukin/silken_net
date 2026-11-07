@@ -16,7 +16,10 @@
 # turns the signature placeholder into the given lines, detaches a line glued to a list item
 # (Redcarpet lazy continuation — #13 (а)), renders with and without `lax_spacing` and refuses
 # when they differ, and asserts: list items and ordered lists match the source, no Markdown,
-# placeholder or subject leaked into the body. Writes body.html · subject.txt · inject.js and
+# placeholder or subject leaked into the body, no closing formula («З повагою,» / «Kind regards,»)
+# glued to its signature lines by soft breaks — a region WITHOUT a signature placeholder renders its
+# signature block as one <p> with newlines, which Gmail shows as ONE line (FEA/Prony, 2026-11-07:
+# caught by eye before Send; seven more regions in the tree had the same shape). Writes body.html · subject.txt · inject.js and
 # prints the SHA-256 of the HTML — the hash the in-page check compares against (#13 (б)).
 #
 # Declared ceiling — what a green run does NOT prove:
@@ -29,7 +32,8 @@
 #   a list is caught ONLY by the ordered-list count; lax ≡ strict guards the normalisation of a list
 #   glued under a paragraph (switch it off and the clean case reds on that assert, and only there).
 #   A lost list start (Redcarpet drops it) is caught by the visible-numbering assert — switch off the
-#   `start=` rewrite and the sectioned case reds there (mutation 2026-11-07).
+#   `start=` rewrite and the sectioned case reds there (mutation 2026-11-07). The glued closing
+#   formula is caught only by its own assert — switch it off and the unsigned case reds there.
 #   · anything that happens in Gmail after the HTML is built (Trusted Types, Cc, attachments) —
 #     the rest of #13.
 
@@ -46,6 +50,7 @@ module LetterBody
   SUBJECT_LINE = /\A\*\*(?:Тема|Subject line):\*\*\s*(.+?)\s*\z/
   SUBJECT_HEADING = /\A#+\s*(?:Тема|Subject line)\s*\z/
   SIGNATURE_PLACEHOLDER = /\A`\[[^\]]*(?:signature|підпис)[^\]]*\]`\s*\z/i
+  CLOSING = /\A(?:З повагою|З найкращими побажаннями|Kind regards|Best regards|With best regards|Sincerely|Regards),/
   LIST_ITEM = /\A(\s*)(?:[-*+]|\d+\.)\s+\S/
   NUMBERED = /\A\d+\.\s+\S/
   MARKER_TOKEN = "SIGNATUREMARKER"
@@ -198,6 +203,9 @@ module LetterBody
     end
     text = html.gsub(/<[^>]+>/, "")
     fail!("Markdown leaked: #{text[/\*\*|`|^#+ /]}") if text.match?(/\*\*|`|^#+ /)
+    glued = html.scan(%r{<p>((?:(?!</p>).)*)</p>}m).flatten.find { |x| x.match?(CLOSING) && x.include?("\n") }
+    fail!("closing formula glued to its signature by soft breaks («#{glued[0, 40].tr("\n", " ")}…») renders as ONE line in Gmail — " \
+          "turn the block into a signature placeholder with --replace-line and pass --signature (#13 (а))") if glued
     fail!("placeholder leaked: #{text[/\[[^\]]{1,80}\]/]}") if text.match?(/\[[^\]]{1,80}\]/)
     fail!("subject leaked into the body") if text.include?(subject)
     fail!("marker leaked into the body") if text.include?(MARKER_TOKEN) || text.match?(MARKER) || text.match?(END_MARK)
@@ -254,6 +262,7 @@ module LetterBody
     ok.("section continues numbering", sr[:html].include?('<ol start="3">') && sr[:html].scan("<ol>").size == 1)
     nest = clean + [ "", "**Розділ 2.**", "", "3. Третє:", "   - вкладений;", "   - ще один.", "4. Четверте." ]
     ok.("nested list does not count as items", assemble(region.(nest), signature: "x")[:html].include?('<ol start="3">'))
+    bad.("closing formula glued by soft breaks", region.(clean[0..-2] + [ "З повагою,", "Олексій Лукін" ]))
     bad.("numbering gap inside a list", region.(clean.map { |l| l == "2. **Друге** питання." ? "3. **Друге** питання." : l }), signature: "x")
     puts "letter_body selftest: #{cases} cases OK"
   end
