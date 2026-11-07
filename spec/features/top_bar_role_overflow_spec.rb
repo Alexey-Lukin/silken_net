@@ -70,7 +70,7 @@ RSpec.describe "Топбар: роле-залежна верстка", :js do
   end
 
   it "вміщає шапку для org-адміна — контроль, що прилад узагалі щось міряє" do
-    page.driver.resize(*desktop)
+    page.current_window.resize_to(*desktop)
     sign_in_as(org_admin, password: password)
 
     result = overflowing_nodes
@@ -82,7 +82,7 @@ RSpec.describe "Топбар: роле-залежна верстка", :js do
   end
 
   it "вміщає шапку і для платформеного актора, якому додається перемикач контексту" do
-    page.driver.resize(*desktop)
+    page.current_window.resize_to(*desktop)
     sign_in_as(platform, password: password)
 
     result = overflowing_nodes

@@ -26,7 +26,7 @@ RSpec.describe "Телеметрія: плейсхолдер на мобільн
   def mobile_width = 390
 
   it "не малює мітки колонки над спінером, і лишає його центрованим блоком" do
-    page.driver.resize(mobile_width, 800)
+    page.current_window.resize_to(mobile_width, 800)
     sign_in_as(admin, password: password)
     visit_ok "/telemetry/live"
 

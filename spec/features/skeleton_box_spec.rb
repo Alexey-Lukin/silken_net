@@ -38,8 +38,9 @@ RSpec.describe "Скелетон lazy-фрейма займає коробку �
 
   # Коробка = обчислені стилі першого елемента фрейма. Обчислені, а не рядок класів:
   # той самий вигляд різним порядком класів — не розбіжність.
+  # `await` шле скрипт новим шляхом Ferrum (0.20+): проміс чекається, повертається
+  # останній вираз — колбек `arguments[0]` (`evaluate_async`) Ferrum 0.21 знімає.
   def measure_js = <<~JS
-    const done = arguments[0];
     const frames = Array.from(document.querySelectorAll('turbo-frame[loading="lazy"]'));
     const snap = () => frames.map((f) => {
       const box = f.getBoundingClientRect();
@@ -57,13 +58,10 @@ RSpec.describe "Скелетон lazy-фрейма займає коробку �
       };
     });
     const loaded = snap();
-    fetch(location.href, { headers: { Accept: 'text/html' } })
-      .then((r) => r.text())
-      .then((html) => {
-        const served = new DOMParser().parseFromString(html, 'text/html');
-        frames.forEach((f) => { f.innerHTML = served.getElementById(f.id).innerHTML; });
-        done({ loaded, skeleton: snap() });
-      });
+    const html = await fetch(location.href, { headers: { Accept: 'text/html' } }).then((r) => r.text());
+    const served = new DOMParser().parseFromString(html, 'text/html');
+    frames.forEach((f) => { f.innerHTML = served.getElementById(f.id).innerHTML; });
+    ({ loaded, skeleton: snap() });
   JS
 
   let(:password)      { "skeleton-box-1" }
@@ -75,14 +73,14 @@ RSpec.describe "Скелетон lazy-фрейма займає коробку �
   let!(:transaction)  { create(:blockchain_transaction, wallet: wallet) }
 
   def measure(path, width)
-    page.driver.resize(width, 900)
+    page.current_window.resize_to(width, 900)
     visit_ok path
     # `loading: lazy` вантажить лише фрейм у вьюпорті — на вузькій ширині половина
     # сторінок ховає свій нижче першого екрана.
     page.driver.browser.evaluate("document.querySelectorAll('turbo-frame[loading=\"lazy\"]').forEach((f) => f.scrollIntoView())")
     expect(page).to have_no_css('turbo-frame[loading="lazy"]:not([complete])', wait: 10)
 
-    page.driver.browser.evaluate_async(measure_js, 10)
+    page.driver.browser.evaluate(measure_js, timeout: 10)
   end
 
   def judge(content, placeholder, width)
