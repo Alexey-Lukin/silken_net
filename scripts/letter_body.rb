@@ -22,11 +22,14 @@
 # Declared ceiling — what a green run does NOT prove:
 #   · letter-specific structure (lettered sub-items of one question, a table's row count, the
 #     place of a named paragraph) — pass those as --replace-line guards or check by eye;
-#   · that «item N» / «п. N» in the text points at the right item;
+#   · that «item N» / «п. N» in the text points at the item it MEANS — the visible number is asserted
+#     (a section continuing the numbering gets `start=`, since 2026-11-07), the meaning is not;
 #   · the PDF annex of a letter (DMLS) — its own recipe lives above that region;
 #   Which assert catches what, measured by mutation 2026-11-07: an indented continuation that closes
 #   a list is caught ONLY by the ordered-list count; lax ≡ strict guards the normalisation of a list
 #   glued under a paragraph (switch it off and the clean case reds on that assert, and only there).
+#   A lost list start (Redcarpet drops it) is caught by the visible-numbering assert — switch off the
+#   `start=` rewrite and the sectioned case reds there (mutation 2026-11-07).
 #   · anything that happens in Gmail after the HTML is built (Trusted Types, Cc, attachments) —
 #     the rest of #13.
 
@@ -130,6 +133,40 @@ module LetterBody
     [ items, groups ]
   end
 
+  # The numbers each source list carries — Redcarpet keeps only the COUNT of a list, never the number
+  # it starts at, so a section that continues the numbering («12.» under a heading) renders as «1.»
+  # and every «п. 12» of the text points at nothing (2026-11-07, accelerated-corrosion ТЗ).
+  def source_groups(body)
+    groups = []
+    in_group = false
+    body.each do |l|
+      if (n = l[/\A(\d+)\.\s+\S/, 1])
+        in_group ? groups.last << n.to_i : groups << [ n.to_i ]
+        in_group = true
+      elsif !l.strip.empty? && !l.start_with?(" ", "\t")
+        in_group = false
+      end
+    end
+    groups
+  end
+
+  # [start, top-level item count] of every <ol> as a reader sees it; items of a nested list don't count.
+  def visible_lists(html)
+    out = []
+    stack = []
+    html.scan(%r{<(/?)(ol|ul|li)\b([^>]*)>}) do |close, tag, attrs|
+      if tag == "li"
+        out[stack.last[1]][1] += 1 if close.empty? && stack.last&.first == "ol"
+      elsif close.empty?
+        out << [ (attrs[/start="(\d+)"/, 1] || 1).to_i, 0 ] if tag == "ol"
+        stack << [ tag, tag == "ol" ? out.size - 1 : nil ]
+      else
+        stack.pop
+      end
+    end
+    out
+  end
+
   def render(md, lax:)
     Redcarpet::Markdown.new(Redcarpet::Render::HTML.new, tables: true, no_intra_emphasis: true, lax_spacing: lax).render(md)
   end
@@ -148,6 +185,12 @@ module LetterBody
     ol = html.scan("<ol").size
     fail!("list items: html #{li} ≠ source #{items}") unless li == items
     fail!("ordered lists: html #{ol} ≠ source #{groups} — an indented continuation closed a list (#13 (а))") unless ol == groups
+    numbers = source_groups(body)
+    numbers.each { |g| fail!("source list numbering not consecutive: #{g.join(',')}") unless g == (g.first...(g.first + g.size)).to_a }
+    k = -1
+    html = html.gsub("<ol>") { k += 1; (st = numbers[k]&.first) && st != 1 ? %(<ol start="#{st}">) : "<ol>" }
+    want = numbers.map { |g| [ g.first, g.size ] }
+    fail!("visible numbering #{visible_lists(html).inspect} ≠ source #{want.inspect} — «п. N» would point at nothing (#13 (а))") unless visible_lists(html) == want
     if signature
       sig = "<p>#{signature.split('|').join('<br>')}</p>"
       fail!("signature marker not rendered as its own paragraph") unless html.include?("<p>#{MARKER_TOKEN}</p>")
@@ -206,6 +249,12 @@ module LetterBody
     bad.("no subject", region.(clean.drop(2)), signature: "x")
     rr = assemble(region.(clean), signature: "x", replacements: [ [ "Шановні колеги!", "Добрий день!" ] ])
     ok.("replace-line applied", rr[:html].include?("<p>Добрий день!</p>"))
+    sect = clean + [ "", "**Розділ 2.**", "", "3. Третє питання.", "4. Четверте питання." ]
+    sr = assemble(region.(sect), signature: "x")
+    ok.("section continues numbering", sr[:html].include?('<ol start="3">') && sr[:html].scan("<ol>").size == 1)
+    nest = clean + [ "", "**Розділ 2.**", "", "3. Третє:", "   - вкладений;", "   - ще один.", "4. Четверте." ]
+    ok.("nested list does not count as items", assemble(region.(nest), signature: "x")[:html].include?('<ol start="3">'))
+    bad.("numbering gap inside a list", region.(clean.map { |l| l == "2. **Друге** питання." ? "3. **Друге** питання." : l }), signature: "x")
     puts "letter_body selftest: #{cases} cases OK"
   end
 end
