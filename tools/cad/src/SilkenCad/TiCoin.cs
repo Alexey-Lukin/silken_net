@@ -20,13 +20,17 @@ internal static class TiCoin
         BaseCylinder oDisc = new(new LocalFrame(), cem.DiscThicknessMm, fDiscR);
         Voxels voxCoin = oDisc.voxConstruct();
 
-        // Eyelet torus, coplanar with the disc mid-plane, overlapping the rim by one
-        // tube radius so the union fuses without a sliver.
-        float fEyeletX = fDiscR + cem.LoopRingRadiusMm - cem.LoopTubeRadiusMm;
-        LocalFrame oFrame = new(new Vector3(fEyeletX, 0f, cem.DiscThicknessMm / 2f));
+        // Eyelet torus, coplanar with the disc mid-plane.
+        LocalFrame oFrame = new(new Vector3(EyeletCentreFromAxisMm(cem), 0f, cem.DiscThicknessMm / 2f));
         BaseRing oLoop = new(oFrame, cem.LoopRingRadiusMm, cem.LoopTubeRadiusMm);
 
         voxCoin.BoolAdd(oLoop.voxConstruct());
         return voxCoin;
     }
+
+    // Distance from the disc axis to the eyelet centre: the torus overlaps the rim by one tube radius so the
+    // union fuses without a sliver. ⛔ ONE function for the body and for both drawing readers — a sheet that
+    // recomputes it draws a loop the STL does not have (00_07 HW.24).
+    internal static float EyeletCentreFromAxisMm(TiCoinCem cem)
+        => cem.DiscDiameterMm / 2f + cem.LoopRingRadiusMm - cem.LoopTubeRadiusMm;
 }

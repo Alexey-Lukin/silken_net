@@ -119,7 +119,7 @@ internal static class Drawing
     }
 
     // Horizontal linear dimension with witness lines + arrow ticks + a value label above the line.
-    private static void HDim(StringBuilder sb, double x1, double x2, double y, string label, double witnessFrom)
+    private static void HDim(StringBuilder sb, double x1, double x2, double y, string label, double witnessFrom, bool labelBelow = false)
     {
         sb.AppendLine(Line(x1, witnessFrom, x1, y, Dim, 0.5));
         sb.AppendLine(Line(x2, witnessFrom, x2, y, Dim, 0.5));
@@ -128,7 +128,8 @@ internal static class Drawing
         sb.AppendLine(Line(x1, y, x1 + 4, y + 2.5, Dim, 0.7));
         sb.AppendLine(Line(x2, y, x2 - 4, y - 2.5, Dim, 0.7));
         sb.AppendLine(Line(x2, y, x2 - 4, y + 2.5, Dim, 0.7));
-        sb.AppendLine(Text((x1 + x2) / 2, y - 3, label, 10, "middle", Dim));
+        // a dimension under its feature puts the value under the line, outside the witness lines, not between them
+        sb.AppendLine(Text((x1 + x2) / 2, labelBelow ? y + 11 : y - 3, label, 10, "middle", Dim));
     }
 
     // Vertical linear dimension (witness lines horizontal, label rotated-free to the right).
@@ -416,6 +417,143 @@ internal static class Drawing
     private static string FormTag(string? tag) => tag is null ? "" : $" · {tag}";
     private static string CoinSubtitle(SheetForm form) => form == SheetForm.Full ? "Деталь — EBFC test electrode · 01_01 §6.1" : "Flat test-electrode coupon";
 
+    // The eyelet's numbers, all from the body's own position (TiCoin.EyeletCentreFromAxisMm) and the manifest radii.
+    internal readonly record struct Eyelet(double CentreMm, double OuterRMm, double HoleRMm, double TubeRMm);
+    internal static Eyelet CoinEyelet(TiCoinCem cem)
+        => new(SilkenCad.TiCoin.EyeletCentreFromAxisMm(cem), cem.LoopRingRadiusMm + cem.LoopTubeRadiusMm,
+               cem.LoopRingRadiusMm - cem.LoopTubeRadiusMm, cem.LoopTubeRadiusMm);
+
+    // A drawn feature carries its numbers (gotcha #11 ⊕), each once: the views dimension the sizes (centre, hole, outer, tube),
+    // this note the two radii the manifest states and the step at the faces, which no view dimensions — all untoleranced, as
+    // the disc thickness is.
+    internal static string EyeletLine(Eyelet e, TiCoinCem cem)
+    {
+        double proud = e.TubeRMm - cem.DiscThicknessMm / 2.0;
+        return $"Eyelet: torus, centreline R{N(cem.LoopRingRadiusMm)}, tube r{N(e.TubeRMm)}"
+             + (proud > 1e-6 ? $"; the tube stands {N(proud)} proud of each face" : "");
+    }
+
+    // The coin's visible EDGES in reader-neutral millimetres, y up. Front: x across, y along the eyelet axis from the
+    // disc centre. Side: x across the thickness from the mid-plane, y the same axis. The part is disc ∪ torus: an edge buried
+    // inside the other body is dropped (a whole torus circle inside the disc reads as a groove), every edge the union keeps is
+    // drawn — and with the tube thicker than the disc the two bodies INTERSECT, so the tube stands out of each face between two
+    // crease circles and the rim is buried only there. Arcs run counter-clockwise from A0 to A1, degrees, 0 = +x.
+    internal readonly record struct OutlineLine(double X0, double Y0, double X1, double Y1);
+    internal readonly record struct OutlineArc(double Cx, double Cy, double R, double A0, double A1);
+    private static double Deg(double rad) => rad * 180.0 / Math.PI;
+
+    // Where the circle of radius d about the eyelet centre crosses the disc rim: the chord's distance along the axis from the
+    // disc centre, or null when that circle does not reach the rim.
+    private static double? RimChord(double rDisc, double c, double d)
+    {
+        double a = (c * c + rDisc * rDisc - d * d) / (2 * c);
+        return Math.Abs(a) < rDisc ? a : null;
+    }
+
+    internal static (List<OutlineLine> Lines, List<OutlineArc> Arcs) CoinFrontOutline(TiCoinCem cem)
+    {
+        var e = CoinEyelet(cem);
+        double rDisc = cem.DiscDiameterMm / 2.0, c = e.CentreMm, ro = e.OuterRMm, h = cem.DiscThicknessMm / 2.0, w = e.TubeRMm;
+        if (c + ro <= rDisc) throw new InvalidOperationException("ti_coin: the eyelet lies inside the disc — no eyelet to draw");
+        var arcs = new List<OutlineArc>();
+        double RimHalfAngle(double a) => Deg(Math.Atan2(Math.Sqrt(rDisc * rDisc - a * a), a));        // seen from the disc centre
+        double EyeAngle(double a) => Deg(Math.Atan2(a - c, Math.Sqrt(rDisc * rDisc - a * a)));     // the right crossing, seen from the eyelet centre
+
+        // the eyelet's outer rim — an edge only outside the disc
+        double? aOuter = RimChord(rDisc, c, ro);
+        if (aOuter is { } ao) { double te = EyeAngle(ao); arcs.Add(new(0, c, ro, te, 180 - te)); }
+        else arcs.Add(new(0, c, ro, 0, 360));
+
+        if (w > h)
+        {
+            // The tube stands out of each face between the crease circles ring ± s: the rim is buried only there.
+            double s = Math.Sqrt(w * w - h * h), dIn = cem.LoopRingRadiusMm - s, dOut = cem.LoopRingRadiusMm + s;
+            double? aOut = RimChord(rDisc, c, dOut), aIn = RimChord(rDisc, c, dIn);
+            if (aOut is not { } aO)
+                throw new InvalidOperationException("ti_coin: the eyelet's raised band does not reach the rim — this outline is not drawn");
+            double tOut = RimHalfAngle(aO);
+            arcs.Add(new(0, 0, rDisc, 90 + tOut, 450 - tOut));                                   // the rim beyond the band
+            if (aIn is { } aI) arcs.Add(new(0, 0, rDisc, 90 - RimHalfAngle(aI), 90 + RimHalfAngle(aI)));   // the rim between band and hole
+            foreach ((double? a, double d) in new[] { (aIn, dIn), (aOut, dOut) })
+            {
+                if (a is not { } aa) continue;                                                     // a crease that never reaches the disc has no face to cut
+                double te = EyeAngle(aa);
+                arcs.Add(new(0, c, d, 180 - te, 360 + te));                                        // the crease, where it runs inside the disc
+            }
+        }
+        else arcs.Add(new(0, 0, rDisc, 0, 360));                                                     // a tube within the disc thickness buries no rim
+        if (e.HoleRMm > 0)
+        {
+            // The hole has to lie in the torus alone: a hole the disc reaches into is not the hole the body has.
+            if (c - e.HoleRMm < rDisc - 1e-4)
+                throw new InvalidOperationException($"ti_coin: the disc reaches into the eyelet hole (rim {N(rDisc)}, hole edge {N(c - e.HoleRMm)}) — this outline is not drawn");
+            arcs.Add(new(0, c, e.HoleRMm, 0, 360));
+        }
+        return (new List<OutlineLine>(), arcs);
+    }
+
+    internal static (List<OutlineLine> Lines, List<OutlineArc> Arcs) CoinSideOutline(TiCoinCem cem)
+    {
+        var e = CoinEyelet(cem);
+        double rDisc = cem.DiscDiameterMm / 2.0, h = cem.DiscThicknessMm / 2.0, w = e.TubeRMm;
+        double yIn = e.CentreMm - cem.LoopRingRadiusMm, yOut = e.CentreMm + cem.LoopRingRadiusMm;
+        // Drawn for the proportion every shipped coin has — the tube thicker than the disc, the disc rim inside the eyelet's
+        // straight run. Any other proportion refuses out loud rather than drawing a part nobody built.
+        if (!(w > h && yIn <= rDisc && rDisc <= yOut))
+            throw new InvalidOperationException($"ti_coin side view: eyelet proportion not drawn (tube r {N(w)} vs half-thickness {N(h)}; rim {N(rDisc)} vs eyelet run {N(yIn)}..{N(yOut)})");
+        double s = Math.Sqrt(w * w - h * h), yJoin = yIn - s, aj = Deg(Math.Atan2(-s, h));
+        // A projection, not a mid-plane section: the face's rim edge stays in view in front of the tube until it enters the
+        // outer crease (ring + s about the eyelet centre), well past the point where the inner cap leaves the face.
+        if (RimChord(rDisc, e.CentreMm, cem.LoopRingRadiusMm + s) is not { } yRim || yRim < yJoin)
+            throw new InvalidOperationException("ti_coin side view: the rim does not run into the eyelet's raised band — this projection is not drawn");
+        var lines = new List<OutlineLine>
+        {
+            new(-h, -rDisc, h, -rDisc),                       // the disc rim opposite the eyelet
+            new(-h, -rDisc, -h, yRim), new(h, -rDisc, h, yRim),
+            new(-w, yIn, -w, yOut), new(w, yIn, w, yOut),     // the eyelet tube, edge-on
+        };
+        // Where the rim cylinder runs into the tube's outer side: across the thickness ζ the meeting point sits at the chord of
+        // the circle ring + √(w² − ζ²) — from the face lines' ends (ζ = ±h) down to the mid-plane. The rim is frontmost on one
+        // side of it and the tube on the other, so it is an edge; drawn exact at its sample points, not as a fitted arc.
+        const int nSeg = 8;
+        double YAt(double z) => RimChord(rDisc, e.CentreMm, cem.LoopRingRadiusMm + Math.Sqrt(w * w - z * z)) ?? throw new InvalidOperationException("ti_coin side view: the rim misses the tube");
+        for (int k = 0; k < nSeg; k++)
+        {
+            double z0 = -h + 2 * h * k / nSeg, z1 = -h + 2 * h * (k + 1) / nSeg;
+            lines.Add(new(z0, YAt(z0), z1, YAt(z1)));
+        }
+        var arcs = new List<OutlineArc>
+        {
+            new(0, yIn, w, 180, 180 - aj), new(0, yIn, w, 360 + aj, 360),   // the inner cap, where it stands proud of the faces
+            new(0, yOut, w, 0, 180),                                       // the outer cap
+        };
+        return (lines, arcs);
+    }
+
+    private static void SvgOutline(StringBuilder b, double ox, double oy, (List<OutlineLine> Lines, List<OutlineArc> Arcs) o, double sw)
+    {
+        foreach (var l in o.Lines) b.AppendLine(Line(ox + l.X0 * Px, oy - l.Y0 * Px, ox + l.X1 * Px, oy - l.Y1 * Px, Stroke, sw));
+        foreach (var a in o.Arcs)
+        {
+            double cx = ox + a.Cx * Px, cy = oy - a.Cy * Px, r = a.R * Px;
+            if (a.A1 - a.A0 >= 360) { b.AppendLine(Circle(cx, cy, r, Stroke, sw)); continue; }
+            double t0 = a.A0 * Math.PI / 180, t1 = a.A1 * Math.PI / 180;
+            // y is down on the canvas, so a counter-clockwise arc of the y-up frame is sweep-flag 0 here
+            b.AppendLine($"<path d='M {N(cx + r * Math.Cos(t0))} {N(cy - r * Math.Sin(t0))} A {N(r)} {N(r)} 0 {(a.A1 - a.A0 > 180 ? 1 : 0)} 0 "
+                       + $"{N(cx + r * Math.Cos(t1))} {N(cy - r * Math.Sin(t1))}' fill='none' stroke='{Stroke}' stroke-width='{N(sw)}'/>");
+        }
+    }
+
+    private static void DxfOutline(DxfDocument doc, Layer layer, double ox, double oy, (List<OutlineLine> Lines, List<OutlineArc> Arcs) o)
+    {
+        foreach (var l in o.Lines) doc.Entities.Add(new Line(new Vector2(ox + l.X0, oy + l.Y0), new Vector2(ox + l.X1, oy + l.Y1)) { Layer = layer });
+        foreach (var a in o.Arcs)
+        {
+            if (a.A1 - a.A0 >= 360) doc.Entities.Add(new Circle(new Vector2(ox + a.Cx, oy + a.Cy), a.R) { Layer = layer });
+            else doc.Entities.Add(new Arc(new Vector2(ox + a.Cx, oy + a.Cy), a.R, ((a.A0 % 360) + 360) % 360, ((a.A1 % 360) + 360) % 360) { Layer = layer });
+        }
+    }
+
     public static string TiCoin(TiCoinCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null,
                                 SheetForm form = SheetForm.Full)
     {
@@ -429,29 +567,31 @@ internal static class Drawing
         b.AppendLine(Text(20, 30, CoinTitle(form), 15, "start", Stroke, "bold"));
         b.AppendLine(Text(20, 46, CoinSubtitle(form), 10, "start", "#555"));
 
-        // FRONT VIEW — disc circle + centre + eyelet + (optional) active-area window
-        b.AppendLine(Circle(frontCx, cy, r, Stroke, 1.2));
+        // FRONT VIEW — disc + centre + eyelet + (optional) active-area window
         b.AppendLine(Centre(frontCx, cy, r, b));
         double winMm = cem.ActiveWindowDiameterMm > 0f ? cem.ActiveWindowDiameterMm : cem.DiscDiameterMm;
         if (cem.ActiveWindowDiameterMm > 0f)
             b.AppendLine(Circle(frontCx, cy, cem.ActiveWindowDiameterMm / 2.0 * Px, Dim, 0.8, "4 2"));
-        // eyelet at the top edge: a small ring (loop) tangent outside the disc
-        double loopR = cem.LoopRingRadiusMm * Px, tubeR = cem.LoopTubeRadiusMm * Px;
-        double eyCy = cy - r - loopR;
-        b.AppendLine(Circle(frontCx, eyCy, loopR + tubeR, Stroke, 1.0));
-        b.AppendLine(Circle(frontCx, eyCy, loopR - tubeR > 0 ? loopR - tubeR : tubeR, Stroke, 1.0));
+        // eyelet at the top edge, where the body puts it — the edges of disc ∪ torus, never two whole bodies
+        var eye = CoinEyelet(cem);
+        double eyCy = cy - eye.CentreMm * Px, eyR = eye.OuterRMm * Px;
+        SvgOutline(b, frontCx, cy, CoinFrontOutline(cem), 1.2);
+        b.AppendLine(Line(frontCx - eyR - 3, eyCy, frontCx + eyR + 3, eyCy, Stroke, 0.4, "6 3"));     // eyelet centre
+        b.AppendLine(Line(frontCx, eyCy - eyR - 3, frontCx, eyCy + eyR + 3, Stroke, 0.4, "6 3"));
+        b.AppendLine(Text(frontCx - eyR - 6, eyCy + 3, $"hole Ø{N(2 * eye.HoleRMm)} · outer Ø{N(2 * eye.OuterRMm)}", 9, "end", Dim));
+        VDim(b, eyCy, cy, frontCx + r + 18, $"{N(eye.CentreMm)}", frontCx + eye.OuterRMm * Px + 3);
         b.AppendLine(Text(frontCx, cy + r + 40, "FRONT", 10, "middle", "#555"));
 
         // Ø dimension (under front view)
         HDim(b, frontCx - r, frontCx + r, cy + r + 22, $"Ø{N(cem.DiscDiameterMm)}", cy + r);
 
-        // SIDE VIEW — thickness rectangle (height = disc Ø), eyelet stub
-        double sideTop = cy - r;
-        b.AppendLine(Rect(sideX, sideTop, t, 2 * r, Stroke, 1.2));
-        b.AppendLine(Rect(sideX, eyCy - tubeR, t, 2 * tubeR, Stroke, 0.8));    // eyelet edge-on
+        // SIDE VIEW — disc edge-on ∪ the eyelet edge-on, its tube proud of the faces when thicker than the disc. The disc Ø is
+        // dimensioned once, in the front view: its top point here is buried in the tube.
+        SvgOutline(b, sideX + t / 2, cy, CoinSideOutline(cem), 1.2);
         b.AppendLine(Text(sideX + t / 2, cy + r + 40, "SIDE", 10, "middle", "#555"));
-        VDim(b, sideTop, sideTop + 2 * r, sideX + t + 26, $"Ø{N(cem.DiscDiameterMm)}", sideX + t);
-        HDim(b, sideX, sideX + t, sideTop - 14, $"{N(cem.DiscThicknessMm)}", sideTop);
+        HDim(b, sideX, sideX + t, cy + r + 14, $"{N(cem.DiscThicknessMm)}", cy + r, labelBelow: true);
+        double eyTop = cy - (eye.CentreMm + eye.OuterRMm) * Px;
+        HDim(b, sideX + t / 2 - eye.TubeRMm * Px, sideX + t / 2 + eye.TubeRMm * Px, eyTop - 12, $"{N(2 * eye.TubeRMm)}", eyTop + eye.TubeRMm * Px);
 
         // NOTES + TOLERANCES — consumed from the CEM (Noyron-clean; no hard-coded engineering text).
         double a = Math.PI * Math.Pow(winMm / 2.0, 2) / 100.0;
@@ -459,8 +599,9 @@ internal static class Drawing
                                               : $"Active electrode area ≈ {N(a)} cm² (1 face, projected)")
             + (cem.ActiveWindowDiameterMm > 0f ? $"; defined-area window Ø{N(cem.ActiveWindowDiameterMm)} (dashed)" : "");
         const double w = 820;
-        double bottom = NotesAndTolerances(b, 20, 300, (int)((w - 40) / Glyph9),
-                                           NotesLines(cem.Notes, lead, form), ToleranceLines(cem.Tolerances));
+        var notes = NotesLines(cem.Notes, lead, form);
+        notes.Insert(1, EyeletLine(eye, cem));
+        double bottom = NotesAndTolerances(b, 20, 300, (int)((w - 40) / Glyph9), notes, ToleranceLines(cem.Tolerances));
 
         // TITLE BLOCK — material/process/SSOT come from the CEM (the alloy-bake-off SKU), not hard-coded:
         // each ti_coin.<alloy>.json carries its own Notes.Material (01_02 §2.5).
@@ -509,21 +650,26 @@ internal static class Drawing
 
         double rr = cem.DiscDiameterMm / 2.0, t = cem.DiscThicknessMm, cx = 0, cy = 0;
 
-        // FRONT — disc + centre cross + eyelet
-        doc.Entities.Add(new Circle(new Vector2(cx, cy), rr) { Layer = geo });
+        // FRONT — disc ∪ eyelet outline, the eyelet where the body puts it + centre cross
+        var eye = CoinEyelet(cem);
+        DxfOutline(doc, geo, cx, cy, CoinFrontOutline(cem));
         doc.Entities.Add(new Line(new Vector2(cx - rr - 2, cy), new Vector2(cx + rr + 2, cy)) { Layer = geo });
         doc.Entities.Add(new Line(new Vector2(cx, cy - rr - 2), new Vector2(cx, cy + rr + 2)) { Layer = geo });
-        double loopR = cem.LoopRingRadiusMm, tubeR = cem.LoopTubeRadiusMm, eyCy = cy + rr + loopR;
-        doc.Entities.Add(new Circle(new Vector2(cx, eyCy), loopR + tubeR) { Layer = geo });
-        if (loopR - tubeR > 0) doc.Entities.Add(new Circle(new Vector2(cx, eyCy), loopR - tubeR) { Layer = geo });
+        double eyY = cy + eye.CentreMm, eyR = eye.OuterRMm;
+        doc.Entities.Add(new Line(new Vector2(cx - eyR - 1, eyY), new Vector2(cx + eyR + 1, eyY)) { Layer = geo });   // eyelet centre
+        doc.Entities.Add(new Line(new Vector2(cx, eyY - eyR - 1), new Vector2(cx, eyY + eyR + 1)) { Layer = geo });
         DxfHDim(doc, dmn, cx - rr, cx + rr, cy - rr - 5, $"%%c{N(cem.DiscDiameterMm)}");
+        DxfVDim(doc, dmn, cy, eyY, cx + rr + 4, N(eye.CentreMm), cx + eyR + 1);
+        doc.Entities.Add(new Text(DxfSafe($"hole Ø{N(2 * eye.HoleRMm)} / outer Ø{N(2 * eye.OuterRMm)}"),
+                                  new Vector2(cx - eyR - 28, eyY - 0.8), 1.6) { Layer = dmn });
         doc.Entities.Add(new Text("FRONT", new Vector2(cx - rr / 2, cy - rr - 11), 2.0) { Layer = nte });
 
-        // SIDE — thickness rect (4 lines) + thickness dim
+        // SIDE — disc ∪ eyelet edge-on + disc thickness and eyelet thickness
         double sx = rr + 16;
-        var q = new[] { new Vector2(sx, cy - rr), new Vector2(sx + t, cy - rr), new Vector2(sx + t, cy + rr), new Vector2(sx, cy + rr) };
-        for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(q[i], q[(i + 1) % 4]) { Layer = geo });
+        DxfOutline(doc, geo, sx + t / 2, cy, CoinSideOutline(cem));
         DxfHDim(doc, dmn, sx, sx + t, cy - rr - 5, N(t));
+        DxfHDim(doc, dmn, sx + t / 2 - eye.TubeRMm, sx + t / 2 + eye.TubeRMm, eyY + eyR + 5, N(2 * eye.TubeRMm),
+                witnessFrom: eyY + cem.LoopRingRadiusMm);
         doc.Entities.Add(new Text("SIDE", new Vector2(sx, cy - rr - 11), 2.0) { Layer = nte });
 
         // NOTES + TOLERANCES (stacked text below the views) — consumed from the CEM, same as the SVG
@@ -532,6 +678,7 @@ internal static class Drawing
         var lines = new List<string> { "NOTES:" };
         var nl = NotesLines(cem.Notes, form == SheetForm.Full ? $"Active electrode area ~{N(a)} cm2 (1 face, projected; 01_03 3.5)"
                                                               : $"Active electrode area ~{N(a)} cm2 (1 face, projected)", form);
+        nl.Insert(1, EyeletLine(eye, cem));
         for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
@@ -1171,12 +1318,22 @@ internal static class Drawing
     }
 
     // Manual horizontal linear dimension in DXF: two short extension ticks + a dimension line + a value.
-    private static void DxfHDim(DxfDocument doc, Layer layer, double x1, double x2, double y, string label)
+    // `witnessFrom` — the feature's edge, when the dimension stands off it; without it, the short ticks of a dimension under its feature.
+    private static void DxfHDim(DxfDocument doc, Layer layer, double x1, double x2, double y, string label, double? witnessFrom = null)
     {
-        doc.Entities.Add(new Line(new Vector2(x1, y + 1.5), new Vector2(x1, y)) { Layer = layer });
-        doc.Entities.Add(new Line(new Vector2(x2, y + 1.5), new Vector2(x2, y)) { Layer = layer });
+        doc.Entities.Add(new Line(new Vector2(x1, witnessFrom ?? y + 1.5), new Vector2(x1, y)) { Layer = layer });
+        doc.Entities.Add(new Line(new Vector2(x2, witnessFrom ?? y + 1.5), new Vector2(x2, y)) { Layer = layer });
         doc.Entities.Add(new Line(new Vector2(x1, y), new Vector2(x2, y)) { Layer = layer });
         doc.Entities.Add(new Text(DxfSafe(label), new Vector2((x1 + x2) / 2 - 2, y - 3), 2.0) { Layer = layer });
+    }
+
+    // Manual vertical linear dimension in DXF: extension lines from the feature's edge at `witnessFrom`, the value to the right.
+    private static void DxfVDim(DxfDocument doc, Layer layer, double y1, double y2, double x, string label, double witnessFrom)
+    {
+        doc.Entities.Add(new Line(new Vector2(witnessFrom, y1), new Vector2(x, y1)) { Layer = layer });
+        doc.Entities.Add(new Line(new Vector2(witnessFrom, y2), new Vector2(x, y2)) { Layer = layer });
+        doc.Entities.Add(new Line(new Vector2(x, y1), new Vector2(x, y2)) { Layer = layer });
+        doc.Entities.Add(new Text(DxfSafe(label), new Vector2(x + 1, (y1 + y2) / 2 - 1), 2.0) { Layer = layer });
     }
 
     // DXF single-line Text is ASCII-friendliest → map the Unicode glyphs we use to DXF/ASCII equivalents.

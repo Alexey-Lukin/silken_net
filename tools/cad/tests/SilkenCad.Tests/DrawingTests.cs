@@ -153,6 +153,154 @@ public class DrawingTests
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
+    // 🔴 The vendor letter names the STL and the dimensioned DXF together as the dimensional authority, so the two must show
+    // ONE eyelet. The sheet once drew it tangent outside the disc while the body overlaps the rim by one tube radius, and then
+    // drew the union as if the bodies merged flush while the tube — thicker than the disc — INTERSECTS it (00_07 HW.24). Both
+    // readers take the position from TiCoin.EyeletCentreFromAxisMm and draw exactly the edges the union keeps.
+    private static string F(double d) => d.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static netDxf.DxfDocument CoinDxf(TiCoinCem cem, string strFile, Drawing.SheetForm form = Drawing.SheetForm.Full)
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"coin_{Guid.NewGuid():N}.dxf");
+        try { Assert.True(Drawing.TiCoinDxf(cem, "t", strFile, path, form: form)); return netDxf.DxfDocument.Load(path); }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    // A second geometry, so «every shipped manifest» is not one case run seven times: another disc, another torus, the tube
+    // still thicker than the disc.
+    private const string OtherCoinKey = "(other proportions)";
+    private static readonly TiCoinCem OtherCoin = new() { DiscDiameterMm = 20f, DiscThicknessMm = 1.2f, LoopRingRadiusMm = 2.0f, LoopTubeRadiusMm = 0.8f };
+    public static TheoryData<string> ShippedCoinCemsAndAnother()
+    {
+        var data = ShippedCoinCems();
+        data.Add(OtherCoinKey);
+        return data;
+    }
+    private static (TiCoinCem Cem, string File) Coin(string strKey)
+        => strKey == OtherCoinKey ? (OtherCoin, "ti_coin.json") : (Cem.Parse<TiCoinCem>(File.ReadAllText(Path.Combine(CemDir(), strKey))), strKey);
+
+    [Theory]
+    [MemberData(nameof(ShippedCoinCemsAndAnother))]
+    public void Coin_Eyelet_Sits_Where_The_Body_Puts_It_In_Both_Readers(string strKey)
+    {
+        var (cem, strFile) = Coin(strKey);
+        double c = TiCoin.EyeletCentreFromAxisMm(cem), ring = cem.LoopRingRadiusMm, w = cem.LoopTubeRadiusMm;
+        double hole = ring - w, outer = ring + w, rim = cem.DiscDiameterMm / 2.0, h = cem.DiscThicknessMm / 2.0;
+        Assert.True(c - outer < rim && rim < c + outer && hole > 0 && w > h);   // an eyelet that crosses the rim and stands proud, or the pin is vacuous
+        double s = Math.Sqrt(w * w - h * h);
+
+        string svg = Drawing.TiCoin(cem, "t", strFile);
+        Assert.Contains($"<circle cx='150' cy='{F(150 - c * 6)}' r='{F(hole * 6)}'", svg);   // the hole, at the printed 6:1 scale
+        Assert.DoesNotContain($"r='{F(outer * 6)}'", svg);                                  // never a whole torus circle
+
+        var doc = CoinDxf(cem, strFile);
+        var holes = doc.Entities.Circles.Where(x => Math.Abs(x.Radius - hole) < 1e-3).ToArray();
+        Assert.Single(holes);
+        Assert.Equal(c, holes[0].Center.Y, 3);
+        Assert.DoesNotContain(doc.Entities.Circles, x => Math.Abs(x.Radius - outer) < 1e-3 || Math.Abs(x.Radius - rim) < 1e-3);
+        foreach (double d in new[] { outer, ring - s, ring + s })        // the outer rim and both creases, about the eyelet centre
+            Assert.Contains(doc.Entities.Arcs, a => Math.Abs(a.Radius - d) < 1e-3 && Math.Abs(a.Center.X) < 1e-6 && Math.Abs(a.Center.Y - c) < 1e-3);
+        Assert.Equal(2, doc.Entities.Arcs.Count(a => Math.Abs(a.Radius - rim) < 1e-3));   // the disc rim, in two pieces round the raised band
+
+        // SIDE (DXF origin at the disc's mid-plane, rim + 16 to the right): the tube's three caps and both faces
+        double xm = rim + 16 + h;
+        Assert.Equal(3, doc.Entities.Arcs.Count(a => Math.Abs(a.Radius - w) < 1e-3 && Math.Abs(a.Center.X - xm) < 1e-6));
+        foreach (double x in new[] { xm - h, xm + h })
+            Assert.Contains(doc.Entities.Lines, l => Math.Abs(l.StartPoint.X - x) < 1e-6 && Math.Abs(l.EndPoint.X - x) < 1e-6
+                                                       && Math.Abs(Math.Min(l.StartPoint.Y, l.EndPoint.Y) + rim) < 1e-6 && Math.Max(l.StartPoint.Y, l.EndPoint.Y) > 0);
+    }
+
+    // The shipped coin against numbers computed BY HAND, outside the code under test (circle-circle chords for disc Ø16 × 1,
+    // torus R1.6 × r0.6 centred 9 from the axis): an angle swapped, a flag flipped or a face cut at the wrong height reds here.
+    [Fact]
+    public void Coin_Edges_Match_The_Hand_Computed_Geometry()
+    {
+        var cem = Cem.Parse<TiCoinCem>(File.ReadAllText(Path.Combine(CemDir(), "ti_coin.json")));
+        var doc = CoinDxf(cem, "ti_coin.json");
+        void Arc(double r, double a0, double a1) => Assert.Contains(doc.Entities.Arcs, a => Math.Abs(a.Radius - r) < 1e-3
+            && Math.Abs(a.StartAngle - a0) < 0.02 && Math.Abs(a.EndAngle - a1) < 0.02);
+        Arc(8.0, 101.177, 78.823);      // the rim beyond the raised band
+        Arc(8.0, 84.730, 95.270);       // the rim between the band and the hole
+        Arc(1.2683, 234.597, 305.403);  // inner crease, inside the disc
+        Arc(1.9317, 216.601, 323.399);  // outer crease, inside the disc
+        Arc(2.2, 326.529, 213.471);     // the eyelet's outer rim, outside the disc
+        foreach (double x in new[] { 24.0, 25.0 })   // the faces seen edge-on stop where the rim enters the outer crease
+            Assert.Contains(doc.Entities.Lines, l => Math.Abs(l.StartPoint.X - x) < 1e-6 && Math.Abs(l.EndPoint.X - x) < 1e-6
+                                                       && Math.Abs(Math.Max(l.StartPoint.Y, l.EndPoint.Y) - 7.8483) < 1e-3);
+        void SideArc(double y, double a0, double a1) => Assert.Contains(doc.Entities.Arcs, a => Math.Abs(a.Radius - 0.6) < 1e-3
+            && Math.Abs(a.Center.X - 24.5) < 1e-6 && Math.Abs(a.Center.Y - y) < 1e-3 && Math.Abs(a.StartAngle - a0) < 0.02 && Math.Abs(a.EndAngle - a1) < 0.02);
+        SideArc(7.4, 180, 213.557);     // the tube's inner cap, where it stands proud of the faces
+        SideArc(7.4, 326.443, 0);
+        SideArc(10.6, 0, 180);          // the outer cap
+        foreach (double x in new[] { 23.9, 25.1 })   // the tube, edge-on
+            Assert.Contains(doc.Entities.Lines, l => Math.Abs(l.StartPoint.X - x) < 1e-6 && Math.Abs(l.EndPoint.X - x) < 1e-6
+                && Math.Abs(Math.Min(l.StartPoint.Y, l.EndPoint.Y) - 7.4) < 1e-6 && Math.Abs(Math.Max(l.StartPoint.Y, l.EndPoint.Y) - 10.6) < 1e-6);
+        // the rim running into the tube's outer side meets the mid-plane at the chord of the eyelet's outer circle
+        Assert.Contains(doc.Entities.Lines, l => (Math.Abs(l.StartPoint.X - 24.5) < 1e-6 && Math.Abs(l.StartPoint.Y - 7.7867) < 1e-3)
+                                                || (Math.Abs(l.EndPoint.X - 24.5) < 1e-6 && Math.Abs(l.EndPoint.Y - 7.7867) < 1e-3));
+
+        string svg = Drawing.TiCoin(cem, "t", "ti_coin.json");
+        // the long rim arc and the inner crease, endpoints and flags — counter-clockwise on a y-down canvas
+        Assert.Contains("<path d='M 140.7 102.91 A 48 48 0 1 0 159.3 102.91'", svg);
+        Assert.Contains("<path d='M 145.59 102.2 A 7.61 7.61 0 0 0 154.41 102.2'", svg);
+        foreach (string label in new[] { ">9<", ">1.2<", ">hole Ø2 · outer Ø4.4<" })
+            Assert.Contains(label, svg);
+    }
+
+    // A drawn feature carries its numbers once (picogk gotcha #11 ⊕): the views carry the sizes, the note the radii the
+    // manifest states and the step at the faces — in both readers and both forms.
+    [Theory]
+    [MemberData(nameof(ShippedCoinCems))]
+    public void Coin_Sheet_Carries_Every_Eyelet_Number_It_Draws_In_Both_Forms(string strFile)
+    {
+        var cem = Cem.Parse<TiCoinCem>(File.ReadAllText(Path.Combine(CemDir(), strFile)));
+        var e = Drawing.CoinEyelet(cem);
+        string line = Drawing.EyeletLine(e, cem);
+        // each number anchored to the text after it: «R1.6» would also match an «R1.65» the manifest does not state
+        Assert.Contains($"centreline R{F(cem.LoopRingRadiusMm)}, tube r{F(cem.LoopTubeRadiusMm)}", line);
+        if (2 * cem.LoopTubeRadiusMm > cem.DiscThicknessMm)
+            Assert.EndsWith($"; the tube stands {F(cem.LoopTubeRadiusMm - cem.DiscThicknessMm / 2.0)} proud of each face", line);
+        string sizes = $"hole Ø{F(2 * e.HoleRMm)} · outer Ø{F(2 * e.OuterRMm)}";
+
+        foreach (var form in new[] { Drawing.SheetForm.Full, Drawing.SheetForm.Vendor })
+        {
+            string svg = Drawing.TiCoin(cem, "t", strFile, form: form);
+            Assert.Contains(line, FlattenSvgText(svg));
+            foreach (string label in new[] { $">{F(e.CentreMm)}<", $">{F(2 * e.TubeRMm)}<", $">{sizes}<" })
+                Assert.Contains(label, svg);
+
+            var texts = CoinDxf(cem, strFile, form).Entities.Texts.Select(x => x.Value).ToArray();
+            Assert.Contains(texts, x => x.Contains(Drawing.DxfSafe(line), StringComparison.Ordinal));
+            foreach (string label in new[] { F(e.CentreMm), F(2 * e.TubeRMm), Drawing.DxfSafe(sizes.Replace(" · ", " / ")) })
+                Assert.Contains(label, texts);
+        }
+    }
+
+    // The CEM is the parameter SSOT only where it SPEAKS (picogk gotcha #0a): a coin manifest that omits an eyelet key would
+    // draw the record's default as if the manifest stated it. Read the RAW json — a parsed record cannot tell the two apart.
+    [Theory]
+    [MemberData(nameof(ShippedCoinCems))]
+    public void Every_Shipped_Coin_Cem_Declares_Its_Eyelet_And_Disc(string strFile)
+    {
+        string strJson = File.ReadAllText(Path.Combine(CemDir(), strFile));
+        foreach (string key in new[] { "disc_diameter_mm", "disc_thickness_mm", "loop_ring_radius_mm", "loop_tube_radius_mm" })
+            Assert.Contains($"\"{key}\":", strJson);
+    }
+
+    // ONE function for the eyelet's position, on the body's side too: the body is never built in a test (PicoGK), so the
+    // generator's source is the only thing that can say it still asks TiCoin.EyeletCentreFromAxisMm rather than re-deriving it.
+    [Fact]
+    public void Coin_Body_Takes_The_Eyelet_Position_From_The_Same_Function_As_The_Sheet()
+    {
+        string src = File.ReadAllText(Path.Combine(CemDir(), "..", "src", "SilkenCad", "TiCoin.cs"));
+        int iBuild = src.IndexOf("public static Voxels Build(", StringComparison.Ordinal);
+        int iFn = src.IndexOf("internal static float EyeletCentreFromAxisMm(", StringComparison.Ordinal);
+        Assert.True(iBuild >= 0 && iFn > iBuild, "TiCoin.Build and TiCoin.EyeletCentreFromAxisMm must both exist, the function after Build");
+        string build = src[iBuild..iFn];
+        Assert.Contains("new Vector3(EyeletCentreFromAxisMm(cem), ", build);           // the frame itself, not a variable that may go unused
+        Assert.Single(Regex.Matches(build, "LoopRingRadiusMm"));                       // only the torus's own radius — no re-derived position
+    }
+
     // ── The round-trip that closes the whole class ──────────────────────────────────────────────
     // 🔴 A test fed an INLINE literal CEM cannot see what the shipped manifests actually produce —
     // and CI runs `verify` only, never `draw`. That gap is why a
