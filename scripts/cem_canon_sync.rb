@@ -62,6 +62,13 @@ C22 = "02_02_Blind_Mate_Pogo_Pin_Interface.md"
 # dispatch day (00_05 §4: executed artefacts first). Same pin as the canon rows: context-anchored regex on
 # the sentence, the manifest is the value's home. The OD Ø15 is DERIVED (bore + 2·wall) — pinned through a
 # Proc, so the row still reads ONE manifest and cannot drift from the two fields it is made of.
+# ⛔ NOT pinned here, by ⚖️ founder 2026-11-07 (00_07 HW.26, on recommendation): the BRIEF's own letter
+# regions (§9 UA / §10 EN of docs/protocols/outreach/lock_fea_prony_brief.md — shank, teeth, bore, wall).
+# The pin (the tracker leg named it P_BRIEF) was a leg «build it once the text stops moving»; the text stopped by being SENT that day, and a
+# sent region is a snapshot of what left — a pin on it would red on every legitimate canon move. Price: a
+# reminder or a second version goes out on the day-of-send check alone (the brief's §9 checklist). Weakest
+# link: a second version (if the contractor asks for one) is new text the pin would not have seen until
+# built anyway. Do not rebuild it on this note — re-opening is founder's call.
 P_UA = "protocols/anchor/fea_aging/calibration_case_ua.md"
 P_EN = "protocols/anchor/fea_aging/calibration_case_en.md"
 P_RFQ = "protocols/procurement/anchor_sleeve_peek_cnc_rfq.md"
