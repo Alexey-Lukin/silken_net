@@ -205,6 +205,9 @@ class DashboardLayout < ApplicationComponent
       span(class: "hidden md:block text-micro text-gaia-text-subtle uppercase tracking-widest") do
         t("navigation.top_bar.context_label")
       end
+      # [UI.20] Пробіл між підписом і назвою: без нього axe читає їх ОДНИМ словом
+      # («КонтекстAcme») і мітка перестає містити видимий текст (WCAG 2.5.3).
+      plain " "
       span(class: "text-tiny text-gaia-text-strong truncate max-w-[8rem] md:max-w-[12rem]") { current }
     end
   end

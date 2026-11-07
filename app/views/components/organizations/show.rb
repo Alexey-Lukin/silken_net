@@ -49,15 +49,17 @@ module Organizations
         return
       end
 
+      # [UI.20] Імʼя — видимий текст (WCAG 2.5.3); назва організації — sr-only, не `aria-label`.
       button_to(
-        t(".switch"),
         switch_organization_path(@organization),
         method: :post,
-        aria: { label: t(".switch_aria", name: @organization.name) },
         class: "text-mini uppercase tracking-widest border border-gaia-border-strong text-gaia-text " \
                "px-3 py-1 hover:bg-gaia-primary hover:text-gaia-primary-text transition-colors cursor-pointer " \
                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
-      )
+      ) do
+        plain t(".switch")
+        span(class: "sr-only") { " #{@organization.name}" }
+      end
     end
 
     def render_header

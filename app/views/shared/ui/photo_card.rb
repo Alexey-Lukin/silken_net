@@ -37,7 +37,9 @@ module Views
             href: rails_blob_path(@photo, disposition: "inline"),
             target: "_blank",
             rel: "noopener noreferrer",
-            aria_label: t("ui.photo_card.view_photo", filename: @photo.filename),
+            # [UI.20] Мітка — лише на гілці-зображенні (видимого тексту там немає); fallback
+            # показує імʼя й розмір, тож його іменує власний текст (WCAG 2.5.3).
+            aria_label: (t("ui.photo_card.view_photo", filename: @photo.filename) if @photo.representable?),
             class: preview_link_classes
           ) do
             if @photo.representable?

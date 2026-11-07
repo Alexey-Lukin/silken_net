@@ -114,14 +114,16 @@ module Alerts
         end
 
         # Acknowledge form posts via Turbo Stream — single-row replace.
+        # [UI.20] Імʼя — видимий текст (WCAG 2.5.3); номер тривоги — sr-only, не `aria-label`.
         button_to(
-          t(".acknowledge"),
           resolve_alert_path(@alert),
           method: :patch,
-          aria: { label: t(".resolve_aria", id: @alert.id) },
           class: resolve_button_classes,
           data: { turbo_confirm: t(".resolve_confirm", id: @alert.id) }
-        )
+        ) do
+          plain t(".acknowledge")
+          span(class: "sr-only") { " #{@alert.id}" }
+        end
       end
     end
 

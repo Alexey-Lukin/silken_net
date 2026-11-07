@@ -154,9 +154,13 @@ module BlockchainTransactions
         td(class: "p-4 text-gaia-primary-strong") { tx.wallet&.tree&.did || tx.cluster&.name || "—" }
         td(class: "p-4 text-gaia-text-muted truncate max-w-[150px] font-mono text-tiny") do
           if tx.tx_hash.present?
-            # Тут aria_label НЕСУЧИЙ (на відміну від OnChainFrame): видимий текст —
-            # обрізаний hex, скрінрідеру він нічого не каже. Тому перекладаємо, а не знімаємо.
-            a(href: tx.explorer_url, target: "_blank", rel: "noopener noreferrer", aria_label: t(".explorer_aria"), class: "hover:text-gaia-primary-strong underline decoration-gaia-border-strong") { tx.tx_hash.first(16) + "..." }
+            # [UI.20] Імʼя — видимий обрізаний hex (WCAG 2.5.3: голосом кажуть те, що бачать);
+            # що це перехід в оглядач блокчейну, скрінрідер чує з sr-only, а не з `aria-label`,
+            # який перекрив би hex фразою, якої на екрані немає.
+            a(href: tx.explorer_url, target: "_blank", rel: "noopener noreferrer", class: "hover:text-gaia-primary-strong underline decoration-gaia-border-strong") do
+              plain tx.tx_hash.first(16) + "..."
+              span(class: "sr-only") { " #{t('.explorer_aria')}" }
+            end
           else
             # Прецедент і переклади вже стояли — `contracts/show` резолвить те саме
             # значення через `t(".ledger.pending_block")` у всіх чотирьох локалях.

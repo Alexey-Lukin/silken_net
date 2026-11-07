@@ -69,7 +69,10 @@ RSpec.describe Organizations::Show do
 
       expect(html).to include(%(action="#{switch_path}"))
       expect(html).to include("SWITCH_TO")
-      expect(html).to include("Switch acting context to Cherkasy Forest Fund")
+      # [UI.20] Імʼя кнопки — видимий текст, назва організації — sr-only (WCAG 2.5.3).
+      button = Nokogiri::HTML.fragment(html).css("button").find { |b| b.text.include?("SWITCH_TO") }
+      expect(button["aria-label"]).to be_nil
+      expect(button.at_css(".sr-only").text.strip).to eq("Cherkasy Forest Fund")
     end
 
     it "на власному контексті показує маркер замість кнопки" do

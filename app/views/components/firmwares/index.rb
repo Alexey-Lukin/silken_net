@@ -121,16 +121,18 @@ module Firmwares
 
         td(class: "p-4 text-right") do
           # [UI.7] `button_to`, не рукописна `<form>` — див. ноту у `firmwares/row.rb`.
-          # ⚠️ `aria:`, не `aria_label:`: `button_to` розкладає вкладений хеш у
-          # `aria-label` сам, а плаский kwarg поїхав би в розмітку як є.
+          # [UI.20] Імʼя — видимий текст (WCAG 2.5.3); версія — sr-only, не `aria-label`.
+          # ⚠️ Знадобиться мітка `button_to` — `aria: { label: }`, не `aria_label:`: вкладений
+          # хеш він розкладає сам, а плаский kwarg поїхав би в розмітку як є.
           button_to(
-            t("firmwares.row.order_evolution"),
             deploy_firmware_path(firmware),
             method: :post,
             class: "text-gaia-primary-strong hover:text-gaia-text-strong border border-gaia-border hover:border-gaia-primary-strong px-4 py-1 uppercase text-mini tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
-            aria: { label: t(".deploy_aria", version: firmware.version) },
             data: { turbo_confirm: t("firmwares.row.confirm", version: firmware.version) }
-          )
+          ) do
+            plain t("firmwares.row.order_evolution")
+            span(class: "sr-only") { " v#{firmware.version}" }
+          end
         end
       end
     end

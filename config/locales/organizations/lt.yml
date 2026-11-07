@@ -13,7 +13,6 @@ lt:
       current_context: AKTYVUS_KONTEKSTAS
       subtitle: Daugianuomininkių entitetų ir jų aplinkos kapitalo valdymas.
       switch: PERJUNGTI →
-      switch_aria: Perjungti darbo kontekstą į %{name}
       title: Globalus klanų registras
       view_profile: PERŽIŪRĖTI_PROFILĮ →
     index_title: Organizacijų registras // Klanai
@@ -51,5 +50,4 @@ lt:
         carbon_yield: Nukalta SCC
         carbon_yield_sub: Nukalta SCC
       switch: PERJUNGTI →
-      switch_aria: Perjungti darbo kontekstą į %{name}
     show_title: Klano profilis // %{name}

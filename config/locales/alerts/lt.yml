@@ -86,7 +86,6 @@ lt:
     row:
       acknowledge: Patvirtinti ir išspręsti →
       evidence_locked: "🔒 A kategorijos įrodymas — uždaro platforma"
-      resolve_aria: 'Išspręsti įspėjimą #%{id}'
       resolve_confirm: 'Patvirtinti grėsmės lokalizavimą įspėjimui #%{id}?'
       resolved: "✓ Išspręsta"
       severity_aria: 'Sunkumas: %{severity}'
@@ -97,9 +96,7 @@ lt:
     show:
       assignment:
         claim: Paimti
-        claim_aria: 'Paimti įspėjimą #%{id}'
         release: Atlaisvinti
-        release_aria: 'Atlaisvinti įspėjimą #%{id}'
         since: nuo %{at}
         title: Atsakingas
         unassigned: Įspėjimo dar niekas nepaėmė

@@ -20,7 +20,6 @@ uk:
         species_name: Назва виду
       define_dna: "+ Визначити ДНК"
       edit: РЕДАГ
-      edit_aria: Редагувати вид %{name}
       kicker: Біологічна матриця
       soldiers_count:
         few: "%{count} солдати"

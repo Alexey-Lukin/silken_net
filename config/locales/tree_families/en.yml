@@ -20,7 +20,6 @@ en:
         species_name: Species Name
       define_dna: "+ Define DNA"
       edit: EDIT
-      edit_aria: Edit %{name} species
       kicker: Biological Matrix
       soldiers_count:
         one: "%{count} Soldier"

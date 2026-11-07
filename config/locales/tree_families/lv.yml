@@ -20,7 +20,6 @@ lv:
         species_name: Sugas nosaukums
       define_dna: "+ Definēt DNS"
       edit: REDIĢĒT
-      edit_aria: Rediģēt %{name} sugu
       kicker: Bioloģiskā matrica
       soldiers_count:
         one: "%{count} karavīrs"

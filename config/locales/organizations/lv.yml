@@ -13,7 +13,6 @@ lv:
       current_context: AKTĪVAIS_KONTEKSTS
       subtitle: Daudzvadītāju entītiju un to vides kapitāla pārvaldība.
       switch: PĀRSLĒGT →
-      switch_aria: Pārslēgt darba kontekstu uz %{name}
       title: Globālais klanu reģistrs
       view_profile: SKATĪT_PROFILU →
     index_title: Organizāciju reģistrs // Klani
@@ -50,5 +49,4 @@ lv:
         carbon_yield: Kalts SCC
         carbon_yield_sub: Kalts SCC
       switch: PĀRSLĒGT →
-      switch_aria: Pārslēgt darba kontekstu uz %{name}
     show_title: Klana profils // %{name}

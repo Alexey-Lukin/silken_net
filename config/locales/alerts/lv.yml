@@ -86,7 +86,6 @@ lv:
     row:
       acknowledge: Apstiprināt un atrisināt →
       evidence_locked: "🔒 A kategorijas pierādījums — to slēdz platforma"
-      resolve_aria: 'Atrisināt brīdinājumu #%{id}'
       resolve_confirm: 'Apstiprināt draudu lokalizāciju brīdinājumam #%{id}?'
       resolved: "✓ Atrisināts"
       severity_aria: 'Smagums: %{severity}'
@@ -97,9 +96,7 @@ lv:
     show:
       assignment:
         claim: Paņemt
-        claim_aria: 'Paņemt brīdinājumu #%{id}'
         release: Atbrīvot
-        release_aria: 'Atbrīvot brīdinājumu #%{id}'
         since: kopš %{at}
         title: Atbildīgais
         unassigned: Brīdinājumu vēl neviens nav paņēmis

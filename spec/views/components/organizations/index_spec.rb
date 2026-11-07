@@ -100,7 +100,10 @@ RSpec.describe Organizations::Index do
       # валідний початок для будь-якого сусіднього id.
       expect(html).to include(%(action="#{switch_path}"))
       expect(html).to include("SWITCH_TO")
-      expect(html).to include("Switch acting context to GreenFund Ltd")
+      # [UI.20] Імʼя кнопки — видимий текст, назва організації — sr-only (WCAG 2.5.3).
+      button = Nokogiri::HTML.fragment(html).css("button").find { |b| b.text.include?("SWITCH_TO") && b.text.include?("GreenFund Ltd") }
+      expect(button["aria-label"]).to be_nil
+      expect(button.at_css(".sr-only").text.strip).to eq("GreenFund Ltd")
     end
 
     # [UI.11] Дзеркальна зміна 2026-08-01: доти цей приклад вимагав

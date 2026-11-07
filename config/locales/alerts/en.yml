@@ -86,7 +86,6 @@ en:
     row:
       acknowledge: Acknowledge & Resolve →
       evidence_locked: "🔒 Category A evidence — the platform closes it"
-      resolve_aria: 'Resolve alert #%{id}'
       resolve_confirm: 'Confirm threat localisation for alert #%{id}?'
       resolved: "✓ Resolved"
       severity_aria: 'Severity: %{severity}'
@@ -97,9 +96,7 @@ en:
     show:
       assignment:
         claim: Take it
-        claim_aria: 'Take alert #%{id}'
         release: Release
-        release_aria: 'Release alert #%{id}'
         since: since %{at}
         title: Assignee
         unassigned: Nobody has taken this alert yet

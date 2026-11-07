@@ -80,18 +80,20 @@ module Alerts
     end
 
     def assignment_button(kind, path)
+      # [UI.20] Імʼя — видимий текст (WCAG 2.5.3); номер тривоги — sr-only, не `aria-label`.
       button_to(
-        t(".assignment.#{kind}"),
         path,
         method: :patch,
-        aria: { label: t(".assignment.#{kind}_aria", id: @alert.id) },
         class: tokens(
           "text-mini uppercase tracking-widest px-3 py-1",
           "text-gaia-primary-strong border border-gaia-border-strong",
           "hover:text-gaia-text-strong transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"
         )
-      )
+      ) do
+        plain t(".assignment.#{kind}")
+        span(class: "sr-only") { " #{@alert.id}" }
+      end
     end
 
     def alert_table

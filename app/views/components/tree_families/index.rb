@@ -73,7 +73,10 @@ module TreeFamilies
             span(class: "sr-only") { " #{family.name}" }
           end
           if @current_user&.super_admin?
-            a(href: edit_tree_family_path(family), class: "text-gaia-text-muted hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".edit_aria", name: family.name)) { t(".edit") }
+            a(href: edit_tree_family_path(family), class: "text-gaia-text-muted hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") do
+              plain t(".edit")
+              span(class: "sr-only") { " #{family.name}" }
+            end
           end
         end
       end

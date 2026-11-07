@@ -86,7 +86,6 @@ uk:
     row:
       acknowledge: Підтвердити та локалізувати →
       evidence_locked: "🔒 Доказ Категорії A — закриває платформа"
-      resolve_aria: Локалізувати тривогу №%{id}
       resolve_confirm: Підтверджуєте локалізацію загрози №%{id}?
       resolved: "✓ Локалізовано"
       severity_aria: 'Рівень небезпеки: %{severity}'
@@ -97,9 +96,7 @@ uk:
     show:
       assignment:
         claim: Взяти на себе
-        claim_aria: 'Взяти тривогу #%{id}'
         release: Відпустити
-        release_aria: 'Відпустити тривогу #%{id}'
         since: з %{at}
         title: Виконавець
         unassigned: Тривогу ще ніхто не взяв

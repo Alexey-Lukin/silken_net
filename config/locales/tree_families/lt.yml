@@ -20,7 +20,6 @@ lt:
         species_name: Rūšies pavadinimas
       define_dna: "+ Apibrėžti DNR"
       edit: REDAGUOTI
-      edit_aria: Redaguoti %{name} rūšį
       kicker: Biologinė matrica
       soldiers_count:
         few: "%{count} kariai"

@@ -13,7 +13,6 @@ en:
       current_context: ACTIVE_CONTEXT
       subtitle: Management of multi-tenant entities and their environmental programmes.
       switch: SWITCH_TO →
-      switch_aria: Switch acting context to %{name}
       title: Global Clan Registry
       view_profile: VIEW_PROFILE →
     index_title: Organization Registry // The Clans
@@ -50,5 +49,4 @@ en:
         carbon_yield: SCC Minted
         carbon_yield_sub: SCC Minted
       switch: SWITCH_TO →
-      switch_aria: Switch acting context to %{name}
     show_title: Clan Profile // %{name}

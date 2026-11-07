@@ -13,7 +13,6 @@ uk:
       current_context: АКТИВНИЙ_КОНТЕКСТ
       subtitle: Управління multi-tenant сутностями та їхніми екологічними програмами.
       switch: ПЕРЕМКНУТИСЬ →
-      switch_aria: Перемкнути робочий контекст на %{name}
       title: Глобальний реєстр кланів
       view_profile: ВІДКРИТИ_ПРОФІЛЬ →
     index_title: Реєстр організацій // Клани
@@ -52,5 +51,4 @@ uk:
         carbon_yield: Нараховано SCC
         carbon_yield_sub: Створено SCC
       switch: ПЕРЕМКНУТИСЬ →
-      switch_aria: Перемкнути робочий контекст на %{name}
     show_title: Профіль клану // %{name}
