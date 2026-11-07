@@ -39,12 +39,32 @@ Sentry.init do |config|
   # 🔒 DATA SANITIZATION (Zero-Trust Security)
   # -----------------------------------------------------------------------
   # No user identity, cookies, query string or IP-bearing headers (`Authorization`, `Cookie`,
-  # `X-Forwarded-For`, `REMOTE_ADDR` arrive as `[Filtered]`). ⚠️ NOT everything: `User-Agent`
-  # is sent verbatim — measured on sentry-ruby 7.0.0 with this flag false — so do not read
-  # this line as "no PII leaves" (what still does is tracked in `00_07` SEC.23).
-  # ⚠️ Since 7.0 this setter REBUILDS `data_collection` from scratch: any future
+  # `X-Forwarded-For`, `REMOTE_ADDR` arrive as `[Filtered]`). ⚠️ The flag ALONE is not "no PII
+  # leaves": measured on 7.0.0 and again on 7.2.0, it lets the subject's `User-Agent`, `Referer`
+  # and `Accept-Language`, Sidekiq job arguments and the SQL text of breadcrumbs through — the
+  # three lines below and the scrubbers further down close them [SEC.23, ⚖️ founder 2026-11-07].
+  # ⚠️ Since 7.0 this setter REBUILDS `data_collection` from scratch: any
   # `config.data_collection.*` line must come AFTER it, or it is silently discarded.
   config.send_default_pii = false
+  # The deny terms the flag installs match `forwarded -ip _ip remote via _user -user`; none of
+  # them is a substring of these three, which identify the subject's browser, page and language.
+  config.data_collection.http_headers.request.terms += %w[user-agent referer accept-language]
+
+  # [SEC.23] Sidekiq job arguments ride in `contexts.sidekiq` — of error events AND of sampled
+  # transactions — and `data_collection.queues` does not reach them: sentry-sidekiq takes the
+  # ActiveJob-on-Sidekiq adapter off sentry-rails' hands, so a mailer's recipient address goes out
+  # too. The failing job's inputs stay in Sidekiq's own retry/dead set; Sentry keeps class + jid.
+  scrub_job_args = lambda do |contexts|
+    job = contexts.is_a?(Hash) && (contexts[:sidekiq] || contexts["sidekiq"])
+    next unless job.is_a?(Hash)
+
+    job["args"] = "[Filtered]" if job.key?("args")
+    job[:args] = "[Filtered]" if job.key?(:args)
+  end
+  # Quoted literals in SQL text: with prepared statements on, binds travel as `$n`, but hand-built
+  # SQL and `insert_all` inline their values. The statement shape stays; the values go. Only
+  # single-quoted literals: numeric literals and `$$`-dollar-quoted strings are NOT masked.
+  mask_sql_literals = ->(sql) { sql.gsub(/'(?:[^']|'')*'/, "'?'") }
 
   # 🔒 [OPS.22, ⚖️ founder 2026-09-05] Logs and metrics are declared OFF here, not inherited:
   # 7.0 made LOGS default-on (metrics already were since 6.3.0 — `self.enable_metrics = true`
@@ -99,6 +119,7 @@ Sentry.init do |config|
       end
     end
 
+    scrub_job_args.call(event.contexts) if event.respond_to?(:contexts)
     event.try(:exception)&.values&.each { |ex| ex.value = redact.call(ex.value) }
     event.message = redact.call(event.message) if event.respond_to?(:message=) && event.message.present?
     # Breadcrumbs (incl. the :http_logger RPC-URL crumb) were NOT scrubbed despite the
@@ -110,6 +131,17 @@ Sentry.init do |config|
       end
     end
 
+    event
+  }
+
+  # [SEC.23] Transactions bypass `before_send` entirely: their own callback scrubs the same job
+  # arguments and the literals of every database span's SQL description.
+  config.before_send_transaction = lambda { |event, _hint|
+    scrub_job_args.call(event.contexts) if event.respond_to?(:contexts)
+    Array(event.try(:spans)).each do |span|
+      desc = span[:description]
+      span[:description] = mask_sql_literals.call(desc) if span[:op].to_s.start_with?("db") && desc.is_a?(String)
+    end
     event
   }
 
@@ -194,4 +226,7 @@ Sentry.init do |config|
   # pipelines can generate hundreds of breadcrumbs in a single job.
   config.breadcrumbs_logger = [ :active_support_logger, :http_logger ]
   config.max_breadcrumbs = 30
+  # [SEC.23] The `sql.active_record` breadcrumb carries the statement TEXT by default (`:sql`);
+  # its name ("User Load") stays, the text does not.
+  config.rails.active_support_logger_subscription_items["sql.active_record"] = %i[name statement_name cached]
 end

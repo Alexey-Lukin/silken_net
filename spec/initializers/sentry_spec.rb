@@ -186,6 +186,51 @@ RSpec.describe Sentry do
       expect(crumb.data.dig("response", "body")).not_to include("deadbeefcafe1234")
     end
 
+    # [SEC.23, ⚖️ founder 2026-11-07] `send_default_pii = false` alone still let these through on
+    # 7.0.0 and 7.2.0 (measured) — each pin below goes red if its line in the initializer goes.
+    it "drops Sidekiq job arguments from an error event, keeping class and jid" do
+      event = Sentry::Event.new(configuration: config)
+      event.contexts = { sidekiq: { "class" => "AlertMailerJob", "jid" => "abc123",
+                                    "args" => [ "subject@example.com", { "first_name" => "Olena" } ] } }
+
+      filtered = config.before_send.call(event, {})
+
+      expect(filtered.contexts[:sidekiq]["args"]).to eq("[Filtered]")
+      expect(filtered.contexts[:sidekiq]).to include("class" => "AlertMailerJob", "jid" => "abc123")
+    end
+  end
+
+  describe "SEC.23 — subject data that send_default_pii = false does not stop" do
+    it "filters User-Agent, Referer and Accept-Language from request headers" do
+      headers = { "User-Agent" => "Mozilla/5.0 (iPhone)", "Referer" => "https://x.test/trees/7",
+                  "Accept-Language" => "uk-UA", "Accept" => "text/html" }
+
+      kept = config.data_collection.http_headers.request.filter(headers)
+
+      expect(kept.values.join(" ")).not_to include("iPhone", "trees/7", "uk-UA")
+      expect(kept["Accept"]).to eq("text/html")
+    end
+
+    it "keeps SQL text out of sql.active_record breadcrumbs" do
+      expect(config.rails.active_support_logger_subscription_items["sql.active_record"]).not_to include(:sql)
+    end
+
+    it "scrubs job arguments and SQL literals from a transaction, which bypasses before_send" do
+      event = Struct.new(:contexts, :spans).new(
+        { sidekiq: { "class" => "MintJob", "args" => [ "0xWallet" ] } },
+        [ { op: "db.sql.active_record", description: "SELECT * FROM users WHERE email = 'a@b.test' AND id = $1" },
+          { op: "http.client", description: "GET https://rpc.test/'quoted'" } ]
+      )
+
+      out = config.before_send_transaction.call(event, {})
+
+      expect(out.contexts[:sidekiq]["args"]).to eq("[Filtered]")
+      expect(out.spans[0][:description]).to eq("SELECT * FROM users WHERE email = '?' AND id = $1")
+      expect(out.spans[1][:description]).to include("'quoted'")
+    end
+  end
+
+  describe "before_send callback, continued" do
     it "passes through events without sensitive fields unchanged" do
       event = Sentry::Event.new(configuration: config)
       event.extra = { gateway_uid: "SNET-Q-001", status: "ok" }

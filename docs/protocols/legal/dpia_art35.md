@@ -107,7 +107,7 @@ Art.35(7)(b) питає не «чи законно», а **чи не можна 
 
 ### 3.3 Точність, цілісність і конфіденційність (Art.5(1)(d), (f))
 
-Виконано на рівні, який можна назвати поіменно: Argon2id для паролів; AR-encryption at-rest для `hardware_keys.*`, `users.otp_secret` (ключі з ENV, свідомо не з `credentials.yml.enc` — SEC.22); `filter_parameters` скраб PII з логів; Sentry `send_default_pii = false`; salt-bound сесійна cookie; TOTP MFA; tamper-evident hash-ланцюг `AuditLog`.
+Виконано на рівні, який можна назвати поіменно: Argon2id для паролів; AR-encryption at-rest для `hardware_keys.*`, `users.otp_secret` (ключі з ENV, свідомо не з `credentials.yml.enc` — SEC.22); `filter_parameters` скраб PII з логів; Sentry — `send_default_pii = false` разом із глушником заголовків браузера, `args` фонових задач і тексту SQL (SEC.23, 2026-11-07); salt-bound сесійна cookie; TOTP MFA; tamper-evident hash-ланцюг `AuditLog`.
 
 ### 3.4 Автоматизовані рішення (Art.22) — межа, яку варто назвати явно
 

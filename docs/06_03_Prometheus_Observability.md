@@ -51,9 +51,9 @@
 
 | Компонент | Файл | Статус |
 |-----------|------|--------|
-| `sentry-ruby` gem | `Gemfile` | ✅ 7.1.0 |
-| `sentry-rails` gem | `Gemfile` | ✅ 7.1.0 (auto-instruments Rails) |
-| `sentry-sidekiq` gem | `Gemfile` | ✅ 7.1.0 (auto-instruments Sidekiq) |
+| `sentry-ruby` gem | `Gemfile` | ✅ 7.2.0 |
+| `sentry-rails` gem | `Gemfile` | ✅ 7.2.0 (auto-instruments Rails) |
+| `sentry-sidekiq` gem | `Gemfile` | ✅ 7.2.0 (auto-instruments Sidekiq) |
 | `prometheus-client` gem | `Gemfile` | ✅ 5.0.0 |
 | Sentry initializer | `config/initializers/sentry.rb` | ✅ Повністю налаштований |
 | Prometheus initializer | `config/initializers/prometheus.rb` | ✅ реєстр метрик визначено (перелік — §2.8) |
@@ -83,9 +83,9 @@
 
 ```ruby
 # Gemfile
-gem "sentry-ruby"    # 7.1.0 — core SDK
-gem "sentry-rails"   # 7.1.0 — auto-instruments Rails (exceptions, breadcrumbs, performance)
-gem "sentry-sidekiq" # 7.1.0 — auto-instruments Sidekiq
+gem "sentry-ruby"    # 7.2.0 — core SDK
+gem "sentry-rails"   # 7.2.0 — auto-instruments Rails (exceptions, breadcrumbs, performance)
+gem "sentry-sidekiq" # 7.2.0 — auto-instruments Sidekiq
 ```
 
 ### 1.2 Налаштування (config/initializers/sentry.rb)
@@ -95,7 +95,7 @@ gem "sentry-sidekiq" # 7.1.0 — auto-instruments Sidekiq
 | `config.dsn` | `ENV["SENTRY_DSN"]` | Інертний без DSN (dev/test) |
 | `config.environment` | `SilkenNet::DeploymentSlot.current` | СЛОТ, не `Rails.env` — обидва слоти біжать під `RAILS_ENV=production` [INF.27]; виміряно на живому canopy 2026-09-02 (`environment: canopy`) |
 | `config.release` | `ENV["RELEASE_VERSION"].presence \|\| ENV["KAMAL_VERSION"].presence` | Git sha, який Kamal інжектить у кожен контейнер сам; `RELEASE_VERSION` — лише явний оверрайд для не-Kamal процесів. 🔴 Доти `env.clear` ніс `"${RELEASE_VERSION}"`, і ВІДДАЛЕНИЙ shell (Kamal передає `env.clear` як `--env` у `docker run` через ssh) розгортав його в порожній рядок — Sentry відкидав release на КОЖНІЙ події (виміряно 2026-09-02, «expected a non-empty string»); `.presence` закриває клас present-but-empty [S2.4] |
-| `config.send_default_pii` | `false` | Не надсилаються ідентичність користувача, cookies, query string і IP-несучі заголовки (`Authorization` · `Cookie` · `X-Forwarded-For` · `REMOTE_ADDR` → `[Filtered]`). ⚠️ **Це НЕ «PII не надсилається»:** `User-Agent` іде дослівно (виміряно на 7.0.0), `args` Sidekiq-джоб їдуть у `contexts` (§1.3), а breadcrumb `sql.active_record` несе ТЕКСТ запиту — розбіжність із юр-корпусом → [`00_07`](00_07_Action_Plan_Tracker) SEC.23. ⚠️ З 7.0 сетер ПЕРЕБУДОВУЄ `data_collection` з нуля, тож будь-який `config.data_collection.*` мусить стояти ПІСЛЯ нього |
+| `config.send_default_pii` | `false` | Не надсилаються ідентичність користувача, cookies, query string і IP-несучі заголовки (`Authorization` · `Cookie` · `X-Forwarded-For` · `REMOTE_ADDR` → `[Filtered]`). ⚠️ **Сам прапорець — не «PII не надсилається»:** на 7.0.0 і 7.2.0 (виміряно) він пропускав `User-Agent` · `Referer` · `Accept-Language`, `args` Sidekiq-джоб (і мейлерів на ActiveJob) і ТЕКСТ запиту в breadcrumb `sql.active_record`. ⚖️ **founder 2026-11-07 — гілка (а): глушити в конфігу** ([`00_07`](00_07_Action_Plan_Tracker) SEC.23): три заголовки — у deny-терміни `data_collection`; `args` — скрабер у `before_send` і `before_send_transaction` (транзакції `before_send` оминають); breadcrumb SQL — без `:sql`; літерали SQL у спанах транзакцій — маска (лише в одинарних лапках: числові літерали й `$$`-рядки не маскуються). Піни — `spec/initializers/sentry_spec.rb`, мутаційно перевірені; проба наскрізь через middleware — усі три `[Filtered]`. **Підстава:** мінімізація даних (GDPR ст. 5(1)(c) і 25), а DPA Sentry без нашого opt-in ще не чинна. **Ціна:** Sentry не показує браузер, ОС і referrer збою, вхідні дані впалої джоби (вони лишаються в retry/dead-сеті Sidekiq) і текст SQL перед збоєм (імʼя запиту лишається); скрабер треба супроводжувати. **Найслабша ланка:** міряно те, що виходить із процесу, не те, що Sentry зберігає; прод-бут не проганяли; вузькість SQL-каналу тримається на prepared statements — пулер у transaction-режимі відкрив би літерали знову. Дані субʼєкта в ТЕКСТІ винятку ці заходи не покривають. ⚠️ З 7.0 сетер ПЕРЕБУДОВУЄ `data_collection` з нуля, тож будь-який `config.data_collection.*` мусить стояти ПІСЛЯ нього |
 | `config.rails.structured_logging.enabled` | `false` | ⚖️ [OPS.22, founder 2026-09-05] 7.0 увімкнув за замовчуванням ЛОГИ (метрики — ще з 6.3.0, активні з першим викликом `Sentry.metrics`; доказ із коду — коментар `config/initializers/sentry.rb`) і ПРИБРАВ обидва вимикачі `enable_logs`/`enable_metrics` (запис у них тепер — `NoMethodError` на буті), тож постава ОГОЛОШЕНА, а не успадкована. Цей рядок гасить категорію, яку 7.0 шле без запиту — лог на кожен запит. ⊕ З 7.1.0 апстрім і сам вимкнув її за замовчуванням (sentry-ruby #3102) — рядок НЕ надлишковий і не зрізається: постава оголошена, а не успадкована, і цей дефолт уже перевернувся в обидва боки за два релізи |
 | `config.before_send_log` · `config.before_send_metric` | `->(_) { nil }` | Відкидають елементи БУДЬ-ЯКОГО емітера, зокрема SDK-метрики, які апстрім уже злив у наступний 7.x. Пін — `spec/initializers/sentry_spec.rb` |
 | `config.traces_sample_rate` | `0.001` (0.1%) | Контроль бюджету APM при мільярдах подій |
@@ -113,7 +113,7 @@ AES-ключі, мнемоніки та бінарні payload у **extra-contex
 
 Gem `sentry-sidekiq` автоматично додає Sentry middleware до Sidekiq server middleware chain. Це означає:
 - Будь-який **необроблений виняток** у будь-якому воркері автоматично надсилається до Sentry.
-- Кожна Sidekiq-задача отримує власну транзакцію Sentry з метаданими: `queue`, `class`, `jid`, `args`.
+- Кожна Sidekiq-задача отримує власну транзакцію Sentry з метаданими: `queue`, `class`, `jid`; `args` приходять як `[Filtered]` (SEC.23, §1.2).
 - Повторні спроби (retries) відстежуються як окремі події.
 
 **Активна Sentry-інструментація у воркерах:**
@@ -624,7 +624,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 | Файл | Роль | Статус |
 |------|------|--------|
-| `Gemfile` | `prometheus-client` 5.0.0, `sentry-ruby/rails/sidekiq` 7.1.0 | ✅ |
+| `Gemfile` | `prometheus-client` 5.0.0, `sentry-ruby/rails/sidekiq` 7.2.0 | ✅ |
 | `config/initializers/sentry.rb` | Ініціалізація Sentry (DSN, sampling, exclusions, scrubbing) | ✅ |
 | `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (реєстр + кількість — §2.8) | ✅ |
 | `app/middleware/prometheus_collector.rb` | Rack middleware: `/metrics` endpoint, IP allowlist, Basic Auth, Sidekiq gauge refresh | ✅ |
