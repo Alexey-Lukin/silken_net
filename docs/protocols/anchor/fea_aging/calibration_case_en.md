@@ -10,9 +10,9 @@
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у вкладення він НЕ йде.
 
-### Appendix 3. Analytical stress calculation for the sleeve — calibration case
+### Attachment 3. Analytical stress calculation for the sleeve — calibration case
 
-**Why this appendix.** Before the main problem is computed, we ask you to run one simplified case for which we have our own analytical answer: a smooth shaft without teeth, cooling to minus 30 degrees Celsius, and the maximum fit interference. If your result agrees with ours on it, we will have checked the assumptions before the main run; if it does not, the discrepancy is the first thing to discuss, and it is worth more than agreement.
+**Why this attachment.** Before the main problem is computed, we ask you to run one simplified case for which we have our own analytical answer: a smooth shaft without teeth, cooling to minus 30 degrees Celsius, and the maximum fit interference. If your result agrees with ours on it, we will have checked the assumptions before the main run; if it does not, the discrepancy is the first thing to discuss, and it is worth more than agreement.
 
 **Geometry.** A coaxial press fit: a titanium shaft 11 mm in diameter enters a polyetheretherketone sleeve with a 2 mm wall. That is, the inner contact radius is 5.5 mm, the outer sleeve radius is 7.5 mm, the outer diameter is 15 mm. The sleeve is 50 mm long.
 
