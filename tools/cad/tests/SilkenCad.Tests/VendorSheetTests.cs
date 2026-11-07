@@ -40,7 +40,7 @@ public class VendorSheetTests
     // 🔴 The other half the first pins lacked: a vendor projection may LOSE an instruction and stay clean of markers.
     // Each phrase that orders or forbids something, present in OUR text of a field, must reach the vendor's text of it.
     private static readonly string[] Instructions =
-        ["FORBIDDEN", "MANDATORY", "x5,000", "x50,000", "H<100 ppm", "250C", "within 2h", "DECLARE", "NOT APPLIED",
+        ["FORBIDDEN", "MANDATORY", "x5,000", "x50,000", "H<100 ppm", "H<=90 ppm", "250C", "within 2h", "DECLARE", "NOT APPLIED",
          "NOT a structural", "do not substitute", "attach", "repeated", "pinhole-free", "BEFORE shipment", "BEFORE plating"];
 
     // Named exemptions, each with its ground — a phrase that leaves one field on purpose because the ORDER lives in another.
