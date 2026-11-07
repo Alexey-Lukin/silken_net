@@ -40,6 +40,7 @@
 require "digest"
 require "json"
 require "fileutils"
+require "nokogiri"
 require "redcarpet"
 
 module LetterBody
@@ -201,7 +202,9 @@ module LetterBody
       fail!("signature marker not rendered as its own paragraph") unless html.include?("<p>#{MARKER_TOKEN}</p>")
       html = html.sub("<p>#{MARKER_TOKEN}</p>", sig)
     end
-    text = html.gsub(/<[^>]+>/, "")
+    # Parsed, not tag-stripped: a regex strip keeps entities, so a subject with «&» leaked into the
+    # body (rendered «&amp;») went unseen (selftest «subject with & leaked»; CodeQL #523).
+    text = Nokogiri::HTML::DocumentFragment.parse(html).text
     fail!("Markdown leaked: #{text[/\*\*|`|^#+ /]}") if text.match?(/\*\*|`|^#+ /)
     glued = html.scan(%r{<p>((?:(?!</p>).)*)</p>}m).flatten.find { |x| x.match?(CLOSING) && x.include?("\n") }
     fail!("closing formula glued to its signature by soft breaks («#{glued[0, 40].tr("\n", " ")}…») renders as ONE line in Gmail — " \
@@ -264,6 +267,9 @@ module LetterBody
     ok.("nested list does not count as items", assemble(region.(nest), signature: "x")[:html].include?('<ol start="3">'))
     bad.("closing formula glued by soft breaks", region.(clean[0..-2] + [ "З повагою,", "Олексій Лукін" ]))
     bad.("numbering gap inside a list", region.(clean.map { |l| l == "2. **Друге** питання." ? "3. **Друге** питання." : l }), signature: "x")
+    amp = clean.map { |l| l.start_with?("**Тема:**") ? "**Тема:** Запит R&D «A»" : l }
+    ok.("subject with & not leaked", assemble(region.(amp), signature: "x")[:subject] == "Запит R&D «A»")
+    bad.("subject with & leaked", region.(amp + [ "", "Запит R&D «A»" ]), signature: "x")
     puts "letter_body selftest: #{cases} cases OK"
   end
 end
