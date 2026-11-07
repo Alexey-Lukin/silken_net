@@ -417,6 +417,12 @@ internal static class Drawing
     private static string FormTag(string? tag) => tag is null ? "" : $" · {tag}";
     private static string CoinSubtitle(SheetForm form) => form == SheetForm.Full ? "Деталь — EBFC test electrode · 01_01 §6.1" : "Flat test-electrode coupon";
 
+    // ONE test of the eyelet tube against the disc for every view and the note — proud (thicker, the bodies intersect),
+    // flush (w = h), or thinner — so no view can draw one proportion while another draws the next.
+    private const double TubeEpsMm = 1e-6;
+    internal static bool TubeStandsProud(double w, double h) => w > h + TubeEpsMm;
+    internal static bool TubeFlush(double w, double h) => Math.Abs(w - h) <= TubeEpsMm;
+
     // The eyelet's numbers, all from the body's own position (TiCoin.EyeletCentreFromAxisMm) and the manifest radii.
     internal readonly record struct Eyelet(double CentreMm, double OuterRMm, double HoleRMm, double TubeRMm);
     internal static Eyelet CoinEyelet(TiCoinCem cem)
@@ -430,7 +436,7 @@ internal static class Drawing
     {
         double proud = e.TubeRMm - cem.DiscThicknessMm / 2.0;
         return $"Eyelet: torus, centreline R{N(cem.LoopRingRadiusMm)}, tube r{N(e.TubeRMm)}"
-             + (proud > 1e-6 ? $"; the tube stands {N(proud)} proud of each face" : "");
+             + (TubeStandsProud(e.TubeRMm, cem.DiscThicknessMm / 2.0) ? $"; the tube stands {N(proud)} proud of each face" : "");
     }
 
     // The coin's visible EDGES in reader-neutral millimetres, y up. Front: x across, y along the eyelet axis from the
@@ -464,7 +470,7 @@ internal static class Drawing
         if (aOuter is { } ao) { double te = EyeAngle(ao); arcs.Add(new(0, c, ro, te, 180 - te)); }
         else arcs.Add(new(0, c, ro, 0, 360));
 
-        if (w > h)
+        if (TubeStandsProud(w, h))
         {
             // The tube stands out of each face between the crease circles ring ± s: the rim is buried only there.
             double s = Math.Sqrt(w * w - h * h), dIn = cem.LoopRingRadiusMm - s, dOut = cem.LoopRingRadiusMm + s;
@@ -497,36 +503,34 @@ internal static class Drawing
         var e = CoinEyelet(cem);
         double rDisc = cem.DiscDiameterMm / 2.0, h = cem.DiscThicknessMm / 2.0, w = e.TubeRMm;
         double yIn = e.CentreMm - cem.LoopRingRadiusMm, yOut = e.CentreMm + cem.LoopRingRadiusMm;
-        // Drawn for the proportion every shipped coin has — the tube thicker than the disc, the disc rim inside the eyelet's
-        // straight run. Any other proportion refuses out loud rather than drawing a part nobody built.
-        if (!(w > h && yIn <= rDisc && rDisc <= yOut))
+        // Two proportions are drawn: the tube FLUSH with the faces (w = h — every shipped coin since the verdict of 2026-11-07,
+        // 01_01 §6.1) and the tube THICKER than the disc (w > h, intersecting it). A thinner tube, or a rim outside the eyelet's
+        // straight run, refuses out loud rather than drawing a part nobody built.
+        bool flush = TubeFlush(w, h);
+        if (!((flush || TubeStandsProud(w, h)) && yIn <= rDisc && rDisc <= yOut))
             throw new InvalidOperationException($"ti_coin side view: eyelet proportion not drawn (tube r {N(w)} vs half-thickness {N(h)}; rim {N(rDisc)} vs eyelet run {N(yIn)}..{N(yOut)})");
-        double s = Math.Sqrt(w * w - h * h), yJoin = yIn - s, aj = Deg(Math.Atan2(-s, h));
+        double s = flush ? 0 : Math.Sqrt(w * w - h * h), yJoin = yIn - s, aj = Deg(Math.Atan2(-s, h));
         // A projection, not a mid-plane section: the face's rim edge stays in view in front of the tube until it enters the
-        // outer crease (ring + s about the eyelet centre), well past the point where the inner cap leaves the face.
+        // outer crease (ring + s about the eyelet centre), well past the point where the inner cap leaves the face. Flush, the
+        // face line and the tube's side are one line all the way up, and the inner cap lies inside the disc.
         if (RimChord(rDisc, e.CentreMm, cem.LoopRingRadiusMm + s) is not { } yRim || yRim < yJoin)
-            throw new InvalidOperationException("ti_coin side view: the rim does not run into the eyelet's raised band — this projection is not drawn");
-        var lines = new List<OutlineLine>
-        {
-            new(-h, -rDisc, h, -rDisc),                       // the disc rim opposite the eyelet
-            new(-h, -rDisc, -h, yRim), new(h, -rDisc, h, yRim),
-            new(-w, yIn, -w, yOut), new(w, yIn, w, yOut),     // the eyelet tube, edge-on
-        };
+            throw new InvalidOperationException("ti_coin side view: the rim does not run into the eyelet's tube — this projection is not drawn");
+        var lines = new List<OutlineLine> { new(-h, -rDisc, h, -rDisc) };   // the disc rim opposite the eyelet
+        if (flush) lines.AddRange([new(-h, -rDisc, -h, yOut), new(h, -rDisc, h, yOut)]);
+        else lines.AddRange([new(-h, -rDisc, -h, yRim), new(h, -rDisc, h, yRim),
+                             new(-w, yIn, -w, yOut), new(w, yIn, w, yOut)]);   // the eyelet tube, edge-on
         // Where the rim cylinder runs into the tube's outer side: across the thickness ζ the meeting point sits at the chord of
-        // the circle ring + √(w² − ζ²) — from the face lines' ends (ζ = ±h) down to the mid-plane. The rim is frontmost on one
-        // side of it and the tube on the other, so it is an edge; drawn exact at its sample points, not as a fitted arc.
+        // the circle ring + √(w² − ζ²) — from the face lines (ζ = ±h) down to the mid-plane. The rim is frontmost on one side
+        // of it and the tube on the other, so it is an edge; drawn exact at its sample points, not as a fitted arc.
         const int nSeg = 8;
-        double YAt(double z) => RimChord(rDisc, e.CentreMm, cem.LoopRingRadiusMm + Math.Sqrt(w * w - z * z)) ?? throw new InvalidOperationException("ti_coin side view: the rim misses the tube");
+        double YAt(double z) => RimChord(rDisc, e.CentreMm, cem.LoopRingRadiusMm + Math.Sqrt(Math.Max(0, w * w - z * z))) ?? throw new InvalidOperationException("ti_coin side view: the rim misses the tube");
         for (int k = 0; k < nSeg; k++)
         {
             double z0 = -h + 2 * h * k / nSeg, z1 = -h + 2 * h * (k + 1) / nSeg;
             lines.Add(new(z0, YAt(z0), z1, YAt(z1)));
         }
-        var arcs = new List<OutlineArc>
-        {
-            new(0, yIn, w, 180, 180 - aj), new(0, yIn, w, 360 + aj, 360),   // the inner cap, where it stands proud of the faces
-            new(0, yOut, w, 0, 180),                                       // the outer cap
-        };
+        var arcs = new List<OutlineArc> { new(0, yOut, w, 0, 180) };                 // the outer cap
+        if (!flush) arcs.AddRange([new(0, yIn, w, 180, 180 - aj), new(0, yIn, w, 360 + aj, 360)]);   // the inner cap, proud of the faces
         return (lines, arcs);
     }
 

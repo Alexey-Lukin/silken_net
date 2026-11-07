@@ -149,8 +149,8 @@ internal sealed record TiCoinCem
     // A lab O-ring / lacquer window can fix exactly 2 cm² INSIDE a larger coupon — decouples A from the coin
     // edge (same A across drop-cast / masked-window / O-ring cell). 0 ⇒ the whole face is the active area.
     public float ActiveWindowDiameterMm { get; init; }
-    public float LoopRingRadiusMm { get; init; } = 1.6f;  // torus centreline radius
-    public float LoopTubeRadiusMm { get; init; } = 0.6f;  // torus tube (wire) radius
+    public float LoopRingRadiusMm { get; init; } = 1.5f;  // torus centreline radius
+    public float LoopTubeRadiusMm { get; init; } = 0.5f;  // torus tube (wire) radius — half the disc thickness: flush with the faces (01_01 §6.1)
     public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (null ⇒ no callout)
     public NotesSpec? Notes { get; init; }                // drawing notes block (null ⇒ defaults)
 }

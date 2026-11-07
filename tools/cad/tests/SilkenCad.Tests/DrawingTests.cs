@@ -186,8 +186,9 @@ public class DrawingTests
         var (cem, strFile) = Coin(strKey);
         double c = TiCoin.EyeletCentreFromAxisMm(cem), ring = cem.LoopRingRadiusMm, w = cem.LoopTubeRadiusMm;
         double hole = ring - w, outer = ring + w, rim = cem.DiscDiameterMm / 2.0, h = cem.DiscThicknessMm / 2.0;
-        Assert.True(c - outer < rim && rim < c + outer && hole > 0 && w > h);   // an eyelet that crosses the rim and stands proud, or the pin is vacuous
-        double s = Math.Sqrt(w * w - h * h);
+        Assert.True(c - outer < rim && rim < c + outer && hole > 0 && w >= h - 1e-6);   // an eyelet that crosses the rim, flush or proud, or the pin is vacuous
+        bool proud = Drawing.TubeStandsProud(w, h);
+        double s = proud ? Math.Sqrt(w * w - h * h) : 0;
 
         string svg = Drawing.TiCoin(cem, "t", strFile);
         Assert.Contains($"<circle cx='150' cy='{F(150 - c * 6)}' r='{F(hole * 6)}'", svg);   // the hole, at the printed 6:1 scale
@@ -197,25 +198,69 @@ public class DrawingTests
         var holes = doc.Entities.Circles.Where(x => Math.Abs(x.Radius - hole) < 1e-3).ToArray();
         Assert.Single(holes);
         Assert.Equal(c, holes[0].Center.Y, 3);
-        Assert.DoesNotContain(doc.Entities.Circles, x => Math.Abs(x.Radius - outer) < 1e-3 || Math.Abs(x.Radius - rim) < 1e-3);
-        foreach (double d in new[] { outer, ring - s, ring + s })        // the outer rim and both creases, about the eyelet centre
-            Assert.Contains(doc.Entities.Arcs, a => Math.Abs(a.Radius - d) < 1e-3 && Math.Abs(a.Center.X) < 1e-6 && Math.Abs(a.Center.Y - c) < 1e-3);
-        Assert.Equal(2, doc.Entities.Arcs.Count(a => Math.Abs(a.Radius - rim) < 1e-3));   // the disc rim, in two pieces round the raised band
+        Assert.DoesNotContain(doc.Entities.Circles, x => Math.Abs(x.Radius - outer) < 1e-3);
+        Assert.Contains(doc.Entities.Arcs, a => Math.Abs(a.Radius - outer) < 1e-3 && Math.Abs(a.Center.X) < 1e-6 && Math.Abs(a.Center.Y - c) < 1e-3);
+        if (proud)
+        {
+            // both creases about the eyelet centre, and the disc rim in two pieces round the raised band
+            foreach (double d in new[] { ring - s, ring + s })
+                Assert.Contains(doc.Entities.Arcs, a => Math.Abs(a.Radius - d) < 1e-3 && Math.Abs(a.Center.X) < 1e-6 && Math.Abs(a.Center.Y - c) < 1e-3);
+            Assert.DoesNotContain(doc.Entities.Circles, x => Math.Abs(x.Radius - rim) < 1e-3);
+            Assert.Equal(2, doc.Entities.Arcs.Count(a => Math.Abs(a.Radius - rim) < 1e-3));
+        }
+        else
+        {
+            // flush: the face is flat to the rim, so the whole rim stays an edge and no crease exists
+            Assert.Single(doc.Entities.Circles, x => Math.Abs(x.Radius - rim) < 1e-3);
+            Assert.DoesNotContain(doc.Entities.Arcs, a => Math.Abs(a.Radius - rim) < 1e-3 || (Math.Abs(a.Radius - ring) < 1e-3 && Math.Abs(a.Center.Y - c) < 1e-3));
+        }
 
-        // SIDE (DXF origin at the disc's mid-plane, rim + 16 to the right): the tube's three caps and both faces
+        // SIDE (DXF origin at the disc's mid-plane, rim + 16 to the right): the tube's caps — three proud, one flush — and both faces
         double xm = rim + 16 + h;
-        Assert.Equal(3, doc.Entities.Arcs.Count(a => Math.Abs(a.Radius - w) < 1e-3 && Math.Abs(a.Center.X - xm) < 1e-6));
+        Assert.Equal(proud ? 3 : 1, doc.Entities.Arcs.Count(a => Math.Abs(a.Radius - w) < 1e-3 && Math.Abs(a.Center.X - xm) < 1e-6));
         foreach (double x in new[] { xm - h, xm + h })
             Assert.Contains(doc.Entities.Lines, l => Math.Abs(l.StartPoint.X - x) < 1e-6 && Math.Abs(l.EndPoint.X - x) < 1e-6
                                                        && Math.Abs(Math.Min(l.StartPoint.Y, l.EndPoint.Y) + rim) < 1e-6 && Math.Max(l.StartPoint.Y, l.EndPoint.Y) > 0);
     }
 
-    // The shipped coin against numbers computed BY HAND, outside the code under test (circle-circle chords for disc Ø16 × 1,
-    // torus R1.6 × r0.6 centred 9 from the axis): an angle swapped, a flag flipped or a face cut at the wrong height reds here.
+    // The shipped coin against numbers computed BY HAND, outside the code under test (disc Ø16 × 1, torus R1.5 × r0.5 — flush
+    // with the faces — centred 9 from the axis, ⚖️ 01_01 §6.1): an angle swapped, a flag flipped or an edge lost reds here.
     [Fact]
-    public void Coin_Edges_Match_The_Hand_Computed_Geometry()
+    public void Coin_Edges_Match_The_Hand_Computed_Geometry_Flush()
     {
         var cem = Cem.Parse<TiCoinCem>(File.ReadAllText(Path.Combine(CemDir(), "ti_coin.json")));
+        Assert.Equal((1.5f, 0.5f), (cem.LoopRingRadiusMm, cem.LoopTubeRadiusMm));   // the geometry these numbers were computed for
+        var doc = CoinDxf(cem, "ti_coin.json");
+        Assert.Contains(doc.Entities.Circles, x => Math.Abs(x.Radius - 8.0) < 1e-6 && Math.Abs(x.Center.X) < 1e-6 && Math.Abs(x.Center.Y) < 1e-6);
+        Assert.Contains(doc.Entities.Circles, x => Math.Abs(x.Radius - 1.0) < 1e-6 && Math.Abs(x.Center.X) < 1e-6 && Math.Abs(x.Center.Y - 9.0) < 1e-6);
+        Assert.Equal(2, doc.Entities.Arcs.Count());   // the eyelet's outer rim and the tube's outer cap — nothing else is an arc
+        Assert.Contains(doc.Entities.Arcs, a => Math.Abs(a.Radius - 2.0) < 1e-3 && Math.Abs(a.Center.Y - 9.0) < 1e-6
+            && Math.Abs(a.StartAngle - 324.315) < 0.02 && Math.Abs(a.EndAngle - 215.685) < 0.02);
+        Assert.Contains(doc.Entities.Arcs, a => Math.Abs(a.Radius - 0.5) < 1e-3 && Math.Abs(a.Center.X - 24.5) < 1e-6
+            && Math.Abs(a.Center.Y - 10.5) < 1e-6 && Math.Abs(a.StartAngle) < 0.02 && Math.Abs(a.EndAngle - 180) < 0.02);
+        foreach (double x in new[] { 24.0, 25.0 })   // face and tube side are one line, from the far rim to the outer cap
+            Assert.Contains(doc.Entities.Lines, l => Math.Abs(l.StartPoint.X - x) < 1e-6 && Math.Abs(l.EndPoint.X - x) < 1e-6
+                && Math.Abs(Math.Min(l.StartPoint.Y, l.EndPoint.Y) + 8.0) < 1e-6 && Math.Abs(Math.Max(l.StartPoint.Y, l.EndPoint.Y) - 10.5) < 1e-6);
+        // the rim running into the tube: from the faces at the chord of the ring circle to the mid-plane at the outer circle's
+        foreach ((double x, double y) in new[] { (24.0, 7.9306), (24.5, 7.8333), (25.0, 7.9306) })
+            Assert.Contains(doc.Entities.Lines, l => (Math.Abs(l.StartPoint.X - x) < 1e-6 && Math.Abs(l.StartPoint.Y - y) < 1e-3)
+                                                    || (Math.Abs(l.EndPoint.X - x) < 1e-6 && Math.Abs(l.EndPoint.Y - y) < 1e-3));
+
+        string svg = Drawing.TiCoin(cem, "t", "ti_coin.json");
+        Assert.Contains("<circle cx='150' cy='150' r='48'", svg);                        // the whole rim
+        Assert.Contains("<circle cx='150' cy='96' r='6'", svg);                          // the hole
+        Assert.Contains("<path d='M 159.75 103 A 12 12 0 1 0 140.25 103'", svg);         // the eyelet's outer rim, outside the disc
+        foreach (string label in new[] { ">9<", ">1<", ">hole Ø2 · outer Ø4<" })
+            Assert.Contains(label, svg);
+    }
+
+    // The intersecting branch — a tube THICKER than the disc, the coin as dispatched on 2026-11-05 — kept pinned on an inline
+    // coin against the same hand computation (torus R1.6 × r0.6 on disc Ø16 × 1).
+    [Fact]
+    public void Coin_Edges_Match_The_Hand_Computed_Geometry_When_The_Tube_Stands_Proud()
+    {
+        var cem = new TiCoinCem { LoopRingRadiusMm = 1.6f, LoopTubeRadiusMm = 0.6f };
+        Assert.Equal((16f, 1f), (cem.DiscDiameterMm, cem.DiscThicknessMm));
         var doc = CoinDxf(cem, "ti_coin.json");
         void Arc(double r, double a0, double a1) => Assert.Contains(doc.Entities.Arcs, a => Math.Abs(a.Radius - r) < 1e-3
             && Math.Abs(a.StartAngle - a0) < 0.02 && Math.Abs(a.EndAngle - a1) < 0.02);
@@ -258,8 +303,10 @@ public class DrawingTests
         string line = Drawing.EyeletLine(e, cem);
         // each number anchored to the text after it: «R1.6» would also match an «R1.65» the manifest does not state
         Assert.Contains($"centreline R{F(cem.LoopRingRadiusMm)}, tube r{F(cem.LoopTubeRadiusMm)}", line);
-        if (2 * cem.LoopTubeRadiusMm > cem.DiscThicknessMm)
+        if (Drawing.TubeStandsProud(cem.LoopTubeRadiusMm, cem.DiscThicknessMm / 2.0))
             Assert.EndsWith($"; the tube stands {F(cem.LoopTubeRadiusMm - cem.DiscThicknessMm / 2.0)} proud of each face", line);
+        else
+            Assert.DoesNotContain("proud", line);   // a flush tube makes no step to report
         string sizes = $"hole Ø{F(2 * e.HoleRMm)} · outer Ø{F(2 * e.OuterRMm)}";
 
         foreach (var form in new[] { Drawing.SheetForm.Full, Drawing.SheetForm.Vendor })
