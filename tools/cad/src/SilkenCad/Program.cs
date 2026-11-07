@@ -732,8 +732,11 @@ internal static class Program
         // question put named them alone, and on a part sheet `notes.extra` is shop instruction, not rationale
         // (anchor_zone1.pine: «printed WITHOUT a core»), so dropping it would cut an order out of the sheet. Whether
         // a part-RFQ sheet goes in this form is open (00_07 HW.1) — refused out loud rather than answered by a flag.
-        if (bVendor && strKind != "ti_coin")
-            return Fail($"draw --vendor: the vendor form is ratified for ti_coin sheets only (tools/cad/docs/drawings_program.md §8 item 5); a '{strKind}' sheet's form is open (00_07 HW.1)");
+        // ⊕ ⚖️ founder 2026-10-15 answered the part form (00_07 HW.1: a part sheet PROJECTS `extra`, never drops it), and
+        // ⚖️ founder 2026-11-07 pulled the `mechanical_lock` kind forward — its sheets ride the FEA/Prony letters (00_07 HW.26).
+        // Every other part kind waits for its own markup pass and stays refused out loud.
+        if (bVendor && strKind is not ("ti_coin" or "mechanical_lock"))
+            return Fail($"draw --vendor: the vendor form is opened for ti_coin and mechanical_lock sheets only (tools/cad/docs/drawings_program.md §8 item 5); a '{strKind}' sheet's notes are not yet marked (00_07 HW.1)");
         Drawing.SheetForm form = bVendor ? Drawing.SheetForm.Vendor : Drawing.SheetForm.Full;
         // Its own directory, so a vendor copy never overwrites — or is mistaken for — the full sheet of the same name.
         if (bVendor) strOutDir = Path.Combine(strOutDir, "vendor");
@@ -748,7 +751,8 @@ internal static class Program
         // deliverable) computed from the CEM numbers — never the mesh. Add a kind = add a Drawing.X pair,
         // and pass `cemSha256` to BOTH halves (the parameter is optional, so the compiler will not ask).
         string strName; string strSvg; Func<string, bool> fnDxf;
-        NotesSpec? vendorNotes = null;   // the coupon's notes, for the changed-notes report a vendor copy prints
+        NotesSpec? vendorNotes = null;   // the sheet's notes, for the changed-notes report a vendor copy prints
+        bool bProjectExtra = false;      // a PART sheet projects `extra` line by line (⚖️ 2026-10-15, HW.1); the coupon drops it whole
         switch (strKind)
         {
             case "ti_coin":
@@ -777,7 +781,8 @@ internal static class Program
                 // happens to equal the filename stem — see the comment on Drawing.MechanicalLock.
                 MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
                 string strFile = Path.GetFileName(strCemPath);
-                strName = cem.Name; strSvg = Drawing.MechanicalLock(cem, strRev, strFile, cemSha256: strCemSha256); fnDxf = p => Drawing.MechanicalLockDxf(cem, strRev, strFile, p, cemSha256: strCemSha256);
+                vendorNotes = cem.Notes; bProjectExtra = true;
+                strName = cem.Name; strSvg = Drawing.MechanicalLock(cem, strRev, strFile, cemSha256: strCemSha256, form: form); fnDxf = p => Drawing.MechanicalLockDxf(cem, strRev, strFile, p, cemSha256: strCemSha256, form: form);
                 break;
             }
             case "anchor_zone1":
@@ -814,10 +819,11 @@ internal static class Program
         bool bDxf = fnDxf(strDxfPath);
         if (bVendor)
         {
-            Console.WriteLine("form → VENDOR (notes without our references and without notes.extra — drawings_program.md §8 item 5)");
+            Console.WriteLine(bProjectExtra ? "form → VENDOR (notes without our references; notes.extra projected line by line — drawings_program.md §8 item 5, part form)"
+                                            : "form → VENDOR (notes without our references and without notes.extra — drawings_program.md §8 item 5)");
             // The founder reads THIS before dispatch — the rendered projection, not the raw markup (the weakest link's gate).
             Console.WriteLine("changed notes, ours → vendor:");
-            foreach (string strLine in Drawing.VendorChanges(vendorNotes)) Console.WriteLine($"  {strLine}");
+            foreach (string strLine in Drawing.VendorChanges(vendorNotes, bProjectExtra)) Console.WriteLine($"  {strLine}");
         }
         Console.WriteLine($"drawing → {strSvgPath}  (CEM-native SVG — human / publication / self-review)");
         Console.WriteLine($"drawing → {strDxfPath}  (CEM-native DXF — {(bDxf ? "factory deliverable, opens in AutoCAD/Fusion" : "SAVE FAILED")})");

@@ -257,8 +257,17 @@ internal static class Drawing
         sb.AppendLine($"<rect x='0' y='0' width='{N(w)}' height='{N(h)}' fill='white'/>");
         sb.AppendLine(Rect(8, 8, w - 16, h - 16, Stroke, 1.2));            // drawing border
         sb.Append(body);
-        sb.AppendLine(Text(w - 14, h - 14 - FooterLineH, $"SilkenNet · CEM-native drawing{FormTag(strFormTag)} · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)} · SSOT {strSsot}", 8, "end", "#888"));
-        sb.AppendLine(Text(w - 14, h - 14, CemIdentityLine(cemSha256), 8, "end", "#888"));
+        string strFooter = $"SilkenNet · CEM-native drawing{FormTag(strFormTag)} · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)} · SSOT {strSsot}";
+        string strIdentity = CemIdentityLine(cemSha256);
+        // 🔴 A footer longer than the frame ran off its LEFT edge (2026-11-07: the lock's long manifest name plus the form tag).
+        // When the first line does not fit, its SSOT pointer moves to the head of the second; a sheet that fits stays byte-identical.
+        if (strFooter.Length * 8 * (Glyph9 / 9.0) > w - 28)
+        {
+            strFooter = $"SilkenNet · CEM-native drawing{FormTag(strFormTag)} · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)}";
+            strIdentity = $"SSOT {strSsot} · {strIdentity}";
+        }
+        sb.AppendLine(Text(w - 14, h - 14 - FooterLineH, strFooter, 8, "end", "#888"));
+        sb.AppendLine(Text(w - 14, h - 14, strIdentity, 8, "end", "#888"));
         sb.AppendLine("</svg>");
         return sb.ToString();
     }
@@ -273,7 +282,7 @@ internal static class Drawing
     //     with no `Post-process: ___` line for the shop to query. A missing line is unaskable; a line
     //     reading NOT SPECIFIED IN CEM is a question the shop WILL ask before cutting metal.
     // Both are cured the same way: the field set is FIXED, and absence is printed, not skipped.
-    private static List<string> NotesLines(NotesSpec? n, string? lead = null, SheetForm form = SheetForm.Full)
+    private static List<string> NotesLines(NotesSpec? n, string? lead = null, SheetForm form = SheetForm.Full, bool projectExtra = false)
     {
         var lines = new List<string>();
         if (lead is not null) lines.Add(lead);
@@ -288,9 +297,15 @@ internal static class Drawing
             lines.Add($"{label}: {p}");
         }
         foreach (var (label, v) in NoteFields(n)) Add(label, v);
-        // The vendor form drops `extra` WHOLE (drawings_program.md §8 item 5): on the coupon sheets it is the bake-off
-        // rationale. ⛔ On a part sheet `extra` is shop instruction — which is why `draw --vendor` refuses other kinds.
-        if (form == SheetForm.Full && n?.Extra is { } extra) lines.AddRange(extra.Select(e => NoteText(e, form)));
+        // The vendor form drops `extra` WHOLE on the coupon sheets (drawings_program.md §8 item 5): there it is the bake-off
+        // rationale. ⛔ On a part sheet `extra` is shop instruction, so dropping it would cut an order out of the sheet —
+        // ⚖️ founder 2026-10-15 (00_07 HW.1): a part sheet PROJECTS `extra` line by line (`projectExtra`); a line marked
+        // internal end to end drops, the rest prints in its vendor form.
+        if (n?.Extra is { } extra)
+        {
+            if (form == SheetForm.Full) lines.AddRange(extra.Select(e => NoteText(e, form)));
+            else if (projectExtra) lines.AddRange(extra.Select(e => NoteText(e, form)).Where(p => !string.IsNullOrWhiteSpace(p)));
+        }
         return lines;
     }
 
@@ -304,7 +319,7 @@ internal static class Drawing
     // 🔑 The CARRIER of the vendor form's weakest link (drawings_program.md §8 item 5): every note whose vendor text
     // differs from ours, both texts side by side, plus what `extra` drops — the list the founder reads beside the diff
     // before dispatch. Printed by `draw --vendor`, so the review reads the RENDERED projection, never the raw markup.
-    internal static IEnumerable<string> VendorChanges(NotesSpec? n)
+    internal static IEnumerable<string> VendorChanges(NotesSpec? n, bool projectExtra = false)
     {
         foreach (var (label, v) in NoteFields(n))
         {
@@ -315,7 +330,16 @@ internal static class Drawing
             yield return $"  ours:   {ours}";
             yield return $"  vendor: {theirs}";
         }
-        foreach (string e in n?.Extra ?? []) yield return $"extra (dropped): {NoteText(e, SheetForm.Full)}";
+        foreach (string e in n?.Extra ?? [])
+        {
+            string ours = NoteText(e, SheetForm.Full);
+            string theirs = projectExtra ? NoteText(e, SheetForm.Vendor) : "";
+            if (string.IsNullOrWhiteSpace(theirs)) { yield return $"extra (dropped): {ours}"; continue; }
+            if (ours == theirs) continue;
+            yield return "extra:";
+            yield return $"  ours:   {ours}";
+            yield return $"  vendor: {theirs}";
+        }
     }
 
     // A title-block cell drawn from a note: projected like the notes block, absent → the loud marker.
@@ -707,8 +731,24 @@ internal static class Drawing
     // the actual file name in explicitly.
     // What a lock end without a groove prints in place of the notch: the absence is the fact to state, not a blank.
     internal const string NoGrooveNote = "NO DIN-471 groove on this end — the ring as a backup was removed (§4.3 B)";
+    // The lock sheet's own words in each form (the coupon's pattern, CoinTitle et al.): the full form keeps our tracker and
+    // canon pointers; the vendor form carries neither — its first reader is an FEA contractor (00_07 HW.26), whose letter
+    // names no canon section and no tracker item (⚖️ founder 2026-11-07).
+    private static string NoGroove(SheetForm form) => form == SheetForm.Full ? NoGrooveNote : "NO DIN-471 groove on this end";
+    private static string LockTitle(bool bGroove, SheetForm form) => form == SheetForm.Full
+        ? (bGroove ? "MECHANICAL LOCK  (§4.3 shank — ratchet barbs + DIN-471 groove)" : "MECHANICAL LOCK  (§4.3 shank — ratchet barbs; NO groove on this end)")
+        : (bGroove ? "MECHANICAL LOCK  (shank — ratchet barbs + DIN-471 groove)" : "MECHANICAL LOCK  (shank — ratchet barbs; NO groove on this end)");
+    private static string LockSubtitle(string strName, SheetForm form) => form == SheetForm.Full
+        ? $"Anchor retention (BLOCKER-3, HW.26) · {strName} · 01_01 §4.3"
+        : $"Anchor retention — titanium shank pressed into a PEEK sleeve · {strName}";
+    private static string LockLead(MechanicalLockCem cem, bool bGroove, double baseMm, SheetForm form) => form == SheetForm.Full
+        ? (bGroove ? $"DIN-471 groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (§4.3 B); " : $"{NoGrooveNote}; ")
+          + $"barb base≈{N(baseMm)} mm (derived h·(cotα+cotβ), §4.3 A)"
+        : (bGroove ? $"DIN-471 groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)}; " : $"{NoGroove(form)}; ")
+          + $"barb base≈{N(baseMm)} mm (derived h·(cotα+cotβ))";
 
-    public static string MechanicalLock(MechanicalLockCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
+    public static string MechanicalLock(MechanicalLockCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null,
+                                        SheetForm form = SheetForm.Full)
     {
         double rShank = cem.ShankDiameterMm / 2.0 * Px;
         double rBore = cem.BoreDiameterMm / 2.0 * Px;
@@ -719,9 +759,8 @@ internal static class Drawing
         var b = new StringBuilder();
 
         bool bGroove = SilkenCad.MechanicalLock.HasGroove(cem);
-        b.AppendLine(Text(20, 30, bGroove ? "MECHANICAL LOCK  (§4.3 shank — ratchet barbs + DIN-471 groove)"
-                                          : "MECHANICAL LOCK  (§4.3 shank — ratchet barbs; NO groove on this end)", 15, "start", Stroke, "bold"));
-        b.AppendLine(Text(20, 46, $"Anchor retention (BLOCKER-3, HW.26) · {cem.Name} · 01_01 §4.3", 10, "start", "#555"));
+        b.AppendLine(Text(20, 30, LockTitle(bGroove, form), 15, "start", Stroke, "bold"));
+        b.AppendLine(Text(20, 46, LockSubtitle(cem.Name, form), 10, "start", "#555"));
 
         // FRONT — shank Ø (+ the Zone-3 bus/cathode channel bore, if this end is hollow; Zone-1 bore=0 ⇒ solid)
         b.AppendLine(Circle(frontCx, cy, rShank, Stroke, 1.2));
@@ -753,10 +792,10 @@ internal static class Drawing
             double gz0 = sideX + (cem.GrooveOffsetMm * Px), gzW = cem.GrooveWidthMm * Px, gzD = cem.GrooveDepthMm * Px;
             b.AppendLine(Rect(gz0, sideTop, gzW, gzD, Stroke, 1.0));
             b.AppendLine(Rect(gz0, sideBot - gzD, gzW, gzD, Stroke, 1.0));
-            b.AppendLine(Text(gz0, sideBot + 14, $"groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} DIN-471 (§4.3 B)", 9, "start", Dim));
+            b.AppendLine(Text(gz0, sideBot + 14, $"groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} DIN-471{(form == SheetForm.Full ? " (§4.3 B)" : "")}", 9, "start", Dim));
         }
         else
-            b.AppendLine(Text(sideX, sideBot + 14, NoGrooveNote, 9, "start", Dim));
+            b.AppendLine(Text(sideX, sideBot + 14, NoGroove(form), 9, "start", Dim));
 
         b.AppendLine(Text(sideX + (shL / 2), sideBot + 58, "SIDE", 10, "middle", "#555"));
         HDim(b, sideX, sideX + shL, sideBot + 36, $"{N(cem.ShankLengthMm)}", sideBot);
@@ -767,19 +806,18 @@ internal static class Drawing
         // base (DERIVED = h·(cotα+cotβ), §4.3 A — a triangle has 2 free params, not 4; `Cem.cs`/`Validation.
         // MeasureLock` carry the same formula).
         double baseMm = cem.BarbHeightMm * ((1.0 / Math.Tan(cem.LeadAngleDeg * Math.PI / 180.0)) + (1.0 / Math.Tan(cem.TrailAngleDeg * Math.PI / 180.0)));
-        string lead = (bGroove ? $"DIN-471 groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (§4.3 B); "
-                               : $"{NoGrooveNote}; ") +
-                      $"barb base≈{N(baseMm)} mm (derived h·(cotα+cotβ), §4.3 A)";
+        string lead = LockLead(cem, bGroove, baseMm, form);
         const double w = 820;
         double bottom = NotesAndTolerances(b, 20, sideBot + 82, (int)((w - 40) / Glyph9),
-                                           NotesLines(cem.Notes, lead), ToleranceLines(cem.Tolerances));
+                                           NotesLines(cem.Notes, lead, form, projectExtra: true), ToleranceLines(cem.Tolerances));
 
         string strSsot = $"cem/{strCemFile}";
         var rows = new[]
         {
-            ("PART", "Mechanical lock (§4.3 shank)"),
-            ("MATERIAL", Cell(cem.Notes?.Material ?? NotSpecified)),
-            ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
+            ("PART", form == SheetForm.Full ? "Mechanical lock (§4.3 shank)" : "Mechanical lock (shank)"),
+            // Projected like the notes block — a raw note here would print our `[[…]]` markup on either sheet.
+            ("MATERIAL", Cell(NoteCell(cem.Notes?.Material, form))),
+            ("PROCESS", Cell(NoteCell(cem.Notes?.Process, form))),
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", Cell(sha, ptr: "→ FOOTER")),
             ("SSOT", Cell($"cem/{strCemFile}", ptr: "→ FOOTER")),
@@ -787,14 +825,16 @@ internal static class Drawing
         };
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256);
+        // Same tag rule as the coupon: the sheet names its own form, because `out/` and `out/vendor/` hold files of one name.
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256, CoinFormTag(form));
     }
 
     // ── Mechanical-lock DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same views, real mm. Mirrors
     // the flange's own SVG⊥DXF asymmetry: secondary-feature TEXT labels (barb count, groove callout) stay
     // SVG-only polish; the DXF carries the same facts as NOTES-block prose (via the shared `lead` line
     // below) plus the GEOMETRY itself (the groove notch is a real cut, not a label, so it IS drawn here). ──
-    public static bool MechanicalLockDxf(MechanicalLockCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
+    public static bool MechanicalLockDxf(MechanicalLockCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null,
+                                         SheetForm form = SheetForm.Full)
     {
         var doc = new DxfDocument();
         var geo = new Layer("GEOMETRY");
@@ -837,12 +877,16 @@ internal static class Drawing
         // NOTES + TOLERANCES stacked below — same lead line as the SVG (the groove w×d + derived barb base)
         double baseMm = cem.BarbHeightMm * ((1.0 / Math.Tan(cem.LeadAngleDeg * Math.PI / 180.0)) + (1.0 / Math.Tan(cem.TrailAngleDeg * Math.PI / 180.0)));
         var lines = new List<string> { "NOTES:" };
-        var nl = NotesLines(cem.Notes, (bGroove ? $"DIN-471 groove {N(cem.GrooveWidthMm)}x{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (sec. 4.3 B); "
-                                                : $"{DxfSafe(NoGrooveNote)}; ") + $"barb base~{N(baseMm)} mm (derived, sec. 4.3 A)");
+        string dxfLead = form == SheetForm.Full
+            ? (bGroove ? $"DIN-471 groove {N(cem.GrooveWidthMm)}x{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (sec. 4.3 B); " : $"{DxfSafe(NoGrooveNote)}; ")
+              + $"barb base~{N(baseMm)} mm (derived, sec. 4.3 A)"
+            : (bGroove ? $"DIN-471 groove {N(cem.GrooveWidthMm)}x{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)}; " : $"{DxfSafe(NoGroove(form))}; ")
+              + $"barb base~{N(baseMm)} mm (derived)";
+        var nl = NotesLines(cem.Notes, dxfLead, form, projectExtra: true);
         for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
-        lines.Add($"SilkenNet mechanical lock | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
+        lines.Add($"SilkenNet mechanical lock{FormTag(CoinFormTag(form)).Replace(" · ", " | ")} | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
         lines.Add(CemIdentityLine(cemSha256));
         double yy = top - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rS, yy), 1.6) { Layer = nte }); yy -= 3.2; }

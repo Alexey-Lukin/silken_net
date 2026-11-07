@@ -150,12 +150,12 @@ public class VendorSheetTests
         finally { if (Directory.Exists(strOut)) Directory.Delete(strOut, recursive: true); }
     }
 
-    // ⚖️ The form is ratified for the COUPON sheets only; on a part sheet `notes.extra` is shop instruction, so the flag
-    // must refuse there rather than quietly answer the open question of 00_07 HW.1 — and leave no sheet behind.
+    // ⚖️ The form is opened for the coupon sheets and, since ⚖️ founder 2026-11-07, the mechanical_lock sheets (00_07 HW.26);
+    // every other part kind's notes are not yet marked, so the flag must refuse there rather than print our references —
+    // and leave no sheet behind.
     [Theory]
     [InlineData("cathode_flange.json")]
     [InlineData("anchor_zone1.pine.json")]
-    [InlineData("mechanical_lock.zone1.json")]
     [InlineData("zone2_sleeve.json")]
     public void Vendor_Flag_Refuses_A_Part_Sheet_Whose_Form_Is_Not_Ratified(string strFile)
     {
@@ -262,5 +262,132 @@ public class VendorSheetTests
         var cem = new TiCoinCem { Notes = new NotesSpec { Process = "[[ours only]]" } };
         Assert.Contains("Process: ours only", Drawing.TiCoin(cem, "t", "ti_coin.json"));
         Assert.Throws<FormatException>(() => Drawing.TiCoin(cem, "t", "ti_coin.json", form: Drawing.SheetForm.Vendor));
+    }
+
+    // ── The PART form (⚖️ founder 2026-10-15, 00_07 HW.1), opened for mechanical_lock on 2026-11-07 (00_07 HW.26): the same
+    // marker net as the coupon, with one difference that is the whole point — `extra` is PROJECTED line by line, not dropped,
+    // because on a part sheet it is shop instruction. A line marked internal end to end drops; the rest prints its vendor half.
+    public static TheoryData<string> ShippedLockCems() => new() { "mechanical_lock.zone1.json", "mechanical_lock.zone3.json" };
+
+    private static NotesSpec LockNotes(string strFile)
+    {
+        var n = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), strFile))).Notes;
+        Assert.NotNull(n);   // a lock with no notes would make every loop below vacuous
+        return n!;
+    }
+
+    private static IEnumerable<(string Field, string? Text)> LockNoteFields(NotesSpec n) =>
+        CoreNotes(n).Concat((n.Extra ?? []).Select((e, i) => ($"extra[{i}]", (string?)e)));
+
+    [Theory]
+    [MemberData(nameof(ShippedLockCems))]
+    public void Every_Note_Of_A_Shipped_Lock_Reads_Clean_In_The_Vendor_Form(string strFile)
+    {
+        var problems = new List<string>();
+        int iFullHits = 0;
+        foreach (var (field, text) in LockNoteFields(LockNotes(strFile)))
+        {
+            if (string.IsNullOrWhiteSpace(text)) continue;
+            iFullHits += Hits(Drawing.NoteText(text, Drawing.SheetForm.Full), InternalMarkers.Append(ManifestPath)).Length;
+            string p = Drawing.NoteText(text, Drawing.SheetForm.Vendor);
+            if (p.Length == 0 && field.StartsWith("extra", StringComparison.Ordinal)) continue;   // an extra line marked ours end to end drops
+            problems.AddRange(Hits(p, InternalMarkers.Append(ManifestPath)).Select(h => $"{field}: {h}"));
+            foreach (Match m in Regex.Matches(p, @"  | [,;.):]|\(\s|\(\)|^\s|\s$"))
+                problems.Add($"{field}: seam «{m.Value}» at {m.Index}");
+        }
+        Assert.True(problems.Count == 0, $"cem/{strFile}, vendor form: {string.Join(" · ", problems)}");
+        var lost = LockNoteFields(LockNotes(strFile)).Where(f => f.Text is not null)
+            .SelectMany(f => Instructions.Where(i => Drawing.NoteText(f.Text!, Drawing.SheetForm.Full).Contains(i, StringComparison.Ordinal)
+                                                  && !Drawing.NoteText(f.Text!, Drawing.SheetForm.Vendor).Contains(i, StringComparison.Ordinal))
+                                         .Select(i => $"{f.Field}: «{i}»")).ToArray();
+        Assert.True(lost.Length == 0, $"cem/{strFile}: the vendor form LOST an instruction ours carries — {string.Join(" · ", lost)}");
+        Assert.True(iFullHits > 0, $"cem/{strFile}: the marker list finds nothing even in the full form — it has gone blind");
+    }
+
+    [Theory]
+    [MemberData(nameof(ShippedLockCems))]
+    public void The_Vendor_Sheet_Of_A_Shipped_Lock_Carries_No_Internal_Marker_And_Projects_Extra_In_Either_Reader(string strFile)
+    {
+        string strCem = Path.Combine(CemFixtures.Dir(), strFile);
+        NotesSpec notes = LockNotes(strFile);
+        string strOut = Path.Combine(Path.GetTempPath(), $"draw_vendor_lock_{Guid.NewGuid():N}");
+        try
+        {
+            Assert.Equal(0, Program.Draw(strCem, strOut, bVendor: true));
+            Assert.Empty(Directory.GetFiles(strOut));
+            string strVendor = Path.Combine(strOut, "vendor");
+            string svg = Flatten(File.ReadAllText(Directory.GetFiles(strVendor, "*.drawing.svg").Single()));
+            string dxf = File.ReadAllText(Directory.GetFiles(strVendor, "*.drawing.dxf").Single());
+
+            string[] extra = notes.Extra ?? [];
+            string[] kept = [.. extra.Where(e => Drawing.NoteText(e, Drawing.SheetForm.Vendor).Length > 0)];
+            string[] dropped = [.. extra.Where(e => Drawing.NoteText(e, Drawing.SheetForm.Vendor).Length == 0)];
+            Assert.NotEmpty(kept);       // else «projected, not dropped» proves nothing on this manifest
+            Assert.NotEmpty(dropped);    // else «a line marked ours drops» proves nothing either
+            string Probe(string s) => Regex.Replace(s, @"\s+", " ")[..Math.Min(40, s.Length)];
+            foreach (var (reader, text) in new[] { ("SVG", svg), ("DXF", dxf) })
+            {
+                string[] hits = Hits(text, InternalMarkers);
+                Assert.True(hits.Length == 0, $"cem/{strFile}, vendor {reader}: {string.Join(" · ", hits)}");
+                foreach (string e in dropped)
+                    Assert.DoesNotContain(reader == "DXF" ? Drawing.DxfSafe(Probe(Drawing.NoteText(e, Drawing.SheetForm.Full))) : Probe(Drawing.NoteText(e, Drawing.SheetForm.Full)), text);
+                foreach (string e in kept)
+                {
+                    string v = Probe(Drawing.NoteText(e, Drawing.SheetForm.Vendor));
+                    Assert.Contains(reader == "DXF" ? Drawing.DxfSafe(v) : v, text);
+                }
+            }
+            Assert.Contains("VENDOR COPY", svg);
+            Assert.Contains("VENDOR COPY", dxf);
+
+            // Counter-lamp: the full sheet of the same manifest carries our markers, every extra line, and says it must not leave.
+            Assert.Equal(0, Program.Draw(strCem, strOut));
+            string full = Flatten(File.ReadAllText(Directory.GetFiles(strOut, "*.drawing.svg").Single()));
+            Assert.NotEmpty(Hits(full, InternalMarkers));
+            Assert.DoesNotContain("VENDOR COPY", full);
+            Assert.Contains("INTERNAL COPY", full);
+            foreach (string e in extra) Assert.Contains(Probe(Drawing.NoteText(e, Drawing.SheetForm.Full)), full);
+            Assert.DoesNotContain("[[", full);   // the full sheet strips the markup — it never prints our brackets
+        }
+        finally { if (Directory.Exists(strOut)) Directory.Delete(strOut, recursive: true); }
+    }
+
+    [Theory]
+    [MemberData(nameof(ShippedLockCems))]
+    public void A_Lock_Vendor_Half_Introduces_No_Order_Its_Full_Half_Does_Not_Carry(string strFile)
+    {
+        var problems = new List<string>();
+        int iSwaps = 0;
+        foreach (var (field, text) in LockNoteFields(LockNotes(strFile)))
+        {
+            if (text is null) continue;
+            foreach (Match mm in Regex.Matches(text, @"\[\[(.*?)\|\|(.*?)\]\]"))
+            {
+                iSwaps++;
+                string full = mm.Groups[1].Value.ToLowerInvariant(), vendor = mm.Groups[2].Value.ToLowerInvariant();
+                problems.AddRange(OrderWords.Where(w => vendor.Contains(w) && !full.Contains(w)).Select(w => $"{field}: «{w}» in «{mm.Groups[2].Value}»"));
+            }
+        }
+        Assert.True(problems.Count == 0, $"cem/{strFile}: a vendor half adds an order — {string.Join(" · ", problems)}");
+        Assert.True(iSwaps > 0, $"cem/{strFile}: no `[[full||vendor]]` swap found — the pin would be vacuous on this manifest");
+    }
+
+    [Theory]
+    [MemberData(nameof(ShippedLockCems))]
+    public void The_Lock_Changed_Notes_Report_Names_Every_Cut_Field_And_Every_Dropped_Or_Projected_Extra_Line(string strFile)
+    {
+        NotesSpec n = LockNotes(strFile);
+        string[] report = [.. Drawing.VendorChanges(n, projectExtra: true)];
+        foreach (var (field, text) in CoreNotes(n))
+        {
+            if (text is null || Drawing.NoteText(text, Drawing.SheetForm.Full) == Drawing.NoteText(text, Drawing.SheetForm.Vendor)) continue;
+            Assert.True(report.Contains($"  ours:   {Drawing.NoteText(text, Drawing.SheetForm.Full)}"), $"cem/{strFile}: {field} changed but the report does not carry it");
+            Assert.Contains($"  vendor: {Drawing.NoteText(text, Drawing.SheetForm.Vendor)}", report);
+        }
+        string[] extra = n.Extra ?? [];
+        Assert.Equal(extra.Count(e => Drawing.NoteText(e, Drawing.SheetForm.Vendor).Length == 0),
+                     report.Count(l => l.StartsWith("extra (dropped): ", StringComparison.Ordinal)));
+        foreach (string e in extra.Where(e => Drawing.NoteText(e, Drawing.SheetForm.Vendor) is { Length: > 0 } v && v != Drawing.NoteText(e, Drawing.SheetForm.Full)))
+            Assert.Contains($"  vendor: {Drawing.NoteText(e, Drawing.SheetForm.Vendor)}", report);
     }
 }

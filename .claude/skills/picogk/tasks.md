@@ -151,8 +151,8 @@
   built); ⚠️ read gotcha #11 BEFORE touching notes/tolerances — pure-managed, no Library.Go,
   consuming the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text; `DrawingStandard` ISO/ASME
   param). Drawing carries fits, GD&T datums, post-process + coating-restriction notes, lattice-spec.
-  ⊕ **A sheet that LEAVES for a vendor: `draw <cem> --vendor`** (→ `out/vendor/`; `ti_coin` only — every other kind
-  refuses until the part-RFQ text applies the part form answered 2026-10-15 — 🔗 leg of `00_07` HW.1, gotcha #17 ⊕). Writing or editing a coupon note, mark what is ours — refs, verdict
+  ⊕ **A sheet that LEAVES for a vendor: `draw <cem> --vendor`** (→ `out/vendor/`; `ti_coin` and, since 2026-11-07, `mechanical_lock` — on a part sheet `extra` is PROJECTED line by line, not dropped; every other
+  kind refuses until its notes are marked for the part-RFQ — 🔗 leg of `00_07` HW.1, gotcha #17 ⊕). Writing or editing a coupon note, mark what is ours — refs, verdict
   provenance, status, bake-off rationale, our-side tests — as `[[span]]`, or `[[full||vendor]]` where the cut would
   break the sentence; then READ the rendered vendor sheet whole, not the field you edited (gotcha #17, #11 ⊕) — `draw --vendor`
   prints every changed note as ours → vendor plus each dropped `extra` line, and that list is what the founder reads before

@@ -679,10 +679,12 @@ public class DrawingTests
                                  cem.Notes?.PostProcess, cem.Notes?.CoatingRestriction, cem.Notes?.Inspection }
                          .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
             Assert.NotEmpty(fields);   // counter-lamp — an empty NotesSpec would make this vacuous
-            foreach (string? v in fields) Assert.Contains(Drawing.DxfSafe(v!), dxf);
+            // The full sheet prints a note with its `[[…]]` markup stripped (since 2026-11-07 the lock notes carry it) —
+            // compare against that projection, the text the sheet is meant to carry, not the raw manifest string.
+            foreach (string? v in fields) Assert.Contains(Drawing.DxfSafe(Drawing.NoteText(v!, Drawing.SheetForm.Full)), dxf);
 
             if (cem.Notes?.Extra is { } extra)
-                foreach (string ex in extra) Assert.Contains(Drawing.DxfSafe(ex), dxf);
+                foreach (string ex in extra) Assert.Contains(Drawing.DxfSafe(Drawing.NoteText(ex, Drawing.SheetForm.Full)), dxf);
 
             Assert.DoesNotContain("NaN", dxf);
         }
@@ -820,8 +822,9 @@ public class DrawingTests
         Assert.NotEmpty(fields);
 
         string flat = FlattenSvgText(svg);
+        // The gallery is the FULL sheet: each note printed with its `[[…]]` markup stripped (the lock notes carry it since 2026-11-07).
         foreach (string? v in fields)
-            Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
+            Assert.Contains(Regex.Replace(Drawing.NoteText(v!, Drawing.SheetForm.Full), @"\s+", " "), flat);
 
         AssertEveryLineIsInsideTheFrame(svg);
         AssertGalleryNamesTheShippedManifest(svg, strCemFile);

@@ -271,6 +271,7 @@ unverified / EU backup hubs — `02_06 §8.1`) + web-grounding (sources below).
    link — the delegated paragraph; what changes is only the authority of the record: founder's, not the machine's.
    Applied at the event, as before — no part-RFQ text exists.
 
+   ⊕ **2026-11-07 — opened for `mechanical_lock`** (⚖️ founder, `00_07` HW.26: its sheets ride the FEA/Prony letters; the part form of 2026-10-15, `00_07` HW.1; the text above is NOT rewritten). On a part sheet `extra` is PROJECTED line by line (`projectExtra` — a line marked internal end to end drops, the rest prints its vendor half), never dropped whole; the lock sheet's own words carry the form (title, subtitle, groove label, lead line, and the MATERIAL / PROCESS cells, now projected — a raw note there would have printed our brackets on either sheet); and the frame moves its SSOT pointer to the second footer line whenever the first would run off the frame (sheets that fit stay byte-identical). Pins — the lock theories of `VendorSheetTests` (markers and seams per note, both rendered readers, a kept ⊥ a dropped `extra` line, no vendor-only order, the changed-notes report), mutation-verified on the projection. Every other part kind still refuses until its notes are marked.
 ## 9. References
 
 **Decision web-grounding (2026-06-21):**
