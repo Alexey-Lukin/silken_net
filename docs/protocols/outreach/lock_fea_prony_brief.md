@@ -1,7 +1,7 @@
 # Бриф-запит — FEA утримання механічного замка Ti↔PEEK + Prony-фіт релаксації PEEK
 
 > ⏳ **Станом на 2026-09-24 · concern-шар, не канон** ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)) · **дім стану — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26.** Того ж пункту — нога відправки (👤 §9 UA / §10 EN) і нога «FEA-валідація» (🔗 відповідь виконавця), що його споживає.
-> **Числа тут — дзеркало канону й маніфесту, дім кожного названо поруч; правити в домі.** Де канон числа не несе, написано, що саме просимо, без вигаданого значення.
+> **Числа тут — дзеркало канону й маніфесту, дім кожного названо поруч; правити в домі.** ⊕ 2026-11-07: обидва листи закрито «число → дім» до читання founder-а (⚖️ founder 2026-11-07 — бриф тримає P [`HW.26`](../../00_07_Action_Plan_Tracker.md)): наша тимчасова оцінка релаксації з листів знята (аналіз сліпий), «результати різняться» → «можуть різнитися», ціль 200 Н — робоча, «рух стовбура не виміряно» → «навантаження на замок не виміряне» (частоту гойдання виміряно), строк 20 років — заявлений, вкладення — лише числові поля маніфестів, маркер під рядок адресата. Де канон числа не несе, написано, що саме просимо, без вигаданого значення.
 > **Адресат — зовнішній комерційний FEA-виконавець (⚖️ ратифіковано founder 2026-09-27); адресати — CADFEM Ukraine ∥ Veryst Engineering (⚖️ 2026-09-28, §8.1; стан — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26).** Desk-звірка 2026-09-27: фах школи Гусака — теорія дифузії й твердофазних реакцій, тож роль FEA/Prony з реєстру знято ([`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)), а присуд [`00_03 §3.6`](../../00_03_TRL_Matrix_HIL_and_Beyond.md) стоїть тепер на комерційному виконавці. Бриф від початку написано так, щоб годився й йому; канал — §8.
 
 ---
@@ -99,7 +99,7 @@
 
 ## 8. Канал і що передати
 
-**Що передати:** ⛔ НЕ цей файл — він несе репо-рефи, трекер-ID і внутрішні рішення про канал (нижче). Одержувачу їде окремий текст запиту, складений із §1–§7 без ID і гліфів, — §9 нижче (UA; адресатів обрано ⚖️ 2026-09-28 — §8.1). Вкладення: обидва маніфести замка · креслення `draw mechanical_lock` (SVG/DXF) · калібрувальний кейс — Додаток 3 ([`calibration_case_ua.md`](../anchor/fea_aging/calibration_case_ua.md) для UA-адресата, [`calibration_case_en.md`](../anchor/fea_aging/calibration_case_en.md) для EN); сам [`THERMAL_STRESS_REPORT`](../anchor/fea_aging/THERMAL_STRESS_REPORT.md) не їде — він англійською, з трекер-ID і §-рефами (чекліст нижче).
+**Що передати:** ⛔ НЕ цей файл — він несе репо-рефи, трекер-ID і внутрішні рішення про канал (нижче). Одержувачу їде окремий текст запиту, складений із §1–§7 без ID і гліфів, — §9 нижче (UA; адресатів обрано ⚖️ 2026-09-28 — §8.1). Вкладення: числові поля обох маніфестів замка (⊕ 2026-11-07: без `_note`/`notes` — ті несуть трекер-ID, §-рефи, дати й пункти, яких лист свідомо не несе) · креслення `draw mechanical_lock` (SVG/DXF) · калібрувальний кейс — Додаток 3 ([`calibration_case_ua.md`](../anchor/fea_aging/calibration_case_ua.md) для UA-адресата, [`calibration_case_en.md`](../anchor/fea_aging/calibration_case_en.md) для EN); сам [`THERMAL_STRESS_REPORT`](../anchor/fea_aging/THERMAL_STRESS_REPORT.md) не їде — він англійською, з трекер-ID і §-рефами (чекліст нижче).
 
 ⚖️ **Канал — зовнішній комерційний FEA-виконавець (РАТИФІКОВАНО founder 2026-09-27 за рекомендацією — дослівно «зовнішній комерційний FEA-виконавець ратифікую», [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26).** Гілку «канал — ЧНУ» присуду нижче знято: FEA/Prony — не фах школи Гусака (теорія дифузії, desk-звірка 2026-09-27). Подія part-RFQ з того присуду лишається ДЕДЛАЙНОМ числа, а не тригером зміни каналу. **Ціна:** платна послуга. **Найслабша ланка:** виконавця ще не названо. ⚠️ **Один виконавець на одне число:** канон прибрав власний трек механіки саме тому, що паралельний результат був би другим, неузгодженим ([`00_03 §3.6`](../../00_03_TRL_Matrix_HIL_and_Beyond.md)).
 
@@ -141,7 +141,9 @@
 
 Я розробляю SilkenNet — прилад для тривалого моніторингу стану живих дерев, який встановлюється в стовбур. Кріплення приладу — анкер із трьох деталей: титанова деталь у деревині, втулка з PEEK і зовнішній титановий фланець. Втулка працює як терморозрив, а титанові хвостовики тримаються в ній натягом і механічним замком — кільцевими несиметричними зубцями. Прошу комерційну пропозицію на одну конкретну задачу механіки полімерів: яка сила вириву лишиться в цьому замку через десять років, коли PEEK зрелаксує.
 
-Скажу одразу, що в нас є, а чого немає. Власних вимірів крипу чи релаксації PEEK у нас немає жодних. Є пружна аналітична оцінка напружень у втулці за Ламе і двочленна оцінка релаксації з літератури, яку ми вважаємо тимчасовою. Скінченно-елементного розрахунку замка з вʼязкопружним PEEK у нас немає. Ми не просимо підтвердити наші оцінки — ми просимо їх замінити.
+`[рядки під адресата — їх ставить збирач у мить відправки]`
+
+Скажу одразу, що в нас є, а чого немає. Власних вимірів крипу чи релаксації PEEK у нас немає жодних. Є пружна аналітична оцінка напружень у втулці за Ламе і двочленна оцінка релаксації з літератури, яку ми вважаємо тимчасовою. Скінченно-елементного розрахунку замка з вʼязкопружним PEEK у нас немає. Ми не просимо підтвердити наші оцінки — ми просимо їх замінити; лише пружну частину просимо відтворити на калібрувальному кейсі (додаток 3), щоб звірити модель із нашою.
 
 Нижче — технічне завдання; параметри геометрії й креслення — в додатках.
 
@@ -156,33 +158,32 @@
 *2. Три частини задачі (послідовні).*
 
 **(А) Апроксимація релаксації PEEK 450G рядом Проні** — багаточленний ряд Максвелла — Віхерта плюс температурно-часовий зсув у діапазоні від −30 до +40 °C.
-- Єдина літературна таблиця крипу, на яку ми спиралися, описує посадку з контактним тиском 25–30 МПа при відносній вологості 90 %. На нашій геометрії такий тиск вимагав би натягу в 7.5–51 рази більшого за наш і доводив би PEEK до межі плинності або за неї. Тому як вхід ми її не використовуємо.
+- Єдина літературна таблиця крипу, на яку ми спиралися, описує посадку з контактним тиском 25–30 МПа при відносній вологості 90 %. На нашій геометрії такий тиск вимагав би натягу щонайменше в 7.5 раза більшого за наш і доводив би PEEK до межі плинності або за неї. Тому як вхід ми її не використовуємо.
 - Наш контактний тиск становить одиниці мегапаскалів. У найгіршому поєднанні (−30 °C і максимальний натяг) аналітична оцінка дає близько 5.4 МПа контактного тиску і 17.9 МПа кільцевого напруження.
 - Даних про вплив вологи в нас немає, а втулка працює у вологому середовищі стовбура.
 - Для апроксимації підійдуть ваші власні виміри (DMA, релаксація напружень) або опубліковані дані з названим джерелом. У звіті просимо розвести, що саме з двох використано.
 
-**(Б) Розрахунок утримання методом скінченних елементів.** Осесиметрична модель титанового хвостовика із зубцями в PEEK-втулці. Кроки: гаряча посадка при 150 °C (вище температури склування PEEK, 143 °C) → охолодження → вʼязкопружна релаксація за рядом із (А) при термоциклі ±35 °C → квазістатичний вирив. Горизонт — 10 років обовʼязково; 20 років — екстраполяцією з позначкою, бо розрахунковий строк служби вузла 20 років. Кейси:
+**(Б) Розрахунок утримання методом скінченних елементів.** Осесиметрична модель титанового хвостовика із зубцями в PEEK-втулці. Кроки: гаряча посадка при 150 °C (вище температури склування PEEK, 143 °C) → охолодження → вʼязкопружна релаксація за рядом із (А) при термоциклі ±35 °C → квазістатичний вирив. Горизонт — 10 років обовʼязково; 20 років — екстраполяцією з позначкою, бо заявлений строк служби вузла — 20 років. Кейси:
 - глибина вставляння хвостовика у втулку — 14 і 18 мм;
 - натяг — мінімум і максимум робочої смуги (5 і 34 мкм на діаметр) та нижня межа допустимого натягу. За нашою пружною оцінкою ця межа близько 8.5 мкм на діаметр; просимо перерахувати її у вашій моделі;
 - модуль Юнга титану — 110 ГПа як база і як параметр, бо сплав ще не обрано;
-- канавка під стопорне кільце DIN 471 за 15 мм від вільного торця — з нею і без неї.
+- канавка під стопорне кільце DIN 471 (1.1 × 0.25 мм) за 15 мм від вільного торця — з нею і без неї.
 
 Якщо повна матриця завелика, просимо запропонувати один базовий кейс, а решту оцінити як відхилення від нього.
 
-**(В) Циклічна частина.** Потрібна амплітуда напруження в PEEK біля зубця (корінь зубця, зона контакту) на одиницю циклічного осьового навантаження і на одиницю згинального моменту на стику — тобто передатна функція. Амплітуди самого навантаження в нас ще немає: рух стовбура ще не виміряно. Порівняння з межею витривалості PEEK зробимо самі, коли навантаження буде виміряне.
+**(В) Циклічна частина.** Потрібна амплітуда напруження в PEEK біля зубця (корінь зубця, зона контакту) на одиницю циклічного осьового навантаження і на одиницю згинального моменту на стику — тобто передатна функція. Амплітуди самого навантаження в нас ще немає: навантаження на замок ще не виміряне. Порівняння з межею витривалості PEEK зробимо самі, коли навантаження буде виміряне.
 
 *3. Вихідні дані.*
 - **Хвостовик:** Ø11 мм, довжина 18 мм. Зона зубців — 12 мм, починаючи за 2 мм від вільного торця, тобто того, що входить у втулку першим. Чотири ряди зубців, висота зубця 0.28 мм. Кути граней відносно осі: 30° для пологої і 70° для крутої. Основа зубця — похідна від висоти й кутів, близько 0.59 мм.
 - **Напрям профілю:** полога грань звернена до вільного торця.
-- **Діапазон вставляння 14–18 мм:** від кінця зони зубців до всієї довжини хвостовика. Проєктна глибина — уся довжина хвостовика, 18 мм; 14 мм — найменша глибина, на якій уся зона зубців ще в PEEK, тобто межа допуску складання. Результати на двох кінцях різняться, тому потрібні обидва.
+- **Діапазон вставляння 14–18 мм:** від кінця зони зубців до всієї довжини хвостовика. Проєктна глибина — уся довжина хвостовика, 18 мм; 14 мм — найменша глибина, на якій уся зона зубців ще в PEEK, тобто межа допуску складання. Результати на двох кінцях можуть різнитися, тому потрібні обидва.
 - **Втулка:** PEEK Victrex 450G, отвір Ø11 мм, стінка 2 мм. Модуль Юнга 4.0 ГПа, коефіцієнт Пуассона 0.4, межа плинності близько 98–100 МПа.
 - **Титан:** модуль Юнга близько 110 ГПа — база; сплав не обрано, тож модуль є параметром.
 - **КТР:** титан 8.6·10⁻⁶ K⁻¹, PEEK 47·10⁻⁶ K⁻¹.
 - **Натяг:** 5–34 мкм на діаметр, віднесено до 20 °C. Це робоча смуга з таблиці допусків, а не результат розрахунку, і її ще переглядатимуть — тому матриця параметрична.
 - **Температури:** робоче вікно від −30 до +40 °C, термоцикл ±35 °C.
 - **Посадка:** гаряча, PEEK нагрітий до 150 °C.
-- **Наша тимчасова оцінка релаксації** (лише для порівняння з вашим результатом, не як вхід): P_c(t) = P_c(0)·[E∞/E0 + (1 − E∞/E0)·exp(−t/τ)], де E∞/E0 ≈ 0.65, τ ≈ 1 рік. Це двочленна оцінка з літератури, не виміряна.
-- **Ціль:** залишкова сила вириву понад 200 Н, тобто пʼятикратний запас до штормового навантаження 40 Н.
+- **Робоча ціль** (її можуть переглянути, коли виміряємо силу, яку замок мусить тримати): залишкова сила вириву понад 200 Н, тобто пʼятикратний запас до штормового навантаження 40 Н.
 
 *4. Що просимо повернути.*
 1. Таблицю ряду Проні (g_i, τ_i, E0, параметри температурно-часового зсуву, діапазон чинності) у CSV або JSON, з описом джерела даних і похибки апроксимації.
@@ -215,7 +216,7 @@
 4. Наш проєкт відкритий: креслення, розрахунки та інженерні дані ми публікуємо під відкритими ліцензіями й хотіли б так само опублікувати звіт і модель. Чи прийнятно це для вас — із посиланням на виконавця чи без, на ваш вибір? Конфіденційними лишаються лише комерційні умови.
 
 **Додатки**
-1. Параметри геометрії замка для обох кінців вузла — два файли JSON; кінець фланця додано лише для довідки, він поза обсягом запиту.
+1. Параметри геометрії замка для обох кінців вузла — два файли JSON із числовими полями; кінець фланця додано лише для довідки, він поза обсягом запиту.
 2. Креслення замка — SVG і DXF.
 3. Наш аналітичний розрахунок напружень у втулці за Ламе — для калібрувального кейсу.
 
@@ -250,13 +251,15 @@ SilkenNet
 
 [Company name]
 
-**Subject:** Request for a commercial proposal — retention of a titanium–PEEK mechanical lock with a Prony-series model of PEEK relaxation
+**Subject line:** Request for a commercial proposal — retention of a titanium–PEEK mechanical lock with a Prony-series model of PEEK relaxation
 
 Dear colleagues,
 
 I am building SilkenNet, an instrument for the long-term monitoring of living trees that is installed in the trunk. The instrument is held by a three-part anchor: a titanium part in the wood, a PEEK sleeve, and an outer titanium flange. The sleeve acts as a thermal break, and the titanium shanks are retained in it by an interference fit and a mechanical lock — annular, asymmetric ratchet teeth. I am asking for a commercial proposal for one specific polymer-mechanics problem: how much pull-out force is left in this lock after ten years, once the PEEK has relaxed.
 
-Let me say first what we have and what we do not. We have no measurements of our own of PEEK creep or relaxation, none. We have an elastic analytical estimate of the stresses in the sleeve (thick-walled Lamé) and a two-term relaxation estimate taken from the literature, which we regard as a stand-in. We have no finite-element analysis of the lock with viscoelastic PEEK. We are not asking you to confirm our estimates — we are asking you to replace them.
+`[lines for the addressee — inserted by the assembler at dispatch]`
+
+Let me say first what we have and what we do not. We have no measurements of our own of PEEK creep or relaxation, none. We have an elastic analytical estimate of the stresses in the sleeve (thick-walled Lamé) and a two-term relaxation estimate taken from the literature, which we regard as a stand-in. We have no finite-element analysis of the lock with viscoelastic PEEK. We are not asking you to confirm our estimates — we are asking you to replace them; only the elastic part we ask you to reproduce on the calibration case (Attachment 3), to check your model against ours.
 
 The statement of work follows; the geometry parameters and drawings are in the attachments.
 
@@ -271,42 +274,41 @@ The main point: **retention is carried by the teeth, not by the interference.** 
 *2. Three parts of the task (sequential).*
 
 **(A) A Prony-series fit of the relaxation of PEEK 450G** — a multi-term Maxwell–Wiechert series plus a time–temperature shift over −30 to +40 °C.
-- The one literature creep table we relied on describes a fit with a contact pressure of 25–30 MPa at 90 % relative humidity. On our geometry that pressure would need an interference 7.5–51 times ours and would take the PEEK to its yield strength or past it. So we do not use it as an input.
-- Our contact pressure is in the single megapascals. In the worst combination (−30 °C and maximum interference) the analytical estimate gives about 5.4 MPa of contact pressure and 17.9 MPa of hoop stress.
+- The one literature creep table we relied on describes a press fit with a contact pressure of 25–30 MPa at 90 % relative humidity. On our geometry that pressure would need an interference at least 7.5 times ours and would take the PEEK to its yield strength or past it. So we do not use it as an input.
+- Our contact pressure is a few megapascals. In the worst combination (−30 °C and maximum interference) the analytical estimate gives about 5.4 MPa of contact pressure and 17.9 MPa of hoop stress.
 - We have no data on the effect of moisture, and the sleeve operates in the wet environment of a trunk.
 - Either your own measurements (DMA, stress relaxation) or published data with a named source are acceptable for the fit. Please state in the report which of the two was used.
 
-**(B) Finite-element analysis of retention.** An axisymmetric model of the toothed titanium shank in the PEEK sleeve. Steps: shrink fit at 150 °C (above the PEEK glass transition, 143 °C) → cooling → viscoelastic relaxation per the series from (A) under a ±35 °C thermal cycle → quasi-static pull-out. Horizon: 10 years mandatory; 20 years by extrapolation, marked as such, because the assembly's design life is 20 years. Cases:
+**(B) Finite-element analysis of retention.** An axisymmetric model of the toothed titanium shank in the PEEK sleeve. Steps: shrink fit at 150 °C (above the PEEK glass transition, 143 °C) → cooling → viscoelastic relaxation per the series from (A) under a ±35 °C thermal cycle → quasi-static pull-out. Horizon: 10 years mandatory; 20 years by extrapolation, marked as such, because the assembly's claimed service life is 20 years. Cases:
 - shank insertion depth into the sleeve — 14 and 18 mm;
 - interference — the minimum and maximum of the working band (5 and 34 µm on the diameter) and the lower admissible bound. By our elastic estimate that bound is about 8.5 µm on the diameter; please recompute it in your model;
 - Young's modulus of the titanium — 110 GPa as the baseline and as a parameter, since the alloy is not yet chosen;
-- a DIN 471 retaining-ring groove 15 mm from the free end — with it and without it.
+- a DIN 471 retaining-ring groove (1.1 × 0.25 mm) 15 mm from the free end — with it and without it.
 
 If the full matrix is too large, please propose one baseline case and price the rest as deltas from it.
 
-**(C) The cyclic part.** We need the stress amplitude in the PEEK near a tooth (tooth root, contact zone) per unit cyclic axial load and per unit bending moment at the joint — that is, a transfer function. We do not yet have the load amplitude itself: trunk sway has not been measured. We will make the comparison with the PEEK endurance limit ourselves once the load is measured.
+**(C) The cyclic part.** We need the stress amplitude in the PEEK near a tooth (tooth root, contact zone) per unit cyclic axial load and per unit bending moment at the joint — that is, a transfer function. We do not yet have the load amplitude itself: the load on the lock has not been measured. We will make the comparison with the PEEK endurance limit ourselves once the load is measured.
 
 *3. Input data.*
 - **Shank:** Ø11 mm, length 18 mm. Tooth zone 12 mm long, starting 2 mm from the free end (the end that enters the sleeve first). Four rows of teeth, tooth height 0.28 mm. Flank angles to the axis: 30° for the shallow flank and 70° for the steep one. The tooth base is derived from height and angles, about 0.59 mm.
 - **Profile direction:** the shallow flank faces the free end.
-- **Insertion range 14–18 mm:** from the end of the tooth zone to the full shank length. The design depth is the full shank, 18 mm; 14 mm is the shallowest depth at which the whole tooth zone is still in the PEEK, i.e. the assembly tolerance limit. The results differ at the two ends of the range, so both are needed.
+- **Insertion range 14–18 mm:** from the end of the tooth zone to the full shank length. The design depth is the full shank, 18 mm; 14 mm is the shallowest depth at which the whole tooth zone is still in the PEEK, i.e. the assembly tolerance limit. The results may differ at the two ends of the range, so both are needed.
 - **Sleeve:** PEEK Victrex 450G, bore Ø11 mm, wall 2 mm. Young's modulus 4.0 GPa, Poisson's ratio 0.4, yield strength about 98–100 MPa.
 - **Titanium:** Young's modulus about 110 GPa — baseline; the alloy is not chosen, so the modulus is a parameter.
 - **Coefficients of thermal expansion:** titanium 8.6·10⁻⁶ K⁻¹, PEEK 47·10⁻⁶ K⁻¹.
 - **Interference:** 5–34 µm on the diameter, referred to 20 °C. This is a working band from a tolerance table, not a computed result, and it will be revised — hence the parametric matrix.
 - **Temperatures:** operating window −30 to +40 °C, thermal cycle ±35 °C.
 - **Fit:** shrink fit, PEEK heated to 150 °C.
-- **Our interim relaxation estimate** (for comparison with your result only, not as an input): P_c(t) = P_c(0)·[E∞/E0 + (1 − E∞/E0)·exp(−t/τ)], with E∞/E0 ≈ 0.65 and τ ≈ 1 year. A two-term literature estimate, not measured.
-- **Target:** residual pull-out force above 200 N, i.e. a fivefold margin over the 40 N storm load.
+- **Working target** (it may be revised once we measure the force the lock must hold): residual pull-out force above 200 N, i.e. a fivefold margin over the 40 N storm load.
 
 *4. What we ask you to return.*
 1. The Prony-series table (g_i, τ_i, E0, time–temperature shift parameters, validity range) as CSV or JSON, with the data source and the fit error stated.
 2. Pull-out force F(t) at 0, 1, 5 and 10 years for each case — as a CSV table; stress fields at the key points.
 3. The transfer function from (C) in MPa/N and MPa/(N·m), with the location where it was taken.
-4. The model: input files (an ANSYS project or an open format), contact parameters with their source (the friction coefficient named, not assumed silently), boundary conditions, and a mesh-convergence demonstration.
+4. The model: input files (ANSYS, Abaqus or an open format), contact parameters with their source (the friction coefficient named, not assumed silently), boundary conditions, and a mesh-convergence demonstration.
 
 *5. How we will read the result.*
-- **Calibration case:** a smooth shaft without teeth at −30 °C and maximum interference must reproduce our Lamé analytical estimate, i.e. a hoop stress of 17.9 MPa (the calculation is in Appendix 3). If there is a discrepancy, please put it on the first page of the report, before the results.
+- **Calibration case:** a smooth shaft without teeth at −30 °C and maximum interference must reproduce our Lamé analytical estimate, i.e. a hoop stress of 17.9 MPa (the calculation is in Attachment 3). If there is a discrepancy, please put it on the first page of the report, before the results.
 - **Lower interference bound:** at that bound, friction at +40 °C is approximately zero, and the model must reproduce this.
 - **The Prony series** reproduces the source data at both ends of the temperature range, with the error stated.
 - **Mesh convergence** is shown, not merely asserted.
@@ -330,7 +332,7 @@ If the full matrix is too large, please propose one baseline case and price the 
 4. Our project is open: drawings, calculations and engineering data are published under open licences, and we would like to publish the report and the model the same way. Is that acceptable to you — with or without attribution to your firm, at your choice? Only the commercial terms stay confidential.
 
 **Attachments**
-1. Lock geometry parameters for both ends of the assembly — two JSON files; the flange end is included for reference only, it is outside the scope of this request.
+1. Lock geometry parameters for both ends of the assembly — two JSON files with the numeric fields; the flange end is included for reference only, it is outside the scope of this request.
 2. Lock drawings — SVG and DXF.
 3. Our analytical stress calculation for the sleeve (Lamé) — the calibration case.
 
