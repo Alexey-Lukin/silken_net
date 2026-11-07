@@ -260,11 +260,13 @@ internal static class Drawing
         string strFooter = $"SilkenNet · CEM-native drawing{FormTag(strFormTag)} · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)} · SSOT {strSsot}";
         string strIdentity = CemIdentityLine(cemSha256);
         // 🔴 A footer longer than the frame ran off its LEFT edge (2026-11-07: the lock's long manifest name plus the form tag).
-        // When the first line does not fit, its SSOT pointer moves to the head of the second; a sheet that fits stays byte-identical.
+        // When the first line does not fit, its SSOT pointer moves to the END of the second — the end, because
+        // scripts/cad_gallery_freshness.rb reads the manifest name as «· SSOT cem/<file>» closing its text element
+        // (pre-push refused the head-of-line form, 2026-11-07); a sheet that fits stays byte-identical.
         if (strFooter.Length * 8 * (Glyph9 / 9.0) > w - 28)
         {
             strFooter = $"SilkenNet · CEM-native drawing{FormTag(strFormTag)} · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)}";
-            strIdentity = $"SSOT {strSsot} · {strIdentity}";
+            strIdentity = $"{strIdentity} · SSOT {strSsot}";
         }
         sb.AppendLine(Text(w - 14, h - 14 - FooterLineH, strFooter, 8, "end", "#888"));
         sb.AppendLine(Text(w - 14, h - 14, strIdentity, 8, "end", "#888"));

@@ -103,7 +103,7 @@
 <line x1='540' y1='965' x2='790' y2='965' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='965' x2='630' y2='981' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='976' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='976' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0f89f3808</text>
+<text x='635' y='976' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>52088710e</text>
 <line x1='540' y1='981' x2='790' y2='981' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='981' x2='630' y2='997' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='992' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -112,6 +112,6 @@
 <line x1='630' y1='997' x2='630' y2='1013' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1008' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
 <text x='635' y='1008' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>6c680e20ee6e94eba2… → FOOTER</text>
-<text x='806' y='1029' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · INTERNAL COPY · rev 0f89f3808 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101)</text>
-<text x='806' y='1041' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SSOT cem/mechanical_lock.zone1.json · CEM SHA-256 (sha256sum of the SSOT manifest file): 6c680e20ee6e94eba2d817d748f0d1c4e8a171beecc113259833f3b17439b487</text>
+<text x='806' y='1029' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · INTERNAL COPY · rev 52088710e · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101)</text>
+<text x='806' y='1041' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 6c680e20ee6e94eba2d817d748f0d1c4e8a171beecc113259833f3b17439b487 · SSOT cem/mechanical_lock.zone1.json</text>
 </svg>
