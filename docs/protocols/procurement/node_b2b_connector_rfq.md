@@ -1,7 +1,7 @@
 # Soldier — B2B-пара Samtec FW-SM + CLP (мезонін Power Deck ↔ RF Deck): лист-запит виробникові
 
 > **Що це:** RFQ-аркуш до **Samtec** на пару board-to-board роз'ємів, що зʼєднує дві плати капсули Soldier. Предмет — перевірити **найслабшу ланку делегованого присуду** про носія пари: з якими кодами висоти FW-SM і CLP дають мейтовані рівно 8.0 і 10.0 мм. Наш вивід стоїть на двох каталожних прикладах, а таблиця мейтів виробника в дереві відсутня. Друга мета — **допуск змикання** і документ, де він записаний: `±0.15` у Z-ланцюзі паспорта не має. Третя — ціна, MOQ, лідтайм і умова «non-returnable». Сам присуд (FW-SM + CLP замість пари FTSH + CLT, якої не існує) лист під сумнів не ставить. Він купує його підтвердження.
-> **Статус:** 🟡 робочий артефакт (не канон); **написано 2026-09-25, не надіслано, founder тексту ще не бачив — ⛔ до „так“ не надсилати.** Адресат — Samtec напряму або дистрибʼютор із доступом до інженерів виробника; канал обирає founder, текст від цього не змінюється. Числа дзеркалять доми, і дім кожного названо в §1; **правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)). Дім стану — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.29: нога «котирування FW-SM + CLP у Samtec». Та сама відповідь годує ще дві ноги пункту: footprint у KiCad і вимір першої партії (§2).
+> **Статус:** 🟡 робочий артефакт (не канон); **написано 2026-09-25; 2026-11-07 переписано до читання founder-а — опубліковане Samtec стало «please confirm X» з цитатою документа (скіл `legal-business` §Доменні правила #14; кожну цитату звірено з первинкою — §0 п. 9 ⊕), лінії пари — за розводкою; не надіслано, founder тексту ще не бачив — ⛔ до „так“ не надсилати.** Адресат — Samtec напряму або дистрибʼютор із доступом до інженерів виробника; канал обирає founder, текст від цього не змінюється. Числа дзеркалять доми, і дім кожного названо в §1; **правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)). Дім стану — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.29: нога «котирування FW-SM + CLP у Samtec». Та сама відповідь годує ще дві ноги пункту: footprint у KiCad і вимір першої партії (§2).
 > **Частина procurement-реєстру** → [`rfq_registry`](rfq_registry.md) (рядок «Капсула електроніка» · hard-constraint дім §4.D: для B2B вимог не несе).
 
 ---
@@ -19,7 +19,7 @@
 6. **Як читати відповідь «найближчі висоти» (п. 1c).** Якщо рівно 8.0 немає, найближча **вища** висота зʼїдає просвіт над антеною `NN02-224` (2.4 мм — найвищий прочитаний член верху RF-деку з 2026-09-30). За кешем `52` антена лишається під короною, поки B2B ≤ 8 + (4.15 − 2.4) = 9.75 мм над центром деки (на краю плати при стелі контуру просвіт 4.136 → 9.74). Обережне прочитання з допуском із того ж кешу (`room_after_tolerance_mm`): просвіт 3.7 мм за RSS, як його цитує [`02_02 §3.5`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md), → ≤ 9.3 мм; за найгіршим випадком 3.2 → ≤ 8.8. Межу подано смугою, а не одним числом, бо котра з них діє, залежить від місця антени на RF-деку, а розкладки немає (кеш сам називає це відсутнім датумом). Це наша арифметика над огинаючою кешу, не канон: припій і монтажний зазор кеш не моделює (його власна стеля). Найближча **нижча** висота опускає зазор антена↔Ti нижче за 11.85 мм.
 7. **Standoff — тепер рішення (⚖️ 2026-10-05, поз. 25); питанням лишилась глибина входу CLP.** Стійки Є — присуд прокладки кишені BME280 (⚖️ founder 2026-10-05, [`02_01 §3.4`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 24) тримає Z позитивним упором стійок між деками; висоту, P/N і отвори веде `00_07` HW.9, а п. 2c лишається питанням про глибину входу CLP при стійках. ⊕ Того ж дня P/N і форму вирішено — без гвинтів, `9774080243R` × 2: поз. 25 і врізка під таблицею [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md); відповідь на пп. 1a–c покаже, чи пара рівно 8.0 — інакше висота стійки є ⚖️ переприсудом (найслабша ланка присуду поз. 25), а не машинною правкою; без гвинтів отворів у RF Deck немає.
 8. **Відповідь у репо не комітиться.** Котирувальний документ, внутрішні звіти й переписка виробника — чужі операційні факти. У репо їде наш висновок у HW.29 і те, що нога прямо наказує: ціну пари 🤖 переносить у BOM поз. 12, рядок TOTAL і rollup [`02_06 §1.2`](../../02_06_Unit_Economics_and_BOM.md) з посиланням на котирування.
-9. **Що публічний каталог уже відповів (звірено 2026-10-05: аркуші FW-SM і CLP, ред. грудня 2025, і сторінка продукту на сайті Samtec).** CLP мейтиться з FW (рядок «Mates» самого аркуша) · обидві −55…+125 °C → п. 5a · CLP 3.4 A на пін → п. 6a (струм; опору контакту аркуш не дає) · 100 циклів змикання з 10 µ″ Au → п. 4a · опція направляючих пінів –A → п. 3b · «Samtec recommends mechanical board spacers be used in applications with gold or selective gold plated connectors» → п. 2c (рекомендацію дано; глибини входу й діапазону стійки — ні) · «non-standard, non-returnable» → п. 8 (умову підтверджено). Тіло FW ставлять на пін кроком 0.005″ (0.13 мм), а `FW-05-03-L-D-228-065` сайт приймає як конфігурацію; ціни без входу в акаунт сайт не показує. **У мить відправки** ці пункти листа стають ПІДТВЕРДЖЕННЯМ із цитатою каталогу, а не питанням; відкритими лишаються таблиця мейтів і коди висоти (п. 1), допуск змикання з документом-джерелом (п. 2a–b) і комерція (п. 8a–e). ⊕ 2026-10-08: діапазон кодів дав сам каталог, інструмент мейтів сайту з каталожною прямою розходиться на номіналі, а «крок .005″» сторінки продукту не сходиться з прикладами каталогу — числа у врізці [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 12. Тож п. 1 у мить відправки питає вже не «чи існує код», а який документ Samtec правий для коду під 8.0 / 10.0 і що означає «крок»; п. 2a уже питає про CLP і решту пари поверх ±.005″ на «A» хедера з креслення FW.
+9. **Що публічний каталог уже відповів (звірено 2026-10-05: аркуші FW-SM і CLP, ред. грудня 2025, і сторінка продукту на сайті Samtec).** CLP мейтиться з FW (рядок «Mates» самого аркуша) · обидві −55…+125 °C → п. 5a · CLP 3.4 A на пін → п. 6a (струм; опору контакту аркуш не дає) · 100 циклів змикання з 10 µ″ Au → п. 4a · опція направляючих пінів –A → п. 3b · «Samtec recommends mechanical board spacers be used in applications with gold or selective gold plated connectors» → п. 2c (рекомендацію дано; глибини входу й діапазону стійки — ні) · «non-standard, non-returnable» → п. 8 (умову підтверджено). Тіло FW ставлять на пін кроком 0.005″ (0.13 мм), а `FW-05-03-L-D-228-065` сайт приймає як конфігурацію; ціни без входу в акаунт сайт не показує. **У мить відправки** ці пункти листа стають ПІДТВЕРДЖЕННЯМ із цитатою каталогу, а не питанням (⊕ 2026-11-07: зроблено ДО читання founder-а, як велить #14 — тут, а не в мить відправки); відкритими лишаються таблиця мейтів і коди висоти (п. 1), допуск змикання з документом-джерелом (п. 2a–b) і комерція (п. 8a–e). ⊕ 2026-10-08: діапазон кодів дав сам каталог, інструмент мейтів сайту з каталожною прямою розходиться на номіналі, а «крок .005″» сторінки продукту не сходиться з прикладами каталогу — числа у врізці [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 12. Тож п. 1 у мить відправки питає вже не «чи існує код», а який документ Samtec правий для коду під 8.0 / 10.0 і що означає «крок»; п. 2a уже питає про CLP і решту пари поверх ±.005″ на «A» хедера з креслення FW.
 
 ---
 
@@ -27,7 +27,7 @@
 
 | Пункт листа | Дім | Як подано | Прибрано |
 |---|---|---|---|
-| **Застосування: дві плати, мезонін** | [`02_01 §1`](../../02_01_Hardware_Architecture_and_BOM.md) (Power Deck + RF Deck) · [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 8 (FR4 1.6 мм) · поз. 12 (роль: 3V3, GND, VSTOR_sense, EBFC_sense, BQ25570 EN — 5–7 ліній; ⚠️ «BQ25570 EN» застаріло 2026-11-02: `VOUT_EN` іде на `VBAT_OK`, не на МК, а пін `EN` канон не розводить — тож «two analog sense lines and enable lines» у тексті листа звірити з розводкою перед надсиланням; без B2B RF Deck не має живлення — [`02_01 §5.3`](../../02_01_Hardware_Architecture_and_BOM.md) дія 1) · [`02_02 §3.5`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (стеля контуру) | фактом; лінії — описово за класом («supply · ground · two analog sense · interrupt · enable»); контур «about 21–23 mm in diameter, possibly larger … the outline may still change» (на застосованому куполі ціль Ø19.97; ⊕ «Пакет кореня» 2026-10-13 — пара B2B ≈ Ø21.58–22.75, і це нижня межа; рух кореня — один, після осі 3 RF-макета, ⚖️ founder 2026-10-13) | назви сигналів · 20.37 / 19.97 (стеля з нульовим допуском читалась би як креслярський розмір — як у [`node_parylene_rfq`](node_parylene_rfq.md)) · анкер, Ti, pogo · пакет кореня й причина руху |
+| **Застосування: дві плати, мезонін** | [`02_01 §1`](../../02_01_Hardware_Architecture_and_BOM.md) (Power Deck + RF Deck) · [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 8 (FR4 1.6 мм) · поз. 12 (роль: 3V3, GND, VSTOR_sense, EBFC_sense, BQ25570 EN — 5–7 ліній; ⚠️ «BQ25570 EN» застаріло 2026-11-02: `VOUT_EN` іде на `VBAT_OK`, не на МК, а пін `EN` канон не розводить — тож «two analog sense lines and enable lines» у тексті листа звірити з розводкою перед надсиланням (⊕ 2026-11-07: лист описує лінії за розводкою — «analog sense lines, possibly one digital enable line» і силова лінія накопичувача за одного з розподілів дек, [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.29, нога KiCad); без B2B RF Deck не має живлення — [`02_01 §5.3`](../../02_01_Hardware_Architecture_and_BOM.md) дія 1) · [`02_02 §3.5`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (стеля контуру) | фактом; лінії — описово за класом («supply · ground · two analog sense · interrupt · enable»); контур «about 21–23 mm in diameter, possibly larger … the outline may still change» (на застосованому куполі ціль Ø19.97; ⊕ «Пакет кореня» 2026-10-13 — пара B2B ≈ Ø21.58–22.75, і це нижня межа; рух кореня — один, після осі 3 RF-макета, ⚖️ founder 2026-10-13) | назви сигналів · 20.37 / 19.97 (стеля з нульовим допуском читалась би як креслярський розмір — як у [`node_parylene_rfq`](node_parylene_rfq.md)) · анкер, Ti, pogo · пакет кореня й причина руху |
 | **Обрана пара** | [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 12 (FW-SM –03 SMD + CLP SMD · 1.27 · 2 × 5 · vertical · header на Power Deck, socket на RF Deck · mated 8–10 задається кодом висоти) | вимогою | історія FTSH/CLT · альтернативи Hirose/Molex · rigid-flex (deferred) |
 | **1 мейт, P/N, висоти** | [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) врізка під таблицею (FW-SM із CLP: приклади каталогу 8.13 і 9.91; стекер –03 .215–.335″ — «7.72–19.15» є діапазоном усієї серії разом із –05/FLE) · нога HW.29 «коди висоти під мейтовані 8.0 і 10.0» · [`02_02 §3.5`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (під короною лише B2B 8) | 8.0 — базою, 10.0 — дельтою; каталожні числа — цитатою ЇХНЬОГО ж каталогу; таблиця мейтів, повні P/N і найближчі висоти — питанням | формула «stacker + post + 0.56» · наш вивід коду · «10 під короною не влазить» (наш висновок, вендорові не потрібен) |
 | **2 допуск змикання** | [`02_02 §3.5`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (член B2B у Z-ланцюзі, паспорта пари немає; на розмір «A» хедера — ±.005″ за кресленням FW) · [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) врізка (цитата каталогу «processing conditions will affect mated height») · третя нога HW.29 | цитатою каталогу; допуск, документ-джерело, процесні фактори — питанням | ⛔ `±0.15` (якір, §0 п. 5) · RSS ±0.45 · вікна pogo/pad |
@@ -54,7 +54,7 @@
 | **5b** покриття контактів | BOM поз. 12 (без коду покриття повного P/N не існує) | Потрібне, щоб п. 1b узагалі дав P/N |
 | **5c** порада щодо Parylene | HW.11 · [`node_parylene_rfq`](node_parylene_rfq.md) п. 6 («окремо ⊥ стеком») | Незалежна думка виробника роз'єму для того самого вибору, який лист коатерові лишає відкритим. Нічого не розсуджує: обидві відповіді зводить founder |
 | **6a** струм на контакт, опір контакту | HW.29 · KiCad «signal integrity для 5–7 сигналів» · вимір insertion loss | Паспортна база, з якою порівнюється вимір першої партії |
-| **7a–b** tape and reel, pick-and-place, креслення, footprint, 3D | HW.29 · KiCad-нога | Вхід footprint-у; tape and reel — серійний монтаж ([`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)) |
+| **7a–b** tape and reel, pick-and-place, креслення, footprint, 3D | HW.29 · KiCad-нога | Вхід footprint-у; tape and reel — серійний монтаж (SMD обох половин — [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 12; що SMD-частини ставить pick-and-place, канон каже лише неявно — [`02_01 §3.5`](../../02_01_Hardware_Architecture_and_BOM.md), «THT-крок поза pick-and-place») |
 | **8a–e** ціна, MOQ, лідтайм, non-returnable, зразки, 1K/10K, доставка | HW.29 · «ціна пари · MOQ · лідтайм · умова non-returnable» | 🤖 ціна → BOM поз. 12, TOTAL, rollup [`02_06 §1.2`](../../02_06_Unit_Economics_and_BOM.md) — за самою ногою |
 
 ---
@@ -88,72 +88,71 @@
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
-**Subject line:** RFQ — FW-SM terminal strip + CLP socket strip, 1.27 mm pitch, 2 × 5, SMT: mating confirmation, part numbers for 8.0 mm and 10.0 mm mated height, mated-height tolerance, samples
+**Subject line:** RFQ: FW-SM + CLP, 1.27 mm, 2 × 5 SMT — part numbers for 8.0 mm and 10.0 mm mated height, tolerance, samples
 
 **To a distributor receiving this:** if you are not Samtec, please forward this message to Samtec technical support. Several of the questions below can only be answered by the manufacturer.
 
 Dear colleagues,
 
-**About us and the application.** We are an R&D project in Ukraine developing a small sensor node for forest monitoring. Its electronics sit in a sealed capsule on two round printed circuit boards stacked one above the other: a lower power board and an upper radio and microcontroller board. Each board is **about 21–23 mm in diameter**, possibly larger (the housing is being sized around the final layout, so the outline may still change), FR4, 1.6 mm thick. A board-to-board connector pair joins the two boards and is the only electrical connection between them. It carries five to seven lines: the 3.3 V supply and ground for the upper board, two analog sense lines and enable lines.
+**About us and the application.** We are an R&D project in Ukraine developing a small sensor node for forest monitoring. Its electronics sit in a sealed capsule on two round printed circuit boards stacked one above the other: a lower power board and an upper radio and microcontroller board. Each board is **about 21–23 mm in diameter**, possibly larger (the housing is being sized around the final layout, so the outline may still change), FR4, 1.6 mm thick. A board-to-board connector pair joins the two boards and is the only electrical connection between them. It carries five to seven lines, and the final list depends on the board layout: the supply and ground for the upper board, analog sense lines, possibly one digital enable line and, depending on how the parts are split between the two boards, the supply line of the energy-storage capacitor.
 
-This is a request for information and a quotation for engineering samples, not yet a production order. Answering commits neither side to anything, and inline answers in this email are fine.
+This is a request for information and a quotation for engineering samples, not yet a production order. Answering commits neither side to anything, and inline answers in this email are fine. Where your published documents already answer a question, we quote them and ask you only to confirm that they apply to this pair.
 
 **What we have selected from your catalog**
 
-- **Lower board:** FW-SM terminal strip, surface-mount lead style (-03), 1.27 mm pitch, double row, 5 positions per row (10 contacts), vertical.
+- **Lower board:** FW-SM terminal strip, surface-mount lead style –03, 1.27 mm pitch, double row, 5 positions per row (10 contacts), vertical.
 - **Upper board:** CLP socket strip, surface mount, 1.27 mm pitch, double row, 5 positions per row.
 - **Mated height:** base case **8.0 mm**; alternative **10.0 mm**.
 
-We are working from your FW-SM catalog pages, which show mated heights with CLP of 8.13 mm and 9.91 mm among their examples, and which give a stacker-height range of .215 to .335 in for lead style –03. We have not found a table that gives the height codes for exactly 8.0 mm and 10.0 mm, so that is the core of this enquiry.
+Your FW-SM catalog (F-226, Rev 09 DEC25) gives a stacker-height range of .215 to .335 in for lead style –03 and, with CLP, mated heights of .320 in (8.13 mm) for stacker code 233 and .390 in (9.91 mm) for code 303. The mated sets on your CLP product page list other combinations, for example FW-03-03-L-D-255-065 with CLP-103-02-F-D-TR-BE at 8.760 mm and FW-02-03-L-D-260-065 with CLP-102-02-F-D-TR-BE at 8.890 mm. From these documents we could not tell which stacker code gives exactly 8.0 mm or 10.0 mm, nor which of them governs the nominal mated height, and that is the core of this enquiry.
 
 **1. Mating and part numbers: the question that matters most to us**
 
-- a. Please confirm from your mating table that FW-SM and CLP, as described above, mate with each other in a double-row, 5-position configuration.
-- b. Please give the complete part numbers of both halves for a mated height of 8.0 mm, and separately for 10.0 mm, with the plating you recommend in item 5. We understand that the mated height is set by the height codes of the FW-SM together with the CLP, and we would rather rely on your table than on our own reading of the examples.
+- a. Your FW-SM catalog lists CLP as a board mate, and your CLP catalog lists FW. Please confirm that FW-SM and CLP, as described above, mate in a double-row, 5-position configuration.
+- b. Please give the complete part numbers of both halves for a mated height of 8.0 mm, and separately for 10.0 mm, with the plating you recommend in item 5. Please also tell us which document governs the nominal mated height (the catalog table or the mated-set data on your website) and in what steps the stacker-height code can be ordered.
 - c. If exactly 8.0 mm or 10.0 mm is not available, please give the nearest available mated heights above and below each, with their part numbers.
 
 **2. Mated-height tolerance**
 
-Your catalog notes that processing conditions will affect mated height. The mated height enters a tolerance stack inside our capsule, so we need the figure together with its source.
+Your FW-SM catalog notes that processing conditions will affect mated height. The mated height enters a tolerance stack inside our capsule, so we need the figure together with its source.
 
-- a. What is the tolerance on the mated height for the combinations in item 1? Where is it specified: a customer drawing, a product specification or a qualification test report? Please send that document. Your FW drawing gives dimension "A" as ±.005 in; what applies to the CLP side and to the mated stack as a whole?
-- b. Which processing conditions change the mated height, and by how much each: solder paste thickness, reflow profile, board flatness, coplanarity of the parts, anything else? What do you recommend to keep the variation small?
-- c. Is the mated pair meant to hold the spacing between the two boards by itself, or do you recommend separate standoffs? If standoffs are used, how much variation in board spacing can the CLP absorb, in insertion depth, while keeping full contact?
+- a. Your FW drawing (Rev DG) gives dimension "A" as ±.005 in and a maximum height variation between rows of .005 in, and your CLP drawing (Rev DH) gives .090 +.003/–.002 in, measured at the bend. Which of these enter the mated height of the pair, and is there a tolerance on the mated height of the pair as a whole for the combinations in item 1? Where is it specified: a customer drawing, a product specification or a qualification test report? Please send that document.
+- b. Your product specification for this family (Rev B) gives a 0.15 mm stencil, up to three reflow passes at a maximum component temperature of 260 °C and machine placement in the Z axis, and both catalogs give a lead coplanarity of .004 in. How much does each processing condition change the mated height (solder paste thickness, reflow profile, board flatness, coplanarity of the parts), and what do you recommend to keep the variation small?
+- c. Your FW-SM catalog recommends mechanical board spacers with gold-plated connectors, and we plan to use them. Your CLP catalog gives a minimum top-entry insertion depth of 1.40 mm (.055 in). What range of board spacing, in insertion depth, can the CLP absorb while keeping full contact?
 
 **3. Alignment when mating**
 
 The connector sits between the two boards, so it mates without visual access.
 
 - a. What lateral offset and angular misalignment does the pair accept at mating? Does it guide itself into position?
-- b. Are alignment pins or polarisation available for these parts, and how do they change the recommended PCB footprint? Our boards are small, so every square millimetre of board area matters.
+- b. Your FW-SM catalog lists an alignment-pin option (–A) from 3 positions. Please confirm which alignment option is available for both halves in 2 × 5, and send the recommended PCB footprint with it: our boards are small, so every square millimetre of board area matters.
 
 **4. Mating cycles**
 
-- a. What is the rated number of mating cycles for this pair?
-- b. Does repeated mating and unmating change the contact resistance or the mated height?
+- a. Your CLP catalog gives a maximum of 100 mating cycles with 10 µ″ gold, and your product specification a durability test of 500 cycles. Which applies to FW-SM + CLP with the plating you recommend?
+- b. Your qualification report 720050 (CLP with FTSH) shows a contact-resistance change of no more than +5.0 mΩ after 100 cycles. Does it apply to FW-SM + CLP, and does repeated mating change the mated height?
 
 **5. Environment, plating and conformal coating**
 
-The capsule is sealed with an O-ring and filled with air, possibly with a desiccant. The operating temperature ranges from −40 to +85 °C, over many years of outdoor service. In series production the boards will be coated with Parylene C, about 10 µm thick, with the mating contacts of the connector masked.
+The capsule is sealed with an O-ring and filled with air, possibly with a desiccant. The operating temperature ranges from −40 to +85 °C, over many years of outdoor service; your catalogs give −55 to +125 °C for both series, which covers it. In series production the boards will be coated with Parylene C, about 10 µm thick, with the mating contacts of the connector masked.
 
-- a. Please confirm that the rated temperature range of both parts covers −40 to +85 °C.
-- b. Which contact plating do you recommend for these conditions?
-- c. Do you have guidance on conformal coating of boards that carry this pair, for example on masking the mating area, or on whether the boards should be coated before or after the two halves are mated?
+- a. Which contact plating do you recommend for these conditions?
+- b. Do you have guidance on conformal coating of boards that carry this pair, for example on masking the mating area, or on whether the boards should be coated before or after the two halves are mated?
 
 **6. Electrical**
 
-- a. Current rating per contact, both with a single contact powered and with several adjacent contacts powered.
-- b. Contact resistance, initial and after the rated mating cycles.
+- a. Your product specification gives 4.2 A with one pin powered per row, and your CLP catalog 3.4 A per pin with 2 pins powered. Please confirm that these apply to FW-SM + CLP, and give the rating with several adjacent contacts powered.
+- b. Your qualification report 720050 gives an initial contact resistance of 9.98 mΩ maximum, and your product specification a change of no more than 15 mΩ. Please confirm that these apply to FW-SM + CLP.
 
 **7. Production and documents**
 
-- a. In production, both halves will be placed by pick-and-place. Are they available on tape and reel, and is a pick-and-place pad or cap available for each half?
+- a. In production, both halves will be placed by pick-and-place. Your catalogs list tape and reel (–TR) and a pick-and-place pad (–P; for FW-SM from 5 positions). Please confirm that both are available for both halves in 2 × 5.
 - b. Please send the customer drawings for the part numbers in item 1, the recommended PCB footprint for each half, and 3D models.
 
 **8. Commercial**
 
 - a. Price and lead time for **5 mated pairs at 8.0 mm mated height** (our base case), and separately for 5 mated pairs at 10.0 mm.
-- b. Your catalog describes this product as non-standard and non-returnable. What does that mean for these part numbers: minimum order quantity, cancellation terms, and whether samples are available through your sample programme?
+- b. Your FW-SM catalog says that the series is non-standard and non-returnable (your CLP catalog: some lengths, styles and options). What does that mean for these part numbers: minimum order quantity, cancellation terms, and whether samples are available through your sample programme?
 - c. An indicative price per mated pair at 1 000 and at 10 000 pairs, with lead times.
 - d. Can samples be delivered to Ukraine directly, or should we order through a distributor?
 - e. Quote currency and validity, and a technical point of contact.
@@ -171,7 +170,7 @@ Thank you in advance.
 | Ресурс | Що бере |
 |---|---|
 | [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) | BOM поз. 12 (пара, крок, 2 × 5, 8–10, лінії) і врізка під таблицею (присуд, каталожні висоти, «non-returnable», найслабша ланка присуду) · поз. 8 (FR4 1.6) |
-| [`02_01 §5.3`](../../02_01_Hardware_Architecture_and_BOM.md) · [`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md) | дія 1: B2B як єдиний міст Power↔RF, «standoff/PCB spacer», зазор антена↔Ti 11.85–13.85 · робот ставить B2B на заводі |
+| [`02_01 §5.3`](../../02_01_Hardware_Architecture_and_BOM.md) | дія 1: B2B як єдиний міст Power↔RF, «standoff/PCB spacer», зазор антена↔Ti 11.85–13.85 (⊕ 2026-11-07: «робот ставить B2B на заводі» з `02_01 §6` знято — §6 цього не каже) |
 | [`02_02 §3.5`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`02_02 §3.4`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) | член B2B у Z-ланцюзі без паспорта пари · вертикальний бюджет (лише B2B 8 під короною) · Parylene C 10 µm і маскування · −40…+85 °C |
 | `tools/in_silico/scripts/52_z_stack_tolerance.py` · `cache/mechanical/z_stack_tolerance.json` | `B2B_STACK_MM`, `TOL_PZ`, просвіт над RF Deck 4.15 / 2.15 мм (§0 пп. 2, 6) |
 | [`02_06 §1.2`](../../02_06_Unit_Economics_and_BOM.md) | rollup, куди 🤖 переносить ціну пари |
