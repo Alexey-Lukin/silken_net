@@ -489,7 +489,8 @@ rb_dark() {
 # 2026-10-17: 177 → 178 — журнал `log_skill_tier` (DOC-T.123: прилад тригера скілів і його пастки); підлога за ним, щоб і він охоронявся.
 # 2026-10-23: 178 → 179 — журнал `log_ebfc_q1_paper_program` (хроніка Статті 1, виселена з роутера `project_ebfc_q1_paper_program`); підлога за ним.
 # 2026-11-05: 179 → 180 — `project_gmail_letters` (журнал надісланих листів; founder: «запамятовуй всі листи які шлемо в gmail»); підлога за ним.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-180}
+# 2026-11-07: 180 → 181 — журнал-близнюк `log_gmail_letters` (тіла відповідей, винесені з `project_gmail_letters`, коли той підійшов до стелі файлу); підлога за ним.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-181}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
