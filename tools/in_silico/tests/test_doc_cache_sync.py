@@ -1711,6 +1711,13 @@ CHECKS += [
         "mechanical/teg_across_peek_break.json",
         lambda d: d["sensitivities"]["fill_factor_lower_bound"]["t_anode_C"], 0.005,
     ),
+    # the wall reaction is at most drag − touchdown per swept µ — an UPPER bound per µ, so both ends round UP (#43)
+    *[(f"bus exit wall reaction upper bound, µ {mu} → bus_mechanical.json", SUMMARY, pat, "mechanical/bus_mechanical.json",
+       (lambda m: lambda d: math.ceil(round(next(b for b in d["clearance_regime"]["branches"]
+                                                  if b["branch"].startswith("PEEK liner") and b["geometry"].startswith("shipped"))
+                                             ["by_mu"][m]["exit_reaction_N_upper_rigid_wall"] * 1000, 9)) / 1000)(mu), 0.0)
+      for mu, pat in (("0.2", rf"\({N}–[\d.]+ N over the swept µ on the shipped geometry"),
+                      ("0.5", rf"\([\d.]+–{N} N over the swept µ on the shipped geometry"))],
     # the bus root's bracket at the worst swept µ (SUMMARY §HW.34 «Coaxial…»): `55` caches both ends to the display, so the
     # bracket is rounded OUTWARD from `68`'s raw — a bracket holds its own ends (in-silico §When Modifying #43; 00_07 HW.43)
     *[(f"bus root bracket, {where} {end} → bus_contact_equilibrium.json", SUMMARY, pat,
@@ -7161,7 +7168,8 @@ CHECKS += [
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["seam_k_at_wall_ceiling_87"]))(key),
           # the share below which the wall's cap stays clear — the insulator's harmless region, DOWN; for the seam's
           # requirement both sides are conservative (it is the lesser of the rise and the ceiling), so DOWN serves both
-          # readers (#43; 00_07 HW.43). The cap's onset, UP, is printed by `102`'s verdict beside it.
+          # readers (#43; 00_07 HW.43) — under the sway ALONE at one temperature (the hot-edge preload adds to it). The cap
+          # binds from the next hundredth up; `102`'s verdict prints that onset for Ta and Ti-6Al-4V only.
           (lambda k: lambda d: _down2(d["seam_by_alloy"][k]["adverse_share_at_wall_cap_exact"]))(key)))],
     ("shear sleeve ratio → 102", SUMMARY, rf"the sleeve is {N}× stiffer axially", SHEAR,
      lambda d: math.floor(d["sleeve_vs_wire"]["ratio"]), 0.0),
