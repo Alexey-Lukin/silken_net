@@ -1711,6 +1711,18 @@ CHECKS += [
         "mechanical/teg_across_peek_break.json",
         lambda d: d["sensitivities"]["fill_factor_lower_bound"]["t_anode_C"], 0.005,
     ),
+    # the bus root's bracket at the worst swept µ (SUMMARY §HW.34 «Coaxial…»): `55` caches both ends to the display, so the
+    # bracket is rounded OUTWARD from `68`'s raw — a bracket holds its own ends (in-silico §When Modifying #43; 00_07 HW.43)
+    *[(f"bus root bracket, {where} {end} → bus_contact_equilibrium.json", SUMMARY, pat,
+       "mechanical/bus_contact_equilibrium.json",
+       (lambda geo, field, how: lambda d: how(next(r for r in d["drag_coaxial"] if r["geometry"] == geo
+                                                   and r["play"] == "zero interference"
+                                                   and r["branch"].startswith("PEEK liner"))["by_mu"]["0.5"][field]))(g, key, rnd),
+       0.0)
+      for where, g, ctx in (("shipped", "shipped — the whole lock shank (HW.26 G1)", r"MPa on the shipped geometry"),
+                            ("shallow end", "lock window, shallow end", r"MPa at the shallow end"))
+      for end, key, rnd, pat in (("low", "sigma_root_MPa_bonded", _down2, rf"\[{N}, [\d.]+\] {ctx}"),
+                                 ("high", "sigma_root_MPa_upper_end", _up1, rf"\[[\d.]+, {N}\] {ctx}"))],
     # the ⊕ of 2026-11-08 (⚖️ founder) beside «L1 (±0.112»: `52` carries the residual ⌈µm⌉ and writes the raw RSS beside
     # it — the ⊕ quotes the raw to four places (00_07 HW.43); the preserved «±0.112» keeps no pin
     *[(f"Z-stack residual raw, {lab} → z_stack_tolerance.json (02_02 §3.5 ⊕ 2026-11-08)", BLIND_MATE, pat,
@@ -1963,14 +1975,22 @@ CHECKS += [
            lambda d: _up2(d["by_slope_reading"]["median"]["A_rim"]["o_ring_reaction_N_needed"]["initial_with_clamp_at_52_requirement"]), 0.0),
           ("initial O-ring reaction, whisker", rf"N \(median reading\) … {N} N with the clamp at `52`'s printed form",
            lambda d: _up2(d["by_slope_reading"]["upper_whisker"]["A_rim"]["o_ring_reaction_N_needed"]["initial_with_clamp_at_52_requirement"]), 0.0),
-          ("stack mass estimate, low", rf"— \*\*{N}–[\d.]+ g\*\*\. At that mass",
-           lambda d: d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"][0], 0.005),
-          ("stack mass estimate, high", rf"— \*\*[\d.]+–{N} g\*\*\. At that mass",
-           lambda d: d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"][1], 0.005),
+          # a computed RANGE holds its own ends — rounded OUTWARD, pinned exactly (in-silico §When Modifying #43; 00_07 HW.43)
+          ("stack mass estimate, low", rf"— \*\*{N}–[\d.]+ g\*\* \(the two computed ranges",
+           lambda d: _down2(d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"][0]), 0.0),
+          ("stack mass estimate, high", rf"— \*\*[\d.]+–{N} g\*\* \(the two computed ranges",
+           lambda d: _up2(d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"][1]), 0.0),
+          # the two boards = the stack less every typed part, at each end (`87` computes them from the rim cavity)
+          ("two boards, low", rf"no larger than the rim cavity {N}–[\d.]+ g",
+           lambda d: _down2(d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"][0]
+                            - sum(v[0] for v in d["inputs"]["stack_parts_g"].values())), 0.0),
+          ("two boards, high", rf"no larger than the rim cavity [\d.]+–{N} g",
+           lambda d: _up2(d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"][1]
+                          - sum(v[1] for v in d["inputs"]["stack_parts_g"].values())), 0.0),
           ("inertia at the estimate, median light", rf"\*\*{N} %\*\* \(median, light\)",
-           lambda d: d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][0] * 100, 0.005),
+           lambda d: _down2(d["by_slope_reading"]["median"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][0] * 100), 0.0),
           ("inertia at the estimate, whisker heavy", rf"\*\*{N} %\*\* \(whisker, heavy\)",
-           lambda d: d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][1] * 100, 0.005),
+           lambda d: _up2(d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][1] * 100), 0.0),
           # one-sided, pinned EXACTLY on the display's own direction (in-silico §When Modifying #43): a capacity DOWN, a
           # demand UP, and the edge of a harmless region («while lighter than X») DOWN — the «reached at» / «unloads at»
           # forms were rewritten, not rounded, since rounded up they read as a harmless region the row does not have
