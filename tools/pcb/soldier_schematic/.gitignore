@@ -4,3 +4,5 @@
 fp-info-cache
 _autosave-*
 out/
+# KiCad lock files while a project is open in the GUI
+~*.lck
