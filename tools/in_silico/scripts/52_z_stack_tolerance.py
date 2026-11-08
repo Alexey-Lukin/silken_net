@@ -229,6 +229,18 @@ def rss(tols: list[float]) -> float:
     return math.sqrt(sum(t * t for t in tols))
 
 
+def carried_um(x: float) -> float:
+    """The shared-gap residual every reader builds on (`90`'s margins, through them `104`): rounded UP to the micrometre.
+    A CARRIED convention, not a display (⚖️ founder 2026-11-08, 00_07 HW.43; full form — 02_02 §3.5): the residual is an
+    RSS of design members, so its fourth digit is no physics, and every reader's margin (half-width × stroke − residual −
+    thermal term), flip CTE and required stroke only worsens as it grows — ⌈µm⌉ errs to the adverse side and moves none
+    of the ratified prices. The raw RSS sits beside it (`residual_pz_raw`). A DIFFERENCE of two carried residuals is not
+    monotone — `104`'s remedy gains (+41.0 · +56.0 · +8.0 · +12.0 µm) sit up to 0.73 µm off the raw either way, named in
+    the 02_02 §3.5 ⊕ — so a new reader whose sentence is one-sided about a difference takes the raw; a root of a monotone
+    reader (the flip CTE) stays on the conservative side (in-silico §When Modifying #6 ⊕ · #43)."""
+    return math.ceil(round(x * 1000, 9)) / 1000
+
+
 def pct(gap: float, free: float, ref: float) -> float:
     """Compression fraction = (free − gap) / ref."""
     return (free - gap) / ref
@@ -819,7 +831,7 @@ def main() -> int:
         for c in ecases[1:]:
             print(report_row(c))
         print(f"    → {'PASS — both windows hold' if ok else 'FAIL'}")
-        escalation.append({"label": label, "residual_pz": round(rp, 3), "residual_or": round(ro, 3),
+        escalation.append({"label": label, "residual_pz": carried_um(rp), "residual_pz_raw": rp, "residual_or": round(ro, 3),
                            "cases": ecases, "pass": ok})
         if ok and final_label is None:
             final_label = label

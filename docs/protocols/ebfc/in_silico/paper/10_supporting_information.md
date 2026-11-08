@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 391 · 30,000,152 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 391 · 30,006,205 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -105,7 +105,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | `33a37aa3f700472744ee6ff887215aa8c64d9a861a616a2c1c7a10f91144e138` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | `1b3a3f34069691d34fe02f3619c6e65437089ad98c176c9a3f7b9b0688633218` | Lamé thermal-mismatch stress for the titanium–PEEK press-fit. |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `c7d4940828c0884580307b356a71676f05651ae53d3c1b9cf07186d8cb2256c9` | Component degradation models: Arrhenius ageing, Kirkendall diffusion, H7/s6 press-fit and EDLC endurance hours. |
-| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `3e5d298bffff4d2c30345fe20428547bb01fad546f684c7bededaf5c2d6ff4bf` | Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs). |
+| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `628844c56b56c10280e6481f5fbfcbff18613bbec2d79bcece2a1f8e5963372d` | Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs). |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4478077492c51936376836ad377739348e119abe4302ce5c490f84dc396f9733` | Per-alloy native-oxide tunnelling model: direct-electron-transfer feasibility across the candidate anchor alloys. |
 | `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `b95c67309b8bce54b570fb5551a430cd412c8f1367f4648e06a8784c5ca7c689` | Axial thermal bridge of the central bus conductor through the anchor's PEEK thermal break. |
 | `tools/in_silico/scripts/55_bus_mechanical.py` | `aa26821ef24341d19b76b360b230fdc859725eb2e3644dcdd5f3f878274980d5` | Mechanical check of the central bus rod: buckling and sway fatigue. |
@@ -156,8 +156,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `f2cba2820b6dc61e7598805ed2dd4b52b68954515c016cbf66cc95a6fc9c30aa` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `1b49574835f73df206390bdd2027b3c09b5dae286ac629b5bec650f1d37ccef6` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `59c13397c4cafdbcaf837c57ab567fd3fb3b82d11d6a4f58a5ea4fd0055d1f14` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `137b3c0f657b456231a6e44451407ab6cc1e096a05e64adfc7a4c3e8dc33ffa3` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -303,7 +303,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/wind_duty_cycle.json` | `678670894a04ba007117efa9fee4b62c7b2cafda7fa78c7b3a5a83fdc6bba901` | 5,923 |
 | `tools/in_silico/cache/mechanical/wire_liner_shear_lag.json` | `25b7737dd875b97981b6c8ccb01c014997e26b0f3b6e54114338bb462e618e24` | 65,499 |
 | `tools/in_silico/cache/mechanical/wire_under_liner_edges.json` | `bbd8736a2b06587e9ab5978989f90666ac0209b9d145fb2148020aa0ba7a4be9` | 69,047 |
-| `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `680e6717bb79fc0422bc5fc1086294b71a1d89366465dc94a548ff6dda7ff277` | 34,819 |
+| `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `9ce5339f44e7d7c62fa90fa8ac87ab94636ce342356dfc18749fc356dcab1d91` | 34,956 |
 
 ### `tools/in_silico/cache/radio/`
 

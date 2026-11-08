@@ -6054,6 +6054,14 @@ def test_pad_travel_remedies_invariants():
         return math.ceil(round(x * 1000, 9)) / 1000
     cnc, half_step = s52.TOL_PZ["CNC_radome"], s52.SPACER_STEP / 2
     res90 = d90["inputs"]["mitigation_residual_mm_52"]
+    # `52` CARRIES its residual ⌈µm⌉ with the raw RSS beside it (⚖️ founder 2026-11-08, 00_07 HW.43; 02_02 §3.5).
+    # CATCHES: the helper slid back to nearest (0.1111 is where the two rules part), and a cached row that disagrees with
+    # the helper applied to its own raw (a stale cache). CANNOT catch a writer that bypasses the helper with round(x, 3)
+    # on today's rows — nearest and ceiling coincide on all three —, nor `104`'s own `ceil3` twin for its FINE and ZERO
+    # remedies (control (c) checks `52`'s three rows only), nor a reader that should take the raw (a difference).
+    assert s52.carried_um(0.1111) == 0.112 and s52.carried_um(0.112) == 0.112
+    for m in json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))["mitigation_escalation"]:
+        assert m["residual_pz"] == s52.carried_um(m["residual_pz_raw"]), m["label"]
     assert c3(math.hypot(cnc, half_step)) == res90["L1 spacer only"]
     assert c3(math.hypot(cnc / 2, half_step)) == res90["L2 spacer + bayonet hard-stop"]
     # the ratified minimal mitigation (⚖️ 2026-10-21): `52`'s L3 rung is the finer step with the hard-stop — 104's (б)

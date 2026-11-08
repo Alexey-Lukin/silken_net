@@ -95,6 +95,7 @@
     {
       "label": "L1 spacer only",
       "residual_pz": 0.112,
+      "residual_pz_raw": 0.1118033988749895,
       "residual_or": 0.05,
       "cases": [
         {
@@ -127,6 +128,7 @@
     {
       "label": "L2 spacer + bayonet hard-stop",
       "residual_pz": 0.071,
+      "residual_pz_raw": 0.07071067811865477,
       "residual_or": 0.05,
       "cases": [
         {
@@ -159,6 +161,7 @@
     {
       "label": "L3 spacer 0.05 mm + bayonet hard-stop",
       "residual_pz": 0.056,
+      "residual_pz_raw": 0.05590169943749475,
       "residual_or": 0.05,
       "cases": [
         {

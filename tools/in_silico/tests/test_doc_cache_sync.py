@@ -1711,6 +1711,40 @@ CHECKS += [
         "mechanical/teg_across_peek_break.json",
         lambda d: d["sensitivities"]["fill_factor_lower_bound"]["t_anode_C"], 0.005,
     ),
+    # the ⊕ of 2026-11-08 (⚖️ founder) beside «L1 (±0.112»: `52` carries the residual ⌈µm⌉ and writes the raw RSS beside
+    # it — the ⊕ quotes the raw to four places (00_07 HW.43); the preserved «±0.112» keeps no pin
+    *[(f"Z-stack residual raw, {lab} → z_stack_tolerance.json (02_02 §3.5 ⊕ 2026-11-08)", BLIND_MATE, pat,
+       "mechanical/z_stack_tolerance.json",
+       (lambda row: lambda d: round(d["mitigation_escalation"][row]["residual_pz_raw"], 4))(i), 1e-9)
+      for i, lab, pat in ((0, "L1", rf"\(сирі \*\*{N}\*\* · L2"), (1, "L2", rf" · L2 \*\*{N}\*\* · L3"),
+                          (2, "L3", rf" · L3 \*\*{N}\*\*\)"))],
+    # …the absolute margins' shift against the raw: carried − raw per rung, the band's two edges in µm (02_02 §3.5 ⊕)
+    ("Z-stack carried − raw residual, low edge (02_02 §3.5 ⊕ 2026-11-08)", BLIND_MATE, rf"запаси менші на \*\*{N}\*\*–\*\*",
+     "mechanical/z_stack_tolerance.json",
+     lambda d: round(min(m["residual_pz"] - m["residual_pz_raw"] for m in d["mitigation_escalation"]) * 1000, 2), 1e-9),
+    ("Z-stack carried − raw residual, high edge (02_02 §3.5 ⊕ 2026-11-08)", BLIND_MATE, rf"–\*\*{N}\*\* мкм \(1–3 кроки показу\)",
+     "mechanical/z_stack_tolerance.json",
+     lambda d: round(max(m["residual_pz"] - m["residual_pz_raw"] for m in d["mitigation_escalation"]) * 1000, 2), 1e-9),
+    # …and its weakest link, measured: `104`'s remedy gains are DIFFERENCES of residuals, so they sit off the raw. All four
+    # from `52`'s cache: L2 and L3 are its rows; the fine step alone is rss(CNC, fine/2), its half-step recovered from the
+    # L3 row (rss(CNC/2, fine/2) — `52`'s own residual rule); no step is the CNC member alone (`104` FINE · ZERO)
+    *[(f"Z-stack raw remedy gain, L1 over {lab} → z_stack_tolerance.json (02_02 §3.5 ⊕ 2026-11-08)", BLIND_MATE, pat,
+       "mechanical/z_stack_tolerance.json", fn, 1e-9)
+      for lab, pat, fn in (
+          ("L2", rf"на сирих — \*\*{N}\*\* · \*\*[\d.]+\*\* · ",
+           lambda d: round((d["mitigation_escalation"][0]["residual_pz_raw"]
+                            - d["mitigation_escalation"][1]["residual_pz_raw"]) * 1000, 2)),
+          ("L3", rf"на сирих — \*\*[\d.]+\*\* · \*\*{N}\*\* · ",
+           lambda d: round((d["mitigation_escalation"][0]["residual_pz_raw"]
+                            - d["mitigation_escalation"][2]["residual_pz_raw"]) * 1000, 2)),
+          ("the fine step alone", rf"на сирих — \*\*[\d.]+\*\* · \*\*[\d.]+\*\* · \*\*{N}\*\* · ",
+           lambda d: round((d["mitigation_escalation"][0]["residual_pz_raw"] - math.sqrt(
+               d["tolerance_mm"]["power_zone3"]["contributors"]["CNC_radome"] ** 2
+               + d["mitigation_escalation"][2]["residual_pz_raw"] ** 2
+               - (d["tolerance_mm"]["power_zone3"]["contributors"]["CNC_radome"] / 2) ** 2)) * 1000, 2)),
+          ("no step", rf"на сирих — (?:\*\*[\d.]+\*\* · ){{3}}\*\*{N}\*\*, тож",
+           lambda d: round((d["mitigation_escalation"][0]["residual_pz_raw"]
+                            - d["tolerance_mm"]["power_zone3"]["contributors"]["CNC_radome"]) * 1000, 2)))],
     # ── HW.33 gland geometry: the O-ring numbers 02_02 §3.5 quotes from script 52 ──
     # Their owner is the Z-stack cache, and every one of them moves the moment an INPUT moves
     # (cord section, ratified squeeze, dome wall) — which is exactly the drift a re-read of the
@@ -1902,6 +1936,12 @@ CHECKS += [
     ("coaxiality ⊕ 2026-11-03 in 01_01 §1.4, the gentle corner's hot preload", COAXIAL,
      rf"тепловим навантаженням `102` \({N} Н\)", "mechanical/wire_liner_shear_lag.json",
      lambda d: round(d["seam_by_alloy"]["Ta"]["hot_preload"]["F_N_gentle_nominal_relaxed_mu_low"], 2), 0.0),
+    # the ⊕ of 2026-11-08 (⚖️ founder) beside the preserved «0.355» of the ⊕ 2026-10-12 sentence — the preserved number keeps
+    # no pin; the ⊕ reads 86's own arithmetic, up for the display, raw to five places (00_07 HW.43)
+    ("coaxiality ⊕ 2026-11-08 in 01_01 §1.4, tight UP", COAXIAL, rf"показ до найближчого, угору \*\*{N}\*\*, сире `86`",
+     "mechanical/coaxiality_allocation.json", lambda d: _up3(_sod86(d, "tight")[1]), 0.0),
+    ("coaxiality ⊕ 2026-11-08 in 01_01 §1.4, tight raw", COAXIAL, rf"угору \*\*[\d.]+\*\*, сире `86` \*\*{N}\*\*;",
+     "mechanical/coaxiality_allocation.json", lambda d: round(_sod86(d, "tight")[1], 5), 1e-9),
     # ── HW.43 stem sway → load through the pogo pins (script 87, 2026-10-13) ──
     # ⛔ The per-gram ratio is what the spring's amplitude is read from once the drawing and the scale give τ_m and m;
     #    a SUMMARY figure drifted off the cache would hand framing B of 59 a fraction nobody computed.
