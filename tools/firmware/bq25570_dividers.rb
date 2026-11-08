@@ -595,6 +595,9 @@ def check_canon_mode
   exit(problems.empty? ? 0 : 1)
 end
 
+# Підключення як бібліотеки (`require_relative`) режимів не запускає: так генератор схеми
+# (`00_07` HW.56) читає номінали тим самим `parse_canon_table`, яким цей файл судить канон.
+if __FILE__ == $PROGRAM_NAME
 case ARGV.first
 when "--assert" then assert_mode
 when "--check-canon" then check_canon_mode
@@ -604,4 +607,5 @@ when /\A[a-zA-Z_][a-zA-Z0-9_]*=/ then measured_mode(ARGV)
 else
   warn "невідомий режим #{ARGV.first.inspect}; доступні: (порожньо) · --assert · --check-canon · --in-circuit [KEY=VAL…] · KEY=VAL (rov1=… rok3=…)"
   exit 2
+end
 end

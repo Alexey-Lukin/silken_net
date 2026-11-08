@@ -1,0 +1,6 @@
+# KiCad's per-user view state and backups, and the generator's check outputs (ERC · PDF · SPICE netlist) — rebuilt by build_schematic.rb
+*.kicad_prl
+*-backups/
+fp-info-cache
+_autosave-*
+out/
