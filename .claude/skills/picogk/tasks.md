@@ -163,7 +163,7 @@
   → `build` + `draw <cem> --vendor` for EVERY `cem/ti_coin*.json` (the coin manifests share one geometry, so the STLs are
   one disc and the alloy lives in the notes) → STL bbox ≡ manifest, and the manifest SHA in the title block of EVERY
   sheet against ITS manifest, not one representative → one archive, one entry per alloy, `unzip -t` → the ours → vendor
-  notes list `draw --vendor` prints goes to the founder beside the diff, before «шли». Before it, grep each sheet's
+  notes list `draw --vendor` prints goes to the founder beside the diff, before «шли». ⊕ The PO pack carries ALL alloys' sheets and STLs (⚖️ founder 2026-11-07), and the three paragraphs to paste into the PO — identification · item-2 hydrogen · «Drawings and STL files» — live in `anchor_alloy_rfq` §5a; a NEW addressee gets the letter without the replacement paragraph, its attachments being new already. Before it, grep each sheet's
   SVG text for every numeric field of the kind's manifest (gotcha #11 ⊕ — the loop radii); traps of the stamp and the
   submodule — gotcha #17 ⊕.
   ⚠️ **«Lamé-µm, NOT a blind ISO-286 lookup» is the canon REQUIREMENT (`01_01 §4.2`), and the shipped band
