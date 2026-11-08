@@ -269,6 +269,11 @@ def up2(x: float) -> float:
     return math.ceil(round(x * 100.0, 9)) / 100.0
 
 
+def down2(x: float) -> float:
+    """The edge of a harmless region («clear below X») rounds DOWN to two decimals (in-silico §When Modifying #43)."""
+    return math.floor(round(x * 100.0, 9)) / 100.0
+
+
 def soderberg_k(amp86: float, mean86: float, f_amp: float, f_mean: float, area: float, row: dict) -> float | None:
     return s86.soderberg(amp86 + f_amp / area, mean86 + max(f_mean, 0.0) / area, row["endurance_MPa"], row["yield_MPa"])[1]
 
@@ -542,11 +547,15 @@ def main() -> int:
     floor_frac = [v["fraction_of_shift"] for k, v in pad_sway.items() if k.startswith("window_floor")]
     stretch = [v["wire_stretch_at_wall_cap_um_max"] for v in by_alloy.values()]
     lines = [f"Seam, adverse corner (the tightest part at μ {max(mu_sweep):g}, `87`'s upper-whisker shift reversed): `86`'s "
-             f"requirement on Ta is {kk(ta, '0.25')} at a quarter of the shift and {kk(ta, '0.5')} at half, and from share "
-             f"{up2(ta['adverse_share_at_wall_cap_exact']):.2f} the liner wall's cap binds — the wall reaches its 23 °C yield "
+             # the share where the wall's cap binds is TWO claims: the cap's onset («binds from X», true only with X UP) and
+             # the insulator's harmless region («clear below X», DOWN) — print both edges (#43 ⊕; 00_07 HW.43)
+             f"requirement on Ta is {kk(ta, '0.25')} at a quarter of the shift and {kk(ta, '0.5')} at half; the liner wall's "
+             f"cap stays clear below share {down2(ta['adverse_share_at_wall_cap_exact']):.2f} and binds from "
+             f"{up2(ta['adverse_share_at_wall_cap_exact']):.2f} — then the wall reaches its 23 °C yield "
              f"every sway cycle and the requirement is `87`'s ceiling reading, {up2(ta['seam_k_at_wall_ceiling_87']):.2f}; on "
              f"{ALLOY_BASELINE} {kk(ti, '0.25')} · {kk(ti, '0.5')} → {up2(ti['seam_k_at_wall_ceiling_87']):.2f} from share "
-             f"{up2(ti['adverse_share_at_wall_cap_exact']):.2f}. Gentle corner (the nominal part after creep at μ {min(mu_sweep):g}, "
+             f"{up2(ti['adverse_share_at_wall_cap_exact']):.2f} (clear below "
+             f"{down2(ti['adverse_share_at_wall_cap_exact']):.2f}). Gentle corner (the nominal part after creep at μ {min(mu_sweep):g}, "
              f"the median shift one-sided): Ta {kg(ta, '0.25')}–{kg(ta, '1')}, {ALLOY_BASELINE} {kg(ti, '0.25')}–{kg(ti, '1')} "
              f"over shares 0.25–1 — above `86`'s {ta['seam_k_86']:.4f} on Ta at every share above zero."]
     lines.append(f"A seasonal preload at the hot edge ({t_hot:.0f} °C) on the relaxed liner adds "

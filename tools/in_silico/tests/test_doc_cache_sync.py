@@ -7140,7 +7140,7 @@ def _down2(x):
 
 def _shear_row(label, j):
     num = [N if j == k else r"[\d.]+" for k in range(7)]
-    cells = [num[0], f"{num[1]} – {num[2]}", num[3], num[4], f"{num[5]} from {num[6]}"]
+    cells = [num[0], f"{num[1]} – {num[2]}", num[3], num[4], num[5], num[6]]
     return rf"(?m)^\| {label} \| " + r" \| ".join(cells) + r" \|$"
 
 
@@ -7159,7 +7159,10 @@ CHECKS += [
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["0.25"]["seam_k_adverse_sway"]))(key),
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["0.5"]["seam_k_adverse_sway"]))(key),
           (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["seam_k_at_wall_ceiling_87"]))(key),
-          (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["adverse_share_at_wall_cap_exact"]))(key)))],
+          # the share below which the wall's cap stays clear — the insulator's harmless region, DOWN; for the seam's
+          # requirement both sides are conservative (it is the lesser of the rise and the ceiling), so DOWN serves both
+          # readers (#43; 00_07 HW.43). The cap's onset, UP, is printed by `102`'s verdict beside it.
+          (lambda k: lambda d: _down2(d["seam_by_alloy"][k]["adverse_share_at_wall_cap_exact"]))(key)))],
     ("shear sleeve ratio → 102", SUMMARY, rf"the sleeve is {N}× stiffer axially", SHEAR,
      lambda d: math.floor(d["sleeve_vs_wire"]["ratio"]), 0.0),
     ("shear stick F at 5 um → 102", SUMMARY, rf"by up to {N} % and [\d.]+ % at a 5 µm shift", SHEAR,

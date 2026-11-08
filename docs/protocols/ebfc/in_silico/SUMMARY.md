@@ -803,18 +803,19 @@ fraction of a ppm/K).
 part at μ 0.4, `87`'s upper-whisker shift reversed; gentle corner: the nominal part after creep at μ 0.1, the median
 shift one-sided.
 
-| alloy | `86` alone | gentle, shares 0.25 – 1 | adverse, ¼ | adverse, ½ | wall's ceiling (`87`), binds from share |
-|---|---|---|---|---|---|
-| Ti-15Zr | 0.1331 | 0.16 – 0.19 | 0.31 | 0.42 | 0.51 from 0.75 |
-| β-Ti-13Nb-13Zr | 0.1408 | 0.17 – 0.20 | 0.31 | 0.42 | 0.54 from 0.83 |
-| Ti-6Al-4V | 0.1441 | 0.17 – 0.21 | 0.34 | 0.47 | 0.55 from 0.72 |
-| Ti-6Al-7Nb | 0.1494 | 0.18 – 0.22 | 0.35 | 0.48 | 0.57 from 0.74 |
-| CP-Ti Gr4 | 0.272 | 0.32 – 0.39 | 0.63 | 0.86 | 1.03 from 0.74 |
-| Ta | 0.3882 | 0.47 – 0.58 | 1.03 | 1.37 | 1.48 from 0.59 |
+| alloy | `86` alone | gentle, shares 0.25 – 1 | adverse, ¼ | adverse, ½ | wall's ceiling (`87`) | its cap clear below share |
+|---|---|---|---|---|---|---|
+| Ti-15Zr | 0.1331 | 0.16 – 0.19 | 0.31 | 0.42 | 0.51 | 0.74 |
+| β-Ti-13Nb-13Zr | 0.1408 | 0.17 – 0.20 | 0.31 | 0.42 | 0.54 | 0.82 |
+| Ti-6Al-4V | 0.1441 | 0.17 – 0.21 | 0.34 | 0.47 | 0.55 | 0.71 |
+| Ti-6Al-7Nb | 0.1494 | 0.18 – 0.22 | 0.35 | 0.48 | 0.57 | 0.73 |
+| CP-Ti Gr4 | 0.272 | 0.32 – 0.39 | 0.63 | 0.86 | 1.03 | 0.73 |
+| Ta | 0.3882 | 0.47 – 0.58 | 1.03 | 1.37 | 1.48 | 0.58 |
 
 The requirement sits above `86`'s own k at every share above zero, even on the gentle corner, so the vendor's seam k
-cannot be accepted against 0.389 on Ta in any corner with the wood imposing anything. Once the ceiling binds, the
-liner wall reaches its 23 °C yield every sway cycle — the insulator, not only the seam (the yield and the grip are 20 °C
+cannot be accepted against 0.389 on Ta in any corner with the wood imposing anything. Below the last column's share
+(rounded down — an edge of the insulator's harmless region; `102`'s verdict prints the cap's onset, a hundredth up) the
+cap stays clear; once the ceiling binds, the liner wall reaches its 23 °C yield every sway cycle — the insulator, not only the seam (the yield and the grip are 20 °C
 figures, the sway source day a January one). Above k 1 not even an unweakened wire keeps SF 2: Ta is past it at a
 quarter of the shift on the adverse corner. A seasonal preload at the hot edge (55 °C) on the relaxed liner adds
 15.1 – 48.4 N of mean on Ta (gentle to adverse grip) — up to 91 % of the wall's 23 °C yield, where creep is not
