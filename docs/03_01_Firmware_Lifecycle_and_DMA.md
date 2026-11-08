@@ -67,7 +67,7 @@
 2. Сконфігурувати Clock Tree для STOP2 (MSI 100 kHz active clock, LSE 32.768 kHz для RTC)
 3. Підготувати HAL-ініціалізацію для всіх периферій (ADC, DMA USART1-RX Королеви, IWDG, RNG, CRYP, SUBGHZ)
 4. Запустити host-based тести (make -C firmware/test) без будь-якого ARM toolchain
-5. Запустити Wokwi-симуляцію для логіки сенсорів та пакетного формату
+5. Прогнати QEMU-паритет ARM-коду ([`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA), клас B — [`00_03 §3.5`](00_03_TRL_Matrix_HIL_and_Beyond)); ⛔ Wokwi сюди не годиться — STM32WL у ньому немає ([`02_01 §7`](02_01_Hardware_Architecture_and_BOM))
 
 ### Конфігурація Pinout STM32CubeMX (5 Каналів Сенсора + SWD)
 

@@ -667,9 +667,8 @@ n ≈ 1.3 (sheet-гіроїд, stretch-dominated)  →  при 65%: E ≈ 22–2
 
 ### 6.3. Симуляція до Отримання Деталей
 
-- **LTspice** (безкоштовний): симуляція аналогового ланцюга EBFC → BQ25570 → Supercap — перевірка струмів витоку та кривої заряду
-- **KiCad** (open-source): проектування PCB; Gerber-файли для JLCPCB/PCBWay
+- **Електроніка капсули** (схема · SPICE · плата) — дім [`02_01 §7`](02_01_Hardware_Architecture_and_BOM); ⚠️ вендорської моделі BQ25570 немає, тож симуляція тракту EBFC → BQ25570 → іоністор — гіпотеза, а відповідь дає стенд
 - **PicoGK + C#** (open source, LEAP 71) — **primary code-CAD трек** (`tools/cad`): voxel SDF engine, генерація гіроїда з математичних формул у коді — Git-friendly, AI-readable; повна анкер-родина + assembly ✅. Деталі — [`01_02 §6 PicoGK`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS).
 - **nTop** (✅ ліцензія отримана, робота ~нуль): **опційний reference / escape-hatch** — GUI-only workflow (AI-агенти сліпі), `.ntop` = бінарник без diff/review.
 - **ANSYS / Abaqus / COMSOL:** FEA press-fit, CFD ксилемного потоку
-- **Wokwi** (хмарний): симуляція логіки STM32 та периферії до отримання плат
+- ⛔ **Wokwi** не годиться: STM32WL у ньому немає — [`02_01 §7`](02_01_Hardware_Architecture_and_BOM); логіку прошивки до плат перевіряють класи A/B ([`00_03 §3.5`](00_03_TRL_Matrix_HIL_and_Beyond))
