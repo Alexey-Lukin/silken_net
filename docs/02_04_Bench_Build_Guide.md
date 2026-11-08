@@ -133,7 +133,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 | Компонент | Модель | Статус | ⚠️ Кусає |
 |---|---|---|---|
 | Клімат-сенсор | Bosch **BME280** (I2C2 mini — `PB15` SCL · `PA15` SDA, J1-23/22; на вузлі — I2C1 на `PB6`/`PB7`) | 🛒 | **НЕ BME680** (газ-нагрівач 10-12 мА вбиває бюджет) · ⚠️ під гейт TPS22860 — лише breakout із РОЗДІЛЕНИМИ `VDD` і `VDDIO`: ключ гейтує тільки `VDD`, `VDDIO` стоїть на постійній шині, а піни в «1» при вимкненому `VDDIO` незворотно пошкоджують чіп через ESD-діоди (Bosch BST-BME280-DS001 rev 1.24 §3.2/§6.2; вимога — [`00_07`](00_07_Action_Plan_Tracker) HW.32) — схему breakout звірити ДО покупки |
-| Load-switch | TI **TPS22860DBVR** (SOT-23-6 — єдиний orderable-корпус, [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM) поз. 23; 10 нА) + перехідник SOT-23-6 → DIP (крок 2.54) на кожен | 🛒 ×2: гейт BME280 · ключ Vcap-sense поз. 23 (стенд підтверджує `VIH,ON` від GPIO 3.3 В при `VBIAS` 5.5 В — [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM)); ×3 — якщо SE051C2 матиме окремий ключ (§3.5) | power-gate BME280 — лише VDD (§3.4) |
+| Load-switch | TI **TPS22860DBVR** (SOT-23-6 — єдиний orderable-корпус, [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM) поз. 23; 10 нА) + перехідник SOT-23-6 → DIP (крок 2.54) на кожен + pull-down 1 МΩ від `ON` до GND на кожен (⚖️ 2026-11-08, врізка під таблицею [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM); номінал у «наборі 820» звірити) | 🛒 ×2: гейт BME280 · ключ Vcap-sense поз. 23 (стенд підтверджує `VIH,ON` від GPIO 3.3 В при `VBIAS` 5.5 В — [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM)); ×3 — якщо SE051C2 матиме окремий ключ (§3.5) | power-gate BME280 — лише VDD (§3.4) |
 | _(production)_ | PTFE-мембрана (IP68 «дихання») | — | не bench-критично |
 
 ### Блок 5 — Security (Secure Element)
@@ -209,7 +209,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 2. **Checkpoint:** LoRa-E5 стартує (світлодіод `PB5`, активний низьким); самотест читається по SWD (RUNBOOK §2.1) — UART-виводу прошивка Солдата сьогодні не має.
 
 ### 3.4 Sense (BME280 @ TPS22860)
-1. TPS22860: `VIN`←3V3, `VOUT`→BME280 `VDD`, `ON`←GPIO (power-gate).
+1. TPS22860: `VIN`←3V3, `VBIAS`←3V3 (живлення самого ключа; `VIN` ≤ `VBIAS` — SLVSD04), `GND`, `VOUT`→BME280 `VDD`, `ON`←GPIO + 1 МΩ від `ON` до GND (power-gate; pull-down — ⚖️ 2026-11-08, [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM)).
 2. BME280: `SCL`→`PB15` (J1-23), `SDA`→`PA15` (J1-22) — I2C2 mini, спільна шина; підтяжки 4.7 кΩ — на платі mini (R15/R16).
 3. **Checkpoint:** I2C-scan бачить BME280 (0x76 при SDO→GND / 0x77 при SDO→VDD); forced-mode read дає t°/RH/тиск.
 4. Деталі VPD/DCI-guard → [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM); firmware `bme280.h` (логіка forced-mode є, HAL-глю — на стенді, §4). ⚠️ **Гейт TPS22860 — лише на VDD, VDDIO лишити на постійній 3V3** (датащит Bosch BME280 §3.2: піни в «1» при вимкненому VDDIO можуть незворотно пошкодити чіп через ESD-діоди, і шина спільна з SE051C2); breakout, де VDD і VDDIO з'єднані, під гейт не ставити.

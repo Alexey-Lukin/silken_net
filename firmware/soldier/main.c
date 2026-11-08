@@ -517,7 +517,8 @@ static void Standby_Write_Wake_Marker(void)  { HAL_RTCEx_BKUPWrite(&hrtc, RTC_BK
 static void Standby_Load_Pulls(void)
 {
     // Кожен ключ навантаження → HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_<порт>, PWR_GPIO_BIT_<n>):
-    // у Standby GPIO рівня не тримає, ключ тримає лише pull PWR. Пін-мапа — .ioc (00_07 FW.46, умова 2).
+    // у Standby GPIO рівня не тримає, ключ тримає pull PWR; `ON` обох TPS22860 тримає ще й зовнішній pull-down
+    // (02_01 §3.1, ⚖️ 2026-11-08) — він єдиний, коли MCU без живлення. Пін-мапа — .ioc (00_07 FW.46, умова 2).
 }
 static void Standby_Pull_Config(void)        { HAL_PWREx_EnablePullUpPullDownConfig(); }   // APC = 1
 static void Standby_No_Sram_Retention(void)  { HAL_PWREx_DisableSRAMRetention(); }        // RRS = 0

@@ -99,7 +99,7 @@
 | АЦП-входи | PB2 (IN4) · PB3 (IN2) · PB4 (IN3) · PA10 (IN6) · PA11 (IN7) · PA12 (IN8) · PA15 (IN11); PA13/PA14 теж АЦП, але зайняті SWD | ✅ сім вільних |
 | RF-ключ поз. 19 `BGS12WN6` — CTRL + VDD-гейт (⚖️ founder 2026-09-30, [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM)) | 2 × GPIO з вільних PA/PB — призначає розкладка ([`00_07`](00_07_Action_Plan_Tracker) HW.9) | ✅ |
 | `V_OC` EBFC (напрям ⚖️ founder 2026-09-10; фізика — гіпотеза до стенда, [`02_03 §12.4.2`](02_03_BQ25570_MPPT_Nano_Power)) | 1 АЦП-вхід із семи вільних, `VIN_DC` напряму (дільник 1:1), довгий sample-time — призначає розкладка ([`00_07`](00_07_Action_Plan_Tracker) HW.9; HAL — FW.46) | ✅ |
-| Vcap-sense (⚖️ делеговано 2026-09-27, [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM); [`00_07`](00_07_Action_Plan_Tracker) FW.50) | 1 АЦП-вхід + 1 GPIO гейта TPS22860 (поз. 23) — призначає розкладка ([`00_07`](00_07_Action_Plan_Tracker) HW.9) | ✅ |
+| Vcap-sense (⚖️ делеговано 2026-09-27, [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM); [`00_07`](00_07_Action_Plan_Tracker) FW.50) | 1 АЦП-вхід + 1 GPIO гейта TPS22860 (поз. 23) — призначає розкладка ([`00_07`](00_07_Action_Plan_Tracker) HW.9); ⊕ `ON` обох TPS22860 (поз. 21 і 23) — не на JTAG-піні PA15 · PB3 · PB4: HAL віддає їх після reset НЕ плаваючими, тож pull-down `ON` ([`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM), ⚖️ 2026-11-08) там нічого не гарантує (застосування машини) | ✅ |
 
 ⚠️ **Акустичних пінів на Солдаті немає** ([`00_07`](00_07_Action_Plan_Tracker) HW.30, 2026-09-29): ні EXTI-пробудження від пʼєзо на PA0, ні аудіо-входу АЦП — сім АЦП-входів вище вільні для розкладки, а PA0 — резерв під подієвий WKUP-вхід (⚖️ 2026-11-01, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) ([`00_07`](00_07_Action_Plan_Tracker) HW.9). ⚠️ Керування RF-ключем фронтенду — два звичайні GPIO (`BGS12WN6`, ⚖️ 2026-09-30: CTRL — 0 → RF1, 1 → RF2; VDD-гейт — ключ живиться лише на час TX/RX, бо при поданому VDD тягне 63 мкА typ, а встановлення після подачі — 5–15 мкс, [`rf_switch_shortlist`](protocols/hardware/rf_switch_shortlist.md) §3); референс-плати ST на UFBGA73 можуть тримати його на PC-пінах, яких QFN48 не має, тож при перенесенні референс-розкладки ці піни перепризначаються ([`00_07`](00_07_Action_Plan_Tracker) HW.9). `.ioc` плати вузла ([`00_07`](00_07_Action_Plan_Tracker) FW.46) — на `STM32WLE5CC`.
 
@@ -634,7 +634,8 @@ HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
 // 1а. Маркер пробудження — першим кроком Silken_Standby_Enter, ПІСЛЯ стану (DR7, §2; FW.66 (Б) · S5)
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR7, SILKEN_STANDBY_WAKE_MAGIC);
 
-// 2. Ключі навантажень: у Standby GPIO рівня не тримають — його тримають лише pull-и PWR (APC)
+// 2. Ключі навантажень: у Standby GPIO рівня не тримають — його тримають pull-и PWR (APC); `ON` обох TPS22860
+//    тримає ще й зовнішній pull-down (02_01 §3.1, ⚖️ 2026-11-08) — єдиний, коли MCU без живлення
 HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_x, PWR_GPIO_BIT_y); // кожен load-switch — вимкнено; пін-мапа — .ioc (FW.46)
 HAL_PWREx_EnablePullUpPullDownConfig();                   // APC = 1
 

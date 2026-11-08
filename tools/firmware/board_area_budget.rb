@@ -69,6 +69,8 @@ C0402 = rect(1.82, 0.92)  # KiCad C_0402_1005Metric
 R0402 = rect(1.86, 0.94)  # KiCad R_0402_1005Metric
 C0603 = rect(2.96, 1.46)  # KiCad C_0603_1608Metric
 SOT23_6 = rect(4.10, 3.40) # KiCad SOT-23-6 — TPS22860 лише DBV: єдиний orderable (TI SLVSD04, addendum 10-11-2025)
+# Член пакета кореня, не дефолту: ⚖️ founder 2026-11-08 (`02_01 §3.1`) — pull-down `ON` поз. 21 і 23 (SLVSD04 §9.2.2.2).
+TPS22860_ON_PULLDOWNS = 2 * R0402
 
 # Поз. 19 — два прочитання (див. стелі в шапці). За присудом: TX-ланка AN5457 A.1.7 L1·C1·L2·C2·C3·L3·C′·C″·C4 (9),
 # VR_PA C9·C10·L6 (3), після ключа C6·C7·L4·C8 (4), RX L5·C11·C12·C13 (4) = 20 × 0402 (опційні C3/C13 — угору) +
@@ -254,7 +256,9 @@ end
 #     кортьярдами; посадка бустера (12.2 × 3.2, DS_NN02-224 §2.7) лежить у ньому й окремо не рахується. Площа росте з Ø,
 #     тож ціль — нерухома точка. Верх RF Deck — завжди; низ — друге прочитання «наскрізний keep-out», за нашим
 #     прочитанням евал-плат (текст DS/UM шарів зони не називає);
-#   • зазор ходу коміра — рядки маршрутів `82` (верхня межа design clearance рядка).
+#   • зазор ходу коміра — рядки маршрутів `82` (верхня межа design clearance рядка);
+#   • pull-down 1 МΩ на `ON` обох ключів TPS22860 (поз. 21 і 23, верх RF Deck; ⚖️ founder 2026-11-08, `02_01 §3.1`) —
+#     2 × 0402: дефолт описує застосований корінь, тож ратифікований рядок, що зсуває ціль над куполом, іде сюди.
 # Умовні члени дає складальник: пара `R_OC` (+1 × 0402 на верху Power Deck) друкується окремо; keep-out THT-падів EDLC
 # під міні-хвилю розміру не має. ⛔ Стелі — усі тягнуть відповідь ВГОРУ, тобто ціль тут НИЖНЯ межа: геометричну підлогу
 # низу RF Deck із наскрізним сегментом (EDLC і сокет поза ним) модель не рахує; рівномірне заповнення 70 % розмазує сегмент
@@ -277,7 +281,7 @@ end
 # Кортьярди (без бустера — він у сегменті) ÷ 0.7 + сегмент у корисному колі на одній чи двох сторонах ≤ 3 × корисна.
 def package_target(rigid_flex:, through:, r_oc: false)
   base = sums(parts(booster: "nn02_224", edlc: "kr", rigid_flex:, pos19: "verdict", standoffs: "m2x8_stop")).values.sum
-  fixed = base - BOOSTER["nn02_224"][1] + C0402 + (r_oc ? R0402 : 0.0)
+  fixed = base - BOOSTER["nn02_224"][1] + C0402 + TPS22860_ON_PULLDOWNS + (r_oc ? R0402 : 0.0)
   d = 20.0
   30.times { d = diameter_for(((fixed / 0.7) + (booster_segment(d, edge: USABLE_EDGE_MM) * (through ? 2 : 1))) / 3) }
   [ [ d, geometric_floor("kr", socket: !rigid_flex) ].max, booster_segment(d, edge: USABLE_EDGE_MM) ]
@@ -288,8 +292,8 @@ if ARGV == [ "--package" ]
   dome = ->(d, gap) { d + (2 * BOSS_BAND_MM) + (2 * (COLLAR_WALL_MM + gap)) }
   puts "Пакет кореня (00_07 HW.9) — ціль контуру під усі члени; купол radome.json Ø#{DOME_MM}, рух кореня — один, після осі 3 (⚖️ founder 2026-10-13)"
   puts "  ⚠️ ціль — НИЖНЯ межа (сегмент розмазано по трьох сторонах, EDLC під наскрізним сегментом не рахується) — умовно на прочитанні щільності 70 %"
-  puts format("  члени понад дефолт: поз. 19 за присудом %+.1f · стійки m2x8_stop %+.1f · четверте місце ланки %+.1f мм²; сегмент — keep-out у корисному колі (нижче), кортьярд бустера %.1f лежить у ньому й окремо не рахується",
-              POS19["verdict"][1] - POS19["class"][1], STANDOFFS["m2x8_stop"][1].values.sum, C0402, BOOSTER["nn02_224"][1])
+  puts format("  члени понад дефолт: поз. 19 за присудом %+.1f · стійки m2x8_stop %+.1f · четверте місце ланки %+.1f · pull-down ON ключів TPS22860 %+.1f мм²; сегмент — keep-out у корисному колі (нижче), кортьярд бустера %.1f лежить у ньому й окремо не рахується",
+              POS19["verdict"][1] - POS19["class"][1], STANDOFFS["m2x8_stop"][1].values.sum, C0402, TPS22860_ON_PULLDOWNS, BOOSTER["nn02_224"][1])
   [ [ "пара B2B", false ], [ "rigid-flex", true ] ].each do |label, rigid|
     [ [ "сегмент лише на верху RF Deck", false ], [ "наскрізний keep-out (верх + низ RF Deck)", true ] ].each do |reading, through|
       d, seg = package_target(rigid_flex: rigid, through:)

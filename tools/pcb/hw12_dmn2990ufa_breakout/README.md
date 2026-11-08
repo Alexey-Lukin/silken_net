@@ -32,6 +32,6 @@ The run fails on any DRC violation or unconnected item before it writes fabricat
 
 ## Ordering notes (👤)
 
-1. **Check the rotation of Q1 in JLCPCB's placement preview.** The CPL says 0° with the drain pad pointing up the board; JLCPCB's own library orientation for `C151598` is theirs, and a wrong angle swaps G and S on a part this small.
+1. **Check the rotation of Q1 in JLCPCB's placement preview.** The CPL says 0° with the drain pad pointing up the board; JLCPCB's own library orientation for `C151598` is theirs, and a wrong angle swaps G and S on a part this small. ⚠️ Our pad numbers are a convention (1 = G, 2 = S, 3 = D), not the datasheet's: DS35765 numbers no pads, and its only «Pin#1» mark (p. 5 outline, the R0.075 corner notch) sits on the **large drain pad**. So in the preview, judge by the large pad — it must land on our drain pad at the top — and do not match the part's pin-1 dot to our pad 1, which is the gate.
 2. **Order some boards bare.** The measurement is nanoamperes, and leakage across the board surface between the D and S tracks belongs to it. A bare board measured with the same instrument at the same voltage is the control: what it shows is not the key's IDSS. The D track is kept away from S everywhere but at the package itself; there is no copper pour for the same reason.
 3. **Hand-solder the header** — it is not in the BOM (a three-pin THT part does not justify THT assembly).
