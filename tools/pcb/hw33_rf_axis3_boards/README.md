@@ -16,9 +16,11 @@ The design outputs are hardware design and fall under **CERN-OHL-S-2.0** by the 
 Rebuild (KiCad 10 installed in `~/Applications/KiCad`):
 
 ```bash
-~/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3.9 \
+~/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3.9 -B \
     tools/pcb/hw33_rf_axis3_boards/build_boards.py
 ```
+
+⛔ Keep `-B`: without it the interpreter writes `__pycache__/*.pyc` inside `KiCad.app`, which breaks the bundle's code signature (`codesign --verify --deep --strict` then reports «a sealed resource is missing or invalid»).
 
 The run refuses a placement whose pads or booster body leave the contour, or a part that reaches into the clearance area; a board that fails DRC (any violation or unconnected item) is deleted with its project before any fabrication file is written; it also writes `fab/<board>/<board>_gerbers.zip` for the upload (ignored by git — it is rebuilt from the text gerbers).
 

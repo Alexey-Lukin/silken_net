@@ -8,8 +8,10 @@ The generator is the source; the board, the project and the fabrication outputs 
 output (hardware design — CERN-OHL-S-2.0 by the zone map in /NOTICE; KiCad's S-expressions carry no
 comments, so they cannot hold a per-file tag). Run it with the Python that ships inside KiCad 10:
 
-    ~/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3.9 \
+    ~/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3.9 -B \
         tools/pcb/hw12_dmn2990ufa_breakout/build_board.py
+
+(-B keeps __pycache__ out of KiCad.app — written bytecode breaks the bundle's code signature.)
 
 Land pattern — Diodes DMN2990UFA datasheet DS35765 Rev. 3-2, p. 5 «Suggested Pad Layout»:
 C 0.350 · X 0.200 · X1 0.450 · X2 0.550 · Y 0.375 · Y1 0.475 · Y2 1.000 mm (drain pad on top, the two

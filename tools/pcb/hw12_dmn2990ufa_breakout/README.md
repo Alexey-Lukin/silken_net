@@ -16,9 +16,11 @@ The design outputs are hardware design and fall under **CERN-OHL-S-2.0** by the 
 Rebuild (KiCad 10 installed in `~/Applications/KiCad`):
 
 ```bash
-~/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3.9 \
+~/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3.9 -B \
     tools/pcb/hw12_dmn2990ufa_breakout/build_board.py
 ```
+
+⛔ Keep `-B`: without it the interpreter writes `__pycache__/*.pyc` inside `KiCad.app`, which breaks the bundle's code signature (`codesign --verify --deep --strict` then reports «a sealed resource is missing or invalid»).
 
 The run fails on any DRC violation or unconnected item before it writes fabrication files, and it also writes `fab/hw12_dmn2990ufa_breakout_gerbers.zip` for the upload (ignored by git — it is rebuilt from the text gerbers).
 

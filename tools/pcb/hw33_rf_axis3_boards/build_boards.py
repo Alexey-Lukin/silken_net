@@ -11,8 +11,10 @@ The generator is the source; the boards, the projects and the fabrication output
 design — CERN-OHL-S-2.0 by the zone map in /NOTICE; KiCad's S-expressions carry no comments). Run it with the Python that
 ships inside KiCad 10:
 
-    ~/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3.9 \
+    ~/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3.9 -B \
         tools/pcb/hw33_rf_axis3_boards/build_boards.py
+
+(-B keeps __pycache__ out of KiCad.app — written bytecode breaks the bundle's code signature.)
 
 Primary sources (Ignion, fetched 2026-10-12 from ignion.io/files/; the PDFs are the vendor's and are NOT kept in the tree —
 the numbers below are their transcription, with the page each was read on):
