@@ -53,13 +53,13 @@ module SessionSweep
     },
     "false_alarm" => {
       unit: :prose,
-      re: /хибн\p{L}* (?:тривог|сполох)|(?:тривог|сполох)\p{L}* (?:була |виявил\p{L}* )?(?:хибн|даремн)|даремн\p{L}* (?:тривог|сполох)|бив\p{L}* на сполох|false alarm/i,
+      re: /хибн\p{L}* (?:тривог|сполох)|(?:тривог|сполох)\p{L}* (?:була |виявил\p{L}* )?(?:хибн|даремн)|даремн\p{L}* (?:тривог|сполох)|бив\p{L}* на сполох|знім\p{L}* (?:свою |власну )?(?:хибну )?тривог|false alarm/i,
       pos: [ "це була хибна тривога", "my false alarm", "бив на сполох даремно" ], neg: [ "хибний позитив гейта" ]
     },
     "missed" => {
       unit: :prose,
-      re: /прогледі\p{L}*|недогледі\p{L}*|(?:пропусти|проґави)\p{L}* (?:справжн|реальн)|missed (?:a |the )?(?:real|genuine)/i,
-      pos: [ "я прогледів справжню ваду", "missed a real defect" ], neg: [ "пропустив коміт" ]
+      re: /прогледі\p{L}*|недогледі\p{L}*|проґави\p{L}*|пропусти(?:в|ла|ли) (?:справжн|реальн|ваду|дефект|баг|клас|сусід|випадок)|не поміти(?:в|ла|ли)|мій промах|\bI missed\b|missed (?:a |the )?(?:real|genuine)/i,
+      pos: [ "я прогледів справжню ваду", "missed a real defect", "я не помітив сусіда", "мій промах" ], neg: [ "пропустив коміт", "пропустив тест" ]
     }
   }.freeze
 
@@ -106,16 +106,18 @@ module SessionSweep
     File.write(File.join(out, "counts.json"), JSON.pretty_generate({ "sessions" => manifest.size, "window" => window, "records" => totals[:records],
                                                                     "prose_blocks" => totals[:prose], "write_strings" => totals[:writes], "families" => counts }))
     rng = Random.new(20_261_108)
-    FAMILIES.each do |name, fam|
-      pool = hits[name][fam[:unit]]
-      File.open(File.join(out, "samples", "#{name}.txt"), "w") do |io|
+    FAMILIES.each_key { |name| %i[prose writes].each { |unit| write_sample(out, name, unit, hits[name][unit], sample, rng) } }
+    puts JSON.pretty_generate(JSON.parse(File.read(File.join(out, "counts.json"))))
+  end
+
+  def write_sample(out, name, unit, pool, sample, rng)
+    re = FAMILIES[name][:re]
+    File.open(File.join(out, "samples", "#{name}.#{unit}.txt"), "w") do |io|
         pool.sample([ sample, pool.size ].min, random: rng).each_with_index do |(sid, ts, text), i|
-          m = text.match(fam[:re])
+          m = text.match(re)
           io.puts "#### #{i + 1} · #{sid} · #{ts}", text[[ m.begin(0) - 300, 0 ].max, 700], ""
         end
-      end
     end
-    puts JSON.pretty_generate(JSON.parse(File.read(File.join(out, "counts.json"))))
   end
 
   def selftest

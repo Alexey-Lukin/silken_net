@@ -8,7 +8,7 @@ measuring any of it.**
 here; this document is intended to constitute prior art.*
 
 > **Author:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
-> **First published in the public repository:** 2026-08-08 · **Status:** text complete; before the arXiv submission (cs.SE/cs.AI) the figures of §4 are re-measured on a new window.
+> **First published in the public repository:** 2026-08-08 · **Status:** text complete; §4 reports two measurement windows; arXiv submission (cs.SE/cs.AI) pending endorsement.
 >
 > **Venue note.** The IP posture that governs this file is defensive-publication-first
 > ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)), and its canonical channel for the
@@ -82,7 +82,8 @@ C2, C3 and C8 overlap its classes C, D and E substantially.
 
 **The findings we could not locate any precedent for are negative, and we lead with them (§3).**
 A regular expression for the event *"a prescribed form survived"* returns **0 hits across 16,893
-assistant blocks** of the corpus. A form that works executes silently; only failures generate
+assistant blocks** of the corpus, and again 0 in the agent's prose of a second window measured with
+a committed instrument, to a family that does not match "worked" (§4). A form that works executes silently; only failures generate
 prose. Therefore **a statistic whose denominator event is never uttered cannot be anything other
 than 100%** — and the corpus's own headline "15 of 15 prescribed forms fell" is a property of
 the genre, not a measurement. The true rate, estimated against an independent denominator, is
@@ -164,7 +165,10 @@ agent memory system that reports statistics about its own failures — including
 The corpus had accumulated a headline: *"15 of 15 prescribed forms fell."* A regular expression
 for the complementary event — *a prescribed form **survived / held / worked***, across both
 working languages of the corpus, stemmed before inflection — returns **0 hits across 16,893
-assistant blocks.**
+assistant blocks.** In the second window (§4) the event is again absent from the agent's prose; in the string inputs
+of its tool calls (file writes and edits, commands, search patterns) it appears once among fifteen
+sampled hits — one prescribed remedy explicitly recorded as having held. Both counts are for a
+family that does not match "worked", so the zero is a zero of that family.
 
 > **A form that works executes silently. Only failures generate prose. A statistic whose
 > denominator event is never uttered cannot be anything other than 100%.**
@@ -202,9 +206,15 @@ This is class **C4** turned on the corpus's own bookkeeping.
 
 ### 3.3 The instrument that read the corpus was defective mid-run
 
-During the measurement, the analysis found a bug in its **own** regular expression: a greedy
-`\w*` preceding a lazy gap silently zeroes a match family in the engine used — 0 hits with it,
-60 without. An isolated reproduction was recorded.
+During the first window's measurement (§4), the analysis reported a bug in its **own** regular
+expression: a greedy `\w*` before a lazy gap appeared to zero a match family — 0 hits with it, 60
+without. The isolated reproduction was not preserved, and the mechanism as stated does not
+reproduce: in Ruby 4.0.9's Onigmo (window 1's engine and version were not recorded) `\w*` matches no Cyrillic letter and the lazy gap
+still reaches the match, so synthetic lines match with or without it. What stands is narrower:
+two expressions believed equivalent gave 0 and 60 hits, and the cause recorded at the time does
+not hold — itself an instance of C5, a verdict outliving its grounds; which count was right is
+unknown. The second window's instrument independently lints its families against `\w`, which in that engine
+is blind to Cyrillic.
 
 > *An instrument's silence reads as a fact about the world.* No error was raised. The family
 > simply returned empty, and empty was about to be reported as "this never happens."
@@ -218,22 +228,40 @@ a member of the class it was counting.**
 
 ## 4. Base rates, with their error bars
 
-Measured by a full pass — not a sample — over 226 sessions, ~132,000 events, **16,893 assistant
-blocks**, spanning **32 days**. All figures are from that single sweep, performed by the same
-agent whose behaviour they describe, using the instrument found defective in §3.3. They have not
-been independently reproduced.
+Two windows, both full passes over top-level session transcripts (sub-agent transcripts are not
+read), not samples. **Window 1** (32 days ending 8 August 2026): 226 sessions, ~132,000
+events, **16,893 assistant blocks**, **32 days**, measured by the same agent whose behaviour it
+describes, with the instrument of §3.3. Neither its corpus nor its regular expressions survive —
+the agent harness kept transcripts for 30 days, and the expressions were not committed — so its
+figures cannot be re-run; they stand as a one-off measurement. **Window 2** (9 October – 8 November
+2026): 88 sessions, 4,679 prose blocks of the agent, measured with an instrument committed to the
+public repository (`tools/paper/session_sweep.rb`), whose families carry positive and negative
+controls, against a frozen copy of the corpus fingerprinted by a SHA-256 manifest; precision was
+read on up to 15 random hits per family by Claude Haiku, a smaller model of the same family; one
+positive hit was re-read by the authoring agent, and no human read the samples. Two families
+("missed" and "false alarm") were widened after a first run on the frozen corpus returned 0 for
+"missed"; the "form held" family was not widened and does not match "worked". The counts sit
+beside the manifest (`second_window_counts.json`). The families were rebuilt from this paper's own
+descriptions, the transcript format changed between the windows, the practice matured, and the
+subject model changed (window 1: mostly Opus 5, with Fable 5 and Opus 4.8; window 2: mostly Opus
+5.5), so the two windows are two points, not a replication of one value.
 
-### Carrier firings versus self-relapses: ≈212 versus ≈29 — a raw ratio of about **7:1 in
+### Window 1 — carrier firings versus self-relapses: ≈212 versus ≈29 — a raw ratio of about **7:1 in
 favour of the rule**
 
 Both families were precision-audited by reading 15 random hits each. The relapse family is
 **40% precise** (the remainder are relapses of *systems* rather than of rules, and twice they
 are cases where the record *prevented* a relapse). The firing family is **93% precise**.
 
-Precision correction moves the ratio *up*, to roughly 16:1 — but **recall is unmeasured on both
+Precision correction moves the ratio *up*, to roughly 17:1 — but **recall is unmeasured on both
 sides**, so this is a ratio of two differently-biased counts and **not a rate**. Treat the
 direction as informative and the magnitude as soft. If a single number is wanted, prefer the
 split verdict below to the ratio.
+
+**Window 2:** in the agent's prose, 10 confirmed firings (15 of 19 hits read) against 11 confirmed
+relapses (all 15 read) — between about 0.9:1 and 1.3:1, parity at this resolution. Window 2 does
+not confirm the direction and does not test the split verdict below. In the string inputs of its
+tool calls the raw counts reverse (41 firing hits against 62 relapse hits, none read).
 
 **The substantive result is a split verdict on the practice's own prior.** The corpus had
 asserted that "probability of relapse does not correlate with the quality of the record; it
@@ -248,24 +276,29 @@ is right and the first half is false *as a generalisation*:
 > **Consequence for reading any such corpus: the density of failure entries measures not the
 > author's unreliability but the fact that falls are narrated and firings are not.**
 
-### Adversarial review: **30.2%** of claims directly overturned; **47.4%** overturned or
+### Window 1 — adversarial review: **30.2%** of claims directly overturned; **47.4%** overturned or
 substantially corrected; **65 of 91** rounds returned mixed verdicts
 
 The practice's description of adversarial review as "the most valuable agent in the cycle"
-therefore rests on roughly **one in three**, not on nine in ten.
+therefore rests on roughly **one in three**, not on nine in ten. *Not re-measured in window 2: its
+instrument does not classify review rounds.*
 
 Rounds differ by **frame**, not by depth. A review aimed at a plan finds mute failure paths; at
 a diff, API regressions and invented mechanisms; at the fixes, vacuous tests that the fix has
 just de-energised; at the fixes-of-fixes, new unverified numbers and under-implemented claims of
 one's own — because *nobody re-reads the prose of a correction*.
 
-### Direction of self-corrections: ≈**49%** "raised a false alarm" versus ≈**51%** "missed
+### Window 1 — direction of self-corrections: ≈**49%** "raised a false alarm" versus ≈**51%** "missed
 something real"
 
 35 versus 37; precision 85% and 90% on 20+20 hand-adjudicated hits. The prior had been that the
 practice was skewed toward over-caution. It is not. **The register is skewed**, because both
 directions are recorded with the same marker or with none, and no marker family exists at all
 for "withdrew my own false alarm."
+
+**Window 2:** 3 false-alarm hits (1 genuine) against 8 missed-something hits (8 genuine), all read —
+leaning further toward "missed" than window 1's near-balance; the counts are tiny, recall is
+unmeasured, and both families were widened after the first run.
 
 ---
 
@@ -535,7 +568,7 @@ Reproducing both inputs may show each is right under a different condition, and 
 condition is the actual finding**. Cutting either side leaves a partial mechanism that looks
 complete.
 
-Separately, and cheaply: *"it has been sitting for ten days" is not "it is broken."* Cadence is
+Separately, and cheaply: *"it has been sitting for ten days" is not "it is broken"*; cadence is
 not a defect, and inferring one from the other is a narrative, not a measurement.
 
 **Prior art.** The outward half is the metrology of Goodhart, verification gaps and reward
@@ -646,7 +679,7 @@ and failed to break defines a proven perimeter. Without that line the next pass 
 same ground, and what was verified reads as unverified — **zero findings silently converts into
 zero information.**
 
-But record **what** withstood and **against what**. "No findings, therefore clean" is a verdict,
+But record **what** withstood and **against what**: "no findings, therefore clean" is a verdict,
 not a measurement, and it belongs to C4.
 
 Two further bounds: *report honest negatives and borderline results; never canonise a favourable
@@ -720,7 +753,7 @@ third form is worse still: an address pointing *inside its own file* at a sectio
 carried the rule. No link checker examines it — it is not a link — and the act of citing creates
 the impression that the rule is homed elsewhere, so it never gets written where it is needed.
 
-> *Ask not "does the address resolve" but "does the TARGET carry what I am attributing to it" —
+> *Ask not "does the address resolve" but "does the TARGET carry what I am attributing to it";
 > and ask it first when the target is in the same file.*
 
 **Counter-rule.** *Divergence is often deliberate.*
@@ -752,7 +785,7 @@ its 17 categories. Our contribution is the gate-blindness argument and the count
 > **Membership test:** *Who decided — the owner, or the filler-of-the-unspecified? If the answer
 > is "nobody decided; it just came out that way" → here.*
 
-Where a value is not set, the decision is made by `= "…"`. A default is always somebody's verdict;
+Where a value is not set, the decision is made by `= default`. A default is always somebody's verdict;
 the only question is whether anybody made it consciously.
 
 **Why this class is unique among the nine: you are guarding an emptiness.** The defect is the
@@ -991,9 +1024,11 @@ stronger claim than its evidence.
    elaborated; classes noticed once and never recurring may simply have been forgotten. We cannot
    distinguish "this class is real and general" from "this class is what this pair happens to
    notice."
-7. **Numbers not independently reproduced.** The sweep in §4 was performed once, by the same agent
-   whose behaviour it measures, using an instrument found defective mid-run (§3.3). No
-   replication.
+7. **Numbers not independently reproduced.** §4 reports two windows, both measured by the same
+   agent whose behaviour they describe. Window 1 was performed once, and its corpus and
+   expressions are gone. Window 2 can be re-run from the committed instrument against a frozen
+   private copy of its corpus, fingerprinted in the repository; its precision judgements were made
+   by Claude Haiku, with one hit re-read by the authoring agent and none by a human. Neither window was measured by anyone else.
 8. **All illustrations are synthetic**, by the design stated in the front-matter note. They
    demonstrate the membership tests; they are not evidence that the classes are frequent,
    important, or correctly individuated.
@@ -1041,7 +1076,7 @@ recall for each membership test. We are not in a position to run it.
 ## Appendix A — Six modes in which a delegated agent reports confidently and wrongly
 
 Observed while fanning out sub-agents for review and audit. These are not "it sometimes makes
-mistakes" — they are distinct modes, each requiring its own reflex. Ordered by cost. Illustrations
+mistakes"; they are distinct modes, each requiring its own reflex. Ordered by cost. Illustrations
 are generic by the same policy as the body.
 
 1. **Fabricates.** Asserts that a field does not exist when it does; states a property backwards.
@@ -1118,6 +1153,21 @@ described a paragraph below; a file that wrote its own diagnosis ("this has cros
 the disease is the FORM") and then received two more sections in that same form; and a rule that
 was fixed not by text but by a **command**, which immediately found a second instance that
 size-based triage had missed.
+
+---
+
+## AI Use Disclosure
+
+This text, its analyses and the repository tooling it describes were written with substantial
+assistance from Anthropic's Claude, used as a coding agent (Claude Code). The author takes full
+responsibility for the content; the agent is not an author.
+
+- **Models.** The git history attributes the paper's commits to Claude Opus 5 (1M context) for its
+  first three commits (2026-08-08/09) and to Claude Opus 5.5 for later revisions; the precision
+  judgements of the second measurement window (§4) were made by Claude Haiku.
+- **No other tool.** The author states that no other AI tool was used for this text or its analyses.
+- **The tool is also the subject.** The agent that assisted is the same agent this paper describes;
+  the reader should weigh that when reading its claims about the agent's behaviour.
 
 ---
 

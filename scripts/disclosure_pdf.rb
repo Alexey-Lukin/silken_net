@@ -39,12 +39,24 @@
 #     no bold, and the bold Chrome synthesises in a heading makes Skia embed the glyph as a Type 3 font, which arXiv's
 #     PDF rules ask submitters to avoid (outline TrueType/Type 1 only);
 #   · a table's first column never wraps (poppler read a wrapped cell across the row), and a
-#     heading never ends a page.
+#     heading never ends a page;
+#   · a cell that is one bold label never wraps either: poppler made a block of each line of a wrapped label and read
+#     the long neighbouring cell between them;
+#   · a `- ` list right after a paragraph line is printed as a list, as GitHub renders it: Redcarpet wants a blank line
+#     first and otherwise prints the markers as text, a line-final one of which poppler drops as a hyphen;
+#   · in bold or italic, a space next to a mark off the baseline (a dash, a quote, an arrow or another symbol) is set
+#     in the regular face: those faces' space glyph maps to U+000A, and PDFKit reads it as a line break between two
+#     glyphs that do not overlap vertically, then reads the rest of the line after the next one; at line-height 0, as
+#     the regular face's metrics otherwise grew a bold table-header line and moved the table below it.
 #
 # ⛔ Ceilings, named: the check compares extracted TEXT, so a glyph drawn wrong but extracted
 # right passes, and two extractors agreeing is evidence, not proof, about a third. A PDF that a
 # repository re-typeset (cover page, running heads) breaks every block that crosses a page —
-# strip its stamps with `--ignore`, then read what stays unmatched by eye.
+# strip its stamps with `--ignore`, then read what stays unmatched by eye. PDFKit breaks a line between ANY two
+# glyphs that do not overlap vertically, a real space between them or not, in every face: a quote next to `.`, `,`, a
+# dash or `=` («broken." Cadence», «it" — and»), or quotes around a mark («"…"»). Markup cannot move a glyph, so the
+# check reports it where the break lands on a line that is not a paragraph's last, and the fix is in the text — a
+# letter, `:` or `;` beside the quote instead.
 
 require "cgi"
 require "fileutils"
@@ -72,6 +84,7 @@ module DisclosurePdf
     .src { font-size: 8.5pt; color: #444; margin-bottom: 10pt; }
     .cd { font-family: "Arial Unicode MS"; line-height: 1; }
     .sym { font-weight: normal; }
+    .sp { font-style: normal; font-weight: normal; line-height: 0; }
     .ms td:first-child { white-space: normal; }
     h1.title { font-size: 19pt; line-height: 1.25; margin: 0 0 6pt; } .byline { font-size: 11pt; margin: 0 0 12pt; }
   CSS
@@ -83,6 +96,11 @@ module DisclosurePdf
 
   # One part of a hyphenated compound — a comma only INSIDE it («4,4′-dimethyl»), so a trailing comma stays outside the span.
   WORD = /[[:alnum:]µ.′]+(?:,[[:alnum:]µ.′]+)*/
+  # A mark that does not reach the baseline, in text escaped for HTML; flat alternatives, so it can sit in a lookbehind.
+  OFF_BASELINE = /[\p{Pd}\p{Pi}\p{Pf}\p{S}\p{No}*]|&quot;|&#39;|&lt;|&gt;/
+  STYLED = "em, strong, b, i, h1, h2, h3, h4, h5, h6, th"
+  # A paragraph whose last line is followed by a `- ` item; a fenced block is matched first and left as it is.
+  LIST_AFTER_LINE = /^(`{3,}|~{3,})[^\n]*\n.*?^\1[^\n]*$|(?:\A|(?<=\n\n))(?![-*+] |\d+\. |[ \t>|#<])[^\n]+(?:\n(?![-*+] |\d+\. )[^\n]+)*\n(?=- )/m
   # Author-only marks a manuscript must not carry: an open founder decision, an unsourced claim, Ukrainian working prose, and
   # the verdict glyph ⚖ — a founder-decision note, and poppler drops it together with the rest of its line (08_declarations,
   # 2026-10-11: three ⚖ lines unmatched in a non-manuscript print; the manuscript strips or refuses all three today).
@@ -150,7 +168,7 @@ module DisclosurePdf
       end
     end.join("\n\n")
     body = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new, tables: true, fenced_code_blocks: true, autolink: true,
-                                                                strikethrough: true, no_intra_emphasis: true).render(md)
+                                                                strikethrough: true, no_intra_emphasis: true).render(lists(md))
     url = paths.one? ? "#{base}#{path}" : "#{base}#{File.dirname(paths.first)}"
     files = paths.one? ? "" : " — sections, in this order: #{paths.map { |q| CGI.escapeHTML(q) }.join(' · ')}"
     front = ""
@@ -190,17 +208,24 @@ module DisclosurePdf
     md.gsub("`/NOTICE`", "[`/NOTICE`](#{base}NOTICE)")
   end
 
+  # The `- ` list rule of the header: a blank line between a paragraph and the item that follows its last line.
+  def lists(md) = md.gsub(LIST_AFTER_LINE) { |m| Regexp.last_match(1) ? m : "#{m}\n" }
+
   # The text-layer rules of the header that live in the markup rather than in the CSS.
   def hygiene(html)
     doc = Nokogiri::HTML(html.gsub(/\u26A0\uFE0F?/, %(<span class="warn">\u26A0\uFE0E</span>)))
     doc.xpath("//body//text()[not(ancestor::pre or ancestor::style)]").each do |t|
       s = CGI.escapeHTML(t.content)
+      if t.ancestors(STYLED).any? && t.ancestors("code").empty?
+        s = s.gsub(/(?<=#{OFF_BASELINE.source})\s|\s(?=#{OFF_BASELINE.source})/o) { %(<span class="sp">#{Regexp.last_match(0)}</span>) }
+      end
       s = s.gsub(/#{WORD}(?:-#{WORD})+/o) { %(<span class="nw">#{Regexp.last_match(0)}</span>) }
       s = s.gsub(/[\u2460-\u2473]/) { %(<span class="cd">#{Regexp.last_match(0)}</span>) }
       s = s.gsub(/[\u27f0-\u27ff]/) { %(<span class="sym">#{Regexp.last_match(0)}</span>) }
       s = s.gsub(/\b[[:alnum:]]+_[[:alnum:]_]+\b/) { %(<code>#{Regexp.last_match(0)}</code>) } if t.ancestors("a").empty? && t.ancestors("code").empty?
       t.replace(Nokogiri::HTML::DocumentFragment.parse(s)) unless s == CGI.escapeHTML(t.content)
     end
+    doc.css("td").each { |td| td["class"] = "nw" if (b = td.at_xpath("strong")) && td.text.strip == b.text.strip }
     doc.to_html
   end
 
@@ -307,6 +332,16 @@ module DisclosurePdf
     a = hygiene(%(<h3>C3 — Mechanism ⟷ its trigger</h3><p>a ↔ b</p>))
     t.call("a long arrow in a heading is set at normal weight, a plain arrow is not touched",
            a.include?(%(<span class="sym">⟷</span>)) && !a.include?(%(<span class="sym">↔)))
+    sp = %(<span class="sp"> </span>)
+    s = hygiene(%(<p><em>a "b" — c, d</em> e — f <strong>x → y</strong> <em><code>p — q</code></em></p>))
+    t.call("in bold or italic a space beside a dash, a quote or an arrow is set in the regular face; beside a comma, in plain text or in code it is not",
+           s.include?(%(a#{sp}"b"#{sp}—#{sp}c, d</em>)) && s.include?(%(x#{sp}→#{sp}y)) && s.include?(" e — f ") && s.include?("<code>p — q</code>"))
+    c = hygiene(%(<table><tr><td><strong>Mostly rediscovery</strong></td><td><strong>C3</strong> Mechanism</td></tr></table>))
+    t.call("a cell that is one bold label is kept on one line, a cell with text beside its bold part is not",
+           c.include?(%(<td class="nw"><strong>Mostly rediscovery</strong>)) && c.scan('class="nw"').size == 1)
+    l = lists("Read in full:\n- A\n  cont.\n- B\n\n```\ntext\n- code\n```\n\n- x\nlazy\n- y\n\n> q\n- z\n")
+    t.call("a `- ` list after a paragraph line gets its blank line; a fenced block, a list's own lines and a quote do not",
+           l == "Read in full:\n\n- A\n  cont.\n- B\n\n```\ntext\n- code\n```\n\n- x\nlazy\n- y\n\n> q\n- z\n")
     read = []
     r = rewrite("![Fig](figures/a.png \"T\") see [m](../x.md#s) and ![w](https://e.org/b.png)", "docs/p/03.md", "B/") do |target|
       read << target
