@@ -95,8 +95,8 @@ everything in this document. Two further negative results follow: a salience mar
 retrospectively repurposed as a measurement instrument, and the instrument that read the corpus
 was itself found defective mid-run.
 
-Provenance is n=1: one engineer, one agent, one repository; 42 days of corpus and a 32-day
-measured window. This is a field report, not a study. §8 states what would falsify it.
+Provenance is n=1: one engineer, one agent, one repository; 42 days of corpus and two measured
+windows (32 days, then 9 October – 8 November 2026). This is a field report, not a study. §8 states what would falsify it.
 
 ---
 
@@ -1005,15 +1005,15 @@ stronger claim than its evidence.
 
 1. **n = 1, and not a random 1.** One human engineer, one agent, one repository, one architectural
    style, one documentation discipline. Corpus span 2026-06-27 to 2026-08-08 (42 days); measured
-   transcript window 32 days.
+   transcript windows 32 days (window 1) and 2026-10-09 to 2026-11-08 (window 2, §4).
 2. **No inter-annotator agreement, and none is possible.** Classification was performed by the
    same pair that produced the failures. Compare MAST, which reports Cohen's κ = 0.88 from six
    independent annotators over 1,600+ traces. We have nothing of the sort, and the nine classes
    are therefore **not validated as discriminable by third parties**.
 3. **Selection by narration, not by occurrence.** §3.1 makes this precise: only failures generate
    prose. Every rate in §4 inherits a 100% ceiling from this.
-4. **Single model family.** All agent behaviour observed comes from one vendor's models over one
-   release window. Whether these classes generalise across model families is untested — and the
+4. **Single model family.** All agent behaviour observed comes from one vendor's models, over two
+   measurement windows between which the subject model changed (§4). Whether these classes generalise across model families is untested — and the
    published false-success work, reporting 3% to 75.8% **by environment and architecture**, is
    strong evidence that single-setting rates for this family of phenomena do not transfer.
 5. **The classes are not orthogonal, and we did not measure how much they overlap.** The explicit

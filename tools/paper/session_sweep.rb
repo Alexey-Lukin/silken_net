@@ -17,7 +17,10 @@
 #
 # Writes three things into OUT:
 #   manifest.json — every input file with sha256, bytes, first and last timestamp: the corpus fingerprint,
-#                   the part of a run that is committed, since the harness keeps transcripts only 30 days;
+#                   the part of a run that is committed, since the harness deletes old transcripts (after 30 days
+#                   by default, which is how window 1's corpus was lost; raised to 365 days in the harness settings
+#                   on 2026-11-08, the founder's call) — still a deadline, so the measured window is also frozen as
+#                   a private copy outside the repository;
 #   counts.json   — per family: blocks matched in each unit, plus the unit totals;
 #   samples/      — up to N matched blocks per family, seeded, with context: private text, read by hand
 #                   to measure precision, and never committed.
