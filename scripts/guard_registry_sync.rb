@@ -189,7 +189,9 @@ CANON_CODE_GATES_OUTSIDE_DOCS = {
   # дзеркало, а не build/test-крок, і саме тому воно тут. ⚠️ Сусідній last-admin
   # гейт того ж job'а свідомо лишається ПОЗА мапою: він inline-shell без власного
   # файлу, тож «cmd, що мусить бігти» для нього не має стабільної цитати.
-  "solidity_audit.yml"  => [ "solidity_test_naming_check.rb" ]
+  "solidity_audit.yml"  => [ "solidity_test_naming_check.rb" ],
+  # HW.56: схема кодом ⟷ таблиця 02_03 §5 і закомічені файли — дзеркало канону, не build-крок.
+  "cad_smoke.yml"       => [ "build_schematic.rb --check" ]
 }.freeze
 
 # §3 slice of 00_06 (from the "3. Drift-prevention" h2 to the next h2).

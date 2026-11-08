@@ -1,4 +1,4 @@
-name: Smoke · CAD PicoGK
+name: Smoke · CAD (PicoGK · KiCad)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,6 +15,10 @@ permissions:
 # Local-verify (`dotnet run -- verify`) stays the PRIMARY developer gate; CI mirrors it.
 # Home of that policy: tools/cad/README.md (NOT 00_07 HW.1 — that item is the anchor
 # CAD-to-factory route and carries no statement about which gate is primary).
+#   • schematic (ubuntu) — the Soldier's schematic written by code (HW.56, tools/pcb/soldier_schematic):
+#     the generator's own `--check` inside the official KiCad image — ERC of every severity, pin→net
+#     check against KiCad's exported netlist, the 02_03 §5 dividers the generator reads, committed files
+#     equal to the generator's output. Same command locally; what it does NOT prove — generator header.
 #
 # Runs on every PR (no pull_request paths-filter): a `changes` job (dorny/paths-filter) gates
 # `logic`/`render` to tools/cad-relevant diffs, and the always-on `cad-ok` aggregate emits a status
@@ -30,6 +34,10 @@ on:
       # The committed gallery is an OUTPUT of tools/cad pinned by DrawingTests — a gallery-only push
       # (a republished sheet) must run `logic` too, or main stays on the last verdict (2026-09-10).
       - 'docs/images/cad/*.drawing.svg'
+      # `schematic` inputs — the same list as the `pcb` filter below.
+      - 'tools/pcb/soldier_schematic/**'
+      - 'tools/firmware/bq25570_dividers.rb'
+      - 'docs/02_03_BQ25570_MPPT_Nano_Power.md'
 
 jobs:
   changes:
@@ -37,6 +45,7 @@ jobs:
     timeout-minutes: 2
     outputs:
       cad: ${{ steps.filter.outputs.cad }}
+      pcb: ${{ steps.filter.outputs.pcb }}
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -55,6 +64,15 @@ jobs:
               # The committed gallery is an OUTPUT of tools/cad and is pinned by DrawingTests,
               # so a PR that only reverts or edits a published drawing must still run `logic`.
               - 'docs/images/cad/*.drawing.svg'
+            # Every input of `build_schematic.rb --check`, not only its folder: it reads the
+            # divider table of 02_03 §5 through the parser in bq25570_dividers.rb, so a canon
+            # edit there makes the committed schematic stale — a filter without those two
+            # paths would leave the gate running only on somebody else's PR.
+            pcb:
+              - 'tools/pcb/soldier_schematic/**'
+              - 'tools/firmware/bq25570_dividers.rb'
+              - 'docs/02_03_BQ25570_MPPT_Nano_Power.md'
+              - '.github/workflows/cad_smoke.yml'
 
   logic:
     needs: changes
@@ -177,15 +195,54 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  schematic:
+    needs: changes
+    if: ${{ needs.changes.outputs.pcb == 'true' }}
+    name: schematic
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # 🔒 [HW.56] KiCad — офіційний образ, пін за digest. Версія несуча, не смакова: схема вбудовує
+      # копії стокових символів із бібліотек тієї версії KiCad, що її згенерувала, тож `--check` тут
+      # судить закомічені файли лише за тієї самої версії, що на дев-машині. Підняття — одним
+      # комітом: перегенерувати схему новим KiCad локально І переставити digest тут.
+      # ⚠️ Бампера немає: Dependabot `docker` скоупнутий на `/` (Dockerfile) і образу в `run:` не
+      # бачить — підняття ручне, скіл `dependency-update`.
+      KICAD_IMAGE: kicad/kicad:10.0.6@sha256:18693567392b80da435f9fa952ce3a3e534c66eb5a6033f5b9c80aa3b19dd3ec
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Pull KiCad image (pinned digest)
+        timeout-minutes: 5
+        run: docker pull "$KICAD_IMAGE"
+
+      - name: Schematic — ERC · pins vs KiCad netlist · 02_03 §5 dividers · committed files fresh
+        # Контейнер кличеться з хоста, тож джоба лишається звичайною Linux-джобою (harden-runner
+        # першим кроком, як скрізь). Ruby — з apt образу (Debian trixie): генератор stdlib-only,
+        # без bundle. ⚠️ Стеля: цей Ruby не пінований (патчі trixie), а `.ruby-version` репо тут не діє.
+        timeout-minutes: 5
+        run: |
+          docker run --rm --user root -v "$GITHUB_WORKSPACE:/w" -w /w "$KICAD_IMAGE" bash -c '
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            apt-get install -y -qq --no-install-recommends ruby > /dev/null
+            ruby tools/pcb/soldier_schematic/build_schematic.rb --check'
+
   cad-ok:
     # Single aggregate status check for branch protection — mirrors docs-ok/ci-ok.
     # `render`'s best-effort steps (headless Metal SIGSEGV, by design) already use
     # continue-on-error: true, so a flaky verify/SBOM step there does NOT flip the
     # `render` JOB's own result to failure — this aggregate only trips on a real
-    # `logic` or `render`-build failure, never on the known-flaky verify step.
+    # `logic`, `render`-build or `schematic` failure, never on the known-flaky verify step.
     name: CAD passed
     if: ${{ always() }}
-    needs: [changes, logic, render]
+    needs: [changes, logic, render, schematic]
     runs-on: ubuntu-latest
     steps:
       - name: Harden runner (egress audit)
@@ -201,7 +258,7 @@ jobs:
         run: |
           echo "::error::The change-filter job did not succeed (result: ${{ needs.changes.result }}) — every job below it was skipped for a FALSE reason, so a green aggregate would vouch for nothing. Infrastructure failure, not a code failure: re-run this workflow."
           exit 1
-      - name: Fail if logic or the render build failed or was cancelled
+      - name: Fail if a CAD job failed or was cancelled
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
         # [OPS.30] Вердикт мусить називати ЕТАП: `failure` = перевірка виконалась
         # і сказала «ні»; `cancelled` = вона НЕ БІГЛА (стеля `timeout-minutes`
