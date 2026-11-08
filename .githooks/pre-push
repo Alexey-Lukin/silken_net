@@ -404,7 +404,12 @@ fi
 #
 # NOT-RUN ⊥ FAILED — як у третього блоку: brakeman є bundle-залежністю, тож свіжий
 # clone без `bundle install` друкує ГУЧНУ ноту й пропускає, а не робить push неможливим.
-if printf '%s\n' "$_changed" | grep -qE '^(app|lib|config)/|^Gemfile'; then
+#
+# ⊕ Тригер — БУДЬ-ЯКИЙ `.rb`, а не лише `app|lib|config` (2026-11-08, HW.56): brakeman сканує
+# усе дерево, крім `firmware/` (`config/brakeman.yml`), тож вужчий тригер пропустив
+# `Marshal.load` у `tools/pcb/…` — і першим червоним став `main`, а не цей хук. ⛔ Не звужувати
+# назад до каталогів застосунку: периметр тригера мусить дорівнювати периметру сканера.
+if printf '%s\n' "$_changed" | grep -qE '^(app|lib|config)/|^Gemfile|\.rb$'; then
   if ( cd "$root" && bundle exec brakeman --version ) >/dev/null 2>&1; then
     if ! ( cd "$root" && bin/brakeman --no-pager --ensure-no-obsolete-ignore-entries ); then
       echo
