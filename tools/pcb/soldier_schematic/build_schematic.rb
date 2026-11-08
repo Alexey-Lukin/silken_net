@@ -2,14 +2,20 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-# [HW.56] Схема силового деку Солдата — генератор. Пише `soldier_power.kicad_sch` (+ мінімальний
-# `.kicad_pro`): людина відкриває його в KiCad 10 (редактор схем — з вікна KiCad), агент перевіряє
-# без вікна — ERC за кодом виходу, рендер PDF, SPICE-нетліст із тієї самої схеми. Рішення й межа —
-# `docs/02_01 §7`; робота — `docs/00_07` HW.56. ⛔ Схему руками не правити: правка — тут, файл
-# перегенеровується, а `--check` червоніє, якщо закомічена схема відстала від генератора.
+# [HW.56] Схема силового деку Солдата — генератор. Пише `soldier_power.kicad_sch` (+ власну бібліотеку
+# символів, проєктну таблицю бібліотек і мінімальний `.kicad_pro`): людина відкриває схему в KiCad 10,
+# агент перевіряє без вікна. Рішення, форма й межа — `docs/02_01 §7`; робота — `docs/00_07` HW.56.
+# ⛔ Схему руками не правити: правка — тут, файл перегенеровується, а `--check` червоніє, якщо закомічене
+# відстало від генератора.
 #
-#   ruby tools/pcb/soldier_schematic/build_schematic.rb          # згенерувати + ERC + PDF + SPICE у out/
-#   ruby tools/pcb/soldier_schematic/build_schematic.rb --check  # те саме, і червоніє на застарілій схемі
+#   ruby tools/pcb/soldier_schematic/build_schematic.rb          # згенерувати + перевірки, вихід у out/
+#   ruby tools/pcb/soldier_schematic/build_schematic.rb --check  # те саме, і червоніє на застарілих файлах
+#
+# Перевірки (кожна валить прогін): ERC усіх рівнів · експорт PDF і SPICE-нетліста · фаради з голим `F` у
+# нетлісті · ЗВІРКА З’ЄДНАНЬ — генератор окремо тримає ЗАДУМАНЕ (пін → мережа) і окремо МАЛЮНОК (дроти,
+# мітки, символи землі), експортує нетліст самого KiCad і вимагає, щоб кожен пін лежав у задуманій мережі.
+# Дріт, що зачепив чужий пін, чи мітка, перейменована на наявну мережу, ERC-у не видні (жодна мітка не
+# висить), а звірці видні.
 #
 # Звідки кожне число (одна річ — один дім):
 #   • плечі дільників BQ25570 — таблиця `02_03 §5`, прочитана тим самим `parse_canon_table`, яким
@@ -17,8 +23,8 @@
 #   • символи — стандартні бібліотеки KiCad 10, вбудовані в схему копією;
 #   • P/N у схему НЕ копіюються: поле «BOM» кожної деталі — вказівник на `02_01 §3.1` поз. N.
 #
-# Розпіновку BQ25570 звірено з таблицею пінів SLUSBH2G (березень 2019). Дві правки вбудованої копії
-# символу — за паспортом, не за бібліотекою, бо інакше ERC червонів би на правильній схемі:
+# Розпіновку BQ25570 звірено з таблицею пінів SLUSBH2G (березень 2019). Дві правки символу — за паспортом,
+# не за бібліотекою, тож виправлений символ живе у власній бібліотеці `SilkenNet`:
 #   • `VBAT` (18): бібліотека — `power_in`, паспорт — I/O (чип веде його зсередини від VSTOR);
 #   • `VOUT` (14): бібліотека — `input`, паспорт — O (вихід buck).
 # Піни 9 і 17 у паспорті — NC «на землю через PowerPAD»; бібліотека зве їх VSS і складає з 1, 15 і 21
@@ -30,17 +36,18 @@
 # ROK3 — до VRDIV. Верхнє плече MPPT (ROC2) — на VIN_DC, не на VRDIV: присуд `02_03 §4.А`.
 #
 # ⛔ ОГОЛОШЕНІ СТЕЛІ — читай як перелік того, чого цей файл НЕ доводить:
-#   • v0 — лише BQ25570 і його обвʼязка; кламп поз. 14 і ключ поз. 23 — наступні кроки HW.56.
+#   • v1 — лише BQ25570 і його обвʼязка; кламп поз. 14 і ключ поз. 23 — наступні кроки HW.56.
 #   • Номінали L і C живуть тут і в BOM `02_01 §3.1` — звіряються очима, гейта між ними немає.
 #   • ⛔ Фаради пиши через масштаб (`470mF`), ніколи голим `F`: у SPICE `F` у будь-якому регістрі — ФЕМТО, і
 #     KiCad при експорті його не перекладає (`M` → `Meg` перекладає), тож `0.47F` іоністора ngspice прочитав
-#     би як 0.47 фФ. `verify` валить прогін на такому значенні в нетлісті.
+#     би як 0.47 фФ.
 #   • Відкрите в каноні лишається відкритим і тут: `VBAT` — 100 мкФ АБО перемичка на VSTOR (`00_07` HW.9),
 #     тож обидві деталі стоять DNP, жодну не обрано.
 #   • U1 виключено із симуляції — вендорської моделі BQ25570 немає (`02_01 §7`); SPICE-нетліст пасивних
 #     симуляцією тракту НЕ є.
-#   • Розміщення — сітка, а зʼєднання — мітками на кінцях пінів: це читається як нетліст, не як
-#     намальована схема; ERC судить зʼєднання, а не читабельність.
+#   • Форма — гібрид (⚖️ делеговано 2026-11-08, `02_01 §7`): земля — символом, дільники — сходинками з
+#     дротами, паралельні конденсатори — на шині, піни мікросхеми — заглушка з міткою. Звірка стереже
+#     ЗʼЄДНАННЯ, а не читабельність: «читається» судить людина.
 
 require "digest"
 require "fileutils"
@@ -59,7 +66,10 @@ KICAD_CLI = [ ENV["KICAD_CLI"], "#{KICAD_APP}/Contents/MacOS/kicad-cli" ].compac
             "kicad-cli"
 GRID = 1.27
 STUB = 2.54
+RUNG = 7.62 # крок плечей у сходинці дільника
+RAIL = 10.16 # крок деталей на шині — ширший, щоб номінали не злипались
 OWN_LIB = "SilkenNet"
+GROUND = "GND"
 
 # ── S-вирази KiCad: розбір і запис ────────────────────────────────────────────────────────────────
 module Sexp
@@ -82,6 +92,11 @@ module Sexp
 
   def head(node) = node.first.is_a?(Atom) ? node.first.v : node.first.to_s
   def child(node, name) = node.find { |e| e.is_a?(Array) && head(e) == name }
+  def children(node, name) = node.select { |e| e.is_a?(Array) && head(e) == name }
+
+  # Глибока копія дерева: масиви копіюються, атоми й рядки ніхто не мутує на місці (правка піна заміняє
+  # елемент масиву). Не `Marshal` — той Brakeman слушно позначає як шлях до виконання коду.
+  def copy(node) = node.is_a?(Array) ? node.map { |e| copy(e) } : node
 
   def num(x)
     s = format("%.4f", x.to_f).sub(/0+\z/, "").sub(/\.\z/, "")
@@ -121,7 +136,7 @@ module Lib
           raise("#{lib}:#{name} у бібліотеках KiCad не знайдено")
     raise "#{lib}:#{name} — похідний символ (extends); вбудовування таких не підтримано" if Sexp.child(sym, "extends")
 
-    Marshal.load(Marshal.dump(sym))
+    Sexp.copy(sym)
   end
 
   def pins(sym)
@@ -139,7 +154,7 @@ module Lib
   end
 end
 
-# ── Аркуш ─────────────────────────────────────────────────────────────────────────────────────────
+# ── Аркуш: ЗАДУМАНЕ (пін → мережа) окремо від МАЛЮНКА ──────────────────────────────────────────────
 class Sheet
   ROOT = "0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
   # Пін дивиться ВІД точки зʼєднання ДО тіла символу; заглушка йде у протилежний бік.
@@ -147,7 +162,7 @@ class Sheet
   LABEL = { [ -1, 0 ] => [ 180, %i[right bottom] ], [ 1, 0 ] => [ 0, %i[left bottom] ],
             [ 0, 1 ] => [ 270, %i[right bottom] ], [ 0, -1 ] => [ 90, %i[left bottom] ] }.freeze
 
-  attr_reader :own, :stock
+  attr_reader :own, :stock, :intended
 
   def initialize
     @lib = {}
@@ -155,6 +170,8 @@ class Sheet
     @stock = []
     @items = []
     @points = {}
+    @intended = {}
+    @power = 0
   end
 
   def self.uid(key)
@@ -162,9 +179,11 @@ class Sheet
     "#{h[0, 8]}-#{h[8, 4]}-5#{h[13, 3]}-#{((h[16, 2].to_i(16) & 0x3f) | 0x80).to_s(16)}#{h[18, 2]}-#{h[20, 12]}"
   end
 
-  # Кожен пін символу мусить отримати мережу ЯВНО (`:nc` — теж явно): пропущений пін — помилка
-  # генератора, а не тихий обрив, який ERC міг би й не назвати.
-  def place(lib_id, ref, value, at:, nets:, bom: nil, note: nil, dnp: false, sim: true, in_bom: true, patch: {})
+  # Кожен пін символу мусить отримати мережу ЯВНО (`:nc` — теж явно): пропущений пін — помилка генератора,
+  # а не тихий обрив. `draw: false` — зʼєднання малює викличник (сходинка, шина); задумане пишеться завжди.
+  # Повертає { номер піна → [x, y] } — кінці пінів на аркуші.
+  def place(lib_id, ref, value, at:, nets:, draw: true, bom: nil, note: nil, dnp: false, sim: true, in_bom: true, patch: {},
+            tag_at: [ 2.54, -1.27 ])
     lib_id, sym = embed(lib_id, patch)
     x, y = at
     on_grid!(ref, x, y)
@@ -178,15 +197,51 @@ class Sheet
     node = [ :symbol, [ :lib_id, lib_id ], [ :at, x, y, 0 ], [ :unit, 1 ], [ :exclude_from_sim, sim ? :no : :yes ],
              [ :in_bom, in_bom ? :yes : :no ], [ :on_board, :yes ], [ :dnp, dnp ? :yes : :no ],
              [ :uuid, Sheet.uid("sym/#{ref}") ],
-             prop("Reference", ref, x + 2.54, y - 1.27, shown: !ref.start_with?("#")),
-             prop("Value", value, x + 2.54, y + 1.27, shown: true),
+             prop("Reference", ref, x + tag_at[0], y + tag_at[1], shown: !ref.start_with?("#")),
+             prop("Value", value, x + tag_at[0], y + tag_at[1] + 2.54, shown: true),
              prop("Footprint", "", x, y), prop("Datasheet", "", x, y), prop("Description", "", x, y) ]
     node << prop("BOM", bom, x, y) if bom
     node << prop("Примітка", note, x, y) if note
     numbers.each { |n| node << [ :pin, n, [ :uuid, Sheet.uid("pin/#{ref}/#{n}") ] ] }
     node << [ :instances, [ :project, NAME, [ :path, "/#{ROOT}", [ :reference, ref ], [ :unit, 1 ] ] ] ]
     @items << node
-    pins.each { |p| connect(ref, p, x, y, nets.fetch(p[:number])) }
+    pins.each { |p| @intended[[ ref, p[:number] ]] = nets.fetch(p[:number]) } unless ref.start_with?("#")
+    pins.each { |p| connect(ref, p, x, y, nets.fetch(p[:number])) } if draw
+    pins.each_with_object({}) { |p, ends| ends[p[:number]] ||= [ x + p[:x], y - p[:y] ] }
+  end
+
+  # Дільник — вертикальна сходинка: верх — заглушка з міткою `nets.first`, вузли між плечима — гілка
+  # вправо з міткою, низ — символ землі. `nets` — від верху до низу, на одну більше, ніж плечей.
+  def divider(arms, nets, x:, y:, **opts)
+    raise "сходинка #{arms.map(&:first)}: низ мусить бути #{GROUND}" unless nets.last == GROUND
+
+    ends = arms.each_with_index.map do |(ref, value), i|
+      place("Device:R_Small", ref, value, at: [ x, y + (i * RUNG) ], nets: { "1" => nets[i], "2" => nets[i + 1] },
+                                          draw: false, **opts)
+    end
+    tag = arms.first.first
+    lead_up(ends.first["1"], nets.first, tag)
+    ends.each_cons(2).with_index do |(upper, lower), i|
+      node = upper["2"]
+      branch = [ node[0] + (4 * STUB), node[1] ] # довша гілка: мітка не налазить на номінал плеча
+      wire(node, lower["1"], "#{tag}/rung#{i}")
+      wire(node, branch, "#{tag}/branch#{i}")
+      junction(node, "#{tag}/node#{i}")
+      label(branch, nets[i + 1], [ 1, 0 ], "#{tag}/node#{i}")
+    end
+    ground(ends.last["2"], "#{tag}/bottom")
+  end
+
+  # Шина: паралельні двополюсники однієї мережі — верхи з’єднані дротом, кожен низ — на землю.
+  def rail(parts, net, x:, y:)
+    ends = parts.each_with_index.map do |(ref, lib, value, opts), i|
+      place("Device:#{lib}", ref, value, at: [ x + (i * RAIL), y ], nets: { "1" => net, "2" => GROUND }, draw: false, **opts)
+    end
+    tag = "rail/#{net}"
+    lead_up(ends.first["1"], net, tag)
+    ends.each_cons(2).with_index { |(a, b), i| wire(a["1"], b["1"], "#{tag}/#{i}") }
+    ends[0...-1].each_with_index { |e, i| junction(e["1"], "#{tag}/#{i}") }
+    ends.each_with_index { |e, i| ground(e["2"], "#{tag}/gnd#{i}") }
   end
 
   def text(str, x, y)
@@ -197,7 +252,7 @@ class Sheet
   def document
     [ :kicad_sch, [ :version, 20260306 ], [ :generator, "silkennet_hw56" ], [ :generator_version, "10.0" ],
       [ :uuid, ROOT ], [ :paper, "A3" ],
-      [ :title_block, [ :title, "SilkenNet — Солдат, силовий дек (v0)" ], [ :company, "SilkenNet" ],
+      [ :title_block, [ :title, "SilkenNet — Солдат, силовий дек (v1)" ], [ :company, "SilkenNet" ],
         [ :comment, 1, "Згенеровано tools/pcb/soldier_schematic/build_schematic.rb — руками не правити" ],
         [ :comment, 2, "Плечі дільників — docs/02_03 §5 через bq25570_dividers.rb · P/N — docs/02_01 §3.1" ] ],
       [ :lib_symbols, *@lib.values ], *@items, [ :sheet_instances, [ :path, "/", [ :page, "1" ] ] ] ]
@@ -217,7 +272,7 @@ class Sheet
         pin = Lib.pins(s).find { |p| p[:number] == number } || raise("#{lib_id}: піна #{number} немає")
         pin[:node][1] = Sexp::Atom.new(type.to_s)
       end
-      @own[name] = Marshal.load(Marshal.dump(s)) unless patch.empty?
+      @own[name] = Sexp.copy(s) unless patch.empty?
       @stock << lib if patch.empty?
       s[1] = target
       s
@@ -235,6 +290,7 @@ class Sheet
     coords.each { |c| raise "#{ref}: #{c} поза сіткою #{GRID} мм" unless ((c / GRID) - (c / GRID).round).abs < 1e-6 }
   end
 
+  # Заглушка від піна назовні; на кінці — мітка мережі або, для землі, символ землі.
   def connect(ref, pin, sx, sy, net)
     px = sx + pin[:x]
     py = sy - pin[:y]
@@ -248,13 +304,46 @@ class Sheet
     return @items << [ :no_connect, [ :at, px, py ], [ :uuid, Sheet.uid("nc/#{tag}") ] ] if net == :nc
 
     dx, dy = OUTWARD.fetch(pin[:angle])
-    ex = px + (dx * STUB)
-    ey = py + (dy * STUB)
-    angle, justify = LABEL.fetch([ dx, dy ])
-    @items << [ :wire, [ :pts, [ :xy, px, py ], [ :xy, ex, ey ] ], [ :stroke, [ :width, 0 ], [ :type, :default ] ],
+    stub_end = [ px + (dx * STUB), py + (dy * STUB) ]
+    wire([ px, py ], stub_end, tag)
+    net == GROUND ? ground(stub_end, tag, [ dx, dy ]) : label(stub_end, net, [ dx, dy ], tag)
+  end
+
+  def lead_up(point, net, tag)
+    top = [ point[0], point[1] - STUB ]
+    wire(point, top, "#{tag}/lead")
+    label(top, net, [ 0, -1 ], "#{tag}/lead")
+  end
+
+  def wire(a, b, tag)
+    @items << [ :wire, [ :pts, [ :xy, *a ], [ :xy, *b ] ], [ :stroke, [ :width, 0 ], [ :type, :default ] ],
                 [ :uuid, Sheet.uid("wire/#{tag}") ] ]
-    @items << [ :label, net, [ :at, ex, ey, angle ], [ :effects, [ :font, [ :size, 1.27, 1.27 ] ], [ :justify, *justify ] ],
+  end
+
+  def junction(point, tag)
+    @items << [ :junction, [ :at, *point ], [ :diameter, 0 ], [ :color, 0, 0, 0, 0 ], [ :uuid, Sheet.uid("junction/#{tag}") ] ]
+  end
+
+  def label(point, net, dir, tag)
+    angle, justify = LABEL.fetch(dir)
+    @items << [ :label, net, [ :at, *point, angle ], [ :effects, [ :font, [ :size, 1.27, 1.27 ] ], [ :justify, *justify ] ],
                 [ :uuid, Sheet.uid("label/#{tag}") ] ]
+  end
+
+  # Символ землі дивиться НАЗОВНІ від піна: на бічному піні вниз він налазив би на сусідній пін.
+  GROUND_ANGLE = { [ 0, 1 ] => 0, [ -1, 0 ] => 270, [ 1, 0 ] => 90, [ 0, -1 ] => 180 }.freeze
+
+  def ground(point, tag, dir = [ 0, 1 ])
+    @power += 1
+    ref = format("#PWR%02d", @power)
+    lib_id, = embed("power:GND", {})
+    x, y = point
+    @items << [ :symbol, [ :lib_id, lib_id ], [ :at, x, y, GROUND_ANGLE.fetch(dir) ], [ :unit, 1 ], [ :exclude_from_sim, :no ], [ :in_bom, :no ],
+                [ :on_board, :yes ], [ :dnp, :no ], [ :uuid, Sheet.uid("gnd/#{tag}") ],
+                prop("Reference", ref, x, y + 5.08), prop("Value", GROUND, x, y + 3.81, shown: dir == [ 0, 1 ]),
+                prop("Footprint", "", x, y), prop("Datasheet", "", x, y), prop("Description", "", x, y),
+                [ :pin, "1", [ :uuid, Sheet.uid("gndpin/#{tag}") ] ],
+                [ :instances, [ :project, NAME, [ :path, "/#{ROOT}", [ :reference, ref ], [ :unit, 1 ] ] ] ] ]
   end
 end
 
@@ -281,46 +370,48 @@ def build
   s = Sheet.new
   bom = ->(pos) { "docs/02_01 §3.1 поз. #{pos}" }
   open_vbat = "⚖️ відкрито: 100 мкФ АБО перемичка на VSTOR — docs/00_07 HW.9"
+  pos10 = bom.call(10)
 
-  s.place("Battery_Management:BQ25570", "U1", "BQ25570", at: [ 190.5, 114.3 ], bom: bom.call(2), sim: false,
+  # Позначення великого корпусу — над ним, праворуч від верхніх пінів, а не поверх назв пінів.
+  s.place("Battery_Management:BQ25570", "U1", "BQ25570", at: [ 190.5, 114.3 ], bom: bom.call(2), sim: false, tag_at: [ 7.62, -21.59 ],
           note: "SPICE-моделі немає — docs/02_01 §7", patch: { "18" => :bidirectional, "14" => :power_out },
-          nets: { "1" => "GND", "2" => "VIN_DC", "3" => "VOC_SAMP", "4" => "VREF_SAMP", "5" => "GND",
-                  "6" => "VBAT_OK", "7" => "VBAT_OV", "8" => "VRDIV", "9" => "GND", "10" => "OK_HYST",
-                  "11" => "OK_PROG", "12" => "VOUT_SET", "13" => "VBAT_OK", "14" => "VOUT", "15" => "GND",
-                  "16" => "LBUCK", "17" => "GND", "18" => "VBAT", "19" => "VSTOR", "20" => "LBOOST", "21" => "GND" })
+          nets: { "1" => GROUND, "2" => "VIN_DC", "3" => "VOC_SAMP", "4" => "VREF_SAMP", "5" => GROUND,
+                  "6" => "VBAT_OK", "7" => "VBAT_OV", "8" => "VRDIV", "9" => GROUND, "10" => "OK_HYST",
+                  "11" => "OK_PROG", "12" => "VOUT_SET", "13" => "VBAT_OK", "14" => "VOUT", "15" => GROUND,
+                  "16" => "LBUCK", "17" => GROUND, "18" => "VBAT", "19" => "VSTOR", "20" => "LBOOST", "21" => GROUND })
 
   # Джерело й прапорці живлення: EBFC зовнішній, тож VIN_DC і GND мусять мати оголошеного «водія».
   s.place("Connector_Generic:Conn_01x02", "J1", "EBFC (pogo)", at: [ 76.2, 50.8 ], bom: bom.call(7), sim: false,
-          nets: { "1" => "VIN_DC", "2" => "GND" })
-  s.place("power:PWR_FLAG", "#FLG01", "PWR_FLAG", at: [ 76.2, 76.2 ], in_bom: false, sim: false, nets: { "1" => "GND" })
+          nets: { "1" => "VIN_DC", "2" => GROUND })
+  s.place("power:PWR_FLAG", "#FLG01", "PWR_FLAG", at: [ 76.2, 76.2 ], in_bom: false, sim: false, nets: { "1" => GROUND })
   s.place("power:PWR_FLAG", "#FLG02", "PWR_FLAG", at: [ 88.9, 76.2 ], in_bom: false, sim: false, nets: { "1" => "VIN_DC" })
 
-  # Ряд живлення: вхід · boost · опорний вузол MPPT · накопичувач · buck.
+  # Ряд живлення: вхід · boost · опорний вузол MPPT · шина VSTOR · VBAT (відкрито) · buck.
   two = ->(ref, lib, value, x, a, b, **kw) { s.place("Device:#{lib}", ref, value, at: [ x, 50.8 ], nets: { "1" => a, "2" => b }, **kw) }
-  two.call("C1", "C_Small", "4.7u", 101.6, "VIN_DC", "GND", bom: bom.call(10), note: "C_IN ≥ 4.7 мкФ (SLUSBH2G); P/N не обрано")
+  two.call("C1", "C_Small", "4.7u", 101.6, "VIN_DC", GROUND, bom: pos10, note: "C_IN ≥ 4.7 мкФ (SLUSBH2G); P/N не обрано")
   two.call("L1", "L_Small", "22u", 114.3, "VIN_DC", "LBOOST", bom: bom.call(15))
-  two.call("C2", "C_Small", "10n", 127.0, "VREF_SAMP", "GND", bom: bom.call(10), note: "CREF 9–11 нФ, малий витік (SLUSBH2G)")
-  two.call("C3", "C_Small", "4.7u", 139.7, "VSTOR", "GND", bom: bom.call(10), note: "C_STOR ≥ 4.7 мкФ (SLUSBH2G)")
-  two.call("C4", "C_Small", "100n", 152.4, "VSTOR", "GND", bom: bom.call(10), note: "C_STOR 0.1 мкФ паралельно (SLUSBH2G)")
-  two.call("C5", "C_Polarized_Small", "470mF", 165.1, "VSTOR", "GND", bom: bom.call(3), note: "EDLC на VSTOR — docs/02_03 §2")
-  s.place("Jumper:SolderJumper_2_Open", "JP1", "VBAT—VSTOR", at: [ 203.2, 50.8 ], dnp: true, sim: false, note: open_vbat,
+  two.call("C2", "C_Small", "10n", 127.0, "VREF_SAMP", GROUND, bom: pos10, note: "CREF 9–11 нФ, малий витік (SLUSBH2G)")
+  s.rail([ [ "C3", "C_Small", "4.7u", { bom: pos10, note: "C_STOR ≥ 4.7 мкФ (SLUSBH2G)" } ],
+           [ "C4", "C_Small", "100n", { bom: pos10, note: "C_STOR 0.1 мкФ паралельно (SLUSBH2G)" } ],
+           [ "C5", "C_Polarized_Small", "470mF", { bom: bom.call(3), note: "EDLC на VSTOR — docs/02_03 §2" } ] ],
+         "VSTOR", x: 139.7, y: 50.8)
+  s.place("Jumper:SolderJumper_2_Open", "JP1", "VBAT—VSTOR", at: [ 190.5, 50.8 ], dnp: true, sim: false, note: open_vbat,
           nets: { "1" => "VBAT", "2" => "VSTOR" })
-  two.call("C6", "C_Small", "100u", 228.6, "VBAT", "GND", dnp: true, note: open_vbat)
-  two.call("L2", "L_Small", "10u", 241.3, "LBUCK", "VOUT", bom: bom.call(15))
-  two.call("C7", "C_Small", "47u", 254.0, "VOUT", "GND", bom: bom.call(9))
+  two.call("C6", "C_Small", "100u", 215.9, "VBAT", GROUND, dnp: true, note: open_vbat)
+  two.call("L2", "L_Small", "10u", 228.6, "LBUCK", "VOUT", bom: bom.call(15))
+  two.call("C7", "C_Small", "47u", 241.3, "VOUT", GROUND, bom: bom.call(9))
 
-  # Ряд дільників: номінали — з канону, верх кожного — до VRDIV (ROC2 — до VIN_DC, §4.А).
+  # Дільники — сходинками; номінали з канону, верх — VRDIV (MPPT — VIN_DC, §4.А).
   arms = dividers
-  [ [ "ROV2", "VRDIV", "VBAT_OV" ], [ "ROV1", "VBAT_OV", "GND" ],
-    [ "ROK3", "VRDIV", "OK_HYST" ], [ "ROK2", "OK_HYST", "OK_PROG" ], [ "ROK1", "OK_PROG", "GND" ],
-    [ "ROUT2", "VRDIV", "VOUT_SET" ], [ "ROUT1", "VOUT_SET", "GND" ],
-    [ "ROC2", "VIN_DC", "VOC_SAMP" ], [ "ROC1", "VOC_SAMP", "GND" ] ].each_with_index do |(ref, top, bottom), i|
-    s.place("Device:R_Small", ref, ohms(arms.fetch(ref)), at: [ 101.6 + (12.7 * i), 177.8 ], bom: bom.call(10),
-            note: "1 % E96 · номінал із docs/02_03 §5", nets: { "1" => top, "2" => bottom })
-  end
+  arm = ->(*refs) { refs.map { |r| [ r, ohms(arms.fetch(r)) ] } }
+  r_opts = { bom: pos10, note: "1 % E96 · номінал із docs/02_03 §5" }
+  s.divider(arm.call("ROV2", "ROV1"), [ "VRDIV", "VBAT_OV", GROUND ], x: 101.6, y: 165.1, **r_opts)
+  s.divider(arm.call("ROK3", "ROK2", "ROK1"), [ "VRDIV", "OK_HYST", "OK_PROG", GROUND ], x: 127.0, y: 165.1, **r_opts)
+  s.divider(arm.call("ROUT2", "ROUT1"), [ "VRDIV", "VOUT_SET", GROUND ], x: 152.4, y: 165.1, **r_opts)
+  s.divider(arm.call("ROC2", "ROC1"), [ "VIN_DC", "VOC_SAMP", GROUND ], x: 177.8, y: 165.1, **r_opts)
 
-  s.text("v0 — BQ25570 і обвʼязка. Кламп поз. 14 і ключ поз. 23 — наступні кроки docs/00_07 HW.56.", 25.4, 228.6)
-  s.text("Зʼєднання — мітками на кінцях пінів; номінали дільників читаються з docs/02_03 §5.", 25.4, 233.68)
+  s.text("v1 — BQ25570 і обвʼязка. Кламп поз. 14 і ключ поз. 23 — наступні кроки docs/00_07 HW.56.", 25.4, 228.6)
+  s.text("Номінали дільників читаються з docs/02_03 §5; зʼєднання звіряються з нетлістом KiCad.", 25.4, 233.68)
   s.text("VBAT: 100 мкФ АБО перемичка на VSTOR — відкрито (HW.9), обидві деталі DNP.", 25.4, 238.76)
   s
 end
@@ -355,6 +446,19 @@ def cli(*args)
   [ out, status.exitstatus ]
 end
 
+# Звірка з’єднань: кожен пін деталі мусить лежати в ЗАДУМАНІЙ мережі нетліста, який експортує сам KiCad.
+def netlist_problems(net_file, intended)
+  actual = {}
+  Sexp.child(Sexp.parse(File.read(net_file)).first, "nets").then { |nets| Sexp.children(nets, "net") }.each do |net|
+    name = Sexp.child(net, "name")[1].sub(%r{\A/}, "")
+    Sexp.children(net, "node").each { |n| actual[[ Sexp.child(n, "ref")[1], Sexp.child(n, "pin")[1] ]] = name }
+  end
+  actual.reject! { |(ref, _), _| ref.start_with?("#") }
+  wrong = intended.filter_map { |pin, want| "#{pin.join('.')}: задумано #{want}, у KiCad #{actual[pin].inspect}" if actual[pin] != want }
+  extra = (actual.keys - intended.keys).map { |pin| "#{pin.join('.')}: у KiCad є (#{actual[pin]}), у задуманому немає" }
+  wrong + extra
+end
+
 def verify(dir)
   sch = File.join(dir, "#{NAME}.kicad_sch")
   out_dir = File.join(HERE, "out")
@@ -366,10 +470,15 @@ def verify(dir)
   warn log unless code.zero? || !violations.empty?
   _, pdf = cli("sch", "export", "pdf", "-o", File.join(out_dir, "#{NAME}.pdf"), sch)
   _, spice = cli("sch", "export", "netlist", "--format", "spice", "-o", File.join(out_dir, "#{NAME}.cir"), sch)
+  net_file = File.join(out_dir, "#{NAME}.net")
+  _, nl = cli("sch", "export", "netlist", "--format", "kicadsexpr", "-o", net_file, sch)
+  wiring = nl.zero? ? netlist_problems(net_file, build.intended) : [ "нетліст KiCad не експортувався" ]
+  wiring.each { |w| warn "FAIL  зʼєднання — #{w}" }
   femto = File.read(File.join(out_dir, "#{NAME}.cir")).lines.grep(/\s[\d.]+F\s*\z/i)
   femto.each { |l| warn "FAIL  SPICE читає голе F як фемто: #{l.strip}" }
-  puts "ERC: #{violations.size} порушень (exit #{code}) · PDF exit #{pdf} · SPICE-нетліст exit #{spice} → #{out_dir.sub("#{Dir.pwd}/", '')}"
-  code.zero? && pdf.zero? && spice.zero? && femto.empty?
+  puts "ERC: #{violations.size} порушень (exit #{code}) · звірка зʼєднань: #{wiring.size} розбіжностей · " \
+       "PDF exit #{pdf} · SPICE exit #{spice} → #{out_dir.sub("#{Dir.pwd}/", '')}"
+  code.zero? && pdf.zero? && spice.zero? && wiring.empty? && femto.empty?
 end
 
 if __FILE__ == $PROGRAM_NAME
