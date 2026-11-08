@@ -33,7 +33,7 @@
 
 require "json"
 require "digest"
-require "time"
+require "fileutils"
 
 module SessionSweep
   # Ruby's \w is ASCII-only, so it never matches a Cyrillic letter: families use \p{L} instead (lint below).
@@ -99,8 +99,7 @@ module SessionSweep
       end
       { "file" => File.basename(f), "sha256" => Digest::SHA256.file(f).hexdigest, "bytes" => File.size(f), "first" => first, "last" => last }
     end
-    Dir.mkdir(out) unless Dir.exist?(out)
-    Dir.mkdir(File.join(out, "samples")) unless Dir.exist?(File.join(out, "samples"))
+    FileUtils.mkdir_p(File.join(out, "samples"))
     window = manifest.flat_map { [ _1["first"], _1["last"] ] }.compact.minmax
     File.write(File.join(out, "manifest.json"), JSON.pretty_generate({ "sessions" => manifest.size, "excluded" => exclude, "window" => window, "files" => manifest }))
     counts = FAMILIES.to_h { |name, fam| [ name, { "unit" => fam[:unit].to_s, "prose" => hits[name][:prose].size, "writes" => hits[name][:writes].size } ] }
