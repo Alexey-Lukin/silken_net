@@ -212,7 +212,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 1. TPS22860: `VIN`←3V3, `VBIAS`←3V3 (живлення самого ключа; `VIN` ≤ `VBIAS` — SLVSD04), `GND`, `VOUT`→BME280 `VDD`, `ON`←GPIO + 1 МΩ від `ON` до GND (power-gate; pull-down — ⚖️ 2026-11-08, [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM)).
 2. BME280: `SCL`→`PB15` (J1-23), `SDA`→`PA15` (J1-22) — I2C2 mini, спільна шина; підтяжки 4.7 кΩ — на платі mini (R15/R16).
 3. **Checkpoint:** I2C-scan бачить BME280 (0x76 при SDO→GND / 0x77 при SDO→VDD); forced-mode read дає t°/RH/тиск.
-4. Деталі VPD/DCI-guard → [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM); firmware `bme280.h` (логіка forced-mode є, HAL-глю — на стенді, §4). ⚠️ **Гейт TPS22860 — лише на VDD, VDDIO лишити на постійній 3V3** (датащит Bosch BME280 §3.2: піни в «1» при вимкненому VDDIO можуть незворотно пошкодити чіп через ESD-діоди, і шина спільна з SE051C2); breakout, де VDD і VDDIO з'єднані, під гейт не ставити.
+4. Деталі VPD/DCI-guard → [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM); firmware `bme280.h` (логіка forced-mode є; HAL-глю образу mini пишеться ДО стенда — машинна нога [`00_07`](00_07_Action_Plan_Tracker) HW.32, а на стенді — живе читання, §4). ⚠️ **Гейт TPS22860 — лише на VDD, VDDIO лишити на постійній 3V3** (датащит Bosch BME280 §3.2: піни в «1» при вимкненому VDDIO можуть незворотно пошкодити чіп через ESD-діоди, і шина спільна з SE051C2); breakout, де VDD і VDDIO з'єднані, під гейт не ставити.
 
 ### 3.5 Security (SE051C2)
 1. SE051C2 (eval-плата): I2C `SCL`→`PB15`, `SDA`→`PA15` (I2C2 mini, спільна з BME280; підтяжки — на платі mini); живлення за load-switch'ем (окремий TPS22860 або спільний — bench).
