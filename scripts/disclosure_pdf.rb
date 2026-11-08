@@ -35,6 +35,9 @@
 #   · a circled digit (①, the paper's program labels) is set in Arial Unicode MS: the fallback face is a Type 3 font
 #     whose glyph poppler drops together with the rest of the line, and at line-height 1, since that face's taller
 #     metrics otherwise move a wrapped table line into a block of its own that poppler reads after the table (2026-10-11);
+#   · a long arrow (U+27F0–U+27FF, the method paper's ⟷) is set at normal weight: its fallback face, Apple Symbols, has
+#     no bold, and the bold Chrome synthesises in a heading makes Skia embed the glyph as a Type 3 font, which arXiv's
+#     PDF rules ask submitters to avoid (outline TrueType/Type 1 only);
 #   · a table's first column never wraps (poppler read a wrapped cell across the row), and a
 #     heading never ends a page.
 #
@@ -68,6 +71,7 @@ module DisclosurePdf
     h1, h2, h3 { break-after: avoid; } tr { break-inside: avoid; }
     .src { font-size: 8.5pt; color: #444; margin-bottom: 10pt; }
     .cd { font-family: "Arial Unicode MS"; line-height: 1; }
+    .sym { font-weight: normal; }
     .ms td:first-child { white-space: normal; }
     h1.title { font-size: 19pt; line-height: 1.25; margin: 0 0 6pt; } .byline { font-size: 11pt; margin: 0 0 12pt; }
   CSS
@@ -193,6 +197,7 @@ module DisclosurePdf
       s = CGI.escapeHTML(t.content)
       s = s.gsub(/#{WORD}(?:-#{WORD})+/o) { %(<span class="nw">#{Regexp.last_match(0)}</span>) }
       s = s.gsub(/[\u2460-\u2473]/) { %(<span class="cd">#{Regexp.last_match(0)}</span>) }
+      s = s.gsub(/[\u27f0-\u27ff]/) { %(<span class="sym">#{Regexp.last_match(0)}</span>) }
       s = s.gsub(/\b[[:alnum:]]+_[[:alnum:]_]+\b/) { %(<code>#{Regexp.last_match(0)}</code>) } if t.ancestors("a").empty? && t.ancestors("code").empty?
       t.replace(Nokogiri::HTML::DocumentFragment.parse(s)) unless s == CGI.escapeHTML(t.content)
     end
@@ -284,7 +289,9 @@ module DisclosurePdf
 
   def selftest
     fails = 0
+    cases = 0
     t = lambda do |name, ok|
+      cases += 1
       puts "#{ok ? 'ok  ' : 'FAIL'} #{name}"
       fails += 1 unless ok
     end
@@ -297,6 +304,9 @@ module DisclosurePdf
     t.call("a hyphenated compound is kept on one line", h.include?(%(<span class="nw">flavin-dependent</span>)))
     t.call("a colour emoji becomes the text glyph", h.include?(%(<span class="warn">\u26A0\uFE0E</span>)) && !h.include?("\uFE0F"))
     t.call("code is left alone", h.include?("<code>delta_t</code>") && !h.include?("<code><code>"))
+    a = hygiene(%(<h3>C3 — Mechanism ⟷ its trigger</h3><p>a ↔ b</p>))
+    t.call("a long arrow in a heading is set at normal weight, a plain arrow is not touched",
+           a.include?(%(<span class="sym">⟷</span>)) && !a.include?(%(<span class="sym">↔)))
     read = []
     r = rewrite("![Fig](figures/a.png \"T\") see [m](../x.md#s) and ![w](https://e.org/b.png)", "docs/p/03.md", "B/") do |target|
       read << target
@@ -322,7 +332,7 @@ module DisclosurePdf
            "#### Стаття 1: y\ntext\n**Назва (EN):** _\"Right\"_\n#### Стаття 2: w\n**Назва (EN):** _\"Next\"_\n"
     t.call("the title is the one under Стаття 1's heading — not the first in the plan, not Стаття 13's, not the next paper's",
            title_from(plan) == "Right" && title_from(plan.sub("**Назва (EN):** _\"Right\"_\n", "")).nil?)
-    puts(fails.zero? ? "disclosure_pdf --selftest: OK (14 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
+    puts(fails.zero? ? "disclosure_pdf --selftest: OK (#{cases} cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
     exit(fails.zero? ? 0 : 1)
   end
 end

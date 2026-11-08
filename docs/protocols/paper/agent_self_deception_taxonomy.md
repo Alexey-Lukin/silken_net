@@ -8,7 +8,7 @@ measuring any of it.**
 here; this document is intended to constitute prior art.*
 
 > **Author:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
-> **First published in the public repository:** 2026-08-08 · **Status:** submission-ready (arXiv cs.SE/cs.AI).
+> **First published in the public repository:** 2026-08-08 · **Status:** text complete; before the arXiv submission (cs.SE/cs.AI) the figures of §4 are re-measured on a new window.
 >
 > **Venue note.** The IP posture that governs this file is defensive-publication-first
 > ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)), and its canonical channel for the
