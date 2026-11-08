@@ -32,7 +32,7 @@
 | **Вступ: анкер, капсула, два піни, байонет** | [`02_02 §1.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (коаксіал, 2 контакти) · [`02_02 §4.3`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (байонет 1/4 оберту) · [`02_02 §6`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (піни на нижньому шарі плати) · [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (осьовий хід) | фактом | полярність (GND/VIN_DC) · хімія EBFC · TRL |
 | **Базовий кейс + альтернатива** | [`02_02 §2.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (серія «0906 або 0908 — обирає HW.9»; даташит прочитано лише для `0906-1-15-20-75-14-11-0`) · [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.43 (найслабша ланка: дані 0908 — сторінка серії й Digi-Key) | дві серії без ранжування; «базовий, бо єдиний прочитаний» | серія «0909» (знято, 404) |
 | **Два однакові піни** | [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 7 («2 шт») | фактом | ціна BOM ~$0.40 |
-| **Електрика: ≈15 мкА … 0.5 мА, ≈0.5 В, Rc < 50 мОм** | [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (до 500 мкА · > 500 мВ · < 50 мОм) · [`02_02 §5`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (cold-start 15 мкА → [`02_03 §1.5`](../../02_03_BQ25570_MPPT_Nano_Power.md)) | вимогою | пороги деградації (> 500 мОм · 1–2 кОм) — послабили б вимогу · розрахунок ΔV |
+| **Електрика: ≈25 мкА … 0.5 мА, < 1 В, Rc < 50 мОм** | [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (до 500 мкА · ≥ 700 мВ max на старті · < 50 мОм) · [`02_02 §5`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (cold-start ≈25 мкА — `PIN(CS)` 15 мкВт при 600 мВ, [`02_03 §1.1`](../../02_03_BQ25570_MPPT_Nano_Power.md); V_OC 500–800 мВ) | вимогою | пороги деградації (> 500 мОм · 1–2 кОм) — послабили б вимогу · розрахунок ΔV |
 | **−40 … +85 °C** | [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) | вимогою, п. 5e — підтвердити | — |
 | **Покриття 0.76 мкм (30 µin) Au по 1.27 мкм (50 µin) Ni** | [`02_02 §2.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (✅ founder 07-03 — ПІН) | вимогою | ⛔ для площадки анкера не цитується (⚖️ 2026-09-22, [`02_02 §1.3`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md)) |
 | **«-20-» = 20 µin (≈0.51 мкм)** | [`02_02 §2.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) ⚠️ ⊕ («чи є варіант 30 µ″, не перевірено») · [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.43 | «we read … please correct us» | «на корпусі» — канон приписує код корпусу; яка деталь несе який код, лист ПИТАЄ (п. 2a), не стверджує |
@@ -88,7 +88,7 @@
 
 ## 📤 Dispatch block (EN) — Mill-Max or distributor email
 
-> **Репо-нота (у лист НЕ йде).** Несе дзеркала домів (§1): 2 однакові піни · ≈15 мкА … 0.5 мА при ≈0.5 В · Rc < 50 мОм · −40 … +85 °C · Au 0.76 / Ni 1.27 мкм (30 / 50 µin) · «-20-» = 20 µin · хід 1.40 мм (.055 ± .005 in) · вікно 50–70 % (0.70–0.98 мм) · сила ~98 г (0.96 Н) ⊥ 60 ± 20 г · BeCu C17200 per ASTM B194 · ціль Ø1.0 урівень, кільце Ø ≥ 4.0 · фланець Ø29.8 · зазор ≈0.3 мм · pH ≈5.75 · «порядку сотні» зʼєднань · ≤ ≈4.7 × 10⁸ циклів за 20 років · 100 000–1 000 000 циклів каталогу · пад 2.5 мм · 2 000 / 20 000 пінів. Питає те, чого канон не несе й не може нести без вендора (§2).
+> **Репо-нота (у лист НЕ йде).** Несе дзеркала домів (§1): 2 однакові піни · ≈25 мкА … 0.5 мА при < 1 В · Rc < 50 мОм · −40 … +85 °C · Au 0.76 / Ni 1.27 мкм (30 / 50 µin) · «-20-» = 20 µin · хід 1.40 мм (.055 ± .005 in) · вікно 50–70 % (0.70–0.98 мм) · сила ~98 г (0.96 Н) ⊥ 60 ± 20 г · BeCu C17200 per ASTM B194 · ціль Ø1.0 урівень, кільце Ø ≥ 4.0 · фланець Ø29.8 · зазор ≈0.3 мм · pH ≈5.75 · «порядку сотні» зʼєднань · ≤ ≈4.7 × 10⁸ циклів за 20 років · 100 000–1 000 000 циклів каталогу · пад 2.5 мм · 2 000 / 20 000 пінів. Питає те, чого канон не несе й не може нести без вендора (§2).
 >
 > **Немає свідомо:** наш вибір серії (жодної не замовляємо) · серія «0909» · корпус 1.27 мм «для вищого струму» (наш струм — мікроампери, опція без рушія) · «≥ 50 000 циклів» (каталожний клас, а не потреба) · ⛔ **прохання про іншу, «сильнішу» пружину** — інший код пружини може бути іншим сплавом, тобто лист мовчки перевідкрив би ратифіковану вісь HW.43 (сплав = S-N-вхід) · рекомендація покриття ЦІЛІ — маршрут площадки обирає гальванік (⚖️ 2026-09-22), а pogo-вендор не авторитет щодо титану · статична релаксація пружини під сталим стиском роками при +85 °C — кандидат-питання, але ні канон, ні трекер його не називають (рамка `59` — циклічна), тож у лист не вписано; рішення — founder-а · маскування піна під Parylene — питання коатера, воно вже в [`node_parylene_rfq`](node_parylene_rfq.md) п. 2 · пороги деградації Rc · S-N-якорі, рамки A/B `59` і наш вирок · дужка частот і межі (2)–(3) циклового бюджету · контур плати (стеля Ø20.37 − 2·t) · ціна BOM · полярність і EBFC-хімія · трекер-ID, канон-рефи, дати й гліфи.
 >
@@ -111,7 +111,7 @@ This is a technical enquiry and not yet an order. Answering commits neither side
 **Our design basis**
 
 - **Quantity:** two identical pins per node.
-- **Electrical:** a low-level circuit, from about 15 µA at start-up up to 0.5 mA in normal operation, at around 0.5 V. Contact resistance must stay below **50 mΩ** per pin.
+- **Electrical:** a low-level circuit below 1 V, from about 25 µA at start-up up to 0.5 mA in normal operation. Contact resistance must stay below **50 mΩ** per pin.
 - **Temperature:** −40 to +85 °C.
 - **Plating we specified:** hard gold, **0.76 µm (30 µin) over 1.27 µm (50 µin) nickel**.
 - **Travel:** we design around a nominal travel of **1.40 mm (.055 in ± .005 in)**, as we read it from your datasheet. The gap is set so that the pins sit between **50 % and 70 % of travel** (0.70 to 0.98 mm compressed), never at either end.
@@ -151,7 +151,7 @@ We need these figures for our height tolerance stack-up.
 **5. Rated life and contact resistance in our conditions**
 
 - a. We read a mechanical life of 100,000 to 1,000,000 cycles for the 0906 series. At what stroke, at what cycling rate and with what end-of-life criterion (a contact resistance limit, a loss of force) is that figure rated?
-- b. The contact resistance figure of 50 mΩ: at what test current and by what method is it measured? Does it hold at our low levels, from microamps up to 0.5 mA at around 0.5 V, where the current is too small to break through surface films?
+- b. The contact resistance figure of 50 mΩ: at what test current and by what method is it measured? Does it hold at our low levels, from microamps up to 0.5 mA below 1 V, where the current is too small to break through surface films?
 - c. Do you have contact resistance data after life testing, and after exposure to humidity?
 - d. Do you have any data on contact resistance, wear or fretting, at the tip or inside the pin, for small-amplitude cyclic motion around a fixed compression, over a number of cycles of the order of 10⁸? If you have none, please say so; that is also a useful answer for us.
 - e. Please confirm that the operating temperature range of these parts covers −40 to +85 °C.

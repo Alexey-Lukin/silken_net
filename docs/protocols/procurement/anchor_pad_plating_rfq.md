@@ -23,7 +23,7 @@
 | Пункт листа | Дім | Як подано | Прибрано |
 |---|---|---|---|
 | **1 центральна площадка** | [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (дріт Ø1.0, «Термінус»: торець і є площадкою) · [`02_02 §1.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (PEEK-кільце Ø ≥ 4.0, ⚖️ 2026-09-18) · [`01_01 §3`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) крок 4a (торець урівень із гранню) | фактом | лайнер 0.15 · канал Ø1.35 · закриття каналу на виході (елемента в дереві ще немає, [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.34) — гальванікові не потрібні |
-| **2 кільцева площадка** | [`02_02 §1.3`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (фланець Ø29.8, корінь 2026-09-30) | радіус і ширина — питанням: залежать від P/N піна HW.9 | «Ø4–5» (мертвий концепт) · «ø 2.5» (друкована площадка ПЛАТИ під пін, [`02_02 §2.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md)) |
+| **2 кільцева площадка** | [`02_02 §1.3`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (фланець Ø29.8, корінь 2026-09-30) · `tools/cad/cem/cathode_flange.json` (`lug_protrusion_mm` 2.0 → по вушках 33.8) · [`02_01 §3.5`](../../02_01_Hardware_Architecture_and_BOM.md) ⊕ «Пакет кореня» (купол і фланець — до ≈ Ø33.1) | радіус і ширина — питанням: залежать від P/N піна HW.9; габарит — фактом із застереженням, що він ще росте | «Ø4–5» (мертвий концепт) · «ø 2.5» (друкована площадка ПЛАТИ під пін, [`02_02 §2.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md)) |
 | **3 один маршрут** | [`02_02 §1.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) Mandatory fix («тим самим кроком») | вимогою | — |
 | **4 матеріал** | [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) («сплав = сплав анода») · [`01_02 §2.5`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) (шість кандидатів; правило (в) для фланця) | базовий 4V + п'ять дельт; тантал окремо — інша хімія активації | наш down-select і його критерії |
 | **5 поверхні без золота** | [`01_02 §3.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) (карта) · вимога (г) [`02_02 §1.3`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) | вимогою | ZnO-Ta (PEO) на сорочці фланця — Крок 8 знято ⚖️ founder 2026-10-04 |
@@ -86,7 +86,7 @@
 **Що покривається**
 
 1. **Центральна площадка — торець титанового дроту Ø1,0 мм.** Дріт тягнутий, одним кінцем приварений до пористої (решітчастої) титанової деталі; золотиться лише вільний торець. Після складання цей торець стоїть урівень із верхньою гранню фланця (п. 2) усередині полімерного кільця діаметром не менше 4,0 мм, і на нього сідає перший пін.
-2. **Кільцева площадка — зона на плоскій верхній грані титанового фланця діаметром 29.8 мм**, на яку сідає другий пін. Радіус і ширину цієї зони ми уточнимо кресленням — вони залежать від моделі піна, яку ще обираємо; просимо назвати найменшу ширину зони й точність її межі, які ви витримуєте.
+2. **Кільцева площадка — зона на плоскій верхній грані титанового фланця діаметром 29.8 мм** (поточна геометрія: по вушках байонета — 33.8 мм, а сам діаметр ще може зрости приблизно до 33 мм), на яку сідає другий пін. Радіус і ширину цієї зони ми уточнимо кресленням — вони залежать від моделі піна, яку ще обираємо; просимо назвати найменшу ширину зони й точність її межі, які ви витримуєте.
 3. **Обидві площадки — одним маршрутом і однаковим покриттям.**
 4. **Матеріал.** Базовий для ціни — Ti-6Al-4V для обох деталей (для пористої деталі це пробний еталон, а не кандидат: її сплав буде безванадієвим). Сплав пористої деталі й дроту остаточно не обрано; кандидати — Ti-6Al-7Nb, технічно чистий титан Grade 4, Ti-13Nb-13Zr, Ti-15Zr і тантал. Фланець — Ti-6Al-4V або один із цих безванадієвих сплавів. Скажіть, для яких сплавів ваш маршрут змінюється, і окремо — чи працюєте ви з танталом. Адгезія на титані залежить від сплаву — для деяких процесів технічно чисті марки поводяться інакше, ніж Ti-6Al-4V, — тож просимо відповісти про адгезію для кожного сплаву, який ви приймете, і вказати, чи вона підтверджена випробуваннями, чи є очікуванням.
 5. **Решта поверхонь не золотиться:** ні пориста деталь, ні інші грані фланця — на частину з них пізніше наносять біологічно активні шари.
@@ -96,7 +96,7 @@
 6. **Функція.** Пін має тверде золоте покриття. Притиснутий до голого титану у вологому кислому середовищі, він утворює з ним гальванічну пару (різниця потенціалів близько 0,2 В), і контактний опір із часом зростає в рази. Золото на площадці виносить цю пару з поверхні контакту — але не прибирає її: під покриттям стик титану з покриттям лишається, і крізь пори до нього може дістатися конденсат. Тому для нас важать не лише товщина, а й адгезія та пористість покриття.
 7. **Контакт ковзний і циклічний.** Пружинний пін притискається силою до приблизно 1 Н (точне значення залежить від моделі піна). Зʼєднань і розʼєднань під час обслуговування — за нашою оцінкою, порядку сотні за строк служби, а між ними — мікрорух від розгойдування стовбура, амплітуду якого ще не виміряно. Тому золото потрібне тверде, а не мʼяке.
 8. **Електрично — слабкострумовий «сухий» контакт:** струм до 500 мкА при напрузі близько 0,5 В; контактний опір пари пін–площадка має лишатися нижче 50 мОм.
-9. **Середовище й строк:** кислий конденсат ксилемного соку (pH близько 5,75, у наших випробуваннях — і 4,5), постійна волога, температура від −40 до +85 °C, строк служби — 20 років.
+9. **Середовище й строк:** кислий конденсат ксилемного соку (pH близько 5,75, у запланованих випробуваннях — і 4,5), постійна волога, температура від −40 до +85 °C, строк служби — 20 років.
 10. **Знезараження після золочення:** деталь проходить ультрафіолет (254 нм), промивання 70 % етанолом і гамма-опромінення Co-60 дозою не менше 15 кГр (верхньої межі ще не задано), далі зберігається при 4–8 °C. Покриття і його адгезія мають це пережити.
 
 **Просимо повідомити**
@@ -139,7 +139,7 @@
 
 **⬇️ COPY FROM THIS LINE.** Everything above is the repo layer and does NOT go into the letter.
 
-**Subject:** Request for information and quotation — selective hard gold plating of two contact pads on titanium parts (process route, pilot batch)
+**Subject line:** Request for information and quotation — selective hard gold plating of two contact pads on titanium parts (process route, pilot batch)
 
 Dear Sir or Madam,
 
@@ -152,7 +152,7 @@ This is a request for a proposal and for information about your capabilities, no
 **What is to be plated**
 
 1. **Central pad — the end face of a Ø1.0 mm titanium wire.** The wire is drawn and welded at one end to a porous (lattice) titanium part; only the free end face is plated. After assembly this end face sits flush with the top face of the flange (item 2), inside a polymer ring of at least 4.0 mm diameter, and the first pin lands on it.
-2. **Annular pad — a zone on the flat top face of a titanium flange of 29.8 mm diameter**, where the second pin lands. We will specify the radius and width of this zone by drawing — they depend on the pin model we are still selecting; please state the minimum zone width and the accuracy of its boundary that you can hold.
+2. **Annular pad — a zone on the flat top face of a titanium flange of 29.8 mm diameter** (current geometry: 33.8 mm across the bayonet lugs, and the diameter itself may still grow to about 33 mm), where the second pin lands. We will specify the radius and width of this zone by drawing — they depend on the pin model we are still selecting; please state the minimum zone width and the accuracy of its boundary that you can hold.
 3. **Both pads — by one route and with the same coating.**
 4. **Material.** The base for pricing is Ti-6Al-4V for both parts (for the porous part this is a trial reference, not a candidate: its alloy will be vanadium-free). The alloy of the porous part and the wire is not final yet; the candidates are Ti-6Al-7Nb, commercially pure titanium Grade 4, Ti-13Nb-13Zr, Ti-15Zr and tantalum. The flange is Ti-6Al-4V or one of these vanadium-free alloys. Please tell us for which alloys your route changes and, separately, whether you work with tantalum. Adhesion on titanium depends on the alloy — for some processes commercially pure grades behave differently from Ti-6Al-4V — so please answer the adhesion question for each alloy you would accept, and state whether your adhesion on it is qualified by testing or is an expectation.
 5. **The remaining surfaces are not plated:** neither the porous part nor the other faces of the flange — some of them later receive biologically active layers.
@@ -162,7 +162,7 @@ This is a request for a proposal and for information about your capabilities, no
 6. **Function.** The pin has a hard gold finish. Pressed against bare titanium in a humid acidic environment, it forms a galvanic couple with it (a potential difference of about 0.2 V), and the contact resistance grows several-fold over time. Gold on the pad moves this couple away from the contact surface — but does not remove it: under the coating the titanium–coating interface remains, and condensate can reach it through pores. This is why the adhesion and porosity of the coating matter to us, not only its thickness.
 7. **The contact is sliding and cyclic.** The spring pin presses with a force of up to about 1 N (the exact value depends on the pin model). Matings and unmatings during maintenance — by our estimate, on the order of a hundred over the service life, and in between them, micro-motion from the swaying of the trunk, whose amplitude has not yet been measured. This is why the gold has to be hard, not soft.
 8. **Electrically — a low-current "dry" contact:** current up to 500 µA at a voltage of about 0.5 V; the contact resistance of the pin–pad pair must stay below 50 mΩ.
-9. **Environment and service life:** acidic condensate of xylem sap (pH about 5.75, and 4.5 in our tests), permanent humidity, temperature from −40 to +85 °C, service life of 20 years.
+9. **Environment and service life:** acidic condensate of xylem sap (pH about 5.75, and 4.5 in our planned tests), permanent humidity, temperature from −40 to +85 °C, service life of 20 years.
 10. **Decontamination after plating:** the part goes through ultraviolet light (254 nm), rinsing with 70 % ethanol and Co-60 gamma irradiation at a dose of at least 15 kGy (the upper limit is not set yet), and is then stored at 4–8 °C. The coating and its adhesion must survive this.
 
 **Please let us know**
