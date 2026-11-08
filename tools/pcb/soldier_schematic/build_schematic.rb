@@ -19,7 +19,8 @@
 #
 # Звідки кожне число (одна річ — один дім):
 #   • плечі дільників BQ25570 — таблиця `02_03 §5`, прочитана тим самим `parse_canon_table`, яким
-#     `tools/firmware/bq25570_dividers.rb --check-canon` судить канон: схема з каноном розійтися не може;
+#     `tools/firmware/bq25570_dividers.rb --check-canon` судить канон: схема з каноном розійтися не може,
+#     доки ганяють `--check` (у CI — ще відкрита нога HW.56);
 #   • символи — стандартні бібліотеки KiCad 10, вбудовані в схему копією;
 #   • P/N у схему НЕ копіюються: поле «BOM» кожної деталі — вказівник на `02_01 §3.1` поз. N.
 #
@@ -44,7 +45,8 @@
 #   • Відкрите в каноні лишається відкритим і тут: `VBAT` — 100 мкФ АБО перемичка на VSTOR (`00_07` HW.9),
 #     тож обидві деталі стоять DNP, жодну не обрано.
 #   • U1 виключено із симуляції — вендорської моделі BQ25570 немає (`02_01 §7`); SPICE-нетліст пасивних
-#     симуляцією тракту НЕ є.
+#     симуляцією тракту НЕ є, і його ніхто не проганяє: «SPICE exit 0» доводить лише ЕКСПОРТ.
+#   • Багатоодиничні символи (кілька unit чи body style) генератор не підтримує й відмовляє вголос.
 #   • Форма — гібрид (⚖️ делеговано 2026-11-08, `02_01 §7`): земля — символом, дільники — сходинками з
 #     дротами, паралельні конденсатори — на шині, піни мікросхеми — заглушка з міткою. Звірка стереже
 #     ЗʼЄДНАННЯ, а не читабельність: «читається» судить людина.
@@ -140,6 +142,9 @@ module Lib
   end
 
   def pins(sym)
+    units = sym.select { |e| e.is_a?(Array) && Sexp.head(e) == "symbol" }.map { |e| e[1].to_s[/_(\d+)_(\d+)\z/, 0] }
+    raise "#{sym[1]}: багатоодиничний символ — не підтримано" if units.compact.any? { |u| u.split("_").drop(1).any? { |d| d.to_i > 1 } }
+
     found = []
     walk = lambda do |n|
       next unless n.is_a?(Array)
@@ -397,7 +402,7 @@ def build
          "VSTOR", x: 139.7, y: 50.8)
   s.place("Jumper:SolderJumper_2_Open", "JP1", "VBAT—VSTOR", at: [ 190.5, 50.8 ], dnp: true, sim: false, note: open_vbat,
           nets: { "1" => "VBAT", "2" => "VSTOR" })
-  two.call("C6", "C_Small", "100u", 215.9, "VBAT", GROUND, dnp: true, note: open_vbat)
+  two.call("C6", "C_Small", "100u", 215.9, "VBAT", GROUND, dnp: true, sim: false, note: open_vbat)
   two.call("L2", "L_Small", "10u", 228.6, "LBUCK", "VOUT", bom: bom.call(15))
   two.call("C7", "C_Small", "47u", 241.3, "VOUT", GROUND, bom: bom.call(9))
 
@@ -437,8 +442,9 @@ def write_project(dir)
   File.write(File.join(dir, "#{NAME}.kicad_sch"), "#{Sexp.dump(sheet.document)}\n")
   File.write(File.join(dir, "silkennet.kicad_sym"), "#{Sexp.dump(own_library(sheet))}\n")
   File.write(File.join(dir, "sym-lib-table"), "#{Sexp.dump(lib_table(sheet))}\n")
-  pro = File.join(dir, "#{NAME}.kicad_pro")
-  File.write(pro, "#{JSON.pretty_generate(meta: { filename: "#{NAME}.kicad_pro", version: 1 })}\n") unless File.exist?(pro)
+  # `.kicad_pro` генерується ЗАВЖДИ й судиться `--check`: у ньому живуть рівні строгості ERC, тож одне
+  # збереження з GUI, що поставить правило в ignore, інакше заглушило б ERC непомітно.
+  File.write(File.join(dir, "#{NAME}.kicad_pro"), "#{JSON.pretty_generate(meta: { filename: "#{NAME}.kicad_pro", version: 1 })}\n")
 end
 
 def cli(*args)
@@ -454,7 +460,8 @@ def netlist_problems(net_file, intended)
     Sexp.children(net, "node").each { |n| actual[[ Sexp.child(n, "ref")[1], Sexp.child(n, "pin")[1] ]] = name }
   end
   actual.reject! { |(ref, _), _| ref.start_with?("#") }
-  wrong = intended.filter_map { |pin, want| "#{pin.join('.')}: задумано #{want}, у KiCad #{actual[pin].inspect}" if actual[pin] != want }
+  ok = ->(pin, want) { want == :nc ? actual[pin].nil? || actual[pin].start_with?("unconnected-") : actual[pin] == want }
+  wrong = intended.filter_map { |pin, want| "#{pin.join('.')}: задумано #{want}, у KiCad #{actual[pin].inspect}" unless ok.call(pin, want) }
   extra = (actual.keys - intended.keys).map { |pin| "#{pin.join('.')}: у KiCad є (#{actual[pin]}), у задуманому немає" }
   wrong + extra
 end
@@ -474,7 +481,10 @@ def verify(dir)
   _, nl = cli("sch", "export", "netlist", "--format", "kicadsexpr", "-o", net_file, sch)
   wiring = nl.zero? ? netlist_problems(net_file, build.intended) : [ "нетліст KiCad не експортувався" ]
   wiring.each { |w| warn "FAIL  зʼєднання — #{w}" }
-  femto = File.read(File.join(out_dir, "#{NAME}.cir")).lines.grep(/\s[\d.]+F\s*\z/i)
+  cir = File.join(out_dir, "#{NAME}.cir")
+  # Будь-який токен-значення з голим F (у SPICE — фемто): `0.47F` · `4.7e-1F` · `0.47Farad`, не лише останній.
+  femto_value = /\A[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?f(arad)?\z/i
+  femto = File.exist?(cir) ? File.read(cir).lines.select { |l| l.split.drop(3).any? { |t| t.match?(femto_value) } } : [ "нетліст не записано" ]
   femto.each { |l| warn "FAIL  SPICE читає голе F як фемто: #{l.strip}" }
   puts "ERC: #{violations.size} порушень (exit #{code}) · звірка зʼєднань: #{wiring.size} розбіжностей · " \
        "PDF exit #{pdf} · SPICE exit #{spice} → #{out_dir.sub("#{Dir.pwd}/", '')}"
@@ -485,7 +495,7 @@ if __FILE__ == $PROGRAM_NAME
   if ARGV.first == "--check"
     Dir.mktmpdir do |tmp|
       write_project(tmp)
-      stale = [ "#{NAME}.kicad_sch", "silkennet.kicad_sym", "sym-lib-table" ].reject do |f|
+      stale = [ "#{NAME}.kicad_sch", "#{NAME}.kicad_pro", "silkennet.kicad_sym", "sym-lib-table" ].reject do |f|
         File.exist?(File.join(HERE, f)) && File.read(File.join(HERE, f)) == File.read(File.join(tmp, f))
       end
       stale.each { |f| warn "FAIL  #{f} відстає від генератора — перегенеруй без --check" }

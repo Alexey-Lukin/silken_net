@@ -31,7 +31,7 @@
 |---|---|---|---|---|---|---|
 | e-peas **AEM10330** | 275 мВ typ | 6 мкВт typ (накопичувач порожній) · 3 мкВт (заряджений) | ZMPP, `R_ZMPP` 10 Ω–100 kΩ | ≈ 0.36 В | Mouser ~847 шт, ~$4.22; QFN40 5×5 | DS-AEM10330 v1.5.0 (07/2026), табл. 3.4 «Typical at 25 °C» |
 | e-peas **AEM10941** | 380 мВ typ | 3 мкВт typ («with empty storage elements») | не згадано; MPPT 70/75/85/90 % | ≈ 0.41 В | Mouser ~6064 шт, ~$3.17 | DS-AEM10941 v2.3 (04/2026), с. 1, 11 |
-| ADI **ADP5091 / ADP5092** | 380 typ / **500 max** мВ (0…85 °C) | 6 мкВт typ | «high impedance dc sources, such as PV cells, TEGs» | ≈ 0.44 В typ / 0.55 В worst | DigiKey ~2193 шт, ~$8.81; LFCSP-24 4×4; lifecycle на analog.com не звірено | Rev. A (05/2017), с. 4 (табл. 1), 16–17, 23 |
+| ADI **ADP5091 / ADP5092** | 380 typ / **500 max** мВ (0…85 °C) | 6 мкВт typ | «high impedance dc sources, such as PV cells, TEGs» | ≈ 0.44 В typ / 0.55 В worst | DigiKey ~2193 шт, ~$8.81; LFCSP-24 4×4; lifecycle — PRODUCTION (звірено браузером 2026-11-08) | Rev. A (05/2017), с. 4 (табл. 1), 16–17, 23 |
 
 Звірено первинкою власним проходом: **AEM10330** (`V_SRC,CS` 275 мВ typ · `P_SRC,CS` 6 / 3 мкВт typ ·
 `R_ZMPP` 10–100 kΩ — табл. «3.4 Typical Electrical Characteristics at 25 °C», DS-AEM10330 v1.5.0). Решту
