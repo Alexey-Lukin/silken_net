@@ -2241,10 +2241,14 @@ CHECKS += [
           # the table's one-sided cells are pinned by the generated block _ORING_ROWS below — the reaction column too:
           # its ends are LIMITS of the bar's middle-and-upper thirds (no lower third under 1″), so the bracket goes
           # OUTWARD, low end down, high end up (in-silico §When Modifying #43; 00_07 HW.43, 2026-11-04)
-          ("SUMMARY binding squeeze", SUMMARY, rf"leaves the lug unbound only while the squeeze stays below {N} %",
+          # one monotone crossing → the SUFFICIENT form «while below X», X down; the far side, where the sentence claims it
+          # too, UP («is past it from X») — «only while» is the necessary form and read as the harmless region (00_07 HW.43)
+          ("SUMMARY binding squeeze", SUMMARY, rf"leaves the lug unbound while the squeeze stays below {N} %",
            lambda d: _down1(d["inversion"]["squeeze_pct_band_high_binds"]), 0.0),
-          ("SUMMARY generous crossing", SUMMARY, rf"stays below it only while the squeeze is under {N} %",
+          ("SUMMARY generous crossing", SUMMARY, rf"stays below it while the squeeze is under {N} %",
            lambda d: _down1(d["inversion"]["squeeze_pct_band_high_exceeds_generous_bound"]), 0.0),
+          ("SUMMARY generous crossing, the far side", SUMMARY, rf"and is past it from {N} %\. With that top",
+           lambda d: _up1(d["inversion"]["squeeze_pct_band_high_exceeds_generous_bound"]), 0.0),
           ("02_02 §3.2 window_floor low", BLIND_MATE, rf"\*\*{N}–[\d.]+ Н\*\* на підлозі вікна 19 %",
            lambda d: _down0(d["band"]["window_floor"]["reaction_N"][0]), 0.0),
           ("02_02 §3.2 window_floor high", BLIND_MATE, rf"\*\*[\d.]+–{N} Н\*\* на підлозі вікна 19 %",

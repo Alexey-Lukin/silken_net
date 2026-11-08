@@ -234,9 +234,11 @@ def main() -> int:
         # each one-sided number carries its own direction (in-silico §When Modifying #43): the edge of a harmless region
         # («from X %») and a margin («X×») or a floor («no less than») DOWN; a requirement («at least», «lost about») UP;
         # the band's ends are LIMITS of the bar's thirds, a bracket OUTWARD (low down, high up); the transcription's
-        # bracket reads «unbound only while below X» at each end — edges of a harmless region, DOWN (00_07 HW.43)
-        f"{GENEROUS_ORING_BOUND_N:.0f} N only while the squeeze is under {down(sq_generous, 1):.1f} % — so it is no "
-        f"bound above that. With that top, 52's requirement lies "
+        # bracket reads «unbound while below X» at each end — edges of a harmless region, DOWN (00_07 HW.43). «Only while»
+        # would be the NECESSARY form, true only with X up, yet read as the harmless region: a sentence on ONE monotone
+        # crossing takes the SUFFICIENT form, X down, and names the far edge UP where it claims that side too (#43 ⊕)
+        f"{GENEROUS_ORING_BOUND_N:.0f} N while the squeeze is under {down(sq_generous, 1):.1f} % and is past it from "
+        f"{up(sq_generous, 1):.1f} % — so it is no bound there. With that top, 52's requirement lies "
         f"between the clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF {sf73:.0f} "
         f"inside) carries it at the nominal at both ends "
         f"({down(nom['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']):.2f}× "
@@ -248,7 +250,7 @@ def main() -> int:
         f"years, so the ring's loss is due early "
         f"({down(top['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']):.2f}× if it never does, "
         f"{down(top['lug_root_margin_x_at_print_floor']['at_assembly']):.2f}× at assembly); a ring that does not relax "
-        f"leaves the lug unbound only while the squeeze stays below {down(sq_bind, 1):.1f} % ({down(min(sq_bind_reads), 1):.1f} at "
+        f"leaves the lug unbound while the squeeze stays below {down(sq_bind, 1):.1f} % ({down(min(sq_bind_reads), 1):.1f} at "
         f"+4 % and {down(max(sq_bind_reads), 1):.1f} at −4 % of the transcription), and strength, not printability, then sizes the "
         f"collar wall — at least {up(top['collar_wall_strength_asks_mm_ring_never_relaxes']):.2f} mm at the window top "
         f"against the 0.2 mm print floor (52's form at the assembly temperature with no fit tolerance; 89 shows the "

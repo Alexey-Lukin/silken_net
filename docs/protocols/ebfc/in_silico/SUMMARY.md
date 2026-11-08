@@ -1813,7 +1813,7 @@ plus a Bosanquet (bulk + Knudsen) steady-diffusion O₂ budget against `J_MAX_25
 | Head the spec window holds (0.2–1.0 µm, θ 110–120°) | **10.2 – 74.4 m H₂O** |
 | Hand-set field loads (dew film · droplet · 20 m/s air stagnation · 50 mm submersion) | 10 – 489 Pa |
 | Pore the prescribed 30 cm column can fail | **33.9 µm** |
-| The rain/dew stand's positive control (2026-11-02, block `stand_positive_control`): the aperture above which the 50 mm phase-I layer passes at ANY θ — a meniscus pinned on a round aperture holds at most a hemisphere's 4γ/d, whatever the angle and the edge, at entry and exit alike; the bound is on the pressure difference ACROSS the hole (water 20 °C) | **> 595 µm**; the sheet's proposed Ø 1.0 mm punch ×**1.68**, passes any layer from **30** mm, and passes only while the cavity's overpressure stays below **198** Pa. The pore the layer holds at one θ (110° · 120°: **203.5 · 297.5 µm**) is only the threshold for ENTRY; at the exit a meniscus nothing touches is held up to 4γ/d, so a θ-sized hole can stay silent at any θ |
+| The rain/dew stand's positive control (2026-11-02, block `stand_positive_control`): the aperture above which the 50 mm phase-I layer passes at ANY θ — a meniscus pinned on a round aperture holds at most a hemisphere's 4γ/d, whatever the angle and the edge, at entry and exit alike; the bound is on the pressure difference ACROSS the hole (water 20 °C) | **> 595 µm**; the sheet's proposed Ø 1.0 mm punch ×**1.68**, passes any layer from **30** mm, and passes while the cavity's overpressure stays below **198** Pa. The pore the layer holds at one θ (110° · 120°: **203.5 · 297.5 µm**) is only the threshold for ENTRY; at the exit a meniscus nothing touches is held up to 4γ/d, so a θ-sized hole can stay silent at any θ |
 | Pore the acceptance criterion demands at θ 110° / 115° / 120° — "≥ 1.5 m" since 2026-09-26 (derived from the IP68 depth, founder-ratified; the old "≥ 1 m" gave 10.2 / 12.6 / 14.9) | **6.78 / 8.38 / 9.92 µm** |
 | Water-entry pressure at θ 110° — pore AND angle together, NOT a bubble point (that one runs in a wetting liquid and does not see θ) | 100 / 199 / 498 kPa for 1.0 / 0.5 / 0.2 µm |
 | θ at which the worst field load breaks through | **90.02 – 90.10°** |
@@ -2057,10 +2057,10 @@ and Parker gives compression set, not stress relaxation, so the share the ring l
 | 27.3 % — `52`'s chain, high | 124–301 | 1.51× … 0.98× | 0 · 2 · 2 % |
 | 30 % — window top | 160–410 | 1.11× … 0.72× | 23 · 28 · 28 % |
 
-**Verdict** — the 100 N is not an upper bound: the band's top stays below it only while the squeeze is under 17.1 %. With that top the lug root
+**Verdict** — the 100 N is not an upper bound: the band's top stays below it while the squeeze is under 17.1 % and is past it from 17.2 %. With that top the lug root
 (SF 2 inside; no fillet, no lug bending) carries `52`'s requirement at the nominal whatever the ring does, at the top of
 the chain `52` models once the ring has lost about 2 % of its reaction, and at the window top only if it has lost about
-23 % by year 2 and about 28 % already by year 5; a ring that never relaxes leaves the lug unbound only while the squeeze stays below 27.1 % (26.8 at +4 % and 27.5 at −4 % of the transcription — the source cannot tell
+23 % by year 2 and about 28 % already by year 5; a ring that never relaxes leaves the lug unbound while the squeeze stays below 27.1 % (26.8 at +4 % and 27.5 at −4 % of the transcription — the source cannot tell
 it from the chain's top), and strength, not printability, then sizes the collar wall — at least 0.28 mm at the window top
 against the 0.2 mm print floor (`52`'s form at the assembly temperature with no fit tolerance) — ratified as a conditional member of the root package (⚖️ founder 2026-10-13, `02_02 §4.4`; script 89 ↓ found that requirement itself, unrounded **0.2765** mm, is the k = 0 end — the lower bound — of a PEEK-dominated loop's wall, and the member that rounds it up a point on a curve of an unmeasured stiffness; the founder ratified it as such the same day). From below, the ring starts at no less than 57 N at the
 floor: (A) holds 5.4× with a clamp at the form `52` prints for the ring's own reaction; a weaker clamp can let the rim
