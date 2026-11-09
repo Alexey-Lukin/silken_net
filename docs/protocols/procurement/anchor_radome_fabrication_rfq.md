@@ -1,7 +1,7 @@
 # Радом Солдата — виготовлення купола з PEEK Ø29.8: запит можливостей і ціни на два маршрути (механообробка ⊥ лиття під тиском)
 
 > **Що це:** RFQ-аркуш до **виготовлювача деталі** — купола-радома (Деталь 4). Предмет — **ціна виготовлення** купола на поточній геометрії й **маршрут**, яким виробник формує внутрішні піднутрення: механообробка із заготовки на прототипи ⊥ лиття під тиском на серію. Саму марку матеріалу й $/кг питає сусідній лист постачальникові матеріалу ([`radome_material_rfq`](radome_material_rfq.md)); котирування виготовлення купола питає лише цей лист. **Форма — комерційний лист українською:** адресат — підприємство (скіл `legal-business` §Доменні правила #6(а)).
-> **Статус:** 🟡 робочий артефакт (не канон); **написано 2026-10-01; маршрут А надіслано 2026-11-09** на «так» founder-а (ТОВ «Дніпровський завод спецінструменту»; адреси — у журналі надісланого, корпус памʼяті); **маршрут Б чекає EN-версії** — ⛔ без «так» на її текст не надсилати. Числа дзеркалять CEM і канон, дім кожного названо в §1; **правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)). Дім стану — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.17, нога «надіслати `anchor_radome_fabrication_rfq`»; ціну, яку лист приносить, чекає HW.33, нога «ціна рядка радома за Ø29.8».
+> **Статус:** 🟡 робочий артефакт (не канон); **написано 2026-10-01; маршрут А надіслано 2026-11-09** на «так» founder-а (ТОВ «Дніпровський завод спецінструменту»; адреси — у журналі надісланого, корпус памʼяті); **EN-версію маршруту Б написано 2026-11-09** (блок «Dispatch block (EN)» нижче; рекомендація адресата — нога [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.17) — ⛔ без «так» на її текст не надсилати. Числа дзеркалять CEM і канон, дім кожного названо в §1; **правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)). Дім стану — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.17, нога «надіслати `anchor_radome_fabrication_rfq`»; ціну, яку лист приносить, чекає HW.33, нога «ціна рядка радома за Ø29.8».
 > **Частина procurement-реєстру** → [`rfq_registry`](rfq_registry.md) (рядок «Анкер hardware»); кандидати-адресати — [`ua_vendor_map §5`](ua_vendor_map.md).
 >
 > ℹ️ **IP:** defensive-publication ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)) — специфікація відкрита; CDA = стандартні комерційні умови, не передумова запиту.
@@ -11,7 +11,7 @@
 ## 0. Як користуватись + cover-note
 
 1. **Чому окремий аркуш, а не другий предмет у листі цеху втулки.** Менший носій був би дописати купол у [`anchor_sleeve_peek_cnc_rfq`](anchor_sleeve_peek_cnc_rfq.md): кандидат той самий (ТОВ «Дніпровський завод спецінструменту», [`ua_vendor_map §5`](ua_vendor_map.md) — «найсильніший кандидат на втулку/радом/фланець»). Але той лист покриває лише маршрут механообробки, а канон рахує купол **литтям** ([`02_06 §1.2`](../../02_06_Unit_Economics_and_BOM.md), «термолиття»), тож лист мусить питати обидва маршрути й не обирати один (скіл `legal-business` §Доменні правила #4). Крім того, той лист має інший дім стану (HW.3) і одне головне питання — смугу отвору Ø11; другий предмет розмив би його. Тому текст тут один для обох маршрутів, а адресата обирає founder: цех ЧПК відповідає на маршрут А, ливарник — на маршрут Б.
-2. **Кандидати маршруту Б — рядок «Лиття PEEK під тиском» [`ua_vendor_map §5`](ua_vendor_map.md)** (desk-прохід 2026-11-08). Найсильніші там — іноземні, а цей лист український, тож маршрут Б потребує EN-версії тексту: це новий текст і окреме «так» founder-а; адресата обирає founder.
+2. **Кандидати маршруту Б — рядок «Лиття PEEK під тиском» [`ua_vendor_map §5`](ua_vendor_map.md)** (desk-прохід 2026-11-08). Найсильніші там — іноземні, а цей лист український, тож маршрут Б потребує EN-версії тексту: це новий текст і окреме «так» founder-а; адресата обирає founder. ⊕ 2026-11-09: EN-версію написано (блок нижче) — той самий зміст із відмінностями, названими в її репо-ноті.
 3. **Геометрія — не приймальна, і лист це каже.** Маніфест `tools/cad/cem/radome.json` сам забороняє різати деталь за ним, доки не змодельовано комір байонета, а дно кишені датчика й зазор прокладки кишені — PLACEHOLDER-и; креслення купола свідомо відкладено до останньої з цих змін (`notes.extra`; [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.1 · HW.33). Тому лист просить ціну на поточну геометрію **для порядку величини** і пропонує 3D-модель, а не креслення. Геометрії лист не рухає: паузу крони знято founder-ом 2026-10-13 лише для вимірів, а рух кореня — один, після осі 3 RF-макета (⚖️ founder 2026-10-13, [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.9). Цей рух зсуне й ЗОВНІШНІЙ Ø купола — модель пакета дає ≈ Ø30.6–33.1 (гілка rigid-flex — від Ø30.6, пара B2B — від Ø31.6), і це нижня межа: вісь 3 зону може лише розширити, а рух може взяти й наскрізне прочитання ([`02_01 §3.5`](../../02_01_Hardware_Architecture_and_BOM.md) ⊕ «Пакет кореня»), — тож п. 7 листа каже «щонайменше ≈ 30.6 (найменша з живих гілок — rigid-flex), можливо понад 33», а не лише про внутрішні елементи.
 4. **Матеріал лист не обирає.** Марку з α ≤ 0.5 питає лист постачальникові матеріалу; тут — лише чи бере виробник давальницьку сировину, яку марку взяв би сам і чи зсуває його процес колір (а з ним α). Наш висновок про α сюди не йде.
 5. **Відповідь у репо не комітиться:** ціни й внутрішні процеси — чужі операційні факти. У [`02_06 §1.2`](../../02_06_Unit_Economics_and_BOM.md) іде лише наш висновок і порядок величини, у [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.33 — стан.
@@ -37,7 +37,7 @@
 
 - [x] 👤 **Маршрут А надіслано 2026-11-09** — «так» founder-а на текст `fc7668fc7`; одне нагадування — нога [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.17.
 - [x] 👤 **Адресат маршруту А:** ТОВ «Дніпровський завод спецінструменту» ([`ua_vendor_map §5`](ua_vendor_map.md)) — загальна скринька з офіційного сайту, копія — скринька «Мех.обробка» з їхньої вітрини послуг; адреси — у журналі надісланого.
-- [ ] 👤 **Маршрут Б:** кандидати в тому ж §5 (рядок «Лиття PEEK під тиском»), найсильніші — іноземні, тож потрібна EN-версія тексту (§0 п. 2; ⚖️ founder 2026-11-08 «пізніше» — машинна нога HW.17); ⛔ до «так» на неї не надсилати; адресата обирає founder.
+- [ ] 👤 **Маршрут Б:** EN-версію написано 2026-11-09 (блок «Dispatch block (EN)») — ⛔ до «так» на неї не надсилати; адресата обирає founder, рекомендацію й канал подано ногою [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.17; кандидати — рядок «Лиття PEEK під тиском» [`ua_vendor_map §5`](ua_vendor_map.md).
 - [ ] 👤 **3D-модель — перебудувати з чистого дерева в день відправки** (скіл `picogk`): `dotnet run --project src/SilkenCad -- build cem/radome.json` із `tools/cad`. Креслення немає й не буде до останньої зміни геометрії (§0 п. 3).
 - [ ] 👤 **Після відповіді:** наш висновок і порядок величини → ціна рядка радома [`02_06 §1.2`](../../02_06_Unit_Economics_and_BOM.md); стан → [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.33; спосіб формування піднутрень → `radome.json` `notes.process`. Цін не комітити (§0 п. 5).
 
@@ -80,6 +80,46 @@
 **Конфіденційність.** Технічна специфікація нашої деталі відкрито опублікована, тож для її обговорення угода про конфіденційність не потрібна; вашу стандартну угоду щодо комерційних умов (ціни, строки) ми готові підписати на етапі замовлення.
 
 `[підпис і контакти відправника — заповнити перед відправкою]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
+## 📤 Dispatch block (EN) — маршрут Б, ливарникові PEEK
+
+> **Репо-нота (у лист НЕ йде).** Той самий зміст, що в UA-блоці вище, і та сама мапа §1 — числа правити в домах, не тут. **Відмінне від UA свідомо:** лиття — першим (адресат — ливарник), механообробка — «якщо робите й її»; п. 2 каже, що піднутрення сидять усередині ЗАКРИТОГО купола, і серед способів називає вставку, яку кладуть руками (desk-прохід 2026-11-09: прямовитяжна оснастка бічними знаками туди не дістає — наше прочитання, не заява ливарника); п. 6 розрізняє прототипну й серійну форму; п. 10 — доставка в Україну, Incoterms, експортні документи й митниця (базовий кейс — скіл `legal-business` §Доменні правила #5(а)). **Немає свідомо:** той самий перелік, що в UA-ноті, плюс рядків «your website says» — текст годиться будь-якому ливарникові з рядка §5 [`ua_vendor_map`](ua_vendor_map.md), а адресата обирає founder (`00_07` HW.17).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+**Subject line:** RFQ — PEEK radome dome, Ø29.8 mm: injection moulding and prototype machining
+
+Dear colleagues,
+
+**About us and the purpose of this enquiry.** We are an R&D project in Ukraine developing a sensor node for forest monitoring. Its electronics sit under a small PEEK radome dome that is mounted on a tree trunk and stays outdoors for many years; an 868 MHz antenna radiates through its wall. We are looking for a manufacturer for this dome: a few prototypes first, a series later. This is a request for information and an indicative quotation, not yet an order. Answering commits neither side to anything, and inline answers in this email are fine. Our main interest is injection moulding for the series; if you also machine prototypes from stock, please answer that part too.
+
+**1. The part.** A hollow PEEK dome: outer diameter **29.8 mm**, height **18.0 mm** above the rim, wall **1.5–2.0 mm** (nominal 2.0 mm; this band is set by radio transparency, so the thickness has to be held, not reduced). Flat top, with the top edge rounded to a **5 mm** radius.
+
+**2. Internal features.** Inside the dome there are: a thickened rim carrying **three L-shaped bayonet slots**; a small flat pad on the inner wall with one **Ø1.0 mm through-hole** and a raised ring (inner diameter 6.5 mm, height 0.5 mm) for a glued membrane; and the body of a small sensor chamber. The rim boss and the chamber body are **internal undercuts** for a simple core, and they sit inside a closed dome. How would you form them: a collapsible core, a loose insert loaded by hand, machining after moulding, or otherwise?
+
+**3. The rim is a sealing face.** The rim of the dome sits on a mating part and compresses an O-ring; there is no groove on the dome itself, so **rim flatness** determines the seal. Please state the flatness you hold and how you measure it. If your route needs annealing or stress relief before the rim is finished, please tell us: stresses released after machining would move exactly this surface.
+
+**4. Material and surface.** The material is a pigmented PEEK grade that we select separately. Do you mould customer-supplied material (granules or rod)? If not, which PEEK grade would you use? Can your process change the colour of the material (drying, melt temperature, heat during machining)? **Nothing is applied** to the part — no paint, no metallic or other conductive coatings, no labels: the antenna radiates through the wall.
+
+**5. Route A — machining from stock (prototypes).** Can you make the dome, including its internal undercuts, by machining from stock? What minimum PEEK wall do you hold on such a part? Price for one part and for a batch of a few, and lead time.
+
+**6. Route B — injection moulding (series).** Indicative price and lead time of the mould (a prototype mould and a production mould, if you offer both); how you would form the internal undercuts; whether you finish the rim by machining after moulding; part price at indicative **1,000** and **10,000** pieces.
+
+**7. The geometry is not final yet.** Some internal features (the shape of the bayonet slots, the height of the chamber) will still change, and the outer diameter may grow — by our estimate to at least 30.6 mm, possibly beyond 33 mm — so we ask for a price on the current geometry, for an order of magnitude; if the price or the route depends on the diameter, please tell us how. There is no drawing yet; we can send a 3D model of the current geometry on request, but it must not be used for manufacturing yet.
+
+**8. Quantities.** Prototypes — a few pieces: please state your minimum batch. For the series — indicative 1,000 and 10,000 pieces, without any commitment.
+
+**9. Inspection and documents.** What your measurement report would cover on this part (wall thickness, rim flatness, the 1.0 mm hole) and with which instruments. Please send an anonymised sample report.
+
+**10. Commercial.** Quote currency and validity, payment terms, delivery to Ukraine (Incoterms, and whether you handle the export documents and customs), and a technical point of contact.
+
+**Confidentiality.** The technical specification of our device is openly published, so no confidentiality agreement is needed to discuss it. We are happy to sign your standard agreement covering commercial terms.
+
+`[sender's signature and contact details — fill in before sending]`
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
