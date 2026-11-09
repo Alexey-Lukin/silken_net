@@ -187,6 +187,26 @@ For the commercial part (item 8 of our first message): that message also went to
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
+## 📤 Follow-up block (EN) — служба 3D-моделей Samtec: глибина верхнього входу CLP
+
+> **Репо-нота (у лист НЕ йде).** Новий адресат, на якого відіслала інженерна підтримка (mated document для конкретних висот стека немає — ⊕ у [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 12). Адреса — видиме посилання «Email 3D Models Group» на сторінці 3D-моделей сайту Samtec, звірено 2026-11-09 (у журналі надісланого — корпус памʼяті). Дзеркала: 1.13 мм — глибина отворів базової STEP-моделі CLP-102-02-F-D, прочитаної того ж дня (там само ⊕); 1.40 мм (.055″) — мінімальна глибина верхнього входу з аркуша CLP; .065″ і ≈ .080″ — пости, між якими обирає вивід діапазону вставлення; CLP-105-02-L-D — код рядка поз. 12. Лист питає одне число (максимальну глибину верхнього входу) або детальну модель — не допуски й не висоту пари. **Немає свідомо:** нашого виводу про смугу стійки, трекер-ID, рефів, дат. **Надіслано 2026-11-09 на «так» founder-а** (журнал надісланого — корпус памʼяті; нагадування — нога HW.29).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+**Subject line:** Detailed 3D model or top-entry insertion depth: CLP-105-02-L-D
+
+Hello,
+
+Samtec Application Engineering, answering our enquiry about an FW-SM + CLP pair, suggested we contact you for models. I downloaded the basic STEP model of CLP-102-02-F-D from your 3D Models page. Its contact openings are modelled only about 1.13 mm deep from the top of the body, while the CLP catalog gives a minimum top-entry insertion depth of 1.40 mm (.055 in), so the basic model does not show the contact cavity.
+
+Could you send a detailed model of CLP-105-02-L-D, or tell us the maximum post insertion depth for top entry, that is, how far a post can enter from the top of the body before it reaches the board? We are choosing the post height of an FW-05-03-L-D header that mates with this socket, between .065 in and about .080 in.
+
+Thank you in advance.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
 ---
 
 ## 5. Cross-references
