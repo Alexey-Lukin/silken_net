@@ -1,7 +1,7 @@
 # Soldier — B2B-пара Samtec FW-SM + CLP (мезонін Power Deck ↔ RF Deck): лист-запит виробникові
 
 > **Що це:** RFQ-аркуш до **Samtec** на пару board-to-board роз'ємів, що зʼєднує дві плати капсули Soldier. Предмет — перевірити **найслабшу ланку делегованого присуду** про носія пари: з якими кодами висоти FW-SM і CLP дають мейтовані рівно 8.0 і 10.0 мм. Наш вивід стоїть на двох каталожних прикладах, а таблиця мейтів виробника в дереві відсутня. Друга мета — **допуск змикання** і документ, де він записаний: `±0.15` у Z-ланцюзі паспорта не має. Третя — ціна, MOQ, лідтайм і умова «non-returnable». Сам присуд (FW-SM + CLP замість пари FTSH + CLT, якої не існує) лист під сумнів не ставить. Він купує його підтвердження.
-> **Статус:** 🟡 робочий артефакт (не канон); **написано 2026-09-25; 2026-11-07 переписано до читання founder-а — опубліковане Samtec стало «please confirm X» з цитатою документа (скіл `legal-business` §Доменні правила #14; кожну цитату звірено з первинкою — §0 п. 9 ⊕), лінії пари — за розводкою; **надіслано 2026-11-07** напряму Samtec (⚖️ founder «так» на текст і канал): To — інженерна підтримка, копія — служба котирувань і зразків (обидві адреси з їхньої сторінки техпідтримки; самі адреси — у корпусі памʼяті), версія `165aeb4a6` без рядка до дистрибʼютора.** Адресат — Samtec напряму або дистрибʼютор із доступом до інженерів виробника; канал обирає founder, текст від цього не змінюється. Числа дзеркалять доми, і дім кожного названо в §1; **правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)). Дім стану — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.29: нога «котирування FW-SM + CLP у Samtec». Та сама відповідь годує ще дві ноги пункту: footprint у KiCad і вимір першої партії (§2).
+> **Статус:** 🟡 робочий артефакт (не канон); **написано 2026-09-25; 2026-11-07 переписано до читання founder-а — опубліковане Samtec стало «please confirm X» з цитатою документа (скіл `legal-business` §Доменні правила #14; кожну цитату звірено з первинкою — §0 п. 9 ⊕), лінії пари — за розводкою; **надіслано 2026-11-07** напряму Samtec (⚖️ founder «так» на текст і канал): To — інженерна підтримка, копія — служба котирувань і зразків (обидві адреси з їхньої сторінки техпідтримки; самі адреси — у корпусі памʼяті), версія `165aeb4a6` без рядка до дистрибʼютора.** ⊕ Перша відповідь координатора ASG 2026-11-09 — уточнення; «Follow-up block (EN)» нижче надіслано того ж дня на «так» founder-а (маршрут комерції — питанням, без нової адреси). Адресат — Samtec напряму або дистрибʼютор із доступом до інженерів виробника; канал обирає founder, текст від цього не змінюється. Числа дзеркалять доми, і дім кожного названо в §1; **правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)). Дім стану — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.29: нога «котирування FW-SM + CLP у Samtec». Та сама відповідь годує ще дві ноги пункту: footprint у KiCad і вимір першої партії (§2).
 > **Частина procurement-реєстру** → [`rfq_registry`](rfq_registry.md) (рядок «Капсула електроніка» · hard-constraint дім §4.D: для B2B вимог не несе).
 
 ---
@@ -158,6 +158,30 @@ The capsule is sealed with an O-ring and filled with air, possibly with a desicc
 - e. Quote currency and validity, and a technical point of contact.
 
 Thank you in advance.
+
+`[sender's signature and contact details — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
+## 📤 Follow-up block (EN) — відповідь координаторові ASG
+
+> **Репо-нота (у лист НЕ йде).** Відповідь у треді на першу відповідь Samtec ASG 2026-11-09 — уточнення, не котирування: сумісність пари підтверджено; найближчі опубліковані висоти — коди 233 і 303 (8.13 / 9.91 мм), а точні P/N, допуск висоти пари й вирівнювання — «needs Engineering confirmation»; опублікованого допуску висоти ПАРИ немає; 500 циклів специфікації на пару «не застосовувати автоматично», звіт 720050 — CLP/FTSH; комерцію перенаправлено на окрему скриньку відділу цін. **Закрито й не питається:** сумісність · опубліковані коди · цикли й звіт · маскування Parylene · струм на два піни. **Питається, вузько, щоб Engineering відповів словом:** коди 228 і 307 — наш вивід із двох каталожних прикладів (мейтована = стекер + .087″), розбіжність сайту з каталогом (≈ 0.05 мм у ряду –F–) і сітка .005″ сторінки продукту — усе дзеркало врізки [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 12; допуск висоти пари — член Z-ланцюга без паспорта пари ([`02_02 §3.5`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md)); вирівнювання — посилання з відповіді веде на product specification CLP/FTSH, яку перший лист уже цитував. **Комерція:** адреса відділу цін прийшла від працівника в треді й на сторінці підтримки не видима (там лише служба клієнтів, куди пішла копія першого листа й відкрито окремий кейс), тож лист питає маршрут, а не пише на нову адресу (скіл `legal-business` §Доменні правила #13 ⊕ — новий адресат лише на «так» founder-а). **Немає свідомо:** трекер-ID, дат і §-рефів · номера кейсу ASG (тред його вже несе) · стійок між деками й нашого Z-бюджету.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+**Subject line:** Re: RFQ: FW-SM + CLP, 1.27 mm, 2 × 5 SMT — part numbers for 8.0 mm and 10.0 mm mated height, tolerance, samples
+
+Hi Brian,
+
+Thank you for the quick and clear feedback. Three questions for Engineering, so that the part numbers can be fixed:
+
+1. **Stacker codes for 8.0 mm and 10.0 mm.** In your FW-SM catalog, the two published pairs with CLP give a mated height equal to the stacker height plus .087″ (233 → .320″, 303 → .390″). On that line, stacker code 228 gives .315″ (8.00 mm) and 307 gives .394″ (10.01 mm), both inside the .215–.335″ range for lead style –03. However, your product page says the body is set on the pin in .005″ steps, and the mated-set data on your website does not sit on that line (for the –F– plating, about 0.05 mm above it). Can codes 228 and 307 be ordered? If not, which codes do you recommend, and which document governs the nominal mated height: the catalog table or the mated-set data on your website?
+2. **Mated-height tolerance.** As there is no published figure for the pair, could Engineering give the tolerance of the mated height for the codes in item 1, or the tolerances of the two halves that we should stack?
+3. **Alignment.** Is an alignment-pin option available on both halves in 2 × 5, and what lateral offset does the pair accept at mating? The link in your message opens the CLP/FTSH product specification, which we have already read; we are looking for the figures for FW-SM with CLP.
+
+For the commercial part (item 8 of our first message): that message also went to your Customer Service, which opened a separate case. Should we write to the Pricing team directly, or will that case reach them?
 
 `[sender's signature and contact details — fill in before sending]`
 
