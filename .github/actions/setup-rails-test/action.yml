@@ -1,8 +1,11 @@
 name: 'Setup Rails test environment'
 description: >-
-  Installs libpq + libvips, sets up Ruby via ruby/setup-ruby (with bundler
-  cache), and builds Tailwind CSS. Shared between the `test` and `feature-test`
-  jobs to keep their step lists in lockstep.
+  Installs libpq + libvips and sets up Ruby via ruby/setup-ruby (with bundler
+  cache) — environment only. Shared between the `test` and `feature-test`
+  jobs to keep their step lists in lockstep. Tailwind is built by each job's
+  own «Build Tailwind CSS» step AFTER the OPS.47 verdict boundary: that task
+  boots the app (`:environment`) and compiles our CSS, so it is a verdict,
+  not setup, and inside this composite the jobs API would see it as setup.
 
 runs:
   using: composite
@@ -37,7 +40,3 @@ runs:
       uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1
       with:
         bundler-cache: true
-
-    - name: Build Tailwind CSS
-      shell: bash
-      run: bin/rails tailwindcss:build

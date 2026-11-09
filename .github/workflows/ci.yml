@@ -59,6 +59,7 @@ jobs:
             workflows:
               - '.github/workflows/**'
               - '.github/actions/**'
+              - 'scripts/ci_verdict_stage.rb'
             firmware:
               - 'firmware/**'
               - 'tools/firmware/**'
@@ -215,6 +216,8 @@ jobs:
         # stm32-mw-lorawan + subghz-phy — для helium_mac_smoke (ARCH.34):
         # справжній MAC-стек лінкується host'ом проти Semtech radio.h.
         run: git submodule update --init firmware/extern/monocypher firmware/extern/stm32-mw-lorawan firmware/extern/subghz-phy
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: '[FW.25] Log-mel tables match the contract (stdlib, no conda)'
         # Drift gate: the committed firmware/common/logmel_*.h must equal a fresh
@@ -289,6 +292,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
             gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
             cmake ninja-build ruby rake qemu-system-arm
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: '[FW.46] Bytecode mirrors == contract sources (deep mrbc regen-diff)'
         run: tools/firmware/gen_bytecode.sh --check
@@ -433,6 +438,8 @@ jobs:
 
       - name: Install cppcheck (apt — version fixed by the ubuntu-24.04 image)
         run: sudo apt-get -o Acquire::Retries=3 update && sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 cppcheck
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: cppcheck firmware (soldier + queen + common)
         run: firmware/scripts/cppcheck.sh
@@ -454,6 +461,8 @@ jobs:
         uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1
         with:
           bundler-cache: true
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: Scan for common Rails security vulnerabilities using static analysis
         # --ensure-no-obsolete-ignore-entries [OPS.28]: a brakeman fingerprint is a
@@ -487,6 +496,8 @@ jobs:
         uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1
         with:
           bundler-cache: true
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: Scan for security vulnerabilities in JavaScript dependencies
         run: bin/importmap audit
@@ -519,6 +530,8 @@ jobs:
           key: rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-${{ github.ref_name == github.event.repository.default_branch && github.run_id || 'default' }}
           restore-keys: |
             rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: Lint code for consistent style
         run: bin/rubocop -f github
@@ -553,6 +566,8 @@ jobs:
           egress-policy: audit
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: Lint Python tooling (tools/**)
         uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
@@ -604,6 +619,8 @@ jobs:
           egress-policy: audit
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: Run actionlint (pinned binary + sha256-verify)
         env:
@@ -615,6 +632,8 @@ jobs:
           echo "${ACTIONLINT_SHA256}  actionlint.tar.gz" | sha256sum -c -
           tar xzf actionlint.tar.gz actionlint
           ./actionlint -color
+      - name: Self-test the verdict-stage classifier (OPS.47)
+        run: ruby scripts/ci_verdict_stage.rb --selftest
 
   shell_parse:
     needs: changes
@@ -644,6 +663,8 @@ jobs:
           egress-policy: audit
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
       # The battery runs FIRST and is not optional: two of the gate's transforms
       # (terraform `$${…}` escaping, the shebang discriminator) have no witness in
       # the live corpus — no heredoc uses `$${`, and only ONE file carries
@@ -672,6 +693,8 @@ jobs:
         uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1
         with:
           bundler-cache: true
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       # Hard gate: PR fails if a key exists in one locale but not another,
       # or if any locale YAML file isn't normalized (sorted, consistent
@@ -734,6 +757,8 @@ jobs:
           egress-policy: audit
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: Validate Alloy config (River parse — deploy/alloy/config.alloy)
         run: |
@@ -799,6 +824,8 @@ jobs:
         with:
           terraform_version: "1.16.6"
           terraform_wrapper: false # preserve real exit codes (drift-detector lesson, INF.22)
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       - name: Format check
         working-directory: terraform
@@ -862,6 +889,12 @@ jobs:
 
       - name: Setup Rails test environment
         uses: ./.github/actions/setup-rails-test
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
+      # [OPS.47] Тут, а не в composite `setup-rails-test`: задача бутує застосунок (`:environment`)
+      # і компілює наш CSS — це вже вердикт, тож вона стоїть ПІСЛЯ межі.
+      - name: Build Tailwind CSS
+        run: bin/rails tailwindcss:build
 
       # гіпотетична: файл падав `NameError` із 2026-08-23 і три доби лишався
       # непоміченим, бо його тоді читали ПʼЯТЕРО (`system_parameter_delivery_spec`,
@@ -969,6 +1002,12 @@ jobs:
 
       - name: Setup Rails test environment
         uses: ./.github/actions/setup-rails-test
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
+      # [OPS.47] Тут, а не в composite `setup-rails-test`: задача бутує застосунок (`:environment`)
+      # і компілює наш CSS — це вже вердикт, тож вона стоїть ПІСЛЯ межі.
+      - name: Build Tailwind CSS
+        run: bin/rails tailwindcss:build
 
       - name: Run Feature Tests
         env:
@@ -1020,6 +1059,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
       - name: Build image (no push)
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
@@ -1056,6 +1097,9 @@ jobs:
       - feature-test
       - docker_smoke
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     steps:
       # [OPS.23] `changes` carries no `if:`, so `success` is its ONLY legal result,
       # while every job below it is path-gated, where `skipped` IS legal. The guard
@@ -1070,21 +1114,42 @@ jobs:
           exit 1
       - name: Fail if any required job failed or was cancelled
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        # [OPS.30] Вердикт мусить називати ЕТАП: `failure` = перевірка виконалась
-        # і сказала «ні»; `cancelled` = вона НЕ БІГЛА (стеля `timeout-minutes`
-        # або скасування прогону). Один меседж на два світи читається як
-        # «впали тести» і жене наступний прохід шукати дефект у власному діфі.
+        # [OPS.30 · OPS.47] Вердикт мусить називати ЕТАП. `cancelled` = перевірка НЕ БІГЛА
+        # (стеля `timeout-minutes` або скасування прогону). А `failure` НЕ означає «перевірка
+        # сказала „ні“»: так само падають крок налаштування й джоба, що не стартувала, — етап
+        # кожної джоби називає крок «Name the stage of each failed job» нижче — з API запуску й межі.
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
           failed=$(jq -r 'to_entries|map(select(.value.result=="failure").key)|join(", ")' <<<"$NEEDS_JSON")
           stopped=$(jq -r 'to_entries|map(select(.value.result=="cancelled").key)|join(", ")' <<<"$NEEDS_JSON")
           if [ -n "$failed" ]; then
-            echo "::error title=ВПАЛО (вердикт є)::${failed} — A required CI job failed — see the job list above."
+            echo "::error title=ВПАЛО (етап — у кроці «Name the stage of each failed job»)::${failed} — A required CI job failed — see the job list above."
           fi
           if [ -n "$stopped" ]; then
             echo "::error title=НЕ БІГЛО (вердикту НЕМАЄ)::${stopped} — скасовано: стеля timeout-minutes або скасування прогону. Це не твердження про код."
           fi
           exit 1
+      # [OPS.47] `failure` несе три світи — впала перевірка · впало налаштування · джоба не
+      # стартувала, — і `needs.*.result` їх не розрізняє. Етап читається з API запуску, не
+      # виводиться: кроки — з API, етап — за межею «Verdict boundary — setup complete» у кожній гейтованій джобі (06_07 §2).
+      # Обидва кроки стоять ПІСЛЯ кроку вердикту й лише друкують: exit 1 агрегату вже поставлено вище.
+      - name: Checkout the verdict-stage classifier
+        if: ${{ always() && contains(needs.*.result, 'failure') }}
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          sparse-checkout: scripts/ci_verdict_stage.rb
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Name the stage of each failed job
+        if: ${{ always() && contains(needs.*.result, 'failure') }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/attempts/${GITHUB_RUN_ATTEMPT}/jobs?per_page=100" > "${RUNNER_TEMP}/jobs.json" || echo '{}' > "${RUNNER_TEMP}/jobs.json"
+          ruby scripts/ci_verdict_stage.rb "${RUNNER_TEMP}/jobs.json"
       - name: All clear
         run: echo "All CI jobs that ran passed (path-skipped jobs are OK)."

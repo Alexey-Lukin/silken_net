@@ -102,6 +102,8 @@ jobs:
       - name: Install subgraph toolchain
         working-directory: subgraph
         run: npm ci
+      - name: Verdict boundary — setup complete
+        run: echo "setup complete — every step below carries the verdict (OPS.47)"
 
       # 🔴 ДВА кроки, і порядок несучий — не зливати в один і не лишати самий `build`.
       # `graph build` компілює мапінг проти `generated/`, тож без свіжого `codegen` він
@@ -158,6 +160,9 @@ jobs:
     if: ${{ always() }}
     needs: [changes, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -174,21 +179,42 @@ jobs:
           exit 1
       - name: Fail if the subgraph lane failed or was cancelled
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        # [OPS.30] Вердикт мусить називати ЕТАП: `failure` = перевірка виконалась
-        # і сказала «ні»; `cancelled` = вона НЕ БІГЛА (стеля `timeout-minutes`
-        # або скасування прогону). Один меседж на два світи читається як
-        # «впали тести» і жене наступний прохід шукати дефект у власному діфі.
+        # [OPS.30 · OPS.47] Вердикт мусить називати ЕТАП. `cancelled` = перевірка НЕ БІГЛА
+        # (стеля `timeout-minutes` або скасування прогону). А `failure` НЕ означає «перевірка
+        # сказала „ні“»: так само падають крок налаштування й джоба, що не стартувала, — етап
+        # кожної джоби називає крок «Name the stage of each failed job» нижче — з API запуску й межі.
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
           failed=$(jq -r 'to_entries|map(select(.value.result=="failure").key)|join(", ")' <<<"$NEEDS_JSON")
           stopped=$(jq -r 'to_entries|map(select(.value.result=="cancelled").key)|join(", ")' <<<"$NEEDS_JSON")
           if [ -n "$failed" ]; then
-            echo "::error title=ВПАЛО (вердикт є)::${failed} — the subgraph lane failed (codegen / build / matchstick)."
+            echo "::error title=ВПАЛО (етап — у кроці «Name the stage of each failed job»)::${failed} — the subgraph lane failed (codegen / build / matchstick)."
           fi
           if [ -n "$stopped" ]; then
             echo "::error title=НЕ БІГЛО (вердикту НЕМАЄ)::${stopped} — скасовано: стеля timeout-minutes або скасування прогону. Це не твердження про код."
           fi
           exit 1
+      # [OPS.47] `failure` несе три світи — впала перевірка · впало налаштування · джоба не
+      # стартувала, — і `needs.*.result` їх не розрізняє. Етап читається з API запуску, не
+      # виводиться: кроки — з API, етап — за межею «Verdict boundary — setup complete» у кожній гейтованій джобі (06_07 §2).
+      # Обидва кроки стоять ПІСЛЯ кроку вердикту й лише друкують: exit 1 агрегату вже поставлено вище.
+      - name: Checkout the verdict-stage classifier
+        if: ${{ always() && contains(needs.*.result, 'failure') }}
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          sparse-checkout: scripts/ci_verdict_stage.rb
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Name the stage of each failed job
+        if: ${{ always() && contains(needs.*.result, 'failure') }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/attempts/${GITHUB_RUN_ATTEMPT}/jobs?per_page=100" > "${RUNNER_TEMP}/jobs.json" || echo '{}' > "${RUNNER_TEMP}/jobs.json"
+          ruby scripts/ci_verdict_stage.rb "${RUNNER_TEMP}/jobs.json"
       - name: All clear
         run: echo "Subgraph lane passed (path-skipped on a non-subgraph change is OK)."

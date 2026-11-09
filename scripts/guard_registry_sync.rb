@@ -11,7 +11,8 @@
 # all). This gate closes the loop:
 #
 #   A. every `run:` step of the docs.yml `docs_check` job appears VERBATIM in
-#      the §3 command column (a wired gate must be registered);
+#      the §3 command column (a wired gate must be registered); the one exemption is
+#      the OPS.47 verdict boundary — a declared no-op, matched by name AND command;
 #      ⛔ ДВІ ОЧЕВИДНІ «ПОКРАЩЕННЯ» ЦІЄЇ ОСІ ВИМІРЯНО Й ВІДМОВЛЕНО [DOC-T.102,
 #      2026-09-07] — не перевідкривати:
 #      · «згенерувати колонку команд із `docs.yml`» робить CHECK A **тавтологією**:
@@ -294,7 +295,14 @@ end
 docs_wf = YAML.safe_load_file(DOCS_WORKFLOW)
 steps   = docs_wf.dig("jobs", "docs_check", "steps") or
   abort("guard_registry_sync: cannot read jobs.docs_check.steps from docs.yml")
-run_cmds = steps.filter_map { |s| s["run"]&.strip }
+# OPS.47: межа вердикту — ОГОЛОШЕНИЙ не-гейт (06_07 §2), no-op, що ділить для агрегату
+# налаштування й вердикт; реєструвати його в §3 означало б назвати гейтом те, що нічого не
+# судить. Звільнення ТІСНЕ: імʼя І команда мусять збігтися дослівно, тож гейт, названий так
+# само, але з іншою командою, реєстрації не уникне (мутаційно звірено обидва боки).
+VERDICT_BOUNDARY_NAME = "Verdict boundary — setup complete"
+VERDICT_BOUNDARY_RUN  = 'echo "setup complete — every step below carries the verdict (OPS.47)"'
+run_cmds = steps.reject { |s| s["name"] == VERDICT_BOUNDARY_NAME && s["run"]&.strip == VERDICT_BOUNDARY_RUN }
+                .filter_map { |s| s["run"]&.strip }
 run_cmds.each do |cmd|
   errors << "docs_check run-step not registered in 00_06 §3: `#{cmd}`" unless registry.include?(cmd)
 end
