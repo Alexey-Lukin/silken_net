@@ -219,7 +219,8 @@ Bench-carrier — STM32WLE5JC у модулі, і його виводи НЕ т�
 | I2C2 | `PB15` SCL · `PA15` SDA | 23 · 22 | підтяжки R15/R16 4.7 кОм до 3V3 на платі mini (BME280 стенда) |
 | SPI2 | `PB13` SCK · `PB14` MISO · `PA10` MOSI · `PB9` NSS | 10 · 8 · 7 · 9 | `PB13` — ще й кнопка BOOT K3 на землю через 470 Ом |
 | Світлодіод | `PB5` | — | червоний D6, **активний низьким** (анод через 1 кОм на 3V3) |
-| Аналог і GPIO | `PB3` A3 · `PB4` A4 · `PA0` D0 · `PA9` D9 · `PB10` D10 | 20 · 21 · 17 · 12 · 11 | — |
+| Аналог і GPIO | `PB3` A3 · `PB4` A4 · `PA0` D0 · `PA9` D9 | 20 · 21 · 17 · 12 | — |
+| Ключ BME280 | `PB10` D10 | 11 | `ON` TPS22860 + pull-down 1 МΩ на макетці ([`02_04 §3.4`](02_04_Bench_Build_Guide)); у коді — `BME280_PWR_*` glue стенда ([`00_07`](00_07_Action_Plan_Tracker) HW.32) |
 | Живлення | 3V3 · USB 5V · GND | 2 · 1 · 6 і 24 | ⛔ не живити одночасно через USB-C і 3V3 від BQ25570 — [`02_04`](02_04_Bench_Build_Guide), крок прошивки |
 | Тактування | LSE 32.768 кГц · 32 МГц | усередині модуля | паспорт V1.1, Figure 1: обидва вузли тактування на платі модуля (32 МГц блок-схема малює «XTAL», а функційно це TCXO — [`rf_frontend_forks`](protocols/hardware/rf_frontend_forks.md)), `PC14`/`PC15` серед виводів модуля немає (Table 1); живлення 32-МГц TCXO — `PB0` модуля (ніжка 28 → TP2), і паспорт велить лишати його плаваючим — не підтягувати й не заземлювати; CL і ESR кварцу LSE паспорт не дає — `LSEDRV` обирається запасом і перевіряється на стенді |
 
@@ -248,6 +249,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | `hrng` | RNG/TRNG | Істинна випадковість (тепловий шум кристала) |
 | `hrtc` | RTC | Real-time clock + Backup Domain (персистентний стан після STOP2) |
 | `hsubghz` | SUBGHZ | Інтегрований LoRa трансивер SX1262 (868 МГц) |
+| `hi2c_sense` | I2C | BME280 ([`00_07`](00_07_Action_Plan_Tracker) HW.32) — лише CCM-образ (`FW2_CCM_ENABLED`); інстанс і піни дає glue плати: стенд — I2C2, вузол — I2C1 (.ioc) |
 | `hcryp` | AES | Апаратний AES (Hardware Crypto Engine). **LoRa-канал: AES-128-ECB** (post-ARCH.42 transitional → CCM target FW.2). Queen додатково динамічно re-init'ить на AES-256-CBC для CoAP-batch flush. |
 
 **Примітка:** Soldier — єдиний вузол, що має ADC та RTC. Queen — не має ADC та RTC (має RNG, AES та IWDG). Таймера й DMA на Солдаті з HW.30 немає (їх тримав лише аудіо-тракт пʼєзо); єдиний DMA-канал прошивки — USART1-RX Королеви (§6.2).
@@ -337,28 +339,9 @@ HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed);
 Апаратний генератор випадкових чисел на основі теплового шуму кристала. **[SEC.11 / FW.30]** `chaos_seed` більше НЕ використовується для Атрактора Лоренца — початковий стан `(x₀,y₀,z₀)` деривується з per-device K_seed (Flash `FLASH_SEED_ADDR`) через HKDF/HMAC. `chaos_seed` залишається для mesh anti-pingpong, TX jitter та CoAP nonce.
 
 **BME280 (мікроклімат — HW.32, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):**
-```c
-// ЕСКІЗ call-site (не код дерева): BME_PWR_* · bme_ops · bme_io · bme_calib — імена
-// майбутнього HAL-глю в main.c; функції Bme280_* — справжній API firmware/common/bme280.h.
-// Гейтований TPS22860: GPIO ON → settle → forced-mode read → GPIO OFF (idle ~10 нА).
-// Клімат змінюється повільно → опитування раз на N пробуджень (climate_due), не щоцикл.
-// Bme280_Read_Calib(&bme_ops, bme_io, &bme_calib) — раз при bring-up (NVM незмінна).
-if (climate_due) {
-  Bme280_Raw raw;
-  HAL_GPIO_WritePin(BME_PWR_PORT, BME_PWR_PIN, GPIO_PIN_SET);   // power-gate ON
-  int rc = Bme280_Forced_Read(&bme_ops, bme_io, &raw);  // I²C, ~10 мс @ ~700 µA
-  HAL_GPIO_WritePin(BME_PWR_PORT, BME_PWR_PIN, GPIO_PIN_RESET);  // OFF
-  if (rc == BME280_OK) {
-    int32_t t_fine, temp_centi = Bme280_Compensate_T(&bme_calib, raw.adc_T, &t_fine);
-    uint32_t rh_q10 = Bme280_Compensate_H(&bme_calib, raw.adc_H, t_fine);
-    vpd_index = Bme280_Vpd_Index_From_Compensated(temp_centi, rh_q10);  // → 1 байт
-  } else {
-    vpd_index = 0x00;  // сентинель «немає BME280», ніколи попереднє значення (контракт bme280.h)
-  }
-}
-```
+Замір — `Bme280_Sense_Vpd_Index` (`firmware/common/bme280.h`, host-тести `make -C firmware/test bme280`): ключ TPS22860 `ON` → settle `BME280_SETTLE_MS` → калібрування NVM → forced-mode read → ключ `OFF` на кожній гілці. Збій будь-якого кроку дає сентинель `0` «немає BME280», ніколи минуле значення; калібрування читається щоразу, бо гейт дає POR на кожен замір, а Standby стирає SRAM (скіл `firmware` #22). Кличе його один сайт — аргумент `vpd_index` у `Pack_CCM_Sensor_Payload` CCM-тракту `main.c` (гейт `FW2_CCM_ENABLED`), тож замір іде раз на кадр, а не раз на пробудження; панічний кадр пише власний `0` (скіл `firmware` #25). Опси шини (`HAL_I2C_Mem_Read/Write`, адреса `BME280_I2C_ADDR_7BIT`, дефолт 0x76 — SDO на GND) і `HAL_Delay` — у `main.c`; шину (`MX_I2C_Sense_Init`) і пін ключа (`BME280_PWR_*`) дає glue плати ДО `#include` — стенд: I2C2 + `PB10` (пін-мапа mini вище), вузол: I2C1 на `PB6`/`PB7` і пін .ioc. Ціна заміру — [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), «Енергетика».
 
-> **[HW.32] Реалізовано як pure-модуль `firmware/common/bme280.h`** (компенсація datasheet Bosch §8.2 + VPD FAO-56, host-golden `firmware/test/test_bme280.c` — int-шлях звірено проти незалежної float-копії §8.1). Транспорт forced-mode (`Bme280_Read_Calib` / `Bme280_Forced_Read`) — у тому ж `bme280.h` через шов `Bme280_Ops`, host-тестований проти фейка регістрів (`make -C firmware/test bme280`); на стенді лишаються HAL-опси (`HAL_I2C_Mem_Read/Write`, адреса 0x76/0x77) і живе читання; SENSE call-site вшивається разом із **CCM-флипом** (`FW2_CCM_ENABLED`), бо `vpd_index` живе тільки у CCM wire-rev2 (байт 19) — у транзитному 16B-кадрі місця нема. Канон формули — [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM).
+> **[HW.32] Реалізовано як pure-модуль `firmware/common/bme280.h`** (компенсація datasheet Bosch §8.2 + VPD FAO-56, host-golden `firmware/test/test_bme280.c` — int-шлях звірено проти незалежної float-копії §8.1). Транспорт forced-mode (`Bme280_Read_Calib` / `Bme280_Forced_Read`) — у тому ж `bme280.h` через шов `Bme280_Ops`, host-тестований проти фейка регістрів (`make -C firmware/test bme280`); HAL-опси й SENSE call-site написано під гейтом **CCM-флипу** (`FW2_CCM_ENABLED`, ↑), бо `vpd_index` живе тільки у CCM wire-rev2 (байт 19) — у транзитному 16B-кадрі місця нема; на стенді лишається живе читання ([`02_04 §3.4`](02_04_Bench_Build_Guide)). Канон формули — [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM).
 
 > **VPD (Vapor Pressure Deficit)** обчислюється на вузлі з t°+RH і пакується **1 байтом** (канонічний дім — **CCM wire-rev2 byte 19 `vpd_index`**, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) wire-budget ledger; ⊕ з wire-rev2.2 (⚖️ 2026-10-08, застосовано 2026-10-10 — [`00_07`](00_07_Action_Plan_Tracker) FW.66) байт несе лише VPD (`0` = «немає сенсора»), а SEC.20-звіт відкату переїхав у байт 11, тож call-site VPD більше нічого не стирає; у транзитному 21B-кадрі VPD НЕ передається — байт 14 там належить gossip-freeze) як **прямий погодний confounder** — backend-гейт, що за задумом не штрафує за погоду, сьогодні wired no-op і структурно інертний ([`04_02`](04_02_Business_Logic_and_Services), врізка VPD-гейта; False-Slashing guard, [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy)). Сирі RH/тиск (для NaaS клімат-оракула, [`00_04`](00_04_Nature_as_a_Service_Contracts)) — у періодичному **climate frame** (FW.2 24B CCM extended payload; транзитний 16B-кадр місця не має). Тригер climate frame: кожні N uplink'ів або значна Δтиску (раннє попередження про шторм). Енергія: за TPS22860-гейтом ≈8нА avg ([`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)). 🚨 **DCI-guard:** BME280-дані (VPD/RH/тиск) **НЕ** входять у входи Атрактора Лоренца (ті — temp/acoustic; delta_t і vcap з E.63 Z не рухають) → firmware↔backend bit-identity не зачіпається.
 

@@ -49,7 +49,7 @@ extern "C" {
 /* #define HAL_DAC_MODULE_ENABLED */ /* SilkenNet: не використовується */
 /* #define HAL_GTZC_MODULE_ENABLED */ /* SilkenNet: не використовується */
 /* #define HAL_HSEM_MODULE_ENABLED */ /* SilkenNet: не використовується */
-/* #define HAL_I2C_MODULE_ENABLED */ /* SilkenNet: не використовується */
+#define HAL_I2C_MODULE_ENABLED /* SilkenNet: HW.32 BME280 (гейтований CCM-блок main.c; шина й ключ — glue плати) */
 /* #define HAL_I2S_MODULE_ENABLED */ /* SilkenNet: не використовується */
 /* #define HAL_IPCC_MODULE_ENABLED */ /* SilkenNet: не використовується */
 /* #define HAL_IRDA_MODULE_ENABLED */ /* SilkenNet: не використовується */

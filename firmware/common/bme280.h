@@ -11,7 +11,8 @@
  * погодний confounder: рахуємо його НА вузлі з t°+RH і шлемо
  * одним байтом, щоб бекенд не штрафував за погоду.
  *
- * Цей модуль pure, без HAL (I²C-глю й живе читання — bench):
+ * Цей модуль pure, без HAL (I²C-клей — main.c під гейтом CCM, тіло шини — glue плати; живе
+ * читання — стенд):
  *   1. Bme280_Compensate_*  — фіксована-точка з datasheet Bosch §8.2
  *      (int32 T → °C×100; int64 P → Pa Q24.8; int32 H → %RH Q22.10).
  *      Host-тест звіряє цілочисельний шлях проти НЕЗАЛЕЖНОЇ float-копії
@@ -23,6 +24,8 @@
  *   3. Bme280_Read_Calib / Bme280_Forced_Read — послідовність регістрів
  *      forced-mode через ops-шов Bme280_Ops (прецедент FlashKvOps /
  *      g_ota_flash_ops): host = фейк регістрів, MCU = HAL_I2C у main.c.
+ *   4. Bme280_Sense_Vpd_Index — увесь замір одного циклу з ключем живлення: його кличе
+ *      SENSE, тож host-тест перевіряє сам код кадру, а не копію (гоча firmware #19).
  *
  * 🚨 DCI-guard: VPD НЕ входить у входи Атрактора Лоренца (ті — temp/acoustic;
  * delta_t і vcap з E.63 Z не рухають) → firmware↔backend bit-identity не зачіпається.
@@ -119,7 +122,7 @@ static inline uint32_t Bme280_Compensate_H(const Bme280_Calib *c, int32_t adc_H,
  * проти референсного гігрометра — це канонічна СТЕЛЯ (0..5.1 kPa @ 0.02/LSB),
  * але самий index→kPa мапінг фіналізується при калібруванні (02_01 §3.4).
  *
- * 0x00 зарезервований під «немає BME280» (call-site шле літерал). Реальний
+ * 0x00 зарезервований під «немає BME280» (його віддає Bme280_Sense_Vpd_Index на збої). Реальний
  * замір сатурується до [1..255] — навіть VPD≈0 (насичене повітря) дає 1,
  * щоб не злитися з сентинелем «сенсора нема». */
 #define BME280_VPD_KPA_PER_LSB   0.02
@@ -159,7 +162,7 @@ static inline uint8_t Bme280_Vpd_Index_From_Compensated(int32_t temp_centi_c,
 
 /* ── Транспорт forced-mode (ops-шов) ─────────────────────────────────────
  * Регістри й таймінги — datasheet BST-BME280-DS001 rev 1.24 (розділи нижче).
- * Контракт викликача (SENSE, вшивається разом із CCM-флипом):
+ * Контракт викликача — його виконує Bme280_Sense_Vpd_Index унизу (SENSE, CCM-гейт):
  *   · після TPS22860 ON — ≥ t_startup 2 мс (§1.1 Table 1) + t_ON самого ключа;
  *     справжній settle міряє стенд;
  *   · код ≠ BME280_OK → у кадр іде сентинель 0x00 «немає BME280», НІКОЛИ
@@ -329,6 +332,35 @@ static inline int Bme280_Forced_Read(const Bme280_Ops *ops, void *io, Bme280_Raw
     raw->adc_T = t;
     raw->adc_H = h;
     return BME280_OK;
+}
+
+/* ── Замір для кадру (SENSE, CCM-ера) ────────────────────────────────────
+ * Уся послідовність одного циклу, щоб main.c тримав лише HAL-клей (гоча firmware #19):
+ * ключ TPS22860 ON → settle → калібрування → forced → компенсація → індекс VPD → OFF.
+ * Калібрування читається щоразу: гейт дає сенсору POR, а статичного кешу Standby не переживе
+ * (гоча firmware #22). Будь-який збій → сентинель «немає BME280», ніколи попереднє значення;
+ * ключ вимикається на КОЖНІЙ гілці. Settle = t_startup 2 мс (§1.1 Table 1) + t_ON ключа, якого
+ * ніхто не міряв — 3 мс узято запасом, суддя — стенд (00_07 HW.32). */
+#define BME280_VPD_INDEX_NONE (BME280_VPD_INDEX_MIN - 1u) /* = FW2_VPD_INDEX_NONE, пін — test_bme280.c */
+#define BME280_SETTLE_MS      5u
+
+static inline uint8_t Bme280_Sense_Vpd_Index(const Bme280_Ops *ops, void *io,
+                                             void (*power)(void *io, int on))
+{
+    Bme280_Calib c;
+    Bme280_Raw raw;
+    uint8_t idx = (uint8_t)BME280_VPD_INDEX_NONE;
+
+    power(io, 1);
+    ops->delay_ms(io, BME280_SETTLE_MS);
+    if (Bme280_Read_Calib(ops, io, &c) == BME280_OK &&
+        Bme280_Forced_Read(ops, io, &raw) == BME280_OK) {
+        int32_t t_fine;
+        int32_t t_centi = Bme280_Compensate_T(&c, raw.adc_T, &t_fine);
+        idx = Bme280_Vpd_Index_From_Compensated(t_centi, Bme280_Compensate_H(&c, raw.adc_H, t_fine));
+    }
+    power(io, 0);
+    return idx;
 }
 
 #endif /* SILKEN_BME280_H */

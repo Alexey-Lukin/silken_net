@@ -271,7 +271,11 @@ if(CMAKE_CROSSCOMPILING)
       ${WL_HAL_SRC}/stm32wlxx_hal_rtc_ex.c
       ${WL_HAL_SRC}/stm32wlxx_hal_flash.c
       ${WL_HAL_SRC}/stm32wlxx_hal_flash_ex.c
-      ${WL_HAL_SRC}/stm32wlxx_hal_dma.c)
+      ${WL_HAL_SRC}/stm32wlxx_hal_dma.c
+      # HW.32: BME280 у CCM-образі — шина I2C2 і ключ живлення (гейт; лінкує лише _gated)
+      ${WL_HAL_SRC}/stm32wlxx_hal_i2c.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_i2c_ex.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_gpio.c)
     # Близнюк soldier_lora_e5_gated — той самий образ із набором SILKEN_GATED_DEFS: hal_check_ccm
     # гейтовані гілки лише КОМПІЛЮЄ, а посилання без дефініції (ARCH.26) бачить тільки лінк, тож
     # кожна гілка, яку відкриє фліп (CCM, Standby, MPU, CAD/TDMA, ratchet, mesh), лінкується вже

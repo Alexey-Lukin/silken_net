@@ -1237,6 +1237,37 @@ static void MX_RTC_Init(void);
 static void MX_SUBGHZ_Init(void);
 static void MX_CRYP_Init(void); // Ініціалізація шифрування
 
+#if FW2_CCM_ENABLED
+// [HW.32] Подих лісу — BME280 дає кадру CCM байт VPD. Сам замір живе в bme280.h (host-тест
+// кличе той самий код); тут лише руки: три опси шини й ключ живлення. Шина в кожної плати
+// своя (стенд mini — I2C2 на PB15/PA15, вузол — I2C1 на PB6/PB7, .ioc), тож тіло
+// MX_I2C_Sense_Init і пін ключа BME280_PWR_* дає glue плати — ДО #include цього файлу.
+#include "../common/bme280.h"
+static void MX_I2C_Sense_Init(void);
+I2C_HandleTypeDef hi2c_sense;
+#ifndef BME280_I2C_ADDR_7BIT
+#define BME280_I2C_ADDR_7BIT  0x76u  // SDO на GND; 0x77 — SDO на VDDIO (§6.2): адресу задає breakout
+#endif
+#define BME280_I2C_TIMEOUT_MS 10u
+static int Bme280_Hal_Read(void *io, uint8_t reg, uint8_t *buf, uint16_t len)
+{
+  return HAL_I2C_Mem_Read((I2C_HandleTypeDef *)io, (uint16_t)(BME280_I2C_ADDR_7BIT << 1), reg,
+                          I2C_MEMADD_SIZE_8BIT, buf, len, BME280_I2C_TIMEOUT_MS) == HAL_OK;
+}
+static int Bme280_Hal_Write(void *io, uint8_t reg, uint8_t val)
+{
+  return HAL_I2C_Mem_Write((I2C_HandleTypeDef *)io, (uint16_t)(BME280_I2C_ADDR_7BIT << 1), reg,
+                           I2C_MEMADD_SIZE_8BIT, &val, 1u, BME280_I2C_TIMEOUT_MS) == HAL_OK;
+}
+static void Bme280_Hal_Delay(void *io, uint32_t ms) { (void)io; HAL_Delay(ms); }
+static void Bme280_Hal_Power(void *io, int on)
+{
+  (void)io;
+  HAL_GPIO_WritePin(BME280_PWR_GPIO_Port, BME280_PWR_Pin, on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+static const Bme280_Ops g_bme280_ops = { Bme280_Hal_Read, Bme280_Hal_Write, Bme280_Hal_Delay };
+#endif
+
 /* USER CODE BEGIN PFP */
 void Trigger_Emergency_LoRa_TX(void);
 void Write_OTA_Contract_To_Flash(const uint8_t* data, uint16_t size);
@@ -1496,6 +1527,9 @@ int main(void)
   MX_RNG_Init();
   MX_RTC_Init();
   MX_SUBGHZ_Init();
+#if FW2_CCM_ENABLED
+  MX_I2C_Sense_Init(); // [HW.32] шина BME280 і ключ його живлення — у нулі до першого заміру
+#endif
 
   // [SEC.21] Сіємо вартову канарку з теплового шуму — якнайраніше, ДО того
   // як парсери торкнуться першого untrusted-байта. main() не повертається
@@ -1980,8 +2014,9 @@ int main(void)
     // семантики): сирий vcap_voltage, dt_wire із сатурацією 0xFFFF. mesh_ctrl = [TTL:4|fw_low:4]
     // (low-nibble — 16-епох ротація через OTA-config). Байт 11 — SEC.20-звіт (акустики й коду
     // 0xFE у CCM-кадрі більше немає: час невідомий їде бітом diag). Поля без джерела пишуться
-    // власним «не виміряно», а не вигаданим числом: voc_mv — HAL-половини V_OC ще немає (HW.19),
-    // vpd_index — call-site BME280 бенчевий (HW.32). reset_cause — стан (FW.59): причина
+    // власним «не виміряно», а не вигаданим числом: voc_mv — HAL-половини V_OC ще немає (HW.19).
+    // vpd_index — замір BME280 цього циклу (HW.32): збій будь-якого кроку дає «немає сенсора»,
+    // ніколи минуле значення. reset_cause — стан (FW.59): причина
     // останнього справжнього ребуту, вирішена на boot.
     uint8_t ccm_pt[FW2_CCM_PLAINTEXT_LEN];
     Pack_CCM_Sensor_Payload(vcap_voltage, (int8_t)lora_payload[6],
@@ -1992,7 +2027,8 @@ int main(void)
                             (uint16_t)FW2_VOC_MV_UNKNOWN,
                             Pack_FW2_Diag(soldier_reset_cause, time_uncertain,
                                           0u /* voc_attempt */, fc_hiwater_degraded),
-                            (uint8_t)FW2_VPD_INDEX_NONE,
+                            Bme280_Sense_Vpd_Index(&g_bme280_ops, &hi2c_sense,
+                                                   Bme280_Hal_Power) /* vpd_index */,
                             wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
                             ccm_pt);
 #endif

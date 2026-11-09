@@ -260,12 +260,24 @@ typedef struct {
     int      calls, fail_call;  /* fail_call-й I²C-виклик (з 1) → NACK; 0 = ніколи */
     uint32_t now_ms, busy_until_ms, delayed_ms, conv_ms, im_update_until_ms;
     int      stuck_measuring, ignore_forced;
+    /* Ключ TPS22860 (HW.32): з require_power знеструмлений сенсор не відповідає на шині. */
+    int      require_power, powered, n_power, power_seq[4], io_seen;
+    uint32_t first_io_ms;
 } FakeBme;
+
+static int fake_bus_dead(FakeBme *f)
+{
+    if (!f->io_seen) {
+        f->io_seen = 1;
+        f->first_io_ms = f->now_ms;
+    }
+    return f->require_power && !f->powered;
+}
 
 static int fake_read(void *io, uint8_t reg, uint8_t *buf, uint16_t len)
 {
     FakeBme *f = io;
-    if (++f->calls == f->fail_call || (unsigned)reg + len > sizeof f->reg) {
+    if (++f->calls == f->fail_call || fake_bus_dead(f) || (unsigned)reg + len > sizeof f->reg) {
         return 0;
     }
     int busy = f->stuck_measuring || f->now_ms < f->busy_until_ms;
@@ -285,7 +297,7 @@ static int fake_read(void *io, uint8_t reg, uint8_t *buf, uint16_t len)
 static int fake_write(void *io, uint8_t reg, uint8_t val)
 {
     FakeBme *f = io;
-    if (++f->calls == f->fail_call) {
+    if (++f->calls == f->fail_call || fake_bus_dead(f)) {
         return 0;
     }
     if (f->n_wr < (int)sizeof f->wr_reg) {
@@ -315,6 +327,23 @@ static void fake_delay(void *io, uint32_t ms)
 }
 
 static const Bme280_Ops FAKE_OPS = { fake_read, fake_write, fake_delay };
+
+static void fake_power(void *io, int on)
+{
+    FakeBme *f = io;
+    if (f->n_power < (int)(sizeof f->power_seq / sizeof f->power_seq[0])) {
+        f->power_seq[f->n_power] = on;
+    }
+    f->n_power++;
+    f->powered = on;
+}
+
+static void fake_power_stuck_off(void *io, int on)
+{
+    FakeBme *f = io;
+    (void)on;
+    f->n_power++;  /* ключ клацає, а VDD не приходить — обрив чи мертвий TPS22860 */
+}
 
 static void fake_init(FakeBme *f)
 {
@@ -521,6 +550,77 @@ static void test_end_to_end_bosch_vector(void)
     if (rh < 40.0 || rh > 60.0) FAILF("RH %.2f %% поза очікуваним ≈50", rh);
 }
 
+/* ── Замір для кадру (HW.32): Bme280_Sense_Vpd_Index — сам код SENSE, не копія ── */
+
+static uint8_t expected_vpd_from_fake(void)
+{
+    FakeBme g;
+    Bme280_Calib c;
+    Bme280_Raw raw;
+    int32_t t_fine;
+    fake_init(&g);
+    if (Bme280_Read_Calib(&FAKE_OPS, &g, &c) != BME280_OK ||
+        Bme280_Forced_Read(&FAKE_OPS, &g, &raw) != BME280_OK) {
+        return 0xEE; /* недосяжне значення — тест упаде на порівнянні */
+    }
+    int32_t t = Bme280_Compensate_T(&c, raw.adc_T, &t_fine);
+    return Bme280_Vpd_Index_From_Compensated(t, Bme280_Compensate_H(&c, raw.adc_H, t_fine));
+}
+
+static void test_sense_powers_settles_then_measures(void)
+{
+    FakeBme f;
+    fake_init(&f);
+    f.require_power = 1;
+    uint8_t idx = Bme280_Sense_Vpd_Index(&FAKE_OPS, &f, fake_power);
+    ASSERT_EQ(idx, expected_vpd_from_fake());
+    if (idx < BME280_VPD_INDEX_MIN) FAILF("measured index %u fell into the sentinel", idx);
+    ASSERT_EQ(f.n_power, 2);
+    ASSERT_EQ(f.power_seq[0], 1);
+    ASSERT_EQ(f.power_seq[1], 0);
+    ASSERT_EQ(f.powered, 0);
+    /* перше звертання до шини — не раніше t_startup 2 мс після ON (§1.1 Table 1) */
+    if (f.first_io_ms < 2u) FAILF("first I2C access at %u ms after power-on", (unsigned)f.first_io_ms);
+}
+
+static void test_sense_every_bus_failure_is_sentinel_and_powers_off(void)
+{
+    FakeBme probe;
+    fake_init(&probe);
+    probe.require_power = 1;
+    (void)Bme280_Sense_Vpd_Index(&FAKE_OPS, &probe, fake_power);
+    if (probe.calls < 4) FAILF("happy path made only %d bus calls", probe.calls);
+    for (int k = 1; k <= probe.calls; k++) {
+        FakeBme f;
+        fake_init(&f);
+        f.require_power = 1;
+        f.fail_call = k;
+        uint8_t idx = Bme280_Sense_Vpd_Index(&FAKE_OPS, &f, fake_power);
+        if (idx != BME280_VPD_INDEX_NONE) FAILF("NACK at call %d gave index %u, not the sentinel", k, idx);
+        if (f.powered || f.n_power != 2) FAILF("NACK at call %d left the switch on (n_power %d)", k, f.n_power);
+    }
+}
+
+static void test_sense_dead_switch_foreign_chip_and_stuck_status(void)
+{
+    FakeBme f;
+    fake_init(&f);
+    f.require_power = 1;
+    ASSERT_EQ(Bme280_Sense_Vpd_Index(&FAKE_OPS, &f, fake_power_stuck_off), BME280_VPD_INDEX_NONE);
+    ASSERT_EQ(f.n_power, 2);
+
+    fake_init(&f);
+    f.reg[BME280_REG_ID] = 0x58; /* BMP280 — сусід без вологості */
+    ASSERT_EQ(Bme280_Sense_Vpd_Index(&FAKE_OPS, &f, fake_power), BME280_VPD_INDEX_NONE);
+    ASSERT_EQ(f.powered, 0);
+
+    fake_init(&f);
+    f.stuck_measuring = 1;
+    ASSERT_EQ(Bme280_Sense_Vpd_Index(&FAKE_OPS, &f, fake_power), BME280_VPD_INDEX_NONE);
+    ASSERT_EQ(f.powered, 0);
+    ASSERT_EQ(BME280_VPD_INDEX_NONE, FW2_VPD_INDEX_NONE);
+}
+
 int main(void)
 {
     printf("════════════════════════════════════════════════════════════════════\n");
@@ -555,6 +655,11 @@ int main(void)
     RUN(test_no_conversion_is_not_a_measurement);
     RUN(test_end_to_end_bosch_vector);
     RUN(test_ccm_vpd_none_sits_below_measured_floor);
+
+    printf("\n— Замір для кадру: ключ TPS22860 · settle · сентинель (HW.32) —\n");
+    RUN(test_sense_powers_settles_then_measures);
+    RUN(test_sense_every_bus_failure_is_sentinel_and_powers_off);
+    RUN(test_sense_dead_switch_foreign_chip_and_stuck_status);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);

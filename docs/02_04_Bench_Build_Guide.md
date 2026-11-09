@@ -209,10 +209,10 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 2. **Checkpoint:** LoRa-E5 стартує (світлодіод `PB5`, активний низьким); самотест читається по SWD (RUNBOOK §2.1) — UART-виводу прошивка Солдата сьогодні не має.
 
 ### 3.4 Sense (BME280 @ TPS22860)
-1. TPS22860: `VIN`←3V3, `VBIAS`←3V3 (живлення самого ключа; `VIN` ≤ `VBIAS` — SLVSD04), `GND`, `VOUT`→BME280 `VDD`, `ON`←GPIO + 1 МΩ від `ON` до GND (power-gate; pull-down — ⚖️ 2026-11-08, [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM)).
+1. TPS22860: `VIN`←3V3, `VBIAS`←3V3 (живлення самого ключа; `VIN` ≤ `VBIAS` — SLVSD04), `GND`, `VOUT`→BME280 `VDD`, `ON`←`PB10` (J1-11; ⚖️ делеговано 2026-11-09 — [`00_07`](00_07_Action_Plan_Tracker) HW.32) + 1 МΩ від `ON` до GND (power-gate; pull-down — ⚖️ 2026-11-08, [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM)).
 2. BME280: `SCL`→`PB15` (J1-23), `SDA`→`PA15` (J1-22) — I2C2 mini, спільна шина; підтяжки 4.7 кΩ — на платі mini (R15/R16).
 3. **Checkpoint:** I2C-scan бачить BME280 (0x76 при SDO→GND / 0x77 при SDO→VDD); forced-mode read дає t°/RH/тиск.
-4. Деталі VPD/DCI-guard → [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM); firmware `bme280.h` (логіка forced-mode є; HAL-глю образу mini пишеться ДО стенда — машинна нога [`00_07`](00_07_Action_Plan_Tracker) HW.32, а на стенді — живе читання, §4). ⚠️ **Гейт TPS22860 — лише на VDD, VDDIO лишити на постійній 3V3** (датащит Bosch BME280 §3.2: піни в «1» при вимкненому VDDIO можуть незворотно пошкодити чіп через ESD-діоди, і шина спільна з SE051C2); breakout, де VDD і VDDIO з'єднані, під гейт не ставити.
+4. Деталі VPD/DCI-guard → [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM); firmware `bme280.h` і HAL-глю образу mini (I2C2 і ключ `PB10`, лише CCM-образ — [`03_01`](03_01_Firmware_Lifecycle_and_DMA), BME280; адреса — `BME280_I2C_ADDR_7BIT`, дефолт 0x76, тож breakout із SDO на VDDIO просить 0x77), а на стенді — живе читання, §4. ⚠️ **Гейт TPS22860 — лише на VDD, VDDIO лишити на постійній 3V3** (датащит Bosch BME280 §3.2: піни в «1» при вимкненому VDDIO можуть незворотно пошкодити чіп через ESD-діоди, і шина спільна з SE051C2); breakout, де VDD і VDDIO з'єднані, під гейт не ставити.
 
 ### 3.5 Security (SE051C2)
 1. SE051C2 (eval-плата): I2C `SCL`→`PB15`, `SDA`→`PA15` (I2C2 mini, спільна з BME280; підтяжки — на платі mini); живлення за load-switch'ем (окремий TPS22860 або спільний — bench).
@@ -246,7 +246,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 |---|---|---|
 | 3.1-3.2 Power | RUNBOOK §3 [дані для E.63] | floor сну (PPK2), E_cycle, Vcap recharge-крива → шкала delta_t (каденс · тиша · зонд комірки) |
 | 3.3 Compute | RUNBOOK §1-2 | flash/option-bytes, crypto-selftest (ccm/sym KAT ≡ OpenSSL) |
-| 3.4 Sense | RUNBOOK §6 (BME280 bullet) | I2C-глю (в коді ще нема) + gate-timing + VPD-калібрування |
+| 3.4 Sense | RUNBOOK §6 (BME280 bullet) | живе читання на CCM-образі (I2C-глю є) + gate-timing + VPD-калібрування |
 | 3.5 Security | RUNBOOK §6 (SE05x bullet) | cold-boot заряд + T1oI2C-латентність + SE sleep-floor за гейтом |
 | 3.7 Radio (LoRa) | RUNBOOK §6 (RF-bullet, HW.31) | LoRa 868 TX/RX діаграма+дальність; антена = pre-flight |
 | 3.3 Time/RTC | RUNBOOK §4 [bench:lse-rtc-wut] | LSE bring-up, WUT wake, drift |

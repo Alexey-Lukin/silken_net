@@ -12,9 +12,16 @@
  * board-freeze; вигадані тіла стали б drift-джерелом проти майбутнього .ioc.
  * Канон: docs/03_01 §12.4 · трекер: 00_07 FW.46.
  */
+/* [HW.32] Пін ключа BME280 на вузлі — пін-мапа .ioc (board-freeze); 0 = «пін не призначено»,
+ * лише щоб гейтований CCM-блок компілювався (гоча firmware #13 (b)). */
+#define BME280_PWR_GPIO_Port GPIOB
+#define BME280_PWR_Pin       0u
 #include "../soldier/main.c"
 
 /* ── CubeMX-заглушки (👤 .ioc згенерує справжні) ───────────────────────── */
+#if FW2_CCM_ENABLED
+static void MX_I2C_Sense_Init(void) { /* 👤 I2C1 на PB6/PB7 і пін ключа BME280 — .ioc */ }
+#endif
 void SystemClock_Config(void) { /* 👤 клок-дерево (FW.49 LSE — bench) */ }
 static void MX_GPIO_Init(void)   { /* 👤 пін-мапа = board-freeze */ }
 static void MX_ADC_Init(void)    { /* 👤 канал/розводка дільника (FW.50) */ }

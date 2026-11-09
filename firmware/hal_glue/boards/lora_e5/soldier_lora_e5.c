@@ -24,8 +24,14 @@
  *    скидом, до startup (RUNBOOK 2.1);
  *  · радіо — заглушка: radio.c без radio_conf.h не компілюється (board-freeze), а зрізам
  *    без радіо воно не потрібне. Send віддає OK, решта нічого не робить;
- *  · GPIO не налаштовано: цикл до сну пінів не торкається.
+ *  · GPIO не налаштовано: цикл до сну пінів не торкається — окрім CCM-образу, де SENSE
+ *    вмикає BME280 ключем на PB10 і читає його I2C2 (HW.32, нижче).
  */
+/* [HW.32] Ключ живлення BME280 на стенді — PB10 (D10, J1-11): вільний на mini, суто цифровий
+ * і не JTAG-пін, тож після скиду це вхід без підтяжки, і pull-down 1 МΩ макетки тримає ключ
+ * вимкненим (гоча firmware #16 (d); ⚖️ делеговано — 00_07 HW.32). Мусить стояти ДО main.c. */
+#define BME280_PWR_GPIO_Port GPIOB
+#define BME280_PWR_Pin       GPIO_PIN_10
 #include "../../../soldier/main.c"
 #include <errno.h>
 
@@ -87,6 +93,36 @@ static void MX_ADC_Init(void)
     if (HAL_ADC_Init(&hadc) != HAL_OK) Error_Handler();
 }
 
+#if FW2_CCM_ENABLED
+/* [HW.32] I2C2 стенда (PB15 SCL · PA15 SDA, підтяжки R15/R16 на платі mini) і ключ BME280 у нулі:
+ * рівень спершу, вихід потім, щоб сенсор ані миті не отримав живлення без запиту. */
+static void MX_I2C_Sense_Init(void)
+{
+    GPIO_InitTypeDef g = {0};
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    HAL_GPIO_WritePin(BME280_PWR_GPIO_Port, BME280_PWR_Pin, GPIO_PIN_RESET);
+    g.Pin   = BME280_PWR_Pin;
+    g.Mode  = GPIO_MODE_OUTPUT_PP;
+    g.Pull  = GPIO_NOPULL;           // pull-down 1 МΩ — на макетці (02_04 §3.4)
+    g.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(BME280_PWR_GPIO_Port, &g);
+
+    hi2c_sense.Instance              = I2C2;
+    // 100 кГц від PCLK1 48 МГц: PRESC 11 (крок 250 нс) · SCLL 19 → 5.0 мкс · SCLH 15 → 4.0 мкс ·
+    // SDADEL 2 → 0.5 мкс · SCLDEL 4 → 1.25 мкс — мінімуми standard-mode I²C (tLOW ≥ 4.7 мкс,
+    // tHIGH ≥ 4.0 мкс, tSU;DAT ≥ 0.25 мкс) виконано; поля — регістр I2C_TIMINGR (RM0461).
+    hi2c_sense.Init.Timing           = 0xB0420F13u;
+    hi2c_sense.Init.OwnAddress1      = 0;
+    hi2c_sense.Init.AddressingMode   = I2C_ADDRESSINGMODE_7BIT;
+    hi2c_sense.Init.DualAddressMode  = I2C_DUALADDRESS_DISABLE;
+    hi2c_sense.Init.OwnAddress2      = 0;
+    hi2c_sense.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+    hi2c_sense.Init.GeneralCallMode  = I2C_GENERALCALL_DISABLE;
+    hi2c_sense.Init.NoStretchMode    = I2C_NOSTRETCH_DISABLE;
+    if (HAL_I2C_Init(&hi2c_sense) != HAL_OK) Error_Handler();
+}
+#endif
+
 static void MX_IWDG_Init(void)
 {
     hiwdg.Instance       = IWDG;
@@ -134,6 +170,28 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *h)
     (void)h;
     __HAL_RCC_ADC_CLK_ENABLE();
 }
+
+#if FW2_CCM_ENABLED
+void HAL_I2C_MspInit(I2C_HandleTypeDef *h)
+{
+    GPIO_InitTypeDef g = {0};
+    RCC_PeriphCLKInitTypeDef clk = {0};
+    if (h->Instance != I2C2) return;
+    clk.PeriphClockSelection = RCC_PERIPHCLK_I2C2;
+    clk.I2c2ClockSelection   = RCC_I2C2CLKSOURCE_PCLK1;   // 48 МГц — під нього пораховано TIMINGR
+    if (HAL_RCCEx_PeriphCLKConfig(&clk) != HAL_OK) Error_Handler();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    g.Mode      = GPIO_MODE_AF_OD;
+    g.Pull      = GPIO_NOPULL;
+    g.Speed     = GPIO_SPEED_FREQ_LOW;
+    g.Alternate = GPIO_AF4_I2C2;
+    g.Pin       = GPIO_PIN_15;
+    HAL_GPIO_Init(GPIOB, &g);   // PB15 — SCL
+    HAL_GPIO_Init(GPIOA, &g);   // PA15 — SDA (після скиду JTDI; AF4 знімає з нього JTAG)
+    __HAL_RCC_I2C2_CLK_ENABLE();
+}
+#endif
 
 void HAL_RNG_MspInit(RNG_HandleTypeDef *h)
 {
