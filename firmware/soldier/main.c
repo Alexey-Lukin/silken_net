@@ -1949,6 +1949,10 @@ int main(void)
     // ~1-2 год wall, відкладаючи телеметрію у стільки ж разів).
     uint8_t grace_hello = (time_uncertain &&
                            wakeups_since_boot < TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS) ? 1u : 0u;
+    // [FW.10] Морозна відмова від TX — ОДНЕ рішення пробудження на двох споживачів: Фаза 4
+    // падає по ньому в Кенозис, а SENSE не будить BME280 для кадру, що не полетить (HW.32).
+    // Входи — temp і vcap вище; після цього рядка їх ніхто не пише.
+    uint8_t tx_deferred = Should_Defer_TX((int8_t)lora_payload[6], vcap_voltage) ? 1u : 0u;
 
     // Байт 7: акустичний слот ECB-кадру (з HW.30 лічильник завжди 0). CCM-кадр wire-rev2.2
     // цей байт не везе — на його місці (байт 11) SEC.20-звіт (FW.66).
@@ -2016,7 +2020,9 @@ int main(void)
     // 0xFE у CCM-кадрі більше немає: час невідомий їде бітом diag). Поля без джерела пишуться
     // власним «не виміряно», а не вигаданим числом: voc_mv — HAL-половини V_OC ще немає (HW.19).
     // vpd_index — замір BME280 цього циклу (HW.32): збій будь-якого кроку дає «немає сенсора»,
-    // ніколи минуле значення. reset_cause — стан (FW.59): причина
+    // ніколи минуле значення; кадр, що не полетить (grace-hello · морозна відмова), сенсор не
+    // будить — пакування біжить і тоді, а 19 мс бадьорого ядра на мовчазному морозі — найдорожчі.
+    // reset_cause — стан (FW.59): причина
     // останнього справжнього ребуту, вирішена на boot.
     uint8_t ccm_pt[FW2_CCM_PLAINTEXT_LEN];
     Pack_CCM_Sensor_Payload(vcap_voltage, (int8_t)lora_payload[6],
@@ -2027,8 +2033,10 @@ int main(void)
                             (uint16_t)FW2_VOC_MV_UNKNOWN,
                             Pack_FW2_Diag(soldier_reset_cause, time_uncertain,
                                           0u /* voc_attempt */, fc_hiwater_degraded),
-                            Bme280_Sense_Vpd_Index(&g_bme280_ops, &hi2c_sense,
-                                                   Bme280_Hal_Power) /* vpd_index */,
+                            (grace_hello || tx_deferred)
+                                ? (uint8_t)FW2_VPD_INDEX_NONE
+                                : Bme280_Sense_Vpd_Index(&g_bme280_ops, &hi2c_sense,
+                                                         Bme280_Hal_Power) /* vpd_index */,
                             wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
                             ccm_pt);
 #endif
@@ -2150,12 +2158,9 @@ int main(void)
     // ESR іоністора різко зростає — LoRa TX при кволій напрузі (<4.0В) може кинути
     // ксилему у брауноут. Краще промовчати й зберегти тепло: пропускаємо
     // Фази 4–4.5 і одразу падаємо у Кенозис. Предикат і його стеля (Vcap-половина
-    // у полі вироджена, ARCH.99) — tx_defer.h.
-    {
-        int8_t packed_temp = (int8_t)lora_payload[6];
-        if (Should_Defer_TX(packed_temp, vcap_voltage)) {
-            goto phase5_kenosis;
-        }
+    // у полі вироджена, ARCH.99) — tx_defer.h; рішення взято у Фазі 1 (`tx_deferred`).
+    if (tx_deferred) {
+        goto phase5_kenosis;
     }
 
     // [FIX: LoRa Collision Storm] Рандомізована затримка 0-500 мс перед TX.
