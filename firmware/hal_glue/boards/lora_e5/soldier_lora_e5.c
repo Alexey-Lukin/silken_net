@@ -24,8 +24,8 @@
  *    скидом, до startup (RUNBOOK 2.1);
  *  · радіо — заглушка: radio.c без radio_conf.h не компілюється (board-freeze), а зрізам
  *    без радіо воно не потрібне. Send віддає OK, решта нічого не робить;
- *  · GPIO не налаштовано: цикл до сну пінів не торкається — окрім CCM-образу, де SENSE
- *    вмикає BME280 ключем на PB10 і читає його I2C2 (HW.32, нижче).
+ *  · GPIO не налаштовано: цикл до сну пінів не торкається — окрім BME280: ключ на PB10 і
+ *    I2C2 (HW.32, нижче) для CCM-кадру й бенч-POST BME280_SELFTEST (RUNBOOK 2.2б).
  */
 /* [HW.32] Ключ живлення BME280 на стенді — PB10 (D10, J1-11): вільний на mini, суто цифровий
  * і не JTAG-пін, тож після скиду це вхід без підтяжки, і pull-down 1 МΩ макетки тримає ключ
@@ -93,7 +93,7 @@ static void MX_ADC_Init(void)
     if (HAL_ADC_Init(&hadc) != HAL_OK) Error_Handler();
 }
 
-#if FW2_CCM_ENABLED
+#if BME280_GLUE_ENABLED
 /* [HW.32] I2C2 стенда (PB15 SCL · PA15 SDA, підтяжки R15/R16 на платі mini) і ключ BME280 у нулі:
  * рівень спершу, вихід потім, щоб сенсор ані миті не отримав живлення без запиту. */
 static void MX_I2C_Sense_Init(void)
@@ -171,7 +171,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *h)
     __HAL_RCC_ADC_CLK_ENABLE();
 }
 
-#if FW2_CCM_ENABLED
+#if BME280_GLUE_ENABLED
 void HAL_I2C_MspInit(I2C_HandleTypeDef *h)
 {
     GPIO_InitTypeDef g = {0};

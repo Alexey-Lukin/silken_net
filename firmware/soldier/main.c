@@ -1237,7 +1237,14 @@ static void MX_RTC_Init(void);
 static void MX_SUBGHZ_Init(void);
 static void MX_CRYP_Init(void); // Ініціалізація шифрування
 
-#if FW2_CCM_ENABLED
+// [HW.32] Руки BME280 потрібні двом: CCM-кадру (байт vpd_index) і бенч-POST `BME280_SELFTEST`
+// (образи mini). Один вираз на всі сайти — декларації тут, init у main(), тіла в glue плати.
+#if FW2_CCM_ENABLED || defined(BME280_SELFTEST)
+#define BME280_GLUE_ENABLED 1
+#else
+#define BME280_GLUE_ENABLED 0
+#endif
+#if BME280_GLUE_ENABLED
 // [HW.32] Подих лісу — BME280 дає кадру CCM байт VPD. Сам замір живе в bme280.h (host-тест
 // кличе той самий код); тут лише руки: три опси шини й ключ живлення. Шина в кожної плати
 // своя (стенд mini — I2C2 на PB15/PA15, вузол — I2C1 на PB6/PB7, .ioc), тож тіло
@@ -1266,6 +1273,17 @@ static void Bme280_Hal_Power(void *io, int on)
   HAL_GPIO_WritePin(BME280_PWR_GPIO_Port, BME280_PWR_Pin, on ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 static const Bme280_Ops g_bme280_ops = { Bme280_Hal_Read, Bme280_Hal_Write, Bme280_Hal_Delay };
+#endif
+#if defined(BME280_SELFTEST)
+// [HW.32] Бенч-POST: один замір на старті тим самим Bme280_Sense, що й кадр, у слова, які
+// firmware/scripts/bench/02_selftest_attest.py --bme читає через SWD (mode=UR). Вивід
+// бенч-образу, не стан циклу (як g_ccm_selftest_failed): переписується на кожному старті.
+// rc = 1 — POST не біг; 0 — BME280_OK; < 0 — код першого кроку, що впав (bme280.h).
+volatile int32_t g_bme280_post_rc = 1;
+volatile int32_t g_bme280_post_t_centi;
+volatile int32_t g_bme280_post_p_pa;
+volatile int32_t g_bme280_post_rh_q10;
+volatile int32_t g_bme280_post_vpd;
 #endif
 
 /* USER CODE BEGIN PFP */
@@ -1527,8 +1545,21 @@ int main(void)
   MX_RNG_Init();
   MX_RTC_Init();
   MX_SUBGHZ_Init();
-#if FW2_CCM_ENABLED
+#if BME280_GLUE_ENABLED
   MX_I2C_Sense_Init(); // [HW.32] шина BME280 і ключ його живлення — у нулі до першого заміру
+#endif
+#if defined(BME280_SELFTEST)
+  // [HW.32] POST — до завантаження ключів, як і POST CCM нижче: на порожній сторінці ключа
+  // плата скидається одразу після них, тож результат переписується на кожному старті.
+  {
+    Bme280_Reading r;
+    Bme280_Sense(&g_bme280_ops, &hi2c_sense, Bme280_Hal_Power, &r);
+    g_bme280_post_t_centi = r.t_centi;
+    g_bme280_post_p_pa    = (int32_t)(r.p_q24_8 >> 8);
+    g_bme280_post_rh_q10  = (int32_t)r.rh_q10;
+    g_bme280_post_vpd     = r.vpd_index;
+    g_bme280_post_rc      = r.rc;   // останнім: rc ≠ 1 каже, що решта слів уже записана
+  }
 #endif
 
   // [SEC.21] Сіємо вартову канарку з теплового шуму — якнайраніше, ДО того

@@ -239,8 +239,8 @@ if(CMAKE_CROSSCOMPILING)
     # лінкують, тож посилання без дефініції (клас link-бомби ARCH.26) бачить лише цей
     # таргет. Рукописна плата hal_glue/boards/lora_e5/ (тіла MX_* і MSP, заглушка
     # радіо, newlib _sbrk) + вендорний startup і system + модулі WL-HAL, яких торкається
-    # цикл. Збірка — з CCM_SELFTEST: перший зріз на кремнії — самотест CCM/sym
-    # (RUNBOOK 2.1–2.2). Межі зрізу (MSI без LSE, RTC на LSI, без WUT, радіо-заглушка) —
+    # цикл. Збірка — з CCM_SELFTEST і BME280_SELFTEST: перший зріз на кремнії — самотест
+    # CCM/sym і замір BME280 (RUNBOOK 2.1–2.2б). Межі зрізу (MSI без LSE, RTC на LSI, без WUT, радіо-заглушка) —
     # шапка soldier_lora_e5.c і docs/03_01 §12.4. ⚠️ Локально на darwin-тулчейні лінк
     # просить libssp (скіл firmware #7 (4)); CI-тулчейн її має.
     if(NOT DEFINED SILKEN_MRUBY_ARM_LIB)
@@ -295,7 +295,7 @@ if(CMAKE_CROSSCOMPILING)
       target_compile_definitions(${_img} PRIVATE
         STM32WLE5xx USE_HAL_DRIVER
         MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
-        CCM_SELFTEST)
+        CCM_SELFTEST BME280_SELFTEST)
       target_compile_options(${_img} PRIVATE -Os
         $<$<COMPILE_LANGUAGE:C>:-Wall -Wextra>)
       target_link_libraries(${_img} PRIVATE silken_attest ${SILKEN_MRUBY_ARM_LIB} m)

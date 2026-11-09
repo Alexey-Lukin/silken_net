@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""02_selftest_attest.py — [bench] крипто-атестація кремнію (FW.2 CCM + sym KAT).
+"""02_selftest_attest.py — [bench] атестація кремнію: крипто (FW.2 CCM + sym KAT) і BME280 (HW.32).
 
 Host-сторона selftest'ів уже доведена (test_ccm_selftest/test_sym_selftest:
 логіка + KAT-вектори коректні) — PASS на платі означає «кремній ≡ OpenSSL»,
@@ -13,11 +13,17 @@ FAIL однозначно вказує на HAL/кремній.
 
     02_selftest_attest.py --plan                       # кроки дня
     02_selftest_attest.py --elf soldier.elf [--sn SN]  # прочитати глобали через SWD
+    02_selftest_attest.py --bme --elf soldier.elf      # POST BME280 (HW.32): rc · t° · тиск · RH · індекс
     02_selftest_attest.py --self-check                 # перевірити парсер на еталонному виводі
 
 Значення глобала: -1 = startup відпрацював, а POST ні (плата не дійшла до нього),
 0 = PASS, N > 0 = N KAT-векторів упало. Збірку без -DCCM_SELFTEST видає відсутність
 символу в .elf, не значення.
+
+POST BME280 (`#if defined(BME280_SELFTEST)`, образи mini несуть його разом із CCM_SELFTEST)
+кличе той самий `Bme280_Sense`, що й кадр, і кладе п'ять слів: `g_bme280_post_rc` (1 = POST
+не біг, 0 = OK, < 0 — код першого кроку, що впав, `bme280.h`) і значення. PASS тут — лише
+«значення в паспортному діапазоні»; правдивість судить кімнатний еталон поруч.
 
 Чому mode=UR, а не HOTPLUG: Солдат майже весь час у STOP2, а DBG_STOP прошивка не
 вмикає — у сні SWD до нього не достукається. SRAM переживає скид, а UR зупиняє ядро
@@ -43,9 +49,15 @@ PLAN = """\
    HOTPLUG до сплячого в STOP2 Солдата не достукається) → вердикт.
 5. PASS → фліп FW2_CCM_ENABLED (firmware) + TELEMETRY_CCM_ENABLED (backend) за
    чеклистом 03_05 «FW.2 flip-checklist» — і не раніше за його грошовий гейт (ARCH.8).
+6. BME280 (HW.32, RUNBOOK 2.2б): той самий образ, `--bme --elf soldier.elf` → t° · тиск · RH
+   поруч із кімнатним термометром і барометром; settle після сну цей POST не міряє.
 """
 
 SYMBOLS = ("g_ccm_selftest_failed", "g_sym_selftest_failed")
+BME_SYMBOLS = ("g_bme280_post_rc", "g_bme280_post_t_centi", "g_bme280_post_p_pa",
+               "g_bme280_post_rh_q10", "g_bme280_post_vpd")
+BME_RC = {1: "POST не біг", -1: "NACK / збій шини", -2: "chip-id ≠ 0x60 — не BME280",
+          -3: "конверсія не скінчилась у бюджет", -4: "конверсії не було (скид-патерн)"}
 PROGRAMMER = "STM32_Programmer_CLI"
 
 
@@ -76,6 +88,21 @@ def verdict(values: dict[str, int]) -> tuple[int, str]:
     return 0, "PASS: кремній ≡ OpenSSL ≡ backend за обома наборами KAT"
 
 
+def verdict_bme(v: dict[str, int]) -> tuple[int, str]:
+    rc = v["g_bme280_post_rc"]
+    if rc == 1:
+        return 3, "POST BME280 не виконувався — плата не дійшла до нього в main()"
+    if rc != 0:
+        return 1, f"FAIL: rc {rc} ({BME_RC.get(rc, 'невідомий код')}) — шина, ключ PB10, адреса, живлення VDD/VDDIO"
+    t, p_hpa = v["g_bme280_post_t_centi"] / 100, v["g_bme280_post_p_pa"] / 100
+    rh, idx = v["g_bme280_post_rh_q10"] / 1024, v["g_bme280_post_vpd"]
+    shown = f"t {t:.2f} °C · P {p_hpa:.1f} гПа · RH {rh:.1f} % · vpd_index {idx}"
+    # паспортні діапазони BST-BME280-DS001 §1.1: −40…+85 °C · 300…1100 гПа · 0…100 %RH; індекс 0 = сентинел
+    if not (-40 <= t <= 85 and 300 <= p_hpa <= 1100 and 0 <= rh <= 100 and idx >= 1):
+        return 1, f"FAIL: значення поза паспортним діапазоном — {shown}"
+    return 0, f"PASS (діапазон): {shown} — звір із кімнатним еталоном"
+
+
 def self_check() -> int:
     nm = "20000a10 D g_ccm_selftest_failed\n20000a14 D g_sym_selftest_failed\n"
     assert symbol_address(nm, "g_ccm_selftest_failed") == 0x20000A10
@@ -86,7 +113,14 @@ def self_check() -> int:
     assert verdict({"a": 0, "b": 0})[0] == 0
     assert verdict({"a": 0, "b": 2})[0] == 1
     assert verdict({"a": -1, "b": 0})[0] == 3
-    print("✅ self-check: парсер nm/-r32 і вердикт")
+    ok = {"g_bme280_post_rc": 0, "g_bme280_post_t_centi": 2508, "g_bme280_post_p_pa": 100653,
+          "g_bme280_post_rh_q10": 47445, "g_bme280_post_vpd": 80}
+    assert verdict_bme(ok)[0] == 0
+    assert verdict_bme({**ok, "g_bme280_post_rc": 1})[0] == 3
+    assert verdict_bme({**ok, "g_bme280_post_rc": -2})[0] == 1
+    assert verdict_bme({**ok, "g_bme280_post_vpd": 0})[0] == 1
+    assert verdict_bme({**ok, "g_bme280_post_p_pa": 0})[0] == 1
+    print("✅ self-check: парсер nm/-r32 і обидва вердикти")
     return 0
 
 
@@ -95,6 +129,7 @@ def main() -> int:
     p.add_argument("--elf", help="бенч-збірка з -DCCM_SELFTEST, та сама, що прошита")
     p.add_argument("--sn", help="серійник ST-LINK (станція з кількома зондами)")
     p.add_argument("--nm", default="arm-none-eabi-nm")
+    p.add_argument("--bme", action="store_true", help="POST BME280 (HW.32) замість крипто-KAT")
     p.add_argument("--plan", action="store_true")
     p.add_argument("--self-check", action="store_true")
     args = p.parse_args()
@@ -108,10 +143,11 @@ def main() -> int:
     nm_out = subprocess.run([args.nm, args.elf], capture_output=True, text=True, check=True).stdout
     connect = ["-c", "port=SWD", "mode=UR"] + ([f"sn={args.sn}"] if args.sn else [])
     values: dict[str, int] = {}
-    for name in SYMBOLS:
+    names, flag = (BME_SYMBOLS, "-DBME280_SELFTEST") if args.bme else (SYMBOLS, "-DCCM_SELFTEST")
+    for name in names:
         addr = symbol_address(nm_out, name)
         if addr is None:
-            print(f"❌ {name} немає в {args.elf} — збірка без -DCCM_SELFTEST")
+            print(f"❌ {name} немає в {args.elf} — збірка без {flag}")
             return 3
         run = subprocess.run([PROGRAMMER, *connect, "-r32", f"0x{addr:08X}", "4"],
                              capture_output=True, text=True)
@@ -125,7 +161,7 @@ def main() -> int:
             return 2
         values[name] = value
 
-    code, text = verdict(values)
+    code, text = verdict_bme(values) if args.bme else verdict(values)
     print(("✅ " if code == 0 else "❌ ") + text)
     return code
 

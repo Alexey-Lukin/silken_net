@@ -19,7 +19,7 @@
 #include "../soldier/main.c"
 
 /* ── CubeMX-заглушки (👤 .ioc згенерує справжні) ───────────────────────── */
-#if FW2_CCM_ENABLED
+#if BME280_GLUE_ENABLED
 static void MX_I2C_Sense_Init(void) { /* 👤 I2C1 на PB6/PB7 і пін ключа BME280 — .ioc */ }
 #endif
 void SystemClock_Config(void) { /* 👤 клок-дерево (FW.49 LSE — bench) */ }

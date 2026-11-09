@@ -344,23 +344,51 @@ static inline int Bme280_Forced_Read(const Bme280_Ops *ops, void *io, Bme280_Raw
 #define BME280_VPD_INDEX_NONE (BME280_VPD_INDEX_MIN - 1u) /* = FW2_VPD_INDEX_NONE, пін — test_bme280.c */
 #define BME280_SETTLE_MS      5u
 
-static inline uint8_t Bme280_Sense_Vpd_Index(const Bme280_Ops *ops, void *io,
-                                             void (*power)(void *io, int on))
+/* Одне читання циклу. Кадр бере з нього лише vpd_index; решту полів читає бенч-POST
+ * (BME280_SELFTEST, main.c) — тим самим кодом, тож стенд перевіряє замір кадру, а не копію. */
+typedef struct {
+    int      rc;        /* BME280_OK або код ПЕРШОГО кроку, що впав */
+    int32_t  t_centi;   /* °C×100; 0 на збої */
+    uint32_t p_q24_8;   /* Pa у Q24.8; 0 на збої */
+    uint32_t rh_q10;    /* %RH у Q22.10; 0 на збої */
+    uint8_t  vpd_index; /* байт 19 CCM-кадру; BME280_VPD_INDEX_NONE на збої */
+} Bme280_Reading;
+
+static inline void Bme280_Sense(const Bme280_Ops *ops, void *io,
+                                void (*power)(void *io, int on), Bme280_Reading *r)
 {
     Bme280_Calib c;
     Bme280_Raw raw;
-    uint8_t idx = (uint8_t)BME280_VPD_INDEX_NONE;
+    r->t_centi = 0;
+    r->p_q24_8 = 0u;
+    r->rh_q10 = 0u;
+    r->vpd_index = (uint8_t)BME280_VPD_INDEX_NONE;
 
     power(io, 1);
     ops->delay_ms(io, BME280_SETTLE_MS);
-    if (Bme280_Read_Calib(ops, io, &c) == BME280_OK &&
-        Bme280_Forced_Read(ops, io, &raw) == BME280_OK) {
+    /* rc — локальна, не поле: так компілятор бачить, що c і raw заповнені рівно тоді,
+     * коли rc == OK (через поле структури він цей зв'язок губить → -Wmaybe-uninitialized). */
+    int rc = Bme280_Read_Calib(ops, io, &c);
+    if (rc == BME280_OK) {
+        rc = Bme280_Forced_Read(ops, io, &raw);
+    }
+    r->rc = rc;
+    if (rc == BME280_OK) {
         int32_t t_fine;
-        int32_t t_centi = Bme280_Compensate_T(&c, raw.adc_T, &t_fine);
-        idx = Bme280_Vpd_Index_From_Compensated(t_centi, Bme280_Compensate_H(&c, raw.adc_H, t_fine));
+        r->t_centi = Bme280_Compensate_T(&c, raw.adc_T, &t_fine);
+        r->p_q24_8 = Bme280_Compensate_P(&c, raw.adc_P, t_fine);
+        r->rh_q10 = Bme280_Compensate_H(&c, raw.adc_H, t_fine);
+        r->vpd_index = Bme280_Vpd_Index_From_Compensated(r->t_centi, r->rh_q10);
     }
     power(io, 0);
-    return idx;
+}
+
+static inline uint8_t Bme280_Sense_Vpd_Index(const Bme280_Ops *ops, void *io,
+                                             void (*power)(void *io, int on))
+{
+    Bme280_Reading r;
+    Bme280_Sense(ops, io, power, &r);
+    return r.vpd_index;
 }
 
 #endif /* SILKEN_BME280_H */

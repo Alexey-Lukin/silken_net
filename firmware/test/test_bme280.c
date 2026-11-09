@@ -621,6 +621,42 @@ static void test_sense_dead_switch_foreign_chip_and_stuck_status(void)
     ASSERT_EQ(BME280_VPD_INDEX_NONE, FW2_VPD_INDEX_NONE);
 }
 
+/* Бенч-POST (BME280_SELFTEST) читає ці поля через SWD: рівно ті числа, що й кадр,
+ * і код ПЕРШОГО кроку, що впав, — бо за ним стенд і шукає несправність. */
+static void test_sense_reading_carries_values_and_first_failure(void)
+{
+    FakeBme f;
+    Bme280_Reading r;
+    fake_init(&f);
+    Bme280_Sense(&FAKE_OPS, &f, fake_power, &r);
+    ASSERT_EQ(r.rc, BME280_OK);
+    ASSERT_EQ(r.t_centi, 2508);                /* приклад Bosch, стор. 23 */
+    ASSERT_NEAR(r.p_q24_8, 25767236, 256);     /* ≤ 1 Pa */
+    double rh = (double)r.rh_q10 / 1024.0;
+    if (rh < 40.0 || rh > 60.0) FAILF("RH %.2f %% поза очікуваним ≈50", rh);
+    ASSERT_EQ(r.vpd_index, expected_vpd_from_fake());
+
+    fake_init(&f);
+    f.fail_call = 1;                           /* NACK на першому ж зверненні */
+    Bme280_Sense(&FAKE_OPS, &f, fake_power, &r);
+    ASSERT_EQ(r.rc, BME280_ERR_I2C);
+    ASSERT_EQ(r.t_centi, 0);
+    ASSERT_EQ(r.vpd_index, BME280_VPD_INDEX_NONE);
+
+    fake_init(&f);
+    f.reg[BME280_REG_ID] = 0x58;               /* BMP280 */
+    Bme280_Sense(&FAKE_OPS, &f, fake_power, &r);
+    ASSERT_EQ(r.rc, BME280_ERR_CHIP_ID);
+    ASSERT_EQ(r.rh_q10, 0u);
+
+    fake_init(&f);
+    f.stuck_measuring = 1;                     /* калібровка чиста, конверсія не скінчилась */
+    Bme280_Sense(&FAKE_OPS, &f, fake_power, &r);
+    ASSERT_EQ(r.rc, BME280_ERR_TIMEOUT);
+    ASSERT_EQ(r.p_q24_8, 0u);
+    ASSERT_EQ(f.powered, 0);
+}
+
 int main(void)
 {
     printf("════════════════════════════════════════════════════════════════════\n");
@@ -660,6 +696,7 @@ int main(void)
     RUN(test_sense_powers_settles_then_measures);
     RUN(test_sense_every_bus_failure_is_sentinel_and_powers_off);
     RUN(test_sense_dead_switch_foreign_chip_and_stuck_status);
+    RUN(test_sense_reading_carries_values_and_first_failure);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);
