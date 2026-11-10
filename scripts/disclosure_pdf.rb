@@ -35,6 +35,9 @@
 #   · a circled digit (①, the paper's program labels) is set in Arial Unicode MS: the fallback face is a Type 3 font
 #     whose glyph poppler drops together with the rest of the line, and at line-height 1, since that face's taller
 #     metrics otherwise move a wrapped table line into a block of its own that poppler reads after the table (2026-10-11);
+#   · a paired arrow (U+21C4–U+21CC, ⇄ … ⇌) is set in Arial Unicode MS, like a circled digit: Helvetica Neue has no such
+#     glyph, and Chrome's fallback, Hiragino Sans, embeds it as a Type 3 font that poppler drops together with the line
+#     around it — the methods' «Cu(II)/Co(II) ⇄ Cu(I)/Co(III)» came out as two blocks (manuscript rehearsal, 2026-11-10);
 #   · a long arrow (U+27F0–U+27FF, the method paper's ⟷) is set at normal weight: its fallback face, Apple Symbols, has
 #     no bold, and the bold Chrome synthesises in a heading makes Skia embed the glyph as a Type 3 font, which arXiv's
 #     PDF rules ask submitters to avoid (outline TrueType/Type 1 only);
@@ -220,7 +223,7 @@ module DisclosurePdf
         s = s.gsub(/(?<=#{OFF_BASELINE.source})\s|\s(?=#{OFF_BASELINE.source})/o) { %(<span class="sp">#{Regexp.last_match(0)}</span>) }
       end
       s = s.gsub(/#{WORD}(?:-#{WORD})+/o) { %(<span class="nw">#{Regexp.last_match(0)}</span>) }
-      s = s.gsub(/[\u2460-\u2473]/) { %(<span class="cd">#{Regexp.last_match(0)}</span>) }
+      s = s.gsub(/[\u2460-\u2473\u21c4-\u21cc]/) { %(<span class="cd">#{Regexp.last_match(0)}</span>) }
       s = s.gsub(/[\u27f0-\u27ff]/) { %(<span class="sym">#{Regexp.last_match(0)}</span>) }
       s = s.gsub(/\b[[:alnum:]]+_[[:alnum:]_]+\b/) { %(<code>#{Regexp.last_match(0)}</code>) } if t.ancestors("a").empty? && t.ancestors("code").empty?
       t.replace(Nokogiri::HTML::DocumentFragment.parse(s)) unless s == CGI.escapeHTML(t.content)
@@ -332,6 +335,9 @@ module DisclosurePdf
     a = hygiene(%(<h3>C3 — Mechanism ⟷ its trigger</h3><p>a ↔ b</p>))
     t.call("a long arrow in a heading is set at normal weight, a plain arrow is not touched",
            a.include?(%(<span class="sym">⟷</span>)) && !a.include?(%(<span class="sym">↔)))
+    pa = hygiene(%(<p>Cu(II) ⇄ Cu(I), ① but a ↔ b</p>))
+    t.call("a paired arrow is set in Arial Unicode MS like a circled digit, a plain arrow is not touched",
+           pa.include?(%(<span class="cd">⇄</span>)) && pa.include?(%(<span class="cd">①</span>)) && !pa.include?(%(<span class="cd">↔)))
     sp = %(<span class="sp"> </span>)
     s = hygiene(%(<p><em>a "b" — c, d</em> e — f <strong>x → y</strong> <em><code>p — q</code></em></p>))
     t.call("in bold or italic a space beside a dash, a quote or an arrow is set in the regular face; beside a comma, in plain text or in code it is not",

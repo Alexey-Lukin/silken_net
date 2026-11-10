@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 391 · 30,010,928 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 391 · 30,011,200 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -114,7 +114,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `019c603112ff0c5363a0a6a44ecacc40868d69a9f5420bec569780db0b903a26` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `34b9e1e9088f8b208b1290734388b3810f035bd6b3fe9f756a44e59e303fef97` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
 | `tools/in_silico/scripts/60_paper_figures.py` | `a7bea736289d89226b3543be5d955e5a3047d3aa1acff2b983f237c67b4bf811` | Publication figures, rendered entirely from the cached DFT results. |
-| `tools/in_silico/scripts/61_paper_tables.py` | `ebc00c0dc88f17fc6a033574bff558b30901dcefb8d72d0053481867ca3a8d72` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
+| `tools/in_silico/scripts/61_paper_tables.py` | `1c6ef6bc04313d5a541e0391bab0be023889ff029deb891d938b740ec0a60673` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `008a9f5f92299c409237fb5cab21b64d514c9b1623794ee00c0be32922ae4980` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
 | `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `76432bc57d246cc71c5f1b41bc9156af4248a562281f7f59c6be02ea36f7edd0` | Does a second power source on the same BQ25570 rail contaminate the recharge-interval signal delta_t? |
 | `tools/in_silico/scripts/64_teg_across_peek_break.py` | `04a03c4ee245c785f7d17cf19b5f68619f37a609a5e6f9315fc40e09f639fbc1` | Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark? |

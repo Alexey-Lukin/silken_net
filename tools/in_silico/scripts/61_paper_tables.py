@@ -231,11 +231,13 @@ def build() -> str:
     # Self-review round 1, cluster 8: the coupling the margins use is printed as such, and the crude ΔSCF one beside it
     # with its resolution — two unconstrained SCF solutions whose difference is read against their tolerance.
     res = {k.split()[0]: v["delta_E_over_scf_tol"] for k, v in ket["dscf_coupling_resolution"]["pairs"].items()}
-    md.append("| Hop | t_ij used (eV) | crude ΔSCF t_ij (eV) | crude ΔE ÷ SCF tolerance | λ_hop, literature scenario (eV) | λ_hop, computed scenario (eV) |")
+    md.append("| Hop | t_ij used (eV) | crude ΔSCF t_ij (eV) | crude ΔE ÷ SCF tolerance | λ_hop lit. (eV) | λ_hop comp. (eV) |")
     md.append("|---|---|---|---|---|---|")
     md.append(f"| **Cu–Co** (framework Cu for T1 ↔ node, bottleneck) | **{fodft['t_ij_eV']:.6f}** (FO-DFT) | {p['Cu-Co']['t_ij_eV']:.5f} | {res['Cu-Co']:.1f} | {_hop_band(lam_lit['Co'])} | {_hop_band(lam_comp['Co'])} |")
     md.append(f"| Co–Ce (node↔vacancy) | {p['Co-Ce']['t_ij_eV']:.5f} (crude) | {p['Co-Ce']['t_ij_eV']:.5f} | {res['Co-Ce']:.0f} | {(lam_lit['Co']+lam_lit['Ce'])/2:.2f} | {(lam_comp['Co']+lam_comp['Ce'])/2:.2f} |")
-    md.append(f"| Ce–graphene (vacancy↔MWCNT, multi-walled carbon nanotube) | {p['Ce-graphene']['t_ij_eV']:.5f} (crude) | {p['Ce-graphene']['t_ij_eV']:.5f} | {res['Ce-graphene']:.0f} | — | — |")
+    # A first-column cell that wraps is read out of order by the PDF extractors (manuscript rehearsal 2026-11-10,
+    # scripts/disclosure_pdf.rb check): abbreviations and the Ru-swap caveat live in the note below the table.
+    md.append(f"| Ce–graphene (vacancy↔MWCNT) | {p['Ce-graphene']['t_ij_eV']:.5f} (crude) | {p['Ce-graphene']['t_ij_eV']:.5f} | {res['Ce-graphene']:.0f} | — | — |")
     md.append("\n**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario, on the FO-DFT coupling** — "
               "each a bracket over the sign of the computed site-energy gap and the λ(Cu) reading; the consumer "
               "reading is the ADVERSE corner:\n")
@@ -253,10 +255,7 @@ def build() -> str:
                    sc["literature λ"], bold=True))
     md.append(_row(f"**computed λ** (B3LYP: Co {lam_comp['Co']:.2f}; Cu literature)", sc["computed λ (B3LYP)"], bold=True))
     ru_half = ket["ru_lambda_nelsen_halves"]
-    md.append(_row(f"Ru-swap (Co→Ru, computed λ {lam_comp['Ru']:.2f}) — *indicative: λ(Ru) sums Nelsen halves "
-                   f"{ru_half['lambda_1_eV']:+.2f} and {ru_half['lambda_2_eV']:+.2f} eV; the Cu–Ru coupling and gap are not "
-                   "obtainable from the minimal cluster, so it borrows the Cu–Co coupling and every column is ΔG = 0*",
-                   sc["Ru-swap (Co→Ru, computed)"]))
+    md.append(_row(f"Ru-swap (Co→Ru, computed λ {lam_comp['Ru']:.2f}) ⁵", sc["Ru-swap (Co→Ru, computed)"]))
     lit, comp = sc["literature λ"], sc["computed λ (B3LYP)"]
     co = ket["cobalt_lambda_condition"]
     co_dg0 = co["lambda_co_at_turnover_eV"][f"fodft|{ket['lambda_cu_base_reading']}|dG=0"]
@@ -265,7 +264,11 @@ def build() -> str:
     cu_need = ket["copper_lambda_condition"]["lambda_cu_at_turnover"]["computed λ (B3LYP)"]
     cu_dg0 = next(v for b, v in cu_need.items() if b.startswith("dG=0"))["lambda_cu_eV"]
     az_side = ("below" if max(az_c) < 1 else "above" if min(az_c) >= 1 else "across")
-    md.append("\n*Inner-sphere λ via Nelsen 4-point (script 35) on [Co(NH₃)₆] for Co and on [M(H₂O)₆] for Ce and Ru; λ(Cu) is a "
+    md.append("\n*MWCNT, multi-walled carbon nanotube; lit. and comp., the literature and the computed λ scenario. "
+              f"⁵ Indicative: λ(Ru) sums Nelsen halves {ru_half['lambda_1_eV']:+.2f} and {ru_half['lambda_2_eV']:+.2f} eV; "
+              "the Cu–Ru coupling and gap are not obtainable from the minimal cluster, so it borrows the Cu–Co coupling "
+              "and every column is ΔG = 0. "
+              "Inner-sphere λ via Nelsen 4-point (script 35) on [Co(NH₃)₆] for Co and on [M(H₂O)₆] for Ce and Ru; λ(Cu) is a "
               f"literature bracket of two solution readings — {cu_lo:.1f} eV (textbook value, source not "
               f"found) and {cu_hi:.1f} eV (Cu(phen)₂²⁺/⁺ self-exchange, Gray & Winkler) — a Cu(I) d¹⁰ "
               "hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. "
