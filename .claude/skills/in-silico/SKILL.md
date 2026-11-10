@@ -130,7 +130,7 @@ head, compressed, and what the rule forbids is in the body (instance — head of
 52. Two thresholds a model prints at the SAME pinned value of a shared input are COUPLED — accepting one at its limit spends the other's headroom; a submission that picks one names the coupling in its price, never as a side note «no change proposed»
 53. An extremum over cells, or a count against a threshold, of a quantity that DIVERGES at that threshold is not smooth in the input — print the count with the input change below which it holds, and the extremum as unbounded at every crossing
 54. A verdict read off a GRID of an input is a claim about its points, not a threshold — solve the crossing or put the grid in the sentence; a fix tends to write a new grid quantifier
-55. A factor that cancels in a RELATIVE reading does not cancel in ABSOLUTE bounds on the same field — and two such bounds bind at OPPOSITE extremes of it — a verdict that skips them says «isothermal» and names every input
+55. A factor that cancels in a RELATIVE reading does not cancel in ABSOLUTE bounds on the same field — and two such bounds bind at OPPOSITE extremes of it — a verdict that skips them says «isothermal», its estimate names every input
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
