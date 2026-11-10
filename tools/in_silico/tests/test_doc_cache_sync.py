@@ -10324,7 +10324,10 @@ def test_dendrometer_knob_set_sentences_recompose_from_the_cache():
     assert all(fer(f"t{t}:g3") for t in (3, 5, 10)) and not fer("t3:g4") and all(fer(f"t{t}:g4") for t in (5, 10))
     # 01_03: «REFeB тримає кожну з цих товщин» on 3 mm, max drift, inside the cap
     assert all("REFeB_sintered" in cap(f"t{t}:g3")["magnet_families_meeting"] for t in (2, 3, 5, 10))
-    # 01_03: «решта комірок вища за стелю 1.42 Тл» — the other t 1–2 mm cells from g = 3 mm, inside the cap too
+    # 01_03: ferrite «лише на типовому дрейфі» — at the maximum drift no t 1–2 mm cell from g = 3 mm admits it, at P* or in the cap
+    assert not any("ferrite_sintered_typical" in rows[k]["magnet_families_meeting_at_p_star"]["max"]
+                   or "ferrite_sintered_typical" in cap(k)["magnet_families_meeting"] for k in ("t1:g3", "t1:g4", "t2:g3", "t2:g4"))
+    # 01_03: «решта комірок вища за 1.42 Тл» — the other t 1–2 mm cells from g = 3 mm, inside the cap too
     assert all(cap(k)["b_r_needed_T"] > 1.42 for k in ("t1:g3", "t1:g4", "t2:g4"))
     # the doc table's family column, against the cache
     text = (REPO / SUMMARY).read_text()
