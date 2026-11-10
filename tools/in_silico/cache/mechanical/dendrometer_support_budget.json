@@ -3654,6 +3654,1029 @@
     },
     "reading": "each row is the base table's row at a thicker scale, computed by the same function; the field the offset term needs at the sensor depends on the period alone, so a longer best period also raises it — `within_sensor_linear_range` gives the best period the sensor's linear range allows and the remanence needed there. The base table's population stays t 1–2 mm."
   },
+  "scale_magnet_temperature": {
+    "lane": "80mT:max",
+    "corners": {
+      "isothermal": null,
+      "kind": {
+        "coefficient_end": 0,
+        "t_ref_need_C": 28.0,
+        "t_ref_cap_C": 28.0,
+        "hot": "sunlit_0.50",
+        "cold": "air_era5_min"
+      },
+      "adverse": {
+        "coefficient_end": 1,
+        "t_ref_need_C": 18.0,
+        "t_ref_cap_C": 28.0,
+        "hot": "sunlit_0.90",
+        "cold": "capsule_sky_edge_81"
+      }
+    },
+    "unwrap_floor_mm": 6.9,
+    "period_cap_mm": {
+      "RECo5": {
+        "isothermal": 10.662919051580076,
+        "kind": 10.32784442379526,
+        "adverse": 10.219026374320972
+      },
+      "RE2Co17": {
+        "isothermal": 10.662919051580076,
+        "kind": 10.410243606327771,
+        "adverse": 10.327988216982067
+      },
+      "REFeB_sintered": {
+        "isothermal": 10.662919051580076,
+        "kind": 9.851615561110757,
+        "adverse": 9.392284344329234
+      }
+    },
+    "cells": {
+      "t1:g1.5": {
+        "t_mm": 1.0,
+        "g_mm": 1.5,
+        "need_T": {
+          "RECo5:isothermal": 0.6672406617973181,
+          "RECo5:kind": 0.6739536779115491,
+          "RECo5:adverse": 0.6795003092687713,
+          "RE2Co17:isothermal": 0.6672406617973181,
+          "RE2Co17:kind": 0.6722627921431,
+          "RE2Co17:adverse": 0.6763933553004384,
+          "REFeB_sintered:isothermal": 0.6672406617973181,
+          "REFeB_sintered:kind": 0.6842803530522348,
+          "REFeB_sintered:adverse": 0.7054226908107107
+        },
+        "holds": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17"
+          ]
+        }
+      },
+      "t1:g2": {
+        "t_mm": 1.0,
+        "g_mm": 2.0,
+        "need_T": {
+          "RECo5:isothermal": 1.059244991436287,
+          "RECo5:kind": 1.069901908952789,
+          "RECo5:adverse": 1.0787071898969314,
+          "RE2Co17:isothermal": 1.059244991436287,
+          "RE2Co17:kind": 1.0672176266782405,
+          "RE2Co17:adverse": 1.0737748984194986,
+          "REFeB_sintered:isothermal": 1.059244991436287,
+          "REFeB_sintered:kind": 1.0862955125612626,
+          "REFeB_sintered:adverse": 1.1198589877211784
+        },
+        "holds": {
+          "isothermal": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        }
+      },
+      "t1:g3": {
+        "t_mm": 1.0,
+        "g_mm": 3.0,
+        "need_T": {
+          "RECo5:isothermal": 2.104930609978506,
+          "RECo5:kind": 2.1305910874250507,
+          "RECo5:adverse": 2.1506220715433533,
+          "RE2Co17:isothermal": 2.104930609978506,
+          "RE2Co17:kind": 2.1237185222972825,
+          "RE2Co17:adverse": 2.1383007801986174,
+          "REFeB_sintered:isothermal": 2.104930609978506,
+          "REFeB_sintered:kind": 2.1784276849677124,
+          "REFeB_sintered:adverse": 2.2728184096742146
+        },
+        "holds": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t1:g4": {
+        "t_mm": 1.0,
+        "g_mm": 4.0,
+        "need_T": {
+          "RECo5:isothermal": 3.7944449928117523,
+          "RECo5:kind": 3.9148334880367432,
+          "RECo5:adverse": 3.977322259220887,
+          "RE2Co17:isothermal": 3.7944449928117523,
+          "RE2Co17:kind": 3.8834600580512557,
+          "RE2Co17:adverse": 3.928966307449904,
+          "REFeB_sintered:isothermal": 3.7944449928117523,
+          "REFeB_sintered:kind": 4.1221942133540574,
+          "REFeB_sintered:adverse": 4.437067667992176
+        },
+        "holds": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t2:g1.5": {
+        "t_mm": 2.0,
+        "g_mm": 1.5,
+        "need_T": {
+          "RECo5:isothermal": 0.484108434926193,
+          "RECo5:kind": 0.4889789830069121,
+          "RECo5:adverse": 0.4930032746593788,
+          "RE2Co17:isothermal": 0.484108434926193,
+          "RE2Co17:kind": 0.4877521811798204,
+          "RE2Co17:adverse": 0.4907490615858744,
+          "REFeB_sintered:isothermal": 0.484108434926193,
+          "REFeB_sintered:kind": 0.49647137792013923,
+          "REFeB_sintered:adverse": 0.5118109467278416
+        },
+        "holds": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t2:g2": {
+        "t_mm": 2.0,
+        "g_mm": 2.0,
+        "need_T": {
+          "RECo5:isothermal": 0.7242752979481867,
+          "RECo5:kind": 0.731562131656985,
+          "RECo5:adverse": 0.7375828799549673,
+          "RE2Co17:isothermal": 0.7242752979481867,
+          "RE2Co17:kind": 0.7297267117495098,
+          "RE2Co17:adverse": 0.7342103486630883,
+          "REFeB_sintered:isothermal": 0.7242752979481867,
+          "REFeB_sintered:kind": 0.7427715140321349,
+          "REFeB_sintered:adverse": 0.7657210641061574
+        },
+        "holds": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        }
+      },
+      "t2:g3": {
+        "t_mm": 2.0,
+        "g_mm": 3.0,
+        "need_T": {
+          "RECo5:isothermal": 1.353879452847765,
+          "RECo5:kind": 1.379706128866403,
+          "RECo5:adverse": 1.3958542334300788,
+          "RE2Co17:isothermal": 1.353879452847765,
+          "RE2Co17:kind": 1.3729200731379987,
+          "RE2Co17:adverse": 1.3846945583947072,
+          "REFeB_sintered:isothermal": 1.353879452847765,
+          "REFeB_sintered:kind": 1.425240578168333,
+          "REFeB_sintered:adverse": 1.5029538451255138
+        },
+        "holds": {
+          "isothermal": [
+            "REFeB_sintered"
+          ],
+          "kind": [],
+          "adverse": []
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "REFeB_sintered"
+          ],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t2:g4": {
+        "t_mm": 2.0,
+        "g_mm": 4.0,
+        "need_T": {
+          "RECo5:isothermal": 2.4405655399639876,
+          "RECo5:kind": 2.5351273591703403,
+          "RECo5:adverse": 2.5814680257908083,
+          "RE2Co17:isothermal": 2.4405655399639876,
+          "RE2Co17:kind": 2.5105399849132577,
+          "RE2Co17:adverse": 2.5442717490551963,
+          "REFeB_sintered:isothermal": 2.4405655399639876,
+          "REFeB_sintered:kind": 2.696953635185724,
+          "REFeB_sintered:adverse": 2.9341138228666632
+        },
+        "holds": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t3:g1.5": {
+        "t_mm": 3.0,
+        "g_mm": 1.5,
+        "need_T": {
+          "RECo5:isothermal": 0.4301079733110646,
+          "RECo5:kind": 0.4344352302080273,
+          "RECo5:adverse": 0.43801062737481905,
+          "RE2Co17:isothermal": 0.4301079733110646,
+          "RE2Co17:kind": 0.43334527347636,
+          "RE2Co17:adverse": 0.43600786322838536,
+          "REFeB_sintered:isothermal": 0.4301079733110646,
+          "REFeB_sintered:kind": 0.44109187685758544,
+          "REFeB_sintered:adverse": 0.45472037488685924
+        },
+        "holds": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t3:g2": {
+        "t_mm": 3.0,
+        "g_mm": 2.0,
+        "need_T": {
+          "RECo5:isothermal": 0.6204047755441962,
+          "RECo5:kind": 0.6266465822775501,
+          "RECo5:adverse": 0.6318038767579771,
+          "RE2Co17:isothermal": 0.6204047755441962,
+          "RE2Co17:kind": 0.6250743855190076,
+          "RE2Co17:adverse": 0.6289150104317592,
+          "REFeB_sintered:isothermal": 0.6204047755441962,
+          "REFeB_sintered:kind": 0.6362483930477711,
+          "REFeB_sintered:adverse": 0.6560371857240411
+        },
+        "holds": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        }
+      },
+      "t3:g3": {
+        "t_mm": 3.0,
+        "g_mm": 3.0,
+        "need_T": {
+          "RECo5:isothermal": 1.130178299852682,
+          "RECo5:kind": 1.157660887333893,
+          "RECo5:adverse": 1.1732156402467406,
+          "RE2Co17:isothermal": 1.130178299852682,
+          "RE2Co17:kind": 1.1504926319135098,
+          "RE2Co17:adverse": 1.1618438864649,
+          "REFeB_sintered:isothermal": 1.130178299852682,
+          "REFeB_sintered:kind": 1.2050582463523065,
+          "REFeB_sintered:adverse": 1.2807364518813307
+        },
+        "holds": {
+          "isothermal": [
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "REFeB_sintered"
+          ]
+        }
+      },
+      "t3:g4": {
+        "t_mm": 3.0,
+        "g_mm": 4.0,
+        "need_T": {
+          "RECo5:isothermal": 2.0373115249173455,
+          "RECo5:kind": 2.127132529687953,
+          "RECo5:adverse": 2.1697241661203606,
+          "RE2Co17:isothermal": 2.0373115249173455,
+          "RE2Co17:kind": 2.1038061947519027,
+          "RE2Co17:adverse": 2.1348004577790194,
+          "REFeB_sintered:isothermal": 2.0373115249173455,
+          "REFeB_sintered:kind": 2.280307105967436,
+          "REFeB_sintered:adverse": 2.500294030386805
+        },
+        "holds": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t5:g1.5": {
+        "t_mm": 5.0,
+        "g_mm": 1.5,
+        "need_T": {
+          "RECo5:isothermal": 0.3963597145010817,
+          "RECo5:kind": 0.40034743482872265,
+          "RECo5:adverse": 0.40364228981443256,
+          "RE2Co17:isothermal": 0.3963597145010817,
+          "RE2Co17:kind": 0.3993430011381392,
+          "RE2Co17:adverse": 0.4017966717962812,
+          "REFeB_sintered:isothermal": 0.3963597145010817,
+          "REFeB_sintered:kind": 0.40648177022651183,
+          "REFeB_sintered:adverse": 0.4190409133327821
+        },
+        "holds": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t5:g2": {
+        "t_mm": 5.0,
+        "g_mm": 2.0,
+        "need_T": {
+          "RECo5:isothermal": 0.548754001076026,
+          "RECo5:kind": 0.5549764127307598,
+          "RECo5:adverse": 0.559973498232879,
+          "RE2Co17:isothermal": 0.548754001076026,
+          "RE2Co17:kind": 0.5533286130254633,
+          "RE2Co17:adverse": 0.556984900590386,
+          "REFeB_sintered:isothermal": 0.548754001076026,
+          "REFeB_sintered:kind": 0.5661780742911551,
+          "REFeB_sintered:adverse": 0.5886221475400388
+        },
+        "holds": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17"
+          ]
+        }
+      },
+      "t5:g3": {
+        "t_mm": 5.0,
+        "g_mm": 3.0,
+        "need_T": {
+          "RECo5:isothermal": 0.9892092697961213,
+          "RECo5:kind": 1.0197359119973826,
+          "RECo5:adverse": 1.035605041241446,
+          "RE2Co17:isothermal": 0.9892092697961213,
+          "RE2Co17:kind": 1.011824093023797,
+          "RE2Co17:adverse": 1.0234177195477112,
+          "REFeB_sintered:isothermal": 0.9892092697961213,
+          "REFeB_sintered:kind": 1.0713672056575678,
+          "REFeB_sintered:adverse": 1.149126691510914
+        },
+        "holds": {
+          "isothermal": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        }
+      },
+      "t5:g4": {
+        "t_mm": 5.0,
+        "g_mm": 4.0,
+        "need_T": {
+          "RECo5:isothermal": 1.7831942501226636,
+          "RECo5:kind": 1.8737036500353215,
+          "RECo5:adverse": 1.915229568594119,
+          "RE2Co17:isothermal": 1.7831942501226636,
+          "RE2Co17:kind": 1.8502350522334485,
+          "RE2Co17:adverse": 1.880452823001206,
+          "REFeB_sintered:isothermal": 1.7831942501226636,
+          "REFeB_sintered:kind": 2.0273262803325003,
+          "REFeB_sintered:adverse": 2.2433613119407774
+        },
+        "holds": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t10:g1.5": {
+        "t_mm": 10.0,
+        "g_mm": 1.5,
+        "need_T": {
+          "RECo5:isothermal": 0.38489973304285274,
+          "RECo5:kind": 0.38877215608032156,
+          "RECo5:adverse": 0.39197174664923445,
+          "RE2Co17:isothermal": 0.38489973304285274,
+          "RE2Co17:kind": 0.3877967636647441,
+          "RE2Co17:adverse": 0.39017949113865685,
+          "REFeB_sintered:isothermal": 0.38489973304285274,
+          "REFeB_sintered:kind": 0.39472912892751527,
+          "REFeB_sintered:adverse": 0.4069251484824673
+        },
+        "holds": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      },
+      "t10:g2": {
+        "t_mm": 10.0,
+        "g_mm": 2.0,
+        "need_T": {
+          "RECo5:isothermal": 0.5213642035832559,
+          "RECo5:kind": 0.5296861870868413,
+          "RECo5:adverse": 0.5352329439160254,
+          "RE2Co17:isothermal": 0.5213642035832559,
+          "RE2Co17:kind": 0.5275276572562635,
+          "RE2Co17:adverse": 0.53160212235864,
+          "REFeB_sintered:isothermal": 0.5213642035832559,
+          "REFeB_sintered:kind": 0.5437658271486356,
+          "REFeB_sintered:adverse": 0.56857149482202
+        },
+        "holds": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RECo5",
+            "RE2Co17"
+          ],
+          "adverse": [
+            "RECo5",
+            "RE2Co17"
+          ]
+        }
+      },
+      "t10:g3": {
+        "t_mm": 10.0,
+        "g_mm": 3.0,
+        "need_T": {
+          "RECo5:isothermal": 0.9398351576720021,
+          "RECo5:kind": 0.9732666374119556,
+          "RECo5:adverse": 0.9898502995358193,
+          "RE2Co17:isothermal": 0.9398351576720021,
+          "RE2Co17:kind": 0.9646441206605816,
+          "RE2Co17:adverse": 0.9767787801685937,
+          "REFeB_sintered:isothermal": 0.9398351576720021,
+          "REFeB_sintered:kind": 1.0289569681653266,
+          "REFeB_sintered:adverse": 1.1099831759011414
+        },
+        "holds": {
+          "isothermal": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "kind": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "adverse": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        }
+      },
+      "t10:g4": {
+        "t_mm": 10.0,
+        "g_mm": 4.0,
+        "need_T": {
+          "RECo5:isothermal": 1.6941901985706729,
+          "RECo5:kind": 1.788319141771155,
+          "RECo5:adverse": 1.83061156199099,
+          "RE2Co17:isothermal": 1.6941901985706729,
+          "RE2Co17:kind": 1.763961124550078,
+          "RE2Co17:adverse": 1.7947572917024097,
+          "REFeB_sintered:isothermal": 1.6941901985706729,
+          "REFeB_sintered:kind": 1.947074254165251,
+          "REFeB_sintered:adverse": 2.1669441081798464
+        },
+        "holds": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        },
+        "holds_with_unwrap_floor": {
+          "isothermal": [],
+          "kind": [],
+          "adverse": []
+        }
+      }
+    },
+    "gap_limit_mm": {
+      "RECo5": {
+        "t1": {
+          "isothermal": 1.8469327103364417,
+          "kind": 1.8355770929948305,
+          "adverse": 1.826323112733169
+        },
+        "t2": {
+          "isothermal": 2.3702966998705586,
+          "kind": 2.354496796040636,
+          "adverse": 2.3416230430319542
+        },
+        "t3": {
+          "isothermal": 2.6691654967330503,
+          "kind": 2.640069398499736,
+          "adverse": 2.6221542559142637
+        },
+        "t5": {
+          "isothermal": 2.8952554458231745,
+          "kind": 2.8485890664860114,
+          "adverse": 2.8250691393616716
+        },
+        "t10": {
+          "isothermal": 2.982147121470491,
+          "kind": 2.9252539663097044,
+          "adverse": 2.8985623082121066
+        }
+      },
+      "RE2Co17": {
+        "t1": {
+          "isothermal": 2.0463612964758098,
+          "kind": 2.037081479942031,
+          "adverse": 2.0295273725698464
+        },
+        "t2": {
+          "isothermal": 2.647582573063545,
+          "kind": 2.632794611716193,
+          "adverse": 2.6216589618968578
+        },
+        "t3": {
+          "isothermal": 2.9540687850721117,
+          "kind": 2.9256408663017006,
+          "adverse": 2.910089943642812
+        },
+        "t5": {
+          "isothermal": 3.180158734162354,
+          "kind": 3.1384381482216117,
+          "adverse": 3.1186170513866682
+        },
+        "t10": {
+          "isothermal": 3.267050409809685,
+          "kind": 3.2175536118578756,
+          "adverse": 3.195286190988258
+        }
+      },
+      "REFeB_sintered": {
+        "t1": {
+          "isothermal": 2.3846197087140135,
+          "kind": 2.3492149026133187,
+          "adverse": 2.3070942190718884
+        },
+        "t2": {
+          "isothermal": 3.080920278659352,
+          "kind": 2.9942241183752927,
+          "adverse": 2.9151303204912007
+        },
+        "t3": {
+          "isothermal": 3.3874064906679178,
+          "kind": 3.2573432776853113,
+          "adverse": 3.1542985965850683
+        },
+        "t5": {
+          "isothermal": 3.613496439758168,
+          "kind": 3.4417201746628243,
+          "adverse": 3.316387348606957
+        },
+        "t10": {
+          "isothermal": 3.700388115396542,
+          "kind": 3.505048935699059,
+          "adverse": 3.368194212461808
+        }
+      }
+    },
+    "thickness_limit_mm_at_realistic_gap": {
+      "RECo5": {
+        "isothermal": null,
+        "kind": null,
+        "adverse": null
+      },
+      "RE2Co17": {
+        "isothermal": 3.242729520705166,
+        "kind": 3.4433375881378963,
+        "adverse": 3.5688666954430186
+      },
+      "REFeB_sintered": {
+        "isothermal": 1.8309458659927353,
+        "kind": 2.0150050032653146,
+        "adverse": 2.2681672658554755
+      }
+    },
+    "need_T_at_infinite_thickness_at_realistic_gap": {
+      "RECo5": {
+        "isothermal": 0.9372412954099394,
+        "kind": 0.9710479304333235,
+        "adverse": 0.9877353369101269
+      },
+      "RE2Co17": {
+        "isothermal": 0.9372412954099394,
+        "kind": 0.9623365859495737,
+        "adverse": 0.9745518781201754
+      },
+      "REFeB_sintered": {
+        "isothermal": 0.9372412954099394,
+        "kind": 1.0272089570241463,
+        "adverse": 1.108602781272143
+      }
+    },
+    "thickness_limit_mm_at_realistic_gap_adverse_by_class_spread": {
+      "0.03": {
+        "RECo5": null,
+        "RE2Co17": 3.8174570989062575,
+        "REFeB_sintered": 2.3725364599382774
+      },
+      "0.05": {
+        "RECo5": null,
+        "RE2Co17": 4.042284726417846,
+        "REFeB_sintered": 2.457266901511772
+      }
+    },
+    "hot_hour_C_at_which_t2_on_3mm_REFeB_breaks_even": {
+      "kind": 50.36175846024589,
+      "adverse": 32.40177733980128
+    },
+    "ferrite_isothermal": {
+      "family_max_T_typical": 0.41,
+      "by_lane": {
+        "80mT:max": {
+          "gap_limit_mm": {
+            "t1": 1.088819173676636,
+            "t2": 1.3245029825117218,
+            "t3": 1.4424621564744833,
+            "t5": 1.5468441451578694,
+            "t10": 1.5968564350929115
+          },
+          "thickness_limit_mm": {
+            "g3": null,
+            "g4": null
+          },
+          "holds_with_unwrap_floor": [
+            "t5:g1.5",
+            "t10:g1.5"
+          ]
+        },
+        "80mT:typ": {
+          "gap_limit_mm": {
+            "t1": 2.331049630126418,
+            "t2": 3.045911221311741,
+            "t3": 3.5070007436744355,
+            "t5": 4.098124998242609,
+            "t10": 4.808207188315292
+          },
+          "thickness_limit_mm": {
+            "g3": 1.9185059984027493,
+            "g4": 4.588261624119298
+          }
+        }
+      }
+    },
+    "two_month_unwrap_period_mm": 9.4,
+    "period_cap_clears_two_month_unwrap_period": {
+      "RECo5": {
+        "isothermal": true,
+        "kind": true,
+        "adverse": true
+      },
+      "RE2Co17": {
+        "isothermal": true,
+        "kind": true,
+        "adverse": true
+      },
+      "REFeB_sintered": {
+        "isothermal": true,
+        "kind": true,
+        "adverse": false
+      }
+    },
+    "inputs": {
+      "br_ref_band_C": [
+        18.0,
+        28.0
+      ],
+      "t_hot_C": {
+        "sunlit_0.50": 52.901622820107306,
+        "sunlit_0.90": 63.10537855621449
+      },
+      "t_hot_source": "78: the flange's hottest hour, sunlit, still air — α 0.5 (the ratified finish) ⊥ α 0.9 (a dark one); the scale's own temperature is not modelled",
+      "t_hot_shaded_alpha_0_5_C_78": 42.7630348629913,
+      "t_cold_C": {
+        "air_era5_min": -27.4,
+        "capsule_sky_edge_81": -33.53
+      },
+      "t_cold_at": "1997-12-17T09:00",
+      "t_cold_source": {
+        "air_era5_min": "the ERA5 record's coldest air hour (71's loader)",
+        "capsule_sky_edge_81": "81: the capsule under a clear sky, no sun, still air, the same hour — a lump the capsule's size, not the scale"
+      },
+      "coefficients_per_K_kind_adverse": {
+        "RECo5": [
+          -0.0004,
+          -0.0004
+        ],
+        "RE2Co17": [
+          -0.0003,
+          -0.0003
+        ],
+        "REFeB_sintered": [
+          -0.001,
+          -0.0012
+        ]
+      },
+      "realistic_gap_mm": 3.0,
+      "unwrap_floor_basis": "cross_season_outage",
+      "class_spread_assumed": [
+        0.03,
+        0.05
+      ],
+      "family_maxima_T": {
+        "RECo5": 0.93,
+        "RE2Co17": 1.1,
+        "REFeB_sintered": 1.42
+      },
+      "family_minima_T": {
+        "RECo5": 0.8,
+        "RE2Co17": 0.9,
+        "REFeB_sintered": 0.98
+      }
+    },
+    "remanence_a_class_must_reach_T_unread_editions": {
+      "t1:g3": {
+        "isothermal": 2.104930609978506,
+        "kind": 2.1784276849677124,
+        "adverse": 2.2728184096742146
+      },
+      "t2:g3": {
+        "isothermal": 1.353879452847765,
+        "kind": 1.425240578168333,
+        "adverse": 1.5029538451255138
+      }
+    },
+    "reading": "B_r(T) = B_r(T_ref)·(1 + α·(T − T_ref)), T_ref in the (23 ± 5) °C band a unit meets its class minimum at; a period fixed for the batch must keep the weakest unit over the need at the hottest hour and the strongest inside the range at the coldest. A family holds a cell when its strongest class (MAGNET_FAMILIES_BR_T, the 2001/AMD1:2004 minima) reaches the minimum, over a continuous period inside its thermal cap, of the hot-end need; «with the unwrap floor» adds P ≥ the cross-season unwrap period and lets any class of the family's span be chosen. Kind = a uniform batch meeting its minimum at 28 °C, the coefficient's smaller end, 78's α 0.5 hour and the coldest air; adverse = the need on a unit meeting its minimum at 18 °C and the cap on one meeting it at 28 °C, the larger end, 78's α 0.9 hour and 81's sky edge that hour. Gap and thickness limits are solved roots (None = no gap ≥ 0.2 mm / no thickness; the t → ∞ need beside), for the offset and range bounds. The class minima are valid only for magnets ≥ 5 mm in all three directions (IEC 60404-8-1:2023 §5.2) — every thinner scale, and every pole shorter than 5 mm (P/2 at the caps here is under it), reads them outside that validity. Ferrite has no coefficient: it is solved isothermally, and its floor list is its own. The 2015 and 2023 editions' minima are unread: `remanence_a_class_must_reach_T_unread_editions` is what such a class would have to reach."
+  },
   "unwrap": {
     "worst_change_mm_by_basis": {
       "winter": 2.0,

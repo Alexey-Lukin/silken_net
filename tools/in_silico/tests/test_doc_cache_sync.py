@@ -10318,7 +10318,8 @@ def test_dendrometer_knob_set_sentences_recompose_from_the_cache():
     assert cap("t3:g3")["magnet_families_meeting"] == ["REFeB_sintered"]
     assert all("RE2Co17" in cap(f"t{t}:g3")["magnet_families_meeting"] for t in (5, 10))
     assert all(cap(f"t{t:g}:g4")["magnet_families_meeting"] == [] for t in (1, 2, 3, 5, 10))
-    # 01_03: ferrite (typical drift) — among t 1–2 mm from g = 3 mm only t 2 on 3 mm; from t 3 mm on 3 mm; from t 5 mm on 4 mm
+    # 01_03: ferrite (typical drift) — among t 1–2 mm from g = 3 mm only t 2 on 3 mm; the thicker grid cells it reaches (its
+    # thickness limits are solved in (2c) — `test_magnet_temperature_set_sentences_recompose_from_the_cache`)
     fer = lambda k: "ferrite_sintered_typical" in rows[k]["magnet_families_meeting_at_p_star"]["typ"]  # noqa: E731
     assert [k for k in ("t1:g3", "t1:g4", "t2:g3", "t2:g4") if fer(k)] == ["t2:g3"]
     assert all(fer(f"t{t}:g3") for t in (3, 5, 10)) and not fer("t3:g4") and all(fer(f"t{t}:g4") for t in (5, 10))
@@ -10335,6 +10336,234 @@ def test_dendrometer_knob_set_sentences_recompose_from_the_cache():
         t, g = k[1:].split(":g")
         fam = " · ".join(_DEN_FAM[f] for f in cap(k)["magnet_families_meeting"]) or "none"
         assert re.search(rf"(?m)^\| {re.escape(t)} · {re.escape(g)} \| .* \| {re.escape(fam)} \|$", text), (k, fam)
+
+
+# ── the same leg, 2026-11-10 (later): the magnet's temperature and the limits SOLVED (114 `scale_magnet_temperature`) ⟷
+# SUMMARY (the paragraph and table after the cap block), 01_03 §4 ⊕ (в) «Клас магніту» and 00_07 HW.54. The cache holds
+# the roots RAW; the docs round a gap limit, a cap and a break-even hour DOWN and a thickness limit or a need UP
+# (§When Modifying #43 — the side that keeps «holds» true), so each pin applies that rounding and compares EXACTLY.
+_MT = "scale_magnet_temperature"
+_MT_FAM = (("REFeB (1.42 T)", "REFeB_sintered"), ("RE₂Co₁₇ (1.10 T)", "RE2Co17"), ("RECo₅ (0.93 T)", "RECo5"))
+_MT_CORNERS = ("isothermal", "kind", "adverse")
+_MT_TS = (1, 2, 3, 5, 10)
+
+
+def _floor(v, n=2):
+    return math.floor(v * 10 ** n) / 10 ** n
+
+
+def _ceil(v, n=2):
+    return math.ceil(v * 10 ** n) / 10 ** n
+
+
+def _mt_gap_regex(label, ci, ti):
+    cols = [" · ".join(N if (c == ci and t == ti) else r"[\d.]+" for t in range(5)) for c in range(3)]
+    return rf"(?m)^\| {re.escape(label)} \| {cols[0]} \| {cols[1]} \| {cols[2]} \| [^|]+ \|$"
+
+
+def _mt_thick_regex(label, ci):
+    th = " ⊥ ".join(N if c == ci else r"[\d.]+" for c in range(3))
+    return rf"(?m)^\| {re.escape(label)} \| [^|]+ \| [^|]+ \| [^|]+ \| {th} \|$"
+
+
+def _mt(path):
+    def get(d):
+        v = d[_MT]
+        for p in path:
+            v = v[p]
+        return v
+    return get
+
+
+def _mt_pair(rx_kind, rx_adverse, doc_rel, path_of, rnd, a="kind", b="adverse"):
+    """Two pins for a «first ⊥ second» pair — `path_of(key)` is the cache path, `rnd` the doc's rounding."""
+    return [(f"magnet temperature {doc_rel[-12:]} {rx[:34]} {k} → 114", doc_rel, rx, DEN, lambda d, k=k: rnd(_mt(path_of(k))(d)), 0.0)
+            for k, rx in ((a, rx_kind), (b, rx_adverse))]
+
+
+def _tl(fam):
+    return lambda c: ("thickness_limit_mm_at_realistic_gap", fam, c)
+
+
+def _cap(fam):
+    return lambda c: ("period_cap_mm", fam, c)
+
+
+_T23 = ("cells", "t2:g3", "need_T")
+_BE = ("hot_hour_C_at_which_t2_on_3mm_REFeB_breaks_even",)
+_SP = ("thickness_limit_mm_at_realistic_gap_adverse_by_class_spread",)
+_FE = ("ferrite_isothermal", "by_lane")
+_C3 = lambda v: _ceil(v, 3)  # noqa: E731
+_F1 = lambda v: _floor(v, 1)  # noqa: E731
+CHECKS += [
+    *[(f"magnet temperature gap limit {fam} {c} t{t} → 114", SUMMARY, _mt_gap_regex(label, ci, ti), DEN,
+       lambda d, f=fam, c=c, t=t: _floor(d[_MT]["gap_limit_mm"][f][f"t{t}"][c]), 0.0)
+      for label, fam in _MT_FAM for ci, c in enumerate(_MT_CORNERS) for ti, t in enumerate(_MT_TS)],
+    *[(f"magnet temperature thickness limit {fam} {c} → 114", SUMMARY, _mt_thick_regex(label, ci), DEN,
+       lambda d, f=fam, c=c: _ceil(d[_MT]["thickness_limit_mm_at_realistic_gap"][f][c]), 0.0)
+      for label, fam in _MT_FAM[:2] for ci, c in enumerate(_MT_CORNERS)],
+    *_mt_pair(rf"ratified α 0\.5 \(\*\*{N} °C\*\*", rf"`78`'s α 0\.9 hour \(\*\*{N} °C\*\*\)", SUMMARY,
+              lambda k: ("inputs", "t_hot_C", k), lambda v: round(v, 1), "sunlit_0.50", "sunlit_0.90"),
+    *_mt_pair(rf"coldest air hour \(\*\*{N} °C\*\*\)", rf"in that same hour \(\*\*{N} °C\*\*\)", SUMMARY,
+              lambda k: ("inputs", "t_cold_C", k), lambda v: v, "air_era5_min", "capsule_sky_edge_81"),
+    *_mt_pair(rf"REFeB from 10\.66 to \*\*{N} ⊥ [\d.]+\*\* mm", rf"REFeB from 10\.66 to \*\*[\d.]+ ⊥ {N}\*\* mm", SUMMARY,
+              _cap("REFeB_sintered"), _floor),
+    *_mt_pair(rf"RE₂Co₁₇ to \*\*{N} ⊥ [\d.]+\*\* mm", rf"RE₂Co₁₇ to \*\*[\d.]+ ⊥ {N}\*\* mm", SUMMARY, _cap("RE2Co17"), _floor),
+    *_mt_pair(rf"RECo₅ to \*\*{N} ⊥ [\d.]+\*\* mm", rf"RECo₅ to \*\*[\d.]+ ⊥ {N}\*\* mm", SUMMARY, _cap("RECo5"), _floor),
+    *_mt_pair(rf"then needs \*\*{N} ⊥ [\d.]+ T\*\*", rf"then needs \*\*[\d.]+ ⊥ {N} T\*\*", SUMMARY,
+              lambda c: (*_T23, f"REFeB_sintered:{c}"), _C3),
+    *_mt_pair(rf"stays under \*\*{N} ⊥ [\d.]+ °C\*\*", rf"stays under \*\*[\d.]+ ⊥ {N} °C\*\*", SUMMARY,
+              lambda c: (*_BE, c), _F1),
+    ("magnet temperature shaded flange → 114", SUMMARY, rf"shaded flange at α 0\.5 reaches {N} °C", DEN,
+     lambda d: round(d[_MT]["inputs"]["t_hot_shaded_alpha_0_5_C_78"], 1), 0.0),
+    *_mt_pair(rf"minimum reaches {N} ⊥ [\d.]+ T would", rf"minimum reaches [\d.]+ ⊥ {N} T would", SUMMARY,
+              lambda c: (*_T23, f"REFeB_sintered:{c}"), _C3),
+    *_mt_pair(rf"from a scale \*\*{N} ⊥ [\d.]+\*\* mm thick", rf"from a scale \*\*[\d.]+ ⊥ {N}\*\* mm thick", SUMMARY,
+              _tl("REFeB_sintered"), _ceil),
+    *_mt_pair(rf"RE₂Co₁₇ from \*\*{N} ⊥ [\d.]+\*\* mm", rf"RE₂Co₁₇ from \*\*[\d.]+ ⊥ {N}\*\* mm", SUMMARY, _tl("RE2Co17"), _ceil),
+    *[(f"magnet temperature RECo5 at infinite thickness {c} → 114", SUMMARY, rx, DEN,
+       lambda d, c=c: _ceil(d[_MT]["need_T_at_infinite_thickness_at_realistic_gap"]["RECo5"][c], 3), 0.0)
+      for c, rx in (("isothermal", rf"needs \*\*{N} ⊥ [\d.]+ ⊥ [\d.]+ T\*\* there"),
+                    ("kind", rf"needs \*\*[\d.]+ ⊥ {N} ⊥ [\d.]+ T\*\* there"),
+                    ("adverse", rf"needs \*\*[\d.]+ ⊥ [\d.]+ ⊥ {N} T\*\* there"))],
+    *_mt_pair(rf"rise to \*\*{N} ⊥ [\d.]+\*\* mm \(REFeB\)", rf"rise to \*\*[\d.]+ ⊥ {N}\*\* mm \(REFeB\)", SUMMARY,
+              lambda s: (*_SP, s, "REFeB_sintered"), _ceil, "0.03", "0.05"),
+    *_mt_pair(rf"and \*\*{N} ⊥ [\d.]+\*\* mm \(RE₂Co₁₇\)", rf"and \*\*[\d.]+ ⊥ {N}\*\* mm \(RE₂Co₁₇\)", SUMMARY,
+              lambda s: (*_SP, s, "RE2Co17"), _ceil, "0.03", "0.05"),
+    ("magnet temperature unwrap floor → 114", SUMMARY, rf"across a season's outage \(≥ {N} mm\)", DEN, _mt(("unwrap_floor_mm",)), 0.0),
+    *_mt_pair(rf"a gap up to {N}–[\d.]+ mm for t 1 → 10 mm", rf"a gap up to [\d.]+–{N} mm for t 1 → 10 mm", SUMMARY,
+              lambda t: (*_FE, "80mT:max", "gap_limit_mm", t), _floor, "t1", "t10"),
+    *_mt_pair(rf"3 mm from a thickness of {N} mm and", rf"and 4 mm from {N} mm\. The cap", SUMMARY,
+              lambda g: (*_FE, "80mT:typ", "thickness_limit_mm", g), _ceil, "g3", "g4"),
+    # 01_03 §4 ⊕ (в) — the same cache, its canon home
+    *_mt_pair(rf"фланець {N} °C \(`78`, сонце, α 0\.5\)", rf"фланець {N} °C \(α 0\.9\)", EBFC,
+              lambda k: ("inputs", "t_hot_C", k), lambda v: round(v, 1), "sunlit_0.50", "sunlit_0.90"),
+    *_mt_pair(rf"повітря {N} °C за записом ERA5", rf"небесний край капсули {N} °C з `81`", EBFC,
+              lambda k: ("inputs", "t_cold_C", k), lambda v: v, "air_era5_min", "capsule_sky_edge_81"),
+    *_mt_pair(rf"з 10\.66 до {N} ⊥ [\d.]+ мм", rf"з 10\.66 до [\d.]+ ⊥ {N} мм", EBFC, _cap("REFeB_sintered"), _floor),
+    *_mt_pair(rf"тоді треба {N} ⊥ [\d.]+ Тл, понад", rf"тоді треба [\d.]+ ⊥ {N} Тл, понад", EBFC,
+              lambda c: (*_T23, f"REFeB_sintered:{c}"), _C3),
+    *_mt_pair(rf"лишається під {N} ⊥ [\d.]+ °C \(затінений", rf"лишається під [\d.]+ ⊥ {N} °C \(затінений", EBFC, lambda c: (*_BE, c), _F1),
+    ("magnet temperature shaded flange → 01_03 → 114", EBFC, rf"затінений фланець `78` на α 0\.5 — {N} °C", DEN,
+     lambda d: round(d[_MT]["inputs"]["t_hot_shaded_alpha_0_5_C_78"], 1), 0.0),
+    *_mt_pair(rf"від товщини шкали {N} ⊥ [\d.]+ мм", rf"від товщини шкали [\d.]+ ⊥ {N} мм", EBFC, _tl("REFeB_sintered"), _ceil),
+    *_mt_pair(rf"RE₂Co₁₇ — від {N} ⊥ [\d.]+ мм", rf"RE₂Co₁₇ — від [\d.]+ ⊥ {N} мм", EBFC, _tl("RE2Co17"), _ceil),
+    *_mt_pair(rf"межі несприятливого кута {N} ⊥ [\d.]+ мм", rf"межі несприятливого кута [\d.]+ ⊥ {N} мм", EBFC,
+              lambda s: (*_SP, s, "REFeB_sintered"), _ceil, "0.03", "0.05"),
+    *_mt_pair(rf"для REFeB і {N} ⊥ [\d.]+ мм для RE₂Co₁₇", rf"для REFeB і [\d.]+ ⊥ {N} мм для RE₂Co₁₇", EBFC,
+              lambda s: (*_SP, s, "RE2Co17"), _ceil, "0.03", "0.05"),
+    ("magnet temperature unwrap floor → 01_03 → 114", EBFC, rf"через провал на сезон \(≥ {N} мм\)", DEN, _mt(("unwrap_floor_mm",)), 0.0),
+    *_mt_pair(rf"тримає зазори до {N}–[\d.]+ мм", rf"тримає зазори до [\d.]+–{N} мм", EBFC,
+              lambda t: (*_FE, "80mT:max", "gap_limit_mm", t), _floor, "t1", "t10"),
+    *_mt_pair(rf"3 мм від товщини {N} мм і", rf"і 4 мм від {N} мм\. Чого", EBFC,
+              lambda g: (*_FE, "80mT:typ", "thickness_limit_mm", g), _ceil, "g3", "g4"),
+    *_mt_pair(rf"із мінімумом від {N} ⊥ [\d.]+ Тл повернув", rf"із мінімумом від [\d.]+ ⊥ {N} Тл повернув", EBFC,
+              lambda c: (*_T23, f"REFeB_sintered:{c}"), _C3),
+    ("magnet temperature design rule REFeB → 01_03 → 114", EBFC, rf"тримає шкала REFeB завтовшки від {N} мм чи", DEN,
+     lambda d: _ceil(d[_MT]["thickness_limit_mm_at_realistic_gap"]["REFeB_sintered"]["adverse"]), 0.0),
+    ("magnet temperature design rule RE2Co17 → 01_03 → 114", EBFC, rf"чи RE₂Co₁₇ від {N} мм \(несприятливий кут, екземпляр", DEN,
+     lambda d: _ceil(d[_MT]["thickness_limit_mm_at_realistic_gap"]["RE2Co17"]["adverse"]), 0.0),
+    # the two-month unwrap basis against REFeB's adverse cap, and the overturn's margins (per cent over 1.42 T)
+    ("magnet temperature two-month period → 114", SUMMARY, rf"needs a period of {N} mm, over REFeB's adverse cap", DEN,
+     _mt(("two_month_unwrap_period_mm",)), 0.0),
+    ("magnet temperature two-month vs cap → 114", SUMMARY, rf"over REFeB's adverse cap \({N} mm\)", DEN,
+     lambda d: _floor(d[_MT]["period_cap_mm"]["REFeB_sintered"]["adverse"]), 0.0),
+    ("magnet temperature two-month period → 01_03 → 114", EBFC, rf"двомісячна потребує періоду {N} мм", DEN,
+     _mt(("two_month_unwrap_period_mm",)), 0.0),
+    ("magnet temperature two-month vs cap → 01_03 → 114", EBFC, rf"понад несприятливу стелю REFeB \({N} мм\)", DEN,
+     lambda d: _floor(d[_MT]["period_cap_mm"]["REFeB_sintered"]["adverse"]), 0.0),
+    *[(f"magnet temperature overturn margin {c} {doc[-12:]} → 114", doc, rx, DEN,
+       lambda d, c=c, n=n: round(100 * (d[_MT]["cells"]["t2:g3"]["need_T"][f"REFeB_sintered:{c}"] / 1.42 - 1), n), 0.0)
+      for c, n, doc, rx in (("adverse", 1, SUMMARY, rf"carries the overturn \(by {N} %\)"),
+                            ("kind", 2, SUMMARY, rf"the kind corner misses by {N} %"),
+                            ("adverse", 1, EBFC, rf"переворот несе несприятливий кут \(на {N} %\)"),
+                            ("kind", 2, EBFC, rf"а мʼякий хибить на {N} %"))],
+    # the family span (01_03 is its home, MAGNET_FAMILIES_BR_T the mirror) — both ends now carry verdicts
+    *[(f"magnet temperature family span {fam} {end} → 114", EBFC, rx, DEN, lambda d, fam=fam, end=end: d[_MT]["inputs"][end][fam], 0.0)
+      for fam, end, rx in (("RECo5", "family_minima_T", rf"превʼю iTeh: RECo₅ {N}–[\d.]+ Тл"),
+                           ("RECo5", "family_maxima_T", rf"превʼю iTeh: RECo₅ [\d.]+–{N} Тл"),
+                           ("RE2Co17", "family_minima_T", rf"Тл, RE₂Co₁₇ {N}–[\d.]+ Тл, спечений REFeB"),
+                           ("RE2Co17", "family_maxima_T", rf"Тл, RE₂Co₁₇ [\d.]+–{N} Тл, спечений REFeB"),
+                           ("REFeB_sintered", "family_minima_T", rf"спечений REFeB {N}–[\d.]+ Тл\)"),
+                           ("REFeB_sintered", "family_maxima_T", rf"спечений REFeB [\d.]+–{N} Тл\)"))],
+    # the coefficient mirror: 01_03 is its home, the script's BR_TEMP_COEFF_PER_K the mirror (adverse end, %/°C)
+    *[(f"magnet temperature coefficient mirror {fam} {i} → 114", EBFC, rx, DEN,
+       lambda d, f=fam, i=i: -100 * d[_MT]["inputs"]["coefficients_per_K_kind_adverse"][f][i], 1e-12)
+      for fam, i, rx in (("REFeB_sintered", 0, rf"температурний коефіцієнт Br \(REFeB −{N}…−[\d.]+ %/°C"),
+                         ("REFeB_sintered", 1, rf"температурний коефіцієнт Br \(REFeB −[\d.]+…−{N} %/°C"),
+                         ("RECo5", 1, rf"RECo₅ −{N} %/°C, RE₂Co₁₇"), ("RE2Co17", 1, rf"RE₂Co₁₇ −{N} %/°C — типові"))],
+    # 00_07 HW.54 — the desk leg's sentence
+    ("magnet temperature design rule REFeB → 00_07 → 114", TRACKER, rf"тримає шкала REFeB від {N} мм чи", DEN,
+     lambda d: _ceil(d[_MT]["thickness_limit_mm_at_realistic_gap"]["REFeB_sintered"]["adverse"]), 0.0),
+    ("magnet temperature design rule RE2Co17 → 00_07 → 114", TRACKER, rf"чи RE₂Co₁₇ від {N} мм завтовшки \(несприятливий кут, екземпляр",
+     DEN, lambda d: _ceil(d[_MT]["thickness_limit_mm_at_realistic_gap"]["RE2Co17"]["adverse"]), 0.0),
+    *_mt_pair(rf"лишається під {N} ⊥ [\d.]+ °C", rf"лишається під [\d.]+ ⊥ {N} °C", TRACKER, lambda c: (*_BE, c), _F1),
+    ("magnet temperature unread editions → 00_07 → 114", TRACKER, rf"\(клас REFeB із мінімумом від {N} Тл повернув би шкалу 2 мм на 3 мм\)",
+     DEN, lambda d: _ceil(d[_MT]["cells"]["t2:g3"]["need_T"]["REFeB_sintered:adverse"], 3), 0.0),
+]
+
+
+def test_magnet_temperature_set_sentences_recompose_from_the_cache():
+    """The SET sentences of the (2c) paragraph (SUMMARY), of 01_03 §4 ⊕ (в) and of the HW.54 desk leg — «holds with no
+    family», «every computed thickness», «every one but t 1 mm», «at no thickness», «no family at 4 mm», «takes REFeB out
+    at t 5 and 10 mm on the wall», «every family out at 1.5 mm from t 2 mm», «from 3 mm the floor changes no verdict» —
+    rebuilt from the cache (§When Modifying #5 ⊕, #54). CAN catch a re-run that changes a membership the prose names;
+    CANNOT catch a set sentence written after this test (it must join it)."""
+    d = json.loads((CACHE / DEN).read_text())[_MT]
+    holds = lambda key, c: d["cells"][key]["holds"][c]  # noqa: E731
+    floor = lambda key, c: d["cells"][key]["holds_with_unwrap_floor"][c]  # noqa: E731
+    thermal = ("kind", "adverse")
+    # «the t 2 mm scale on 3 mm holds with no family» (with temperature) — and the isothermal REFeB cell still passes
+    assert all(holds("t2:g3", c) == [] for c in thermal) and holds("t2:g3", "isothermal") == ["REFeB_sintered"]
+    # «the adverse corner carries the overturn … the kind corner misses by 0.37 %, inside what the idealised field resolves»
+    assert 0 < d["cells"]["t2:g3"]["need_T"]["REFeB_sintered:kind"] / 1.42 - 1 < 0.005
+    assert d["cells"]["t2:g3"]["need_T"]["REFeB_sintered:adverse"] / 1.42 - 1 > 0.05
+    # on 3 mm: REFeB from a root between t 2 and t 3, RE₂Co₁₇ t 5 · 10 not t 3, RECo₅ at no thickness (root None)
+    for c in (*thermal, "isothermal"):
+        assert all("REFeB_sintered" in holds(f"t{t}:g3", c) for t in (3, 5, 10)), c
+        assert all("RE2Co17" in holds(f"t{t}:g3", c) for t in (5, 10)) and "RE2Co17" not in holds("t3:g3", c), c
+        assert not any("RECo5" in holds(f"t{t}:g3", c) for t in _MT_TS), c
+        assert d["thickness_limit_mm_at_realistic_gap"]["RECo5"][c] is None, c
+        assert d["need_T_at_infinite_thickness_at_realistic_gap"]["RECo5"][c] > d["inputs"]["family_maxima_T"]["RECo5"], c
+    for c in thermal:
+        assert 2.0 < d["thickness_limit_mm_at_realistic_gap"]["REFeB_sintered"][c] < 3.0, c
+        assert 3.0 < d["thickness_limit_mm_at_realistic_gap"]["RE2Co17"][c] < 5.0, c
+    # «all under 5 mm» — the size validity sentence quantifies over every solved thickness limit
+    assert all(v is None or v < 5.0 for by_c in d["thickness_limit_mm_at_realistic_gap"].values() for v in by_c.values())
+    # «at the wall's own 2 mm REFeB and RE₂Co₁₇ hold every computed thickness and RECo₅ every one but t 1 mm» · «at 4 mm none»
+    for c in (*thermal, "isothermal"):
+        assert all({"REFeB_sintered", "RE2Co17"} <= set(holds(f"t{t}:g2", c)) for t in _MT_TS), c
+        assert [t for t in _MT_TS if "RECo5" not in holds(f"t{t}:g2", c)] == [1], c
+        assert all(holds(f"t{t}:g4", c) == [] for t in _MT_TS), c
+    # the unwrap floor: REFeB out at t 5 and 10 on the wall at both thermal corners (only there on the wall), every family
+    # out at 1.5 mm from t 2 mm, and from 3 mm no verdict changes
+    for c in thermal:
+        assert [t for t in _MT_TS if set(holds(f"t{t}:g2", c)) != set(floor(f"t{t}:g2", c))] == [5, 10], c
+        assert all(set(holds(f"t{t}:g2", c)) - set(floor(f"t{t}:g2", c)) == {"REFeB_sintered"} for t in (5, 10)), c
+        assert all(floor(f"t{t}:g1.5", c) == [] for t in (2, 3, 5, 10)), c
+    # «… and REFeB at t 1 mm at the adverse corner» — only there at t 1 on 1.5 mm
+    assert set(holds("t1:g1.5", "adverse")) - set(floor("t1:g1.5", "adverse")) == {"REFeB_sintered"}
+    assert all(holds("t1:g1.5", c) == floor("t1:g1.5", c) != [] for c in ("isothermal", "kind"))
+    # the two-month basis: REFeB's adverse cap under it, every other cap over it
+    clears = d["period_cap_clears_two_month_unwrap_period"]
+    assert [(f, c) for f, by_c in clears.items() for c, ok in by_c.items() if not ok] == [("REFeB_sintered", "adverse")]
+    # ferrite with the floor: 1.5 mm still at t 5 and 10 mm (its own list) — and not the wall at the maximum drift
+    assert d["ferrite_isothermal"]["by_lane"]["80mT:max"]["holds_with_unwrap_floor"] == ["t5:g1.5", "t10:g1.5"]
+    for key, cell in d["cells"].items():
+        if cell["g_mm"] >= 3:
+            assert cell["holds"] == cell["holds_with_unwrap_floor"], key
+    # «shade is a lever»: the shaded α 0.5 flange hour lies under the kind break-even and over the adverse one
+    be, shade = d["hot_hour_C_at_which_t2_on_3mm_REFeB_breaks_even"], d["inputs"]["t_hot_shaded_alpha_0_5_C_78"]
+    assert be["adverse"] < shade < be["kind"] < d["inputs"]["t_hot_C"]["sunlit_0.50"]
+    # ferrite «under the wall» at the maximum drift; no thickness holds 3 or 4 mm there
+    fe = d["ferrite_isothermal"]["by_lane"]
+    assert all(v < 2.0 for v in fe["80mT:max"]["gap_limit_mm"].values())
+    assert all(v is None for v in fe["80mT:max"]["thickness_limit_mm"].values())
+    # «the cap's angle and mismatch errors shrink with the cap» — every thermal cap under the isothermal one
+    for fam, caps in d["period_cap_mm"].items():
+        assert caps["adverse"] < caps["kind"] < caps["isothermal"], fam
+    text = (REPO / SUMMARY).read_text()
+    assert re.search(r"(?m)^\| RECo₅ \(0\.93 T\) \| [^|]+ \| [^|]+ \| [^|]+ \| none ⊥ none ⊥ none \|$", text)
 
 
 # ── HW.54 a dark PV window in the crown (111, 2026-10-28) ⟷ SUMMARY §«How Much Does a Dark PV Window in the Dome Heat

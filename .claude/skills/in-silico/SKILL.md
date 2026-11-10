@@ -311,9 +311,9 @@ Anchor mechanics (CPU):
   71 (importlib: load_hours — the ERA5 hourly loader, code) · 78 (flange_cambium_heat.json — the flange's and the cambium's
      hottest hour, `bark.facing_spread_mm`, the no-flange maximum) · 103 (anchor_wood_share.json — sections, PEEK lengths,
      stiffnesses, the green xylem's α) · 110 (winter_pv_autonomy.json — cadence C, the demand, `record.hours`) · lib
-     (ALPHA_PEEK_1K · E_CYCLE · ETA_BUCK_ACTIVE) · the radome and cathode-flange CEMs → 114 (dendrometer_support_budget.json —
-     a point dendrometer on the anchor); a re-run of 78, 103 or 110, a change to 71's loader, those lib constants or
-     either CEM re-runs 114
+     (ALPHA_PEEK_1K · E_CYCLE · ETA_BUCK_ACTIVE) · 81 (capsule_cold_edge_sky.json — the sky-cooled cold edge, the magnet's
+     cold end) · the radome and cathode-flange CEMs → 114 (dendrometer_support_budget.json — a point dendrometer on the
+     anchor); a re-run of 78, 81, 103 or 110, a change to 71's loader, those lib constants or either CEM re-runs 114
   110 (importlib: thresholds · lanes_of · floor_sig · CORNERS · BISECT_HI_CM2, and through it 79 — sun, faces, weather,
      snow, sky, ground reflection, vapour pressure, WIND_K, AZIMUTHS_DEG — and 71 — convection, geometry;
      winter_pv_autonomy.json — the autonomy days, `necessary_a_eff_cm2` for control 1, `record.hours`) → 115

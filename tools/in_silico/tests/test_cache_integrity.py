@@ -9179,6 +9179,104 @@ def test_dendrometer_thickness_knob_and_linear_range_cap_are_recomputed():
             assert all(a > b for a, b in itertools.pairwise(needs)), (g, drift, needs)
 
 
+def test_dendrometer_magnet_temperature_is_recomputed():
+    """114 (HW.54 Р3(в), (2c)) — the magnet's temperature block against the fields it derives from, and against the caches
+    it copies.
+
+    CAN catch: a copied hot hour or cold edge that is not `78`'s or `81`'s · a thermal cap that is not the isothermal cap
+    × f(T_hot)/f(T_cold) at the corner's own T_ref, coefficient and temperatures · a «holds» list that disagrees with the
+    cached need against the cached family maximum · «holds with the unwrap floor» admitting a cell «holds» refuses · a
+    corner out of order (isothermal ≤ kind ≤ adverse need; the reverse for the gap limit; the same for the thickness
+    limit) · a grid cell's «holds» that disagrees with its row's solved gap limit · a solved root (gap or thickness) whose
+    need, recomputed here from the closed form with P* on a fine grid, is not its family's maximum · the isothermal need
+    off the base table's grid need by more than the grid step's worth (the table caches its need rounded to 0.001 T).
+    CANNOT catch: a wrong coefficient or temperature input, the field form or the size validity — the script's control 9
+    and its WHAT IT CANNOT SEE carry those.
+    """
+    import math
+
+    import numpy as np
+    d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
+    mt, hall, target = d["scale_magnet_temperature"], d["inputs"]["hall"], d["inputs"]["frame_sensitivity_um_per_K"]
+    inp, lane = mt["inputs"], mt["lane"]
+    z78 = json.loads((CACHE / "thermal/flange_cambium_heat.json").read_text())["verdict"]["worst_cell"]
+    z81 = json.loads((CACHE / "thermal/capsule_cold_edge_sky.json").read_text())
+    for k, v in inp["t_hot_C"].items():
+        assert v == z78[k]["flange_max_C"], k
+    assert inp["t_hot_shaded_alpha_0_5_C_78"] == z78["shaded_0.50"]["flange_max_C"]
+    assert inp["t_cold_C"]["capsule_sky_edge_81"] == z81["edges"]["deep"]["coldest_c"]
+    assert inp["t_cold_C"]["air_era5_min"] == pytest.approx(z81["air"]["coldest_c"], abs=0.05)
+    assert inp["t_cold_at"] == z81["air"]["at"] == z81["edges"]["deep"]["at"]
+    lin_mt, drift = lane.split("mT:")
+    lin, db = float(lin_mt) * 1e-3, hall["offset_drift_T_per_K"][drift]
+    cap_iso = 2 * math.pi * target * 1e-3 * lin / (math.sqrt(2) * db)
+
+    def args(fam, corner):
+        c = mt["corners"][corner]
+        if c is None:
+            return 0.0, 20.0, 20.0, 20.0, 20.0
+        return (inp["coefficients_per_K_kind_adverse"][fam][c["coefficient_end"]], c["t_ref_need_C"], c["t_ref_cap_C"],
+                inp["t_hot_C"][c["hot"]], inp["t_cold_C"][c["cold"]])
+
+    f = lambda a, t, t_ref: 1 + a * (t - t_ref)  # noqa: E731
+
+    def cap_of(fam, corner, spread=0.0, lane_cap=None):
+        a, tn, tcap, th, tc = args(fam, corner)
+        return (lane_cap or cap_iso) * f(a, th, tn) / f(a, tc, tcap) / (1 + spread)
+
+    def need(t, g, fam, corner, spread=0.0, drift_db=None, lane_cap=None):   # closed form, P* on a fine grid — independent
+        a, tn, _tcap, th, _tc = args(fam, corner)                          # of the script's minimiser
+        dbb = drift_db or db
+        p = np.arange(0.5, 60.0, 0.0005)
+        k = 2 * np.pi / p
+        cost = 2 * p / (2 * np.pi) * math.sqrt(2) * dbb / (target * 1e-3 * (1 - np.exp(-k * t)) * np.exp(-k * g))
+        p_use = min(float(p[int(np.argmin(cost))]), cap_of(fam, corner, spread, lane_cap))
+        k1 = 2 * math.pi / p_use
+        return (2 * p_use / (2 * math.pi) * math.sqrt(2) * dbb / (target * 1e-3 * (1 - math.exp(-k1 * t)) * math.exp(-k1 * g))
+                / f(a, th, tn))
+
+    for fam, caps in mt["period_cap_mm"].items():
+        assert caps["isothermal"] == pytest.approx(cap_iso, rel=1e-12), fam
+        for c in ("kind", "adverse"):
+            assert caps[c] == pytest.approx(cap_of(fam, c), rel=1e-12), (fam, c)
+    maxima = inp["family_maxima_T"]
+    for key, cell in mt["cells"].items():
+        for c, listed in cell["holds"].items():
+            assert listed == [fam for fam, b_max in maxima.items() if b_max >= cell["need_T"][f"{fam}:{c}"]], (key, c)
+            assert set(cell["holds_with_unwrap_floor"][c]) <= set(listed), (key, c)
+        for fam in maxima:
+            n = [cell["need_T"][f"{fam}:{c}"] for c in ("isothermal", "kind", "adverse")]
+            assert n[0] <= n[1] <= n[2], (key, fam, n)
+        base = {**d["scale"], **d["scale_thickness_knob"]["rows"]}[key]["within_sensor_linear_range"][lane]["b_r_needed_T"]
+        assert base * (1 - 2e-3) - 0.0005 <= cell["need_T"]["REFeB_sintered:isothermal"] <= base + 0.0005 + 1e-12, key
+    for fam, by_t in mt["gap_limit_mm"].items():
+        for tk, lim in by_t.items():
+            vals = [lim[c] for c in ("isothermal", "kind", "adverse")]
+            assert all(v is not None for v in vals) and vals[0] >= vals[1] >= vals[2], (fam, tk, vals)
+            for c, glim in lim.items():
+                assert need(float(tk[1:]), glim, fam, c) == pytest.approx(maxima[fam], rel=2e-5), (fam, tk, c)
+                for g in d["inputs"]["gaps_mm"]:
+                    assert (fam in mt["cells"][f"{tk}:g{g:g}"]["holds"][c]) == (g <= glim), (fam, tk, g, c)
+        th = mt["thickness_limit_mm_at_realistic_gap"][fam]
+        for c, tlim in th.items():
+            if tlim is not None:
+                assert need(tlim, inp["realistic_gap_mm"], fam, c) == pytest.approx(maxima[fam], rel=2e-5), (fam, c)
+        if th["isothermal"] is not None:
+            assert th["isothermal"] <= th["kind"] <= th["adverse"], (fam, th)
+        for s_key, by_f in mt["thickness_limit_mm_at_realistic_gap_adverse_by_class_spread"].items():
+            if by_f[fam] is not None:   # the spread roots return the family's maximum too
+                assert need(by_f[fam], inp["realistic_gap_mm"], fam, "adverse", float(s_key)) == pytest.approx(maxima[fam], rel=2e-5)
+    fe = mt["ferrite_isothermal"]
+    for fl, v in fe["by_lane"].items():   # the ferrite roots, isothermal, on their own lane's drift and cap
+        dl = hall["offset_drift_T_per_K"][fl.split("mT:")[1]]
+        cap_l = 2 * math.pi * target * 1e-3 * float(fl.split("mT:")[0]) * 1e-3 / (math.sqrt(2) * dl)
+        for tk, glim in v["gap_limit_mm"].items():
+            assert need(float(tk[1:]), glim, "RECo5", "isothermal", 0.0, dl, cap_l) == pytest.approx(fe["family_max_T_typical"], rel=2e-5)
+        for gk, tlim in v["thickness_limit_mm"].items():
+            if tlim is not None:
+                assert need(tlim, float(gk[1:]), "RECo5", "isothermal", 0.0, dl, cap_l) == pytest.approx(fe["family_max_T_typical"], rel=2e-5)
+
+
 def test_pv_snow_frost_order_and_azimuth_are_recomputed():
     """115 — the measured order and the azimuth ratios against the fields they derive from. CAN catch a hand-written order
     or a stale ratio after a partial re-run; CANNOT catch a wrong cover model (the script's controls carry those)."""
