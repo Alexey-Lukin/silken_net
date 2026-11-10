@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 391 · 30,188,960 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 393 · 30,237,754 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -64,6 +64,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/114_dendrometer_support_budget.py` | `760d3bb141251f2bbaa5815255c4beaea3b7d912c5c92248b6b862e68fc05072` | Whether a point dendrometer that uses the anchor as its support can hold its reading: the thermal artefact of the support per fixation depth, the period a magnetic scale needs behind the capsule wall and the error terms of a two-axis Hall sensor reading it, the unwrap margin through winter swings and power outages, the energy of a read, and how soon the growing bark passes the capsule. |
 | `tools/in_silico/scripts/115_pv_face_snow_frost_azimuth.py` | `67308152bb63b8381366d2f09d3650e8d8409b35dc4b40ed936d39e9ec1f7bc1` | How far snow and hoarfrost on the sensor capsule's dome, and a face azimuth set by the radio gateway rather than by the sun, can raise the aperture a small photovoltaic cell on the dome needs to keep the node's supercapacitor from running empty through thirty winters — four readings of the cover named by how they are built, their order measured on the thresholds, on the hourly climate record. |
 | `tools/in_silico/scripts/116_countersink_ring_and_exit.py` | `6e3edb7615aa336ec4c89ccb1da560d38c526dafefc3798f6b5f6c35044c8289` | A countersunk exit of the bus rod's channel: the clearance a PEEK ring's bore needs so the rod never bears on it, the floor of the exit-edge radius under an axis offset, and what the countersink's depth costs the rod's root cycle. |
+| `tools/in_silico/scripts/117_stem_face_cover_rules_rehearsal.py` | `d873944d7fa6b5325a2f10542ece6917f1a01b4854d198aeea96d481dfd140dd` | A rehearsal, on thirty winters of hourly reanalysis weather, of the rules a single light logger on a pine stem's face will be read by: how many winter days the rules as first written, and a rejected draft rewrite, can judge against a base of cover-free days, and how many overcast hours on bare ground a winter offers at most. |
 | `tools/in_silico/scripts/11_full_matrix_md.py` | `28c8a0919352ea39c45ea353f1764bf90a12cb12bef5ce397970e4a62d174ac7` | L2-extended — full matrix stability MD: protein + FAD + genipin + chitosan + CNC. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `21c4b260195f62e079d7505e26cc41cd3519417d8f2047ddec96976b02c062fc` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
 | `tools/in_silico/scripts/13_psbma_diffusion_md.py` | `1df7d7778e3fc058fa5f00cc181eaf242148a6dfbffd262543e0c617c50828c8` | L2 — glucose diffusion through PSBMA membrane layer. |
@@ -156,8 +157,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `3a050c7218ccfe9e8d904bdd22c6499e366e67454281e4b70a07f959093200ab` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `ceef51be9091ebe4a141e30b55f31160f6b7d4976c8e859305addd496acc35f5` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `d588161e6801a8d15a8430b26d48ef6f377e1926be1d1c92289678ad727bebdc` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `cf5dbbe87e64be2e285683bb34a1b1d1a231686b19b247ee5726c266f71b4bc0` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -254,6 +255,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/kinetics/psbma_diffusion.json` | `ab421f10cf94b29b55a88238e5a100434eb320ab855418fd646aa79821f4b50d` | 275 |
 | `tools/in_silico/cache/kinetics/psbma_diffusion_msd.png` | `0983ab5220f8c06360729c6603a8b2084f33feebfe5721971e04325bcda9f153` | 51,926 |
 | `tools/in_silico/cache/kinetics/pv_face_snow_frost_azimuth.json` | `4684ed9e84840c825997e096d571c86c09d04878acd2565139f3256371c50f8d` | 68,221 |
+| `tools/in_silico/cache/kinetics/stem_face_cover_rules_rehearsal.json` | `2b526b6e8b85a2213af4785b3181ff50dd487a5533cf4416b2d9bb91efcd93c7` | 20,721 |
 | `tools/in_silico/cache/kinetics/strain_cycling.json` | `d4d8eaa35f26f1eac5c3f8c65373fb7e3655934c20f4ee6db715fd7e5ca693a7` | 4,041 |
 | `tools/in_silico/cache/kinetics/temperature_sweep.json` | `492d51a3cbd7de43d1e689db1f820080f5de869ae8e6d191d81dc95b8d474b7e` | 1,135 |
 | `tools/in_silico/cache/kinetics/thermal_penetration.json` | `5cae21264b41cad0ce9d460b85d29121cb225fffd1ba17f57b9371f629d53aba` | 1,297 |

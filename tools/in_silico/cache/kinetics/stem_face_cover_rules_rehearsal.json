@@ -1,0 +1,779 @@
+{
+  "script": "117_stem_face_cover_rules_rehearsal.py",
+  "leg": "00_07 HW.54 Р3(б)(4)",
+  "what": "the stem-face cover rules (the sheet's §6 pp. 1–4) rehearsed on ERA5 1991–2020 December–February: the share of days the rules as written and a rejected draft can judge against a base of non-candidate days, the CERRA event days the season cannot have, and an upper bound on the overcast bare-ground hours per winter",
+  "inputs": {
+    "months": [
+      12,
+      1,
+      2
+    ],
+    "ghi_min_kwh_m2": 0.1,
+    "rules_as_written": {
+      "frost_rh_ice": 0.9,
+      "snow_ceiling_mm": 2,
+      "snow_ceiling_max_c": 1.0,
+      "nrel_mm": 10,
+      "days_after": 3,
+      "window_d": [
+        15,
+        30
+      ],
+      "pool_min": 5
+    },
+    "draft_2026_11_10_rejected": {
+      "frost_rh_ice_clear": 0.9,
+      "frost_cloud_clear_max": 0.5,
+      "frost_rh_ice_any_sky": 1.0,
+      "frost_run_h": 3,
+      "snow_mm": 10,
+      "snow_max_c": 1.0,
+      "days_after": 1,
+      "pool_min": 5,
+      "diffuse_edges": [
+        0.5,
+        0.9
+      ]
+    },
+    "overcast_hour": {
+      "diffuse_share_min": 0.9,
+      "ghi_min_w_m2": 20.0
+    },
+    "overcast_hours_printed": [
+      25,
+      30,
+      35
+    ],
+    "ground_edges_m_79": [
+      0.01,
+      0.11
+    ],
+    "adversary_reproduced": {
+      "old_frost_candidate_share": 0.802,
+      "old_all_candidate_share": [
+        0.88,
+        0.9
+      ],
+      "old_not_judged_share": 0.976
+    },
+    "sources": {
+      "weather": "79's load_weather (ERA5 hourly, dew point, cloud)",
+      "ghi": "110's irradiance",
+      "snow": "79's load_snow (ERA5-Land · CERRA)",
+      "ice_saturation": "115's e_ice_hpa",
+      "cerra_end": "CERRA's last hour at this point: 2021-06-30T23:00 UTC (Open-Meteo archive, probed 2026-11-10)"
+    }
+  },
+  "controls": {
+    "reproduces_the_adversary_within": 0.05,
+    "era5_land_rises_whole_cm": true,
+    "draft_candidates_subset_of_written": true,
+    "ghi_is_110s": true
+  },
+  "summary": {
+    "winters": 29,
+    "old": {
+      "candidate_share_frost": 0.8277,
+      "candidate_share_all": 0.8965,
+      "judged_share_all_days": 0.026,
+      "winters_with_no_day_judged": 23
+    },
+    "draft_2026_11_10_rejected": {
+      "candidate_share_all": 0.4492,
+      "candidate_share_frost_of_all_days": 0.1532,
+      "judged_share_median_winter": 1.0,
+      "judged_share_min_winter": 0.8556,
+      "fallback_days": 517,
+      "rejected_because": "judgeability does not discriminate: the class fallback manufactures dips on a cover-free face, the episode count does not move with cover, the frost rule is narrower than 115's frost (adversary 2026-11-10; requirements for the next rewrite — 00_07 HW.54)"
+    },
+    "overcast_hours_upper_bound": {
+      "bare_median_winter": 40.0,
+      "bare_winters_with_none": 6,
+      "bare_winters_under": {
+        "25": 13,
+        "30": 13,
+        "35": 14
+      },
+      "bare_or_intermediate_median_winter": 215.0,
+      "bare_or_intermediate_winters_under": {
+        "25": 0,
+        "30": 1,
+        "35": 1
+      }
+    },
+    "cerra_only_ceiling_event_days_per_winter": {
+      "median": 14.0,
+      "max": 22
+    },
+    "judgeable_share_median_winter": 1.0
+  },
+  "per_winter": {
+    "1991/92": {
+      "days": 91,
+      "old_candidate_share": {
+        "frost": 0.9451,
+        "all": 0.978
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.4176,
+      "draft_candidate_share_frost": 0.0659,
+      "draft_judged_share": 0.989,
+      "draft_fallback_days": 6,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 5,
+        "bare_or_intermediate_upward_biased": 273
+      },
+      "ground_state_days": {
+        "bare": 1,
+        "intermediate": 90,
+        "snow": 0
+      },
+      "cerra_only_ceiling_event_days": 14
+    },
+    "1992/93": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.8444,
+        "all": 0.9222
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.4556,
+      "draft_candidate_share_frost": 0.1889,
+      "draft_judged_share": 0.9556,
+      "draft_fallback_days": 15,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 46,
+        "bare_or_intermediate_upward_biased": 250
+      },
+      "ground_state_days": {
+        "bare": 13,
+        "intermediate": 73,
+        "snow": 4
+      },
+      "cerra_only_ceiling_event_days": 17
+    },
+    "1993/94": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.6667,
+        "all": 0.8667
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.3556,
+      "draft_candidate_share_frost": 0.0889,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 15,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 43,
+        "bare_or_intermediate_upward_biased": 273
+      },
+      "ground_state_days": {
+        "bare": 8,
+        "intermediate": 82,
+        "snow": 0
+      },
+      "cerra_only_ceiling_event_days": 14
+    },
+    "1994/95": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.9,
+        "all": 0.9333
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.5444,
+      "draft_candidate_share_frost": 0.1444,
+      "draft_judged_share": 0.9778,
+      "draft_fallback_days": 16,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 17,
+        "bare_or_intermediate_upward_biased": 252
+      },
+      "ground_state_days": {
+        "bare": 9,
+        "intermediate": 79,
+        "snow": 2
+      },
+      "cerra_only_ceiling_event_days": 8
+    },
+    "1995/96": {
+      "days": 91,
+      "old_candidate_share": {
+        "frost": 1.0,
+        "all": 1.0
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.6264,
+      "draft_candidate_share_frost": 0.3187,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 14,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 0,
+        "bare_or_intermediate_upward_biased": 75
+      },
+      "ground_state_days": {
+        "bare": 0,
+        "intermediate": 27,
+        "snow": 64
+      },
+      "cerra_only_ceiling_event_days": 14
+    },
+    "1996/97": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.6556,
+        "all": 0.7556
+      },
+      "old_judged_share": 0.0111,
+      "draft_candidate_share": 0.4,
+      "draft_candidate_share_frost": 0.2,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 5,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 56,
+        "bare_or_intermediate_upward_biased": 218
+      },
+      "ground_state_days": {
+        "bare": 16,
+        "intermediate": 74,
+        "snow": 0
+      },
+      "cerra_only_ceiling_event_days": 7
+    },
+    "1997/98": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.8444,
+        "all": 0.9111
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.3778,
+      "draft_candidate_share_frost": 0.0444,
+      "draft_judged_share": 0.9889,
+      "draft_fallback_days": 30,
+      "judgeable_share": 0.9889,
+      "overcast_hours_upper_bound": {
+        "bare": 40,
+        "bare_or_intermediate_upward_biased": 183
+      },
+      "ground_state_days": {
+        "bare": 14,
+        "intermediate": 54,
+        "snow": 22
+      },
+      "cerra_only_ceiling_event_days": 12
+    },
+    "1998/99": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.9556,
+        "all": 0.9778
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.6,
+      "draft_candidate_share_frost": 0.2667,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 11,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 0,
+        "bare_or_intermediate_upward_biased": 55
+      },
+      "ground_state_days": {
+        "bare": 0,
+        "intermediate": 11,
+        "snow": 79
+      },
+      "cerra_only_ceiling_event_days": 13
+    },
+    "1999/00": {
+      "days": 91,
+      "old_candidate_share": {
+        "frost": 0.8571,
+        "all": 0.9341
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.5055,
+      "draft_candidate_share_frost": 0.1099,
+      "draft_judged_share": 0.9451,
+      "draft_fallback_days": 39,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 21,
+        "bare_or_intermediate_upward_biased": 107
+      },
+      "ground_state_days": {
+        "bare": 5,
+        "intermediate": 29,
+        "snow": 57
+      },
+      "cerra_only_ceiling_event_days": 14
+    },
+    "2000/01": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.7444,
+        "all": 0.8
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.3444,
+      "draft_candidate_share_frost": 0.0889,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 11,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 67,
+        "bare_or_intermediate_upward_biased": 261
+      },
+      "ground_state_days": {
+        "bare": 22,
+        "intermediate": 68,
+        "snow": 0
+      },
+      "cerra_only_ceiling_event_days": 6
+    },
+    "2001/02": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.6889,
+        "all": 0.7333
+      },
+      "old_judged_share": 0.1444,
+      "draft_candidate_share": 0.4222,
+      "draft_candidate_share_frost": 0.1889,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 23,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 40,
+        "bare_or_intermediate_upward_biased": 124
+      },
+      "ground_state_days": {
+        "bare": 22,
+        "intermediate": 34,
+        "snow": 34
+      },
+      "cerra_only_ceiling_event_days": 17
+    },
+    "2002/03": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 1.0,
+        "all": 1.0
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.5889,
+      "draft_candidate_share_frost": 0.2444,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 31,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 0,
+        "bare_or_intermediate_upward_biased": 77
+      },
+      "ground_state_days": {
+        "bare": 0,
+        "intermediate": 38,
+        "snow": 52
+      },
+      "cerra_only_ceiling_event_days": 19
+    },
+    "2003/04": {
+      "days": 91,
+      "old_candidate_share": {
+        "frost": 0.9231,
+        "all": 0.967
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.5385,
+      "draft_candidate_share_frost": 0.1319,
+      "draft_judged_share": 0.9341,
+      "draft_fallback_days": 44,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 9,
+        "bare_or_intermediate_upward_biased": 170
+      },
+      "ground_state_days": {
+        "bare": 6,
+        "intermediate": 52,
+        "snow": 33
+      },
+      "cerra_only_ceiling_event_days": 9
+    },
+    "2004/05": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.7667,
+        "all": 0.8667
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.4444,
+      "draft_candidate_share_frost": 0.1222,
+      "draft_judged_share": 0.9444,
+      "draft_fallback_days": 10,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 49,
+        "bare_or_intermediate_upward_biased": 252
+      },
+      "ground_state_days": {
+        "bare": 16,
+        "intermediate": 69,
+        "snow": 5
+      },
+      "cerra_only_ceiling_event_days": 13
+    },
+    "2005/06": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.9556,
+        "all": 0.9667
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.4444,
+      "draft_candidate_share_frost": 0.1778,
+      "draft_judged_share": 0.9667,
+      "draft_fallback_days": 15,
+      "judgeable_share": 0.9889,
+      "overcast_hours_upper_bound": {
+        "bare": 4,
+        "bare_or_intermediate_upward_biased": 151
+      },
+      "ground_state_days": {
+        "bare": 2,
+        "intermediate": 47,
+        "snow": 41
+      },
+      "cerra_only_ceiling_event_days": 22
+    },
+    "2006/07": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.5667,
+        "all": 0.6889
+      },
+      "old_judged_share": 0.3222,
+      "draft_candidate_share": 0.2556,
+      "draft_candidate_share_frost": 0.0444,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 0,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 121,
+        "bare_or_intermediate_upward_biased": 273
+      },
+      "ground_state_days": {
+        "bare": 43,
+        "intermediate": 47,
+        "snow": 0
+      },
+      "cerra_only_ceiling_event_days": 12
+    },
+    "2007/08": {
+      "days": 91,
+      "old_candidate_share": {
+        "frost": 0.8901,
+        "all": 0.9341
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.3846,
+      "draft_candidate_share_frost": 0.1099,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 9,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 21,
+        "bare_or_intermediate_upward_biased": 249
+      },
+      "ground_state_days": {
+        "bare": 9,
+        "intermediate": 82,
+        "snow": 0
+      },
+      "cerra_only_ceiling_event_days": 13
+    },
+    "2008/09": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.8222,
+        "all": 0.8889
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.5222,
+      "draft_candidate_share_frost": 0.1778,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 31,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 32,
+        "bare_or_intermediate_upward_biased": 243
+      },
+      "ground_state_days": {
+        "bare": 9,
+        "intermediate": 51,
+        "snow": 30
+      },
+      "cerra_only_ceiling_event_days": 14
+    },
+    "2009/10": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.8778,
+        "all": 0.8889
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.5222,
+      "draft_candidate_share_frost": 0.1333,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 22,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 43,
+        "bare_or_intermediate_upward_biased": 89
+      },
+      "ground_state_days": {
+        "bare": 10,
+        "intermediate": 13,
+        "snow": 67
+      },
+      "cerra_only_ceiling_event_days": 17
+    },
+    "2010/11": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.9333,
+        "all": 0.9778
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.6444,
+      "draft_candidate_share_frost": 0.2333,
+      "draft_judged_share": 0.9333,
+      "draft_fallback_days": 26,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 0,
+        "bare_or_intermediate_upward_biased": 215
+      },
+      "ground_state_days": {
+        "bare": 1,
+        "intermediate": 69,
+        "snow": 20
+      },
+      "cerra_only_ceiling_event_days": 15
+    },
+    "2011/12": {
+      "days": 91,
+      "old_candidate_share": {
+        "frost": 0.8681,
+        "all": 0.9011
+      },
+      "old_judged_share": 0.0989,
+      "draft_candidate_share": 0.5275,
+      "draft_candidate_share_frost": 0.2747,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 27,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 68,
+        "bare_or_intermediate_upward_biased": 136
+      },
+      "ground_state_days": {
+        "bare": 25,
+        "intermediate": 28,
+        "snow": 38
+      },
+      "cerra_only_ceiling_event_days": 8
+    },
+    "2012/13": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.8778,
+        "all": 0.9556
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.4,
+      "draft_candidate_share_frost": 0.1,
+      "draft_judged_share": 0.9889,
+      "draft_fallback_days": 17,
+      "judgeable_share": 0.9889,
+      "overcast_hours_upper_bound": {
+        "bare": 52,
+        "bare_or_intermediate_upward_biased": 319
+      },
+      "ground_state_days": {
+        "bare": 9,
+        "intermediate": 64,
+        "snow": 17
+      },
+      "cerra_only_ceiling_event_days": 20
+    },
+    "2013/14": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.5667,
+        "all": 0.8222
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.3444,
+      "draft_candidate_share_frost": 0.1556,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 4,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 98,
+        "bare_or_intermediate_upward_biased": 229
+      },
+      "ground_state_days": {
+        "bare": 33,
+        "intermediate": 57,
+        "snow": 0
+      },
+      "cerra_only_ceiling_event_days": 16
+    },
+    "2014/15": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.8,
+        "all": 0.9111
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.3667,
+      "draft_candidate_share_frost": 0.1889,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 7,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 14,
+        "bare_or_intermediate_upward_biased": 281
+      },
+      "ground_state_days": {
+        "bare": 8,
+        "intermediate": 82,
+        "snow": 0
+      },
+      "cerra_only_ceiling_event_days": 17
+    },
+    "2015/16": {
+      "days": 91,
+      "old_candidate_share": {
+        "frost": 0.8681,
+        "all": 0.956
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.3736,
+      "draft_candidate_share_frost": 0.1099,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 36,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 64,
+        "bare_or_intermediate_upward_biased": 141
+      },
+      "ground_state_days": {
+        "bare": 25,
+        "intermediate": 32,
+        "snow": 34
+      },
+      "cerra_only_ceiling_event_days": 14
+    },
+    "2016/17": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.9111,
+        "all": 0.9444
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.5333,
+      "draft_candidate_share_frost": 0.2111,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 21,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 0,
+        "bare_or_intermediate_upward_biased": 140
+      },
+      "ground_state_days": {
+        "bare": 0,
+        "intermediate": 44,
+        "snow": 46
+      },
+      "cerra_only_ceiling_event_days": 14
+    },
+    "2017/18": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.7667,
+        "all": 0.8111
+      },
+      "old_judged_share": 0.1,
+      "draft_candidate_share": 0.4222,
+      "draft_candidate_share_frost": 0.1556,
+      "draft_judged_share": 0.8556,
+      "draft_fallback_days": 20,
+      "judgeable_share": 0.9889,
+      "overcast_hours_upper_bound": {
+        "bare": 80,
+        "bare_or_intermediate_upward_biased": 245
+      },
+      "ground_state_days": {
+        "bare": 30,
+        "intermediate": 48,
+        "snow": 12
+      },
+      "cerra_only_ceiling_event_days": 14
+    },
+    "2018/19": {
+      "days": 90,
+      "old_candidate_share": {
+        "frost": 0.9667,
+        "all": 1.0
+      },
+      "old_judged_share": 0.0,
+      "draft_candidate_share": 0.4667,
+      "draft_candidate_share_frost": 0.1333,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 12,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 0,
+        "bare_or_intermediate_upward_biased": 26
+      },
+      "ground_state_days": {
+        "bare": 0,
+        "intermediate": 11,
+        "snow": 79
+      },
+      "cerra_only_ceiling_event_days": 18
+    },
+    "2019/20": {
+      "days": 91,
+      "old_candidate_share": {
+        "frost": 0.5385,
+        "all": 0.7033
+      },
+      "old_judged_share": 0.0769,
+      "draft_candidate_share": 0.1978,
+      "draft_candidate_share_frost": 0.033,
+      "draft_judged_share": 1.0,
+      "draft_fallback_days": 0,
+      "judgeable_share": 1.0,
+      "overcast_hours_upper_bound": {
+        "bare": 81,
+        "bare_or_intermediate_upward_biased": 179
+      },
+      "ground_state_days": {
+        "bare": 36,
+        "intermediate": 55,
+        "snow": 0
+      },
+      "cerra_only_ceiling_event_days": 1
+    }
+  }
+}

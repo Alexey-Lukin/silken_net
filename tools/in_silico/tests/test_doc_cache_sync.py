@@ -10566,6 +10566,62 @@ def test_magnet_temperature_set_sentences_recompose_from_the_cache():
     assert re.search(r"(?m)^\| RECo₅ \(0\.93 T\) \| [^|]+ \| [^|]+ \| [^|]+ \| none ⊥ none ⊥ none \|$", text)
 
 
+# ── HW.54 Р3(б)(4) the stem-face cover rules rehearsed before the logger (117, 2026-11-10) ⟷ SUMMARY §«Can the Stem-Face
+# Cover Rules Judge a Winter at All?», the sheet's §6 marker and 00_07 HW.54. Shares are cached at 4 decimals and printed in
+# per cent at 2 (or 1), pinned EXACTLY; the draft rewrite is a rejected reading, so no sheet rule mirrors it.
+SFC = "kinetics/stem_face_cover_rules_rehearsal.json"
+SHEET = "docs/protocols/ebfc/stem_face_winter_light.md"
+
+
+def _sfc(path, scale=1.0, nd=None):
+    def get(d):
+        v = d
+        for p in path:
+            v = v[p]
+        v = v * scale
+        return v if nd is None else round(v, nd)
+    return get
+
+
+_SFC_OLD, _SFC_DRAFT, _SFC_HOURS = ("summary", "old"), ("summary", "draft_2026_11_10_rejected"), ("summary", "overcast_hours_upper_bound")
+CHECKS += [
+    ("117 old frost share → SUMMARY", SUMMARY, rf"\*\*{N} %\*\* of the season candidate from frost alone", SFC, _sfc((*_SFC_OLD, "candidate_share_frost"), 100, 2), 0.0),
+    ("117 old all share → SUMMARY", SUMMARY, rf"and \*\*{N} %\*\* with snow, judge", SFC, _sfc((*_SFC_OLD, "candidate_share_all"), 100, 2), 0.0),
+    ("117 old judged → SUMMARY", SUMMARY, rf"judge \*\*{N} %\*\* of the days", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
+    ("117 old winters none → SUMMARY", SUMMARY, rf"judge none in \*\*{N}\*\* winters of 29", SFC, _sfc((*_SFC_OLD, "winters_with_no_day_judged")), 0.0),
+    ("117 winters → SUMMARY", SUMMARY, rf"December–February of {N} full winters", SFC, _sfc(("summary", "winters")), 0.0),
+    ("117 draft candidates → SUMMARY", SUMMARY, rf"cut the candidates to \*\*{N} %\*\*", SFC, _sfc((*_SFC_DRAFT, "candidate_share_all"), 100, 2), 0.0),
+    ("117 cerra days → SUMMARY", SUMMARY, rf"added a median of \*\*{N}\*\* event days", SFC, _sfc(("summary", "cerra_only_ceiling_event_days_per_winter", "median")), 0.0),
+    ("117 bare hours median → SUMMARY", SUMMARY, rf"has at most a median of \*\*{N}\*\* such hours", SFC, _sfc((*_SFC_HOURS, "bare_median_winter")), 0.0),
+    ("117 bare winters under 30 → SUMMARY", SUMMARY, rf"\*\*{N}\*\* winters of 29 offer fewer than 30", SFC, lambda d: d["summary"]["overcast_hours_upper_bound"]["bare_winters_under"]["30"], 0.0),
+    ("117 bare winters none → SUMMARY", SUMMARY, rf"fewer than 30 and \*\*{N}\*\* offer none", SFC, _sfc((*_SFC_HOURS, "bare_winters_with_none")), 0.0),
+    ("117 shallow hours median → SUMMARY", SUMMARY, rf"intermediate ground \(median \*\*{N}\*\* hours\)", SFC, _sfc((*_SFC_HOURS, "bare_or_intermediate_median_winter")), 0.0),
+    ("117 old judged → sheet marker", SHEET, rf"ця літера судить {N} % діб", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
+    ("117 old winters none → sheet marker", SHEET, rf"а в {N} зимах із 29 жодної", SFC, _sfc((*_SFC_OLD, "winters_with_no_day_judged")), 0.0),
+    ("117 old judged → 00_07 leg", TRACKER, rf"\(ця літера судить {N} % діб, у 23 зимах", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
+    ("117 old winters none → 00_07 leg", TRACKER, rf"судить [\d.]+ % діб, у {N} зимах із 29 жодної", SFC, _sfc((*_SFC_OLD, "winters_with_no_day_judged")), 0.0),
+    ("117 bare winters under 30 → 00_07 leg", TRACKER, rf"менше 30 у {N} зимах із 29, у 6", SFC, lambda d: d["summary"]["overcast_hours_upper_bound"]["bare_winters_under"]["30"], 0.0),
+    ("117 bare winters none → 00_07 leg", TRACKER, rf"у [\d]+ зимах із 29, у {N} — жодної \(`117`\)", SFC, _sfc((*_SFC_HOURS, "bare_winters_with_none")), 0.0),
+    ("117 old judged → 00_07 Стан", TRACKER, rf"репетиція `117` — {N} % суджених діб", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
+]
+
+
+def test_stem_face_cover_rules_sentences_recompose_from_the_cache():
+    """The SET sentences of the 117 paragraph (SUMMARY) — «judged every day of the median winter», «about every second
+    winter the measurement cannot give an adverse R», the draft only narrowing — rebuilt from the cache (§When Modifying
+    #5 ⊕). CAN catch a re-run that changes a verdict the prose names; CANNOT catch a set sentence written after this test."""
+    d = json.loads((CACHE / SFC).read_text())
+    s = d["summary"]
+    assert s["draft_2026_11_10_rejected"]["judged_share_median_winter"] == 1.0          # «judged every day of the median winter»
+    assert s["draft_2026_11_10_rejected"]["candidate_share_all"] < s["old"]["candidate_share_all"]
+    assert s["old"]["judged_share_all_days"] < 0.05 and s["old"]["winters_with_no_day_judged"] > s["winters"] / 2
+    w, under30 = s["winters"], s["overcast_hours_upper_bound"]["bare_winters_under"]["30"]
+    assert w / 3 <= under30 <= 2 * w / 3, under30                                        # «about every second winter»
+    assert s["overcast_hours_upper_bound"]["bare_or_intermediate_median_winter"] > s["overcast_hours_upper_bound"]["bare_median_winter"]
+    assert d["controls"]["draft_candidates_subset_of_written"] and d["controls"]["ghi_is_110s"]
+    assert d["inputs"]["draft_2026_11_10_rejected"]["days_after"] == 1                     # «snow on its day and the next»
+
+
 # ── HW.54 a dark PV window in the crown (111, 2026-10-28) ⟷ SUMMARY §«How Much Does a Dark PV Window in the Dome Heat
 # the Capsule and the Cambium?», 01_03 §4 ⊕ 2026-10-28 and 00_07 HW.54. Temperatures and hours are cached at the
 # precision the table prints; the absorptances at six decimals and pinned at the three the table prints, EXACTLY (a

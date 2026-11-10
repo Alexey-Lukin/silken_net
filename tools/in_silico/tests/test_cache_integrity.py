@@ -9277,6 +9277,42 @@ def test_dendrometer_magnet_temperature_is_recomputed():
                 assert need(tlim, float(gk[1:]), "RECo5", "isothermal", 0.0, dl, cap_l) == pytest.approx(fe["family_max_T_typical"], rel=2e-5)
 
 
+def test_stem_face_cover_rules_rehearsal_summary_is_recomputed():
+    """117 (HW.54 Р3(б)(4)) — the summary against the per-winter table it is built from.
+
+    CAN catch: a median, minimum or count that is not the table's · a share outside [0, 1] · a winter whose draft candidates
+    outnumber the written ones (the draft only narrowed) or whose judged share exceeds its judgeable share · a bound with
+    intermediate ground below the bare one.
+    CANNOT catch: a wrong rule or a wrong input (ERA5, the thresholds) — the script's controls carry those.
+    """
+    import numpy as np
+    d = json.loads((KINETICS / "stem_face_cover_rules_rehearsal.json").read_text())
+    pw, s = d["per_winter"], d["summary"]
+    assert len(pw) == s["winters"] == 29
+    dj = np.array([v["draft_judged_share"] for v in pw.values()])
+    for w, v in pw.items():
+        for x in (v["draft_candidate_share"], v["old_candidate_share"]["all"], v["old_candidate_share"]["frost"],
+                  v["judgeable_share"], v["old_judged_share"], v["draft_judged_share"]):
+            assert 0.0 <= x <= 1.0, w
+        assert v["draft_candidate_share"] <= v["old_candidate_share"]["all"] + 1e-9, w
+        assert v["old_candidate_share"]["frost"] <= v["old_candidate_share"]["all"] + 1e-9, w
+        assert v["draft_judged_share"] <= v["judgeable_share"] + 1e-9 and v["old_judged_share"] <= v["judgeable_share"] + 1e-9, w
+        assert sum(v["ground_state_days"].values()) == v["days"], w
+        h = v["overcast_hours_upper_bound"]
+        assert h["bare_or_intermediate_upward_biased"] >= h["bare"], w
+    sd = s["draft_2026_11_10_rejected"]
+    assert sd["judged_share_median_winter"] == pytest.approx(float(np.median(dj)), abs=5e-5)
+    assert sd["judged_share_min_winter"] == pytest.approx(float(dj.min()), abs=5e-5)
+    assert sd["fallback_days"] == sum(v["draft_fallback_days"] for v in pw.values())
+    assert s["old"]["winters_with_no_day_judged"] == sum(v["old_judged_share"] == 0.0 for v in pw.values())
+    bare = np.array([v["overcast_hours_upper_bound"]["bare"] for v in pw.values()])
+    sh = s["overcast_hours_upper_bound"]
+    assert sh["bare_median_winter"] == float(np.median(bare)) and sh["bare_winters_with_none"] == int(np.sum(bare == 0))
+    assert all(sh["bare_winters_under"][str(n)] == int(np.sum(bare < n)) for n in d["inputs"]["overcast_hours_printed"])
+    cerra = np.array([v["cerra_only_ceiling_event_days"] for v in pw.values()])
+    assert s["cerra_only_ceiling_event_days_per_winter"]["median"] == float(np.median(cerra))
+
+
 def test_pv_snow_frost_order_and_azimuth_are_recomputed():
     """115 — the measured order and the azimuth ratios against the fields they derive from. CAN catch a hand-written order
     or a stale ratio after a partial re-run; CANNOT catch a wrong cover model (the script's controls carry those)."""

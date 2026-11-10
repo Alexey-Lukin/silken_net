@@ -43,6 +43,7 @@ on:
       - 'docs/00_07_Action_Plan_Tracker.md'
       - 'docs/protocols/anchor/field_strain_sensor_sheet.md'
       - 'docs/protocols/outreach/forest_access_application.md'
+      - 'docs/protocols/ebfc/stem_face_winter_light.md'
       # The CAD inputs the scripts read at runtime (CEM manifests, the voxel-FE caches): a change there
       # stales the caches built on them, and only the cache test in `smoke` can see it.
       - 'tools/cad/cem/**'
@@ -94,6 +95,7 @@ jobs:
               - 'docs/00_07_Action_Plan_Tracker.md'
               - 'docs/protocols/anchor/field_strain_sensor_sheet.md'
               - 'docs/protocols/outreach/forest_access_application.md'
+              - 'docs/protocols/ebfc/stem_face_winter_light.md'
 
   lock_sync:
     needs: changes
