@@ -7137,14 +7137,6 @@ _SHEAR_ROWS = (("Ti-15Zr", "Ti-15Zr"), ("β-Ti-13Nb-13Zr", "beta-Ti-13Nb-13Zr"),
                ("Ti-6Al-7Nb", "Ti-6Al-7Nb"), ("CP-Ti Gr4", "CP-Ti-Gr4"), ("Ta", "Ta"))
 
 
-def _up2(x):
-    return math.ceil(round(x * 100, 9)) / 100
-
-
-def _down2(x):
-    return math.floor(round(x * 100, 9)) / 100
-
-
 def _shear_row(label, j):
     num = [N if j == k else r"[\d.]+" for k in range(7)]
     cells = [num[0], f"{num[1]} – {num[2]}", num[3], num[4], num[5], num[6]]
@@ -7309,10 +7301,6 @@ _SWAY105_DISC = (("uniform over the bark annulus (`103`'s bearing area)", "b_pul
                  ("at the channel's edge only", "b_pull_at_shank|channel_edge_only"))
 _SW_Z1 = "b_zone3_fit|anode_bond_stiff|state3_rigid_tie_max|upper_whisker"
 _SW_Z3 = "b_zone3_fit|anode_bond_stiff|state2_rigid_bark|upper_whisker"
-
-
-def _floor2(x):
-    return math.floor(round(x * 100, 9)) / 100
 
 
 def _sway105_row(label, j):
@@ -8665,7 +8653,6 @@ def _sweep_ends(d, pol, key):
     return ends
 
 
-_floor2 = lambda v: math.floor(v * 100 + 1e-9) / 100  # noqa: E731
 _eff_floor2 = lambda d: _floor2(min(min(x["efficiency"] for x in d["cases"] if x["polarization"] == "TM"), *(e["min"] for e in _sweep_ends(d, "TM", "efficiency").values())))  # noqa: E731
 
 
@@ -8944,8 +8931,6 @@ def _ds_te_field(field, end):
     return f
 
 
-_floor1 = lambda v: math.floor(v * 10 + 1e-9) / 10  # noqa: E731
-_ceil1 = lambda v: math.ceil(v * 10 - 1e-9) / 10  # noqa: E731
 
 
 CHECKS += [
@@ -9096,7 +9081,6 @@ CHECKS += [
 TRACKER = "docs/00_07_Action_Plan_Tracker.md"
 FIELD_SHEET = "docs/protocols/anchor/field_strain_sensor_sheet.md"
 FOREST_APP = "docs/protocols/outreach/forest_access_application.md"
-_ceil2 = lambda v: math.ceil(v * 100 - 1e-9) / 100  # noqa: E731
 _BS = lambda d: d["bark_sweep"]  # noqa: E731
 _BSR = lambda d: d["bark_sweep"]["rule"]  # noqa: E731
 _BP = lambda d, pol, k: d["dbh_sweep"]["controls"]["standoff_monotone_by_polarization"][pol][k]  # noqa: E731
@@ -11900,3 +11884,29 @@ def test_exit_radius_in_the_letters_is_116s(label, doc_rel, pattern, resolver):
     m = re.findall(pattern, doc(doc_rel))
     assert len(m) == 1, f"[{label}] anchor matched {len(m)} times in {doc_rel} — reworded? tighten or update the anchor"
     assert abs(float(m[0].replace(",", ".")) - resolver(d)) <= 1e-9, f"[{label}] {doc_rel} says {m[0]}, the cache {resolver(d)}"
+
+
+@pytest.mark.parametrize("module", ["test_doc_cache_sync.py", "test_cache_integrity.py"])
+def test_no_module_name_is_rebound_with_another_definition(module):
+    """A pin module is ONE namespace for blocks written months apart, and Python resolves a global at CALL time — so a second
+    top-level binding of a name replaces the first for every resolver that calls it, the earlier block's included. Measured
+    2026-11-10: the 117 block bound `_SH` over 103's `_SH = "anode_bond_stiff"`, and thirteen 103 pins went NaN — loudly that
+    time; a value of the same shape would have resolved the wrong numbers in silence. The same sweep found six rounding
+    helpers bound twice with different epsilon rules (consolidated). Prefix a block's private names with its tag (`_SFC_*`).
+    CAN catch: a top-level name (assignment, def, class) bound twice with different definitions; an identical repeat passes.
+    CANNOT catch: a rebinding through `global`, a star-import, or inside a function; two names for one meaning."""
+    import ast
+    from collections import defaultdict
+    tree = ast.parse((Path(__file__).parent / module).read_text(encoding="utf-8"))
+    seen = defaultdict(set)
+    for node in tree.body:
+        if isinstance(node, (ast.Assign, ast.AnnAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for t in targets:
+                for e in (t.elts if isinstance(t, ast.Tuple) else [t]):
+                    if isinstance(e, ast.Name):
+                        seen[e.id].add(ast.dump(node.value) if node.value is not None else "")
+        elif isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+            seen[node.name].add(ast.dump(node))
+    rebound = sorted(name for name, defs in seen.items() if len(defs) > 1)
+    assert not rebound, f"{module}: top-level names bound twice with different definitions — {rebound}"
