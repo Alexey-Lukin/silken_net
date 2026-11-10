@@ -47,6 +47,11 @@ on:
       - 'docs/protocols/anchor/field_strain_sensor_sheet.md'
       - 'docs/protocols/outreach/forest_access_application.md'
       - 'docs/protocols/ebfc/stem_face_winter_light.md'
+      - 'docs/protocols/anchor/sn_fatigue_test_plan.md'
+      - 'docs/protocols/ebfc/cathode_gdl_orr_test.md'
+      - 'docs/protocols/procurement/anchor_accelerated_corrosion_rfq.md'
+      - 'docs/protocols/procurement/anchor_coin_electrochem_rfq.md'
+      - 'docs/protocols/procurement/anchor_sn_fatigue_rfq.md'
       # The CAD inputs the scripts read at runtime (CEM manifests, the voxel-FE caches): a change there
       # stales the caches built on them, and only the cache test in `smoke` can see it.
       - 'tools/cad/cem/**'
@@ -82,9 +87,6 @@ jobs:
               - 'docs/02_02_Blind_Mate_Pogo_Pin_Interface.md'
               - 'docs/02_03_BQ25570_MPPT_Nano_Power.md'
               - 'docs/protocols/procurement/ebfc_chem_rfq.md'
-              - 'docs/protocols/procurement/vendor_templates.md'
-              - 'docs/protocols/procurement/anchor_flange_cnc_rfq.md'
-              - 'docs/protocols/procurement/anchor_liner_tribo_rfq.md'
               - 'docs/protocols/anchor/fea_aging/calibration_case_*.md'
               - 'docs/protocols/outreach/lock_fea_prony_brief.md'
               - 'docs/protocols/anchor/gdl_rain_dew_stand.md'
@@ -102,6 +104,14 @@ jobs:
               - 'docs/protocols/anchor/field_strain_sensor_sheet.md'
               - 'docs/protocols/outreach/forest_access_application.md'
               - 'docs/protocols/ebfc/stem_face_winter_light.md'
+              - 'docs/protocols/procurement/vendor_templates.md'
+              - 'docs/protocols/procurement/anchor_flange_cnc_rfq.md'
+              - 'docs/protocols/procurement/anchor_liner_tribo_rfq.md'
+              - 'docs/protocols/anchor/sn_fatigue_test_plan.md'
+              - 'docs/protocols/ebfc/cathode_gdl_orr_test.md'
+              - 'docs/protocols/procurement/anchor_accelerated_corrosion_rfq.md'
+              - 'docs/protocols/procurement/anchor_coin_electrochem_rfq.md'
+              - 'docs/protocols/procurement/anchor_sn_fatigue_rfq.md'
 
   lock_sync:
     needs: changes

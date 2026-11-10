@@ -271,8 +271,8 @@ def main() -> int:
     print(f"  the stand's punch {POSITIVE_CONTROL_PUNCH_MM} mm: x{positive_control['punch_over_bound_x']:.3f} the bound; "
           f"passes any layer from {positive_control['punch_passes_any_layer_from_mm']:.2f} mm, any gamma up to "
           f"{positive_control['punch_passes_up_to_gamma_N_m'] * 1000:.1f} mN/m at 50 mm; a cavity overpressure of "
-          f"{positive_control['cavity_overpressure_stopping_the_punch_Pa']:.1f} Pa "
-          f"({positive_control['cavity_overpressure_stopping_the_punch_mm_H2O']:.1f} mm H2O) stops it")
+          f"{positive_control['cavity_overpressure_stopping_the_punch_Pa']:.2f} Pa "
+          f"({positive_control['cavity_overpressure_stopping_the_punch_mm_H2O']:.2f} mm H2O) stops it at the nominal point")
 
     # ── (3) the field demand the membrane actually faces ────────────────────
     banner("(3) The pressure the field actually applies")

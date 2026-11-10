@@ -4319,9 +4319,11 @@ CHECKS += [
 
 # ── HW.25 · the stand's positive control (§4.3 p. 4, §8.1) → 57 `stand_positive_control`. The punch Ø is the SHEET's
 # proposal inside a [вибір стенда] and 57 mirrors it. «Passes above / from X» rounds UP (the bound, the layer, the
-# measured-hole acceptance); a margin and the γ the margin covers round DOWN; the stopping overpressure is quoted in the
-# NECESSARY form «passes only while below N» over a FAMILY of layers (a thinner layer stops lower), true only with N UP
-# (#43 ⊕ 2026-11-08, «only while» by the shape of the claim) — and the letter that carries it to the lab, the same.
+# measured-hole acceptance); a margin and the γ the margin covers round DOWN. The stopping overpressure is NOT a threshold:
+# it is ρgh − 4γ/d of the MEASURED hole, and over the family the sheet and the letter leave open (the resin arm's lower
+# γ, warmer water, the bath level's tolerance, a wider punched hole) it rises above any number near the nominal one
+# (adversary on b7b8d73e2) — so the docs print the NOMINAL point (the proposed punch, clean 20 °C water, exactly 50 mm)
+# as «≈», rounded to nearest, and the anchors carry the FORM words, so a sentence turned back into a threshold reds.
 GDL = "kinetics/gdl_breakthrough.json"
 _PC = "stand_positive_control"
 
@@ -4349,10 +4351,11 @@ CHECKS += [
      lambda d: _up(d[_PC]["punch_passes_any_layer_from_mm"]), 1e-9),
     ("HW.25 · stand §4.3 p.4 γ the margin covers (down)", STAND, rf"за будь-якого γ нижче \*\*{N}\*\* Н/м", GDL,
      lambda d: _down(d[_PC]["punch_passes_up_to_gamma_N_m"] * 1000.0) / 1000.0, 1e-9),
-    ("HW.25 · stand §4.3 p.4 stopping cavity overpressure, Pa (up)", STAND, rf"нижчий за \*\*{N}\*\* Па \(≈", GDL,
-     lambda d: _up(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
-    ("HW.25 · stand §4.3 p.4 stopping cavity overpressure, mm H₂O (up)", STAND, rf"\(≈ \*\*{N}\*\* мм H₂O\)", GDL,
-     lambda d: _up1(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
+    ("HW.25 · stand §4.3 p.4 nominal stopping overpressure, Pa", STAND,
+     rf"для ВИМІРЯНОГО просвіту d — для пропозиції Ø 1.0 мм у чистій воді 20 °C під шаром рівно 50 мм це ≈ \*\*{N}\*\* Па \(≈", GDL,
+     lambda d: round(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
+    ("HW.25 · stand §4.3 p.4 nominal stopping overpressure, mm H₂O", STAND, rf"Па \(≈ \*\*{N}\*\* мм H₂O\), а на смоляному плечі", GDL,
+     lambda d: round(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
     ("HW.25 · stand §4.3 p.4 pore held at θ 110°", STAND, rf"підлозі специфікації, \*\*{N} µm\*\*", GDL,
      lambda d: d[_PC]["pore_held_by_theta_um"]["CA_110"], 0.05),
     ("HW.25 · stand §4.3 p.4 pore held at θ 120°", STAND, rf"при θ = 120° — \*\*{N} µm\*\*", GDL,
@@ -4365,13 +4368,16 @@ CHECKS += [
      lambda d: _up(d[_PC]["punch_passes_any_layer_from_mm"]), 1e-9),
     ("HW.25 · stand §8.1 row γ (down)", STAND, rf"мм · {N} Н/м · ", GDL,
      lambda d: _down(d[_PC]["punch_passes_up_to_gamma_N_m"] * 1000.0) / 1000.0, 1e-9),
-    ("HW.25 · stand §8.1 row stopping overpressure, Pa (up)", STAND, rf"Н/м · {N} Па \(≈", GDL,
-     lambda d: _up(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
-    ("HW.25 · stand §8.1 row stopping overpressure, mm H₂O (up)", STAND, rf"Па \(≈ {N} мм H₂O\) · ", GDL,
-     lambda d: _up1(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
-    ("HW.25 · climate-lab letter p. 7 stopping overpressure, mm H₂O (up)", "docs/protocols/procurement/vendor_templates.md",
-     rf"з надлишком від {N} мм водяного стовпа", GDL,
-     lambda d: _up1(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
+    ("HW.25 · stand §8.1 row nominal stopping overpressure, Pa", STAND, rf"Н/м · ≈ {N} Па \(≈", GDL,
+     lambda d: round(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
+    ("HW.25 · stand §8.1 row nominal stopping overpressure, mm H₂O", STAND, rf"Па \(≈ {N} мм H₂O\) · ", GDL,
+     lambda d: round(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
+    ("HW.25 · stand §8.1 column names the nominal point, not a threshold", STAND,
+     rf"надлишок тиску в порожнині, що її зупиняє, — номінал: Ø {N} мм, чиста вода 20 °C, шар рівно 50 мм", GDL,
+     lambda d: d[_PC]["punch_mm"], 1e-9),
+    ("HW.25 · climate-lab letter p. 7 nominal stopping overpressure, mm H₂O", "docs/protocols/procurement/vendor_templates.md",
+     rf"тобто без надлишку: надлишок зупиняє воду крізь отвір — для отвору 1 мм у чистій воді близько {N} мм водяного стовпа", GDL,
+     lambda d: round(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
     ("HW.25 · stand §8.1 row pore held at θ 110°", STAND, rf"H₂O\) · {N} / [\d.]+ µm \|", GDL,
      lambda d: d[_PC]["pore_held_by_theta_um"]["CA_110"], 0.05),
     ("HW.25 · stand §8.1 row pore held at θ 120°", STAND, rf"H₂O\) · [\d.]+ / {N} µm \|", GDL,
@@ -4383,8 +4389,8 @@ CHECKS += [
      lambda d: _down2(d[_PC]["punch_over_bound_x"]), 1e-9),
     ("HW.25 · SUMMARY positive-control thinnest layer (up)", SUMMARY, rf"passes any layer from \*\*{N}\*\* mm", GDL,
      lambda d: _up(d[_PC]["punch_passes_any_layer_from_mm"]), 1e-9),
-    ("HW.25 · SUMMARY stopping cavity overpressure (up)", SUMMARY, rf"cavity.s overpressure stays below \*\*{N}\*\* Pa", GDL,
-     lambda d: _up(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
+    ("HW.25 · SUMMARY nominal stopping overpressure", SUMMARY, rf"stops it at ρgh − 4γ/d of the measured aperture — ≈ \*\*{N}\*\* Pa at the nominal point", GDL,
+     lambda d: round(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
     ("HW.25 · SUMMARY pore held at θ 110°", SUMMARY, rf"\(110° · 120°: \*\*{N} · [\d.]+ µm\*\*\)", GDL,
      lambda d: d[_PC]["pore_held_by_theta_um"]["CA_110"], 0.05),
     ("HW.25 · SUMMARY pore held at θ 120°", SUMMARY, rf"\(110° · 120°: \*\*[\d.]+ · {N} µm\*\*\)", GDL,
@@ -10928,9 +10934,12 @@ def _doc_targets() -> set[str]:
     CHECKS row names (`ebfc_chem_rfq.md`, the order sheet), so a CHECKS-only perimeter would have
     declared full coverage while that doc could drift from the code mirror unwatched. The set is
     taken from every source of doc-reads in the file, and a new source belongs here the same day.
+    ⊕ 2026-11-10 (adversary on b7b8d73e2): `_LETTER_EXIT_PINS` and the sap-salt mirror scan were two such sources this set
+    did not read — three letters and five sheets sat outside both workflow lists while the guard stayed green.
     """
     return ({row[1] for row in CHECKS} | {d[0] for d in _RATIFIED_GENE_DECLARATIONS}
-            | {p[1] for p in _PRESS_FIT_PINS} | {p[1] for p in _DATE_PINS})
+            | {p[1] for p in _PRESS_FIT_PINS} | {p[1] for p in _DATE_PINS}
+            | {p[1] for p in _LETTER_EXIT_PINS} | _sap_mirror_docs())
 
 
 def test_every_doc_target_triggers_this_guard():
@@ -11792,6 +11801,13 @@ def test_a3d_crosscheck_cannot_aggregate_the_exposure_gate_sentinel():
 # 85's own constant. CAN catch: a mirror left on a superseded point, in any letter or plan, table or prose. CANNOT
 # catch: a mirror that writes the salt under another name or with the number BEFORE the name.
 _SAP_SALT = re.compile(r"(KNO₃|CaCl₂|MgSO₄|[Mm]alic acid|[Яя]блучна кислота)[^|\n\d]{0,12}?\|?\s*\**(\d+[.,]\d+|\d+)\**")
+
+
+def _sap_mirror_docs() -> set[str]:
+    """The docs/protocols/** files `test_sap_recipe_mirrors_match_the_live_point` reads — every one with a line carrying a
+    sap salt — so `_doc_targets` holds them to the workflow lists the day a new one appears."""
+    return {str(f.relative_to(REPO)) for f in sorted((REPO / "docs/protocols").rglob("*.md"))
+            if any(_SAP_SALT.search(line) for line in f.read_text(encoding="utf-8").splitlines())}
 
 
 def test_sap_recipe_mirrors_match_the_live_point():
