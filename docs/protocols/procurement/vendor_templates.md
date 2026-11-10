@@ -730,16 +730,16 @@ No drawings accompany this pre-qualification: part geometry (STL + dimensioned D
 6. **Water vapour transmission rate**, with method and conditions. The membrane also has to limit evaporation of the thin aqueous electrolyte film beneath it, so we need to know how much vapour passes.
 7. **Construction:** is the membrane supplied unsupported or on a backing? If on a backing, name its material, give the thickness of the membrane and of the backing separately, and say whether any adhesive or binder is present in the product as supplied.
 8. **Sterilisation compatibility.** The membrane will **not** be gamma-irradiated. Before assembly it goes, together with an EPDM seal, through **one** of these cycles:
-   - **autoclave: 121 °C / 15 psi / 30 min**, or
-   - **ethylene oxide: 50 °C / 40 % RH, followed by aeration of 7–14 days**.
+    - **autoclave: 121 °C / 15 psi / 30 min**, or
+    - **ethylene oxide: 50 °C / 40 % RH, followed by aeration of 7–14 days**.
 
-   Tell us whether the membrane — and any backing — tolerates each cycle, and share any data on bubble point, water entry pressure or contact angle before and after. Our own acceptance check is the **bubble point before and after the cycle, changing by no more than 5 %**.
+    Tell us whether the membrane — and any backing — tolerates each cycle, and share any data on bubble point, water entry pressure or contact angle before and after. Our own acceptance check is the **bubble point before and after the cycle, changing by no more than 5 %**.
 9. **Chemical compatibility.** In service the membrane may be in contact with:
-   - aqueous media at **pH 5.75 (working setpoint), with a side series run at pH 4.5**: the electrolyte film beneath the membrane, and tree sap. Our in-vitro reference medium is a synthetic xylem sap — a dilute organic acid (malic) and salts (potassium nitrate, calcium chloride, magnesium sulfate) at a few millimolar or less, brought to the setpoint with potassium hydroxide;
-   - tree resin (resin acids, terpenes) — see item 4;
-   - an **EPDM elastomer, 70 Shore A**, in the same assembly.
+    - aqueous media at **pH 5.75 (working setpoint), with a side series run at pH 4.5**: the electrolyte film beneath the membrane, and tree sap. Our in-vitro reference medium is a synthetic xylem sap — a dilute organic acid (malic) and salts (potassium nitrate, calcium chloride, magnesium sulfate) at a few millimolar or less, brought to the setpoint with potassium hydroxide;
+    - tree resin (resin acids, terpenes) — see item 4;
+    - an **EPDM elastomer, 70 Shore A**, in the same assembly.
 
-   Tell us of any known incompatibility, including for a backing or surface treatment if present.
+    Tell us of any known incompatibility, including for a backing or surface treatment if present.
 10. **Mechanical fixing without adhesive.** Is your membrane suitable for being held only by clamping along its edges? In particular: whether sustained clamping damages it or opens a leak path at the clamped edge over time; what edge design you recommend or advise against; whether it can be wrapped around a cylinder 29.8 mm in diameter without damage; and, since the membrane is fitted as a band around that cylinder on its side face, how the joint where the two ends meet can be closed without adhesive.
 11. **Sample formats:** the sizes in which you can supply samples (sheet, roll width, die-cut pieces), the smallest die-cut piece you can make, and whether you can cut to a drawing we supply. The membrane geometry on our part is not final, so sheet or roll stock we can cut ourselves is the most useful first sample.
 12. **Documentation per lot:** certificate of conformance or test report, and lot traceability.
@@ -993,7 +993,7 @@ No drawings accompany this pre-qualification: part geometry (STL + dimensioned D
 
 Шановні колеги!
 
-**Про нас і мету запиту.** Ми розробляємо титановий сенсорний вузол, який встановлюється в стовбур живого дерева й цілий рік працює в лісі. Повітряний катод вузла захищено мікропористою гідрофобною мембраною з політетрафторетилену: вона мусить пропускати кисень і не пропускати рідку воду. Нам потрібно перевірити, чи зберігає мембрана гідрофобність після тривалого циклічного впливу дощу й роси і чи не проходить крізь неї вода протягом циклу.
+**Про нас і мету запиту.** Ми розробляємо титановий сенсорний вузол, який встановлюється в стовбур живого дерева і має цілий рік працювати в лісі. Як джерело живлення вузла ми досліджуємо, серед кількох кандидатів, ферментний біопаливний елемент, вбудований в анкер; його повітряний катод захищено мікропористою гідрофобною мембраною з політетрафторетилену: вона мусить пропускати кисень і не пропускати рідку воду. Нам потрібно перевірити, чи зберігає мембрана гідрофобність після тривалого циклічного впливу дощу й роси і чи не проходить крізь неї вода протягом циклу.
 
 Це запит інформації про ваші можливості й орієнтовну вартість, а ще не замовлення; відповідь ні до чого не зобов'язує жодну сторону, і відповідати можна просто в тексті листа. З відкритого реєстру акредитації ми знаємо, що у вашій сфері акредитації є випробування на захист від води (дощу) і на вплив вологи, і розуміємо, що її надано для електричного й електронного обладнання. Тож ідеться про неакредитовану роботу на замовлення: нам потрібні ваше обладнання, режим і журнал, а не акредитований протокол. Крайовий кут змочування до й після циклу вимірюватиме окрема лабораторія — його від вас не потрібно.
 
@@ -1001,13 +1001,13 @@ No drawings accompany this pre-qualification: part geometry (STL + dimensioned D
 
 1. **Зразки.** Зразок — диск мембрани діаметром до 47 мм у тримачі. Базовий варіант — **10 тримачів**: дві групи (п. 3), у кожній три робочі зразки й два контрольні (п. 7). Тримачі лежать лицьовою поверхнею догори під кутом близько 10° до горизонталі, без екрана від дощу. Під кожним зразком — суха порожнина з індикатором рідкої води: він показує, чи пройшла вода крізь мембрану. Тримачі нашої конструкції — креслення надішлемо, щойно підготуємо; якщо зручніше, запропонуйте власні (п. 15).
 2. **Цикл — один на добу, 84 доби поспіль (12 тижнів):**
-   - **дощ** — окремі краплі, а не туман, з відомими розміром і висотою падіння: від них залежить швидкість удару краплі, і саме вона для нас головна; інтенсивність міряється на рівні зразків;
-   - **стояння крапель і висихання** — без витирання;
-   - **роса** — лицьова поверхня зразка охолоджується нижче точки роси повітря камери до видимої конденсації. Холод подається з боку лицьової поверхні (повітрям камери), а не холодною плитою з тильного боку: там суха порожнина з індикатором, і конденсат у ній дав би хибний сигнал;
-   - **занурення** — періодично, шар води 50 мм над найвищою точкою лицьової поверхні (або тримач на час занурення ставлять горизонтально);
-   - **висихання** перед наступним циклом.
+    - **дощ** — окремі краплі, а не туман, з відомими розміром і висотою падіння: від них залежить швидкість удару краплі, і саме вона для нас головна; інтенсивність міряється на рівні зразків;
+    - **стояння крапель і висихання** — без витирання;
+    - **роса** — лицьова поверхня зразка охолоджується нижче точки роси повітря камери до видимої конденсації. Холод подається з боку лицьової поверхні (повітрям камери), а не холодною плитою з тильного боку: там суха порожнина з індикатором, і конденсат у ній дав би хибний сигнал;
+    - **занурення** — періодично, шар води 50 мм над найвищою точкою лицьової поверхні (або тримач на час занурення ставлять горизонтально);
+    - **висихання** перед наступним циклом.
 
-   Порядок фаз усередині доби й тривалість кожної — на ваш розсуд (пп. 11–13); природний порядок — дощ і висихання вдень, роса вночі.
+    Порядок фаз усередині доби й тривалість кожної — на ваш розсуд (пп. 11–13); природний порядок — дощ і висихання вдень, роса вночі.
 3. **Дві групи зразків, фізично розділені:** перша — чиста вода; друга — та сама схема, але вода перед тим контактувала з живицею сосни звичайної. Спільних дощувальних пристроїв, ванн і збірників у двох груп бути не може. Спосіб приготування води другої групи ми ще обираємо: природна живиця, зібрана з дерева, або модельний розчин смоляної кислоти (п. 16).
 4. **Матеріали й вода.** Усе, що торкається води й зразків, не повинно вимивати поверхнево-активних речовин і мастил: без клеїв і без силіконових змащень. Вода — проточна або фільтрована, щоб стенд не накопичував власних забруднень.
 5. **Температура.** Вода й повітря під час дощу й занурення — близько 20 °C. Для роси має значення лише те, що лицьова поверхня холодніша за точку роси повітря; абсолютні значення — на ваш вибір.
@@ -1015,7 +1015,7 @@ No drawings accompany this pre-qualification: part geometry (STL + dimensioned D
 7. **Контрольні зразки — навмисні, а не брак.** У кожній групі один зразок має навмисний прокол — отвір діаметром близько 1 мм, пробитий пробійником крізь усі шари зразка; скажіть, чи зробите його ви, чи надіслати зразок уже проколотим. Найменший просвіт отвору виміряйте на світло лупою зі шкалою й запишіть: нам потрібно, щоб просвіт мінус похибка шкали був більшим за 0.6 мм (межу розраховано для води близько 20 °C, п. 5; якщо вода холодніша — скажіть нам), а якщо менший — повідомте, і ми замінимо зразок. Під цим зразком — окрема порожнина зі своїм дренажем і не на спільній лінії продуву, бо крізь отвір вода йде весь час, поки зразок під шаром; тиск у ній — як у кожній порожнині (п. 6), а з надлишком від 20.3 мм водяного стовпа контроль уже не працює; індикатор має накривати саме вихід отвору. Індикатор під цим зразком мусить спрацювати в першому ж зануренні, а якщо не спрацював — індикатори цієї групи сліпі, і про це треба повідомити нас одразу. Другий контрольний зразок — суцільна плівка без пор: індикатор під ним не повинен спрацювати ніколи, і його спрацювання означає конденсат або обхід води по краю.
 8. **Журнал — безперервно:** мітки часу кожної фази; температура й відносна вологість камери; температура води; температура лицьової поверхні й точка роси під час роси; інтенсивність дощу; рівень води під час занурення; різниця тисків «порожнина − камера» для кожної порожнини; стан індикатора під кожним зразком після кожної роси й кожного занурення — з номером циклу й фазою; щотижня — фото зразків із фіксованими відстанню, світлом і шкалою.
 
-   **Якщо індикатор під робочим зразком спрацював:** запишіть номер циклу й фазу, повідомте нас того ж дня, вийміть зразок, не сушіть його й не торкайтеся лицьової поверхні, покладіть у закриту тару й якнайшвидше передайте нам — кут на ньому треба виміряти одразу; до циклу він не повертається.
+    **Якщо індикатор під робочим зразком спрацював:** запишіть номер циклу й фазу, повідомте нас того ж дня, вийміть зразок, не сушіть його й не торкайтеся лицьової поверхні, покладіть у закриту тару й якнайшвидше передайте нам — кут на ньому треба виміряти одразу; до циклу він не повертається.
 9. **Логістика зразків.** Зразки приїдуть від нас уже простерилізованими, з маркуванням на кожному зразку (і на тримачі, якщо тримачі наші), а якщо тримачі будуть наші — уже закріпленими в них; приймання — за актом із переліком ідентифікаторів. Лицьової поверхні не торкатися: брати лише за тримач, у рукавичках. До старту — зберігання при 4–8 °C у темряві. Після останнього циклу — сушіння за одним протоколом для всіх зразків (просимо описати ваш) і повернення нам у сухій упаковці в узгоджений строк, однаковий для всіх: від проміжку між кінцем циклу й виміром кута залежить порівнянність.
 
 **Просимо повідомити**
