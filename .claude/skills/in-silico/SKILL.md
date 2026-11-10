@@ -8,7 +8,7 @@ description: "Use when working on the silken_net in-silico surface — the EBFC 
 ## Critical Rules
 
 **Bodies live in `rules.md` — open it before running or changing DFT/MD, declaring an anchor dimension,
-or quoting a literature constant or a source.** #19–#35 are the DFT and MD gotchas, #36–#46 the citation rules (§Paper Citations below routes there), and from #47 on the rules appended after them, whatever their group (#47 DFT · #48 a vendor-datasheet input). Below is one generated line per rule: the line is the CARRIER; the
+or quoting a literature constant or a source.** #19–#35 are the DFT and MD gotchas, #36–#46 the citation rules (§Paper Citations below routes there), and from #47 on the rules appended after them, whatever their group. Below is one generated line per rule: the line is the CARRIER; the
 mechanism, the incident and the bounds are in the companion. Numbering is append-only — cite
 `in-silico §Critical Rules #N` (the section name disambiguates from §When Modifying).
 
@@ -131,6 +131,7 @@ head, compressed, and what the rule forbids is in the body (instance — head of
 53. An extremum over cells, or a count against a threshold, of a quantity that DIVERGES at that threshold is not smooth in the input — print the count with the input change below which it holds, and the extremum as unbounded at every crossing
 54. A verdict read off a GRID of an input is a claim about its points, not a threshold — solve the crossing or put the grid in the sentence; a fix tends to write a new grid quantifier
 55. A factor that cancels in a RELATIVE reading does not cancel in ABSOLUTE bounds on the same field — and two such bounds bind at OPPOSITE extremes of it — a verdict that skips them says «isothermal», its estimate names every input
+56. A stochastic acceptance test is judged over SEEDS, never on one noise draw
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
