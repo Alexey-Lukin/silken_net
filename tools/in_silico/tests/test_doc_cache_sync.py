@@ -10276,11 +10276,27 @@ CHECKS += [
        lambda d, k=key: _den_knob_row(d, k)["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"], 0.0) for key, rx in (
         ("t2:g3", rf"потребує {N} Тл на періоді"), ("t3:g3", rf"на 3 мм — {N} · [\d.]+ · [\d.]+ Тл"),
         ("t5:g3", rf"на 3 мм — [\d.]+ · {N} · [\d.]+ Тл"), ("t10:g3", rf"на 3 мм — [\d.]+ · [\d.]+ · {N} Тл"))],
+    ("dendrometer canon P* of the passing cell → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"на P\* {N} мм потреба нижча", DEN,
+     lambda d: d["scale"]["t2:g3"]["best_period_mm"], 0.0),
+    ("dendrometer canon need at P* → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"потреба нижча — {N} Тл", DEN,
+     lambda d: d["scale"]["t2:g3"]["b_r_needed_T_offset_term_only"]["max"], 0.0),
+    ("dendrometer canon field at P* → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"поле там {N} мТ", DEN,
+     lambda d: d["scale"]["t2:g3"]["field_at_sensor_mT_at_needed_b_r"]["max"], 0.0),
+    ("dendrometer canon knob ratio low → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"до ×{N}–[\d.]+ від шкали 2 мм", DEN,
+     lambda d: min(r["b_r_needed_over_t2_same_gap"][x] for r in d[_KNOB]["rows"].values() for x in ("typ", "max")), 0.0),
+    ("dendrometer canon knob ratio high → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"до ×[\d.]+–{N} від шкали 2 мм", DEN,
+     lambda d: max(r["b_r_needed_over_t2_same_gap"][x] for r in d[_KNOB]["rows"].values() for x in ("typ", "max")), 0.0),
+    ("dendrometer canon base need inside the cap, low → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"у межах стелі на максимальному — {N}–[\d.]+\)", DEN,
+     lambda d: min(d["scale"][k]["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"] for k in ("t1:g3", "t1:g4", "t2:g3", "t2:g4")), 0.0),
+    ("dendrometer canon base need inside the cap, high → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"у межах стелі на максимальному — [\d.]+–{N}\)", DEN,
+     lambda d: max(d["scale"][k]["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"] for k in ("t1:g3", "t1:g4", "t2:g3", "t2:g4")), 0.0),
+    ("dendrometer summary need inside the cap → 114", SUMMARY, rf"P\* figure to {N} T", DEN,
+     lambda d: d["scale"]["t2:g3"]["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"], 0.0),
     ("dendrometer canon cap → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"на періоді {N} мм", DEN,
      lambda d: d["scale"]["t2:g3"]["within_sensor_linear_range"]["80mT:max"]["period_cap_mm"], 0.0),
-    ("dendrometer canon g4 low → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"жодна товщина \({N}–[\d.]+ Тл\)", DEN,
+    ("dendrometer canon g4 low → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"жодна порахована товщина \({N}–[\d.]+ Тл\)", DEN,
      lambda d: min(_den_knob_row(d, f"t{t}:g4")["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"] for t in (3, 5, 10)), 0.0),
-    ("dendrometer canon g4 high → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"жодна товщина \([\d.]+–{N} Тл\)", DEN,
+    ("dendrometer canon g4 high → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"жодна порахована товщина \([\d.]+–{N} Тл\)", DEN,
      lambda d: max(_den_knob_row(d, f"t{t}:g4")["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"] for t in (3, 5, 10)), 0.0),
 ]
 
@@ -10302,6 +10318,12 @@ def test_dendrometer_knob_set_sentences_recompose_from_the_cache():
     assert cap("t3:g3")["magnet_families_meeting"] == ["REFeB_sintered"]
     assert all("RE2Co17" in cap(f"t{t}:g3")["magnet_families_meeting"] for t in (5, 10))
     assert all(cap(f"t{t:g}:g4")["magnet_families_meeting"] == [] for t in (1, 2, 3, 5, 10))
+    # 01_03: ferrite (typical drift) — among t 1–2 mm from g = 3 mm only t 2 on 3 mm; from t 3 mm on 3 mm; from t 5 mm on 4 mm
+    fer = lambda k: "ferrite_sintered_typical" in rows[k]["magnet_families_meeting_at_p_star"]["typ"]  # noqa: E731
+    assert [k for k in ("t1:g3", "t1:g4", "t2:g3", "t2:g4") if fer(k)] == ["t2:g3"]
+    assert all(fer(f"t{t}:g3") for t in (3, 5, 10)) and not fer("t3:g4") and all(fer(f"t{t}:g4") for t in (5, 10))
+    # 01_03: «REFeB тримає кожну з цих товщин» on 3 mm, max drift, inside the cap
+    assert all("REFeB_sintered" in cap(f"t{t}:g3")["magnet_families_meeting"] for t in (2, 3, 5, 10))
     # 01_03: «решта комірок вища за стелю 1.42 Тл» — the other t 1–2 mm cells from g = 3 mm, inside the cap too
     assert all(cap(k)["b_r_needed_T"] > 1.42 for k in ("t1:g3", "t1:g4", "t2:g4"))
     # the doc table's family column, against the cache

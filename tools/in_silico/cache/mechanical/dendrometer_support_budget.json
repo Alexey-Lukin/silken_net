@@ -2005,7 +2005,7 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.89,
+          "typ": 0.888,
           "max": 0.888
         },
         "best_period_over_t2_same_gap": 1.101,
@@ -2159,7 +2159,7 @@
         },
         "b_r_needed_over_t2_same_gap": {
           "typ": 0.857,
-          "max": 0.856
+          "max": 0.857
         },
         "best_period_over_t2_same_gap": 1.098,
         "unwrap_margin_by_basis": {
@@ -2304,7 +2304,7 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.815,
+          "typ": 0.814,
           "max": 0.814
         },
         "best_period_over_t2_same_gap": 1.084,
@@ -2442,8 +2442,8 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.786,
-          "max": 0.788
+          "typ": 0.787,
+          "max": 0.787
         },
         "best_period_over_t2_same_gap": 1.073,
         "unwrap_margin_by_basis": {
@@ -2597,8 +2597,8 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.821,
-          "max": 0.818
+          "typ": 0.819,
+          "max": 0.819
         },
         "best_period_over_t2_same_gap": 1.234,
         "unwrap_margin_by_basis": {
@@ -2750,7 +2750,7 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.76,
+          "typ": 0.758,
           "max": 0.758
         },
         "best_period_over_t2_same_gap": 1.239,
@@ -2898,7 +2898,7 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.675,
+          "typ": 0.676,
           "max": 0.676
         },
         "best_period_over_t2_same_gap": 1.219,
@@ -3196,7 +3196,7 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.793,
+          "typ": 0.795,
           "max": 0.795
         },
         "best_period_over_t2_same_gap": 1.343,
@@ -3349,8 +3349,8 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.714,
-          "max": 0.713
+          "typ": 0.712,
+          "max": 0.712
         },
         "best_period_over_t2_same_gap": 1.404,
         "unwrap_margin_by_basis": {
@@ -3497,7 +3497,7 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.595,
+          "typ": 0.594,
           "max": 0.594
         },
         "best_period_over_t2_same_gap": 1.428,
@@ -3641,7 +3641,7 @@
           }
         },
         "b_r_needed_over_t2_same_gap": {
-          "typ": 0.517,
+          "typ": 0.518,
           "max": 0.518
         },
         "best_period_over_t2_same_gap": 1.41,

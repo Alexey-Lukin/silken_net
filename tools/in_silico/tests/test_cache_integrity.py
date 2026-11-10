@@ -9146,7 +9146,8 @@ def test_dendrometer_thickness_knob_and_linear_range_cap_are_recomputed():
         ref = d["scale"][f"t2:g{row['g_mm']:g}"]
         for drift in ("typ", "max"):
             assert row["b_r_needed_over_t2_same_gap"][drift] == pytest.approx(
-                row["b_r_needed_T_offset_term_only"][drift] / ref["b_r_needed_T_offset_term_only"][drift], abs=0.002), key
+                row["b_r_needed_T_offset_term_only"][drift] / ref["b_r_needed_T_offset_term_only"][drift], abs=0.004), key
+            # the script divides the UNROUNDED needs; the cache holds them rounded to 0.001 T, which moves this ratio ≤ 0.003
         assert row["best_period_over_t2_same_gap"] == pytest.approx(row["best_period_mm"] / ref["best_period_mm"], abs=0.002)
         for b, ch in bases.items():
             assert row["unwrap_margin_by_basis"][b] == pytest.approx(row["half_period_mm"] / ch, abs=0.002), (key, b)

@@ -98,8 +98,10 @@ WHAT IT CANNOT SEE.
   (4) The field is an idealisation (finite width, pole-pitch errors, a ferromagnetic neighbour); the magnet is not
       chosen, so (2) gives the remanence a scale NEEDS, not one a product has; the families it is held against are a
       mirror of the canon's desk (specified minima per family, ferrite typical), not a product's datasheet, and «meets»
-      says only that some class of the family reaches the need — not its corrosion, its temperature coefficient or
-      whether a scale of that class and thickness is made. The sensor's mismatch drift has no per-kelvin basis in its
+      says only that some class of the family reaches the need — not its corrosion or whether a scale of that class and
+      thickness is made. ISOTHERMAL: the magnet's B_r temperature coefficient cancels in the atan2 but not in the two
+      absolute bounds — the cap must hold the COLDEST field and the need the HOTTEST — so a «meets» here is optimistic;
+      and the gaps are a grid (GAPS_MM), so a family's gap limit lies between two rows, unsolved (00_07 HW.54 Р3(в)). The sensor's mismatch drift has no per-kelvin basis in its
       datasheet, and its offset drift is taken as one row for both ranges.
   (5) Whether a scale and a probe can travel 16–100 mm past a flush capsule without a visit — the geometry (01_04
       §5.5); (4) says only when the problem starts.
@@ -379,7 +381,7 @@ def control_sections(z103: dict, premise: str, sections, alpha_w: float) -> None
 def control_thickness() -> None:
     """Control 8 — the knob and the cap. For each gap and drift, a thicker scale needs STRICTLY less remanence at its own
     best period, which grows with thickness and stays at or under 2πg; at the cap the needed field equals the linear
-    range by a separate route, and a capped period never exceeds its cap. CAN catch a sign slip in the (1 − e^{−kt})
+    range (the cap formula inverted — control 4 is the independent route), and a capped period never exceeds its cap. CAN catch a sign slip in the (1 − e^{−kt})
     term, a cap applied the wrong way or a scan that overruns it; CANNOT an error in the idealised field form."""
     ts = sorted({*SCALE_T_MM, *SCALE_T_KNOB_MM})
     for g in GAPS_MM:
@@ -556,9 +558,11 @@ def main() -> int:
         for g in GAPS_MM:
             row = scale_cell(t_mm, g, radome["wall_thickness_mm"])
             ref = scale[f"t2:g{g:g}"]
-            row["b_r_needed_over_t2_same_gap"] = {k: round(row["b_r_needed_T_offset_term_only"][k]
-                                                            / ref["b_r_needed_T_offset_term_only"][k], 3)
-                                                  for k in HALL["offset_drift_T_per_K"]}
+            # the ratio from the UNROUNDED needs — dividing the cached (rounded) ones put up to 0.003 of artefact into it
+            row["b_r_needed_over_t2_same_gap"] = {
+                k: round(b_r_needed_t(row["best_period_mm"], t_mm, g, db, FRAME_UM_PER_K)
+                         / b_r_needed_t(ref["best_period_mm"], 2.0, g, db, FRAME_UM_PER_K), 3)
+                for k, db in HALL["offset_drift_T_per_K"].items()}
             row["best_period_over_t2_same_gap"] = round(row["best_period_mm"] / ref["best_period_mm"], 3)
             row["unwrap_margin_by_basis"] = {b: round(row["half_period_mm"] / w, 3) for b, w in bases.items()}
             knob_rows[f"t{t_mm:g}:g{g:g}"] = row
