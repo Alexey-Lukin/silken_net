@@ -69,11 +69,10 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 ## When Modifying
 
 **Bodies live in `modifying.md` — open it before editing a script, a shared constant, a cache or a doc
-that quotes one.** One generated line per item below; numbered 2026-09-18 in the pre-split order,
-append-only since — cite `in-silico §When Modifying #N`. 🔴 **Citing a number as the GROUND of a choice is a claim
-about its BODY — open it first:** a line below is the rule's head, compressed, and what the rule forbids is in the
-body (2026-11-02: the `108` change cited #43 in four places — the script twice, its test, a skill ⊕ — for up-rounding
-a «a further X % opens it» sentence, the form #43's body says to rewrite, not round).
+that quotes one.** One generated line per item below, numbering append-only — cite `in-silico §When Modifying #N`.
+🔴 **Citing a number as the GROUND of a choice is a claim about its BODY — open it first:** a line below is the rule's
+head, compressed, and what the rule forbids is in the body (2026-11-02: the `108` change cited #43 four times for
+up-rounding a «a further X % opens it» sentence — the form #43's body says to rewrite, not round).
 
 <!-- INSILICO-MODIFYING-INDEX:AUTO — generated from modifying.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
@@ -131,6 +130,8 @@ a «a further X % opens it» sentence, the form #43's body says to rewrite, not 
 51. A threshold computed on an AREA is a claim about whatever that area IS — a housing's face bounds a cell behind it, it is not one; take the part's envelope from its CEM, publish the threshold per NAMED area, and call an outline an upper bound on active area
 52. Two thresholds a model prints at the SAME pinned value of a shared input are COUPLED — accepting one at its limit spends the other's headroom; a submission that picks one names the coupling in its price, never as a side note «no change proposed»
 53. An extremum over cells, or a count against a threshold, of a quantity that DIVERGES at that threshold is not smooth in the input — print the count with the input change below which it holds, and the extremum as unbounded at every crossing
+54. A verdict read off a GRID of an input is a claim about its points, not a threshold — solve the crossing or put the grid in the sentence; a fix tends to write a new grid quantifier
+55. A factor that cancels in a RELATIVE reading does not cancel in ABSOLUTE bounds on the same field — and two such bounds bind at OPPOSITE extremes of it
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
