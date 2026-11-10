@@ -53,7 +53,13 @@ MODEL.
       ANGLE error — static and cyclic, P·AERR/360; calibrating it IN PLACE needs the scale to pass a full period, i.e. years of
         growth.
     Both pairs of axes are printed: X–Y (both axes in the field's plane, which needs the IC mounted edge-on) and X–Z
-    (the IC flat on the board). THE COUNT across periods: the device sends the phase, the server unwraps the series —
+    (the IC flat on the board). THE SENSOR'S LINEAR RANGE caps the period: the field the offset term needs at the sensor
+    is P·√2·δB/(2π·target) — the period alone sets it, not the magnet and not the thickness — so a period above
+    P_cap = 2π·target·B_lin/(√2·δB) asks for a field the sensor cannot read linearly; each row prints, per range and
+    drift, the best period inside the cap and the remanence needed THERE, and the magnet families with a class at or
+    above it (`MAGNET_FAMILIES_BR_T`, a canon mirror). THE THICKNESS KNOB (2b): the same row at t 3 · 5 · 10 mm in a
+    block of its own, with its remanence and period over the t 2 mm row's — a thicker scale lowers the remanence at a
+    longer P*, and the longer P* raises the field needed and the angle and mismatch errors with it. THE COUNT across periods: the device sends the phase, the server unwraps the series —
     nothing is persisted on the device (its RTC backup domain does not survive an outage on our board, 03_01). The
     unwrap holds while every change between two delivered readings stays under P/2 (an absolute-in-period phase; the
     collector's «half a pole» was for an incremental pole counter, a different reader); the change is priced on a
@@ -90,8 +96,11 @@ WHAT IT CANNOT SEE.
       gyroid exceeds it by 0.7 ppm/K, the bonded Zone-1 composite by 1.5, the Zone-3 composite by 1.9. The design terms are nulled, not zero: their sign is the
       scale's and the holder's material, still open.
   (4) The field is an idealisation (finite width, pole-pitch errors, a ferromagnetic neighbour); the magnet is not
-      chosen, so (2) gives the remanence a scale NEEDS, not one a product has; a magnet class's remanence is not in the
-      tree. The sensor's mismatch drift has no per-kelvin basis in its datasheet.
+      chosen, so (2) gives the remanence a scale NEEDS, not one a product has; the families it is held against are a
+      mirror of the canon's desk (specified minima per family, ferrite typical), not a product's datasheet, and «meets»
+      says only that some class of the family reaches the need — not its corrosion, its temperature coefficient or
+      whether a scale of that class and thickness is made. The sensor's mismatch drift has no per-kelvin basis in its
+      datasheet, and its offset drift is taken as one row for both ranges.
   (5) Whether a scale and a probe can travel 16–100 mm past a flush capsule without a visit — the geometry (01_04
       §5.5); (4) says only when the problem starts.
   (6) Separating reversible shrinkage (TWD) from growth — the zero-growth method's job, not priced here.
@@ -117,6 +126,10 @@ CONTROLS (each says what it CAN and CANNOT catch).
   (7) Monotone support: every anchor section's α exceeds α_w, so |A| grows with depth and the crossing is unique —
       asserted, not assumed; and |A| at the solved crossing equals 0.3 µm/K; CAN catch a wrong slope or bookkeeping in
       the solve, CANNOT a wrong section (that is (3)'s).
+  (8) Thickness and cap: per gap and drift a thicker scale needs strictly less B_r at a P* that grows with t and stays
+      at or under 2πg; the field needed at P_cap equals the linear range by a separate route; no capped period overruns
+      its cap; CAN catch a sign slip in the (1 − e^{−kt}) term, a cap applied the wrong way or a scan past it, CANNOT
+      an error in the idealised field form.
 
 Run:  python tools/in_silico/scripts/114_dendrometer_support_budget.py      # a few seconds
 """
@@ -180,6 +193,15 @@ GROWTH_MONTHS_MIN = 4.0                    # our assumption: the year's incremen
 NOISE_TARGET_UM = 1.0
 GAPS_MM = (1.5, 2.0, 3.0, 4.0)             # the radome wall's band, then the wall plus clearances (not in the tree)
 SCALE_T_MM = (1.0, 2.0)
+# The thickness knob (01_03 §4 ⊕ (в), desk 2026-11-10: «t 3–10 mm»), priced in its OWN block so the base table's
+# population — which the canon's «one cell passes» and the in-place calibration span are quantified over — stays t 1–2 mm
+SCALE_T_KNOB_MM = (3.0, 5.0, 10.0)
+# Magnet families against the remanence a scale needs — mirror of 01_03 §4 ⊕ (в), desk 2026-11-10 (edit THERE): the
+# range of specified MINIMA over each family's classes, IEC 60404-8-1:2001/AMD1:2004 Tables 11–12 (iTeh preview); sintered
+# ferrite from MMPA 0100-00 Table III-1, TYPICAL values, not minima. A family «meets» a need when its highest value does —
+# i.e. at least one of its classes; which class, and its corrosion and temperature coefficient, the canon says
+MAGNET_FAMILIES_BR_T = {"RECo5": (0.80, 0.93), "RE2Co17": (0.90, 1.10), "REFeB_sintered": (0.98, 1.42),
+                        "ferrite_sintered_typical": (0.23, 0.41)}
 TIE_SHALLOWEST_MM = 0.5                    # `103`'s DEPTH_MIN — its tie axis starts here
 
 
@@ -245,12 +267,26 @@ def field_amplitude_t(b_r: float, p_mm: float, t_mm: float, g_mm: float) -> floa
     return 0.5 * b_r * (1 - math.exp(-k * t_mm)) * math.exp(-k * g_mm)
 
 
-def best_period_mm(t_mm: float, g_mm: float, step: float = 0.01) -> float:
-    """The period minimising the offset term at the gap — B_r and δB only scale it, so they do not move it."""
+def best_period_mm(t_mm: float, g_mm: float, step: float = 0.01, p_max_mm: float | None = None) -> float:
+    """The period minimising the offset term at the gap — B_r and δB only scale it, so they do not move it. With
+    `p_max_mm` the scan stops there: the best period the sensor's linear range allows (see `period_cap_mm`)."""
     grid = np.arange(0.5, 60.0 + step, step)      # below 0.5 mm e^{−kg} underflows; the optimum is far above it
+    if p_max_mm is not None:
+        grid = grid[grid <= p_max_mm + 1e-9]
     k = 2 * np.pi / grid
     cost = grid / ((1 - np.exp(-k * t_mm)) * np.exp(-k * g_mm))
     return round(float(grid[int(np.argmin(cost))]), 2)
+
+
+def period_cap_mm(linear_range_t: float, db_per_k: float, target_um_per_k: float) -> float:
+    """The longest period at which the field the offset term NEEDS stays inside the sensor's linear range. That field is
+    P·√2·δB/(2π·target) — the period alone sets it, not the magnet and not the scale's thickness (control 4's identity)."""
+    return 2 * math.pi * target_um_per_k * 1e-3 * linear_range_t / (math.sqrt(2) * db_per_k)
+
+
+def families_meeting(need_t: float) -> list[str]:
+    """The magnet families with at least one class at or above `need_t` (their highest value in MAGNET_FAMILIES_BR_T)."""
+    return [f for f, (_lo, hi) in MAGNET_FAMILIES_BR_T.items() if hi >= need_t]
 
 
 def b_r_needed_t(p_mm, t_mm, g_mm, db_per_k, target_um_per_k) -> float:
@@ -258,6 +294,51 @@ def b_r_needed_t(p_mm, t_mm, g_mm, db_per_k, target_um_per_k) -> float:
     k = 2 * math.pi / p_mm
     return (2 * p_mm / (2 * math.pi) * math.sqrt(2) * db_per_k
             / (target_um_per_k * 1e-3 * (1 - math.exp(-k * t_mm)) * math.exp(-k * g_mm)))
+
+
+def scale_cell(t_mm: float, g: float, wall_mm: float) -> dict:
+    """One (thickness, gap) row of the scale behind the wall — the ONE home of the row, for the base table and the
+    thickness knob alike."""
+    p = best_period_mm(t_mm, g)
+    need_raw = {k: b_r_needed_t(p, t_mm, g, db, FRAME_UM_PER_K) for k, db in HALL["offset_drift_T_per_K"].items()}
+    need = {k: round(v, 3) for k, v in need_raw.items()}
+    b_sensor = {k: round(field_amplitude_t(br, p, t_mm, g) * 1e3, 1) for k, br in need.items()}
+    n_conv = {}
+    for k, br in need.items():
+        noise = p / (2 * math.pi) * HALL["noise_T"]["x_y"] / field_amplitude_t(br, p, t_mm, g) * 1e3
+        n_conv[k] = max(1, math.ceil((noise / NOISE_TARGET_UM) ** 2))
+    pairs = {}
+    for pair in ("x_y", "x_z"):
+        eps = HALL["sens_mismatch_drift"][pair]
+        peak = p / (2 * math.pi) * eps / 2 * 1e3
+        pairs[pair] = {"angle_error_static_cyclic_um": round(p * HALL["angle_error_deg"][pair] / 360 * 1e3, 1),
+                       "mismatch_drift_cyclic_peak_um_over_datasheet_drift": round(peak, 1),
+                       "mismatch_um_per_K_if_linear_over_K": [round(peak / dk, 2) for dk in MISMATCH_LINEAR_SPREAD_K[::-1]]}
+    within_range = {}
+    for lin in HALL["linear_range_T"]:
+        for drift, db in HALL["offset_drift_T_per_K"].items():
+            cap = period_cap_mm(lin, db, FRAME_UM_PER_K)
+            p_in = best_period_mm(t_mm, g, p_max_mm=cap)
+            need_in = b_r_needed_t(p_in, t_mm, g, db, FRAME_UM_PER_K)
+            within_range[f"{lin * 1e3:g}mT:{drift}"] = {
+                "period_cap_mm": round(cap, 2), "best_period_within_cap_mm": p_in, "capped": p_in < p,
+                "b_r_needed_T": round(need_in, 3), "magnet_families_meeting": families_meeting(need_in),
+                "angle_error_static_cyclic_um": {pr: round(p_in * HALL["angle_error_deg"][pr] / 360 * 1e3, 1)
+                                                 for pr in ("x_y", "x_z")},
+                "mismatch_drift_cyclic_peak_um": {pr: round(p_in / (2 * math.pi) * HALL["sens_mismatch_drift"][pr] / 2 * 1e3, 1)
+                                                  for pr in ("x_y", "x_z")}}
+    return {
+        "t_mm": t_mm, "g_mm": g, "best_period_mm": p, "half_period_mm": round(p / 2, 3),
+        "b_r_needed_T_offset_term_only": need, "field_at_sensor_mT_at_needed_b_r": b_sensor,
+        "within_linear_range_40mT": {k: v <= HALL["linear_range_T"][0] * 1e3 for k, v in b_sensor.items()},
+        "within_linear_range_80mT": {k: v <= HALL["linear_range_T"][1] * 1e3 for k, v in b_sensor.items()},
+        "two_channel_samples_for_1um_at_needed_b_r": n_conv, "axis_pairs": pairs,
+        "surface_field_share_kept_by_2mm_period": float(f"{math.exp(-2 * math.pi * g / ENCODER_2MM['period_mm']):.2e}"),
+        "gap_below_radome_wall": g < wall_mm,
+        "in_place_angle_calibration_yr_fast_slow": [round(p / RADIAL_RATE_MM_PER_YR[1], 1),
+                                                    round(p / RADIAL_RATE_MM_PER_YR[0], 1)],
+        "magnet_families_meeting_at_p_star": {k: families_meeting(v) for k, v in need_raw.items()},
+        "within_sensor_linear_range": within_range}
 
 
 def energy_j(i_a: float, v: float, t_s: float) -> float:
@@ -295,10 +376,30 @@ def control_sections(z103: dict, premise: str, sections, alpha_w: float) -> None
     assert cross is not None and abs(abs(anchor_term_um_per_k(sections, cross, alpha_w)) - FRAME_UM_PER_K) < 1e-9
 
 
+def control_thickness() -> None:
+    """Control 8 — the knob and the cap. For each gap and drift, a thicker scale needs STRICTLY less remanence at its own
+    best period, which grows with thickness and stays at or under 2πg; at the cap the needed field equals the linear
+    range by a separate route, and a capped period never exceeds its cap. CAN catch a sign slip in the (1 − e^{−kt})
+    term, a cap applied the wrong way or a scan that overruns it; CANNOT an error in the idealised field form."""
+    ts = sorted({*SCALE_T_MM, *SCALE_T_KNOB_MM})
+    for g in GAPS_MM:
+        periods = [best_period_mm(t, g) for t in ts]
+        assert all(a <= b for a, b in itertools.pairwise(periods)), (g, periods)
+        assert periods[-1] <= 2 * math.pi * g + 0.02, (g, periods[-1])
+        for db in HALL["offset_drift_T_per_K"].values():
+            needs = [b_r_needed_t(p, t, g, db, FRAME_UM_PER_K) for p, t in zip(periods, ts)]
+            assert all(a > b for a, b in itertools.pairwise(needs)), (g, db, needs)
+            for lin in HALL["linear_range_T"]:
+                cap = period_cap_mm(lin, db, FRAME_UM_PER_K)
+                assert abs(cap * math.sqrt(2) * db / (2 * math.pi * FRAME_UM_PER_K * 1e-3) - lin) < 1e-12
+                for t in ts:
+                    assert best_period_mm(t, g, p_max_mm=cap) <= cap + 1e-9, (t, g, lin)
+
+
 def control_field() -> None:
     for g in GAPS_MM:
         assert abs(best_period_mm(1e3, g) - 2 * math.pi * g) < 0.02, g
-        for t_mm in SCALE_T_MM:
+        for t_mm in (*SCALE_T_MM, *SCALE_T_KNOB_MM):
             p = best_period_mm(t_mm, g)
             for db in HALL["offset_drift_T_per_K"].values():
                 b = field_amplitude_t(b_r_needed_t(p, t_mm, g, db, FRAME_UM_PER_K), p, t_mm, g)
@@ -350,6 +451,7 @@ def main() -> int:
         control_closure_and_impulses(secs)
         control_sections(z103, p, secs, alpha_w)
     control_field()
+    control_thickness()
     control_energy()
 
     s71 = _load("s71_capsule", "71_capsule_thermal_envelope.py")
@@ -420,34 +522,7 @@ def main() -> int:
                           "lift the flange off the sleeve — our reading, 103 does not model lift-off"}
 
     # (2) the scale behind the wall
-    scale = {}
-    for t_mm in SCALE_T_MM:
-        for g in GAPS_MM:
-            p = best_period_mm(t_mm, g)
-            need = {k: round(b_r_needed_t(p, t_mm, g, db, FRAME_UM_PER_K), 3)
-                    for k, db in HALL["offset_drift_T_per_K"].items()}
-            b_sensor = {k: round(field_amplitude_t(br, p, t_mm, g) * 1e3, 1) for k, br in need.items()}
-            n_conv = {}
-            for k, br in need.items():
-                noise = p / (2 * math.pi) * HALL["noise_T"]["x_y"] / field_amplitude_t(br, p, t_mm, g) * 1e3
-                n_conv[k] = max(1, math.ceil((noise / NOISE_TARGET_UM) ** 2))
-            pairs = {}
-            for pair in ("x_y", "x_z"):
-                eps = HALL["sens_mismatch_drift"][pair]
-                peak = p / (2 * math.pi) * eps / 2 * 1e3
-                pairs[pair] = {"angle_error_static_cyclic_um": round(p * HALL["angle_error_deg"][pair] / 360 * 1e3, 1),
-                               "mismatch_drift_cyclic_peak_um_over_datasheet_drift": round(peak, 1),
-                               "mismatch_um_per_K_if_linear_over_K": [round(peak / dk, 2) for dk in MISMATCH_LINEAR_SPREAD_K[::-1]]}
-            scale[f"t{t_mm:g}:g{g:g}"] = {
-                "t_mm": t_mm, "g_mm": g, "best_period_mm": p, "half_period_mm": round(p / 2, 3),
-                "b_r_needed_T_offset_term_only": need, "field_at_sensor_mT_at_needed_b_r": b_sensor,
-                "within_linear_range_40mT": {k: v <= HALL["linear_range_T"][0] * 1e3 for k, v in b_sensor.items()},
-                "within_linear_range_80mT": {k: v <= HALL["linear_range_T"][1] * 1e3 for k, v in b_sensor.items()},
-                "two_channel_samples_for_1um_at_needed_b_r": n_conv, "axis_pairs": pairs,
-                "surface_field_share_kept_by_2mm_period": float(f"{math.exp(-2 * math.pi * g / ENCODER_2MM['period_mm']):.2e}"),
-                "gap_below_radome_wall": g < radome["wall_thickness_mm"],
-                "in_place_angle_calibration_yr_fast_slow": [round(p / RADIAL_RATE_MM_PER_YR[1], 1),
-                                                            round(p / RADIAL_RATE_MM_PER_YR[0], 1)]}
+    scale = {f"t{t_mm:g}:g{g:g}": scale_cell(t_mm, g, radome["wall_thickness_mm"]) for t_mm in SCALE_T_MM for g in GAPS_MM}
     month_fast_mm = RADIAL_RATE_MM_PER_YR[1] / GROWTH_MONTHS_MIN
     bases = {"winter": FROST_SWING_MM[1],
              "growing_month_fast_end_plus_daily_swing": round(month_fast_mm + DAILY_SWING_MM[1], 3),
@@ -474,6 +549,26 @@ def main() -> int:
                             "discontinuity; a ledger whose old readings are archived or expire — the server keeps a persisted "
                             "running unwrapped position, not a recompute over history; creep of the sensor's mount; and the "
                             "phase needs a field on the wire."}
+
+    # (2b) the thickness knob — a thicker scale lowers the remanence the offset term needs, at a longer best period
+    knob_rows = {}
+    for t_mm in SCALE_T_KNOB_MM:
+        for g in GAPS_MM:
+            row = scale_cell(t_mm, g, radome["wall_thickness_mm"])
+            ref = scale[f"t2:g{g:g}"]
+            row["b_r_needed_over_t2_same_gap"] = {k: round(row["b_r_needed_T_offset_term_only"][k]
+                                                            / ref["b_r_needed_T_offset_term_only"][k], 3)
+                                                  for k in HALL["offset_drift_T_per_K"]}
+            row["best_period_over_t2_same_gap"] = round(row["best_period_mm"] / ref["best_period_mm"], 3)
+            row["unwrap_margin_by_basis"] = {b: round(row["half_period_mm"] / w, 3) for b, w in bases.items()}
+            knob_rows[f"t{t_mm:g}:g{g:g}"] = row
+    thickness_knob = {
+        "thickness_mm": SCALE_T_KNOB_MM, "reference": "the t 2 mm row of the base table at the same gap",
+        "rows": knob_rows,
+        "reading": "each row is the base table's row at a thicker scale, computed by the same function; the field the "
+                   "offset term needs at the sensor depends on the period alone, so a longer best period also raises "
+                   "it — `within_sensor_linear_range` gives the best period the sensor's linear range allows and the "
+                   "remanence needed there. The base table's population stays t 1–2 mm."}
 
     # (3) the energy of a read, riding cadence C
     cad = z110["inputs"]["cadence_c_interval_s"]
@@ -533,6 +628,16 @@ def main() -> int:
               f"B {v['field_at_sensor_mT_at_needed_b_r']} mT  N {v['two_channel_samples_for_1um_at_needed_b_r']}  "
               f"pairs {v['axis_pairs']}")
     print(f"    unwrap: {json.dumps({k: unwrap[k] for k in ('worst_change_mm_by_basis', 'period_required_mm_by_basis', 'margin_by_geometry')})}")
+    print("  (2b) the thickness knob — P*, B_r needed (typ ⊥ max) and its ratio to t 2 mm; inside the 80 mT range at max drift:")
+    for k, v in knob_rows.items():
+        w = v["within_sensor_linear_range"]["80mT:max"]
+        print(f"      {k:9s} P* {v['best_period_mm']:6.2f}  B_r {v['b_r_needed_T_offset_term_only']} T  "
+              f"×t2 {v['b_r_needed_over_t2_same_gap']}  | ≤80 mT, max: P {w['best_period_within_cap_mm']} "
+              f"B_r {w['b_r_needed_T']} {w['magnet_families_meeting']}")
+    for k, v in scale.items():
+        w = v["within_sensor_linear_range"]["80mT:max"]
+        print(f"      base {k:9s} ≤80 mT, max: P {w['best_period_within_cap_mm']} (cap {w['period_cap_mm']}) "
+              f"B_r {w['b_r_needed_T']} {w['magnet_families_meeting']}  | at P*: {v['magnet_families_meeting_at_p_star']}")
     print(f"  (3) read energy: {json.dumps(energy, ensure_ascii=False)}")
     print(f"  (4) travel: {json.dumps(travel, ensure_ascii=False)}")
 
@@ -551,6 +656,7 @@ def main() -> int:
                    "mismatch_linear_spread_K_assumed": MISMATCH_LINEAR_SPREAD_K, "encoder_2mm": ENCODER_2MM,
                    "core_run_A": I_CORE_RUN_A, "v_out": V_OUT, "eta_buck_active": ETA_BUCK_ACTIVE, "e_cycle_J": E_CYCLE,
                    "gaps_mm": GAPS_MM, "scale_thickness_mm": SCALE_T_MM, "noise_target_um": NOISE_TARGET_UM,
+                   "scale_thickness_knob_mm": SCALE_T_KNOB_MM, "magnet_families_br_T": MAGNET_FAMILIES_BR_T,
                    "sources": {"geometry_alpha_share": "103 cache (anchor_wood_share.json); xylem α — Sevanto et al. 2005, "
                                                        "Boreal Env. Res. 10:437, Table 1, P. sylvestris, radial",
                                "flange_heat": "78 cache (flange_cambium_heat.json)",
@@ -562,11 +668,16 @@ def main() -> int:
                                "growth": "nph.17552 Table 1 · Etzold et al. 2022 Ecol. Lett. 10.1111/ele.13933 · "
                                          "Zweifel et al. 2021 Front. For. Glob. Change 10.3389/ffgc.2021.776905 p. 9",
                                "swings_and_rate_ends": "01_03 §4 ⊕ (в)", "core_vout_cycle": "02_03 §9.4",
+                               "magnet_families": "01_03 §4 ⊕ (в), desk 2026-11-10 — IEC 60404-8-1:2001/AMD1:2004 "
+                                                  "Tables 11–12 (specified minima) · MMPA 0100-00 Table III-1 (ferrite, "
+                                                  "typical) — a mirror, edit THERE",
                                "collection": "handoff 2026-10-26_r3v_dendrometer.json"}},
         "controls": {"closure_and_impulses": "A = 0 with one α; unit impulses → z_f − z_t · z_t + h · −h · −section length",
                      "sections": "tile from 0, end at 103's full depth, gyroid centre on its anode centroid, 103's PEEK "
                                  "length to the shank's top",
                      "field_optimum": "P* = 2πg for a thick scale",
+                     "thickness_and_cap": "a thicker scale needs strictly less B_r at a P* that grows toward 2πg; the "
+                                          "field needed at the cap equals the linear range; no capped period overruns it",
                      "energy": "02_03 §9.4 members → lib's E_CYCLE through the active buck",
                      "era5_hours": z110["record"]["hours"], "monotone_support": "every anchor section's α > α_w"},
         "temperature": spans,
@@ -578,6 +689,7 @@ def main() -> int:
         "design_terms": "(α_s − α_w)·z_t + (α_s − α_h)·h — nulled in the base reading; each ppm/K of mismatch costs "
                         "z_t (or h) in mm × 1e-3 µm/K, and α_s = α_w cannot be designed while α_w is one reading",
         "scale": scale,
+        "scale_thickness_knob": thickness_knob,
         "unwrap": unwrap,
         "energy": energy,
         "travel": travel,

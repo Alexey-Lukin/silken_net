@@ -10218,6 +10218,100 @@ CHECKS += [
 ]
 
 
+# ── the same leg, 2026-11-10: the sensor's linear range caps the period, and the scale's thickness is a knob (114
+# `within_sensor_linear_range` · `scale_thickness_knob`) ⟷ SUMMARY (the paragraph and table under the scale table) and
+# 01_03 §4 ⊕ (в), «Клас магніту». The table is rendered from the cache at its own precision, so every cell is EXACT.
+_DEN_KNOB_ROWS = ("t1:g3", "t2:g3", "t3:g3", "t5:g3", "t10:g3", "t1:g4", "t2:g4", "t3:g4", "t5:g4", "t10:g4")
+_DEN_FAM = {"RECo5": "RECo₅", "RE2Co17": "RE₂Co₁₇", "REFeB_sintered": "REFeB", "ferrite_sintered_typical": "ferrite"}
+
+
+def _den_knob_row(d, key):
+    return {**d["scale"], **d["scale_thickness_knob"]["rows"]}[key]
+
+
+def _den_knob_cells(key):
+    t, g = key[1:].split(":g")
+    cap = lambda v: v["within_sensor_linear_range"]["80mT:max"]  # noqa: E731
+    return [(rf"\| {re.escape(t)} · {re.escape(g)} \| ", lambda v: v["best_period_mm"]),
+            (None, lambda v: v["b_r_needed_T_offset_term_only"]["max"]),
+            (None, lambda v: v.get("b_r_needed_over_t2_same_gap", {}).get("max")),
+            (None, lambda v: cap(v)["best_period_within_cap_mm"]),
+            (None, lambda v: cap(v)["b_r_needed_T"])]
+
+
+def _den_knob_regex(key, j):
+    t, g = key[1:].split(":g")
+    n = [N if j == k else r"[\d.]+" for k in range(5)]
+    ratio = n[2] if key not in ("t1:g3", "t2:g3", "t1:g4", "t2:g4") else "—"
+    return rf"(?m)^\| {re.escape(t)} · {re.escape(g)} \| {n[0]} \| {n[1]} \| {ratio} \| {n[3]} \| {n[4]} \| [^|]+ \|$"
+
+
+_KNOB = "scale_thickness_knob"
+CHECKS += [
+    *[(f"dendrometer knob table {key} col {j} → 114", SUMMARY, _den_knob_regex(key, j), DEN,
+       lambda d, k=key, f=f: f(_den_knob_row(d, k)), 0.0)
+      for key in _DEN_KNOB_ROWS for j, (_, f) in enumerate(_den_knob_cells(key))
+      if not (j == 2 and key in ("t1:g3", "t2:g3", "t1:g4", "t2:g4"))],
+    *[(f"dendrometer period cap {lane} → 114", SUMMARY, rx, DEN,
+       lambda d, lane=lane: d["scale"]["t2:g3"]["within_sensor_linear_range"][lane]["period_cap_mm"], 0.0) for lane, rx in (
+        ("80mT:max", rf"caps the period: \*\*{N}\*\* mm inside ±80 mT"), ("40mT:max", rf"\({N} inside ±40 mT;"),
+        ("80mT:typ", rf"; {N} ⊥ [\d.]+ at the typical drift\)"), ("40mT:typ", rf"; [\d.]+ ⊥ {N} at the typical drift\)"))],
+    ("dendrometer cap angle error X–Y → 114", SUMMARY, rf"errors are the cap's \({N} ⊥ [\d.]+ µm, X–Y\)", DEN,
+     lambda d: d["scale"]["t2:g3"]["within_sensor_linear_range"]["80mT:max"]["angle_error_static_cyclic_um"]["x_y"], 0.0),
+    ("dendrometer cap mismatch X–Y → 114", SUMMARY, rf"errors are the cap's \([\d.]+ ⊥ {N} µm, X–Y\)", DEN,
+     lambda d: d["scale"]["t2:g3"]["within_sensor_linear_range"]["80mT:max"]["mismatch_drift_cyclic_peak_um"]["x_y"], 0.0),
+    ("dendrometer knob ratio low → 114", SUMMARY, rf"to ×{N}–[\d.]+ of the t 2 mm row", DEN,
+     lambda d: min(r["b_r_needed_over_t2_same_gap"][x] for r in d[_KNOB]["rows"].values() for x in ("typ", "max")), 0.0),
+    ("dendrometer knob ratio high → 114", SUMMARY, rf"to ×[\d.]+–{N} of the t 2 mm row", DEN,
+     lambda d: max(r["b_r_needed_over_t2_same_gap"][x] for r in d[_KNOB]["rows"].values() for x in ("typ", "max")), 0.0),
+    ("dendrometer knob P* low → 114", SUMMARY, rf"at a P\* of {N}–[\d.]+ mm", DEN,
+     lambda d: min(r["best_period_mm"] for r in d[_KNOB]["rows"].values()), 0.0),
+    ("dendrometer knob P* high → 114", SUMMARY, rf"at a P\* of [\d.]+–{N} mm", DEN,
+     lambda d: max(r["best_period_mm"] for r in d[_KNOB]["rows"].values()), 0.0),
+    ("dendrometer wall gap inside the cap, low → 114", SUMMARY, rf"inside the cap is {N}–[\d.]+ T for t 10 → 1 mm", DEN,
+     lambda d: _den_knob_row(d, "t10:g2")["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"], 0.0),
+    ("dendrometer wall gap inside the cap, high → 114", SUMMARY, rf"inside the cap is [\d.]+–{N} T for t 10 → 1 mm", DEN,
+     lambda d: _den_knob_row(d, "t1:g2")["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"], 0.0),
+    *[(f"dendrometer canon knob {key} → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rx, DEN,
+       lambda d, k=key: _den_knob_row(d, k)["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"], 0.0) for key, rx in (
+        ("t2:g3", rf"потребує {N} Тл на періоді"), ("t3:g3", rf"на 3 мм — {N} · [\d.]+ · [\d.]+ Тл"),
+        ("t5:g3", rf"на 3 мм — [\d.]+ · {N} · [\d.]+ Тл"), ("t10:g3", rf"на 3 мм — [\d.]+ · [\d.]+ · {N} Тл"))],
+    ("dendrometer canon cap → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"на періоді {N} мм", DEN,
+     lambda d: d["scale"]["t2:g3"]["within_sensor_linear_range"]["80mT:max"]["period_cap_mm"], 0.0),
+    ("dendrometer canon g4 low → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"жодна товщина \({N}–[\d.]+ Тл\)", DEN,
+     lambda d: min(_den_knob_row(d, f"t{t}:g4")["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"] for t in (3, 5, 10)), 0.0),
+    ("dendrometer canon g4 high → 114", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", rf"жодна товщина \([\d.]+–{N} Тл\)", DEN,
+     lambda d: max(_den_knob_row(d, f"t{t}:g4")["within_sensor_linear_range"]["80mT:max"]["b_r_needed_T"] for t in (3, 5, 10)), 0.0),
+]
+
+
+def test_dendrometer_knob_set_sentences_recompose_from_the_cache():
+    """The SET sentences of the 2026-11-10 paragraph (SUMMARY) and of 01_03 §4 ⊕ (в) «Клас магніту» — a numeric pin never
+    sees «only», «every», «none», so each set is rebuilt from the cache (§When Modifying #5 ⊕). CAN catch a re-run that
+    changes a membership the prose names; CANNOT catch a set sentence written after this test (it must join it)."""
+    d = json.loads((CACHE / DEN).read_text())
+    rows = {**d["scale"], **d["scale_thickness_knob"]["rows"]}
+    cap = lambda k, lane="80mT:max": rows[k]["within_sensor_linear_range"][lane]  # noqa: E731
+    real = [k for k, v in rows.items() if v["g_mm"] >= 3]
+    # «From g = 3 mm every P* lies over that cap at the maximum drift»
+    assert all(cap(k)["capped"] for k in real)
+    # «at the typical drift the ±80 mT cap binds on none of these rows»
+    assert not any(cap(k, "80mT:typ")["capped"] for k in rows)
+    # «only sintered REFeB … reaches it» (t 2 mm on 3 mm) · «from t 5 mm RE₂Co₁₇ does too» · «at 4 mm no thickness»
+    assert cap("t2:g3")["magnet_families_meeting"] == ["REFeB_sintered"]
+    assert cap("t3:g3")["magnet_families_meeting"] == ["REFeB_sintered"]
+    assert all("RE2Co17" in cap(f"t{t}:g3")["magnet_families_meeting"] for t in (5, 10))
+    assert all(cap(f"t{t:g}:g4")["magnet_families_meeting"] == [] for t in (1, 2, 3, 5, 10))
+    # 01_03: «решта комірок вища за стелю 1.42 Тл» — the other t 1–2 mm cells from g = 3 mm, inside the cap too
+    assert all(cap(k)["b_r_needed_T"] > 1.42 for k in ("t1:g3", "t1:g4", "t2:g4"))
+    # the doc table's family column, against the cache
+    text = (REPO / SUMMARY).read_text()
+    for k in _DEN_KNOB_ROWS:
+        t, g = k[1:].split(":g")
+        fam = " · ".join(_DEN_FAM[f] for f in cap(k)["magnet_families_meeting"]) or "none"
+        assert re.search(rf"(?m)^\| {re.escape(t)} · {re.escape(g)} \| .* \| {re.escape(fam)} \|$", text), (k, fam)
+
+
 # ── HW.54 a dark PV window in the crown (111, 2026-10-28) ⟷ SUMMARY §«How Much Does a Dark PV Window in the Dome Heat
 # the Capsule and the Cambium?», 01_03 §4 ⊕ 2026-10-28 and 00_07 HW.54. Temperatures and hours are cached at the
 # precision the table prints; the absorptances at six decimals and pinned at the three the table prints, EXACTLY (a

@@ -9117,6 +9117,65 @@ def test_dendrometer_budget_is_self_consistent():
         [d["inputs"]["growth"]["yr_um"] * u for u in (min(U), max(U))], abs=0.06)
 
 
+def test_dendrometer_thickness_knob_and_linear_range_cap_are_recomputed():
+    """114 (HW.54 Р3(в)) — the thickness knob and the sensor's linear-range cap against the fields they derive from.
+
+    CAN catch: a knob ratio that is not the row's B_r (or P*) over the t 2 mm row's at the same gap · an unwrap margin
+    that is not P*/2 over its basis · a period cap that is not 2π·target·B_lin/(√2·δB) · a «best period within the cap»
+    above the cap, or a `capped` flag that disagrees with it · a magnet-family list that disagrees with the cached family
+    table at the cached need (judged outside a ±0.001 T band, since the need is cached rounded) · a thicker scale that
+    does not need strictly less B_r at its own P* · angle or mismatch errors that are not proportional to the period used.
+    CANNOT catch: a wrong input (the datasheet rows, the families' transcription in the canon) or the idealised field form —
+    the script's controls 4 and 8 carry the form.
+    """
+    import math
+    d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
+    inp, hall = d["inputs"], d["inputs"]["hall"]
+    target, fam = inp["frame_sensitivity_um_per_K"], inp["magnet_families_br_T"]
+    knob = d["scale_thickness_knob"]["rows"]
+    bases = d["unwrap"]["worst_change_mm_by_basis"]
+
+    def families_agree(listed, need):
+        for name, (_lo, hi) in fam.items():
+            if hi >= need + 0.001:
+                assert name in listed, (name, need, listed)
+            elif hi < need - 0.001:
+                assert name not in listed, (name, need, listed)
+
+    for key, row in knob.items():
+        ref = d["scale"][f"t2:g{row['g_mm']:g}"]
+        for drift in ("typ", "max"):
+            assert row["b_r_needed_over_t2_same_gap"][drift] == pytest.approx(
+                row["b_r_needed_T_offset_term_only"][drift] / ref["b_r_needed_T_offset_term_only"][drift], abs=0.002), key
+        assert row["best_period_over_t2_same_gap"] == pytest.approx(row["best_period_mm"] / ref["best_period_mm"], abs=0.002)
+        for b, ch in bases.items():
+            assert row["unwrap_margin_by_basis"][b] == pytest.approx(row["half_period_mm"] / ch, abs=0.002), (key, b)
+    for key, row in [*d["scale"].items(), *knob.items()]:
+        for drift, need in row["b_r_needed_T_offset_term_only"].items():
+            families_agree(row["magnet_families_meeting_at_p_star"][drift], need)
+        for lane, w in row["within_sensor_linear_range"].items():
+            lin_mt, drift = lane.split("mT:")
+            cap = 2 * math.pi * target * 1e-3 * float(lin_mt) * 1e-3 / (math.sqrt(2) * hall["offset_drift_T_per_K"][drift])
+            assert w["period_cap_mm"] == pytest.approx(cap, abs=0.006), (key, lane)
+            assert w["best_period_within_cap_mm"] <= cap + 1e-9, (key, lane)
+            assert w["capped"] == (w["best_period_within_cap_mm"] < row["best_period_mm"]), (key, lane)
+            if not w["capped"]:
+                assert w["b_r_needed_T"] == pytest.approx(row["b_r_needed_T_offset_term_only"][drift], abs=0.0011), (key, lane)
+            families_agree(w["magnet_families_meeting"], w["b_r_needed_T"])
+            for pair in ("x_y", "x_z"):
+                p = w["best_period_within_cap_mm"]
+                assert w["angle_error_static_cyclic_um"][pair] == pytest.approx(
+                    p * hall["angle_error_deg"][pair] / 360 * 1e3, abs=0.051), (key, lane, pair)
+                assert w["mismatch_drift_cyclic_peak_um"][pair] == pytest.approx(
+                    p / (2 * math.pi) * hall["sens_mismatch_drift"][pair] / 2 * 1e3, abs=0.051), (key, lane, pair)
+    rows = {**d["scale"], **knob}
+    for g in inp["gaps_mm"]:
+        ts = sorted({r["t_mm"] for r in rows.values()})
+        for drift in ("typ", "max"):
+            needs = [rows[f"t{t:g}:g{g:g}"]["b_r_needed_T_offset_term_only"][drift] for t in ts]
+            assert all(a > b for a, b in zip(needs, needs[1:])), (g, drift, needs)
+
+
 def test_pv_snow_frost_order_and_azimuth_are_recomputed():
     """115 — the measured order and the azimuth ratios against the fields they derive from. CAN catch a hand-written order
     or a stale ratio after a partial re-run; CANNOT catch a wrong cover model (the script's controls carry those)."""

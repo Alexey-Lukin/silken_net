@@ -94,6 +94,29 @@
       2.0
     ],
     "noise_target_um": 1.0,
+    "scale_thickness_knob_mm": [
+      3.0,
+      5.0,
+      10.0
+    ],
+    "magnet_families_br_T": {
+      "RECo5": [
+        0.8,
+        0.93
+      ],
+      "RE2Co17": [
+        0.9,
+        1.1
+      ],
+      "REFeB_sintered": [
+        0.98,
+        1.42
+      ],
+      "ferrite_sintered_typical": [
+        0.23,
+        0.41
+      ]
+    },
     "sources": {
       "geometry_alpha_share": "103 cache (anchor_wood_share.json); xylem α — Sevanto et al. 2005, Boreal Env. Res. 10:437, Table 1, P. sylvestris, radial",
       "flange_heat": "78 cache (flange_cambium_heat.json)",
@@ -106,6 +129,7 @@
       "growth": "nph.17552 Table 1 · Etzold et al. 2022 Ecol. Lett. 10.1111/ele.13933 · Zweifel et al. 2021 Front. For. Glob. Change 10.3389/ffgc.2021.776905 p. 9",
       "swings_and_rate_ends": "01_03 §4 ⊕ (в)",
       "core_vout_cycle": "02_03 §9.4",
+      "magnet_families": "01_03 §4 ⊕ (в), desk 2026-11-10 — IEC 60404-8-1:2001/AMD1:2004 Tables 11–12 (specified minima) · MMPA 0100-00 Table III-1 (ferrite, typical) — a mirror, edit THERE",
       "collection": "handoff 2026-10-26_r3v_dendrometer.json"
     }
   },
@@ -113,6 +137,7 @@
     "closure_and_impulses": "A = 0 with one α; unit impulses → z_f − z_t · z_t + h · −h · −section length",
     "sections": "tile from 0, end at 103's full depth, gyroid centre on its anode centroid, 103's PEEK length to the shank's top",
     "field_optimum": "P* = 2πg for a thick scale",
+    "thickness_and_cap": "a thicker scale needs strictly less B_r at a P* that grows toward 2πg; the field needed at the cap equals the linear range; no capped period overruns it",
     "energy": "02_03 §9.4 members → lib's E_CYCLE through the active buck",
     "era5_hours": 262992,
     "monotone_support": "every anchor section's α > α_w"
@@ -793,7 +818,100 @@
       "in_place_angle_calibration_yr_fast_slow": [
         1.2,
         7.5
-      ]
+      ],
+      "magnet_families_meeting_at_p_star": {
+        "typ": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered",
+          "ferrite_sintered_typical"
+        ],
+        "max": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered"
+        ]
+      },
+      "within_sensor_linear_range": {
+        "40mT:typ": {
+          "period_cap_mm": 17.77,
+          "best_period_within_cap_mm": 6.01,
+          "capped": false,
+          "b_r_needed_T": 0.2,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 8.3,
+            "x_z": 16.7
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 23.9,
+            "x_z": 71.7
+          }
+        },
+        "40mT:max": {
+          "period_cap_mm": 5.33,
+          "best_period_within_cap_mm": 5.33,
+          "capped": true,
+          "b_r_needed_T": 0.677,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 7.4,
+            "x_z": 14.8
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 21.2,
+            "x_z": 63.6
+          }
+        },
+        "80mT:typ": {
+          "period_cap_mm": 35.54,
+          "best_period_within_cap_mm": 6.01,
+          "capped": false,
+          "b_r_needed_T": 0.2,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 8.3,
+            "x_z": 16.7
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 23.9,
+            "x_z": 71.7
+          }
+        },
+        "80mT:max": {
+          "period_cap_mm": 10.66,
+          "best_period_within_cap_mm": 6.01,
+          "capped": false,
+          "b_r_needed_T": 0.667,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 8.3,
+            "x_z": 16.7
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 23.9,
+            "x_z": 71.7
+          }
+        }
+      }
     },
     "t1:g2": {
       "t_mm": 1.0,
@@ -843,7 +961,96 @@
       "in_place_angle_calibration_yr_fast_slow": [
         1.5,
         9.5
-      ]
+      ],
+      "magnet_families_meeting_at_p_star": {
+        "typ": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered",
+          "ferrite_sintered_typical"
+        ],
+        "max": [
+          "RE2Co17",
+          "REFeB_sintered"
+        ]
+      },
+      "within_sensor_linear_range": {
+        "40mT:typ": {
+          "period_cap_mm": 17.77,
+          "best_period_within_cap_mm": 7.64,
+          "capped": false,
+          "b_r_needed_T": 0.318,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 10.6,
+            "x_z": 21.2
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 30.4,
+            "x_z": 91.2
+          }
+        },
+        "40mT:max": {
+          "period_cap_mm": 5.33,
+          "best_period_within_cap_mm": 5.33,
+          "capped": true,
+          "b_r_needed_T": 1.221,
+          "magnet_families_meeting": [
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 7.4,
+            "x_z": 14.8
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 21.2,
+            "x_z": 63.6
+          }
+        },
+        "80mT:typ": {
+          "period_cap_mm": 35.54,
+          "best_period_within_cap_mm": 7.64,
+          "capped": false,
+          "b_r_needed_T": 0.318,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 10.6,
+            "x_z": 21.2
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 30.4,
+            "x_z": 91.2
+          }
+        },
+        "80mT:max": {
+          "period_cap_mm": 10.66,
+          "best_period_within_cap_mm": 7.64,
+          "capped": false,
+          "b_r_needed_T": 1.059,
+          "magnet_families_meeting": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 10.6,
+            "x_z": 21.2
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 30.4,
+            "x_z": 91.2
+          }
+        }
+      }
     },
     "t1:g3": {
       "t_mm": 1.0,
@@ -893,7 +1100,85 @@
       "in_place_angle_calibration_yr_fast_slow": [
         2.2,
         13.5
-      ]
+      ],
+      "magnet_families_meeting_at_p_star": {
+        "typ": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered"
+        ],
+        "max": []
+      },
+      "within_sensor_linear_range": {
+        "40mT:typ": {
+          "period_cap_mm": 17.77,
+          "best_period_within_cap_mm": 10.84,
+          "capped": false,
+          "b_r_needed_T": 0.631,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 15.1,
+            "x_z": 30.1
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 43.1,
+            "x_z": 129.4
+          }
+        },
+        "40mT:max": {
+          "period_cap_mm": 5.33,
+          "best_period_within_cap_mm": 5.33,
+          "capped": true,
+          "b_r_needed_T": 3.968,
+          "magnet_families_meeting": [],
+          "angle_error_static_cyclic_um": {
+            "x_y": 7.4,
+            "x_z": 14.8
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 21.2,
+            "x_z": 63.6
+          }
+        },
+        "80mT:typ": {
+          "period_cap_mm": 35.54,
+          "best_period_within_cap_mm": 10.84,
+          "capped": false,
+          "b_r_needed_T": 0.631,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 15.1,
+            "x_z": 30.1
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 43.1,
+            "x_z": 129.4
+          }
+        },
+        "80mT:max": {
+          "period_cap_mm": 10.66,
+          "best_period_within_cap_mm": 10.66,
+          "capped": true,
+          "b_r_needed_T": 2.105,
+          "magnet_families_meeting": [],
+          "angle_error_static_cyclic_um": {
+            "x_y": 14.8,
+            "x_z": 29.6
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 42.4,
+            "x_z": 127.2
+          }
+        }
+      }
     },
     "t1:g4": {
       "t_mm": 1.0,
@@ -943,7 +1228,82 @@
       "in_place_angle_calibration_yr_fast_slow": [
         2.8,
         17.5
-      ]
+      ],
+      "magnet_families_meeting_at_p_star": {
+        "typ": [
+          "RE2Co17",
+          "REFeB_sintered"
+        ],
+        "max": []
+      },
+      "within_sensor_linear_range": {
+        "40mT:typ": {
+          "period_cap_mm": 17.77,
+          "best_period_within_cap_mm": 14.02,
+          "capped": false,
+          "b_r_needed_T": 1.049,
+          "magnet_families_meeting": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 19.5,
+            "x_z": 38.9
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 55.8,
+            "x_z": 167.4
+          }
+        },
+        "40mT:max": {
+          "period_cap_mm": 5.33,
+          "best_period_within_cap_mm": 5.33,
+          "capped": true,
+          "b_r_needed_T": 12.897,
+          "magnet_families_meeting": [],
+          "angle_error_static_cyclic_um": {
+            "x_y": 7.4,
+            "x_z": 14.8
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 21.2,
+            "x_z": 63.6
+          }
+        },
+        "80mT:typ": {
+          "period_cap_mm": 35.54,
+          "best_period_within_cap_mm": 14.02,
+          "capped": false,
+          "b_r_needed_T": 1.049,
+          "magnet_families_meeting": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 19.5,
+            "x_z": 38.9
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 55.8,
+            "x_z": 167.4
+          }
+        },
+        "80mT:max": {
+          "period_cap_mm": 10.66,
+          "best_period_within_cap_mm": 10.66,
+          "capped": true,
+          "b_r_needed_T": 3.795,
+          "magnet_families_meeting": [],
+          "angle_error_static_cyclic_um": {
+            "x_y": 14.8,
+            "x_z": 29.6
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 42.4,
+            "x_z": 127.2
+          }
+        }
+      }
     },
     "t2:g1.5": {
       "t_mm": 2.0,
@@ -993,7 +1353,100 @@
       "in_place_angle_calibration_yr_fast_slow": [
         1.4,
         8.7
-      ]
+      ],
+      "magnet_families_meeting_at_p_star": {
+        "typ": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered",
+          "ferrite_sintered_typical"
+        ],
+        "max": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered"
+        ]
+      },
+      "within_sensor_linear_range": {
+        "40mT:typ": {
+          "period_cap_mm": 17.77,
+          "best_period_within_cap_mm": 6.96,
+          "capped": false,
+          "b_r_needed_T": 0.145,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 9.7,
+            "x_z": 19.3
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 27.7,
+            "x_z": 83.1
+          }
+        },
+        "40mT:max": {
+          "period_cap_mm": 5.33,
+          "best_period_within_cap_mm": 5.33,
+          "capped": true,
+          "b_r_needed_T": 0.518,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 7.4,
+            "x_z": 14.8
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 21.2,
+            "x_z": 63.6
+          }
+        },
+        "80mT:typ": {
+          "period_cap_mm": 35.54,
+          "best_period_within_cap_mm": 6.96,
+          "capped": false,
+          "b_r_needed_T": 0.145,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 9.7,
+            "x_z": 19.3
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 27.7,
+            "x_z": 83.1
+          }
+        },
+        "80mT:max": {
+          "period_cap_mm": 10.66,
+          "best_period_within_cap_mm": 6.96,
+          "capped": false,
+          "b_r_needed_T": 0.484,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 9.7,
+            "x_z": 19.3
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 27.7,
+            "x_z": 83.1
+          }
+        }
+      }
     },
     "t2:g2": {
       "t_mm": 2.0,
@@ -1043,7 +1496,99 @@
       "in_place_angle_calibration_yr_fast_slow": [
         1.7,
         10.9
-      ]
+      ],
+      "magnet_families_meeting_at_p_star": {
+        "typ": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered",
+          "ferrite_sintered_typical"
+        ],
+        "max": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered"
+        ]
+      },
+      "within_sensor_linear_range": {
+        "40mT:typ": {
+          "period_cap_mm": 17.77,
+          "best_period_within_cap_mm": 8.69,
+          "capped": false,
+          "b_r_needed_T": 0.217,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 12.1,
+            "x_z": 24.1
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 34.6,
+            "x_z": 103.7
+          }
+        },
+        "40mT:max": {
+          "period_cap_mm": 5.33,
+          "best_period_within_cap_mm": 5.33,
+          "capped": true,
+          "b_r_needed_T": 0.933,
+          "magnet_families_meeting": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 7.4,
+            "x_z": 14.8
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 21.2,
+            "x_z": 63.6
+          }
+        },
+        "80mT:typ": {
+          "period_cap_mm": 35.54,
+          "best_period_within_cap_mm": 8.69,
+          "capped": false,
+          "b_r_needed_T": 0.217,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 12.1,
+            "x_z": 24.1
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 34.6,
+            "x_z": 103.7
+          }
+        },
+        "80mT:max": {
+          "period_cap_mm": 10.66,
+          "best_period_within_cap_mm": 8.69,
+          "capped": false,
+          "b_r_needed_T": 0.724,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 12.1,
+            "x_z": 24.1
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 34.6,
+            "x_z": 103.7
+          }
+        }
+      }
     },
     "t2:g3": {
       "t_mm": 2.0,
@@ -1093,7 +1638,92 @@
       "in_place_angle_calibration_yr_fast_slow": [
         2.4,
         15.0
-      ]
+      ],
+      "magnet_families_meeting_at_p_star": {
+        "typ": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered",
+          "ferrite_sintered_typical"
+        ],
+        "max": [
+          "REFeB_sintered"
+        ]
+      },
+      "within_sensor_linear_range": {
+        "40mT:typ": {
+          "period_cap_mm": 17.77,
+          "best_period_within_cap_mm": 12.03,
+          "capped": false,
+          "b_r_needed_T": 0.4,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 16.7,
+            "x_z": 33.4
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 47.9,
+            "x_z": 143.6
+          }
+        },
+        "40mT:max": {
+          "period_cap_mm": 5.33,
+          "best_period_within_cap_mm": 5.33,
+          "capped": true,
+          "b_r_needed_T": 3.034,
+          "magnet_families_meeting": [],
+          "angle_error_static_cyclic_um": {
+            "x_y": 7.4,
+            "x_z": 14.8
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 21.2,
+            "x_z": 63.6
+          }
+        },
+        "80mT:typ": {
+          "period_cap_mm": 35.54,
+          "best_period_within_cap_mm": 12.03,
+          "capped": false,
+          "b_r_needed_T": 0.4,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 16.7,
+            "x_z": 33.4
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 47.9,
+            "x_z": 143.6
+          }
+        },
+        "80mT:max": {
+          "period_cap_mm": 10.66,
+          "best_period_within_cap_mm": 10.66,
+          "capped": true,
+          "b_r_needed_T": 1.354,
+          "magnet_families_meeting": [
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 14.8,
+            "x_z": 29.6
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 42.4,
+            "x_z": 127.2
+          }
+        }
+      }
     },
     "t2:g4": {
       "t_mm": 2.0,
@@ -1143,8 +1773,1886 @@
       "in_place_angle_calibration_yr_fast_slow": [
         3.1,
         19.1
-      ]
+      ],
+      "magnet_families_meeting_at_p_star": {
+        "typ": [
+          "RECo5",
+          "RE2Co17",
+          "REFeB_sintered"
+        ],
+        "max": []
+      },
+      "within_sensor_linear_range": {
+        "40mT:typ": {
+          "period_cap_mm": 17.77,
+          "best_period_within_cap_mm": 15.28,
+          "capped": false,
+          "b_r_needed_T": 0.636,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 21.2,
+            "x_z": 42.4
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 60.8,
+            "x_z": 182.4
+          }
+        },
+        "40mT:max": {
+          "period_cap_mm": 5.33,
+          "best_period_within_cap_mm": 5.33,
+          "capped": true,
+          "b_r_needed_T": 9.863,
+          "magnet_families_meeting": [],
+          "angle_error_static_cyclic_um": {
+            "x_y": 7.4,
+            "x_z": 14.8
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 21.2,
+            "x_z": 63.6
+          }
+        },
+        "80mT:typ": {
+          "period_cap_mm": 35.54,
+          "best_period_within_cap_mm": 15.28,
+          "capped": false,
+          "b_r_needed_T": 0.636,
+          "magnet_families_meeting": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "angle_error_static_cyclic_um": {
+            "x_y": 21.2,
+            "x_z": 42.4
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 60.8,
+            "x_z": 182.4
+          }
+        },
+        "80mT:max": {
+          "period_cap_mm": 10.66,
+          "best_period_within_cap_mm": 10.66,
+          "capped": true,
+          "b_r_needed_T": 2.441,
+          "magnet_families_meeting": [],
+          "angle_error_static_cyclic_um": {
+            "x_y": 14.8,
+            "x_z": 29.6
+          },
+          "mismatch_drift_cyclic_peak_um": {
+            "x_y": 42.4,
+            "x_z": 127.2
+          }
+        }
+      }
     }
+  },
+  "scale_thickness_knob": {
+    "thickness_mm": [
+      3.0,
+      5.0,
+      10.0
+    ],
+    "reference": "the t 2 mm row of the base table at the same gap",
+    "rows": {
+      "t3:g1.5": {
+        "t_mm": 3.0,
+        "g_mm": 1.5,
+        "best_period_mm": 7.66,
+        "half_period_mm": 3.83,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.129,
+          "max": 0.43
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 17.2,
+          "max": 57.5
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": true
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 10.6,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 30.5,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.3,
+              0.47
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 21.3,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 91.4,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.91,
+              1.41
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 0.00898,
+        "gap_below_radome_wall": true,
+        "in_place_angle_calibration_yr_fast_slow": [
+          1.5,
+          9.6
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 7.66,
+            "capped": false,
+            "b_r_needed_T": 0.129,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 10.6,
+              "x_z": 21.3
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 30.5,
+              "x_z": 91.4
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 0.483,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 7.66,
+            "capped": false,
+            "b_r_needed_T": 0.129,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 10.6,
+              "x_z": 21.3
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 30.5,
+              "x_z": 91.4
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 7.66,
+            "capped": false,
+            "b_r_needed_T": 0.43,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 10.6,
+              "x_z": 21.3
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 30.5,
+              "x_z": 91.4
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.89,
+          "max": 0.888
+        },
+        "best_period_over_t2_same_gap": 1.101,
+        "unwrap_margin_by_basis": {
+          "winter": 1.915,
+          "growing_month_fast_end_plus_daily_swing": 2.641,
+          "cross_season_outage": 1.11
+        }
+      },
+      "t3:g2": {
+        "t_mm": 3.0,
+        "g_mm": 2.0,
+        "best_period_mm": 9.54,
+        "half_period_mm": 4.77,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.186,
+          "max": 0.62
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 21.5,
+          "max": 71.5
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": true
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 13.2,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 38.0,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.38,
+              0.58
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 26.5,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 113.9,
+            "mismatch_um_per_K_if_linear_over_K": [
+              1.14,
+              1.75
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 0.00187,
+        "gap_below_radome_wall": false,
+        "in_place_angle_calibration_yr_fast_slow": [
+          1.9,
+          11.9
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 9.54,
+            "capped": false,
+            "b_r_needed_T": 0.186,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 13.2,
+              "x_z": 26.5
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 38.0,
+              "x_z": 113.9
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 0.87,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 9.54,
+            "capped": false,
+            "b_r_needed_T": 0.186,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 13.2,
+              "x_z": 26.5
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 38.0,
+              "x_z": 113.9
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 9.54,
+            "capped": false,
+            "b_r_needed_T": 0.62,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 13.2,
+              "x_z": 26.5
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 38.0,
+              "x_z": 113.9
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.857,
+          "max": 0.856
+        },
+        "best_period_over_t2_same_gap": 1.098,
+        "unwrap_margin_by_basis": {
+          "winter": 2.385,
+          "growing_month_fast_end_plus_daily_swing": 3.29,
+          "cross_season_outage": 1.383
+        }
+      },
+      "t3:g3": {
+        "t_mm": 3.0,
+        "g_mm": 3.0,
+        "best_period_mm": 13.04,
+        "half_period_mm": 6.52,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.326,
+          "max": 1.086
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 29.4,
+          "max": 97.8
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": false
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 18.1,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 51.9,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.52,
+              0.8
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 36.2,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 155.7,
+            "mismatch_um_per_K_if_linear_over_K": [
+              1.56,
+              2.39
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 8.07e-05,
+        "gap_below_radome_wall": false,
+        "in_place_angle_calibration_yr_fast_slow": [
+          2.6,
+          16.3
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 13.04,
+            "capped": false,
+            "b_r_needed_T": 0.326,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 18.1,
+              "x_z": 36.2
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 51.9,
+              "x_z": 155.7
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 2.829,
+            "magnet_families_meeting": [],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 13.04,
+            "capped": false,
+            "b_r_needed_T": 0.326,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 18.1,
+              "x_z": 36.2
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 51.9,
+              "x_z": 155.7
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 10.66,
+            "capped": true,
+            "b_r_needed_T": 1.13,
+            "magnet_families_meeting": [
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 14.8,
+              "x_z": 29.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.4,
+              "x_z": 127.2
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.815,
+          "max": 0.814
+        },
+        "best_period_over_t2_same_gap": 1.084,
+        "unwrap_margin_by_basis": {
+          "winter": 3.26,
+          "growing_month_fast_end_plus_daily_swing": 4.497,
+          "cross_season_outage": 1.89
+        }
+      },
+      "t3:g4": {
+        "t_mm": 3.0,
+        "g_mm": 4.0,
+        "best_period_mm": 16.4,
+        "half_period_mm": 8.2,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.5,
+          "max": 1.668
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 36.9,
+          "max": 123.1
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": false
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 22.8,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 65.3,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.65,
+              1.0
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 45.6,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 195.8,
+            "mismatch_um_per_K_if_linear_over_K": [
+              1.96,
+              3.01
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 3.49e-06,
+        "gap_below_radome_wall": false,
+        "in_place_angle_calibration_yr_fast_slow": [
+          3.3,
+          20.5
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ],
+          "max": []
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 16.4,
+            "capped": false,
+            "b_r_needed_T": 0.5,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 22.8,
+              "x_z": 45.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 65.3,
+              "x_z": 195.8
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 9.197,
+            "magnet_families_meeting": [],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 16.4,
+            "capped": false,
+            "b_r_needed_T": 0.5,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 22.8,
+              "x_z": 45.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 65.3,
+              "x_z": 195.8
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 10.66,
+            "capped": true,
+            "b_r_needed_T": 2.038,
+            "magnet_families_meeting": [],
+            "angle_error_static_cyclic_um": {
+              "x_y": 14.8,
+              "x_z": 29.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.4,
+              "x_z": 127.2
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.786,
+          "max": 0.788
+        },
+        "best_period_over_t2_same_gap": 1.073,
+        "unwrap_margin_by_basis": {
+          "winter": 4.1,
+          "growing_month_fast_end_plus_daily_swing": 5.655,
+          "cross_season_outage": 2.377
+        }
+      },
+      "t5:g1.5": {
+        "t_mm": 5.0,
+        "g_mm": 1.5,
+        "best_period_mm": 8.59,
+        "half_period_mm": 4.295,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.119,
+          "max": 0.396
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 19.3,
+          "max": 64.4
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": true
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 11.9,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 34.2,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.34,
+              0.53
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 23.9,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 102.5,
+            "mismatch_um_per_K_if_linear_over_K": [
+              1.03,
+              1.58
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 0.00898,
+        "gap_below_radome_wall": true,
+        "in_place_angle_calibration_yr_fast_slow": [
+          1.7,
+          10.7
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 8.59,
+            "capped": false,
+            "b_r_needed_T": 0.119,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 11.9,
+              "x_z": 23.9
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 34.2,
+              "x_z": 102.5
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 0.47,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 8.59,
+            "capped": false,
+            "b_r_needed_T": 0.119,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 11.9,
+              "x_z": 23.9
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 34.2,
+              "x_z": 102.5
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 8.59,
+            "capped": false,
+            "b_r_needed_T": 0.396,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 11.9,
+              "x_z": 23.9
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 34.2,
+              "x_z": 102.5
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.821,
+          "max": 0.818
+        },
+        "best_period_over_t2_same_gap": 1.234,
+        "unwrap_margin_by_basis": {
+          "winter": 2.147,
+          "growing_month_fast_end_plus_daily_swing": 2.962,
+          "cross_season_outage": 1.245
+        }
+      },
+      "t5:g2": {
+        "t_mm": 5.0,
+        "g_mm": 2.0,
+        "best_period_mm": 10.77,
+        "half_period_mm": 5.385,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.165,
+          "max": 0.549
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 24.3,
+          "max": 80.8
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": false
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 15.0,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 42.9,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.43,
+              0.66
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 29.9,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 128.6,
+            "mismatch_um_per_K_if_linear_over_K": [
+              1.29,
+              1.98
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 0.00187,
+        "gap_below_radome_wall": false,
+        "in_place_angle_calibration_yr_fast_slow": [
+          2.2,
+          13.5
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 10.77,
+            "capped": false,
+            "b_r_needed_T": 0.165,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 15.0,
+              "x_z": 29.9
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.9,
+              "x_z": 128.6
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 0.847,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 10.77,
+            "capped": false,
+            "b_r_needed_T": 0.165,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 15.0,
+              "x_z": 29.9
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.9,
+              "x_z": 128.6
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 10.66,
+            "capped": true,
+            "b_r_needed_T": 0.549,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 14.8,
+              "x_z": 29.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.4,
+              "x_z": 127.2
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.76,
+          "max": 0.758
+        },
+        "best_period_over_t2_same_gap": 1.239,
+        "unwrap_margin_by_basis": {
+          "winter": 2.692,
+          "growing_month_fast_end_plus_daily_swing": 3.714,
+          "cross_season_outage": 1.561
+        }
+      },
+      "t5:g3": {
+        "t_mm": 5.0,
+        "g_mm": 3.0,
+        "best_period_mm": 14.67,
+        "half_period_mm": 7.335,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.27,
+          "max": 0.902
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 33.0,
+          "max": 110.1
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": false
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 20.4,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 58.4,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.58,
+              0.9
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 40.8,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 175.1,
+            "mismatch_um_per_K_if_linear_over_K": [
+              1.75,
+              2.69
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 8.07e-05,
+        "gap_below_radome_wall": false,
+        "in_place_angle_calibration_yr_fast_slow": [
+          2.9,
+          18.3
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 14.67,
+            "capped": false,
+            "b_r_needed_T": 0.27,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 20.4,
+              "x_z": 40.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 58.4,
+              "x_z": 175.1
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 2.755,
+            "magnet_families_meeting": [],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 14.67,
+            "capped": false,
+            "b_r_needed_T": 0.27,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 20.4,
+              "x_z": 40.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 58.4,
+              "x_z": 175.1
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 10.66,
+            "capped": true,
+            "b_r_needed_T": 0.989,
+            "magnet_families_meeting": [
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 14.8,
+              "x_z": 29.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.4,
+              "x_z": 127.2
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.675,
+          "max": 0.676
+        },
+        "best_period_over_t2_same_gap": 1.219,
+        "unwrap_margin_by_basis": {
+          "winter": 3.667,
+          "growing_month_fast_end_plus_daily_swing": 5.059,
+          "cross_season_outage": 2.126
+        }
+      },
+      "t5:g4": {
+        "t_mm": 5.0,
+        "g_mm": 4.0,
+        "best_period_mm": 18.27,
+        "half_period_mm": 9.135,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.397,
+          "max": 1.322
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 41.2,
+          "max": 137.1
+        },
+        "within_linear_range_40mT": {
+          "typ": false,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": false
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 25.4,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 72.7,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.73,
+              1.12
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 50.8,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 218.1,
+            "mismatch_um_per_K_if_linear_over_K": [
+              2.18,
+              3.36
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 3.49e-06,
+        "gap_below_radome_wall": false,
+        "in_place_angle_calibration_yr_fast_slow": [
+          3.7,
+          22.8
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "REFeB_sintered"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 17.77,
+            "capped": true,
+            "b_r_needed_T": 0.397,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 24.7,
+              "x_z": 49.4
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 70.7,
+              "x_z": 212.1
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 8.954,
+            "magnet_families_meeting": [],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 18.27,
+            "capped": false,
+            "b_r_needed_T": 0.397,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 25.4,
+              "x_z": 50.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 72.7,
+              "x_z": 218.1
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 10.66,
+            "capped": true,
+            "b_r_needed_T": 1.784,
+            "magnet_families_meeting": [],
+            "angle_error_static_cyclic_um": {
+              "x_y": 14.8,
+              "x_z": 29.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.4,
+              "x_z": 127.2
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.624,
+          "max": 0.624
+        },
+        "best_period_over_t2_same_gap": 1.196,
+        "unwrap_margin_by_basis": {
+          "winter": 4.567,
+          "growing_month_fast_end_plus_daily_swing": 6.3,
+          "cross_season_outage": 2.648
+        }
+      },
+      "t10:g1.5": {
+        "t_mm": 10.0,
+        "g_mm": 1.5,
+        "best_period_mm": 9.35,
+        "half_period_mm": 4.675,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.115,
+          "max": 0.385
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 21.0,
+          "max": 70.2
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": true
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 13.0,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 37.2,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.37,
+              0.57
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 26.0,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 111.6,
+            "mismatch_um_per_K_if_linear_over_K": [
+              1.12,
+              1.72
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 0.00898,
+        "gap_below_radome_wall": true,
+        "in_place_angle_calibration_yr_fast_slow": [
+          1.9,
+          11.7
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 9.35,
+            "capped": false,
+            "b_r_needed_T": 0.115,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 13.0,
+              "x_z": 26.0
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 37.2,
+              "x_z": 111.6
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 0.469,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 9.35,
+            "capped": false,
+            "b_r_needed_T": 0.115,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 13.0,
+              "x_z": 26.0
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 37.2,
+              "x_z": 111.6
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 9.35,
+            "capped": false,
+            "b_r_needed_T": 0.385,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 13.0,
+              "x_z": 26.0
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 37.2,
+              "x_z": 111.6
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.793,
+          "max": 0.795
+        },
+        "best_period_over_t2_same_gap": 1.343,
+        "unwrap_margin_by_basis": {
+          "winter": 2.337,
+          "growing_month_fast_end_plus_daily_swing": 3.224,
+          "cross_season_outage": 1.355
+        }
+      },
+      "t10:g2": {
+        "t_mm": 10.0,
+        "g_mm": 2.0,
+        "best_period_mm": 12.2,
+        "half_period_mm": 6.1,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.155,
+          "max": 0.516
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 27.5,
+          "max": 91.6
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": false
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 16.9,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 48.5,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.49,
+              0.75
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 33.9,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 145.6,
+            "mismatch_um_per_K_if_linear_over_K": [
+              1.46,
+              2.24
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 0.00187,
+        "gap_below_radome_wall": false,
+        "in_place_angle_calibration_yr_fast_slow": [
+          2.4,
+          15.2
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 12.2,
+            "capped": false,
+            "b_r_needed_T": 0.155,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 16.9,
+              "x_z": 33.9
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 48.5,
+              "x_z": 145.6
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 0.845,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 12.2,
+            "capped": false,
+            "b_r_needed_T": 0.155,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 16.9,
+              "x_z": 33.9
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 48.5,
+              "x_z": 145.6
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 10.66,
+            "capped": true,
+            "b_r_needed_T": 0.521,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 14.8,
+              "x_z": 29.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.4,
+              "x_z": 127.2
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.714,
+          "max": 0.713
+        },
+        "best_period_over_t2_same_gap": 1.404,
+        "unwrap_margin_by_basis": {
+          "winter": 3.05,
+          "growing_month_fast_end_plus_daily_swing": 4.207,
+          "cross_season_outage": 1.768
+        }
+      },
+      "t10:g3": {
+        "t_mm": 10.0,
+        "g_mm": 3.0,
+        "best_period_mm": 17.18,
+        "half_period_mm": 8.59,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.238,
+          "max": 0.793
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 38.7,
+          "max": 128.9
+        },
+        "within_linear_range_40mT": {
+          "typ": true,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": false
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 23.9,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 68.4,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.68,
+              1.05
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 47.7,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 205.1,
+            "mismatch_um_per_K_if_linear_over_K": [
+              2.05,
+              3.15
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 8.07e-05,
+        "gap_below_radome_wall": false,
+        "in_place_angle_calibration_yr_fast_slow": [
+          3.4,
+          21.5
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 17.18,
+            "capped": false,
+            "b_r_needed_T": 0.238,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 23.9,
+              "x_z": 47.7
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 68.4,
+              "x_z": 205.1
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 2.747,
+            "magnet_families_meeting": [],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 17.18,
+            "capped": false,
+            "b_r_needed_T": 0.238,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 23.9,
+              "x_z": 47.7
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 68.4,
+              "x_z": 205.1
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 10.66,
+            "capped": true,
+            "b_r_needed_T": 0.94,
+            "magnet_families_meeting": [
+              "RE2Co17",
+              "REFeB_sintered"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 14.8,
+              "x_z": 29.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.4,
+              "x_z": 127.2
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.595,
+          "max": 0.594
+        },
+        "best_period_over_t2_same_gap": 1.428,
+        "unwrap_margin_by_basis": {
+          "winter": 4.295,
+          "growing_month_fast_end_plus_daily_swing": 5.924,
+          "cross_season_outage": 2.49
+        }
+      },
+      "t10:g4": {
+        "t_mm": 10.0,
+        "g_mm": 4.0,
+        "best_period_mm": 21.54,
+        "half_period_mm": 10.77,
+        "b_r_needed_T_offset_term_only": {
+          "typ": 0.329,
+          "max": 1.097
+        },
+        "field_at_sensor_mT_at_needed_b_r": {
+          "typ": 48.4,
+          "max": 161.5
+        },
+        "within_linear_range_40mT": {
+          "typ": false,
+          "max": false
+        },
+        "within_linear_range_80mT": {
+          "typ": true,
+          "max": false
+        },
+        "two_channel_samples_for_1um_at_needed_b_r": {
+          "typ": 3,
+          "max": 1
+        },
+        "axis_pairs": {
+          "x_y": {
+            "angle_error_static_cyclic_um": 29.9,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 85.7,
+            "mismatch_um_per_K_if_linear_over_K": [
+              0.86,
+              1.32
+            ]
+          },
+          "x_z": {
+            "angle_error_static_cyclic_um": 59.8,
+            "mismatch_drift_cyclic_peak_um_over_datasheet_drift": 257.1,
+            "mismatch_um_per_K_if_linear_over_K": [
+              2.57,
+              3.96
+            ]
+          }
+        },
+        "surface_field_share_kept_by_2mm_period": 3.49e-06,
+        "gap_below_radome_wall": false,
+        "in_place_angle_calibration_yr_fast_slow": [
+          4.3,
+          26.9
+        ],
+        "magnet_families_meeting_at_p_star": {
+          "typ": [
+            "RECo5",
+            "RE2Co17",
+            "REFeB_sintered",
+            "ferrite_sintered_typical"
+          ],
+          "max": [
+            "RE2Co17",
+            "REFeB_sintered"
+          ]
+        },
+        "within_sensor_linear_range": {
+          "40mT:typ": {
+            "period_cap_mm": 17.77,
+            "best_period_within_cap_mm": 17.77,
+            "capped": true,
+            "b_r_needed_T": 0.339,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 24.7,
+              "x_z": 49.4
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 70.7,
+              "x_z": 212.1
+            }
+          },
+          "40mT:max": {
+            "period_cap_mm": 5.33,
+            "best_period_within_cap_mm": 5.33,
+            "capped": true,
+            "b_r_needed_T": 8.929,
+            "magnet_families_meeting": [],
+            "angle_error_static_cyclic_um": {
+              "x_y": 7.4,
+              "x_z": 14.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 21.2,
+              "x_z": 63.6
+            }
+          },
+          "80mT:typ": {
+            "period_cap_mm": 35.54,
+            "best_period_within_cap_mm": 21.54,
+            "capped": false,
+            "b_r_needed_T": 0.329,
+            "magnet_families_meeting": [
+              "RECo5",
+              "RE2Co17",
+              "REFeB_sintered",
+              "ferrite_sintered_typical"
+            ],
+            "angle_error_static_cyclic_um": {
+              "x_y": 29.9,
+              "x_z": 59.8
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 85.7,
+              "x_z": 257.1
+            }
+          },
+          "80mT:max": {
+            "period_cap_mm": 10.66,
+            "best_period_within_cap_mm": 10.66,
+            "capped": true,
+            "b_r_needed_T": 1.695,
+            "magnet_families_meeting": [],
+            "angle_error_static_cyclic_um": {
+              "x_y": 14.8,
+              "x_z": 29.6
+            },
+            "mismatch_drift_cyclic_peak_um": {
+              "x_y": 42.4,
+              "x_z": 127.2
+            }
+          }
+        },
+        "b_r_needed_over_t2_same_gap": {
+          "typ": 0.517,
+          "max": 0.518
+        },
+        "best_period_over_t2_same_gap": 1.41,
+        "unwrap_margin_by_basis": {
+          "winter": 5.385,
+          "growing_month_fast_end_plus_daily_swing": 7.428,
+          "cross_season_outage": 3.122
+        }
+      }
+    },
+    "reading": "each row is the base table's row at a thicker scale, computed by the same function; the field the offset term needs at the sensor depends on the period alone, so a longer best period also raises it — `within_sensor_linear_range` gives the best period the sensor's linear range allows and the remanence needed there. The base table's population stays t 1–2 mm."
   },
   "unwrap": {
     "worst_change_mm_by_basis": {
