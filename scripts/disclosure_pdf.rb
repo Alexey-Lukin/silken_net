@@ -42,7 +42,10 @@
 #     no bold, and the bold Chrome synthesises in a heading makes Skia embed the glyph as a Type 3 font, which arXiv's
 #     PDF rules ask submitters to avoid (outline TrueType/Type 1 only);
 #   · a table's first column never wraps (poppler read a wrapped cell across the row), and a
-#     heading never ends a page;
+#     heading never ends a page; in manuscript mode it may (`.ms td:first-child`), so a cell or a header long enough
+#     to wrap is shortened at its source, its caveat moved to the note below the table — and that fix is judged in the
+#     FULL manuscript: a table cut out of it lays out differently and did not reproduce its own control (rehearsal
+#     2026-11-10); print a variant from a temporary commit in a worktree, its SHA is readable from this tree;
 #   · a cell that is one bold label never wraps either: poppler made a block of each line of a wrapped label and read
 #     the long neighbouring cell between them;
 #   · a `- ` list right after a paragraph line is printed as a list, as GitHub renders it: Redcarpet wants a blank line
