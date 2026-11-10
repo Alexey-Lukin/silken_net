@@ -4319,7 +4319,9 @@ CHECKS += [
 
 # ── HW.25 · the stand's positive control (§4.3 p. 4, §8.1) → 57 `stand_positive_control`. The punch Ø is the SHEET's
 # proposal inside a [вибір стенда] and 57 mirrors it. «Passes above / from X» rounds UP (the bound, the layer, the
-# measured-hole acceptance); a margin, a stopping overpressure and the γ the margin covers round DOWN (#43).
+# measured-hole acceptance); a margin and the γ the margin covers round DOWN; the stopping overpressure is quoted in the
+# NECESSARY form «passes only while below N» over a FAMILY of layers (a thinner layer stops lower), true only with N UP
+# (#43 ⊕ 2026-11-08, «only while» by the shape of the claim) — and the letter that carries it to the lab, the same.
 GDL = "kinetics/gdl_breakthrough.json"
 _PC = "stand_positive_control"
 
@@ -4347,10 +4349,10 @@ CHECKS += [
      lambda d: _up(d[_PC]["punch_passes_any_layer_from_mm"]), 1e-9),
     ("HW.25 · stand §4.3 p.4 γ the margin covers (down)", STAND, rf"за будь-якого γ нижче \*\*{N}\*\* Н/м", GDL,
      lambda d: _down(d[_PC]["punch_passes_up_to_gamma_N_m"] * 1000.0) / 1000.0, 1e-9),
-    ("HW.25 · stand §4.3 p.4 stopping cavity overpressure, Pa (down)", STAND, rf"нижчий за \*\*{N}\*\* Па \(≈", GDL,
-     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
-    ("HW.25 · stand §4.3 p.4 stopping cavity overpressure, mm H₂O (down)", STAND, rf"\(≈ \*\*{N}\*\* мм H₂O\)", GDL,
-     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
+    ("HW.25 · stand §4.3 p.4 stopping cavity overpressure, Pa (up)", STAND, rf"нижчий за \*\*{N}\*\* Па \(≈", GDL,
+     lambda d: _up(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
+    ("HW.25 · stand §4.3 p.4 stopping cavity overpressure, mm H₂O (up)", STAND, rf"\(≈ \*\*{N}\*\* мм H₂O\)", GDL,
+     lambda d: _up1(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
     ("HW.25 · stand §4.3 p.4 pore held at θ 110°", STAND, rf"підлозі специфікації, \*\*{N} µm\*\*", GDL,
      lambda d: d[_PC]["pore_held_by_theta_um"]["CA_110"], 0.05),
     ("HW.25 · stand §4.3 p.4 pore held at θ 120°", STAND, rf"при θ = 120° — \*\*{N} µm\*\*", GDL,
@@ -4363,10 +4365,13 @@ CHECKS += [
      lambda d: _up(d[_PC]["punch_passes_any_layer_from_mm"]), 1e-9),
     ("HW.25 · stand §8.1 row γ (down)", STAND, rf"мм · {N} Н/м · ", GDL,
      lambda d: _down(d[_PC]["punch_passes_up_to_gamma_N_m"] * 1000.0) / 1000.0, 1e-9),
-    ("HW.25 · stand §8.1 row stopping overpressure, Pa (down)", STAND, rf"Н/м · {N} Па \(≈", GDL,
-     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
-    ("HW.25 · stand §8.1 row stopping overpressure, mm H₂O (down)", STAND, rf"Па \(≈ {N} мм H₂O\) · ", GDL,
-     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
+    ("HW.25 · stand §8.1 row stopping overpressure, Pa (up)", STAND, rf"Н/м · {N} Па \(≈", GDL,
+     lambda d: _up(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
+    ("HW.25 · stand §8.1 row stopping overpressure, mm H₂O (up)", STAND, rf"Па \(≈ {N} мм H₂O\) · ", GDL,
+     lambda d: _up1(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
+    ("HW.25 · climate-lab letter p. 7 stopping overpressure, mm H₂O (up)", "docs/protocols/procurement/vendor_templates.md",
+     rf"з надлишком від {N} мм водяного стовпа", GDL,
+     lambda d: _up1(d[_PC]["cavity_overpressure_stopping_the_punch_mm_H2O"]), 1e-9),
     ("HW.25 · stand §8.1 row pore held at θ 110°", STAND, rf"H₂O\) · {N} / [\d.]+ µm \|", GDL,
      lambda d: d[_PC]["pore_held_by_theta_um"]["CA_110"], 0.05),
     ("HW.25 · stand §8.1 row pore held at θ 120°", STAND, rf"H₂O\) · [\d.]+ / {N} µm \|", GDL,
@@ -4378,8 +4383,8 @@ CHECKS += [
      lambda d: _down2(d[_PC]["punch_over_bound_x"]), 1e-9),
     ("HW.25 · SUMMARY positive-control thinnest layer (up)", SUMMARY, rf"passes any layer from \*\*{N}\*\* mm", GDL,
      lambda d: _up(d[_PC]["punch_passes_any_layer_from_mm"]), 1e-9),
-    ("HW.25 · SUMMARY stopping cavity overpressure (down)", SUMMARY, rf"cavity.s overpressure stays below \*\*{N}\*\* Pa", GDL,
-     lambda d: _down(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
+    ("HW.25 · SUMMARY stopping cavity overpressure (up)", SUMMARY, rf"cavity.s overpressure stays below \*\*{N}\*\* Pa", GDL,
+     lambda d: _up(d[_PC]["cavity_overpressure_stopping_the_punch_Pa"]), 1e-9),
     ("HW.25 · SUMMARY pore held at θ 110°", SUMMARY, rf"\(110° · 120°: \*\*{N} · [\d.]+ µm\*\*\)", GDL,
      lambda d: d[_PC]["pore_held_by_theta_um"]["CA_110"], 0.05),
     ("HW.25 · SUMMARY pore held at θ 120°", SUMMARY, rf"\(110° · 120°: \*\*[\d.]+ · {N} µm\*\*\)", GDL,
