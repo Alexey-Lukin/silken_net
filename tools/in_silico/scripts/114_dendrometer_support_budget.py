@@ -389,7 +389,7 @@ def control_thickness() -> None:
         assert all(a <= b for a, b in itertools.pairwise(periods)), (g, periods)
         assert periods[-1] <= 2 * math.pi * g + 0.02, (g, periods[-1])
         for db in HALL["offset_drift_T_per_K"].values():
-            needs = [b_r_needed_t(p, t, g, db, FRAME_UM_PER_K) for p, t in zip(periods, ts)]
+            needs = [b_r_needed_t(p, t, g, db, FRAME_UM_PER_K) for p, t in zip(periods, ts, strict=True)]
             assert all(a > b for a, b in itertools.pairwise(needs)), (g, db, needs)
             for lin in HALL["linear_range_T"]:
                 cap = period_cap_mm(lin, db, FRAME_UM_PER_K)

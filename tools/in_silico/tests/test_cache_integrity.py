@@ -9128,6 +9128,7 @@ def test_dendrometer_thickness_knob_and_linear_range_cap_are_recomputed():
     CANNOT catch: a wrong input (the datasheet rows, the families' transcription in the canon) or the idealised field form —
     the script's controls 4 and 8 carry the form.
     """
+    import itertools
     import math
     d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
     inp, hall = d["inputs"], d["inputs"]["hall"]
@@ -9175,7 +9176,7 @@ def test_dendrometer_thickness_knob_and_linear_range_cap_are_recomputed():
         ts = sorted({r["t_mm"] for r in rows.values()})
         for drift in ("typ", "max"):
             needs = [rows[f"t{t:g}:g{g:g}"]["b_r_needed_T_offset_term_only"][drift] for t in ts]
-            assert all(a > b for a, b in zip(needs, needs[1:])), (g, drift, needs)
+            assert all(a > b for a, b in itertools.pairwise(needs)), (g, drift, needs)
 
 
 def test_pv_snow_frost_order_and_azimuth_are_recomputed():
