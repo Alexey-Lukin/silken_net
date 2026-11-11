@@ -7184,7 +7184,7 @@ CHECKS += [
      lambda d: math.ceil(round(max(abs(d["controls"]["stick_compliance_at_tightest_grip"][-1]["F_rel"]),
                                    abs(d["controls"]["stick_compliance_at_tightest_grip"][-1]["pad_rel"])) * 1000, 9)) / 10, 0.0),
     ("shear wire stretch low → 102", SUMMARY, rf"at most {N} – [\d.]+ µm at the wall's cap", SHEAR,
-     lambda d: math.floor(round(min(v["wire_stretch_at_wall_cap_um_max"] for v in d["seam_by_alloy"].values()) * 10, 9)) / 10, 0.0),
+     lambda d: math.ceil(round(min(v["wire_stretch_at_wall_cap_um_max"] for v in d["seam_by_alloy"].values()) * 10, 9)) / 10, 0.0),  # an «at most» per alloy rounds UP at both ends (#43)
     ("shear wire stretch high → 102", SUMMARY, rf"at most [\d.]+ – {N} µm at the wall's cap", SHEAR,
      lambda d: math.ceil(round(max(v["wire_stretch_at_wall_cap_um_max"] for v in d["seam_by_alloy"].values()) * 10, 9)) / 10, 0.0),
     ("shear hot past larger count → 102", SUMMARY, rf"past the larger margin on {N} of 4 readings", SHEAR,

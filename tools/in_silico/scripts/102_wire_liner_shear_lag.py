@@ -563,7 +563,7 @@ def main() -> int:
                  f"of mean on Ta (gentle to adverse grip) — up to {math.ceil(round(ta['hot_preload']['wall_stress_share_of_23C_yield'] * 100, 9))} % of "
                  f"the wall's 23 °C yield, where creep is not modelled, so the upper end is a ceiling — and raises its "
                  f"requirement to {kk(ta, '0', 'seam_k_adverse_with_preload')} with no sway at all.")
-    lines.append(f"Pad: the wire's own stretch is capped with the force — at most {down1(min(stretch)):.1f}–{up1(max(stretch)):.1f} µm "
+    lines.append(f"Pad: the wire's own stretch is capped with the force — at most {up1(min(stretch)):.1f}–{up1(max(stretch)):.1f} µm "
                  f"at the wall's cap — so the rest of any shift goes into the pad: with the part gripping "
                  f"{math.floor(round(min(grip_frac) * 100, 9))}–{math.ceil(round(max(grip_frac) * 100, 9))} % of a sway shift "
                  f"reaches it, on a part at the window floor {math.floor(round(min(floor_frac) * 100, 9))}–"

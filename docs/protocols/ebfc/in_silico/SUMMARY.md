@@ -788,7 +788,7 @@ reading at the liner wall's ceiling the real requirement lies (HW.34), and how m
 the pin. `102` is the model it named — the wire and the liner as a shear-lag pair with Coulomb slip (`55`'s grip per
 tolerance part and μ). With the flange shifted δ from the anode, the liner collects the force at its held top over a
 slip zone, the pair sticks below it as a composite, and the wire carries the force through the bare run to the weld
-root. The wire's own stretch is capped with the force — at most 12.8 – 29.9 µm at the wall's cap, by alloy — so the
+root. The wire's own stretch is capped with the force — at most 12.9 – 29.9 µm at the wall's cap, by alloy — so the
 rest of any shift goes into the pad's travel: the liner only chooses how much of δ the seam takes. A reversal follows
 the virgin curve doubled (Masing); the seasonal heat enters as a slow preload on the relaxed liner with the sway cycle
 on top. The share of `87`'s shift the wood imposes on the anchor is the free variable: 0 with the anode not bonded, 1
