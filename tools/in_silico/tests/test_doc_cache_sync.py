@@ -10674,7 +10674,7 @@ CHECKS += [
          lambda d: d["truths"][_SPC_CEIL]["median_cover_free_judged_days"]),
         ("ceiling winters < 5 → SUMMARY", SUMMARY, rf"\*\*{N}\*\* winters of 29 have fewer than 5",
          lambda d: d["truths"][_SPC_CEIL]["winters_with_fewer_than_5_cover_free_judged_days"]),
-        ("ceiling share → SUMMARY", SUMMARY, rf"median winter share of \*\*{N}\*\*",
+        ("ceiling share → SUMMARY", SUMMARY, rf"to a winter median of \*\*{N}\*\*",
          lambda d: round(d["truths"][_SPC_CEIL]["median_winter_mean_transmitted_share"], 3)),
         ("others cover-free low → SUMMARY", SUMMARY, rf"a median of {N}–\d+ judged days per winter are cover-free",
          _spc_others("median_cover_free_judged_days", min)),
@@ -10692,6 +10692,22 @@ CHECKS += [
          lambda d: round(d["truths"][_SPC_CEIL]["median_winter_mean_transmitted_share"], 3)),
         ("middle truths k2 min → SUMMARY", SUMMARY, rf"in {N}–\d+ winters of 29 under every test", _spc_middle(min)),
         ("middle truths k2 max → SUMMARY", SUMMARY, rf"in \d+–{N} winters of 29 under every test", _spc_middle(max)))],
+]
+
+# …and the same base figures where they are acted on: beside the ratified field answer (01_03 §4 ⊕ 2026-11-11) and in
+# the sheet's §6 rules marker
+CHECKS += [
+    *[(f"118 base {lab}", doc, pat, SPC, fn, 0.0) for lab, doc, pat, fn in (
+        ("ceiling cover-free median → 01_03", EBFC, rf"в медіанній зимі лише {N} суджені доби вільні від покриву \(пропущена частка ≥ 0\.8\), у \d+ зимах",
+         lambda d: d["truths"][_SPC_CEIL]["median_cover_free_judged_days"]),
+        ("ceiling winters < 5 → 01_03", EBFC, rf"\(пропущена частка ≥ 0\.8\), у {N} зимах із 29 менше 5",
+         lambda d: d["truths"][_SPC_CEIL]["winters_with_fewer_than_5_cover_free_judged_days"]),
+        ("ceiling share → 01_03", EBFC, rf"на суджених добах до медіани {N}, і поріг R",
+         lambda d: round(d["truths"][_SPC_CEIL]["median_winter_mean_transmitted_share"], 3)),
+        ("ceiling cover-free median → sheet", SHEET, rf"в медіанній зимі лише {N} суджені доби вільні від покриву \(пропущена частка ≥ 0\.8\), тож база",
+         lambda d: d["truths"][_SPC_CEIL]["median_cover_free_judged_days"]),
+        ("others cover-free low → sheet", SHEET, rf"медіана вільних суджених діб {N}–\d+\)", _spc_others("median_cover_free_judged_days", min)),
+        ("others cover-free high → sheet", SHEET, rf"медіана вільних суджених діб \d+–{N}\)", _spc_others("median_cover_free_judged_days", max)))],
 ]
 
 
