@@ -2131,7 +2131,8 @@ def test_bus_mechanical_weld_seam():
             assert v["contact_station_mm"] in (None, br["contact_station_when_touched_down_mm"])
             assert (v["contact_station_mm"] is not None) == v["touches_down"]
             assert abs(v["deflection_at_mouth_um"]) < br["radial_play_mm"] * 1e3, "the mouth was reached coaxially"
-            assert v["sigma_root_MPa_bonded"] <= v["sigma_root_MPa_upper_end"] <= v["sigma_root_MPa_free_cantilever"] + 0.01, br["branch"]
+            # raw since the #6 pass (00_07 HW.43): the script's own bound, not a display-rounding slack
+            assert v["sigma_root_MPa_bonded"] <= v["sigma_root_MPa_upper_end"] <= v["sigma_root_MPa_free_cantilever"] * 1.0001, br["branch"]
             assert v["upper_end_is"].startswith(("Ti-bore stop", "free cantilever"))
     shipped = [b for b in cr["branches"] if b["play_side"] == "channel"]
     assert cr["shipped_exit_contact_forced_on_every_mu_and_geometry"] == all(b["touches_down_on_every_mu"] for b in shipped)
@@ -2824,10 +2825,13 @@ def test_bus_contact_equilibrium():
     # 7. One solver, two caches: the coaxial cap script 55 writes must equal the one this script writes.
     side = d["script55_side_by_side"]
     assert side["caps_agree"] is True and side["upper_ends_agree"] is True
-    # 68 caches raw since 2026-11-05 (00_07 HW.43), 55 to two decimals — one solver, compared at 55's precision
-    r2 = lambda m: {k: round(v, 2) for k, v in m.items()}  # noqa: E731
-    assert side["script55_coaxial_cap_MPa_at_worst_mu_bonded"] == r2(side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"])
-    assert side["script55_upper_end_MPa_at_worst_mu"] == r2(side["equilibrium_upper_end_MPa_at_worst_mu"])
+    # both scripts cache the root sigmas raw (00_07 HW.43 — 68 since 2026-11-05, 55 since its #6 pass): one solver on one
+    # set of inputs reproduces the float, so the two owners of the bracket ends agree to 1e-9 relative (bit for bit on
+    # one machine; a few ULPs if one script is re-run on another platform) — never to a display (§When Modifying #6)
+    def agree(a, b):
+        return a.keys() == b.keys() and all(abs(a[k] - b[k]) <= 1e-9 * abs(b[k]) for k in b)
+    assert agree(side["script55_coaxial_cap_MPa_at_worst_mu_bonded"], side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"])
+    assert agree(side["script55_upper_end_MPa_at_worst_mu"], side["equilibrium_upper_end_MPa_at_worst_mu"])
     assert side["coaxial_cap_bound"].startswith("LOWER")
     for g, lo in side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"].items():
         assert side["equilibrium_upper_end_MPa_at_worst_mu"][g] >= lo, g
@@ -2836,8 +2840,8 @@ def test_bus_contact_equilibrium():
         by_geo = json.loads(bus55.read_text())["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"]
         caps55 = {g["geometry"]: g["coaxial_cap_MPa_bonded"] for g in by_geo}
         upper55 = {g["geometry"]: g["bracket_MPa_worst_mu"][1] for g in by_geo}
-        assert caps55 == r2(side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"]), "scripts 55 and 68 drifted apart on the coaxial cap"
-        assert upper55 == r2(side["equilibrium_upper_end_MPa_at_worst_mu"]), "scripts 55 and 68 drifted apart on the upper end"
+        assert agree(caps55, side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"]), "scripts 55 and 68 drifted apart on the coaxial cap"
+        assert agree(upper55, side["equilibrium_upper_end_MPa_at_worst_mu"]), "scripts 55 and 68 drifted apart on the upper end"
 
 
 def test_coaxiality_allocation():

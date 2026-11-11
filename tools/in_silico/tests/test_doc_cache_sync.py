@@ -1718,8 +1718,8 @@ CHECKS += [
                                              ["by_mu"][m]["exit_reaction_N_upper_rigid_wall"] * 1000, 9)) / 1000)(mu), 0.0)
       for mu, pat in (("0.2", rf"\({N}–[\d.]+ N over the swept µ on the shipped geometry"),
                       ("0.5", rf"\([\d.]+–{N} N over the swept µ on the shipped geometry"))],
-    # the bus root's bracket at the worst swept µ (SUMMARY §HW.34 «Coaxial…»): `55` caches both ends to the display, so the
-    # bracket is rounded OUTWARD from `68`'s raw — a bracket holds its own ends (in-silico §When Modifying #43; 00_07 HW.43)
+    # the bus root's bracket at the worst swept µ (SUMMARY §HW.34 «Coaxial…»): rounded OUTWARD from `68`'s raw ends, which `55`
+    # caches bit-identically — a bracket holds its own ends (in-silico §When Modifying #43; 00_07 HW.43)
     *[(f"bus root bracket, {where} {end} → bus_contact_equilibrium.json", SUMMARY, pat,
        "mechanical/bus_contact_equilibrium.json",
        (lambda geo, field, how: lambda d: how(next(r for r in d["drag_coaxial"] if r["geometry"] == geo
@@ -2510,18 +2510,29 @@ CHECKS += [
         "mechanical/bus_mechanical.json",
         lambda d: d["wear_budget"]["binding"]["sliding_in_contact_per_cycle_um_upper"], 0.05,
     ),
-    (
-        "coaxial root-stress bracket, upper end, canon mirror → bus_mechanical.json §supported_column_vs_equilibrium",
-        COAXIAL, rf"дужка \[[\d.]+, \*\*{N}\*\*\] МПа на чинній геометрії",
-        "mechanical/bus_mechanical.json",
-        lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["bracket_MPa_worst_mu"][1], 0.05,
-    ),
-    (
-        "coaxial root-stress bracket, lower end, canon mirror → bus_mechanical.json §supported_column_vs_equilibrium",
-        COAXIAL, rf"дужка \[{N}, \*\*[\d.]+\*\*\] МПа на чинній геометрії",
-        "mechanical/bus_mechanical.json",
-        lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["bracket_MPa_worst_mu"][0], 0.005,
-    ),
+    # the bus root's bracket in canon: `55` caches both ends RAW (00_07 HW.43 #6), and a bracket holds its own ends, so
+    # each end is pinned EXACTLY at the outward rounding — lower DOWN to 0.01, upper UP to 0.1 (in-silico §When Modifying
+    # #43); a tolerance here admitted the inward-rounded [3.40, 23.8] beside a raw 3.3966
+    *[(f"coaxial root-stress bracket, {where} {end}, canon mirror → bus_mechanical.json §supported_column_vs_equilibrium",
+       COAXIAL, pat, "mechanical/bus_mechanical.json",
+       (lambda gi, ki, rnd: lambda d: rnd(d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][gi]
+                                          ["bracket_MPa_worst_mu"][ki]))(i, k, how), 0.0)
+      for where, i, end, k, how, pat in (
+          ("shipped", 0, "lower", 0, _down2, rf"дужка \[{N}, \*\*[\d.]+\*\*\] МПа на чинній геометрії"),
+          ("shipped", 0, "upper", 1, _up1, rf"дужка \[[\d.]+, \*\*{N}\*\*\] МПа на чинній геометрії"),
+          ("shallow end", 1, "lower", 0, _down2, rf"\(\[{N}, [\d.]+\] на мілкому кінці вікна замка\)"),
+          ("shallow end", 1, "upper", 1, _up1, rf"\(\[[\d.]+, {N}\] на мілкому кінці вікна замка\)"))],
+    # …and the same bracket SPLIT into «lower ends (shipped / shallow)» and «upper ends (shipped / shallow)» in
+    # PIPELINE_STATUS — a form a grep for «[x, y]» does not see (the #6 pass's adversary found it rounded inward)
+    *[(f"coaxial root-stress bracket, split, {where} {end} → bus_mechanical.json §supported_column_vs_equilibrium",
+       PIPELINE, pat, "mechanical/bus_mechanical.json",
+       (lambda gi, ki, rnd: lambda d: rnd(d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][gi]
+                                          ["bracket_MPa_worst_mu"][ki]))(i, k, how), 0.0)
+      for where, i, end, k, how, pat in (
+          ("shipped", 0, "lower", 0, _down2, rf"\({N} / [\d.]+ МПа\), що від дріфту"),
+          ("shallow end", 1, "lower", 0, _down2, rf"\([\d.]+ / {N} МПа\), що від дріфту"),
+          ("shipped", 0, "upper", 1, _up1, rf"до Ti-стопу \({N} / [\d.]+;"),
+          ("shallow end", 1, "upper", 1, _up1, rf"до Ti-стопу \([\d.]+ / {N};"))],
     # ── HW.43 part references: the table SUMMARY quotes from script 59 ──
     # ⛔ Every bracket is pinned at BOTH ends (same rule as the cycle-budget block below): the numbers here are
     # literature anchors script 59 carries with their sources, and a doc that kept one end while the other drifted

@@ -301,9 +301,15 @@ def main() -> int:
                  for g in s55_cache["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"]}
     # CONTROL across the two scripts: the same solver on the same inputs must give the same bracket ends — a
     # divergence here means the two scripts disagree on geometry, member or play, never on physics.
-    #    68 caches raw (00_07 HW.43 «68 → 86»), 55 to 2 decimals: the comparison is at 55's precision.
-    caps_agree = s55_caps == {k: round(v, 2) for k, v in cap_zero.items()}
-    upper_agree = s55_upper == {k: round(v, 2) for k, v in upper_zero.items()}
+    #    Both cache the root sigmas raw (68 since «68 → 86», 55 since the #6 pass on its root sigmas, 00_07 HW.43), and
+    #    the same solver on the same inputs reproduces the float — so the control holds to 1e-9 relative (§When
+    #    Modifying #6), not to a display: bit for bit on one machine, a few ULPs when one script is re-run on another
+    #    platform or BLAS (lib/beam_contact solves through numpy.linalg).
+    def _agree(a: dict, b: dict) -> bool:
+        return a.keys() == b.keys() and all(abs(a[k] - b[k]) <= 1e-9 * abs(b[k]) for k in b)
+
+    caps_agree = _agree(s55_caps, cap_zero)
+    upper_agree = _agree(s55_upper, upper_zero)
     assert caps_agree, f"script 55 and 68 disagree on the coaxial cap: {s55_caps} vs {cap_zero}"
     assert upper_agree, f"script 55 and 68 disagree on the upper end: {s55_upper} vs {upper_zero}"
     pad_peak = {g.label: max(p["sigma_root_MPa"] for p in pad if p["geometry"] == g.label) for g in geos}

@@ -77,6 +77,7 @@ No FEA — slender-beam closed form (Euler buckling + cantilever bending + S-N e
 from __future__ import annotations
 
 import json
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -103,6 +104,17 @@ from lib.mechanics import thick_wall_hoop
 from lib.utils import banner
 
 SI_DESCRIPTION = "Mechanical check of the central bus rod: buckling and sway fatigue."  # its row in the paper SI (72): English, no repo jargon
+
+
+def _bracket(lo: float, hi: float) -> str:
+    """A root-stress bracket printed OUTWARD — the lower end DOWN to 0.01, the upper end UP to 0.1 MPa — so the printed
+    bracket holds both raw ends (in-silico §When Modifying #43; the root sigmas are cached raw since 00_07 HW.43 #6)."""
+    return f"[{math.floor(lo * 100 + 1e-9) / 100:.2f}, {math.ceil(round(hi * 10, 9)) / 10:.1f}]"
+
+
+def _up2(x: float) -> str:
+    """An «up to X» ceiling printed UP to 0.01 MPa (in-silico §When Modifying #43)."""
+    return f"{math.ceil(round(x * 100, 9)) / 100:.2f}"
 
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -625,8 +637,9 @@ def main() -> int:
             "unsupported_predicted_failure": failing_b, "unsupported_marginal": marginal_b,
             "unsupported_infinite_life": infinite_b,
             "unsupported_infinite_life_for_all": len(infinite_b) == len(alloy_rows),
-            "supported_infinite_life_for_all": all(r[f"sf_supported_{branch}"] >= INFINITE_LIFE_SF
-                                                   for r in alloy_rows),
+            # from the RAW ratio, not the 0.01-rounded row (in-silico §When Modifying #6; 00_07 HW.43)
+            "supported_infinite_life_for_all": all(endurance_MPa(r["yield_MPa"], dict(FAB_BRANCHES)[branch]) / sig_sup
+                                                   >= INFINITE_LIFE_SF for r in alloy_rows),
         }
     shipped = branch_summary[SHIPPED_BRANCH]
     sup_lo, sup_hi = shipped["sf_supported_range"]
@@ -654,9 +667,11 @@ def main() -> int:
           f"{'SFu pr':>7s} {'SFs pr':>7s} | {'SFu wl':>7s} {'SFs wl':>7s}   (4V)")
     print(f"  {'-' * 82}")
     mu_rows = []
+    su_raw_by_mu = {}   # the raw §3 column — what the §4 two-owner control compares, never the row's 0.1 display
     for mu in MU_SWEEP:
         fl = mu * F_POGO_N
         su = bending_stress_MPa(fl, L_FREE_UNSUP)
+        su_raw_by_mu[mu] = su
         ss = bending_stress_MPa(fl, L_FREE_SUP)
         row = {"mu": mu, "f_lat_N": round(fl, 3), "sigma_unsup_MPa": round(su, 1),
                "sigma_sup_MPa": round(ss, 1)}
@@ -748,18 +763,21 @@ def main() -> int:
                 assert sig_upper >= root_sigma_MPa(res["clamp_moment_Nm"]) - 1e-9, "the upper end fell below the rigid-wall end"
                 if geo is SHIPPED_GEOMETRY:
                     # CONTROL, two owners of one quantity: the free-cantilever end IS §3's unsupported column at this µ.
-                    _mu_row = next(m for m in mu_rows if m["mu"] == mu)
-                    assert abs(sig_free - _mu_row["sigma_unsup_MPa"]) <= 0.05, "free-cantilever end ≠ §3 sigma_unsup"
+                    #    Compared RAW, to the precision the same formula reproduces (§When Modifying #6), not
+                    #    within the 0.1 MPa the §3 row is displayed at.
+                    assert abs(sig_free - su_raw_by_mu[mu]) <= 1e-9 * sig_free, "free-cantilever end ≠ §3 sigma_unsup"
                 rot_upper = 4.0 * ((D_BUS + 2.0 * t_mm) / 2.0) * (bc.slope_rad(upper, geo.pad_mm) - bc.slope_rad(res, geo.pad_mm))
                 _rot_upper[(geo.label, label, mu)] = rot_upper
                 by_mu[str(mu)] = {"touches_down": bool(touched),
                                   "contact_station_mm": stations[0] if stations else None,
-                                  "sigma_root_MPa_bonded": round(root_sigma_MPa(res["clamp_moment_Nm"]), 2),
-                                  "sigma_root_MPa_bare": round(root_sigma_MPa(bare["clamp_moment_Nm"]), 2),
-                                  "sigma_root_MPa_upper_end": round(sig_upper, 2),
+                                  # root sigmas RAW: 55 computes its bracket, ratios and SF from these rows and 68 checks
+                                  # them bit for bit (in-silico §When Modifying #6; 00_07 HW.43) — displays round, rows don't
+                                  "sigma_root_MPa_bonded": float(root_sigma_MPa(res["clamp_moment_Nm"])),
+                                  "sigma_root_MPa_bare": float(root_sigma_MPa(bare["clamp_moment_Nm"])),
+                                  "sigma_root_MPa_upper_end": float(sig_upper),
                                   "upper_end_is": ("Ti-bore stop — the polymer wall fully yielded, rod against the bare bore"
                                                    if upper["contacts"] else "free cantilever — the drag cannot reach the Ti bore"),
-                                  "sigma_root_MPa_free_cantilever": round(sig_free, 2),
+                                  "sigma_root_MPa_free_cantilever": float(sig_free),
                                   "exit_reaction_N_upper_rigid_wall": round(r_exit, 4),
                                   "deflection_at_mouth_um": round(bc.deflection_mm(res, geo.gap_mm) * 1e3, 2),
                                   "slope_at_exit_mrad_rigid_wall": round(bc.slope_rad(res, geo.pad_mm) * 1e3, 4),
@@ -786,7 +804,7 @@ def main() -> int:
                             "mouth_reached_on_any_mu": False,
                             "regime": regime})
             _w = by_mu[str(max(MU_SWEEP))]
-            print(f"  {geo.label:<28s} {label:<22s} {play * 1e3:>5.0f} µm {f_td:>7.4f} N {_w['sigma_root_MPa_bonded']:>6.2f}…{_w['sigma_root_MPa_upper_end']:<6.1f} MPa "
+            print(f"  {geo.label:<28s} {label:<22s} {play * 1e3:>5.0f} µm {f_td:>7.4f} N {_bracket(_w['sigma_root_MPa_bonded'], _w['sigma_root_MPa_upper_end']):<14s} MPa "
                   f"{_w['exit_reaction_N_upper_rigid_wall']:>8.4f} N   {regime}")
     # Cross-geometry, cross-µ facts the verdict is built from — DERIVED, never typed.
     shipped_regimes = [r for r in regimes if r["play_side"] == "channel"]
@@ -931,7 +949,7 @@ def main() -> int:
                                  "contacts": res["contacts"],
                                  "mouth_reaction_N": round(p_mouth, 4),
                                  "approach_angle_deg": round(float(np.degrees(theta)), 4),
-                                 "sigma_root_MPa": round(root_sigma_MPa(res["clamp_moment_Nm"]), 2)},
+                                 "sigma_root_MPa": float(root_sigma_MPa(res["clamp_moment_Nm"]))},
                 "approach_angle_deg_per_um_past_play": round(float(np.degrees(3.0e-6 / (2.0 * a_m))), 5),
                 "mouth_reaction_N_per_um_past_play": round(3.0 * ei_bare * 1e-6 / a_m ** 3, 4),
                 "lead_in_chamfer_deg": [30.0, 45.0],
@@ -1003,7 +1021,7 @@ def main() -> int:
     sup_worst = bending_stress_MPa(max(MU_SWEEP) * F_POGO_N, L_FREE_SUP)
     supported_check = {"idealisation": f"a {L_FREE_SUP:.0f} mm cantilever (the shipped geometry's PEEK gap) propped where the bore "
                                        "begins — the §2 «supported» column, computed on the shipped geometry only",
-                       "supported_column_sigma_MPa": {"nominal_mu": round(sup_nominal, 1), "worst_mu": round(sup_worst, 1)},
+                       "supported_column_sigma_MPa": {"nominal_mu": float(sup_nominal), "worst_mu": float(sup_worst)},
                        "coaxial_cap_bound": "LOWER — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², "
                                             "the Ti-bore stop / free cantilever is the UPPER end (bracket_MPa_* per geometry), "
                                             "and the contact compliance that places the root in it is measured nowhere",
@@ -1121,8 +1139,8 @@ def main() -> int:
             mp = bc.solve(ch, ei_at_bond, zero_play, drag_N=+mu_worst * F_POGO_N, offset_mm=e_um / 1000.0)
             mn = bc.solve(ch, ei_at_bond, zero_play, drag_N=-mu_worst * F_POGO_N, offset_mm=e_um / 1000.0)
             assert mp["peak_moment_station_mm"] == 0.0 and mn["peak_moment_station_mm"] == 0.0, "peak moment left the root under reversing drag"
-            amps.append({"offset_um": e_um, "mean_MPa": round(exact[e_um], 2),
-                         "amplitude_MPa": round(root_sigma_MPa((mp["clamp_moment_Nm"] - mn["clamp_moment_Nm"]) / 2.0), 2)})
+            amps.append({"offset_um": e_um, "mean_MPa": float(exact[e_um]),
+                         "amplitude_MPa": float(root_sigma_MPa((mp["clamp_moment_Nm"] - mn["clamp_moment_Nm"]) / 2.0))})
         amp_max = max(a["amplitude_MPa"] for a in amps)
         root_loading.append({
             "geometry": geo.label,
@@ -1141,8 +1159,8 @@ def main() -> int:
                                "worst-µ drag on top of it, and on the lock-window geometry it exceeds the rigid-wall coaxial figure"},
             "peak_moment_at_root_in_every_solve": True,
         })
-        print(f"  {geo.label:<28s} coaxial: amplitude {cap:.2f} (rigid wall, LOWER) … {cap_upper:.1f} MPa (upper end), mean 0 · "
-              f"offset: mean {secant:.3f} MPa/µm past the play, amplitude up to {amp_max:.2f} MPa (rigid wall) over offsets "
+        print(f"  {geo.label:<28s} coaxial: amplitude {_bracket(cap, cap_upper)} MPa (rigid wall LOWER … upper end), mean 0 · "
+              f"offset: mean {secant:.3f} MPa/µm past the play, amplitude up to {_up2(amp_max)} MPa (rigid wall) over offsets "
               f"{min(REVERSING_DRAG_OFFSETS_UM)}–{max(REVERSING_DRAG_OFFSETS_UM)} µm")
     print("  ⛔ No break-even k: the offset regime carries a MEAN this file cannot correct for, the coaxial amplitude is a")
     print("     BRACKET whose compliance input is unmeasured, and a k from its rigid-wall end alone would assume both a")
@@ -1913,7 +1931,7 @@ def main() -> int:
     # ⛔ DERIVED from §4, never typed.
     print(f"  4. CONTACT (§4, equilibrium): the shipped liner touches down at the EXIT on every swept µ on every geometry: "
           f"{shipped_forced_everywhere}; the mouth is never reached coaxially; the root stress lies in "
-          + " / ".join(f"[{g['bracket_MPa_worst_mu'][0]:.2f}, {g['bracket_MPa_worst_mu'][1]:.1f}]" for g in supported_check["by_geometry"])
+          + " / ".join(_bracket(*g["bracket_MPa_worst_mu"]) for g in supported_check["by_geometry"])
           + " MPa at worst µ (shipped / lock window shallow end) — rigid wall LOWER, Ti-bore stop or free cantilever UPPER, "
           "the contact compliance unmeasured; the §2 supported column overstates the rigid-wall end ×"
           + "/".join(f"{g['column_over_cap_nominal']:.1f}" for g in supported_check["by_geometry"]) + " at nominal µ and sits "
@@ -1922,9 +1940,9 @@ def main() -> int:
     print("     derived, because the root sees a fully-reversed coaxial cap OR a static mean from a channel offset,")
     print("     and the model has no mean-stress correction. The inputs a seam acceptance needs are in the cache:")
     for rl in root_loading:
-        print(f"     {rl['geometry']:<28s} coaxial amplitude [{rl['coaxial']['amplitude_MPa_lower_rigid_wall']:.2f}, "
-              f"{rl['coaxial']['amplitude_MPa_upper_end']:.1f}] MPa (mean 0) · offset mean "
-              f"{rl['offset']['mean_MPa_per_um_past_play']:.3f} MPa/µm past the play, amplitude up to {rl['offset']['amplitude_MPa_max_over_swept_offsets']:.2f} MPa (rigid wall)")
+        print(f"     {rl['geometry']:<28s} coaxial amplitude "
+              f"{_bracket(rl['coaxial']['amplitude_MPa_lower_rigid_wall'], rl['coaxial']['amplitude_MPa_upper_end'])} MPa (mean 0) · offset mean "
+              f"{rl['offset']['mean_MPa_per_um_past_play']:.3f} MPa/µm past the play, amplitude up to {_up2(rl['offset']['amplitude_MPa_max_over_swept_offsets'])} MPa (rigid wall)")
     print("     ⛔ k itself stays NOT MEASURED — it comes from the vendor (00_07 HW.34).")
     print("  6. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
     print("     thermal bridge → the leading bake-off candidates (HW.24) win on both axes, no tension.")
@@ -1984,7 +2002,7 @@ def main() -> int:
         if binding_wear is not None else
         "WEAR is NOT priced in this run: the duty cache is absent and no cycle count is substituted."
     )
-    _ship_geo = [f"{g['geometry']} [{g['bracket_MPa_worst_mu'][0]:.2f}, {g['bracket_MPa_worst_mu'][1]:.1f}] MPa" for g in supported_check["by_geometry"]]
+    _ship_geo = [f"{g['geometry']} {_bracket(*g['bracket_MPa_worst_mu'])} MPa" for g in supported_check["by_geometry"]]
 
     out = {
         "method": "slender-beam closed form — Euler buckling (fixed-free) + cantilever tip-load bending "
