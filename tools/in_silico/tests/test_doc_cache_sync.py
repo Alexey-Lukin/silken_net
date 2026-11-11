@@ -10611,6 +10611,89 @@ CHECKS += [
     ("117 old judged → 00_07 Стан", TRACKER, rf"репетиція `117` — {N} % суджених діб", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
 ]
 
+# ── HW.54 Р3(б)(4) how often one season of one logger can tell the cover readings apart (118, 2026-11-11) ⟷ SUMMARY
+# §«How Often Can One Season of One Logger Tell the Cover Readings Apart?». The cells are COUNTS of winters (exact
+# integers), so no rounding direction arises (a cell given once stands for both ends).
+SPC = "kinetics/stem_face_cover_power.json"
+
+
+def _spc(key, field):
+    return lambda d: d["pairs"][key]["winters_rejectable"][field] if field != "count" else d["pairs"][key]["count_test_winters"]
+
+
+_ROW = {"cm": r"\| ceiling → melt only \| ", "cn": r"\| ceiling → NREL published \| ", "cf": r"\| ceiling → favourable end \| ",
+        "mn": r"\| melt only → NREL published \| ", "nm": r"\| NREL published → melt only \| ",
+        "nf": r"\| NREL published → favourable end \| ", "mc": r"\| melt only → ceiling \| ", "nc": r"\| NREL published → ceiling \| "}
+CHECKS += [
+    *[(f"118 {key} {field} → SUMMARY", SUMMARY, pat, SPC, _spc(key, field), 0.0) for key, field, pat in (
+        ("low:ceiling->melt_only", "lenient:k2", _ROW["cm"] + rf"\*\*{N}\*\* · "),
+        ("high:ceiling->melt_only", "lenient:k2", _ROW["cm"] + rf"\*\*{N}\*\* · "),
+        ("low:ceiling->melt_only", "strict:k2", _ROW["cm"] + rf"\*\*\d+\*\* · \*\*{N}\*\* · "),
+        ("high:ceiling->melt_only", "strict:k2", _ROW["cm"] + rf"\*\*\d+\*\* · \*\*{N}\*\* · "),
+        ("low:ceiling->nrel_published", "strict:k2", _ROW["cn"] + rf"\*\*\d+\*\* · \*\*{N}\*\* · "),
+        ("low:ceiling->nrel_published", "runs:k2", _ROW["cn"] + rf"\*\*\d+\*\* · \*\*\d+\*\* · \*\*{N} / \d+\*\*"),
+        ("high:ceiling->nrel_published", "runs:k2", _ROW["cn"] + rf"\*\*\d+\*\* · \*\*\d+\*\* · \*\*\d+ / {N}\*\*"),
+        ("low:ceiling->favourable_end", "lenient:k2", _ROW["cf"] + rf"\*\*{N}\*\* · "),
+        ("low:ceiling->favourable_end", "lenient:k1", _ROW["cf"] + rf"\*\*\d+\*\* · \*\*\d+\*\* · \*\*\d+\*\* \| {N} \|"),
+        ("low:melt_only->nrel_published", "strict:k2", _ROW["mn"] + rf"\*\*{N} / \d+\*\* under all three"),
+        ("high:melt_only->nrel_published", "lenient:k2", _ROW["mn"] + rf"\*\*\d+ / {N}\*\* under all three"),
+        ("low:nrel_published->melt_only", "strict:k2", _ROW["nm"] + rf"\*\*\d+ / \d+\*\* · \*\*{N} / \d+\*\*"),
+        ("high:nrel_published->melt_only", "strict:k2", _ROW["nm"] + rf"\*\*\d+ / \d+\*\* · \*\*\d+ / {N}\*\*"),
+        ("low:nrel_published->favourable_end", "lenient:k2", _ROW["nf"] + rf"\*\*{N} / \d+\*\* · "),
+        ("high:nrel_published->favourable_end", "lenient:k2", _ROW["nf"] + rf"\*\*\d+ / {N}\*\* · "),
+        ("low:melt_only->ceiling", "count", _ROW["mc"] + rf"0 under all three \| 0 \| \*\*{N} / \d+\*\*"),
+        ("high:melt_only->ceiling", "count", _ROW["mc"] + rf"0 under all three \| 0 \| \*\*\d+ / {N}\*\*"),
+        ("high:nrel_published->ceiling", "count", _ROW["nc"] + rf"0 under all three \| 0 \| \*\*\d+ / {N}\*\*"),
+        ("low:ceiling->nrel_published", "lenient:k2", _ROW["cn"] + rf"\*\*{N}\*\* · "),
+        ("high:ceiling->nrel_published", "lenient:k2", _ROW["cn"] + rf"\*\*{N}\*\* · "),
+        ("high:ceiling->nrel_published", "strict:k2", _ROW["cn"] + rf"\*\*\d+\*\* · \*\*{N}\*\* · "),
+        ("low:melt_only->favourable_end", "lenient:k2", rf"\| melt only → favourable end \| \*\*{N} / \d+\*\* under all three"),
+        ("high:melt_only->favourable_end", "strict:k2", rf"\| melt only → favourable end \| \*\*\d+ / {N}\*\* under all three"),
+        ("low:ceiling->melt_only", "count", _ROW["cm"] + rf"\*\*\d+\*\* · \*\*\d+\*\* · \*\*\d+\*\* \| \d+ \| {N} / \d+ \|"),
+        ("high:ceiling->melt_only", "count", _ROW["cm"] + rf"\*\*\d+\*\* · \*\*\d+\*\* · \*\*\d+\*\* \| \d+ \| \d+ / {N} \|"),
+        *[("low:melt_only->ceiling", m, _ROW["mc"] + rf"{N} under all three") for m in ("lenient:k2", "strict:k2", "runs:k2")])],
+]
+
+
+def _spc_middle(fn):
+    """min or max of the middle truths' two-miss counts over every test, end and reading but the ceiling."""
+    return lambda d: fn(r["winters_rejectable"][f"{m}:k2"] for r in d["pairs"].values()
+                        if r["truth"] in ("melt_only", "nrel_published") and r["reading"] != "ceiling"
+                        for m in ("lenient", "strict", "runs"))
+
+
+def _spc_others(field, fn, rnd=lambda x: x):
+    """min or max of a `truths` field over the readings that are not the ceiling, both ends."""
+    return lambda d: rnd(fn(v[field] for k, v in d["truths"].items() if not k.endswith(":ceiling")))
+
+
+_SPC_CEIL = "low:ceiling"
+CHECKS += [
+    *[(f"118 base {lab}", doc, pat, SPC, fn, 0.0) for lab, doc, pat, fn in (
+        ("ceiling cover-free median → SUMMARY", SUMMARY, rf"a median of \*\*{N}\*\* judged days per winter are free of cover",
+         lambda d: d["truths"][_SPC_CEIL]["median_cover_free_judged_days"]),
+        ("ceiling winters < 5 → SUMMARY", SUMMARY, rf"\*\*{N}\*\* winters of 29 have fewer than 5",
+         lambda d: d["truths"][_SPC_CEIL]["winters_with_fewer_than_5_cover_free_judged_days"]),
+        ("ceiling share → SUMMARY", SUMMARY, rf"median winter share of \*\*{N}\*\*",
+         lambda d: round(d["truths"][_SPC_CEIL]["median_winter_mean_transmitted_share"], 3)),
+        ("others cover-free low → SUMMARY", SUMMARY, rf"a median of {N}–\d+ judged days per winter are cover-free",
+         _spc_others("median_cover_free_judged_days", min)),
+        ("others cover-free high → SUMMARY", SUMMARY, rf"a median of \d+–{N} judged days per winter are cover-free",
+         _spc_others("median_cover_free_judged_days", max)),
+        ("others share low → SUMMARY", SUMMARY, rf"and the share is {N}–[\d.]+, so a base exists",
+         _spc_others("median_winter_mean_transmitted_share", min, _down2)),
+        ("others share high → SUMMARY", SUMMARY, rf"and the share is [\d.]+–{N}, so a base exists",
+         _spc_others("median_winter_mean_transmitted_share", max, _up1)),
+        ("ceiling cover-free median → 00_07", TRACKER, rf"в медіанній зимі лише {N} суджені доби вільні від покриву",
+         lambda d: d["truths"][_SPC_CEIL]["median_cover_free_judged_days"]),
+        ("ceiling winters < 5 → 00_07", TRACKER, rf"у {N} зимах із 29 — менше 5 \(п\. 4",
+         lambda d: d["truths"][_SPC_CEIL]["winters_with_fewer_than_5_cover_free_judged_days"]),
+        ("ceiling share → 00_07", TRACKER, rf"до медіанної частки {N} \(",
+         lambda d: round(d["truths"][_SPC_CEIL]["median_winter_mean_transmitted_share"], 3)),
+        ("middle truths k2 min → SUMMARY", SUMMARY, rf"in {N}–\d+ winters of 29 under every test", _spc_middle(min)),
+        ("middle truths k2 max → SUMMARY", SUMMARY, rf"in \d+–{N} winters of 29 under every test", _spc_middle(max)))],
+]
+
 
 def test_stem_face_cover_rules_sentences_recompose_from_the_cache():
     """The SET sentences of the 117 paragraph (SUMMARY) — «judged every day of the median winter», «about every second

@@ -226,6 +226,67 @@ def control_clearing() -> None:
     assert c3[:, 0].tolist() == [1.0, 1.0, 0.0, 0.0, 0.0], c3[:, 0]
 
 
+def cover_readings(wx: dict, g: np.ndarray, snow: dict, d_dome: float) -> dict:
+    """The four readings' covers of a small face lit by `g` (hours, fields; W/m²) — the ONE home of the cover model:
+    115's own main and 118 call it. Returns, per reading, (cover fraction, snow-only covered, frost-only covered), each
+    (hours, fields); and the inputs main reuses (the two snow-event series, the cloud-weighted sky,
+    the frost point). Every operation is per column, so a call on a subset of fields gives those columns of a call on
+    all of them. Control (2) runs here, on every call."""
+    ta = wx["t_air"][:, None]
+    ta4 = (ta + 273.15) ** 4
+    t_sky4_clear = S79.sky_emissivity(wx["t_air"], wx["t_dew"])[:, None] * ta4
+    t_sky4_cloud = wx["cloud"][:, None] * ta4 + (1.0 - wx["cloud"][:, None]) * t_sky4_clear
+    t_fp = frost_point_c(wx["t_dew"])[:, None]
+    u_k = WIND_K_PLAUSIBLE * wx["u10"][:, None]
+
+    # snow events
+    rise_mm = {n: np.concatenate([[0], np.rint(np.diff(r["depth_m"]) * 1000.0).astype(int)]) for n, r in snow.items()}
+    assert set(rise_mm) == {"era5_land", "cerra"}, set(rise_mm)              # depth sits on a grid: compare in whole mm
+    ev_snow_ceiling = ((rise_mm["era5_land"] >= round(CEILING_SNOW_STEP_M * 1000))
+                       | (rise_mm["cerra"] >= round(CEILING_SNOW_STEP_M * 1000))) & (wx["t_air"] <= CEILING_SNOW_MAX_C)
+    ev_snow_nrel = ((rise_mm["era5_land"] >= round(NREL_SNOW_STEP_M * 1000))
+                    & (wx["t_air"] >= WET_SNOW_C[0]) & (wx["t_air"] <= WET_SNOW_C[1]))
+    assert ev_snow_ceiling.sum() > 0 and ev_snow_nrel.sum() > 0, "positive control: no snowfall in thirty winters"
+
+    # the faces
+    t_ceiling = face_temperature_c(ta, np.zeros_like(g), t_sky4_clear, d_dome)
+    t_plaus = face_temperature_c(ta, ALPHA_DARK_CELL * g, t_sky4_cloud, d_dome, u_k)
+    t_dark_cloud = face_temperature_c(ta, np.zeros_like(g[:, :1]), t_sky4_cloud, d_dome)          # control (2)
+    overcast = np.ones_like(wx["cloud"])[:, None] * ta4 + (1.0 - np.ones_like(wx["cloud"])[:, None]) * t_sky4_clear
+    assert np.allclose(overcast, ta4, rtol=0, atol=1e-6), "control (2): a full cloud cover must radiate at the air"
+    assert np.all(t_dark_cloud >= t_ceiling[:, :1] - 1e-6) and np.all(t_ceiling <= ta + 1e-6), "control (2)"
+
+    # the covers, per reading: (cover fraction (hours, fields), snow-only covered, frost-only covered)
+    covers = {}
+    fr = (t_ceiling < 0.0) & (t_ceiling < t_fp)
+    clear = t_ceiling > 0.0
+    covers["ceiling"] = (melt_blind(fr | ev_snow_ceiling[:, None], clear).astype(float),
+                         melt_blind(np.repeat(ev_snow_ceiling[:, None], g.shape[1], 1), clear), melt_blind(fr, clear))
+    fr = (t_plaus < 0.0) & (t_plaus < t_fp)
+    clear = t_plaus > 0.0
+    blind = melt_blind(fr | ev_snow_nrel[:, None], clear)
+    assert not np.any(blind & clear), "control (3): a melt-rule blind hour with the face above 0 °C"
+    covers["melt_only"] = (blind.astype(float), melt_blind(np.repeat(ev_snow_nrel[:, None], g.shape[1], 1), clear),
+                           melt_blind(fr, clear))
+    t_cov = face_temperature_c(ta, ALPHA_COVER * g, t_sky4_cloud, d_dome, u_k)
+    rho_v_air = S79.vapour_pressure_hpa(wx["t_dew"])[:, None] * 100.0 * M_W / (R_GAS * (ta + 273.15))
+    can_slide = can_slide_mask(ta, g)
+    events = np.repeat(ev_snow_nrel[:, None], g.shape[1], 1)
+    for reading, t_face in (("nrel_published", t_cov), ("favourable_end", t_plaus)):
+        film = 0.5 * (t_face + ta)
+        p_air = S71.air_props(film)
+        h_m = h_conv(d_dome, t_face - ta, film, u_k) / ((p_air["k"] / p_air["alpha"]) * LEWIS ** (2.0 / 3.0))
+        rho_v_ice = e_ice_hpa(np.minimum(t_face, 0.0)) * 100.0 * M_W / (R_GAS * (t_face + 273.15))
+        warm = t_face > 0.0
+        flux = h_m * (rho_v_air - rho_v_ice) * 3600.0
+        m = frost_budget(flux, warm)
+        c_snow = snow_slide(events, can_slide, warm if reading == "favourable_end" else None)
+        frost_cov = m > FROST_BLIND_KG_M2
+        covers[reading] = (np.maximum(c_snow, frost_cov.astype(float)), c_snow > 0.0, frost_cov)
+    return {"covers": covers, "ev_snow_ceiling": ev_snow_ceiling, "ev_snow_nrel": ev_snow_nrel,
+            "t_sky4_cloud": t_sky4_cloud, "t_fp": t_fp}
+
+
 def reading_order(by_field: dict, readings: list) -> dict:
     """The readings' order, MEASURED on every field × corner threshold (None — no aperture up to the scan's top — is the
     most adverse), never declared: a name such as «ceiling» or «favourable end» is a claim about a direction, and two
@@ -276,55 +337,9 @@ def main() -> int:
             cols.append(wx["dni"] * gc[j] + 0.5 * wx["dif"] + 0.5 * refl[k])
     g = np.stack(cols, axis=1)                                    # (hours, fields) — the light on each face, W/m²
     ta = wx["t_air"][:, None]
-    ta4 = (ta + 273.15) ** 4
-    t_sky4_clear = S79.sky_emissivity(wx["t_air"], wx["t_dew"])[:, None] * ta4
-    t_sky4_cloud = wx["cloud"][:, None] * ta4 + (1.0 - wx["cloud"][:, None]) * t_sky4_clear
-    t_fp = frost_point_c(wx["t_dew"])[:, None]
-    u_k = WIND_K_PLAUSIBLE * wx["u10"][:, None]
-
-    # snow events
-    rise_mm = {n: np.concatenate([[0], np.rint(np.diff(r["depth_m"]) * 1000.0).astype(int)]) for n, r in snow.items()}
-    assert set(rise_mm) == {"era5_land", "cerra"}, set(rise_mm)              # depth sits on a grid: compare in whole mm
-    ev_snow_ceiling = ((rise_mm["era5_land"] >= round(CEILING_SNOW_STEP_M * 1000))
-                       | (rise_mm["cerra"] >= round(CEILING_SNOW_STEP_M * 1000))) & (wx["t_air"] <= CEILING_SNOW_MAX_C)
-    ev_snow_nrel = ((rise_mm["era5_land"] >= round(NREL_SNOW_STEP_M * 1000))
-                    & (wx["t_air"] >= WET_SNOW_C[0]) & (wx["t_air"] <= WET_SNOW_C[1]))
-    assert ev_snow_ceiling.sum() > 0 and ev_snow_nrel.sum() > 0, "positive control: no snowfall in thirty winters"
-
-    # the faces
-    t_ceiling = face_temperature_c(ta, np.zeros_like(g), t_sky4_clear, d_dome)
-    t_plaus = face_temperature_c(ta, ALPHA_DARK_CELL * g, t_sky4_cloud, d_dome, u_k)
-    t_dark_cloud = face_temperature_c(ta, np.zeros_like(g[:, :1]), t_sky4_cloud, d_dome)          # control (2)
-    overcast = np.ones_like(wx["cloud"])[:, None] * ta4 + (1.0 - np.ones_like(wx["cloud"])[:, None]) * t_sky4_clear
-    assert np.allclose(overcast, ta4, rtol=0, atol=1e-6), "control (2): a full cloud cover must radiate at the air"
-    assert np.all(t_dark_cloud >= t_ceiling[:, :1] - 1e-6) and np.all(t_ceiling <= ta + 1e-6), "control (2)"
-
-    # the covers, per reading: (cover fraction (hours, fields), snow-only covered, frost-only covered)
-    covers = {}
-    fr = (t_ceiling < 0.0) & (t_ceiling < t_fp)
-    clear = t_ceiling > 0.0
-    covers["ceiling"] = (melt_blind(fr | ev_snow_ceiling[:, None], clear).astype(float),
-                         melt_blind(np.repeat(ev_snow_ceiling[:, None], g.shape[1], 1), clear), melt_blind(fr, clear))
-    fr = (t_plaus < 0.0) & (t_plaus < t_fp)
-    clear = t_plaus > 0.0
-    blind = melt_blind(fr | ev_snow_nrel[:, None], clear)
-    assert not np.any(blind & clear), "control (3): a melt-rule blind hour with the face above 0 °C"
-    covers["melt_only"] = (blind.astype(float), melt_blind(np.repeat(ev_snow_nrel[:, None], g.shape[1], 1), clear),
-                           melt_blind(fr, clear))
-    t_cov = face_temperature_c(ta, ALPHA_COVER * g, t_sky4_cloud, d_dome, u_k)
-    rho_v_air = S79.vapour_pressure_hpa(wx["t_dew"])[:, None] * 100.0 * M_W / (R_GAS * (ta + 273.15))
-    can_slide = can_slide_mask(ta, g)
-    events = np.repeat(ev_snow_nrel[:, None], g.shape[1], 1)
-    for reading, t_face in (("nrel_published", t_cov), ("favourable_end", t_plaus)):
-        film = 0.5 * (t_face + ta)
-        p_air = S71.air_props(film)
-        h_m = h_conv(d_dome, t_face - ta, film, u_k) / ((p_air["k"] / p_air["alpha"]) * LEWIS ** (2.0 / 3.0))
-        rho_v_ice = e_ice_hpa(np.minimum(t_face, 0.0)) * 100.0 * M_W / (R_GAS * (t_face + 273.15))
-        warm = t_face > 0.0
-        m = frost_budget(h_m * (rho_v_air - rho_v_ice) * 3600.0, warm)
-        c_snow = snow_slide(events, can_slide, warm if reading == "favourable_end" else None)
-        frost_cov = m > FROST_BLIND_KG_M2
-        covers[reading] = (np.maximum(c_snow, frost_cov.astype(float)), c_snow > 0.0, frost_cov)
+    cr = cover_readings(wx, g, snow, d_dome)
+    covers, ev_snow_ceiling, ev_snow_nrel = cr["covers"], cr["ev_snow_ceiling"], cr["ev_snow_nrel"]
+    t_sky4_cloud, t_fp = cr["t_sky4_cloud"], cr["t_fp"]
 
     # statistics
     month = times.astype("datetime64[M]").astype(int) % 12 + 1
