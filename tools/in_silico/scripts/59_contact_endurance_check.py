@@ -87,10 +87,19 @@ SPRING_DRAWING_MISSING = ("the full spring drawing — wire diameter, mean coil 
 SWAY_DEFLECTION_MISSING = ("the inputs script 87 names for the sway amplitude at the pin — whether the bayonet "
                            "keeps the rim from lifting at every temperature (it decides whether the pin slides at all; the "
                            "O-ring reaction is 88's band), "
-                           "the board stack's layout (its mass is estimated part by part in 87), the axial load "
-                           "at the bus wire's root and how much of the centre-pad shift reaches the pin (87 computes "
-                           "only the liner wall's ceiling on that load), and the stem's strain and "
-                           "acceleration at anchor height on host-size pines (00_07 HW.43)")
+                           "the board stack's layout (its mass is estimated part by part in 87), what holds the "
+                           "anchor in the wood (102 computes the root load and the centre-pad share reaching the pin "
+                           "per share of the stem's shift, 103 the share per bond state — both conditional on it), "
+                           "and the stem's strain and acceleration at anchor height on host-size pines (00_07 HW.43)")
+TORSIONAL_SN_MISSING = "a torsional S-N reference for C17200"
+SPRING_MISSING = (SPRING_DRAWING_MISSING, TORSIONAL_SN_MISSING, SWAY_DEFLECTION_MISSING)  # ONE list — the count is derived
+
+# The bench threshold of framing B, in BOTH readings (in-silico §When Modifying #11 — two readings, never a pick):
+# the 240 MPa anchor is read as NORMAL stress, while the spring wire carries SHEAR; under the conditional verdict
+# (02_02 §2.2, 2026-10-01) the wire's shear is judged against sigma / sqrt(3). Printed DOWN: «below X — no bench» is
+# the harmless region (§When Modifying #43).
+BENCH_SIGMA_MPA = 240.0
+BENCH_TAU_MPA = math.floor(BENCH_SIGMA_MPA / math.sqrt(3.0) * 10.0) / 10.0
 
 
 def pogo_spring_verdict(budget: dict) -> dict:
@@ -135,9 +144,20 @@ def pogo_spring_verdict(budget: dict) -> dict:
         },
         "closed": False,
         "verdict": "TWO mismatched framings, neither closed — see framing_A (fails, likely wrong model) "
-                   "and framing_B (physically right, needs one missing datum) above.",
-        "missing_datum": f"{SPRING_DRAWING_MISSING} + a torsional S-N reference for C17200 + "
-                         f"{SWAY_DEFLECTION_MISSING} — without it, framing B cannot be closed to a number.",
+                   f"and framing_B (physically right, needs {len(SPRING_MISSING)} missing data) above.",
+        "missing_datum": " + ".join(SPRING_MISSING) + " — without them, framing B cannot be closed to a number.",
+        "bench_threshold_MPa": {
+            "anchor_read_as_normal_stress": BENCH_SIGMA_MPA,
+            "wire_shear_after_von_mises_conversion": BENCH_TAU_MPA,
+            "note": "the spring wire's stress is shear: against the 240 MPa anchor read as normal stress the bench "
+                    "threshold for the wire's tau is sigma/sqrt(3), printed down; the conversion is the conditional "
+                    "verdict of 02_02 §2.2 (2026-10-01) and waits for the vendor's answer on torsional data.",
+            "mean_stress_not_corrected": "the anchors are read as fully reversed tests (R = -1 is stated for the "
+                                         "sibling study's rig, not for the anchors themselves — loading_mode_caveat), "
+                                         "while the spring works under a preload with a small alternating part: no "
+                                         "mean-stress correction (Goodman, Soderberg) is applied here, so if that "
+                                         "reading holds, either threshold is optimistic.",
+        },
     }
 
 
@@ -222,7 +242,8 @@ def main() -> int:
     print("  - Pogo spring: physically-right framing needs the sway amplitude at the pin (script 87's inputs).")
     print("  - PEEK barb: real 30-48 MPa threshold now exists for HW.26's pending FEA to check against.")
     print("  - Genipin matrix: REMOVE from the S-N framing (category mismatch); its axis is chemical, HW.5.")
-    print("  bench (🔗) is needed for: pogo spring (if framing-B stress exceeds ~240 MPa) and PEEK barb")
+    print(f"  bench (🔗) is needed for: pogo spring (if framing-B stress exceeds ~{BENCH_SIGMA_MPA:.0f} MPa read as normal stress —")
+    print(f"  {BENCH_TAU_MPA:.1f} MPa for the wire's shear after the conditional conversion; no mean-stress correction) and PEEK barb")
     print("  (if HW.26 FEA finds barb stress above ~30 MPa) — NOT for genipin (different axis, HW.5, not")
     print("  this item).")
 

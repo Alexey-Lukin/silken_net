@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 395 · 30,791,620 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 395 · 30,794,507 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -114,7 +114,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `540c96b92a3d8b411b7b321f13a730a123eb6c19533a49eec2aaebf67f7fa9e8` | Unified thick-wall Lamé model: press-fit interference and thermal mismatch in one model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `f7f565e9b81c5e79219605d8f411e43598f54dfb0aa17e994f754e618fcc8dd3` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `019c603112ff0c5363a0a6a44ecacc40868d69a9f5420bec569780db0b903a26` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
-| `tools/in_silico/scripts/59_contact_endurance_check.py` | `34b9e1e9088f8b208b1290734388b3810f035bd6b3fe9f756a44e59e303fef97` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
+| `tools/in_silico/scripts/59_contact_endurance_check.py` | `332f8fbbb92021d0668ad1a02e3dae327b659bab8f5b4c21d843de1ca4684326` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
 | `tools/in_silico/scripts/60_paper_figures.py` | `a7bea736289d89226b3543be5d955e5a3047d3aa1acff2b983f237c67b4bf811` | Publication figures, rendered entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `1c6ef6bc04313d5a541e0391bab0be023889ff029deb891d938b740ec0a60673` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `008a9f5f92299c409237fb5cab21b64d514c9b1623794ee00c0be32922ae4980` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
@@ -142,7 +142,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/84_cathode_ionic_path.py` | `082e1f460d1de0bfa2b777791bc7fb1ff454ccea744c78b9864b3ea5cb4360bf` | Series ionic resistance of the path from the anode in the sapwood to the cathode on the flange, element by element, against the cold-start budget of the energy harvester for two readings of the electrodes' own internal resistance: the material value each layer would need, with published tree and stemflow readings beside it. |
 | `tools/in_silico/scripts/85_electrode_interfacial_ph.py` | `b254a51b898744cf44c28553080bce9758a3d7d8a1b17987a1033426b40fe3e3` | How far each Ti-coin electrode's own current shifts the pH at its face in the media the test letter allows, from a steady diffusion-layer equation: the cathode as a fraction of its oxygen supply limit, the anode as the diffusion-layer thickness its predicted current tolerates; and the anchor's anode, conditional on sap filling its gap, as the current at which its face leaves the enzyme's pH band. |
 | `tools/in_silico/scripts/86_coaxiality_allocation.py` | `8fb53df11dfa4d44beb0b7484322cd5ff5018a36522bb198e00355ceb01ac974` | What a channel-to-root misalignment costs the bus root with a Soderberg mean-stress correction. |
-| `tools/in_silico/scripts/87_pogo_sway_transfer.py` | `d1d01dbbc8a9f92e0db04bb1161a8de2f10e8a307bc73ced30c15701e29e29ba` | How trunk sway reaches the spring contact pins of the sensor capsule: a rim-friction condition, the inertia of the board stack and a Poisson term at the centre pad, from published stem-tilt data of a Scots pine. |
+| `tools/in_silico/scripts/87_pogo_sway_transfer.py` | `b7f0e4ea568cb860ebd5c382b467c1105f325f9b09588de948bd10f7a520b2cf` | How trunk sway reaches the spring contact pins of the sensor capsule: a rim-friction condition, the inertia of the board stack and a Poisson term at the centre pad, from published stem-tilt data of a Scots pine. |
 | `tools/in_silico/scripts/88_oring_reaction_band.py` | `1ef1e2082b8292736980ea72f1e67f995c7f45939be2bef690aa6ae34061bcec` | The force an O-ring pushes back with when it is squeezed, from a seal maker's published chart, over the range of squeeze our tolerances allow, and what that force means for the bayonet lock and for the capsule staying put. |
 | `tools/in_silico/scripts/89_bayonet_thermal_clamp.py` | `e356c6b44a99b74b1fb742033a9d2b9e75900a8e920e3b7e1fe50a1a70b11c4e` | How much the bayonet's grip spreads with its fit tolerance and with heat and cold, and how thick the titanium collar must then be — as a function of how stiff the clamp is, which is still unmeasured. |
 | `tools/in_silico/scripts/90_pogo_thermal_gap.py` | `f7d9fc4060d48304c249efe964e6ea424ca28d2b92d2b361445dc7c7bb697343` | How heat and cold change how hard the spring contacts press on the anchor — over a season and over a day — and whether the assembly's tolerance budget still leaves room for it. |
@@ -285,7 +285,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/coaxiality_allocation.json` | `cc165d0228663c55d872a9e887ad9158aca5ea5a05cea229f0ff7c72fabd44ed` | 29,302 |
 | `tools/in_silico/cache/mechanical/collar_running_clearance.json` | `3b9f44aa783c38fc39ee18bfb5eff2ae2dd3a46d38982ccfe242e68d67cd05c3` | 4,209 |
 | `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `bf2e965610f84358fdfedd69ce01838611f3cfdfcb9c2df86bf01aea49941cea` | 5,687 |
-| `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `4008c4cf748d3a44c80b9ab3e49677e532beba9b99081a5eff5bd5c769fc4b1c` | 9,991 |
+| `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `c748cfeb407465d42b3ea645ea2e14a38e2e2cca22ef76835367c57dfa82e8e8` | 10,911 |
 | `tools/in_silico/cache/mechanical/countersink_ring_exit.json` | `e65c9ee55331a23de93674d1b81a8a832649357933c83c1a023db67da4cb354a` | 1,229,683 |
 | `tools/in_silico/cache/mechanical/dendrometer_support_budget.json` | `e781043d2aca2f85bd5c790a65c2f6863f877d3c9323fa95ea83ed58a80e2ed4` | 141,337 |
 | `tools/in_silico/cache/mechanical/field_strain_campaign.json` | `cd262b585a5c6c63d5f05fd564a46ec68cc5940d2c96ea28a530a57e1e246c49` | 76,422 |
@@ -296,7 +296,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/liner_mouth_contact.json` | `87caf0020041854a9c6e9587dfd66cdb08a7a6b4e3cfc7a20d2c8c7e84034a24` | 161,857 |
 | `tools/in_silico/cache/mechanical/oring_reaction_band.json` | `8e6df28e951a86290c114104876906184c2839ddf42518ab21eefd100015b453` | 11,170 |
 | `tools/in_silico/cache/mechanical/pad_travel_remedies.json` | `e6151b6ae0b4f8b0bba0f6d9ac9dc33b328004aa9df00d3984b2b1482b04d813` | 33,474 |
-| `tools/in_silico/cache/mechanical/pogo_sway_transfer.json` | `787890fec735499a49054a23845d6dfc972df02c860d119ca3a74cf2957f2ee1` | 16,528 |
+| `tools/in_silico/cache/mechanical/pogo_sway_transfer.json` | `304d7443401bdc76a18f8ed9e407c34c0ea5c08930a79794f5601ff21bc0755d` | 16,558 |
 | `tools/in_silico/cache/mechanical/pogo_thermal_gap.json` | `e43a3336516bea3afa4c987dc15698c84b479097718bab7e2d57704191491f85` | 13,559 |
 | `tools/in_silico/cache/mechanical/printed_part_sway_stress.json` | `736ed99dc1a09a6e1e68f164cd612cba98849a9286734dad267781393794eed4` | 449,574 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.json` | `434d4456b3eb5cf79e3af7da4f916419eb34accc094455d36053898485c5c055` | 67,177 |
