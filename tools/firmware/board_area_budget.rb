@@ -218,7 +218,7 @@ end
 # цитує вихід моделі, тож пін ловить дрейф канону від моделі, але не помилку самої моделі.
 # 🔑 Пін «купол ≥ радом під ціль» замикає коло: новий рядок BOM тягне ціль угору → купол у CAD
 # відстає → пін червоніє, доки корінь не рухнуть знову або не приймуть заповнення понад 70 %.
-if ARGV == [ "--assert" ]
+if __FILE__ == $PROGRAM_NAME && ARGV == [ "--assert" ] # CLI лише при прямому запуску: `require_relative` (`standoff_layout_fit.rb`) бере константи й геометрію
   near = ->(value, canon) { (value - canon).abs < 0.05 }
   target = ->(booster, rigid) { target_for(booster:, edlc: "kr", rigid_flex: rigid).max }
   fill_on_ceiling = sums(parts(booster: "nn02_224", edlc: "kr", rigid_flex: false)).values.sum / (3 * usable(CEILING_MM))
@@ -268,12 +268,18 @@ end
 CLEARANCE_JSON = File.expand_path("../in_silico/cache/mechanical/collar_running_clearance.json", __dir__)
 ORING_BAND_JSON = File.expand_path("../in_silico/cache/mechanical/oring_reaction_band.json", __dir__)
 
-# Сегмент над хордою на колі радіуса rc; хорду ставить бустер на краю плати Ø d, як у генераторі плат.
-def booster_segment(d, edge: 0.0)
+# Хорда clearance-сегмента — координата від центру плати Ø d (відʼємна: сегмент лежить за нею, біля краю); бустер на колі
+# r − 0.5, хорда на 1.0 мм за падами, як у генераторі плат.
+def booster_chord(d)
   r = d / 2.0
   ex, ey, pad_h = 6.1, 1.6, 3.2   # NN02-224: пади 2.2 × 3.2 на кроці 7.8 + 2.2, корпус 12.0 × 3.0 — як у генераторі
-  chord = -Math.sqrt(((r - 0.5)**2) - (ex**2)) + ey + (pad_h / 2) + 1.0
-  rc = r - edge
+  -Math.sqrt(((r - 0.5)**2) - (ex**2)) + ey + (pad_h / 2) + 1.0
+end
+
+# Сегмент над хордою на колі радіуса rc.
+def booster_segment(d, edge: 0.0)
+  chord = booster_chord(d)
+  rc = (d / 2.0) - edge
   depth = rc + chord
   (rc * rc * Math.acos((rc - depth) / rc)) - ((rc - depth) * Math.sqrt((2 * rc * depth) - (depth * depth)))
 end
@@ -286,6 +292,8 @@ def package_target(rigid_flex:, through:, r_oc: false)
   30.times { d = diameter_for(((fixed / 0.7) + (booster_segment(d, edge: USABLE_EDGE_MM) * (through ? 2 : 1))) / 3) }
   [ [ d, geometric_floor("kr", socket: !rigid_flex) ].max, booster_segment(d, edge: USABLE_EDGE_MM) ]
 end
+
+return unless __FILE__ == $PROGRAM_NAME # далі — лише CLI
 
 if ARGV == [ "--package" ]
   routes = JSON.parse(File.read(CLEARANCE_JSON)).fetch("routes")
