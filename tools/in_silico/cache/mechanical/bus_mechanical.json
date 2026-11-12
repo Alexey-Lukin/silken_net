@@ -121,12 +121,20 @@
   "fabrication_branches": {
     "printed": {
       "sf_unsupported_range": [
-        0.65,
+        0.64,
         1.78
       ],
       "sf_supported_range": [
         1.25,
-        3.45
+        3.46
+      ],
+      "sf_unsupported_range_raw": [
+        0.6451484913621898,
+        1.7764958457799427
+      ],
+      "sf_supported_range_raw": [
+        1.2544553998709245,
+        3.454297477905444
       ],
       "unsupported_predicted_failure": [
         "CP-Ti-Gr4",
@@ -145,11 +153,19 @@
     "welded": {
       "sf_unsupported_range": [
         1.29,
-        3.55
+        3.56
       ],
       "sf_supported_range": [
-        2.51,
+        2.5,
         6.91
+      ],
+      "sf_unsupported_range_raw": [
+        1.2902969827243795,
+        3.5529916915598854
+      ],
+      "sf_supported_range_raw": [
+        2.508910799741849,
+        6.908594955810888
       ],
       "unsupported_predicted_failure": [],
       "unsupported_marginal": [
@@ -4250,6 +4266,6 @@
     ],
     "note": "radial_play answers ASSEMBLY, the coaxial cap and touchdown answer SUPPORT \u2014 different questions, same row. Geometry does not discriminate (\u0431)/(\u0432)/(\u0433): all three land 25 \u00b5m radial. The discriminating costs are NOT computed here \u2014 wear allowance (\u0431), re-spec of the primary datum (\u0432), fatigue \u03c3 \u221d 1/d\u00b3 (\u0433)."
   },
-  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 11x); the bore liner doubles as lateral support -> fatigue SF 2.5-6.9x (infinite life, all alloys) on the 18 mm supported idealisation, which OVERSTATES the coaxial equilibrium root stress. BARE, the drawn wire reaches infinite life for 4 of 6 alloys (SF 1.3-3.5x, shipped span); short of the SF-2 line: CP-Ti-Gr4, Ta; none is predicted to fail. On the superseded PRINTED branch 0 of 6 reach infinite life bare (Ti-15Zr, beta-Ti-13Nb-13Zr, Ti-6Al-4V, Ti-6Al-7Nb short of the SF-2 line), predicted failure: CP-Ti-Gr4, Ta. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11), and since 2026-09-14 the contact is an EQUILIBRIUM, not a free-shape reading: on a coaxial channel the shipped liner touches down at the EXIT on every swept \u00b5 on every geometry (True), the mouth is never reached, and the root stress at worst \u00b5 lies in shipped \u2014 the whole lock shank (HW.26 G1) [3.39, 23.8] MPa / lock window, shallow end [2.72, 19.2] MPa (rigid wall = LOWER end, Ti-bore stop or free cantilever = UPPER end, bonded, zero-interference play; the contact compliance that places it is measured nowhere); shipped \u2014 the whole lock shank (HW.26 G1): forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none; lock window, shallow end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none. A channel off the root axis by more than the play makes the MOUTH a contact station and puts a static MEAN on the root (swept, never measured). What the liner carries is WEAR - the exit contact is geometrically forced on every swept \u00b5, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34, \u2696\ufe0f 2026-09-11: the liner's ground is WEAR). The seam is NOT priced: no break-even k (weld_seam.break_even_k_not_derived_because). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both. WEAR is BOUNDED (wear_budget) at the EQUILIBRIUM stations since 2026-09-14 - the exit under coaxial drag, the mouth under a channel offset: the rate is not measured anywhere, so the block prices the BUDGET as a BOUND over the contact-compliance bracket (a rigid point contact slides zero, a compliant one rotates in contact up to the Ti-bore stop; the rigid-wall figures bound nothing), and the two ends are set by the CONTACT GEOMETRY - an open verdict of ours - not by tribology. The wear axis re-earns the rejection of the conformal branches against a RIGID wall only; on the bound it does not discriminate them, because the in-contact sliding scales with the polymer's own wall.",
+  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 11x); the bore liner doubles as lateral support -> fatigue SF 2.50-6.91x (infinite life, all alloys) on the 18 mm supported idealisation, which OVERSTATES the coaxial equilibrium root stress. BARE, the drawn wire reaches infinite life for 4 of 6 alloys (SF 1.29-3.56x, shipped span); short of the SF-2 line: CP-Ti-Gr4, Ta; none is predicted to fail. On the superseded PRINTED branch 0 of 6 reach infinite life bare (Ti-15Zr, beta-Ti-13Nb-13Zr, Ti-6Al-4V, Ti-6Al-7Nb short of the SF-2 line), predicted failure: CP-Ti-Gr4, Ta. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11), and since 2026-09-14 the contact is an EQUILIBRIUM, not a free-shape reading: on a coaxial channel the shipped liner touches down at the EXIT on every swept \u00b5 on every geometry (True), the mouth is never reached, and the root stress at worst \u00b5 lies in shipped \u2014 the whole lock shank (HW.26 G1) [3.39, 23.8] MPa / lock window, shallow end [2.72, 19.2] MPa (rigid wall = LOWER end, Ti-bore stop or free cantilever = UPPER end, bonded, zero-interference play; the contact compliance that places it is measured nowhere); shipped \u2014 the whole lock shank (HW.26 G1): forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none; lock window, shallow end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none. A channel off the root axis by more than the play makes the MOUTH a contact station and puts a static MEAN on the root (swept, never measured). What the liner carries is WEAR - the exit contact is geometrically forced on every swept \u00b5, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34, \u2696\ufe0f 2026-09-11: the liner's ground is WEAR). The seam is NOT priced: no break-even k (weld_seam.break_even_k_not_derived_because). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both. WEAR is BOUNDED (wear_budget) at the EQUILIBRIUM stations since 2026-09-14 - the exit under coaxial drag, the mouth under a channel offset: the rate is not measured anywhere, so the block prices the BUDGET as a BOUND over the contact-compliance bracket (a rigid point contact slides zero, a compliant one rotates in contact up to the Ti-bore stop; the rigid-wall figures bound nothing), and the two ends are set by the CONTACT GEOMETRY - an open verdict of ours - not by tribology. The wear axis re-earns the rejection of the conformal branches against a RIGID wall only; on the bound it does not discriminate them, because the in-contact sliding scales with the polymer's own wall.",
   "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. GEOMETRY: the unsupported PEEK gap comes from the Zone-1 insertion \u2014 the whole lock shank since \u2696\ufe0f 00_07 HW.26 G1 2026-10-12; the contact blocks carry the shipped geometry AND the lock window's shallow end, the \u00a71-\u00a73 tables the shipped geometry only. CONTACT: rigid frictionless wall, perfect clamp, small deflection. The SIGN of the rigid-wall figure differs by regime: under coaxial drag it is the LOWER end of the root stress (a compliant polymer wall raises the root moment by 3EI\u00b7(R/k)/L\u00b2, the Ti-bore stop or free cantilever is the upper end), under a channel offset it is an UPPER bound (a compliant mouth relieves a displacement-driven load); the contact compliance is measured nowhere, and the channel offset, tilt and the fit's play are SWEPT. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. No break-even knockdown k is derived (the root sees a fully-reversed coaxial cap OR a static mean from an offset, and no mean-stress correction exists here); what IS given is the root amplitude and mean per regime and geometry (weld_seam.root_section_loading). k itself is NOT MEASURED and is not assumed here. THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since 2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The nominal is RATIFIED 2026-09-18 (00_07 HW.34: bore = wire - 11.41 um, OD = ID + 0.30, fitted hot, 01_01 3 step 4a); the channel play it leaves is set mostly by the WIRE's band (k per um of wire over nominal, interference_window.od_growth_eats_channel_play), and that band is NOT MEASURED. Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET at the equilibrium stations (exit under coaxial drag, mouth under an offset) as a BOUND over the contact-compliance bracket, its span set by the contact AREA bracketed between a flow-pressure bound and the full projected run. The coaxial in-contact sliding lies in [0 (rigid wall), the rotation to the Ti-bore stop]; the rigid-wall rotation figure bounds nothing, and against a rigid wall the driver is the reversing normal load. On the bound the wear axis does NOT discriminate the shipped liner from a conformal film (branch_discrimination). Archard assumes GROSS slip - at these amplitudes a real pair may be in partial slip, which removes less material and fails by fretting FATIGUE instead, a mode nothing here models. Third-body debris, the titanium side of the pair and the whole -30..+40 C dependence are outside the bound. Three seam mechanisms stay outside any bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries."
 }

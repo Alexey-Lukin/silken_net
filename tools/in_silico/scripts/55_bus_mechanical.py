@@ -112,6 +112,12 @@ def _bracket(lo: float, hi: float) -> str:
     return f"[{math.floor(lo * 100 + 1e-9) / 100:.2f}, {math.ceil(round(hi * 10, 9)) / 10:.1f}]"
 
 
+def _sf_range(vals: list[float]) -> list[float]:
+    """A safety-factor range over the alloys, OUTWARD to 0.01 — the least DOWN, the greatest UP — so the range holds
+    every alloy's raw ratio (in-silico §When Modifying #43: a bracket over cells rounds outward, not to nearest)."""
+    return [math.floor(min(vals) * 100 + 1e-9) / 100, math.ceil(round(max(vals) * 100, 9)) / 100]
+
+
 def _up2(x: float) -> str:
     """An «up to X» ceiling printed UP to 0.01 MPa (in-silico §When Modifying #43)."""
     return f"{math.ceil(round(x * 100, 9)) / 100:.2f}"
@@ -598,6 +604,7 @@ def main() -> int:
         return "⚠ marginal" if sf >= 1.0 else "✗ FAILS"
 
     alloy_rows = []
+    sf_raw = {(kind, branch): [] for kind in ("unsupported", "supported") for branch, _ in FAB_BRANCHES}  # unrounded, for the printed ranges
     for name, props in sorted(ALLOY_PROPERTIES.items(), key=lambda kv: -kv[1]["yield_MPa"]):
         sy = props["yield_MPa"]
         row = {"alloy": name, "yield_MPa": sy}
@@ -606,6 +613,8 @@ def main() -> int:
             row[f"endurance_MPa_{branch}"] = round(se, 1)
             row[f"sf_unsupported_{branch}"] = round(se / sig_unsup, 2)
             row[f"sf_supported_{branch}"] = round(se / sig_sup, 2)
+            sf_raw["unsupported", branch].append(se / sig_unsup)
+            sf_raw["supported", branch].append(se / sig_sup)
             row[f"unsupported_infinite_life_{branch}"] = bool(se / sig_unsup >= INFINITE_LIFE_SF)
             row[f"unsupported_predicted_failure_{branch}"] = bool(se / sig_unsup < 1.0)
         # ⛔ TWO decimals, not one: CP-Ti lands at 1.96 and rounds to "2.0" at one decimal, i.e. the
@@ -617,16 +626,15 @@ def main() -> int:
               f"{life_label(row['sf_unsupported_welded']):>10s}")
         alloy_rows.append(row)
 
-    # Everything below is DERIVED from alloy_rows. A hardcoded range here mirrored the numbers above and
+    # Everything below is DERIVED from alloy_rows and the raw ratios (sf_raw). A hardcoded range here mirrored the numbers above and
     # drifted the moment the diameter moved — the table said one thing and its own summary another.
-    def spread(key: str) -> tuple[float, float]:
-        vals = [r[key] for r in alloy_rows]
-        return min(vals), max(vals)
+    def spread(kind: str, branch: str) -> list[float]:
+        return _sf_range(sf_raw[kind, branch])  # from the RAW ratios, never the 0.01-rounded rows (§When Modifying #6)
 
     branch_summary = {}
     for branch, _ in FAB_BRANCHES:
-        uns_lo, uns_hi = spread(f"sf_unsupported_{branch}")
-        sup_lo_b, sup_hi_b = spread(f"sf_supported_{branch}")
+        uns_lo, uns_hi = spread("unsupported", branch)
+        sup_lo_b, sup_hi_b = spread("supported", branch)
         failing_b = [r["alloy"] for r in alloy_rows if r[f"unsupported_predicted_failure_{branch}"]]
         marginal_b = [r["alloy"] for r in alloy_rows
                       if not r[f"unsupported_predicted_failure_{branch}"]
@@ -634,6 +642,9 @@ def main() -> int:
         infinite_b = [r["alloy"] for r in alloy_rows if r[f"unsupported_infinite_life_{branch}"]]
         branch_summary[branch] = {
             "sf_unsupported_range": [uns_lo, uns_hi], "sf_supported_range": [sup_lo_b, sup_hi_b],
+            # the unrounded ends the two ranges above are rounded OUTWARD from — what test_cache_integrity holds them to
+            "sf_unsupported_range_raw": [min(sf_raw["unsupported", branch]), max(sf_raw["unsupported", branch])],
+            "sf_supported_range_raw": [min(sf_raw["supported", branch]), max(sf_raw["supported", branch])],
             "unsupported_predicted_failure": failing_b, "unsupported_marginal": marginal_b,
             "unsupported_infinite_life": infinite_b,
             "unsupported_infinite_life_for_all": len(infinite_b) == len(alloy_rows),
@@ -651,9 +662,9 @@ def main() -> int:
         b = branch_summary[branch]
         tag = " (SHIPPED, ⚖️ 2026-09-10)" if branch == SHIPPED_BRANCH else " (superseded fabrication)"
         print(f"\n  → {branch.upper()}{tag}")
-        print(f"      SUPPORTED (liner): SF {b['sf_supported_range'][0]:.1f}-{b['sf_supported_range'][1]:.1f}× — "
+        print(f"      SUPPORTED (liner): SF {b['sf_supported_range'][0]:.2f}-{b['sf_supported_range'][1]:.2f}× — "
               f"{'infinite life for EVERY alloy' if b['supported_infinite_life_for_all'] else 'NOT infinite life for every alloy'}.")
-        print(f"      UNSUPPORTED: SF {b['sf_unsupported_range'][0]:.1f}-{b['sf_unsupported_range'][1]:.1f}× — "
+        print(f"      UNSUPPORTED: SF {b['sf_unsupported_range'][0]:.2f}-{b['sf_unsupported_range'][1]:.2f}× — "
               f"infinite life for {len(b['unsupported_infinite_life'])}/{len(alloy_rows)}; "
               f"predicted FAILURE for {', '.join(b['unsupported_predicted_failure']) or 'none'}; "
               f"marginal for {', '.join(b['unsupported_marginal']) or 'none'}.")
@@ -1910,7 +1921,7 @@ def main() -> int:
     banner("Verdict")
     p_cr_unsup = euler_buckling_N(L_FREE_UNSUP)
     print(f"  1. Buckling: non-issue (P_cr {p_cr_unsup:.0f} N ≫ 1 N pogo, SF {p_cr_unsup / F_POGO_N:.0f}× even unsupported).")
-    print(f"  2. Sway fatigue on the SHIPPED ({SHIPPED_BRANCH}) rod: supported SF {sup_lo:.1f}-{sup_hi:.1f}×; "
+    print(f"  2. Sway fatigue on the SHIPPED ({SHIPPED_BRANCH}) rod: supported SF {sup_lo:.2f}-{sup_hi:.2f}×; "
           f"unsupported FAILS for {', '.join(failing) or 'no alloy'}.")
     # ⛔ The sentence below is DERIVED, never typed: a hand-written "all alloys clear it" is exactly the
     # claim that goes stale the moment an input moves, and this file's own inputs just moved.
@@ -2193,10 +2204,12 @@ def main() -> int:
         "verdict": (f"Monolithic bus at the canon rod O{D_BUS:.1f} (01_01 1.4), SHIPPED fabrication = "
                     f"{SHIPPED_BRANCH} (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue "
                     f"(SF {p_cr_unsup / F_POGO_N:.0f}x); the bore liner doubles as lateral support -> "
-                    f"fatigue SF {sup_lo:.1f}-{sup_hi:.1f}x (infinite life, all alloys) on the {L_FREE_SUP:.0f} mm supported "
+                    f"fatigue SF {sup_lo:.2f}-{sup_hi:.2f}x "
+                    f"({'infinite life, all alloys' if shipped['supported_infinite_life_for_all'] else 'NOT infinite life for every alloy'}) "
+                    f"on the {L_FREE_SUP:.0f} mm supported "
                     f"idealisation, which OVERSTATES the coaxial equilibrium root stress. BARE, the drawn "
                     f"wire reaches infinite life for {len(shipped['unsupported_infinite_life'])} of "
-                    f"{len(alloy_rows)} alloys (SF {uns_lo:.1f}-{uns_hi:.1f}x, shipped span); "
+                    f"{len(alloy_rows)} alloys (SF {uns_lo:.2f}-{uns_hi:.2f}x, shipped span); "
                     # ⛔ DERIVED from branch_summary, never typed: this sentence read «NOT over the SF-2 line.
                     #    On the superseded PRINTED branch not one of the six cleared it» for a whole day after
                     #    the L_FREE_UNSUP=36 inputs were retired — the printed report was derived, the cache

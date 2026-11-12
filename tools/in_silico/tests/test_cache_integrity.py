@@ -1975,6 +1975,28 @@ def test_bus_mechanical_liner_axial_thermal():
     assert "protrusion" in ax["liner_length_provenance"], "the length stopped citing the CEM field"
 
 
+def test_bus_mechanical_sf_ranges_are_outward_of_the_raw_ratios():
+    """The SF ranges over the alloys are the raw ends rounded OUTWARD to 0.01 — the least down, the greatest up
+    (in-silico §When Modifying #43). CAN catch: a generator turned back to round-to-nearest (four of the eight ends
+    differ on the shipped inputs), or a range that leaves a raw ratio outside. CANNOT catch: a wrong raw ratio."""
+    import math
+
+    path = MECHANICAL / "bus_mechanical.json"
+    if not path.exists():
+        pytest.skip("bus_mechanical.json not computed")
+    branches = json.loads(path.read_text())["fabrication_branches"]
+    nearest_differs = 0
+    for name, b in branches.items():
+        for kind in ("unsupported", "supported"):
+            lo, hi = b[f"sf_{kind}_range"]
+            raw_lo, raw_hi = b[f"sf_{kind}_range_raw"]
+            assert lo == math.floor(raw_lo * 100 + 1e-9) / 100, (name, kind, lo, raw_lo)
+            assert hi == math.ceil(round(raw_hi * 100, 9)) / 100, (name, kind, hi, raw_hi)
+            assert lo <= raw_lo <= raw_hi <= hi, (name, kind)
+            nearest_differs += (round(raw_lo, 2) != lo) + (round(raw_hi, 2) != hi)
+    assert nearest_differs > 0, "no end separates outward from nearest on these inputs — the control above is blind"
+
+
 def test_bus_mechanical_interference_window():
     """Script 55 (HW.34): the liner↔wire fit is BOUNDED, and its two vendor inputs stay ABSENT.
 

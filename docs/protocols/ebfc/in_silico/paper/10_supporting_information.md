@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 395 · 30,785,362 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 395 · 30,791,620 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -110,7 +110,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/52_z_stack_tolerance.py` | `628844c56b56c10280e6481f5fbfcbff18613bbec2d79bcece2a1f8e5963372d` | Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs). |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4478077492c51936376836ad377739348e119abe4302ce5c490f84dc396f9733` | Per-alloy native-oxide tunnelling model: direct-electron-transfer feasibility across the candidate anchor alloys. |
 | `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `b95c67309b8bce54b570fb5551a430cd412c8f1367f4648e06a8784c5ca7c689` | Axial thermal bridge of the central bus conductor through the anchor's PEEK thermal break. |
-| `tools/in_silico/scripts/55_bus_mechanical.py` | `4691141c178c234a621d7d5158a0ae8c0e734e1a1720411b26afb3bb65d72d73` | Mechanical check of the central bus rod: buckling and sway fatigue. |
+| `tools/in_silico/scripts/55_bus_mechanical.py` | `4d3173af3b8491b637172a671ee2743f2cd9fdbb8680360bb7eb6f8bfb1e1ea3` | Mechanical check of the central bus rod: buckling and sway fatigue. |
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `540c96b92a3d8b411b7b321f13a730a123eb6c19533a49eec2aaebf67f7fa9e8` | Unified thick-wall Lamé model: press-fit interference and thermal mismatch in one model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `f7f565e9b81c5e79219605d8f411e43598f54dfb0aa17e994f754e618fcc8dd3` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `019c603112ff0c5363a0a6a44ecacc40868d69a9f5420bec569780db0b903a26` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
@@ -158,8 +158,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `42f33c09ca986009eaedd814e09873fdfd9a042f931648b5eef606e9d2194208` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `25a64d1b5aa9c726343fe19dadeedd8aec27a3ebd912dcea4b3a37a05fe125be` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `e5045e756a61fc905bf546e046b69f1a6ef2eae3ebca5d46ec02ad599f2ead4f` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `7c23e08295858263fb2d8d521fbadb7926a80240cc3ab45686101391e6446b23` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -280,7 +280,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/anchor_wood_share.json` | `5f18d0ea1cd8e9567331d3c75080fe9e9687356ec8089c108cc941b2ab4e2d35` | 39,614 |
 | `tools/in_silico/cache/mechanical/bayonet_thermal_clamp.json` | `c63d228bc7e6509b9592678d9f8c367186abe41623fdec5b8f4d486179e175f9` | 81,615 |
 | `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `c15376d2e34a4370d52983e8c6311b299c7fbc9c12670a32a27c8d5a51944a3a` | 77,087 |
-| `tools/in_silico/cache/mechanical/bus_mechanical.json` | `05decad62bf197d131c13d387d83cf6b6173f4c0c4fad9ecbe6e2bf040ed593b` | 236,440 |
+| `tools/in_silico/cache/mechanical/bus_mechanical.json` | `d120526a85450adaf785ca6f8002396960f895582020b9eeba8eba3efbd92455` | 236,836 |
 | `tools/in_silico/cache/mechanical/bus_torsion_budget.json` | `b4013141afe2ffd2b4fbc855d794c0006c0aadb90bba86d5948c637b13849e38` | 8,066 |
 | `tools/in_silico/cache/mechanical/coaxiality_allocation.json` | `cc165d0228663c55d872a9e887ad9158aca5ea5a05cea229f0ff7c72fabd44ed` | 29,302 |
 | `tools/in_silico/cache/mechanical/collar_running_clearance.json` | `3b9f44aa783c38fc39ee18bfb5eff2ae2dd3a46d38982ccfe242e68d67cd05c3` | 4,209 |

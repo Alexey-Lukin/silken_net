@@ -574,13 +574,13 @@ free at µA (Ti 11.3 µV at 100 µA, 4×10⁴ below the 500 mV reference).
 fabrication verdict it reports **two branches**: `printed` (superseded) and `welded` (SHIPPED, ⚖️
 2026-09-10, cold-drawn wire, no as-built knockdown). Buckling SF **11×** (1 N pogo) even unsupported →
 still a non-issue in both. Sway fatigue: the bore **liner** (= the short-circuit insulation) doubles as
-lateral support → infinite life for **every** alloy on the shipped welded branch (SF 2.5–6.9×; the superseded
-printed branch reads 1.25–3.45×, CP-Ti and Ta below SF 2) — ⚠️ both on the 18 mm «supported» idealisation, which
+lateral support → infinite life for **every** alloy on the shipped welded branch (SF 2.50–6.91×; the superseded
+printed branch reads 1.25–3.46×, CP-Ti and Ta below SF 2) — ⚠️ both on the 18 mm «supported» idealisation, which
 since G1 lies ABOVE the compliant bracket's upper end on every geometry (§equilibrium below), so for the coaxial
 regime it is a conservative bound: on the bracket itself every alloy clears SF 2 (welded Ta 5.80 at the upper end;
 the printed derate of 0.50 halves it, still above 2) — and it says nothing about a channel offset. 🔴 **Bare, the fabrication choice decides — and it decides two different verdicts.** Printed:
-infinite life for **0 of 6** (SF 0.65–1.78×), **CP-Ti (0.90) and Ta (0.65) predicted fatigue failures**. Welded:
-every SF doubles → infinite life for **4 of 6** (SF 1.29–3.55×), with CP-Ti (1.80) and the binding candidate
+infinite life for **0 of 6** (SF 0.64–1.78×), **CP-Ti (0.90) and Ta (0.65) predicted fatigue failures**. Welded:
+every SF doubles → infinite life for **4 of 6** (SF 1.29–3.56×), with CP-Ti (1.80) and the binding candidate
 **Ta at 1.29 below the SF-2 line**. ⚖️ **Both columns are the RATIFIED LOW END of the
 `σ_e/σ_y` band since 2026-09-18** (founder 2026-09-17, `00_07` HW.34) — at the midpoint the welded column reads
 5 of 6 (Ta 1.45); the shipped LINED configuration is unaffected in verdict and its binding corner is Ta **5.80**

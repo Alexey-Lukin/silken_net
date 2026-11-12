@@ -2303,6 +2303,40 @@ CHECKS += [
     # table, derates), while the prose around it would stay internally consistent on the old value.
     # ⛔ The axial thermal term entered canon prose the same hour it was derived, which is exactly the
     # shape this file exists against: a number with no owner reads identically to one with an owner.
+    # The SF ranges over the alloys: the cache holds them OUTWARD to 0.01 (least down, greatest up — in-silico §When
+    # Modifying #43), and the doc carries the same two ends exactly; a range printed to nearest reds here.
+    *[(f"SUMMARY SF range over the alloys, {branch} {kind}, end {i} → bus_mechanical.json §fabrication_branches",
+       SUMMARY, pat, "mechanical/bus_mechanical.json",
+       lambda d, b=branch, k=kind, i=i: d["fabrication_branches"][b][f"sf_{k}_range"][i], 0.0)
+      for branch, kind, i, pat in (
+          ("welded", "supported", 0, rf"shipped welded branch \(SF {N}–[\d.]+×;"),
+          ("welded", "supported", 1, rf"shipped welded branch \(SF [\d.]+–{N}×;"),
+          ("printed", "supported", 0, rf"printed branch reads {N}–[\d.]+×"),
+          ("printed", "supported", 1, rf"printed branch reads [\d.]+–{N}×"),
+          ("printed", "unsupported", 0, rf"\*\*0 of 6\*\* \(SF {N}–[\d.]+×\)"),
+          ("printed", "unsupported", 1, rf"\*\*0 of 6\*\* \(SF [\d.]+–{N}×\)"),
+          ("welded", "unsupported", 0, rf"\*\*4 of 6\*\* \(SF {N}–[\d.]+×\)"),
+          ("welded", "unsupported", 1, rf"\*\*4 of 6\*\* \(SF [\d.]+–{N}×\)"))],
+    *[(f"{tag} SF range over the alloys, {branch} {kind}, end {i} → bus_mechanical.json §fabrication_branches",
+       doc, pat, "mechanical/bus_mechanical.json",
+       lambda d, b=branch, k=kind, i=i: d["fabrication_branches"][b][f"sf_{k}_range"][i], 0.0)
+      for tag, doc, branch, kind, i, pat in (
+          ("PIPELINE_STATUS", PIPELINE, "welded", "supported", 0, rf"на зварній гілці \(SF {N}–[\d.]+×; друкована"),
+          ("PIPELINE_STATUS", PIPELINE, "welded", "supported", 1, rf"на зварній гілці \(SF [\d.]+–{N}×; друкована"),
+          ("PIPELINE_STATUS", PIPELINE, "printed", "supported", 0, rf"×; друкована {N}–[\d.]+×, CP-Ti і Ta нижче SF 2"),
+          ("PIPELINE_STATUS", PIPELINE, "printed", "supported", 1, rf"×; друкована [\d.]+–{N}×, CP-Ti і Ta нижче SF 2"),
+          ("PIPELINE_STATUS", PIPELINE, "printed", "unsupported", 0, rf"\*\*0 з 6\*\* \(SF {N}–[\d.]+\)"),
+          ("PIPELINE_STATUS", PIPELINE, "printed", "unsupported", 1, rf"\*\*0 з 6\*\* \(SF [\d.]+–{N}\)"),
+          ("PIPELINE_STATUS", PIPELINE, "welded", "unsupported", 0, rf"\*\*4 з 6\*\* \(SF {N}–[\d.]+\)"),
+          ("PIPELINE_STATUS", PIPELINE, "welded", "unsupported", 1, rf"\*\*4 з 6\*\* \(SF [\d.]+–{N}\)"),
+          ("01_01 §1.4", COAXIAL, "printed", "unsupported", 0, rf"\*\*жодному\*\* сплаву \(SF {N}–[\d.]+\)"),
+          ("01_01 §1.4", COAXIAL, "printed", "unsupported", 1, rf"\*\*жодному\*\* сплаву \(SF [\d.]+–{N}\)"),
+          ("01_01 §1.4", COAXIAL, "welded", "unsupported", 0, rf"\*\*чотири з шести\*\* \(SF {N}–[\d.]+\)"),
+          ("01_01 §1.4", COAXIAL, "welded", "unsupported", 1, rf"\*\*чотири з шести\*\* \(SF [\d.]+–{N}\)"),
+          ("sn_fatigue_test_plan", "docs/protocols/anchor/sn_fatigue_test_plan.md", "printed", "unsupported", 0,
+           rf"SF без опори {N}–[\d.]+ \(`fabrication_branches"),
+          ("sn_fatigue_test_plan", "docs/protocols/anchor/sn_fatigue_test_plan.md", "printed", "unsupported", 1,
+           rf"SF без опори [\d.]+–{N} \(`fabrication_branches"))],
     (
         "liner differential AXIAL growth at 40 K → bus_mechanical.json §axial_thermal",
         COAXIAL, rf"дає \*\*{N} мкм на 40 К\*\*",
@@ -10504,7 +10538,7 @@ CHECKS += [
     ("magnet temperature design rule RE2Co17 → 00_07 → 114", TRACKER, rf"чи RE₂Co₁₇ від {N} мм завтовшки \(несприятливий кут, екземпляр",
      DEN, lambda d: _ceil(d[_MT]["thickness_limit_mm_at_realistic_gap"]["RE2Co17"]["adverse"]), 0.0),
     *_mt_pair(rf"лишається під {N} ⊥ [\d.]+ °C", rf"лишається під [\d.]+ ⊥ {N} °C", TRACKER, lambda c: (*_BE, c), _F1),
-    ("magnet temperature unread editions → 00_07 → 114", TRACKER, rf"\(клас REFeB із мінімумом від {N} Тл повернув би шкалу 2 мм на 3 мм\)",
+    ("magnet temperature unread editions → 01_03 §4 → 114", EBFC, rf"Це нижче {N} Тл, яких потребує несприятливий кут клітинки",
      DEN, lambda d: _ceil(d[_MT]["cells"]["t2:g3"]["need_T"]["REFeB_sintered:adverse"], 3), 0.0),
 ]
 
