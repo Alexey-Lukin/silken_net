@@ -11003,6 +11003,115 @@ CHECKS += [
 ]
 
 
+class _Preserved:
+    """A number that sits INSIDE a preserved form — a ratified verdict, its submission or a dated ⊕ addendum
+    (00_05 §7): the form is appended to, never rewritten. A plain pin on such a number compares the doc with the
+    LIVE cache, so the day a re-run moves the cache, editing the preserved number is the move that turns the pin
+    green — the gate rewards what the norm forbids (00_07 HW.43, the class found 2026-11-03). This resolver splits
+    the two halves: the DOC is held to the number the form carries, and the CACHE is held to that same number
+    separately, so each failure names its own remedy.
+
+    `live=None` — the cache has already moved and a dated ⊕ beside the form carries the new value under its own
+    row; this one then only keeps the preserved number from being edited.
+
+    CAN catch: the preserved number edited (with or without the cache moving) · the cache moving under it.
+    CANNOT catch: whether the sentence around the number is still true · a preserved number no row pins · a registry
+    entry edited or deleted in the same diff as the doc (the row falls back to a plain pin — the diff of
+    `_PRESERVED_AT` is the witness) · a rewrite that keeps the value (62.0 → 62) · a cache move inside the row's
+    tolerance. Deliberately not callable: a caller that wants the live cache must read `.live`."""
+
+    def __init__(self, frozen, live=None):
+        self.frozen, self.live = float(frozen), live
+
+
+# Kept numbers whose cache has ALREADY moved: the dated ⊕ beside each took the live pin over, so these rows carry no
+# resolver of their own — the registry below gives them a frozen one (an unregistered row here fails loudly).
+CHECKS += [
+    ("104 V g gap, the ratified number → 104", BLIND_MATE, r"\(г\) коротший PEEK — зазор ≤ " + N + r" мм \(⊕ 2026-11-03: ",
+     REMEDY, None, 0.0),
+    ("HW.37 · 02_03 life in open air, unsourced 0.4 V/part, the 2026-09-26 number → capsule_envelope.json",
+     POWER, rf"строк у повітрі — \*\*{N}–[\d.]+ року\*\* \(⊕ 2026-11-03: ", THERMAL, None, 0.05),
+]
+
+# label → the number the preserved form carries (as ratified, or as its dated ⊕ wrote it). A re-run that moves one
+# of these: keep the entry, map its label in `_PRESERVED_WITHOUT_LIVE` to the row of the dated ⊕ you append beside
+# the form, and give THAT ⊕ its own row and its own entry here.
+# ⚠️ Not every pin on a preserved form is registered yet (00_07 HW.43) — a row outside this table still reads the
+# live cache, and its drift message names the same remedy; register it here the day it is touched.
+_PRESERVED_AT = {
+    # ⚖️ founder 2026-10-21, the verdict's full form in 02_02 §3.5, and its ⊕ 2026-11-03 mark beside the ratified 5.6
+    "104 V worst → 104": 4.6,
+    "104 V slope → 104": 2.0,
+    "104 V shank → 104": 11.7,
+    "104 V L3 step → 90": 56.0,
+    "104 V pin tol → 104": 0.127,
+    "104 V fallback → 104": 1.698,
+    "104 V a uw → 104": 3.2,
+    "104 V a both → 104": 10.4,
+    "104 V c uw → 104": 1.778,
+    "104 V c both → 104": 1.914,
+    "104 V g gap → 104": 5.7,
+    "104 V g gap, the ratified number → 104": 5.6,
+    # the submission of that verdict and its ⊕ 2026-11-03 / 2026-11-05 marks, same paragraph («подання, НЕ переписано»)
+    "104 B held → 104": 23.7,
+    "104 B med → 104": 24.7,
+    "104 B uw → 104": 37.8,
+    "104 B 32 → 104": 51.1,
+    "104 B L2 → 104": 41.0,
+    "104 B L2 held → 104": 17.3,
+    "104 B L2 uw → 104": 3.2,
+    "104 B L2 32 → 104": 10.1,
+    "104 B L2F → 104": 56.0,
+    "104 B L2F held → 104": 32.3,
+    "104 B L2F uw → 104": 18.2,
+    "104 B L2F 32 → 104": 4.9,
+    "104 B L2F both → 104": 4.6,
+    "104 B shank min → 104": 11.7,
+    "104 B leads+sway → 104": 51.4,
+    "104 B stroke → 104": 1.637,
+    "104 B stroke uw → 104": 1.778,
+    "104 B gap → 104": 5.7,
+    "104 B shank → 104": 26.3,
+    "104 B cte → 104": 21.5,
+    "104 B F lo → 104": 20.9,
+    "104 B F hi → 104": 22.3,
+    "104 B F today → 104": 35.9,
+    "104 B alone → 104": 0.929,
+    "104 B shank 10 → 104": 31.6,
+    "104 B pin tol → 104": 0.127,
+    # the ⊕ of 2026-10-17 beside the ratified «Співвісність», 01_01 §1.4, and its ⊕ 2026-11-03 mark
+    "pogo sway transfer, seam k at the ceiling, Ti-6Al-4V in 01_01 §1.4 → pogo_sway_transfer.json": 0.55,
+    "pogo sway transfer, seam k at the ceiling, Ta in 01_01 §1.4 → pogo_sway_transfer.json": 1.48,
+    "pogo sway transfer, wire SF at the ceiling, Ta in 01_01 §1.4 → pogo_sway_transfer.json": 1.39,
+    "pogo sway transfer, Ti-15Zr tight branch at the ceiling in 01_01 §1.4 → pogo_sway_transfer.json": 0.4886,
+    "pogo sway transfer, Ti-15Zr ⌀0.10 at the ceiling in 01_01 §1.4 → pogo_sway_transfer.json": 0.5042,
+    # the measurement of 2026-09-26 appended to the derate verdict, 02_03 §12.1, and its ⊕ 2026-11-03 mark
+    "HW.37 · 02_03 life in open air, unsourced 0.2 V/part → capsule_envelope.json": 62.0,
+    "HW.37 · 02_03 life in open air, unsourced 0.4 V/part → capsule_envelope.json": 19.2,
+    "HW.37 · 02_03 life in open air, unsourced 0.4 V/part, the 2026-09-26 number → capsule_envelope.json": 19.1,
+}
+# kept label → the label of the dated ⊕ row beside it that took the live pin over. Mapping to an heir — not a bare
+# set — is the point: dropping a live half without naming the row that now reads the cache would silence the gate.
+_PRESERVED_WITHOUT_LIVE = {
+    "104 V g gap, the ratified number → 104": "104 V g gap → 104",
+    "HW.37 · 02_03 life in open air, unsourced 0.4 V/part, the 2026-09-26 number → capsule_envelope.json":
+        "HW.37 · 02_03 life in open air, unsourced 0.4 V/part → capsule_envelope.json",
+}
+_labels = [row[0] for row in CHECKS]
+assert all(_labels.count(k) == 1 for k in _PRESERVED_AT), "a _PRESERVED_AT label must name exactly one row of CHECKS"
+assert not any("premise" in k for k in _PRESERVED_AT), "a premise row mirrors canon into the script — its remedy is a re-run, not a ⊕"
+_row_of = {row[0]: row for row in CHECKS}
+for _kept, _heir in _PRESERVED_WITHOUT_LIVE.items():
+    assert _kept in _PRESERVED_AT and _heir in _PRESERVED_AT, (
+        "a label without a live half, and the ⊕ row that took it over, must both be preserved ones")
+    assert _heir not in _PRESERVED_WITHOUT_LIVE, "the row that took a live pin over must itself still read the cache"
+    assert _heir != _kept and _row_of[_heir][1] == _row_of[_kept][1] and _row_of[_heir][3] == _row_of[_kept][3], (
+        "the ⊕ row that takes a live pin over stands in the same doc and reads the same cache")
+CHECKS[:] = [(row[0], row[1], row[2], row[3],
+              _Preserved(_PRESERVED_AT[row[0]], None if row[0] in _PRESERVED_WITHOUT_LIVE else row[4]), row[5])
+             if row[0] in _PRESERVED_AT else row for row in CHECKS]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
@@ -11021,6 +11130,20 @@ def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
     assert len(matches) == 1, (
         f"[{label}] anchor matched {len(matches)} lines in {doc_rel} — ambiguous; tighten the pattern.")
     doc_val = _to_float(matches[0])
+    if isinstance(resolver, _Preserved):
+        assert math.isclose(doc_val, resolver.frozen, rel_tol=1e-12, abs_tol=0.0), (
+            f"[{label}] PRESERVED NUMBER EDITED: {doc_rel} says {doc_val}, but this number sits inside a preserved form "
+            f"(a ratified verdict, its submission or a dated ⊕ — 00_05 §7) and stood at {resolver.frozen} there. "
+            "Restore it: a cache that moved is recorded by a dated ⊕ BESIDE the form, never by rewriting it.")
+        if resolver.live is not None:
+            live_val = float(resolver.live(C(cache_rel)))
+            assert live_val == resolver.frozen or abs(live_val - resolver.frozen) <= tol, (
+                f"[{label}] CACHE MOVED UNDER A PRESERVED NUMBER: {cache_rel} now gives {live_val}, and the preserved "
+                f"form in {doc_rel} keeps {resolver.frozen}. If the re-run itself is wrong, fix the owning script and "
+                "re-run; otherwise do NOT edit the number — append a dated ⊕ beside it with the new value, give that ⊕ "
+                "its own row and its own `_PRESERVED_AT` entry, and map this label to the ⊕ row's label in "
+                "`_PRESERVED_WITHOUT_LIVE` (00_05 §7; 00_07 HW.43).")
+        return
     cache_val = float(resolver(C(cache_rel)))
     # The remedy is not the same for every row, so the message must not pretend it is: a `premise` row
     # mirrors CANON into the script (canon moved → re-run), and a NaN resolver refuses a doc sentence the
@@ -11031,8 +11154,10 @@ def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
         remedy = "CANON is the source for this row — re-run the owning script so its cache mirrors canon again."
     else:
         remedy = ("Cache is SSOT — fix the doc, or (if the cache is wrong) re-run the owning script. ⛔ Unless the number sits in "
-                  "a ratified verdict — its submission, the verdict itself or a ⊕ addendum (00_05 §7): keep it, add a dated "
-                  "⊕ beside it with the new value, and move this pin to the ⊕.")
+                  "a ratified verdict — its submission, the verdict itself or a ⊕ addendum (00_05 §7): keep it AND keep this "
+                  "pin on it — register this label in `_PRESERVED_AT` at the kept number, append a dated ⊕ beside it with "
+                  "the new value, give that ⊕ its own row and its own `_PRESERVED_AT` entry, and map this label to the ⊕ "
+                  "row's label in `_PRESERVED_WITHOUT_LIVE`.")
     if math.isinf(doc_val) or math.isinf(cache_val):
         assert doc_val == cache_val, (
             f"[{label}] DOC↔CACHE DRIFT: {doc_rel} says {doc_val} but {cache_rel} says {cache_val} — "
@@ -11042,6 +11167,39 @@ def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
         f"[{label}] DOC↔CACHE DRIFT: {doc_rel} says {doc_val} but "
         f"{cache_rel} says {cache_val} (|Δ|={abs(doc_val - cache_val):.4g} > tol {tol}). {remedy}"
     )
+
+
+def test_preserved_form_names_which_side_moved(monkeypatch):
+    """The `_Preserved` branch of `test_doc_matches_cache`, driven on a synthetic doc and cache (00_07 HW.43).
+
+    CAN catch: the branch losing either assert, or judging the cache before the doc — the fourth case, a preserved
+    number rewritten to the cache's NEW value, is the move a plain pin rewards with green and must stay red as an edit.
+    The last three asserts are the WIRING: that the registry is applied to `CHECKS` at all, with the frozen number
+    and the live half each row was given — without them every branch check below passes on an unwired registry.
+    CANNOT catch: a preserved number that no row registers in `_PRESERVED_AT`."""
+    def judge(doc_number, cache_number, live=True, tol=0.0):
+        monkeypatch.setitem(globals(), "doc", lambda rel: f"k ≥ {doc_number} here")
+        monkeypatch.setitem(globals(), "C", lambda rel: {"k": cache_number})
+        test_doc_matches_cache("probe", "probe.md", rf"k ≥ {N} here", "probe.json",
+                               _Preserved(0.55, (lambda d: d["k"]) if live else None), tol)
+
+    judge(0.55, 0.55)
+    with pytest.raises(AssertionError, match="PRESERVED NUMBER EDITED"):
+        judge(0.56, 0.55)
+    with pytest.raises(AssertionError, match="CACHE MOVED UNDER A PRESERVED NUMBER"):
+        judge(0.55, 0.58)
+    with pytest.raises(AssertionError, match="PRESERVED NUMBER EDITED"):
+        judge(0.58, 0.58)
+    judge(0.55, 0.58, live=False)   # the cache has moved and a dated ⊕ carries it: only the edit is judged here
+    with pytest.raises(AssertionError, match="PRESERVED NUMBER EDITED"):
+        judge(0.58, 0.58, live=False)
+    judge(0.55, 0.58, tol=0.05)   # the cache half is judged in the row's own tolerance …
+    with pytest.raises(AssertionError, match="PRESERVED NUMBER EDITED"):
+        judge(0.58, 0.55, tol=0.05)   # … the doc half never is: an edit inside the tolerance is still an edit
+    wired = {row[0]: row[4] for row in CHECKS if isinstance(row[4], _Preserved)}
+    assert set(wired) == set(_PRESERVED_AT), "the registry is not applied to CHECKS"
+    assert all(wired[k].frozen == v and (wired[k].live is None) == (k in _PRESERVED_WITHOUT_LIVE)
+               for k, v in _PRESERVED_AT.items()), "a registered row carries another number or another live half"
 
 
 # ── Perimeter: a pin is decorative on every change its INPUT cannot trigger ──
