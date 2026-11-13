@@ -324,6 +324,13 @@ Anchor mechanics (CPU):
      vapour pressure, REFLECT_ENDS) → 117 (stem_face_cover_rules_rehearsal.json — the stem-face sheet's cover rules
      rehearsed on ERA5 before the logger); a change to 79's loaders or REFLECT_ENDS, 110's irradiance or 115's ice
      saturation re-runs 117
+  107 (importlib: solve · source_coeffs · stem_layers · run_case · _span · the readings and the carrier; radio/stem_radio_shadow.json —
+     its rows at its own standoffs, a control) · 114 (dendrometer_support_budget.json: the rate ends, the bearing share, and
+     the install edges as a control) · 78 (flange_cambium_heat.json: the RAW facing spread) · 52 (z_stack_tolerance.json: the
+     RF-deck rows over the flange) · tools/cad/cem (radome: the crown, the dome's radius and the vent hole by
+     `Radome.VentZMm`'s closed form — pinned from the C# side, RadomeTests; cathode flange: its placeholder thickness)
+     → 119 (radio/bark_overgrowth_consumers.json — the marks the rising bark passes on the radome, the radio under the
+     surface, the pit, the allowance); a re-run of 107, 114, 78 or 52, or a change to either CEM, re-runs 119
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

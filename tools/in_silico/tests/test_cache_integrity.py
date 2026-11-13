@@ -9354,3 +9354,328 @@ def test_pv_snow_frost_order_and_azimuth_are_recomputed():
     for k, v in d["azimuth"].items():
         if v["worst_over_south"] is not None:
             assert v["worst_over_south"] == pytest.approx(v["worst_bearing_cm2"] / v["south_face_cm2"], abs=0.002), k
+
+
+def _overgrowth_embedded_homogeneous(eps, a, rho, pol, f_hz, phi_deg):
+    """A line source INSIDE a homogeneous stem, in closed form and by reciprocity — sharing no code with 119's unit
+    response, with its direct problem or with 107's recursion. A unit incident order sets up A_n·J_n(k₁ρ) inside, with
+    A_n = (−2j/(πa)) / [β·J_n(k₁a)·H_n′(βa) − q·J_n′(k₁a)·H_n(βa)], q = k₁ (TM) or k₁/ε_r (TE) — the Wronskian of J and
+    H⁽²⁾ over the surface match; the far coefficient is that field at the source's point (TM: E_z) or its
+    (1/ε_r)·∂/∂ρ over β (TE: E_φ). Returns the field in dB against the free source's front lobe (|F| = 1)."""
+    from scipy.special import h2vp, hankel2, jv, jvp
+    beta = 2 * math.pi * f_hz / 299_792_458.0
+    k1 = beta * np.sqrt(complex(eps))
+    k1 = k1.conjugate() if k1.imag > 0 else k1          # e^{jωt}: the decaying branch
+    x = beta * a
+    ns = np.arange(-(math.ceil(x + 4.0 * x ** (1 / 3) + 12) + 10), math.ceil(x + 4.0 * x ** (1 / 3) + 12) + 11)
+    q = k1 if pol == "TM" else k1 / complex(eps)
+    amp = (-2j / (math.pi * a)) / (beta * jv(ns, k1 * a) * h2vp(ns, x) - q * jvp(ns, k1 * a) * hankel2(ns, x))
+    tau = amp * jv(ns, k1 * rho) if pol == "TM" else amp * (k1 / beta) * jvp(ns, k1 * rho) / complex(eps)
+    F = np.exp(1j * np.outer(np.deg2rad(np.asarray(phi_deg, float)), ns)) @ ((1j ** ns) * tau)
+    return 20.0 * np.log10(np.abs(F))
+
+
+def test_bark_overgrowth_consumers_are_recomputed():
+    """119 (00_07 HW.54, the leg «кора накриває купол») — the marks' clock, the pit and the allowance against the inputs
+    they derive from; every homogeneous row of the embedded radio, and the grid's weakest cells, against a closed form
+    computed here; the printed ranges against the rows and raw ends they are ranges OF; the verdict's sentences against
+    the fields that carry them.
+
+    CAN catch: a vent height that no longer follows the radome's CEM · an install reference that is not the oblique cut of
+    `78`'s raw spread (÷ cos θ, half of it on the mid-line) and the flange's thickness · a tilt that is not the one the
+    spread encodes · a year, a radial travel, a bearing-share stretch or a «reached inside the life» flag that is not
+    travel / rate · a mark order that is not by height · an embedded far field with a wrong reciprocity factor or a wrong
+    interior amplitude on the homogeneous rows, at the printed depths AND at the grid's weakest front and weakest
+    rule-angle cell (the closed form shares no code with the script) · a range that is not the outward rounding of its raw
+    ends, or raw ends that are not its rows' · an after-life cell whose state does not follow its heights, a state list
+    that is not the cells', or a «closed»/«deck in air» span that is not its cells' · a medium of the
+    readings missing from the attenuation list, or an attenuation that is not its permittivity's · a share, its
+    half-depth or its years that are not the closed form's · an allowance, a flange thickness or a height ratio that is
+    not the arithmetic of its inputs, or two routes that no longer add one height · a control recorded above its tolerance · a verdict sentence a partial re-run left behind.
+    CANNOT catch: a defect only a LAYERED row would show (the script's direct-problem control gates those at runtime,
+    recorded here only as a number under its tolerance) · the layered rows off the printed depths, and with them the
+    «stems as they stand» counts, which only the script's own run produces · a wrong INPUT (a
+    rate, a deck row, a permittivity, the bearing share — their homes carry them) · anything the model declares it
+    cannot see, its premise first.
+    """
+    pytest.importorskip("scipy")
+    d = json.loads((RADIO / "bark_overgrowth_consumers.json").read_text(encoding="utf-8"))
+    i, m = d["inputs"], d["marks"]
+    slow, fast = i["radial_rate_mm_per_yr"]
+    life, install, u_lo, u_hi = i["life_yr"], i["install_bark_over_flange_top_mm"], *i["bearing_share_U_ends_114"]
+    # the vent's height from the CEM, by Radome.VentZMm's closed form; one hole
+    cem = json.loads((REPO / "tools/cad/cem/radome.json").read_text(encoding="utf-8"))
+    flange_t = json.loads((REPO / "tools/cad/cem/cathode_flange.json").read_text(encoding="utf-8"))["flange_thickness_mm"]
+    boss = cem["lock_groove_z_mm"] + cem["lug_radius_mm"] + cem["slot_clearance_mm"]
+    r_in = cem["dome_diameter_mm"] / 2 - cem["wall_thickness_mm"]
+    chord = math.sqrt(r_in ** 2 - (cem["vent_facet_width_mm"] / 2) ** 2)
+    edge = math.hypot(chord, (cem["vent_ring_id_mm"] + 2 * cem["vent_ring_wall_mm"]) / 2)
+    gap, rho_c = edge - (cem["dome_diameter_mm"] / 2 - cem["bell_radius_mm"]), cem["bell_radius_mm"] - cem["wall_thickness_mm"]
+    top = cem["cavity_height_mm"] + (rho_c if gap <= 0 else 0.0 if gap >= rho_c else math.sqrt(rho_c ** 2 - gap ** 2))
+    z_vent = (boss + top) / 2
+    assert i["vent_hole"]["centre_over_rim_mm"] == pytest.approx(z_vent, abs=1e-9)
+    assert i["vent_hole"]["holes"] == cem["vent_holes"] == 1, "the mark is derived for one hole on the ring's centre"
+    assert boss < z_vent < cem["cavity_height_mm"], "the vent hole must sit on the vertical wall, under the crown's edge"
+    rows52, bom = i["rf_deck_rows_over_flange_top_mm"], i["rf_deck_bom_rows_mm"]
+    assert rows52[0] < bom[0] and rows52[-1] == bom[1] and bom[0] in rows52, "a named alternative below the BOM's two rows"
+    heights = {"radome_rim": 0.0, "vent_hole_lower_edge": z_vent - cem["vent_hole_diameter_mm"] / 2,
+               "vent_hole_upper_edge": z_vent + cem["vent_hole_diameter_mm"] / 2,
+               "rf_deck_alt_low": rows52[0], "rf_deck_bom_low": bom[0], "rf_deck_bom_high": bom[1],
+               "crown_edge": cem["cavity_height_mm"], "crown_top": cem["cavity_height_mm"] + cem["bell_radius_mm"]}
+    assert m["order_low_to_high"] == sorted(heights, key=heights.get)
+    assert i["crown_top_over_rim_mm"] == heights["crown_top"] and i["dome_radius_mm"] == cem["dome_diameter_mm"] / 2
+    # the install references — canon's limit, and the tilted seat's deep edge, mid-line and shallow edge: the bark's plane
+    # cuts the capsule obliquely, so along the axis the edges are `78`'s RAW spread over cos θ apart
+    bark78 = json.loads((CACHE / "thermal/flange_cambium_heat.json").read_text(encoding="utf-8"))["bark"]
+    spread, cos_t = bark78["facing_spread_mm"], math.cos(math.radians(i["tilt_deg"]))
+    assert i["facing_spread_mm_78"] == spread and i["flange_thickness_placeholder_mm"] == flange_t
+    assert spread == pytest.approx(bark78["flange_diameter_mm"] * math.sin(math.radians(i["tilt_deg"])), abs=1e-9), "the tilt is the one the spread encodes"
+    assert i["cos_tilt"] == pytest.approx(cos_t, abs=1e-12) and 0 < i["tilt_deg"] <= 10.0, "the install angle's ceiling (01_04 §3.2)"
+    assert install == pytest.approx({"flange_top": 0.0, "deep_edge": spread / cos_t - flange_t,
+                                     "mid_seat": spread / (2 * cos_t) - flange_t, "shallow_edge": -flange_t}, abs=1e-12)
+    assert list(install) == ["flange_top", "deep_edge", "mid_seat", "shallow_edge"]
+    assert i["install_edges_as_114_reads_them_mm"] == pytest.approx({"flange_top": 0.0, "deep_edge": spread - flange_t, "shallow_edge": -flange_t}, abs=1e-12)
+    for name, h in heights.items():
+        c = m["clock"][name]
+        assert c["over_flange_top_mm"] == pytest.approx(h, abs=1e-12)
+        for ref, b0 in install.items():
+            row, climb = c["by_install_reference"][ref], (h - b0) * cos_t
+            yrs = [max(climb, 0) / fast, max(climb, 0) / slow]
+            assert row["radial_travel_mm"] == pytest.approx(climb, abs=1e-12)
+            assert row["yr_fast_slow"] == [round(y, 1) for y in yrs]
+            assert row["yr_fast_slow_at_bearing_share"] == {f"U_{u:g}": [round(y / (1 - u), 1) for y in yrs] for u in (u_lo, u_hi)}
+            assert max(climb, 0) / life - 1e-3 < row["outlives_life_below_mm_per_yr"] <= max(climb, 0) / life + 1e-9   # rounded DOWN
+            assert m["reached_inside_life"][name][ref] == {
+                "slow": climb < life * slow, "fast": climb < life * fast,
+                "slow_at_the_high_bearing_share": climb < life * slow * (1 - u_hi)}
+    lo = m["lowest_opening"]
+    by_ref = {ref: v["outlives_life_below_mm_per_yr"] for ref, v in m["clock"]["vent_hole_lower_edge"]["by_install_reference"].items()}
+    assert lo["mark"] == "vent_hole_lower_edge" and lo["outlives_life_below_mm_per_yr_by_reference"] == by_ref
+    assert lo["mounting_azimuth_reference"] == "mid_seat"
+    assert m["crown_top_untilted_yr_fast_slow_as_114"] == [round(heights["crown_top"] / fast, 1), round(heights["crown_top"] / slow, 1)]
+    assert lo["outlives_life_below_mm_per_yr_on_every_reference"] == min(by_ref.values()), "a «on every reference» threshold is the least"
+    # the embedded radio: every homogeneous row against the closed form, every printed range against its rows
+    rows, marks = d["radio_rows_at_depth_marks"], [f"{x:g}" for x in i["depth_marks_mm"]]
+    assert len(rows) == 2 * len(i["readings"]) * len(i["stems_dbh_m"])
+    checked = 0
+    for r in rows:
+        assert r["surface_radius_m"] == pytest.approx(r["dbh_m"] / 2, abs=1e-12)
+        if r["homogeneous_eps"] is None:
+            continue
+        assert r["reading"] in i["homogeneous_readings"]
+        eps = complex(r["homogeneous_eps"][0], -r["homogeneous_eps"][1])
+        for k in marks:
+            got = _overgrowth_embedded_homogeneous(eps, r["surface_radius_m"], r["surface_radius_m"] - float(k) / 1e3,
+                                                   r["polarization"], d["frequency_Hz"], [0.0, i["rule_angle_deg"]])
+            assert r["front_same_current_dB_by_depth_mm"][k] == pytest.approx(float(got[0]), abs=1e-6), (r["reading"], k)
+            assert r["rule_angle_same_current_dB_by_depth_mm"][k] == pytest.approx(float(got[1]), abs=1e-6), (r["reading"], k)
+            checked += 1
+    assert checked == 2 * len(i["homogeneous_readings"]) * len(i["stems_dbh_m"]) * len(marks) > 0
+    grid = round((0 - i["axis_mm"]["deck_over_surface_from"]) / i["axis_mm"]["step"]) + 1
+    for pol in ("TM", "TE"):
+        sel, block = [r for r in rows if r["polarization"] == pol], d["radio_same_current"][pol]
+        for k in marks:
+            cell = block["deck_under_the_surface"][k]
+            front = [r["front_same_current_dB_by_depth_mm"][k] for r in sel]
+            drop = [r["front_same_current_dB_by_depth_mm"][k] - r["rule_angle_same_current_dB_by_depth_mm"][k] for r in sel]
+            wet = [r["front_same_current_dB_by_depth_mm"][k] for r in sel if r["homogeneous_eps"] is not None]
+            own = [r["front_same_current_dB_by_depth_mm"][k] for r in sel if r["homogeneous_eps"] is None]
+            for key, vals in (("front_same_current_dB", front), ("rule_angle_below_front_dB", drop),
+                              ("front_wet_from_the_surface_dB", wet), ("front_under_the_stem_s_own_bark_dB", own)):
+                assert cell[key + "_raw"] == pytest.approx([min(vals), max(vals)], abs=1e-9), (pol, k, key)
+            assert cell["rows"] == len(sel)
+            assert cell["rows_beyond_the_rule_s_3dB_at_the_rule_angle"] == sum(x > i["rule_drop_dB"] for x in drop)
+        # the grid's weakest front and weakest rule-angle cell — the numbers canon quotes — sit on homogeneous rows,
+        # where the closed form reaches them
+        deepest = block["deepest_front_over_depth"][f"{-i['axis_mm']['deck_over_surface_from']:g}"]
+        for key, phi in (("front", 0.0), ("rule_angle", i["rule_angle_deg"])):
+            cell = deepest[key]
+            assert cell["reading"] in i["homogeneous_readings"], "the weakest cell left the homogeneous rows — the closed form no longer reaches it"
+            eps = next(complex(r["homogeneous_eps"][0], -r["homogeneous_eps"][1]) for r in rows if r["reading"] == cell["reading"])
+            got = _overgrowth_embedded_homogeneous(eps, cell["dbh_m"] / 2, cell["dbh_m"] / 2 - cell["at_depth_mm"] / 1e3, pol,
+                                                   d["frequency_Hz"], [phi])
+            assert cell["same_current_dB_raw"] == pytest.approx(float(got[0]), abs=1e-6), (pol, key)
+            assert cell["same_current_dB"] == math.floor(cell["same_current_dB_raw"] * 10 + 1e-9) / 10   # a floor: DOWN
+        on_grid = block["rule_on_the_grid_under_the_surface"]
+        assert on_grid["cells"] == len(sel) * grid and 0 <= on_grid["cells_beyond_3dB_at_the_rule_angle"] <= on_grid["cells"]
+        assert on_grid["least_crossing_3dB_deg"] == math.floor(on_grid["least_crossing_3dB_deg_raw"] * 10 + 1e-9) / 10
+        # the same grid with the stems as they stand — only its bookkeeping is held here (CANNOT above)
+        alt = block["stems_as_they_stand"]
+        assert alt["rows"] == len(sel) and alt["cells"] == on_grid["cells"]
+        assert alt["rows_that_differ"] == len(i["readings_whose_sapwood_grows_with_depth"]) * len(i["stems_dbh_m"]) > 0
+        assert 0 <= alt["cells_beyond_3dB_at_the_rule_angle"] <= alt["cells"]
+        assert alt["least_crossing_3dB_deg"] == math.floor(alt["least_crossing_3dB_deg_raw"] * 10 + 1e-9) / 10
+        assert set(alt["by_depth_mm"]) == set(marks[1:])
+        # after the life: the state of every cell from its heights (with the tilt in the travel); which cells are a
+        # result is counted, never assumed for a rate end; a closed cell's weakest front is a homogeneous row's
+        decks = {"rf_deck_alt_low": heights["rf_deck_alt_low"], "rf_deck_bom_high": heights["rf_deck_bom_high"]}
+        states = {end: {st: [] for st in ("deck in air", "pit", "surface over the crown")} for end in ("slow", "fast")}
+        # a deck's centre is on the axis: its cells run from the flange's top and from the mid-line, never from an edge
+        assert {k.split(":")[0] for k in block["after_life"]} == set(i["deck_install_references"]) == {"flange_top", "mid_seat"}
+        for key, cell in block["after_life"].items():
+            ref, rate, deck = key.split(":")
+            v = slow if rate == "slow" else fast
+            s_life = (decks[deck] - install[ref]) * cos_t - life * v
+            crown_over = (heights["crown_top"] - install[ref]) * cos_t - life * v
+            assert cell["deck_over_surface_mm"] == pytest.approx(s_life, abs=1e-9)
+            assert cell["crown_over_surface_mm"] == pytest.approx(crown_over, abs=1e-9)
+            want = "deck in air" if s_life > 0 else "pit" if crown_over > -1.0 else "surface over the crown"
+            assert cell["state"].startswith(want), key
+            states[rate][want].append(key)
+            assert ("efficiency_2d" in cell) == (want == "deck in air"), "the near-field indicator exists for a deck in air only"
+            assert ("change_as_they_stand_dB" in cell) == (s_life <= 0), "under the surface both readings of the stem are printed"
+            if want == "surface over the crown":
+                hom = [float(_overgrowth_embedded_homogeneous(
+                    complex(r["homogeneous_eps"][0], -r["homogeneous_eps"][1]), r["surface_radius_m"],
+                    r["surface_radius_m"] + s_life / 1e3, pol, d["frequency_Hz"], [0.0])[0]) for r in sel if r["homogeneous_eps"] is not None]
+                assert cell["front_same_current_dB_raw"][0] == pytest.approx(min(hom), abs=1e-6), key
+        assert block["after_life_states"] == {end: {st: sorted(c) for st, c in v.items()} for end, v in states.items()}
+        for name, st, fields in (("after_life_closed", "surface over the crown",
+                                  ("front_same_current_dB", "change_against_install_day_dB", "change_as_they_stand_dB",
+                                   "rule_angle_below_front_dB")),
+                                 ("after_life_deck_in_air", "deck in air",
+                                  ("change_against_install_day_dB", "efficiency_2d", "install_day_efficiency_2d"))):
+            cells = sorted(states["slow"][st] + states["fast"][st])
+            assert block[name]["cells"] == cells
+            for key in fields:
+                if cells:
+                    ends = [x for k in cells for x in block["after_life"][k][key + "_raw"]]
+                    assert block[name][key + "_raw"] == [min(ends), max(ends)], (pol, name, key)
+        both = block["after_life_closed"]
+        if both["cells"]:       # the weak end is a homogeneous reading's under either reading; the favourable end is not
+            assert both["change_as_they_stand_dB_raw"][0] == pytest.approx(both["change_against_install_day_dB_raw"][0], abs=1e-9)
+            assert both["change_as_they_stand_dB_raw"][1] >= both["change_against_install_day_dB_raw"][1]
+    # every range a document quotes is cached OUTWARD from its raw ends (in-silico §When Modifying #43 ⊕) — the control
+    # on the GENERATOR: turned back to nearest, an end would sit inside the cells and this reds, not the doc pin
+    def spans(node, path=""):
+        if isinstance(node, dict):
+            for key, v in node.items():
+                if key.endswith("_raw") and isinstance(v, list):
+                    yield f"{path}/{key[:-4]}", node[key[:-4]], v
+                yield from spans(v, f"{path}/{key}")
+    seen = 0
+    for where, shown, raw in spans(d):
+        f = 100 if where.endswith(("efficiency_2d", "plane_wave_dB_per_cm")) else 10
+        assert shown == [math.floor(raw[0] * f) / f, math.ceil(raw[1] * f) / f], where
+        assert shown[0] <= raw[0] <= raw[1] <= shown[1], where
+        seen += 1
+    assert seen > 150, "the outward-rounding control looked at almost nothing"
+    # the media — every permittivity of the rows that carry one, and each attenuation from its permittivity
+    beta = 2 * math.pi * d["frequency_Hz"] / 299_792_458.0
+    att = {}
+    for name, v in d["media"].items():
+        k = beta * np.sqrt(complex(v["eps"][0], -v["eps"][1]))
+        att[name] = abs(k.imag) * 20 / math.log(10) / 100
+        assert v["plane_wave_dB_per_cm"] == pytest.approx(att[name], rel=1e-12)
+        assert v["wavelength_in_medium_mm"] == pytest.approx(2 * math.pi / abs(k.real) * 1000, rel=1e-12)
+    for r in rows:
+        if r["homogeneous_eps"] is not None:
+            assert any(v["eps"] == pytest.approx(r["homogeneous_eps"], abs=1e-12) for v in d["media"].values()), r["reading"]
+    span = d["media_span"]
+    assert span["least"] == min(att, key=att.get) and span["most"] == max(att, key=att.get)
+    assert span["plane_wave_dB_per_cm_raw"] == pytest.approx([min(att.values()), max(att.values())], rel=1e-12)
+    # the pit — the closed form for two parallel coaxial discs, recomputed
+    def view(p, r_disc, r_pit):
+        if p <= 0:
+            return 1.0
+        r1, r2 = r_disc / p, r_pit / p
+        s = 1 + (1 + r2 * r2) / (r1 * r1)
+        return 0.5 * (s - math.sqrt(s * s - 4 * (r2 / r1) ** 2))
+    assert view(14.9, 14.9, 14.9) == pytest.approx(0.5 * (3 - math.sqrt(5)), abs=1e-12)   # equal discs one radius apart
+    pit = d["pit"]
+    assert pit["pit_radius_mm"] == i["dome_radius_mm"]
+    discs = {"crown_flat": i["dome_radius_mm"] - cem["bell_radius_mm"], "dome_outline": i["dome_radius_mm"]}
+    assert pit["discs_radius_mm"] == pytest.approx(discs, abs=1e-12)
+    for name, r_disc in discs.items():
+        b = pit["by_disc"][name]
+        assert view(b["half_share_depth_mm"], r_disc, pit["pit_radius_mm"]) == pytest.approx(0.5, abs=1e-9)
+        assert b["half_share_yr_after_the_crown_fast_slow"] == [round(b["half_share_depth_mm"] / fast, 1), round(b["half_share_depth_mm"] / slow, 1)]
+        for k, v in b["share_by_depth_mm"].items():
+            assert v == pytest.approx(view(float(k), r_disc, pit["pit_radius_mm"]), abs=1e-12)
+            assert b["centre_beam_cutoff_deg_by_depth_mm"][k] == pytest.approx(math.degrees(math.atan(pit["pit_radius_mm"] / float(k))), abs=1e-9)
+        for key, row in b["after_life"].items():
+            ref, rate = key.split(":")
+            p_life = life * (slow if rate == "slow" else fast) - (heights["crown_top"] - install[ref]) * cos_t
+            assert row["pit_depth_mm"] == pytest.approx(p_life, abs=1e-9)
+            if p_life > 0:
+                assert row["share"] == pytest.approx(view(p_life, r_disc, pit["pit_radius_mm"]), abs=1e-12)
+            else:
+                assert row["share"] is None, "no pit yet — the crown is still out of the surface"
+        shares = [b["after_life"][f"{ref}:fast"]["share"] * 100 for ref in install]
+        assert b["share_after_life_fast_pct_raw"] == pytest.approx([min(shares), max(shares)], abs=1e-10)
+    # «the outline's share is the least of any coaxial disc inside it» — the share falls with the disc's radius
+    for p in (5.0, 20.0, 80.0):
+        assert view(p, discs["crown_flat"], pit["pit_radius_mm"]) > view(p, discs["dome_outline"], pit["pit_radius_mm"])
+    depths = [life * fast - (heights["crown_top"] - b0) * cos_t for b0 in install.values()]
+    assert pit["after_life_fast"]["pit_depth_mm_raw"] == pytest.approx([min(depths), max(depths)], abs=1e-10)
+    assert pit["after_life_slow_pit_depth_mm"] == pytest.approx({ref: life * slow - (heights["crown_top"] - b0) * cos_t for ref, b0 in install.items()}, abs=1e-9)
+    # the allowance — how far below the flange's top the bark must start, as a flange and as a raised stack
+    al, h_open, crown = d["allowance"], heights["vent_hole_lower_edge"], heights["crown_top"]
+    assert al["lowest_opening"] == "vent_hole_lower_edge" and al["flange_thickness_placeholder_mm"] == flange_t
+    for rate, v in (("slow", slow), ("fast", fast)):
+        row, need = al["by_rate_end"][rate], life * v / cos_t - h_open      # along the axis: the travel is radial
+        assert row["bark_below_flange_top_at_install_mm"] == pytest.approx(need, abs=1e-9)
+        assert row["today_mm_by_reference"] == pytest.approx({ref: -b0 for ref, b0 in install.items()}, abs=1e-12)
+        t_need = {"shallow_edge": need, "mid_seat": need + spread / (2 * cos_t), "deep_edge": need + spread / cos_t}
+        assert row["as_flange_thickness_mm"] == pytest.approx(t_need, abs=1e-9)
+        lifts = {ref: max(0.0, need + b0) for ref, b0 in install.items()}
+        assert row["raised_stack_lift_mm_by_reference"] == pytest.approx(lifts, abs=1e-9)
+        fl, st = row["flange_route_crown_height_ratio"], row["raised_stack_crown_height_ratio"]
+        assert fl["about_the_rim"] == 1.0, "a thicker flange leaves the crown's height over the rim as it is"
+        assert fl["about_the_underside"] == pytest.approx({ref: (t + crown) / (flange_t + crown) for ref, t in t_need.items()}, abs=1e-12)
+        assert st["about_the_rim"] == pytest.approx({ref: (crown + x) / crown for ref, x in lifts.items()}, abs=1e-12)
+        assert st["about_the_underside"] == pytest.approx({ref: (flange_t + crown + x) / (flange_t + crown) for ref, x in lifts.items()}, abs=1e-12)
+        for ref in t_need:      # «at one rate end the two routes add the same height»
+            if lifts[ref] > 0:
+                assert st["about_the_underside"][ref] == pytest.approx(fl["about_the_underside"][ref], abs=1e-12), (rate, ref)
+    rs = al["raised_stack"]
+    lift, keep = max(0.0, life * fast / cos_t - h_open), life * fast / cos_t
+    assert rs["lift_mm"] == pytest.approx(lift, abs=1e-9) and rs["lift_keeping_the_install_day_standoff_mm"] == pytest.approx(keep, abs=1e-9)
+    assert rs["crown_height_ratio_about_the_rim_keeping_the_install_day_standoff"] == pytest.approx((crown + keep) / crown, abs=1e-12)
+    for deck in ("rf_deck_alt_low", "rf_deck_bom_high"):
+        v = rs["by_deck"][deck]
+        assert v["standoff_install_day_mm"] == pytest.approx((heights[deck] + lift) * cos_t, abs=1e-9)
+        assert v["standoff_after_life_mm"] == pytest.approx((heights[deck] + lift) * cos_t - life * fast, abs=1e-9) and v["standoff_after_life_mm"] > 0
+        for pol in ("TM", "TE"):
+            assert 0 <= v[pol]["rows_with_crossing_under_the_rule"] <= v[pol]["rows"] == len(i["readings"]) * len(i["stems_dbh_m"])
+    # controls recorded under their tolerances, and the control that is the point of the script ran on something
+    c, tol = d["controls"], d["tolerances"]
+    for key, t in (("direct_max_rel", "direct"), ("surface_max_rel", "surface"), ("free_space_max", "free_space"),
+                   ("trunc_max_dF", "truncation"), ("cache107_max_dB", "cache_107_dB"), ("cache107_max_eff", "cache_107_efficiency")):
+        assert c[key] <= tol[t], key
+    assert c["direct_positions_per_row"] > 0
+    # the verdict's sentences, recomposed from the fields that carry them (in-silico §When Modifying #5)
+    def up(x, nd=2):
+        return math.ceil(x * 10 ** nd - 1e-9) / 10 ** nd
+    tm = d["radio_same_current"]["TM"]
+    vent = m["clock"]["vent_hole_lower_edge"]["by_install_reference"]
+    head, mid = vent["flange_top"]["yr_fast_slow"], vent["mid_seat"]["yr_fast_slow"]
+    crown_yr = m["clock"]["crown_top"]["by_install_reference"]["flange_top"]["yr_fast_slow"]
+    deep = tm["deepest_front_over_depth"][f"{-i['axis_mm']['deck_over_surface_from']:g}"]["front"]
+    st, grid, alt = tm["after_life_states"], tm["rule_on_the_grid_under_the_surface"], tm["stems_as_they_stand"]
+    all_fast = all(v["fast"] for k in m["order_low_to_high"][1:] for v in m["reached_inside_life"][k].values())
+    slow_need, fast_need = al["by_rate_end"]["slow"], al["by_rate_end"]["fast"]
+    t_slow = slow_need["as_flange_thickness_mm"]
+    closed_only_fast = (bool(st["fast"]["surface over the crown"]) and not st["fast"]["pit"] and not st["fast"]["deck in air"]
+                        and not st["slow"]["surface over the crown"])
+    assert closed_only_fast, "the verdict's «at the fast end only» sentence — and canon's — no longer holds"
+    change, alt_change = tm["after_life_closed"]["change_against_install_day_dB"], tm["after_life_closed"]["change_as_they_stand_dB"]
+    slow_txt = (f"every one of the {len(st['slow']['pit'])} cells is a pit — no state of the model" if not st["slow"]["deck in air"]
+                else f"still in air on {len(st['slow']['deck in air'])} of the cells and in a pit — no state of the model — on {len(st['slow']['pit'])}")
+    for phrase in (
+            f"its lower edge at {h_open:.2f} mm — {head[0]} ⊥ {head[1]} years at the fast ⊥ slow end from a surface at the "
+            f"flange's top and {mid[0]} ⊥ {mid[1]} from the seat's mid-line",
+            f"the last at {crown:.1f} mm ({crown_yr[0]} ⊥ {crown_yr[1]} years)",
+            ("Every mark above the rim is passed inside the life at the fast end on every install reference." if all_fast
+             else "Not every mark above the rim is passed inside the life at the fast end."),
+            f"only while the rate stays below {lo['outlives_life_below_mm_per_yr_on_every_reference']} mm/yr",
+            f"has moved by {change[0]} … {change[1]} dB against the install day with E along the stem "
+            f"({alt_change[0]} … {alt_change[1]} dB with the stems as they stand); at the slow end {slow_txt}.",
+            f"is {deep['same_current_dB']} dB against the free front lobe ({deep['reading']}, DBH {deep['dbh_m'] * 100:g} cm, {deep['at_depth_mm']:g} mm)",
+            f"fails on {grid['cells_beyond_3dB_at_the_rule_angle']} of {grid['cells']} cells with the wood laid over the capsule "
+            f"taken as sapwood and on {alt['cells_beyond_3dB_at_the_rule_angle']} of {alt['cells']} with the stems as they stand",
+            f"to a depth of {pit['by_disc']['crown_flat']['half_share_depth_mm']:.2f} mm",
+            f"must stand at least {up(slow_need['bark_below_flange_top_at_install_mm']):.2f} mm below the flange's top",
+            f"a flange at least {up(t_slow['shallow_edge']):.2f} ⊥ {up(t_slow['mid_seat']):.2f} ⊥ {up(t_slow['deep_edge']):.2f} mm thick",
+            f"today's {flange_t:g} mm placeholder; at the fast end it is at least {up(fast_need['bark_below_flange_top_at_install_mm']):.2f} mm."):
+        assert phrase in d["verdict"], phrase

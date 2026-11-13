@@ -164,6 +164,26 @@ public class RadomeTests
         Assert.True(Radome.VentPadThicknessMm(cem) < cem.WallThicknessMm, "the pad ADDS material — it never thins the wall");
     }
 
+    // 🔗 A second C#↔Python crossing, pinned from THIS side: script 119 (what the rising bark reaches on the capsule,
+    // 00_07 HW.54) MIRRORS Radome.VentZMm in Python from the same manifest fields, because the vent hole is the lowest
+    // mark the bark reaches and its height sets the years. MUTATION: change VentZMm's formula, the boss height or the
+    // crown's inner round here ⇒ reds; change a manifest field without re-running 119 ⇒ reds. (119's own half: its cache
+    // test re-derives the height from the manifest and holds the cache to it.)
+    [Fact]
+    public void Vent_Hole_Height_And_Crown_Top_Match_Script_119_Cache()
+    {
+        RadomeCem cem = Cem.Parse<RadomeCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "radome.json")));
+        using var cache = JsonDocument.Parse(File.ReadAllText(CemFixtures.OvergrowthCache()));
+        JsonElement inputs = cache.RootElement.GetProperty("inputs");
+        Near(inputs.GetProperty("vent_hole").GetProperty("centre_over_rim_mm").GetDouble(), Radome.VentZMm(cem), 1e-4);
+        Near(inputs.GetProperty("vent_hole").GetProperty("diameter_mm").GetDouble(), cem.VentHoleDiameterMm, 1e-6);
+        // 119 derives the lowest opening for ONE hole on the ring's centre; a pitch circle (VentHoles > 1) puts one lower
+        Assert.Equal(1, (int)cem.VentHoles);
+        Assert.Equal((int)cem.VentHoles, inputs.GetProperty("vent_hole").GetProperty("holes").GetInt32());
+        Near(inputs.GetProperty("crown_top_over_rim_mm").GetDouble(), Radome.TopZMm(cem), 1e-6);
+        Near(inputs.GetProperty("dome_radius_mm").GetDouble(), cem.DomeDiameterMm / 2f, 1e-6);
+    }
+
     // The pocket stays off the board envelope on BOTH sides (duct outside the rim cavity, chamber inside it) and under
     // the crown, and is small enough for the verdict's response-time ground (0.3 cm³ → seconds). Its floor is a placeholder
     // (HW.29 / HW.9) and is pinned only for self-consistency, never for a value.

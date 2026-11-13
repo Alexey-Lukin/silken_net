@@ -33,6 +33,14 @@ internal static class CemFixtures
         return strPath;
     }
 
+    // Script 119's cache — the Python side of the vent-height crossing (the bark's marks on the capsule, 00_07 HW.54).
+    public static string OvergrowthCache()
+    {
+        string strPath = Path.GetFullPath(Path.Combine(Dir(), "..", "..", "in_silico", "cache", "radio", "bark_overgrowth_consumers.json"));
+        Assert.True(File.Exists(strPath), $"script 119 cache not found at {strPath} — the crossing pin has nothing to read");
+        return strPath;
+    }
+
     // The rim (periphery) gyroid period — the finest cell, hence the THINNEST feature. ⚠ The
     // period→thickness factor is TOPOLOGY-dependent and the `period/10` that stood here is the
     // SHEET one: 0.12·period on sheet, 0.36·period on network (01_01 §5.5, measured 2026-09-12).

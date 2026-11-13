@@ -12051,6 +12051,279 @@ def test_exit_radius_in_the_letters_is_116s(label, doc_rel, pattern, resolver):
     assert abs(float(m[0].replace(",", ".")) - resolver(d)) <= 1e-9, f"[{label}] {doc_rel} says {m[0]}, the cache {resolver(d)}"
 
 
+# ── HW.54 what the rising bark passes on the radome (119, 2026-11-13) ⟷ SUMMARY §«What Does the Rising Bark Pass on the
+# Radome…», canon ⊕ in 01_04 §5.5 / §3.1 · 02_01 §5.3 / §3.4 · 01_03 §4 (б), and the open ⚖️ leg of 00_07 HW.54. Tables of
+# outward-rounded spans have too many cells for one pin apiece, so every row and every sentence that carries a number is
+# REBUILT from the cache here and must be found verbatim (in-silico §When Modifying #5 ⊕); requirements round UP, floors
+# and «outlives while below» round DOWN, ranges are already outward in the cache.
+def _og_db(x):
+    return "0.0" if abs(x) < 0.05 else f"{x:+.1f}".replace("-", "−")
+
+
+def _og_span(v):
+    return f"{_og_db(v[0])} … {_og_db(v[1])}"
+
+
+def _og_rng(v, nd=1):
+    return f"{v[0]:.{nd}f}–{v[1]:.{nd}f}"
+
+
+def _og_pair(v):
+    return f"{v[0]:.1f} ⊥ {v[1]:.1f}"
+
+
+def _og_up(x, nd=2):
+    return math.ceil(x * 10 ** nd - 1e-9) / 10 ** nd
+
+
+def _og_down(x, nd=2):
+    return math.floor(x * 10 ** nd + 1e-9) / 10 ** nd
+
+
+_OG_REFS = ("flange_top", "deep_edge", "mid_seat", "shallow_edge")
+_OG_SEAT = ("shallow_edge", "mid_seat", "deep_edge")
+_OG_LABEL = {"radome_rim": "radome's rim (the joint with the flange)", "vent_hole_lower_edge": "vent hole, lower edge",
+         "rf_deck_alt_low": "RF deck, the named-alternative row (B2B 6)", "vent_hole_upper_edge": "vent hole, upper edge",
+         "rf_deck_bom_low": "RF deck, the BOM's low row", "crown_edge": "crown's edge (the wall's top)",
+         "rf_deck_bom_high": "RF deck, the BOM's high row", "crown_top": "crown's top (`114`'s mark)"}
+_OG_REF_EN = {"flange_top": "the flange's top", "deep_edge": "the seat's deep edge", "mid_seat": "the seat's mid-line",
+          "shallow_edge": "the seat's shallow edge"}
+_OG_DECK_EN = {"rf_deck_alt_low": "the named-alternative row", "rf_deck_bom_high": "the BOM's high row"}
+_OG_REF_UA = {"flange_top": "верху фланця", "deep_edge": "глибокого краю посадки", "mid_seat": "середньої лінії посадки",
+          "shallow_edge": "мілкого краю посадки"}
+_OG_DECK_UA = {"rf_deck_alt_low": "названа альтернатива", "rf_deck_bom_high": "верхній ряд BOM"}
+
+
+def _overgrowth_doc_lines(d):
+    m, clock, pit, al, i = d["marks"], d["marks"]["clock"], d["pit"], d["allowance"], d["inputs"]
+    tm, te = d["radio_same_current"]["TM"], d["radio_same_current"]["TE"]
+    def yr(k, ref="flange_top"):
+        return clock[k]["by_install_reference"][ref]["yr_fast_slow"]
+
+    def h(k):
+        return clock[k]["over_flange_top_mm"]
+    rows = {"marks": [], "radio": [], "pit": [], "allowance": []}
+    for k in m["order_low_to_high"]:
+        r = clock[k]["by_install_reference"]
+        rows["marks"].append(f"| {_OG_LABEL[k]} | {h(k):.2f} | " + " | ".join(_og_pair(r[ref]["yr_fast_slow"]) for ref in _OG_REFS)
+                             + " | " + " · ".join(f"{r[ref]['outlives_life_below_mm_per_yr']:.3f}" for ref in _OG_REFS) + " |")
+    lo, hi = f"{h('rf_deck_alt_low'):g}", f"{h('rf_deck_bom_high'):g}"
+    for key, lab in ((hi, f"{hi} over — the BOM's high row"), (lo, f"{lo} over — the named-alternative row"),
+                     ("5", "5 over"), ("0.5", "0.5 over")):
+        a, b = tm["deck_in_air"][key], te["deck_in_air"][key]
+        rows["radio"].append(f"| {lab} | {_og_span(a['front_same_current_dB'])} | {_og_rng(a['rule_angle_below_front_dB'])} | {_og_rng(a['efficiency_2d'], 2)} | "
+                             f"{_og_span(b['front_same_current_dB'])} | {_og_rng(b['rule_angle_below_front_dB'])} |")
+    for key, lab in (("0", "at the surface"), *((k, f"{k} under") for k in ("10", "20", "40", "60", "80"))):
+        a, b = tm["deck_under_the_surface"][key], te["deck_under_the_surface"][key]
+        rows["radio"].append(f"| {lab} | {_og_span(a['front_same_current_dB'])} | {_og_rng(a['rule_angle_below_front_dB'])} | — | "
+                             f"{_og_span(b['front_same_current_dB'])} | {_og_rng(b['rule_angle_below_front_dB'])} |")
+    for k, lab in (("crown_flat", "the crown's flat (Ø 19.8 mm)"),
+                   ("dome_outline", "the dome's outline (Ø 29.8 mm — the largest disc a cell could be; its share is the least)")):
+        b = pit["by_disc"][k]
+        s = b["share_by_depth_mm"]
+        rows["pit"].append(f"| {lab} | {b['half_share_depth_mm']:.2f} | {_og_pair(b['half_share_yr_after_the_crown_fast_slow'])} | "
+                           f"{s['10']:.3f} · {s['20']:.3f} · {s['40']:.3f} · {s['80']:.3f} | {_og_rng(b['share_after_life_fast_pct'])} % |")
+    sl, fa = al["by_rate_end"]["slow"], al["by_rate_end"]["fast"]
+    def thick(r):
+        return " ⊥ ".join(f"{_og_up(r['as_flange_thickness_mm'][ref]):.2f}" for ref in _OG_SEAT)
+
+    def lifts(r):
+        return " · ".join(f"{_og_up(r['raised_stack_lift_mm_by_reference'][ref]):.2f}" for ref in _OG_REFS)
+    def under(r):
+        return " ⊥ ".join(f"×{r['flange_route_crown_height_ratio']['about_the_underside'][ref]:.2f}" for ref in _OG_SEAT)
+
+    def rim(r):
+        return " · ".join(f"×{r['raised_stack_crown_height_ratio']['about_the_rim'][ref]:.2f}" for ref in _OG_REFS)
+    def rim_span(r):
+        v = [r["raised_stack_crown_height_ratio"]["about_the_rim"][ref] for ref in _OG_SEAT]
+        return f"×{_og_down(min(v)):.2f}–{_og_up(max(v)):.2f}"
+    def lift_span(r):
+        v = [_og_up(r["raised_stack_lift_mm_by_reference"][ref]) for ref in _OG_SEAT]
+        return f"{min(v):.2f}–{max(v):.2f}"
+    rows["allowance"] = [
+        f"| the install-day bark below the flange's top at the mark's azimuth, along the axis, at least, mm | {_og_up(sl['bark_below_flange_top_at_install_mm']):.2f} | {_og_up(fa['bark_below_flange_top_at_install_mm']):.2f} |",
+        f"| route 1 — a thicker flange: on the seat's shallow edge ⊥ mid-line ⊥ deep edge, at least, mm (today {al['flange_thickness_placeholder_mm']:.1f} — a placeholder) | {thick(sl)} | {thick(fa)} |",
+        f"| route 2 — a stack raised on the radome: lift from the flange's top · deep edge · mid-line · shallow edge, at least, mm | {lifts(sl)} | {lifts(fa)} |",
+        f"| the crown's height over the flange's underside, against today's — the same on either route (shallow ⊥ mid-line ⊥ deep) | {under(sl)} | {under(fa)} |",
+        f"| the crown's height over the rim, against today's: route 1 ×1.00; route 2 from the flange's top · deep · mid-line · shallow | {rim(sl)} | {rim(fa)} |"]
+    u_lo, u_hi = i["bearing_share_U_ends_114"]
+    vent = "vent_hole_lower_edge"
+    vref = clock[vent]["by_install_reference"]
+    high_u = " · ".join(f"{vref[ref]['yr_fast_slow_at_bearing_share'][f'U_{u_hi:g}'][1]:.1f}" for ref in _OG_REFS)
+    dkey = f"{-i['axis_mm']['deck_over_surface_from']:g}"
+    deep_tm, deep_te = tm["deepest_front_over_depth"][dkey], te["deepest_front_over_depth"][dkey]
+    gtm, gte = tm["rule_on_the_grid_under_the_surface"], te["rule_on_the_grid_under_the_surface"]
+    atm, ate = tm["stems_as_they_stand"], te["stems_as_they_stand"]
+    u0 = tm["deck_under_the_surface"]["0"]
+    rs = al["raised_stack"]
+    rl, rh = rs["by_deck"]["rf_deck_alt_low"], rs["by_deck"]["rf_deck_bom_high"]
+    def both(key, pol):
+        v = [rl[pol][key], rh[pol][key]]
+        return [min(x[0] for x in v), max(x[1] for x in v)]
+    cut = pit["by_disc"]["crown_flat"]["centre_beam_cutoff_deg_by_depth_mm"]
+    seat = m["below_the_flange_top"]["live_bark_to_flange_seat_yr_114"]["thin_contact_78"]
+    te_rows = [te["deck_under_the_surface"][k]["rows_beyond_the_rule_s_3dB_at_the_rule_angle"] for k in ("0", "5", "10")]
+    inst = i["install_bark_over_flange_top_mm"]
+    st = tm["after_life_states"]
+    n_slow = sum(len(c) for c in st["slow"].values())
+    air = tm["after_life_deck_in_air"]
+    air_cells = [c.split(":") for c in air["cells"]]
+    air_en = "; ".join(f"{_OG_DECK_EN[c[2]]} from {_OG_REF_EN[c[0]]}, {tm['after_life'][':'.join(c)]['deck_over_surface_mm']:.2f} mm over the surface" for c in air_cells)
+    air_ua = "; ".join(f"{_OG_DECK_UA[c[2]]} від {_OG_REF_UA[c[0]]}, {tm['after_life'][':'.join(c)]['deck_over_surface_mm']:.2f} мм над корою" for c in air_cells)
+    closed = tm["after_life_closed"]
+    ca, ca_te = closed["change_as_they_stand_dB"], te["after_life_closed"]["change_as_they_stand_dB"]
+    out = [tm["after_life"][c]["crown_over_surface_mm"] for end in st["slow"].values() for c in end]
+    crown_en = (f"the crown still {_og_down(min(out)):.2f}–{_og_up(max(out)):.2f} mm out of it" if min(out) > 0
+                else f"the crown out of it or at most {_og_up(-min(out)):.2f} mm under it")
+    crown_ua = (f"корона ще на {_og_down(min(out)):.2f}–{_og_up(max(out)):.2f} мм над корою" if min(out) > 0
+                else f"корона над корою або щонайбільше на {_og_up(-min(out)):.2f} мм під нею")
+    alt20, alt80 = atm["by_depth_mm"]["20"]["front_as_they_stand_minus_overgrown_dB"], atm["by_depth_mm"]["80"]["front_as_they_stand_minus_overgrown_dB"]
+    unt = m["crown_top_untilted_yr_fast_slow_as_114"]
+    f = {
+     "u": f"{_og_down(u_lo * 100, 1):.1f}–{_og_up(u_hi * 100, 1):.1f} %",
+     "seat": f"`114` puts the live bark at the flange seat in {_og_pair(seat)} years on the thin contact",
+     "edges": (f"the faced seat's deep edge ({inst['deep_edge']:.2f} mm above the top) ⊥ its mid-line ({-inst['mid_seat']:.2f} mm below) ⊥ "
+               f"its shallow edge (the flange's underside, {-inst['shallow_edge']:.1f} mm below)"),
+     "rates": f"at {i['radial_rate_mm_per_yr'][1]:.1f} ⊥ {i['radial_rate_mm_per_yr'][0]:.1f} mm/yr",
+     "tilt": f"a mark z along the axis is passed after a radial travel of z·cos {i['tilt_deg']:g}°, {(1 - i['cos_tilt']) * 100:.1f} % sooner than an untilted clock",
+     "untilted": f"`114`, which carries no tilt, prices the crown's top at {_og_pair(unt)} years; here it is {_og_pair(yr('crown_top'))}",
+     "vent_mid": f"{_og_pair(yr(vent, 'mid_seat'))} years from the seat's mid-line",
+     "high_u": f"at `114`'s high bearing share the slow end stretches to {high_u} years (the flange's top · deep edge · mid-line · shallow edge)",
+     "every_ref": f"only while the rate stays below {m['lowest_opening']['outlives_life_below_mm_per_yr_on_every_reference']:.3f} mm/yr",
+     "fast_pit": f"({_og_rng(pit['after_life_fast']['pit_depth_mm'])} mm)",
+     "fast_change": (f"the front has moved by {_og_span(closed['change_against_install_day_dB'])} dB against the same row's install day with E along the stem "
+                     f"({_og_span(te['after_life_closed']['change_against_install_day_dB'])} dB with E horizontal); with the stems as they stand the favourable end "
+                     f"is {_og_db(ca[1])} dB ({_og_db(ca_te[1])} dB) and the weak end the same"),
+     "slow_states": (f"in a pit on every one of its {n_slow} cells — the surface over the deck, {crown_en}" if not air["cells"] else
+                      f"in a pit on {len(st['slow']['pit'])} of {n_slow} cells — the surface over the deck, {crown_en} — and still in air on "
+                      f"{len(st['slow']['deck in air'])} ({air_en}), where the front has moved by {_og_span(air['change_against_install_day_dB'])} dB and the 2-D "
+                      f"indicator from {_og_rng(air['install_day_efficiency_2d'], 2)} to {_og_rng(air['efficiency_2d'], 2)}"),
+     "weakest": (f"stand {_og_db(deep_tm['front']['same_current_dB'])} dB in front and {_og_db(deep_tm['rule_angle']['same_current_dB'])} dB at ±50° against the free source's front lobe with E along the stem "
+                 f"({_og_db(deep_te['front']['same_current_dB'])} and {_og_db(deep_te['rule_angle']['same_current_dB'])} dB with E horizontal; `{deep_tm['front']['reading']}`, DBH {deep_tm['front']['dbh_m'] * 100:g} cm, at the grid's end)"),
+     "rule": ((f"holds on every one of the grid's {gtm['cells']} cells with E along the stem (the least −3 dB crossing {gtm['least_crossing_3dB_deg']:.1f}°) "
+               if gtm['cells_beyond_3dB_at_the_rule_angle'] == 0 else
+               f"fails on {gtm['cells_beyond_3dB_at_the_rule_angle']} of {gtm['cells']} cells with E along the stem (the least −3 dB crossing {gtm['least_crossing_3dB_deg']:.1f}°) ")
+              + f"and fails on {gte['cells_beyond_3dB_at_the_rule_angle']} of {gte['cells']} with E horizontal (the least crossing {gte['least_crossing_3dB_deg']:.1f}°; "
+              f"{te_rows[0]} of {te['deck_under_the_surface']['0']['rows']} rows at the surface, {te_rows[1]} at 5 mm, {te_rows[2]} at 10 mm)"),
+     "rule_alt": (f"on {atm['cells_beyond_3dB_at_the_rule_angle']} of {atm['cells']} cells with E along the stem (the least crossing {atm['least_crossing_3dB_deg']:.1f}°) "
+                  f"and on {ate['cells_beyond_3dB_at_the_rule_angle']} of {ate['cells']} with E horizontal ({ate['least_crossing_3dB_deg']:.1f}°)"),
+     "alt_front": f"{_og_span(alt20)} dB at 20 mm and {_og_span(alt80)} dB at 80 mm",
+     "media": f"from {d['media_span']['plane_wave_dB_per_cm'][0]:.2f} dB/cm (the dry bark proxy) to {d['media_span']['plane_wave_dB_per_cm'][1]:.2f} dB/cm (the red pine reading with all of its loss read as ionic)",
+     "surface": f"the front stands {_og_span(u0['front_wet_from_the_surface_dB'])} dB at the surface itself, against {_og_span(u0['front_under_the_stem_s_own_bark_dB'])} dB under the stem's own bark",
+     "indicator": f"{_og_rng(tm['deck_in_air'][hi]['efficiency_2d'], 2)} at the BOM's high row, {_og_rng(tm['deck_in_air'][lo]['efficiency_2d'], 2)} at the named-alternative row, {_og_rng(tm['deck_in_air']['0.5']['efficiency_2d'], 2)} with the surface 0.5 mm under the deck",
+     "side107": f"at the flange's top the same indicator is {tm['deck_in_air'][lo]['efficiency_2d'][0]:.2f}–{tm['deck_in_air'][hi]['efficiency_2d'][1]:.2f} against {tm['deck_in_air']['12.85']['efficiency_2d'][0]:.2f}–{tm['deck_in_air']['16.85']['efficiency_2d'][1]:.2f} at `107`'s standoffs",
+     "beam": f"{cut['10']:.1f}° at 10 mm, {cut['20']:.1f}° at 20 mm, {cut['40']:.1f}° at 40 mm",
+     "need": f"at least {_og_up(sl['bark_below_flange_top_at_install_mm']):.2f} mm below the flange's top at the slow end and {_og_up(fa['bark_below_flange_top_at_install_mm']):.2f} mm at the fast end",
+     "today": (f"today it stands {-inst['shallow_edge']:.1f} mm below on the seat's shallow edge, {-inst['mid_seat']:.2f} mm below on its mid-line "
+               f"and {inst['deep_edge']:.2f} mm ABOVE on its deep edge"),
+     "raised_at": f"{rl['standoff_install_day_mm']:.2f} ⊥ {rh['standoff_install_day_mm']:.2f} mm over the install-day surface and {rl['standoff_after_life_mm']:.2f} ⊥ {rh['standoff_after_life_mm']:.2f} mm over it after the life",
+     "raised_tm": (f"the front goes from {_og_span(both('install_day_front_same_current_dB', 'TM'))} dB to {_og_span(both('after_life_front_same_current_dB', 'TM'))} dB and the 2-D indicator from "
+                   f"{_og_rng(both('install_day_efficiency_2d', 'TM'), 2)} to {_og_rng(both('after_life_efficiency_2d', 'TM'), 2)}"),
+     "keep": f"{_og_up(rs['lift_keeping_the_install_day_standoff_mm']):.2f} mm, the crown ×{rs['crown_height_ratio_about_the_rim_keeping_the_install_day_standoff']:.2f} as high over the rim",
+     "raised_rule": (f"no row with E along the stem has its −3 dB crossing under the ratified ±50° ({_og_rng(both('install_day_crossing_3dB_deg', 'TM'))}°), while with E horizontal "
+                     f"{rl['TE']['rows_with_crossing_under_the_rule']} ⊥ {rh['TE']['rows_with_crossing_under_the_rule']} of {rl['TE']['rows']} rows do ({_og_rng(both('install_day_crossing_3dB_deg', 'TE'))}°)"),
+    }
+    # ── Ukrainian mirrors (canon, the forester's sheet, the tracker leg) ──
+    def ts(k, ref="flange_top"):
+        return _og_pair(yr(k, ref))
+    ua = {
+     "codit_marks": (f"обід (стик радома з фланцем) — на рівні верху фланця; нижній край отвору вента — {h(vent):.2f} мм над ним, {ts(vent)} року; "
+                     f"RF-дек — {h('rf_deck_alt_low'):g} мм (названа альтернатива) і {h('rf_deck_bom_low'):g}–{h('rf_deck_bom_high'):g} мм (ряди BOM): {ts('rf_deck_alt_low')} і "
+                     f"{ts('rf_deck_bom_low')} … {ts('rf_deck_bom_high')} року; верх корони — {h('crown_top'):.1f} мм, {ts('crown_top')} року"),
+     "codit_tilt": f"у годиннику — нахил {i['tilt_deg']:g}°: мітку на осі кора минає на {(1 - i['cos_tilt']) * 100:.1f} % раніше, ніж без нього, тож `114`, що нахилу не несе, дає верхові корони {_og_pair(unt)} року",
+     "codit_mid": f"від середньої лінії — {ts(vent, 'mid_seat')} року",
+     "codit_need": (f"кора в день монтажу мусить стояти щонайменше на {_og_up(sl['bark_below_flange_top_at_install_mm']):.2f} мм нижче верху фланця — це фланець {thick(sl)} мм "
+                    f"на мілкому краї ⊥ середній лінії ⊥ глибокому краї посадки; на швидкому краю — {_og_up(fa['bark_below_flange_top_at_install_mm']):.2f} мм, і це вже не фланець"),
+     "codit_u": f"частку слідування U до {_og_up(u_hi * 100, 1):.1f} %",
+     "codit_highu": f"з нею на повільному краю отвір вента доживає до {high_u} року (верх фланця · глибокий край · середня лінія · мілкий край)",
+     "codit_half": f"дістає половину ізотропного поля до глибини {pit['by_disc']['crown_flat']['half_share_depth_mm']:.2f} мм ({_og_pair(pit['by_disc']['crown_flat']['half_share_yr_after_the_crown_fast_slow'])} року після того, як кора дійшла до верху)",
+     "weak66": f"усю бічну грань фланця-плейсхолдера {-inst['shallow_edge']:.1f} мм кора долає на мілкому краї посадки за {ts('radome_rim', 'shallow_edge')} року",
+     "bom_deck": (f"дек стоїть {h('rf_deck_alt_low'):g} (названа альтернатива) і {h('rf_deck_bom_low'):g}–{h('rf_deck_bom_high'):g} мм (ряди BOM) над верхом фланця, і за нерухомої капсули з корою на верху фланця в день монтажу "
+                  f"кора доходить до нього за {ts('rf_deck_alt_low')} і {ts('rf_deck_bom_low')} … {ts('rf_deck_bom_high')} року"),
+     "bom_change": (f"зсунутий на {_og_span(closed['change_against_install_day_dB'])} дБ для E вздовж стовбура і на "
+                    f"{_og_span(te['after_life_closed']['change_against_install_day_dB'])} дБ для горизонтального E; зі стовбуром як є сприятливий край — "
+                    f"{_og_db(ca[1])} дБ ({_og_db(ca_te[1])} — горизонтальне), слабкий той самий"),
+     "bom_slow": (f"дек у ямі на всіх {n_slow} клітинках — стан, якого модель не має ({crown_ua})" if not air["cells"] else
+                   f"дек у ямі на {len(st['slow']['pit'])} із {n_slow} клітинок — стан, якого модель не має ({crown_ua}), — і ще в повітрі на {len(st['slow']['deck in air'])} ({air_ua}): "
+                   f"там фронт зсунутий на {_og_span(air['change_against_install_day_dB'])} дБ, а індикатор ближнього поля падає з {_og_rng(air['install_day_efficiency_2d'], 2)} до {_og_rng(air['efficiency_2d'], 2)}"),
+     "bom_weakest": (f"{_og_db(deep_tm['front']['same_current_dB'])} дБ у фронті й {_og_db(deep_tm['rule_angle']['same_current_dB'])} дБ на ±50° проти фронту вільного джерела (E вздовж стовбура; "
+                     f"{_og_db(deep_te['front']['same_current_dB'])} і {_og_db(deep_te['rule_angle']['same_current_dB'])} — горизонтальне)"),
+     "bom_rule": ((f"для E вздовж стовбура тримається на всіх {gtm['cells']} клітинках сітки (найменший перетин −3 дБ — {gtm['least_crossing_3dB_deg']:.1f}°), "
+                   if gtm['cells_beyond_3dB_at_the_rule_angle'] == 0 else
+                   f"для E вздовж стовбура не тримається на {gtm['cells_beyond_3dB_at_the_rule_angle']} із {gtm['cells']} клітинок (найменший перетин −3 дБ — {gtm['least_crossing_3dB_deg']:.1f}°), ")
+                  + f"а для горизонтального E — ні на {gte['cells_beyond_3dB_at_the_rule_angle']} із {gte['cells']}"),
+     "bom_grid": f"сітки {i['axis_mm']['step']:g} мм до глибини {dkey} мм",
+     "bom_rule_alt": (f"на {atm['cells_beyond_3dB_at_the_rule_angle']} із {atm['cells']} клітинок для E вздовж стовбура (найменший перетин — {atm['least_crossing_3dB_deg']:.1f}°) "
+                      f"і на {ate['cells_beyond_3dB_at_the_rule_angle']} із {ate['cells']} для горизонтального"),
+     "bom_indicator": (f"{_og_rng(tm['deck_in_air'][hi]['efficiency_2d'], 2)} на верхньому ряді BOM, {_og_rng(tm['deck_in_air'][lo]['efficiency_2d'], 2)} на названій альтернативі, "
+                       f"{_og_rng(tm['deck_in_air']['0.5']['efficiency_2d'], 2)} за 0.5 мм до поверхні"),
+     "bom_side": (f"той самий індикатор — {tm['deck_in_air'][lo]['efficiency_2d'][0]:.2f}–{tm['deck_in_air'][hi]['efficiency_2d'][1]:.2f} проти "
+                  f"{tm['deck_in_air']['12.85']['efficiency_2d'][0]:.2f}–{tm['deck_in_air']['16.85']['efficiency_2d'][1]:.2f}"),
+     "vent_h": f"його нижній край стоїть {h(vent):.2f} мм над верхом фланця",
+     "vent_yr": f"поверхня кори доходить до нього за {ts(vent)} року від верху фланця і за {ts(vent, 'mid_seat')} року від середньої лінії посадки",
+     "ebfc_marks": (f"нижній край отвору вента — {h(vent):.2f} мм, RF-дек — {h('rf_deck_alt_low'):g} мм (названа альтернатива) і "
+                    f"{h('rf_deck_bom_low'):g}–{h('rf_deck_bom_high'):g} мм (ряди BOM) над верхом фланця"),
+     "ebfc_pit": (f"дістає половину ізотропного поля до глибини {pit['by_disc']['crown_flat']['half_share_depth_mm']:.2f} мм і "
+                  f"{_og_rng(pit['by_disc']['crown_flat']['share_after_life_fast_pct'])} % через 20 років на швидкому краю ходу"),
+     "leg_vent": f"над обідом першим — нижній край отвору вента на {h(vent):.2f} мм над верхом фланця",
+     "leg_flange": f"фланець {thick(sl)} мм на мілкому краї ⊥ середній лінії ⊥ глибокому краї посадки проти плейсхолдера {al['flange_thickness_placeholder_mm']:.1f}",
+     "leg_stack": f"стек, піднятий на радомі, додає ту саму висоту (щонайменше {lift_span(sl)} мм на тих самих трьох місцях) — різниця лише на обіді: висота корони над байонетом лишається ×1.00 з фланцем і стає {rim_span(sl)} зі стеком",
+     "leg_fast": f"на швидкому краю запас у фланець не вміщується ({_og_up(fa['bark_below_flange_top_at_install_mm']):.2f} мм)",
+     "leg_rule": f"«діаграма тримається» — лише за припущення про заболонь: зі стовбуром як є правило ±50° падає на {atm['cells_beyond_3dB_at_the_rule_angle']} із {atm['cells']} клітинок",
+    }
+    return rows, f, ua
+
+
+def test_bark_overgrowth_documents_follow_the_cache():
+    """119 ⟷ every document that quotes it. CAN catch: a re-run that moves a year, a span, a share, an allowance or a
+    count while a table row or a sentence stays · a mirror in canon or in the tracker's leg left on the old number · a
+    SET sentence («inside the life at BOTH rate ends on every install reference», «only at the fast end», «no cell at the
+    slow end», «the weak end the same») once the cache stops carrying it · the comparison canon declines to make turning
+    into one (the margin's number leaving the paragraph the ⊕ points at).
+    CANNOT catch: a sentence with no number, set or direction in it, nor whether the cache is right (the cache test and
+    the script's controls carry that)."""
+    d = C("radio/bark_overgrowth_consumers.json")
+    rows, f, ua = _overgrowth_doc_lines(d)
+    summary = doc(SUMMARY)
+    for line in [x for block in rows.values() for x in block] + [v for k, v in f.items() if k != "u"]:
+        assert line in summary, f"SUMMARY no longer carries: {line}"
+    assert f"by a share U — {f['u']} over its air-dry bark readings" in summary
+    homes = {"codit_": CODIT, "weak": CODIT, "bom_": HW_BOM, "vent_": HW_BOM, "ebfc_": EBFC, "leg_": TRACKER}
+    for key, line in ua.items():
+        path = next(p for prefix, p in homes.items() if key.startswith(prefix))
+        assert line in doc(path), f"{path} no longer carries: {line}"
+    # the SET and DIRECTION sentences
+    m, i = d["marks"], d["inputs"]
+    reached, vent = m["reached_inside_life"], "vent_hole_lower_edge"
+    assert set(reached[vent]) == set(_OG_REFS) and all(v["slow"] and v["fast"] for v in reached[vent].values()), \
+        "«inside the life at BOTH rate ends on every install reference»"
+    assert m["order_low_to_high"][0] == "radome_rim" and m["order_low_to_high"][1] == vent and m["order_low_to_high"][-1] == "crown_top"
+    assert 0.45 < m["clock"][vent]["over_flange_top_mm"] / m["clock"]["crown_top"]["over_flange_top_mm"] < 0.55, "«at half the crown's height»"
+    inst = i["install_bark_over_flange_top_mm"]
+    assert inst["deep_edge"] > inst["mid_seat"] > inst["shallow_edge"] and inst["deep_edge"] > 0 > inst["mid_seat"], \
+        "«highest at the deep edge, lowest at the shallow one»; «ABOVE on its deep edge», «below on its mid-line»"
+    rim = m["clock"]["radome_rim"]["by_install_reference"]["shallow_edge"]["yr_fast_slow"]
+    assert max(rim) < 5.0, "«швидше за візит раз на 5–7 років на обох краях ходу» (01_04 §3.1 ⊕)"
+    for pol in ("TM", "TE"):
+        block = d["radio_same_current"][pol]
+        st = block["after_life_states"]
+        assert st["fast"]["surface over the crown"] and not st["fast"]["pit"] and not st["fast"]["deck in air"], "«over the crown only at the fast end»"
+        assert not st["slow"]["surface over the crown"], "«at the slow end no cell has the surface over the crown»"
+        both = block["after_life_closed"]
+        assert abs(both["change_as_they_stand_dB_raw"][0] - both["change_against_install_day_dB_raw"][0]) < 1e-9, "«the weak end the same»"
+    rs = d["allowance"]["raised_stack"]["by_deck"]
+    assert all(v["TM"]["rows_with_crossing_under_the_rule"] == 0 for v in rs.values()), "«no row with E along the stem … under the ratified ±50°»"
+    assert len(i["readings"]) == 16 and [round(x * 100) for x in i["stems_dbh_m"]] == [38, 50, 60], "«sixteen readings», «DBH 38 · 50 · 60 cm»"
+    assert d["media_span"]["least"] == "bark_dry_proxy" and d["media_span"]["most"] == "red_pine_thawed_all_ionic"
+    fa = d["allowance"]["by_rate_end"]["fast"]["as_flange_thickness_mm"]
+    assert min(fa.values()) > 10 * d["allowance"]["flange_thickness_placeholder_mm"], "«at the fast end it is not a flange»"
+    half = d["pit"]["by_disc"]["crown_flat"]["half_share_depth_mm"] / (2 * d["pit"]["discs_radius_mm"]["crown_flat"])
+    assert 0.6 < half < 0.72, "PIPELINE_STATUS: «about two-thirds of its own diameter»"
+    # canon declines the comparison with the budget — the margin it names must still be the one its own section carries
+    bom = doc(HW_BOM)
+    assert "+34.7…+49.7 дБ (📡 вище, ⊕ 2026-10-25)" in bom and bom.count("+34.7…+49.7") >= 2, "the margin the ⊕ points at moved or left its home"
+
+
 @pytest.mark.parametrize("module", ["test_doc_cache_sync.py", "test_cache_integrity.py"])
 def test_no_module_name_is_rebound_with_another_definition(module):
     """A pin module is ONE namespace for blocks written months apart, and Python resolves a global at CALL time — so a second

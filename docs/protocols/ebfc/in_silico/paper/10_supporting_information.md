@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 395 · 30,794,507 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 397 · 31,114,098 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -66,6 +66,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/116_countersink_ring_and_exit.py` | `6e3edb7615aa336ec4c89ccb1da560d38c526dafefc3798f6b5f6c35044c8289` | A countersunk exit of the bus rod's channel: the clearance a PEEK ring's bore needs so the rod never bears on it, the floor of the exit-edge radius under an axis offset, and what the countersink's depth costs the rod's root cycle. |
 | `tools/in_silico/scripts/117_stem_face_cover_rules_rehearsal.py` | `d873944d7fa6b5325a2f10542ece6917f1a01b4854d198aeea96d481dfd140dd` | A rehearsal, on thirty winters of hourly reanalysis weather, of the rules a single light logger on a pine stem's face will be read by: how many winter days the rules as first written, and a rejected draft rewrite, can judge against a base of cover-free days, and how many overcast hours on bare ground a winter offers at most. |
 | `tools/in_silico/scripts/118_stem_face_cover_power.py` | `41894d52d81ca5f4a1fd5eaf7dbc62d2a80abfe74b032a7b3a0440073fb4cc73` | How often one winter of a single light logger on a pine stem's face could tell four models of snow and hoarfrost cover apart, on a perfect logger with the true cover known hour by hour, under several readings of a coverage test, over 29 winters of hourly reanalysis weather. |
+| `tools/in_silico/scripts/119_bark_overgrowth_consumers.py` | `dc3574ec75940d9d123c9a235a05b2ef048e7affcb1de7e980d91da0d4ecdba2` | What a tree stem's outward growth passes on a sensor capsule fixed to older wood, in order: the years at which the rising surface reaches the vent hole, the antenna plane and the dome's top, the far field of a line source once it lies under the surface of a layered lossy stem (by reciprocity from the plane-wave interior field, checked against the source's own boundary-value problem), the share of an isotropic field a disc keeps at the bottom of a straight-walled pit, and the allowance that keeps the lowest opening clear, as a flange thickness and as a raised stack. |
 | `tools/in_silico/scripts/11_full_matrix_md.py` | `28c8a0919352ea39c45ea353f1764bf90a12cb12bef5ce397970e4a62d174ac7` | L2-extended — full matrix stability MD: protein + FAD + genipin + chitosan + CNC. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `21c4b260195f62e079d7505e26cc41cd3519417d8f2047ddec96976b02c062fc` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
 | `tools/in_silico/scripts/13_psbma_diffusion_md.py` | `1df7d7778e3fc058fa5f00cc181eaf242148a6dfbffd262543e0c617c50828c8` | L2 — glucose diffusion through PSBMA membrane layer. |
@@ -158,8 +159,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `e5045e756a61fc905bf546e046b69f1a6ef2eae3ebca5d46ec02ad599f2ead4f` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `7c23e08295858263fb2d8d521fbadb7926a80240cc3ab45686101391e6446b23` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `84027de5d29e78223ae0cd667589721f9f118621e8a6972a57b3e1d453aff36a` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `806b51baa503fe9b0f9946fea73d89be85eddb9ba5456813187b06f02f316907` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -313,6 +314,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 
 | File | SHA-256 | Bytes |
 |---|---|---|
+| `tools/in_silico/cache/radio/bark_overgrowth_consumers.json` | `dcb032eac656e1d1f68c7c482b8719af70e1afb1d869c70b2a7906048ed23681` | 193,944 |
 | `tools/in_silico/cache/radio/stem_radio_shadow.json` | `fc90ea54382e956c2d6bc5a7789e8bfe813bc967205f11b207a235ceceb03a80` | 1,709,803 |
 
 ### `tools/in_silico/cache/reproduction/`
