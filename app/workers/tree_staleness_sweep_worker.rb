@@ -8,8 +8,9 @@
 # свідомими відмінностями (канон 06_08 §1.3):
 #
 #   1. Поріг НЕ виводиться з конфіга: Soldier спить між energy-sufficient циклами,
-#      delta_t навмисно варіативний (стрес → повільніший заряд → довша тиша = САМ
-#      сигнал) → SystemParameter :tree_silence_threshold_hours, 24h [transitional]
+#      delta_t навмисно варіативний (менша потужність комірки → повільніший заряд →
+#      довша тиша; чия це вада — дерева, анода чи погоди — тиша не каже, 01_03 §4)
+#      → SystemParameter :tree_silence_threshold_hours, 24h [transitional]
 #      до bench-калібрування (00_07 SILENCE-1 / E.63).
 #   2. Носій = per-tree :field_audit, НЕ новий alert-тип: новий critical-тип
 #      потрапив би у critical_unmaintained? (BlockchainBurningService, blacklist-

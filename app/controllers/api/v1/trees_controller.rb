@@ -53,8 +53,8 @@ module Api
               tree: TreeBlueprint.render_as_hash(@tree, view: :show),
               telemetry: {
                 # [ARCH.84] ⛔ Не повертати `|| 0`: `z` — координата атрактора
-                # Лоренца, а `CRITICAL_Z_MIN` = 2.0, тож нуль означає катастрофічну
-                # втрату тургору, а не «немає даних». Три сусідні поля були чесні
+                # Лоренца, а `CRITICAL_Z_MIN` = 2.0, тож нуль читається як статус
+                # `stress`, а не «немає даних». Три сусідні поля були чесні
                 # весь час — розходився лише цей.
                 z_value: @latest_log&.z_value,
                 temperature: @latest_log&.temperature_c,

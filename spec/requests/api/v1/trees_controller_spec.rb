@@ -72,7 +72,7 @@ RSpec.describe Api::V1::TreesController, type: :request do
     # [ARCH.84] Приклад сам зізнавався в назві («with null values») і водночас
     # вимагав `eq(0)` від однієї з чотирьох величин. Нуль тут не нейтральний:
     # `z` — координата атрактора Лоренца, а `CRITICAL_Z_MIN` = 2.0, тож нуль
-    # читається як катастрофічна втрата тургору, приписана вузлу, який просто
+    # читається як статус `stress`, приписаний вузлу, який просто
     # ніколи не виходив в ефір. Три сусідні поля були чесні весь час.
     it "includes telemetry data with null values when no logs exist" do
       get "/trees/#{own_tree.id}", headers: headers, as: :json

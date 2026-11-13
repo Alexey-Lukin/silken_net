@@ -66,7 +66,7 @@ module Api
           did: @tree.did,
           timestamps: plucked.map { |row| row[0].to_i },
           # [ARCH.102] NULL лишається null (рядок без виміру — напр. panic): z = 0
-          # канон читає як катастрофічну втрату тургору, а 0 °C — як мороз.
+          # лежить нижче `CRITICAL_Z_MIN` і читався б як статус `stress`, а 0 °C — як мороз.
           z_value: plucked.map { |row| row[1]&.to_f&.round(2) },
           temperature: plucked.map { |row| row[2]&.to_f&.round(2) }
         }
