@@ -2880,6 +2880,63 @@ Each sky defines its own frost days — the bark's daily minimum under that sky 
 
 **Ceilings.** How the product is computed, on what cell and how accurately at an hourly step has not been read from its primary: the numbers above compare forms, they do not calibrate `79`. The product's hourly mean temperature is paired as the temperature at the end of its hour — up to half an hour late, so in the «air» reading the column's air runs behind the flux it is paired with. ERA5 cover and the product's cloud amount disagree hour by hour (under a product cloud amount of 20–50 % the median ERA5 cover is 0.71), and in the diffuse-sun columns of the product's readings the long wave is the product's cloud while the short wave is ERA5's. `79`'s beam and ground-reflected light are not re-run under the product's sky. Sky view, wind at the trunk, sun on the face, 1D conduction and zero contact resistance are `79`'s, unchanged; the radome↔flange coupling stays unmeasured, so the table is a bracket over its two ends and no row is a forecast.
 
+## HW.37 — Does the Reanalysis the Cold Edge Stands On Run Warm on Cold Nights? (script 121)
+
+**The question (2026-11-13, [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.37).** Canon reads the node's cold edge — the lowest air temperature and every count of cold hours and days — off ERA5 ([`02_03 §12.1`](../../../02_03_BQ25570_MPPT_Nano_Power.md); `81`; the frost days of `79`). A desk pass found ERA5 warmer than the Cherkasy station on the coldest nights of 2000–2009. `121` asks whether that holds on another decade, how much of it is produced by choosing the days BY the station, and what a second reanalysis gives for the same edge. Two station records that share no day — GHCN-Daily 2000–2009 and the Global Summary of the Day 1991–1998, the latter split into explicit minimum reports and minima derived from the hourly reports (a ceiling on the true minimum) — against ERA5's daily minimum and MERRA-2's (`tools/in_silico/data/station_cherkasy/`).
+
+**The gap, reanalysis minus station, conditioned three ways.** A gap measured on days chosen by one series is pulled toward that series' extremes, so the days are chosen by the station, by the reanalysis, and not at all (a bin of fewer than 5 days carries no mean); ERA5's minimum is taken over three windows, because the station's «day» is a reporting window and not a calendar day:
+
+| Record | Reading | all winter days | station below −15 °C | reanalysis below −15 °C | station below −20 °C | reanalysis below −20 °C |
+|---|---|---|---|---|---|---|
+| GHCN-Daily 2000–2009 | ERA5, UTC day | +0.71 K | +4.07 K (77 d) | +2.04 K (45 d) | +5.34 K (32 d) | +2.17 K (12 d) |
+| GHCN-Daily 2000–2009 | ERA5, clock day | +0.88 K | +4.01 K (77 d) | +2.26 K (42 d) | +5.31 K (32 d) | +2.18 K (12 d) |
+| GHCN-Daily 2000–2009 | ERA5, night 18:00–06:00 UTC | +1.24 K | +4.16 K (77 d) | +2.77 K (40 d) | +5.47 K (32 d) | +2.51 K (12 d) |
+| GHCN-Daily 2000–2009 | MERRA-2 | −1.77 K | +0.84 K (77 d) | −2.81 K (94 d) | +1.66 K (32 d) | −3.18 K (34 d) |
+| GSOD 1991–1998, explicit minima | ERA5, UTC day | +0.95 K | +3.01 K (46 d) | +1.85 K (19 d) | +4.08 K (12 d) | — (3 d) |
+| GSOD 1991–1998, explicit minima | ERA5, clock day | +1.04 K | +3.10 K (46 d) | +1.71 K (18 d) | +4.28 K (12 d) | — (3 d) |
+| GSOD 1991–1998, explicit minima | ERA5, night 18:00–06:00 UTC | +1.13 K | +3.21 K (46 d) | +1.79 K (18 d) | +4.38 K (12 d) | — (3 d) |
+| GSOD 1991–1998, explicit minima | MERRA-2 | −1.05 K | +1.48 K (46 d) | −0.87 K (38 d) | +2.59 K (12 d) | −3.46 K (10 d) |
+| GSOD 1991–1998, minima derived from hourly reports | ERA5, UTC day | +0.02 K | +1.32 K (21 d) | −0.07 K (16 d) | +1.29 K (6 d) | −1.34 K (5 d) |
+| GSOD 1991–1998, minima derived from hourly reports | ERA5, clock day | +0.54 K | +2.09 K (21 d) | +0.67 K (13 d) | +1.70 K (6 d) | — (4 d) |
+| GSOD 1991–1998, minima derived from hourly reports | ERA5, night 18:00–06:00 UTC | +1.55 K | +3.63 K (21 d) | +0.91 K (9 d) | +2.32 K (6 d) | — (4 d) |
+| GSOD 1991–1998, minima derived from hourly reports | MERRA-2 | −2.23 K | +0.07 K (21 d) | −3.61 K (30 d) | −2.82 K (6 d) | −6.54 K (7 d) |
+
+Chosen by the station's minimum below −15 °C, ERA5 (UTC day) is +4.07 K on the 2000–2009 record and +3.01 K on the explicit minima of 1991–1998; chosen by ERA5's own minimum instead, +2.04 and +1.85 K; over the night window the same pairs are +4.16 and +3.21, +2.77 and +1.79 K. The two choices are two ends, each pulled toward the series that chose the days, not two parts of one gap. On the two records with explicit minima 36 of the 48 conditioned ERA5 cells (four thresholds × three windows × two choices × two records) carry a mean, and all 36 are positive; the three windows are readings of the same nights and the bins are nested, so the independent units are the two records. At −25 °C only the station-chosen cells of 2000–2009 carry a mean (10 days); at −20 °C chosen by ERA5, only those of 2000–2009 (12 days). On the derived record 3 of its 16 ERA5 cells with a mean are negative — UTC day, chosen by ERA5: −0.22, −0.07 and −1.34 K; a derived minimum is a ceiling on the true one, so a gap against it is a floor on the gap. MERRA-2 at −15 °C is +0.84 and +1.48 K chosen by the station and −2.81 and −0.87 K chosen by itself: its gap changes sign with the choice. With no choice at all — the low quantiles of the same winter days — ERA5 (UTC day) minus the station is +4.06 / +2.30 / +1.20 K at the 1 / 5 / 10 % quantiles on 2000–2009 and +2.66 / +3.43 / +2.50 K on the explicit minima of 1991–1998; MERRA-2: −1.60 / −1.38 / −1.35 and −0.40 / +1.93 / +0.67 K.
+
+**With no condition — the same paired days, counted by each series.**
+
+| Record | minimum below | station | ERA5, UTC day | MERRA-2 |
+|---|---|---|---|---|
+| GHCN-Daily 2000–2009 | −15 °C | 77 | 45 | 94 |
+| GHCN-Daily 2000–2009 | −20 °C | 32 | 12 | 34 |
+| GHCN-Daily 2000–2009 | −25 °C | 10 | 4 | 13 |
+| GSOD 1991–1998, explicit minima | −15 °C | 46 | 19 | 38 |
+| GSOD 1991–1998, explicit minima | −20 °C | 12 | 3 | 10 |
+| GSOD 1991–1998, explicit minima | −25 °C | 1 | 1 | 2 |
+| GSOD 1991–1998, minima derived from hourly reports | −15 °C | 21 | 16 | 30 |
+| GSOD 1991–1998, minima derived from hourly reports | −20 °C | 6 | 5 | 7 |
+| GSOD 1991–1998, minima derived from hourly reports | −25 °C | 1 | 2 | 3 |
+
+On the same paired days the station against ERA5 (UTC day) and MERRA-2 — 2000–2009: below −15 °C 77 against 45 and 94; below −20 °C 32 against 12 and 34; below −25 °C 10 against 4 and 13; explicit minima of 1991–1998: below −15 °C 46 against 19 and 38; below −20 °C 12 against 3 and 10; below −25 °C 1 against 1 and 2. ERA5 has fewer cold days than the station in 5 of these 6 record-and-threshold cells and as many in 1; MERRA-2 has more than the station in 4 and fewer in 2; the station has more than BOTH in 2, both on the 1991–1998 record.
+
+**The extremes.** On the paired days ERA5's lowest is −26.8 and −27.1 °C against the station's −27.5 and −27.0 °C — 0.7 K above and 0.1 K below. On the station's coldest day ERA5 read −20.7 °C on 2000–2009 (2003-02-17, 6.8 K warmer) and −27.1 °C on the explicit minima of 1991–1998 (1994-02-13 — there the coldest day of both). ERA5's own −27.4 °C of the 29 seasons fell on 1997-12-17 and 2012-02-02 — days with no explicit station minimum; the one the derived record carries reads −25.9 °C, a ceiling on the true minimum. The station does not contradict ERA5's floor and on its days does not test it. MERRA-2's lowest on the paired days is −30.95 and −32.37 °C — 3.45 and 5.37 K below the station's own lowest; on the station's coldest days it read −20.71 and −32.37 °C; and its −34.94 °C of the 29 seasons (1997-12-16) falls on a day no station record carries. On 1997-12-17, where the derived record reads −25.9 °C, MERRA-2 read −34.61 °C; a ceiling on the true minimum excludes neither reanalysis.
+
+**The edge itself, 29 seasons 1991/92–2019/20, in the two reanalyses.**
+
+| Reading | lowest minimum | days with minimum below −15 / −20 / −25 °C (seasons with any) | days with MAXIMUM below −15 / −20 °C (seasons with any) |
+|---|---|---|---|
+| ERA5, UTC day | −27.4 °C (1997-12-17, 2012-02-02) | 192 (26) / 52 (18) / 11 (4) | 14 (5) / 2 (2) |
+| ERA5, clock day | −27.4 °C (1997-12-17, 2012-02-02) | 178 (26) / 48 (18) / 9 (4) | 14 (5) / 2 (2) |
+| MERRA-2 | −34.9 °C (1997-12-16) | 415 (28) / 142 (21) / 52 (15) | 34 (13) / 10 (5) |
+
+Hours below −25 °C over 2001–2020: ERA5 **38**, MERRA-2 **261**; below −20 °C — 299 and 895; below −15 °C — 1205 and 2804. The hourly MERRA-2 series is the 2 m temperature riding in `data/power_cherkasy_longwave/` — an hour's mean against ERA5's value at the hour.
+
+**What follows.** ERA5 runs warm on cold nights against this station: on the two records with explicit minima every conditioned cell that carries a mean is positive, and with no choice of days its low winter quantiles sit 1.20–4.44 K above the station's over the three windows. It shows as cold days ERA5 does not count — fewer than the station in 5 of 6 cells — while its lowest values lie within 0.7 K of the station's; of the station's two coldest days ERA5 met one and read the other 6.8 K warmer. MERRA-2 has more cold days than the station in 4 of 6 cells and fewer in 2. The two are therefore two NAMED readings of the edge — ERA5 the smaller count in every line of the edge table and in every count of hours — and neither is shown to bound the station from above; the station is a town site, so the direction for the forest plot is not established here. Nothing here corrects either reanalysis. The node's capsule is not air: in the coldest hour of `81`'s deep edge (clear sky, no sun, calm; air −27.4 °C) the capsule sat 6.1 K below the air — the difference of that hour, not a constant: across `81`'s 12 runs it is −6.13 to +0.05 K — and `81` ran on ERA5 only, so what the colder reading means for the capsule's own floor is not computed here.
+
+**Controls.** All six controls passed: every one of the 12 record-and-reading pairings correlates best at lag 0; the mean gap over all paired days stays inside ±3 K (the bound that would catch °F read as °C); the clock-day mean recomputed from ERA5's hourly file meets its daily-mean file within 0.067 K on all 10958 days; the GHCN-Daily quality flags dropped are exactly the file's 74 «I» and 1 «G», leaving 2483 of its 2558 minima; MERRA-2's daily minimum equals the minimum of its hourly field on all 7305 days of 2001–2020; and ERA5's hourly series, read as UTC by subtracting the file's offset, changes hour to hour in step with MERRA-2's — the correlation of first differences is highest at lag −1 h (0.55; 0.51 at lag 0, 0.41 and 0.16 at ∓3 h), inside the hour that instants against hourly means cannot resolve.
+
+**Ceilings.** One station, and not the forest plot: a synoptic site at a town against cells of 0.25° and 0.5° × 0.625° — part of any gap is siting, not reanalysis error. The station's «day» for a reported minimum is a reporting window; the three ERA5 windows are readings of it, and the night window is this script's guess, not a station manual's. The two station records share no day, so nothing says they are one instrument. A reanalysis «daily minimum» is the lowest of 24 hourly values — instants for ERA5, hourly means for MERRA-2 — and both sit at or above the continuous minimum a thermometer reports. The coldest bins are thin.
+
 ## HW.5.IS — How Hard Does the Cathode Medium's Malate Pull on the Nanozyme's Metals? (script 93)
 
 The buffered cathode medium (malic acid 10 mM in the sap's salts, pH 4.5 — ⚖️ founder 2026-10-12, `01_03 §3.5`) carried

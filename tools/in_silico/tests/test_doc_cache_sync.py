@@ -11260,6 +11260,291 @@ _SKY120_ANCHORS = {
 }
 
 
+# ── HW.37 · 121: the cold edge against the station (SUMMARY §HW.37 · 02_03 §12.1 ⊕ 2026-11-13) ──
+# As for `120`: the sentences with a number, a set or a direction are built here from the cache and required verbatim;
+# the plain-word ones the builder does not build are held by `_COLD121_ANCHORS`.
+COLD_EDGE = "thermal/cold_edge_station.json"
+_COLD121_RECORDS = (("ghcnd_2000_2009", "GHCN-Daily 2000–2009"), ("gsod_1991_1998_explicit", "GSOD 1991–1998, explicit minima"),
+                    ("gsod_1991_1998_derived", "GSOD 1991–1998, minima derived from hourly reports"))
+_COLD121_READINGS = (("era5_utc_day", "ERA5, UTC day"), ("era5_clock_day", "ERA5, clock day"), ("era5_night", "ERA5, night 18:00–06:00 UTC"),
+                     ("merra2_utc_day", "MERRA-2"))
+_COLD121_ERA5 = ("era5_utc_day", "era5_clock_day", "era5_night")
+_COLD121_EXPLICIT = ("ghcnd_2000_2009", "gsod_1991_1998_explicit")
+_COLD121_COUNTED = ("-15.0", "-20.0", "-25.0")
+_COLD121_DERIVED = "gsod_1991_1998_derived"
+_COLD121_LEVEL_K = 1.0      # OUR choice: «the station's coldest day was met» / «the lowest values lie within» mean inside 1 K
+_COLD121_WORDS = {2: "two", 3: "three", 4: "four"}
+
+
+def _cold121_paragraphs(d: dict) -> dict:
+    """Every sentence of SUMMARY §HW.37 (`121`) and of the 02_03 §12.1 ⊕ 2026-11-13 that carries a number, a set or a
+    direction — built from the cache, never typed. A direction sentence is written for the pattern the cache has today;
+    each such pattern is asserted first, so a re-run that breaks it reds with the reason instead of a stale claim."""
+    recs, edge, hours, model = d["station_records"], d["cold_edge"], d["hours_below_2001_2020"], d["model"]
+    g_rec, s_rec = _COLD121_EXPLICIT
+
+    def m(x: float, nd: int = 2) -> str:
+        return f"{x:+.{nd}f}".replace("-", "−")
+
+    def u(x: float, nd: int = 1) -> str:
+        return f"{x:.{nd}f}".replace("-", "−")
+
+    def cond(rec: str, reading: str, key: str, thr: str) -> str:
+        g = recs[rec]["reanalyses"][reading][key][thr]
+        return f"{m(g['mean_K'])} K ({g['days']} d)" if "mean_K" in g else f"— ({g['days']} d)"
+
+    gap = ["| Record | Reading | all winter days | station below −15 °C | reanalysis below −15 °C | station below −20 °C | reanalysis below −20 °C |",
+           "|---|---|---|---|---|---|---|"]
+    for rec, rec_label in _COLD121_RECORDS:
+        for reading, label in _COLD121_READINGS:
+            r = recs[rec]["reanalyses"][reading]
+            gap.append(f"| {rec_label} | {label} | {m(r['winter_days']['mean_K'])} K | {cond(rec, reading, 'station_below', '-15.0')} | "
+                       f"{cond(rec, reading, 'reanalysis_below', '-15.0')} | {cond(rec, reading, 'station_below', '-20.0')} | "
+                       f"{cond(rec, reading, 'reanalysis_below', '-20.0')} |")
+
+    counts = ["| Record | minimum below | station | ERA5, UTC day | MERRA-2 |", "|---|---|---|---|---|"]
+    place = {}
+    for rec, rec_label in _COLD121_RECORDS:
+        for thr in _COLD121_COUNTED:
+            place[(rec, thr)] = (recs[rec]["station"]["days_below"][thr],
+                                 *(recs[rec]["reanalyses"][k]["days_below"][thr] for k in ("era5_utc_day", "merra2_utc_day")))
+            counts.append(f"| {rec_label} | {u(float(thr), 0)} °C | " + " | ".join(str(n) for n in place[(rec, thr)]) + " |")
+
+    def gaps(reading: str, key: str, thr: str = "-15.0") -> list:
+        return [recs[rec]["reanalyses"][reading][key][thr]["mean_K"] for rec in _COLD121_EXPLICIT]
+
+    e_st, e_re = gaps("era5_utc_day", "station_below"), gaps("era5_utc_day", "reanalysis_below")
+    n_st, n_re = gaps("era5_night", "station_below"), gaps("era5_night", "reanalysis_below")
+    m_st, m_re = gaps("merra2_utc_day", "station_below"), gaps("merra2_utc_day", "reanalysis_below")
+    # every conditioned ERA5 cell of the two explicit records — thresholds × windows × choices × records; a thin bin carries no mean
+    choices = ("station_below", "reanalysis_below")
+    all_cells = [(rec, reading, key, thr) for rec in _COLD121_EXPLICIT for reading in _COLD121_ERA5 for key in choices
+                 for thr in recs[rec]["reanalyses"][reading][key]]
+    cell = lambda c: recs[c[0]]["reanalyses"][c[1]][c[2]][c[3]]      # noqa: E731
+    era5_cells = [c for c in all_cells if "mean_K" in cell(c)]
+    assert all(cell(c)["mean_K"] > 0 for c in era5_cells), "a conditioned ERA5 cell is no longer positive — rewrite «gap», «follows» and the 02_03 ⊕"
+    n_thr = len({c[3] for c in all_cells})
+    assert len(all_cells) == n_thr * len(_COLD121_ERA5) * len(choices) * len(_COLD121_EXPLICIT)
+    axes = " × ".join(f"{_COLD121_WORDS[n]} {what}" for n, what in ((n_thr, "thresholds"), (len(_COLD121_ERA5), "windows"), (len(choices), "choices"),
+                                                                     (len(_COLD121_EXPLICIT), "records")))
+    # where the coldest bins carry a mean at all — the sentence names the pattern, so the pattern is asserted
+    assert {(c[0], c[2]) for c in era5_cells if c[3] == "-25.0"} == {(g_rec, "station_below")}, "the −25 °C cells that carry a mean moved — rewrite «gap»"
+    assert {c[0] for c in era5_cells if c[3] == "-20.0" and c[2] == "reanalysis_below"} == {g_rec}, "the −20 °C ERA5-chosen cells moved — rewrite «gap»"
+    d25 = {cell((g_rec, r, "station_below", "-25.0"))["days"] for r in _COLD121_ERA5}
+    d20 = {cell((g_rec, r, "reanalysis_below", "-20.0"))["days"] for r in _COLD121_ERA5}
+    assert len(d25) == 1 and len(d20) == 1, "the three windows no longer count the same days in the coldest bins — rewrite «gap»"
+    # the derived record is a ceiling on the true minimum: its cells are reported apart, and the negative ones named
+    der_cells = [(reading, key, c["mean_K"]) for reading in _COLD121_ERA5 for key in choices
+                 for c in recs[_COLD121_DERIVED]["reanalyses"][reading][key].values() if "mean_K" in c]
+    der_neg = [c for c in der_cells if c[2] < 0]
+    assert len(der_neg) > 1 and all(c[:2] == ("era5_utc_day", "reanalysis_below") for c in der_neg), \
+        "the derived record's negative ERA5 cells are no longer the UTC-day, ERA5-chosen ones — rewrite «gap»"
+    der_vals = ", ".join(m(c[2]) for c in der_neg[:-1]) + f" and {m(der_neg[-1][2])}"
+    merra_flips = all(x > 0 for x in m_st) and all(x < 0 for x in m_re)
+    merra_en = ": its gap changes sign with the choice" if merra_flips else ""
+
+    def quantile_gaps(reading: str) -> list:
+        return [[recs[rec]["reanalyses"][reading]["winter_quantiles_C"][q] - recs[rec]["station"]["winter_quantiles_C"][q] for q in ("0.01", "0.05", "0.1")]
+                for rec in _COLD121_EXPLICIT]
+
+    q_e, q_m = quantile_gaps("era5_utc_day"), quantile_gaps("merra2_utc_day")
+    q_all = [v for reading in _COLD121_ERA5 for r in quantile_gaps(reading) for v in r]      # all three windows — «follows» speaks for them
+    assert all(v > 0 for v in q_all), "ERA5's low winter quantiles are no longer all above the station's — rewrite «quant» and «follows»"
+    slash = lambda row: " / ".join(m(v) for v in row)      # noqa: E731
+    dot = lambda row: " · ".join(m(v) for v in row)        # noqa: E731
+
+    cells = [(rec, thr) for rec in _COLD121_EXPLICIT for thr in _COLD121_COUNTED]
+    under = [c for c in cells if place[c][1] < place[c][0]]
+    ties = [c for c in cells if place[c][1] == place[c][0]]
+    m_more = [c for c in cells if place[c][2] > place[c][0]]
+    m_fewer = [c for c in cells if place[c][2] < place[c][0]]
+    above_both = [c for c in cells if place[c][0] > max(place[c][1:])]
+    assert len(under) + len(ties) == len(cells), "ERA5 now has MORE cold days than the station in a cell — rewrite «counts», «follows» and the 02_03 ⊕"
+    assert above_both == [(s_rec, "-15.0"), (s_rec, "-20.0")], "the cells where the station exceeds both reanalyses moved — rewrite the 02_03 ⊕"
+    g25, s25 = place[(g_rec, "-25.0")], place[(s_rec, "-25.0")]
+    assert g25[1] < g25[0] and s25[1] == s25[0] and g25[2] >= g25[0] and s25[2] >= s25[0], "the −25 °C pattern moved — rewrite the 02_03 ⊕"
+    row = lambda rec: "; ".join(f"below {u(float(t), 0)} °C {place[(rec, t)][0]} against {place[(rec, t)][1]} and {place[(rec, t)][2]}"   # noqa: E731
+                                for t in _COLD121_COUNTED)
+
+    e_edge, m_edge = edge["era5_clock_day"], edge["merra2_utc_day"]
+    assert edge["era5_utc_day"]["lowest_C"] == e_edge["lowest_C"] and edge["era5_utc_day"]["lowest_days"] == e_edge["lowest_days"]
+    lows = {rec: recs[rec]["station"] for rec in _COLD121_EXPLICIT}
+    assert all(len(lows[rec]["lowest_days"]) == 1 for rec in _COLD121_EXPLICIT), "a station record's lowest minimum now falls on several days"
+    low_day = {rec: lows[rec]["lowest_days"][0] for rec in _COLD121_EXPLICIT}
+    on_low = {rec: {k: recs[rec]["reanalyses"][k]["on_station_lowest_days_C"][low_day[rec]] for k in ("era5_utc_day", "merra2_utc_day")}
+              for rec in _COLD121_EXPLICIT}
+    paired_low = {k: [recs[rec]["reanalyses"][k]["lowest_C"] for rec in _COLD121_EXPLICIT] for k in ("era5_utc_day", "merra2_utc_day")}
+    below_station = [lows[rec]["lowest_C"] - recs[rec]["reanalyses"]["merra2_utc_day"]["lowest_C"] for rec in _COLD121_EXPLICIT]
+    assert all(x > 0 for x in below_station), "MERRA-2's lowest on the paired days is no longer below the station's — rewrite «extremes»"
+    # level and date of the lowest values, record by record — «met» and «within» are held to `_COLD121_LEVEL_K`
+    d_low = [paired_low["era5_utc_day"][i] - lows[rec]["lowest_C"] for i, rec in enumerate(_COLD121_EXPLICIT)]
+    miss = {rec: on_low[rec]["era5_utc_day"] - lows[rec]["lowest_C"] for rec in _COLD121_EXPLICIT}
+    assert max(abs(x) for x in d_low) < _COLD121_LEVEL_K, "ERA5's lowest on the paired days left the station's level — rewrite «extremes» and «follows»"
+    assert abs(miss[s_rec]) < _COLD121_LEVEL_K < miss[g_rec], "which of the station's two coldest days ERA5 met has changed — rewrite «extremes», «follows», 02_03"
+    assert list(recs[s_rec]["reanalyses"]["era5_utc_day"]["station_on_its_lowest_days_C"]) == [low_day[s_rec]], \
+        "ERA5's coldest paired day of 1991–1998 is no longer the station's — rewrite «extremes»"
+    rel = lambda x: f"{abs(x):.1f} K {'above' if x > 0 else 'below'}"      # noqa: E731
+    der_low = recs[_COLD121_DERIVED]["station"]
+    assert len(der_low["lowest_days"]) == 1 and der_low["lowest_days"][0] in e_edge["lowest_days"], "the derived record's lowest day left ERA5's floor days"
+    der_day = der_low["lowest_days"][0]
+    der_on = {k: recs[_COLD121_DERIVED]["reanalyses"][k]["on_station_lowest_days_C"][der_day] for k in ("era5_utc_day", "merra2_utc_day")}
+    assert all(v <= der_low["lowest_C"] for v in der_on.values()), "a reanalysis now reads ABOVE the derived ceiling on that day — the ceiling then excludes it"
+    explicit_on_floor = [v[rec] for v in e_edge["station_on_lowest_days_C"].values() for rec in _COLD121_EXPLICIT if v[rec] is not None]
+    derived_on_floor = [v["gsod_1991_1998_derived"] for v in e_edge["station_on_lowest_days_C"].values() if v["gsod_1991_1998_derived"] is not None]
+    assert not explicit_on_floor, "an explicit station minimum now exists on a day of ERA5's floor — the «does not test it» sentences must be rewritten"
+    assert all(v is None for day in m_edge["station_on_lowest_days_C"].values() for v in day.values()), "a station record now carries MERRA-2's floor day"
+    derived_en = (f"; the one the derived record carries reads {u(derived_on_floor[0])} °C, a ceiling on the true minimum" if len(derived_on_floor) == 1
+                  else "")
+    seasons = e_edge["seasons"]
+    assert all(e["seasons"] == seasons for e in edge.values())
+    printed = {"min_below": _COLD121_COUNTED, "max_below": ("-15.0", "-20.0")}      # the columns the edge table prints
+    lower = (all(edge["era5_utc_day"][k][t]["days"] < m_edge[k][t]["days"] and e_edge[k][t]["days"] < m_edge[k][t]["days"]
+                 for k, cols in printed.items() for t in cols)
+             and all(hours["era5"][t] < hours["merra2"][t] for t in hours["era5"]))
+    assert lower, "ERA5 is no longer the smaller count in every line of the edge — rewrite «follows» and the 02_03 ⊕"
+    assert hours["hours_era5"] == hours["hours_merra2"], "the two hourly series cover different hours"
+
+    edge_rows = ["| Reading | lowest minimum | days with minimum below −15 / −20 / −25 °C (seasons with any) | days with MAXIMUM below −15 / −20 °C (seasons with any) |",
+                 "|---|---|---|---|"]
+    for reading, label in (("era5_utc_day", "ERA5, UTC day"), ("era5_clock_day", "ERA5, clock day"), ("merra2_utc_day", "MERRA-2")):
+        e = edge[reading]
+        mins = " / ".join(f"{e['min_below'][t]['days']} ({e['min_below'][t]['seasons_with_any']})" for t in printed["min_below"])
+        maxs = " / ".join(f"{e['max_below'][t]['days']} ({e['max_below'][t]['seasons_with_any']})" for t in printed["max_below"])
+        edge_rows.append(f"| {label} | {u(e['lowest_C'])} °C ({', '.join(e['lowest_days'])}) | {mins} | {maxs} |")
+
+    inputs, ctl = d["inputs"], d["controls"]
+    lags = [r["pairing_correlation_by_lag"] for rec in recs.values() for r in rec["reanalyses"].values()]
+    assert all(x["0"] > x["-1"] and x["0"] > x["1"] for x in lags)
+    flags = " and ".join(f"{n} «{k}»" for k, n in inputs["ghcnd_dropped_on_quality_flag"].items())
+    years = f"{hours['window_utc_days'][0][:4]}–{hours['window_utc_days'][1][:4]}"
+    tmin_all = inputs["ghcnd_tmin_days"] + sum(inputs["ghcnd_dropped_on_quality_flag"].values())
+    off = ctl["era5_utc_offset_direction"]
+    by_lag, best = off["correlation_by_lag_h"], off["best_lag_h"]
+    assert abs(best) <= 1 and by_lag[str(best)] == max(by_lag.values())
+    edge_lags = sorted(by_lag, key=int)
+    # `81`'s capsule depression is ONE hour of ONE run — carried with its hour, its regime and the spread over `81`'s runs
+    cold = C(COLD)
+    deep = cold["edges"]["deep"]
+    deps = [c["depression_at_coldest_K"] for by in cold["runs"].values() for c in by.values()]
+    assert deep["depression_at_coldest_K"] < 0 and deep["regime"] == "clear_no_sun" and deep["wind"] == "k=0.0", \
+        "`81`'s deep edge is no longer its clear, sunless, calm run with the capsule BELOW the air — rewrite «capsule» and the 02_03 «req»"
+    assert min(deps) == deep["depression_at_coldest_K"]
+    dep = abs(deep["depression_at_coldest_K"])
+
+    en = {
+        "gap_intro": (f"A gap measured on days chosen by one series is pulled toward that series' extremes, so the days are chosen by the station, by "
+                      f"the reanalysis, and not at all (a bin of fewer than {model['min_days_for_a_mean']} days carries no mean); ERA5's minimum is "
+                      f"taken over three windows, because the station's «day» is a reporting window and not a calendar day:"),
+        "gap_table": "\n".join(gap),
+        "gap": (f"Chosen by the station's minimum below −15 °C, ERA5 (UTC day) is {m(e_st[0])} K on the 2000–2009 record and {m(e_st[1])} K on the "
+                f"explicit minima of 1991–1998; chosen by ERA5's own minimum instead, {m(e_re[0])} and {m(e_re[1])} K; over the night window the "
+                f"same pairs are {m(n_st[0])} and {m(n_st[1])}, {m(n_re[0])} and {m(n_re[1])} K. The two choices are two ends, each pulled toward "
+                f"the series that chose the days, not two parts of one gap. On the two records with explicit minima {len(era5_cells)} of the "
+                f"{len(all_cells)} conditioned ERA5 cells ({axes}) carry a mean, and all {len(era5_cells)} are positive; the three windows "
+                f"are readings of the same nights and the bins are nested, so the independent units are the two records. At −25 °C only the "
+                f"station-chosen cells of 2000–2009 carry a mean ({d25.pop()} days); at −20 °C chosen by ERA5, only those of 2000–2009 "
+                f"({d20.pop()} days). On the derived record {len(der_neg)} of its {len(der_cells)} ERA5 cells with a mean are negative — UTC day, "
+                f"chosen by ERA5: {der_vals} K; a derived minimum is a ceiling on the true one, so a gap against it is a floor on the gap. "
+                f"MERRA-2 at −15 °C is {m(m_st[0])} and {m(m_st[1])} K chosen by the station and {m(m_re[0])} and {m(m_re[1])} K chosen by "
+                f"itself{merra_en}."),
+        "quant": (f"With no choice at all — the low quantiles of the same winter days — ERA5 (UTC day) minus the station is {slash(q_e[0])} K at the "
+                  f"1 / 5 / 10 % quantiles on 2000–2009 and {slash(q_e[1])} K on the explicit minima of 1991–1998; MERRA-2: {slash(q_m[0])} and "
+                  f"{slash(q_m[1])} K."),
+        "count_table": "\n".join(counts),
+        "counts": (f"On the same paired days the station against ERA5 (UTC day) and MERRA-2 — 2000–2009: {row(g_rec)}; explicit minima of "
+                   f"1991–1998: {row(s_rec)}. ERA5 has fewer cold days than the station in {len(under)} of these {len(cells)} record-and-threshold "
+                   f"cells and as many in {len(ties)}; MERRA-2 has more than the station in {len(m_more)} and fewer in {len(m_fewer)}; the station "
+                   f"has more than BOTH in {len(above_both)}, both on the 1991–1998 record."),
+        "extremes": (f"On the paired days ERA5's lowest is {u(paired_low['era5_utc_day'][0])} and {u(paired_low['era5_utc_day'][1])} °C against "
+                     f"the station's {u(lows[g_rec]['lowest_C'])} and {u(lows[s_rec]['lowest_C'])} °C — {rel(d_low[0])} and {rel(d_low[1])}. On the "
+                     f"station's coldest day ERA5 read {u(on_low[g_rec]['era5_utc_day'])} °C on 2000–2009 ({low_day[g_rec]}, {miss[g_rec]:.1f} K "
+                     f"warmer) and {u(on_low[s_rec]['era5_utc_day'])} °C on the explicit minima of 1991–1998 ({low_day[s_rec]} — there the coldest "
+                     f"day of both). ERA5's own {u(e_edge['lowest_C'])} °C of the {seasons} seasons fell on {' and '.join(e_edge['lowest_days'])} — "
+                     f"days with no explicit station minimum{derived_en}. The station does not contradict ERA5's floor and on its days does not "
+                     f"test it. MERRA-2's lowest on the paired days is {u(paired_low['merra2_utc_day'][0], 2)} and "
+                     f"{u(paired_low['merra2_utc_day'][1], 2)} °C — {below_station[0]:.2f} and {below_station[1]:.2f} K below the station's own "
+                     f"lowest; on the station's coldest days it read {u(on_low[g_rec]['merra2_utc_day'], 2)} and "
+                     f"{u(on_low[s_rec]['merra2_utc_day'], 2)} °C; and its {u(m_edge['lowest_C'], 2)} °C of the {seasons} seasons "
+                     f"({', '.join(m_edge['lowest_days'])}) falls on a day no station record carries. On {der_day}, where the derived record reads "
+                     f"{u(der_low['lowest_C'])} °C, MERRA-2 read {u(der_on['merra2_utc_day'], 2)} °C; a ceiling on the true minimum excludes "
+                     f"neither reanalysis."),
+        "edge_head": f"**The edge itself, {seasons} seasons {model['edge_window'][0][:4]}/{int(model['edge_window'][0][2:4]) + 1}–"
+                     f"{int(model['edge_window'][1][:4]) - 1}/{model['edge_window'][1][2:4]}, in the two reanalyses.**",
+        "edge_table": "\n".join(edge_rows),
+        "hours": (f"Hours below −25 °C over {years}: ERA5 **{hours['era5']['-25.0']}**, MERRA-2 **{hours['merra2']['-25.0']}**; below −20 °C — "
+                  f"{hours['era5']['-20.0']} and {hours['merra2']['-20.0']}; below −15 °C — {hours['era5']['-15.0']} and {hours['merra2']['-15.0']}."),
+        "follows": (f"ERA5 runs warm on cold nights against this station: on the two records with explicit minima every conditioned cell that "
+                    f"carries a mean is positive, and with no choice of days its low winter quantiles sit {min(q_all):.2f}–{max(q_all):.2f} K above "
+                    f"the station's over the three windows. It shows as cold days ERA5 does not count — fewer than the station in {len(under)} of "
+                    f"{len(cells)} cells — while its lowest values lie within {max(abs(x) for x in d_low):.1f} K of the station's; of the station's "
+                    f"two coldest days ERA5 met one and read the other {miss[g_rec]:.1f} K warmer. MERRA-2 has "
+                    f"more cold days than the station in {len(m_more)} of {len(cells)} cells and fewer in {len(m_fewer)}. The two are therefore two "
+                    f"NAMED readings of the edge — ERA5 the smaller count in every line of the edge table and in every count of hours — and neither "
+                    f"is shown to bound the station from above; the station is a town site, so the direction for the forest plot is not "
+                    f"established here."),
+        "capsule": (f"The node's capsule is not air: in the coldest hour of `81`'s deep edge (clear sky, no sun, calm; air "
+                    f"{u(deep['t_air_at_coldest_c'])} °C) the capsule sat {dep:.1f} K below the air — the difference of that hour, not a constant: "
+                    f"across `81`'s {len(deps)} runs it is {m(min(deps))} to {m(max(deps))} K — and `81` ran on ERA5 only, so what the colder "
+                    f"reading means for the capsule's own floor is not computed here."),
+        "controls": (f"All six controls passed: every one of the {len(lags)} record-and-reading pairings correlates best at lag 0; the mean gap "
+                     f"over all paired days stays inside ±{ctl['units_bound_K']:g} K (the bound that would catch °F read as °C); the clock-day mean "
+                     f"recomputed from ERA5's hourly file meets its daily-mean file within {ctl['era5_files_agree']['worst_difference_K']:.3f} K on "
+                     f"all {ctl['era5_files_agree']['days']} days; the GHCN-Daily quality flags dropped are exactly the file's {flags}, leaving "
+                     f"{inputs['ghcnd_tmin_days']} of its {tmin_all} minima; MERRA-2's daily minimum equals the minimum of its hourly field on all "
+                     f"{ctl['merra2_files_agree']['days']} days of {years}; and ERA5's hourly series, read as UTC by subtracting the file's offset, "
+                     f"changes hour to hour in step with MERRA-2's — the correlation of first differences is highest at lag "
+                     f"{f'{best:+d}'.replace('-', '−')} h ({by_lag[str(best)]:.2f}; {by_lag['0']:.2f} at lag 0, {by_lag[edge_lags[0]]:.2f} and "
+                     f"{by_lag[edge_lags[-1]]:.2f} at ∓{edge_lags[-1]} h), inside the hour that instants against hourly means cannot resolve."),
+        "status_row": (f"| 121 | `cold_edge_station` | **HW.37 — the cold edge against the Cherkasy station (2026-11-13):** ✅ ran; ERA5's and MERRA-2's "
+                       f"daily minima against two station records that share no day (GHCN-Daily 2000–2009, GSOD 1991–1998), the gap conditioned on "
+                       f"the station, on the reanalysis and on neither, over three day windows for ERA5; the cold edge of {seasons} seasons and "
+                       f"the hours below each threshold read from both reanalyses. Results, controls and ceilings — [`SUMMARY.md`](SUMMARY.md) "
+                       f"§«Does the Reanalysis the Cold Edge Stands On Run Warm on Cold Nights?» | `thermal/cold_edge_station.json` |"),
+    }
+    g20, s20, s15 = place[(g_rec, "-20.0")], place[(s_rec, "-20.0")], place[(s_rec, "-15.0")]
+    ua = {
+        "counts": (f"діб із мінімумом нижче −20 °C станція має **{g20[0]}** (2000–2009) і **{s20[0]}** (явні мінімуми 1991–1998), ERA5 на тих "
+                   f"самих добах — {g20[1]} і {s20[1]}, MERRA-2 — {g20[2]} і {s20[2]}"),
+        "gap": (f"на добах, де станційний мінімум нижчий за −15 °C, ERA5 тепліший на {m(e_st[0])} і {m(e_st[1])} K, на добах, відібраних за його "
+                f"власним мінімумом, — на {m(e_re[0])} і {m(e_re[1])} K (це два кінці, не частини одного зсуву), а без жодного відбору нижні зимові "
+                f"квантилі ERA5 (1 · 5 · 10 %) вищі за станційні на {dot(q_e[0])} і {dot(q_e[1])} K"),
+        "hours": (f"Години нижче −25 °C за {years}: ERA5 — **{hours['era5']['-25.0']}**, MERRA-2 — **{hours['merra2']['-25.0']}**; нижче −20 °C — "
+                  f"{hours['era5']['-20.0']} і {hours['merra2']['-20.0']}"),
+        "floor": (f"Абсолютний мінімум ERA5 ({u(e_edge['lowest_C'])} °C) станція не спростовує, а на його добах не перевіряє: її найнижчі "
+                  f"мінімуми — {u(lows[g_rec]['lowest_C'])} і {u(lows[s_rec]['lowest_C'])} °C; у добу {u(lows[s_rec]['lowest_C'])} °C "
+                  f"({low_day[s_rec]}) ERA5 дав {u(on_low[s_rec]['era5_utc_day'])} °C, у добу {u(lows[g_rec]['lowest_C'])} °C ({low_day[g_rec]}) — "
+                  f"{u(on_low[g_rec]['era5_utc_day'])} °C, а на добах із {u(e_edge['lowest_C'])} °C явного станційного мінімуму немає"),
+        "reading": (f"Тобто «64 години нижче −25 °C за 30 років» — прочитання ERA5, менше з двох названих ({years}: {hours['era5']['-25.0']} проти "
+                    f"{hours['merra2']['-25.0']} год), а не оцінка. На порозі −25 °C ERA5 має менше діб, ніж станція, на записі 2000–2009 "
+                    f"({g25[1]} проти {g25[0]}) і стільки ж на явних мінімумах 1991–1998 ({s25[1]} і {s25[0]}); MERRA-2 — не менше станції на обох "
+                    f"({g25[2]} і {s25[2]}). Нижче −15 і −20 °C на записі 1991–1998 станція має більше діб, ніж обидва реаналізи ({s15[0]} проти "
+                    f"{s15[1]} і {s15[2]}; {s20[0]} проти {s20[1]} і {s20[2]}), тож верхньою межею MERRA-2 не показано"),
+        "req": (f"Вимогу капсули «від −40 °C» на холоднішому прочитанні не перевірено: {u(m_edge['lowest_C'])} °C — мінімум ПОВІТРЯ, а `81` "
+                f"рахував капсулу лише на ERA5. У найхолоднішу годину його глибокого краю (ясно, без сонця, штиль; повітря "
+                f"{u(deep['t_air_at_coldest_c'])} °C) капсула була на {dep:.1f} K нижча за повітря — це різниця тієї години, не стала (у "
+                f"{len(deps)} прогонах `81` — від {m(min(deps))} до {m(max(deps))} K), і до {u(m_edge['lowest_C'])} °C її не прикладено. «Не "
+                f"перетинає жоден прогін» вище стосується прогонів на ERA5"),
+    }
+    return {"en": en, "ua": ua}
+
+
+# Wording the builder does not build but the two pages stand on.
+_COLD121_ANCHORS = {
+    SUMMARY: ("Nothing here corrects either reanalysis.",
+              "a ceiling on the true minimum) — against ERA5's daily minimum",
+              "The station's «day» for a reported minimum is a reporting window",
+              "the night window is this script's guess, not a station manual's",
+              "an hour's mean against ERA5's value at the hour",
+              "both sit at or above the continuous minimum a thermometer reports",
+              "The coldest bins are thin."),
+    POWER: ("холодні лічби цього рядка стоять на ERA5, а він проти станції Черкаси має менше морозних діб",
+            "проти цієї станції тримається в лічбі морозних діб, а не в найнижчому значенні",
+            "Годин станція не дає, і станція в місті — не ділянка: напрямок для вузла не встановлено.",
+            "доба станційного мінімуму — вікно звітування, а не доба реаналізу",
+            "жодного з двох реаналізів це не виправляє"),
+}
+
+
 class _Preserved:
     """A number that sits INSIDE a preserved form — a ratified verdict, its submission or a dated ⊕ addendum
     (00_05 §7): the form is appended to, never rewritten. A plain pin on such a number compares the doc with the
@@ -11503,6 +11788,82 @@ def test_sky_product_cache_is_whole():
     moves = [abs(r["colder_share"] - shifted[(r["regime"], r["coupling"], r["wind_k"], r["bark_side"])]) for r in half["unshifted_flux_runs"]]
     assert len(moves) == 16 and d["controls"]["unshifted_clock_flux_reading_largest_share_move"] == pytest.approx(max(moves), abs=1e-12)
     assert f"In {f['between']} of {f['pairs']} cell-and-reading pairs" in d["verdict"]["text"], "the cache's verdict text and its runs disagree"
+
+
+def test_cold_edge_pages_are_built_from_the_cache():
+    """SUMMARY §HW.37 (`121`) and the 02_03 §12.1 ⊕ 2026-11-13 carry, verbatim, what `_cold121_paragraphs` builds from the
+    cache: the three tables, every gap, quantile and count, the extremes with their days, the direction sentences and
+    the PIPELINE_STATUS row.
+
+    CAN catch: a re-run or a new station file moving any figure while the prose stays · a record or a reading swapped
+    in a table · a direction sentence outliving the cells it was read from — the builder asserts, and refuses to
+    build otherwise: every conditioned ERA5 cell of the two explicit records positive (all thresholds, three windows,
+    both choices) · which coldest bins carry a mean · the derived record's negative cells being the UTC-day,
+    ERA5-chosen ones · the low quantiles above the station's in all three windows · ERA5 never above the station in
+    the six counted cells · which of the station's two coldest days ERA5 met (inside `_COLD121_LEVEL_K`) · MERRA-2's
+    lowest below the station's · ERA5 the smaller count in every PRINTED column of the edge table and every count of
+    hours · no explicit station minimum on a day of either floor · the SIGN, regime and wind of `81`'s capsule
+    depression · the plain-word sentences of both pages being reworded away (`_COLD121_ANCHORS`).
+    CANNOT catch: whether the station is right about the forest plot, or a reanalysis about the cell; that the capsule
+    is colder than the air is `81`'s, and this test only carries `81`'s one hour and its spread into the sentence;
+    `_COLD121_LEVEL_K` is a named choice, not a measured resolution.
+    Remedy when the 02_03 half reds after a re-run: the ⊕ is dated — append a new dated ⊕ beside it, do not rewrite it."""
+    built = _cold121_paragraphs(C(COLD_EDGE))
+    summary, power, status = doc(SUMMARY), doc(POWER), doc("docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md")
+    for name, text in built["en"].items():
+        where = status if name == "status_row" else summary
+        assert text in where, f"`121`'s «{name}» paragraph is not on its page as the cache builds it:\n{text}"
+    for name, text in built["ua"].items():
+        assert text in power, f"02_03 §12.1 ⊕ 2026-11-13 does not carry its «{name}» sentence as the cache builds it:\n{text}"
+    for rel, anchors in _COLD121_ANCHORS.items():
+        for anchor in anchors:
+            assert anchor in doc(rel), f"{rel} lost the wording `121`'s page stands on: «{anchor}»"
+
+
+def test_cold_edge_cache_is_whole():
+    """`121`'s cache against itself and against its inputs' own counts.
+
+    CAN catch: a record whose paired days exceed the days its file gave · a count of days below a threshold that is
+    not monotone in the threshold · a conditioned bin that is not the count beside it · days with the MAXIMUM below a
+    threshold outnumbering days with the minimum below it · the two hourly series covering different hours · the
+    readings of the edge covering different days · a control recorded as passed with its own numbers saying otherwise
+    (the two file controls, the direction of the clock offset) · the verdict sentence disagreeing with the edge it names.
+    CANNOT catch: a wrong file — the counts are the script's own reading of it."""
+    d = C(COLD_EDGE)
+    inputs, ctl = d["inputs"], d["controls"]
+    sizes = {"ghcnd_2000_2009": inputs["ghcnd_tmin_days"], "gsod_1991_1998_explicit": inputs["gsod_explicit_days"],
+             "gsod_1991_1998_derived": inputs["gsod_derived_days"]}
+    thresholds = [str(t) for t in d["model"]["thresholds_C"]]
+    for name, rec in d["station_records"].items():
+        assert rec["paired_days"] <= sizes[name] and rec["winter_days"] <= rec["paired_days"]
+        series = [rec["station"]["days_below"]] + [r["days_below"] for r in rec["reanalyses"].values()]
+        for counts in series:
+            values = [counts[t] for t in thresholds]            # thresholds run from −10 down: counts cannot grow
+            assert values == sorted(values, reverse=True), f"{name}: days below a threshold are not monotone: {values}"
+        for reading, r in rec["reanalyses"].items():
+            for t in thresholds:
+                assert r["station_below"][t]["days"] == rec["station"]["days_below"][t]
+                assert r["reanalysis_below"][t]["days"] == r["days_below"][t]
+                for cond in ("station_below", "reanalysis_below"):
+                    assert ("mean_K" in r[cond][t]) == (r[cond][t]["days"] >= d["model"]["min_days_for_a_mean"])
+            lag = r["pairing_correlation_by_lag"]
+            assert lag["0"] > lag["-1"] and lag["0"] > lag["1"], f"{name}/{reading}: lag 0 is not the best pairing"
+            assert abs(r["all_days"]["mean_K"]) <= ctl["units_bound_K"]
+    hours = d["hours_below_2001_2020"]
+    assert hours["hours_era5"] == hours["hours_merra2"]
+    for series in ("era5", "merra2"):
+        values = [hours[series][t] for t in thresholds]
+        assert values == sorted(values, reverse=True) and values[0] < hours["hours_era5"]
+    for key in ("era5_files_agree", "merra2_files_agree"):
+        assert ctl[key]["worst_difference_K"] <= ctl[key]["tolerance_K"]
+    by_lag = ctl["era5_utc_offset_direction"]["correlation_by_lag_h"]
+    assert abs(ctl["era5_utc_offset_direction"]["best_lag_h"]) <= 1 and by_lag[str(ctl["era5_utc_offset_direction"]["best_lag_h"])] == max(by_lag.values())
+    assert len({e["days"] for e in d["cold_edge"].values()}) == 1, "the readings of the edge cover different days"
+    assert sum(inputs["ghcnd_dropped_on_quality_flag"].values()) + inputs["ghcnd_tmin_days"] == 2558, "kept plus dropped is every TMIN the README counts"
+    for e in d["cold_edge"].values():
+        assert all(v["seasons_with_any"] <= e["seasons"] for v in e["min_below"].values())
+        assert all(e["max_below"][t]["days"] <= e["min_below"][t]["days"] for t in thresholds), "a day's maximum cannot be below a threshold its minimum is not"
+        assert f"{e['lowest_C']:.1f} °C ({', '.join(e['lowest_days'])})" in d["verdict"] or e is d["cold_edge"]["era5_utc_day"]
 
 
 def test_preserved_form_names_which_side_moved(monkeypatch):
