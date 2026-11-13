@@ -111,8 +111,8 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
       expect(response.parsed_body["timestamps"].length).to eq(2)
     end
 
-    # [ARCH.102] Рядок без виміру (panic) лишається null, а не 0.0: z = 0 канон
-    # читає як катастрофічну втрату тургору, а 0 °C — як мороз.
+    # [ARCH.102] Рядок без виміру (panic) лишається null, а не 0.0: z = 0 лежить нижче
+    # `CRITICAL_Z_MIN` і читався б як статус `stress`, а 0 °C — як мороз.
     it "keeps an unmeasured row as null instead of fabricating 0.0" do
       create(:telemetry_log, tree: own_tree, panic: true, z_value: nil, temperature_c: nil,
                              created_at: 1.hour.ago)
