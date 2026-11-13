@@ -12052,7 +12052,7 @@ def test_exit_radius_in_the_letters_is_116s(label, doc_rel, pattern, resolver):
 
 
 # ── HW.54 what the rising bark passes on the radome (119, 2026-11-13) ⟷ SUMMARY §«What Does the Rising Bark Pass on the
-# Radome…», canon ⊕ in 01_04 §5.5 / §3.1 · 02_01 §5.3 / §3.4 · 01_03 §4 (б), and the open ⚖️ leg of 00_07 HW.54. Tables of
+# Radome…», canon ⊕ in 01_04 §5.5 / §3.1 · 02_01 §5.3 / §3.4 · 01_03 §4 (б), and the ratified verdict in 01_04 §5.5 C (⚖️ 2026-11-13). Tables of
 # outward-rounded spans have too many cells for one pin apiece, so every row and every sentence that carries a number is
 # REBUILT from the cache here and must be found verbatim (in-silico §When Modifying #5 ⊕); requirements round UP, floors
 # and «outlives while below» round DOWN, ranges are already outward in the cache.
@@ -12288,7 +12288,7 @@ def test_bark_overgrowth_documents_follow_the_cache():
     for line in [x for block in rows.values() for x in block] + [v for k, v in f.items() if k != "u"]:
         assert line in summary, f"SUMMARY no longer carries: {line}"
     assert f"by a share U — {f['u']} over its air-dry bark readings" in summary
-    homes = {"codit_": CODIT, "weak": CODIT, "bom_": HW_BOM, "vent_": HW_BOM, "ebfc_": EBFC, "leg_": TRACKER}
+    homes = {"codit_": CODIT, "weak": CODIT, "bom_": HW_BOM, "vent_": HW_BOM, "ebfc_": EBFC, "leg_": CODIT}
     for key, line in ua.items():
         path = next(p for prefix, p in homes.items() if key.startswith(prefix))
         assert line in doc(path), f"{path} no longer carries: {line}"
