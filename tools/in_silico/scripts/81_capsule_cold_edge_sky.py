@@ -21,7 +21,8 @@ MODEL — one isothermal lump (`71`'s geometry from tools/cad/cem/radome.json), 
     the air temperature is worst.
   • Sky — the two ends of `79`: CLEAR every hour (T_sky⁴ = ε_sky·T_a⁴, ε_sky by Brutsaert 1975 from `79`) and
     OVERCAST every hour (T_sky = T_a, no long-wave deficit — on a sunless hour this is `71`'s lump exactly).
-    Real cloud cover is not in the tree.
+    Real cloud cover is not used here: this script keeps the two ends (ERA5 cover has been in the tree since `79`'s
+    cloud regimes, and a satellite-derived sky since `120` — neither is fed to this lump).
   • Sun — the two ends of `79`: none, and ERA5 DIFFUSE through the sky view F (no beam: under a crown or on a north
     face), at the LIGHTEST specified finish α = 0.50 (02_01 §5.2) — the least daytime gain, the cold end of `71`'s
     α sweep.

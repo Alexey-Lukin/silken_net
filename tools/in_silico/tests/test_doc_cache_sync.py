@@ -11003,6 +11003,263 @@ CHECKS += [
 ]
 
 
+# ── HW.6 · 120: the cloudy winter sky read from a satellite product (SUMMARY §HW.6 · 01_04 §3.1 ⊕ 2026-11-13) ──
+# Every sentence of the two pages that carries a number, a set or a direction is BUILT here from the cache and required
+# verbatim — a numeric pin never sees «between», «do not overlap» or «negative in every cell» (in-silico §When Modifying
+# #5), and the first draft of this page said «the sky's form does not decide the sign» against its own table.
+SKY_PRODUCT = "thermal/sky_longwave_product.json"
+_SKY120_SKIES = (("`79` linear", "cloud_linear_{}"), ("`79` B82", "cloud_b82_{}"), ("product, «emissivity» reading", "product_{}_emissivity"),
+                 ("product, «flux» reading", "product_{}_flux"), ("product, «air» reading", "product_{}_air"))
+_SKY120_READINGS = ("emissivity", "flux", "air")
+_SKY120_SUNS = (("no_sun", "without sun", "без сонця"), ("diffuse_sun", "with diffuse sun", "з розсіяним сонцем"))
+_SKY120_MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+
+
+def _sky120_facts(rows: list) -> dict:
+    """`120`'s `bracket` re-typed from its `runs`, with the same definitions as the script's `bracket_facts` — it catches
+    `bracket` drifting from `runs`, not an error of design shared by both — plus what the sentences need per SKY and
+    per CELL (a range over six skies says nothing about any one of them)."""
+    cell = {(r["regime"], r["coupling"], r["wind_k"], r["bark_side"]): r for r in rows}
+    keys = sorted({(r["wind_k"], r["bark_side"]) for r in rows})
+    suns, couplings = tuple(s[0] for s in _SKY120_SUNS), ("decoupled", "tied")
+    col = lambda regime, cp, f: [f(cell[(regime, cp, k, side)]) for k, side in keys]   # noqa: E731
+    share, median = (lambda r: r["colder_share"]), (lambda r: r["shift_K"]["median"])
+    between = pairs = opposite = 0
+    margins, disjoint, touching = [], [], []
+    for sun in suns:
+        for cp in couplings:
+            lin, b82 = col(f"cloud_linear_{sun}", cp, share), col(f"cloud_b82_{sun}", cp, share)
+            if max(b82) < min(lin) or max(lin) < min(b82):
+                disjoint.append((sun, cp, [min(lin), max(lin)], [min(b82), max(b82)]))
+            if cp == "tied":
+                opposite += sum(a * b < 0 for a, b in zip(col(f"cloud_linear_{sun}", cp, median), col(f"cloud_b82_{sun}", cp, median), strict=True))
+            for rd in _SKY120_READINGS:
+                for x, f1, f2 in zip(col(f"product_{sun}_{rd}", cp, share), lin, b82, strict=True):
+                    pairs += 1
+                    between += min(f1, f2) <= x <= max(f1, f2)
+                    margins.append(min(x - min(f1, f2), max(f1, f2) - x))
+                    if margins[-1] == 0:
+                        touching.append((x, f1, f2))
+    product = [(sun, rd) for sun in suns for rd in _SKY120_READINGS]
+    by_sky = {(sun, rd): col(f"product_{sun}_{rd}", "tied", median) for sun, rd in product}
+    med = {cp: [v for sun, rd in product for v in col(f"product_{sun}_{rd}", cp, median)] for cp in couplings}
+    reading_sign = sum(min(by_sky[(sun, rd)][i] for rd in _SKY120_READINGS) < 0 < max(by_sky[(sun, rd)][i] for rd in _SKY120_READINGS)
+                       for sun in suns for i in range(len(keys)))
+    lin_sun = col("cloud_linear_diffuse_sun", "decoupled", median)
+    days = [r["frost_days"] for r in rows]
+    return {"between": between, "pairs": pairs, "margin": min(margins), "touching": len(touching),
+            "touching_at_zero_with_b82": bool(touching) and all(x == 0 and b82 == 0 for x, _, b82 in touching),
+            "disjoint": disjoint, "blocks": len(suns) * len(couplings), "opposite": opposite, "tied_cells": len(keys) * len(suns),
+            "median": {cp: [min(v), max(v)] for cp, v in med.items()}, "linear_sun_decoupled": [min(lin_sun), max(lin_sun)],
+            "product_skies": len(product),
+            "tied_skies_of_both_signs": [k for k, v in by_sky.items() if min(v) < 0 < max(v)],
+            "tied_skies_all_positive": [k for k, v in by_sky.items() if min(v) > 0],
+            "tied_skies_all_negative": [k for k, v in by_sky.items() if max(v) < 0],
+            "tied_cells_where_the_reading_sets_the_sign": reading_sign,
+            "frost_days": [min(days), max(days)]}
+
+
+def _sky120_paragraphs(d: dict) -> dict:
+    """Every sentence of SUMMARY §HW.6 (`120`) and of the 01_04 §3.1 ⊕ 2026-11-13 that carries a number, a set or a
+    direction — built from the cache, never typed."""
+    a, ctl, data, model = d["forms_vs_product"], d["controls"], d["data"], d["model"]
+    regimes, runs = d["frost_half_2001_2020"]["by_regime"], d["frost_half_2001_2020"]["runs"]
+    f = _sky120_facts(runs)
+    bins = a["enhancement_by_era5_cover"]
+    low, part, full = bins[0], bins[1], bins[-1]
+    amount_bin = a["era5_cover_median_within_ceres_amount_bins"][1]
+    sn, sp, cf = a["seasonal_night_medians_covered"], a["seasonal_night_medians_partial_cover"], a["b82_constant_the_product_asks"]
+    clear = a["clear_sky_formula_against_product"]
+    cl = clear["by_class"]
+    frost, cold, mild, summer = cl["all_frost_hours"], cl["frost_hours_below_cold_class"], cl["winter_hours_not_frost"], cl["summer_hours"]
+    d_t = a["era5_minus_product_air_temperature_K"]["mean"]
+    years = f"{data['window_days'][0][:4]}–{data['window_days'][1][:4]}"
+    months = f"{_SKY120_MONTHS[a['months'][0] - 1]}–{_SKY120_MONTHS[a['months'][-1] - 1]}"
+    summer_months = f"{_SKY120_MONTHS[clear['summer_months'][0] - 1]}–{_SKY120_MONTHS[clear['summer_months'][-1] - 1]}"
+    assert (months, summer_months) == ("November–March", "May–August"), "the UA sentences name листопад–березень and травень–серпень"
+
+    def m(x: float, nd: int = 2) -> str:          # a signed number with a true minus
+        return f"{x:+.{nd}f}".replace("-", "−")
+
+    def u(x: float, nd: int = 2) -> str:          # an unsigned-format number with a true minus if it is negative
+        return f"{x:.{nd}f}".replace("-", "−")
+
+    def rng(name: str, cp: str = "tied") -> str:
+        lo, hi = regimes[name][cp]["colder_share_range"]
+        return f"{lo * 100:.0f}–{hi * 100:.0f} %"
+
+    def skies(keys: list, lang: int) -> str:      # «emissivity» and «air» with diffuse sun
+        parts = []
+        for sun, *labels in _SKY120_SUNS:
+            mine = [f"«{rd}»" for s, rd in keys if s == sun]
+            if mine:
+                parts.append((" and " if lang == 0 else " і ").join(mine) + " " + labels[lang])
+        return "; ".join(parts)
+
+    for key in ("brutsaert_minus_product_Wm2", "brutsaert_with_frost_point_minus_product_Wm2", "brutsaert_on_era5_minus_product_Wm2"):
+        assert frost[key] < 0, f"`79`'s clear sky is no longer below the product's on frost hours ({key}) — rewrite the clear-sky sentences"
+
+    table = ["| Sky | tied, no sun | tied, diffuse sun | decoupled, no sun | decoupled, diffuse sun |", "|---|---|---|---|---|"]
+    for label, key in _SKY120_SKIES:
+        table.append(f"| {label} | {rng(key.format('no_sun'))} | {rng(key.format('diffuse_sun'))} | {rng(key.format('no_sun'), 'decoupled')} | "
+                     f"{rng(key.format('diffuse_sun'), 'decoupled')} |")
+
+    above_both = sum(s["product"] > max(s["linear"], s["b82"]) for s in sp["seasons"])
+    below_b82 = sum(s["product"] < s["b82"] for s in sn["seasons"])
+    assert above_both == sp["seasons_total"], "under partial ERA5 cover the product is no longer above both forms in every season — rewrite «A_partial»"
+
+    dec, tied = f["median"]["decoupled"], f["median"]["tied"]
+    dec_en = "negative in every cell of every reading" if dec[1] < 0 else "not of one sign"
+    dec_ua = "відʼємна в кожній клітинці кожного прочитання" if dec[1] < 0 else "не одного знаку"
+    both, pos, neg = f["tied_skies_of_both_signs"], f["tied_skies_all_positive"], f["tied_skies_all_negative"]
+    one_en = " and ".join(x for x in (f"positive in every cell of {len(pos)} ({skies(pos, 0)})" if pos else "",
+                                      f"negative in every cell of {len(neg)} ({skies(neg, 0)})" if neg else "") if x) or "of one sign in none"
+    one_ua = " і ".join(x for x in (f"у {len(pos)} ({skies(pos, 1)}) медіана додатна в кожній клітинці" if pos else "",
+                                    f"у {len(neg)} ({skies(neg, 1)}) — відʼємна в кожній клітинці" if neg else "") if x) or "одного знаку — у жодному"
+    unsettled = bool(both) or f["tied_cells_where_the_reading_sets_the_sign"] > 0
+    settle_en = "So a read sky does not settle the sign under the flange." if unsettled else "So under the read sky the tied end keeps one sign."
+    settle_ua = ("Тобто прочитане небо питання знаку під фланцем не знімає." if unsettled
+                 else "Тобто під прочитаним небом край повного звʼязку тримає один знак.")
+    block_en = {("diffuse_sun", "decoupled"): "the decoupled end with diffuse sun", ("diffuse_sun", "tied"): "the tied end with diffuse sun",
+                ("no_sun", "decoupled"): "the decoupled end without sun", ("no_sun", "tied"): "the tied end without sun"}
+    disjoint_en = "; ".join(f"{block_en[(sun, cp)]}, {lin[0] * 100:.1f}–{lin[1] * 100:.1f} % ⊥ {b82[0] * 100:.1f}–{b82[1] * 100:.1f} %"
+                            for sun, cp, lin, b82 in f["disjoint"])
+    forms_en = (f"their ranges do not overlap in {len(f['disjoint'])} of {f['blocks']} sun-and-coupling blocks ({disjoint_en}), and their median shifts "
+                f"have opposite signs in {f['opposite']} of {f['tied_cells']} tied cells")
+    forms_ua = (f"їхні діапазони не перетинаються в {len(f['disjoint'])} із {f['blocks']} блоків «сонце × звʼязок», а медіани зсуву мають протилежний "
+                f"знак у {f['opposite']} із {f['tied_cells']} клітинок повного звʼязку")
+    if f["between"] == f["pairs"]:
+        if f["touching"]:
+            level_en = (f"{f['touching']} of them at 0 % together with B82" if f["touching_at_zero_with_b82"]
+                        else f"{f['touching']} of them level with one of the forms")
+            level_ua = (f"у {f['touching']} із них — 0 % разом із B82" if f["touching_at_zero_with_b82"]
+                        else f"у {f['touching']} із них — урівень з однією з форм")
+        else:
+            level_en, level_ua = f"the tightest by {f['margin'] * 100:.2f} points", f"найтісніша — на {f['margin'] * 100:.2f} п.п."
+        between_en = (f"Cell by cell, each sky over its own frost days, each reading of the read sky lies between `79`'s two forms — {f['pairs']} of "
+                      f"{f['pairs']} cell-and-reading pairs, {level_en}. `79`'s two forms themselves stand further apart: {forms_en}. Reading the sky "
+                      f"narrows that bracket without closing it: under")
+        between_ua = (f"У кожній із {f['pairs']} пар «клітинка × прочитання» — кожне небо на власних морозних добах — частка під небом продукту "
+                      f"лежить між двома формами ({level_ua}). Самі дві форми розходяться сильніше: {forms_ua}. Під")
+    else:
+        between_en = (f"Each sky over its own frost days: in {f['between']} of {f['pairs']} cell-and-reading pairs the product's share lies between "
+                      f"`79`'s two forms'; the widest miss is {abs(f['margin']) * 100:.1f} points. Of `79`'s two forms, {forms_en}. Under")
+        between_ua = (f"Кожне небо на власних морозних добах: у {f['between']} із {f['pairs']} пар «клітинка × прочитання» частка під небом "
+                      f"продукту лежить між двома формами (найбільший вихід за них — {abs(f['margin']) * 100:.1f} п.п.). У самих двох форм "
+                      f"{forms_ua}. Під")
+    r_lag = ctl["clock_against_era5"]["correlation_by_row_lag"]
+    above = ctl["sky_above_black_body"]
+    spin = model["spin_up_days"]
+
+    en = {
+        "A": (f"On **{a['frost_hours']}** frost hours (ERA5's air below {a['frost_below_C']:g} °C) of {months} {years} the product's cloud enhancement — "
+              f"all-sky over clear-sky flux, a ratio no temperature enters on the product's side — has under full ERA5 cover a median of "
+              f"**{full['product_median']:.3f}** (10th–90th percentile {full['product_p10_p90'][0]:.3f}–{full['product_p10_p90'][1]:.3f}); `79`'s B82 "
+              f"form gives **{full['b82_median']:.3f}** and its linear form **{full['linear_median']:.3f}**. Part of that last gap is not the form: "
+              f"under full cover the linear form's enhancement is 1/ε, and ε is `79`'s clear-sky formula on ERA5; on the product's own clear-sky "
+              f"emissivity — which also puts the product's colder air under the cloud — the linear form gives "
+              f"**{full['linear_on_product_clear_sky_median']:.3f}**."),
+        "A_seasons": (f"By season, under ERA5 cover above {sn['covered_above']}, the product's night medians run **{sn['product_range'][0]:.3f}–"
+                      f"{sn['product_range'][1]:.3f}** over **{sn['seasons_total']}** seasons, against {sn['linear_range'][0]:.3f}–"
+                      f"{sn['linear_range'][1]:.3f} for the linear form ({sn['linear_on_product_clear_sky_range'][0]:.3f}–"
+                      f"{sn['linear_on_product_clear_sky_range'][1]:.3f} on the product's clear sky) and {sn['b82_range'][0]:.3f}–"
+                      f"{sn['b82_range'][1]:.3f} for B82 — nearer B82 in {sn['seasons_product_closer_to_b82']} of {sn['seasons_total']}, nearer "
+                      f"B82 than the linear form on the product's clear sky in "
+                      f"{sn['seasons_product_closer_to_b82_than_to_linear_on_product_clear_sky']} of {sn['seasons_total']}, and below B82 itself "
+                      f"in {below_b82} of {sn['seasons_total']}."),
+        "A_partial": (f"That is a statement about a covered sky. Under ERA5 cover of {sp['cover_at_most']} or less — "
+                      f"**{sp['share_of_frost_hours'] * 100:.0f} %** of frost hours — the product's night median is above BOTH forms in {above_both} "
+                      f"of {sp['seasons_total']} seasons (nearer B82 in {sp['seasons_product_closer_to_b82']}) — more than a black cloud of that "
+                      f"cover gives — so there ERA5's cover is not the product's cloud, and this class says nothing about the form: in the "
+                      f"{part['from']}–{part['to']} bin the product's median is {part['product_median']:.3f} against {part['linear_median']:.3f} for "
+                      f"the linear form and {part['b82_median']:.3f} for B82, and below {low['to']} it is {low['product_median']:.3f} against "
+                      f"{low['linear_median']:.3f} and {low['b82_median']:.3f}."),
+        "A_C": (f"Under cover above {cf['covered_above']} a B82-shaped form meets the product's median hour at C ≈ **{cf['era5_cover']['median']:.2f}** "
+                f"(10th–90th percentile of hours {cf['era5_cover']['p10_p90'][0]:.2f}–{cf['era5_cover']['p10_p90'][1]:.2f}) on ERA5 cover and "
+                f"{cf['ceres_amount']['median']:.2f} on the product's own cloud amount, against the model's {cf['model_C']}."),
+        "clear": (f"On frost hours `79`'s clear-sky formula (Brutsaert 1975), fed the MERRA-2 temperature and dew point POWER serves beside the "
+                  f"flux, is **{abs(frost['brutsaert_minus_product_Wm2']):.1f}** W/m² below the product's clear-sky flux (median emissivity "
+                  f"{frost['emissivity_brutsaert_median']:.3f} against {frost['emissivity_product_median']:.3f}); "
+                  f"**{abs(frost['brutsaert_with_frost_point_minus_product_Wm2']):.1f}** W/m² below it if that «dew/frost point» is a frost point "
+                  f"under 0 °C; and **{abs(frost['brutsaert_on_era5_minus_product_Wm2']):.1f}** W/m² below it as `79` actually computes it, on "
+                  f"ERA5's temperature and dew point. It is a cold-weather gap — formula minus product, on the MERRA-2 inputs and, in brackets, "
+                  f"as `79` computes it: {m(cold['brutsaert_minus_product_Wm2'], 1)} ({m(cold['brutsaert_on_era5_minus_product_Wm2'], 1)}) W/m² on "
+                  f"frost hours colder than {u(clear['cold_class_below_C'], 0)} °C, {m(mild['brutsaert_minus_product_Wm2'], 1)} "
+                  f"({m(mild['brutsaert_on_era5_minus_product_Wm2'], 1)}) on winter hours above freezing, "
+                  f"{m(summer['brutsaert_minus_product_Wm2'], 1)} ({m(summer['brutsaert_on_era5_minus_product_Wm2'], 1)}) in {summer_months}."),
+        "B_intro": (f"The window {data['window_days'][0]} … {data['window_days'][1]} less `79`'s {spin} days of spin-up; `79`'s own columns, "
+                    f"thresholds and `shift_stats`, imported — the share statistic is re-typed from `79`'s `main` with the same "
+                    f"{model['colder_band_K']:g} K band. The share of frost days on which the cambium under the flange takes a daily minimum lower "
+                    f"than under bare bark by more than that band, as a range over wind and the two ends of the bark bracket:"),
+        "table": "\n".join(table),
+        "days": (f"Each sky defines its own frost days — the bark's daily minimum under that sky is below {model['frost_day_C']:g} °C, as in `79` — "
+                 f"so the five skies' shares are taken over different days: {f['frost_days'][0]} to {f['frost_days'][1]} frost days by sky and "
+                 f"cell."),
+        "air": (f"The product's sky is carried in three NAMED readings because ERA5's air runs **{d_t:.2f}** K warmer than the product's on frost "
+                f"hours and nothing here says which air the product's sky belongs with:"),
+        "says": (f"{between_en} the product's sky the median shift is {m(dec[0])}…{m(dec[1])} K at the decoupled end — {dec_en} — where `79`'s linear "
+                 f"form with diffuse sun spans {m(f['linear_sun_decoupled'][0])}…{m(f['linear_sun_decoupled'][1])} K; at the tied end it runs "
+                 f"{m(tied[0])}…{m(tied[1])} K: of both signs across wind and bark in {len(both)} of the {f['product_skies']} product skies, "
+                 f"{one_en}; in {f['tied_cells_where_the_reading_sets_the_sign']} of {f['tied_cells']} tied cells the sign depends on which reading "
+                 f"is taken, against {f['opposite']} of {f['tied_cells']} between `79`'s two forms. {settle_en}"),
+        "black": (f"The product's sky is above a black body at the air temperature on {above['emissivity']['share_of_frost_hours'] * 100:.1f} % of "
+                  f"frost hours in the «emissivity» and «air» readings and {above['flux']['share_of_frost_hours'] * 100:.1f} % in «flux» (largest "
+                  f"emissivity {max(v['largest_emissivity_on_frost_hours'] for v in above.values()):.2f}); `79`'s own forms never are, and no cap "
+                  f"is applied."),
+        "clock": (f"This stands on POWER's documentation; the controls are narrower. `79`'s own B82 sky sent round the product's clock returns "
+                  f"`79`'s native B82 series to {ctl['injection_equals_native_b82']['clock_round_trip_max_abs_difference_K']:.0e} K — a check of "
+                  f"the lookup against its own shift, which passes at any shift. The hour-to-hour changes of the product's air temperature "
+                  f"correlate with ERA5's best at the pairing used (r {r_lag['0']:.3f}, against {r_lag['-1']:.3f} and {r_lag['1']:.3f} one row "
+                  f"either side) — a check on MERRA-2's temperature, not on the CERES fluxes, and it does not separate half an hour. The unshifted "
+                  f"pairing moves a share of the «flux» reading by at most "
+                  f"{ctl['unshifted_clock_flux_reading_largest_share_move'] * 100:.1f} points."),
+        "cover": (f"under a product cloud amount of {amount_bin['from']:g}–{amount_bin['to']:g} % the median ERA5 cover is "
+                  f"{amount_bin['era5_cover_median']:.2f}"),
+        "b82": f"«B82» (clear sky × (1 + {model['b82_C']}·c²))",
+    }
+    ua = {
+        "forms": (f"На морозних годинах (мороз — за повітрям ERA5) листопада–березня {years} відношення цих двох потоків під суцільним покривом "
+                  f"ERA5 має медіану **{full['product_median']:.3f}**; форма B82 дає **{full['b82_median']:.3f}**, лінійна — "
+                  f"**{full['linear_median']:.3f}** (на власному ясному небі продукту — {full['linear_on_product_clear_sky_median']:.3f}), і за "
+                  f"покриву ERA5 понад {sn['covered_above']} нічна медіана продукту ближча до B82 у {sn['seasons_product_closer_to_b82']} із "
+                  f"**{sn['seasons_total']}** сезонів. За покриву ERA5 {sp['cover_at_most']} і менше — {sp['share_of_frost_hours'] * 100:.0f} % "
+                  f"морозних годин — нічна медіана продукту вища за ОБИДВІ форми у {above_both} із {sp['seasons_total']} сезонів: покрив ERA5 там "
+                  f"не є хмарою продукту, тож про форму цей клас не каже нічого."),
+        "clear": (f"Окремо, на морозних годинах: ясне небо за Брутсертом на температурі й точці роси MERRA-2, які POWER віддає поруч із потоком, "
+                  f"нижче за ясний потік продукту на **{abs(frost['brutsaert_minus_product_Wm2']):.1f}** Вт/м², а як його рахує сама `79`, на "
+                  f"ERA5, — на **{abs(frost['brutsaert_on_era5_minus_product_Wm2']):.1f}** Вт/м²."),
+        "shares": (f"без сонця — **{rng('product_no_sun_emissivity')}**, **{rng('product_no_sun_flux')}** і **{rng('product_no_sun_air')}** за трьома "
+                   f"названими прочитаннями (лінійна форма на тих самих роках — {rng('cloud_linear_no_sun')}, B82 — {rng('cloud_b82_no_sun')}); з "
+                   f"розсіяним сонцем — **{rng('product_diffuse_sun_emissivity')}**, **{rng('product_diffuse_sun_flux')}** і "
+                   f"**{rng('product_diffuse_sun_air')}** (лінійна — {rng('cloud_linear_diffuse_sun')}, B82 — {rng('cloud_b82_diffuse_sun')})."),
+        "says": (f"{between_ua} прочитаним небом медіана зсуву на розвʼязаному краї — {m(dec[0])}…{m(dec[1])} K ({dec_ua}), на краї повного звʼязку — "
+                 f"{m(tied[0])}…{m(tied[1])} K: обидва знаки в межах одного неба — у {len(both)} із {f['product_skies']} неб продукту, {one_ua}; у "
+                 f"{f['tied_cells_where_the_reading_sets_the_sign']} із {f['tied_cells']} клітинок знак залежить від прочитання (між двома формами "
+                 f"`79` — у {f['opposite']} із {f['tied_cells']}). {settle_ua}"),
+        "air": (f"три прочитання розходяться, бо повітря ERA5 на морозних годинах тепліше за повітря продукту на **{d_t:.2f}** K, і жодне з них не "
+                f"обрано"),
+    }
+    return {"en": en, "ua": ua}
+
+
+# Wording the builder does not build but the page stands on — a direction or a convention said in plain words.
+_SKY120_ANCHORS = {
+    SUMMARY: ("POWER stamps an hourly value with the start of the hour it averages",
+              "`79` applies a row to the hour ending at it, so a product hour lands one row later than its stamp",
+              "reduces to the clear branch with no black-body cap",
+              "on a winter window where B82's black-sky cap never binds",
+              "is paired as the temperature at the end of its hour — up to half an hour late",
+              "the sign at the site stays the pair's"),
+    CODIT: ("край повного звʼязку, частка морозних діб «холодніше під фланцем»",
+            "дужку воно звужує й не закриває",
+            "Формулу 2026-10-14 це не замінює",
+            "неба (⊕ 2026-11-13 нижче). Модель бере дві форми.",
+            "тож вони лишаються дужкою (⊕ 2026-11-13 нижче).",
+            "діє на ділянці (про неї — ⊕ 2026-11-13 нижче;",
+            "— з 2001 року."),
+}
+
+
 class _Preserved:
     """A number that sits INSIDE a preserved form — a ratified verdict, its submission or a dated ⊕ addendum
     (00_05 §7): the form is appended to, never rewritten. A plain pin on such a number compares the doc with the
@@ -11167,6 +11424,85 @@ def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
         f"[{label}] DOC↔CACHE DRIFT: {doc_rel} says {doc_val} but "
         f"{cache_rel} says {cache_val} (|Δ|={abs(doc_val - cache_val):.4g} > tol {tol}). {remedy}"
     )
+
+
+def test_sky_product_pages_are_built_from_the_cache():
+    """SUMMARY §HW.6 (`120`) and the 01_04 §3.1 ⊕ 2026-11-13 carry, verbatim, the paragraphs `_sky120_paragraphs` builds
+    from the cache — every number at the precision printed, every «between», «do not overlap», «negative in every
+    cell», «below», the table with its header, and the «to 10⁻¹³ K» of the control.
+
+    CAN catch: a re-run moving any figure while the prose stays · a column or a reading swapped · a sentence about a
+    set or a direction outliving the cells it was read from · the clear-sky gap changing sign under «below» · a
+    control residual growing past the page's «10⁻¹³ K» · the plain-word conventions the builder does not build
+    (which end of the hour the stamp is, which way the row lands, «no cap», the three pointers of 01_04) being
+    reworded away — `_SKY120_ANCHORS`.
+    CANNOT catch: whether the product is right about the sky, or `79` about the bark — the page is held to the cache,
+    the cache to nothing here. The prose around these paragraphs (ceilings, the question) is not pinned.
+    Remedy when the 01_04 half reds after a re-run: the ⊕ is dated — append a new dated ⊕ beside it, do not rewrite it."""
+    d = C(SKY_PRODUCT)
+    built = _sky120_paragraphs(d)
+    summary, codit = doc(SUMMARY), doc(CODIT)
+    for name, text in built["en"].items():
+        assert text in summary, f"SUMMARY §HW.6 (`120`) does not carry its «{name}» paragraph as the cache builds it:\n{text}"
+    for name, text in built["ua"].items():
+        assert text in codit, f"01_04 §3.1 ⊕ 2026-11-13 does not carry its «{name}» sentence as the cache builds it:\n{text}"
+    for rel, anchors in _SKY120_ANCHORS.items():
+        for anchor in anchors:
+            assert anchor in doc(rel), f"{rel} lost the wording `120`'s page stands on: «{anchor}»"
+    ctl = d["controls"]["injection_equals_native_b82"]
+    assert ctl["max_abs_difference_K"] < 1e-13 and ctl["clock_round_trip_max_abs_difference_K"] < 1e-13, (
+        "a B82 control residual left the «10⁻¹³ K» SUMMARY states")
+    assert "returns `79`'s native B82 cambium series to 10⁻¹³ K" in summary
+    assert set(d["model"]["readings"]) == set(_SKY120_READINGS), "SUMMARY names three readings"
+
+
+def test_sky_product_cache_is_whole():
+    """`120`'s cache against itself: what it states in one place is recounted from another.
+
+    CAN catch: `bracket` drifting from `runs` (re-typed here with the script's own definitions — a shared error of
+    design passes) · a share that is
+    not its own day counts · a range in `by_regime` that is not the range of its runs · a seasonal count that is not
+    the count of its season list · the clock control recorded with a best lag other than the pairing used · the
+    unshifted sensitivity not being the largest move between its two run lists.
+    CANNOT catch: an error inside `79.simulate` or in the product — both sides of every check come from one run."""
+    d = C(SKY_PRODUCT)
+    half = d["frost_half_2001_2020"]
+    runs, by_regime, bracket = half["runs"], half["by_regime"], half["bracket"]
+    f = _sky120_facts(runs)
+    assert (bracket["reading_cells_between_the_two_forms"], bracket["reading_cells_total"]) == (f["between"], f["pairs"])
+    assert bracket["smallest_margin_inside_the_forms"] == pytest.approx(f["margin"], abs=1e-12)
+    assert bracket["tied_cells_where_the_forms_medians_have_opposite_signs"] == f["opposite"]
+    assert bracket["product_median_K_range"] == f["median"]
+    assert bracket["linear_diffuse_sun_decoupled_median_K_range"] == f["linear_sun_decoupled"]
+    assert [(b["sun"], b["coupling"]) for b in bracket["forms_ranges_that_do_not_overlap"]] == [(sun, cp) for sun, cp, _, _ in f["disjoint"]]
+    assert len(runs) == 10 * 2 * 2 * 2, "five skies × sun or none × two couplings × two winds × two bark ends"
+    for r in runs:
+        assert r["colder_share"] == pytest.approx(r["colder_days"] / r["frost_days"], abs=1e-12)
+        assert r["frost_days"] == r["shift_K"]["frost_days"]
+    for regime, by_cp in by_regime.items():
+        for cp, row in by_cp.items():
+            mine = [r["colder_share"] for r in runs if r["regime"] == regime and r["coupling"] == cp]
+            assert row["colder_share_range"] == [min(mine), max(mine)], f"{regime}/{cp}: the range is not the range of its runs"
+            its = [r for r in runs if r["regime"] == regime and r["coupling"] == cp]
+            assert row["median_K_range"] == [min(r["shift_K"]["median"] for r in its), max(r["shift_K"]["median"] for r in its)]
+            assert row["frost_days_range"] == [min(r["frost_days"] for r in its), max(r["frost_days"] for r in its)]
+    for block in ("seasonal_night_medians_covered", "seasonal_night_medians_partial_cover"):
+        sn = d["forms_vs_product"][block]
+        assert sn["seasons_total"] == len(sn["seasons"])
+        assert sn["seasons_product_closer_to_b82"] == sum(abs(s["product"] - s["b82"]) < abs(s["product"] - s["linear"]) for s in sn["seasons"])
+        assert sn["seasons_product_closer_to_b82_than_to_linear_on_product_clear_sky"] == sum(
+            abs(s["product"] - s["b82"]) < abs(s["product"] - s["linear_on_product_clear_sky"]) for s in sn["seasons"])
+        for key in ("product", "linear", "b82", "linear_on_product_clear_sky"):
+            mine = [s[key] for s in sn["seasons"]]
+            assert sn[f"{key}_range"] == [min(mine), max(mine)], f"{block}: `{key}_range` is not the range of its seasons"
+    clock = d["controls"]["clock_against_era5"]
+    by_lag = clock["correlation_by_row_lag"]
+    assert clock["best_row_lag"] == 0 and by_lag["0"] == max(by_lag.values())
+    assert clock["stamp_lag_rows_applied"] == d["data"]["product_stamp_lag_h"] == 1
+    shifted = {(r["regime"], r["coupling"], r["wind_k"], r["bark_side"]): r["colder_share"] for r in runs}
+    moves = [abs(r["colder_share"] - shifted[(r["regime"], r["coupling"], r["wind_k"], r["bark_side"])]) for r in half["unshifted_flux_runs"]]
+    assert len(moves) == 16 and d["controls"]["unshifted_clock_flux_reading_largest_share_move"] == pytest.approx(max(moves), abs=1e-12)
+    assert f"In {f['between']} of {f['pairs']} cell-and-reading pairs" in d["verdict"]["text"], "the cache's verdict text and its runs disagree"
 
 
 def test_preserved_form_names_which_side_moved(monkeypatch):

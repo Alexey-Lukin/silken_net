@@ -15,6 +15,10 @@ Open-Meteo Historical Weather API, reanalysis model **ERA5** pinned by `models=e
 49.5 N, 32.0 E, elevation 111 m); the variable is the daily mean of 2 m air temperature, °C. 10 958 days, no gaps.
 The CSV is the `daily` block of that response, unchanged.
 
+⊕ 2026-11-13 — a second reader: `tools/firmware/queen_energy_budget.rb` takes this daily mean as the battery-cell
+temperature for the LiFePO4 charge block of `docs/02_05 §4а.5` (HW.14). What the series is not for THAT use — an
+enclosure in the sun, a night colder than the day's mean — is said in the model's own comments.
+
 **Declared ceiling — what this series is NOT:**
 - **Air, not stem.** The anchor sits inside a pine stem, whose temperature damps the air's extremes; damping
   lowers `T_eff`, so an air-based `T_eff` is an UPPER bound on the stem's → the field-year equivalence it
