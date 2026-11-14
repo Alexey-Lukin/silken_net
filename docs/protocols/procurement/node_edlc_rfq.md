@@ -50,7 +50,7 @@
 | **Part B п. 4** (пайка в автоматизованому виробництві) | HW.37 👤 «котирування кроку пайки двох THT-виводів» | Умови пайки й keep-out — у крок збирання ([`02_03 §12.1`](../../02_03_BQ25570_MPPT_Nano_Power.md)) і в розводку ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.9: keep-out навколо двох THT-падів на верху RF Deck задає обраний процес) |
 | **Part B п. 3a–b** (ємність між +20 і −25 °C · розкид партій) | HW.44, нога «виміряні входи моделі» (ємність на +20 °C і на морозі) | Вхід вікна [`02_03 §9.8а`](../../02_03_BQ25570_MPPT_Nano_Power.md) і `ruby tools/firmware/boot_brownout_cycle.rb` (ємність — рядок «номінал»): на моделі на нижньому краю допуску CCM уже циклить на warmup (⊕ там само; знаки біля нуля — модельні), тож відповідь рухає підставу HW.44 заборони CCM (ARCH.8 → FW.2), а не лише число. Typical-крива — не гарантія: гарантує лише край −20 %; ємність НАШОЇ деталі — крок стенда HW.37 «ємність у вікнах моделі» у [`02_04 §4.1`](../../02_04_Bench_Build_Guide.md), і то кілька деталей однієї закупівлі (1–3 зразки, [`02_04 §1`](../../02_04_Bench_Build_Guide.md)), не розподіл партій |
 | **Part B п. 3f–h** (ESR · опір під імпульсом · ріст за ресурсом) | HW.37 — нога повернення вибору SKU · HW.44 — прочитання ESR моделі boot↔brownout | Рядок ESR [`02_03 §12.1`](../../02_03_BQ25570_MPPT_Nano_Power.md) і прочитання ESR у `ruby tools/firmware/boot_brownout_cycle.rb`: від опору залежить, чи живиться кадр нижче верху вікна і чи вузол, увімкнений на 3.40 В, переживає перший же кадр. Поріг, що вирішує, — boot-TX (≈ 2.7 Ом), а не паспортний максимум; вибір SKU повертається founder-у за виміром RUNBOOK 3.7 (присуд 2026-10-27 — «записати й міряти»). Typical-ESR від FAE і 1-кГц ESR — ще не опір нашої деталі під 0.2-с імпульсом: його міряє стенд |
-| **Part B п. 3c–e** (нижче −25 °C) | HW.37, та сама нога, ⊕ про підлогу −25 °C | Підлогу −25 °C канон уже несе — [`02_03 §12.1`](../../02_03_BQ25570_MPPT_Nano_Power.md) (Eaton Technical Data 4327: вужча за огинаючу капсули −40…+85 °C); туди ж сідає й відповідь про те, що нижче неї, вибір — за тим, хто інтегрує |
+| **Part B п. 3c–e** (нижче −25 °C) | HW.37, та сама нога, ⊕ про підлогу −25 °C | Підлогу −25 °C канон уже несе — [`02_03 §12.1`](../../02_03_BQ25570_MPPT_Nano_Power.md) (Eaton Technical Data 4327: вужча за огинаючу капсули −40…+85 °C); туди ж сідає й відповідь про те, що нижче неї, вибір — за тим, хто інтегрує. ⊕ 2026-11-14: відповідь на 3c–3e судить 🔗-нога HW.37 «відповідь FAE на Part B 3c–3e або стенд → ⚖️ вибір SKU повертається …» (⚖️ founder 2026-11-14, ⊕ біля присуду KR у [`02_03 §12.1`](../../02_03_BQ25570_MPPT_Nano_Power.md)) |
 
 ---
 
@@ -184,6 +184,26 @@ Thank you in advance.
 One more question to item 1 of Part B in our earlier message, if we may.
 
 Your application guidelines (Technical Note PS-5006) state that the lifetime of a supercapacitor halves for every 10 °C rise in temperature, while the lines of Figure 1 in the same note fall by roughly a factor of three per 10 °C. For the KR-5R5H474-R held at 4.82 V between −25 °C and +30 °C, which of the two should we use to estimate its life? If neither holds at these temperatures, please tell us what does.
+
+Thank you.
+
+`[sender's signature and contact details — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
+## 📤 Reminder block (EN) — нагадування з холоднішим краєм капсули
+
+> **Репо-нота (у лист НЕ йде).** ⚖️ founder 2026-11-14 — «так» на опцію (В) подання про підлогу іоністора ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.37) і «так, добре» на підхід: одне коротке нагадування за правилом комерційного листа ([`rfq_registry`](rfq_registry.md) §3), лише якщо до дати нагадування (нога нагадування HW.37) тиша; якщо відповідь прийде раніше — питання цього блоку окремим листом у тому самому треді. **Числа листа й їхні доми:** «within about 1 °C of −40 °C» — −39.02 °C (погодинний ряд MERRA-2, формула неба), −40.21 °C (з множником ядра ×0.7), −40.70…−41.17 °C (добовий мінімум 1997-12-16) — кеш `122` і ⊕ 2026-11-14 у [`02_03 §12.1`](../../02_03_BQ25570_MPPT_Nano_Power.md); «about 114 hours» і «an average of about 53 hours a year» (середнє за 20 років, найхолодніше з трьох неб) — `SUMMARY.md` §HW.37 (`122`). Речення про PS-5006 — Technical Note PS-5006 «Effective December 2017», с. 2, «Ambient temperature» (рядок ESR [`02_03 §12.1`](../../02_03_BQ25570_MPPT_Nano_Power.md), ⊕ 2026-11-14); ⛔ перед відправкою звірити за першоджерелом на сайті Eaton. Шкала відповіді — у 🔗-нозі HW.37 «відповідь FAE на Part B 3c–3e …». **«Так» founder-а на САМ текст — 2026-11-14.** Відправка — у дату нагадування (нога нагадування HW.37), лише якщо тиша, і лише після звірки речення PS-5006 за першоджерелом на сайті Eaton; якщо першоджерело його не підтвердить — абзац «In particular» переписати й показати founder-у знову (це вже інший текст).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+A short reminder of our two messages below about the KR-5R5H474-R. If they have not yet reached your supercapacitor application engineers, please forward them. Any answer helps, even a partial one, and "no data" is a useful answer too.
+
+One update to items 3c to 3e of Part B. We have since run our thermal model of the capsule on a second reanalysis of the region's air, which is colder than the first on cold nights. In the coldest case we modelled (clear sky, no sun, still air — not a forecast), the capsule now comes to within about 1 °C of −40 °C, with a longest spell of about 114 hours below −25 °C and an average of about 53 hours a year below it. So 3c to 3e now matter to us down to −40 °C.
+
+In particular: your application guidelines (Technical Note PS-5006) say that at low temperatures the rise in ESR is only temporary. Does this also hold for the KR-5R5H474-R after hours at −30 to −40 °C, below its rated range, and does its capacitance also return to its earlier value once back at +20 °C?
 
 Thank you.
 
