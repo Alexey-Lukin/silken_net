@@ -340,6 +340,10 @@ Anchor mechanics (CPU):
      lives in the script) — 52 and 73 still read lib `GENEROUS_ORING_BOUND_N` until they re-run with the root package (00_07 HW.9)
   55 → 77 (bus_mechanical.json: the lock insertion window) · tools/cad/cem → 77 (gyroid · sleeve geometry at runtime)
   62 → wind_duty_cycle.json → 55 · 59 (cycle budget; 55 prints NOT COMPUTED without it)
+  62 (wind_duty_cycle.json: the Beaufort anchors) · 98 (field_strain_campaign.json: the Beaufort-5 threshold, January's
+     hours as a control) · data/station_cherkasy (GSOD wind, MERRA-2 daily and hourly) · data/era5_cherkasy (hourly wind) ·
+     62's input file (a control on its day rule) → 123 (wind_reanalyses_station.json — the two reanalyses of the wind
+     against the station); a re-run of 62 or 98 that moves a threshold re-runs 123
   66 → tools/cad TopologyCrossChecks (a C# consumer: no Python re-run reaches it)
   51 → 71 (importlib: `capacitor_life_hours` — a kernel change re-runs 71 too) · tools/cad/cem → 71 (radome geometry at runtime)
   71 → 78 (importlib: the hourly capsule balance at both h_c readings, checked against capsule_envelope.json's

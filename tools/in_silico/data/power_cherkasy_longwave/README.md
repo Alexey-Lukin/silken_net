@@ -55,6 +55,27 @@ run if an hour is unmatched. What checks that pairing, and what cannot — `120`
   hourly for each equal-area grid by removing clouds» (§1.2.2): the clear-sky flux is the all-sky computation without clouds, on
   GEOS-5.4.1 profiles, not on the MERRA-2 air of the same row. Which edition POWER serves, and the surface-flux accuracy summary,
   are still not read.
+  ⊕ 2026-11-14 — read (the lines above are not rewritten):
+  (a) EDITION. POWER's methodology page (`https://power.larc.nasa.gov/docs/methodology/data/sources_fluxes/`) lists «CERES SYN1deg
+  Edition 4.2» from January 1, 2001; the Data Quality Summary's title page names «Terra-Aqua-NOAA20 Edition4B — Release Date: May 7,
+  2025» and says «SYN1deg Edition4B (Edition4.2 on the ordering tool)». The API response names no edition, so «the rows are
+  Edition4B» is POWER's statement about its archive, not something read from this file.
+  (b) CELL. Not 1° × 1° at this latitude. The same summary, §3: «Processing is performed on a nested grid (Table 3-1) … The final
+  product contains a complete 360x180 1° grid created by replication», and Table 3-1 gives the segment 45° to 70° a longitude
+  extent of 2°. A probe of the POWER API around the point (2026-11-14; points and responses in the handoff corpus,
+  `2026-11-14_hw6_ceres_syn1deg_primary.md`) returned one value over 49–50° N × 32–34° E; the point sits near that cell's western edge.
+  (c) ACCURACY AT AN HOURLY STEP. No validation of Edition4B is published («An updated Data Quality Summary will be available
+  soon»). For Edition 4A: CERES_SYN1deg_Ed4A «Surface Flux Accuracy and Validation», 4/8/2021, Table 1 («Uncertainty (k=1 or 1σ)»)
+  — downward longwave, land: mean irradiance 333, hourly gridded 24, monthly gridded 10 W/m². Rutan et al. 2015 validate
+  Edition 3A at a 3-hourly step (their Table 4, SYN1deg, all sites: standard deviation 20.4 W/m², 6.2 %). Neither gives a night,
+  winter or snow-cover breakdown.
+  (d) NIGHT CLOUD. The Data Quality Summary, §4.1: when a geostationary satellite «is upgraded to a newer generation instrument,
+  the discontinuity in fluxes at the temporal boundary is more pronounced in Ed4A than in Ed3A»; the surface summary: «The
+  difference in nighttime cloud properties is larger than the difference in daytime cloud properties». So the twenty winters are
+  not one instrument, and `120` does not split its seasons by that boundary; which geostationary domain serves 32–34° E after
+  2004 is not read.
+  What this changes: the cell and the edition are named; an hourly uncertainty of that size is the scatter of single hours, not
+  a statement about a median over frost nights — the numbers of `120` still compare forms and do not calibrate `79`.
 - **Not on ERA5's temperature.** `T2M` and `T2MDEW` are MERRA-2's; on frost hours ERA5's air temperature at the
   same point runs warmer (`120` prints by how much). A flux in W/m² set against ERA5's black-body flux therefore
   mixes the two reanalyses; `120` judges the cloud term by the ratio all-sky / clear-sky, which no temperature

@@ -37,6 +37,11 @@ the month's rate, never as a length.
 CAN: say which start months make a short campaign likely, how often a winter fails to deliver, and price it in trips.
 CANNOT: say how ERA5's open-terrain grid wind relates to the wind under the canopy at anchor height — that transfer is
 exactly what the campaign measures, and with ≈ 2 storms in 10 hours one campaign cannot show that it is stable; say
+the site's absolute wind climate — against the Cherkasy station ERA5 runs somewhat below it on the daily mean and
+far below it at strong wind, while MERRA-2 (the series `62` counts on) holds many times ERA5's Beaufort-5 hours; yet
+the two reanalyses rank the station's windy days alike (script 123, cache mechanical/wind_reanalyses_station.json).
+So the «8 m/s» of the stop rule is ERA5's own level, not an anemometer's, and the plan is self-consistent by
+construction — the hours are binned and counted on this same series; say
 whether TARGET_HOURS is enough for a histogram's tail; price cold derating in (3)–(4) (USABLE_FRACTION = 1, so those
 battery days are a ceiling and those trips a floor). (5) CAN say what each chemistry costs in mass and price, how often the
 site's air crosses each sheet's discharge floor and the AGM freezing curve, and what the makers' cold readings would do

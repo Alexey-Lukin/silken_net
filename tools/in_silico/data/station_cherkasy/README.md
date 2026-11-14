@@ -1,8 +1,9 @@
-# Cherkasy synoptic station — daily minimum temperature, two records; and MERRA-2 daily minima for the same point
+# Cherkasy synoptic station — daily minimum temperature and wind; and MERRA-2 for the same point
 
 **What it is for:** `scripts/121_cold_edge_station.py` (HW.37) — whether the reanalysis the cold edge stands on (ERA5,
 `../era5_cherkasy/`) runs warm on cold nights, on two station records that share no day, and what a second reanalysis
-gives for the same edge.
+gives for the same edge. And `scripts/123_wind_reanalyses_station.py` (HW.43) — which of the two reanalyses the station's
+own wind sits nearer to.
 
 **Provenance — the queries, not only the results** (all fetched 2026-11-13 with `curl`; each file is the response,
 unchanged, gzipped):
@@ -48,6 +49,19 @@ through 12/31/2020 in UTC», «Location: latitude  49.44   longitude 32.06», «
 0.625 degree lat/lon region = 116.19 meters», «T2M_MIN       MERRA-2 Temperature at 2 Meters Minimum (C)». 10 958 days,
 no missing value in T2M_MIN or T2M_MAX. The point is the one the ERA5 files were asked for.
 
+`power_merra2_hourly_wind_2001_2020.csv.tar.gz` — NASA POWER Hourly API, one request per year, the twenty responses
+unchanged (fetched 2026-11-13 with `curl`; the tarball was re-packed on 2026-11-14 without the archiver's `._*`
+side files — the members are byte-identical):
+
+```
+https://power.larc.nasa.gov/api/temporal/hourly/point?parameters=WS10M,WS50M,T2M&community=RE&longitude=32.06&latitude=49.44&start=<YEAR>0101&end=<YEAR>1231&format=CSV&time-standard=UTC
+```
+
+Header of each response, verbatim: «NASA/POWER Source Native Resolution Hourly Data», «in UTC», «WS10M     MERRA-2 Wind
+Speed at 10 Meters (m/s)». 175 320 hours, no missing value in `WS10M`. `123` checks it against the daily file above
+(the daily mean and maximum are the mean and maximum of these hours over the UTC day) and against the file `62` reads
+(`../nasa_power_cherkasy_ws10m_2015_2024.json`, whose days are POWER's LST — UTC + 2 h here).
+
 **Declared ceiling — what these series are NOT:**
 - **One station, and not the forest plot.** A synoptic site at a town against reanalysis cells of 0.25° and
   0.5° × 0.625°: part of any gap is siting — cold-air pooling, snow under the screen — not reanalysis error.
@@ -61,5 +75,10 @@ no missing value in T2M_MIN or T2M_MAX. The point is the one the ERA5 files were
 - **MERRA-2's daily minimum is the minimum of its hourly field on a UTC day** — checked by `121` against the hourly
   2 m temperature of `../power_cherkasy_longwave/` on every day of 2001–2020 (control 5); hourly MEANS, so it sits at
   or above the continuous minimum, as ERA5's lowest of 24 instants does.
-- **The wind columns** (GSOD `WDSP` · `MXSPD`, MERRA-2 `WS10M` · `WS10M_MAX`) ride in the responses and no script reads
-  them yet.
+- **The wind columns** (GSOD `WDSP` · `MXSPD`, MERRA-2 `WS10M` · `WS10M_MAX`) are read by
+  `scripts/123_wind_reanalyses_station.py` (HW.43). GSOD's wind is in knots and the station's reports are whole metres
+  per second (every `MXSPD` lands on that grid — `123`, control 2), so a station threshold is a threshold on an integer;
+  `WDSP_ATTRIBUTES` is the number of reports behind the day's mean, four to ten. The product's readme (same file as
+  above): «WDSP - Mean wind speed for the day in knots to tenths. Missing = 999.9»; «MXSPD - Maximum sustained wind speed
+  reported for the day in knots to tenths. Missing = 999.9». The anemometer's height, type and averaging time are not
+  read from a station manual.

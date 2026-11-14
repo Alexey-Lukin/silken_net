@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 409 · 34,362,958 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 413 · 35,973,162 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -71,6 +71,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/120_sky_longwave_product.py` | `9b7240df7f35a29161e5e85d138b841c4cfd95bff7daf77a979f61688bdac896` | Which cloudy-sky long-wave form a winter sky follows: two textbook forms and a clear-sky formula set against a satellite-derived hourly surface flux product over twenty winters, and the cambium temperature under a titanium flange against bare bark recomputed under that product's sky in three named readings. |
 | `tools/in_silico/scripts/121_cold_edge_station.py` | `8d6ecc56e78354ed12461678689bbddac4ffeb88805d45cadad3b9255e672b33` | Whether a reanalysis runs warm on cold nights: daily minimum air temperature of two reanalyses against two non-overlapping records of one synoptic station, with the gap conditioned on the station, on the reanalysis and on neither, and the cold edge of twenty-nine seasons read from both reanalyses. |
 | `tools/in_silico/scripts/122_capsule_cold_edge_second_reading.py` | `070e042b565121214e740b8b94fc4077d903317df603c938edbb16d31bf03f32` | Cold edge of the sensor capsule (isolated lump, no sun, still air) on a second reanalysis reading of the air under three readings of the sky, hourly over twenty years, and at every daily minimum of the ten years before them, against the capsule's temperature requirement. |
+| `tools/in_silico/scripts/123_wind_reanalyses_station.py` | `a76459a766cb1722631406b46cc589e99bab3b0d73d5587351b1660fe9243ce2` | Two reanalyses of the 10 m wind against one synoptic station's daily mean and daily maximum wind, with the gap conditioned on the station, on the reanalysis and on neither, and the strong-wind hours of nineteen winter seasons read from both reanalyses. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `21c4b260195f62e079d7505e26cc41cd3519417d8f2047ddec96976b02c062fc` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
 | `tools/in_silico/scripts/13_psbma_diffusion_md.py` | `1df7d7778e3fc058fa5f00cc181eaf242148a6dfbffd262543e0c617c50828c8` | L2 — glucose diffusion through PSBMA membrane layer. |
 | `tools/in_silico/scripts/14_xylem_sap_sweep_md.py` | `e4a8753f04783fc3198835d35935899a64d90aeb0b3cdbd223d6b4421e2d6c6b` | L2 — xylem sap composition sweep: test enzyme stability across tree species. |
@@ -121,7 +122,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `332f8fbbb92021d0668ad1a02e3dae327b659bab8f5b4c21d843de1ca4684326` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
 | `tools/in_silico/scripts/60_paper_figures.py` | `a7bea736289d89226b3543be5d955e5a3047d3aa1acff2b983f237c67b4bf811` | Publication figures, rendered entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `1c6ef6bc04313d5a541e0391bab0be023889ff029deb891d938b740ec0a60673` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
-| `tools/in_silico/scripts/62_wind_duty_cycle.py` | `008a9f5f92299c409237fb5cab21b64d514c9b1623794ee00c0be32922ae4980` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
+| `tools/in_silico/scripts/62_wind_duty_cycle.py` | `d28b6a000241f7bf54f930be78af4f46c5e058e74551286fad724d064d53f96f` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
 | `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `76432bc57d246cc71c5f1b41bc9156af4248a562281f7f59c6be02ea36f7edd0` | Does a second power source on the same BQ25570 rail contaminate the recharge-interval signal delta_t? |
 | `tools/in_silico/scripts/64_teg_across_peek_break.py` | `04a03c4ee245c785f7d17cf19b5f68619f37a609a5e6f9315fc40e09f639fbc1` | Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark? |
 | `tools/in_silico/scripts/65_zif_radiosensitization.py` | `1893e0838191293f9f2ecfc0c248bed1d136ff5f94b5141828975e3502bae755` | Does the ZIF nanozyme radiosensitise the enzyme stack under Co-60 gamma sterilisation? A desk verdict. |
@@ -157,13 +158,13 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/95_cascade_like_for_like.py` | `e727efbe88e657f4189b8615db6eae84220ddb45878c6ca01822a2bf6c0f8d25` | L3 anode cascade like-for-like: the 2e⁻/2H⁺ FAD potential at 32b's four levels (MMFF electronic = 32 · relaxed · + ZPE · + RRHO) against the Os(III/II) couple of each computed form (21f · 34 · 21e relaxed) on one SHE scale, the distance to the measured cascade split by side; no SCF |
 | `tools/in_silico/scripts/96_os_couple_thermo.py` | `147acab357bc0f431300e14ae65ac82bd2c6a7a07c2fd0bbbb74a01d77c333c2` | L3 Os(III/II) couple harmonic thermochemistry (analytic C-PCM Hessian, B3LYP/6-31G(d)+LANL2DZ(Os)) on the device mediator's adiabatic chloro form, so the like-for-like cascade (95) carries the ZPE and RRHO terms on both sides for that form |
 | `tools/in_silico/scripts/97_wire_under_liner_edges.py` | `8e548ca621f25edb553712985e5c9212a13edfecead51c722f2de4eb0f89458a` | The bus wire under the liner's edges: the mouth and exit contact pressure carried through the PEEK layer onto the Ti surface (layer on an elastic half-space), added to the wire's nominal bending along the drag cycle, and the weld knockdown below which the welded root stays the critical section |
-| `tools/in_silico/scripts/98_field_strain_campaign.py` | `c8eed84df9fd9275d08d1a4088d4ec872e76f923ce6062209cac5fd89e5a7b8a` | How long a field campaign of stem-strain sensors must run to collect strong-wind hours, replayed over 30 years of hourly reanalysis wind at the site for each start month, and how many battery trips that costs. |
+| `tools/in_silico/scripts/98_field_strain_campaign.py` | `b6e26be8a2957f66bb68e9cc7fa2dfb3d03b09badccacb535506ec89250af615` | How long a field campaign of stem-strain sensors must run to collect strong-wind hours, replayed over 30 years of hourly reanalysis wind at the site for each start month, and how many battery trips that costs. |
 | `tools/in_silico/scripts/99_coating_cluster_cost.py` | `2603422d38565f96a319d8bc0da5d3f4b55e7d9d61d1584dcc3b0f9e43df59db` | The basis size of model coating clusters (Zn-substituted hydroxyapatite and PEDOT:PSS on a TiO2 cluster) at the pipeline's tiers, and the cost of one SCF and of a relaxation extrapolated from the pipeline's own timed series. |
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `84027de5d29e78223ae0cd667589721f9f118621e8a6972a57b3e1d453aff36a` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `c4809b9146f9ae181e4014ea29019c11fcc459d18c5e4d04d4148a066a3988e5` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `cdd199c5575b166950ff5ba84c96b0df7f5411a39e1ab5403d45a58f101ee132` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -309,6 +310,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/thermal_install_field.json` | `d2176765f0e5ce740b4293ec9faeaa557bf196827596d3664bfe791e2bd4e660` | 31,116 |
 | `tools/in_silico/cache/mechanical/thermal_install_field.png` | `5833b01cd2f5705da4e1f3771df6854808eddee5b0cce5666119998df933a387` | 272,271 |
 | `tools/in_silico/cache/mechanical/wind_duty_cycle.json` | `678670894a04ba007117efa9fee4b62c7b2cafda7fa78c7b3a5a83fdc6bba901` | 5,923 |
+| `tools/in_silico/cache/mechanical/wind_reanalyses_station.json` | `f9e72d8a6f06cc27c6ae57ce6190fb745df595fc0020caf59185b670dd9bcb9c` | 32,601 |
 | `tools/in_silico/cache/mechanical/wire_liner_shear_lag.json` | `6b0c66ee2dc65508e9c07c254d04794017cff525cb2326f8be346f2368ae471e` | 65,546 |
 | `tools/in_silico/cache/mechanical/wire_under_liner_edges.json` | `bbd8736a2b06587e9ab5978989f90666ac0209b9d145fb2148020aa0ba7a4be9` | 69,047 |
 | `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `9ce5339f44e7d7c62fa90fa8ac87ab94636ce342356dfc18749fc356dcab1d91` | 34,956 |
@@ -442,13 +444,15 @@ External records the desk models read at run time (climate reanalysis, wind, hom
 | `tools/in_silico/data/era5_cherkasy/hourly_dew_rh_soil_1991_2020.csv.gz` | `e093b16dbfca9684b4bd94056fe7a9100c59d4b8b30baaa86200b840b53ac202` | 2,028,981 |
 | `tools/in_silico/data/era5_cherkasy/hourly_snow_cerra_1991_2020.csv.gz` | `77dfd1c105e63f3461f57c92929deb90e3df8190d5343748e25d271965be937d` | 665,165 |
 | `tools/in_silico/data/era5_cherkasy/hourly_snow_era5_land_1991_2020.csv.gz` | `1992c26b843bf06b6e9b647d344ede874d6a784b81b71f05648f76470c5ad65b` | 651,780 |
+| `tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.README.md` | `82d5b2d4406a51469c65544ad77624429fa4841a09961f61c5757f044494fd27` | 1,542 |
 | `tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.json` | `8866640bf57497d38d3ecbfeb8918c78aaca98f163eb39a676d41e9c063216e4` | 58,549 |
-| `tools/in_silico/data/power_cherkasy_longwave/README.md` | `1d8596a35f2643ff0415fab093dc2b822adeba1f07659bf4f1389bf9621a0e05` | 5,500 |
+| `tools/in_silico/data/power_cherkasy_longwave/README.md` | `bdd9a73605d2adeed9ab8e09206aa16bf058a81eb658a636233b43ee55910450` | 7,909 |
 | `tools/in_silico/data/power_cherkasy_longwave/hourly_2001_2020.csv.gz` | `e9fcd727d5a42c7855474252aaade18bef24aa5b8ca335b4f6b34801ddc6c185` | 2,560,723 |
-| `tools/in_silico/data/station_cherkasy/README.md` | `2382dadfc00f856cd847c3e3f93c94077f98fc95de3226f4036a990e310ecfb1` | 5,379 |
+| `tools/in_silico/data/station_cherkasy/README.md` | `d3e4ee22c1e3138e52fc272b08b20ea3573a411373e3e5265f82c373b50081b5` | 7,007 |
 | `tools/in_silico/data/station_cherkasy/ghcnd_UPM00033487_2000_2009.csv.gz` | `a8626e5838f97d229ad0354f891202f830d162848baf56918099346fd540c21a` | 28,752 |
 | `tools/in_silico/data/station_cherkasy/gsod_33487099999_1991_1998.csv.gz` | `34baca304a1c843d570eadb8868cb43d2133ba6a5066ab487f0f85926b238191` | 52,424 |
 | `tools/in_silico/data/station_cherkasy/power_merra2_daily_1991_2020.csv.gz` | `008ab1dacdca7e0e090f418eae96aec1e32f0e7431061ec16f12944dc96e86e3` | 143,554 |
+| `tools/in_silico/data/station_cherkasy/power_merra2_hourly_wind_2001_2020.csv.tar.gz` | `bd2dcc4cb606eadcdab5d71a8c3891bebb1a10af168bdc28c196849e0c70d3c0` | 1,511,806 |
 
 ## S5. Coordinates
 

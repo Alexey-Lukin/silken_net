@@ -1,0 +1,1031 @@
+{
+  "script": "123_wind_reanalyses_station.py",
+  "question": "which reanalysis of the 10 m wind the station sits nearer to, on the daily mean `62` counts and on the daily maximum behind `98`'s Beaufort-5 hours, and what each script's figures become on the other series",
+  "model": {
+    "beaufort_anchors_ms_from_62": [
+      3.4,
+      5.5,
+      8.0
+    ],
+    "beaufort_5_ms_from_98": 8.0,
+    "knot_ms": 0.5144444444444445,
+    "station_reports_whole_ms": true,
+    "rounding_half_ms": 0.5,
+    "synoptic_utc_hours": [
+      0,
+      3,
+      6,
+      9,
+      12,
+      15,
+      18,
+      21
+    ],
+    "dense_days_min_reports": 7,
+    "quantiles": [
+      0.9,
+      0.95,
+      0.99
+    ],
+    "min_days_for_a_mean": 5,
+    "campaign_months": [
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "era5_clock_offset_s": 10800,
+    "gap_sign": "reanalysis minus station"
+  },
+  "inputs": {
+    "gsod_days_with_wind": 1672,
+    "reports_per_day": {
+      "4": 161,
+      "5": 233,
+      "6": 379,
+      "7": 482,
+      "8": 401,
+      "9": 15,
+      "10": 1
+    },
+    "paired_days_by_year": {
+      "1991": 360,
+      "1992": 354,
+      "1993": 352,
+      "1994": 336,
+      "1995": 146,
+      "1996": 54,
+      "1997": 45,
+      "1998": 25
+    },
+    "merra2_daily_days": 10958,
+    "merra2_hourly_hours": 175320,
+    "era5_hours": 262992,
+    "era5_whole_utc_days": 10957
+  },
+  "controls": {
+    "station_units": {
+      "worst_knot_grid_miss_kn": 0.06457883369329664,
+      "tolerance_kn": 0.08,
+      "days_mean_above_max": 4,
+      "worst_mean_above_max_ms": 0.019000000000000128,
+      "mean_over_max_tolerance_ms": 0.05
+    },
+    "merra2_files_agree": {
+      "days_against_hourly": 7305,
+      "worst_daily_mean_against_hourly_ms": 0.005000000000000782,
+      "worst_daily_max_against_hourly_ms": 0.0,
+      "tolerance_ms": 0.011,
+      "file_of_62": {
+        "time_standard": "LST",
+        "day_is_utc_plus_h": 2,
+        "days_shared": 2192,
+        "first_day": "20150101",
+        "last_day": "20201231",
+        "worst_difference_on_its_own_days_ms": 0.005000000000000782,
+        "worst_difference_if_read_as_utc_days_ms": 0.79
+      }
+    },
+    "era5_reading_is_98s": {
+      "january_beaufort_5_hours_per_day": 0.198,
+      "januaries_without_a_beaufort_5_hour": 14,
+      "januaries": 30
+    },
+    "era5_utc_offset_direction": {
+      "hours": 175317,
+      "correlation_by_lag_h": {
+        "-3": 0.8594622323499334,
+        "-2": 0.8936458397936906,
+        "-1": 0.9130808245357858,
+        "0": 0.9108274125925077,
+        "1": 0.8869290259390967,
+        "2": 0.8500787721645731,
+        "3": 0.806571027035537
+      },
+      "best_lag_h": -1
+    }
+  },
+  "station_days": {
+    "all_days": {
+      "paired_days": 1672,
+      "first_day": "1991-01-01",
+      "last_day": "1998-05-03",
+      "daily_mean": {
+        "station": {
+          "mean_ms": 3.677570108984583,
+          "coefficient_of_variation": 0.44672565396771086,
+          "share_at_or_above": {
+            "3.4": 0.5430622009569378,
+            "5.5": 0.12619617224880383,
+            "8.0": 0.014952153110047847
+          }
+        },
+        "reanalyses": {
+          "era5_utc_day": {
+            "mean_ms": 3.464338422603225,
+            "ratio_of_means_to_station": 0.9420183218640981,
+            "coefficient_of_variation": 0.3548383251220813,
+            "all_days": {
+              "days": 1672,
+              "mean_ms": -0.21323168638135773,
+              "median_ms": -0.15399074074074082
+            },
+            "share_at_or_above": {
+              "3.4": 0.4820574162679426,
+              "5.5": 0.060406698564593304,
+              "8.0": 0.0017942583732057417
+            },
+            "pairing_correlation_by_lag": {
+              "-1": 0.4668173159888808,
+              "0": 0.8636959299714754,
+              "1": 0.37401265687047225
+            }
+          },
+          "merra2_utc_day": {
+            "mean_ms": 4.6306399521531105,
+            "ratio_of_means_to_station": 1.2591574912032555,
+            "coefficient_of_variation": 0.3666392825812029,
+            "all_days": {
+              "days": 1672,
+              "mean_ms": 0.9530698431685272,
+              "median_ms": 0.9643888888888883
+            },
+            "share_at_or_above": {
+              "3.4": 0.7535885167464115,
+              "5.5": 0.2751196172248804,
+              "8.0": 0.03409090909090909
+            },
+            "pairing_correlation_by_lag": {
+              "-1": 0.4706054641512355,
+              "0": 0.845818514024036,
+              "1": 0.34151727868429294
+            }
+          }
+        },
+        "the_two_reanalyses": {
+          "pair": [
+            "era5_utc_day",
+            "merra2_utc_day"
+          ],
+          "correlation": 0.9660447123686176,
+          "ratio_of_means": 1.3366592368517756
+        }
+      },
+      "daily_max": {
+        "station": {
+          "mean_ms": 5.826555023923445,
+          "max_over_mean": 1.5843491357754755,
+          "days_reported_at_or_above": {
+            "7.0": 423,
+            "8.0": 253,
+            "9.0": 150
+          },
+          "quantiles_ms": {
+            "0.9": 8.0,
+            "0.95": 10.0,
+            "0.99": 14.0
+          },
+          "highest_ms": 25.0
+        },
+        "reanalyses": {
+          "era5_max_of_24_instants": {
+            "mean_ms": 4.752375730994152,
+            "max_over_mean": 1.3717989270294935,
+            "all_days": {
+              "days": 1672,
+              "mean_ms": -1.074179292929293,
+              "median_ms": -0.8888888888888893
+            },
+            "quantiles_ms": {
+              "0.9": 6.722222222222221,
+              "0.95": 7.413888888888879,
+              "0.99": 8.432777777777774
+            },
+            "highest_ms": 10.638888888888888,
+            "rescaled_to_station_mean": {
+              "factor": 1.061550478149051,
+              "days_at_or_above": 72
+            },
+            "own_highest_days": {
+              "n_station_threshold_days": 253,
+              "nth_value_ms": 6.25,
+              "days_at_or_above_nth": 258,
+              "station_threshold_days_among": 158
+            },
+            "at_threshold": {
+              "as_printed": {
+                "reanalysis_threshold_ms": 8.0,
+                "days_reanalysis": 36,
+                "days_both": 34,
+                "days_station_only": 219,
+                "days_reanalysis_only": 2,
+                "station_chosen": {
+                  "days": 253,
+                  "mean_ms": -3.2333113746157225,
+                  "median_ms": -2.3888888888888893
+                },
+                "reanalysis_chosen": {
+                  "days": 36,
+                  "mean_ms": -2.141203703703704,
+                  "median_ms": -1.8888888888888893
+                }
+              },
+              "rounding_consistent": {
+                "reanalysis_threshold_ms": 7.5,
+                "days_reanalysis": 80,
+                "days_both": 69,
+                "days_station_only": 184,
+                "days_reanalysis_only": 11,
+                "station_chosen": {
+                  "days": 253,
+                  "mean_ms": -3.2333113746157225,
+                  "median_ms": -2.3888888888888893
+                },
+                "reanalysis_chosen": {
+                  "days": 80,
+                  "mean_ms": -1.8291666666666668,
+                  "median_ms": -1.8472222222222223
+                }
+              }
+            }
+          },
+          "era5_max_of_8_synoptic_instants": {
+            "mean_ms": 4.572484715576821,
+            "max_over_mean": 1.3198724136601228,
+            "all_days": {
+              "days": 1672,
+              "mean_ms": -1.2540703083466243,
+              "median_ms": -1.0555555555555562
+            },
+            "quantiles_ms": {
+              "0.9": 6.583333333333333,
+              "0.95": 7.1236111111111065,
+              "0.99": 8.282222222222218
+            },
+            "highest_ms": 10.499999999999998,
+            "rescaled_to_station_mean": {
+              "factor": 1.061550478149051,
+              "days_at_or_above": 53
+            },
+            "own_highest_days": {
+              "n_station_threshold_days": 253,
+              "nth_value_ms": 6.055555555555555,
+              "days_at_or_above_nth": 254,
+              "station_threshold_days_among": 155
+            },
+            "at_threshold": {
+              "as_printed": {
+                "reanalysis_threshold_ms": 8.0,
+                "days_reanalysis": 24,
+                "days_both": 24,
+                "days_station_only": 229,
+                "days_reanalysis_only": 0,
+                "station_chosen": {
+                  "days": 253,
+                  "mean_ms": -3.4425779534475187,
+                  "median_ms": -2.75
+                },
+                "reanalysis_chosen": {
+                  "days": 24,
+                  "mean_ms": -2.582175925925926,
+                  "median_ms": -2.166666666666666
+                }
+              },
+              "rounding_consistent": {
+                "reanalysis_threshold_ms": 7.5,
+                "days_reanalysis": 56,
+                "days_both": 52,
+                "days_station_only": 201,
+                "days_reanalysis_only": 4,
+                "station_chosen": {
+                  "days": 253,
+                  "mean_ms": -3.4425779534475187,
+                  "median_ms": -2.75
+                },
+                "reanalysis_chosen": {
+                  "days": 56,
+                  "mean_ms": -2.367559523809524,
+                  "median_ms": -2.0972222222222223
+                }
+              }
+            }
+          },
+          "merra2_max_of_24_hourly_means": {
+            "mean_ms": 6.393175837320574,
+            "max_over_mean": 1.3806246875980794,
+            "all_days": {
+              "days": 1672,
+              "mean_ms": 0.5666208133971292,
+              "median_ms": 0.6500000000000004
+            },
+            "quantiles_ms": {
+              "0.9": 9.26,
+              "0.95": 10.154499999999999,
+              "0.99": 12.185799999999999
+            },
+            "highest_ms": 15.84,
+            "rescaled_to_station_mean": {
+              "factor": 0.7941818295060107,
+              "days_at_or_above": 88
+            },
+            "own_highest_days": {
+              "n_station_threshold_days": 253,
+              "nth_value_ms": 8.51,
+              "days_at_or_above_nth": 253,
+              "station_threshold_days_among": 152
+            },
+            "at_threshold": {
+              "as_printed": {
+                "reanalysis_threshold_ms": 8.0,
+                "days_reanalysis": 353,
+                "days_both": 175,
+                "days_station_only": 78,
+                "days_reanalysis_only": 178,
+                "station_chosen": {
+                  "days": 253,
+                  "mean_ms": -0.836403162055336,
+                  "median_ms": -0.17999999999999972
+                },
+                "reanalysis_chosen": {
+                  "days": 353,
+                  "mean_ms": 1.431643059490085,
+                  "median_ms": 1.6600000000000001
+                }
+              },
+              "rounding_consistent": {
+                "reanalysis_threshold_ms": 7.5,
+                "days_reanalysis": 462,
+                "days_both": 197,
+                "days_station_only": 56,
+                "days_reanalysis_only": 265,
+                "station_chosen": {
+                  "days": 253,
+                  "mean_ms": -0.836403162055336,
+                  "median_ms": -0.17999999999999972
+                },
+                "reanalysis_chosen": {
+                  "days": 462,
+                  "mean_ms": 1.3856493506493506,
+                  "median_ms": 1.605
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "dense_days": {
+      "paired_days": 899,
+      "first_day": "1991-01-01",
+      "last_day": "1997-01-11",
+      "daily_mean": {
+        "station": {
+          "mean_ms": 3.624172413793104,
+          "coefficient_of_variation": 0.44159279325257006,
+          "share_at_or_above": {
+            "3.4": 0.5383759733036707,
+            "5.5": 0.11457174638487208,
+            "8.0": 0.01557285873192436
+          }
+        },
+        "reanalyses": {
+          "era5_utc_day": {
+            "mean_ms": 3.436612954723355,
+            "ratio_of_means_to_station": 0.9482476445226713,
+            "coefficient_of_variation": 0.3581855312468853,
+            "all_days": {
+              "days": 899,
+              "mean_ms": -0.18755945906974858,
+              "median_ms": -0.13782407407407504
+            },
+            "share_at_or_above": {
+              "3.4": 0.47163515016685204,
+              "5.5": 0.06229143492769744,
+              "8.0": 0.0011123470522803114
+            },
+            "pairing_correlation_by_lag": {
+              "-1": 0.4568146347253277,
+              "0": 0.8833437055193729,
+              "1": 0.4044660693798313
+            }
+          },
+          "merra2_utc_day": {
+            "mean_ms": 4.596551724137932,
+            "ratio_of_means_to_station": 1.2683038220378493,
+            "coefficient_of_variation": 0.36792116876853,
+            "all_days": {
+              "days": 899,
+              "mean_ms": 0.9723793103448273,
+              "median_ms": 0.999222222222222
+            },
+            "share_at_or_above": {
+              "3.4": 0.7474972191323693,
+              "5.5": 0.2625139043381535,
+              "8.0": 0.03670745272525028
+            },
+            "pairing_correlation_by_lag": {
+              "-1": 0.461301660449311,
+              "0": 0.8692500844459826,
+              "1": 0.3798225445882439
+            }
+          }
+        },
+        "the_two_reanalyses": {
+          "pair": [
+            "era5_utc_day",
+            "merra2_utc_day"
+          ],
+          "correlation": 0.9681336620659171,
+          "ratio_of_means": 1.3375238307881987
+        }
+      },
+      "daily_max": {
+        "station": {
+          "mean_ms": 5.903225806451613,
+          "max_over_mean": 1.6288479499443083,
+          "days_reported_at_or_above": {
+            "7.0": 232,
+            "8.0": 137,
+            "9.0": 80
+          },
+          "quantiles_ms": {
+            "0.9": 8.0,
+            "0.95": 10.0,
+            "0.99": 15.0
+          },
+          "highest_ms": 25.0
+        },
+        "reanalyses": {
+          "era5_max_of_24_instants": {
+            "mean_ms": 4.751730317636881,
+            "max_over_mean": 1.3826783464533008,
+            "all_days": {
+              "days": 899,
+              "mean_ms": -1.1514954888147326,
+              "median_ms": -0.9722222222222223
+            },
+            "quantiles_ms": {
+              "0.9": 6.755555555555556,
+              "0.95": 7.5,
+              "0.99": 8.417777777777776
+            },
+            "highest_ms": 10.499999999999998,
+            "rescaled_to_station_mean": {
+              "factor": 1.0545768352563425,
+              "days_at_or_above": 34
+            },
+            "own_highest_days": {
+              "n_station_threshold_days": 137,
+              "nth_value_ms": 6.388888888888888,
+              "days_at_or_above_nth": 137,
+              "station_threshold_days_among": 86
+            },
+            "at_threshold": {
+              "as_printed": {
+                "reanalysis_threshold_ms": 8.0,
+                "days_reanalysis": 19,
+                "days_both": 17,
+                "days_station_only": 120,
+                "days_reanalysis_only": 2,
+                "station_chosen": {
+                  "days": 137,
+                  "mean_ms": -3.313057583130576,
+                  "median_ms": -2.5
+                },
+                "reanalysis_chosen": {
+                  "days": 19,
+                  "mean_ms": -1.8187134502923978,
+                  "median_ms": -1.833333333333334
+                }
+              },
+              "rounding_consistent": {
+                "reanalysis_threshold_ms": 7.5,
+                "days_reanalysis": 47,
+                "days_both": 39,
+                "days_station_only": 98,
+                "days_reanalysis_only": 8,
+                "station_chosen": {
+                  "days": 137,
+                  "mean_ms": -3.313057583130576,
+                  "median_ms": -2.5
+                },
+                "reanalysis_chosen": {
+                  "days": 47,
+                  "mean_ms": -1.7606382978723407,
+                  "median_ms": -1.5000000000000018
+                }
+              }
+            }
+          },
+          "era5_max_of_8_synoptic_instants": {
+            "mean_ms": 4.564485230503028,
+            "max_over_mean": 1.3281929884567014,
+            "all_days": {
+              "days": 899,
+              "mean_ms": -1.3387405759485849,
+              "median_ms": -1.1388888888888888
+            },
+            "quantiles_ms": {
+              "0.9": 6.5888888888888895,
+              "0.95": 7.197222222222219,
+              "0.99": 8.25333333333333
+            },
+            "highest_ms": 10.499999999999998,
+            "rescaled_to_station_mean": {
+              "factor": 1.0545768352563425,
+              "days_at_or_above": 25
+            },
+            "own_highest_days": {
+              "n_station_threshold_days": 137,
+              "nth_value_ms": 6.111111111111111,
+              "days_at_or_above_nth": 137,
+              "station_threshold_days_among": 87
+            },
+            "at_threshold": {
+              "as_printed": {
+                "reanalysis_threshold_ms": 8.0,
+                "days_reanalysis": 12,
+                "days_both": 12,
+                "days_station_only": 125,
+                "days_reanalysis_only": 0,
+                "station_chosen": {
+                  "days": 137,
+                  "mean_ms": -3.510543390105434,
+                  "median_ms": -2.750000000000001
+                },
+                "reanalysis_chosen": {
+                  "days": 12,
+                  "mean_ms": -2.3101851851851856,
+                  "median_ms": -2.0555555555555554
+                }
+              },
+              "rounding_consistent": {
+                "reanalysis_threshold_ms": 7.5,
+                "days_reanalysis": 32,
+                "days_both": 29,
+                "days_station_only": 108,
+                "days_reanalysis_only": 3,
+                "station_chosen": {
+                  "days": 137,
+                  "mean_ms": -3.510543390105434,
+                  "median_ms": -2.750000000000001
+                },
+                "reanalysis_chosen": {
+                  "days": 32,
+                  "mean_ms": -2.369791666666667,
+                  "median_ms": -2.083333333333334
+                }
+              }
+            }
+          },
+          "merra2_max_of_24_hourly_means": {
+            "mean_ms": 6.396418242491658,
+            "max_over_mean": 1.3915688599569245,
+            "all_days": {
+              "days": 899,
+              "mean_ms": 0.4931924360400445,
+              "median_ms": 0.5299999999999994
+            },
+            "quantiles_ms": {
+              "0.9": 9.34,
+              "0.95": 10.105999999999995,
+              "0.99": 12.242199999999999
+            },
+            "highest_ms": 14.9,
+            "rescaled_to_station_mean": {
+              "factor": 0.7884546136534134,
+              "days_at_or_above": 45
+            },
+            "own_highest_days": {
+              "n_station_threshold_days": 137,
+              "nth_value_ms": 8.63,
+              "days_at_or_above_nth": 138,
+              "station_threshold_days_among": 84
+            },
+            "at_threshold": {
+              "as_printed": {
+                "reanalysis_threshold_ms": 8.0,
+                "days_reanalysis": 203,
+                "days_both": 100,
+                "days_station_only": 37,
+                "days_reanalysis_only": 103,
+                "station_chosen": {
+                  "days": 137,
+                  "mean_ms": -0.8933576642335768,
+                  "median_ms": -0.16999999999999993
+                },
+                "reanalysis_chosen": {
+                  "days": 203,
+                  "mean_ms": 1.304039408866995,
+                  "median_ms": 1.6600000000000001
+                }
+              },
+              "rounding_consistent": {
+                "reanalysis_threshold_ms": 7.5,
+                "days_reanalysis": 244,
+                "days_both": 105,
+                "days_station_only": 32,
+                "days_reanalysis_only": 139,
+                "station_chosen": {
+                  "days": 137,
+                  "mean_ms": -0.8933576642335768,
+                  "median_ms": -0.16999999999999993
+                },
+                "reanalysis_chosen": {
+                  "days": 244,
+                  "mean_ms": 1.3199590163934425,
+                  "median_ms": 1.6450000000000005
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "campaign_months": {
+      "paired_days": 799,
+      "first_day": "1991-01-01",
+      "last_day": "1998-04-02",
+      "daily_mean": {
+        "station": {
+          "mean_ms": 4.029278264497289,
+          "coefficient_of_variation": 0.4378200313833768,
+          "share_at_or_above": {
+            "3.4": 0.6257822277847309,
+            "5.5": 0.17647058823529413,
+            "8.0": 0.026282853566958697
+          }
+        },
+        "reanalyses": {
+          "era5_utc_day": {
+            "mean_ms": 3.634095570852454,
+            "ratio_of_means_to_station": 0.9019222134328965,
+            "coefficient_of_variation": 0.3564521294763153,
+            "all_days": {
+              "days": 799,
+              "mean_ms": -0.3951826936448341,
+              "median_ms": -0.3431203703703707
+            },
+            "share_at_or_above": {
+              "3.4": 0.5331664580725908,
+              "5.5": 0.08385481852315395,
+              "8.0": 0.0025031289111389237
+            },
+            "pairing_correlation_by_lag": {
+              "-1": 0.49567649050055157,
+              "0": 0.8756651978438154,
+              "1": 0.3721335635823427
+            }
+          },
+          "merra2_utc_day": {
+            "mean_ms": 4.899449311639549,
+            "ratio_of_means_to_station": 1.2159620135470657,
+            "coefficient_of_variation": 0.3761395948337247,
+            "all_days": {
+              "days": 799,
+              "mean_ms": 0.8701710471422609,
+              "median_ms": 0.8982222222222225
+            },
+            "share_at_or_above": {
+              "3.4": 0.7897371714643304,
+              "5.5": 0.34668335419274093,
+              "8.0": 0.05506883604505632
+            },
+            "pairing_correlation_by_lag": {
+              "-1": 0.5012228490883638,
+              "0": 0.8549572526594654,
+              "1": 0.3205664912331676
+            }
+          }
+        },
+        "the_two_reanalyses": {
+          "pair": [
+            "era5_utc_day",
+            "merra2_utc_day"
+          ],
+          "correlation": 0.9683565835310012,
+          "ratio_of_means": 1.348189450749717
+        }
+      },
+      "daily_max": {
+        "station": {
+          "mean_ms": 5.977471839799749,
+          "max_over_mean": 1.483509315419675,
+          "days_reported_at_or_above": {
+            "7.0": 220,
+            "8.0": 140,
+            "9.0": 96
+          },
+          "quantiles_ms": {
+            "0.9": 9.0,
+            "0.95": 10.0,
+            "0.99": 14.0
+          },
+          "highest_ms": 22.0
+        },
+        "reanalyses": {
+          "era5_max_of_24_instants": {
+            "mean_ms": 4.906202197190933,
+            "max_over_mean": 1.3500476532707366,
+            "all_days": {
+              "days": 799,
+              "mean_ms": -1.0712696426088166,
+              "median_ms": -0.9722222222222223
+            },
+            "quantiles_ms": {
+              "0.9": 7.005555555555556,
+              "0.95": 7.697222222222219,
+              "0.99": 8.55833333333333
+            },
+            "highest_ms": 10.638888888888888,
+            "rescaled_to_station_mean": {
+              "factor": 1.1087430657615138,
+              "days_at_or_above": 63
+            },
+            "own_highest_days": {
+              "n_station_threshold_days": 140,
+              "nth_value_ms": 6.416666666666667,
+              "days_at_or_above_nth": 143,
+              "station_threshold_days_among": 97
+            },
+            "at_threshold": {
+              "as_printed": {
+                "reanalysis_threshold_ms": 8.0,
+                "days_reanalysis": 25,
+                "days_both": 24,
+                "days_station_only": 116,
+                "days_reanalysis_only": 1,
+                "station_chosen": {
+                  "days": 140,
+                  "mean_ms": -3.0595238095238098,
+                  "median_ms": -2.4861111111111116
+                },
+                "reanalysis_chosen": {
+                  "days": 25,
+                  "mean_ms": -2.756666666666667,
+                  "median_ms": -2.1111111111111107
+                }
+              },
+              "rounding_consistent": {
+                "reanalysis_threshold_ms": 7.5,
+                "days_reanalysis": 55,
+                "days_both": 49,
+                "days_station_only": 91,
+                "days_reanalysis_only": 6,
+                "station_chosen": {
+                  "days": 140,
+                  "mean_ms": -3.0595238095238098,
+                  "median_ms": -2.4861111111111116
+                },
+                "reanalysis_chosen": {
+                  "days": 55,
+                  "mean_ms": -2.2969696969696973,
+                  "median_ms": -2.0555555555555554
+                }
+              }
+            }
+          },
+          "era5_max_of_8_synoptic_instants": {
+            "mean_ms": 4.722987067167292,
+            "max_over_mean": 1.2996320473925829,
+            "all_days": {
+              "days": 799,
+              "mean_ms": -1.2544847726324573,
+              "median_ms": -1.083333333333334
+            },
+            "quantiles_ms": {
+              "0.9": 6.805555555555555,
+              "0.95": 7.444444444444445,
+              "0.99": 8.448888888888884
+            },
+            "highest_ms": 10.083333333333332,
+            "rescaled_to_station_mean": {
+              "factor": 1.1087430657615138,
+              "days_at_or_above": 53
+            },
+            "own_highest_days": {
+              "n_station_threshold_days": 140,
+              "nth_value_ms": 6.166666666666666,
+              "days_at_or_above_nth": 140,
+              "station_threshold_days_among": 95
+            },
+            "at_threshold": {
+              "as_printed": {
+                "reanalysis_threshold_ms": 8.0,
+                "days_reanalysis": 16,
+                "days_both": 16,
+                "days_station_only": 124,
+                "days_reanalysis_only": 0,
+                "station_chosen": {
+                  "days": 140,
+                  "mean_ms": -3.2746031746031745,
+                  "median_ms": -2.8055555555555562
+                },
+                "reanalysis_chosen": {
+                  "days": 16,
+                  "mean_ms": -3.3906250000000004,
+                  "median_ms": -2.9861111111111125
+                }
+              },
+              "rounding_consistent": {
+                "reanalysis_threshold_ms": 7.5,
+                "days_reanalysis": 38,
+                "days_both": 36,
+                "days_station_only": 104,
+                "days_reanalysis_only": 2,
+                "station_chosen": {
+                  "days": 140,
+                  "mean_ms": -3.2746031746031745,
+                  "median_ms": -2.8055555555555562
+                },
+                "reanalysis_chosen": {
+                  "days": 38,
+                  "mean_ms": -2.897660818713451,
+                  "median_ms": -2.1944444444444446
+                }
+              }
+            }
+          },
+          "merra2_max_of_24_hourly_means": {
+            "mean_ms": 6.663629536921151,
+            "max_over_mean": 1.3600772480879566,
+            "all_days": {
+              "days": 799,
+              "mean_ms": 0.6861576971214017,
+              "median_ms": 0.7100000000000009
+            },
+            "quantiles_ms": {
+              "0.9": 9.702,
+              "0.95": 10.801,
+              "0.99": 12.782799999999996
+            },
+            "highest_ms": 15.84,
+            "rescaled_to_station_mean": {
+              "factor": 0.8223941117065936,
+              "days_at_or_above": 79
+            },
+            "own_highest_days": {
+              "n_station_threshold_days": 140,
+              "nth_value_ms": 8.76,
+              "days_at_or_above_nth": 140,
+              "station_threshold_days_among": 96
+            },
+            "at_threshold": {
+              "as_printed": {
+                "reanalysis_threshold_ms": 8.0,
+                "days_reanalysis": 201,
+                "days_both": 110,
+                "days_station_only": 30,
+                "days_reanalysis_only": 91,
+                "station_chosen": {
+                  "days": 140,
+                  "mean_ms": -0.3163571428571429,
+                  "median_ms": 0.040000000000000036
+                },
+                "reanalysis_chosen": {
+                  "days": 201,
+                  "mean_ms": 1.309402985074627,
+                  "median_ms": 1.5500000000000007
+                }
+              },
+              "rounding_consistent": {
+                "reanalysis_threshold_ms": 7.5,
+                "days_reanalysis": 255,
+                "days_both": 122,
+                "days_station_only": 18,
+                "days_reanalysis_only": 133,
+                "station_chosen": {
+                  "days": 140,
+                  "mean_ms": -0.3163571428571429,
+                  "median_ms": 0.040000000000000036
+                },
+                "reanalysis_chosen": {
+                  "days": 255,
+                  "mean_ms": 1.3024313725490195,
+                  "median_ms": 1.5700000000000003
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "thirty_years_daily_mean": {
+    "days": 10957,
+    "first_day": "1991-01-01",
+    "last_day": "2020-12-30",
+    "share_of_days_with_mean_at_or_above": {
+      "era5_utc_day": {
+        "3.4": 0.43305649356575704,
+        "5.5": 0.050378753308387335,
+        "8.0": 0.0010039244318700374
+      },
+      "merra2_utc_day": {
+        "3.4": 0.7035684950260108,
+        "5.5": 0.23710869763621428,
+        "8.0": 0.030391530528429314
+      }
+    },
+    "mean_ms": {
+      "era5_utc_day": 3.3216573245920924,
+      "merra2_utc_day": 4.416169571963128
+    }
+  },
+  "campaign_season_hours": {
+    "threshold_ms": 8.0,
+    "seasons": [
+      "2001/02",
+      "2002/03",
+      "2003/04",
+      "2004/05",
+      "2005/06",
+      "2006/07",
+      "2007/08",
+      "2008/09",
+      "2009/10",
+      "2010/11",
+      "2011/12",
+      "2012/13",
+      "2013/14",
+      "2014/15",
+      "2015/16",
+      "2016/17",
+      "2017/18",
+      "2018/19",
+      "2019/20"
+    ],
+    "hours_per_season": 3630.315789473684,
+    "hours": 68976,
+    "era5": {
+      "per_season": [
+        40,
+        37,
+        9,
+        41,
+        5,
+        30,
+        13,
+        0,
+        29,
+        50,
+        15,
+        36,
+        38,
+        37,
+        53,
+        12,
+        28,
+        18,
+        29
+      ],
+      "median": 29,
+      "least": 0,
+      "most": 53,
+      "total": 520
+    },
+    "merra2": {
+      "per_season": [
+        377,
+        263,
+        287,
+        268,
+        222,
+        390,
+        301,
+        158,
+        199,
+        273,
+        223,
+        256,
+        410,
+        312,
+        375,
+        382,
+        294,
+        204,
+        364
+      ],
+      "median": 287,
+      "least": 158,
+      "most": 410,
+      "total": 5558
+    },
+    "both_total": 519,
+    "mean_speed_all_hours_ms": {
+      "era5": 3.535113260006701,
+      "merra2": 4.753967466945024
+    },
+    "days_with_such_an_hour": {
+      "era5": 105,
+      "merra2": 657
+    },
+    "januaries": 19,
+    "januaries_without_such_an_hour": {
+      "era5": 8,
+      "merra2": 1
+    }
+  },
+  "verdict": "On the 1672 paired station days of 1991–1998 the station's daily mean wind is 3.68 m/s, ERA5's 3.46 and MERRA-2's 4.63. The station reported 8 m/s or more on 253 of those days; ERA5's hourly maximum reaches 8 m/s on 36 days, 34 of them among the station's (80 and 69 at 7.5), MERRA-2's on 353, 175 among the station's (462 and 197). Over the campaign seasons 2001/02…2019/20 the hours at 8 m/s or more are a median 29 a season in ERA5 and 287 in MERRA-2."
+}

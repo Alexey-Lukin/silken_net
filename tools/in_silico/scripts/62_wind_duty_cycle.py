@@ -45,6 +45,13 @@ Source: NASA POWER API (power.larc.nasa.gov), daily WS10M (10m wind speed), Cher
 49.44N 32.06E, 2015-01-01..2024-12-31 (3653 days, fetched 2026-09-09). Raw response committed at
 tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.json (network fetch is not CI-reproducible,
 so the source file is checked in, not regenerated at run time).
+
+WHICH REANALYSIS. The wind here is MERRA-2's, and a day of the file is POWER's LST day — the UTC day shifted two
+hours at this longitude (measured on the years the hourly series shares with it; the file's README). Against the
+Cherkasy station's own daily mean MERRA-2 puts MORE days above each anchor than the station does, and ERA5 — the
+series `98` plans the field campaign on — fewer (script 123, cache mechanical/wind_reanalyses_station.json); the same
+script on ERA5 would print lower shares at every anchor. That orders three series of OPEN wind; it says nothing of
+gap 2 above — the wind under the canopy — which is the sense in which the shares below are upper bounds.
 """
 from __future__ import annotations
 

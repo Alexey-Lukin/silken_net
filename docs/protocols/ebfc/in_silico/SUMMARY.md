@@ -2882,6 +2882,8 @@ Each sky defines its own frost days — the bark's daily minimum under that sky 
 
 **Ceilings.** How the product is computed, on what cell and how accurately at an hourly step has not been read from its primary: the numbers above compare forms, they do not calibrate `79`. The product's hourly mean temperature is paired as the temperature at the end of its hour — up to half an hour late, so in the «air» reading the column's air runs behind the flux it is paired with. ERA5 cover and the product's cloud amount disagree hour by hour (under a product cloud amount of 20–50 % the median ERA5 cover is 0.71), and in the diffuse-sun columns of the product's readings the long wave is the product's cloud while the short wave is ERA5's. `79`'s beam and ground-reflected light are not re-run under the product's sky. Sky view, wind at the trunk, sun on the face, 1D conduction and zero contact resistance are `79`'s, unchanged; the radome↔flange coupling stays unmeasured, so the table is a bracket over its two ends and no row is a forecast.
 
+⊕ **2026-11-14 — the product's primaries, read (the paragraph above is not rewritten).** *Edition:* NASA POWER's methodology page lists CERES SYN1deg Edition 4.2 from 1 January 2001, and the product's Data Quality Summary names Edition4B, released 7 May 2025, as «Edition4.2 on the ordering tool»; the API response itself names no edition. *Cell:* at this latitude it is not 1° × 1° — the summary's nested grid has a 2° longitude extent between 45° and 70°, the 1° product grid being filled by replication, and a probe of the POWER API around the point returned one value over 49–50° N × 32–34° E, the point sitting near that cell's western edge. *Accuracy:* no validation of Edition4B is published; for Edition 4A the surface-flux summary gives the hourly gridded downward long wave an uncertainty (k = 1) of 24 W/m² over land against a mean of 333, and Rutan et al. 2015 validate Edition 3A at a 3-hourly step (standard deviation 20.4 W/m², 6.2 %, all sites); neither gives a night, winter or snow breakdown. *Night cloud:* the summaries state that night-time cloud properties differ between geostationary generations and that a satellite upgrade leaves a discontinuity in the fluxes, so the twenty winters are not one instrument — `120` does not split its seasons by that boundary. What this changes: the cell and the edition are named, and the hourly uncertainty is of the size of single-hour scatter, not a statement about a median over frost nights; the numbers above still compare forms and do not calibrate `79`. Sources and quotes — the README of `tools/in_silico/data/power_cherkasy_longwave/`.
+
 ## HW.37 — Does the Reanalysis the Cold Edge Stands On Run Warm on Cold Nights? (script 121)
 
 **The question (2026-11-13, [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.37).** Canon reads the node's cold edge — the lowest air temperature and every count of cold hours and days — off ERA5 ([`02_03 §12.1`](../../../02_03_BQ25570_MPPT_Nano_Power.md); `81`; the frost days of `79`). A desk pass found ERA5 warmer than the Cherkasy station on the coldest nights of 2000–2009. `121` asks whether that holds on another decade, how much of it is produced by choosing the days BY the station, and what a second reanalysis gives for the same edge. Two station records that share no day — GHCN-Daily 2000–2009 and the Global Summary of the Day 1991–1998, the latter split into explicit minimum reports and minima derived from the hourly reports (a ceiling on the true minimum) — against ERA5's daily minimum and MERRA-2's (`tools/in_silico/data/station_cherkasy/`).
@@ -3063,6 +3065,63 @@ spread is not log-normal is outside the model. For C · D · E the compared quan
 spread is the coupons' different RESPONSE plus two scans' repeatability — not the loading spread of `j_max`, so its CV
 row may sit lower. The ICP-MS series (3 per alloy by the letter) and test H are not covered. The model counts the
 priced units; the quote prices them. Cache: `kinetics/coin_replicate_power.json`.
+---
+
+## HW.43 — Which Reanalysis of the Wind Does the Station Sit Nearer To? (script 123)
+
+**The question (2026-11-14, [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.43).** `62` takes its duty shares from MERRA-2's daily mean wind, and `98` plans the field strain campaign on ERA5's hourly wind and counts its stop rule in hours at Beaufort 5; a desk pass found the two series an order of magnitude apart in strong-wind hours on the same point. `123` sets both against the Cherkasy station's own wind (GSOD, 1991–1998) on the quantity each script counts — the daily mean for `62`, the daily maximum that stands behind `98`'s hours — with the days chosen by the station, by the reanalysis and not at all, as `121` did for the temperature, and keeps LEVEL and RANKING apart. The station is the yardstick here, not the truth: its anemometer is not read from a station manual. It reports whole metres per second, so the threshold is read twice — as printed, and at the value a report rounds from. The thresholds are read from the two scripts' caches, not typed.
+
+**The daily mean — the quantity `62` counts.**
+
+| Days | Series | mean, m/s | days with mean ≥ 3.4 m/s | days with mean ≥ 5.5 m/s | days with mean ≥ 8 m/s |
+|---|---|---|---|---|---|
+| all paired days (1672 d) | station | 3.68 | 54.3 % | 12.6 % | 1.5 % |
+| | ERA5 | 3.46 | 48.2 % | 6.0 % | 0.2 % |
+| | MERRA-2 | 4.63 | 75.4 % | 27.5 % | 3.4 % |
+| days with 7 or more reports (899 d) | station | 3.62 | 53.8 % | 11.5 % | 1.6 % |
+| | ERA5 | 3.44 | 47.2 % | 6.2 % | 0.1 % |
+| | MERRA-2 | 4.60 | 74.7 % | 26.3 % | 3.7 % |
+| December–April (799 d) | station | 4.03 | 62.6 % | 17.6 % | 2.6 % |
+| | ERA5 | 3.63 | 53.3 % | 8.4 % | 0.3 % |
+| | MERRA-2 | 4.90 | 79.0 % | 34.7 % | 5.5 % |
+
+On the daily mean the station lies between the two series, nearer ERA5 in level, in all three sets of days: over the 1672 paired days of 1991–1998 it is 3.68 m/s against ERA5's 3.46 and MERRA-2's 4.63 — 0.94 and 1.26 of the station's. At each of `62`'s three anchors, in each set of days, ERA5 puts fewer days at or above the anchor than the station and MERRA-2 more.
+
+**The daily maximum — what stands behind `98`'s hours.** A day can hold a Beaufort-5 hour only if its maximum reaches it. The station's maximum is the highest of the day's reports — short means at a point; ERA5's is taken over all 24 hourly instants and over the eight synoptic ones, which is nearer the station's reporting schedule and does not equalise the support (a point against an instant of a grid-cell average); MERRA-2's is the highest of 24 hourly means. The counts are therefore not like for like, and the two paragraphs after the table say what survives that:
+
+| Days | Reading | days at 8 m/s or more | of them the station's | the station's days it misses | at 7.5 m/s: days · the station's | minus the station, on the station's days | on its own days |
+|---|---|---|---|---|---|---|---|
+| all paired days (1672 d) | station, highest of the day's reports | 253 | — | — | — | — | — |
+| | ERA5, highest of 24 hourly instants | 36 | 34 | 219 | 80 · 69 | −3.23 m/s | −2.14 m/s |
+| | ERA5, highest of the 8 synoptic instants | 24 | 24 | 229 | 56 · 52 | −3.44 m/s | −2.58 m/s |
+| | MERRA-2, highest of 24 hourly means | 353 | 175 | 78 | 462 · 197 | −0.84 m/s | +1.43 m/s |
+| days with 7 or more reports (899 d) | station, highest of the day's reports | 137 | — | — | — | — | — |
+| | ERA5, highest of 24 hourly instants | 19 | 17 | 120 | 47 · 39 | −3.31 m/s | −1.82 m/s |
+| | ERA5, highest of the 8 synoptic instants | 12 | 12 | 125 | 32 · 29 | −3.51 m/s | −2.31 m/s |
+| | MERRA-2, highest of 24 hourly means | 203 | 100 | 37 | 244 · 105 | −0.89 m/s | +1.30 m/s |
+| December–April (799 d) | station, highest of the day's reports | 140 | — | — | — | — | — |
+| | ERA5, highest of 24 hourly instants | 25 | 24 | 116 | 55 · 49 | −3.06 m/s | −2.76 m/s |
+| | ERA5, highest of the 8 synoptic instants | 16 | 16 | 124 | 38 · 36 | −3.27 m/s | −3.39 m/s |
+| | MERRA-2, highest of 24 hourly means | 201 | 110 | 30 | 255 · 122 | −0.32 m/s | +1.31 m/s |
+
+The station reported 8 m/s or more on 253 of the 1672 days (15.1 %); ERA5's hourly maximum reaches 8 m/s on 36 days, 34 of them the station's, and MERRA-2's on 353, 175 the station's. So 219 of the station's 253 threshold days stay below 8 m/s in ERA5. Read at 7.5 m/s — the value a report of 8 rounds from — ERA5 has 80 days (69 the station's) and MERRA-2 462 (197). The station's own count moves with one whole m/s — 423 days at 7 or more, 150 at 9 or more — and ERA5's stays below it either way.
+
+Over all paired days ERA5's daily maximum is 1.07 m/s below the station's and MERRA-2's 0.57 above. On the station's own threshold days ERA5's maximum sits 3.23 m/s below the station's report on average (median 2.39) and MERRA-2's 0.84 below (median 0.18); on the days each reanalysis itself puts at the threshold, ERA5 is still 2.14 m/s below the station and MERRA-2 1.43 above it. The two ways of choosing the days are two ends, not parts of one gap: ERA5 is below the station under both, in all three sets of days; MERRA-2 is below on the station's days and above on its own.
+
+The upper quantiles of the daily maximum over all paired days (0.90 · 0.95 · 0.99): station 8 · 10 · 14 m/s, ERA5 6.72 · 7.41 · 8.43, MERRA-2 9.26 · 10.15 · 12.19; the highest value of each — 25, 10.64 and 15.84 m/s.
+
+**Level and ranking, kept apart.** Both reanalyses are smoother than the station, and on the daily mean they are nearly one series at two scales. The coefficient of variation of the daily mean is 0.45 at the station, 0.35 in ERA5 and 0.37 in MERRA-2; the two reanalyses' daily means correlate at 0.97, MERRA-2's mean being 1.34 times ERA5's. Rescaled to the station's mean, ERA5's daily maximum reaches 8 m/s on 72 days and MERRA-2's on 88, against the station's 253: MERRA-2 comes nearer the station's count because it runs higher by a near-constant factor, not because it holds the station's tail.
+
+Ranked rather than counted, the two do alike. Of ERA5's own 258 highest daily maxima (as many as the station has threshold days, 253, plus the days tied with the last of them — down to 6.25 m/s) 158 are days the station reported 8 m/s or more; of MERRA-2's 253 (down to 8.51 m/s) — 152. In December–April: 97 of 143 and 96 of 140.
+
+**Hours, in the form the stop rule counts.** Hours at 8 m/s or more over the 19 campaign seasons 2001/02…2019/20 (1 December … 30 April; 68976 hours both series carry): ERA5 a median 29 a season (0–53), MERRA-2 287 (158–410). 519 of ERA5's 520 such hours are also MERRA-2's, out of MERRA-2's 5558; such an hour falls on 105 days in ERA5 and 657 in MERRA-2, and 8 of the 19 Januaries have none in ERA5 against 1 in MERRA-2. MERRA-2 holds 10.7 times ERA5's such hours; the mean speed over ALL hours of those seasons is 3.54 against 4.75 m/s.
+
+**What it means for the two scripts — a machine reading, not a verdict.** `62`'s shares of days, recomputed on the daily mean over the 10957 UTC days of 1991–2020 both series carry: at 3.4 · 5.5 · 8 m/s ERA5 keeps 43.3 % · 5.0 % · 0.1 % of days, MERRA-2 70.4 % · 23.7 % · 3.0 %; `62` itself, on MERRA-2's 2015–2024, prints 70.4 % · 24.8 % · 3.5 %. For `62`: on the daily mean MERRA-2 puts more days above every anchor than the station, and ERA5 fewer. That orders the three series; whether `62`'s shares over-count the wind under a canopy — the sense in which `62` calls them upper bounds — a town station does not say. For `98`: the plan is self-consistent by construction, because the measured hours are binned, and the stop rule counted, on the series the replay ran on — so the station cannot refute it. What the station adds is that ERA5's LEVEL at strong wind is far below an anemometer's, so its «8 m/s» is not a station's 8 m/s, while it ranks windy days as MERRA-2 does. For a transfer that bins hours by the reanalysis wind the ranking is what carries: nothing here is a ground to change the series, the stop rule or the cap, and it is a ground not to read the campaign's ERA5 thresholds as Beaufort numbers on an anemometer.
+
+**Controls.** All five controls passed: the station's daily mean correlates with each reanalysis' best at lag 0 in every set of days; every station maximum is a whole number of m/s when read as knots (worst miss 0.065 kn of the 0.08 allowed) and no day's mean exceeds its maximum by more than the print's rounding (4 days do, by at most 0.019 m/s); MERRA-2's daily mean and maximum equal the mean and maximum of its hourly field on all 7305 days (worst 0.005 m/s), and the file `62` reads — its header's time standard is LST — equals the same hourly field's mean over days of UTC + 2 h on all 2192 days they share (worst 0.005 m/s; read as UTC days it would miss by up to 0.79 m/s); this script's count of January's Beaufort-5 hours (0.198 a day, 14 of 30 Januaries without one) is `98`'s; and ERA5's hourly wind, read as UTC by subtracting the file's offset, correlates with MERRA-2's best at lag −1 h (0.913; 0.911 at lag 0), inside the hour that instants against hourly means cannot resolve.
+
+**Ceilings.** One station, at a town, and not the forest plot: a synoptic anemometer against grid cells of 0.25° and 0.5° × 0.625°, so part of any gap is siting and exposure. The station's maximum is the highest of four to ten reports a day, each a short mean, and a reanalysis hour — an instant for ERA5, an hourly mean for MERRA-2 — is a grid-cell average that holds no gust; the anemometer's height, type and averaging time are not read from a station manual, the reports show a preference for some whole numbers, and the single highest report stands as the archive gives it. The record is dense only to 1994 and shares no year with the hours of the campaign seasons, whose median is over the seasons both hourly series carry, not over all of ERA5's. The ranking is compared at the station's count of threshold days; further into the tail it is not compared here. Nothing here corrects a reanalysis or re-plans the campaign, and nothing says how either cell's open-terrain wind relates to the wind under the canopy at anchor height — that transfer is what the campaign measures. Cache: `mechanical/wind_reanalyses_station.json`.
+
 ---
 
 ## CHEM.11 — Can the Deglycosylation Hotspots Actually Be Compensated? (scripts 69 · 80)

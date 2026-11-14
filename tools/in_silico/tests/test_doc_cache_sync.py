@@ -13524,6 +13524,299 @@ def test_bark_overgrowth_documents_follow_the_cache():
     assert "+34.7…+49.7 дБ (📡 вище, ⊕ 2026-10-25)" in bom and bom.count("+34.7…+49.7") >= 2, "the margin the ⊕ points at moved or left its home"
 
 
+# ── HW.43 · 123: two reanalyses of the wind against the station (SUMMARY §HW.43 (`123`) · 01_02 §2.2 ⊕ 2026-11-14) ──
+# As for `121`: every sentence with a number, a set or a direction is built here from the cache and required verbatim;
+# the plain-word ones the builder does not build are held by `_WIND123_ANCHORS`.
+WIND123 = "mechanical/wind_reanalyses_station.json"
+_WIND123_SUBSETS = (("all_days", "all paired days"), ("dense_days", "days with 7 or more reports"), ("campaign_months", "December–April"))
+_WIND123_MEANS = (("era5_utc_day", "ERA5"), ("merra2_utc_day", "MERRA-2"))
+_WIND123_PEAKS = (("era5_max_of_24_instants", "ERA5, highest of 24 hourly instants"),
+                  ("era5_max_of_8_synoptic_instants", "ERA5, highest of the 8 synoptic instants"),
+                  ("merra2_max_of_24_hourly_means", "MERRA-2, highest of 24 hourly means"))
+_WIND123_E24, _WIND123_M24 = "era5_max_of_24_instants", "merra2_max_of_24_hourly_means"
+_WIND123_ALIKE = 0.05           # OUR choice, symmetric: «rank alike» while the shares of confirmed days differ by less than this EITHER way
+_WIND123_TIMES = (8.0, 13.0)    # OUR choice: the band inside which «an order of magnitude apart» / «many times» stays the right wording
+
+
+def _wind123_paragraphs(d: dict) -> dict:
+    """Every sentence of SUMMARY §HW.43 (`123`) and of the 01_02 §2.2 ⊕ 2026-11-14 that carries a number, a set or a
+    direction — built from the cache, never typed. A direction sentence is written for the pattern the cache has today;
+    each such pattern is asserted first, so a re-run that breaks it reds with the reason instead of a stale claim."""
+    model, sub, hours, thirty, ctl = d["model"], d["station_days"], d["campaign_season_hours"], d["thirty_years_daily_mean"], d["controls"]
+    anchors = [str(a) for a in model["beaufort_anchors_ms_from_62"]]
+    b5 = model["beaufort_5_ms_from_98"]
+    half = b5 - model["rounding_half_ms"]
+    assert model["dense_days_min_reports"] == 7 and model["campaign_months"] == [12, 1, 2, 3, 4], "the subset labels are typed for these"
+
+    def pct(x: float, nd: int = 1) -> str:
+        return f"{100 * x:.{nd}f} %"
+
+    def m(x: float, nd: int = 2) -> str:
+        return f"{x:+.{nd}f}".replace("-", "−")
+
+    mean_rows = ["| Days | Series | mean, m/s | " + " | ".join(f"days with mean ≥ {float(a):g} m/s" for a in anchors) + " |", "|---|---|---|" + "---|" * len(anchors)]
+    max_rows = [f"| Days | Reading | days at {b5:g} m/s or more | of them the station's | the station's days it misses | at {half:g} m/s: days · the station's | "
+                "minus the station, on the station's days | on its own days |", "|---|---|---|---|---|---|---|---|"]
+    for key, label in _WIND123_SUBSETS:
+        s = sub[key]
+        dm, dx = s["daily_mean"], s["daily_max"]
+        head = f"{label} ({s['paired_days']} d)"
+        st_days = dx["station"]["days_reported_at_or_above"][str(b5)]
+        mean_rows.append(f"| {head} | station | {dm['station']['mean_ms']:.2f} | " + " | ".join(pct(dm["station"]["share_at_or_above"][a]) for a in anchors) + " |")
+        e_mean, m_mean, s_mean = dm["reanalyses"]["era5_utc_day"]["mean_ms"], dm["reanalyses"]["merra2_utc_day"]["mean_ms"], dm["station"]["mean_ms"]
+        assert e_mean < s_mean < m_mean and s_mean - e_mean < m_mean - s_mean, f"{key}: the station's mean no longer lies between the two, nearer ERA5"
+        for name, r_label in _WIND123_MEANS:
+            r = dm["reanalyses"][name]
+            mean_rows.append(f"| | {r_label} | {r['mean_ms']:.2f} | " + " | ".join(pct(r["share_at_or_above"][a]) for a in anchors) + " |")
+        for a in anchors:
+            shares = [dm["reanalyses"]["era5_utc_day"]["share_at_or_above"][a], dm["station"]["share_at_or_above"][a],
+                      dm["reanalyses"]["merra2_utc_day"]["share_at_or_above"][a]]
+            assert shares[0] < shares[1] < shares[2], f"{key}, anchor {a}: the shares are no longer ERA5 < station < MERRA-2: {shares}"
+        max_rows.append(f"| {head} | station, highest of the day's reports | {st_days} | — | — | — | — | — |")
+        for name, r_label in _WIND123_PEAKS:
+            at = dx["reanalyses"][name]["at_threshold"]
+            p, c = at["as_printed"], at["rounding_consistent"]
+            assert "mean_ms" in p["station_chosen"] and "mean_ms" in p["reanalysis_chosen"], (
+                f"{key}, {name}: a conditioned bin fell under {model['min_days_for_a_mean']} days and carries no mean — the table has no form for it")
+            max_rows.append(f"| | {r_label} | {p['days_reanalysis']} | {p['days_both']} | {p['days_station_only']} | {c['days_reanalysis']} · {c['days_both']} | "
+                            f"{m(p['station_chosen']['mean_ms'])} m/s | {m(p['reanalysis_chosen']['mean_ms'])} m/s |")
+        re_, rm_ = dx["reanalyses"][_WIND123_E24], dx["reanalyses"][_WIND123_M24]
+        e, mm = re_["at_threshold"]["as_printed"], rm_["at_threshold"]["as_printed"]
+        assert e["station_chosen"]["mean_ms"] < 0 and e["reanalysis_chosen"]["mean_ms"] < 0, f"{key}: ERA5 is no longer below the station under both choices"
+        assert mm["station_chosen"]["mean_ms"] < 0 < mm["reanalysis_chosen"]["mean_ms"], f"{key}: MERRA-2 is no longer below on the station's days and above on its own"
+        assert e["days_station_only"] > e["days_both"], f"{key}: most of the station's threshold days no longer stay below the threshold in ERA5"
+        cvs = [dm["station"]["coefficient_of_variation"], dm["reanalyses"]["era5_utc_day"]["coefficient_of_variation"],
+               dm["reanalyses"]["merra2_utc_day"]["coefficient_of_variation"]]
+        assert cvs[0] > max(cvs[1:]), f"{key}: the station is no longer the widest of the three series: {cvs}"
+        rescaled = [r["rescaled_to_station_mean"]["days_at_or_above"] for r in (re_, rm_)]
+        assert max(rescaled) < st_days, f"{key}: a rescaled reanalysis reaches the station's count: {rescaled}"
+        own = [r["own_highest_days"]["station_threshold_days_among"] / r["own_highest_days"]["days_at_or_above_nth"] for r in (re_, rm_)]
+        assert abs(own[0] - own[1]) < _WIND123_ALIKE, f"{key}: the two reanalyses no longer rank the station's threshold days alike: {own}"
+        era5_most = max(e["days_reanalysis"], re_["at_threshold"]["rounding_consistent"]["days_reanalysis"])
+        assert dx["station"]["days_reported_at_or_above"][str(b5 + 1.0)] > era5_most, f"{key}: ERA5's count reaches the station's one m/s higher"
+
+    a = sub["all_days"]
+    am, ax = a["daily_mean"], a["daily_max"]
+    n, st_days = a["paired_days"], ax["station"]["days_reported_at_or_above"][str(b5)]
+    e, mm = ax["reanalyses"][_WIND123_E24], ax["reanalyses"][_WIND123_M24]
+    ep, ec, mp, mc = e["at_threshold"]["as_printed"], e["at_threshold"]["rounding_consistent"], mm["at_threshold"]["as_printed"], mm["at_threshold"]["rounding_consistent"]
+    era, mer = am["reanalyses"]["era5_utc_day"], am["reanalyses"]["merra2_utc_day"]
+    q = [str(x) for x in model["quantiles"]]
+    assert q == ["0.9", "0.95", "0.99"]
+    q_station = " · ".join(f"{ax['station']['quantiles_ms'][x]:g}" for x in q)
+    q_era5 = " · ".join(f"{e['quantiles_ms'][x]:.2f}" for x in q)
+    q_merra2 = " · ".join(f"{mm['quantiles_ms'][x]:.2f}" for x in q)
+    he, hm = hours["era5"], hours["merra2"]
+    assert hours["both_total"] <= he["total"] <= hm["total"]
+    times = hm["total"] / he["total"]
+    assert _WIND123_TIMES[0] <= times <= _WIND123_TIMES[1], f"MERRA-2 holds {times:.1f} times ERA5's Beaufort-5 hours — «an order of magnitude» no longer fits"
+    pair, c = am["the_two_reanalyses"], sub["campaign_months"]["daily_max"]["reanalyses"]
+    assert pair["pair"] == ["era5_utc_day", "merra2_utc_day"]
+    near = ax["station"]["days_reported_at_or_above"]
+    oe, om = e["own_highest_days"], mm["own_highest_days"]
+    ce, cm = c[_WIND123_E24]["own_highest_days"], c[_WIND123_M24]["own_highest_days"]
+    t_e, t_m = thirty["share_of_days_with_mean_at_or_above"]["era5_utc_day"], thirty["share_of_days_with_mean_at_or_above"]["merra2_utc_day"]
+    own62 = {str(r["threshold_ms"]): r["exceedance_fraction"] for r in C("mechanical/wind_duty_cycle.json")["beaufort_exceedance"]}
+    assert list(own62) == anchors
+    f62, mf, unit, clock = ctl["merra2_files_agree"]["file_of_62"], ctl["merra2_files_agree"], ctl["station_units"], ctl["era5_utc_offset_direction"]
+    by_lag, best, jan = clock["correlation_by_lag_h"], clock["best_lag_h"], ctl["era5_reading_is_98s"]
+    assert abs(best) <= 1 and by_lag[str(best)] == max(by_lag.values())
+    seasons = hours["seasons"]
+    en = {
+        "mean_table": "\n".join(mean_rows),
+        "max_table": "\n".join(max_rows),
+        "mean_reading": (f"On the daily mean the station lies between the two series, nearer ERA5 in level, in all three sets of days: over the {n} paired days "
+                         f"of {a['first_day'][:4]}–{a['last_day'][:4]} it is {am['station']['mean_ms']:.2f} m/s against ERA5's {era['mean_ms']:.2f} and "
+                         f"MERRA-2's {mer['mean_ms']:.2f} — {era['ratio_of_means_to_station']:.2f} and {mer['ratio_of_means_to_station']:.2f} of the "
+                         f"station's. At each of `62`'s three anchors, in each set of days, ERA5 puts fewer days at or above the anchor than the station "
+                         f"and MERRA-2 more."),
+        "max_reading": (f"The station reported {b5:g} m/s or more on {st_days} of the {n} days ({pct(st_days / n)}); ERA5's hourly maximum reaches "
+                        f"{b5:g} m/s on {ep['days_reanalysis']} days, {ep['days_both']} of them the station's, and MERRA-2's on {mp['days_reanalysis']}, "
+                        f"{mp['days_both']} the station's. So {ep['days_station_only']} of the station's {st_days} threshold days stay below {b5:g} m/s "
+                        f"in ERA5. Read at {half:g} m/s — the value a report of {b5:g} rounds from — ERA5 has {ec['days_reanalysis']} days "
+                        f"({ec['days_both']} the station's) and MERRA-2 {mc['days_reanalysis']} ({mc['days_both']}). The station's own count moves "
+                        f"with one whole m/s — {near[str(b5 - 1.0)]} days at {b5 - 1:g} or more, {near[str(b5 + 1.0)]} at {b5 + 1:g} or more — and "
+                        f"ERA5's stays below it either way."),
+        "gap_reading": (f"Over all paired days ERA5's daily maximum is {abs(e['all_days']['mean_ms']):.2f} m/s below the station's and MERRA-2's "
+                        f"{mm['all_days']['mean_ms']:.2f} above. On the station's own threshold days ERA5's maximum sits "
+                        f"{abs(ep['station_chosen']['mean_ms']):.2f} m/s below the station's report on average (median "
+                        f"{abs(ep['station_chosen']['median_ms']):.2f}) and MERRA-2's {abs(mp['station_chosen']['mean_ms']):.2f} below (median "
+                        f"{abs(mp['station_chosen']['median_ms']):.2f}); on the days each reanalysis itself puts at the threshold, ERA5 is still "
+                        f"{abs(ep['reanalysis_chosen']['mean_ms']):.2f} m/s below the station and MERRA-2 {mp['reanalysis_chosen']['mean_ms']:.2f} above "
+                        f"it. The two ways of choosing the days are two ends, not parts of one gap: ERA5 is below the station under both, in all three "
+                        f"sets of days; MERRA-2 is below on the station's days and above on its own."),
+        "spread_reading": (f"Both reanalyses are smoother than the station, and on the daily mean they are nearly one series at two scales. The coefficient of variation "
+                           f"of the daily mean is {am['station']['coefficient_of_variation']:.2f} at the station, {era['coefficient_of_variation']:.2f} "
+                           f"in ERA5 and {mer['coefficient_of_variation']:.2f} in MERRA-2; the two reanalyses' daily means correlate at "
+                           f"{pair['correlation']:.2f}, MERRA-2's mean being {pair['ratio_of_means']:.2f} times ERA5's. Rescaled to the station's mean, "
+                           f"ERA5's daily maximum reaches {b5:g} m/s on {e['rescaled_to_station_mean']['days_at_or_above']} days and MERRA-2's on "
+                           f"{mm['rescaled_to_station_mean']['days_at_or_above']}, against the station's {st_days}: MERRA-2 comes nearer the station's "
+                           f"count because it runs higher by a near-constant factor, not because it holds the station's tail."),
+        "rank_reading": (f"Ranked rather than counted, the two do alike. Of ERA5's own {oe['days_at_or_above_nth']} highest daily maxima (as many "
+                         f"as the station has threshold days, {oe['n_station_threshold_days']}, plus the days tied with the last of them — down to "
+                         f"{oe['nth_value_ms']:.2f} m/s) {oe['station_threshold_days_among']} are days the station reported {b5:g} m/s or more; of "
+                         f"MERRA-2's {om['days_at_or_above_nth']} (down to {om['nth_value_ms']:.2f} m/s) — {om['station_threshold_days_among']}. In "
+                         f"December–April: {ce['station_threshold_days_among']} of {ce['days_at_or_above_nth']} and "
+                         f"{cm['station_threshold_days_among']} of {cm['days_at_or_above_nth']}."),
+        "quantiles": (f"The upper quantiles of the daily maximum over all paired days (0.90 · 0.95 · 0.99): station "
+                      f"{q_station} m/s, ERA5 {q_era5}, MERRA-2 {q_merra2}; the highest value of each — {ax['station']['highest_ms']:g}, "
+                      f"{e['highest_ms']:.2f} and {mm['highest_ms']:.2f} m/s."),
+        "hours": (f"Hours at {b5:g} m/s or more over the {len(seasons)} campaign seasons {seasons[0]}…{seasons[-1]} (1 December … 30 April; "
+                  f"{hours['hours']} hours both series carry): ERA5 a median {he['median']:g} a season ({he['least']}–{he['most']}), MERRA-2 "
+                  f"{hm['median']:g} ({hm['least']}–{hm['most']}). {hours['both_total']} of ERA5's {he['total']} such hours are also MERRA-2's, out of "
+                  f"MERRA-2's {hm['total']}; such an hour falls on {hours['days_with_such_an_hour']['era5']} days in ERA5 and "
+                  f"{hours['days_with_such_an_hour']['merra2']} in MERRA-2, and {hours['januaries_without_such_an_hour']['era5']} of the "
+                  f"{hours['januaries']} Januaries have none in ERA5 against {hours['januaries_without_such_an_hour']['merra2']} in MERRA-2. MERRA-2 holds "
+                  f"{times:.1f} times ERA5's such hours; the mean speed over ALL hours of those seasons is "
+                  f"{hours['mean_speed_all_hours_ms']['era5']:.2f} against {hours['mean_speed_all_hours_ms']['merra2']:.2f} m/s."),
+        "shares_of_62": (f"`62`'s shares of days, recomputed on the daily mean over the {thirty['days']} UTC days of {thirty['first_day'][:4]}–"
+                         f"{thirty['last_day'][:4]} both series carry: at {' · '.join(f'{float(x):g}' for x in anchors)} m/s ERA5 keeps "
+                         f"{' · '.join(pct(t_e[x]) for x in anchors)} of days, MERRA-2 {' · '.join(pct(t_m[x]) for x in anchors)}; `62` itself, on "
+                         f"MERRA-2's 2015–2024, prints {' · '.join(pct(own62[x]) for x in anchors)}."),
+        "controls": (f"All five controls passed: the station's daily mean correlates with each reanalysis' best at lag 0 in every set of days; every "
+                     f"station maximum is a whole number of m/s when read as knots (worst miss {unit['worst_knot_grid_miss_kn']:.3f} kn of the "
+                     f"{unit['tolerance_kn']:g} allowed) and no day's mean exceeds its maximum by more than the print's rounding "
+                     f"({unit['days_mean_above_max']} days do, by at most {unit['worst_mean_above_max_ms']:.3f} m/s); MERRA-2's daily mean and "
+                     f"maximum equal the mean and "
+                     f"maximum of its hourly field on all {mf['days_against_hourly']} days (worst {mf['worst_daily_mean_against_hourly_ms']:.3f} m/s), "
+                     f"and the file `62` reads — its header's time standard is {f62['time_standard']} — equals the same hourly field's mean over days "
+                     f"of UTC + {f62['day_is_utc_plus_h']} h on all {f62['days_shared']} days they share (worst "
+                     f"{f62['worst_difference_on_its_own_days_ms']:.3f} m/s; read as UTC days it would miss by up to "
+                     f"{f62['worst_difference_if_read_as_utc_days_ms']:.2f} m/s); this script's count of January's Beaufort-5 hours "
+                     f"({jan['january_beaufort_5_hours_per_day']:g} a day, {jan['januaries_without_a_beaufort_5_hour']} of {jan['januaries']} Januaries "
+                     f"without one) is `98`'s; and ERA5's hourly wind, read as UTC by subtracting the file's offset, correlates with MERRA-2's best at "
+                     f"lag {f'{best:+d}'.replace('-', '−')} h ({by_lag[str(best)]:.3f}; {by_lag['0']:.3f} at lag 0), inside the hour that instants "
+                     f"against hourly means cannot resolve."),
+        "status_row": (f"| 123 | `wind_reanalyses_station` | **HW.43 — two reanalyses of the wind against the Cherkasy station (2026-11-14):** ✅ ran; "
+                       f"the station's daily mean and daily maximum wind (GSOD 1991–1998, {n} paired days) against ERA5 and MERRA-2, the gap at "
+                       f"Beaufort 5 conditioned on the station, on the reanalysis and on neither; the Beaufort-5 hours of {len(seasons)} campaign "
+                       f"seasons read from both reanalyses; `62`'s shares recomputed on ERA5. Results, controls and ceilings — "
+                       f"[`SUMMARY.md`](SUMMARY.md) §«Which Reanalysis of the Wind Does the Station Sit Nearer To?» | "
+                       f"`mechanical/wind_reanalyses_station.json` |"),
+    }
+    ua = {
+        "times": f"у годинах із вітром від {b5:g} м/с два ряди розходяться в {times:.1f} раза",
+        "means": (f"середнє доби на {n} спарених добах {a['first_day'][:4]}–{a['last_day'][:4]}: станція **{am['station']['mean_ms']:.2f}** м/с, "
+                  f"ERA5 {era['mean_ms']:.2f}, MERRA-2 {mer['mean_ms']:.2f}"),
+        "windy": (f"вітер {b5:g} м/с і більше станція звітувала в **{st_days}** доби; погодинний максимум ERA5 сягає {b5:g} м/с у "
+                  f"{ep['days_reanalysis']} діб ({ep['days_both']} із них — станційні), MERRA-2 — у {mp['days_reanalysis']} ({mp['days_both']})"),
+        "spread": (f"розкид добового середнього (коефіцієнт варіації) — {am['station']['coefficient_of_variation']:.2f} у станції проти "
+                   f"{era['coefficient_of_variation']:.2f} в ERA5 і {mer['coefficient_of_variation']:.2f} у MERRA-2, добові середні двох реаналізів "
+                   f"корелюють на {pair['correlation']:.2f}, а середнє MERRA-2 — {pair['ratio_of_means']:.2f} середнього ERA5"),
+        "rescaled": (f"приведений до станційного середнього, максимум ERA5 сягає {b5:g} м/с у {e['rescaled_to_station_mean']['days_at_or_above']} "
+                     f"діб, MERRA-2 — у {mm['rescaled_to_station_mean']['days_at_or_above']}"),
+        "rank": (f"із {oe['days_at_or_above_nth']} найвітряніших діб самого ERA5 станція звітувала {b5:g} м/с і більше в "
+                 f"{oe['station_threshold_days_among']}, із {om['days_at_or_above_nth']} найвітряніших діб MERRA-2 — у "
+                 f"{om['station_threshold_days_among']}"),
+        "hours": (f"годин із вітром від {b5:g} м/с за сезон кампанії ({seasons[0]}…{seasons[-1]}): медіана **{he['median']:g}** в ERA5 і "
+                  f"**{hm['median']:g}** у MERRA-2, і {hours['both_total']} із {he['total']} таких годин ERA5 — також години MERRA-2"),
+    }
+    return {"en": en, "ua": ua}
+
+
+_WIND123_ANCHORS = {
+    SUMMARY: ("One station, at a town, and not the forest plot",
+              "Nothing here corrects a reanalysis or re-plans the campaign",
+              "self-consistent by construction",
+              "it ranks windy days as MERRA-2 does",
+              "a town station does not say"),
+    METALLURGY: ("самоузгоджений за побудовою",
+                 "ранжує так само, як MERRA-2",
+                 "міська станція не каже"),
+}
+
+
+def test_wind_station_pages_are_built_from_the_cache():
+    """SUMMARY §HW.43 (`123`) and the 01_02 §2.2 ⊕ 2026-11-14 carry, verbatim, what `_wind123_paragraphs` builds from the
+    cache: both tables, every mean, share, count, gap and quantile, the hours of the campaign seasons, `62`'s shares on
+    both series, the controls sentence and the PIPELINE_STATUS row.
+
+    CAN catch: a re-run or a new station file moving any figure while the prose stays · a series or a subset swapped in
+    a table · a direction sentence outliving its cells — the builder asserts, and refuses to build otherwise: the
+    station's mean between the two and nearer ERA5 in all three sets of days · ERA5 < station < MERRA-2 at every anchor
+    in every set · ERA5 below the station under both ways of choosing the days, MERRA-2 below on the station's days and
+    above on its own · most of the station's threshold days staying below the threshold in ERA5, also one whole m/s
+    higher · the station being the widest of the three series and no rescaled reanalysis reaching its count · the two
+    reanalyses ranking the station's threshold days alike (inside `_WIND123_ALIKE`) · MERRA-2's Beaufort-5 hours a
+    multiple of ERA5's inside `_WIND123_TIMES` · the plain-word sentences of both pages being reworded away
+    (`_WIND123_ANCHORS`).
+    CANNOT catch: whether the station is right about the forest plot or a reanalysis about its cell; what the canopy
+    does to either; that the station's anemometer is what a WMO site should be; `_WIND123_ALIKE` and `_WIND123_TIMES`
+    are named choices, not measured resolutions; the docstrings of `62` and `98` and the data READMEs are not pinned.
+    Remedy when the 01_02 half reds after a re-run: the ⊕ is dated — append a new dated ⊕ beside it, do not rewrite it."""
+    built = _wind123_paragraphs(C(WIND123))
+    summary, canon, status = doc(SUMMARY), doc(METALLURGY), doc("docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md")
+    for name, text in built["en"].items():
+        where = status if name == "status_row" else summary
+        assert text in where, f"`123`'s «{name}» paragraph is not on its page as the cache builds it:\n{text}"
+    for name, text in built["ua"].items():
+        assert text in canon, f"01_02 §2.2 ⊕ 2026-11-14 does not carry its «{name}» sentence as the cache builds it:\n{text}"
+    for rel, anchors in _WIND123_ANCHORS.items():
+        for anchor in anchors:
+            assert anchor in doc(rel), f"{rel} lost the wording `123`'s page stands on: «{anchor}»"
+
+
+def test_wind_station_cache_is_whole():
+    """`123`'s cache against itself, against its inputs' own counts and against the two caches it reads its thresholds from.
+
+    CAN catch: a subset larger than the paired days · the dense and campaign subsets not being subsets by their own
+    rule's counts · a count at the threshold that does not split into «both» and «only» · the rounding-consistent
+    reading finding fewer days than the printed one · a conditioned bin that is not the count beside it · shares at the
+    anchors that grow with the anchor · the season rows not summing to their totals or carrying another number of
+    seasons · a control recorded as passed with its own numbers saying otherwise · a threshold that is no longer `62`'s
+    or `98`'s · the verdict sentence disagreeing with the cells it names.
+    CANNOT catch: a wrong file — the counts are the script's own reading of it."""
+    d = C(WIND123)
+    model, sub, hours, ctl = d["model"], d["station_days"], d["campaign_season_hours"], d["controls"]
+    anchors = model["beaufort_anchors_ms_from_62"]
+    b5 = model["beaufort_5_ms_from_98"]
+    assert anchors == [r["threshold_ms"] for r in C("mechanical/wind_duty_cycle.json")["beaufort_exceedance"]]
+    assert b5 == C("mechanical/field_strain_campaign.json")["thresholds_ms"]["beaufort_5"] == hours["threshold_ms"]
+    total = sub["all_days"]["paired_days"]
+    assert total == d["inputs"]["gsod_days_with_wind"] == sum(d["inputs"]["paired_days_by_year"].values())
+    dense = sum(n for reports, n in d["inputs"]["reports_per_day"].items() if int(reports) >= model["dense_days_min_reports"])
+    assert sub["dense_days"]["paired_days"] == dense and sub["campaign_months"]["paired_days"] < total
+    for name, s in sub.items():
+        dm, dx = s["daily_mean"], s["daily_max"]
+        st_days = dx["station"]["days_reported_at_or_above"][str(b5)]
+        near = [dx["station"]["days_reported_at_or_above"][str(x)] for x in (b5 - 1.0, b5, b5 + 1.0)]
+        assert near == sorted(near, reverse=True), f"{name}: the station's counts one m/s either side are not monotone: {near}"
+        for series in [dm["station"], *dm["reanalyses"].values()]:
+            shares = [series["share_at_or_above"][str(a)] for a in anchors]
+            assert shares == sorted(shares, reverse=True), f"{name}: shares at the anchors are not monotone: {shares}"
+        for reading, r in dm["reanalyses"].items():
+            lag = r["pairing_correlation_by_lag"]
+            assert lag["0"] > lag["-1"] and lag["0"] > lag["1"], f"{name}/{reading}: lag 0 is not the best pairing"
+        for r in dx["reanalyses"].values():
+            own = r["own_highest_days"]
+            assert own["n_station_threshold_days"] == st_days <= own["days_at_or_above_nth"] and own["station_threshold_days_among"] <= st_days
+            p, c = r["at_threshold"]["as_printed"], r["at_threshold"]["rounding_consistent"]
+            assert p["reanalysis_threshold_ms"] == b5 and c["reanalysis_threshold_ms"] == b5 - model["rounding_half_ms"]
+            assert c["days_reanalysis"] >= p["days_reanalysis"] and c["days_both"] >= p["days_both"]
+            for at in (p, c):
+                assert at["days_both"] + at["days_station_only"] == st_days and at["days_both"] + at["days_reanalysis_only"] == at["days_reanalysis"]
+                assert at["station_chosen"]["days"] == st_days and at["reanalysis_chosen"]["days"] == at["days_reanalysis"]
+                for cond in ("station_chosen", "reanalysis_chosen"):
+                    assert ("mean_ms" in at[cond]) == (at[cond]["days"] >= model["min_days_for_a_mean"])
+    for series in ("era5", "merra2"):
+        row = hours[series]
+        assert len(row["per_season"]) == len(hours["seasons"]) and sum(row["per_season"]) == row["total"]
+        assert row["least"] == min(row["per_season"]) and row["most"] == max(row["per_season"])
+    assert hours["both_total"] <= min(hours["era5"]["total"], hours["merra2"]["total"])
+    files = ctl["merra2_files_agree"]
+    assert max(files["worst_daily_mean_against_hourly_ms"], files["worst_daily_max_against_hourly_ms"],
+               files["file_of_62"]["worst_difference_on_its_own_days_ms"]) <= files["tolerance_ms"]
+    assert files["file_of_62"]["worst_difference_if_read_as_utc_days_ms"] > files["tolerance_ms"], "control 3 no longer tells the two day rules apart"
+    assert ctl["station_units"]["worst_knot_grid_miss_kn"] <= ctl["station_units"]["tolerance_kn"]
+    assert ctl["station_units"]["worst_mean_above_max_ms"] <= ctl["station_units"]["mean_over_max_tolerance_ms"]
+    clock = ctl["era5_utc_offset_direction"]
+    assert abs(clock["best_lag_h"]) <= 1 and clock["correlation_by_lag_h"][str(clock["best_lag_h"])] == max(clock["correlation_by_lag_h"].values())
+    a = sub["all_days"]
+    e = a["daily_max"]["reanalyses"]["era5_max_of_24_instants"]["at_threshold"]["as_printed"]
+    assert f"reported {b5:g} m/s or more on {a['daily_max']['station']['days_reported_at_or_above'][str(b5)]} of those days" in d["verdict"]
+    assert f"reaches {b5:g} m/s on {e['days_reanalysis']} days, {e['days_both']} of them among the station's" in d["verdict"]
+
+
 @pytest.mark.parametrize("module", ["test_doc_cache_sync.py", "test_cache_integrity.py"])
 def test_no_module_name_is_rebound_with_another_definition(module):
     """A pin module is ONE namespace for blocks written months apart, and Python resolves a global at CALL time — so a second
