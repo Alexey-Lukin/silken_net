@@ -28,6 +28,9 @@
 #   · that «item N» / «п. N» in the text points at the item it MEANS — the visible number is asserted
 #     (a section continuing the numbering gets `start=`, since 2026-11-07), the meaning is not;
 #   · the PDF annex of a letter (DMLS) — its own recipe lives above that region;
+#   · a bracketed formula is told from an unfilled placeholder ONLY by the superscript charge right after
+#     the bracket — a neutral complex written in brackets still reds (name it without brackets or pass
+#     --replace-line); and a placeholder someone typed with a charge after it would pass;
 #   Which assert catches what, measured by mutation 2026-11-07: an indented continuation that closes
 #   a list is caught ONLY by the ordered-list count; lax ≡ strict guards the normalisation of a list
 #   glued under a paragraph (switch it off and the clean case reds on that assert, and only there).
@@ -51,6 +54,9 @@ module LetterBody
   SUBJECT_LINE = /\A\*\*(?:Тема|Subject line):\*\*\s*(.+?)\s*\z/
   SUBJECT_HEADING = /\A#+\s*(?:Тема|Subject line)\s*\z/
   SIGNATURE_PLACEHOLDER = /\A`\[[^\]]*(?:signature|підпис)[^\]]*\]`\s*\z/i
+  # A bracketed span left in the body is an unfilled placeholder — unless a superscript charge follows the
+  # bracket at once: that is a complex ion's formula («[Os(…)Cl]⁺/²⁺»), which chemistry writes in brackets.
+  PLACEHOLDER = /\[[^\]]{1,80}\](?![⁺⁻⁰¹²³⁴-⁹])/
   CLOSING = /\A(?:З повагою|З найкращими побажаннями|Kind regards|Best regards|With best regards|Sincerely|Regards),/
   LIST_ITEM = /\A(\s*)(?:[-*+]|\d+\.)\s+\S/
   NUMBERED = /\A\d+\.\s+\S/
@@ -209,7 +215,7 @@ module LetterBody
     glued = html.scan(%r{<p>((?:(?!</p>).)*)</p>}m).flatten.find { |x| x.match?(CLOSING) && x.include?("\n") }
     fail!("closing formula glued to its signature by soft breaks («#{glued[0, 40].tr("\n", " ")}…») renders as ONE line in Gmail — " \
           "turn the block into a signature placeholder with --replace-line and pass --signature (#13 (а))") if glued
-    fail!("placeholder leaked: #{text[/\[[^\]]{1,80}\]/]}") if text.match?(/\[[^\]]{1,80}\]/)
+    fail!("placeholder leaked: #{text[PLACEHOLDER]}") if text.match?(PLACEHOLDER)
     fail!("subject leaked into the body") if text.include?(subject)
     fail!("marker leaked into the body") if text.include?(MARKER_TOKEN) || text.match?(MARKER) || text.match?(END_MARK)
     html = html.gsub("<table>", '<table style="border-collapse:collapse" border="1" cellpadding="4">') if table_border
@@ -252,6 +258,9 @@ module LetterBody
     g = assemble(region.(glued), signature: "Олексій Лукін")
     ok.("glued line detached", g[:detached] == 1 && g[:html].include?("<p>Рядок, що мав би стояти окремо.</p>"))
     bad.("placeholder leaked", region.(clean + [ "", "Адресат: [Імʼя Прізвище]" ]), signature: "x")
+    ion = assemble(region.(clean + [ "", "Продукт: [Os(dmbpy)₂(PVI)Cl]⁺/²⁺." ]), signature: "x")
+    ok.("complex-ion formula is not a placeholder", ion[:html].include?("[Os(dmbpy)₂(PVI)Cl]⁺/²⁺"))
+    bad.("bracket without a charge still leaks", region.(clean + [ "", "Продукт: [Os(dmbpy)₂(PVI)Cl] — уточнити." ]), signature: "x")
     bad.("signature placeholder without --signature", region.(clean))
     bad.("indented continuation closes the list", region.(clean.dup.insert(clean.index("1. **Перше** питання.") + 1, "", "  Продовження першого пункту.")), signature: "x")
     bad.("no end marker", region.(clean)[0..-2], signature: "x")
