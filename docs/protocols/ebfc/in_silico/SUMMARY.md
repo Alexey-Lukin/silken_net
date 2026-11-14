@@ -2006,6 +2006,8 @@ typical winter, with k itself ours. NOT modelled: the bark's heat through the fl
 snow or rime on the radome; the temperature INSIDE the capsule is the thermocouple leg of HW.37.
 (`thermal/capsule_cold_edge_sky.json` → `runs`, `edges`, `sky_on_cold_days`, `controls`)
 
+⊕ **2026-11-14 (`122`).** «No run crosses the capsule requirement» is about ERA5 air under Brutsaert's sky with `71`'s kernels as they are, and «ERA5 smoothing of station minima» is now counted (`121`: ERA5 has fewer cold days than the station). On MERRA-2 air under the same sky the hourly record keeps less margin to −40 °C than the shift `71`'s own ×0.7 reading of its still-air kernel makes, and the days before it pass the requirement under three readings at once — §HW.37 (script 122).
+
 ---
 
 ## HW.33 — The Bayonet Collar's Running Clearance (script 82)
