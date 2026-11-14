@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.11.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.10.0...v0.11.0) (2026-11-14)
+
+
+### Features
+
+* **cad · HW.24 · ⚖️ founder 2026-11-07:** вушко купона врівень із диском (кільце 1.5 × трубка 0.5); PO везе перебудовані аркуші й STL усіх сплавів ([b297e95](https://github.com/Alexey-Lukin/silken_net/commit/b297e955cbdb7748c4bce700c901c3084991239f))
+* **ci · HW.56 · 00_06 §2/§3 · 06_07 · SEC.24:** схема кодом у CI — джоба `schematic` у `CAD passed`, офіційний образ KiCad 10.0.6 за digest; дім плечей дільників у §2 ([07d1cf9](https://github.com/Alexey-Lukin/silken_net/commit/07d1cf994e833b257e749bf06af280581b265f81))
+* **firmware · HW.32:** BME280 у CCM-кадрі — замір із ключем у bme280.h, HAL-руки в main.c, I2C2 і ключ PB10 на стенді ([3146f44](https://github.com/Alexey-Lukin/silken_net/commit/3146f44a607bde26af6441349e66ea4fedcf4a96))
+* **firmware · HW.32:** бенч-POST BME280_SELFTEST — живе читання стенда через SWD, без радіо й CCM-дня ([446d74f](https://github.com/Alexey-Lukin/silken_net/commit/446d74fe3d9be7b97892f516d66fdde16e4deff5))
+* **HW.14:** бюджет Королеви на ряді сонця й температури — заряд на морозі; гейт ряду попередженням ([084d68b](https://github.com/Alexey-Lukin/silken_net/commit/084d68bfffb9443bbc840bb370a8729c33e92e47))
+* **HW.37 · in-silico 51/71:** строк EDLC — на ОБОХ рядках паспорта й PS-5006; консервативного кінця бракета немає, є нижня межа, і на ній «20 років» не тримаються ніде ([cf3c19d](https://github.com/Alexey-Lukin/silken_net/commit/cf3c19d284f09cd1d7ed573a364552257ec06b57))
+* **HW.37:** прилад 121 — холодний край проти станції Черкаси у двох реаналізах ([d7a840e](https://github.com/Alexey-Lukin/silken_net/commit/d7a840e7d4a07c3bcc81b7bf5d60d54019891a8f))
+* **HW.37:** прилад 122 — капсула на холоднішому прочитанні повітря під трьома небами ([122519a](https://github.com/Alexey-Lukin/silken_net/commit/122519aa81b46acf87553904e5b8a709f3fcc8f2))
+* **HW.43:** прилад 123 — вітер двох реаналізів проти станції Черкаси; desk HW.37 · HW.6 · HW.3 ([20f6c8a](https://github.com/Alexey-Lukin/silken_net/commit/20f6c8a12ea6b9f695c0605fffc5df9f6843934b))
+* **HW.54:** `119` — що кора минає на радомі, у якому порядку і що втрачає кожен споживач; нога «кора накриває купол» стала поданням ([13e8165](https://github.com/Alexey-Lukin/silken_net/commit/13e8165bccf3e0049b38f1376f2166c2343b66d7))
+* **HW.6:** прилад 120 — хмарне зимове небо за супутниковим продуктом і морозна половина 79 під ним ([2803720](https://github.com/Alexey-Lukin/silken_net/commit/28037204f42c2ee15290cc8d94ffa8ac43bd6f61))
+* **tools/paper · UNI.3:** прилад другого вікна §4 методичного пейпера — session_sweep.rb, відбиток корпусу; реплікацію почато (⚖️ founder 2026-11-08) ([d0f5d40](https://github.com/Alexey-Lukin/silken_net/commit/d0f5d40ed8a693589a998609105b4a50abce7bdf))
+* **tools/pcb · HW.56 · 02_01 §3.1 · ⚖️ founder 2026-11-08:** схема v2 — кламп поз. 14 і ключ Vcap поз. 23; pull-down 1 МΩ на ON обох TPS22860 — член пакета кореня ([391ee4f](https://github.com/Alexey-Lukin/silken_net/commit/391ee4f0216cb204d7ac62b09cbfed14ef97ae2d))
+* **tools/pcb · HW.56 · HW.44 · ⚖️ делеговано 2026-11-08:** схема v1 — гібрид із звіркою зʼєднань проти нетліста KiCad; Brakeman без Marshal; нога другого джерела ККД ([c1455ec](https://github.com/Alexey-Lukin/silken_net/commit/c1455ecb87f2a9f829e8a4aba695d9a0b700685d))
+* **tools/pcb · HW.56:** схема силового деку Солдата кодом — BQ25570 з обвʼязкою; плечі з канону, ERC розрізняє, SPICE без фемтофарадної пастки ([c1e6fc1](https://github.com/Alexey-Lukin/silken_net/commit/c1e6fc10ff43b2b3bcf53465d719634df7181538))
+* **UNI.3 · arXiv:** методичний пейпер — друге вікно §4, заява про ШІ, текстовий шар PDF 0/0, лист endorser-у; виняток гейта й канон ([6d690a3](https://github.com/Alexey-Lukin/silken_net/commit/6d690a39072171580f52178710be14db44d71513))
+
+
+### Bug Fixes
+
+* **.githooks/pre-push · OPS.28 · HW.56:** блок brakeman будиться на будь-який `.rb` — периметр тригера дорівнює периметру сканера ([e828d86](https://github.com/Alexey-Lukin/silken_net/commit/e828d867711cf4cd933977ed8d80342251cfe767))
+* **01a · 02a · HW.43 · HW.23:** адверсар на п'ять комітів сесії — повернуто необхідну форму 198 Па, межа реакції стінки вгору, сім носіїв паузи листів, клас [#43](https://github.com/Alexey-Lukin/silken_net/issues/43) знову відкрито ([45a8347](https://github.com/Alexey-Lukin/silken_net/commit/45a83473cb5b98837d4dcfc2f360aa3985046ca3))
+* **02_03 §9.1/§9.8а · 02_01 §7 · 00_03 · 00_06 §2.2 · HW.44 · HW.56 · HW.17 · tools:** адверсар на сесію — вимір ККД модель НЕ послаблює (мій висновок був хибний); переказ TI звужено до сказаного; генератор без латентних вад ([489df43](https://github.com/Alexey-Lukin/silken_net/commit/489df43ff13ee6d25e4405667682e1b92dab6fe6))
+* **cad · HW.24:** аркуш купона малює вушко там, де його ставить тіло, і всі ребра диска ∪ тора; два ⚖️ про PO ([a5689d6](https://github.com/Alexey-Lukin/silken_net/commit/a5689d6d5e837a44c905eb9d4947325dd835018f))
+* **firmware · HW.32:** BME280 не будиться для кадру, що не полетить — морозна відмова одним рішенням; ⚖️-нога каналу спостереження стенда ([cfdc44a](https://github.com/Alexey-Lukin/silken_net/commit/cfdc44a6dba5dc8ec2e60016ea5ce923dc513352))
+* **HW.25 листи:** обидва листи збирач відхиляв — відступи; кліматичний лист — під Р11 HW.54; адресати — у ноги ([4dbd0d2](https://github.com/Alexey-Lukin/silken_net/commit/4dbd0d2b5c4c291fd5e0b580b065302416494bd7))
+* **HW.43 · HW.25:** адверсар b7b8d73e2 — зупинний надлишок контролю не поріг, а ρgh − 4γ/d виміряного отвору; кліматичний лист п. 7; лист Donaldson; гейт бачить усі документи пінів ([fc4b2e1](https://github.com/Alexey-Lukin/silken_net/commit/fc4b2e123cd8e64b8105c687e48b22a6dbf39258))
+* **HW.43 · HW.8 · HW.24:** 59 і 87 називають відсутні входи за станом після 102/103, поріг стенда — у двох прочитаннях; вимога лічби циклів стенда Rc; доповнення до ТЗ 1 ([a300846](https://github.com/Alexey-Lukin/silken_net/commit/a3008463c3a2c21259aa038ce7aed7e75e4f77b6))
+* **HW.43 клас #43 · HW.25:** зупинний надлишок позитивного контролю — 199 Па, не 198; три листи з пінами — у шляхах воркфлоу ([b7b8d73](https://github.com/Alexey-Lukin/silken_net/commit/b7b8d73e29b42ead91f94795f385c77e16a12761))
+* **HW.43 клас #43:** «at most» вердикту 102 — угору на обох краях; Стан HW.33 зведено до прочитання 02_02 §4.4; дужку кореня шини зчеплено з сигмами 55 ([04edb21](https://github.com/Alexey-Lukin/silken_net/commit/04edb21c446301b2dd1c1fd0af08593c8807c99a))
+* **HW.43 клас #6:** 55 кешує сигми кореня сирими; дужка кореня шини — назовні [3.39, 23.8] · [2.72, 19.2] у п'яти носіях; крос-контроль 55 ⟷ 68 — до 1e-9 ([79048d8](https://github.com/Alexey-Lukin/silken_net/commit/79048d86892202e5ecfc9a6ce1ee941b99a5afa7))
+* **HW.54 логер · HW.17 · in-silico #54/#55:** адверсар фіналізації — строк «до кінця листопада» не виконує жоден канал; відповіді MERA і toolcraft — чернетки ([32c66c6](https://github.com/Alexey-Lukin/silken_net/commit/32c66c6d91c5af38369c3ee34b8ed23915fee02d))
+* **HW.54 логер · HW.17 · in-silico #54:** ⚖️ «Так, MERA, котирування» застосовано; ціну подання виправлено після ратифікації; сітковий квантор ще двічі ([d3ee511](https://github.com/Alexey-Lukin/silken_net/commit/d3ee511126c867caa63176d9b5bea78eba25c442))
+* **in-silico · HW.43 · ⚖️ founder 2026-11-08:** залишок `52` несеться ⌈мкм⌉ із сирим поруч; «0.355» речення ⊕ 2026-10-12 позначено на місці ([c760948](https://github.com/Alexey-Lukin/silken_net/commit/c7609487cd2fc1014f5f78f60ea9fb59ea2129b8))
+* **in-silico · HW.43:** «only while» на одному монотонному перетинанні → достатня форма (`88` · `57`); `103` по клітинках лишено необхідним ([4a42865](https://github.com/Alexey-Lukin/silken_net/commit/4a428650a001b339b59a2c3178bea2996c949568))
+* **in-silico · HW.43:** поріг стелі стінки `102` — дві речі: межа безпеки ізолятора (униз) і початок обмеження (угору); клас [#43](https://github.com/Alexey-Lukin/silken_net/issues/43) поза абзацами закрито ([94a48fe](https://github.com/Alexey-Lukin/silken_net/commit/94a48fec92b2494acf403a6c18859008b77a7d93))
+* **procurement · HW.41:** тема листа оператору SIM — у формі, яку читає збирач ([513b6b7](https://github.com/Alexey-Lukin/silken_net/commit/513b6b799c1b2e605f74c729f314de50a604e060))
+* **scripts · HW.5:** два листи ebfc_chem_rfq, які збирач відмовляв у мить відправки, тепер збираються — без зміни жодного слова ([9180023](https://github.com/Alexey-Lukin/silken_net/commit/9180023ced4246bfc18f82144091a8ccda02d185))
+* **tools/paper · UNI.3:** session_sweep — атомарний FileUtils.mkdir_p замість «перевір, тоді mkdir» (rubocop Lint/NonAtomicFileOperation, зупинив pre-push) ([165d8e1](https://github.com/Alexey-Lukin/silken_net/commit/165d8e1966ced689a078382cff6a4b55382d5871))
+* **tools/pcb · HW.33 · HW.12:** генератори плат — вбудований Python KiCad з `-B`, бо байткод у бандлі ламав його підпис ([fe85a50](https://github.com/Alexey-Lukin/silken_net/commit/fe85a50a45ca0cd5dba18aed070d4a7ddf8f15ac))
+* **UI.20 · a11y:** імʼя контролу з видимим текстом дає САМ текст (WCAG 2.5.3) — `aria-label`, що його не містив, знято по всьому класу; пункт → §🗄️ ([65403ae](https://github.com/Alexey-Lukin/silken_net/commit/65403ae286990969010a31915e76a50ec6c05896))
+* **адверсар фіналізації 2026-11-11:** присуди founder-а дослівно з позначкою «за поданням», повернуто загублені межі, закрито ногу з виконаним предметом ([3e18bef](https://github.com/Alexey-Lukin/silken_net/commit/3e18bef8709c2f711c9e2977824424a90d4a2191))
+* **Стаття 1 · HW.5.IS:** репетиція друку рукопису — 4 розбіжності текстового шару знято до дня депонування ([9eef552](https://github.com/Alexey-Lukin/silken_net/commit/9eef552a35e55e78ea1ba20f03b48366794d3980))
+* **фіналізація 2026-11-10:** адверсар c95d06144 · ae7cff031 · d7a1afa5f — сприятливий кут IEC, (14) — правило краю, повний звіт B, чесна лічба зерен, застарілі доми ([18a58c7](https://github.com/Alexey-Lukin/silken_net/commit/18a58c7508e5557ac4c2beb62fe2f70e96d55e07))
+
 ## [0.10.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.9.0...v0.10.0) (2026-11-07)
 
 
