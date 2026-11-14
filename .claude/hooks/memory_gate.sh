@@ -491,7 +491,7 @@ rb_dark() {
 # 2026-11-05: 179 → 180 — `project_gmail_letters` (журнал надісланих листів; founder: «запамятовуй всі листи які шлемо в gmail»); підлога за ним.
 # 2026-11-07: 180 → 181 — журнал-близнюк `log_gmail_letters` (тіла відповідей, винесені з `project_gmail_letters`, коли той підійшов до стелі файлу); підлога за ним.
 # 2026-11-08: 181 → 182 — подієвий дім `project_02c_rfq_scoring` (🔒 шкала підрахунку RFQ, виселена з `project_procurement`, щоб той зійшов під стелю старту); підлога за ним.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-183}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-184}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
