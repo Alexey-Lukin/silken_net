@@ -3156,7 +3156,11 @@ bound · every coupon. Canon judges by the arm mean with the bound printed besid
 three stay here because the choice was priced on them. The three readings move apart with n — the margin a good arm needs shrinks under
 the first two and grows under the third — so the replicate count and the reading are one decision. The largest CV at
 which a gate's best case still passes with P 0.80 (C: an arm that loses nothing, ×1.25 above 80 %; D: an arm on its
-own +7.5 % target against −10 %; D is measured on its own arm only, so its bound has no pooled row):
+own +7.5 % target against −10 %; D is measured on its own arm only, so its bound has no pooled row). ⚠️ The +7.5 % is the
+source paper's number for the gold-containing hybrid (Lac/nCuCeAuZIF) — an ABTS sensitivity on one electrode, with no
+spread given — and for the Co–Cu–Ce hybrid that is the base stack here the paper has no chloride measurement at all
+([`01_03 §1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md), the ⊕ under the cathode table), so the D rows say what an
+arm sitting AT that target would need, not what the base arm is expected to do (`00_07` HW.5):
 
 | gate · reading | n = 2 | 3 | 4 | 5 | 6 |
 |---|---|---|---|---|---|
