@@ -11,8 +11,12 @@ link: a house in the southern sector shades exactly that face, and then the ques
 150°–270°», a two-storey building «about 7 m» away on the other three sides, the roof edge «about 7 m» up), and then
 by a satellite image of the court, north up. Read by eye off that image: the back wall faces about 215°, the opening
 seen from the tree is about 167°–256° — narrower than the words' 150°–270° —, the tree stands nearer the back wall
-than the wings, and beyond the opening stand trees some 10–20 m away. The verdict's condition is therefore met, and
-the choice — keep the south face, turn the logger to the opening, or take another tree — needs the light as a number.
+than the wings. What stands beyond the opening the image does not say: two readings of it (this script's first, and
+another model's the founder passed on) put trees there, and the founder, who sees the yard, corrected both the same
+day — beyond the driveway stand low trimmed bushes and a parking area with a few trees, deciduous ones: nothing at
+the winter sun's height. He added what no reading of the image had: the pine is one of THREE planted close together
+in the court. The verdict's condition is therefore met, and the choice — keep the south face, turn the logger to the
+opening, or take another tree — needs the light as a number.
 
 MODEL.
   THE YARD — three walls, each at its own perpendicular distance from the tree: the back wall on a bearing of 35°
@@ -35,10 +39,19 @@ MODEL.
     the face is printed as the room that term has), and the base case leaves the opening's horizon EMPTY — the kind
     assumption: the winter sun is low, and trees stand there.
   WHAT STANDS IN THE OPENING — three axes, none of them the trees themselves (a stand is neither level nor opaque):
-      a level opaque horizon inside the whole opening, 0 … 60° (a 15–25 m crown line 10–20 m away stands at 34–67°);
+      a level opaque horizon inside the whole opening, 0 … 60° — an axis, not this yard: by the founder's word the
+        opening is near its empty end at the sun's height;
       the same horizon WITHOUT the building — so the building's share is printed GIVEN what stands in the opening
         (building + horizon over horizon alone), which is what a reader would divide a measured R by;
       a screen in one half of the opening only — where the sign of «turn the logger» is decided.
+  A NEIGHBOUR'S STEM — with three pines planted close, a stem standing between the face and the opening is an opaque
+    strip of the sky from the ground up: run as a strip 10° wide (a stem 0.35 m thick 2 m away) centred on four
+    bearings — a scale, not the yard: where the three stand against each other is not in the tree.
+  A SECOND READING OF THE PLAN — another model's reading of the same image against a 10 m scale bar (passed on by the
+    founder, 2026-11-14): the court's axis 4° further west, the trunk nearer the back wall and much nearer the
+    WESTERN wing, the wings ending nearer the tree. Two readings of one image by eye, neither a measurement — the same
+    text put a wall of conifers beyond the opening, which the founder does not find — so both plans are run and
+    printed side by side, and the readings on the spot decide.
   THE OPEN FACE it is set against — the same face with no building: DNI · cos γ + ½ diffuse + ½ albedo · (beam on the
     level + diffuse); for the south face under ERA5 that is `110`'s «open_face_180» (control 1).
   TWO SKIES — ERA5's, and the CERES SYN1deg product's (`124`'s loader and clock): the two split the same global flux
@@ -49,8 +62,9 @@ MODEL.
     both edges move together), which (i) does not cover: an image off nadir displaces a 25 m crown by metres against
     the roof edges.
 
-WHAT IT CANNOT SEE. What actually stands beyond the opening (only level screens are run); the pine's own crown and
-neighbours (the thing the logger is there to measure); the plan beyond what an image read by eye gives; a roof's
+WHAT IT CANNOT SEE. What actually stands beyond the opening (only level screens are run; the founder's word stands in
+for it); the pine's own crown; where the two neighbouring pines stand and what their stems and crowns take; the plan
+beyond what an image read by eye gives (two readings of it differ by metres); a roof's
 ridge above its edge; windows, wall colour and the light the walls return; an anisotropic sky (the circumsolar part
 of the diffuse light is blocked together with the beam, so for a face that loses beam the isotropic sky is the kind
 form); snow on the yard's ground other than `79`'s two albedo ends on ERA5-Land's cell; the logger's height other
@@ -118,8 +132,11 @@ BACK_WALL_BEARING_DEG = 35.0                # the back wall lies this way from t
 WALLS_M = {"back": 5.2, "east": 8.5, "west": 7.3}      # perpendicular distances from the tree
 OPENING_DEG = (167.0, 256.0)                # the wings' ends seen from the tree (the words gave «about 150°–270°»)
 ROOF_EDGE_M = 7.0
-TREES_BEYOND_M = (10.0, 20.0)               # the trees beyond the opening, by eye off the same image
-CROWN_HEIGHTS_M = (15.0, 20.0, 25.0)        # illustrative crown lines (the pine itself is about 25 m)
+# a second reading of the same image, another model's, against a 10 m scale bar (mid-values of the ranges it gave)
+SECOND_PLAN = {"back_wall_bearing_deg": 39.0, "walls_m": {"back": 4.5, "east": 9.25, "west": 5.25},
+               "wing_ends_in_front_of_the_tree_m": {"east": 6.25, "west": 5.45}}
+NEIGHBOUR_STRIP_DEG = 10.0                  # a stem 0.35 m thick 2 m away
+NEIGHBOUR_BEARINGS_DEG = (170.0, 190.0, 210.0, 230.0)
 # the bracket on «by eye»
 ROOF_EDGES_M = (6.0, 7.0, 8.0)
 SCALES = (0.85, 1.0, 1.15)                  # on every distance
@@ -285,10 +302,7 @@ def control_kernels() -> dict:
             "roof_edge_from_the_logger_deg": {"back_wall_normal": edge_deg(back_b, LOGGER_HEIGHT_M),
                                               "eastern_wall_normal": edge_deg(east_b, LOGGER_HEIGHT_M),
                                               "western_wall_normal": edge_deg(west_b, LOGGER_HEIGHT_M),
-                                              "opening_eastern_edge": edge_deg(OPENING_DEG[0] - 1e-6, LOGGER_HEIGHT_M)},
-            "crown_line_from_the_logger_deg": {
-                f"{height:g}m_at_{dist:g}m": math.degrees(math.atan((height - LOGGER_HEIGHT_M) / dist))
-                for height in CROWN_HEIGHTS_M for dist in TREES_BEYOND_M}}
+                                              "opening_eastern_edge": edge_deg(OPENING_DEG[0] - 1e-6, LOGGER_HEIGHT_M)}}
 
 
 def main() -> int:
@@ -422,9 +436,9 @@ def main() -> int:
     # control (5): the base beam share by ray–segment intersection
     seen2 = visible_past_segments(sun_az, sun_el, ROOF_EDGE_M - LOGGER_HEIGHT_M)
     k_beam2 = np.where(seen2 & (c180 > 0.0), c180, 0.0).mean(axis=1)
-    second = {name: float((sky["dni"] * k_beam2)[win].sum() / (sky["dni"] * k_open180)[win].sum()) for name, sky in skies.items()}
+    by_segments = {name: float((sky["dni"] * k_beam2)[win].sum() / (sky["dni"] * k_open180)[win].sum()) for name, sky in skies.items()}
     for sky in skies:
-        assert abs(second[sky] - base["south_180"]["by_sky"][sky]["beam_kept"]) < 1e-6, ("control 5", sky, second[sky])
+        assert abs(by_segments[sky] - base["south_180"]["by_sky"][sky]["beam_kept"]) < 1e-6, ("control 5", sky, by_segments[sky])
 
     def turned_over_south(cells: dict) -> dict:
         return dict(zip(keys, over(cells["opening_centre"], cells["south_180"]), strict=True))
@@ -475,6 +489,33 @@ def main() -> int:
                      "at_max": {k: trunk_hi[k] for k in ("to_the_eastern_wing_m", "to_the_back_wall_m", "opening_deg")},
                      "within_one_metre_min": min(r["total_kept_min"] for r in one_metre),
                      "within_one_metre_max": max(r["total_kept_max"] for r in one_metre)}
+    # a neighbour's stem between the face and the opening: an opaque strip from the ground up
+    neighbour = {}
+    for bearing in NEIGHBOUR_BEARINGS_DEG:
+        strip = ((bearing - NEIGHBOUR_STRIP_DEG / 2.0, bearing + NEIGHBOUR_STRIP_DEG / 2.0, 90.0),)
+        cell = yard(OPENING_DEG, walls0, ROOF_EDGE_M, 180.0, screens=strip)
+        neighbour[f"{bearing:g}"] = {"total_kept_min": min(kept(cell)), "total_kept_max": max(kept(cell)),
+                                     "over_no_strip_min": min(over(cell, base["south_180"])),
+                                     "over_no_strip_max": max(over(cell, base["south_180"]))}
+    # the second reading of the plan
+    b2 = SECOND_PLAN["back_wall_bearing_deg"]
+    d2, fwd2 = SECOND_PLAN["walls_m"], SECOND_PLAN["wing_ends_in_front_of_the_tree_m"]
+    walls2 = ((b2, d2["back"]), (b2 + 90.0, d2["east"]), (b2 + 270.0, d2["west"]))
+    opening2 = (b2 + 90.0 + math.degrees(math.atan2(fwd2["east"], d2["east"])),
+                b2 + 270.0 - math.degrees(math.atan2(fwd2["west"], d2["west"])))
+    cells2 = {"south_180": yard(opening2, walls2, ROOF_EDGE_M, 180.0),
+              "opening_centre": yard(opening2, walls2, ROOF_EDGE_M, 0.5 * (opening2[0] + opening2[1]))}
+    rise2 = ROOF_EDGE_M - LOGGER_HEIGHT_M
+    second = {"opening_deg": list(opening2), "walls_m": d2, "back_wall_bearing_deg": b2,
+              "roof_edge_from_the_logger_deg": {k: math.degrees(math.atan(rise2 / d2[w]))
+                                                for k, w in (("back_wall_normal", "back"), ("eastern_wall_normal", "east"),
+                                                             ("western_wall_normal", "west"))},
+              "eastern_wing_end_over_its_distance": fwd2["east"] / d2["east"],
+              "south_face_total_kept_min": min(kept(cells2["south_180"])), "south_face_total_kept_max": max(kept(cells2["south_180"])),
+              "south_face_beam_kept_era5": cells2["south_180"]["by_sky"]["era5"]["beam_kept"],
+              "south_face_sky_diffuse_kept": cells2["south_180"]["by_sky"]["era5"]["sky_diffuse_kept"],
+              "turned_over_south_min": min(over(cells2["opening_centre"], cells2["south_180"])),
+              "turned_over_south_max": max(over(cells2["opening_centre"], cells2["south_180"]))}
     lit = win[:, None] & (u > 0.0)
     west_most_winter_sun = float(sun_az[lit].max())
     highest_winter_sun = float(sun_el[lit].max())
@@ -562,7 +603,13 @@ def main() -> int:
     print(f"  the roof edge seen from {LOGGER_HEIGHT_M} m: back {roof['back_wall_normal']:.1f}°, east {roof['eastern_wall_normal']:.1f}°, "
           f"west {roof['western_wall_normal']:.1f}°, at the opening's eastern edge {roof['opening_eastern_edge']:.1f}°; the highest winter "
           f"sun {highest_winter_sun:.1f}°, its westernmost bearing {west_most_winter_sun:.1f}°")
-    print("  crown lines: " + ", ".join(f"{k} {v:.0f}°" for k, v in kernels["crown_line_from_the_logger_deg"].items()))
+    print(f"  the second reading of the plan: opening {opening2[0]:.1f}°–{opening2[1]:.1f}°, south face total kept "
+          f"{second['south_face_total_kept_min']:.3f}–{second['south_face_total_kept_max']:.3f} (beam {second['south_face_beam_kept_era5']:.3f}), "
+          f"turned over south {second['turned_over_south_min']:.3f}–{second['turned_over_south_max']:.3f}; roof edge "
+          + ", ".join(f"{k} {v:.1f}°" for k, v in second["roof_edge_from_the_logger_deg"].items()))
+    print("  a neighbour's stem, a 10° strip → south total kept · over no strip: "
+          + "; ".join(f"{b}°: {v['total_kept_min']:.3f}–{v['total_kept_max']:.3f} · {v['over_no_strip_min']:.3f}–{v['over_no_strip_max']:.3f}"
+                      for b, v in neighbour.items()))
     for name, cell in base.items():
         vf = cell["view_factors"]
         print(f"  face {name} ({faces[name]:.1f}°): sky view {vf['sky']:.3f} of 0.5, walls {vf['walls']:.3f}, ground's sky view "
@@ -605,7 +652,10 @@ def main() -> int:
                     "base case leaves the opening's horizon empty (the horizon axis prices what stands there)",
         "inputs": {"opening_deg": list(OPENING_DEG), "walls_m": WALLS_M, "back_wall_bearing_deg": BACK_WALL_BEARING_DEG,
                    "roof_edge_m": ROOF_EDGE_M, "logger_height_m": LOGGER_HEIGHT_M, "eye_height_m": EYE_HEIGHT_M, "faces_deg": faces,
-                   "trees_beyond_the_opening_m": list(TREES_BEYOND_M),
+                   "beyond_the_opening": "by the founder's word (2026-11-14): low trimmed bushes and a parking area with a few "
+                                         "deciduous trees — nothing at the winter sun's height; and the pine is one of three "
+                                         "planted close together in the court",
+                   "second_plan": SECOND_PLAN, "neighbour_strip_deg": NEIGHBOUR_STRIP_DEG,
                    "months": list(MONTHS), "seasons": list(SEASONS), "skies": list(skies), "ends": ends,
                    "bracket": {"roof_edges_m": list(ROOF_EDGES_M), "scales": list(SCALES), "edge_shifts_deg": list(EDGE_SHIFTS_DEG),
                                "trunk_shifts_m": list(TRUNK_SHIFTS_M)},
@@ -613,7 +663,7 @@ def main() -> int:
                    "source": "the founder's satellite image of the court, north up, read by eye in pixels and scaled by his "
                              "«about 7 m» taken as the mean of the three wall distances; the roof edge by his word; 2026-11-14"},
         "controls": {"110_open_face_fields_reproduced": control1, "kernels": kernels,
-                     "beam_kept_by_ray_segment_intersection": second,
+                     "beam_kept_by_ray_segment_intersection": by_segments,
                      "highest_winter_sun_deg": highest_winter_sun},
         "sun_first_seen_from_the_trunk": sight,
         "base": base,
@@ -622,6 +672,8 @@ def main() -> int:
         "opening_horizon": horizon,
         "screen_in_one_half_of_the_opening": screen,
         "eastern_edge_alone": east_edge,
+        "second_reading_of_the_plan": second,
+        "neighbour_stem_strip": neighbour,
         "trunk_moved": {"bracket": trunk_bracket, "positions": trunk},
         "winter_sun_westernmost_bearing_deg": west_most_winter_sun,
         "bracket": bracket,

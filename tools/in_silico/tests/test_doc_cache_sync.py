@@ -14209,22 +14209,20 @@ def test_two_airs_words_follow_the_cache():
 
 
 def test_courtyard_words_follow_the_cache():
-    """125's SUMMARY section in WORDS: the plan's inputs, the by-axis brackets, the months, the crowns, the reading's
-    ranges and the table of hours — each sentence rebuilt from the cache. CAN catch a re-run (another plan, another
-    sun) that leaves those sentences behind; CANNOT catch a reworded sentence that keeps its anchor."""
+    """125's SUMMARY section in WORDS: the plan's inputs, the by-axis brackets, the second reading of the plan, the
+    neighbour's stem, the reading's ranges and the table of hours — each sentence rebuilt from the cache. CAN catch a
+    re-run (another plan, another sun) that leaves those sentences behind; CANNOT catch a reworded sentence that
+    keeps its anchor."""
     d, text = C(_CYD), doc(SUMMARY)
     inp, k = d["inputs"], d["controls"]["kernels"]
     w = inp["walls_m"]
     assert f"the tree stands {w['back']:g} m from it, {w['east']:g} m from the eastern wing and {w['west']:g} m from the western one" in text
     assert f"the opening seen from the tree is about {inp['opening_deg'][0]:g}°–{inp['opening_deg'][1]:g}°" in text
-    trees = inp["trees_beyond_the_opening_m"]
-    assert f"beyond the opening stand trees some {trees[0]:g}–{trees[1]:g} m away" in text
+    assert "low trimmed bushes and a parking area with a few deciduous trees" in text and "deciduous" in inp["beyond_the_opening"]
+    assert "the pine is one of THREE planted close together in the court" in text and "three" in inp["beyond_the_opening"]
     wings = k["wing_lengths_from_the_back_wall_m"]
     assert f"make the wings {wings['east']:.1f} and {wings['west']:.1f} m long from the back wall" in text
     assert f"the south face's view of the walls is {d['base']['south_180']['view_factors']['walls']:.3f} of its 0.5" in text
-    crown = k["crown_line_from_the_logger_deg"].values()
-    assert f"standing 10–20 m away is at {min(crown):.0f}°–{max(crown):.0f}° — at or above that sun" in text
-    assert min(crown) > d["controls"]["highest_winter_sun_deg"]
     s = d["base"]["south_180"]["by_sky"]
     assert f"(the product's: {s['ceres']['beam_kept']:.3f} and {d['base']['opening_centre']['by_sky']['ceres']['beam_kept']:.3f})" in text
     m = s["era5"]["low"]["by_month"]
@@ -14245,42 +14243,53 @@ def test_courtyard_words_follow_the_cache():
             f"highest 2 m the other way ({tb['at_max']['opening_deg'][0]:.0f}°–{tb['at_max']['opening_deg'][1]:.0f}°)") in text
     assert tb["at_min"]["to_the_eastern_wing_m"] == 2.0 == tb["at_min"]["to_the_back_wall_m"]
     assert tb["at_max"]["to_the_eastern_wing_m"] == -2.0 == tb["at_max"]["to_the_back_wall_m"]
-    assert f"with the plan's brackets, between {tb['total_kept_min']:.2f} and {tb['total_kept_max']:.2f} is kept" in text
-    assert tb["total_kept_min"] <= d["bracket"]["south_180"]["total_kept_min"] and d["bracket"]["south_180"]["total_kept_max"] <= tb["total_kept_max"]
+    # the second reading of the plan and the neighbour's stem
+    p2, nb = d["second_reading_of_the_plan"], d["neighbour_stem_strip"]
+    assert (f"the trunk nearer the back wall ({p2['walls_m']['back']:g} m) and much nearer the WESTERN wing ({p2['walls_m']['west']:g} m, "
+            f"{p2['walls_m']['east']:g} m from the eastern one), with the opening at {p2['opening_deg'][0]:.0f}°–{p2['opening_deg'][1]:.0f}°") in text
+    assert (f"On that plan the south face keeps **{p2['south_face_total_kept_min']:.3f}**–**{p2['south_face_total_kept_max']:.3f}** "
+            f"(beam {p2['south_face_beam_kept_era5']:.3f}), and the face turned to the opening receives {p2['turned_over_south_min']:.3f}–"
+            f"{p2['turned_over_south_max']:.3f} of the south face's light") in text
+    lo_b = min(nb, key=lambda b: nb[b]["over_no_strip_min"])
+    hi_b = max(nb, key=lambda b: nb[b]["over_no_strip_max"])
+    nb_lo, nb_hi = min(v["over_no_strip_min"] for v in nb.values()), max(v["over_no_strip_max"] for v in nb.values())
+    assert (f"a strip {inp['neighbour_strip_deg']:g}° wide (a stem 0.35 m thick 2 m away) leaves the south face **{nb_lo:.3f}**–**{nb_hi:.3f}** of "
+            f"what it has without it — least with the strip at {lo_b}°, most at {hi_b}°") in text
+    assert abs(math.degrees(2 * math.atan(0.35 / 2 / 2.0)) - inp["neighbour_strip_deg"]) < 0.05
+    assert f"costs {1 - nb_hi:.0%}–{1 - nb_lo:.0%} of the face's light" in text
+    # the reading
     totals = [s[sky][end]["total_kept"] for sky in ("era5", "ceres") for end in ("low", "high")]
     assert "takes about a third of the south face's winter light" in text and 1 - max(totals) > 0.30 and 1 - min(totals) < 0.36
+    assert (f"{min(totals):.2f}–{max(totals):.2f} kept on the first, {p2['south_face_total_kept_min']:.2f}–{p2['south_face_total_kept_max']:.2f} on "
+            f"the second — and the first plan's brackets run from {tb['total_kept_min']:.2f} to {tb['total_kept_max']:.2f}: a factor of "
+            f"{tb['total_kept_max'] / tb['total_kept_min']:.1f}, against the 1.64 times between `110`'s favourable and nominal thresholds") in text
+    assert tb["total_kept_min"] <= p2["south_face_total_kept_min"] and p2["south_face_total_kept_max"] <= tb["total_kept_max"]
+    assert tb["total_kept_min"] <= d["bracket"]["south_180"]["total_kept_min"] and d["bracket"]["south_180"]["total_kept_max"] <= tb["total_kept_max"]
+    assert re.search(r"\| Cadence C \| 0\.0218 ⊥ [\d.]+ \| 0\.0358 ⊥", text) and abs(0.0358 / 0.0218 - 1.64) < 0.005
     hz = d["opening_horizon"]
     tall = [hz[h] for h in ("35", "45", "60")]
-    sight = d["sun_first_seen_from_the_trunk"]
-    dec = sight["12-21"]["sun_elevation_by_bearing_deg"]
-    share = [v[f"building_share_given_the_horizon_{end}"] for v in hz.values() for end in ("min", "max")]
-    assert (f"under a level opaque horizon of 35°–60° the face keeps {min(v['south_face_total_kept_min'] for v in tall):.2f}–"
-            f"{max(v['south_face_total_kept_max'] for v in tall):.2f} of an open face's light, and the building's share given that horizon is "
-            f"{min(v['building_share_given_the_horizon_min'] for v in tall):.2f}–{max(v['building_share_given_the_horizon_max'] for v in tall):.2f}, "
-            "not two thirds") in text
-    assert f"under high crowns a December sun {dec['210']:.0f}°–{dec['170']:.0f}° up passes among the trunks" in text
-    assert f"between them the building's share runs {min(share):.2f}–{max(share):.2f}" in text
-    dif = [v["building_share_of_the_sky_diffuse"] for v in tall]
-    assert (f"it runs narrower: {hz['0']['building_share_of_the_sky_diffuse']:.2f} with an empty horizon, {min(dif):.2f}–{max(dif):.2f} "
-            "at 35°–60°") in text
+    assert (f"the building's share given a horizon of 35°–60° is {min(v['building_share_given_the_horizon_min'] for v in tall):.2f}–"
+            f"{max(v['building_share_given_the_horizon_max'] for v in tall):.2f}, not two thirds") in text
     level = [v[f"turned_over_south_{end}"] for v in hz.values() for end in ("min", "max")]
     scr = d["screen_in_one_half_of_the_opening"]
-    assert (f"is not the lever: {min(level):.2f}–{max(level):.2f} of the south face's light under any level horizon, and with a screen "
+    assert (f"is not the lever: {min(level):.2f}–{max(level):.2f} of the south face's light under any level horizon "
+            f"({p2['turned_over_south_min']:.2f}–{p2['turned_over_south_max']:.2f} on the second plan with an empty one), and with a screen "
             f"in one half the sign follows the half — {scr['eastern_half_40']['turned_over_south_min']:.2f}–"
             f"{scr['eastern_half_40']['turned_over_south_max']:.2f} when the eastern half is screened at 40°, "
             f"{scr['western_half_40']['turned_over_south_min']:.2f}–{scr['western_half_40']['turned_over_south_max']:.2f} when the western one is") in text
     assert scr["eastern_half_40"]["turned_over_south_min"] > 1.0 > scr["western_half_40"]["turned_over_south_max"]
-    # the spread of the building's share against the gap between `110`'s favourable and nominal thresholds at cadence C
-    assert (f"a share known no better than {min(share):.2f}–{max(share):.2f} spreads wider than the 1.64 times between `110`'s "
-            "favourable and nominal thresholds at cadence C") in text
-    assert max(share) / min(share) > 1.64 and re.search(r"\| Cadence C \| 0\.0218 ⊥ [\d.]+ \| 0\.0358 ⊥", text)
-    assert abs(0.0358 / 0.0218 - 1.64) < 0.005
-    roof = k["roof_edge_from_the_logger_deg"]
-    assert (f"toward the back wall (the model: {roof['back_wall_normal']:.1f}°), square to the eastern wing ({roof['eastern_wall_normal']:.1f}°), "
-            f"square to the western one ({roof['western_wall_normal']:.1f}°), and just east of the opening's eastern edge "
-            f"({roof['opening_eastern_edge']:.1f}°)") in text
+    # the visit
+    roof, roof2 = k["roof_edge_from_the_logger_deg"], p2["roof_edge_from_the_logger_deg"]
+    assert (f"toward the back wall (the first plan: {roof['back_wall_normal']:.1f}°, the second: {roof2['back_wall_normal']:.1f}°), square to the "
+            f"eastern wing ({roof['eastern_wall_normal']:.1f}° ⊥ {roof2['eastern_wall_normal']:.1f}°), square to the western one "
+            f"({roof['western_wall_normal']:.1f}° ⊥ {roof2['western_wall_normal']:.1f}° — where the two plans differ most)") in text
+    gaps = {key: abs(roof[key] - roof2[key]) for key in roof2}
+    assert max(gaps, key=gaps.get) == "western_wall_normal"
+    assert f"(the first plan: {inp['opening_deg'][0]:g}° and {inp['opening_deg'][1]:g}°, the second: {p2['opening_deg'][0]:.0f}° and {p2['opening_deg'][1]:.0f}°; true)" in text
     ratio = k["eastern_wing_end_over_its_distance_by_eastern_edge"]
-    assert f"{ratio['167']:.2f} for an eastern edge at 167°, {ratio['161']:.2f} at 161°, {ratio['173']:.2f} at 173°" in text
+    assert (f"{ratio['167']:.2f} for an eastern edge at 167°, {ratio['161']:.2f} at 161°, {ratio['173']:.2f} at 173°; the second plan gives "
+            f"{p2['eastern_wing_end_over_its_distance']:.2f}") in text
+    sight = d["sun_first_seen_from_the_trunk"]
     names = {"11-21": "21 November", "12-21": "21 December", "01-21": "21 January", "02-11": "11 February", "02-21": "21 February"}
     for date, v in sight.items():
         heights = " · ".join(f"{v['sun_elevation_by_bearing_deg'][b]:.0f}°" for b in ("170", "190", "210", "230"))

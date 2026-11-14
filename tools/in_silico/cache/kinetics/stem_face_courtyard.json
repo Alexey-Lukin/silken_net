@@ -18,10 +18,20 @@
       "south_180": 180.0,
       "opening_centre": 211.5
     },
-    "trees_beyond_the_opening_m": [
-      10.0,
-      20.0
-    ],
+    "beyond_the_opening": "by the founder's word (2026-11-14): low trimmed bushes and a parking area with a few deciduous trees \u2014 nothing at the winter sun's height; and the pine is one of three planted close together in the court",
+    "second_plan": {
+      "back_wall_bearing_deg": 39.0,
+      "walls_m": {
+        "back": 4.5,
+        "east": 9.25,
+        "west": 5.25
+      },
+      "wing_ends_in_front_of_the_tree_m": {
+        "east": 6.25,
+        "west": 5.45
+      }
+    },
+    "neighbour_strip_deg": 10.0,
     "months": [
       12,
       1,
@@ -113,14 +123,6 @@
         "eastern_wall_normal": 33.845340261071705,
         "western_wall_normal": 37.98349825527709,
         "opening_eastern_edge": 26.489103946942485
-      },
-      "crown_line_from_the_logger_deg": {
-        "15m_at_10m": 53.873284227210085,
-        "15m_at_20m": 34.41114338393872,
-        "20m_at_10m": 61.86393940977817,
-        "20m_at_20m": 43.076059015448756,
-        "25m_at_10m": 67.12312819534525,
-        "25m_at_20m": 49.83958757629758
       }
     },
     "beam_kept_by_ray_segment_intersection": {
@@ -1519,6 +1521,56 @@
       "beam_kept_era5": 0.5300079362561585,
       "total_kept_min": 0.5519329783577366,
       "total_kept_max": 0.5667307780079724
+    }
+  },
+  "second_reading_of_the_plan": {
+    "opening_deg": [
+      163.04593735660166,
+      262.929175545213
+    ],
+    "walls_m": {
+      "back": 4.5,
+      "east": 9.25,
+      "west": 5.25
+    },
+    "back_wall_bearing_deg": 39.0,
+    "roof_edge_from_the_logger_deg": {
+      "back_wall_normal": 51.70983680775693,
+      "eastern_wall_normal": 31.642048988829377,
+      "western_wall_normal": 47.353296866108316
+    },
+    "eastern_wing_end_over_its_distance": 0.6756756756756757,
+    "south_face_total_kept_min": 0.7003254481343538,
+    "south_face_total_kept_max": 0.71547993239368,
+    "south_face_beam_kept_era5": 0.7042305072813292,
+    "south_face_sky_diffuse_kept": 0.7798975432902534,
+    "turned_over_south_min": 1.0245504845416853,
+    "turned_over_south_max": 1.030996352035676
+  },
+  "neighbour_stem_strip": {
+    "170": {
+      "total_kept_min": 0.5940106208782662,
+      "total_kept_max": 0.6020595231104695,
+      "over_no_strip_min": 0.8805158310078613,
+      "over_no_strip_max": 0.8862679372005288
+    },
+    "190": {
+      "total_kept_min": 0.5735737569954651,
+      "total_kept_max": 0.5829760769257802,
+      "over_no_strip_min": 0.8505399047365799,
+      "over_no_strip_max": 0.8581759532096392
+    },
+    "210": {
+      "total_kept_min": 0.5841550411088233,
+      "total_kept_max": 0.5994847864900906,
+      "over_no_strip_min": 0.8662306581436219,
+      "over_no_strip_max": 0.8824777695745961
+    },
+    "230": {
+      "total_kept_min": 0.6313245019737929,
+      "total_kept_max": 0.6375115656092913,
+      "over_no_strip_min": 0.9334522994696954,
+      "over_no_strip_max": 0.9395606914148832
     }
   },
   "trunk_moved": {
