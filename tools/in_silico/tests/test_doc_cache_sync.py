@@ -11545,6 +11545,275 @@ _COLD121_ANCHORS = {
 }
 
 
+# ── HW.37 · 122: the capsule's deep edge on the colder reading of the air (SUMMARY §HW.37 (122) · 02_03 §12.1 ⊕ 2026-11-14) ──
+CAP_SECOND = "thermal/capsule_cold_edge_second_reading.json"
+_CAP122_RUNS = (("merra2", "formula_clear", "MERRA-2", "Brutsaert's formula (`81`'s clear sky)"),
+                ("merra2", "product_clear", "MERRA-2", "CERES SYN1deg clear-sky flux"),
+                ("merra2", "product_all_sky", "MERRA-2", "CERES SYN1deg all-sky flux"),
+                ("era5", "formula_clear", "ERA5", "Brutsaert's formula (`81`'s clear sky)"))
+
+
+def _cap122_paragraphs(d: dict) -> dict:
+    """Every sentence of SUMMARY §HW.37 (`122`) and of the 02_03 §12.1 ⊕ 2026-11-14 that carries a number or a direction —
+    built from the cache. Each direction is asserted first, so a re-run that turns it reds with the reason."""
+    r, day, model, inputs, ctl = d["readings"], d["day_before_the_hourly_record"], d["model"], d["inputs"], d["controls"]
+    req, floor = model["capsule_requirement_C"], model["edlc_floor_C"]
+    skies, sky_cold, dew, ks = d["merra2_air_by_sky"], d["sky_emissivity_on_merra2_coldest_hours"], d["merra2_dew"], d["kernel_sensitivity"]
+    d81, d121 = C(COLD), C(COLD_EDGE)
+    seasons = d121["cold_edge"]["merra2_utc_day"]["seasons"]
+    scale = ks["scale"]
+    assert scale == model["kernel_scale"] == C(THERMAL)["hot_bound_h_c_sensitivity"]["h_c_scale"], "the kernel scale is no longer `71`'s"
+
+    def u(x: float, nd: int = 2) -> str:
+        return f"{x:.{nd}f}".replace("-", "−")
+
+    def signed(x, fmt: str) -> str:
+        return format(x, fmt).replace("-", "−")
+
+    def run(air: str, sky: str, scaled: bool = False) -> dict:
+        if air == "merra2":
+            return (ks["merra2_air_by_sky"] if scaled else skies)[sky]
+        return ks["era5_formula_clear"] if scaled else r["era5"]["capsule"]
+
+    years = f"{model['window_utc_days'][0][:4]}–{model['window_utc_days'][1][:4]}"
+    yrs = model["years_of_window"]
+    deep81 = d81["runs"][model["regime"]][model["wind"]]
+    years81 = d81["inputs"]["years"]
+    per81 = deep81["hours_below_floor"] / years81
+    table = [f"| Air | Sky | coldest capsule hour (UTC; the air at it) | capsule: hours below {u(floor, 0)} °C (UTC days · longest spell) | capsule: "
+             f"hours below {u(req, 0)} °C | with `71`'s ×{scale:g} still-air kernel: coldest · hours below {u(floor, 0)} / {u(req, 0)} °C |",
+             "|---|---|---|---|---|---|"]
+    for air, sky, a_label, s_label in _CAP122_RUNS:
+        c, k = run(air, sky), run(air, sky, True)
+        table.append(f"| {a_label} | {s_label} | {u(c['coldest_C'])} °C ({c['at']}; {u(c['air_at_coldest_C'])} °C) | {c['hours_below_floor']} "
+                     f"({c['days_below_floor']} · {c['longest_spell_below_floor_h']} h) | {c['hours_below_requirement']} | {u(k['coldest_C'])} °C · "
+                     f"{k['hours_below_floor']} / {k['hours_below_requirement']} |")
+
+    nom = [run(a, s) for a, s, _, _ in _CAP122_RUNS]
+    sca = [run(a, s, True) for a, s, _, _ in _CAP122_RUNS]
+    mf, mp, ma, ef = nom
+    kf, kp, ka, ke = sca
+    assert skies["formula_clear"] == r["merra2"]["capsule"]
+    assert all(c["hours_below_requirement"] == 0 for c in nom), \
+        "with `71`'s kernels as they are a run now crosses the requirement INSIDE the hourly record — rewrite «window», «follows», the 02_03 ⊕ and the tracker"
+    assert kf["hours_below_requirement"] > 0 and all(c["hours_below_requirement"] == 0 for c in (kp, ka, ke)), \
+        "with the scaled kernel the formula-sky run on MERRA-2 air is no longer the one and only run below the requirement — rewrite «window» and «follows»"
+    assert all(k["coldest_C"] < n["coldest_C"] and k["hours_below_floor"] > n["hours_below_floor"] for k, n in zip(sca, nom, strict=True))
+    assert mf["coldest_C"] < mp["coldest_C"] < ma["coldest_C"] and mf["coldest_C"] < ef["coldest_C"], "the order of the four runs' minima moved"
+    assert mf["hours_below_floor"] > mp["hours_below_floor"] > ma["hours_below_floor"] > ef["hours_below_floor"], \
+        "a MERRA-2 run no longer has more hours below the floor than the next sky or than ERA5 — rewrite «follows» and the tracker's (5)"
+    assert ma["hours_below_floor"] / yrs > per81, "a MERRA-2 run no longer has more hours below the floor a year than `81`'s record — rewrite «follows»"
+    margin_f, margin_p, margin_a = (c["coldest_C"] - req for c in (mf, mp, ma))
+    assert margin_f > 0
+    am, ae = r["merra2"]["air"], r["era5"]["air"]
+
+    ef_, pc, pa_ = sky_cold["formula_clear"], sky_cold["product_clear"], sky_cold["product_all_sky"]
+    gapw = sky_cold["formula_minus_product_clear_Wm2"]
+    assert ef_["highest"] < pc["lowest"] and gapw["highest"] < 0, "Brutsaert's sky is no longer below CERES's clear sky on every one of the coldest hours"
+    assert pa_["highest"] > 1.0, "the all-sky ratio no longer exceeds 1 on the coldest hours — rewrite «sky»"
+
+    sweep = day["sweep"]
+    dews = [x["air_minus_dew_K"] for x in sweep]
+    own = day["merra2_air_minus_dew_on_its_coldest_hours_K"]
+    assert dews[0] <= own["lowest"] < 0 < own["highest"] <= dews[-1], "MERRA-2's own air-minus-dew on its coldest hours left the sweep — widen it"
+    caps = [x["capsule_C"] for x in sweep]
+    assert caps == sorted(caps, reverse=True), "a drier air no longer makes the capsule colder — the sweep's two ends are not its extremes"
+    every = day["every_day_before_the_hourly_record"]
+    hits = every["below_requirement_at_air_minus_dew_K"]
+    wet, dry = (hits[k] for k in (f"{dews[0]:g}", f"{dews[-1]:g}"))
+    those = day["days_below_the_requirement"]
+    hit_days = sorted(those)
+    assert [h["day"] for h in wet] == hit_days == [h["day"] for h in dry] and day["day"] in hit_days, \
+        "the days below the requirement before the hourly record are no longer the same at both ends of the sweep — rewrite «days»"
+    assert len(hit_days) == 2, "the page is written for TWO days below the requirement — rewrite «days», «stands_on», «follows» and the 02_03 ⊕"
+    by_day = {h["day"]: [req - h["capsule_C"]] for h in wet}
+    for h in dry:
+        by_day[h["day"]].append(req - h["capsule_C"])
+    assert all(0 < a < b for a, b in by_day.values())
+    worst = max(b for _, b in by_day.values())
+    span = f"{every['first_day'][:4]}–{every['last_day'][:4]}"
+    listed = ", ".join(hit_days)
+    d1, d2 = (those[k] for k in hit_days)
+
+    on_req = [x["sky_emissivity_on_the_requirement"] for x in (d1, d2)]
+    form_eps = sorted(x["sky_emissivity"] for x in sweep)
+    assert form_eps[-1] < min(on_req) and max(on_req) < pc["lowest"], "the sky ratio the crossing needs is no longer between the formula's and CERES's"
+    prod = [v for x in (d1, d2) for v in x["capsule_at_product_clear_sky_emissivity_C"].values()]
+    kprod_d = ks["capsule_at_product_clear_sky_emissivity_on_the_days_below_the_requirement_C"]
+    assert sorted(kprod_d) == hit_days
+    kprod = [v for dd in hit_days for v in kprod_d[dd].values()]
+    assert all(v > req for v in prod + kprod), "with CERES's clear-sky ratios the lump is no longer above the requirement on those days (either kernel)"
+    shares = [v for x in (d1, d2) for v in x["that_wind_as_a_share_of_the_daily_mean_10m_wind"].values()]
+    assert max(shares) < 0.1
+    winds = [x["merra2"]["wind_10m_mean_m_s"] for x in (d1, d2)]
+    k_caps = {k: [v for x in (d1, d2) for v in x["capsule_with_a_share_of_the_daily_mean_wind_C"][k].values()] for k in ("k=0.1", "k=0.3")}
+    assert all(v > req for vals in k_caps.values() for v in vals), "with `71`'s shares k of the daily-mean wind the lump is no longer above the requirement"
+    assert d1["station"] is None and d2["station"] is not None, "which of the two days the station carries has changed — rewrite «stands_on» and the 02_03 ⊕"
+    st, m2d = d2["station"], d2["merra2"]
+    assert st["min_is_derived_from_hourly_reports"] and st["max_is_an_explicit_report"]
+    assert st["min_C"] > m2d["mean_C"] and st["mean_C"] < m2d["max_C"], \
+        "the station's coldest report is no longer above MERRA-2's daily mean, or its mean no longer below MERRA-2's maximum — rewrite «stands_on» and «follows»"
+    above_mean = st["min_C"] - m2d["mean_C"]
+    st_share = sorted(d2["that_wind_as_a_share_of_the_station_mean_wind"].values())
+
+    g = d121["station_records"]["ghcnd_2000_2009"]
+    n_st = g["station"]["days_below"]["-25.0"]
+    n_m2, n_e5 = (g["reanalyses"][k]["days_below"]["-25.0"] for k in ("merra2_utc_day", "era5_utc_day"))
+    assert abs(n_st - n_m2) < abs(n_st - n_e5), "in days below −25 °C the station no longer sits nearer MERRA-2 than ERA5 — rewrite «follows»"
+
+    assert d81["edges"]["max_hours_below_capsule_requirement"] == 0, "`81` now has a run below the requirement on ERA5 air — rewrite `122`'s question and «follows»"
+    for regime, by_k in d81["runs"].items():
+        if regime.startswith("clear"):
+            calm = by_k["k=0.0"]
+            assert all(x["coldest_c"] > calm["coldest_c"] and x["hours_below_floor"] < calm["hours_below_floor"] for k, x in by_k.items() if k != "k=0.0"), \
+                "a windy clear-sky run of `81` is no longer warmer than its calm one — rewrite `122`'s «calm» anchor"
+    capped, frost = dew["capped_at_air"], dew["read_as_frost_point"]
+    assert frost["coldest_shift_K"] < 0 and frost["hours_below_floor_shift"] > 0, "read as a frost point the capsule is no longer colder — «the warmer reading» is wrong"
+    assert frost["capsule"]["hours_below_requirement"] == 0 and capped["capsule"]["hours_below_requirement"] == 0
+    c5 = ctl["merra2_dew_against_era5_dew"]
+    assert ctl["deep_edge_of_81"]["reproduced"] and ctl["era5_window_is_121s_hour_for_hour"] and ctl["kernel_scaled_run_colder_and_restored"] \
+        and abs(c5["mean_minus_era5_K"]) <= c5["bound_K"] and c5["correlation"] >= c5["least_correlation"], \
+        "«All seven controls passed» is built from a cache that says otherwise"
+    thr = " · ".join(u(float(t), 0) for t in ctl["air_hours_below_thresholds_as_in_121"]["merra2"])
+
+    def lo_hi(x: dict, nd: int = 2) -> str:
+        return f"{x['lowest']:.{nd}f}–{x['highest']:.{nd}f}"
+
+    def rng(vals: list) -> str:
+        return f"{u(min(vals))} to {u(max(vals))}"
+
+    def per_year(c: dict) -> str:
+        return f"{c['hours_below_floor'] / yrs:.1f}"
+
+    en = {
+        "table": "\n".join(table),
+        "window": (f"Over {years}, with `71`'s kernels as they are, no run crosses the requirement. On MERRA-2 air the deep edge bottoms at "
+                   f"{u(mf['coldest_C'])} °C under the formula's clear sky — {margin_f:.2f} K above the requirement of {u(req, 0)} °C — at "
+                   f"{u(mp['coldest_C'])} °C under CERES's clear-sky flux and at {u(ma['coldest_C'])} °C under its all-sky flux; on ERA5 air under the "
+                   f"formula, at {u(ef['coldest_C'])} °C. The air itself bottoms at {u(am['coldest_C'])} °C (MERRA-2) and {u(ae['coldest_C'], 1)} °C "
+                   f"(ERA5), with {am['hours_below_floor']} and {ae['hours_below_floor']} hours below the EDLC floor. `71` reads its still-air kernel "
+                   f"off its home geometry at ×{scale:g} and prints its hot bound with that reading; run here on the cold edge, it puts the formula-sky "
+                   f"run on MERRA-2 air at {u(kf['coldest_C'])} °C, below the requirement on {kf['hours_below_requirement']} hours, and leaves "
+                   f"CERES's two skies {kp['coldest_C'] - req:.2f} and {ka['coldest_C'] - req:.2f} K above it and ERA5 under the formula at "
+                   f"{u(ke['coldest_C'])} °C."),
+        "sky": (f"The formula's sky is the coldest of the three, and at these temperatures it is an extrapolation: on MERRA-2's {sky_cold['hours']} "
+                f"coldest hours of {years} Brutsaert's formula gives a ratio of sky to air black-body flux of {lo_hi(ef_)} (median "
+                f"{ef_['median']:.2f}) where CERES's clear-sky flux gives {lo_hi(pc)} (median {pc['median']:.2f}) — on every one of those hours "
+                f"the formula's flux is below CERES's, by {abs(gapw['highest']):.1f}–{abs(gapw['lowest']):.1f} W/m² (median "
+                f"{abs(gapw['median']):.1f}). CERES's ratio is a ratio of two sources — its flux over the black-body flux of MERRA-2's air — and "
+                f"under its all-sky flux it reaches {pa_['highest']:.2f} on those hours."),
+        "days": (f"MERRA-2's lowest daily minimum of the {seasons} seasons `121` reads — {u(day['air_min_C'])} °C on {day['day']} — lies before "
+                 f"the hourly record (POWER serves hourly values from {inputs['merra2_hourly_first_day'][:4]}), and so does CERES's sky. Solved "
+                 f"under the formula's sky in still air at the minimum of each of the {every['days']} days of {span} the daily file carries, the "
+                 f"lump is below the requirement on {len(hit_days)} of them ({listed}), at both ends of a dew-point sweep from "
+                 f"{abs(dews[0]):.0f} K above the air to {dews[-1]:.0f} K below it — by {by_day[hit_days[0]][0]:.2f}–{by_day[hit_days[0]][1]:.2f} K "
+                 f"on the first and {by_day[hit_days[1]][0]:.2f}–{by_day[hit_days[1]][1]:.2f} K on the second. The sweep is ours; it spans what "
+                 f"MERRA-2 carries on its {own['hours']} coldest hours of {years} (from {abs(own['lowest']):.2f} K above the air to "
+                 f"{own['highest']:.2f} K below, median {own['median']:.2f} K below)."),
+        "stands_on": (f"On those two days the lump sits ON the requirement at a sky ratio of {on_req[0]:.3f} and {on_req[1]:.3f}; the formula gives "
+                      f"{form_eps[0]:.3f}–{form_eps[-1]:.3f} across the sweep at the lower minimum, and with CERES's clear-sky ratios of its coldest "
+                      f"hours the same lump at those minima sits at {rng(prod)} °C — above the requirement, and still above it with the ×{scale:g} "
+                      f"kernel ({rng(kprod)} °C). Still air is the other half: the lump needs a wind at the capsule of {min(shares):.3f}–"
+                      f"{max(shares):.3f} of the daily-mean 10 m wind the daily file carries for those days ({winds[0]:.2f} and {winds[1]:.2f} m/s); "
+                      f"with `71`'s share k = 0.1 of it the lump sits at {rng(k_caps['k=0.1'])} °C, with k = 0.3 at {rng(k_caps['k=0.3'])} °C — k is "
+                      f"ours and unmeasured, and a daily mean is not the wind at the coldest hour. The station has no row for {hit_days[0]}; for "
+                      f"{hit_days[1]} it carries a mean of {st['mean_from_reports']} reports of {u(st['mean_C'], 1)} °C, a reported maximum of "
+                      f"{u(st['max_C'], 1)} °C, a minimum derived from those reports of {u(st['min_C'], 1)} °C (a ceiling on the true one) and a mean "
+                      f"wind of {st['wind_mean_m_s']:.1f} m/s (the lump needs {st_share[0]:.3f}–{st_share[-1]:.3f} of it), against MERRA-2's "
+                      f"{u(m2d['mean_C'])}, {u(m2d['max_C'])} and {u(m2d['min_C'])} °C for the same day."),
+        "follows": (f"`81` found no run below the capsule requirement; that is a statement about ERA5 air under the formula's sky with `71`'s kernels "
+                    f"as they are. On MERRA-2 air the hourly record keeps {margin_f:.2f} K under the formula's sky and {margin_p:.2f} and "
+                    f"{margin_a:.2f} K under CERES's two skies — and the first does not survive `71`'s own reading of its kernel, which takes "
+                    f"that run below the requirement. Before the hourly record the model's lower bound passes the requirement — by at most {worst:.2f} K — "
+                    f"on {len(hit_days)} days of {span}. That passing takes three readings at once — MERRA-2's air rather than ERA5's, Brutsaert's "
+                    f"formula rather than CERES's computed flux, and air at the capsule stiller than {min(shares):.3f}–{max(shares):.3f} of the "
+                    f"daily-mean 10 m wind — and none of them is a rare event or settled for the plot: the first two are each one of two readings "
+                    f"of one quantity, and a clear sky and a low minimum are one weather, not two chances. Against them the same files set "
+                    f"CERES's ratios, `71`'s k (ours, unmeasured) and, on {hit_days[1]}, a town station whose coldest report is "
+                    f"{above_mean:.1f} K above MERRA-2's daily mean. The hours below the EDLC floor do not share that reassurance: per year of the "
+                    f"window {per_year(mf)} · {per_year(mp)} · {per_year(ma)} on MERRA-2 air (formula · CERES clear · CERES all-sky) against "
+                    f"{per_year(ef)} on ERA5 air, and {per81:.1f} a year in `81`'s {years81:g} years ({deep81['hours_below_floor']} h) — the count "
+                    f"the canon carries; every MERRA-2 run is above both, the all-sky one included, which is no clear-sky bound; with the "
+                    f"×{scale:g} kernel every count grows ({per_year(kf)} · {per_year(kp)} · {per_year(ka)} against {per_year(ke)}); and in days "
+                    f"below {u(floor, 0)} °C the station sits nearer MERRA-2 than ERA5 (`121`, 2000–2009: {n_st} station days against {n_m2} and "
+                    f"{n_e5}). The temperatures are a lower bound for a GIVEN air, a GIVEN form of the clear sky and a GIVEN kernel in five choices "
+                    f"— isolated from the bark, clear every hour, no sun, still air, no heat capacity; the hour counts are an upper count in the "
+                    f"first four only, because a heat capacity can stretch a spell as well as shave it (`81`). The sky view "
+                    f"{d81['inputs']['sky_view']:g} and the capsule's emissivity {d81['inputs']['epsilon']:.2f} are `71`'s assumptions, not bounds; "
+                    f"the half of the view that is not sky is taken at the air's temperature; and ×{scale:g} is `71`'s own reading of its kernel "
+                    f"off its home geometry, not a measured band."),
+        "controls": (f"All seven controls passed: `81`'s cached deep edge is reproduced through this script's call path, and it is the regime and "
+                     f"wind this script names; the MERRA-2 window is one unbroken clock of {inputs['hours']} hours with no missing value in any "
+                     f"of its four columns; the ERA5 window is `121`'s UTC series hour for hour, and the air's hours below {thr} °C equal `121`'s "
+                     f"counts in both readings; MERRA-2's lowest daily minimum is a single day before the hourly record and the daily file "
+                     f"carries it; MERRA-2's dew column sits {signed(c5['mean_minus_era5_K'], '+.2f')} K from ERA5's dew point in the mean with a "
+                     f"correlation of {c5['correlation']:.3f} (bound ±{c5['bound_K']:g} K, at least {c5['least_correlation']:g}); CERES's clear-sky "
+                     f"flux exceeds its all-sky flux on no hour and is below it on some; and `71`'s kernels scaled by ×{scale:g} make every run "
+                     f"colder and are restored after."),
+        "ceilings": (f"MERRA-2's «dew/frost point» sits above the air on {inputs['merra2_hours_dew_above_air']} of the {inputs['hours']} hours, "
+                     f"{inputs['merra2_hours_dew_above_air_with_air_at_or_above_0C']} of them with the air at or above 0 °C; the response's header "
+                     f"does not say which of the two it is below 0 °C, and here it is read as a dew point over water — the warmer reading of the "
+                     f"two. Capped at the air, it moves the coldest capsule hour by {signed(capped['coldest_shift_K'], '+.3f')} K and the hours "
+                     f"below the floor by {signed(capped['hours_below_floor_shift'], '+d')}; read as a frost point over ice (`120`'s conversion), "
+                     f"by {signed(frost['coldest_shift_K'], '+.3f')} K and {signed(frost['hours_below_floor_shift'], '+d')}, still with no hour "
+                     f"below the requirement."),
+        "status_row": (f"| 122 | `capsule_cold_edge_second_reading` | **HW.37 — the capsule's deep cold edge on MERRA-2 air (2026-11-14):** ✅ ran; "
+                       f"`81`'s isolated lump with no sun in still air, hourly over {years} on MERRA-2 air under three readings of the sky "
+                       f"(Brutsaert's formula · CERES SYN1deg clear-sky · all-sky) and on ERA5 air, each beside `71`'s ×{scale:g} reading of its "
+                       f"still-air kernel, and at every daily minimum of {span} before the hourly record, against the EDLC floor and the capsule "
+                       f"requirement; what a crossing stands on — sky, wind, station. Results, controls and ceilings — [`SUMMARY.md`](SUMMARY.md) "
+                       f"§«The Capsule's Cold Edge on the Colder Reading of the Air» | `thermal/capsule_cold_edge_second_reading.json` |"),
+    }
+    ua = {
+        "cap": (f"на повітрі MERRA-2 глибокий край `81` (ізольована капсула, без сонця, штиль) за {years} з ядрами конвекції `71` як є вимоги "
+                f"«від {u(req, 0)} °C» не перетинає за жодного з трьох прочитань неба: мінімум **{u(mf['coldest_C'])} °C** під формулою ясного "
+                f"неба Брутсерта (тією, що в `81`) — на {margin_f:.2f} K вище вимоги, **{u(mp['coldest_C'])} °C** під ясним потоком CERES SYN1deg "
+                f"з того самого рядка файла POWER (розрахунок із прибраними хмарами на профілях іншого аналізу — не вимір і не на повітрі MERRA-2) "
+                f"і {u(ma['coldest_C'])} °C під його потоком усього неба; на повітрі ERA5 під формулою — {u(ef['coldest_C'])} °C. Запас "
+                f"{margin_f:.2f} K менший за зсув, який дає власний розкид моделі: з множником ×{scale:g} на ядро конвекції в штиль, яким `71` оцінює свою "
+                f"похибку на гарячому боці, прогін під формулою на MERRA-2 опускається до **{u(kf['coldest_C'])} °C** і лежить нижче вимоги "
+                f"{kf['hours_below_requirement']} год, під небом CERES — {u(kp['coldest_C'])} і {u(ka['coldest_C'])} °C. Нижче підлоги іоністора "
+                f"{u(floor, 0)} °C капсула проводить {mf['hours_below_floor']} · {mp['hours_below_floor']} · {ma['hours_below_floor']} год на "
+                f"MERRA-2 (три неба в тому самому порядку) проти {ef['hours_below_floor']} на ERA5 — за рік {per_year(mf)} · {per_year(mp)} · "
+                f"{per_year(ma)} проти {per_year(ef)} год, а «{deep81['hours_below_floor']} год» рядка вище за {years81:g} років — {per81:.1f} год "
+                f"на рік: на холоднішому прочитанні лічба більша за кожного з трьох неб, і під потоком усього неба теж"),
+        "day": (f"Найнижчий добовий мінімум MERRA-2 за {seasons} сезонів ({u(day['air_min_C'])} °C, {day['day']}) лежить до погодинного ряду, і "
+                f"небо CERES теж. Розвʼязана під формулою неба у штиль на добовому мінімумі кожної з {every['days']} діб {span}, модель лежить "
+                f"нижче вимоги у {len(hit_days)} з них ({listed}) — щонайбільше на {worst:.2f} K"),
+        "stands": (f"Перетин потребує трьох прочитань разом, і жодне з них не є ні рідкісною подією, ні встановленим для ділянки: повітря MERRA-2, а "
+                   f"не ERA5; формули неба, а не розрахункового потоку CERES (на {sky_cold['hours']} найхолодніших годинах MERRA-2 формула дає "
+                   f"потік на {abs(gapw['highest']):.1f}–{abs(gapw['lowest']):.1f} Вт/м² нижчий за ясний потік CERES; з відношеннями CERES та "
+                   f"сама модель у ті дві доби дає від {u(min(prod))} до {u(max(prod))} °C, з ядром ×{scale:g} — від {u(min(kprod))} до "
+                   f"{u(max(kprod))} °C); і повітря біля капсули, тихішого за {min(shares):.3f}–{max(shares):.3f} добового середнього вітру на 10 м "
+                   f"({winds[0]:.2f} і {winds[1]:.2f} м/с — добове середнє, не вітер найхолоднішої години; частка `k`, що доходить до стовбура, — "
+                   f"наша, невиміряна). Ясне небо й низький мінімум — одна погода, а не два незалежні шанси. Станція (у місті, не на ділянці) має "
+                   f"рядок лише за {hit_days[1]}: її найхолодніший строк ({u(st['min_C'], 1)} °C — похідний мінімум, стеля справжнього) на "
+                   f"{above_mean:.1f} K вищий за добове середнє MERRA-2"),
+    }
+    return {"en": en, "ua": ua}
+
+
+# Wording the builder does not build but `122`'s two pages stand on.
+_CAP122_ANCHORS = {
+    SUMMARY: ("This script changes nothing in `81`: it imports its lump and writes its own cache.",
+              "No wind rides in the MERRA-2 hourly file, so inside the hourly record only the calm run is computed; under a clear sky every "
+              "windy run of `81` is warmer than its calm one.",
+              "Neither air reading is shown to bound the station in its count of cold days (`121`); which of them the plot follows is the "
+              "capsule logger's to say.",
+              "One reanalysis cell, hourly means stamped at the start of the hour; a steady lump with no heat capacity.",
+              "The sky product is CERES SYN1deg by the response's header, not MERRA-2: by its data-quality summary its clear-sky flux is the "
+              "all-sky radiative-transfer computation with the clouds removed, on another analysis's six-hourly profiles — not a measurement, "
+              "not computed on the air it shares a row with, and not a judge of the formula but a second reading of the sky. It does not "
+              "reach back before the hourly record."),
+    POWER: ("Речення «не перетинає жоден прогін» вище — про прогони на повітрі ERA5 під формулою неба з ядрами `71` як є",
+            "«нижня межа моделі» біля лічби годин вище — про температуру того прогону; для лічби годин він верхній",
+            "Температури тут — нижня межа моделі для ЗАДАНОГО повітря, заданої форми неба й заданого ядра; лічба годин — верхня лічба лише "
+            "за першими чотирма виборами (теплоємність може й розтягнути відрізок — `81`); це не прогноз для ділянки",
+            "суддя — логер капсули",
+            "Вимогу «від −40 °C», підлогу іоністора й вибір еластомера кільця цей допис не міняє — наслідки йдуть поданням"),
+}
+
+
 class _Preserved:
     """A number that sits INSIDE a preserved form — a ratified verdict, its submission or a dated ⊕ addendum
     (00_05 §7): the form is appended to, never rewritten. A plain pin on such a number compares the doc with the
@@ -11864,6 +12133,82 @@ def test_cold_edge_cache_is_whole():
         assert all(v["seasons_with_any"] <= e["seasons"] for v in e["min_below"].values())
         assert all(e["max_below"][t]["days"] <= e["min_below"][t]["days"] for t in thresholds), "a day's maximum cannot be below a threshold its minimum is not"
         assert f"{e['lowest_C']:.1f} °C ({', '.join(e['lowest_days'])})" in d["verdict"] or e is d["cold_edge"]["era5_utc_day"]
+
+
+def test_capsule_second_reading_pages_are_built_from_the_cache():
+    """SUMMARY §HW.37 (`122`) and the 02_03 §12.1 ⊕ 2026-11-14 carry, verbatim, what `_cap122_paragraphs` builds from the
+    cache: the table of four runs with `71`'s kernel reading beside each, the hourly window, the sky, the days before the
+    hourly record, what a crossing stands on, what follows, the controls, the dew ceiling and the PIPELINE_STATUS row.
+
+    CAN catch: a re-run of `122`, `121`, `81` or `71` moving a figure while the prose stays · a direction outliving its
+    numbers — the builder refuses to build unless: with `71`'s kernels as they are no run crosses inside the hourly record,
+    and with its scaled kernel exactly the formula-sky run on MERRA-2 air does · the scaled kernel makes every run colder ·
+    the four minima keep their order and the four hour counts theirs (every MERRA-2 run above ERA5, the all-sky one above
+    `81`'s yearly count) · the formula's sky is below CERES's on EVERY one of the coldest hours and the all-sky ratio
+    exceeds 1 · MERRA-2's own air-minus-dew range lies inside the sweep · a drier air makes the capsule colder · the days
+    below the requirement are the same TWO at both ends of the sweep · the sky ratio the crossing needs lies between the
+    formula's and CERES's · with CERES's ratios (either kernel) and with `71`'s shares k of the daily-mean wind the lump is
+    above the requirement on those days · the station carries exactly the second day, its coldest report is above
+    MERRA-2's daily mean and its mean below MERRA-2's maximum · in days below −25 °C the station sits nearer MERRA-2 · `81`
+    has no run below the requirement and its windy clear-sky runs are warmer than its calm one · read as a frost point the
+    capsule is colder · every control the cache records passed · the plain-word sentences being reworded away
+    (`_CAP122_ANCHORS`).
+    CANNOT catch: which air reading the plot follows, or which sky; whether ×0.7 is the right size of `71`'s spread;
+    anything about `81`'s lump itself (`122`'s control 1 only holds this script to it).
+    Remedy when the 02_03 half reds after a re-run: the ⊕ is dated — append a new dated ⊕ beside it, do not rewrite it."""
+    built = _cap122_paragraphs(C(CAP_SECOND))
+    summary, power, status = doc(SUMMARY), doc(POWER), doc("docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md")
+    for name, text in built["en"].items():
+        where = status if name == "status_row" else summary
+        assert text in where, f"`122`'s «{name}» paragraph is not on its page as the cache builds it:\n{text}"
+    for name, text in built["ua"].items():
+        assert text in power, f"02_03 §12.1 ⊕ 2026-11-14 does not carry its «{name}» sentence as the cache builds it:\n{text}"
+    for rel, anchors in _CAP122_ANCHORS.items():
+        for anchor in anchors:
+            assert anchor in doc(rel), f"{rel} lost the wording `122`'s page stands on: «{anchor}»"
+
+
+def test_capsule_second_reading_cache_is_whole():
+    """`122`'s cache against itself and against the caches it reads.
+
+    CAN catch: the window, the thresholds or the clock offset drifting from `121`'s · the regime and wind drifting from
+    `81`'s deep edge · the floor or the requirement drifting from `81`'s · the kernel scale drifting from `71`'s · the day
+    before the hourly record drifting from `121`'s floor · a capsule above the air on its coldest hour · hours below the
+    requirement that disagree with the coldest hour (both kernels) · the phrases of the verdict that carry a direction
+    disagreeing with the numbers · a sky ratio outside (0, 1.2) · a day «below the requirement» whose capsule is not.
+    CANNOT catch: a wrong MERRA-2 file — the counts are the script's own reading of it (its controls 3 and 5 hold them)."""
+    d, d121, d81 = C(CAP_SECOND), C(COLD_EDGE), C(COLD)
+    model, req = d["model"], d["model"]["capsule_requirement_C"]
+    assert model["window_utc_days"] == d121["hours_below_2001_2020"]["window_utc_days"]
+    assert d["inputs"]["hours"] == d121["hours_below_2001_2020"]["hours_merra2"]
+    assert d["controls"]["air_hours_below_thresholds_as_in_121"] == {k: d121["hours_below_2001_2020"][k] for k in ("merra2", "era5")}
+    assert model["era5_utc_offset_h"] * 3600 == d121["model"]["era5_clock_offset_s"]
+    assert (model["regime"], model["wind"]) == (d81["edges"]["deep"]["regime"], d81["edges"]["deep"]["wind"])
+    assert req == d81["inputs"]["capsule_requirement_min_c"] and model["edlc_floor_C"] == d81["inputs"]["edlc_floor_c"]
+    assert model["kernel_scale"] == d["kernel_sensitivity"]["scale"] == C(THERMAL)["hot_bound_h_c_sensitivity"]["h_c_scale"]
+    day, edge = d["day_before_the_hourly_record"], d121["cold_edge"]["merra2_utc_day"]
+    assert [day["day"]] == edge["lowest_days"] and day["air_min_C"] == edge["lowest_C"] and day["day"] < d["inputs"]["merra2_hourly_first_day"]
+    every = day["every_day_before_the_hourly_record"]
+    assert every["last_day"] < d["inputs"]["merra2_hourly_first_day"]
+    for hits in every["below_requirement_at_air_minus_dew_K"].values():
+        assert all(h["capsule_C"] < req < h["air_min_C"] and every["first_day"] <= h["day"] <= every["last_day"] for h in hits)
+    ks = d["kernel_sensitivity"]
+    runs = [*d["merra2_air_by_sky"].values(), d["readings"]["era5"]["capsule"], *(v["capsule"] for v in d["merra2_dew"].values()),
+            *ks["merra2_air_by_sky"].values(), ks["era5_formula_clear"]]
+    for cap in runs:
+        assert cap["minus_air_at_coldest_K"] < 0 and cap["hours_below_requirement"] <= cap["hours_below_floor"]
+        assert (cap["coldest_C"] < req) == (cap["hours_below_requirement"] > 0)
+    for r in d["readings"].values():
+        assert r["air"]["minus_air_at_coldest_K"] == 0.0 and r["air"]["hours_below_floor"] <= r["capsule"]["hours_below_floor"]
+    for key in ("formula_clear", "product_clear", "product_all_sky"):
+        e = d["sky_emissivity_on_merra2_coldest_hours"][key]
+        assert 0.0 < e["lowest"] <= e["median"] <= e["highest"] < 1.2
+    m, kf = d["merra2_air_by_sky"]["formula_clear"], ks["merra2_air_by_sky"]["formula_clear"]
+    assert ("stays above the capsule requirement" in d["verdict"]) == (m["hours_below_requirement"] == 0)
+    assert f"{m['coldest_C']:.2f}".replace("-", "−") in d["verdict"] and f"{m['hours_below_floor']} hours (formula sky)" in d["verdict"]
+    assert f"{kf['hours_below_requirement']} hours below the requirement inside the hourly record" in d["verdict"]
+    days = sorted({h["day"] for hits in every["below_requirement_at_air_minus_dew_K"].values() for h in hits})
+    assert f"({', '.join(days)})" in d["verdict"] and days == sorted(day["days_below_the_requirement"])
 
 
 def test_preserved_form_names_which_side_moved(monkeypatch):

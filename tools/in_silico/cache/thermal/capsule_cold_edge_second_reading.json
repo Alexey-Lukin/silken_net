@@ -1,0 +1,453 @@
+{
+  "script": "122_capsule_cold_edge_second_reading.py",
+  "question": "does the capsule's deep cold edge still clear the capsule requirement on the colder named reading of the air, and on what does a crossing stand",
+  "model": {
+    "lump": "81 (imported): isolated, steady per hour",
+    "regime": "clear_no_sun",
+    "wind": "k=0.0",
+    "edlc_floor_C": -25.0,
+    "capsule_requirement_C": -40.0,
+    "window_utc_days": [
+      "2001-01-01",
+      "2020-12-30"
+    ],
+    "era5_utc_offset_h": 3,
+    "dew_sweep_K": [
+      -2.0,
+      0.0,
+      1.0,
+      2.0,
+      3.0,
+      5.0
+    ],
+    "cold_air_C": -20.0,
+    "wind_k": [
+      0.0,
+      0.1,
+      0.3
+    ],
+    "kernel_scale": 0.7,
+    "years_of_window": 19.99726214921287,
+    "skies": {
+      "formula_clear": "Brutsaert 1975 from the dew point, via 79 — 81's clear sky",
+      "product_clear": "CLRSKY_SFC_LW_DWN of the same row",
+      "product_all_sky": "ALLSKY_SFC_LW_DWN of the same row"
+    }
+  },
+  "inputs": {
+    "hours": 175296,
+    "merra2_hourly_first_day": "2001-01-01",
+    "merra2_hours_dew_above_air": 6145,
+    "merra2_hours_dew_above_air_with_air_at_or_above_0C": 4001
+  },
+  "controls": {
+    "deep_edge_of_81": {
+      "reproduced": true,
+      "regime": "clear_no_sun",
+      "wind": "k=0.0",
+      "fields": [
+        "at",
+        "coldest_c",
+        "days_below_floor",
+        "depression_at_coldest_K",
+        "hours_below_capsule_requirement",
+        "hours_below_floor",
+        "longest_spell_below_floor_h",
+        "t_air_at_coldest_c"
+      ]
+    },
+    "air_hours_below_thresholds_as_in_121": {
+      "merra2": {
+        "-10.0": 8356,
+        "-15.0": 2804,
+        "-20.0": 895,
+        "-25.0": 261
+      },
+      "era5": {
+        "-10.0": 4885,
+        "-15.0": 1205,
+        "-20.0": 299,
+        "-25.0": 38
+      }
+    },
+    "era5_window_is_121s_hour_for_hour": true,
+    "merra2_dew_against_era5_dew": {
+      "mean_minus_era5_K": -0.5580487290069368,
+      "correlation": 0.9737147283508,
+      "bound_K": 3.0,
+      "least_correlation": 0.95
+    },
+    "kernel_scaled_run_colder_and_restored": true
+  },
+  "readings": {
+    "merra2": {
+      "air": {
+        "coldest_C": -33.15,
+        "at": "2012-02-02T04",
+        "air_at_coldest_C": -33.15,
+        "minus_air_at_coldest_K": 0.0,
+        "hours_below_floor": 261,
+        "days_below_floor": 37,
+        "longest_spell_below_floor_h": 20,
+        "hours_below_requirement": 0
+      },
+      "capsule": {
+        "coldest_C": -39.023862653970724,
+        "at": "2012-02-02T04",
+        "air_at_coldest_C": -33.15,
+        "minus_air_at_coldest_K": -5.8738626539707255,
+        "hours_below_floor": 1059,
+        "days_below_floor": 112,
+        "longest_spell_below_floor_h": 114,
+        "hours_below_requirement": 0
+      },
+      "capsule_minus_air_on_cold_hours": {
+        "hours": 895,
+        "deepest_K": -6.134382933378216,
+        "median_K": -5.858138650655739,
+        "shallowest_K": -5.660689622163773
+      }
+    },
+    "era5": {
+      "air": {
+        "coldest_C": -27.4,
+        "at": "2012-02-02T07",
+        "air_at_coldest_C": -27.4,
+        "minus_air_at_coldest_K": 0.0,
+        "hours_below_floor": 38,
+        "days_below_floor": 7,
+        "longest_spell_below_floor_h": 10,
+        "hours_below_requirement": 0
+      },
+      "capsule": {
+        "coldest_C": -33.44937300086022,
+        "at": "2012-02-02T07",
+        "air_at_coldest_C": -27.4,
+        "minus_air_at_coldest_K": -6.049373000860221,
+        "hours_below_floor": 399,
+        "days_below_floor": 49,
+        "longest_spell_below_floor_h": 106,
+        "hours_below_requirement": 0
+      },
+      "capsule_minus_air_on_cold_hours": {
+        "hours": 299,
+        "deepest_K": -6.33765771985054,
+        "median_K": -6.029337793588642,
+        "shallowest_K": -5.844342261552811
+      }
+    }
+  },
+  "merra2_air_by_sky": {
+    "formula_clear": {
+      "coldest_C": -39.023862653970724,
+      "at": "2012-02-02T04",
+      "air_at_coldest_C": -33.15,
+      "minus_air_at_coldest_K": -5.8738626539707255,
+      "hours_below_floor": 1059,
+      "days_below_floor": 112,
+      "longest_spell_below_floor_h": 114,
+      "hours_below_requirement": 0
+    },
+    "product_clear": {
+      "coldest_C": -36.01386266350747,
+      "at": "2012-02-02T04",
+      "air_at_coldest_C": -33.15,
+      "minus_air_at_coldest_K": -2.8638626635074687,
+      "hours_below_floor": 660,
+      "days_below_floor": 66,
+      "longest_spell_below_floor_h": 108,
+      "hours_below_requirement": 0
+    },
+    "product_all_sky": {
+      "coldest_C": -35.194883295297615,
+      "at": "2012-02-02T05",
+      "air_at_coldest_C": -33.04,
+      "minus_air_at_coldest_K": -2.1548832952976156,
+      "hours_below_floor": 462,
+      "days_below_floor": 54,
+      "longest_spell_below_floor_h": 45,
+      "hours_below_requirement": 0
+    }
+  },
+  "sky_emissivity_on_merra2_coldest_hours": {
+    "hours": 200,
+    "formula_clear": {
+      "lowest": 0.4942982856120481,
+      "median": 0.5286043340200857,
+      "highest": 0.5485197985997385
+    },
+    "product_clear": {
+      "lowest": 0.6867313602426318,
+      "median": 0.7636090820030044,
+      "highest": 0.8294634632131185
+    },
+    "product_all_sky": {
+      "lowest": 0.7065015987571454,
+      "median": 0.8942435087720488,
+      "highest": 1.0780208519189332
+    },
+    "formula_minus_product_clear_Wm2": {
+      "lowest": -62.0495900131334,
+      "median": -48.85971513457537,
+      "highest": -31.96113465052845
+    }
+  },
+  "merra2_dew": {
+    "capped_at_air": {
+      "capsule": {
+        "coldest_C": -39.05584352612496,
+        "at": "2012-02-02T04",
+        "air_at_coldest_C": -33.15,
+        "minus_air_at_coldest_K": -5.905843526124961,
+        "hours_below_floor": 1059,
+        "days_below_floor": 112,
+        "longest_spell_below_floor_h": 114,
+        "hours_below_requirement": 0
+      },
+      "coldest_shift_K": -0.03198087215423584,
+      "hours_below_floor_shift": 0
+    },
+    "read_as_frost_point": {
+      "capsule": {
+        "coldest_C": -39.25024735331536,
+        "at": "2012-02-02T04",
+        "air_at_coldest_C": -33.15,
+        "minus_air_at_coldest_K": -6.1002473533153605,
+        "hours_below_floor": 1105,
+        "days_below_floor": 116,
+        "longest_spell_below_floor_h": 114,
+        "hours_below_requirement": 0
+      },
+      "coldest_shift_K": -0.226384699344635,
+      "hours_below_floor_shift": 46
+    }
+  },
+  "kernel_sensitivity": {
+    "scale": 0.7,
+    "merra2_air_by_sky": {
+      "formula_clear": {
+        "coldest_C": -40.21482872366906,
+        "at": "2012-02-02T04",
+        "air_at_coldest_C": -33.15,
+        "minus_air_at_coldest_K": -7.064828723669059,
+        "hours_below_floor": 1340,
+        "days_below_floor": 142,
+        "longest_spell_below_floor_h": 116,
+        "hours_below_requirement": 3
+      },
+      "product_clear": {
+        "coldest_C": -36.54636072516442,
+        "at": "2012-02-02T04",
+        "air_at_coldest_C": -33.15,
+        "minus_air_at_coldest_K": -3.3963607251644206,
+        "hours_below_floor": 771,
+        "days_below_floor": 76,
+        "longest_spell_below_floor_h": 110,
+        "hours_below_requirement": 0
+      },
+      "product_all_sky": {
+        "coldest_C": -35.58178658127784,
+        "at": "2012-02-02T05",
+        "air_at_coldest_C": -33.04,
+        "minus_air_at_coldest_K": -2.54178658127784,
+        "hours_below_floor": 500,
+        "days_below_floor": 56,
+        "longest_spell_below_floor_h": 53,
+        "hours_below_requirement": 0
+      }
+    },
+    "era5_formula_clear": {
+      "coldest_C": -34.6411097586155,
+      "at": "2012-02-02T07",
+      "air_at_coldest_C": -27.4,
+      "minus_air_at_coldest_K": -7.241109758615501,
+      "hours_below_floor": 504,
+      "days_below_floor": 60,
+      "longest_spell_below_floor_h": 110,
+      "hours_below_requirement": 0
+    },
+    "capsule_at_product_clear_sky_emissivity_on_the_days_below_the_requirement_C": {
+      "1997-12-16": {
+        "lowest": -39.48332962632179,
+        "median": -38.47338852524757,
+        "highest": -37.57684585690498
+      },
+      "1997-12-17": {
+        "lowest": -39.16934152007103,
+        "median": -38.15557916522026,
+        "highest": -37.25572575688362
+      }
+    }
+  },
+  "day_before_the_hourly_record": {
+    "day": "1997-12-16",
+    "air_min_C": -34.94,
+    "sweep": [
+      {
+        "air_minus_dew_K": -2.0,
+        "sky_emissivity": 0.49526933850985405,
+        "capsule_C": -40.7038518512249,
+        "minus_air_K": -5.763851851224899
+      },
+      {
+        "air_minus_dew_K": 0.0,
+        "sky_emissivity": 0.4816074842395649,
+        "capsule_C": -40.839091511964796,
+        "minus_air_K": -5.899091511964798
+      },
+      {
+        "air_minus_dew_K": 1.0,
+        "sky_emissivity": 0.47482236385187365,
+        "capsule_C": -40.90606358885765,
+        "minus_air_K": -5.966063588857651
+      },
+      {
+        "air_minus_dew_K": 2.0,
+        "sky_emissivity": 0.46806840906013797,
+        "capsule_C": -40.97260204195976,
+        "minus_air_K": -6.032602041959763
+      },
+      {
+        "air_minus_dew_K": 3.0,
+        "sky_emissivity": 0.461346093947794,
+        "capsule_C": -41.03870687127113,
+        "minus_air_K": -6.098706871271133
+      },
+      {
+        "air_minus_dew_K": 5.0,
+        "sky_emissivity": 0.4479982916402371,
+        "capsule_C": -41.169607611894605,
+        "minus_air_K": -6.2296076118946075
+      }
+    ],
+    "merra2_air_minus_dew_on_its_coldest_hours_K": {
+      "hours": 200,
+      "lowest": -1.2900000000000027,
+      "median": 0.120000000000001,
+      "highest": 1.6999999999999993
+    },
+    "every_day_before_the_hourly_record": {
+      "first_day": "1991-01-01",
+      "last_day": "2000-12-31",
+      "days": 3653,
+      "below_requirement_at_air_minus_dew_K": {
+        "-2": [
+          {
+            "day": "1997-12-16",
+            "air_min_C": -34.94,
+            "capsule_C": -40.7038518512249
+          },
+          {
+            "day": "1997-12-17",
+            "air_min_C": -34.61,
+            "capsule_C": -40.37468959450722
+          }
+        ],
+        "5": [
+          {
+            "day": "1997-12-16",
+            "air_min_C": -34.94,
+            "capsule_C": -41.169607611894605
+          },
+          {
+            "day": "1997-12-17",
+            "air_min_C": -34.61,
+            "capsule_C": -40.8432983314991
+          }
+        ]
+      }
+    },
+    "days_below_the_requirement": {
+      "1997-12-16": {
+        "merra2": {
+          "min_C": -34.94,
+          "mean_C": -31.52,
+          "max_C": -26.33,
+          "wind_10m_mean_m_s": 4.73,
+          "wind_10m_max_m_s": 5.87
+        },
+        "sky_emissivity_on_the_requirement": 0.5654843974858521,
+        "capsule_at_product_clear_sky_emissivity_C": {
+          "lowest": -38.743586214780805,
+          "median": -37.912023636102674,
+          "highest": -37.16979560494423
+        },
+        "wind_at_the_capsule_on_the_requirement_m_s": {
+          "-2": 0.07754158839816228,
+          "5": 0.10122421401320025
+        },
+        "that_wind_as_a_share_of_the_daily_mean_10m_wind": {
+          "-2": 0.0163935704858694,
+          "5": 0.021400468078900687
+        },
+        "that_wind_as_a_share_of_the_station_mean_wind": null,
+        "capsule_with_a_share_of_the_daily_mean_wind_C": {
+          "k=0.0": {
+            "-2": -40.7038518512249,
+            "5": -41.169607611894605
+          },
+          "k=0.1": {
+            "-2": -37.48670664668083,
+            "5": -37.72561726212501
+          },
+          "k=0.3": {
+            "-2": -36.49315563082695,
+            "5": -36.63863864779472
+          }
+        },
+        "station": null
+      },
+      "1997-12-17": {
+        "merra2": {
+          "min_C": -34.61,
+          "mean_C": -29.46,
+          "max_C": -23.13,
+          "wind_10m_mean_m_s": 2.89,
+          "wind_10m_max_m_s": 3.94
+        },
+        "sky_emissivity_on_the_requirement": 0.5348255801945926,
+        "capsule_at_product_clear_sky_emissivity_C": {
+          "lowest": -38.427948549985885,
+          "median": -37.5930501973629,
+          "highest": -36.847901240587234
+        },
+        "wind_at_the_capsule_on_the_requirement_m_s": {
+          "-2": 0.06384333391906694,
+          "5": 0.0842711076256819
+        },
+        "that_wind_as_a_share_of_the_daily_mean_10m_wind": {
+          "-2": 0.022091119003137347,
+          "5": 0.029159552811654638
+        },
+        "that_wind_as_a_share_of_the_station_mean_wind": {
+          "-2": 0.035457605780813535,
+          "5": 0.04680287712875143
+        },
+        "capsule_with_a_share_of_the_daily_mean_wind_C": {
+          "k=0.0": {
+            "-2": -40.37468959450722,
+            "5": -40.8432983314991
+          },
+          "k=0.1": {
+            "-2": -37.73402620911598,
+            "5": -38.02914787888527
+          },
+          "k=0.3": {
+            "-2": -36.56384278893471,
+            "5": -36.7479853785038
+          }
+        },
+        "station": {
+          "mean_C": -24.166666666666664,
+          "mean_from_reports": 5,
+          "min_C": -25.88888888888889,
+          "min_is_derived_from_hourly_reports": true,
+          "max_C": -17.72222222222222,
+          "max_is_an_explicit_report": true,
+          "wind_mean_m_s": 1.800554
+        }
+      }
+    }
+  },
+  "verdict": "On MERRA-2 air the capsule's deep edge (isolated, Brutsaert's clear sky, no sun, still air) bottoms at −39.02 °C over 2001–2020 and stays above the capsule requirement of −40 °C; under the product's clear-sky flux the same lump on the same air bottoms at −36.01 °C, on ERA5 air under the formula at −33.45 °C. Below the EDLC floor of −25 °C: 1059 hours (formula sky), 660 (product's clear sky), 399 (ERA5 air, formula sky). Solved under the formula sky at the minimum of each of the 3653 days before the hourly record, the lump is below the requirement on 2 (1997-12-16, 1997-12-17), by at most 1.17 K; with the product's clear-sky ratios, or with a tenth of the daily-mean wind, the lump there is above the requirement. With `71`'s ×0.7 reading of the still-air kernel the formula-sky run on MERRA-2 air bottoms at −40.21 °C with 3 hours below the requirement inside the hourly record, the product's clear-sky run at −36.55 °C."
+}

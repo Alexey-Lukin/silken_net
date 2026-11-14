@@ -48,7 +48,13 @@ run if an hour is unmatched. What checks that pairing, and what cannot — `120`
   assimilated profiles), on what cell, in which edition POWER serves them and how accurately at an hourly step has
   NOT been read from a primary here. The paper to read is Rutan et al. 2015, *J. Atmos. Oceanic Technol.*,
   doi:10.1175/JTECH-D-14-00165.1 — and which edition it validates against the one served is part of that reading.
-  Until then the numbers of `120` compare forms; they do not calibrate `79`.
+  Until then the numbers of `120` compare forms; they do not calibrate `79`. ⊕ 2026-11-14 (`122`): the product's own data-quality summary —
+  CERES_SYN1deg_Ed4A Data Quality Summary V1, updated 5/8/2025
+  (`https://ceres.larc.nasa.gov/documents/DQ_summaries/CERES_SYN1deg_Ed4A_DQS.pdf`, read 2026-11-14) — says the surface fluxes use
+  «six-hourly 1°×1° GEOS-5.4.1 temperature and relative humidity profiles» (§1.2.1) and that «Clear-sky fluxes are also computed
+  hourly for each equal-area grid by removing clouds» (§1.2.2): the clear-sky flux is the all-sky computation without clouds, on
+  GEOS-5.4.1 profiles, not on the MERRA-2 air of the same row. Which edition POWER serves, and the surface-flux accuracy summary,
+  are still not read.
 - **Not on ERA5's temperature.** `T2M` and `T2MDEW` are MERRA-2's; on frost hours ERA5's air temperature at the
   same point runs warmer (`120` prints by how much). A flux in W/m² set against ERA5's black-body flux therefore
   mixes the two reanalyses; `120` judges the cloud term by the ratio all-sky / clear-sky, which no temperature
