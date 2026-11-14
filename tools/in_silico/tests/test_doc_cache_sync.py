@@ -11835,6 +11835,162 @@ class _Preserved:
         self.frozen, self.live = float(frozen), live
 
 
+# ── HW.54 Р3(б)(4), stage 1 — the stem-face logger under a second sky (124, 2026-11-14) ⟷ SUMMARY
+# §«What Does a Second Sky Do to the Stem-Face Logger's Rules?». Counts of winters are exact integers; the means and the
+# spreads are pinned as the doc prints them (two or three decimals), so the tolerance is half the last printed digit.
+_SSK = "kinetics/stem_face_second_sky.json"
+_SSK_TH = {"0.5": r"second sky θ 0\.5 — the sheet's p\.5", "0.3": r"second sky θ 0\.3", "0.2": r"second sky θ 0\.2",
+           "0.15": r"second sky θ 0\.15", "0.1": r"second sky θ 0\.1"}
+_SSK_ROWS = {("none", "favourable_end"): r"2S none → favourable end \(false\)",
+             ("melt_only", "melt_only"): r"2S melt only → melt only \(false\)",
+             ("melt_only", "nrel_published"): r"2S melt only → NREL published",
+             ("melt_only", "favourable_end"): r"2S melt only → favourable end",
+             ("nrel_published", "nrel_published"): r"2S NREL published → NREL published \(false\)",
+             ("nrel_published", "melt_only"): r"2S NREL published → melt only",
+             ("nrel_published", "favourable_end"): r"2S NREL published → favourable end"}
+_SSK_GRID = ("0.5", "0.2", "0.15", "0.1")
+_SSK_WORLDS = {"era5": r"W1 ERA5 · ERA5 · ERA5", "half": r"W2 α 1/√2 · ERA5 · ERA5", "ceres": r"W3 product · ERA5 · ERA5",
+               "ceres_cold_truth": r"W4 product · MERRA-2 dew · ERA5", "ceres_cold_both": r"W5 product · MERRA-2 dew · the same",
+               "era5_cold_both": r"W6 ERA5 · MERRA-2 dew · the same", "ceres_frost_both": r"W7 product · MERRA-2 frost · the same",
+               "era5_frost_both": r"W8 ERA5 · MERRA-2 frost · the same"}
+_SSK_EXACT_SKY_PAIRS = (("era5", "ceres"), ("era5_cold_both", "ceres_cold_both"), ("era5_frost_both", "ceres_frost_both"))
+_SSK_OUT = ("winters_with_a_rejection_not_proven_false", "winters_with_a_false_rejection", "winters_with_no_rejection")
+_SSK_AB = r"\d+ / \d+"
+
+
+def _ssk_sd(world, end):
+    return lambda d: d["cover_free"][f"{world}:{end}"]["sd_ln_r_over_base"]
+
+
+def _ssk_free(world, end, theta, field):
+    return lambda d: d["cover_free"][f"{world}:{end}"]["by_theta"][theta][field]
+
+
+def _ssk_rej(world, end, truth, reading, theta, k=2):
+    return lambda d: d["cells"][f"{world}:{end}:{truth}"]["rejections"][f"theta{theta}:tol1:k{k}:{reading}"]["winters"]
+
+
+def _ssk_cell(pos, end, n=None):
+    """The pattern of one «a / b» cell at position `pos` of an n-cell « · »-joined column (the θ grid's width by default)."""
+    cells = [_SSK_AB] * (len(_SSK_GRID) if n is None else n)
+    cells[pos] = rf"{N} / \d+" if end == "low" else rf"\d+ / {N}"
+    return " · ".join(cells)
+
+
+def _ssk_out(world, end, truth, field, theta="0.1", k=2):
+    return lambda d: d["cells"][f"{world}:{end}:{truth}"]["outcome"][f"theta{theta}:tol1:k{k}"][field]
+
+
+def _ssk_span(pick, field, worlds, truths, theta="0.1", k=2):
+    return lambda d: pick(d["cells"][f"{w}:{e}:{t}"]["outcome"][f"theta{theta}:tol1:k{k}"][field]
+                          for w in worlds for e in ("low", "high") for t in truths)
+
+
+def _ssk_self(pick, world, truth, theta="0.1"):
+    return lambda d: pick(d["cells"][f"{world}:{e}:{truth}"]["rejections"][f"theta{theta}:tol1:k2:{truth}"]["winters"]
+                          for e in ("low", "high"))
+
+
+_SSK_ALL_T = ("none", "ceiling", "melt_only", "nrel_published", "favourable_end")
+CHECKS += [
+    ("124 sky sd(ln) → SUMMARY", SUMMARY, rf"differs by a standard deviation of \*\*{N}\*\* in the logarithm", _SSK,
+     lambda d: d["sky_alone"]["sd_ln"], 0.0005),
+    ("124 sky MAD-sd → SUMMARY", SUMMARY, rf"in the logarithm \(a robust \*\*{N}\*\*\)", _SSK,
+     lambda d: d["sky_alone"]["mad_sd_ln"], 0.0005),
+    ("124 sky days → SUMMARY", SUMMARY, rf"Over the {N} judged DJF days the daily GHI of the two products", _SSK,
+     lambda d: d["sky_alone"]["days"], 0.0),
+    ("124 winter air difference → SUMMARY", SUMMARY, rf"at the same point — \*\*{N}\*\* K colder on average over the seasons' winter hours", _SSK,
+     lambda d: d["controls"]["era5_air_minus_merra2_air_mean_K"]["seasons_djf_hours"], 0.005),
+    *[(f"124 cover-free sd(ln R/base) {w}:{end} → SUMMARY", SUMMARY, pat, _SSK,
+       _ssk_sd(w, end), 0.0005) for w, end, pat in (
+        ("ceres", "low", rf"scatters by \*\*{N}\*\* / \*\*[\d.]+\*\* in the logarithm"),
+        ("ceres", "high", rf"scatters by \*\*[\d.]+\*\* / \*\*{N}\*\* in the logarithm"),
+        ("era5", "low", rf"against \*\*{N}\*\* / \*\*[\d.]+\*\* when the face is lit by ERA5 itself"),
+        ("era5", "high", rf"against \*\*[\d.]+\*\* / \*\*{N}\*\* when the face is lit by ERA5 itself"))],
+    *[(f"124 cover-free θ{th} {world} {field} {end} → SUMMARY", SUMMARY, rf"\| {row} \| " + pat, _SSK,
+       _ssk_free(world, end, th, field), tol)
+      for th, row in _SSK_TH.items() for world, field, end, pat, tol in (
+        ("ceres", "runs_per_winter_mean", "low", rf"\*\*{N}\*\* / \*\*[\d.]+\*\* \|", 0.005),
+        ("ceres", "runs_per_winter_mean", "high", rf"\*\*[\d.]+\*\* / \*\*{N}\*\* \|", 0.005),
+        ("ceres", "winters_with_at_least_2_runs", "low", rf"\*\*[\d.]+\*\* / \*\*[\d.]+\*\* \| \*\*{N}\*\* / \*\*\d+\*\* \|", 0.0),
+        ("ceres", "winters_with_at_least_2_runs", "high", rf"\*\*[\d.]+\*\* / \*\*[\d.]+\*\* \| \*\*\d+\*\* / \*\*{N}\*\* \|", 0.0),
+        ("half", "winters_with_at_least_2_runs", "low",
+         rf"\*\*[\d.]+\*\* / \*\*[\d.]+\*\* \| \*\*\d+\*\* / \*\*\d+\*\* \| \*\*{N}\*\* / \*\*\d+\*\* \|", 0.0),
+        ("half", "winters_with_at_least_2_runs", "high",
+         rf"\*\*[\d.]+\*\* / \*\*[\d.]+\*\* \| \*\*\d+\*\* / \*\*\d+\*\* \| \*\*\d+\*\* / \*\*{N}\*\* \|", 0.0))],
+    *[(f"124 rejection {t}->{y} θ{th} {end} → SUMMARY", SUMMARY, rf"\| {row} \| " + _ssk_cell(pos, end) + r" \|", _SSK,
+       _ssk_rej("ceres", end, t, y, th), 0.0)
+      for (t, y), row in _SSK_ROWS.items() for pos, th in enumerate(_SSK_GRID) for end in ("low", "high")],
+    *[(f"124 rejection {t}->{y} ERA5 sky θ0.5 {end} → SUMMARY", SUMMARY,
+       rf"\| {row} \| [^|]+ \| " + (rf"{N} / \d+ \|" if end == "low" else rf"\d+ / {N} \|"), _SSK,
+       _ssk_rej("era5", end, t, y, "0.5"), 0.0)
+      for (t, y), row in _SSK_ROWS.items() for end in ("low", "high")],
+    *[(f"124 ceiling → favourable end θ{th} {end} → SUMMARY", SUMMARY,
+       r"\| 2S ceiling → favourable end \| " + (rf"{N} / \d+" if end == "low" else rf"\d+ / {N}") + r" at every θ of the grid \|",
+       _SSK, _ssk_rej("ceres", end, "ceiling", "favourable_end", th), 0.0)
+      for th in ("0.5", "0.3", "0.2", "0.15", "0.1", "0.05") for end in ("low", "high")],
+    # the worlds table: per world, truth and end, the three outcome counts at θ 0.1, two runs, a day's tolerance
+    *[(f"124 world {w} {t} {field} {end} → SUMMARY", SUMMARY,
+       rf"\| {row} \| " + (rf"{_SSK_AB} · {_SSK_AB} · {_SSK_AB} \| " if t == "nrel_published" else "") + _ssk_cell(pos, end, 3) + r" \|",
+       _SSK, _ssk_out(w, end, t, field), 0.0)
+      for w, row in _SSK_WORLDS.items() for t in ("melt_only", "nrel_published")
+      for pos, field in enumerate(_SSK_OUT) for end in ("low", "high")],
+    *[(f"124 {lab} → SUMMARY", SUMMARY, pat, _SSK, fn, 0.0) for lab, pat, fn in (
+        ("ceiling rejection span min", rf"under the ceiling truth a rejection comes in only {N}–\d+ winters of 19 in every world",
+         _ssk_span(min, _SSK_OUT[0], _SSK_WORLDS, ("ceiling",))),
+        ("ceiling rejection span max", rf"under the ceiling truth a rejection comes in only \d+–{N} winters of 19 in every world",
+         _ssk_span(max, _SSK_OUT[0], _SSK_WORLDS, ("ceiling",))),
+        ("(3) W4 melt self-rejection min", rf"the true melt-only reading is rejected under itself in \*\*{N}\*\*–\*\*\d+\*\* winters \(W4\)", _ssk_self(min, "ceres_cold_truth", "melt_only")),
+        ("(3) W4 melt self-rejection max", rf"the true melt-only reading is rejected under itself in \*\*\d+\*\*–\*\*{N}\*\* winters \(W4\)", _ssk_self(max, "ceres_cold_truth", "melt_only")),
+        ("(3) W5 melt self-rejection min", rf"against \*\*{N}\*\*–\*\*\d+\*\* with the truth's own air \(W5\)", _ssk_self(min, "ceres_cold_both", "melt_only")),
+        ("(3) W5 melt self-rejection max", rf"against \*\*\d+\*\*–\*\*{N}\*\* with the truth's own air \(W5\)", _ssk_self(max, "ceres_cold_both", "melt_only")),
+        ("(4) one run θ0.5 W1 false max", rf"rejects falsely \(in up to \*\*{N}\*\* winters\)",
+         _ssk_span(max, _SSK_OUT[1], ("era5",), _SSK_ALL_T, "0.5", 1)),
+        ("(4) one run W1 melt low", rf"and at θ 0\.3 it rejects in \*\*{N}\*\* / \*\*\d+\*\* winters under the melt-only truth",
+         _ssk_out("era5", "low", "melt_only", _SSK_OUT[0], "0.3", 1)),
+        ("(4) one run W1 melt high", rf"and at θ 0\.3 it rejects in \*\*\d+\*\* / \*\*{N}\*\* winters under the melt-only truth",
+         _ssk_out("era5", "high", "melt_only", _SSK_OUT[0], "0.3", 1)),
+        ("(4) one run W1 NREL low", rf"and in \*\*{N}\*\* / \*\*\d+\*\* under the NREL one, while under the product's sky",
+         _ssk_out("era5", "low", "nrel_published", _SSK_OUT[0], "0.3", 1)),
+        ("(4) one run W1 NREL high", rf"and in \*\*\d+\*\* / \*\*{N}\*\* under the NREL one, while under the product's sky",
+         _ssk_out("era5", "high", "nrel_published", _SSK_OUT[0], "0.3", 1)),
+        ("(4) one run W3 melt false low", rf"still brings a false rejection in \*\*{N}\*\* / \*\*\d+\*\* winters under the melt-only truth",
+         _ssk_out("ceres", "low", "melt_only", _SSK_OUT[1], "0.1", 1)),
+        ("(4) one run W3 melt false high", rf"still brings a false rejection in \*\*\d+\*\* / \*\*{N}\*\* winters under the melt-only truth",
+         _ssk_out("ceres", "high", "melt_only", _SSK_OUT[1], "0.1", 1)),
+        ("(4) one run W3 NREL false low", rf"and in \*\*{N}\*\* / \*\*\d+\*\* under the NREL one — more in the other product-sky worlds",
+         _ssk_out("ceres", "low", "nrel_published", _SSK_OUT[1], "0.1", 1)),
+        ("(4) one run W3 NREL false high", rf"and in \*\*\d+\*\* / \*\*{N}\*\* under the NREL one — more in the other product-sky worlds",
+         _ssk_out("ceres", "high", "nrel_published", _SSK_OUT[1], "0.1", 1)),
+        ("bracket: no rejection on ERA5 air, min", rf"is the end of \*\*{N}\*\*–\*\*\d+\*\* winters of 19 in the worlds on ERA5's air",
+         _ssk_span(min, _SSK_OUT[2], ("era5", "half", "ceres"), _SSK_ALL_T)),
+        ("bracket: no rejection on ERA5 air, max", rf"is the end of \*\*\d+\*\*–\*\*{N}\*\* winters of 19 in the worlds on ERA5's air",
+         _ssk_span(max, _SSK_OUT[2], ("era5", "half", "ceres"), _SSK_ALL_T)),
+        ("bracket: no rejection, melt on the dew reading, min", rf"and of \*\*{N}\*\*–\*\*\d+\*\* under a melt-only truth on the dew-point reading",
+         _ssk_span(min, _SSK_OUT[2], ("ceres_cold_both", "era5_cold_both"), ("melt_only",))),
+        ("bracket: no rejection, melt on the dew reading, max", rf"and of \*\*\d+\*\*–\*\*{N}\*\* under a melt-only truth on the dew-point reading",
+         _ssk_span(max, _SSK_OUT[2], ("ceres_cold_both", "era5_cold_both"), ("melt_only",))),
+        ("rules: an exact sky moves the two-run counts by at most", rf"of the two middle truths by no more than \*\*{N}\*\* winters \(W1 against W3",
+         lambda d: max(abs(d["cells"][f"{x}:{e}:{t}"]["outcome"]["theta0.1:tol1:k2"][_SSK_OUT[0]]
+                           - d["cells"][f"{y}:{e}:{t}"]["outcome"]["theta0.1:tol1:k2"][_SSK_OUT[0]])
+                       for x, y in _SSK_EXACT_SKY_PAIRS for e in ("low", "high") for t in ("melt_only", "nrel_published"))))],
+    *[(f"124 seasonal R {lab} → SUMMARY", SUMMARY, pat, _SSK, fn, 0.0005) for lab, pat, fn in (
+        ("low median", rf"has a median of \*\*{N}\*\* over the nineteen winters", lambda d: d["seasonal_r"]["low"]["median"]),
+        ("low min", rf"over the nineteen winters, from \*\*{N}\*\* to ", lambda d: d["seasonal_r"]["low"]["min"]),
+        ("low max", rf"over the nineteen winters, from \*\*[\d.]+\*\* to \*\*{N}\*\* \(low end", lambda d: d["seasonal_r"]["low"]["max"]),
+        ("high median", rf"\(low end; high: \*\*{N}\*\*, ", lambda d: d["seasonal_r"]["high"]["median"]),
+        ("high min", rf"\(low end; high: \*\*[\d.]+\*\*, \*\*{N}\*\*–", lambda d: d["seasonal_r"]["high"]["min"]),
+        ("high max", rf"\(low end; high: \*\*[\d.]+\*\*, \*\*[\d.]+\*\*–\*\*{N}\*\*\)", lambda d: d["seasonal_r"]["high"]["max"]))],
+    ("124 clock correlation at the applied lag → SUMMARY", SUMMARY, rf"peaks at the applied one-row lag \({N}, against", _SSK,
+     lambda d: d["controls"]["correlation_by_row_lag"]["1"], 0.0005),
+    ("124 closure median → SUMMARY", SUMMARY, rf"own global flux under this script's sun \(median {N}\)", _SSK,
+     lambda d: d["controls"]["closure_median"], 0.0005),
+    ("124 control-3 cells → SUMMARY", SUMMARY, rf"`118`'s cached counts for the same seasons \({N} cells\)", _SSK,
+     lambda d: d["controls"]["118_cover_free_day_counts_checked"], 0.0),
+    ("124 air correlation → SUMMARY", SUMMARY, rf"the second air correlates with ERA5's at {N} hour by hour", _SSK,
+     lambda d: d["controls"]["air_correlation"], 0.0005),
+]
+
 # Kept numbers whose cache has ALREADY moved: the dated ⊕ beside each took the live pin over, so these rows carry no
 # resolver of their own — the registry below gives them a frozen one (an unregistered row here fails loudly).
 CHECKS += [
@@ -13815,6 +13971,81 @@ def test_wind_station_cache_is_whole():
     e = a["daily_max"]["reanalyses"]["era5_max_of_24_instants"]["at_threshold"]["as_printed"]
     assert f"reported {b5:g} m/s or more on {a['daily_max']['station']['days_reported_at_or_above'][str(b5)]} of those days" in d["verdict"]
     assert f"reaches {b5:g} m/s on {e['days_reanalysis']} days, {e['days_both']} of them among the station's" in d["verdict"]
+
+
+
+def test_second_sky_words_follow_the_cache():
+    """124's SUMMARY section states several things in WORDS that no numeric pin can hold; each is checked against the cache
+    together with the sentence's presence, so a re-run that breaks the word reds here. CAN catch: a cover-free winter with
+    fewer runs than the sentence says; a rejection under «no cover» or the favourable end at θ 0.1 (two runs) in any
+    world; a false one-run rejection in the ERA5-lit, ERA5-air world at θ 0.3 or deeper; a false two-run rejection at
+    θ 0.5 in a world with an exact sky; a single false run that no longer survives to θ 0.1 in exactly one winter; the
+    bracket's cells. CANNOT catch: a reworded sentence that keeps the anchor phrase and changes its meaning."""
+    d, text = C(_SSK), doc(SUMMARY)
+    free = d["cover_free"]
+    assert "at least four in every one" in text
+    assert min(free[f"ceres:{e}"]["by_theta"]["0.5"]["runs_per_winter_min"] for e in ("low", "high")) >= 4
+    assert "still shows two or more runs in 13–17 winters" in text
+    assert sorted(free[f"half:{e}"]["by_theta"]["0.5"]["winters_with_at_least_2_runs"] for e in ("low", "high")) == [13, 17]
+    for w in _SSK_WORLDS:
+        for e in ("low", "high"):
+            for t in ("none", "favourable_end"):
+                out = d["cells"][f"{w}:{e}:{t}"]["outcome"]["theta0.1:tol1:k2"]
+                assert out["winters_with_no_rejection"] == 19, (w, e, t, out)
+    assert "nothing is rejected in any world at θ 0.1 (two runs)" in text
+    assert "one run is clean there from θ 0.3 down" in text
+    for e in ("low", "high"):
+        for t in _SSK_ALL_T:
+            for th in ("0.3", "0.2", "0.15", "0.1", "0.05"):
+                assert d["cells"][f"era5:{e}:{t}"]["outcome"][f"theta{th}:tol1:k1"]["winters_with_a_false_rejection"] == 0, (e, t, th)
+    assert "with it θ 0.5 carries no false two-run rejection in W1, W6 and W8" in text
+    for w in ("era5", "era5_cold_both", "era5_frost_both"):
+        for e in ("low", "high"):
+            for t in _SSK_ALL_T:
+                assert d["cells"][f"{w}:{e}:{t}"]["outcome"]["theta0.5:tol1:k2"]["winters_with_a_false_rejection"] == 0, (w, e, t)
+    assert "a single false run survives to θ 0.1 in one winter of nineteen at either end" in text
+    assert [free[f"ceres:{e}"]["by_theta"]["0.1"]["winters_with_at_least_1_runs"] for e in ("low", "high")] == [1, 1]
+    assert ("end between θ 0.15 and θ 0.1 at the low reflection end and between θ 0.2 and θ 0.15 at the high one") in text
+    two = {(e, th): free[f"ceres:{e}"]["by_theta"][th]["winters_with_at_least_2_runs"] for e in ("low", "high") for th in ("0.2", "0.15", "0.1")}
+    assert two[("low", "0.15")] >= 1 and two[("low", "0.1")] == 0 and two[("high", "0.2")] >= 1 and two[("high", "0.15")] == 0, two
+    # a true reading under itself, the product's sky on ERA5's air (W3): 2 / 0 at θ 0.1 and at θ 0.05
+    assert "the melt-only truth is still rejected under itself in 2 / 0 winters at θ 0.1 and at θ 0.05" in text
+    for th in ("0.1", "0.05"):
+        assert [d["cells"][f"ceres:{e}:melt_only"]["rejections"][f"theta{th}:tol1:k2:melt_only"]["winters"] for e in ("low", "high")] == [2, 0]
+    # an exact sky against the product's, θ 0.1, two runs, the two middle truths: the not-proven-false count falls in
+    # 5 of 12 cells and rises in 2, and every false two-run rejection goes to zero under the exact sky
+    assert "the not-proven-false count falls in 5 of the 12 cells and rises in 2" in text
+    assert "every false two-run rejection at θ 0.1 goes to zero under it" in text
+    moves = [d["cells"][f"{x}:{e}:{t}"]["outcome"]["theta0.1:tol1:k2"][_SSK_OUT[0]]
+             - d["cells"][f"{y}:{e}:{t}"]["outcome"]["theta0.1:tol1:k2"][_SSK_OUT[0]]
+             for x, y in _SSK_EXACT_SKY_PAIRS for e in ("low", "high") for t in ("melt_only", "nrel_published")]
+    assert (sum(v < 0 for v in moves), sum(v > 0 for v in moves), len(moves)) == (5, 2, 12), moves
+    for x, _ in _SSK_EXACT_SKY_PAIRS:
+        for e in ("low", "high"):
+            for t in _SSK_ALL_T:
+                assert d["cells"][f"{x}:{e}:{t}"]["outcome"]["theta0.1:tol1:k2"]["winters_with_a_false_rejection"] == 0, (x, e, t)
+    # the humidity reading alone (W8 → W6), and the sky alone on each air
+    assert ("moves the count from 8 / 7 to 14 / 10 under a melt-only truth and from 0 / 1 to 6 / 4 under an NREL one (W8 → W6)") in text
+    assert "(two runs) in all nineteen" in text
+    for w in ("ceres", "ceres_cold_truth", "ceres_cold_both", "ceres_frost_both"):
+        for e in ("low", "high"):
+            for t in ("none", "melt_only", "nrel_published", "favourable_end"):
+                for y in ("melt_only", "nrel_published", "favourable_end"):
+                    assert d["cells"][f"{w}:{e}:{t}"]["rejections"][f"theta0.5:tol1:k2:{y}"]["winters"] == 19, (w, e, t, y)
+    assert all(b["winters_with_at_least_1_runs"] == 0 for e in ("low", "high") for b in free[f"era5:{e}"]["by_theta"].values())
+    assert "under ERA5's own sky the same code gives none at any θ of the grid" in text
+
+    def npf(world, truth):
+        return " / ".join(str(d["cells"][f"{world}:{e}:{truth}"]["outcome"]["theta0.1:tol1:k2"][_SSK_OUT[0]]) for e in ("low", "high"))
+    m = "melt_only"
+    assert (f"{npf('era5', m)} and {npf('ceres', m)} winters of 19 on ERA5's air (W1, W3), {npf('ceres_cold_both', m)} on MERRA-2's air "
+            f"with its humidity read as a dew point (W5, W6), {npf('ceres_frost_both', m)} and {npf('era5_frost_both', m)} with the "
+            "same column read as a frost point (W7, W8)") in text
+    assert npf("era5_cold_both", m) == npf("ceres_cold_both", m)
+    n = "nrel_published"
+    assert (f"Under an NREL truth: {npf('era5', n)} to {npf('ceres', n)} on ERA5's air, {npf('ceres_cold_both', n)} and "
+            f"{npf('era5_cold_both', n)} on the dew-point reading, {npf('ceres_frost_both', n)} and {npf('era5_frost_both', n)} on "
+            "the frost-point one") in text
 
 
 @pytest.mark.parametrize("module", ["test_doc_cache_sync.py", "test_cache_integrity.py"])

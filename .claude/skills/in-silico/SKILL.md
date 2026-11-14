@@ -324,6 +324,11 @@ Anchor mechanics (CPU):
      vapour pressure, REFLECT_ENDS) → 117 (stem_face_cover_rules_rehearsal.json — the stem-face sheet's cover rules
      rehearsed on ERA5 before the logger); a change to 79's loaders or REFLECT_ENDS, 110's irradiance or 115's ice
      saturation re-runs 117
+  118 (importlib: episodes_runs, DIP, and through it 115 — cover_readings — 110 — irradiance — 79 and 71; kinetics/stem_face_cover_power.json —
+     its cover-free day counts, a control) · data/power_cherkasy_shortwave (the CERES SYN1deg short-wave components, hourly) ·
+     data/power_cherkasy_longwave (its MERRA-2 air and humidity columns — the second air) · 120 (importlib: frost_point_as_dew_point) → 124
+     (kinetics/stem_face_second_sky.json — the stem-face logger under a second sky and a second air); a re-run of 118, or a
+     change to 115's cover model, 110's irradiance or 79's loaders, sun, faces or REFLECT_ENDS, re-runs 124
   107 (importlib: solve · source_coeffs · stem_layers · run_case · _span · the readings and the carrier; radio/stem_radio_shadow.json —
      its rows at its own standoffs, a control) · 114 (dendrometer_support_budget.json: the rate ends, the bearing share, and
      the install edges as a control) · 78 (flange_cambium_heat.json: the RAW facing spread) · 52 (z_stack_tolerance.json: the

@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 413 · 35,973,162 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 417 · 41,029,963 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -72,6 +72,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/121_cold_edge_station.py` | `8d6ecc56e78354ed12461678689bbddac4ffeb88805d45cadad3b9255e672b33` | Whether a reanalysis runs warm on cold nights: daily minimum air temperature of two reanalyses against two non-overlapping records of one synoptic station, with the gap conditioned on the station, on the reanalysis and on neither, and the cold edge of twenty-nine seasons read from both reanalyses. |
 | `tools/in_silico/scripts/122_capsule_cold_edge_second_reading.py` | `070e042b565121214e740b8b94fc4077d903317df603c938edbb16d31bf03f32` | Cold edge of the sensor capsule (isolated lump, no sun, still air) on a second reanalysis reading of the air under three readings of the sky, hourly over twenty years, and at every daily minimum of the ten years before them, against the capsule's temperature requirement. |
 | `tools/in_silico/scripts/123_wind_reanalyses_station.py` | `a76459a766cb1722631406b46cc589e99bab3b0d73d5587351b1660fe9243ce2` | Two reanalyses of the 10 m wind against one synoptic station's daily mean and daily maximum wind, with the gap conditioned on the station, on the reanalysis and on neither, and the strong-wind hours of nineteen winter seasons read from both reanalyses. |
+| `tools/in_silico/scripts/124_stem_face_second_sky.py` | `e090af68ff7e1b65b7f5d805a1a5f38c4df0e0934cd44463ddf229a150c48e43` | A light logger on a pine stem's south face under a second sky: the face lit by a satellite-based surface-irradiance product and judged against reanalysis irradiance — the false light dips, the rejections of snow- and hoarfrost-cover models and the seasonal ratio that the disagreement of the two sky estimates alone produces, over 19 winters. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `21c4b260195f62e079d7505e26cc41cd3519417d8f2047ddec96976b02c062fc` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
 | `tools/in_silico/scripts/13_psbma_diffusion_md.py` | `1df7d7778e3fc058fa5f00cc181eaf242148a6dfbffd262543e0c617c50828c8` | L2 — glucose diffusion through PSBMA membrane layer. |
 | `tools/in_silico/scripts/14_xylem_sap_sweep_md.py` | `e4a8753f04783fc3198835d35935899a64d90aeb0b3cdbd223d6b4421e2d6c6b` | L2 — xylem sap composition sweep: test enzyme stability across tree species. |
@@ -164,7 +165,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `84027de5d29e78223ae0cd667589721f9f118621e8a6972a57b3e1d453aff36a` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `cdd199c5575b166950ff5ba84c96b0df7f5411a39e1ab5403d45a58f101ee132` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `8e8bf6227d5e315b05875cddfb0e09f5edf14bf2acc270e311b5294e6b7bee85` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -263,6 +264,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/kinetics/pv_face_snow_frost_azimuth.json` | `4684ed9e84840c825997e096d571c86c09d04878acd2565139f3256371c50f8d` | 68,221 |
 | `tools/in_silico/cache/kinetics/stem_face_cover_power.json` | `4831fdbc97bff6a819aba3f3a630336854726bd7c13da08835961d0053824cc7` | 509,701 |
 | `tools/in_silico/cache/kinetics/stem_face_cover_rules_rehearsal.json` | `2b526b6e8b85a2213af4785b3181ff50dd487a5533cf4416b2d9bb91efcd93c7` | 20,721 |
+| `tools/in_silico/cache/kinetics/stem_face_second_sky.json` | `0271cebaf460ddcb3a5b379661754efbd1636622fd66a5c9ce4c13ab242a3d9f` | 3,431,159 |
 | `tools/in_silico/cache/kinetics/strain_cycling.json` | `d4d8eaa35f26f1eac5c3f8c65373fb7e3655934c20f4ee6db715fd7e5ca693a7` | 4,041 |
 | `tools/in_silico/cache/kinetics/temperature_sweep.json` | `492d51a3cbd7de43d1e689db1f820080f5de869ae8e6d191d81dc95b8d474b7e` | 1,135 |
 | `tools/in_silico/cache/kinetics/thermal_penetration.json` | `5cae21264b41cad0ce9d460b85d29121cb225fffd1ba17f57b9371f629d53aba` | 1,297 |
@@ -448,6 +450,8 @@ External records the desk models read at run time (climate reanalysis, wind, hom
 | `tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.json` | `8866640bf57497d38d3ecbfeb8918c78aaca98f163eb39a676d41e9c063216e4` | 58,549 |
 | `tools/in_silico/data/power_cherkasy_longwave/README.md` | `bdd9a73605d2adeed9ab8e09206aa16bf058a81eb658a636233b43ee55910450` | 7,909 |
 | `tools/in_silico/data/power_cherkasy_longwave/hourly_2001_2020.csv.gz` | `e9fcd727d5a42c7855474252aaade18bef24aa5b8ca335b4f6b34801ddc6c185` | 2,560,723 |
+| `tools/in_silico/data/power_cherkasy_shortwave/README.md` | `2f4f287a1734333da3daa5c55844a32e5f40baa51e4bff4675d75c405fdb6e48` | 4,956 |
+| `tools/in_silico/data/power_cherkasy_shortwave/hourly_2001_2020.csv.gz` | `83bd7d6772b9065cbb2f8d216c6889e9ac2bdf0581b7fe8339124376ba8731a0` | 1,563,477 |
 | `tools/in_silico/data/station_cherkasy/README.md` | `d3e4ee22c1e3138e52fc272b08b20ea3573a411373e3e5265f82c373b50081b5` | 7,007 |
 | `tools/in_silico/data/station_cherkasy/ghcnd_UPM00033487_2000_2009.csv.gz` | `a8626e5838f97d229ad0354f891202f830d162848baf56918099346fd540c21a` | 28,752 |
 | `tools/in_silico/data/station_cherkasy/gsod_33487099999_1991_1998.csv.gz` | `34baca304a1c843d570eadb8868cb43d2133ba6a5066ab487f0f85926b238191` | 52,424 |

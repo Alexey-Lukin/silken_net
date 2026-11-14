@@ -159,6 +159,24 @@ Best regards,
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
+## 📤 Reminder block (EN) — MERA (the quote for the delivery address sent)
+
+> **Репо-нота (у лист НЕ йде).** Відповідь у тому самому треді MERA, лише продавцеві, що відповів; імʼя адресата — у Gmail, не в дереві. Стан на 2026-11-14: після нашої адреси доставки котирування не надходило (скриньку й спам перечитано того дня). **Не надіслано; подано founder-у:** і текст, і дата чекають його «так». Правило комерційного листа — одне нагадування після 7 робочих днів тиші ([`rfq_registry`](rfq_registry.md) §3); чи слати цей блок раніше — присуд founder-а, нога пункту-власника: лист відповідає на прохання самого продавця (адреса для розрахунку транспорту), а не є холодним запитом, і кожен день без котирування зсуває замовлення, оплату й доставку вглиб грудня (ціна строку — §2a). Блок нічого не замовляє; рішення купувати — після ціни й дати. Числа й обіцянки листа: «1 × HOBO MX2309», курʼєр в Україну, три пункти котирування — ті самі, що в блоці «reply to MERA» вище; «early December» — вікно виміру аркуша [`stem_face_winter_light`](../ebfc/stem_face_winter_light.md) §3.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear `[salesperson's name — fill in before sending]`,
+
+A short follow-up on the quote for 1 × HOBO MX2309 with courier delivery to Ukraine — the delivery address is in my previous message below. Could you send it, with the total price including transport, the payment terms and the expected delivery date? The measurement starts in early December, so I would like to place the order as soon as the quote arrives.
+
+If anything is missing on my side for the quote, please tell me.
+
+Best regards,
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
 ---
 
 ## 3. Cross-references
