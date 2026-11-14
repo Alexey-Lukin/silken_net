@@ -14148,6 +14148,66 @@ def test_second_sky_words_follow_the_cache():
 
 
 
+def test_two_airs_words_follow_the_cache():
+    """124's «rule of two airs» paragraph in SUMMARY: every count is recomputed from the cache's cells. CAN catch a
+    re-run (another error axis, another air) that leaves the paragraph behind, and a sentence whose aggregate the
+    cells no longer give; CANNOT catch a reworded sentence that keeps its anchor."""
+    z, text = C("kinetics/stem_face_second_sky.json")["two_airs_rule"], doc(SUMMARY)
+    cells, inp = z["cells"], z["inputs"]
+    rules, own = inp["rules"], "winters_the_truth_is_rejected"
+    parts = {key: key.split(":") for key in cells}
+
+    def axis(label):
+        return "dew" if label.startswith("dew") else ("d" if label.startswith("d") else "other")
+
+    def worst(pick):
+        keys = [k for k in cells if parts[k][3] != "none" and pick(parts[k])]
+        return " · ".join(str(max(cells[k][rule][own] for k in keys)) for rule in rules)
+
+    assert f"at θ 0.1 and 0.15, tol {inp['tol']}, k {inp['k']}" in text and f"or only when BOTH reject; {len(cells)} cells" in text
+    assert inp["sensor_offsets_K"] == [-1.0, -0.5, 0.0, 0.5, 1.0] and inp["dew_offsets_K"] == [-2.0, -1.0, 1.0]
+    at01 = "theta0.1"
+    assert (f"an offset on temperature and dew point alike **{worst(lambda p: p[5] == at01 and axis(p[4]) == 'd')}**; on the dew point alone "
+            f"**{worst(lambda p: p[5] == at01 and axis(p[4]) == 'dew')}**; the other humidity reading "
+            f"**{worst(lambda p: p[5] == at01 and axis(p[4]) == 'other')}**") in text
+
+    def melt(label, rule="both"):
+        return cells[f"ceres:merra2:low:melt_only:{label}:{at01}"][rule][own]
+
+    assert (f"«both» rejects it in {melt('d+0')} winters of 19 with no error, {melt('dew-1')} with the dew point 1 K low, {melt('dew-2')} with "
+            f"2 K low and {melt('other_humidity_reading')} on the other reading — against {melt('d+0', 'era5_alone')} on ERA5's air alone") in text
+    assert melt("d+0") < melt("dew-1") < melt("dew-2") and melt("dew-2") >= melt("d+0", "era5_alone")
+    pairs = stronger = weaker = 0
+    for key, cell in cells.items():
+        for reading, n_both in cell["both"]["winters_rejected_by_reading"].items():
+            single = [cell[rule]["winters_rejected_by_reading"][reading] for rule in rules[:2]]
+            assert n_both <= min(single), (key, reading)
+            if parts[key][5] == at01 and reading not in cell["both"]["proven_false"]:
+                pairs, stronger, weaker = pairs + 1, stronger + (n_both < max(single)), weaker + (n_both < min(single))
+    assert (f"of the {pairs} pairs of a cell and a reading not proven false at θ 0.1, «both» rejects in fewer winters than the stronger single "
+            f"rule in {stronger} and than the weaker in {weaker}") in text
+    lost = [cells[f"ceres:{air}:low:melt_only:d+0:{at01}"]["runs_of_the_truth_missed_on_both_airs"] for air in ("era5", "merra2", "merra2_frost")]
+
+    def span(key):
+        return f"{min(v[key] for v in lost)}–{max(v[key] for v in lost)}"
+
+    assert (f"are {span('runs')} runs ({span('days')} days) per truth air; on {span('days_the_truths_cover_takes_over_half')} of those days the "
+            f"truth's cover takes over half the light and on none is the face free of it, while the product's "
+            f"sky is under half of ERA5's on {span('days_the_products_ghi_is_under_half_of_era5s')}") in text
+    assert all(v["days_free_of_the_truths_cover"] == 0 and 2 * v["days_the_truths_cover_takes_over_half"] > v["days"] for v in lost)
+    warm = [air for air in inp["truth_airs"] if air.endswith("K")]
+    assert len(warm) == 2 and (f"in at most {worst(lambda p: p[5] == at01 and p[1] in warm)} winters at θ 0.1 "
+                               f"({worst(lambda p: p[5] == 'theta0.15' and p[1] in warm)} at 0.15)") in text
+    differs = inp["nesting_differs_from_era5_air"]
+    assert "«NREL» inside the ceiling fails; recorded in the cache" in text
+    assert differs and all(all(item.endswith("nrel_published->ceiling") for item in v) for v in differs.values())
+
+    def bare(theta):
+        return max(cells[k][rule]["winters_with_a_false_rejection"] for k in cells if parts[k][5] == theta and parts[k][3] == "none" for rule in rules)
+
+    assert f"is rejected in {bare(at01)} winters at θ 0.1 under any rule, sky and error, at 0.15 in at most {bare('theta0.15')}" in text
+
+
 def test_courtyard_words_follow_the_cache():
     """125's SUMMARY section in WORDS: the plan's inputs, the by-axis brackets, the months, the crowns, the reading's
     ranges and the table of hours — each sentence rebuilt from the cache. CAN catch a re-run (another plan, another

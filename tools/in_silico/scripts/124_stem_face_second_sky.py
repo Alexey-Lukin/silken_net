@@ -53,6 +53,23 @@ MODEL.
     covers every hour T covers in the analyst's run (the containment `118` asserts). Every other rejection is counted as
     «not proven false» — the flag sits on the PAIR, not on the run, so such a rejection can still rest on runs the
     truth's cover did not make (sky-made dips where the lighter reading has no cover); it is an upper count of power.
+  THE RULE OF TWO AIRS (added 2026-11-14 for the rewrite of the sheet's pp. 3–7). The analyst the season will have
+    holds exactly two airs: ERA5's and the logger's own. Three rules are scored at θ 0.1 and 0.15, tol 1, k 2: reject
+    on ERA5's air alone · on the logger's air alone · only when BOTH reject. The truth's air runs over ERA5's,
+    MERRA-2's in both readings of its humidity column, and ERA5's warmed by 1 and 2 K on temperature and dew point
+    alike (a yard warmer than the cell, with the cell's snow, cloud and wind). The logger's air is the TRUTH's air
+    with a sensor error, on three axes — each grants that the air at the logger IS the air that drives the cover,
+    which nothing here tests, and no cell has both airs away from the cover's:
+      «d»    a constant offset on temperature and dew point alike (−1 … +1 K) — it keeps the dew-point deficit, so
+             the logger's humidity is exact on it (asserted);
+      «dew»  a constant offset on the dew point alone (−2 · −1 · +1 K; capped at the air) — a humidity sensor's
+             error, added after this block's adversary showed the first axis was blind to it;
+      «other_humidity_reading»  on MERRA-2's air, the humidity column read the OTHER way (dew ⊥ frost point) — a
+             named reading, not a typed offset.
+    A rejection is PROVEN false on the air whose run shows the containment (the readings' nesting is not the same on
+    every air — it fails on the warmed ones, recorded); under «both» it is proven false when either air proves it.
+    Counts are kept per winter and per reading; for the truth's own runs missed on both airs with no sensor error, the
+    days are sorted by what stood over them (the truth's cover · no cover · the product's sky under half of ERA5's).
 
 DECLARED BEFORE THE RUN. The θ grid (0.5 · 0.3 · 0.2 · 0.15 · 0.1 · 0.05), tol and k above; the seasons are the product's
 nineteen full Dec–Feb seasons (2002–2020), split odd ⊥ even as the held-out axis (#56); no synthetic noise is added and
@@ -61,7 +78,8 @@ The α and air axes were added after the first version's adversary (2026-11-14) 
 both; their values (1/√2; MERRA-2 as the one second air in the tree) were fixed before their run.
 
 WHAT IT CANNOT SEE. The yard against either cell (a crown, the house, point-against-area scatter — all of which add to
-what is printed), the product's own error (which subtracts from what ERA5 alone would cause), sensor offsets, cosine and
+what is printed), the product's own error (which subtracts from what ERA5 alone would cause), sensor errors other than
+a constant offset on temperature and dew point, a logger whose air is not the air that drives the cover, cosine and
 spectral errors, the logger's clock, fog and rime, a second wind and a second long-wave sky (the air axis swaps the
 2 m temperature and dew point only, and MERRA-2 is a cell too — under a crown the nights may as well be warmer), the
 product's «Dew/Frost Point» taken as a dew point, the hybrid reading, the decisions other than coverage (dry snow;
@@ -84,6 +102,13 @@ CONTROLS (each says what it CAN and CANNOT catch).
       the share recorded); the mean of ERA5's air minus it is recorded over all hours and over the seasons' DJF hours
       (`120` reports the same difference on ITS rows — winter frost hours — where it is larger); CAN catch a swapped or
       foreign column and a gross clock error, CANNOT say which air is the yard's.
+  (6) The two-air block: at no sensor error its outcomes AND its count of winters the truth is rejected are the
+      worlds' own (ERA5's air alone is «era5» · «ceres» · «ceres_cold_truth», the logger's alone the «…_both» worlds;
+      the other-humidity logger alone under «both»-air truth is checked the same way where a world exists); on ERA5's
+      air warmed by 1 K with the logger 1 K low the logger IS ERA5 and the three rules agree; «both» never rejects a
+      reading in more winters than either single rule; the «d» axis keeps the dew-point deficit and the «dew» axis the
+      temperature. CAN catch a wrong run, base, miss, flag or truth count, an «or» for the «and», a shift of the wrong
+      sign or column; CANNOT an error the worlds share, nor a wrong count at a sensor error no world carries.
   One code path builds every world's face from α, so control (3) on α 0 covers the composition of all of them; at α 1
   the mixed sky is the product's columns exactly (asserted).
 """
@@ -142,6 +167,15 @@ COVERED = 0.5                               # a day «covered» by reading Y bel
 FREE = 0.8                                  # a day the truth leaves free of cover (`118`'s CONT)
 TOLS = (0, 1)
 KS = (1, 2, 3)
+# the rule of two airs (declared before its run, 2026-11-14)
+RULE_SKIES = {"era5": 0.0, "ceres": 1.0}
+RULE_THETAS = (0.1, 0.15)
+RULE_TOL, RULE_K = 1, 2
+SENSOR_OFFSETS_K = (-1.0, -0.5, 0.0, 0.5, 1.0)
+DEW_OFFSETS_K = (-2.0, -1.0, 1.0)            # on the dew point alone
+OTHER_HUMIDITY = {"merra2": "merra2_frost", "merra2_frost": "merra2"}
+WARM_YARD_K = (1.0, 2.0)
+RULES = ("era5_alone", "logger_alone", "both")
 CLOSURE_MIN_W = 50.0
 CLOSURE_TOL = 0.02
 
@@ -337,6 +371,33 @@ def main() -> int:
     wx_air = {"era5": wx, "merra2": {**wx, "t_air": t_m, "t_dew": np.where(have, td_capped, wx["t_dew"])},
               "merra2_frost": {**wx, "t_air": t_m, "t_dew": td_frost}}
     frost_reading_shift = float((td_capped[win_air := have & (t_m < 0.0)] - td_frost[win_air]).mean())
+    shift_of = {}
+
+    def shifted(name: str, delta: float) -> str:
+        """The name of an air shifted by δ K on temperature and dew point alike («era5+1.5K»)."""
+        base, total = shift_of.get(name, (name, 0.0))
+        total += delta
+        new = base if total == 0.0 else f"{base}{total:+g}K"
+        shift_of.setdefault(new, (base, total))
+        return new
+
+    dew_of = {}
+
+    def dew_shifted(name: str, delta: float) -> str:
+        """The name of an air whose dew point alone is shifted by δ K and capped at the air («merra2dew-1K»)."""
+        new = f"{name}dew{delta:+g}K"
+        dew_of[new] = (name, delta)
+        return new
+
+    def air_of(name: str) -> dict:
+        if name not in wx_air:
+            if name in dew_of:
+                base, delta = dew_of[name]
+                wx_air[name] = {**air_of(base), "t_dew": np.minimum(air_of(base)["t_dew"] + delta, air_of(base)["t_air"])}
+            else:
+                base, total = shift_of[name]
+                wx_air[name] = {**wx_air[base], "t_air": wx_air[base]["t_air"] + total, "t_dew": wx_air[base]["t_dew"] + total}
+        return wx_air[name]
 
     def sky(alpha: float):
         """ERA5 + α · (product − ERA5), column by column; ERA5 where the product has no hour."""
@@ -356,7 +417,7 @@ def main() -> int:
 
     def cover_of(alpha: float, air_name: str):
         if (alpha, air_name) not in cover_cache:
-            cover_cache[(alpha, air_name)] = S115.cover_readings(wx_air[air_name], skies[alpha][1], snow_season, d_dome)["covers"]
+            cover_cache[(alpha, air_name)] = S115.cover_readings(air_of(air_name), skies[alpha][1], snow_season, d_dome)["covers"]
         return cover_cache[(alpha, air_name)]
 
     # days
@@ -395,15 +456,22 @@ def main() -> int:
     # the analyst's reading Y: ERA5's sky, the analyst's air — the day's transmitted share, whether Y «covers» the day,
     # and which readings cover every hour another covers (the false-rejection rule)
     analyst = {}
-    for air_name in sorted({w[2] for w in WORLDS.values()}):
-        share = {(y, c): np.where(light(0.0, "era5", "none", c) > 0,
-                                  light(0.0, air_name, y, c) / np.where(light(0.0, "era5", "none", c) > 0, light(0.0, "era5", "none", c), 1.0),
-                                  1.0) for y in READINGS for c in range(len(ends))}
-        cov = cover_of(0.0, air_name)
-        analyst[air_name] = {
-            "share": share, "covered": {k: v < COVERED for k, v in share.items()},
-            "contains": {(t, y, c): bool(np.all(cov[y][0][win_h, c] >= cov[t][0][win_h, c] - 1e-12))
-                         for t in READINGS for y in READINGS for c in range(len(ends)) if t != y}}
+
+    def analyst_for(air_name: str) -> dict:
+        if air_name not in analyst:
+            share = {(y, c): np.where(light(0.0, "era5", "none", c) > 0,
+                                      light(0.0, air_name, y, c) / np.where(light(0.0, "era5", "none", c) > 0, light(0.0, "era5", "none", c), 1.0),
+                                      1.0) for y in READINGS for c in range(len(ends))}
+            cov = cover_of(0.0, air_name)
+            analyst[air_name] = {
+                "share": share, "covered": {k: v < COVERED for k, v in share.items()},
+                "contains": {(t, y, c): bool(np.all(cov[y][0][win_h, c] >= cov[t][0][win_h, c] - 1e-12))
+                             for t in READINGS for y in READINGS for c in range(len(ends)) if t != y}}
+        return analyst[air_name]
+
+    world_airs = sorted({w[2] for w in WORLDS.values()})
+    for air_name in world_airs:
+        analyst_for(air_name)
 
     # control (3): the «era5» world's cover-free judged days per winter are 118's
     z118 = json.loads(P118.read_text())
@@ -506,6 +574,113 @@ def main() -> int:
                         "r_over_base_percentiles": {str(q): float(np.percentile(ratios, q)) for q in (1, 5, 50, 95, 99)},
                         "by_theta": by_theta}
 
+    # C. the rule of two airs: the same record judged on ERA5's air, on the logger's (the truth's air with a sensor
+    # error), and on both
+    truth_airs = ("era5", "merra2", "merra2_frost", *[shifted("era5", k) for k in WARM_YARD_K])
+    two_airs, logger_of = {}, {}
+    for truth_air in truth_airs:
+        logger_of[truth_air] = {f"d{delta:+g}": shifted(truth_air, delta) for delta in SENSOR_OFFSETS_K}
+        if truth_air in OTHER_HUMIDITY or truth_air == "era5":
+            logger_of[truth_air].update({f"dew{delta:+g}": dew_shifted(truth_air, delta) for delta in DEW_OFFSETS_K})
+        if truth_air in OTHER_HUMIDITY:
+            logger_of[truth_air]["other_humidity_reading"] = OTHER_HUMIDITY[truth_air]
+
+    def missed(run: list, covered: np.ndarray) -> bool:
+        return not np.any(covered[max(run[0] - RULE_TOL, 0):run[-1] + RULE_TOL + 1])
+
+    for sky_name, alpha in RULE_SKIES.items():
+        for truth_air in truth_airs:
+            for c, end in enumerate(ends):
+                r_none = light(alpha, "era5", "none", c) / safe_g
+                for t in TRUTHS:
+                    r = light(alpha, truth_air, t, c) / safe_g
+                    share = np.where(r_none > 0, r / np.where(r_none > 0, r_none, 1.0), 1.0)
+                    runs = {}
+                    for sy in seasons:
+                        jd = jd_of[sy]
+                        base = base_from_record(r, jd, ground, terc_of[sy])
+                        ratio = np.full(len(days), np.nan)
+                        ratio[jd] = r[jd] / base[jd]
+                        for theta in RULE_THETAS:
+                            runs[(sy, theta)] = [[int(sel_of[sy][i]) for i in run] for run in runs_below(ratio[sel_of[sy]], theta)]
+                    for label, logger in logger_of[truth_air].items():
+                        an = {"era5": analyst_for("era5"), "logger": analyst_for(logger)}
+                        proven = {a: {y: bool(t == "none" or y == t or v["contains"].get((t, y, c), False)) for y in READINGS}
+                                  for a, v in an.items()}
+                        flags = {"era5_alone": proven["era5"], "logger_alone": proven["logger"],
+                                 "both": {y: proven["era5"][y] or proven["logger"][y] for y in READINGS}}
+                        for theta in RULE_THETAS:
+                            rejected = {rule: [] for rule in RULES}
+                            for sy in seasons:
+                                hit = {a: {y for y in READINGS
+                                           if sum(missed(run, v["covered"][(y, c)]) for run in runs[(sy, theta)]) >= RULE_K}
+                                       for a, v in an.items()}
+                                rejected["era5_alone"].append(hit["era5"])
+                                rejected["logger_alone"].append(hit["logger"])
+                                rejected["both"].append(hit["era5"] & hit["logger"])
+                            cell = {rule: {"winters_with_a_rejection_not_proven_false": sum(any(not flags[rule][y] for y in h) for h in per),
+                                           "winters_with_a_false_rejection": sum(any(flags[rule][y] for y in h) for h in per),
+                                           "winters_with_no_rejection": sum(not h for h in per),
+                                           "winters_the_truth_is_rejected": None if t == "none" else sum(t in h for h in per),
+                                           "winters_rejected_by_reading": {y: sum(y in h for h in per) for y in READINGS},
+                                           "proven_false": [y for y in READINGS if flags[rule][y]]}
+                                    for rule, per in rejected.items()}
+                            if label == "d+0" and theta == RULE_THETAS[0] and t != "none":
+                                lost = [run for sy in seasons for run in runs[(sy, theta)]
+                                        if all(missed(run, v["covered"][(t, c)]) for v in an.values())]
+                                on = np.array([d for run in lost for d in run], dtype=int)
+                                cell["runs_of_the_truth_missed_on_both_airs"] = {
+                                    "runs": len(lost), "days": len(on),
+                                    "days_the_truths_cover_takes_over_half": int(np.sum(share[on] < COVERED)),
+                                    "days_free_of_the_truths_cover": int(np.sum(share[on] >= FREE)),
+                                    **({"days_the_products_ghi_is_under_half_of_era5s": int(np.sum(g_c_kwh[on] < 0.5 * g_e_kwh[on]))}
+                                       if alpha == 1.0 else {})}
+                            two_airs[f"{sky_name}:{truth_air}:{end}:{t}:{label}:theta{theta:g}"] = cell
+    # control (6)
+    control6 = {"outcomes": 0, "truth_counts": 0, "logger_is_era5": 0, "both_within_each": 0}
+    same_as = {("era5", "era5", "era5_alone", "d+0"): "era5", ("era5", "era5", "logger_alone", "d+0"): "era5",
+               ("ceres", "era5", "era5_alone", "d+0"): "ceres", ("ceres", "era5", "logger_alone", "d+0"): "ceres",
+               ("ceres", "merra2", "era5_alone", "d+0"): "ceres_cold_truth", ("ceres", "merra2", "logger_alone", "d+0"): "ceres_cold_both",
+               ("era5", "merra2", "logger_alone", "d+0"): "era5_cold_both",
+               ("ceres", "merra2_frost", "logger_alone", "d+0"): "ceres_frost_both",
+               ("era5", "merra2_frost", "logger_alone", "d+0"): "era5_frost_both"}
+    for (sky_name, truth_air, rule, label), world in same_as.items():
+        for end in ends:
+            for t in TRUTHS:
+                for theta in RULE_THETAS:
+                    got = two_airs[f"{sky_name}:{truth_air}:{end}:{t}:{label}:theta{theta:g}"][rule]
+                    old = out_cells[f"{world}:{end}:{t}"]
+                    want = old["outcome"][f"theta{theta:g}:tol{RULE_TOL}:k{RULE_K}"]
+                    assert all(got[k] == v for k, v in want.items()), ("control 6", sky_name, truth_air, rule, end, t, theta, got, want)
+                    control6["outcomes"] += 1
+                    for y in READINGS:
+                        assert got["winters_rejected_by_reading"][y] == old["rejections"][f"theta{theta:g}:tol{RULE_TOL}:k{RULE_K}:{y}"]["winters"]
+                        control6["truth_counts"] += 1
+    warm1 = shifted("era5", WARM_YARD_K[0])
+    assert logger_of[warm1][f"d{-WARM_YARD_K[0]:+g}"] == "era5"
+    for key, cell in two_airs.items():
+        if f":{warm1}:" in key and f":d{-WARM_YARD_K[0]:+g}:" in key:
+            assert cell["era5_alone"] == cell["logger_alone"] == cell["both"], ("control 6, the logger is ERA5", key)
+            control6["logger_is_era5"] += 1
+        for y in READINGS:
+            n = {rule: cell[rule]["winters_rejected_by_reading"][y] for rule in RULES}
+            assert n["both"] <= min(n["era5_alone"], n["logger_alone"]), ("control 6, both within each", key, y, n)
+            control6["both_within_each"] += 1
+    for name, (base, _total) in shift_of.items():
+        if name in wx_air and name != base:
+            assert np.allclose(wx_air[name]["t_air"] - wx_air[name]["t_dew"], wx_air[base]["t_air"] - wx_air[base]["t_dew"], rtol=0, atol=1e-9)
+    dew_deficit = {}
+    for name, (base, delta) in dew_of.items():
+        if name in wx_air:
+            assert np.array_equal(wx_air[name]["t_air"], wx_air[base]["t_air"]) and np.all(wx_air[name]["t_dew"] <= wx_air[name]["t_air"])
+            moved = float((wx_air[name]["t_dew"] - wx_air[base]["t_dew"])[win_h].mean())
+            assert (moved < 0.0) == (delta < 0.0) and abs(moved) <= abs(delta) + 1e-9, ("control 6, the dew axis", name, moved)
+            dew_deficit[name] = float((wx_air[name]["t_air"] - wx_air[name]["t_dew"])[win_h].mean())
+    assert control6["logger_is_era5"] > 0
+    nesting_differs = {name: sorted(f"{ends[c]}:{t}->{y}" for (t, y, c), v in a["contains"].items() if v != analyst["era5"]["contains"][(t, y, c)])
+                       for name, a in analyst.items()}
+    nesting_differs = {name: v for name, v in nesting_differs.items() if v}
+
     print(f"  clock: corr by row lag {', '.join(f'{k:+d}: {v:.3f}' for k, v in by_lag.items())}; closure median {closure_median:.3f}; "
           f"ERA5 air − MERRA-2 air {air_diff:.2f} K over all hours, {air_diff_winter:.2f} K over the seasons' DJF hours")
     print(f"  the sky alone — daily GHI, product over ERA5, {sky_alone['days']} judged DJF days: sd(ln) {sky_alone['sd_ln']:.3f}, "
@@ -523,6 +698,17 @@ def main() -> int:
             parts = [f"{t[:5]} " + "·".join(str(v) for v in out_cells[f"{w}:low:{t}"]["outcome"][f"theta{theta:g}:tol1:k{k}"].values())
                      for t in TRUTHS]
             print(f"    {w:<17s} k{k} θ{theta:<4g} " + " | ".join(parts))
+
+    print(f"  the rule of two airs, θ {RULE_THETAS[0]:g}, tol {RULE_TOL}, k {RULE_K}, the product's sky — winters of 19 the TRUE reading is "
+          "rejected under itself, low/high end, per rule ERA5 alone | logger alone | both:")
+    for truth_air in truth_airs:
+        for t in ("melt_only", "nrel_published"):
+            row = []
+            for label in logger_of[truth_air]:
+                lo, hi = (two_airs[f"ceres:{truth_air}:{end}:{t}:{label}:theta{RULE_THETAS[0]:g}"] for end in ends)
+                row.append(f"{label} " + "|".join(f"{lo[rule]['winters_the_truth_is_rejected']}/{hi[rule]['winters_the_truth_is_rejected']}" for rule in RULES))
+            print(f"    {truth_air:<13s} {t[:9]:<9s} " + "  ".join(row))
+    print(f"  nesting of the readings differs from ERA5's air on: {nesting_differs}")
 
     OUT.write_text(json.dumps({
         "question": "00_07 HW.54 Р3(б)(4), stage 1: what the disagreement of two sky products, and of two airs, does to the "
@@ -551,10 +737,19 @@ def main() -> int:
         "beam_share_of_winter_face_light_low_end": beam,
         "containment_by_analyst_air": {air_name: {f"{end}:{t}->{y}": a["contains"][(t, y, c)] for c, end in enumerate(ends)
                                                   for t in READINGS for y in READINGS if t != y}
-                                       for air_name, a in analyst.items()},
+                                       for air_name, a in analyst.items() if air_name in world_airs},
         "cover_free": cover_free,
         "truths": truths_out,
         "cells": out_cells,
+        "two_airs_rule": {"inputs": {"skies": RULE_SKIES, "truth_airs": list(truth_airs), "sensor_offsets_K": list(SENSOR_OFFSETS_K),
+                                     "dew_offsets_K": list(DEW_OFFSETS_K), "loggers_by_truth_air": logger_of,
+                                     "thetas": list(RULE_THETAS), "tol": RULE_TOL, "k": RULE_K, "rules": list(RULES),
+                                     "logger_air": "the truth's air with a sensor error: «d» on temperature and dew point alike, "
+                                                   "«dew» on the dew point alone, «other_humidity_reading» the column read the other way",
+                                     "control_6_checks": control6,
+                                     "mean_dew_point_deficit_K_on_the_dew_axis_djf": dew_deficit,
+                                     "nesting_differs_from_era5_air": nesting_differs},
+                          "cells": two_airs},
     }, indent=2))
     print(f"[124] wrote {OUT.relative_to(HERE.parents[2])}")
     return 0
