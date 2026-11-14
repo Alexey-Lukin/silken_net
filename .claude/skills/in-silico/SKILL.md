@@ -329,6 +329,9 @@ Anchor mechanics (CPU):
      data/power_cherkasy_longwave (its MERRA-2 air and humidity columns — the second air) · 120 (importlib: frost_point_as_dew_point) → 124
      (kinetics/stem_face_second_sky.json — the stem-face logger under a second sky and a second air); a re-run of 118, or a
      change to 115's cover model, 110's irradiance or 79's loaders, sun, faces or REFLECT_ENDS, re-runs 124
+  124 (importlib: load_power, on_model_clock, the product file and its lag — and through it 110's irradiance and 79's sun, faces,
+     snow and REFLECT_ENDS) → 125 (kinetics/stem_face_courtyard.json — the logger's face in a courtyard); the yard's dimensions are
+     constants of the script (the founder's, by eye); a change to 124's loader, 110's open face or 79's sun re-runs 125
   107 (importlib: solve · source_coeffs · stem_layers · run_case · _span · the readings and the carrier; radio/stem_radio_shadow.json —
      its rows at its own standoffs, a control) · 114 (dendrometer_support_budget.json: the rate ends, the bearing share, and
      the install edges as a control) · 78 (flange_cambium_heat.json: the RAW facing spread) · 52 (z_stack_tolerance.json: the

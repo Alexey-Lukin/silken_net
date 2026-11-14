@@ -2843,6 +2843,75 @@ The favourable end is covered by every other reading hour by hour (as melt only 
 
 **Controls.** The correlation of the two GHI series peaks at the applied one-row lag (0.955, against 0.905 and 0.896 beside it); the product's DNI · cos z + diffuse closes on its own global flux under this script's sun (median 0.994); in the ERA5-lit world the cover-free judged days per winter and truth equal `118`'s cached counts for the same seasons (152 cells) — and one code path builds every world's face from α, with the α 0 and α 1 ends bit for bit the two products; the run, base, tercile and miss functions return hand-computed answers on synthetic seasons (both windows of the base, the dark-pool and too-few-days branches); the second air correlates with ERA5's at 0.989 hour by hour.
 
+## HW.54 — How Much Winter Light Reaches the Logger's Face in a Courtyard? (script 125)
+
+**The question (2026-11-14, [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.54, leg Р3(б)(4)).** The verdict that put one logger on the south face named its weakest link — a house in the southern sector shades exactly that face, and then the question returns to the founder ([`01_03 §4`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)). The founder gave the yard twice: by word and a phone compass (open toward a true heading of 210°, «about 150°–270°», a two-storey building «about 7 m» away on the other three sides, the roof edge «about 7 m» up), then by a satellite image of the court, north up. Read by eye off that image — pixels, scaled by the «7 m» taken as the mean of the three wall distances, the trunk taken under the crown's centre: the back wall faces about 215°; the tree stands 5.2 m from it, 8.5 m from the eastern wing and 7.3 m from the western one; the opening seen from the tree is about 167°–256°, narrower than the words' 150°–270°; and beyond the opening stand trees some 10–20 m away. Those inputs put the eastern wing's end **7.7** m in front of the tree and the western one's **8.4** m, and make the wings 12.9 and 13.6 m long from the back wall — nearly equal, the one cross-check a plan read this way has inside itself. `125` takes the logger at the sheet's 1.3 m and sets the face's light in that yard against the same face standing open: the beam where the sun stands above whatever is on its bearing (a roof edge, or the opening's horizon), the diffuse flux through the face's view of the sky above that line (isotropic), and the ground-reflected light from what reaches the yard's ground — under ERA5's sky and under the CERES SYN1deg product's, over the nineteen winters both hold. ⚠️ **Not a bound in either direction.** The light the walls return is not added (it adds — the south face's view of the walls is 0.127 of its 0.5), and the base case leaves the opening's horizon EMPTY, the kind assumption.
+
+**The roof line and the crowns against the winter sun.** Seen from the logger the roof edge stands **47.6**° up toward the back wall, **33.8**° on the eastern wall's normal, **38.0**° on the western one's and **26.5**° at the opening's eastern edge; the highest sun of the nineteen winters is **32.5**°. A crown line of trees 15–25 m tall standing 10–20 m away is at 34°–67° — at or above that sun.
+
+**The building alone — an empty horizon in the opening; the share of the same face's open winter light** (low / high albedo end of `79`):
+
+| face in the yard | beam kept | sky-diffuse kept | total kept, ERA5's sky | total kept, the product's sky | bracket (i) on «by eye» (total) |
+|---|---|---|---|---|---|
+| CY south face, 180° | **0.665** | **0.746** | **0.683** / **0.679** | **0.674** / **0.672** | **0.589**–**0.772** |
+| CY face turned to the opening, 211.5° | **0.807** | **0.811** | **0.791** / **0.771** | **0.786** / **0.768** | **0.689**–**0.864** |
+
+The beam column is ERA5's (the product's: 0.657 and 0.798). Each row is against the SAME face standing open, and an open face turned to 211.5° has less winter light than an open south face — so the two rows are not a comparison of the two orientations; that comparison is in the next part. By month the south face keeps 0.69 in December, 0.69 in January and 0.67 in February (ERA5, low end); the share of its open beam that comes from east of the opening is 0.32, 0.33 and 0.37. Three brackets on a plan read by eye, the south face's total: (i) the roof edge at 6 · 7 · 8 m, every distance times 0.85 · 1 · 1.15 and each edge of the opening 6° either way, 81 combinations — the table's last column; by axis, the roof edge alone 0.656–0.713, the scale alone 0.654–0.704, the two together 0.644–0.741, the eastern edge alone 0.630–0.728, the western edge alone 0.670–0.685 (the winter sun's westernmost bearing is 258°); (ii) the eastern edge alone, further out — the table below; (iii) the TRUNK moved in the fixed building, up to 2 m along and across the court, all three distances and both edges moving together: **0.536**–**0.799** (up to 1 m: 0.606–0.745) — lowest with the trunk 2 m nearer the eastern wing and the back wall (the opening then 181°–257°), highest 2 m the other way (153°–255°). Bracket (i) does not cover (iii): an image off nadir displaces a 25 m crown by metres against the roof edges.
+
+| the opening's eastern edge | south face, beam kept (ERA5) | south face, total kept |
+|---|---|---|
+| EE 150° — the words' edge | **0.826** | **0.804**–**0.816** |
+| EE 155° | **0.779** | **0.767**–**0.777** |
+| EE 161° | **0.720** | **0.718**–**0.728** |
+| EE 167° — the image's edge | **0.665** | **0.672**–**0.683** |
+| EE 173° | **0.614** | **0.630**–**0.640** |
+| EE 180° | **0.566** | **0.588**–**0.600** |
+| EE 190° | **0.530** | **0.552**–**0.567** |
+
+**What stands in the opening — a level opaque horizon inside it** (lowest–highest of both skies and both ends; the base plan). The third column is the building's share GIVEN that horizon: the yard with the building over the same horizon without it — what a measured R would have to be divided by to take the building out.
+
+| horizon in the opening | south face, total kept (of the open face) | the building's share given that horizon | … of the sky-diffuse light alone | face turned to the opening over the south face |
+|---|---|---|---|---|
+| HZ 0° (the base case) | **0.672**–**0.683** | **0.672**–**0.683** | **0.746** | **1.042**–**1.051** |
+| HZ 5° | **0.651**–**0.656** | **0.665**–**0.674** | **0.727** | **1.033**–**1.038** |
+| HZ 10° | **0.604**–**0.614** | **0.650**–**0.658** | **0.707** | **1.013**–**1.016** |
+| HZ 15° | **0.515**–**0.541** | **0.613**–**0.628** | **0.684** | **0.983**–**0.988** |
+| HZ 20° | **0.314**–**0.367** | **0.491**–**0.534** | **0.658** | **0.984**–**0.988** |
+| HZ 25° | **0.208**–**0.264** | **0.390**–**0.452** | **0.630** | **0.975**–**0.982** |
+| HZ 30° | **0.134**–**0.188** | **0.291**–**0.370** | **0.600** | **0.973**–**0.982** |
+| HZ 35° | **0.106**–**0.157** | **0.246**–**0.329** | **0.568** | **0.971**–**0.981** |
+| HZ 45° | **0.088**–**0.135** | **0.213**–**0.297** | **0.502** | **0.934**–**0.958** |
+| HZ 60° | **0.070**–**0.111** | **0.177**–**0.258** | **0.417** | **0.881**–**0.925** |
+
+A level horizon moves both faces alike, so its last column cannot say whether to turn the logger. A screen in ONE half of the opening can:
+
+| a screen inside the opening | face turned to the opening over the south face | south face, total kept |
+|---|---|---|
+| SC eastern half, 40° | **1.174**–**1.220** | **0.255**–**0.294** |
+| SC western half, 40° | **0.943**–**0.953** | **0.516**–**0.531** |
+| SC eastern half, 20° | **1.082**–**1.099** | **0.438**–**0.479** |
+| SC western half, 20° | **0.971**–**0.976** | **0.550**–**0.567** |
+
+With an empty horizon the turned face receives **1.051** / **1.044** of the south face's light under ERA5's sky and **1.048** / **1.042** under the product's; across bracket (i), **1.011**–**1.081**.
+
+**What it means (the machine's reading, not a verdict).** (1) The building alone takes about a third of the south face's winter light — mostly the morning beam behind the eastern wing, the rest the sky the three walls close; with the plan's brackets, between 0.54 and 0.80 is kept. (2) What stands in the opening is the larger term, and the unknown one. Crown lines at 34°–67° stand above the winter sun; under a level opaque horizon of 35°–60° the face keeps 0.07–0.16 of an open face's light, and the building's share given that horizon is 0.18–0.33, not two thirds: the building and the trees take DIFFERENT sky — the building the morning, the trees the opening — so once the trees take the opening's beam the building takes the only beam left. A level opaque screen is the harsh stand-in (under high crowns a December sun 12°–17° up passes among the trunks), the empty horizon the kind one; between them the building's share runs 0.18–0.68. On an overcast stretch — the kind that binds `110`'s adverse corner — it is the sky-diffuse column that acts, and it runs narrower: 0.75 with an empty horizon, 0.42–0.57 at 35°–60°. (3) Turning the logger to the opening is not the lever: 0.88–1.05 of the south face's light under any level horizon, and with a screen in one half the sign follows the half — 1.17–1.22 when the eastern half is screened at 40°, 0.94–0.95 when the western one is. (4) For the reading of R: a «not refuted» — R above the threshold in spite of the building — stands as it is; a refutation could be the building's, so it counts only if R divided by the LOWEST defensible share of the building is still below the threshold, and a share known no better than 0.18–0.68 spreads wider than the 1.64 times between `110`'s favourable and nominal thresholds at cadence C. Whether the trees beyond the opening are a stand — the thing the measurement asks about — or one more screen is the founder's fact, not the image's; the sheet's «a yard is not a stand» is untouched. A stem standing beyond the line of the wings' ends would have the whole building on bearings the winter sun does not take (a reading of the plan, not a run).
+
+**What a visit to the yard replaces.** The model consumes angles, so angles read on the spot replace the plan read by eye. (1) A phone's inclinometer at the trunk, 1.3 m up, on the roof edge: toward the back wall (the model: 47.6°), square to the eastern wing (33.8°), square to the western one (38.0°), and just east of the opening's eastern edge (26.5°) — this replaces the roof's height and the scale at once, and a ridge standing above the edge shows in it. (2) The compass bearings of the opening's two edges (the model: 167° and 256°, true). (3) On the bearings 170°, 190°, 210° and 230°: what stands AT THE SUN'S HEIGHT of the table below — sky, trunks, crown, shrub; evergreen or bare — and the top of the crowns separately. (4) By paces, free of the scale: how far in front of the tree the eastern wing ends, over the tree's distance from that wing — 0.90 for an eastern edge at 167°, 0.73 at 161°, 1.11 at 173°. (5) On a clear morning, the minute the sun is first seen from 1.6 m at the trunk's face — the table; earlier than printed, the eastern edge lies further east or the roof lower; later, the edge lies further west or something beyond the opening stands higher than the sun. The logger's own record carries the same step on every clear morning.
+
+| date | the sun's bearing passes the eastern edge | first seen from 1.6 m | the sun's height at 170° · 190° · 210° · 230° |
+|---|---|---|---|
+| 21 November | 10:46 | 10:46 | 20° · 20° · 16° · 6° |
+| 21 December | 10:55 | 10:55 | 17° · 16° · 12° · 1° |
+| 21 January | 11:10 | 11:10 | 20° · 20° · 15° · 5° |
+| 11 February | 11:18 | 11:18 | 26° · 26° · 21° · 12° |
+| 21 February | 11:20 | 10:54 — over the roof | 29° · 29° · 25° · 16° |
+
+Local winter time. Late in February the sun clears the eastern wing's roof before its bearing reaches the opening's edge.
+
+**What it cannot see.** What actually stands beyond the opening (only level screens are run; a stand is neither level nor opaque); the pine's own crown and its neighbours — the thing the logger is there to measure; the plan beyond what an image read by eye gives, and an input error no control can see (the eastern and western distances swapped pass every one of them); a roof's ridge above its edge; windows, wall colour and the light the walls return; an anisotropic sky, whose circumsolar part is blocked together with the beam; the yard's own snow; the logger's height other than 1.3 m.
+
+**Controls.** Through the function the numbers come from: with no walls it returns the open face, with the walls drawn in and no opening under a thousandth, with a level horizon all round the direct sum over the sun's samples above it and the closed form of the sky view, and at height z under a roof H the beam of height 0 under H − z. The base beam share is recomputed by a second implementation — each sun sample's ray against three wall segments laid out in plan coordinates — and agrees. The plan the inputs make is asserted to be a court (both wings end in front of the tree); the distance law is checked off a wall's normal through `math`; the clock, by solar noon at 11:30–12:10 on every printed date. Beside it: the south face's open light under ERA5 is `110`'s open face hour by hour, and the view-factor kernels return their closed forms.
+
 ## HW.54 — What Does the Rising Bark Pass on the Radome, and What Does Each Consumer Stand to Lose? (script 119)
 
 **The question (2026-11-13, [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.54, the leg «кора накриває купол»).** `114` (4) prices ONE mark — the bark climbs the radome's 18 mm to the crown's top in 3.6–22.5 years — and `01_04 §5.5` C ⊕ names consumers of that number. The marks stand at different heights, and the field product has no visit to clear them (HW.54 Р12). `119` computes the two inputs the leg asks for before a recommendation — what `107`'s radio model says once the antenna plane is under the surface, and what an allowance that keeps the marks clear costs — and the two they need to be read: the ORDER in which the surface passes the marks, and the light left at the bottom of the pit the crown ends up in (numbers — `cache/radio/bark_overgrowth_consumers.json`).

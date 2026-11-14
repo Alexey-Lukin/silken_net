@@ -1,0 +1,4431 @@
+{
+  "question": "00_07 HW.54 \u04203(\u0431)(4): the share of an open stem face's winter light that reaches the logger's face in a courtyard open to one side \u2014 not a bound in either direction: wall-reflected light is not added, and the base case leaves the opening's horizon empty (the horizon axis prices what stands there)",
+  "inputs": {
+    "opening_deg": [
+      167.0,
+      256.0
+    ],
+    "walls_m": {
+      "back": 5.2,
+      "east": 8.5,
+      "west": 7.3
+    },
+    "back_wall_bearing_deg": 35.0,
+    "roof_edge_m": 7.0,
+    "logger_height_m": 1.3,
+    "eye_height_m": 1.6,
+    "faces_deg": {
+      "south_180": 180.0,
+      "opening_centre": 211.5
+    },
+    "trees_beyond_the_opening_m": [
+      10.0,
+      20.0
+    ],
+    "months": [
+      12,
+      1,
+      2
+    ],
+    "seasons": [
+      2002,
+      2020
+    ],
+    "skies": [
+      "era5",
+      "ceres"
+    ],
+    "ends": [
+      "low",
+      "high"
+    ],
+    "bracket": {
+      "roof_edges_m": [
+        6.0,
+        7.0,
+        8.0
+      ],
+      "scales": [
+        0.85,
+        1.0,
+        1.15
+      ],
+      "edge_shifts_deg": [
+        -6.0,
+        0.0,
+        6.0
+      ],
+      "trunk_shifts_m": [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+      ]
+    },
+    "opening_horizons_deg": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0,
+      25.0,
+      30.0,
+      35.0,
+      45.0,
+      60.0
+    ],
+    "eastern_edges_deg": [
+      150.0,
+      155.0,
+      161.0,
+      167.0,
+      173.0,
+      180.0,
+      190.0
+    ],
+    "source": "the founder's satellite image of the court, north up, read by eye in pixels and scaled by his \u00ababout 7 m\u00bb taken as the mean of the three wall distances; the roof edge by his word; 2026-11-14"
+  },
+  "controls": {
+    "110_open_face_fields_reproduced": 2,
+    "kernels": {
+      "eastern_wing_ends_in_front_of_the_tree_m": 7.6534343765316395,
+      "western_wing_ends_in_front_of_the_tree_m": 8.39768937271337,
+      "eastern_wing_end_over_its_distance_by_eastern_edge": {
+        "150": 0.46630765815499864,
+        "155": 0.5773502691896256,
+        "161": 0.7265425280053609,
+        "167": 0.9004040442978399,
+        "173": 1.1106125148291928,
+        "180": 1.4281480067421144
+      },
+      "wing_lengths_from_the_back_wall_m": {
+        "east": 12.85343437653164,
+        "west": 13.597689372713369
+      },
+      "court_width_m": 15.8,
+      "back_corner_bearings_deg": {
+        "east": 93.54317664244476,
+        "west": 340.4633642415406
+      },
+      "roof_edge_from_the_logger_deg": {
+        "back_wall_normal": 47.62640563829075,
+        "eastern_wall_normal": 33.845340261071705,
+        "western_wall_normal": 37.98349825527709,
+        "opening_eastern_edge": 26.489103946942485
+      },
+      "crown_line_from_the_logger_deg": {
+        "15m_at_10m": 53.873284227210085,
+        "15m_at_20m": 34.41114338393872,
+        "20m_at_10m": 61.86393940977817,
+        "20m_at_20m": 43.076059015448756,
+        "25m_at_10m": 67.12312819534525,
+        "25m_at_20m": 49.83958757629758
+      }
+    },
+    "beam_kept_by_ray_segment_intersection": {
+      "era5": 0.6653209288172975,
+      "ceres": 0.6570087086554971
+    },
+    "highest_winter_sun_deg": 32.52729691537001
+  },
+  "sun_first_seen_from_the_trunk": {
+    "11-21": {
+      "bearing_passes_the_eastern_edge_local": "10:46",
+      "sun_elevation_then_deg": 19.827329810454906,
+      "first_seen_from_eye_height_local": "10:46",
+      "first_seen_at_bearing_deg": 167.0813505938474,
+      "first_seen_over_the_roof": false,
+      "bearing_rate_deg_per_h": 14.802799870243973,
+      "solar_noon_local": "11:38",
+      "noon_elevation_deg": 20.763288607644718,
+      "sun_elevation_by_bearing_deg": {
+        "170": 20.211523176813472,
+        "190": 20.17935734770592,
+        "210": 15.534191365602148,
+        "230": 5.692526523128914,
+        "250": null
+      }
+    },
+    "12-21": {
+      "bearing_passes_the_eastern_edge_local": "10:55",
+      "sun_elevation_then_deg": 16.087239209190432,
+      "first_seen_from_eye_height_local": "10:55",
+      "first_seen_at_bearing_deg": 167.05360252650718,
+      "first_seen_over_the_roof": false,
+      "bearing_rate_deg_per_h": 14.117739481873826,
+      "solar_noon_local": "11:50",
+      "noon_elevation_deg": 17.081024860045847,
+      "sun_elevation_by_bearing_deg": {
+        "170": 16.50453349745603,
+        "190": 16.46358457479574,
+        "210": 11.585975825183166,
+        "230": 1.4491997756573074,
+        "250": null
+      }
+    },
+    "01-21": {
+      "bearing_passes_the_eastern_edge_local": "11:10",
+      "sun_elevation_then_deg": 19.422782564120794,
+      "first_seen_from_eye_height_local": "11:10",
+      "first_seen_at_bearing_deg": 167.0468277269331,
+      "first_seen_over_the_roof": false,
+      "bearing_rate_deg_per_h": 14.723852585911459,
+      "solar_noon_local": "12:03",
+      "noon_elevation_deg": 20.38457369867593,
+      "sun_elevation_by_bearing_deg": {
+        "170": 19.812023855720525,
+        "190": 19.79877119776533,
+        "210": 15.166273267401229,
+        "230": 5.35456701931321,
+        "250": null
+      }
+    },
+    "02-11": {
+      "bearing_passes_the_eastern_edge_local": "11:18",
+      "sun_elevation_then_deg": 25.274588032856695,
+      "first_seen_from_eye_height_local": "11:18",
+      "first_seen_at_bearing_deg": 167.21330841307355,
+      "first_seen_over_the_roof": false,
+      "bearing_rate_deg_per_h": 15.856030212848736,
+      "solar_noon_local": "12:06",
+      "noon_elevation_deg": 26.148455410246925,
+      "sun_elevation_by_bearing_deg": {
+        "170": 25.627761083153754,
+        "190": 25.627083150778663,
+        "210": 21.29271980159288,
+        "230": 12.100798853023301,
+        "250": null
+      }
+    },
+    "02-21": {
+      "bearing_passes_the_eastern_edge_local": "11:20",
+      "sun_elevation_then_deg": 28.745576672994677,
+      "first_seen_from_eye_height_local": "10:54",
+      "first_seen_at_bearing_deg": 160.13552940805644,
+      "first_seen_over_the_roof": true,
+      "bearing_rate_deg_per_h": 16.577551078087993,
+      "solar_noon_local": "12:06",
+      "noon_elevation_deg": 29.577714092880708,
+      "sun_elevation_by_bearing_deg": {
+        "170": 29.067955498586326,
+        "190": 29.055524898253687,
+        "210": 24.914957439562503,
+        "230": 16.14284638268239,
+        "250": 2.401399902573374
+      }
+    }
+  },
+  "base": {
+    "south_180": {
+      "view_factors": {
+        "sky": 0.3727578005725287,
+        "walls": 0.1272425960649569,
+        "ground_sky_view": 0.6496825159788326
+      },
+      "by_sky": {
+        "era5": {
+          "beam_kept": 0.6653209288172975,
+          "sky_diffuse_kept": 0.7455156011450574,
+          "share_of_the_open_beam_from_east_of_the_opening_by_month": {
+            "12": 0.3219832764687474,
+            "1": 0.3260932558974853,
+            "2": 0.373264900815838
+          },
+          "low": {
+            "total_kept": 0.6829610532551783,
+            "ground_light_kept": 0.655750502707454,
+            "yard_light_kwh_m2_per_winter": 90.40051748143742,
+            "open_light_kwh_m2_per_winter": 132.36555298514307,
+            "beam_share_of_the_yard_light": 0.6480716089505029,
+            "by_month": {
+              "12": 0.6923881680656084,
+              "1": 0.6893004247136205,
+              "2": 0.6736474730380774
+            }
+          },
+          "high": {
+            "total_kept": 0.6793199864729466,
+            "ground_light_kept": 0.655826183615163,
+            "yard_light_kwh_m2_per_winter": 103.88383619900651,
+            "open_light_kwh_m2_per_winter": 152.9232736672081,
+            "beam_share_of_the_yard_light": 0.5639569249437624,
+            "by_month": {
+              "12": 0.6891685788955247,
+              "1": 0.6862590288823817,
+              "2": 0.6696531164242302
+            }
+          }
+        },
+        "ceres": {
+          "beam_kept": 0.6570087086554971,
+          "sky_diffuse_kept": 0.7455156011450574,
+          "share_of_the_open_beam_from_east_of_the_opening_by_month": {
+            "12": 0.33872043239309507,
+            "1": 0.33867997170083725,
+            "2": 0.37397360207550556
+          },
+          "low": {
+            "total_kept": 0.674364311187852,
+            "ground_light_kept": 0.6551644635352203,
+            "yard_light_kwh_m2_per_winter": 101.88183947520956,
+            "open_light_kwh_m2_per_winter": 151.0783381993493,
+            "beam_share_of_the_yard_light": 0.6894552839558168,
+            "by_month": {
+              "12": 0.6755696224650023,
+              "1": 0.6772321233149471,
+              "2": 0.6714102856638787
+            }
+          },
+          "high": {
+            "total_kept": 0.6719358395284528,
+            "ground_light_kept": 0.654906730899642,
+            "yard_light_kwh_m2_per_winter": 115.84685764313005,
+            "open_light_kwh_m2_per_winter": 172.40761815060853,
+            "beam_share_of_the_yard_light": 0.6063433570352617,
+            "by_month": {
+              "12": 0.6743071709540894,
+              "1": 0.6756024888165703,
+              "2": 0.66782417605943
+            }
+          }
+        }
+      }
+    },
+    "opening_centre": {
+      "view_factors": {
+        "sky": 0.4055078027826121,
+        "walls": 0.09449259385487345,
+        "ground_sky_view": 0.6496825159788326
+      },
+      "by_sky": {
+        "era5": {
+          "beam_kept": 0.806997804305063,
+          "sky_diffuse_kept": 0.8110156055652242,
+          "share_of_the_open_beam_from_east_of_the_opening_by_month": {
+            "12": 0.20819928892052206,
+            "1": 0.20075606622976694,
+            "2": 0.1993750400145067
+          },
+          "low": {
+            "total_kept": 0.7909294101294252,
+            "ground_light_kept": 0.655750502707454,
+            "yard_light_kwh_m2_per_winter": 94.96990041015823,
+            "open_light_kwh_m2_per_winter": 120.0738007638604,
+            "beam_share_of_the_yard_light": 0.6438060780954004,
+            "by_month": {
+              "12": 0.7869015307632526,
+              "1": 0.7858603178892604,
+              "2": 0.7964971638178096
+            }
+          },
+          "high": {
+            "total_kept": 0.7711871279827469,
+            "ground_light_kept": 0.655826183615163,
+            "yard_light_kwh_m2_per_winter": 108.4532191277273,
+            "open_light_kwh_m2_per_winter": 140.63152144592542,
+            "beam_share_of_the_yard_light": 0.5637656457957828,
+            "by_month": {
+              "12": 0.7701393629869207,
+              "1": 0.7700919204576728,
+              "2": 0.772443251061138
+            }
+          }
+        },
+        "ceres": {
+          "beam_kept": 0.7982629688149973,
+          "sky_diffuse_kept": 0.8110156055652241,
+          "share_of_the_open_beam_from_east_of_the_opening_by_month": {
+            "12": 0.22058038558885246,
+            "1": 0.20982259126147426,
+            "2": 0.2013565499718459
+          },
+          "low": {
+            "total_kept": 0.7860679018278531,
+            "ground_light_kept": 0.6551644635352203,
+            "yard_light_kwh_m2_per_winter": 106.77688218291956,
+            "open_light_kwh_m2_per_winter": 135.8367158035966,
+            "beam_share_of_the_yard_light": 0.685336639809586,
+            "by_month": {
+              "12": 0.7779742258667476,
+              "1": 0.7803427190109651,
+              "2": 0.7953239900319984
+            }
+          },
+          "high": {
+            "total_kept": 0.7682444269889698,
+            "ground_light_kept": 0.654906730899642,
+            "yard_light_kwh_m2_per_winter": 120.74190035084008,
+            "open_light_kwh_m2_per_winter": 157.16599575485583,
+            "beam_share_of_the_yard_light": 0.6060705474400544,
+            "by_month": {
+              "12": 0.7641725803931431,
+              "1": 0.7663891253706017,
+              "2": 0.7719514364067457
+            }
+          }
+        }
+      }
+    }
+  },
+  "face_turned_to_the_opening_over_south_face": {
+    "era5": {
+      "low": 1.0505459819924048,
+      "high": 1.0439855043470612
+    },
+    "ceres": {
+      "low": 1.048046273339039,
+      "high": 1.0422544280207355
+    }
+  },
+  "face_turned_to_the_opening_over_south_face_across_the_bracket": {
+    "min": 1.0112025356580108,
+    "max": 1.0811565366190738,
+    "rows": [
+      {
+        "roof_edge_m": 6.0,
+        "scale": 0.85,
+        "opening_deg": [
+          161.0,
+          250.0
+        ],
+        "era5:low": 1.0392407295068475,
+        "era5:high": 1.034281891068236,
+        "ceres:low": 1.0374538411762908,
+        "ceres:high": 1.0330564495097159
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 0.85,
+        "opening_deg": [
+          161.0,
+          256.0
+        ],
+        "era5:low": 1.0371166847803723,
+        "era5:high": 1.032422601037622,
+        "ceres:low": 1.034189310664043,
+        "ceres:high": 1.0301712368236193
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 0.85,
+        "opening_deg": [
+          161.0,
+          262.0
+        ],
+        "era5:low": 1.0334555437157193,
+        "era5:high": 1.029214594681675,
+        "ceres:low": 1.0293095870434494,
+        "ceres:high": 1.0258569427009758
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 0.85,
+        "opening_deg": [
+          167.0,
+          250.0
+        ],
+        "era5:low": 1.0506294864314536,
+        "era5:high": 1.0441096450264806,
+        "ceres:low": 1.0494942445809485,
+        "ceres:high": 1.0435729855015636
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 0.85,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "era5:low": 1.048635398422053,
+        "era5:high": 1.042367700382362,
+        "ceres:low": 1.0463231334508312,
+        "ceres:high": 1.040775858764757
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 0.85,
+        "opening_deg": [
+          167.0,
+          262.0
+        ],
+        "era5:low": 1.0451309652980894,
+        "era5:high": 1.0393010458556213,
+        "ceres:low": 1.0415715892438604,
+        "ceres:high": 1.0365813686178302
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          250.0
+        ],
+        "era5:low": 1.0612871211427712,
+        "era5:high": 1.053241690653841,
+        "ceres:low": 1.0602431552941365,
+        "ceres:high": 1.0529042260973183
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          256.0
+        ],
+        "era5:low": 1.0592659498054353,
+        "era5:high": 1.0514804306663446,
+        "ceres:low": 1.056924604402287,
+        "ceres:high": 1.0499833222297854
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          262.0
+        ],
+        "era5:low": 1.0557695293880034,
+        "era5:high": 1.0484255770906492,
+        "ceres:low": 1.0520684061073025,
+        "ceres:high": 1.045703645085559
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.0,
+        "opening_deg": [
+          161.0,
+          250.0
+        ],
+        "era5:low": 1.0330076772898777,
+        "era5:high": 1.028733235217274,
+        "ceres:low": 1.0318153345627759,
+        "ceres:high": 1.0279903530230063
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.0,
+        "opening_deg": [
+          161.0,
+          256.0
+        ],
+        "era5:low": 1.0299775819089552,
+        "era5:high": 1.0260946423680795,
+        "ceres:low": 1.027752707363371,
+        "ceres:high": 1.0244146729574137
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.0,
+        "opening_deg": [
+          161.0,
+          262.0
+        ],
+        "era5:low": 1.0253363648386813,
+        "era5:high": 1.0220494731908012,
+        "ceres:low": 1.022012442209075,
+        "ceres:high": 1.019360610793151
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.0,
+        "opening_deg": [
+          167.0,
+          250.0
+        ],
+        "era5:low": 1.0402252604780007,
+        "era5:high": 1.0349330323605221,
+        "ceres:low": 1.0398343496768612,
+        "ceres:high": 1.0349679787444517
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.0,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "era5:low": 1.0369217625529925,
+        "era5:high": 1.0320632491897908,
+        "ceres:low": 1.0354839968933738,
+        "ceres:high": 1.0311472784729274
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.0,
+        "opening_deg": [
+          167.0,
+          262.0
+        ],
+        "era5:low": 1.0320226032796576,
+        "era5:high": 1.0278021282738108,
+        "ceres:low": 1.029481246551937,
+        "ceres:high": 1.0258723120991529
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.0,
+        "opening_deg": [
+          173.0,
+          250.0
+        ],
+        "era5:low": 1.0452823141167018,
+        "era5:high": 1.0392324095111645,
+        "ceres:low": 1.045354588107589,
+        "ceres:high": 1.0397259594619097
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.0,
+        "opening_deg": [
+          173.0,
+          256.0
+        ],
+        "era5:low": 1.0414635030038948,
+        "era5:high": 1.0359230185085957,
+        "ceres:low": 1.0404190806584994,
+        "ceres:high": 1.0354010209071738
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.0,
+        "opening_deg": [
+          173.0,
+          262.0
+        ],
+        "era5:low": 1.036069684308878,
+        "era5:high": 1.0312422915643327,
+        "ceres:low": 1.0338621576410683,
+        "ceres:high": 1.0296512307049341
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          250.0
+        ],
+        "era5:low": 1.0252921721901986,
+        "era5:high": 1.0219634237861384,
+        "ceres:low": 1.0245299001956216,
+        "ceres:high": 1.0215351424070034
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          256.0
+        ],
+        "era5:low": 1.0212232291300185,
+        "era5:high": 1.018430268638331,
+        "ceres:low": 1.019510729546174,
+        "ceres:high": 1.0171284692556375
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          262.0
+        ],
+        "era5:low": 1.0154820347398172,
+        "era5:high": 1.0134424627120764,
+        "ceres:low": 1.0127625667469315,
+        "ceres:high": 1.0112025356580108
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          167.0,
+          250.0
+        ],
+        "era5:low": 1.0284514569896501,
+        "era5:high": 1.0246572491210557,
+        "ceres:low": 1.028654618721854,
+        "ceres:high": 1.0251054866996498
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "era5:low": 1.023745776917809,
+        "era5:high": 1.0205795267916309,
+        "ceres:low": 1.023009913147413,
+        "ceres:high": 1.0201596860735829
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          167.0,
+          262.0
+        ],
+        "era5:low": 1.017375733639647,
+        "era5:high": 1.0150564160052888,
+        "ceres:low": 1.0156553453038046,
+        "ceres:high": 1.013713967262583
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          173.0,
+          250.0
+        ],
+        "era5:low": 1.0289016202175425,
+        "era5:high": 1.025003583451829,
+        "ceres:low": 1.0295505831015341,
+        "ceres:high": 1.025847572377592
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          173.0,
+          256.0
+        ],
+        "era5:low": 1.0233189578186248,
+        "era5:high": 1.0201743949974862,
+        "ceres:low": 1.0229664182345384,
+        "ceres:high": 1.0200883033429937
+      },
+      {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          173.0,
+          262.0
+        ],
+        "era5:low": 1.0160840405562963,
+        "era5:high": 1.0139128127796047,
+        "ceres:low": 1.0146960043140492,
+        "ceres:high": 1.0128522595798195
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 0.85,
+        "opening_deg": [
+          161.0,
+          250.0
+        ],
+        "era5:low": 1.0426106288164145,
+        "era5:high": 1.0373975511063607,
+        "ceres:low": 1.0402971644190917,
+        "ceres:high": 1.0357127218275723
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 0.85,
+        "opening_deg": [
+          161.0,
+          256.0
+        ],
+        "era5:low": 1.0411109620086516,
+        "era5:high": 1.0360740183220745,
+        "ceres:low": 1.0375517548174216,
+        "ceres:high": 1.0332725983411164
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 0.85,
+        "opening_deg": [
+          161.0,
+          262.0
+        ],
+        "era5:low": 1.038155874752804,
+        "era5:high": 1.0334657678206196,
+        "ceres:low": 1.0332603902584339,
+        "ceres:high": 1.0294580715147614
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 0.85,
+        "opening_deg": [
+          167.0,
+          250.0
+        ],
+        "era5:low": 1.0583262917038558,
+        "era5:high": 1.0509915960028726,
+        "ceres:low": 1.0563551259713941,
+        "ceres:high": 1.0497697697267354
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 0.85,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "era5:low": 1.0574368203345945,
+        "era5:high": 1.05020385175327,
+        "ceres:low": 1.0541395709226886,
+        "ceres:high": 1.0478028029524458
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 0.85,
+        "opening_deg": [
+          167.0,
+          262.0
+        ],
+        "era5:low": 1.0551354187655482,
+        "era5:high": 1.0481692820217647,
+        "ceres:low": 1.0504268326697992,
+        "ceres:high": 1.0445051793830953
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          250.0
+        ],
+        "era5:low": 1.0747455780352722,
+        "era5:high": 1.0650878488227038,
+        "ceres:low": 1.072543986031094,
+        "ceres:high": 1.0638467595624093
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          256.0
+        ],
+        "era5:low": 1.074384379972447,
+        "era5:high": 1.064760439351169,
+        "ceres:low": 1.0706903811710102,
+        "ceres:high": 1.0622017408307327
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          262.0
+        ],
+        "era5:low": 1.07266749535282,
+        "era5:high": 1.0632339720097854,
+        "ceres:low": 1.0674001127016193,
+        "ceres:high": 1.0592791731309559
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.0,
+        "opening_deg": [
+          161.0,
+          250.0
+        ],
+        "era5:low": 1.0400762385540805,
+        "era5:high": 1.0349863306525957,
+        "ceres:low": 1.038163986294851,
+        "ceres:high": 1.033662879178973
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.0,
+        "opening_deg": [
+          161.0,
+          256.0
+        ],
+        "era5:low": 1.038094829709482,
+        "era5:high": 1.033253341096817,
+        "ceres:low": 1.0350194352458248,
+        "ceres:high": 1.0308855332059337
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.0,
+        "opening_deg": [
+          161.0,
+          262.0
+        ],
+        "era5:low": 1.0345917825306044,
+        "era5:high": 1.0301856633772133,
+        "ceres:low": 1.0302727575031994,
+        "ceres:high": 1.0266911409015131
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.0,
+        "opening_deg": [
+          167.0,
+          250.0
+        ],
+        "era5:low": 1.0523063884812685,
+        "era5:high": 1.0455215965589761,
+        "ceres:low": 1.0510113851323075,
+        "ceres:high": 1.0448673895694547
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.0,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "era5:low": 1.0505459819924048,
+        "era5:high": 1.0439855043470612,
+        "ceres:low": 1.048046273339039,
+        "ceres:high": 1.0422544280207355
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.0,
+        "opening_deg": [
+          167.0,
+          262.0
+        ],
+        "era5:low": 1.0472935831478927,
+        "era5:high": 1.0411413099995455,
+        "ceres:low": 1.0435162579801598,
+        "ceres:high": 1.0382584202053018
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.0,
+        "opening_deg": [
+          173.0,
+          250.0
+        ],
+        "era5:low": 1.063921410135181,
+        "era5:high": 1.0554498785594115,
+        "ceres:low": 1.062637255611629,
+        "ceres:high": 1.0549388712636778
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.0,
+        "opening_deg": [
+          173.0,
+          256.0
+        ],
+        "era5:low": 1.0622231549060301,
+        "era5:high": 1.0539721292198911,
+        "ceres:low": 1.0596037755511132,
+        "ceres:high": 1.052272146006662
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.0,
+        "opening_deg": [
+          173.0,
+          262.0
+        ],
+        "era5:low": 1.0590713314188784,
+        "era5:high": 1.0512202407126392,
+        "ceres:low": 1.0550509176388083,
+        "ceres:high": 1.0482633888044126
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          250.0
+        ],
+        "era5:low": 1.03544569980325,
+        "era5:high": 1.0308403865788662,
+        "ceres:low": 1.0340877596296874,
+        "ceres:high": 1.0299768626330272
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          256.0
+        ],
+        "era5:low": 1.0327672032767983,
+        "era5:high": 1.02850907656946,
+        "ceres:low": 1.0303443728024397,
+        "ceres:high": 1.026683390063179
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          262.0
+        ],
+        "era5:low": 1.0285037833442974,
+        "era5:high": 1.0247938880120513,
+        "ceres:low": 1.0249455036141568,
+        "ceres:high": 1.0219310460623992
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.15,
+        "opening_deg": [
+          167.0,
+          250.0
+        ],
+        "era5:low": 1.044072691908377,
+        "era5:high": 1.0382415161144865,
+        "ceres:low": 1.043441190587112,
+        "ceres:high": 1.0381060913133806
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.15,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "era5:low": 1.0412542572895165,
+        "era5:high": 1.0357952213576678,
+        "ceres:low": 1.0395328915679198,
+        "ceres:high": 1.0346759189376968
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.15,
+        "opening_deg": [
+          167.0,
+          262.0
+        ],
+        "era5:low": 1.0368700331347567,
+        "era5:high": 1.0319834530728271,
+        "ceres:low": 1.0339974104867935,
+        "ceres:high": 1.029813707488032
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.15,
+        "opening_deg": [
+          173.0,
+          250.0
+        ],
+        "era5:low": 1.050927556927774,
+        "era5:high": 1.04406297139529,
+        "ceres:low": 1.0506608065526053,
+        "ceres:high": 1.044321431545948
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.15,
+        "opening_deg": [
+          173.0,
+          256.0
+        ],
+        "era5:low": 1.047747283907864,
+        "era5:high": 1.041310855522723,
+        "ceres:low": 1.046307183751312,
+        "ceres:high": 1.040510618377443
+      },
+      {
+        "roof_edge_m": 7.0,
+        "scale": 1.15,
+        "opening_deg": [
+          173.0,
+          262.0
+        ],
+        "era5:low": 1.0430263521617926,
+        "era5:high": 1.0372171522585663,
+        "ceres:low": 1.0403611080705644,
+        "ceres:high": 1.0353005332139875
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          161.0,
+          250.0
+        ],
+        "era5:low": 1.0444350603876131,
+        "era5:high": 1.0391743814911503,
+        "ceres:low": 1.041835408884897,
+        "ceres:high": 1.0372228806450967
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          161.0,
+          256.0
+        ],
+        "era5:low": 1.0433620641964336,
+        "era5:high": 1.0382168639137002,
+        "ceres:low": 1.039445527497231,
+        "ceres:high": 1.035086040529443
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          161.0,
+          262.0
+        ],
+        "era5:low": 1.0408908967771842,
+        "era5:high": 1.0360183150417752,
+        "ceres:low": 1.0355583002743594,
+        "ceres:high": 1.031612156760011
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          167.0,
+          250.0
+        ],
+        "era5:low": 1.0610321588496443,
+        "era5:high": 1.0536087902799134,
+        "ceres:low": 1.0586530679524528,
+        "ceres:high": 1.0520160469906203
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "era5:low": 1.0606723947926364,
+        "era5:high": 1.0532763844424533,
+        "ceres:low": 1.0568793055144223,
+        "ceres:high": 1.0504274325303418
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          167.0,
+          262.0
+        ],
+        "era5:low": 1.0589652033571904,
+        "era5:high": 1.0517460559794098,
+        "ceres:low": 1.053663202127224,
+        "ceres:high": 1.0475501301035028
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          250.0
+        ],
+        "era5:low": 1.0806447652658917,
+        "era5:high": 1.0705126973423638,
+        "ceres:low": 1.0776916358051112,
+        "ceres:high": 1.0686303485017536
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          256.0
+        ],
+        "era5:low": 1.0811565366190738,
+        "era5:high": 1.070938137549731,
+        "ceres:low": 1.0765767132003607,
+        "ceres:high": 1.067623919070718
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          262.0
+        ],
+        "era5:low": 1.0803927362375034,
+        "era5:high": 1.0702255651816794,
+        "ceres:low": 1.0740927188130842,
+        "ceres:high": 1.0653922070672195
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.0,
+        "opening_deg": [
+          161.0,
+          250.0
+        ],
+        "era5:low": 1.0425590796934177,
+        "era5:high": 1.0373086837064254,
+        "ceres:low": 1.040255100876384,
+        "ceres:high": 1.0356392601949578
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.0,
+        "opening_deg": [
+          161.0,
+          256.0
+        ],
+        "era5:low": 1.041059530170099,
+        "era5:high": 1.0359878314403745,
+        "ceres:low": 1.03751078217133,
+        "ceres:high": 1.0332033843256803
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.0,
+        "opening_deg": [
+          161.0,
+          262.0
+        ],
+        "era5:low": 1.0381054974958577,
+        "era5:high": 1.033384471308808,
+        "ceres:low": 1.0332213446965637,
+        "ceres:high": 1.0293950865769341
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.0,
+        "opening_deg": [
+          167.0,
+          250.0
+        ],
+        "era5:low": 1.058249893164592,
+        "era5:high": 1.0508598257982262,
+        "ceres:low": 1.0562914700048434,
+        "ceres:high": 1.0496582317503567
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.0,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "era5:low": 1.057360107308686,
+        "era5:high": 1.0500743735401288,
+        "ceres:low": 1.0540768172012875,
+        "ceres:high": 1.0476955142292845
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.0,
+        "opening_deg": [
+          167.0,
+          262.0
+        ],
+        "era5:low": 1.0550593979472307,
+        "era5:high": 1.048044491674465,
+        "ceres:low": 1.05036588088128,
+        "ceres:high": 1.0444042885644753
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.0,
+        "opening_deg": [
+          173.0,
+          250.0
+        ],
+        "era5:low": 1.0746386434115434,
+        "era5:high": 1.0649039848027653,
+        "ceres:low": 1.0724544527684026,
+        "ceres:high": 1.0636901213181402
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.0,
+        "opening_deg": [
+          173.0,
+          256.0
+        ],
+        "era5:low": 1.0742767483063114,
+        "era5:high": 1.06457862685315,
+        "ceres:low": 1.0706017035010413,
+        "ceres:high": 1.06204966240363
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.0,
+        "opening_deg": [
+          173.0,
+          262.0
+        ],
+        "era5:low": 1.072560219053463,
+        "era5:high": 1.0630567648357536,
+        "ceres:low": 1.067313229908382,
+        "ceres:high": 1.0591339359298655
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          250.0
+        ],
+        "era5:low": 1.040482632205426,
+        "era5:high": 1.0353250689747846,
+        "ceres:low": 1.0385054053457414,
+        "ceres:high": 1.0339511837957074
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          256.0
+        ],
+        "era5:low": 1.0385800203757432,
+        "era5:high": 1.0336619656161103,
+        "ceres:low": 1.0354268301525753,
+        "ceres:high": 1.0312333060459709
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          262.0
+        ],
+        "era5:low": 1.0351665108653028,
+        "era5:high": 1.0306738887610738,
+        "ceres:low": 1.0307552600532457,
+        "ceres:high": 1.0271067576036903
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.15,
+        "opening_deg": [
+          167.0,
+          250.0
+        ],
+        "era5:low": 1.053104285590871,
+        "era5:high": 1.0461869472977285,
+        "ceres:low": 1.051729880256814,
+        "ceres:high": 1.045474913086193
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.15,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "era5:low": 1.0514663127248909,
+        "era5:high": 1.044758806460508,
+        "ceres:low": 1.0488721209716363,
+        "ceres:high": 1.0429580860564935
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.15,
+        "opening_deg": [
+          167.0,
+          262.0
+        ],
+        "era5:low": 1.0483488436428365,
+        "era5:high": 1.0420338185582847,
+        "ceres:low": 1.0444601108128,
+        "ceres:high": 1.0390679696944614
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.15,
+        "opening_deg": [
+          173.0,
+          250.0
+        ],
+        "era5:low": 1.0652931474890812,
+        "era5:high": 1.0565850278469202,
+        "ceres:low": 1.0639228815898738,
+        "ceres:high": 1.056019233154175
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.15,
+        "opening_deg": [
+          173.0,
+          256.0
+        ],
+        "era5:low": 1.0637748530740374,
+        "era5:high": 1.0552653887273824,
+        "ceres:low": 1.0610521621314917,
+        "ceres:high": 1.053497891522334
+      },
+      {
+        "roof_edge_m": 8.0,
+        "scale": 1.15,
+        "opening_deg": [
+          173.0,
+          262.0
+        ],
+        "era5:low": 1.060817909003093,
+        "era5:high": 1.0526850594306656,
+        "ceres:low": 1.0566748161766524,
+        "ceres:high": 1.0496462477126132
+      }
+    ]
+  },
+  "opening_horizon": {
+    "0": {
+      "south_face_total_kept_min": 0.6719358395284528,
+      "south_face_total_kept_max": 0.6829610532551783,
+      "south_face_beam_kept_era5": 0.6653209288172975,
+      "building_share_given_the_horizon_min": 0.6719357470184107,
+      "building_share_given_the_horizon_max": 0.6829609274528634,
+      "building_share_of_the_sky_diffuse": 0.7455150097466595,
+      "turned_over_south_min": 1.0422544280207355,
+      "turned_over_south_max": 1.0505459819924048
+    },
+    "5": {
+      "south_face_total_kept_min": 0.6513749657221204,
+      "south_face_total_kept_max": 0.6563731996046287,
+      "south_face_beam_kept_era5": 0.6488737132052773,
+      "building_share_given_the_horizon_min": 0.6650859531920608,
+      "building_share_given_the_horizon_max": 0.6743012996694147,
+      "building_share_of_the_sky_diffuse": 0.727463764634646,
+      "turned_over_south_min": 1.032811959144493,
+      "turned_over_south_max": 1.0380890311143038
+    },
+    "10": {
+      "south_face_total_kept_min": 0.6039427252094443,
+      "south_face_total_kept_max": 0.6137639939498171,
+      "south_face_beam_kept_era5": 0.6031190080443535,
+      "building_share_given_the_horizon_min": 0.6496094522905501,
+      "building_share_given_the_horizon_max": 0.6578520551814554,
+      "building_share_of_the_sky_diffuse": 0.7069951584349125,
+      "turned_over_south_min": 1.0133577189847771,
+      "turned_over_south_max": 1.0156046618063075
+    },
+    "15": {
+      "south_face_total_kept_min": 0.5153400765508132,
+      "south_face_total_kept_max": 0.5405231490851506,
+      "south_face_beam_kept_era5": 0.5097948074834173,
+      "building_share_given_the_horizon_min": 0.6127881462204653,
+      "building_share_given_the_horizon_max": 0.6276370924787307,
+      "building_share_of_the_sky_diffuse": 0.6839800409985269,
+      "turned_over_south_min": 0.9830256540718879,
+      "turned_over_south_max": 0.9879539590888574
+    },
+    "20": {
+      "south_face_total_kept_min": 0.3137352693890323,
+      "south_face_total_kept_max": 0.3669546781486936,
+      "south_face_beam_kept_era5": 0.2619610876787729,
+      "building_share_given_the_horizon_min": 0.4906935297417791,
+      "building_share_given_the_horizon_max": 0.5336475857119355,
+      "building_share_of_the_sky_diffuse": 0.6583716599947294,
+      "turned_over_south_min": 0.9843754712477738,
+      "turned_over_south_max": 0.987891553081375
+    },
+    "25": {
+      "south_face_total_kept_min": 0.20833551001886316,
+      "south_face_total_kept_max": 0.2642751172844577,
+      "south_face_beam_kept_era5": 0.12922022391811663,
+      "building_share_given_the_horizon_min": 0.3901623330526507,
+      "building_share_given_the_horizon_max": 0.4517868659181552,
+      "building_share_of_the_sky_diffuse": 0.6302537547697983,
+      "turned_over_south_min": 0.9747379252806624,
+      "turned_over_south_max": 0.9822229731908076
+    },
+    "30": {
+      "south_face_total_kept_min": 0.13362593035484935,
+      "south_face_total_kept_max": 0.18838665664779952,
+      "south_face_beam_kept_era5": 0.03813397233619199,
+      "building_share_given_the_horizon_min": 0.2909580924344953,
+      "building_share_given_the_horizon_max": 0.370062722002044,
+      "building_share_of_the_sky_diffuse": 0.5998969926441055,
+      "turned_over_south_min": 0.9734518454712684,
+      "turned_over_south_max": 0.982131524840714
+    },
+    "35": {
+      "south_face_total_kept_min": 0.10601314040387019,
+      "south_face_total_kept_max": 0.15727590869975247,
+      "south_face_beam_kept_era5": 0.011144857841116637,
+      "building_share_given_the_horizon_min": 0.24560034602461311,
+      "building_share_given_the_horizon_max": 0.3290593314591818,
+      "building_share_of_the_sky_diffuse": 0.5678151804714988,
+      "turned_over_south_min": 0.9705785096996742,
+      "turned_over_south_max": 0.9806515030277011
+    },
+    "45": {
+      "south_face_total_kept_min": 0.08813159317388844,
+      "south_face_total_kept_max": 0.13540093201178244,
+      "south_face_beam_kept_era5": 0.011144857841116637,
+      "building_share_given_the_horizon_min": 0.21299789409611444,
+      "building_share_given_the_horizon_max": 0.29687906500403155,
+      "building_share_of_the_sky_diffuse": 0.5019462339328901,
+      "turned_over_south_min": 0.9343628050174801,
+      "turned_over_south_max": 0.9575472674842674
+    },
+    "60": {
+      "south_face_total_kept_min": 0.06985884370718791,
+      "south_face_total_kept_max": 0.11140659961616245,
+      "south_face_beam_kept_era5": 0.011144857841116637,
+      "building_share_given_the_horizon_min": 0.17663661621328566,
+      "building_share_given_the_horizon_max": 0.25783385811701004,
+      "building_share_of_the_sky_diffuse": 0.41744237042231225,
+      "turned_over_south_min": 0.8808775012900056,
+      "turned_over_south_max": 0.9252941259369133
+    }
+  },
+  "screen_in_one_half_of_the_opening": {
+    "eastern_half_40": {
+      "turned_over_south_min": 1.17382396379789,
+      "turned_over_south_max": 1.219789714750339,
+      "south_face_total_kept_min": 0.2549103274316091,
+      "south_face_total_kept_max": 0.2939976144451347
+    },
+    "western_half_40": {
+      "turned_over_south_min": 0.9433529494054682,
+      "turned_over_south_max": 0.9527453161906115,
+      "south_face_total_kept_min": 0.515981614844336,
+      "south_face_total_kept_max": 0.5311367585082095
+    },
+    "eastern_half_20": {
+      "turned_over_south_min": 1.0820438974980324,
+      "turned_over_south_max": 1.0988421749728785,
+      "south_face_total_kept_min": 0.4382728590964414,
+      "south_face_total_kept_max": 0.4789517275996337
+    },
+    "western_half_20": {
+      "turned_over_south_min": 0.9712252684012755,
+      "turned_over_south_max": 0.9755728447323374,
+      "south_face_total_kept_min": 0.549826721480443,
+      "south_face_total_kept_max": 0.5673229370220063
+    }
+  },
+  "eastern_edge_alone": {
+    "150": {
+      "beam_kept_era5": 0.82583631903886,
+      "total_kept_min": 0.8041408768731492,
+      "total_kept_max": 0.8161165220060578
+    },
+    "155": {
+      "beam_kept_era5": 0.7790007204589183,
+      "total_kept_min": 0.7668445287008514,
+      "total_kept_max": 0.7771929402044999
+    },
+    "161": {
+      "beam_kept_era5": 0.719598219691371,
+      "total_kept_min": 0.7175626938072194,
+      "total_kept_max": 0.7283741172516677
+    },
+    "167": {
+      "beam_kept_era5": 0.6653209288172975,
+      "total_kept_min": 0.6719358395284528,
+      "total_kept_max": 0.6829610532551783
+    },
+    "173": {
+      "beam_kept_era5": 0.614085093727355,
+      "total_kept_min": 0.6301468502288514,
+      "total_kept_max": 0.6399390914006736
+    },
+    "180": {
+      "beam_kept_era5": 0.5661068614385664,
+      "total_kept_min": 0.5881027816297488,
+      "total_kept_max": 0.5997046795326898
+    },
+    "190": {
+      "beam_kept_era5": 0.5300079362561585,
+      "total_kept_min": 0.5519329783577366,
+      "total_kept_max": 0.5667307780079724
+    }
+  },
+  "trunk_moved": {
+    "bracket": {
+      "positions": 25,
+      "total_kept_min": 0.535573880015377,
+      "total_kept_max": 0.7993106558825959,
+      "at_min": {
+        "to_the_eastern_wing_m": 2.0,
+        "to_the_back_wall_m": 2.0,
+        "opening_deg": [
+          181.04621828761685,
+          256.8103880665245
+        ]
+      },
+      "at_max": {
+        "to_the_eastern_wing_m": -2.0,
+        "to_the_back_wall_m": -2.0,
+        "opening_deg": [
+          153.29901382649234,
+          254.6391691424201
+        ]
+      },
+      "within_one_metre_min": 0.605689636661053,
+      "within_one_metre_max": 0.7446776687463995
+    },
+    "positions": {
+      "-2:-2": {
+        "to_the_eastern_wing_m": -2.0,
+        "to_the_back_wall_m": -2.0,
+        "opening_deg": [
+          153.29901382649234,
+          254.6391691424201
+        ],
+        "walls_m": {
+          "back": 7.2,
+          "east": 10.5,
+          "west": 5.3
+        },
+        "total_kept_min": 0.7883552967968644,
+        "total_kept_max": 0.7993106558825959
+      },
+      "-2:-1": {
+        "to_the_eastern_wing_m": -2.0,
+        "to_the_back_wall_m": -1.0,
+        "opening_deg": [
+          157.36081698000544,
+          250.61932326002847
+        ],
+        "walls_m": {
+          "back": 6.2,
+          "east": 10.5,
+          "west": 5.3
+        },
+        "total_kept_min": 0.7550226737149299,
+        "total_kept_max": 0.768242527199067
+      },
+      "-2:0": {
+        "to_the_eastern_wing_m": -2.0,
+        "to_the_back_wall_m": 0.0,
+        "opening_deg": [
+          161.0882518136736,
+          247.25708821172628
+        ],
+        "walls_m": {
+          "back": 5.2,
+          "east": 10.5,
+          "west": 5.3
+        },
+        "total_kept_min": 0.7239672199861231,
+        "total_kept_max": 0.7390763568915144
+      },
+      "-2:1": {
+        "to_the_eastern_wing_m": -2.0,
+        "to_the_back_wall_m": 1.0,
+        "opening_deg": [
+          164.49318405404324,
+          244.42162539908117
+        ],
+        "walls_m": {
+          "back": 4.2,
+          "east": 10.5,
+          "west": 5.3
+        },
+        "total_kept_min": 0.6960452022026111,
+        "total_kept_max": 0.713055569767813
+      },
+      "-2:2": {
+        "to_the_eastern_wing_m": -2.0,
+        "to_the_back_wall_m": 2.0,
+        "opening_deg": [
+          167.59464626929037,
+          242.009241429277
+        ],
+        "walls_m": {
+          "back": 3.2,
+          "east": 10.5,
+          "west": 5.3
+        },
+        "total_kept_min": 0.6704050715204831,
+        "total_kept_max": 0.6889587704926093
+      },
+      "-1:-2": {
+        "to_the_eastern_wing_m": -1.0,
+        "to_the_back_wall_m": -2.0,
+        "opening_deg": [
+          155.7568072964081,
+          259.5592049728387
+        ],
+        "walls_m": {
+          "back": 7.2,
+          "east": 9.5,
+          "west": 6.3
+        },
+        "total_kept_min": 0.7694177221438244,
+        "total_kept_max": 0.7786890355022259
+      },
+      "-1:-1": {
+        "to_the_eastern_wing_m": -1.0,
+        "to_the_back_wall_m": -1.0,
+        "opening_deg": [
+          160.0059193057522,
+          255.41828903164213
+        ],
+        "walls_m": {
+          "back": 6.2,
+          "east": 9.5,
+          "west": 6.3
+        },
+        "total_kept_min": 0.733182123392518,
+        "total_kept_max": 0.7446776687463995
+      },
+      "-1:0": {
+        "to_the_eastern_wing_m": -1.0,
+        "to_the_back_wall_m": 0.0,
+        "opening_deg": [
+          163.85577585310213,
+          251.8774640745132
+        ],
+        "walls_m": {
+          "back": 5.2,
+          "east": 9.5,
+          "west": 6.3
+        },
+        "total_kept_min": 0.7016004121184027,
+        "total_kept_max": 0.7153737915953384
+      },
+      "-1:1": {
+        "to_the_eastern_wing_m": -1.0,
+        "to_the_back_wall_m": 1.0,
+        "opening_deg": [
+          167.33000815444979,
+          248.83701266808794
+        ],
+        "walls_m": {
+          "back": 4.2,
+          "east": 9.5,
+          "west": 6.3
+        },
+        "total_kept_min": 0.6726020883338866,
+        "total_kept_max": 0.6877971162850821
+      },
+      "-1:2": {
+        "to_the_eastern_wing_m": -1.0,
+        "to_the_back_wall_m": 2.0,
+        "opening_deg": [
+          170.45897534565958,
+          246.21183350812908
+        ],
+        "walls_m": {
+          "back": 3.2,
+          "east": 9.5,
+          "west": 6.3
+        },
+        "total_kept_min": 0.6453494864827631,
+        "total_kept_max": 0.6617344042233373
+      },
+      "0:-2": {
+        "to_the_eastern_wing_m": 0.0,
+        "to_the_back_wall_m": -2.0,
+        "opening_deg": [
+          158.6282730205177,
+          263.7688113114492
+        ],
+        "walls_m": {
+          "back": 7.2,
+          "east": 8.5,
+          "west": 7.3
+        },
+        "total_kept_min": 0.7442505148601383,
+        "total_kept_max": 0.7520458906950487
+      },
+      "0:-1": {
+        "to_the_eastern_wing_m": 0.0,
+        "to_the_back_wall_m": -1.0,
+        "opening_deg": [
+          163.05231130328121,
+          259.6191846080282
+        ],
+        "walls_m": {
+          "back": 6.2,
+          "east": 8.5,
+          "west": 7.3
+        },
+        "total_kept_min": 0.7059752941661802,
+        "total_kept_max": 0.7155738023670757
+      },
+      "0:0": {
+        "to_the_eastern_wing_m": 0.0,
+        "to_the_back_wall_m": 0.0,
+        "opening_deg": [
+          167.0,
+          256.0
+        ],
+        "walls_m": {
+          "back": 5.2,
+          "east": 8.5,
+          "west": 7.3
+        },
+        "total_kept_min": 0.6719358395284528,
+        "total_kept_max": 0.6829610532551783
+      },
+      "0:1": {
+        "to_the_eastern_wing_m": 0.0,
+        "to_the_back_wall_m": 1.0,
+        "opening_deg": [
+          170.5124867456044,
+          252.83958505761285
+        ],
+        "walls_m": {
+          "back": 4.2,
+          "east": 8.5,
+          "west": 7.3
+        },
+        "total_kept_min": 0.6419507235526163,
+        "total_kept_max": 0.6539671785059653
+      },
+      "0:2": {
+        "to_the_eastern_wing_m": 0.0,
+        "to_the_back_wall_m": 2.0,
+        "opening_deg": [
+          173.63557673171192,
+          250.0718894293842
+        ],
+        "walls_m": {
+          "back": 3.2,
+          "east": 8.5,
+          "west": 7.3
+        },
+        "total_kept_min": 0.6146500674246872,
+        "total_kept_max": 0.6282503944466967
+      },
+      "1:-2": {
+        "to_the_eastern_wing_m": 1.0,
+        "to_the_back_wall_m": -2.0,
+        "opening_deg": [
+          162.00866732782566,
+          267.3747505984031
+        ],
+        "walls_m": {
+          "back": 7.2,
+          "east": 7.5,
+          "west": 8.3
+        },
+        "total_kept_min": 0.714145345702012,
+        "total_kept_max": 0.7208690472256835
+      },
+      "1:-1": {
+        "to_the_eastern_wing_m": 1.0,
+        "to_the_back_wall_m": -1.0,
+        "opening_deg": [
+          166.57702041087936,
+          263.28976861936377
+        ],
+        "walls_m": {
+          "back": 6.2,
+          "east": 7.5,
+          "west": 8.3
+        },
+        "total_kept_min": 0.6721012127475896,
+        "total_kept_max": 0.6799054176690148
+      },
+      "1:0": {
+        "to_the_eastern_wing_m": 1.0,
+        "to_the_back_wall_m": 0.0,
+        "opening_deg": [
+          170.58012207495636,
+          259.6647964412388
+        ],
+        "walls_m": {
+          "back": 5.2,
+          "east": 7.5,
+          "west": 8.3
+        },
+        "total_kept_min": 0.6367628762945908,
+        "total_kept_max": 0.6447110090825737
+      },
+      "1:1": {
+        "to_the_eastern_wing_m": 1.0,
+        "to_the_back_wall_m": 1.0,
+        "opening_deg": [
+          174.08426742544927,
+          256.4508076630073
+        ],
+        "walls_m": {
+          "back": 4.2,
+          "east": 7.5,
+          "west": 8.3
+        },
+        "total_kept_min": 0.605689636661053,
+        "total_kept_max": 0.6141730516952746
+      },
+      "1:2": {
+        "to_the_eastern_wing_m": 1.0,
+        "to_the_back_wall_m": 2.0,
+        "opening_deg": [
+          177.15545247935094,
+          253.59876688745908
+        ],
+        "walls_m": {
+          "back": 3.2,
+          "east": 7.5,
+          "west": 8.3
+        },
+        "total_kept_min": 0.5780658105287564,
+        "total_kept_max": 0.5880852974551076
+      },
+      "2:-2": {
+        "to_the_eastern_wing_m": 2.0,
+        "to_the_back_wall_m": -2.0,
+        "opening_deg": [
+          166.01541302706985,
+          270.4749999613166
+        ],
+        "walls_m": {
+          "back": 7.2,
+          "east": 6.5,
+          "west": 9.3
+        },
+        "total_kept_min": 0.6738035033002727,
+        "total_kept_max": 0.6829772756557003
+      },
+      "2:-1": {
+        "to_the_eastern_wing_m": 2.0,
+        "to_the_back_wall_m": -1.0,
+        "opening_deg": [
+          170.66832305899942,
+          266.4994892877993
+        ],
+        "walls_m": {
+          "back": 6.2,
+          "east": 6.5,
+          "west": 9.3
+        },
+        "total_kept_min": 0.6287911038282175,
+        "total_kept_max": 0.6386747774066319
+      },
+      "2:0": {
+        "to_the_eastern_wing_m": 2.0,
+        "to_the_back_wall_m": 0.0,
+        "opening_deg": [
+          174.6590245276262,
+          262.9186784607092
+        ],
+        "walls_m": {
+          "back": 5.2,
+          "east": 6.5,
+          "west": 9.3
+        },
+        "total_kept_min": 0.5923748936896509,
+        "total_kept_max": 0.6019323012017267
+      },
+      "2:1": {
+        "to_the_eastern_wing_m": 2.0,
+        "to_the_back_wall_m": 1.0,
+        "opening_deg": [
+          178.08807120216179,
+          259.70065082803825
+        ],
+        "walls_m": {
+          "back": 4.2,
+          "east": 6.5,
+          "west": 9.3
+        },
+        "total_kept_min": 0.5611925555062012,
+        "total_kept_max": 0.5692232529831329
+      },
+      "2:2": {
+        "to_the_eastern_wing_m": 2.0,
+        "to_the_back_wall_m": 2.0,
+        "opening_deg": [
+          181.04621828761685,
+          256.8103880665245
+        ],
+        "walls_m": {
+          "back": 3.2,
+          "east": 6.5,
+          "west": 9.3
+        },
+        "total_kept_min": 0.535573880015377,
+        "total_kept_max": 0.5418132790886012
+      }
+    }
+  },
+  "winter_sun_westernmost_bearing_deg": 257.7899936232832,
+  "bracket": {
+    "south_180": {
+      "combinations": 81,
+      "total_kept_min": 0.5885568166197414,
+      "total_kept_max": 0.7719589791344403,
+      "beam_kept_min": 0.5825085262538913,
+      "beam_kept_max": 0.7557635638838395,
+      "at_min": {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          250.0
+        ]
+      },
+      "at_max": {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          262.0
+        ]
+      },
+      "rows": [
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7278903784203963,
+          "era5:high": 0.7211733549023128,
+          "ceres:low": 0.7218334425353683,
+          "ceres:high": 0.7166760727045033,
+          "era5:beam": 0.7208776895088932,
+          "ceres:beam": 0.7138354176080866,
+          "sky_view": 0.3852254864776012
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.7304100562505048,
+          "era5:high": 0.7237514753698446,
+          "ceres:low": 0.7239322310852501,
+          "ceres:high": 0.7188543260245455,
+          "era5:beam": 0.7214276491896087,
+          "ceres:beam": 0.7142077355602974,
+          "sky_view": 0.3892017038896827
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.7320880722171074,
+          "era5:high": 0.7256596080604601,
+          "ceres:low": 0.725360652754615,
+          "ceres:high": 0.7204971497558015,
+          "era5:beam": 0.7214367577281547,
+          "ceres:beam": 0.7142124285917901,
+          "sky_view": 0.3920394606614014
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.6839868359291146,
+          "era5:high": 0.6795463661682604,
+          "ceres:low": 0.6754562352729077,
+          "ceres:high": 0.6723266783469821,
+          "era5:beam": 0.6686571082821515,
+          "ceres:beam": 0.659987041989851,
+          "sky_view": 0.3712914132434832
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.686506513759223,
+          "era5:high": 0.6821244866357923,
+          "ceres:low": 0.6775550238227892,
+          "ceres:high": 0.6745049316670243,
+          "era5:beam": 0.6692070679628672,
+          "ceres:beam": 0.6603593599420619,
+          "sky_view": 0.37526763065556473
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.6881845297258257,
+          "era5:high": 0.684032619326408,
+          "ceres:low": 0.6789834454921543,
+          "ceres:high": 0.6761477553982804,
+          "era5:beam": 0.6692161765014131,
+          "ceres:beam": 0.6603640529735547,
+          "sky_view": 0.3781053874272834
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.642291989859329,
+          "era5:high": 0.6399577186979467,
+          "ceres:low": 0.6329467423655094,
+          "ceres:high": 0.6315827511989828,
+          "era5:beam": 0.6192136284056116,
+          "ceres:beam": 0.6110660138162605,
+          "sky_view": 0.3579993340751649
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.6448116676894374,
+          "era5:high": 0.6425358391654786,
+          "ceres:low": 0.6350455309153912,
+          "ceres:high": 0.633761004519025,
+          "era5:beam": 0.6197635880863271,
+          "ceres:beam": 0.6114383317684714,
+          "sky_view": 0.3619755514872464
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.6464896836560401,
+          "era5:high": 0.6444439718560941,
+          "ceres:low": 0.6364739525847561,
+          "ceres:high": 0.635403828250281,
+          "era5:beam": 0.619772696624873,
+          "ceres:beam": 0.611443024799964,
+          "sky_view": 0.364813308258965
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7471462871926843,
+          "era5:high": 0.7429121669521248,
+          "ceres:low": 0.7389868380536477,
+          "ceres:high": 0.7360555115223795,
+          "era5:beam": 0.7353450592137685,
+          "ceres:beam": 0.7264830814849569,
+          "sky_view": 0.3974749822844502
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.7493758145108065,
+          "era5:high": 0.7451544742157374,
+          "ceres:low": 0.7408383265620656,
+          "ceres:high": 0.7379443880122311,
+          "era5:beam": 0.7358950188944839,
+          "ceres:beam": 0.7268553994371677,
+          "sky_view": 0.40096808403104295
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.7508277303085896,
+          "era5:high": 0.7467715813162298,
+          "ceres:low": 0.7420741028688621,
+          "ceres:high": 0.7393365850376877,
+          "era5:beam": 0.73590412743303,
+          "ceres:beam": 0.7268600924686606,
+          "sky_view": 0.40347846630775525
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7103073833032604,
+          "era5:high": 0.7079625741485658,
+          "ceres:low": 0.6993207533123963,
+          "ceres:high": 0.698086702983874,
+          "era5:beam": 0.6920219794749736,
+          "ceres:beam": 0.6807230944727067,
+          "sky_view": 0.385175321224283
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.7125369106213826,
+          "era5:high": 0.7102048814121783,
+          "ceres:low": 0.7011722418208142,
+          "ceres:high": 0.6999755794737255,
+          "era5:beam": 0.692571939155689,
+          "ceres:beam": 0.6810954124249177,
+          "sky_view": 0.3886684229708758
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.7139888264191657,
+          "era5:high": 0.7118219885126709,
+          "ceres:low": 0.7024080181276107,
+          "ceres:high": 0.701367776499182,
+          "era5:beam": 0.6925810476942349,
+          "ceres:beam": 0.6811001054564104,
+          "sky_view": 0.391178805247588
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.6773552810152162,
+          "era5:high": 0.6767083639344298,
+          "ceres:low": 0.6647429273843886,
+          "ceres:high": 0.6650377597200109,
+          "era5:beam": 0.6537518453162655,
+          "ceres:beam": 0.6413660881820161,
+          "sky_view": 0.3735049028692673
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.6795848083333385,
+          "era5:high": 0.6789506711980424,
+          "ceres:low": 0.6665944158928063,
+          "ceres:high": 0.6669266362098626,
+          "era5:beam": 0.6543018049969811,
+          "ceres:beam": 0.641738406134227,
+          "sky_view": 0.37699800461586014
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.6810367241311217,
+          "era5:high": 0.680567778298535,
+          "ceres:low": 0.6678301921996029,
+          "ceres:high": 0.6683188332353193,
+          "era5:beam": 0.6543109135355271,
+          "ceres:beam": 0.6417430991657197,
+          "sky_view": 0.37950838689257244
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.768684406287804,
+          "era5:high": 0.7661883624538957,
+          "ceres:low": 0.7588402226118072,
+          "ceres:high": 0.7574328263645063,
+          "era5:beam": 0.7552044956645779,
+          "ceres:beam": 0.7445291049073403,
+          "sky_view": 0.4077666948006828
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.7706862592123488,
+          "era5:high": 0.768172587301703,
+          "ceres:low": 0.7604976487610374,
+          "ceres:high": 0.7590992793865939,
+          "era5:beam": 0.7557544553452934,
+          "ceres:beam": 0.7449014228595511,
+          "sky_view": 0.4108716344488218
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.7719589791344403,
+          "era5:high": 0.7695641219212968,
+          "ceres:low": 0.7615807328291897,
+          "ceres:high": 0.7602971926570626,
+          "era5:beam": 0.7557635638838395,
+          "ceres:beam": 0.7449061158910438,
+          "sky_view": 0.413114056170615
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7389233790279793,
+          "era5:high": 0.7380073511266848,
+          "ceres:low": 0.7257068842105951,
+          "ceres:high": 0.7258267652752042,
+          "era5:beam": 0.7208788616929598,
+          "ceres:beam": 0.7065980653709567,
+          "sky_view": 0.3967970252373992
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.7409252319525241,
+          "era5:high": 0.7399915759744919,
+          "ceres:low": 0.7273643103598256,
+          "ceres:high": 0.7274932182972919,
+          "era5:beam": 0.7214288213736756,
+          "ceres:beam": 0.7069703833231674,
+          "sky_view": 0.3999019648855382
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.7421979518746157,
+          "era5:high": 0.7413831105940857,
+          "ceres:low": 0.7284473944279779,
+          "ceres:high": 0.7286911315677606,
+          "era5:beam": 0.7214379299122213,
+          "ceres:beam": 0.7069750763546602,
+          "sky_view": 0.4021443866073314
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.7132504716692953,
+          "era5:high": 0.7136140533521603,
+          "ceres:low": 0.6983183491901042,
+          "ceres:high": 0.6995930650862989,
+          "era5:beam": 0.6919777386611595,
+          "ceres:beam": 0.676066623946586,
+          "sky_view": 0.38642761240708706
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.7152523245938401,
+          "era5:high": 0.7155982781999677,
+          "ceres:low": 0.6999757753393345,
+          "ceres:high": 0.7012595181083866,
+          "era5:beam": 0.6925276983418749,
+          "ceres:beam": 0.6764389418987969,
+          "sky_view": 0.389532552055226
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.7165250445159317,
+          "era5:high": 0.7169898128195614,
+          "ceres:low": 0.7010588594074867,
+          "ceres:high": 0.7024574313788553,
+          "era5:beam": 0.6925368068804207,
+          "ceres:beam": 0.6764436349302896,
+          "sky_view": 0.3917749737770193
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7149012097909971,
+          "era5:high": 0.7050537109020748,
+          "ceres:low": 0.7108090285736377,
+          "ceres:high": 0.7028298835300406,
+          "era5:beam": 0.7170499938747906,
+          "ceres:beam": 0.7108286069335011,
+          "sky_view": 0.37089845094747526
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.7177729740233805,
+          "era5:high": 0.7080299221488225,
+          "ceres:low": 0.7132079265013153,
+          "ceres:high": 0.705351229416363,
+          "era5:beam": 0.7175999535555063,
+          "ceres:beam": 0.711200924885712,
+          "sky_view": 0.3754766471270069
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.7197145625184117,
+          "era5:high": 0.7102680886883809,
+          "ceres:low": 0.7148609412814743,
+          "ceres:high": 0.7072783171869224,
+          "era5:beam": 0.7176090620940522,
+          "ceres:beam": 0.7112056179172047,
+          "sky_view": 0.37871146889614954
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.6628922778617633,
+          "era5:high": 0.6563116478669994,
+          "ceres:low": 0.6568789440460604,
+          "ceres:high": 0.6517767758752907,
+          "era5:beam": 0.6541570133313076,
+          "ceres:beam": 0.6475189751172303,
+          "sky_view": 0.35496534026887194
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.6657640420941467,
+          "era5:high": 0.6592878591137472,
+          "ceres:low": 0.6592778419737377,
+          "ceres:high": 0.654298121761613,
+          "era5:beam": 0.6547069730120231,
+          "ceres:beam": 0.6478912930694413,
+          "sky_view": 0.3595435364484036
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.6677056305891781,
+          "era5:high": 0.6615260256533054,
+          "ceres:low": 0.6609308567538967,
+          "ceres:high": 0.6562252095321722,
+          "era5:beam": 0.6547160815505692,
+          "ceres:beam": 0.647895986100934,
+          "sky_view": 0.3627783582175462
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.6125410567030105,
+          "era5:high": 0.6088666432173008,
+          "ceres:low": 0.6061537282187397,
+          "ceres:high": 0.6035191879225023,
+          "era5:beam": 0.5934891306404991,
+          "ceres:beam": 0.5884359783894408,
+          "sky_view": 0.3396482815404584
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.6154128209353937,
+          "era5:high": 0.6118428544640484,
+          "ceres:low": 0.6085526261464173,
+          "ceres:high": 0.6060405338088247,
+          "era5:beam": 0.5940390903212147,
+          "ceres:beam": 0.5888082963416517,
+          "sky_view": 0.34422647771999
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.6173544094304251,
+          "era5:high": 0.6140810210036067,
+          "ceres:low": 0.6102056409265761,
+          "ceres:high": 0.6079676215793841,
+          "era5:beam": 0.5940481988597608,
+          "ceres:beam": 0.5888129893731445,
+          "sky_view": 0.3474612994891327
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7258147721610125,
+          "era5:high": 0.7196407567402993,
+          "ceres:low": 0.7200716671032724,
+          "ceres:high": 0.7153588311233217,
+          "era5:beam": 0.7190482600106554,
+          "ceres:beam": 0.7123815040491079,
+          "sky_view": 0.3829350690050488
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.7283741172516677,
+          "era5:high": 0.7222484957568959,
+          "ceres:low": 0.7222042999774076,
+          "ceres:high": 0.7175626938072194,
+          "era5:beam": 0.719598219691371,
+          "ceres:beam": 0.7127538220013189,
+          "sky_view": 0.3870045919856213
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.7300770304509985,
+          "era5:high": 0.7241729426613336,
+          "ceres:low": 0.7236539690291731,
+          "ceres:high": 0.7192196421764805,
+          "era5:beam": 0.7196073282299169,
+          "ceres:beam": 0.7127585150328115,
+          "sky_view": 0.3899047200863047
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.6804017081645232,
+          "era5:high": 0.67671224745635,
+          "ceres:low": 0.6722316783137168,
+          "ceres:high": 0.6697319768445552,
+          "era5:beam": 0.6647709691365818,
+          "ceres:beam": 0.6566363907032863,
+          "sky_view": 0.36868827759195616
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.6829610532551783,
+          "era5:high": 0.6793199864729466,
+          "ceres:low": 0.674364311187852,
+          "ceres:high": 0.6719358395284528,
+          "era5:beam": 0.6653209288172975,
+          "ceres:beam": 0.6570087086554971,
+          "sky_view": 0.3727578005725287
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.6846639664545091,
+          "era5:high": 0.6812444333773843,
+          "ceres:low": 0.6758139802396175,
+          "ceres:high": 0.6735927878977138,
+          "era5:beam": 0.6653300373558434,
+          "ceres:beam": 0.6570134016869899,
+          "sky_view": 0.37565792867321207
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.6373797463100185,
+          "era5:high": 0.635982841348257,
+          "ceres:low": 0.6285234402331209,
+          "ceres:high": 0.6279429875449536,
+          "era5:beam": 0.6135351340466394,
+          "ceres:beam": 0.6061867924746459,
+          "sky_view": 0.35508266339990663
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.6399390914006736,
+          "era5:high": 0.6385905803648535,
+          "ceres:low": 0.6306560731072562,
+          "ceres:high": 0.6301468502288514,
+          "era5:beam": 0.614085093727355,
+          "ceres:beam": 0.6065591104268567,
+          "sky_view": 0.35915218638047913
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.6416420046000044,
+          "era5:high": 0.6405150272692912,
+          "ceres:low": 0.6321057421590217,
+          "ceres:high": 0.6318037985981124,
+          "era5:beam": 0.6140942022659011,
+          "ceres:beam": 0.6065638034583495,
+          "sky_view": 0.36205231448116254
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7408492004290315,
+          "era5:high": 0.7370126636740744,
+          "ceres:low": 0.7331837783797149,
+          "ceres:high": 0.7305852094213874,
+          "era5:beam": 0.729190541294248,
+          "ceres:beam": 0.7209370031962312,
+          "sky_view": 0.393484600208322
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.7431559007006965,
+          "era5:high": 0.7393286691312039,
+          "ceres:low": 0.7351010764762647,
+          "ceres:high": 0.7325376760057735,
+          "era5:beam": 0.7297405009749637,
+          "ceres:beam": 0.7213093211484422,
+          "sky_view": 0.3971323330126362
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.744662957835124,
+          "era5:high": 0.7410013785258674,
+          "ceres:low": 0.7363838684368529,
+          "ceres:high": 0.7339778302373,
+          "era5:beam": 0.7297496095135095,
+          "ceres:beam": 0.7213140141799349,
+          "sky_view": 0.39974827647808
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7017347113108515,
+          "era5:high": 0.7000173866487387,
+          "ceres:low": 0.6914466421720421,
+          "ceres:high": 0.6907354326900839,
+          "era5:beam": 0.6828946387052248,
+          "ceres:beam": 0.672607730878785,
+          "sky_view": 0.38065914647889465
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.7040414115825164,
+          "era5:high": 0.7023333921058682,
+          "ceres:low": 0.693363940268592,
+          "ceres:high": 0.6926878992744699,
+          "era5:beam": 0.6834445983859405,
+          "ceres:beam": 0.6729800488309959,
+          "sky_view": 0.38430687928320895
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.705548468716944,
+          "era5:high": 0.7040061015005318,
+          "ceres:low": 0.69464673222918,
+          "ceres:high": 0.6941280535059964,
+          "era5:beam": 0.6834537069244865,
+          "ceres:beam": 0.6729847418624888,
+          "sky_view": 0.3869228227486527
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.6661444713109662,
+          "era5:high": 0.6664213193083883,
+          "ceres:low": 0.654452907319448,
+          "ceres:high": 0.6555147507895603,
+          "era5:beam": 0.6410832461832888,
+          "ceres:beam": 0.630184262733718,
+          "sky_view": 0.36846998878661835
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.6684511715826312,
+          "era5:high": 0.6687373247655178,
+          "ceres:low": 0.656370205415998,
+          "ceres:high": 0.6574672173739464,
+          "era5:beam": 0.6416332058640045,
+          "ceres:beam": 0.6305565806859289,
+          "sky_view": 0.3721177215909326
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.6699582287170587,
+          "era5:high": 0.6704100341601814,
+          "ceres:low": 0.657652997376586,
+          "ceres:high": 0.6589073716054729,
+          "era5:beam": 0.6416423144025504,
+          "ceres:beam": 0.6305612737174217,
+          "sky_view": 0.3747336650563764
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7064600639366833,
+          "era5:high": 0.6936056697753326,
+          "ceres:low": 0.7036181349888012,
+          "ceres:high": 0.692973791448025,
+          "era5:beam": 0.7170499938747906,
+          "ceres:beam": 0.7108286069335011,
+          "sky_view": 0.35965178276924836
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.7096376001474369,
+          "era5:high": 0.696936022692496,
+          "ceres:low": 0.7062776468519468,
+          "ceres:high": 0.6958003068445174,
+          "era5:beam": 0.7175999535555063,
+          "ceres:beam": 0.711200924885712,
+          "sky_view": 0.36473868929795783
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.7118036297775582,
+          "era5:high": 0.699463139594368,
+          "ceres:low": 0.7081218933087718,
+          "ceres:high": 0.6979762338796548,
+          "era5:beam": 0.7176090620940522,
+          "ceres:beam": 0.7112056179172047,
+          "sky_view": 0.36829838269019327
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.6532583443088585,
+          "era5:high": 0.6437379056647204,
+          "ceres:low": 0.6486727583324438,
+          "ceres:high": 0.640950950444328,
+          "era5:beam": 0.6536261112954654,
+          "ceres:beam": 0.647095956960567,
+          "sky_view": 0.34206680878169116
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.656435880519612,
+          "era5:high": 0.6470682585818835,
+          "ceres:low": 0.6513322701955894,
+          "ceres:high": 0.6437774658408203,
+          "era5:beam": 0.6541760709761808,
+          "ceres:beam": 0.6474682749127778,
+          "sky_view": 0.34715371531040057
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.6586019101497333,
+          "era5:high": 0.6495953754837559,
+          "ceres:low": 0.6531765166524144,
+          "ceres:high": 0.6459533928759579,
+          "era5:beam": 0.654185179514727,
+          "ceres:beam": 0.6474729679442704,
+          "sky_view": 0.35071340870263606
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.5977640159855395,
+          "era5:high": 0.5917523806126539,
+          "ceres:low": 0.5933139853974478,
+          "ceres:high": 0.5885568166197414,
+          "era5:beam": 0.5865285682346667,
+          "ceres:beam": 0.5825085262538913,
+          "sky_view": 0.3250341406995814
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.6009415521962931,
+          "era5:high": 0.5950827335298171,
+          "ceres:low": 0.5959734972605933,
+          "ceres:high": 0.5913833320162337,
+          "era5:beam": 0.5870785279153824,
+          "ceres:beam": 0.5828808442061021,
+          "sky_view": 0.3301210472282909
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.6031075818264144,
+          "era5:high": 0.5976098504316891,
+          "ceres:low": 0.5978177437174185,
+          "ceres:high": 0.5935592590513712,
+          "era5:beam": 0.5870876364539283,
+          "ceres:beam": 0.5828855372375947,
+          "sky_view": 0.33368074062052633
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.715641322810144,
+          "era5:high": 0.7066088993970382,
+          "ceres:low": 0.7114383267246862,
+          "ceres:high": 0.7041663116470217,
+          "era5:beam": 0.7170499938747906,
+          "ceres:beam": 0.7108286069335011,
+          "sky_view": 0.37096193307705355
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.7184974700703014,
+          "era5:high": 0.7095531510138312,
+          "ceres:low": 0.71382394410859,
+          "ceres:high": 0.7066601909974161,
+          "era5:beam": 0.7175999535555063,
+          "ceres:beam": 0.711200924885712,
+          "sky_view": 0.3755373574011853
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.7204227801333484,
+          "era5:high": 0.7117573521466534,
+          "ceres:low": 0.7154631172567784,
+          "ceres:high": 0.7085580903982095,
+          "era5:beam": 0.7176090620940522,
+          "ceres:beam": 0.7112056179172047,
+          "sky_view": 0.378770380992067
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.6636517345943445,
+          "era5:high": 0.6579030360206376,
+          "ceres:low": 0.6575246992620409,
+          "ceres:high": 0.6531443246328098,
+          "era5:beam": 0.6541570133313076,
+          "ceres:beam": 0.6475189751172303,
+          "sky_view": 0.3550379219637091
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.6665078818545018,
+          "era5:high": 0.6608472876374305,
+          "ceres:low": 0.6599103166459448,
+          "ceres:high": 0.6556382039832038,
+          "era5:beam": 0.6547069730120231,
+          "ceres:beam": 0.6478912930694413,
+          "sky_view": 0.3596133462878408
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.6684331919175488,
+          "era5:high": 0.6630514887702526,
+          "ceres:low": 0.6615494897941332,
+          "ceres:high": 0.6575361033839973,
+          "era5:beam": 0.6547160815505692,
+          "ceres:beam": 0.647895986100934,
+          "sky_view": 0.36284636987872254
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.6133190433332368,
+          "era5:high": 0.6104923376973242,
+          "ceres:low": 0.6068152489307701,
+          "ceres:high": 0.6049162308494449,
+          "era5:beam": 0.5934891306404991,
+          "ceres:beam": 0.5884359783894408,
+          "sky_view": 0.33973019963577766
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.6161751905933942,
+          "era5:high": 0.6134365893141172,
+          "ceres:low": 0.609200866314674,
+          "ceres:high": 0.6074101101998388,
+          "era5:beam": 0.5940390903212147,
+          "ceres:beam": 0.5888082963416517,
+          "sky_view": 0.3443056239599093
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.6181005006564412,
+          "era5:high": 0.6156407904469392,
+          "ceres:low": 0.6108400394628625,
+          "ceres:high": 0.6093080096006324,
+          "era5:beam": 0.5940481988597608,
+          "ceres:beam": 0.5888129893731445,
+          "sky_view": 0.3475386475507911
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7247826680299374,
+          "era5:high": 0.7189437548515437,
+          "ceres:low": 0.71920257821339,
+          "ceres:high": 0.7147657939086864,
+          "era5:beam": 0.7184156066291018,
+          "ceres:beam": 0.7118907125053809,
+          "sky_view": 0.38129039483961663
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.727370716357129,
+          "era5:high": 0.7215728516856621,
+          "ceres:low": 0.7213597010069225,
+          "ceres:high": 0.7169881240129199,
+          "era5:beam": 0.7189655663098173,
+          "ceres:beam": 0.7122630304575919,
+          "sky_view": 0.38542755784068533
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.7290915305181437,
+          "era5:high": 0.7235089164471584,
+          "ceres:low": 0.7228246470421581,
+          "ceres:high": 0.7186551320242388,
+          "era5:beam": 0.7189746748483633,
+          "ceres:beam": 0.7122677234890846,
+          "sky_view": 0.3883727178864312
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.6786621509516894,
+          "era5:high": 0.67540665104009,
+          "ceres:low": 0.6706711810912444,
+          "ceres:high": 0.66853629088508,
+          "era5:beam": 0.6632283128595485,
+          "ceres:beam": 0.6552916110143935,
+          "sky_view": 0.3668175368736652
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.6812501992788811,
+          "era5:high": 0.6780357478742082,
+          "ceres:low": 0.6728283038847767,
+          "ceres:high": 0.6707586209893135,
+          "era5:beam": 0.6637782725402642,
+          "ceres:beam": 0.6556639289666043,
+          "sky_view": 0.3709546998747339
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.6829710134398956,
+          "era5:high": 0.6799718126357045,
+          "ceres:low": 0.6742932499200123,
+          "ceres:high": 0.6724256290006324,
+          "era5:beam": 0.6637873810788101,
+          "ceres:beam": 0.6556686219980972,
+          "sky_view": 0.3738998599204797
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.6347763923794806,
+          "era5:high": 0.6339984982394465,
+          "ceres:low": 0.626090079143939,
+          "ceres:high": 0.6260395262458548,
+          "era5:beam": 0.6107914879222772,
+          "ceres:beam": 0.6036921107174038,
+          "sky_view": 0.3529845585663837
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.6373644407066721,
+          "era5:high": 0.6366275950735646,
+          "ceres:low": 0.6282472019374714,
+          "ceres:high": 0.6282618563500881,
+          "era5:beam": 0.6113414476029928,
+          "ceres:beam": 0.6040644286696146,
+          "sky_view": 0.3571217215674524
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.6390852548676867,
+          "era5:high": 0.638563659835061,
+          "ceres:low": 0.629712147972707,
+          "ceres:high": 0.629928864361407,
+          "era5:beam": 0.6113505561415387,
+          "ceres:beam": 0.6040691217011073,
+          "sky_view": 0.3600668816131982
+        }
+      ]
+    },
+    "opening_centre": {
+      "combinations": 81,
+      "total_kept_min": 0.6888469626669957,
+      "total_kept_max": 0.8641580664269428,
+      "beam_kept_min": 0.7321472959810118,
+      "beam_kept_max": 0.8763989001399977,
+      "at_min": {
+        "roof_edge_m": 8.0,
+        "scale": 0.85,
+        "opening_deg": [
+          173.0,
+          250.0
+        ]
+      },
+      "at_max": {
+        "roof_edge_m": 6.0,
+        "scale": 1.15,
+        "opening_deg": [
+          161.0,
+          262.0
+        ]
+      },
+      "rows": [
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.8059396761847508,
+          "era5:high": 0.7877643861312573,
+          "ceres:low": 0.8024183819839343,
+          "ceres:high": 0.7863519571290933,
+          "era5:beam": 0.8236549625493069,
+          "ceres:beam": 0.8160180271177145,
+          "sky_view": 0.40840346207771894
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.8202081286152418,
+          "era5:high": 0.8001509779915338,
+          "ceres:low": 0.8164827413769986,
+          "ceres:high": 0.7986579875758066,
+          "era5:beam": 0.8386019041412226,
+          "ceres:beam": 0.8306823147029418,
+          "sky_view": 0.4177395907960534
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.8340303425213949,
+          "era5:high": 0.8121379355386423,
+          "ceres:low": 0.8303955967832266,
+          "ceres:high": 0.8108059604948074,
+          "era5:beam": 0.8527166814930482,
+          "ceres:beam": 0.8450237743458149,
+          "sky_view": 0.42723050823482367
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7780849814341125,
+          "era5:high": 0.7597840586006994,
+          "ceres:low": 0.7730833645298074,
+          "ceres:high": 0.7566825205833384,
+          "era5:beam": 0.7934438156382491,
+          "ceres:beam": 0.7845106409854885,
+          "sky_view": 0.3976844118986717
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.7935894703051102,
+          "era5:high": 0.7731708940572688,
+          "ceres:low": 0.7884886085763858,
+          "ceres:high": 0.7700877286975578,
+          "era5:beam": 0.810064440453948,
+          "ceres:beam": 0.8009244119597133,
+          "sky_view": 0.40736633636479064
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.8086344401055483,
+          "era5:high": 0.7861376421481175,
+          "ceres:low": 0.803726950589259,
+          "ceres:high": 0.7833102525241666,
+          "era5:beam": 0.8257778499417824,
+          "ceres:beam": 0.816956761386361,
+          "sky_view": 0.4172772732745707
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.7514362126894754,
+          "era5:high": 0.732943055480558,
+          "ceres:low": 0.7463760113710197,
+          "ceres:high": 0.7294860531536901,
+          "era5:beam": 0.7648691014438952,
+          "ceres:beam": 0.7565366531409924,
+          "sky_view": 0.38705505250731054
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.767917408006657,
+          "era5:high": 0.7471003952191015,
+          "ceres:low": 0.7627972040382861,
+          "ceres:high": 0.7436981753405086,
+          "era5:beam": 0.7828292848226694,
+          "ceres:beam": 0.7743002075525375,
+          "sky_view": 0.39701811436294054
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.7839013632144712,
+          "era5:high": 0.7607974679883222,
+          "ceres:low": 0.7790329978103322,
+          "ceres:high": 0.7577007466759815,
+          "era5:beam": 0.7997626910429552,
+          "ceres:beam": 0.7916172507107465,
+          "sky_view": 0.40728333849703974
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.8222986751133653,
+          "era5:high": 0.8071569515732157,
+          "ceres:low": 0.8170220325694807,
+          "ceres:high": 0.8036549455276149,
+          "era5:beam": 0.8349360385136811,
+          "ceres:beam": 0.825933095918294,
+          "sky_view": 0.41830801439675636
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.8357129820891289,
+          "era5:high": 0.8187639426009437,
+          "ceres:low": 0.8303498724362034,
+          "ceres:high": 0.8152859416887728,
+          "era5:beam": 0.8494373812867952,
+          "ceres:beam": 0.8402166201075123,
+          "sky_view": 0.42648782703417065
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.848659319977653,
+          "era5:high": 0.829947483188598,
+          "ceres:low": 0.8435065998694209,
+          "ceres:high": 0.8267380168121259,
+          "era5:beam": 0.8630781372449543,
+          "ceres:beam": 0.854153230866076,
+          "sky_view": 0.4348463725343374
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.8000247611259022,
+          "era5:high": 0.7845985903345268,
+          "ceres:low": 0.7930300207480611,
+          "ceres:high": 0.7791961677423186,
+          "era5:beam": 0.8117175162042586,
+          "ceres:beam": 0.8008190707420475,
+          "sky_view": 0.40882495467699015
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.8144793472370156,
+          "era5:high": 0.797041395536441,
+          "ceres:low": 0.8075197119080982,
+          "ceres:high": 0.7917743933695272,
+          "era5:beam": 0.8276705173913312,
+          "ceres:beam": 0.8166551900996131,
+          "sky_view": 0.4172908749041784
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.8284327093734205,
+          "era5:high": 0.8090238546053492,
+          "ceres:low": 0.8218037536726949,
+          "ceres:high": 0.8041330629751219,
+          "era5:beam": 0.8426651472918298,
+          "ceres:beam": 0.8320652058387121,
+          "sky_view": 0.4260040970297421
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.780507074732905,
+          "era5:high": 0.7647247350549492,
+          "ceres:low": 0.7728627595228306,
+          "ceres:high": 0.7585130471922873,
+          "era5:beam": 0.7923478356902505,
+          "ceres:beam": 0.780750306126747,
+          "sky_view": 0.399451441529831
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.7957274324573919,
+          "era5:high": 0.7777609254597351,
+          "ceres:low": 0.7881886921439888,
+          "ceres:high": 0.7717478947921367,
+          "era5:beam": 0.8094178540625451,
+          "ceres:beam": 0.7977511159659711,
+          "sky_view": 0.40814397603953617
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.8103827625873852,
+          "era5:high": 0.7902752562761151,
+          "ceres:low": 0.8032670051243379,
+          "ceres:high": 0.7847170862075121,
+          "era5:beam": 0.8253781448623391,
+          "ceres:beam": 0.8142338458505071,
+          "sky_view": 0.41715140573601034
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.8396844513376978,
+          "era5:high": 0.8269679027149777,
+          "ceres:low": 0.8330480790431118,
+          "ceres:high": 0.8218024812456953,
+          "era5:beam": 0.849716790351006,
+          "ceres:beam": 0.839460464277137,
+          "sky_view": 0.42658925137560005
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.8521734606194957,
+          "era5:high": 0.8377512386153733,
+          "ceres:low": 0.8455488985484128,
+          "ceres:high": 0.8326930089221476,
+          "era5:beam": 0.8635101479272187,
+          "ceres:beam": 0.8531156282454881,
+          "sky_view": 0.43384436942819765
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.8641580664269428,
+          "era5:high": 0.8480760923044509,
+          "ceres:low": 0.8578445873207962,
+          "ceres:high": 0.8433724313395268,
+          "era5:beam": 0.8763989001399977,
+          "ceres:beam": 0.8663849210557039,
+          "sky_view": 0.4412846107827404
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.8228352895479457,
+          "era5:high": 0.8097748415146069,
+          "ceres:low": 0.8141039746328544,
+          "ceres:high": 0.8024390701802468,
+          "era5:beam": 0.8333377101662716,
+          "ceres:beam": 0.8203055444291116,
+          "sky_view": 0.4181163663551051
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.836167394283516,
+          "era5:high": 0.8212294950316487,
+          "ceres:low": 0.8275930903858681,
+          "ceres:high": 0.8141322715380732,
+          "era5:beam": 0.8483461745031591,
+          "ceres:beam": 0.8353109823836818,
+          "sky_view": 0.4256138442409938
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.8489414516917174,
+          "era5:high": 0.832172354410186,
+          "ceres:low": 0.8408233682020577,
+          "ceres:high": 0.8255582391954741,
+          "era5:beam": 0.8623263202477593,
+          "ceres:beam": 0.8498281447559639,
+          "sky_view": 0.4333595007640255
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.8089890422926725,
+          "era5:high": 0.7953891987261518,
+          "ceres:low": 0.7996246414502632,
+          "ceres:high": 0.7872745174451513,
+          "era5:beam": 0.8213248007547779,
+          "ceres:beam": 0.8072488035732575,
+          "sky_view": 0.4097592772998547
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.8228997136554106,
+          "era5:high": 0.8072798663208811,
+          "ceres:low": 0.8137754945153474,
+          "ceres:high": 0.7994758297715149,
+          "era5:beam": 0.8372393466826064,
+          "ceres:beam": 0.8232289597279071,
+          "sky_view": 0.41744452176101643
+        },
+        {
+          "roof_edge_m": 6.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.8361644548014339,
+          "era5:high": 0.8185776485819904,
+          "ceres:low": 0.8276022675620551,
+          "ceres:high": 0.8113446539477079,
+          "era5:beam": 0.8519421377632203,
+          "ceres:beam": 0.838599888482795,
+          "sky_view": 0.42544013202524866
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7941244703353084,
+          "era5:high": 0.7724763123613122,
+          "ceres:low": 0.7923287909162697,
+          "ceres:high": 0.7731424926900917,
+          "era5:beam": 0.8205400823515867,
+          "ceres:beam": 0.8135650574380089,
+          "sky_view": 0.39673352747591817
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.8091216562343683,
+          "era5:high": 0.7855383098948967,
+          "ceres:low": 0.807002689695154,
+          "ceres:high": 0.78601506329217,
+          "era5:beam": 0.8355871280173074,
+          "ceres:beam": 0.828306715067267,
+          "sky_view": 0.4075173281901373
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.8236630365115062,
+          "era5:high": 0.7981955640732303,
+          "ceres:low": 0.8215166616897026,
+          "ceres:high": 0.798724251275106,
+          "era5:beam": 0.8498086052398421,
+          "ceres:beam": 0.8427305609289416,
+          "sky_view": 0.41839663876093514
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7596127561232158,
+          "era5:high": 0.7386425644877624,
+          "ceres:low": 0.7567358984805397,
+          "ceres:high": 0.7379101307632427,
+          "era5:beam": 0.7814272972855547,
+          "ceres:beam": 0.774129659629728,
+          "sky_view": 0.3845097228498955
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.7760710522104772,
+          "era5:high": 0.7529039857379117,
+          "ceres:low": 0.7729503928651271,
+          "ceres:high": 0.752061043704091,
+          "era5:beam": 0.7983767630529085,
+          "ceres:beam": 0.7908175854718426,
+          "sky_view": 0.3957217123899244
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.7920814701903857,
+          "era5:high": 0.7667588157858933,
+          "ceres:low": 0.7890091789907412,
+          "ceres:high": 0.7660415207004547,
+          "era5:beam": 0.8144459395545607,
+          "ceres:beam": 0.8071466827257869,
+          "sky_view": 0.4071083219398164
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.72571749170601,
+          "era5:high": 0.7051776237736567,
+          "ceres:low": 0.7230742886311429,
+          "ceres:high": 0.7043167567087244,
+          "era5:beam": 0.7432479885368695,
+          "ceres:beam": 0.7374063941228153,
+          "sky_view": 0.37232782377444373
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.7433662486444972,
+          "era5:high": 0.7203975287623849,
+          "ceres:low": 0.740495225056011,
+          "ceres:high": 0.7194448076549965,
+          "era5:beam": 0.7617342497841065,
+          "ceres:beam": 0.7556146667430471,
+          "sky_view": 0.3838985512765797
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.7605545555259929,
+          "era5:high": 0.735192055271924,
+          "ceres:low": 0.757765279474084,
+          "ceres:high": 0.7343957426497623,
+          "era5:beam": 0.779247297194428,
+          "ceres:beam": 0.773422080396946,
+          "sky_view": 0.39572190389165934
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.804287605929903,
+          "era5:high": 0.7866256709798476,
+          "ceres:low": 0.8010078442378181,
+          "ceres:high": 0.785367411756108,
+          "era5:beam": 0.8221769453134131,
+          "ceres:beam": 0.8148408572059421,
+          "sky_view": 0.4065446585688067
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.818693301028845,
+          "era5:high": 0.7991318486225147,
+          "ceres:low": 0.8151877156230267,
+          "ceres:high": 0.7977757402779909,
+          "era5:beam": 0.8371731967012109,
+          "ceres:beam": 0.8295437835327137,
+          "sky_view": 0.41610472541764276
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.832653726578426,
+          "era5:high": 0.8112387872438696,
+          "ceres:low": 0.8292169884274194,
+          "ceres:high": 0.8100264828124271,
+          "era5:beam": 0.8513405124049315,
+          "ceres:beam": 0.8439263736765117,
+          "sky_view": 0.42581266822602265
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7752420230988329,
+          "era5:high": 0.7576384726203216,
+          "ceres:low": 0.7705049739808972,
+          "ceres:high": 0.7546972007213509,
+          "era5:beam": 0.790281665991021,
+          "ceres:beam": 0.7817693534491287,
+          "sky_view": 0.39558974538773634
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.7909294101294252,
+          "era5:high": 0.7711871279827469,
+          "ceres:low": 0.7860679018278531,
+          "ceres:high": 0.7682444269889698,
+          "era5:beam": 0.806997804305063,
+          "ceres:beam": 0.7982629688149973,
+          "sky_view": 0.4055078027826121
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.8061623800423091,
+          "era5:high": 0.7843195860106942,
+          "ceres:low": 0.8014687836648365,
+          "ceres:high": 0.7816128525102339,
+          "era5:beam": 0.8228143599903374,
+          "ceres:beam": 0.8143815944656906,
+          "sky_view": 0.41564888235883835
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.7475401582636627,
+          "era5:high": 0.7299177487679955,
+          "ceres:low": 0.7428336062090359,
+          "ceres:high": 0.7266836242450601,
+          "era5:beam": 0.7602057531126373,
+          "ceres:beam": 0.7525079366846703,
+          "sky_view": 0.38471892009799885
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.7642422052387838,
+          "era5:high": 0.7442726326813374,
+          "ceres:low": 0.7594449520629586,
+          "ceres:high": 0.7410689993441705,
+          "era5:beam": 0.7782950329278795,
+          "ceres:beam": 0.7703788350027846,
+          "sky_view": 0.39492944180420897
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.7804564892935516,
+          "era5:high": 0.7581747614350027,
+          "ceres:low": 0.7758797101643049,
+          "ceres:high": 0.7552520574293454,
+          "era5:beam": 0.7953701377425932,
+          "ceres:beam": 0.7878137803953745,
+          "sky_view": 0.40543704549401205
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.8172925572735822,
+          "era5:high": 0.8023874455669046,
+          "ceres:low": 0.8123914277381079,
+          "ceres:high": 0.7992237076851606,
+          "era5:beam": 0.8302103099419855,
+          "ceres:beam": 0.8216449975444072,
+          "sky_view": 0.4150878119233357
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.8310211412641647,
+          "era5:high": 0.8142741560005684,
+          "ceres:low": 0.8259970837280716,
+          "ceres:high": 0.8111049115949851,
+          "era5:beam": 0.8449112316657759,
+          "ceres:beam": 0.8361036874312507,
+          "sky_view": 0.42363711104150226
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.8442913992216021,
+          "era5:high": 0.8257459526676504,
+          "ceres:low": 0.8394407867620862,
+          "ceres:high": 0.8228153763831588,
+          "era5:beam": 0.8587641781197168,
+          "ceres:beam": 0.8502264680311159,
+          "sky_view": 0.4323595372330405
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7932925947271396,
+          "era5:high": 0.7782734102966623,
+          "ceres:low": 0.7868205613431379,
+          "ceres:high": 0.7733284770908788,
+          "era5:beam": 0.8046969678330343,
+          "ceres:beam": 0.7945460537322188,
+          "sky_view": 0.4052065091012735
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.8081309050001858,
+          "era5:high": 0.7910576440641749,
+          "ceres:low": 0.8016494761669365,
+          "ceres:high": 0.7862122493306621,
+          "era5:beam": 0.820925688807228,
+          "ceres:beam": 0.8106221809111703,
+          "sky_view": 0.41406038759606684
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.8224846282951156,
+          "era5:high": 0.8033958279886005,
+          "ceres:low": 0.8162884819885643,
+          "ceres:high": 0.798890150726873,
+          "era5:beam": 0.8362168635252578,
+          "ceres:beam": 0.8262905052794091,
+          "sky_view": 0.42315792593141877
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.7717345227100207,
+          "era5:high": 0.7566002607784879,
+          "ceres:low": 0.764761399723483,
+          "ceres:high": 0.7509560546070974,
+          "era5:beam": 0.7824846755888195,
+          "ceres:beam": 0.7720017169545093,
+          "sky_view": 0.39542997155181214
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.7874134809455003,
+          "era5:high": 0.7700454774567949,
+          "ceres:low": 0.780491695374533,
+          "ceres:high": 0.7645562116856591,
+          "era5:beam": 0.7999068250028105,
+          "ceres:beam": 0.7893063610577318,
+          "sky_view": 0.40452716479462425
+        },
+        {
+          "roof_edge_m": 7.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.8025529653362071,
+          "era5:high": 0.7829904794803273,
+          "ceres:low": 0.7959983218931657,
+          "ceres:high": 0.7779112823049981,
+          "era5:beam": 0.8162512108052116,
+          "ceres:beam": 0.8061207320743765,
+          "sky_view": 0.4139375382178291
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7861211070817882,
+          "era5:high": 0.7612351188729523,
+          "ceres:low": 0.785472934889869,
+          "ceres:high": 0.7634118759603457,
+          "era5:beam": 0.8205400823515867,
+          "ceres:beam": 0.8135650574380089,
+          "sky_view": 0.3874877011306241
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.8016805823630876,
+          "era5:high": 0.7748291777839933,
+          "ceres:low": 0.8006196555489699,
+          "ceres:high": 0.7767327132982796,
+          "era5:beam": 0.8355871280173074,
+          "ceres:beam": 0.828306715067267,
+          "sky_view": 0.39949899549310586
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.8167556157488477,
+          "era5:high": 0.7879944836177947,
+          "ceres:low": 0.8155819433761178,
+          "ceres:high": 0.7898687829129124,
+          "era5:beam": 0.8498086052398421,
+          "ceres:beam": 0.8427305609289416,
+          "sky_view": 0.41152559446402825
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7504870746991673,
+          "era5:high": 0.7262956501775113,
+          "ceres:low": 0.7489078309846116,
+          "ceres:high": 0.7272063947998433,
+          "era5:beam": 0.7809714862468927,
+          "ceres:beam": 0.7737657683006272,
+          "sky_view": 0.3740248634430145
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.7675387277127849,
+          "era5:high": 0.7411111624375089,
+          "ceres:low": 0.7656195529152702,
+          "ceres:high": 0.7418219670925061,
+          "era5:beam": 0.797930988758566,
+          "ceres:beam": 0.7904615091717493,
+          "sky_view": 0.38654058354350307
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.7841177574425471,
+          "era5:high": 0.7554995878487799,
+          "ceres:low": 0.7821545856942106,
+          "ceres:high": 0.7562489775745384,
+          "era5:beam": 0.8140110748831868,
+          "ceres:beam": 0.8067991011786119,
+          "sky_view": 0.39915270527088054
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.712097469607993,
+          "era5:high": 0.6888469626669957,
+          "ceres:low": 0.7111547644445264,
+          "ceres:high": 0.6899438715407323,
+          "era5:beam": 0.7370968208175847,
+          "ceres:beam": 0.7321472959810118,
+          "sky_view": 0.3605390892528349
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.7304616604764785,
+          "era5:high": 0.7047290094018185,
+          "ceres:low": 0.729175636219241,
+          "ceres:high": 0.7056286028417995,
+          "era5:beam": 0.7556897437299467,
+          "ceres:beam": 0.7504423869101803,
+          "sky_view": 0.37348734838280384
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 0.85,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.7483540972970966,
+          "era5:high": 0.7201771767985296,
+          "ceres:low": 0.7470364855426169,
+          "ceres:high": 0.7211288424411725,
+          "era5:beam": 0.7733218040125186,
+          "ceres:beam": 0.7683467246271812,
+          "sky_view": 0.38661209107994593
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.7949072964833265,
+          "era5:high": 0.7741139006082373,
+          "ceres:low": 0.7929981951695642,
+          "ceres:high": 0.774557677769455,
+          "era5:beam": 0.8205400823515867,
+          "ceres:beam": 0.8135650574380089,
+          "sky_view": 0.396785480928685
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.8098983448882505,
+          "era5:high": 0.7871628009874979,
+          "ceres:low": 0.8076678246095841,
+          "ceres:high": 0.7874209683555089,
+          "era5:beam": 0.8355871280173074,
+          "ceres:beam": 0.828306715067267,
+          "sky_view": 0.40756260176307774
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.8244335339259058,
+          "era5:high": 0.7998062696807203,
+          "ceres:low": 0.8221776108368135,
+          "ceres:high": 0.800120533377231,
+          "era5:beam": 0.8498086052398421,
+          "ceres:beam": 0.8427305609289416,
+          "sky_view": 0.41843558936764397
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7604281249361919,
+          "era5:high": 0.7403407507270636,
+          "ceres:low": 0.7574341739132942,
+          "ceres:high": 0.7393798358885424,
+          "era5:beam": 0.7814272972855547,
+          "ceres:beam": 0.774129659629728,
+          "sky_view": 0.3845685112032635
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.7768817710325704,
+          "era5:high": 0.7545918025343099,
+          "ceres:low": 0.7736458602294087,
+          "ceres:high": 0.7535241920341632,
+          "era5:beam": 0.7983767630529085,
+          "ceres:beam": 0.7908175854718426,
+          "sky_view": 0.39577342163939916
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.7928874265001004,
+          "era5:high": 0.7684354458068655,
+          "ceres:low": 0.7897018679913189,
+          "ceres:high": 0.7674976454149939,
+          "era5:beam": 0.8144459395545607,
+          "ceres:beam": 0.8071466827257869,
+          "sky_view": 0.40715329253294097
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.7265669245290236,
+          "era5:high": 0.7069384133630018,
+          "ceres:low": 0.7238029833126697,
+          "ceres:high": 0.7058431866774988,
+          "era5:beam": 0.7432479885368695,
+          "ceres:beam": 0.7374063941228153,
+          "sky_view": 0.372393734410194
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.7442125636574539,
+          "era5:high": 0.7221506965493802,
+          "ceres:low": 0.7412226173463794,
+          "ceres:high": 0.7209674259042803,
+          "era5:beam": 0.7617342497841065,
+          "ceres:beam": 0.7556146667430471,
+          "sky_view": 0.383957001096554
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.0,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.7613975542515989,
+          "era5:high": 0.7369366031727401,
+          "ceres:low": 0.7584913442832908,
+          "ceres:high": 0.7359139525201606,
+          "era5:beam": 0.779247297194428,
+          "ceres:beam": 0.773422080396946,
+          "sky_view": 0.39577321671617915
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            250.0
+          ],
+          "era5:low": 0.8034577299349972,
+          "era5:high": 0.7861209949992894,
+          "ceres:low": 0.8003041776218565,
+          "ceres:high": 0.7849352065270068,
+          "era5:beam": 0.8216620281162786,
+          "ceres:beam": 0.8144397004795804,
+          "sky_view": 0.405208426464712
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            256.0
+          ],
+          "era5:low": 0.8179475957337875,
+          "era5:high": 0.7987000222235884,
+          "ceres:low": 0.8145548664945595,
+          "ceres:high": 0.7974058588936924,
+          "era5:beam": 0.8366748140625915,
+          "ceres:beam": 0.8291551503912336,
+          "sky_view": 0.41493094510966705
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            161.0,
+            262.0
+          ],
+          "era5:low": 0.8319916876358682,
+          "era5:high": 0.8108790360980397,
+          "ceres:low": 0.8286545871454921,
+          "ceres:high": 0.80971834996214,
+          "era5:beam": 0.8508597539296263,
+          "ceres:beam": 0.843551077211579,
+          "sky_view": 0.42479583093645124
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            250.0
+          ],
+          "era5:low": 0.7738463052007478,
+          "era5:high": 0.7566579603761706,
+          "ceres:low": 0.7692418601181193,
+          "ceres:high": 0.7537878493494548,
+          "era5:beam": 0.7890166989421841,
+          "ceres:beam": 0.7806589042941486,
+          "sky_view": 0.3940831214664405
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            256.0
+          ],
+          "era5:low": 0.7896392475605125,
+          "era5:high": 0.7702993713830286,
+          "ceres:low": 0.7848954670206346,
+          "ceres:high": 0.7674162344359541,
+          "era5:beam": 0.8057695249527099,
+          "ceres:beam": 0.7971832627015648,
+          "sky_view": 0.4041726047158543
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            167.0,
+            262.0
+          ],
+          "era5:low": 0.8049792870934057,
+          "era5:high": 0.7835255069438678,
+          "ceres:low": 0.8003885937836417,
+          "ceres:high": 0.7808669054394967,
+          "era5:beam": 0.8216257289996243,
+          "ceres:beam": 0.8133351367417455,
+          "sky_view": 0.41448023369605796
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            250.0
+          ],
+          "era5:low": 0.7454467415533137,
+          "era5:high": 0.7284229035122572,
+          "ceres:low": 0.7408529212201856,
+          "ceres:high": 0.725222794107783,
+          "era5:beam": 0.7579094683252123,
+          "ceres:beam": 0.7504018371490752,
+          "sky_view": 0.3830374524838188
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            256.0
+          ],
+          "era5:low": 0.7622793642444141,
+          "era5:high": 0.7428952282076363,
+          "ceres:low": 0.7575782857019272,
+          "ceres:high": 0.7397128541838467,
+          "era5:beam": 0.776056009085129,
+          "ceres:beam": 0.7683220916667574,
+          "sky_view": 0.3934277726269547
+        },
+        {
+          "roof_edge_m": 8.0,
+          "scale": 1.15,
+          "opening_deg": [
+            173.0,
+            262.0
+          ],
+          "era5:low": 0.7786285743024439,
+          "era5:high": 0.7569181935948907,
+          "ceres:low": 0.774131372828265,
+          "ceres:high": 0.7540041439779692,
+          "era5:beam": 0.7931941567964147,
+          "ceres:beam": 0.7858114465538381,
+          "sky_view": 0.40411092311592145
+        }
+      ]
+    }
+  },
+  "south_face_bracket_by_axis": {
+    "roof_edge_alone": {
+      "total_kept_min": 0.6556382039832038,
+      "total_kept_max": 0.7125369106213826
+    },
+    "scale_alone": {
+      "total_kept_min": 0.654298121761613,
+      "total_kept_max": 0.7040414115825164
+    },
+    "roof_edge_and_scale": {
+      "total_kept_min": 0.6437774658408203,
+      "total_kept_max": 0.7409252319525241
+    },
+    "eastern_edge_alone": {
+      "total_kept_min": 0.6301468502288514,
+      "total_kept_max": 0.7283741172516677
+    },
+    "western_edge_alone": {
+      "total_kept_min": 0.6697319768445552,
+      "total_kept_max": 0.6846639664545091
+    }
+  }
+}

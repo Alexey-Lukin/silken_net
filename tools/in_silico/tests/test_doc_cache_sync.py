@@ -11991,6 +11991,105 @@ CHECKS += [
      lambda d: d["controls"]["air_correlation"], 0.0005),
 ]
 
+# ── HW.54 Р3(б)(4) — the logger's face in a courtyard (125, 2026-11-14) ⟷ SUMMARY §«How Much Winter Light Reaches the
+# Logger's Face in a Courtyard?». Shares are pinned as printed (three decimals; the tolerance is half the last digit).
+_CYD = "kinetics/stem_face_courtyard.json"
+_CYD_ROWS = {"south_180": r"CY south face, 180°", "opening_centre": r"CY face turned to the opening, 211\.5°"}
+_CYD_B = r"\*\*[\d.]+\*\*"
+_CYD_R = rf"{_CYD_B}–{_CYD_B}"
+
+
+def _cyd_base(face, *path):
+    def get(d):
+        node = d["base"][face]
+        for key in path:
+            node = node[key]
+        return node
+    return get
+
+
+def _cyd_key(*path):
+    def get(d):
+        node = d
+        for key in path:
+            node = node[key]
+        return node
+    return get
+
+
+def _cyd_bracket(face, key):
+    return lambda d: d["bracket"][face][key]
+
+
+def _cyd_range(prefix, lead, stem):
+    """Two pins for a «**lo**–**hi**» cell that follows `lead` cells of ranges or single bold numbers."""
+    return ((f"{prefix} min", lead + rf"\*\*{N}\*\*–{_CYD_B} \|", f"{stem}_min"),
+            (f"{prefix} max", lead + rf"{_CYD_B}–\*\*{N}\*\* \|", f"{stem}_max"))
+
+
+CHECKS += [
+    *[(f"125 {face} {lab} → SUMMARY", SUMMARY, rf"\| {row} \| " + pat, _CYD, fn, 0.0005)
+      for face, row in _CYD_ROWS.items() for lab, pat, fn in (
+        ("beam kept", rf"\*\*{N}\*\* \|", _cyd_base(face, "by_sky", "era5", "beam_kept")),
+        ("sky-diffuse kept", rf"{_CYD_B} \| \*\*{N}\*\* \|", _cyd_base(face, "by_sky", "era5", "sky_diffuse_kept")),
+        ("total ERA5 low", rf"{_CYD_B} \| {_CYD_B} \| \*\*{N}\*\* / ", _cyd_base(face, "by_sky", "era5", "low", "total_kept")),
+        ("total ERA5 high", rf"{_CYD_B} \| {_CYD_B} \| {_CYD_B} / \*\*{N}\*\* \|", _cyd_base(face, "by_sky", "era5", "high", "total_kept")),
+        ("total product low", rf"{_CYD_B} \| {_CYD_B} \| {_CYD_B} / {_CYD_B} \| \*\*{N}\*\* / ",
+         _cyd_base(face, "by_sky", "ceres", "low", "total_kept")),
+        ("total product high", rf"{_CYD_B} \| {_CYD_B} \| {_CYD_B} / {_CYD_B} \| {_CYD_B} / \*\*{N}\*\* \|",
+         _cyd_base(face, "by_sky", "ceres", "high", "total_kept")),
+        ("bracket min", rf"(?:{_CYD_B}[ |/]+){{6}}\*\*{N}\*\*–", _cyd_bracket(face, "total_kept_min")),
+        ("bracket max", rf"(?:{_CYD_B}[ |/]+){{6}}{_CYD_B}–\*\*{N}\*\* \|", _cyd_bracket(face, "total_kept_max")))],
+    *[(f"125 {lab} → SUMMARY", SUMMARY, pat, _CYD, fn, tol) for lab, pat, fn, tol in (
+        ("eastern wing end", rf"put the eastern wing's end \*\*{N}\*\* m in front of the tree",
+         _cyd_key("controls", "kernels", "eastern_wing_ends_in_front_of_the_tree_m"), 0.05),
+        ("western wing end", rf"and the western one's \*\*{N}\*\* m, and make the wings",
+         _cyd_key("controls", "kernels", "western_wing_ends_in_front_of_the_tree_m"), 0.05),
+        ("roof edge toward the back wall", rf"the roof edge stands \*\*{N}\*\*° up toward the back wall",
+         _cyd_key("controls", "kernels", "roof_edge_from_the_logger_deg", "back_wall_normal"), 0.05),
+        ("roof edge on the eastern wall's normal", rf"\*\*{N}\*\*° on the eastern wall's normal",
+         _cyd_key("controls", "kernels", "roof_edge_from_the_logger_deg", "eastern_wall_normal"), 0.05),
+        ("roof edge on the western wall's normal", rf"\*\*{N}\*\*° on the western one's and",
+         _cyd_key("controls", "kernels", "roof_edge_from_the_logger_deg", "western_wall_normal"), 0.05),
+        ("roof edge at the opening's eastern edge", rf"and \*\*{N}\*\*° at the opening's eastern edge",
+         _cyd_key("controls", "kernels", "roof_edge_from_the_logger_deg", "opening_eastern_edge"), 0.05),
+        ("highest winter sun", rf"the highest sun of the nineteen winters is \*\*{N}\*\*°", _cyd_key("controls", "highest_winter_sun_deg"), 0.05),
+        ("trunk moved, min", rf"all three distances and both edges moving together: \*\*{N}\*\*–", _cyd_key("trunk_moved", "bracket", "total_kept_min"), 0.0005),
+        ("trunk moved, max", rf"all three distances and both edges moving together: {_CYD_B}–\*\*{N}\*\* ",
+         _cyd_key("trunk_moved", "bracket", "total_kept_max"), 0.0005),
+        ("turned over south ERA5 low", rf"receives \*\*{N}\*\* / {_CYD_B} of the south face's light under ERA5's sky",
+         _cyd_key("face_turned_to_the_opening_over_south_face", "era5", "low"), 0.0005),
+        ("turned over south ERA5 high", rf"receives {_CYD_B} / \*\*{N}\*\* of the south face's light under ERA5's sky",
+         _cyd_key("face_turned_to_the_opening_over_south_face", "era5", "high"), 0.0005),
+        ("turned over south product low", rf"and \*\*{N}\*\* / {_CYD_B} under the product's; across bracket",
+         _cyd_key("face_turned_to_the_opening_over_south_face", "ceres", "low"), 0.0005),
+        ("turned over south product high", rf"and {_CYD_B} / \*\*{N}\*\* under the product's; across bracket",
+         _cyd_key("face_turned_to_the_opening_over_south_face", "ceres", "high"), 0.0005),
+        ("turned over south, bracket min", rf"across bracket \(i\), \*\*{N}\*\*–{_CYD_B}\.",
+         _cyd_key("face_turned_to_the_opening_over_south_face_across_the_bracket", "min"), 0.0005),
+        ("turned over south, bracket max", rf"across bracket \(i\), {_CYD_B}–\*\*{N}\*\*\.",
+         _cyd_key("face_turned_to_the_opening_over_south_face_across_the_bracket", "max"), 0.0005))],
+    *[(f"125 eastern edge {edge}° {lab} → SUMMARY", SUMMARY, rf"\| EE {edge}°[^|]*\| " + pat, _CYD,
+       _cyd_key("eastern_edge_alone", edge, key), 0.0005)
+      for edge in ("150", "155", "161", "167", "173", "180", "190") for lab, key, pat in (
+        ("beam", "beam_kept_era5", rf"\*\*{N}\*\* \|"),
+        ("total min", "total_kept_min", rf"{_CYD_B} \| \*\*{N}\*\*–"),
+        ("total max", "total_kept_max", rf"{_CYD_B} \| {_CYD_B}–\*\*{N}\*\* \|"))],
+    *[(f"125 horizon {hz}° {lab} → SUMMARY", SUMMARY, rf"\| HZ {hz}°[^|]*\| " + pat, _CYD,
+       _cyd_key("opening_horizon", hz, key), 0.0005)
+      for hz in ("0", "5", "10", "15", "20", "25", "30", "35", "45", "60") for lab, pat, key in (
+        *_cyd_range("south", "", "south_face_total_kept"),
+        *_cyd_range("building's share", rf"{_CYD_R} \| ", "building_share_given_the_horizon"),
+        ("building's share of the sky-diffuse", rf"{_CYD_R} \| {_CYD_R} \| \*\*{N}\*\* \|", "building_share_of_the_sky_diffuse"),
+        *_cyd_range("turned", rf"{_CYD_R} \| {_CYD_R} \| {_CYD_B} \| ", "turned_over_south"))],
+    *[(f"125 screen {name} {lab} → SUMMARY", SUMMARY, rf"\| SC {row} \| " + pat, _CYD,
+       _cyd_key("screen_in_one_half_of_the_opening", name, key), 0.0005)
+      for name, row in (("eastern_half_40", "eastern half, 40°"), ("western_half_40", "western half, 40°"),
+                        ("eastern_half_20", "eastern half, 20°"), ("western_half_20", "western half, 20°"))
+      for lab, pat, key in (*_cyd_range("turned", "", "turned_over_south"),
+                            *_cyd_range("south", rf"{_CYD_R} \| ", "south_face_total_kept"))],
+]
+
 # Kept numbers whose cache has ALREADY moved: the dated ⊕ beside each took the live pin over, so these rows carry no
 # resolver of their own — the registry below gives them a frozen one (an unregistered row here fails loudly).
 CHECKS += [
@@ -14046,6 +14145,90 @@ def test_second_sky_words_follow_the_cache():
     assert (f"Under an NREL truth: {npf('era5', n)} to {npf('ceres', n)} on ERA5's air, {npf('ceres_cold_both', n)} and "
             f"{npf('era5_cold_both', n)} on the dew-point reading, {npf('ceres_frost_both', n)} and {npf('era5_frost_both', n)} on "
             "the frost-point one") in text
+
+
+
+def test_courtyard_words_follow_the_cache():
+    """125's SUMMARY section in WORDS: the plan's inputs, the by-axis brackets, the months, the crowns, the reading's
+    ranges and the table of hours — each sentence rebuilt from the cache. CAN catch a re-run (another plan, another
+    sun) that leaves those sentences behind; CANNOT catch a reworded sentence that keeps its anchor."""
+    d, text = C(_CYD), doc(SUMMARY)
+    inp, k = d["inputs"], d["controls"]["kernels"]
+    w = inp["walls_m"]
+    assert f"the tree stands {w['back']:g} m from it, {w['east']:g} m from the eastern wing and {w['west']:g} m from the western one" in text
+    assert f"the opening seen from the tree is about {inp['opening_deg'][0]:g}°–{inp['opening_deg'][1]:g}°" in text
+    trees = inp["trees_beyond_the_opening_m"]
+    assert f"beyond the opening stand trees some {trees[0]:g}–{trees[1]:g} m away" in text
+    wings = k["wing_lengths_from_the_back_wall_m"]
+    assert f"make the wings {wings['east']:.1f} and {wings['west']:.1f} m long from the back wall" in text
+    assert f"the south face's view of the walls is {d['base']['south_180']['view_factors']['walls']:.3f} of its 0.5" in text
+    crown = k["crown_line_from_the_logger_deg"].values()
+    assert f"standing 10–20 m away is at {min(crown):.0f}°–{max(crown):.0f}° — at or above that sun" in text
+    assert min(crown) > d["controls"]["highest_winter_sun_deg"]
+    s = d["base"]["south_180"]["by_sky"]
+    assert f"(the product's: {s['ceres']['beam_kept']:.3f} and {d['base']['opening_centre']['by_sky']['ceres']['beam_kept']:.3f})" in text
+    m = s["era5"]["low"]["by_month"]
+    east = s["era5"]["share_of_the_open_beam_from_east_of_the_opening_by_month"]
+    assert (f"keeps {m['12']:.2f} in December, {m['1']:.2f} in January and {m['2']:.2f} in February (ERA5, low end); the share of its "
+            f"open beam that comes from east of the opening is {east['12']:.2f}, {east['1']:.2f} and {east['2']:.2f}") in text
+    ax = d["south_face_bracket_by_axis"]
+
+    def span(key):
+        return f"{ax[key]['total_kept_min']:.3f}–{ax[key]['total_kept_max']:.3f}"
+
+    assert (f"the roof edge alone {span('roof_edge_alone')}, the scale alone {span('scale_alone')}, the two together "
+            f"{span('roof_edge_and_scale')}, the eastern edge alone {span('eastern_edge_alone')}, the western edge alone "
+            f"{span('western_edge_alone')} (the winter sun's westernmost bearing is {d['winter_sun_westernmost_bearing_deg']:.0f}°)") in text
+    tb = d["trunk_moved"]["bracket"]
+    assert (f"(up to 1 m: {tb['within_one_metre_min']:.3f}–{tb['within_one_metre_max']:.3f}) — lowest with the trunk 2 m nearer the "
+            f"eastern wing and the back wall (the opening then {tb['at_min']['opening_deg'][0]:.0f}°–{tb['at_min']['opening_deg'][1]:.0f}°), "
+            f"highest 2 m the other way ({tb['at_max']['opening_deg'][0]:.0f}°–{tb['at_max']['opening_deg'][1]:.0f}°)") in text
+    assert tb["at_min"]["to_the_eastern_wing_m"] == 2.0 == tb["at_min"]["to_the_back_wall_m"]
+    assert tb["at_max"]["to_the_eastern_wing_m"] == -2.0 == tb["at_max"]["to_the_back_wall_m"]
+    assert f"with the plan's brackets, between {tb['total_kept_min']:.2f} and {tb['total_kept_max']:.2f} is kept" in text
+    assert tb["total_kept_min"] <= d["bracket"]["south_180"]["total_kept_min"] and d["bracket"]["south_180"]["total_kept_max"] <= tb["total_kept_max"]
+    totals = [s[sky][end]["total_kept"] for sky in ("era5", "ceres") for end in ("low", "high")]
+    assert "takes about a third of the south face's winter light" in text and 1 - max(totals) > 0.30 and 1 - min(totals) < 0.36
+    hz = d["opening_horizon"]
+    tall = [hz[h] for h in ("35", "45", "60")]
+    sight = d["sun_first_seen_from_the_trunk"]
+    dec = sight["12-21"]["sun_elevation_by_bearing_deg"]
+    share = [v[f"building_share_given_the_horizon_{end}"] for v in hz.values() for end in ("min", "max")]
+    assert (f"under a level opaque horizon of 35°–60° the face keeps {min(v['south_face_total_kept_min'] for v in tall):.2f}–"
+            f"{max(v['south_face_total_kept_max'] for v in tall):.2f} of an open face's light, and the building's share given that horizon is "
+            f"{min(v['building_share_given_the_horizon_min'] for v in tall):.2f}–{max(v['building_share_given_the_horizon_max'] for v in tall):.2f}, "
+            "not two thirds") in text
+    assert f"under high crowns a December sun {dec['210']:.0f}°–{dec['170']:.0f}° up passes among the trunks" in text
+    assert f"between them the building's share runs {min(share):.2f}–{max(share):.2f}" in text
+    dif = [v["building_share_of_the_sky_diffuse"] for v in tall]
+    assert (f"it runs narrower: {hz['0']['building_share_of_the_sky_diffuse']:.2f} with an empty horizon, {min(dif):.2f}–{max(dif):.2f} "
+            "at 35°–60°") in text
+    level = [v[f"turned_over_south_{end}"] for v in hz.values() for end in ("min", "max")]
+    scr = d["screen_in_one_half_of_the_opening"]
+    assert (f"is not the lever: {min(level):.2f}–{max(level):.2f} of the south face's light under any level horizon, and with a screen "
+            f"in one half the sign follows the half — {scr['eastern_half_40']['turned_over_south_min']:.2f}–"
+            f"{scr['eastern_half_40']['turned_over_south_max']:.2f} when the eastern half is screened at 40°, "
+            f"{scr['western_half_40']['turned_over_south_min']:.2f}–{scr['western_half_40']['turned_over_south_max']:.2f} when the western one is") in text
+    assert scr["eastern_half_40"]["turned_over_south_min"] > 1.0 > scr["western_half_40"]["turned_over_south_max"]
+    # the spread of the building's share against the gap between `110`'s favourable and nominal thresholds at cadence C
+    assert (f"a share known no better than {min(share):.2f}–{max(share):.2f} spreads wider than the 1.64 times between `110`'s "
+            "favourable and nominal thresholds at cadence C") in text
+    assert max(share) / min(share) > 1.64 and re.search(r"\| Cadence C \| 0\.0218 ⊥ [\d.]+ \| 0\.0358 ⊥", text)
+    assert abs(0.0358 / 0.0218 - 1.64) < 0.005
+    roof = k["roof_edge_from_the_logger_deg"]
+    assert (f"toward the back wall (the model: {roof['back_wall_normal']:.1f}°), square to the eastern wing ({roof['eastern_wall_normal']:.1f}°), "
+            f"square to the western one ({roof['western_wall_normal']:.1f}°), and just east of the opening's eastern edge "
+            f"({roof['opening_eastern_edge']:.1f}°)") in text
+    ratio = k["eastern_wing_end_over_its_distance_by_eastern_edge"]
+    assert f"{ratio['167']:.2f} for an eastern edge at 167°, {ratio['161']:.2f} at 161°, {ratio['173']:.2f} at 173°" in text
+    names = {"11-21": "21 November", "12-21": "21 December", "01-21": "21 January", "02-11": "11 February", "02-21": "21 February"}
+    for date, v in sight.items():
+        heights = " · ".join(f"{v['sun_elevation_by_bearing_deg'][b]:.0f}°" for b in ("170", "190", "210", "230"))
+        roofed = " — over the roof" if v["first_seen_over_the_roof"] else ""
+        assert (f"| {names[date]} | {v['bearing_passes_the_eastern_edge_local']} | {v['first_seen_from_eye_height_local']}{roofed} | "
+                f"{heights} |") in text, date
+    assert [date for date, v in sight.items() if v["first_seen_over_the_roof"]] == ["02-21"]
+    assert "Late in February the sun clears the eastern wing's roof before its bearing reaches the opening's edge" in text
 
 
 @pytest.mark.parametrize("module", ["test_doc_cache_sync.py", "test_cache_integrity.py"])
