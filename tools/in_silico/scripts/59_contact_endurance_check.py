@@ -25,9 +25,11 @@ Verdicts by part (see the three functions + `main` for the full reasoning and ca
      the pin — conditional on the rim holding the capsule (the bayonet clamp keeping the rim from lifting; the O-ring reaction is `88`'s), and in inputs the
      tree does not have — so the working stress still needs the drawing and those inputs — PARTIAL.
   2. PEEK mechanical-lock barb (cyclic fatigue, NOT the already-tracked HW.26 static cold-flow
-     creep) — a real endurance-limit reference now exists (30-48 MPa @ 1e6-1e7 cycles, two
-     independent sources) but the actual barb contact-stress amplitude is not computed (HW.26 FEA
-     still open) — PARTIAL, hands HW.26 an acceptance threshold to FEA against.
+     creep) — two literature READINGS (30-48 MPa @ 1e6-1e7 cycles), held as the anchor until a new
+     source moves them (00_07 HW.34): neither is a material limit, and for an axially or bending-
+     loaded PEEK wall the pair is a CEILING, not a floor (`loading_mode_caveat`). The actual barb
+     contact-stress amplitude is not computed (HW.26 FEA still open) — PARTIAL, hands HW.26 a
+     ceiling to FEA against.
   3. Genipin-chitosan-CNC matrix — CATEGORY MISMATCH, a correction to HW.43's own list, not a
      finding about the matrix: it is a ~10-20 µm enzyme-immobilization hydrogel COATING (01_03
      §2.1 Layer 4), not a load-bearing spring/structural element under the 0.5-5 N axial stress
@@ -38,15 +40,17 @@ Verdicts by part (see the three functions + `main` for the full reasoning and ca
      hydrogel coating the way it does for metals/PEEK. Durability axis for this part is chemical/
      enzymatic (HW.5 stability tests), not mechanical fatigue.
 
-Sources (fetched 2026-09-09 + 2026-10-01, see verdict `sources` list in the JSON output for exact citations):
+Sources (fetched 2026-09-09 + 2026-10-01, the PEEK pair re-read 2026-11-15; see verdict `sources` list in the JSON output
+for exact citations):
   - BeCu C17200 VHCF: the anchor points are printed by the Li et al. 2025 Adv. Eng. Mater. abstract
     (R not stated); the sibling Ma et al. 2025 EFM "Specific very high cycle fatigue fracture mechanism
     in C17200 beryllium copper alloy…" (ScienceDirect; SSRN 5074646 preprint sect. 2.2 — 20 kHz,
     R = -1) + "Rotating Bending Fatigue Behaviors of C17200…" (PMC/NCBI).
   - Mill-Max 0906 series product page (mill-max.com) — mechanical life spec.
-  - PEEK endurance limit: peekchina.com "Fatigue Strength of PEEK: A Guide for Gear Engineers" +
-    Pastukhov et al. 2020, "Physical background of the endurance limit in poly(ether ether ketone)",
-    J. Polym. Sci. (Wiley).
+  - PEEK endurance readings: peekchina.com "Fatigue Strength of PEEK: A Guide for Gear Engineers" (a vendor
+    flexural figure, no R stated) + Pastukhov, Kanters, Engels, Govaert 2020, "Physical background of the
+    endurance limit in poly(ether ether ketone)", J. Polym. Sci. 58(5), 716-736, doi 10.1002/pol.20190091
+    (Crossref-verified; body read 2026-11-15 — R 0.1, the limit apparent, not a design parameter).
 """
 from __future__ import annotations
 
@@ -161,10 +165,32 @@ def pogo_spring_verdict(budget: dict) -> dict:
     }
 
 
+# The two PEEK sources, ONE wording each: the part's notes and the `sources` list both quote them (in-silico §When
+# Modifying #5). Rewritten 2026-11-15 against the second paper's BODY (00_07 HW.34) — the earlier note had read a flat
+# material limit into its title. The anchor's numbers did not move: a new source moves them, not this re-reading.
+PEEK_SOURCE_PEEKCHINA = ("peekchina.com — 'Fatigue Strength of PEEK: A Guide for Gear Engineers' — unfilled PEEK endurance "
+                         "limit 30-40 MPa @ 1e6-1e7 cycles under flexural/bending fatigue, for the vendor's own grade at room "
+                         "temperature, dry; no R-ratio, specimen, frequency or source stated (re-read 2026-11-15, script 126's "
+                         "READINGS) — a vendor claim without a DOI (in-silico §Critical Rules #44)")
+PEEK_SOURCE_PASTUKHOV = ("Pastukhov, Kanters, Engels, Govaert 2020, J. Polym. Sci. 58(5), 716-736, 'Physical background of the "
+                         "endurance limit in poly(ether ether ketone)', doi 10.1002/pol.20190091 (Crossref-verified, CC BY 4.0; "
+                         "body read in a browser 2026-11-15, Wiley refuses machine fetches) — cyclic tests tension-tension, "
+                         "sinusoidal, R 0.1, 1 Hz, servo-hydraulic, on injection-moulded ASTM D638 Type I bars and 0.5 mm "
+                         "compression-moulded sheets of KETASPIRE KT-820, at 23-130 °C; its abstract ties the 'apparent "
+                         "endurance (fatigue) limit' to an evolution of the yield stress (physical aging, strain hardening from "
+                         "texture), and its body concludes the limit is not a material property — it depends on temperature, "
+                         "processing and loading history and is not a reliable design parameter. The anchor's ~41-48 MPa @ 1e7: "
+                         "not found in the paper's text; likely a figure reading, unverified")
+
+
 def peek_barb_cyclic_verdict(budget: dict) -> dict:
-    endurance_lo_MPa, endurance_hi_MPa = 30.0, 48.0  # unfilled PEEK, 1e6-1e7 cycles, 2 converging sources
+    # Two READINGS, not a converged limit: 30 = the vendor's flexural figure (R not stated); 48 = attributed to
+    # Pastukhov 2020 with no page in its text (R 0.1 there — in-silico §Critical Rules #43). Held as the anchor until a
+    # new source moves them (00_07 HW.34); script 126 reads them, as two named R readings.
+    endurance_lo_MPa, endurance_hi_MPa = 30.0, 48.0
     tested_hi = 1.0e7
     orders = (math.log10(budget["floor"] / tested_hi), math.log10(budget["ceiling"] / tested_hi))
+    span = f"{endurance_lo_MPa:.0f}-{endurance_hi_MPa:.0f} MPa"
     return {
         "part": "PEEK mechanical-lock barb (HW.26) — CYCLIC fatigue axis, distinct from HW.26's "
                 "already-tracked STATIC cold-flow creep (time-based, not cycle-based — orthogonal "
@@ -173,19 +199,34 @@ def peek_barb_cyclic_verdict(budget: dict) -> dict:
         "tested_range_cycles": [1.0e6, tested_hi],
         "budget_cycles": [budget["floor"], budget["ceiling"]],
         "budget_orders_beyond_tested": [round(o, 2) for o in orders],
-        "extrapolation_note": (f"the budget is {orders[0]:.1f}-{orders[1]:.1f} orders beyond the tested range, but "
-                               "PEEK's endurance limit is reported as a genuine flat fatigue limit (self-heating/"
-                               "crack-arrest mechanism, not VHCF-style continued degradation like metals) — "
-                               "Pastukhov et al. 2020 title is literally 'Physical background of the ENDURANCE "
-                               "LIMIT in PEEK'. Treat 30 MPa as a defensible lower-bound acceptance threshold, not "
-                               "a precisely-validated number at the budget."),
+        "loading_mode_caveat": (f"neither reading is a material limit, and for an axially or bending-loaded PEEK wall (the "
+                                f"barb root; the liner wall of script 126) the {span} pair is a CEILING, not a floor: "
+                                f"(i) {endurance_lo_MPa:.0f} is a FLEXURAL figure with no R stated — carried to an axially "
+                                "loaded section it is optimistic (a bending specimen peaks at its outer fibre only); "
+                                f"(ii) {endurance_hi_MPa:.0f}, if it is read off Pastukhov 2020, is a MAXIMUM stress at "
+                                "R 0.1 (tension-tension, a mean-stressed cycle) — read as a fully reversed amplitude it "
+                                "has no ground, and carried to R = -1 it falls (script 126's reading F2, a Goodman "
+                                "conversion that is ours); (iii) both stop at 1e7 cycles (extrapolation_note). Neither is "
+                                "of an extruded thin wall (Pastukhov: moulded bars and 0.5 mm moulded sheets; peekchina: "
+                                "specimen not stated)."),
+        "extrapolation_note": (f"the budget is {orders[0]:.1f}-{orders[1]:.1f} orders beyond the tested range, and no flat "
+                               "limit carries it there: the high end's source (Pastukhov et al. 2020 — R 0.1, 1 Hz, "
+                               "23-130 °C) finds the endurance limit APPARENT, a stagnation of the yield stress's "
+                               "evolution (physical aging, texture) — not a material property, dependent on temperature, "
+                               "processing and loading history, not a reliable design parameter; its flattening does "
+                               "not mean failure is avoided. A part that survives the budget's cycles has survived "
+                               "1e7, so at the same cycle (R, temperature, specimen) the stress it can carry for the "
+                               "budget is at most the 1e7 reading — how far below it, no source past 1e7 says. Treat "
+                               f"{endurance_lo_MPa:.0f} MPa as the low end of a CEILING, not as a lower-bound "
+                               "acceptance threshold."),
         "closed": False,
-        "verdict": "Reference endurance limit established (30-48 MPa @ 1e6-1e7 cycles) — see "
-                   "missing_datum for what still closes it.",
+        "verdict": (f"Reference endurance READINGS ({span} @ 1e6-1e7 cycles) — a ceiling for an axially or "
+                    "bending-loaded PEEK part, not an established limit (loading_mode_caveat); see missing_datum "
+                    "for what still closes it."),
         "missing_datum": "actual contact-stress amplitude at the mechanical-lock barb under sway-induced "
                           "cyclic load — HW.26's commercial FEA delivers the stress PER UNIT load (a transfer "
                           "function, lock_fea_prony_brief), the amplitude needs HW.43's measured load, and the "
-                          "comparison against 30-48 MPa is ours, not the FEA's (the letters §9/§10 leave it out on purpose; the brief "
+                          f"comparison against {span} is ours, not the FEA's (the letters §9/§10 leave it out on purpose; the brief "
                           "carries it as our input, §2).",
     }
 
@@ -240,12 +281,12 @@ def main() -> int:
     print(f"  None of the {len(parts)} parts is fully CLOSED by literature review alone — and that is itself")
     print("  the honest result HW.43 asked for: an ACCEPTANCE UNIT per part, not a rubber-stamped pass.")
     print("  - Pogo spring: physically-right framing needs the sway amplitude at the pin (script 87's inputs).")
-    print("  - PEEK barb: real 30-48 MPa threshold now exists for HW.26's pending FEA to check against.")
+    print("  - PEEK barb: 30-48 MPa readings — a ceiling for HW.26's pending FEA, not an established limit.")
     print("  - Genipin matrix: REMOVE from the S-N framing (category mismatch); its axis is chemical, HW.5.")
     print(f"  bench (🔗) is needed for: pogo spring (if framing-B stress exceeds ~{BENCH_SIGMA_MPA:.0f} MPa read as normal stress —")
     print(f"  {BENCH_TAU_MPA:.1f} MPa for the wire's shear after the conditional conversion; no mean-stress correction) and PEEK barb")
-    print("  (if HW.26 FEA finds barb stress above ~30 MPa) — NOT for genipin (different axis, HW.5, not")
-    print("  this item).")
+    print("  (if HW.26 FEA finds barb stress above ~30 MPa — the ceiling's low end, so a stress below it is not")
+    print("  shown safe) — NOT for genipin (different axis, HW.5, not this item).")
 
     out = {
         "method": "literature-cited endurance/fatigue-limit review, no FEA — matches HW.43's own request "
@@ -265,15 +306,13 @@ def main() -> int:
             "5074646 preprint sect. 2.2 gives the rig: 20 kHz, R = -1",
             "PMC/NCBI — 'Rotating Bending Fatigue Behaviors of C17200 Beryllium Copper Alloy at High "
             "Temperatures' — corroborating BeCu fatigue behaviour",
-            "peekchina.com — 'Fatigue Strength of PEEK: A Guide for Gear Engineers' — unfilled PEEK "
-            "endurance limit 30-40 MPa @ 1e6-1e7 cycles",
-            "Pastukhov et al. 2020, J. Polym. Sci., 'Physical background of the endurance limit in "
-            "poly(ether ether ketone)' (Wiley) — corroborating ~41-48 MPa @ 1e7 cycles, true flat limit",
+            PEEK_SOURCE_PEEKCHINA,
+            PEEK_SOURCE_PASTUKHOV,
             "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md row 16 (script 16_strain_cycling_md.py, "
             "N=10 MD cycles, qualitative pseudoplastic verdict) — genipin-matrix existing cyclic probe",
         ],
-        "verdict": "No part fully closed; each gets a named acceptance threshold or a named reason the "
-                   "method does not apply, per-part detail in `parts`. Genipin-matrix removed from the "
+        "verdict": "No part fully closed; each gets a named threshold (for the PEEK barb a ceiling, not an "
+                   "acceptance floor) or a named reason the method does not apply, per-part detail in `parts`. Genipin-matrix removed from the "
                    "S-N framing as a category-mismatch correction to HW.43's own checkbox list.",
         "caveats": "All numeric thresholds are cited literature values, not computed physical facts for "
                    "OUR exact parts/geometry (00_06 §0 Validation Gate) — each 'missing_datum' field names "
