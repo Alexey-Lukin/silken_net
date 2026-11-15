@@ -262,6 +262,11 @@ Anchor mechanics (CPU):
   102 (importlib: Pair, soderberg_k; its cache: the grid, the flip CTEs, the hot preload per span) · 55 (importlib: spans,
      CEM shank Ø and length) · 77 · 78 · 86 · 87 → 103 (anchor_wood_share.json — the wood's share per bond state, the flange
      on the bark and on a Zone-3 fit); a change to 102's closed form or to the flange CEM re-runs 103
+  102 (importlib: Pair, and through it 55; its cache: grips, shifts, the hot preload per premise, the grid it is held to) ·
+     103 (its cache: the state shares, both premises) · 55 (bus_mechanical.json: tube section, σ_y, the press-fit rows the
+     preload is rebuilt from) · 59 (contact_endurance_check.json: the PEEK anchor) · 77 (the sleeve section) → 126
+     (liner_wall_axial_stress.json — the liner wall's mean and amplitude against PEEK fatigue, yield and creep readings; the
+     Victrex transcriptions live in the script); a re-run of 102, 103 or 59, or a change to the flange CEM, re-runs 126
   102 (importlib: Pair, soderberg_k; its cache: temperatures, the share-0 seam control, the sway shift) · 103 (its cache:
      the composite, the shares, the (CTE, share) fronts, the seam corners it controls against) · 52 (importlib: TOL_PZ ·
      SPACER_STEP · SPACER_STEP_FINE · POGO_TRAVEL_TOL · rss; its cache: the L3 rung's residual) · 55 (importlib: spans, liner, CEM flange shank Ø; bus_mechanical.json: the grip rows)

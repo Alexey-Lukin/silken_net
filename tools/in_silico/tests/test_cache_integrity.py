@@ -9910,3 +9910,180 @@ def test_bark_overgrowth_consumers_are_recomputed():
             f"a flange at least {up(t_slow['shallow_edge']):.2f} ⊥ {up(t_slow['mid_seat']):.2f} ⊥ {up(t_slow['deep_edge']):.2f} mm thick",
             f"today's {flange_t:g} mm placeholder; at the fast end it is at least {up(fast_need['bark_below_flange_top_at_install_mm']):.2f} mm."):
         assert phrase in d["verdict"], phrase
+
+def test_liner_wall_axial_stress_invariants():
+    """126 (00_07 HW.34, the liner-wall leg): every cell and threshold recomputed HERE from the CURRENT `102`, `103`, `55`
+    and `59` caches on `102`'s `Pair` — written independently of the script's force function — and every classification
+    re-derived from its readings.
+
+    CAN catch: a state share that is not `103`'s current one; a cell whose σ is not F / A_tube of `102`'s force at that share
+    and corner (the hot preload at its temperature, its premise and `102`'s clip included); σ_max, σ_min or the Goodman
+    amplitude off their definitions; an axis label that does not follow from the cell and the named readings; a fatigue or
+    warm-edge threshold that does not land on its target or sits on the wrong side of its share; the anchor not `59`'s current
+    one; F2 or F3 off their R 0.1 Goodman conversion; the warm-edge yield off Figure 4's interpolation at either temperature;
+    the cached preload at the capsule edge off `102`'s; the cambium-edge preload off `102`'s own thermal rows (its baseline
+    wire on the bark span, to their rounding); a creep floor that is not the largest plotted stress at or below the preload;
+    the relaxation lever not landing; the capture's limits off σ·A; the verdict's counts off the cells. CANNOT: judge the
+    transcriptions against the figures (only what physics owes them — monotone), the readings' roles, or `102`'s model
+    itself; both sides call the same `Pair`, and the preload at a non-cached temperature is the script's rebuild, checked
+    here only where `102` cached a row.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("s126_wall", REPO / "tools/in_silico/scripts/126_liner_wall_axial_stress.py")
+    s126 = importlib.util.module_from_spec(spec)
+    sys.modules["s126_wall"] = s126
+    spec.loader.exec_module(s126)
+    from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES
+    d = json.loads((MECHANICAL / "liner_wall_axial_stress.json").read_text(encoding="utf-8"))
+    d102 = json.loads((MECHANICAL / "wire_liner_shear_lag.json").read_text(encoding="utf-8"))
+    d103 = json.loads((MECHANICAL / "anchor_wood_share.json").read_text(encoding="utf-8"))
+    cp = json.loads((MECHANICAL / "bus_mechanical.json").read_text(encoding="utf-8"))["interference_window"]["cold_press_fit"]
+    anchor = json.loads((MECHANICAL / "contact_endurance_check.json").read_text(encoding="utf-8"))["parts"]["peek_barb_cyclic"]["endurance_limit_MPa"]
+    area, s_y = cp["tube_section_mm2"], cp["peek_yield_MPa"]
+    geo = d102["geometry"]
+    assert d["inputs"]["anchor_MPa_59"] == anchor and d["inputs"]["tube_section_mm2"] == area
+    temps = {"capsule_edge_90": d102["thermal"]["temperatures_c"]["capsule_model_edges_90"],
+             "cambium_under_flange_79": d102["thermal"]["temperatures_c"]["cambium_under_flange_79"]}
+    assert d["inputs"]["t_warm_C_102"] == {k: v[1] for k, v in temps.items()}
+    assert d["inputs"]["t_cold_C_102"] == {k: v[0] for k, v in temps.items()}
+
+    # readings
+    fat = d["readings"]["fatigue_reversed_limit_MPa"]
+    a_, m_ = (1 - s126.VICTREX_FIG9_R) / 2, (1 + s126.VICTREX_FIG9_R) / 2
+    assert fat["F1_anchor_as_reversed_amplitude_low"] == anchor[0] and fat["F1_anchor_as_reversed_amplitude_high"] == anchor[1]
+    for smax, k in ((anchor[0], "F2_anchor_as_max_stress_at_R0.1_low"), (anchor[1], "F2_anchor_as_max_stress_at_R0.1_high"),
+                    (s126.VICTREX_FIG9[-1][1], "F3_victrex_450G_R0.1_to_reversed")):
+        assert fat[k] == pytest.approx(a_ * smax / (1 - m_ * smax / s_y), abs=1e-12), k
+    f4 = s126.VICTREX_FIG4
+    assert all(b[1] < a[1] for a, b in itertools.pairwise(f4)), "Figure 4 falls with temperature"
+    y_warm = d["readings"]["warm_edge_yield_MPa"]
+    for tk, (_, t) in temps.items():
+        lo = max(r for r in f4 if r[0] <= t)
+        hi = min(r for r in f4 if r[0] >= t)
+        v4 = lo[1] + (hi[1] - lo[1]) * (t - lo[0]) / (hi[0] - lo[0])
+        assert y_warm[tk]["fig4_absolute"] == pytest.approx(v4, abs=1e-9)
+        assert y_warm[tk]["fig4_ratio_on_tree_yield"] == pytest.approx(v4 / f4[0][1] * s_y, abs=1e-9) and f4[0][0] == 23.0
+    lim = {"adverse": min(fat.values()), "kind": max(fat.values())}
+    rd_of = {"adverse": "fig4_absolute", "kind": "fig4_ratio_on_tree_yield"}
+
+    # the preload: `102`'s cache at the capsule edge, `102`'s thermal rows at the cambium (its baseline wire on the bark)
+    we = d["warm_edge_preload"]
+    for al, row in d102["seam_by_alloy"].items():
+        for pm in ("flange_on_bark", "zone3_fit"):
+            src = row["hot_preload"] if pm == "flange_on_bark" else row["hot_preload"]["zone3_fit_bonded_shank"]
+            assert we[f"{al}__{pm}__adverse__capsule_edge_90"]["F_preload_N"] == pytest.approx(src["F_N_relaxed_liner"], abs=1e-9)
+            assert we[f"{al}__{pm}__gentle__capsule_edge_90"]["F_preload_N"] == pytest.approx(src["F_N_gentle_nominal_relaxed_mu_low"], abs=1e-9)
+    mu = cp["mu_sweep"]
+    for gr, part in (("adverse", f"window_ceiling__mu{max(mu):g}"), ("gentle", f"ratified_nominal_relaxed__mu{min(mu):g}")):
+        r = d102["thermal"]["by_reading"][f"gap_and_shank_disc_on_sleeve_top__cambium_under_flange_79__{part}"]
+        assert we[f"{ALLOY_BASELINE}__flange_on_bark__{gr}__cambium_under_flange_79"]["F_preload_N"] == pytest.approx(r["hot"]["root_F_N"], abs=0.005 + 1e-9)
+        assert d["cold_edge"][f"{ALLOY_BASELINE}__flange_on_bark__{gr}__cambium_under_flange_79"]["F_N"] == pytest.approx(r["cold"]["root_F_N"], abs=0.005 + 1e-9)
+
+    # cells, rebuilt on 102's Pair from the cached inputs and the cached preload
+    grips = d102["grip"]["by_part_N_per_mm_at_20C"]["window_ceiling"]
+    q_adv = grips[max(grips, key=float)]
+    hi_shift = max(d102["sway_input"]["shift_um_87"]["upper_whisker"]) * 1e-3
+    lo_shift = min(d102["sway_input"]["shift_um_87"]["median"]) * 1e-3
+    shares = {"flange_on_bark": d103["share"], "zone3_fit": d103["zone3_fit"]["share"]}
+    n_cells = 0
+    for pm, block in shares.items():
+        s3 = block["state3_no_bearing_any_depth_of_102_shift"]
+        want = {"state1_anode_free": 0.0, "state2_air_dry_readings_max": block["state2_at_air_dry_readings"]["max"],
+                "state2_cap_rigid_bark_bond_soft": block["state2_cap_rigid_bark"]["anode_bond_soft"],
+                "state2_cap_rigid_bark_bond_stiff": block["state2_cap_rigid_bark"]["anode_bond_stiff"],
+                "state3_no_bearing_bond_soft_max": s3["anode_bond_soft"]["max"],
+                "state3_no_bearing_bond_stiff_min": s3["anode_bond_stiff"]["min"],
+                "state3_no_bearing_bond_stiff_max": s3["anode_bond_stiff"]["max"],
+                "state3_cap_rigid_bark_bond_soft": block["state3_cap_rigid_bark_of_102_shift"]["anode_bond_soft"],
+                "state3_cap_rigid_bark_bond_stiff": block["state3_cap_rigid_bark_of_102_shift"]["anode_bond_stiff"]}
+        assert d["states_share_of_102_shift"][pm] == want, pm
+        for st, sh in want.items():
+            for al, row in d102["seam_by_alloy"].items():
+                ea_w = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3 * geo["wire_area_mm2"]
+                for key, c in d["cells"][pm][st][al].items():
+                    corner, _, tk = key.partition("@")
+                    adverse = corner.startswith("adverse")
+                    pr = s126.s102.Pair(q_adv if adverse else row["gentle_grip_N_per_mm"], ea_w, geo["liner_EA_N"],
+                                        geo["bare_run_mm"], geo["liner_run_mm"], geo["wall_cap_N_23C"])
+                    da, dm = ((sh * hi_shift, 0.0) if "reversed" in corner else
+                              (sh * hi_shift / 2, sh * hi_shift / 2) if adverse else (sh * lo_shift / 2, sh * lo_shift / 2))
+                    cy = pr.cycle(da, dm)
+                    fa, fm, hot = cy["F_amp"], cy["F_mean"], bool(tk)
+                    if hot:
+                        fm += we[f"{al}__{pm}__{'adverse' if adverse else 'gentle'}__{tk}"]["F_preload_N"]
+                    clip = hot and fm + fa > pr.cap + 1e-9
+                    if clip:
+                        fm = pr.cap - fa
+                    sm, sa = fm / area, fa / area
+                    assert (c["sigma_mean_MPa"], c["sigma_amp_MPa"]) == pytest.approx((sm, sa), abs=1e-9), (pm, st, al, key)
+                    assert c["sigma_max_MPa"] == pytest.approx(sm + sa, abs=1e-9) and c["sigma_min_MPa"] == pytest.approx(sm - sa, abs=1e-9)
+                    assert c["wall_at_23C_cap"] == (cy["capped"] or clip)
+                    for side in ("adverse", "kind"):
+                        su = y_warm[tk][rd_of[side]] if hot else s_y
+                        g = math.inf if max(sm, 0) >= su else sa / (1 - max(sm, 0) / su)
+                        got = c["goodman_reversed_equivalent_MPa"][side]
+                        assert (got is None and math.isinf(g)) or got == pytest.approx(g, abs=1e-9)
+                        axis = ("yield_23C_cap" if c["wall_at_23C_cap"] else "yield_warm_edge" if hot and sm + sa >= su
+                                else "fatigue" if g > lim[side] else "clear_on_read_data")
+                        assert c[f"axis_{side}_readings"] == axis, (pm, st, al, key, side)
+                    n_cells += 1
+    assert n_cells == 2 * 9 * len(d102["seam_by_alloy"]) * (len(s126.BASE_CORNERS) + 2 * len(s126.HOT_CORNERS))
+
+    # thresholds land, on the right side
+    for al, t in d["thresholds"].items():
+        ea_w = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3 * geo["wire_area_mm2"]
+        pr = s126.s102.Pair(q_adv, ea_w, geo["liner_EA_N"], geo["bare_run_mm"], geo["liner_run_mm"], geo["wall_cap_N_23C"])
+        assert t["yield_23C_share_102"] == d102["seam_by_alloy"][al]["adverse_share_at_wall_cap_exact"]
+        for k, s in t["fatigue_share_reversed"].items():
+            assert s is not None and 0 < s < t["yield_23C_share_102"], (al, k)
+            assert pr.cycle(s * hi_shift, 0.0)["F_amp"] / area == pytest.approx(fat[k], abs=1e-6), (al, k)
+        for key, s in t["warm_edge_yield_share"].items():
+            tk, pm, gr, rd = key.split("__")
+            if gr != "adverse":
+                continue
+            pre = we[f"{al}__{pm}__adverse__{tk}"]["F_preload_N"]
+            if s is None:
+                assert (pre + pr.cycle(hi_shift, 0.0)["F_amp"]) / area < y_warm[tk][rd], key
+            elif s == 0.0:
+                assert pre / area >= y_warm[tk][rd], key
+            else:
+                assert pre / area < y_warm[tk][rd] and (pre + pr.cycle(s * hi_shift, 0.0)["F_amp"]) / area == pytest.approx(y_warm[tk][rd], abs=1e-6), key
+
+    # the warm edge: the preload alone, its band, its creep floor, its relaxation lever; the capture; the cold edge
+    fig7, band = s126.VICTREX_FIG7, d["readings"]["victrex"]["fig4_digitise_MPa"]
+    for key, w in we.items():
+        tk = key.split("__")[3]
+        s_pre = w["F_preload_N"] / area
+        assert w["sigma_preload_MPa"] == pytest.approx(s_pre, abs=1e-12)
+        below = [k for k in sorted(fig7) if k <= s_pre]
+        floor = w["creep_23C_lower_bound"]
+        assert (floor is None) == (not below) and (floor is None or floor["plotted_stress_MPa"] == below[-1])
+        assert w["reaches_fig4_band"] == {"minus": s_pre >= y_warm[tk]["fig4_absolute"] - band,
+                                         "plus": s_pre >= y_warm[tk]["fig4_absolute"] + band}
+        for rd, sy in y_warm[tk].items():
+            assert w["reaches_warm_edge_yield"][rd] == (s_pre >= sy)
+            lv = w["retained_modulus_below_which_it_falls_under_warm_edge_yield"][rd]
+            assert isinstance(lv, str) == (s_pre < sy), (key, rd)
+            if isinstance(lv, float):
+                assert 0 < lv < s126.PEEK_RELAX_FLOOR
+    cap = d["capture"]
+    for k, v in fat.items():
+        assert cap["holding_force_below_N"][k] == pytest.approx(v * area, abs=1e-12)
+    slip = sorted(k for k, v in cap["summer_preload_N_range"].items() if v[0] > cap["holding_force_below_N"][d["readings"]["fatigue_adverse_reading"]])
+    assert slip == cap["preload_groups_slipping_under_adverse_H"]
+    for c in d["cold_edge"].values():
+        assert c["F_N"] < 0 and c["sigma_MPa"] == pytest.approx(c["F_N"] / area, abs=1e-12)
+        assert c["at_23C_cap"] == (abs(c["F_N"] + geo["wall_cap_N_23C"]) < 1e-9)
+    st7 = sorted(fig7)
+    assert all(fig7[b][i] > fig7[a][i] for a, b in itertools.pairwise(st7) for i in (0, 1)) and all(v[1] > v[0] for v in fig7.values())
+
+    # the verdict's counts, from the cells
+    alloys = list(d102["seam_by_alloy"])
+    first = sum(all(s < t["yield_23C_share_102"] for s in t["fatigue_share_reversed"].values()) for t in d["thresholds"].values())
+    assert f"on {first} of {len(alloys)} alloys every fatigue reading switches on before the yield" in d["verdict"]
+    cold_bark = [v["at_23C_cap"] for k, v in d["cold_edge"].items() if "__flange_on_bark__adverse__" in k]
+    assert f"in compression on {sum(cold_bark)} of {len(cold_bark)} alloy × temperature cells" in d["verdict"]
+    c = d["controls"]
+    assert c["forces_vs_102_grid_max_miss_N"] <= 1e-9 and c["preload_rebuilt_vs_102_max_miss_N"] <= 1e-9
+    assert c["preload_rebuilt_vs_102_thermal_rows_max_miss_N"] <= 0.005 + 1e-9 and c["threshold_landing_max_miss_MPa"] <= 1e-6

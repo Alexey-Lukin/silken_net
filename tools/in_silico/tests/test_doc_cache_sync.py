@@ -4669,6 +4669,188 @@ CHECKS += [
      lambda d: d["summary"]["ratified_exit_radius"]["peak_max_MPa"], 0.005),
 ]
 
+# ── HW.34 · the liner wall under the axial path (126) → `liner_wall_axial_stress.json`. A «clear below share X» threshold
+# rounds DOWN; a «below X N» limit rounds DOWN; a reading is nearest (#43). The two tables are rebuilt row by row by
+# `_lwa126_tables` (the page's writer calls the same function) and pinned by `test_liner_wall126_tables_follow_the_cache`.
+LWA = "mechanical/liner_wall_axial_stress.json"
+_LWA_FAT = ("F2_anchor_as_max_stress_at_R0.1_low", "F1_anchor_as_reversed_amplitude_low", "F2_anchor_as_max_stress_at_R0.1_high",
+            "F1_anchor_as_reversed_amplitude_high", "F3_victrex_450G_R0.1_to_reversed")
+_LWA_T = ("capsule_edge_90", "cambium_under_flange_79")
+_LWA_AXIS = {"yield_23C_cap": "yield (23 °C cap)", "yield_warm_edge": "short-term yield", "fatigue": "fatigue",
+             "clear_on_read_data": "clear"}
+
+
+def _lwa_d2(x) -> str:
+    return "—" if x is None else ("0" if x == 0 else f"{math.floor(round(x * 100, 9)) / 100:.2f}")
+
+
+def _lwa126_tables(d: dict) -> list:
+    """126's two SUMMARY tables, header and rows, from the cache — one source for the page and its pin."""
+    fat, t = d["readings"]["fatigue_reversed_limit_MPa"], d["inputs"]["t_warm_C_102"]
+    alloys = list(d["thresholds"])
+    rows = [f"| Alloy | Sway alone, reversed: clear below share — F2 {fat[_LWA_FAT[0]]:.1f} · F1 {fat[_LWA_FAT[1]]:g} · F2 "
+            f"{fat[_LWA_FAT[2]]:.1f} · F1 {fat[_LWA_FAT[3]]:g} · F3 {fat[_LWA_FAT[4]]:.1f} MPa | 23 °C yield from share (`102`) | "
+            f"Hot preload alone (share 0, adverse grip), MPa — capsule edge {t[_LWA_T[0]]:.1f} °C: bark ⊥ Zone-3 · cambium "
+            f"{t[_LWA_T[1]]:.1f} °C: bark ⊥ Zone-3 | Short-term yield, preload + reversed sway, adverse grip: clear below share, "
+            f"Fig. 4/ratio — capsule: bark ⊥ Zone-3 · cambium: bark ⊥ Zone-3 (0 = the preload alone reaches it; — = not by share 1) |",
+            "|---|---|---|---|---|"]
+    for al in alloys:
+        th, we = d["thresholds"][al], d["warm_edge_preload"]
+        fs = " · ".join(_lwa_d2(th["fatigue_share_reversed"][k]) for k in _LWA_FAT)
+        pre = " · ".join(f"{we[f'{al}__flange_on_bark__adverse__{tk}']['sigma_preload_MPa']:.1f} ⊥ "
+                         f"{we[f'{al}__zone3_fit__adverse__{tk}']['sigma_preload_MPa']:.1f}" for tk in _LWA_T)
+
+        def ws(tk, pm, th=th):
+            w = th["warm_edge_yield_share"]
+            return f"{_lwa_d2(w[f'{tk}__{pm}__adverse__fig4_absolute'])}/{_lwa_d2(w[f'{tk}__{pm}__adverse__fig4_ratio_on_tree_yield'])}"
+        warm = " · ".join(f"{ws(tk, 'flange_on_bark')} ⊥ {ws(tk, 'zone3_fit')}" for tk in _LWA_T)
+        rows.append(f"| {al} | {fs} | {th['yield_23C_share_102']:.4f} | {pre} | {warm} |")
+    rows += ["", "| State (`103`, flange on the bark) | Share | Ti-6Al-4V: σ_a reversed · axis adverse ⊥ kind | Ta: σ_a reversed · "
+                 "axis adverse ⊥ kind | Ti-6Al-4V + preload, capsule edge: σ_m / σ_a · axis | Ti-6Al-4V + preload, cambium: "
+                 "σ_m / σ_a · axis |", "|---|---|---|---|---|---|"]
+    for st, by in d["cells"]["flange_on_bark"].items():
+        ti, ta = by["Ti-6Al-4V"], by["Ta"]
+
+        def ax(c):
+            return f"{_LWA_AXIS[c['axis_adverse_readings']]} ⊥ {_LWA_AXIS[c['axis_kind_readings']]}"
+        r, q = ti["adverse_reversed"], ta["adverse_reversed"]
+        hot = " | ".join(f"{ti[f'adverse_reversed_hot_preload@{tk}']['sigma_mean_MPa']:.1f} / "
+                         f"{ti[f'adverse_reversed_hot_preload@{tk}']['sigma_amp_MPa']:.1f} · {ax(ti[f'adverse_reversed_hot_preload@{tk}'])}"
+                         for tk in _LWA_T)
+        rows.append(f"| {st} | {r['share']:.4f} | {r['sigma_amp_MPa']:.1f} · {ax(r)} | {q['sigma_amp_MPa']:.1f} · {ax(q)} | {hot} |")
+    return rows
+
+
+def _lwa_pre(d: dict, grip: str, pm: str, tk: str, fn) -> float:
+    return fn(v["sigma_preload_MPa"] for k, v in d["warm_edge_preload"].items() if k.endswith(f"__{pm}__{grip}__{tk}"))
+
+
+def _lwa_lever(d: dict, fn) -> float:
+    vals = [v["retained_modulus_below_which_it_falls_under_warm_edge_yield"]["fig4_absolute"]
+            for k, v in d["warm_edge_preload"].items() if k.endswith("__flange_on_bark__adverse__capsule_edge_90")]
+    return math.floor(round(fn(x for x in vals if isinstance(x, float)) * 1e3, 9)) / 1e3
+
+
+def _lwa_thr(d: dict, alloy: str, k: str) -> float:
+    return _down2(d["thresholds"][alloy]["fatigue_share_reversed"][k])
+
+
+def _lwa_warm(d: dict, tk: str, pm: str, fn) -> float:
+    return _down2(fn(v["warm_edge_yield_share"][f"{tk}__{pm}__adverse__fig4_absolute"] for v in d["thresholds"].values()))
+
+
+CHECKS += [
+    ("HW.34 · SUMMARY 126 F2 low", SUMMARY, rf"on a Goodman line to the tree's σ_y, \*\*{N} · [\d.]+\*\* MPa", LWA,
+     lambda d: d["readings"]["fatigue_reversed_limit_MPa"][_LWA_FAT[0]], 0.05),
+    ("HW.34 · SUMMARY 126 F2 high", SUMMARY, rf"on a Goodman line to the tree's σ_y, \*\*[\d.]+ · {N}\*\* MPa", LWA,
+     lambda d: d["readings"]["fatigue_reversed_limit_MPa"][_LWA_FAT[2]], 0.05),
+    ("HW.34 · SUMMARY 126 F3 450G R 0.1", SUMMARY, rf"\(R 0\.1\): \*\*{N}\*\* MPa σ_max at ≈ 1e7", LWA,
+     lambda d: d["readings"]["victrex"]["fig9_450G_23C_R01_cycles_max_stress"][-1][1], 0.05),
+    ("HW.34 · SUMMARY 126 F3 reversed-equivalent", SUMMARY, rf"same Goodman line, \*\*{N}\*\* MPa — the kindest", LWA,
+     lambda d: d["readings"]["fatigue_reversed_limit_MPa"][_LWA_FAT[4]], 0.05),
+    ("HW.34 · SUMMARY 126 capsule-edge yield Fig. 4", SUMMARY, rf"capsule edge, 55\.0 °C: \*\*{N}\*\* ⊥", LWA,
+     lambda d: d["readings"]["warm_edge_yield_MPa"]["capsule_edge_90"]["fig4_absolute"], 0.05),
+    ("HW.34 · SUMMARY 126 capsule-edge yield ratio", SUMMARY, rf"55\.0 °C: \*\*[\d.]+\*\* ⊥ \*\*{N}\*\* MPa", LWA,
+     lambda d: d["readings"]["warm_edge_yield_MPa"]["capsule_edge_90"]["fig4_ratio_on_tree_yield"], 0.05),
+    ("HW.34 · SUMMARY 126 cambium yield Fig. 4", SUMMARY, rf"under the flange, 46\.6 °C: \*\*{N}\*\* ⊥", LWA,
+     lambda d: d["readings"]["warm_edge_yield_MPa"]["cambium_under_flange_79"]["fig4_absolute"], 0.05),
+    ("HW.34 · SUMMARY 126 cambium yield ratio", SUMMARY, rf"46\.6 °C: \*\*[\d.]+\*\* ⊥ \*\*{N}\*\* MPa", LWA,
+     lambda d: d["readings"]["warm_edge_yield_MPa"]["cambium_under_flange_79"]["fig4_ratio_on_tree_yield"], 0.05),
+    ("HW.34 · SUMMARY 126 (A) Ti-6Al-4V clear below F2 (down)", SUMMARY, rf"clear only below share \*\*{N}\*\* \(F2 16\.2\)", LWA,
+     lambda d: _lwa_thr(d, "Ti-6Al-4V", _LWA_FAT[0]), 1e-9),
+    ("HW.34 · SUMMARY 126 (A) Ti-6Al-4V clear below F3 (down)", SUMMARY, rf"to \*\*{N}\*\* \(F3 75\.7\), against yield", LWA,
+     lambda d: _lwa_thr(d, "Ti-6Al-4V", _LWA_FAT[4]), 1e-9),
+    ("HW.34 · SUMMARY 126 (A) Ti-6Al-4V yield share", SUMMARY, rf"against yield from \*\*{N}\*\*; Ta", LWA,
+     lambda d: d["thresholds"]["Ti-6Al-4V"]["yield_23C_share_102"], 5e-5),
+    ("HW.34 · SUMMARY 126 (A) Ta F3 (down)", SUMMARY, rf"; Ta [\d.]+…{N}, beta-Ti", LWA, lambda d: _lwa_thr(d, "Ta", _LWA_FAT[4]), 1e-9),
+    ("HW.34 · SUMMARY 126 (A) beta-Ti F3 (down)", SUMMARY, rf"beta-Ti-13Nb-13Zr [\d.]+…{N}\)\. By state", LWA,
+     lambda d: _lwa_thr(d, "beta-Ti-13Nb-13Zr", _LWA_FAT[4]), 1e-9),
+    ("HW.34 · SUMMARY 126 (A) air-dry amplitude low", SUMMARY, rf"\(0\.0955\) puts \*\*{N}–[\d.]+\*\* MPa", LWA,
+     lambda d: min(c["adverse_reversed"]["sigma_amp_MPa"] for c in d["cells"]["flange_on_bark"]["state2_air_dry_readings_max"].values()), 0.05),
+    ("HW.34 · SUMMARY 126 (A) air-dry amplitude high", SUMMARY, rf"\(0\.0955\) puts \*\*[\d.]+–{N}\*\* MPa", LWA,
+     lambda d: max(c["adverse_reversed"]["sigma_amp_MPa"] for c in d["cells"]["flange_on_bark"]["state2_air_dry_readings_max"].values()), 0.05),
+    ("HW.34 · SUMMARY 126 (B) F3 over the tree's yield", SUMMARY, rf"σ_max, \*\*{N}\*\* of the tree's yield", LWA,
+     lambda d: d["readings"]["fig9_max_stress_over_yields"]["tree_23C"], 0.005),
+    ("HW.34 · SUMMARY 126 (B) F3 over the capsule-edge yield", SUMMARY, rf"and ×\*\*{N}\*\* \(capsule edge\)", LWA,
+     lambda d: d["readings"]["fig9_max_stress_over_yields"]["fig4_capsule_edge_90"], 0.005),
+    ("HW.34 · SUMMARY 126 (B) F3 over the cambium yield", SUMMARY, rf"⊥ ×\*\*{N}\*\* \(cambium\)", LWA,
+     lambda d: d["readings"]["fig9_max_stress_over_yields"]["fig4_cambium_under_flange_79"], 0.005),
+    ("HW.34 · SUMMARY 126 (C) bark capsule preload low", SUMMARY, rf"the preload alone, \*\*{N}–[\d.]+\*\* MPa, reaches", LWA,
+     lambda d: _lwa_pre(d, "adverse", "flange_on_bark", _LWA_T[0], min), 0.05),
+    ("HW.34 · SUMMARY 126 (C) bark capsule preload high", SUMMARY, rf"the preload alone, \*\*[\d.]+–{N}\*\* MPa, reaches", LWA,
+     lambda d: _lwa_pre(d, "adverse", "flange_on_bark", _LWA_T[0], max), 0.05),
+    ("HW.34 · SUMMARY 126 (C) bark cambium preload low", SUMMARY, rf"At the cambium \(\*\*{N}–[\d.]+\*\* MPa", LWA,
+     lambda d: _lwa_pre(d, "adverse", "flange_on_bark", _LWA_T[1], min), 0.05),
+    ("HW.34 · SUMMARY 126 (C) bark cambium preload high", SUMMARY, rf"At the cambium \(\*\*[\d.]+–{N}\*\* MPa", LWA,
+     lambda d: _lwa_pre(d, "adverse", "flange_on_bark", _LWA_T[1], max), 0.05),
+    ("HW.34 · SUMMARY 126 (C) Zone-3 capsule preload low", SUMMARY, rf"on a Zone-3 fit \(\*\*{N}–[\d.]+\*\* MPa at the capsule", LWA,
+     lambda d: _lwa_pre(d, "adverse", "zone3_fit", _LWA_T[0], min), 0.05),
+    ("HW.34 · SUMMARY 126 (C) Zone-3 capsule preload high", SUMMARY, rf"on a Zone-3 fit \(\*\*[\d.]+–{N}\*\* MPa at the capsule", LWA,
+     lambda d: _lwa_pre(d, "adverse", "zone3_fit", _LWA_T[0], max), 0.05),
+    ("HW.34 · SUMMARY 126 (C) Zone-3 cambium preload low", SUMMARY, rf"capsule edge, \*\*{N}–[\d.]+\*\* at the cambium\)", LWA,
+     lambda d: _lwa_pre(d, "adverse", "zone3_fit", _LWA_T[1], min), 0.05),
+    ("HW.34 · SUMMARY 126 (C) Zone-3 cambium preload high", SUMMARY, rf"capsule edge, \*\*[\d.]+–{N}\*\* at the cambium\)", LWA,
+     lambda d: _lwa_pre(d, "adverse", "zone3_fit", _LWA_T[1], max), 0.05),
+    ("HW.34 · SUMMARY 126 (C) Zone-3 sway clear low (down)", SUMMARY, rf"keeps it clear only below share \*\*{N}\*\* \(Ta\)", LWA,
+     lambda d: _lwa_warm(d, _LWA_T[0], "zone3_fit", min), 1e-9),
+    ("HW.34 · SUMMARY 126 (C) Zone-3 sway clear high (down)", SUMMARY, rf"\(Ta\) – \*\*{N}\*\* \(beta-Ti-13Nb-13Zr\) at the capsule edge", LWA,
+     lambda d: _lwa_warm(d, _LWA_T[0], "zone3_fit", max), 1e-9),
+    ("HW.34 · SUMMARY 126 (C) gentle preload bark low", SUMMARY, rf"gentle grip's preload is \*\*{N}–[\d.]+\*\* ⊥", LWA,
+     lambda d: _lwa_pre(d, "gentle", "flange_on_bark", _LWA_T[0], min), 0.05),
+    ("HW.34 · SUMMARY 126 (C) gentle preload Zone-3 high", SUMMARY, rf"⊥ \*\*[\d.]+–{N}\*\* MPa at the capsule edge\. \*\*\(D\)", LWA,
+     lambda d: _lwa_pre(d, "gentle", "zone3_fit", _LWA_T[0], max), 0.05),
+    ("HW.34 · SUMMARY 126 (D) lever low (down)", SUMMARY, rf"keeps less than \*\*{N}–[\d.]+\*\* of its modulus", LWA,
+     lambda d: _lwa_lever(d, min), 1e-9),
+    ("HW.34 · SUMMARY 126 (D) lever high (down)", SUMMARY, rf"keeps less than \*\*[\d.]+–{N}\*\* of its modulus", LWA,
+     lambda d: _lwa_lever(d, max), 1e-9),
+    ("HW.34 · SUMMARY 126 (D) lever Ti-6Al-4V (down)", SUMMARY, rf"\(Ti-6Al-4V \*\*{N}\*\*; beta-Ti", LWA,
+     lambda d: math.floor(round(d["warm_edge_preload"]["Ti-6Al-4V__flange_on_bark__adverse__capsule_edge_90"]
+                                ["retained_modulus_below_which_it_falls_under_warm_edge_yield"]["fig4_absolute"] * 1e3, 9)) / 1e3, 1e-9),
+    ("HW.34 · SUMMARY 126 (D) 23 °C creep secant over E", SUMMARY, rf"sits at \*\*{N}\*\* of the tree's E", LWA,
+     lambda d: d["readings"]["fig7_top_curve_1000h_secant_over_tree_E"], 5e-4),
+    ("HW.34 · SUMMARY 126 (D) creep floor adverse", SUMMARY, rf"≥ \*\*{N}\*\* % in 1000 h for every adverse-grip", LWA,
+     lambda d: min(v["creep_23C_lower_bound"]["strain_pct_at_1000h_23C"] for k, v in d["warm_edge_preload"].items()
+                   if k.endswith("__flange_on_bark__adverse__capsule_edge_90")), 1e-9),
+    ("HW.34 · SUMMARY 126 (D) creep floor gentle", SUMMARY, rf"≥ \*\*{N}\*\* % for the gentle-grip ones", LWA,
+     lambda d: min(v["creep_23C_lower_bound"]["strain_pct_at_1000h_23C"] for k, v in d["warm_edge_preload"].items()
+                   if k.endswith("__gentle__capsule_edge_90") and v["creep_23C_lower_bound"]), 1e-9),
+    ("HW.34 · SUMMARY 126 (E) H below, F2 (down)", SUMMARY, rf"only while H < \*\*{N}\*\* N \(F2 low\)", LWA,
+     lambda d: _down1(d["capture"]["holding_force_below_N"][_LWA_FAT[0]]), 1e-9),
+    ("HW.34 · SUMMARY 126 (E) H below, F3 (down)", SUMMARY, rf"… \*\*{N}\*\* N \(F3\)", LWA,
+     lambda d: _down1(d["capture"]["holding_force_below_N"][_LWA_FAT[4]]), 1e-9),
+    ("HW.34 · SUMMARY 126 (E) summer preload low", SUMMARY, rf"capsule edge \*\*{N}–[\d.]+\*\* N", LWA,
+     lambda d: d["capture"]["summer_preload_N_range"]["flange_on_bark__adverse__capsule_edge_90"][0], 0.05),
+    ("HW.34 · SUMMARY 126 (E) summer preload high", SUMMARY, rf"capsule edge \*\*[\d.]+–{N}\*\* N", LWA,
+     lambda d: d["capture"]["summer_preload_N_range"]["flange_on_bark__adverse__capsule_edge_90"][1], 0.05),
+    ("HW.34 · SUMMARY 126 (G) trigger example share", SUMMARY, rf"e\.g\. share \*\*{N}\*\* →", LWA,
+     lambda d: d["states_share_of_102_shift"]["zone3_fit"]["state3_cap_rigid_bark_bond_soft"], 5e-5),
+    ("HW.34 · SUMMARY 126 (G) trigger example stress", SUMMARY, rf"→ \*\*{N}\*\* MPa on Ti-6Al-4V", LWA,
+     lambda d: d["cells"]["zone3_fit"]["state3_cap_rigid_bark_bond_soft"]["Ti-6Al-4V"]["adverse_reversed"]["sigma_amp_MPa"], 0.05),
+    ("HW.34 · SUMMARY 126 ceilings cold Zone-3 low", SUMMARY, rf"on a Zone-3 fit \*\*{N} … [\d.−-]+\*\* MPa", LWA,
+     lambda d: min(v["sigma_MPa"] for k, v in d["cold_edge"].items() if "__zone3_fit__adverse__" in k), 0.05),
+    ("HW.34 · SUMMARY 126 ceilings cold Zone-3 high", SUMMARY, rf"on a Zone-3 fit \*\*[\d.−-]+ … {N}\*\* MPa", LWA,
+     lambda d: max(v["sigma_MPa"] for k, v in d["cold_edge"].items() if "__zone3_fit__adverse__" in k), 0.05),
+    ("HW.34 · PIPELINE_STATUS 126 lever high (down)", PSTAT, rf"more than [\d.]+–{N} of its modulus\)", LWA,
+     lambda d: _lwa_lever(d, max), 1e-9),
+]
+
+CHECKS += [
+    ("HW.34 · SUMMARY 126 (C) stacked, bark cambium low (down)", SUMMARY, rf"on the bark at the cambium clear only below share \*\*{N}\*\* \(Ta\)", LWA,
+     lambda d: _lwa_warm(d, _LWA_T[1], "flange_on_bark", min), 1e-9),
+    ("HW.34 · SUMMARY 126 (C) stacked, bark cambium high (down)", SUMMARY, rf"\(Ta\) – \*\*{N}\*\* \(beta-Ti-13Nb-13Zr\), on a Zone-3 fit at the cambium", LWA,
+     lambda d: _lwa_warm(d, _LWA_T[1], "flange_on_bark", max), 1e-9),
+    ("HW.34 · SUMMARY 126 (C) stacked, Zone-3 cambium low (down)", SUMMARY, rf"on a Zone-3 fit at the cambium below \*\*{N}\*\* –", LWA,
+     lambda d: _lwa_warm(d, _LWA_T[1], "zone3_fit", min), 1e-9),
+    ("HW.34 · SUMMARY 126 (C) stacked, Zone-3 cambium high (down)", SUMMARY, rf"at the cambium below \*\*[\d.]+\*\* – \*\*{N}\*\* — the hottest", LWA,
+     lambda d: _lwa_warm(d, _LWA_T[1], "zone3_fit", max), 1e-9),
+    ("HW.34 · SUMMARY 126 (G) stacked, largest onset (down)", SUMMARY, rf"from share 0 to \*\*{N}\*\* on Figure 4", LWA,
+     lambda d: _down2(max(v["warm_edge_yield_share"][f"{tk}__{pm}__adverse__fig4_absolute"] for v in d["thresholds"].values()
+                          for tk in _LWA_T for pm in ("flange_on_bark", "zone3_fit"))), 1e-9),
+    ("HW.34 · SUMMARY 126 (G) fatigue onset F2 low (down)", SUMMARY, rf"fatigue leg's onset at \*\*{N}–[\d.]+\*\* on F2", LWA,
+     lambda d: _down2(min(v["fatigue_share_reversed"][_LWA_FAT[0]] for v in d["thresholds"].values())), 1e-9),
+    ("HW.34 · SUMMARY 126 (G) fatigue onset F2 high (down)", SUMMARY, rf"fatigue leg's onset at \*\*[\d.]+–{N}\*\* on F2", LWA,
+     lambda d: _down2(max(v["fatigue_share_reversed"][_LWA_FAT[0]] for v in d["thresholds"].values())), 1e-9),
+]
 
 # Calendar dates are not numbers `N` can read, so they get their own pin: (label, doc, regex with ONE
 # capture group holding MM-DD, cache resolver returning the same MM-DD string).
@@ -14599,3 +14781,77 @@ def test_no_module_name_is_rebound_with_another_definition(module):
             seen[node.name].add(ast.dump(node))
     rebound = sorted(name for name, defs in seen.items() if len(defs) > 1)
     assert not rebound, f"{module}: top-level names bound twice with different definitions — {rebound}"
+
+
+def test_liner_wall126_tables_follow_the_cache():
+    """126's two SUMMARY tables, every row and both headers, rebuilt from the cache by `_lwa126_tables` and found verbatim
+    on the page — every alloy, every column (in-silico §When Modifying #5 · #16)."""
+    s = doc(SUMMARY)
+    rows = [r for r in _lwa126_tables(C(LWA)) if r]
+    missing = [r for r in rows if r not in s]
+    assert not missing, f"126 table rows not on the page (re-render the block from `_lwa126_tables`): {missing[:2]}"
+    assert len(rows) == 2 + 6 + 2 + 9
+
+
+def test_liner_wall126_set_sentences_follow_the_cache():
+    """126's set and count sentences in SUMMARY §HW.34, rebuilt from the cache (in-silico §When Modifying #5): which alloys
+    pass which reading at the air-dry state, how many reach the warm-edge yield at each temperature and on each premise,
+    the alloy already under at the relax floor, the creep floor above the top curve, the gentle corner, the trigger's
+    ground. A cache that moves a set reds here with the phrase it would need."""
+    d = C(LWA)
+    s = doc(SUMMARY)
+    fat = d["readings"]["fatigue_reversed_limit_MPa"]
+    air = d["cells"]["flange_on_bark"]["state2_air_dry_readings_max"]
+    alloys = list(air)
+    amp = {a: air[a]["adverse_reversed"]["sigma_amp_MPa"] for a in alloys}
+    assert [a for a in alloys if amp[a] > fat[_LWA_FAT[0]]] == alloys and [a for a in alloys if amp[a] > fat[_LWA_FAT[1]]] == ["Ta"]
+    assert "past F2's adverse 16.2 on all six alloys and past F1's 30 on Ta alone" in s
+    first = sum(all(x < t["yield_23C_share_102"] for x in t["fatigue_share_reversed"].values()) for t in d["thresholds"].values())
+    assert first == 6 and "every fatigue reading switches on before the yield on all six alloys" in s
+    we = d["warm_edge_preload"]
+
+    def n(tk, pm, key, sub=None):
+        blk = "reaches_warm_edge_yield" if sub is None else "reaches_fig4_band"
+        return sum(we[f"{a}__{pm}__adverse__{tk}"][blk][key if sub is None else sub] for a in alloys)
+    cap, cam = _LWA_T
+    band = (n(cap, "flange_on_bark", None, "plus"), n(cap, "flange_on_bark", None, "minus"))
+    ratio = [a for a in alloys if we[f"{a}__flange_on_bark__adverse__{cap}"]["reaches_warm_edge_yield"]["fig4_ratio_on_tree_yield"]]
+    below = [a for a in alloys if not we[f"{a}__flange_on_bark__adverse__{cap}"]["reaches_fig4_band"]["minus"]]
+    assert band == (4, 5) and ratio == ["Ta"] and below == ["beta-Ti-13Nb-13Zr"]
+    assert ("reaches it on 4–5 of 6 alloys across Figure 4's ±2 MPa digitisation band (beta-Ti-13Nb-13Zr below it on every "
+            "reading) and the ratio reading on Ta alone — 1 to 5 of 6 over the readings") in s
+    nz = sum(n(tk, "zone3_fit", None, "minus") for tk in _LWA_T) + n(cam, "flange_on_bark", None, "minus")
+    assert nz == 0 and "on none, even at the low end of Figure 4's band" in s
+    under = [a for a in alloys if isinstance(we[f"{a}__flange_on_bark__adverse__{cap}"]
+                                              ["retained_modulus_below_which_it_falls_under_warm_edge_yield"]["fig4_absolute"], str)]
+    assert under == ["beta-Ti-13Nb-13Zr"] and "beta-Ti-13Nb-13Zr is already under at `102`'s relax floor 0.65" in s
+    top = max(float(k) for k in d["readings"]["victrex"]["fig7_450G_23C_creep_strain_pct_first_and_1000h"])
+    assert all(we[f"{a}__flange_on_bark__adverse__{cap}"]["sigma_preload_MPa"] > top for a in alloys)
+    assert "for every adverse-grip bark preload at the capsule edge (all above the top 60 MPa curve)" in s
+    soft = ("state2_cap_rigid_bark_bond_soft", "state3_no_bearing_bond_soft_max")
+    rigid = [st for st in d["cells"]["flange_on_bark"] if st not in ("state1_anode_free", "state2_air_dry_readings_max")]
+    miss30 = sorted({(st, a) for st in rigid for a in alloys
+                     if d["cells"]["flange_on_bark"][st][a]["adverse_reversed"]["sigma_amp_MPa"] <= fat[_LWA_FAT[1]]})
+    assert miss30 == sorted((st, "beta-Ti-13Nb-13Zr") for st in soft)
+    assert "the amplitude passes F1's 30 on every alloy except beta-Ti-13Nb-13Zr at the soft bond's shares (0.14–0.15)" in s
+    f3_states = sorted({d["states_share_of_102_shift"][pm][st] for pm in d["cells"] for st in d["cells"][pm]
+                        if any(d["cells"][pm][st][a]["adverse_reversed"]["axis_kind_readings"] != "clear_on_read_data" for a in alloys)})
+    assert min(f3_states) >= 0.58 and max(f3_states) <= 0.72
+    assert "F3's 75.7 on some alloy only at the stiff bond's largest shares (0.58–0.72 over both premises)" in s
+    gentle_sway = {c["gentle_one_sided"]["axis_adverse_readings"] for pm in d["cells"].values() for st in pm.values() for c in st.values()}
+    gentle_hot = [(d["states_share_of_102_shift"][pm][st], c[f"gentle_one_sided_hot_preload@{tk}"])
+                  for pm in d["cells"] for st in d["cells"][pm] for c in d["cells"][pm][st].values() for tk in _LWA_T]
+    flagged = [sh for sh, c in gentle_hot if c["axis_adverse_readings"] != "clear_on_read_data"]
+    assert gentle_sway == {"clear_on_read_data"} and all(c["axis_kind_readings"] == "clear_on_read_data" for _, c in gentle_hot)
+    assert flagged and min(flagged) >= 0.58 and max(flagged) <= 0.72
+    for tk in _LWA_T:      # «at either temperature»
+        assert any(c[f"gentle_one_sided_hot_preload@{tk}"]["axis_adverse_readings"] != "clear_on_read_data"
+                   for pm in d["cells"].values() for st in pm.values() for c in st.values()), tk
+    assert "(0.58–0.72) at either temperature, and none passes the kind one" in s
+    assert "is clear on the sway alone in every state on every reading" in s
+    assert f"μ {min(d['inputs']['mu_sweep_55']):g}, the median shift one-sided" in s
+    past48 = [(pm, st) for pm in d["cells"] for st in d["cells"][pm]
+              if d["cells"][pm][st]["Ti-6Al-4V"]["adverse_reversed"]["sigma_amp_MPa"] > fat[_LWA_FAT[3]]]
+    assert f"the anchor's 48 is passed in {len(past48)} of `103`'s 18 state cells" in s and len(past48) == 8
+    cold_bark = [v["at_23C_cap"] for k, v in d["cold_edge"].items() if "__flange_on_bark__adverse__" in k]
+    assert f"on {sum(cold_bark)} of {len(cold_bark)} alloy × temperature cells" in s

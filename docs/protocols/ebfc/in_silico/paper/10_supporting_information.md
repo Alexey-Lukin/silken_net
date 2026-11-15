@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 419 · 44,060,498 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 421 · 44,880,457 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -74,6 +74,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/123_wind_reanalyses_station.py` | `a76459a766cb1722631406b46cc589e99bab3b0d73d5587351b1660fe9243ce2` | Two reanalyses of the 10 m wind against one synoptic station's daily mean and daily maximum wind, with the gap conditioned on the station, on the reanalysis and on neither, and the strong-wind hours of nineteen winter seasons read from both reanalyses. |
 | `tools/in_silico/scripts/124_stem_face_second_sky.py` | `5693e3d9ea993866d3bc026f8b3394641892a4038190d30a2725227646f004f0` | A light logger on a pine stem's south face under a second sky: the face lit by a satellite-based surface-irradiance product and judged against reanalysis irradiance — the false light dips, the rejections of snow- and hoarfrost-cover models and the seasonal ratio that the disagreement of the two sky estimates alone produces, over 19 winters. |
 | `tools/in_silico/scripts/125_stem_face_courtyard.py` | `c89a4f7534f41a4f504b13f4010ad1464b793bd69cfbee2d5587363a6b1c95bd` | A light logger on a pine stem's face in a courtyard open to one side: the share of an open face's winter beam, sky-diffuse and ground-reflected light that reaches the face past a two-storey building on three sides, under two sky products; the building's share given a level horizon inside the opening, a bracket on a plan read by eye that includes the trunk's position, and the hours the sun is first seen from the trunk. |
+| `tools/in_silico/scripts/126_liner_wall_axial_stress.py` | `bfc4138036054fa3c3e422090e16f922a15aa2ca411c331fef453330dfa7771a` | First-order check of the axial stress in the thin PEEK liner wall of the anchor's bus wire: its mean and amplitude per bond state of the anchor in the wood and per wire alloy, from the shear-lag model's root force, against PEEK fatigue readings and against its strength and creep at two warm-edge temperatures, with the load shares at which each failure axis switches on; no solve |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `21c4b260195f62e079d7505e26cc41cd3519417d8f2047ddec96976b02c062fc` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
 | `tools/in_silico/scripts/13_psbma_diffusion_md.py` | `1df7d7778e3fc058fa5f00cc181eaf242148a6dfbffd262543e0c617c50828c8` | L2 — glucose diffusion through PSBMA membrane layer. |
 | `tools/in_silico/scripts/14_xylem_sap_sweep_md.py` | `e4a8753f04783fc3198835d35935899a64d90aeb0b3cdbd223d6b4421e2d6c6b` | L2 — xylem sap composition sweep: test enzyme stability across tree species. |
@@ -165,8 +166,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_pymol_cartoon.py` | `29196944b2ddeee996bb3babff974d0a15f695de7eea5b53a0fd39959554a2dd` | Fig 1 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `b4fe76b578bc07e38acd90e415b4e3d06aa0a714f9b9b60f133532fbfc3331ca` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `b32f1255db6e913f7967c06ffe9e9084d9168afaad1fd17a9f38de4544fd82b3` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `a6ef275d4432af84548d523c787fa7d5e1d69d461d48fbbaec3824c0eb637590` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `0a690347a6558b9e70197bfc21cf920ef82e4004c0f4fbf8ad58e57d840d6ca0` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `921e1b000bb951cae27fb7cdac3dea6c0ed6a52d0aac868a5e7bce70e1872cc7` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -303,6 +304,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/gyroid_wood_strain_share.json` | `42a6e4875f17c378d137a62815e01fffb6a51d831d7b0397c36496a1e4681945` | 561,435 |
 | `tools/in_silico/cache/mechanical/liner_exit_contact.json` | `5492ab4d830b32d940aa77ff9a3e6dae78e7f3f84bb8fec4cbf404767afee7fa` | 63,959 |
 | `tools/in_silico/cache/mechanical/liner_mouth_contact.json` | `87caf0020041854a9c6e9587dfd66cdb08a7a6b4e3cfc7a20d2c8c7e84034a24` | 161,857 |
+| `tools/in_silico/cache/mechanical/liner_wall_axial_stress.json` | `45cfe91eead85465a063c8421fb5addff4a67ee03bda9c43fd7c6eef23012005` | 739,610 |
 | `tools/in_silico/cache/mechanical/oring_reaction_band.json` | `8e6df28e951a86290c114104876906184c2839ddf42518ab21eefd100015b453` | 11,170 |
 | `tools/in_silico/cache/mechanical/pad_travel_remedies.json` | `e6151b6ae0b4f8b0bba0f6d9ac9dc33b328004aa9df00d3984b2b1482b04d813` | 33,474 |
 | `tools/in_silico/cache/mechanical/pogo_sway_transfer.json` | `304d7443401bdc76a18f8ed9e407c34c0ea5c08930a79794f5601ff21bc0755d` | 16,558 |
