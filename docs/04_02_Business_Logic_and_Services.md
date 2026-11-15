@@ -1835,7 +1835,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 
 Константи: σ = 10.0, ρ = 28.0, β = 8/3. Адаптивні параметри: акустика → σ (clamped 5–30), температура → ρ (clamped 10–50). **[E.63]** β лишається **фіксованим** (`perturb_beta` видалено — `delta_t_s`/`vcap_mv` на Z **не** впливають; метаболізм живить `growth_points` напряму, див. Attractor card вище). **[SEC.11]** Початкова точка `(x₀, y₀, z₀)` ∈ [-1, +1]³ деривується з per-device `K_seed` через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` (cold start) або читається з попереднього `TelemetryLog.lorenz_state_x/y/z` (warm continuation, mirror RTC DR16-DR18). DID **не** є входом атрактора — лише identifier (та `info`-string у HKDF при provisioning K_seed). 250 ітерацій × 0.01 timestep. **[FIX FW.7]** Float (IEEE 754 double) — байт-ідентично з firmware mruby для Dual Computation Integrity.
 
-Використовується для ідентифікації стресу дерева через відхилення траєкторії z у фазовому просторі. Верифікується ZK-proof через IoTeX W3bstream.
+Несуча роль Z — печатка обчислювальної цілісності (DCI, ECB-ера): парність device-Z ≡ server-Z проти фабрикації; стану чи стресу дерева Z не свідчить ([E.64]; [`00_01 §3`](00_01_Vision_Mission_and_Roadmap)). ZK-шлях IoTeX W3bstream — PATH 1, у проді демоутнутий і activation-gated ([`05_02`](05_02_Proof_of_Growth_Pipeline)).
 
 ---
 
