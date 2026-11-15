@@ -2,7 +2,8 @@
 """
 HW.9 — land patterns of the board-to-board pair of the bench stack's test decks (00_07 HW.9, ⚖️ founder 2026-11-15;
 the pair — 02_01 §3.1 pos. 12): the Samtec FW-SM header and the Samtec CLP-SM socket, 5 positions x 2 rows (ordering codes: 02_01 §3.1 pos. 12), both
-without the –A option. KiCad ships neither, so they are drawn here from the vendor's drawings.
+without the –A option. KiCad ships neither, so they are drawn here from the vendor's drawings. The standoff between the
+decks (02_01 §3.1 pos. 25) is drawn here too — its source, and why KiCad's own footprint of it is not used, at STANDOFF.
 
 Sources (Samtec, fetched 2026-11-15 from suddendocs.samtec.com/prints/; the PDFs are the vendor's and are NOT kept in the
 tree — the numbers below are their transcription, each with the sheet and view it was read on):
@@ -37,6 +38,8 @@ y DOWN.
 """
 from __future__ import annotations
 
+import math
+
 INCH = 25.4
 
 PARTS = {
@@ -70,6 +73,37 @@ PARTS = {
 POST = 0.016                         # read, S5 sheet 1 FIG 1, side view «.016[0.41] SQ REF (TYP)» — the post's section
 COURTYARD_MARGIN = 0.25              # mm, OURS (the habit of hw12 / hw33) — no drawing gives a courtyard
 
+# The standoff between the decks: Würth WA-SMSI, SMT steel spacer with internal thread M2, L 8.0 (02_01 §3.1 pos. 25).
+# Source W1 — Würth Elektronik datasheet of order code 9774080243R, REVISION 001.003 of 2025-12-31, page 1/6, fetched
+# 2026-11-15 from we-online.com/components/products/datasheet/9774080243R.pdf (sha256 39e7a13e3ee285b6…; the PDF is the
+# vendor's and is NOT kept in the tree). Millimetres, as the sheet prints them; its general tolerance is DIN ISO 2768-1m,
+# and the only explicit one is the length's. All «read» but one half of the bridge (below): the numbers have a text
+# layer, and which line each belongs to was read on a 400 dpi raster of the page.
+#   The part sits on the board by its SHOULDER, soldered to a ring pad, with a spigot in a non-plated hole; the thread
+#   runs right through (section A-A), so the end face that meets the upper deck is a ring — its bore and the chamfer at
+#   its mouth are not dimensioned. L is drawn from the shoulder to that face: the spigot is not in it, the solder under
+#   the shoulder adds to it, and the sheet gives that solder no height — only the paste.
+# KiCad ships a footprint of this part (Mounting_Wuerth); it is not used because its paste is not the sheet's: its four
+# apertures end at Ø5.12, not Ø5.2 — 5.7 % less paste under the one joint whose height the bench is after.
+STANDOFF = {
+    "value": "WA-SMSI M2x8",
+    "length": 8.0,                   # W1 Article Properties «Length L 8 mm ±0.1mm»; section A-A: shoulder → end face
+    "length_tol": 0.1,
+    # The sheet is drawn in first-angle projection (the symbol in its title block): the plan view above the elevation
+    # is the part seen from below, the one under it — from above
+    "body_d": 4.35,                  # W1 Dimensions, the lower plan view «Ø 4,35» — the body, hence the end face's outer Ø
+    "spigot_d": 2.8,                 # W1 Dimensions, the upper plan view «Ø 2,8» — the middle circle
+    "spigot_l": 1.4,                 # W1 section A-A «1,4» — below the shoulder
+    "pad_d": 5.3,                    # W1 Recommended Land Pattern, «Suggested solder pad» «Ø 5,3»
+    "hole_d": 3.0,                   # W1 ibid., «Non plated through hole» «Ø 3,0» — the pad's inner edge is the hole's
+    "paste_od": 5.2,                 # W1 Stencil Suggestion «Ø 5,2»
+    "paste_id": 3.1,                 # W1 ibid. «Ø 3,1»
+    # W1 ibid. «0,6» — the bridges that cut the ring into four apertures: read on the bridge it is dimensioned on; the
+    # other is drawn the same width and carries no dimension of its own — interpreted
+    "paste_bridge": 0.6,
+    "paste_min": 0.150,              # W1 Properties «Solder Cream Thickness 150 µm min.» — the stencil order's, not the board's
+}
+
 
 def pads(part: str, n: int = 5) -> list:
     """[(number, x, y, w, h)] in mm for n positions per row; odd numbers in the row drawn at the bottom (+y), both
@@ -88,6 +122,26 @@ def body(part: str, n: int = 5) -> tuple:
     """(length along the rows, width) in mm — for FW the vendor's «other components shall avoid» zone."""
     p = PARTS[part]
     return (n * p["pitch"] + p["body_l_over_pitch"]) * INCH, p["body_w"] * INCH
+
+
+def courtyard(part: str, n: int = 5) -> tuple:
+    """(half-length along the rows, half-width) in mm — pads or body, whichever reaches further, plus the margin."""
+    body_l, body_w = body(part, n)
+    return (max(body_l / 2, max(abs(x) + w / 2 for _, x, _y, w, _h in pads(part, n))) + COURTYARD_MARGIN,
+            max(body_w / 2, max(abs(y) + h / 2 for _, _x, y, _w, h in pads(part, n))) + COURTYARD_MARGIN)
+
+
+def standoff_paste(steps: int = 24) -> list:
+    """The standoff's four stencil apertures, [[(x, y), …] × 4] in mm about its axis — W1 Stencil Suggestion: the ring
+    paste_id…paste_od cut by two bridges along the axes. Each arc is a polygon of `steps` chords, inscribed."""
+    ro, ri, half = STANDOFF["paste_od"] / 2, STANDOFF["paste_id"] / 2, STANDOFF["paste_bridge"] / 2
+
+    def arc(r: float, a0: float, a1: float) -> list:
+        return [(r * math.cos(a0 + (a1 - a0) * i / steps), r * math.sin(a0 + (a1 - a0) * i / steps)) for i in range(steps + 1)]
+
+    ao, ai = math.asin(half / ro), math.asin(half / ri)
+    quadrant = arc(ro, ao, math.pi / 2 - ao) + arc(ri, math.pi / 2 - ai, ai)
+    return [[(sx * x, sy * y) for x, y in quadrant] for sx in (1, -1) for sy in (1, -1)]
 
 
 def post_gap() -> tuple:
@@ -131,10 +185,7 @@ def connector_footprint(board, part: str, ref: str, at: tuple, bottom: bool = Fa
         pad.SetPosition(pt(x, y))
         fp.Add(pad)
     body_l, body_w = body(part, n)
-    ex = max(body_l / 2, max(abs(x) + w / 2 for _, x, _y, w, _h in pads(part, n)))    # pads or body, whichever
-    ey = max(body_w / 2, max(abs(y) + h / 2 for _, _x, y, _w, h in pads(part, n)))    # reaches further
-    for layer, hx, hy, width in ((pcbnew.F_CrtYd, ex + COURTYARD_MARGIN, ey + COURTYARD_MARGIN, 0.05),
-                                 (pcbnew.F_Fab, body_l / 2, body_w / 2, 0.10)):
+    for layer, hx, hy, width in ((pcbnew.F_CrtYd, *courtyard(part, n), 0.05), (pcbnew.F_Fab, body_l / 2, body_w / 2, 0.10)):
         corners = ((-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy))
         for i in range(4):   # no zip(strict=) — KiCad's Python is 3.9
             shape = pcbnew.PCB_SHAPE(fp)
@@ -149,4 +200,54 @@ def connector_footprint(board, part: str, ref: str, at: tuple, bottom: bool = Fa
     board.Add(fp)
     if bottom:
         fp.Flip(fp.GetPosition(), pcbnew.FLIP_DIRECTION_LEFT_RIGHT)
+    return fp
+
+
+def standoff_footprint(board, ref: str, at: tuple):
+    """Draw the standoff's land pattern (W1) into the board at `at` (mm), on the front: the non-plated hole with the ring
+    pad around it — copper and mask from the hole's edge to pad_d — and the four paste apertures of standoff_paste()."""
+    import pcbnew
+
+    def pt(x: float, y: float):
+        return pcbnew.VECTOR2I(pcbnew.FromMM(at[0] + x), pcbnew.FromMM(at[1] + y))
+
+    def ring(layer: int, d: float, width: float) -> None:
+        shape = pcbnew.PCB_SHAPE(fp)
+        shape.SetShape(pcbnew.SHAPE_T_CIRCLE)
+        shape.SetCenter(pt(0, 0))
+        shape.SetEnd(pt(d / 2, 0))
+        shape.SetLayer(layer)
+        shape.SetWidth(pcbnew.FromMM(width))
+        fp.Add(shape)
+
+    fp = pcbnew.FOOTPRINT(board)
+    fp.SetFPID(pcbnew.LIB_ID("SilkenNet", "Wuerth_WA-SMSI_M2x8"))
+    fp.SetReference(ref)
+    fp.SetValue(STANDOFF["value"])
+    fp.SetAttributes(pcbnew.FP_SMD)
+    fp.SetPosition(pt(0, 0))
+    pad = pcbnew.PAD(fp)
+    pad.SetAttribute(pcbnew.PAD_ATTRIB_NPTH)
+    pad.SetShape(pcbnew.F_Cu, pcbnew.PAD_SHAPE_CIRCLE)
+    pad.SetSize(pcbnew.F_Cu, pcbnew.VECTOR2I(pcbnew.FromMM(STANDOFF["pad_d"]), pcbnew.FromMM(STANDOFF["pad_d"])))
+    pad.SetDrillSize(pcbnew.VECTOR2I(pcbnew.FromMM(STANDOFF["hole_d"]), pcbnew.FromMM(STANDOFF["hole_d"])))
+    layers = pcbnew.LSET()
+    layers.AddLayer(pcbnew.F_Cu)
+    layers.AddLayer(pcbnew.F_Mask)
+    pad.SetLayerSet(layers)
+    pad.SetPosition(pt(0, 0))
+    fp.Add(pad)
+    for aperture in standoff_paste():
+        shape = pcbnew.PCB_SHAPE(fp)
+        shape.SetShape(pcbnew.SHAPE_T_POLY)
+        shape.SetPolyPoints([pt(x, y) for x, y in aperture])
+        shape.SetFilled(True)
+        shape.SetLayer(pcbnew.F_Paste)
+        shape.SetWidth(0)
+        fp.Add(shape)
+    ring(pcbnew.F_CrtYd, STANDOFF["pad_d"] + 2 * COURTYARD_MARGIN, 0.05)
+    ring(pcbnew.F_Fab, STANDOFF["body_d"], 0.10)
+    fp.Reference().SetVisible(False)
+    fp.Value().SetVisible(False)
+    board.Add(fp)
     return fp

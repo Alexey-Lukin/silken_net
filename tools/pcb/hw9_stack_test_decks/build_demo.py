@@ -2,8 +2,9 @@
 """
 HW.9 — the smallest board that puts both land patterns of footprints.py through KiCad's DRC: the header FW on the front
 and the socket CLP on the BACK at the same place — the stack seen in plan, the header on top of the lower deck and the
-socket under the upper one. It is a proof of the footprints, not a deck: no standoffs, no nets, nothing to order
-(the deck generator is the next leg of 00_07 HW.9).
+socket under the upper one. It is a proof of the footprints, not a deck: no standoffs, no nets, nothing to order (the
+decks are build_decks.py, which imports the project and DRC helpers below; its stack check across two boards covers
+the flip check here, and what this run adds is the printout of the gap under the socket).
 
 The generator is the source; the board and the project next to it are its output (hardware design — CERN-OHL-S-2.0 by
 the zone map in /NOTICE). Run it with the Python that ships inside KiCad 10:
@@ -25,6 +26,7 @@ import sys
 from pathlib import Path
 
 import pcbnew
+from decks import CLEARANCE
 from footprints import INCH, connector_footprint, post_channel, post_gap
 
 HERE = Path(__file__).resolve().parent
@@ -35,7 +37,6 @@ PROJECT_FILE = HERE / f"{NAME}.kicad_pro"
 KICAD_CLI = Path(pcbnew.__file__).resolve().parents[7] / "MacOS/kicad-cli"
 
 BOARD_W, BOARD_H = 12.0, 12.0            # mm, centred on the pair
-CLEARANCE = 0.15                         # the rule of hw33; the patterns leave 0.53 mm between neighbouring pads
 
 
 def build() -> pcbnew.BOARD:
@@ -73,10 +74,10 @@ def build() -> pcbnew.BOARD:
     return board
 
 
-def write_project() -> None:
+def write_project(path: Path = PROJECT_FILE) -> None:
     """The rules KiCad's DRC reads live in the project, not in the board — written here so that a fresh checkout judges
-    the board against the same clearance it was built for."""
-    PROJECT_FILE.write_text(json.dumps({
+    the board against the same clearance it was built for. (build_decks.py writes its projects with this too.)"""
+    path.write_text(json.dumps({
         "board": {"design_settings": {"rules": {
             "min_clearance": CLEARANCE, "min_track_width": 0.2, "min_copper_edge_clearance": 0.3,
             "min_through_hole_diameter": 0.3, "min_hole_to_hole": 0.25, "min_via_annular_width": 0.13,
@@ -84,21 +85,22 @@ def write_project() -> None:
             # the footprints are defined here, not in a library — «library not configured» describes the design's
             # choice, not a defect
             "rule_severities": {"lib_footprint_issues": "ignore", "lib_footprint_mismatch": "ignore"}}},
-        "meta": {"filename": PROJECT_FILE.name, "version": 3},
+        "meta": {"filename": path.name, "version": 3},
         "net_settings": {"classes": [{"name": "Default", "clearance": CLEARANCE, "track_width": 0.2,
                                       "via_diameter": 0.6, "via_drill": 0.3}], "meta": {"version": 4}},
     }, indent=2) + "\n")
 
 
-def drc_gate() -> None:
+def drc_gate(board_file: Path = BOARD_FILE) -> None:
     """Any DRC violation or unconnected item fails the build; the failed board stays, as a diff against the committed one."""
     report = HERE / "drc.json"
     subprocess.run([str(KICAD_CLI), "pcb", "drc", "--format", "json", "--units", "mm", "--severity-all",
-                    "--output", str(report), str(BOARD_FILE)], check=True, capture_output=True, text=True)
+                    "--output", str(report), str(board_file)], check=True, capture_output=True, text=True)
     data = json.loads(report.read_text())
     bad = data.get("violations", []) + data.get("unconnected_items", [])
     if bad:
-        raise SystemExit("DRC failed:\n  " + "\n  ".join(f"{v['severity']} {v['type']}: {v['description']}" for v in bad))
+        raise SystemExit(f"DRC failed for {board_file.name}:\n  " +
+                         "\n  ".join(f"{v['severity']} {v['type']}: {v['description']}" for v in bad))
     report.unlink()
 
 
