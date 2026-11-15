@@ -185,6 +185,119 @@ public void No_Lock_Or_Flange_Manifest_Carries_A_Barb_Direction_Key()
             "evaporates on parse; the ratchet direction is fixed by the insertion end, not by a sign");
 }
 
+// ── The ridge box and the barb crests of a BUILT mesh by azimuth (MechanicalLock.RidgeBox · ReadCrestVertex ·
+//    CrestFindings). Pure pins: the mesh needs the voxel runtime, which CI lacks, and no gate runs `verify` — so the
+//    box pin is the only automatic red if the ridges are rendered in the bare cylinder's box again, and the crest
+//    pins hold the comparison `verify` applies, never the fact that a built body passes it. ──
+
+// The box the ridges are rendered in reaches past every crest by the band the runtime keeps round a surface — on
+// both sides of X and of Y — and is no shorter than the shank along the axis.
+// MUTATION: return the shank's own box ⇒ red.
+[Fact]
+public void The_Ridge_Box_Reaches_Past_The_Crests_On_Every_Side()
+{
+    MechanicalLockCem cem = MkCem();
+    float fR = cem.ShankDiameterMm / 2f, fVoxel = cem.VoxelSizeMm;
+    float fReach = fR + cem.BarbHeightMm + (3f * fVoxel) - 1e-4f;   // the float sum, not a looser claim
+    var oShank = new PicoGK.BBox3(new Vector3(-fR, -fR, 0f), new Vector3(fR, fR, cem.ShankLengthMm));
+    PicoGK.BBox3 oBox = MechanicalLock.RidgeBox(cem, oShank, fVoxel);
+
+    Assert.True(oBox.vecMin.X <= -fReach && oBox.vecMax.X >= fReach && oBox.vecMin.Y <= -fReach && oBox.vecMax.Y >= fReach,
+        $"the ridge box spans x {oBox.vecMin.X:F3}…{oBox.vecMax.X:F3}, y {oBox.vecMin.Y:F3}…{oBox.vecMax.Y:F3}; the crests " +
+        $"and their band reach ±{fReach:F3} — a box short of that cuts every tooth down where it crosses the axes");
+    Assert.True(oBox.vecMin.Z <= 0f && oBox.vecMax.Z >= cem.ShankLengthMm, "the ridge box is shorter than the shank");
+}
+
+// A ring of mesh vertices on every row's crest (every 0.25° of azimuth, off the sector boundaries), read through
+// ReadCrestVertex: fnRadius(row, azimuth°) is the radius of the crest there.
+private static float[,] CrestRing(MechanicalLockCem cem, float fVoxelMm, Func<int, float, float> fnRadius)
+{
+    var aCrest = new float[cem.BarbRows, MechanicalLock.CrestSectors];
+    for (int nRow = 0; nRow < cem.BarbRows; nRow++)
+        for (float fAz = 0.1f; fAz < 360f; fAz += 0.25f)
+        {
+            float fR = fnRadius(nRow, fAz), fRad = fAz * MathF.PI / 180f;
+            MechanicalLock.ReadCrestVertex(cem, fVoxelMm,
+                new Vector3(fR * MathF.Cos(fRad), fR * MathF.Sin(fRad), MechanicalLock.CrestZMm(cem, nRow)), aCrest);
+        }
+    return aCrest;
+}
+
+// The cut is given in DEGREES of the circle and read through the same vertex feed `verify` uses, so the pins hold the
+// angular resolution itself:
+//   • a crest whole round the circle, at the height a mesh carries it, passes;
+//   • the cut the ridges had — low within 9° of an axis, on one row — is found and names the row, although the
+//     largest radius round that tooth is untouched. MUTATION: CrestSectors = 12 ⇒ red (a 30° sector keeps a sound
+//     vertex on either side of the cut);
+//   • the declared resolution: a crest low over an arc of 6°, wherever it lies, is found. MUTATION: CrestSectors = 60
+//     ⇒ red here — and only here: a 6° sector still sees the ±9° cut above, so that case alone would not hold 120;
+//   • the declared ceiling: an arc of 2° between two sector centres hides behind the sound vertices either side of it;
+//   • a crest standing proud of the manifest's by more than the same room is found as well, and so is a sector that
+//     no vertex fed.
+// MUTATION: judge a row by its largest reading instead of every sector ⇒ red · the proud side dropped ⇒ red.
+[Fact]
+public void A_Crest_Cut_Down_Over_An_Arc_Of_The_Circle_Is_Found_By_Its_Width_In_Degrees()
+{
+    MechanicalLockCem cem = MkCem();
+    float fVoxel = cem.VoxelSizeMm, fNominal = (cem.ShankDiameterMm / 2f) + cem.BarbHeightMm;
+    float fSound = fNominal - (0.5f * fVoxel), fCut = fNominal - (2f * fVoxel);
+    static bool Within(float fAz, float fCentre, float fHalfWidth)
+        => MathF.Abs(((fAz - fCentre + 540f) % 360f) - 180f) <= fHalfWidth;
+    IReadOnlyList<string> Cut(int nCutRow, float fCentre, float fHalfWidth, float fRadius)
+        => MechanicalLock.CrestFindings(cem, fVoxel,
+            CrestRing(cem, fVoxel, (nRow, fAz) => nRow == nCutRow && Within(fAz, fCentre, fHalfWidth) ? fRadius : fSound)).Findings;
+
+    Assert.Empty(MechanicalLock.CrestFindings(cem, fVoxel, CrestRing(cem, fVoxel, (_, _) => fSound)).Findings);
+
+    string strAxisCut = Assert.Single(Cut(2, 90f, 9f, fCut));
+    Assert.Contains("barb row 3", strAxisCut, StringComparison.Ordinal);
+    Assert.Contains("the crest is LOW over", strAxisCut, StringComparison.Ordinal);
+
+    foreach (float fCentre in new[] { 91.3f, 200.7f, 359.2f })
+        Assert.Contains("barb row 2", Assert.Single(Cut(1, fCentre, 3f, fCut)), StringComparison.Ordinal);
+
+    Assert.Empty(Cut(1, 91.5f, 1f, fCut));
+
+    Assert.Contains("the crest stands PROUD over", Assert.Single(Cut(0, 45f, 9f, fNominal + (1.5f * fVoxel))), StringComparison.Ordinal);
+
+    float[,] aEmpty = CrestRing(cem, fVoxel, (_, _) => fSound);
+    aEmpty[0, 7] = 0f;
+    Assert.Contains("barb row 1", Assert.Single(MechanicalLock.CrestFindings(cem, fVoxel, aEmpty).Findings), StringComparison.Ordinal);
+}
+
+// Where a mesh vertex (lock-local) is read: in the row whose analytic crest lies within the axial window, and in the
+// sector CENTRED on its azimuth's nearest multiple of the sector width. Every point sits off a boundary, on both
+// sides of what it pins: 1.2° either side of an axis must land in that axis's sector (sectors that START on the axis
+// would split them), 1.8 voxels off the crest feeds and 2.2 does not.
+// MUTATION: sector centres shifted by half a sector ⇒ red · CrestAxialWindowVoxels = 3 or 1 ⇒ red.
+[Fact]
+public void A_Mesh_Vertex_Feeds_The_Sector_Centred_On_Its_Axis_Within_Two_Voxels_Of_The_Crest()
+{
+    MechanicalLockCem cem = MkCem();
+    float fVoxel = cem.VoxelSizeMm, fR = (cem.ShankDiameterMm / 2f) + cem.BarbHeightMm;
+    float fStep = 360f / MechanicalLock.CrestSectors;
+    var aCrest = new float[cem.BarbRows, MechanicalLock.CrestSectors];
+    Vector3 At(float fAzimuthDeg, float fZ)
+        => new(fR * MathF.Cos(fAzimuthDeg * MathF.PI / 180f), fR * MathF.Sin(fAzimuthDeg * MathF.PI / 180f), fZ);
+    float fZ1 = MechanicalLock.CrestZMm(cem, 1), fZ3 = MechanicalLock.CrestZMm(cem, 3);
+
+    MechanicalLock.ReadCrestVertex(cem, fVoxel, At(90f - (0.4f * fStep), fZ1 + (1.8f * fVoxel)), aCrest);   // row 2, +Y, just inside the window
+    MechanicalLock.ReadCrestVertex(cem, fVoxel, At(90f + (0.4f * fStep), fZ1 - (1.8f * fVoxel)), aCrest);   // … the other side of both
+    MechanicalLock.ReadCrestVertex(cem, fVoxel, At(180f - (0.4f * fStep), fZ3), aCrest);                    // row 4, −X
+    MechanicalLock.ReadCrestVertex(cem, fVoxel, At(180f + (0.4f * fStep), fZ3), aCrest);
+    MechanicalLock.ReadCrestVertex(cem, fVoxel, At(0f, fZ1 + (2.2f * fVoxel)), aCrest);                     // just outside the window
+    MechanicalLock.ReadCrestVertex(cem, fVoxel, At(0f, fZ1 - (2.2f * fVoxel)), aCrest);
+    MechanicalLock.ReadCrestVertex(cem, fVoxel, At(0f, 0.5f), aCrest);                                      // plain shank
+    MechanicalLock.ReadCrestVertex(cem, fVoxel, At(0f, cem.ShankLengthMm + 5f), aCrest);                    // beyond the lock
+
+    var aFed = new List<(int Row, int Sector)>();
+    for (int r = 0; r < cem.BarbRows; r++)
+        for (int s = 0; s < MechanicalLock.CrestSectors; s++)
+            if (aCrest[r, s] > 0f) aFed.Add((r, s));
+    Assert.Equal([(1, MechanicalLock.CrestSectors / 4), (3, MechanicalLock.CrestSectors / 2)], aFed);
+    Assert.Equal(fR, aCrest[1, MechanicalLock.CrestSectors / 4], 4);
+}
+
 // ── Insertion window (00_07 HW.26) — MechanicalLock.InsertionWindowMm is the arithmetic's one home ──
 
 // The window the SHIPPED Zone-1 lock admits, from its free end: the end of its PEEK-contact zone to the end of its

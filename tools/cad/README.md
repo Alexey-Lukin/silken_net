@@ -181,7 +181,7 @@ and the Zone-3 groove from the geometry; the Zone-1 groove bounds nothing and st
 (`MechanicalLock.HasGroove`). Own SDF (4th, ratchet `R(z)`), solid `BaseCylinder` + thin barb-ridge
 `BoolAdd` + groove-ring `BoolSubtract` where `HasGroove` + a central bore (`0` ⇒ SOLID shank — the Zone-1
 end, whose anode carries no core; `Ø1.35` ⇒ cathode channel the welded bus wire threads, `01_01 §1.4`). Metrics MEASURED off the profile (barb count /
-height / base, groove depth) + a **self-support face angle** (Noyron manufacturing-awareness): the
+height / base, groove depth) — the ANALYTIC profile, which is blind to what the render does; the one reading `verify` takes off the built MESH is the crest of every barb row by azimuth (`MechanicalLock.CrestFindings`), and it gates `VERIFY OK` — + a **self-support face angle** (Noyron manufacturing-awareness): the
 ratchet self-supports printed leading-ramp-down as a SEPARATE part (Ti64 LPBF 60° downface, Sa≈15µm);
 on the integrated Zone-1 body the anode's `01_02 §1.6` tip-down puts the steep face down at 20° — open,
 `00_07` HW.26 G4. Zone-1 Ø11 + Zone-3 placeholder Ø (canon Ø11 lands with the collar, HW.8.9). Grounded over canon §4.3:
@@ -191,7 +191,7 @@ tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-sp
 §4.3 lock for the barbed Zone-3 shank (`CathodeFlange.ShankCem` mapping — the same local ratchet profile; the ±1 direction knob was removed 2026-09-13, HW.26; no groove on this end since 2026-09-18) + 3 radial **bayonet lugs**
 (`LocalFrame(pos, radialZ)`) + Ø1.35 bus channel (the welded bus wire threads it) + the capsule's one O-ring groove — its FACE seal; the second sealing element, the channel's own closure at its exit, is REQUIRED since 2026-09-18 and not in geometry (`00_07` HW.34) — on the top face (1.344 × 2.315 at r 10.485–12.8 — depth = CS·(1 − 0.245), width = ring section / (0.80 fill · depth), radii off the socket band; nothing stored, `00_07` HW.33 branch (а) applied 2026-09-14; the flange sheet draws it as geometry in both readers and its depth tolerance as loud absence). `verify` gates solidity (NOT hollow-shell,
 gotcha #9), the derived Ø, lugs-fused (bbox extent past the rim — 3 lugs @120° are asymmetric → span ≈ flangeD +
-protrusion), barb-count. Top face = pogo pads (coating, not geometry); side/perimeter = cathode catalytic
+protrusion), barb-count, and the shank's barb crests by azimuth on the built mesh (as for the lock). Top face = pogo pads (coating, not geometry); side/perimeter = cathode catalytic
 (O₂ ingress, 02_02 §1.2).
 
 **Ti-coin A_electrode (shipped)** — `ti_coin` CEM → Ø16 disc, 1 face ≈ 2 cm² (01_03 §3.5); `verify` gates

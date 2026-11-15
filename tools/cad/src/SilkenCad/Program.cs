@@ -1129,9 +1129,26 @@ internal static class Program
         bool bSolid = oM.SolidVolumeMm3 > 0.8 * dCylVol;   // a FILLED shank (solid, or annulus for a cathode channel), not a hollow render of an open SDF field
         if (!bSolid) Console.WriteLine($"  ⚠ solid volume {oM.SolidVolumeMm3:F0} ≪ {dCylVol:F0} mm³ expected — hollow render (an SDF field left open at the bbox caps, gotcha #9)");
 
-        bool bOk = bSane && bCount && bHeight && bBase && bGroove && bSolid;
+        bool bCrests = ReportCrestsByAzimuth(cem, voxShank);
+        bool bOk = bSane && bCount && bHeight && bBase && bGroove && bSolid && bCrests;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
+    }
+
+    // The barb crests of the BUILT body, by azimuth (MechanicalLock.CrestFindings). The metrics above read the tooth
+    // off the analytic profile — the parameter→geometry maths — and so stayed green over ridges the render had cut
+    // down on part of the circle; this is the one reading here that looks at the mesh. The body is in the lock's own
+    // frame (the lock itself, and the flange's shank: CathodeFlange builds on it without moving it).
+    private static bool ReportCrestsByAzimuth(MechanicalLockCem cem, Voxels voxBody)
+    {
+        Mesh msh = voxBody.mshAsMesh();
+        float[,] aCrest = new float[cem.BarbRows, MechanicalLock.CrestSectors];
+        for (int i = 0, n = msh.nVertexCount(); i < n; i++)
+            MechanicalLock.ReadCrestVertex(cem, cem.VoxelSizeMm, msh.vecVertexAt(i), aCrest);
+        (string strSummary, IReadOnlyList<string> aFindings) = MechanicalLock.CrestFindings(cem, cem.VoxelSizeMm, aCrest);
+        Console.WriteLine($"  {strSummary}");
+        foreach (string strFinding in aFindings) Console.WriteLine($"  ⚠ {strFinding}");
+        return aFindings.Count == 0;
     }
 
     // Cathode-flange verify (Деталь 3, 01_01 §1): golden metrics + assembly gates — solidity (a SOLID
@@ -1171,7 +1188,8 @@ internal static class Program
         if (!bLugs) Console.WriteLine($"  ⚠ bayonet lugs not fused (max bbox {dMaxXY:F1} < expected ≥{fLugSpanMin:F1} mm)");
         if (!bBarbs) Console.WriteLine($"  ⚠ barb count {oM.BarbCount} ≠ rows {cem.BarbRows}");
 
-        bool bOk = bSane && bSolid && bLugs && bBarbs;
+        bool bCrests = ReportCrestsByAzimuth(CathodeFlange.ShankCem(cem), voxFlange);
+        bool bOk = bSane && bSolid && bLugs && bBarbs && bCrests;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
     }

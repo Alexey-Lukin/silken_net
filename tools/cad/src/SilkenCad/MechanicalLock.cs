@@ -117,8 +117,9 @@ internal static class MechanicalLock
         // 1. Solid shank — a true filled cylinder (NOT an SDF render; see BarbRidges).
         Voxels voxShank = new BaseCylinder(new LocalFrame(), cem.ShankLengthMm, fRShank).voxConstruct();
 
-        // 2. Barb ridges — a thin annular shell, fused onto the shank.
-        voxShank.BoolAdd(new Voxels(new BarbRidges(cem), voxShank.oCalculateBoundingBox()));
+        // 2. Barb ridges — a thin annular shell, fused onto the shank, rendered in RidgeBox (below): the ridges stand
+        //    proud of the cylinder, so the cylinder's own box is too small for them.
+        voxShank.BoolAdd(new Voxels(new BarbRidges(cem), RidgeBox(cem, voxShank.oCalculateBoundingBox(), voxShank.fVoxelSize)));
 
         // 3. Retaining groove (§4.3 B) — subtract an annular ring (depth grooveDepth) over the groove width;
         //    skipped on an end that carries none (a zero-length cylinder is not a groove, it is a degenerate solid).
@@ -159,4 +160,92 @@ internal static class MechanicalLock
 
     public static InsertionWindow InsertionWindowMm(MechanicalLockCem cem)
         => new(cem.ContactStartMm + cem.ContactLengthMm, cem.ShankLengthMm);
+
+    // The box the barb ridges are rendered in: the bare shank's, grown radially by the barb height plus the 3-voxel
+    // band the runtime keeps around a surface. Pure, so xUnit holds it without the voxel runtime.
+    // 🔴 Until 2026-11-15 the ridges were rendered in the bare cylinder's own box, whose four side planes are tangent
+    //    to it: every tooth came out cut down where it crosses the X and Y axes (crest 0.11 mm low on the axis, whole
+    //    again ≈ 10° either side — measured at voxel 0.05), on the lock's own STL and on the flange's shank alike —
+    //    and nothing saw it, because `verify` measured the tooth on the analytic profile. `verify` now reads the crest
+    //    off the built mesh by azimuth (CrestFindings below); no gate runs `verify`, so the pin on THIS function is
+    //    what an automatic run would red on if the bare box came back.
+    internal static BBox3 RidgeBox(MechanicalLockCem cem, BBox3 oShank, float fVoxelMm)
+    {
+        float fProud = cem.BarbHeightMm + (3f * fVoxelMm);
+        return new BBox3(oShank.vecMin - new Vector3(fProud, fProud, 0f), oShank.vecMax + new Vector3(fProud, fProud, 0f));
+    }
+
+    // ── The barb CRESTS of a built mesh, read BY AZIMUTH — pure, so xUnit pins the comparison; reading the mesh is
+    //    the verb's (`verify mechanical_lock` · `verify cathode_flange`; a body that carries the lock in another frame
+    //    hands its vertices in lock-local coordinates). A crest read as one number per tooth — the largest radius
+    //    anywhere round it — is exactly what hid the clipped ridges: the tooth was whole on most of the circle. ──
+
+    // Sectors of 3°, centred on k·3°, so each of the four axis directions sits in the MIDDLE of one. A sector reads the
+    // LARGEST radius in it, so a crest low over an arc of 6° or more is seen wherever the arc lies (any such arc holds
+    // a whole sector), and a narrower one can hide between two sectors that each keep a sound vertex. The cut this
+    // check was built for was below the floor over ≈ 15° at each axis.
+    internal const int CrestSectors = 120;
+    // A vertex counts for a row's crest within 2 voxels of its analytic z (a meshed face lands within a voxel of its
+    // nominal, and the layer that straddles it reads either side); a sector's crest may read 1 voxel off the
+    // manifest's, either way — the sharp edge meshes rounded, short of its nominal by a fraction of a voxel.
+    // ⛔ Declared ceilings of that one-voxel floor, measured on the Zone-1 lock's own build (2026-11-15):
+    //    • a sound crest keeps 0.011–0.033 mm above it over voxels 0.03–0.08 — 0.019 at the shipped 0.05, the least at
+    //      0.032 — so a kernel or voxel change that rounds the edge a little more reds a sound mesh;
+    //    • the floor moves with the voxel, so does what passes: a crest low by up to one voxel is let through, and from
+    //      voxel 0.065 up the bare-box cut itself passed (0.065 · 0.07 · 0.08 — exit 0 on the old box);
+    //    • it is not derived from the tooth: a sharper apex meshes shorter, so a future manifest with a steeper tooth
+    //      may red a sound mesh.
+    internal const int CrestAxialWindowVoxels = 2;
+    internal const float CrestRadialToleranceVoxels = 1f;
+
+    // The analytic crest of barb row nRow (0-based from local z = 0), lock-local z.
+    internal static float CrestZMm(MechanicalLockCem cem, int nRow)
+        => cem.ContactStartMm + (nRow * cem.ContactLengthMm / cem.BarbRows)
+           + (cem.BarbHeightMm / MathF.Tan(cem.LeadAngleDeg * MathF.PI / 180f));
+
+    // Feeds one mesh vertex, in LOCK-LOCAL coordinates, into aCrest[row, sector] — the largest radius seen there.
+    internal static void ReadCrestVertex(MechanicalLockCem cem, float fVoxelMm, Vector3 vecLockLocal, float[,] aCrest)
+    {
+        int nRow = (int)MathF.Round((vecLockLocal.Z - CrestZMm(cem, 0)) * cem.BarbRows / cem.ContactLengthMm);
+        if (nRow < 0 || nRow >= cem.BarbRows
+            || MathF.Abs(vecLockLocal.Z - CrestZMm(cem, nRow)) > CrestAxialWindowVoxels * fVoxelMm) return;
+        int nSector = (int)MathF.Round(MathF.Atan2(vecLockLocal.Y, vecLockLocal.X) * CrestSectors / (2f * MathF.PI));
+        nSector = ((nSector % CrestSectors) + CrestSectors) % CrestSectors;
+        aCrest[nRow, nSector] = MathF.Max(
+            aCrest[nRow, nSector], MathF.Sqrt((vecLockLocal.X * vecLockLocal.X) + (vecLockLocal.Y * vecLockLocal.Y)));
+    }
+
+    // Every sector of every row must carry its crest, no lower than the floor and no higher than the same room above
+    // the manifest's: one finding per row and side, naming the extreme reading, where it is and over how much of the
+    // circle the tooth is off. (A sector no vertex fed reads 0.)
+    internal static (string Summary, IReadOnlyList<string> Findings) CrestFindings(MechanicalLockCem cem, float fVoxelMm, float[,] aCrest)
+    {
+        float fNominal = (cem.ShankDiameterMm / 2f) + cem.BarbHeightMm;
+        float fFloor = fNominal - (CrestRadialToleranceVoxels * fVoxelMm), fCeiling = fNominal + (CrestRadialToleranceVoxels * fVoxelMm);
+        var aFindings = new List<string>();
+        float fLowest = float.MaxValue, fHighest = float.MinValue;
+        for (int nRow = 0; nRow < aCrest.GetLength(0); nRow++)
+        {
+            int nLow = 0, nHigh = 0, nLowAt = 0, nHighAt = 0;
+            for (int s = 0; s < CrestSectors; s++)
+            {
+                if (aCrest[nRow, s] < fFloor) nLow++;
+                if (aCrest[nRow, s] > fCeiling) nHigh++;
+                if (aCrest[nRow, s] < aCrest[nRow, nLowAt]) nLowAt = s;
+                if (aCrest[nRow, s] > aCrest[nRow, nHighAt]) nHighAt = s;
+            }
+            fLowest = MathF.Min(fLowest, aCrest[nRow, nLowAt]);
+            fHighest = MathF.Max(fHighest, aCrest[nRow, nHighAt]);
+            if (nLow > 0)
+                aFindings.Add($"barb row {nRow + 1}: the crest is LOW over {nLow} of {CrestSectors} sectors of the circle — lowest r " +
+                              $"{aCrest[nRow, nLowAt]:F3} at azimuth {nLowAt * 360f / CrestSectors:F0}°, where the manifest gives {fNominal:F3} " +
+                              $"and the check allows {fFloor:F3}");
+            if (nHigh > 0)
+                aFindings.Add($"barb row {nRow + 1}: the crest stands PROUD over {nHigh} of {CrestSectors} sectors of the circle — highest r " +
+                              $"{aCrest[nRow, nHighAt]:F3} at azimuth {nHighAt * 360f / CrestSectors:F0}°, where the manifest gives {fNominal:F3} " +
+                              $"and the check allows {fCeiling:F3}");
+        }
+        return ($"barb crests by azimuth ({aCrest.GetLength(0)} rows × {CrestSectors} sectors): r {fLowest:F3}…{fHighest:F3}, " +
+                $"manifest {fNominal:F3}, allowed {fFloor:F3}…{fCeiling:F3}", aFindings);
+    }
 }
