@@ -60,9 +60,9 @@ class TelemetryLog < ApplicationRecord
   # Стара назва tamper_detected інвертувала semantics: софт-збій читався «вандалізмом»
   # (positive-A slash жертви OTA-бага).
   enum :bio_status, {
-    homeostasis: 0,      # Здоровий Хаос (Атрактор у нормі)
-    stress: 1,           # Раннє попередження (Посуха)
-    anomaly: 2,          # Критичний збій / Хвороба
+    homeostasis: 0,      # Z у смузі статусу (у ранній моделі — «здоровий хаос»); стану дерева не свідчить [E.64]
+    stress: 1,           # Z нижче смуги (у ранній моделі — «посуха»)
+    anomaly: 2,          # Z над ρ-відносною стелею (у ранній моделі — «хвороба»)
     vm_error: 3          # Софт-збій прошивки (mruby VM / unprovisioned) — НЕ tamper
   }, prefix: true
 
