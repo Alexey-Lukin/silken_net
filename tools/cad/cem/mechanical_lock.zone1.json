@@ -24,7 +24,7 @@
     "lattice_spec": "Not applicable - solid shank, no lattice. (Printed as one body with the Zone-1 gyroid anode[[, whose lattice spec lives in cem/anchor_zone1.*.json]])",
     "inspection": "Barb tooth geometry MEASURED against [[01_01 4.3||the specified profile]]: height h and the DERIVED base (a triangle has two free parameters, so alpha/beta + h are specified and base is computed, acceptance 0.40-0.60 mm). DIN-471 groove to the real standard dimensions for this shaft diameter, CNC after printing. ATTENTION: no ring is fitted as a creep backup[[ (removed 2026-09-18, 00_07 HW.26)]]: under the sleeve's lower end a ring would only stop the anode moving DEEPER, never pulling out; that stop is the press fixture's[[ (HW.26, 2026-10-12)]], so this groove holds nothing; whether it leaves the geometry is [[G3's||not yet decided]].[[ Pull-out retention 3-5x over friction and the PEEK 150 C click-fit are FEA (00_07 HW.3.IS) + bench - NOT asserted by this generator and NOT a drawing acceptance line]]",
     "extra": [
-      "Self-contained demo shank (Zone-1 Ø11 real[[, HW.33]]) — not yet integrated into the gyroid rod[[ (separate session, 00_07 HW.26)]]",
+      "This sheet and its STL show the lock shank alone, as a standalone body — the form used for FEA and for dimensioning. The printed part is this shank fused to a Zone-1 gyroid anode of the same Ø11 as ONE body — a separate STL[[ (build <anchor_zone1.json> --lock <this file>)]]",
       "[[Barb pull-out (3–5× vs friction) and PEEK 150°C click-fit retention are FEA + bench (HW.3.IS), NOT asserted by this generator]]"
     ]
   }

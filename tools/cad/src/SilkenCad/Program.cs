@@ -22,7 +22,7 @@ internal static class Program
             return (args.Length == 0 ? "help" : args[0]) switch
             {
                 "smoke" => RunHeadless(0.5f, Smoke),
-                "build" => args.Length >= 2 ? Build(args[1], args.Contains("--parts")) : Fail("usage: build <cem.json> [--parts]"),
+                "build" => args.Length >= 2 ? BuildCli(args) : Fail("usage: build <cem.json> [--parts | --lock <mechanical_lock.json>]"),
                 "verify" => args.Length >= 2
                     ? Verify(args[1], args.Contains("--write-golden"))
                     : Fail("usage: verify <cem.json> [--write-golden]"),
@@ -93,6 +93,130 @@ internal static class Program
         _ = voxBounding.voxIntersectImplicit(xGyroid);
         Console.WriteLine("smoke OK — PicoGK + ShapeKernel + LatticeLibrary render live (headless via Library.Go).");
         return 0;
+    }
+
+    // `--lock` without its manifest REFUSES: falling through to the plain build would write the lattice alone under a
+    // command that asked for the integrated body.
+    private static int BuildCli(string[] args)
+    {
+        int iLock = Array.IndexOf(args, "--lock");
+        if (iLock < 0) return Build(args[1], args.Contains("--parts"));
+        if (iLock + 1 >= args.Length || args.Contains("--parts"))
+            return Fail("usage: build <anchor_zone1.json> --lock <mechanical_lock.json>   (one body — not combined with --parts)");
+        return BuildIntegrated(args[1], args[iLock + 1]);
+    }
+
+    // `build <anchor_zone1> --lock <mechanical_lock>` (00_07 HW.26 G3): the gyroid plus its lock shank as ONE body, in
+    // its OWN file — the plain `build <anchor_zone1>` still writes the lattice alone. What the body does not settle,
+    // and why this verb judges the mesh before it writes it: the header of Zone1Anode.BuildIntegrated.
+    // 🔴 A run that does not end in exit 0 leaves NO file under the canonical name — whichever way it failed (a refusal
+    //    from the manifests, a finding on the mesh, an exception in the runtime): an earlier STL of that name is
+    //    removed, because out/ is the vendor's copy and no gate watches it (picogk #17). The two kind refusals come
+    //    first and remove nothing: until both manifests are known to be the right kind there is no name to remove.
+    private static int BuildIntegrated(string strAnodePath, string strLockPath)
+    {
+        string strAnodeJson = File.ReadAllText(strAnodePath), strLockJson = File.ReadAllText(strLockPath);
+        // ⛔ Both kind checks are load-bearing: Cem.Parse fills absent members from record defaults, and MechanicalLockCem's
+        //    defaults ARE the Zone-1 lock — any other manifest handed to --lock would build a right-looking shank.
+        // ⚠️ What they do NOT close (picogk #0a): a mechanical_lock manifest that OMITS a field still takes that field's
+        //    Zone-1 default without a word — the kind is checked, the completeness of the manifest is not.
+        if (Cem.Kind(strAnodeJson) != "anchor_zone1")
+            return Fail($"build --lock integrates a lock into an anchor_zone1 anode — {strAnodePath} is a '{Cem.Kind(strAnodeJson)}'");
+        if (Cem.Kind(strLockJson) != "mechanical_lock")
+            return Fail($"build --lock needs a mechanical_lock manifest — {strLockPath} is a '{Cem.Kind(strLockJson)}'");
+        AnchorCem anode = Cem.Parse<AnchorCem>(strAnodeJson);
+        MechanicalLockCem lockCem = Cem.Parse<MechanicalLockCem>(strLockJson);
+        string strPath = Path.Combine("out", $"{anode.Name}.integrated.{lockCem.Name}.stl");
+
+        int nExit = 1;
+        try
+        {
+            nExit = BuildIntegratedTo(anode, lockCem, strPath);
+            return nExit;
+        }
+        finally
+        {
+            if (nExit != 0 && File.Exists(strPath))
+            {
+                File.Delete(strPath);
+                Console.WriteLine($"  the earlier {strPath} was REMOVED — this run did not produce the body it names");
+            }
+        }
+    }
+
+    private static int BuildIntegratedTo(AnchorCem anode, MechanicalLockCem lockCem, string strPath)
+    {
+        // The two refusals that follow from the manifests alone come before the runtime starts, both as exit 2: a shank
+        // of another Ø, and a voxel too coarse for the mesh check to tell the shallow ramp from the steep face.
+        Func<Vector3, Vector3> fnLockLocal;   // the placement, read backwards: it is its own inverse
+        try
+        {
+            fnLockLocal = Zone1Anode.ShankPlacement(anode, lockCem);
+        }
+        catch (InvalidDataException ex)
+        {
+            return Fail($"build --lock: {ex.Message}");
+        }
+
+        // The finer of the two manifests' voxels: the body carries the lattice AND the barbs, and the lock's voxel is its
+        // barb-feature floor (what that costs the gyroid: the Zone1Anode.BuildIntegrated header).
+        float fVoxel = MathF.Min(anode.VoxelSizeMm, lockCem.VoxelSizeMm);
+        if (!Zone1Anode.LayerResolvesRatchet(lockCem, fVoxel))
+            return Fail($"build --lock: at voxel {fVoxel:0.###} mm the mesh check cannot tell this lock's shallow ramp from its steep face, " +
+                        "so the ratchet direction of the body could not be judged — nothing is built; use a finer voxel_size_mm");
+        float fTop = Zone1Anode.IntegratedLengthMm(anode, lockCem);
+        return RunHeadless(fVoxel, () =>
+        {
+            Mesh msh = Zone1Anode.BuildIntegrated(anode, lockCem).mshAsMesh();
+
+            // Read the mesh once: its Z per vertex (seam), the largest and smallest radius per shank layer and the
+            // crest of every barb row by azimuth (profile), its triangles.
+            float[] aVertexZ = new float[msh.nVertexCount()];
+            float[] aLayerMax = new float[Zone1Anode.ShankLayerCount(lockCem, fVoxel)];
+            float[] aLayerMin = new float[aLayerMax.Length];
+            Array.Fill(aLayerMin, float.MaxValue);
+            float[,] aCrest = new float[lockCem.BarbRows, MechanicalLock.CrestSectors];
+            for (int i = 0; i < aVertexZ.Length; i++)
+            {
+                Vector3 v = msh.vecVertexAt(i);
+                aVertexZ[i] = v.Z;
+                Zone1Anode.ReadShankVertex(anode, lockCem, fVoxel, v.Z, MathF.Sqrt((v.X * v.X) + (v.Y * v.Y)), aLayerMax, aLayerMin);
+                MechanicalLock.ReadCrestVertex(lockCem, fVoxel, fnLockLocal(v), aCrest);
+            }
+            int[] aTriangles = new int[3 * msh.nTriangleCount()];
+            for (int t = 0; t < aTriangles.Length; t += 3)
+            {
+                Triangle oTri = msh.oTriangleAt(t / 3);
+                (aTriangles[t], aTriangles[t + 1], aTriangles[t + 2]) = (oTri.A, oTri.B, oTri.C);
+            }
+
+            BBox3 bb = msh.oBoundingBox();
+            (string strProfile, IReadOnlyList<string> aProfile) =
+                Zone1Anode.IntegratedProfileFindings(anode, lockCem, fVoxel, aLayerMax, aLayerMin, aCrest);
+            (string strSeam, IReadOnlyList<string> aSeam) = Zone1Anode.IntegratedSeamFindings(anode, lockCem, fVoxel, aVertexZ, aTriangles);
+            List<string> aFindings = [.. aProfile, .. aSeam];
+            if (MathF.Abs(bb.vecMin.Z) > 3f * fVoxel || MathF.Abs(bb.vecMax.Z - fTop) > 3f * fVoxel)
+                aFindings.Add($"the mesh spans z {bb.vecMin.Z:F2}…{bb.vecMax.Z:F2} mm, the two manifests give 0…{fTop:F2}");
+
+            Console.WriteLine($"  voxel {fVoxel:0.###} mm (anode {anode.VoxelSizeMm:0.###} · lock {lockCem.VoxelSizeMm:0.###}) · " +
+                              $"z {bb.vecMin.Z:F2}…{bb.vecMax.Z:F2} mm (gyroid 0…{anode.LengthMm:F2}, shank to {fTop:F2})");
+            if (strProfile.Length > 0) Console.WriteLine($"  {strProfile}");
+            Console.WriteLine($"  {strSeam}");
+            if (aFindings.Count > 0)
+            {
+                foreach (string strFinding in aFindings) Console.WriteLine($"  ⚠ {strFinding}");
+                Console.WriteLine("INTEGRATED FAILED — the built mesh is not the body the two manifests describe; nothing written");
+                return 1;
+            }
+
+            Directory.CreateDirectory("out");
+            msh.SaveToStlFile(strPath);
+            Console.WriteLine($"wrote {strPath}");
+            Console.WriteLine("  ⛔ not settled by this body: its print orientation (00_07 HW.26 G4) · which lock the SKU takes — " +
+                              "the pair was named on this command line, no anchor manifest names its lock");
+            Console.WriteLine("INTEGRATED OK — mesh profile and seam match the two manifests within the check's tolerances");
+            return 0;
+        });
     }
 
     private static int Build(string strCemPath, bool bParts = false)
@@ -1470,6 +1594,7 @@ internal static class Program
             "  smoke             foundation self-test (no output file)\n" +
             "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome | zone2_sleeve | anchor_assembly | anchor_axial_stack)\n" +
             "  build <cem.json> --parts   anchor_assembly | anchor_axial_stack: also one STL per body → out/<name>.<part>.stl, all in the assembly frame\n" +
+            "  build <anchor_zone1.json> --lock <mechanical_lock.json>   the gyroid + its lock shank as ONE body → out/<anode>.integrated.<lock>.stl, written only if the built mesh matches the two manifests — a mismatch (exit 1) writes nothing; refuses (exit 2) an anode whose Ø is not the shank's and a voxel too coarse for the check; any failure REMOVES an earlier file of that name\n" +
             "  verify <cem.json> measure metrics → out/<name>.metrics.json + compare the committed *.golden.json, if any (exit 0/1)  [--write-golden]\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +

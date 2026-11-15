@@ -85,6 +85,29 @@
   faces z = 0 — the end that enters the PEEK first — on BOTH ends, with no direction knob (gotcha #15); the
   Zone-1 anode's frame runs the other way (z = 0 = tree side), so an integrated shank is PLACED by rotation; on
   the INTEGRATED Zone-1 body «tip-down» puts the steep face down — open, `00_07` HW.26 G4.
+  ⊕ **The integrated body — `build cem/<anchor_zone1.x>.json --lock cem/mechanical_lock.zone1.json`** (2026-11-15,
+  `00_07` HW.26 G3) → `out/<anode name>.integrated.<lock name>.stl`: the gyroid ∪ its lock shank as ONE fused body,
+  from a second builder (`Zone1Anode.BuildIntegrated`) BESIDE `Build` — the plain `build <anchor_zone1>` still writes
+  the lattice alone, so the goldens, porosity, `verify` and FE go on measuring the same object, and the lock's own STL
+  (`build cem/mechanical_lock.zone1.json`) stays the standalone shank — the FEA's body, and the one the lock sheet
+  dimensions from the same manifest. Exit **0** = written ·
+  **1** = a finding on the BUILT mesh, nothing written · **2** = refused before anything is built (an anode whose Ø is
+  not the shank's — that transition is an open G3 leg · a voxel too coarse to tell the shallow ramp from the steep
+  face · a manifest of the wrong `kind` · `--lock` without its manifest or beside `--parts`). Once both manifests are
+  parsed, ANY non-zero exit removes an earlier STL of that name — `out/` is the vendor's copy (gotcha #17). What it
+  reads off the built mesh BEFORE writing: the shank per one-voxel layer from the top face (the ratchet's direction by
+  rise against fall, every layer's largest and smallest radius — barb rows, groove band, plain shank), each row's crest
+  by azimuth (`MechanicalLock.CrestFindings`, the reading `verify mechanical_lock` takes), the seam (the largest
+  surface runs tip to top face, no other surface rises above the seam plane) and the Z extent against the two
+  manifests. ⛔ **What it does NOT check is a pinned table — read it, never restate a number from it:**
+  `MechanicalLockTests.The_Mesh_Check_Lets_Through_What_Its_Tolerances_Declare`, whose header also names what no
+  reading here can show at all (the lattice below the seam is on that list); what the BODY does not settle — the print
+  orientation (G4), which lock a SKU takes (the pair is whatever the command line named), a voxel no golden covers —
+  is the header of `Zone1Anode.BuildIntegrated`. ⛔ **No gate runs `build --lock`, and none holds `verify` either:**
+  CI has no voxel runtime (gotcha #3 — the `cad_smoke` verify step is best-effort) and `pre-push` builds no mesh, so
+  xUnit pins the pure comparison and the placement map, never the built body — deleting the check's call or its
+  `return 1` reds nothing. A green suite says nothing about an STL in `out/`; the verb's exit code on the day it was
+  built does.
 - **Connectivity / verification (ARCH.25)** — CODE VERIFICATION, two independent routes to one topological
   fact (canon `01_02 §6`); validation needs the physical experiment we have not run: `Connectivity.cs` samples
   the CEM SDF → 3-phase grid → 6-conn flood-fill → open-pore (Archimedes) / percolation (EAAE flow-through) /

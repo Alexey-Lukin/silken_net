@@ -36,6 +36,8 @@ count beside a growing folder is right the day it is written and quietly narrowe
 - **Drawings** = SVG (vector — GitHub renders inline; the factory DXF is produced alongside by `draw`, but
   stays in `out/` regenerate-able). CEM-native: views + dimensions + GD&T computed from the CEM numbers.
 - **Renders** = PicoGK native voxel screenshot (Ti-metallic material), TGA → PNG (presentation-sized 1600 px).
-- STL is gitignored (too big — pine ≈ 189 MB); rebuild with `dotnet run -- build <cem>`.
+- STL is gitignored (too big — pine ≈ 189 MB); rebuild with `dotnet run -- build <cem>`. The anode with its lock
+  shank as ONE body is its own STL — `dotnet run -- build <anchor_zone1 cem> --lock <mechanical_lock cem>` — while the
+  lock sheet above and the plain `build` of either manifest stay the shank alone and the lattice alone.
 - Render is viewer-window-gated (PicoGK opens a GL window + screenshots it): macOS desktop OK; a headless
   box needs a display (xvfb) or the f3d fallback on the STL.
