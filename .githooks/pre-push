@@ -535,7 +535,7 @@ fi
 # зачіпає периметр нижче. Дискримінує: HEAD — 1 passed, `96214a7d3` — 1 failed.
 # ⚠️ Стеля: судить HEAD (як і `_changed` вище); периметр — дерево in-silico, канон in-silico і
 # `00_02` (назва статті), а `00_07` свідомо ні — `72` читає трекер лише для жаргон-гейта описів,
-# і правка трекера, що його зачепить, лишається на CI. NOT-RUN ⊥ FAILED: pytest exit 1 — вердикт,
+# і правка трекера, що його зачепить, лишається на CI [⊕ 2026-11-15: стелю знято — периметр тепер увесь `docs/`, див. ⊕ нижче]. NOT-RUN ⊥ FAILED: pytest exit 1 — вердикт,
 # будь-який інший (нема pytest · не зібрався тест · worktree не створився) — гучна нота й пропуск.
 # ⊕ 2026-11-04: інтерпретатор шукаємо за ФАЙЛОВОЮ СИСТЕМОЮ й за ЗДАТНІСТЮ, а не беремо перший `python3` з PATH
 # (форма — DCO-ruby вище). Пін ганяли на тому `python3`, що давав PATH шелу: 2026-10-16 він біг (1 passed),
@@ -549,7 +549,18 @@ fi
 # імпортують numpy на верхньому рівні. Кандидати — PATH і miniforge base (pytest = пін CI, numpy немає:
 # найближча заміна голого джоба, не дзеркало — інші плагіни, старіші pluggy · iniconfig · packaging). Явний
 # SI_PYTHON — наказ, не підказка: не пройшов перевірку — нота з його іменем, інших не пробуємо.
-if printf '%s\n' "$_changed" | grep -qE '^tools/in_silico/|^docs/protocols/ebfc/in_silico/|^docs/00_02_'; then
+# ⊕ 2026-11-15 (⚖️ founder: «так, додай у pre-push») — блок жене вже не один пін маніфесту, а ВСІ файли CI-джоби
+# `cache_doc_sync` (doc↔cache піни + stdlib-тести), і тригер — будь-яка правка `docs/` чи `tools/in_silico/`. Куплено
+# рецидивом: коміт `2f0644caa` закрив ногу `00_07`, а сім пінів `test_doc_cache_sync` звіряли числа саме з її текстом;
+# смуга `Docs` цих пінів не жене, а цей блок трекер свідомо пропускав (стеля, записана нижче до цього дня) — `main`
+# пішов червоним по смузі in-silico, полагоджено `35880a073`. Урок записано двічі (2026-10-26 і цей), тобто правилу
+# бракувало носія в мить дії — він тут. Список тест-файлів НЕ переписано в хук: його читаємо з самої джоби
+# `cache_doc_sync` у `.github/workflows/in_silico_smoke.yml` (рядки `tools/in_silico/tests/*.py` між заголовком
+# джоби й наступною джобою), тож доданий там файл додається й тут; порожній список — гучна нота, не тиша.
+# Тригер ширший за `paths` джоби (там — перелік документів, які читають CHECKS): уся та множина лежить у `docs/` і
+# `tools/in_silico/`, а зайве спрацювання коштує лише часу. ЦІНА виміряна 2026-11-15 на цьому дереві: 12 с на HEAD (worktree +
+# 5068 тестів), 15 с на `2f0644caa`. Дискримінує: HEAD — 0 failed, `2f0644caa` — 7 failed (саме ті сім пінів).
+if printf '%s\n' "$_changed" | grep -qE '^tools/in_silico/|^docs/'; then
   for _si_py in "${SI_PYTHON:-}" "$(command -v python3 2>/dev/null)" "$HOME/miniforge3/bin/python3"; do
     [ -n "$_si_py" ] && [ -x "$_si_py" ] && "$_si_py" -c \
       'import importlib.util as u, sys; import pytest; sys.exit(u.find_spec("numpy") is not None)' \
@@ -560,34 +571,42 @@ if printf '%s\n' "$_changed" | grep -qE '^tools/in_silico/|^docs/protocols/ebfc/
   if [ -n "$_si_py" ]; then
     _si_dir=$(mktemp -d)
     trap 'rm -f "$_i18n_log"; git -C "$root" worktree remove --force "$_si_dir/wt" >/dev/null 2>&1; rm -rf "$_si_dir"' EXIT INT TERM
-    if git -C "$root" worktree add -q --detach "$_si_dir/wt" HEAD >/dev/null 2>&1; then
-      "$_si_py" -m pytest -q -p no:cacheprovider \
-        "$_si_dir/wt/tools/in_silico/tests/test_doc_cache_sync.py::test_paper_si_matches_its_generator" \
-        >"$_si_dir/log" 2>&1
+    _si_tests=$(awk '/^  cache_doc_sync:/{on=1;next} on && /^  [a-z_-]+:/{on=0} on' \
+      "$root/.github/workflows/in_silico_smoke.yml" 2>/dev/null \
+      | grep -oE 'tools/in_silico/tests/[a-z0-9_]+\.py' | sort -u)
+    if [ -z "$_si_tests" ]; then
+      echo "pre-push NOTE — no test files found in the \`cache_doc_sync\` job of .github/workflows/in_silico_smoke.yml;"
+      echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
+    elif git -C "$root" worktree add -q --detach "$_si_dir/wt" HEAD >/dev/null 2>&1; then
+      # shellcheck disable=SC2086 — word splitting of the file list is intended
+      (cd "$_si_dir/wt" && "$_si_py" -m pytest -q -p no:cacheprovider $_si_tests) >"$_si_dir/log" 2>&1
       _si_rc=$?
       git -C "$root" worktree remove --force "$_si_dir/wt" >/dev/null 2>&1
       if [ "$_si_rc" -eq 1 ]; then
-        cat "$_si_dir/log"
+        grep -E '^(FAILED|ERROR|E  )' "$_si_dir/log" | head -40
+        tail -n 3 "$_si_dir/log"
         echo
-        echo "pre-push BLOCKED — the pushed commit's SI manifest is not what \`72\` renders from it (pin ran on $_si_py)."
-        echo "Fix:  $_si_py tools/in_silico/scripts/72_paper_supporting_information.py   # on a CLEAN tree"
-        echo "      then commit docs/protocols/ebfc/in_silico/paper/10_supporting_information.md"
+        echo "pre-push BLOCKED — the pushed commit fails the \`cache_doc_sync\` job's tests (ran on $_si_py):"
+        echo "  $(echo $_si_tests | tr '\n' ' ')"
+        echo "Fix:  a doc↔cache pin names a doc line and the cache number it must match — fix the doc, the cache"
+        echo "      (regenerate by its script) or, if the doc text is GONE on purpose, the pin; SI manifest — run"
+        echo "      $_si_py tools/in_silico/scripts/72_paper_supporting_information.py on a CLEAN tree and commit it."
         echo "Then re-push.  (Emergency bypass: git push --no-verify)"
         exit 1
       elif [ "$_si_rc" -ne 0 ]; then
-        echo "pre-push NOTE — the SI-manifest pin could not RUN on $_si_py (pytest exit $_si_rc)."
+        echo "pre-push NOTE — the \`cache_doc_sync\` tests could not RUN on $_si_py (pytest exit $_si_rc)."
         echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
       fi
     else
-      echo "pre-push NOTE — SI-manifest pin skipped: a temporary worktree of HEAD could not be created."
+      echo "pre-push NOTE — \`cache_doc_sync\` tests skipped: a temporary worktree of HEAD could not be created."
       echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
     fi
   else
     if [ -n "${SI_PYTHON:-}" ]; then
-      echo "pre-push NOTE — SI_PYTHON=$SI_PYTHON cannot run the SI-manifest pin (needs pytest and no numpy);"
+      echo "pre-push NOTE — SI_PYTHON=$SI_PYTHON cannot run the \`cache_doc_sync\` tests (needs pytest and no numpy);"
       echo "  no other python was tried."
     else
-      echo "pre-push NOTE — in-silico changed but no python with pytest and without numpy was found"
+      echo "pre-push NOTE — docs or in-silico changed but no python with pytest and without numpy was found"
       echo "  (probed: python3 on PATH · ~/miniforge3/bin/python3)."
     fi
     echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
