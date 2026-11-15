@@ -1,10 +1,10 @@
 # Defensive Disclosure — SilkenNet self-powered tree-health monitor (prior art)
 
 > **Author / discloser:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
-> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-10-25
+> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-11-15
 > **First published on 2026-10-04:** §2.1 and §3.1 as they then stood, and every passage or table entry marked
-> «added 2026-10-04» or «corrected 2026-10-04». Passages marked «added 2026-10-12» (§5), «corrected 2026-10-23» (§2.1) and «corrected
-> 2026-10-25» (§1 SYNERGY A, §2, §2.1(9)) post-date the Technical Disclosure Commons print and are not re-issued there: what was disclosed stays disclosed, and the correction
+> «added 2026-10-04» or «corrected 2026-10-04». Passages marked «added 2026-10-12» (§5), «corrected 2026-10-23» (§2.1), «corrected
+> 2026-10-25» (§1 SYNERGY A, §2, §2.1(9)) and «corrected 2026-11-15» (§2) post-date the Technical Disclosure Commons print and are not re-issued there: what was disclosed stays disclosed, and the correction
 > serves the next reader of this repository.
 > **Status:** published on Technical Disclosure Commons on 2026-10-06 (submitted 2026-10-04, printed from
 > commit `5bd8636f5` of this file) — https://www.tdcommons.org/dpubs_series/12006, under CC BY-SA 4.0.
@@ -115,7 +115,20 @@ comprising:
   Cu-Co-Ce zeolitic-imidazolate-framework nanozyme alone operating by direct electron transfer, are
   disclosed, not practised — ⚠️ **corrected 2026-10-04:** earlier revisions named only these two
   single-catalyst forms ([`01_03 §1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) ·
-  [`01_03 §2.2`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md));
+  [`01_03 §2.2`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)). ⚠️ **corrected 2026-11-15:** of the three roles of the nanozyme named
+  above, the second and third, and the reserve part of the first, are the reference design's intent, as is
+  direct electron transfer in the nanozyme-alone form. Of the first role, the published source of the hybrid
+  (Demkiv et al. 2026, *Bioelectrochemistry and Biosensors* 1(1):5, doi:10.53941/bebs.2026.100005) measured
+  0.53 µW/cm² from a cell whose cathode carried the Co-Cu-Ce nanozyme alone, and a higher cell power with the
+  hybrid than with laccase alone, both with ABTS dissolved in the solution; it reports no measurement
+  without a mediator under stated conditions, so direct electron transfer is not shown for this hybrid. It
+  measured storage at 4 °C, the response in 0.25 M NaCl and the temperature and pH profiles only on the
+  gold-containing composition: the temperature profile of that hybrid closely followed that of free laccase,
+  and activity after heating and proteolysis were not measured. In this repository, transfer without a
+  mediator at this cathode is a computed estimate, conditional on the reorganisation energies of the Co and
+  Cu sites and on the laccase T1 centre lying close to the framework, an assumption of the model; its first
+  measurement is planned in the cathode tests on the Stage 2 coupons
+  ([`01_03 §1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)). The forms stand as disclosed;
 - **(c) an energy store** (supercapacitor) charged by the EBFC and powering the electronics;
 - **(d) a compute node** that derives a health signal **from the charge dynamics of that energy store
   itself** — so that the EBFC **simultaneously** powers the device and serves as its sensor, with no
