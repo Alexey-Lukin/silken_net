@@ -1,0 +1,114 @@
+(kicad_sch
+	(version 20260306)
+	(generator "silkennet_hw56")
+	(generator_version "10.0")
+	(uuid "b7e272a7-e21b-5e83-9060-ab7c15b992e7")
+	(paper "A4")
+	(title_block
+		(title "SilkenNet — Солдат (вузол)")
+		(company "SilkenNet")
+		(comment 1 "Згенеровано tools/pcb/soldier_schematic/build_schematic.rb — руками не правити")
+		(comment 2 "Аркуші: power — силовий тракт · mcu — МК без RF-тракту")
+	)
+	(lib_symbols)
+	(sheet
+		(at 25.4 38.1)
+		(size 50.8 25.4)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "9af42320-fe3c-5292-b08f-009c7e3ffbd1")
+		(property "Sheetname" "power"
+			(at 25.4 37.3884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "soldier_power.kicad_sch"
+			(at 25.4 64.0846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 88.9 38.1)
+		(size 50.8 25.4)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "59e11d01-b420-5add-a746-3325135c036a")
+		(property "Sheetname" "mcu"
+			(at 88.9 37.3884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "soldier_mcu.kicad_sch"
+			(at 88.9 64.0846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7"
+					(page "3")
+				)
+			)
+		)
+	)
+	(text "Аркуш RF-тракту (поз. 19) не побудовано: умови публікації ST AN5457 ще не прочитано — docs/00_07 HW.56."
+		(exclude_from_sim yes)
+		(at 25.4 88.9 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "cd4e4b07-94ce-5dfc-bfd2-684803195115")
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)

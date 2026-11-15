@@ -2537,8 +2537,8 @@
 			(uuid "a69f6970-3eb9-545a-a106-faf6bda77797")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "U1")
 					(unit 1)
 				)
@@ -2614,8 +2614,8 @@
 			(uuid "b588bb43-ed8d-5e6e-b801-2733bdb479b4")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR01")
 					(unit 1)
 				)
@@ -2754,8 +2754,8 @@
 			(uuid "26dca5d7-ed74-530f-bc40-a727c893970f")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR02")
 					(unit 1)
 				)
@@ -2920,15 +2920,17 @@
 		)
 		(uuid "693f9b99-2bd8-5bcd-ad0e-5a2023dfbbd1")
 	)
-	(label "VOUT"
+	(global_label "VOUT"
+		(shape output)
 		(at 208.28 106.68 0)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify left)
 		)
-		(uuid "821eb36b-34d3-5aae-8367-2f893ee14580")
+		(uuid "1c3eb7ef-d32d-5eaa-96d5-1c9a06e03192")
 	)
 	(wire
 		(pts
@@ -3084,8 +3086,8 @@
 			(uuid "2a57aaab-b2cd-56ec-9797-826ac1c1f13a")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "J1")
 					(unit 1)
 				)
@@ -3182,8 +3184,8 @@
 			(uuid "658816e4-7dfb-5e2f-9bf4-42d6c138628d")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR03")
 					(unit 1)
 				)
@@ -3248,8 +3250,8 @@
 			(uuid "392f2eec-f05f-577f-a2df-f46529868d5f")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#FLG01")
 					(unit 1)
 				)
@@ -3325,8 +3327,8 @@
 			(uuid "2d3c10c4-cd88-5806-93fe-759f5f8641e3")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR04")
 					(unit 1)
 				)
@@ -3391,8 +3393,8 @@
 			(uuid "592973c0-7b48-5f4f-8023-7cdc9462ddc7")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#FLG02")
 					(unit 1)
 				)
@@ -3499,8 +3501,8 @@
 			(uuid "37091f11-1f04-5c93-aa10-d43cf7ba34cf")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "C1")
 					(unit 1)
 				)
@@ -3597,8 +3599,8 @@
 			(uuid "f5931339-fa14-5d76-99b2-8d2b57da4897")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR05")
 					(unit 1)
 				)
@@ -3675,8 +3677,8 @@
 			(uuid "509c6ec6-815c-5cf3-be68-e61e01f771b4")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "L1")
 					(unit 1)
 				)
@@ -3804,8 +3806,8 @@
 			(uuid "0744998e-c892-500b-973c-c5227b310c8b")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "C2")
 					(unit 1)
 				)
@@ -3902,8 +3904,8 @@
 			(uuid "86dc6f28-0254-587c-ad3f-4898c1029a9f")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR06")
 					(unit 1)
 				)
@@ -3989,8 +3991,8 @@
 			(uuid "a2867177-e394-53e4-9519-d6ec998c0fe8")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "C3")
 					(unit 1)
 				)
@@ -4076,8 +4078,8 @@
 			(uuid "57c7acd3-e3de-547c-80de-92549c91c7db")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "C4")
 					(unit 1)
 				)
@@ -4163,8 +4165,8 @@
 			(uuid "38b80609-3b75-590b-aa42-b5ee5b9d39e2")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "C5")
 					(unit 1)
 				)
@@ -4284,8 +4286,8 @@
 			(uuid "540f1743-5037-5f06-aab1-c76ced71f0cb")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR07")
 					(unit 1)
 				)
@@ -4350,8 +4352,8 @@
 			(uuid "bb1d367e-e241-515a-9c91-e7d4cf24ffd2")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR08")
 					(unit 1)
 				)
@@ -4416,8 +4418,8 @@
 			(uuid "d1affef0-e50b-5785-88ec-02775f5e7515")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR09")
 					(unit 1)
 				)
@@ -4494,8 +4496,8 @@
 			(uuid "cf26f0f1-9ee3-52aa-8235-a40b548425c2")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "JP1")
 					(unit 1)
 				)
@@ -4614,8 +4616,8 @@
 			(uuid "afd3dc90-0f11-5f6c-af3f-ccc24ac67762")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "C6")
 					(unit 1)
 				)
@@ -4712,8 +4714,8 @@
 			(uuid "ffd09088-395a-5c28-b72b-609ecd43fbab")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR10")
 					(unit 1)
 				)
@@ -4790,8 +4792,8 @@
 			(uuid "6742f3d6-b93c-5059-a033-a500398358a5")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "L2")
 					(unit 1)
 				)
@@ -4830,15 +4832,17 @@
 		)
 		(uuid "2c2567e1-5a6b-5cf2-8ecd-33f369e7304f")
 	)
-	(label "VOUT"
+	(global_label "VOUT"
+		(shape output)
 		(at 228.6 55.88 270)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify right)
 		)
-		(uuid "3f067dc7-bc5c-5eaa-9459-def098019615")
+		(uuid "86b6aba3-c9e6-5ecb-a43d-0ba123dcdca8")
 	)
 	(symbol
 		(lib_id "Device:C_Small")
@@ -4910,8 +4914,8 @@
 			(uuid "f4e2dfc4-6dea-5d85-b2fb-d2c53f9e7e75")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "C7")
 					(unit 1)
 				)
@@ -4929,15 +4933,17 @@
 		)
 		(uuid "bc4a14b0-2dbd-5127-9f3c-6067dcfa6c8b")
 	)
-	(label "VOUT"
+	(global_label "VOUT"
+		(shape output)
 		(at 241.3 45.72 90)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify left)
 		)
-		(uuid "701e4b59-fcff-59b7-8a67-ee3d8c9d07a7")
+		(uuid "514b7785-d752-55e7-8e60-1a9a6c522ee7")
 	)
 	(wire
 		(pts
@@ -5008,8 +5014,8 @@
 			(uuid "dd3c88f8-1ea6-5da7-9d94-a661abb21233")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR11")
 					(unit 1)
 				)
@@ -5095,8 +5101,8 @@
 			(uuid "3170e30d-67cb-5835-b253-32b0cdaa23c3")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "ROV2")
 					(unit 1)
 				)
@@ -5182,8 +5188,8 @@
 			(uuid "7c44fdd2-9902-5f14-bc06-967f159466a7")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "ROV1")
 					(unit 1)
 				)
@@ -5307,8 +5313,8 @@
 			(uuid "cf09102d-2b91-59f3-a3b7-32b07a30f35a")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR12")
 					(unit 1)
 				)
@@ -5394,8 +5400,8 @@
 			(uuid "36a17400-04b6-5178-94ce-599f09df17da")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "ROK3")
 					(unit 1)
 				)
@@ -5481,8 +5487,8 @@
 			(uuid "ec84ae08-ffb1-53fb-9f8e-015939fc8913")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "ROK2")
 					(unit 1)
 				)
@@ -5568,8 +5574,8 @@
 			(uuid "466b809b-0bb8-546d-b017-7cf7d4ba9d90")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "ROK1")
 					(unit 1)
 				)
@@ -5731,8 +5737,8 @@
 			(uuid "8761dcd5-f0a7-5754-8c1d-e21d0a82aa2d")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR13")
 					(unit 1)
 				)
@@ -5818,8 +5824,8 @@
 			(uuid "5df77f2e-4715-50bd-9db1-9c62b52a2a75")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "ROUT2")
 					(unit 1)
 				)
@@ -5905,8 +5911,8 @@
 			(uuid "27a2ff36-f6d0-5fe6-b6fb-3aec2ce0125c")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "ROUT1")
 					(unit 1)
 				)
@@ -6030,8 +6036,8 @@
 			(uuid "9cea456a-058e-51df-9a64-a0a756f51787")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR14")
 					(unit 1)
 				)
@@ -6117,8 +6123,8 @@
 			(uuid "f9055681-4627-530d-8c18-6fca1a27910f")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "ROC2")
 					(unit 1)
 				)
@@ -6204,8 +6210,8 @@
 			(uuid "a26ed79f-b4f6-5ba8-a409-2cff7f90f88f")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "ROC1")
 					(unit 1)
 				)
@@ -6329,8 +6335,8 @@
 			(uuid "46016311-524a-5030-8327-5ebb8baa536b")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR15")
 					(unit 1)
 				)
@@ -6425,8 +6431,8 @@
 			(uuid "f8f52e08-1e16-5857-8f53-8b35d0a1d7b6")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "U2")
 					(unit 1)
 				)
@@ -6544,8 +6550,8 @@
 			(uuid "f1279b57-0b0c-54c0-ac3f-ea264b2cf877")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR16")
 					(unit 1)
 				)
@@ -6621,8 +6627,8 @@
 			(uuid "e2a57bc7-d684-54bf-96cc-5830a95f1b2b")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR17")
 					(unit 1)
 				)
@@ -6698,8 +6704,8 @@
 			(uuid "8390429c-02dd-59fd-ab9c-29bd5505a3d4")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR18")
 					(unit 1)
 				)
@@ -6785,8 +6791,8 @@
 			(uuid "503df255-5ca0-5b20-afaa-82d42211f019")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "RGPD1")
 					(unit 1)
 				)
@@ -6872,8 +6878,8 @@
 			(uuid "d87c6c8f-f829-57e0-88d5-55559640c5ea")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR19")
 					(unit 1)
 				)
@@ -6959,8 +6965,8 @@
 			(uuid "d8db585a-eda2-5795-b511-fd5314a87d8a")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "RDUMP1")
 					(unit 1)
 				)
@@ -7070,8 +7076,8 @@
 			(uuid "49870609-6dd8-53a5-8ba7-fc4faa065bbf")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "Q1")
 					(unit 1)
 				)
@@ -7195,8 +7201,8 @@
 			(uuid "bf95db96-14f5-5bd5-88b9-60df006c51da")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR20")
 					(unit 1)
 				)
@@ -7294,8 +7300,8 @@
 			(uuid "38050640-9628-5896-9836-aded5f687204")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "U3")
 					(unit 1)
 				)
@@ -7392,8 +7398,8 @@
 			(uuid "a229dcff-29e0-5c21-aefa-32205b82c930")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR21")
 					(unit 1)
 				)
@@ -7548,8 +7554,8 @@
 			(uuid "bda1cb32-d6a8-515d-b4c6-b8f704da8aab")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "RPD1")
 					(unit 1)
 				)
@@ -7637,8 +7643,8 @@
 			(uuid "503e5ab7-7ede-5b2d-815c-623c5347078e")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR22")
 					(unit 1)
 				)
@@ -7724,8 +7730,8 @@
 			(uuid "698a1d09-f4a1-51b5-922b-7b8ccb59f2d1")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "RSNS1")
 					(unit 1)
 				)
@@ -7811,8 +7817,8 @@
 			(uuid "c125a7b1-35f5-59f0-a0a3-2f3808c709d5")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "RSNS2")
 					(unit 1)
 				)
@@ -7938,8 +7944,8 @@
 			(uuid "d4339aa0-f1ba-5922-ae8a-aba7b92ad578")
 		)
 		(instances
-			(project "soldier_power"
-				(path "/0a1b2c3d-4e5f-5a6b-8c7d-9e0f1a2b3c4d"
+			(project "soldier"
+				(path "/b7e272a7-e21b-5e83-9060-ab7c15b992e7/9af42320-fe3c-5292-b08f-009c7e3ffbd1"
 					(reference "#PWR23")
 					(unit 1)
 				)
@@ -7990,9 +7996,15 @@
 		)
 		(uuid "a8755b47-b3e4-535c-91f0-8d2b406391f5")
 	)
-	(sheet_instances
-		(path "/"
-			(page "1")
+	(text "VOUT — глобальна мітка: живить аркуш МК (VDD · VDDA · VDDRF · VDDSMPS · VBAT)."
+		(exclude_from_sim yes)
+		(at 25.4 248.92 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
 		)
+		(uuid "8f0284a7-2680-5c5b-9b60-f5d07fd05fca")
 	)
 )

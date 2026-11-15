@@ -1,0 +1,11 @@
+{
+  "erc": {
+    "rule_severities": {
+      "isolated_pin_label": "ignore"
+    }
+  },
+  "meta": {
+    "filename": "soldier.kicad_pro",
+    "version": 1
+  }
+}
