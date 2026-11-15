@@ -1,0 +1,3 @@
+# KiCad's per-user view state, and the DRC report the generator deletes on a clean run
+*.kicad_prl
+drc.json
