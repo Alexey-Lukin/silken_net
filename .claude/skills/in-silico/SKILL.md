@@ -320,10 +320,14 @@ Anchor mechanics (CPU):
      winter_pv_autonomy.json — the autonomy days, `necessary_a_eff_cm2` for control 1, `record.hours`) → 115
      (pv_face_snow_frost_azimuth.json — snow, hoarfrost and the gateway's bearing on the dome's PV face); a re-run of
      71, 79 or 110 re-runs 115
-  115 (importlib: e_ice_hpa, and through it 110 — irradiance — and 79 — load_weather, load_snow, site, sun, faces,
-     vapour pressure, REFLECT_ENDS) → 117 (stem_face_cover_rules_rehearsal.json — the stem-face sheet's cover rules
-     rehearsed on ERA5 before the logger); a change to 79's loaders or REFLECT_ENDS, 110's irradiance or 115's ice
-     saturation re-runs 117
+  115 (importlib: e_ice_hpa, cover_readings — and a PRIVATE instance with WET_SNOW_C opened downward for the dry
+     readings — and through it 110 — irradiance — and 79 — load_weather, load_snow, site, sun, faces, vapour pressure,
+     reflected rows, REFLECT_ENDS) · 124 (importlib: base_from_record · terciles · runs_below · misses — the record's base,
+     its ONE home; stem_face_second_sky.json — the cover-free face's false-run rate at θ 0.1, the Poisson bar) · 71
+     (geometry: the dome's diameter) → 117 (stem_face_cover_rules_rehearsal.json — the stem-face sheet's cover rules
+     rehearsed on ERA5 before the logger: the rules as written, a rejected draft, and since 2026-11-15 the rewritten rules
+     on a perfect logger); a change to 79's loaders or REFLECT_ENDS, 110's irradiance, 115's ice saturation or cover
+     model, or 124's base, run or miss functions, or a re-run of 124, re-runs 117
   118 (importlib: episodes_runs, DIP, and through it 115 — cover_readings — 110 — irradiance — 79 and 71; kinetics/stem_face_cover_power.json —
      its cover-free day counts, a control) · data/power_cherkasy_shortwave (the CERES SYN1deg short-wave components, hourly) ·
      data/power_cherkasy_longwave (its MERRA-2 air and humidity columns — the second air) · 120 (importlib: frost_point_as_dew_point) → 124

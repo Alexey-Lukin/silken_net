@@ -10645,6 +10645,161 @@ CHECKS += [
     ("117 old judged → 00_07 Стан", TRACKER, rf"репетиція `117` — {N} % суджених діб", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
 ]
 
+# …and the rules rewritten 2026-11-15, rehearsed on a perfect logger (the same script) ⟷ SUMMARY's paragraph «The rules
+# rewritten on 2026-11-15» and the sheet's §6 rules p. 5 · p. 7 · p. 10. Spans are [min, max] over both reflection ends;
+# the verdict share is a property printed at one decimal, rounded DOWN (#43). The set sentences — the spans that the text
+# calls one number, the θ/tol invariance, the nesting, the σ grid point before the first false rejection — are rebuilt in
+# test_stem_face_rewritten_rules_sentences_recompose_from_the_cache.
+_NR = ("summary", "rules_2026_11_15")
+P124 = "kinetics/stem_face_second_sky.json"
+
+
+def _nr(*path, scale=1.0, nd=None):
+    return _sfc((*_NR, *path), scale, nd)
+
+
+def _nr_verdict(d):
+    return _down1(d["summary"]["rules_2026_11_15"]["verdict_day_share"]["none"][0] * 100)
+
+
+def _nr_dry(fn):
+    return lambda d: fn(v["winters_reading_rejected"][i] for k, v in d["summary"]["rules_2026_11_15"]["dry_snow"].items()
+                        if k.startswith("dry_") for i in (0, 1))
+
+
+def _nr_hybrid_no_base(d):
+    s = d["summary"]["rules_2026_11_15"]
+    return s["winters"] - s["winters_with_base"]["hybrid"][1]
+
+
+def _nr_before_cliff(d):
+    s = d["summary"]["rules_2026_11_15"]
+    grid = d["rules_2026_11_15"]["inputs"]["sigmas"]
+    return grid[grid.index(s["least_sigma_with_a_false_rejection_in_any_seed"]) - 1]
+
+
+def _nr_share(group):
+    return lambda d: _down1(d["summary"]["rules_2026_11_15"]["verdict_day_share"][group][0] * 100)
+
+
+def _nr_others_trigger(fn):
+    """The camera question's return count over the truths that are neither middle nor dry, both ends."""
+    return lambda d: fn(v for g in ("none", "ceiling", "favourable_end", "hybrid")
+                        for v in d["summary"]["rules_2026_11_15"]["winters_camera_question_returns"][g])
+
+
+def _sfc_bound16(d):
+    s = d["summary"]
+    return s["winters"] - s["overcast_hours_upper_bound"]["bare_winters_under"]["30"]
+
+
+def _p124_self(fn, no_sensor_error):
+    """124's rule of two airs, «both», θ 0.1: winters the true reading is rejected under itself (min over cells, or max —
+    over every sensor error, or at none)."""
+    def get(d):
+        v = [c["both"]["winters_the_truth_is_rejected"] for k, c in d["two_airs_rule"]["cells"].items()
+             if k.endswith(":theta0.1") and k.split(":")[3] != "none" and (not no_sensor_error or k.split(":")[4] == "d+0")]
+        return fn(v)
+    return get
+
+
+def _p125_total(fn):
+    return lambda d: round(fn(d["base"]["south_180"]["by_sky"][s][e]["total_kept"] for s in ("era5", "ceres") for e in ("low", "high")), 3)
+
+
+def _p124_single_run_winters(d):
+    return max(d["cover_free"][f"ceres:{e}"]["by_theta"]["0.1"]["winters_with_at_least_1_runs"] for e in d["inputs"]["ends"])
+
+
+def _p124_winters(d):
+    return d["inputs"]["seasons"][1] - d["inputs"]["seasons"][0] + 1
+
+
+CHECKS += [
+    *[(f"117 rewritten {lab}", doc, pat, SFC, fn, 0.0) for lab, doc, pat, fn in (
+        ("verdict share → SUMMARY", SUMMARY, rf"on \*\*{N}\*\* % of the days of a cover-free winter", _nr_verdict),
+        ("old judged → SUMMARY", SUMMARY, rf"\(the rules as written: \*\*{N}\*\* %, a share", _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1)),
+        ("base none → SUMMARY", SUMMARY, rf"a season has a base in \*\*{N}\*\* winters of 29 with no cover", _nr("winters_with_base", "none", 0)),
+        ("base ceiling → SUMMARY", SUMMARY, rf"in \*\*{N}\*\* under the ceiling and in \*\*", _nr("winters_with_base", "ceiling", 1)),
+        ("base hybrid → SUMMARY", SUMMARY, rf"in \*\*{N}\*\* under the hybrids", _nr("winters_with_base", "hybrid", 1)),
+        ("middle rejected low → SUMMARY", SUMMARY, rf"something is rejected in \*\*{N}\*\*–", _nr("winters_not_proven_false", "middle", 0)),
+        ("middle rejected high → SUMMARY", SUMMARY, rf"something is rejected in \*\*\d+\*\*–\*\*{N}\*\* winters", _nr("winters_not_proven_false", "middle", 1)),
+        ("middle none low → SUMMARY", SUMMARY, rf"and nothing in \*\*{N}\*\*–", _nr("winters_no_rejection", "middle", 0)),
+        ("middle none high → SUMMARY", SUMMARY, rf"and nothing in \*\*\d+\*\*–\*\*{N}\*\* — so", _nr("winters_no_rejection", "middle", 1)),
+        ("cliff → SUMMARY", SUMMARY, rf"the first false rejection comes at σ \*\*{N}\*\*", _nr("least_sigma_with_a_false_rejection_in_any_seed")),
+        ("before cliff → SUMMARY", SUMMARY, rf"\(none in 10 seeds up to {N}\)", _nr_before_cliff),
+        ("adverse hours → SUMMARY", SUMMARY, rf"outside the episodes in \*\*{N}\*\* winters of 29 with no cover", _nr("winters_adverse_r_estimable", "none", 0)),
+        ("adverse hours no base → SUMMARY", SUMMARY, rf"and in \*\*{N}\*\* under the ceiling and the hybrids, where", _nr("winters_adverse_r_estimable", "ceiling", 0)),
+        ("adverse bound → SUMMARY", SUMMARY, rf"— {N} is also the bound before any exclusion", _sfc_bound16),
+        ("base share ceiling → SUMMARY", SUMMARY, rf"\*\*{N}\*\* % under the ceiling and \*\*[\d.]+\*\* % under the hybrids", _nr("verdict_day_share", "ceiling", 1, scale=100)),
+        ("base share hybrid → SUMMARY", SUMMARY, rf"% under the ceiling and \*\*{N}\*\* % under the hybrids", _nr_share("hybrid")),
+        ("trigger none low → SUMMARY", SUMMARY, rf"comes in \*\*{N}\*\*–\*\*\d+\*\* winters of 29, exactly one", _nr("winters_camera_question_returns", "middle", 0)),
+        ("trigger none high → SUMMARY", SUMMARY, rf"comes in \*\*\d+\*\*–\*\*{N}\*\* winters of 29, exactly one", _nr("winters_camera_question_returns", "middle", 1)),
+        ("trigger one low → SUMMARY", SUMMARY, rf"exactly one episode in \*\*{N}\*\*–", _nr("winters_with_exactly_1_run", "middle", 0)),
+        ("trigger one high → SUMMARY", SUMMARY, rf"exactly one episode in \*\*\d+\*\*–\*\*{N}\*\*", _nr("winters_with_exactly_1_run", "middle", 1)),
+        ("trigger others low → SUMMARY", SUMMARY, rf"the camera question returns in \*\*{N}\*\*–\*\*29\*\*", _nr_others_trigger(min)),
+        ("trigger others high → SUMMARY", SUMMARY, rf"the camera question returns in \*\*\d+\*\*–\*\*{N}\*\*\.", _nr_others_trigger(max)),
+        ("poisson runs → SUMMARY", SUMMARY, rf"\(\*\*{N}\*\* run in 19 winters at θ 0\.1\)", _nr("poisson", "runs")),
+        ("poisson k → SUMMARY", SUMMARY, rf"is {N} runs at α 0\.01", _nr("poisson", "k_at_rate")),
+        ("poisson k up → SUMMARY", SUMMARY, rf"and {N} at the rate's one-sided 95 % upper bound", _nr("poisson", "k_at_rate_upper")),
+        ("poisson p up → SUMMARY", SUMMARY, rf"a chance of \*\*{N}\*\*, not", _nr("poisson", "p_two_runs_at_rate_upper", nd=3)),
+        ("poisson p → SUMMARY", SUMMARY, rf", not \*\*{N}\*\*\); the rate comes", _nr("poisson", "p_two_runs_at_rate", nd=4)),
+        ("dry low → SUMMARY", SUMMARY, rf"the reading without dry snow is rejected in \*\*{N}\*\*–", _nr_dry(min)),
+        ("dry high → SUMMARY", SUMMARY, rf"the reading without dry snow is rejected in \*\*\d+\*\*–\*\*{N}\*\* winters", _nr_dry(max)),
+        ("hybrid no base → SUMMARY", SUMMARY, rf"the season has no base in \*\*{N}\*\* winters of 29", _nr_hybrid_no_base),
+        ("verdict share → sheet", SHEET, rf"не критерій: {N} % діб зими без покриву", _nr_verdict),
+        ("base share ceiling → sheet", SHEET, rf"діб зими без покриву, {N} % за стелі", _nr("verdict_day_share", "ceiling", 1, scale=100)),
+        ("base share hybrid → sheet", SHEET, rf"% за стелі, {N} % за гібридів", _nr_share("hybrid")),
+        ("trigger none low → sheet", SHEET, rf"\(питання камери повертається\) у {N}–\d+ зимах із 29", _nr("winters_camera_question_returns", "middle", 0)),
+        ("trigger none high → sheet", SHEET, rf"\(питання камери повертається\) у \d+–{N} зимах із 29", _nr("winters_camera_question_returns", "middle", 1)),
+        ("trigger one low → sheet", SHEET, rf"рівно один епізод — у {N}–\d+,", _nr("winters_with_exactly_1_run", "middle", 0)),
+        ("trigger one high → sheet", SHEET, rf"рівно один епізод — у \d+–{N},", _nr("winters_with_exactly_1_run", "middle", 1)),
+        ("trigger rejection low → sheet", SHEET, rf"два й більше з відкиданням — у {N}–\d+;", _nr("winters_not_proven_false", "middle", 0)),
+        ("trigger rejection high → sheet", SHEET, rf"два й більше з відкиданням — у \d+–{N};", _nr("winters_not_proven_false", "middle", 1)),
+        ("trigger others low → sheet", SHEET, rf"питання камери повертається в {N}–\d+ зимах\.", _nr_others_trigger(min)),
+        ("trigger others high → sheet", SHEET, rf"питання камери повертається в \d+–{N} зимах\.", _nr_others_trigger(max)),
+        ("old judged → sheet", SHEET, rf"Старі {N} % \(літера 2026-11-09/10\)", _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1)),
+        ("base none → sheet", SHEET, rf"База є в {N} зимах із 29 без покриву", _nr("winters_with_base", "none", 0)),
+        ("base hybrid → sheet", SHEET, rf"у жодній — за стелі, в {N} — за гібридів", _nr("winters_with_base", "hybrid", 1)),
+        ("middle rejected low → sheet", SHEET, rf"щось відкидається в {N}–\d+ зимах із 29", _nr("winters_not_proven_false", "middle", 0)),
+        ("middle rejected high → sheet", SHEET, rf"щось відкидається в \d+–{N} зимах із 29", _nr("winters_not_proven_false", "middle", 1)),
+        ("middle none low → sheet", SHEET, rf"нічого — у {N}–\d+: найімовірніший", _nr("winters_no_rejection", "middle", 0)),
+        ("middle none high → sheet", SHEET, rf"нічого — у \d+–{N}: найімовірніший", _nr("winters_no_rejection", "middle", 1)),
+        ("cliff → sheet", SHEET, rf"перше хибне відкидання — за σ {N},", _nr("least_sigma_with_a_false_rejection_in_any_seed")),
+        ("before cliff → sheet", SHEET, rf"до σ {N} — у жодному з 10 зерен", _nr_before_cliff),
+        ("adverse hours → sheet", SHEET, rf"оцінюване в {N} зимах із 29 без покриву", _nr("winters_adverse_r_estimable", "none", 0)),
+        ("adverse hours no base → sheet", SHEET, rf"у {N} — за стелі й гібридів, бо там бази немає", _nr("winters_adverse_r_estimable", "ceiling", 0)),
+        ("adverse bound → sheet", SHEET, rf"Верхня межа до будь-яких виключень — {N} \(`117`\)", _sfc_bound16),
+        ("dry low → sheet", SHEET, rf"прочитання без сухого снігу відкидається в {N}–\d+ зимах із 29", _nr_dry(min)),
+        ("dry high → sheet", SHEET, rf"прочитання без сухого снігу відкидається в \d+–{N} зимах із 29", _nr_dry(max)),
+        ("hybrid no base → sheet", SHEET, rf"бази немає в {N} зимах із 29 — обліплення", _nr_hybrid_no_base),
+        ("poisson runs → sheet", SHEET, rf"\(`124`: {N} серія за 19 зим при 0\.1", _nr("poisson", "runs")),
+        ("poisson winters → sheet", SHEET, rf"серія за {N} зим при 0\.1", _nr("poisson", "winters")),
+        ("poisson k → sheet", SHEET, rf"гірший кінець\) дає поріг {N} серії", _nr("poisson", "k_at_rate")),
+        ("poisson k up → sheet", SHEET, rf"на верхній 95 % межі тієї ставки — {N} \(", _nr("poisson", "k_at_rate_upper")),
+        ("poisson p up → sheet", SHEET, rf"дві серії тоді мають імовірність {N}, а не", _nr("poisson", "p_two_runs_at_rate_upper", nd=3)),
+        ("poisson p → sheet", SHEET, rf"імовірність [\d.]+, а не {N}\)", _nr("poisson", "p_two_runs_at_rate", nd=4)))],
+    *[(f"124 {lab}", doc, pat, P124, fn, 0.0) for lab, doc, pat, fn in (
+        ("self-rejection floor → sheet", SHEET, rf"самовідкидання правди в {N} · \d+ · \d+ зимах із 19", _p124_self(min, False)),
+        ("self-rejection no sensor error → sheet", SHEET, rf"самовідкидання правди в \d+ · {N} · \d+ зимах із 19", _p124_self(max, True)),
+        ("self-rejection worst → sheet", SHEET, rf"самовідкидання правди в \d+ · \d+ · {N} зимах із 19", _p124_self(max, False)),
+        ("self-rejection floor → SUMMARY", SUMMARY, rf"rejected under itself in \*\*{N}\*\* · \*\*\d+\*\* · \*\*\d+\*\* winters of 19 —", _p124_self(min, False)),
+        ("self-rejection no sensor error → SUMMARY", SUMMARY, rf"rejected under itself in \*\*\d+\*\* · \*\*{N}\*\* · \*\*\d+\*\* winters of 19 —", _p124_self(max, True)),
+        ("self-rejection worst → SUMMARY", SUMMARY, rf"rejected under itself in \*\*\d+\*\* · \*\*\d+\*\* · \*\*{N}\*\* winters of 19 —", _p124_self(max, False)),
+        ("sky sd → sheet", SHEET, rf"має sd ln {N} \(`124`, `sky_alone`\)", lambda d: round(d["sky_alone"]["sd_ln"], 3)),
+        ("face sd low → sheet", SHEET, rf"під другим небом — {N} / [\d.]+, уже біля", lambda d: round(d["cover_free"]["ceres:low"]["sd_ln_r_over_base"], 3)),
+        ("face sd high → sheet", SHEET, rf"під другим небом — [\d.]+ / {N}, уже біля", lambda d: round(d["cover_free"]["ceres:high"]["sd_ln_r_over_base"], 3)),
+        ("sky sd → SUMMARY", SUMMARY, rf"products has sd\(ln\) \*\*{N}\*\* and a cover-free", lambda d: round(d["sky_alone"]["sd_ln"], 3)),
+        ("face sd low → SUMMARY", SUMMARY, rf"under the second sky \*\*{N}\*\* / \*\*[\d.]+\*\*, both heavy", lambda d: round(d["cover_free"]["ceres:low"]["sd_ln_r_over_base"], 3)),
+        ("face sd high → SUMMARY", SUMMARY, rf"under the second sky \*\*[\d.]+\*\* / \*\*{N}\*\*, both heavy", lambda d: round(d["cover_free"]["ceres:high"]["sd_ln_r_over_base"], 3)))],
+    *[(f"125 {lab}", SHEET, pat, "kinetics/stem_face_courtyard.json", fn, 0.0) for lab, pat, fn in (
+        ("total kept low → sheet p.8", rf"частка всього світла \(`125` за планом зі знімка: {N}–", _p125_total(min)),
+        ("total kept high → sheet p.8", rf"за планом зі знімка: [\d.]+–{N}\)", _p125_total(max)),
+        ("sky diffuse kept → sheet p.8", rf"частка розсіяного неба \({N}\)", lambda d: round(d["base"]["south_180"]["by_sky"]["era5"]["sky_diffuse_kept"], 3)))],
+    ("124 single false run at θ 0.1 → sheet p.5", SHEET, rf"доживає до неї в {N} зимі з \d+", P124, _p124_single_run_winters, 0.0),
+    ("124 winters → sheet p.5", SHEET, rf"доживає до неї в \d+ зимі з {N}\.", P124, _p124_winters, 0.0),
+]
+
 # ── HW.54 Р3(б)(4) how often one season of one logger can tell the cover readings apart (118, 2026-11-11) ⟷ SUMMARY
 # §«How Often Can One Season of One Logger Tell the Cover Readings Apart?». The cells are COUNTS of winters (exact
 # integers), so no rounding direction arises (a cell given once stands for both ends).
@@ -10759,6 +10914,97 @@ def test_stem_face_cover_rules_sentences_recompose_from_the_cache():
     assert s["overcast_hours_upper_bound"]["bare_or_intermediate_median_winter"] > s["overcast_hours_upper_bound"]["bare_median_winter"]
     assert d["controls"]["draft_candidates_subset_of_written"] and d["controls"]["ghi_is_110s"]
     assert d["inputs"]["draft_2026_11_10_rejected"]["days_after"] == 1                     # «snow on its day and the next»
+
+
+def test_stem_face_rewritten_rules_sentences_recompose_from_the_cache():
+    """The SET sentences about the rules rewritten 2026-11-15 (the sheet's §6 rules pp. 5, 7, 9, 10 and SUMMARY's paragraph),
+    rebuilt from 117's, 124's and 125's caches (§When Modifying #5 ⊕). CAN catch a re-run that turns a span the text calls
+    one number into two, moves an outcome between θ 0.1 and 0.15 or between tolerances, breaks the nesting the text relies on,
+    moves 124's deciding grid point, or moves a frozen 125 hour; CANNOT catch a set sentence written after this test."""
+    d = json.loads((CACHE / SFC).read_text())
+    s, cells = d["summary"]["rules_2026_11_15"], d["rules_2026_11_15"]["cells"]
+    w = s["winters"]
+    # «база є в 29 зимах із 29 без покриву й за обох середніх правд, у жодній — за стелі» · «несприятливе R … за будь-якої правди»
+    assert s["winters_with_base"]["none"] == s["winters_with_base"]["middle"] == [w, w]
+    assert s["winters_with_base"]["ceiling"] == [0, 0] and s["winters_with_base"]["hybrid"][0] == s["winters_with_base"]["hybrid"][1]
+    # «оцінюване в 9 … без покриву, за середніх правд і сприятливого кінця; у 16 — за стелі й гібридів» · «Верхня межа … — 16»
+    ar = s["winters_adverse_r_estimable"]
+    assert ar["none"] == ar["middle"] == ar["favourable_end"] and ar["none"][0] == ar["none"][1]
+    assert ar["ceiling"] == ar["hybrid"] and ar["ceiling"][0] == ar["ceiling"][1] == _sfc_bound16(d)
+    # «у 28–29 зимах» for the truths that are neither middle nor dry; «рівно один епізод» + «немає» + «з відкиданням» ≤ 29
+    assert all(s["winters_camera_question_returns"][g][0] >= w - 1 for g in ("none", "ceiling", "favourable_end", "hybrid"))
+    # «тест мітки … не спрацював у жодній із 22 клітинок»
+    assert len(cells) == 22 and all(c["winters_test_b_fires"] == 0 for c in cells.values())
+    # «без покриву — жодного епізоду й жодного відкидання; хибних відкидань — 0 за будь-якої правди»
+    assert s["winters_with_at_least_1_run"]["none"] == [0, 0] and s["false_rejection_winters_max"] == 0
+    assert s["winters_not_proven_false"]["none"] == [0, 0]
+    # «поріг між 0.1 і 0.15 і допуск від 0 до 2 діб … рішень не рухають» — cell by cell
+    for key, c in cells.items():
+        o = c["outcome"]
+        assert o["theta0.1:tol1"] == o["theta0.15:tol1"] == o["theta0.1:tol0"] == o["theta0.1:tol2"], key
+    # «так стеля вціліє за будь-якої правди, а сухе прочитання — за правди свого середнього прочитання» (ERA5 air)
+    cont = d["rules_2026_11_15"]["containment"]
+    for e in ("low", "high"):
+        for t in d["rules_2026_11_15"]["inputs"]["truths"]:
+            if t not in ("none", "ceiling"):
+                assert cont[f"{e}:{t}->ceiling"], (e, t)
+        for y in ("melt_only", "nrel_published", "favourable_end"):
+            assert cont[f"{e}:{y}->dry_{y}"], (e, y)
+    # «перше хибне відкидання — за σ 0.8, до σ 0.6 — у жодному з 10 зерен»
+    grid = d["rules_2026_11_15"]["inputs"]["sigmas"]
+    cliff = s["least_sigma_with_a_false_rejection_in_any_seed"]
+    assert all(s["noise"][f"sigma_{g:g}"]["false_rejection_winters_max_over_seeds"] == 0 for g in grid if g < cliff)
+    assert d["rules_2026_11_15"]["inputs"]["seeds"] == 10
+    # «поріг відкидання 2 — той самий поріг» (the Poisson bar at the point rate equals the rule's k)
+    assert s["poisson"]["k_at_rate"] == d["rules_2026_11_15"]["inputs"]["rules"]["k"]
+    # p.5: «0.1 — найвища точка сітки `124`, на якій така грань не дає двох хибних серій у жодній зимі на жодному кінці»
+    z = json.loads((CACHE / P124).read_text())
+    clean = [float(th) for th in z["cover_free"]["ceres:low"]["by_theta"]
+             if all(z["cover_free"][f"ceres:{e}"]["by_theta"][th]["winters_with_at_least_2_runs"] == 0 for e in z["inputs"]["ends"])]
+    assert max(clean) == d["rules_2026_11_15"]["inputs"]["rules"]["theta"]
+    # p.0 (б): the 125 hours frozen into the rule, and «пізніше сонце виходить над дах крила»
+    sun = json.loads((CACHE / "kinetics/stem_face_courtyard.json").read_text())["sun_first_seen_from_the_trunk"]
+    months = {"11": "листопада", "12": "грудня", "01": "січня", "02": "лютого"}
+    frozen = ", ".join(f"{int(k[3:])} {months[k[:2]]} — {v['bearing_passes_the_eastern_edge_local']}"
+                       for k, v in sun.items() if not v["first_seen_over_the_roof"])
+    assert frozen in (REPO / SHEET).read_text(), frozen
+    assert [k for k, v in sun.items() if v["first_seen_over_the_roof"]] == ["02-21"]
+
+
+def test_stem_face_rule_constants_match_the_rehearsal():
+    """Every constant of the sheet's §6 rules (2026-11-09/10 p. 1 still in force, and the rules rewritten 2026-11-15) is the
+    value the rehearsal ran — or, for the rules that need the logger's own record, the value `117` DECLARES beside them —
+    so an edit of either side alone reds here (adversary of 2026-11-15: θ, «covered», k, tol, «half» and «30 hours» could
+    be edited in the sheet with every pin green). CAN catch a constant changed on one side only; CANNOT catch a rule
+    whose constant was never put in the code (each phrase below is the whole inventory) or a word-number not in WORDS."""
+    d = json.loads((CACHE / SFC).read_text())
+    blk = d["rules_2026_11_15"]["inputs"]
+    r, dec, oh = blk["rules"], blk["declared_not_rehearsed"], d["inputs"]["overcast_hour"]
+    words = {0.5: ("половини", "половину"), 3: ("три",)}       # a number the sheet writes as a word
+    side = sorted(x for x in r["thetas"] if x != r["theta"])
+    phrases = [
+        f"R_d < {r['theta']:g} · база",
+        f"лічильники при {side[0]:g} і {side[1]:g} друкуються поруч",
+        f"пропускає менше {r['covered']:g} світла доби",
+        f"(± {r['tol']} доба)",
+        f"має щонайменше {r['k']} промахи в сезоні",
+        f"якщо базу мають менше {words[r['season_base_min_share']][0]} суджених діб сезону",
+        f"при α {r['alpha']:g}",
+        f"на верхній {round(r['rate_confidence'] * 100)} % межі тієї ставки",
+        f"лише якщо таких годин щонайменше {r['overcast_hours_min']}",
+        f"(частка розсіяного години ≥ {oh['diffuse_share_min']:g}, GHI ≥ {oh['ghi_min_w_m2']:g} Вт/м²",
+        f"приріст ERA5-Land ≥ {r['snow_label_mm'] / 10:g} см за годину",
+        f"у вікні ±{blk['base_windows_d'][0]} діб",
+        f"менше {blk['base_min_days']} таких діб — ±{blk['base_windows_d'][1]}",
+        f"Доба з ΣGHI_ERA5 < {d['inputs']['ghi_min_kwh_m2']:g} кВт·год/м²",
+        f"показу вище нічної бази на {dec['clock_threshold_w_m2']:g} Вт/м²",
+        f"перевищує попередній на {words[dec['step_beam_share']][1]} обчисленого прямого світла",
+        f"за {words[dec['dark_pool_sd']][0]} стандартні відхилення показів логера",
+        f"дірка в повітрі логера до {dec['logger_air_gap_max_h']} год",
+    ]
+    text = (REPO / SHEET).read_text()
+    missing = [ph for ph in phrases if ph not in text]
+    assert not missing, missing
 
 
 # ── HW.54 a dark PV window in the crown (111, 2026-10-28) ⟷ SUMMARY §«How Much Does a Dark PV Window in the Dome Heat

@@ -9339,6 +9339,87 @@ def test_stem_face_cover_rules_rehearsal_summary_is_recomputed():
     assert s["cerra_only_ceiling_event_days_per_winter"]["median"] == float(np.median(cerra))
 
 
+def test_stem_face_rewritten_rules_rehearsal_is_recomputed():
+    """117's block for the rules rewritten 2026-11-15 — each cell's aggregates against its per-winter rows, and the summary
+    the docs quote against the cells.
+
+    CAN catch: a verdict share, base count, run count, test-B count or adverse-R count that is not its rows' · a rejection
+    counted for a winter without a base (the episode rules do not apply there) · a «false» flag that is not «none», the truth
+    itself or a containment · a summary span that is not its cells' min and max · a Poisson bar that is not the least k with
+    P(N ≥ k) ≤ α at its rate · a noise summary that is not its seeds'.
+    CANNOT catch: a wrong rule, cover or base inside the script (its controls (5)–(8) carry those) — and the outcomes for
+    θ/tol keys other than the deciding one are aggregates only (their per-winter rows are not cached).
+    """
+    import math
+
+    d = json.loads((KINETICS / "stem_face_cover_rules_rehearsal.json").read_text())
+    blk, s = d["rules_2026_11_15"], d["summary"]["rules_2026_11_15"]
+    rules, ends = blk["inputs"]["rules"], ("low", "high")
+    th, dkey = f"{rules['theta']:g}", f"theta{rules['theta']:g}:tol{rules['tol']}"
+    p = s["poisson"]
+    for c_key, c in blk["cells"].items():
+        rows = c["per_winter"]
+        assert len(rows) == s["winters"] == 29, c_key
+        truth = c_key.split(":", 1)[1]
+        withb = [r for r in rows if r["season_with_base"]]
+        for r in rows:
+            assert r["season_with_base"] == (r["based_days"] >= rules["season_base_min_share"] * r["judged_days"]), (c_key, r["season"])
+            assert r["based_days"] <= r["judged_days"] <= r["days"], (c_key, r["season"])
+            if not r["season_with_base"]:
+                assert all(v == 0 for v in r["runs"].values()) and not r["rejected"], (c_key, r["season"])
+            assert r["runs_without_event"] <= r["runs"][th], (c_key, r["season"])
+        assert c["verdict_day_share"] == round(sum(r["based_days"] for r in withb) / sum(r["days"] for r in rows), 4), c_key
+        assert c["winters_with_base"] == len(withb), c_key
+        assert c["median_based_days"] == float(np.median([r["based_days"] for r in rows])), c_key
+        for t in c["winters_with_at_least_1_run"]:
+            assert c["winters_with_at_least_1_run"][t] == sum(r["runs"][t] >= 1 for r in rows), (c_key, t)
+            assert c["winters_with_at_least_2_runs"][t] == sum(r["runs"][t] >= 2 for r in rows), (c_key, t)
+        assert c["winters_test_b_fires"] == sum(r["runs_without_event"] >= p["k_at_rate"] for r in rows), c_key
+        assert c["winters_adverse_r_estimable"] == sum(r["overcast_bare_hours_outside_runs"] >= rules["overcast_hours_min"] for r in rows), c_key
+        fl = set(c["proven_false"])
+        for y in blk["inputs"]["analyst_readings"]:
+            want = truth == "none" or y == truth or blk["containment"].get(f"{c_key.split(':')[0]}:{truth}->{y}", False)
+            assert (y in fl) == bool(want), (c_key, y)
+        o = c["outcome"][dkey]
+        assert o["winters_with_a_rejection_not_proven_false"] == sum(any(y not in fl for y in r["rejected"]) for r in rows), c_key
+        assert o["winters_with_a_false_rejection"] == sum(any(y in fl for y in r["rejected"]) for r in rows), c_key
+        assert o["winters_with_no_rejection"] == sum(not r["rejected"] for r in rows), c_key
+        assert all(c["winters_rejected_by_reading"][y] == sum(y in r["rejected"] for r in rows) for y in c["winters_rejected_by_reading"]), c_key
+    groups = {"none": ("none",), "middle": ("melt_only", "nrel_published"), "favourable_end": ("favourable_end",),
+              "ceiling": ("ceiling",), "hybrid": tuple(f"hybrid_{y}" for y in ("melt_only", "nrel_published", "favourable_end")),
+              "dry": tuple(f"dry_{y}" for y in ("melt_only", "nrel_published", "favourable_end"))}
+
+    def span(get, truths):
+        v = [get(blk["cells"][f"{e}:{t}"]) for e in ends for t in truths]
+        return [min(v), max(v)]
+    for field, get in (("verdict_day_share", lambda c: c["verdict_day_share"]), ("winters_with_base", lambda c: c["winters_with_base"]),
+                       ("winters_with_at_least_1_run", lambda c: c["winters_with_at_least_1_run"][th]),
+                       ("winters_adverse_r_estimable", lambda c: c["winters_adverse_r_estimable"]),
+                       ("winters_not_proven_false", lambda c: c["outcome"][dkey]["winters_with_a_rejection_not_proven_false"]),
+                       ("winters_no_rejection", lambda c: c["outcome"][dkey]["winters_with_no_rejection"]),
+                       ("winters_camera_question_returns", lambda c: sum((not r["season_with_base"]) or r["runs"][th] == 0 for r in c["per_winter"])),
+                       ("winters_with_exactly_1_run", lambda c: sum(r["season_with_base"] and r["runs"][th] == 1 for r in c["per_winter"]))):
+        assert s[field] == {g: span(get, ts) for g, ts in groups.items()}, field
+    assert s["false_rejection_winters_max"] == max(c["outcome"][dkey]["winters_with_a_false_rejection"] for c in blk["cells"].values())
+    # the Poisson bar: the least k with P(N ≥ k) ≤ α, at the rate and at its upper bound
+    def tail(lam, k):
+        return 1.0 - sum(math.exp(-lam) * lam ** i / math.factorial(i) for i in range(k))
+    for rate, k in ((p["rate_per_winter"], p["k_at_rate"]), (p["rate_upper"], p["k_at_rate_upper"])):
+        assert tail(rate, k) <= p["alpha"] < tail(rate, k - 1) if k > 1 else tail(rate, k) <= p["alpha"], (rate, k)
+    assert p["p_two_runs_at_rate"] == pytest.approx(tail(p["rate_per_winter"], 2), rel=1e-9)
+    assert p["rate_per_winter"] == pytest.approx(p["runs"] / p["winters"], rel=1e-12)
+    # the noise summary against its seeds
+    for sg, cell in blk["noise"].items():
+        ns = s["noise"][sg]
+        assert ns["false_rejection_winters_max_over_seeds"] == max(max(v["winters_with_a_false_rejection"]) for v in cell.values()), sg
+        assert ns["cover_free_two_run_winters_max_over_seeds"] == max(max(cell[f"{e}:none"]["winters_with_at_least_2_runs"]) for e in ends), sg
+        for v in cell.values():
+            assert len(v["winters_with_a_false_rejection"]) == blk["inputs"]["seeds"]
+            assert all(a + b == f for a, b, f in zip(v["odd_winters_false"], v["even_winters_false"], v["winters_with_a_false_rejection"], strict=True))
+    firsts = [float(sg[6:]) for sg, ns in s["noise"].items() if ns["false_rejection_winters_max_over_seeds"] > 0]
+    assert s["least_sigma_with_a_false_rejection_in_any_seed"] == (min(firsts) if firsts else None)
+
+
 def test_pv_snow_frost_order_and_azimuth_are_recomputed():
     """115 — the measured order and the azimuth ratios against the fields they derive from. CAN catch a hand-written order
     or a stale ratio after a partial re-run; CANNOT catch a wrong cover model (the script's controls carry those)."""
