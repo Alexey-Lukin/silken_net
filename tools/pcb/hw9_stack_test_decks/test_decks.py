@@ -126,10 +126,12 @@ def test_contour_is_the_smallest_round_both_decks_and_keyed():
     for cx, cy in (decks.PAIR, (0.0, 0.0)):
         assert {(round(2 * cx - x, 6), round(2 * cy - y, 6)) for x, y in contour} != {(round(x, 6), round(y, 6)) for x, y in contour}
     assert len(contour) == 5 and decks.KEY > 0
-    # the upper deck's name — a box about the size KiCad draws four letters at 0.8 mm — finds room (the build holds KiCad's box)
-    lx, ly = decks.label_at()
-    assert decks.clear_of_supports(lx - 1.8, ly - 0.75, lx + 1.8, ly + 0.75)
-    assert not decks.clear_of_supports(*decks.STANDOFFS[0], *decks.STANDOFFS[0])         # and the check can say no
+    # print finds room off every probed surface — boxes about the size KiCad draws four letters at 0.8 mm (the build holds
+    # KiCad's own boxes, and the Gerbers of the base faces empty); and the check can say no
+    for x, y in decks.print_spots().values():
+        assert decks.clear_of_supports(x - 1.8, y - 0.75, x + 1.8, y + 0.75)
+    assert decks.KEEP_R >= decks.LANDING_D / 2 + decks.MASK_RELIEF
+    assert not decks.clear_of_supports(*decks.STANDOFFS[0], *decks.STANDOFFS[0])
 
 
 @pytest.mark.parametrize("face", decks.SURFACES)
@@ -156,6 +158,53 @@ def test_surfaces_put_copper_and_mask_where_the_parameter_says(face, holes):
             assert abs(y) - h / 2 - (island[3] - decks.PAIR[1]) == pytest.approx(decks.CLEARANCE)
     assert pad_inner - post_face == pytest.approx(0.0381, abs=1e-4)
     assert surface(shapes, 0.0, -2.0) == (False, False)                     # nothing at a point away from all of them
+
+
+@needs_ruby
+def test_points_are_the_bench_sheets():
+    """deck_stack_gap_bench_sheet.md §2.1, §4, §9 p. 2 — names, and where each stands on the geometry it names."""
+    node = decks.node_layout()
+    at = {name: (x, y) for name, _deck, _face, x, y in decks.points(node)}
+    deck = {name: d for name, d, *_ in decks.points(node)}
+    assert {"P_H1", "P_H2", "P_1", "P_2", "P_A", "P_B", "G", "Z_padH1", "Z_padH2", "Z_padF", "Z_A1", "Z_A2", "Z_disc.H1",
+            "Z_disc.H2", "Z_strip", "Z_pad.1", "Z_pad.2", "Z_E1", "Z_E2", *(f"Z_H{i}.{k}" for i in (1, 2) for k in (1, 2, 3))} == set(at)
+    assert {deck[n] for n in at if n.startswith("P_") or n == "G"} == {"stack"} and at["G"] == node["G"]
+    (h1x, h1y), g = decks.STANDOFFS[0], node["G"]
+    # P_H1 on H1's ring, on the side away from G — the line from G through H1's axis; the ring is the shoulder's
+    v, w = (at["P_H1"][0] - h1x, at["P_H1"][1] - h1y), (g[0] - h1x, g[1] - h1y)
+    assert math.hypot(*v) == pytest.approx(decks.RING_R) and v[0] * w[1] - v[1] * w[0] == pytest.approx(0, abs=1e-9)
+    assert v[0] * w[0] + v[1] * w[1] < 0
+    assert S["spigot_d"] / 2 < decks.RING_R < S["body_d"] / 2
+    # the sheet compares the stack's reading at P_Hi with the deck's at the same point: a ring point and the disc
+    for i in (1, 2):
+        assert at[f"Z_H{i}.1"] == at[f"Z_disc.H{i}"] == at[f"P_H{i}"]
+        ring = [at[f"Z_H{i}.{k}"] for k in (1, 2, 3)]
+        cx, cy = decks.STANDOFFS[i - 1]
+        assert all(math.hypot(x - cx, y - cy) == pytest.approx(decks.RING_R) for x, y in ring)
+        assert [math.dist(a, b) for a, b in ((ring[0], ring[1]), (ring[1], ring[2]), (ring[2], ring[0]))] == pytest.approx([decks.RING_R * math.sqrt(3)] * 3)
+        r = math.dist(at[f"Z_padH{i}"], (cx, cy))
+        assert S["hole_d"] / 2 < r < S["pad_d"] / 2                                     # on the pad's ring
+    assert at["P_H2"] == pytest.approx((-at["P_H1"][0], at["P_H1"][1]))                  # H2: the mirror of H1's side
+    # on the pads they name: the header's pad 1; the socket's pad in each row, mirrored onto the back
+    _n, x, y, w_, h_ = footprints.pads("FW")[0]
+    assert abs(at["Z_padF"][0] - x) < w_ / 2 and abs(at["Z_padF"][1] - decks.PAIR[1] - y) < h_ / 2
+    rows = set()
+    for name, (_n, x, y, w_, h_) in zip(("Z_pad.1", "Z_pad.2"), footprints.pads("CLP")[:2], strict=True):
+        assert abs(at[name][0] + x) < w_ / 2 and abs(at[name][1] - decks.PAIR[1] - y) < h_ / 2
+        rows.add(math.copysign(1, y))
+    assert rows == {1, -1}
+    # the strip under the holes, the bodies' ends clear of the posts, the windows round the pair
+    pad_inner = footprints.post_gap()[0]
+    assert at["Z_strip"] == decks.PAIR
+    column, post = abs(footprints.pads("FW")[0][1]), footprints.POST * footprints.INCH / 2
+    for part, ends in (("FW", ("Z_A1", "Z_A2")), ("CLP", ("Z_E1", "Z_E2"))):
+        for name, s in zip(ends, (-1, 1), strict=True):
+            x, y = at[name]
+            assert y == decks.PAIR[1] and s * x > column + post and abs(x) < footprints.body(part)[0] / 2
+    assert at["P_1"] == (-column, decks.PAIR[1]) and at["P_2"] == (column, decks.PAIR[1])
+    assert at["P_A"][1] < decks.PAIR[1] - pad_inner and at["P_B"][1] > decks.PAIR[1] + pad_inner
+    xs, ys = [x for x, _ in decks.outline()], [y for _, y in decks.outline()]
+    assert all(min(xs) < x < max(xs) and min(ys) < y < max(ys) for x, y in at.values())
 
 
 def test_threshold_of_the_written_decks_is_the_canons_example():

@@ -636,86 +636,6 @@
 		(embedded_fonts no)
 	)
 	(gr_line
-		(start -2.091692 -1.206449)
-		(end -2.341692 -1.206449)
-		(stroke
-			(width 0.15)
-			(type default)
-		)
-		(layer "B.SilkS")
-		(uuid "9be78069-e812-47c2-aa31-d676eab0dbe8")
-	)
-	(gr_line
-		(start -1.891692 -1.406449)
-		(end -1.891692 -1.656449)
-		(stroke
-			(width 0.15)
-			(type default)
-		)
-		(layer "B.SilkS")
-		(uuid "c2eac23f-d836-4a6e-bb07-c0ff52836d39")
-	)
-	(gr_line
-		(start -1.891692 -1.006449)
-		(end -1.891692 -0.756449)
-		(stroke
-			(width 0.15)
-			(type default)
-		)
-		(layer "B.SilkS")
-		(uuid "9229abbc-fa10-4fcf-bd18-85a67dd63373")
-	)
-	(gr_line
-		(start -1.691692 -1.206449)
-		(end -1.441692 -1.206449)
-		(stroke
-			(width 0.15)
-			(type default)
-		)
-		(layer "B.SilkS")
-		(uuid "bdaf525e-9294-4034-b628-5f1fa9746b83")
-	)
-	(gr_line
-		(start -1.146088 -1.531771)
-		(end -1.396088 -1.531771)
-		(stroke
-			(width 0.15)
-			(type default)
-		)
-		(layer "B.SilkS")
-		(uuid "0c16ef8f-0513-43a9-a5f7-97b5e724620f")
-	)
-	(gr_line
-		(start -0.946088 -1.731771)
-		(end -0.946088 -1.981771)
-		(stroke
-			(width 0.15)
-			(type default)
-		)
-		(layer "B.SilkS")
-		(uuid "c0932efc-ff12-4908-8650-c2ce1ad9e3c0")
-	)
-	(gr_line
-		(start -0.946088 -1.331771)
-		(end -0.946088 -1.081771)
-		(stroke
-			(width 0.15)
-			(type default)
-		)
-		(layer "B.SilkS")
-		(uuid "0a974e5e-2499-465f-8c59-ea67d5a2f7d3")
-	)
-	(gr_line
-		(start -0.746088 -1.531771)
-		(end -0.496088 -1.531771)
-		(stroke
-			(width 0.15)
-			(type default)
-		)
-		(layer "B.SilkS")
-		(uuid "a31e2ccd-ce7b-40ac-bcfd-686b166c9e79")
-	)
-	(gr_line
 		(start -10.83 -1.9)
 		(end -8.83 -3.9)
 		(stroke
@@ -764,6 +684,39 @@
 		)
 		(layer "Edge.Cuts")
 		(uuid "47ceb21c-2734-4de5-a118-855664842526")
+	)
+	(gr_text "H1"
+		(at -6.93 3.95 0)
+		(layer "F.SilkS")
+		(uuid "a31e2ccd-ce7b-40ac-bcfd-686b166c9e79")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.15)
+			)
+		)
+	)
+	(gr_text "H2"
+		(at 6.93 3.95 0)
+		(layer "F.SilkS")
+		(uuid "0c16ef8f-0513-43a9-a5f7-97b5e724620f")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.15)
+			)
+		)
+	)
+	(gr_text "#___"
+		(at 6.93 5.55 0)
+		(layer "F.SilkS")
+		(uuid "0a974e5e-2499-465f-8c59-ea67d5a2f7d3")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.15)
+			)
+		)
 	)
 	(embedded_fonts no)
 )

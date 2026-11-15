@@ -4,9 +4,11 @@ HW.9 — the two test decks of the bench stack (00_07 HW.9, ⚖️ founder 2026-
 two standoffs on its front, and the UPPER deck with the socket CLP on its back and, there too, the surfaces the standoffs'
 end faces meet — one upper deck per name in decks.VARIANTS, because what lies under the faces and under the socket's
 holes moves the very threshold the bench measures against (02_01 §3.1, the inset of pos. 12, last ⊕). Nothing else is on
-them: no nets, no parts beyond the pair and the standoffs; in print only the upper deck's name and the marks of the
-node's two resultants where print may stand. The arrangement, the contour and every choice that is ours — decks.py; the
-land patterns — footprints.py.
+them: no nets, no parts beyond the pair and the standoffs; print — «H1», «H2», the upper deck's name and the kit
+number's field — on the working faces only, the base faces carrying mask and nothing else (the bench sheet,
+docs/protocols/hardware/deck_stack_gap_bench_sheet.md §2.1, §9). Besides the boards it writes hw9_deck_points.csv, the
+sheet's points. The arrangement, the contour, the points and every choice that is ours — decks.py; the land patterns —
+footprints.py.
 
 The generator is the source; the boards, the projects and fab/ next to it are its output (hardware design —
 CERN-OHL-S-2.0 by the zone map in /NOTICE). Run it with the Python that ships inside KiCad 10 (and Ruby on the PATH — the
@@ -17,10 +19,11 @@ node's searcher):
 
 (-B keeps __pycache__ out of KiCad.app — written bytecode breaks the bundle's code signature.)
 
-Every check runs on all three boards before fab/ is touched: the decks against the node's searcher, each upper deck laid
-over the lower one (socket pad n over header pad n; under the posts' axes and the end faces the surfaces its name spells,
-and the threshold they give against the canon's example), KiCad's DRC of each board, and the placement file a fab would
-read against KiCad's own pads. The boards are written first, because DRC and the placement export read them from disk;
+Every check runs on all three boards before fab/ is touched: the decks against the node's searcher, the lower deck's
+pads one copper under one finish, each upper deck laid over the lower one (socket pad n over header pad n; under the
+posts' axes and the end faces the surfaces its name spells, and the threshold they give against the canon's example),
+the sheet's points on the surfaces it probes, KiCad's DRC of each board, the base faces empty in the Gerbers, and the
+placement file a fab would read against KiCad's own pads. The boards are written first, because DRC and the placement export read them from disk;
 a board that failed stays in the tree as a diff against the committed one.
 """
 from __future__ import annotations
@@ -45,7 +48,10 @@ THICKNESS = 1.6                     # mm — the node's decks (02_01 §3.1 pos. 
 #                                     inside the lower deck. Ours until the order is ruled — a question of that submission
 BACK = {"Cu": pcbnew.B_Cu, "Mask": pcbnew.B_Mask}
 STAMP = re.compile(r"\d{4}-\d\d-\d\d([T ])\d\d:\d\d:\d\d(?:[+-]\d\d:?\d\d)?")
-TICK = (0.2, 0.45)                  # mm — a mark is four ticks round its point, this far out: no print ON the point
+KIT_FIELD = "#___"                  # the kit number's write-in field (bench sheet §3: every deck is traced by its number)
+# The base faces — a deck lies on the plate by it, the stack is read on it (bench sheet §2.1): mask and nothing else
+BASE_FACE = {"lower": ("B_Cu", "B_Mask", "B_Paste", "B_Silkscreen"), "upper": ("F_Cu", "F_Mask", "F_Paste", "F_Silkscreen")}
+GERBER_OBJECT = re.compile(r"D0?[123]\*|G36\*")   # a draw, a move-to-draw, a flash or a region: anything on the layer
 CODE_HOME = {"FW": "02_01 §3.1 pos. 12", "CLP": "02_01 §3.1 pos. 12", "standoff": "02_01 §3.1 pos. 25"}
 
 
@@ -78,34 +84,36 @@ def new_board(title: str) -> pcbnew.BOARD:
     return board
 
 
-def mark(board: pcbnew.BOARD, layer: int, x: float, y: float) -> bool:
-    """An open cross at (x, y) — if decks.clear_of_supports() lets print stand there; False, and nothing drawn, if not."""
-    lo, hi = TICK
-    if not decks.clear_of_supports(x - hi, y - hi, x + hi, y + hi):
-        return False
-    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-        tick = pcbnew.PCB_SHAPE(board)
-        tick.SetShape(pcbnew.SHAPE_T_SEGMENT)
-        tick.SetStart(pt(x + dx * lo, y + dy * lo))
-        tick.SetEnd(pt(x + dx * hi, y + dy * hi))
-        tick.SetLayer(layer)
-        tick.SetWidth(pcbnew.FromMM(0.15))
-        board.Add(tick)
-    return True
+def text(board: pcbnew.BOARD, layer: int, words: str, spot: str) -> None:
+    """Print on a deck's working face at decks.print_spots()[spot] — mirrored on the back, so it reads from that side;
+    refused unless KiCad's own box of it clears every probed surface (decks.clear_of_supports())."""
+    label = pcbnew.PCB_TEXT(board)
+    label.SetText(words)
+    label.SetPosition(pt(*decks.print_spots()[spot]))
+    label.SetLayer(layer)
+    label.SetMirrored(layer == pcbnew.B_SilkS)
+    label.SetTextSize(pt(0.8, 0.8))
+    label.SetTextThickness(pcbnew.FromMM(0.15))
+    board.Add(label)
+    box = label.GetBoundingBox()
+    if not decks.clear_of_supports(*(pcbnew.ToMM(v) for v in (box.GetLeft(), box.GetTop(), box.GetRight(), box.GetBottom()))):
+        raise SystemExit(f"{board.GetTitleBlock().GetTitle()}: «{words}» stands on a probed surface or off the board")
 
 
-def lower(node: dict) -> tuple:
-    """(board, [marked?] per P): the header and the standoffs; on the BACK — where the pogo pins push — the marks of P."""
+def lower() -> pcbnew.BOARD:
+    """The header and the standoffs; print on the top (working) face only — the bottom is the base the deck lies on."""
     board = new_board("HW.9 test deck, lower: header FW and two standoffs on the front")
     connector_footprint(board, "FW", "J1", PAIR)
     for i, at in enumerate(STANDOFFS):
         standoff_footprint(board, f"H{i + 1}", at)
-    return board, [mark(board, pcbnew.B_SilkS, *p) for p in node["P"]]
+    for spot, words in (("H1", "H1"), ("H2", "H2"), ("kit", KIT_FIELD)):
+        text(board, pcbnew.F_SilkS, words, spot)
+    return board
 
 
-def upper(name: str, node: dict) -> tuple:
-    """(board, marked?): the socket and the surfaces its name spells; on the FRONT — where the gasket's bead presses —
-    the name (decks.label_at()) and the mark of G."""
+def upper(name: str) -> pcbnew.BOARD:
+    """The socket and the surfaces its name spells; print on the back (working) face only — the top is the base face
+    the stack is read on."""
     face, holes = decks.variant(name)
     board = new_board(f"HW.9 test deck, upper {name}: socket CLP on the back; under the end faces {face}, under the holes {holes}")
     connector_footprint(board, "CLP", "J1", PAIR, bottom=True)
@@ -123,17 +131,10 @@ def upper(name: str, node: dict) -> tuple:
         shape.SetWidth(0)
         shape.SetLayer(BACK[layer])
         board.Add(shape)
-    label = pcbnew.PCB_TEXT(board)
-    label.SetText(f"U-{name.upper()}")                  # the full name is the title block's; the corner holds four letters
-    label.SetPosition(pt(*decks.label_at()))
-    label.SetLayer(pcbnew.F_SilkS)
-    label.SetTextSize(pt(0.8, 0.8))
-    label.SetTextThickness(pcbnew.FromMM(0.15))
-    board.Add(label)
-    box = label.GetBoundingBox()
-    if not decks.clear_of_supports(*(pcbnew.ToMM(v) for v in (box.GetLeft(), box.GetTop(), box.GetRight(), box.GetBottom()))):
-        raise SystemExit(f"upper {name}: the label stands over a support or off the board")
-    return board, mark(board, pcbnew.F_SilkS, *node["G"])
+    # the full name is the title block's; the corner holds four letters
+    for spot, words in (("H1", "H1"), ("H2", "H2"), ("name", f"U-{name.upper()}"), ("kit", KIT_FIELD)):
+        text(board, pcbnew.B_SilkS, words, spot)
+    return board
 
 
 def check_node(low: pcbnew.BOARD, node: dict) -> None:
@@ -157,10 +158,40 @@ def check_node(low: pcbnew.BOARD, node: dict) -> None:
         fail(f"the end face Ø{STANDOFF['body_d']} is not the node's Ø{node['face_d']}")
 
 
-def surface_at(board: pcbnew.BOARD, x: float, y: float) -> tuple:
-    """(copper, mask opened) on the BACK of a board at a point — by whatever KiCad finds there, shapes and pads alike."""
+def surface_at(board: pcbnew.BOARD, x: float, y: float, back: bool = True) -> tuple:
+    """(copper, mask opened) on one face of a board at a point — by whatever KiCad finds there, shapes and pads alike."""
     items = [*board.GetDrawings(), *(pad for fp in board.GetFootprints() for pad in fp.Pads())]
-    return tuple(any(item.IsOnLayer(layer) and item.HitTest(pt(x, y)) for item in items) for layer in (pcbnew.B_Cu, pcbnew.B_Mask))
+    layers = (pcbnew.B_Cu, pcbnew.B_Mask) if back else (pcbnew.F_Cu, pcbnew.F_Mask)
+    return tuple(any(item.IsOnLayer(layer) and item.HitTest(pt(x, y)) for item in items) for layer in layers)
+
+
+def check_lower_pads(low: pcbnew.BOARD) -> None:
+    """Bench sheet §9 p. 5, the premise «the copper under the header and under the standoffs is the same»: every pad of
+    the lower deck is on the one front copper layer with its mask opened, so the board's one finish covers them all."""
+    for fp in low.GetFootprints():
+        for pad in fp.Pads():
+            if not (pad.IsOnLayer(pcbnew.F_Cu) and pad.IsOnLayer(pcbnew.F_Mask)
+                    and not pad.IsOnLayer(pcbnew.B_Cu) and not pad.IsOnLayer(pcbnew.B_Mask)):
+                raise SystemExit(f"lower deck: a pad of {fp.GetReference()} is not front copper under an opened mask")
+
+
+def check_points(low: pcbnew.BOARD, uppers: dict, rows: list) -> None:
+    """The bench sheet's points on copper, on what KiCad has on the boards: the pads and the standoffs' ring on the lower
+    deck's front are bare copper; on each upper deck's back the socket's pads are, and the disc and the strip are the
+    surfaces its name spells."""
+    for name, deck, _face, x, y in rows:
+        if deck == "lower" and not name.startswith("Z_A"):
+            boards, want = {"lower": low}, {"lower": (True, True)}
+        elif deck == "upper" and not name.startswith("Z_E"):
+            boards = uppers
+            spelled = {v: [SURFACES[s] for s in decks.variant(v)] for v in uppers}
+            want = {v: (True, True) if name.startswith("Z_pad") else spelled[v][0 if name.startswith("Z_disc") else 1] for v in uppers}
+        else:
+            continue
+        for v, board in boards.items():
+            if surface_at(board, x, y, back=deck == "upper") != want[v]:
+                raise SystemExit(f"point {name} on {v}: (copper, mask opened) = {surface_at(board, x, y, deck == 'upper')}, "
+                                 f"the sheet probes {want[v]}")
 
 
 def check_stack(low: pcbnew.BOARD, up: pcbnew.BOARD, name: str) -> float | None:
@@ -257,43 +288,76 @@ def bom(board: pcbnew.BOARD) -> str:
     return text.getvalue()
 
 
-def fabrication(stem: str, cpl: str, parts: str) -> None:
-    """Gerbers and drill as text — KiCad's time stamps replaced by the title block's date, so that a rerun changes
-    nothing — the placement file placement() checked, and the bill of materials."""
-    board_file = HERE / f"{stem}.kicad_pcb"
-    gerbers = HERE / "fab" / stem / "gerbers"
-    gerbers.mkdir(parents=True, exist_ok=True)
-    for old in gerbers.iterdir():
-        old.unlink()
+def gerbers(stem: str, out: Path) -> dict:
+    """{file name: text} — Gerbers and drill as text, KiCad's time stamps replaced by the title block's date, so that a
+    rerun changes nothing; refused if the deck's base face carries anything at all on copper, mask, paste or print (a
+    mask layer draws its OPENINGS — empty is mask everywhere)."""
+    out.mkdir(parents=True)
     for args in (("gerbers", "--no-x2", "--layers", "F.Cu,B.Cu,F.Paste,B.Paste,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts"),
                  ("drill", "--format", "excellon")):
-        subprocess.run([str(KICAD_CLI), "pcb", "export", *args, "--output", f"{gerbers}/", str(board_file)],
+        subprocess.run([str(KICAD_CLI), "pcb", "export", *args, "--output", f"{out}/", str(HERE / f"{stem}.kicad_pcb")],
                        check=True, capture_output=True, text=True)
-    for f in gerbers.iterdir():
-        f.write_text(STAMP.sub(rf"{DATE}\g<1>00:00:00", f.read_text()))
-    (gerbers.parent / f"{stem}_cpl.csv").write_text(cpl)
-    (gerbers.parent / f"{stem}_bom.csv").write_text(parts)
+    files = {f.name: STAMP.sub(rf"{DATE}\g<1>00:00:00", f.read_text()) for f in sorted(out.iterdir())}
+    for layer in BASE_FACE["lower" if stem.endswith("lower") else "upper"]:
+        body = next((t for n, t in files.items() if n.startswith(f"{stem}-{layer}.")), None)
+        if body is None:
+            raise SystemExit(f"{stem}: KiCad wrote no Gerber of the base face's {layer} — nothing to hold empty")
+        if GERBER_OBJECT.search(body):
+            raise SystemExit(f"{stem}: the base face's {layer} is not empty — the bench sheet (§2.1) needs mask and nothing else")
+    return files
+
+
+def fabrication(stem: str, files: dict, cpl: str, parts: str) -> None:
+    """fab/<board>/: the Gerbers and drill gerbers() checked, the placement file placement() checked, the bill of materials."""
+    folder = HERE / "fab" / stem / "gerbers"
+    folder.mkdir(parents=True, exist_ok=True)
+    for old in folder.iterdir():
+        old.unlink()
+    for name, body in files.items():
+        (folder / name).write_text(body)
+    (folder.parent / f"{stem}_cpl.csv").write_text(cpl)
+    (folder.parent / f"{stem}_bom.csv").write_text(parts)
+
+
+def points_file(rows: list) -> str:
+    """The bench sheet's points (§9 p. 2): in the frame above, and from the two edges that meet at the cut corner (the key,
+    at (min x, min y)): the SHORT edge by H1 (x = min x) and the LONG edge along the standoffs, away from the pair
+    (y = min y). A deck turned over keeps that corner on those two edges, so the distances hold on either face."""
+    xs, ys = [x for x, _ in outline()], [y for _, y in outline()]
+    text = io.StringIO()
+    w = csv.writer(text, lineterminator="\n")
+    w.writerow(("Point", "Deck", "Face", "X mm", "Y mm", "From the short edge at the key mm", "From the long edge at the key mm"))
+    for name, deck, face, x, y in rows:
+        w.writerow((name, deck, face, f"{x:.3f}", f"{y:.3f}", f"{x - min(xs):.3f}", f"{y - min(ys):.3f}"))
+    return text.getvalue()
 
 
 def main() -> int:
     node = decks.node_layout()
-    low, p_marked = lower(node)
-    uppers = {name: upper(name, node) for name in VARIANTS}
-    boards = {"hw9_deck_lower": low, **{f"hw9_deck_upper_{name}": board for name, (board, _) in uppers.items()}}
+    low = lower()
+    uppers = {name: upper(name) for name in VARIANTS}
+    boards = {"hw9_deck_lower": low, **{f"hw9_deck_upper_{name}": board for name, board in uppers.items()}}
+    rows = decks.points(node)
     check_node(low, node)
-    deltas = {name: check_stack(low, boards[f"hw9_deck_upper_{name}"], name) for name in VARIANTS}
+    check_lower_pads(low)
+    deltas = {name: check_stack(low, uppers[name], name) for name in VARIANTS}
+    check_points(low, uppers, rows)
     for stem, board in boards.items():
         board.Save(str(HERE / f"{stem}.kicad_pcb"))
         write_project(HERE / f"{stem}.kicad_pro")
         drc_gate(HERE / f"{stem}.kicad_pcb")
     with tempfile.TemporaryDirectory() as tmp:
-        files = {stem: (placement(stem, board, Path(tmp)), bom(board)) for stem, board in boards.items()}
-    for stem, (cpl, parts) in files.items():
-        fabrication(stem, cpl, parts)
+        files = {stem: (gerbers(stem, Path(tmp) / stem), placement(stem, board, Path(tmp)), bom(board))
+                 for stem, board in boards.items()}
+    for stem, (layers, cpl, parts) in files.items():
+        fabrication(stem, layers, cpl, parts)
+    (HERE / "hw9_deck_points.csv").write_text(points_file(rows))
     xs, ys = [x for x, _ in outline()], [y for _, y in outline()]
-    print(f"wrote {', '.join(boards)} — every check passed before fab/: the node's searcher, each upper deck over the lower "
-          "one (socket pad n over header pad n, the spelled surfaces, Δ* against the canon's example), DRC clean "
-          "(0 violations, 0 unconnected) each, the placement file against KiCad's pads")
+    print(f"wrote {', '.join(boards)} and hw9_deck_points.csv — every check passed before fab/: the node's searcher, "
+          "the lower deck's pads one copper and one finish, each upper deck over the lower one (socket pad n over header "
+          "pad n, the spelled surfaces, Δ* against the canon's example), the sheet's points on their surfaces, DRC clean "
+          "(0 violations, 0 unconnected) each, the base faces mask and nothing else in the Gerbers, the placement file "
+          "against KiCad's pads")
     print(f"  contour {max(xs) - min(xs):.2f} × {max(ys) - min(ys):.2f} mm, one corner cut {KEY:.1f} × {KEY:.1f} (the key), "
           f"{THICKNESS} mm, 2 layers; standoffs H1, H2 {SPAN} apart, the pair {PAIR[1]} off their line, rows along it")
     for name in VARIANTS:
@@ -301,13 +365,12 @@ def main() -> int:
         delta = "—" if deltas[name] is None else f"{deltas[name]:.4f} mm (canon ≈ {decks.CANON_EXAMPLE[name]})"
         print(f"  upper {name}: under the end faces {face}, under the socket's holes {holes}; Δ* at copper "
               f"{decks.COPPER} and no seam {delta}")
-    (gx, gy), g_marked = node["G"], all(marked for _, marked in uppers.values())
-    print(f"  the node's resultants, in this frame (x along H1→H2, y down, towards the pair; the searcher's standoff B is {node['B']}):")
-    print(f"    G, the gasket's bead, on the upper deck from above: ({gx:+.3f}, {gy:+.3f}) — "
-          + ("marked on its front" if g_marked else "NOT marked: it stands over a standoff's end face"))
-    for (px, py), marked in zip(node["P"], p_marked):   # noqa: B905 — KiCad's Python is 3.9: no zip(strict=)
-        print(f"    P, the pogo pins' resultant at an extreme split, on the lower deck from below: ({px:+.3f}, {py:+.3f}) — "
-              + ("marked on its back" if marked else "NOT marked: no room for print"))
+    (gx, gy), ((p0x, p0y), (p1x, p1y)) = node["G"], node["P"]
+    print(f"  the node's resultants, in this frame (x along H1→H2, y down, towards the pair; the searcher's standoff B is {node['B']}),"
+          " unmarked — print stays off the base faces; the points, G among them, are in hw9_deck_points.csv:")
+    print(f"    G, the gasket's bead, on the upper deck from above — where the bench's load goes: ({gx:+.3f}, {gy:+.3f})")
+    print(f"    P, the pogo pins' resultant, on the lower deck from below — a force up to 1.92 N in the node, not the bench's "
+          f"support: ({p0x:+.3f}, {p0y:+.3f}) … ({p1x:+.3f}, {p1y:+.3f})")
     return 0
 
 

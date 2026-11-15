@@ -24,7 +24,7 @@ import math
 import subprocess
 from pathlib import Path
 
-from footprints import COURTYARD_MARGIN, STANDOFF, body, courtyard, post_gap
+from footprints import COURTYARD_MARGIN, INCH, POST, STANDOFF, body, courtyard, pads, post_gap
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -97,24 +97,75 @@ def outline() -> list:
     return [(-x1 + KEY, y0), (x1, y0), (x1, y1), (-x1, y1), (-x1, y0 + KEY)]
 
 
+KEEP_R = max(STANDOFF["pad_d"] / 2 + COURTYARD_MARGIN, LANDING_D / 2 + MASK_RELIEF)   # print stays outside this round a standoff
+
+
 def clear_of_supports(x0: float, y0: float, x1: float, y1: float) -> bool:
-    """Whether a box of print (mm) stays on the board PRINT_INSET in from its edge and over neither the pair's courtyard
-    nor a standoff's — because the surfaces the bench will probe are the protocol's to name, and print stands proud."""
+    """Whether a box of print (mm) stays on the board PRINT_INSET in from its edge and off every surface the bench
+    probes on a working face (deck_stack_gap_bench_sheet.md §9 p. 3): the pair's courtyard — its pads, the strip under
+    the holes — and KEEP_R round a standoff — its pad and ring, the disc and its mask relief."""
     xs, ys = [x for x, _ in outline()], [y for _, y in outline()]
     (fw_x, fw_y), (clp_x, clp_y) = courtyard("FW"), courtyard("CLP")
     hx, hy = max(fw_x, clp_x), max(fw_y, clp_y)
-    r = STANDOFF["pad_d"] / 2 + COURTYARD_MARGIN
     return (min(xs) + PRINT_INSET < x0 and x1 < max(xs) - PRINT_INSET and min(ys) + PRINT_INSET < y0 and y1 < max(ys) - PRINT_INSET
             and (x1 < PAIR[0] - hx or x0 > PAIR[0] + hx or y1 < PAIR[1] - hy or y0 > PAIR[1] + hy)
-            and all(math.hypot(max(x0 - sx, 0, sx - x1), max(y0 - sy, 0, sy - y1)) > r for sx, sy in STANDOFFS))
+            and all(math.hypot(max(x0 - sx, 0, sx - x1), max(y0 - sy, 0, sy - y1)) > KEEP_R for sx, sy in STANDOFFS))
 
 
-def label_at() -> tuple:
-    """Where an upper deck carries its name, (x, y) in mm, on its FRONT — the top face of the stack, away from the paste
-    side: the middle of the free corner beside the pair and past standoff H1 (clear_of_supports() holds the box)."""
+def print_spots() -> dict:
+    """Where print stands, (x, y) in mm — on each deck's WORKING face only, the lower deck's top and the upper deck's back
+    (the bench sheet, §9 pp. 1, 3: the base faces — the lower deck's bottom, the upper deck's top — carry mask and nothing
+    else): «H1», «H2» just past each standoff's keep-out, on the pair's side; the kit number's write-in field one line
+    under «H2» — by the standoff's pad on the lower deck, by its disc on the upper (§9 p. 3); the upper deck's name in
+    the free corner beside the pair by H1. Ours, all of it; the build holds every box to clear_of_supports()."""
     x0, y1 = min(x for x, _ in outline()), max(y for _, y in outline())
-    pair_hx = max(courtyard("FW")[0], courtyard("CLP")[0])
-    return (x0 - pair_hx) / 2, (STANDOFF["pad_d"] / 2 + COURTYARD_MARGIN + y1) / 2
+    line = 1.6                                                 # mm, a line of 0.8 mm text and the gap under it
+    return {"H1": (STANDOFFS[0][0], KEEP_R + 0.8), "H2": (STANDOFFS[1][0], KEEP_R + 0.8),
+            "kit": (STANDOFFS[1][0], KEEP_R + 0.8 + line),
+            "name": ((x0 - max(courtyard("FW")[0], courtyard("CLP")[0])) / 2, (KEEP_R + y1) / 2)}
+
+
+# The ring an end face is probed on: the middle of the shoulder's ring, Ø2.8…Ø4.35 (W1) — ours; the end face spans it too,
+# its bore (M2) and the chamfer at its mouth being undimensioned and well inside
+RING_R = (STANDOFF["spigot_d"] + STANDOFF["body_d"]) / 4
+FACES = {"lower": "top (working)", "upper": "back (working)", "stack": "top of the upper deck (base)"}
+
+
+def points(node: dict) -> list:
+    """The bench sheet's points (deck_stack_gap_bench_sheet.md §2.1, §4), [(name, deck, face, x, y)] in mm, in the frame
+    above. P_H1 sits on H1's ring on the side away from G (§2.1), and so do the first of H1's three ring points and the
+    point on its disc, which the sheet compares with it (§4.2, §4.3); H2 takes the mirror of H1's side. P_1, P_2 over the
+    end columns of posts, on the pair's centreline; P_A, P_B across the standoffs' line, at the socket's courtyard on
+    either side; the header's and the socket's end points midway between the outer post's face and the body's end;
+    index 1 is the end of pad 1. Where the sheet does not fix a point, the choice is ours — README."""
+    (h1x, h1y), (h2x, h2y) = STANDOFFS
+    gx, gy = node["G"]
+    d = math.hypot(h1x - gx, h1y - gy)
+    side = {"H1": ((h1x - gx) / d, (h1y - gy) / d), "H2": ((gx - h1x) / d, (h1y - gy) / d)}
+    at = {"H1": (h1x, h1y), "H2": (h2x, h2y)}
+
+    def on(h: str, r: float, turn: float = 0.0) -> tuple:
+        (ux, uy), c, s = side[h], math.cos(turn), math.sin(turn)
+        return at[h][0] + r * (ux * c - uy * s), at[h][1] + r * (ux * s + uy * c)
+
+    fw1, clp1, clp2 = pads("FW")[0], pads("CLP")[0], pads("CLP")[1]
+    column = abs(fw1[1])                                       # the outer column of posts
+    post = POST * INCH / 2
+    ends = {part: (column + post + body(part)[0] / 2) / 2 for part in ("FW", "CLP")}
+    pad_r = (STANDOFF["hole_d"] + STANDOFF["pad_d"]) / 4
+    out = [(f"Z_pad{h}", "lower", *on(h, pad_r)) for h in at]
+    out += [("Z_padF", "lower", PAIR[0] + fw1[1], PAIR[1] + fw1[2])]
+    out += [(f"Z_{h}.{k + 1}", "lower", *on(h, RING_R, k * 2 * math.pi / 3)) for h in at for k in range(3)]
+    out += [(f"Z_A{i + 1}", "lower", PAIR[0] + s * ends["FW"], PAIR[1]) for i, s in enumerate((-1, 1))]
+    out += [(f"Z_disc.{h}", "upper", *on(h, RING_R)) for h in at]
+    out += [("Z_strip", "upper", *PAIR)]
+    out += [(f"Z_pad.{n}", "upper", PAIR[0] - x, PAIR[1] + y) for n, x, y, _w, _h in (clp1, clp2)]   # mirrored: on the back
+    out += [(f"Z_E{i + 1}", "upper", PAIR[0] + s * ends["CLP"], PAIR[1]) for i, s in enumerate((-1, 1))]
+    out += [(f"P_{h}", "stack", *on(h, RING_R)) for h in at]
+    out += [(f"P_{i + 1}", "stack", PAIR[0] + s * column, PAIR[1]) for i, s in enumerate((-1, 1))]
+    out += [(f"P_{ab}", "stack", PAIR[0], PAIR[1] + s * courtyard("CLP")[1]) for ab, s in (("A", -1), ("B", 1))]
+    out += [("G", "stack", gx, gy)]
+    return [(name, deck, FACES[deck], x, y) for name, deck, x, y in out]
 
 
 def upper_surfaces(face: str, holes: str) -> list:

@@ -383,14 +383,51 @@
 		(uuid "71cc42db-ae4f-48a1-96ff-3f7404eb674f")
 	)
 	(gr_text "U-BB"
-		(at -7.23545 5.6845 0)
-		(layer "F.SilkS")
+		(at -7.23545 5.8095 0)
+		(layer "B.SilkS")
+		(uuid "2feb1144-535e-4755-ad94-f95cdb392cee")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.15)
+			)
+			(justify mirror)
+		)
+	)
+	(gr_text "H1"
+		(at -6.93 3.95 0)
+		(layer "B.SilkS")
 		(uuid "11911a8a-dc10-4179-bfa7-e94d9dac24ed")
 		(effects
 			(font
 				(size 0.8 0.8)
 				(thickness 0.15)
 			)
+			(justify mirror)
+		)
+	)
+	(gr_text "H2"
+		(at 6.93 3.95 0)
+		(layer "B.SilkS")
+		(uuid "21e058d9-b744-467a-8a1d-f0ad8e054cae")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.15)
+			)
+			(justify mirror)
+		)
+	)
+	(gr_text "#___"
+		(at 6.93 5.55 0)
+		(layer "B.SilkS")
+		(uuid "b5973b7b-47ce-4305-81b5-3ad50d9cdf97")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.15)
+			)
+			(justify mirror)
 		)
 	)
 	(embedded_fonts no)

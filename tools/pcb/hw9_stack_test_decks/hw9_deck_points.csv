@@ -1,0 +1,26 @@
+Point,Deck,Face,X mm,Y mm,From the short edge at the key mm,From the long edge at the key mm
+Z_padH1,lower,top (working),-8.405,1.460,2.425,5.360
+Z_padH2,lower,top (working),8.405,1.460,19.235,5.360
+Z_padF,lower,top (working),-2.540,5.822,8.290,9.722
+Z_H1.1,lower,top (working),-8.200,1.257,2.630,5.157
+Z_H1.2,lower,top (working),-7.384,-1.729,3.446,2.171
+Z_H1.3,lower,top (working),-5.206,0.472,5.624,4.372
+Z_H2.1,lower,top (working),8.200,1.257,19.030,5.157
+Z_H2.2,lower,top (working),5.206,0.472,16.036,4.372
+Z_H2.3,lower,top (working),7.384,-1.729,18.214,2.171
+Z_A1,lower,top (working),-2.959,3.790,7.871,7.690
+Z_A2,lower,top (working),2.959,3.790,13.789,7.690
+Z_disc.H1,upper,back (working),-8.200,1.257,2.630,5.157
+Z_disc.H2,upper,back (working),8.200,1.257,19.030,5.157
+Z_strip,upper,back (working),0.000,3.790,10.830,7.690
+Z_pad.1,upper,back (working),-2.540,5.403,8.290,9.303
+Z_pad.2,upper,back (working),-2.540,2.177,8.290,6.077
+Z_E1,upper,back (working),-3.067,3.790,7.763,7.690
+Z_E2,upper,back (working),3.067,3.790,13.897,7.690
+P_H1,stack,top of the upper deck (base),-8.200,1.257,2.630,5.157
+P_H2,stack,top of the upper deck (base),8.200,1.257,19.030,5.157
+P_1,stack,top of the upper deck (base),-2.540,3.790,8.290,7.690
+P_2,stack,top of the upper deck (base),2.540,3.790,13.370,7.690
+P_A,stack,top of the upper deck (base),0.000,1.191,10.830,5.091
+P_B,stack,top of the upper deck (base),0.000,6.389,10.830,10.290
+G,stack,top of the upper deck (base),-6.504,-0.422,4.326,3.478
