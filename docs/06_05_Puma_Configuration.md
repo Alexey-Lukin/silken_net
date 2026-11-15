@@ -2,14 +2,14 @@
 
 ## 🎯 Мета
 
-Зафіксувати архітектурні рішення та операційні runbook'и для Puma 8.0.2 — production HTTP-сервера SilkenNet. Документ описує **поточний стан** конфігурації та причини кожного вибору.
+Зафіксувати архітектурні рішення та операційні runbook'и для Puma 8.0.3 — production HTTP-сервера SilkenNet. Документ описує **поточний стан** конфігурації та причини кожного вибору.
 
 ---
 
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — конфігурація відповідає SSOT; IO-bound пул, cluster hooks і graceful shutdown **зашиті й покриті host-тестами**. ⚠️ **Верифікація на живому трафіку судиться не тут:** дім факту «чи слот обслуговує» — [`06_01 §Статус`](06_01_Deployment_Kamal_Terraform), і читати треба ЙОГО, а не цитату звідси — ця цитата протухала двічі, обидва рази в бік БІДНОСТІ. Production verification → [`00_07`](00_07_Action_Plan_Tracker) S1.1.
-- **Версія:** `puma (8.0.2)` (`Gemfile.lock`)
+- **Версія:** `puma (8.0.3)` (`Gemfile.lock`)
 - **Конфігураційний SSOT:** `config/puma.rb`
 - **Runtime-архітектура:** `Cloudflare (TLS, HTTP/2) → kamal-proxy (origin-TLS) → Thruster (gzip, статика, буферизація) → Puma (clustered, preload_app!) → Rails 8.1` — Thruster TLS НЕ термінує і HTTP/2 не дає: обидва живуть на плечі Cloudflare, origin-TLS — у kamal-proxy ([`06_01 §TLS`](06_01_Deployment_Kamal_Terraform))
 - **Puma middleware:** немає — `MarkWeb3RequestsAsIoBound` знято 2026-08-14 ([ARCH.80]; обґрунтування було мертве на обох шляхах)
@@ -109,7 +109,7 @@ kamal app exec -i "curl -sf -o /dev/null -w '%{http_code}\n' http://[::1]:3000/u
 kamal app exec -i "grep -i ':0BB8 ' /proc/net/tcp6"                                  # zero-dependency дубль
 ```
 
-🔴 **`ss -tlnp | grep 3000` тут НЕ працює, і це не «незручно», а неможливо (виміряно 2026-08-31):** `ss` дає пакет `iproute2`, а образ ставить рівно `curl libjemalloc2 libvips postgresql-client` (`Dockerfile`) — тобто форма `kamal app exec -i 'ss -tlnp | grep 3000'`, що стояла в §8 нижче, віддала б `command not found`. На хості ж 3000 не видно взагалі: Kamal-ролі мають `network-alias`, а не `publish` (`config/deploy.yml` — `publish` несе лише роль `coap`, і то `5683/udp`). ⚠️ Саме твердження, яке крок перевіряє, при цьому чинне — переміряне проти гема: `puma-8.0.2` `Configuration.default_tcp_host` = `ipv6_interface_available? ? '::' : '0.0.0.0'`. Відповідь на **IPv6-loopback** можлива лише при bind на `::`; `/up` виключений із `force_ssl`-редиректу й `host_authorization` (`probe_paths` у `production.rb`), тож 200 не маскується ані 301, ані 403.
+🔴 **`ss -tlnp | grep 3000` тут НЕ працює, і це не «незручно», а неможливо (виміряно 2026-08-31):** `ss` дає пакет `iproute2`, а образ ставить рівно `curl libjemalloc2 libvips postgresql-client` (`Dockerfile`) — тобто форма `kamal app exec -i 'ss -tlnp | grep 3000'`, що стояла в §8 нижче, віддала б `command not found`. На хості ж 3000 не видно взагалі: Kamal-ролі мають `network-alias`, а не `publish` (`config/deploy.yml` — `publish` несе лише роль `coap`, і то `5683/udp`). ⚠️ Саме твердження, яке крок перевіряє, при цьому чинне — переміряне проти гема: `puma-8.0.2` `Configuration.default_tcp_host` = `ipv6_interface_available? ? '::' : '0.0.0.0'` [⊕ 2026-11-15, `puma-8.0.3`: та сама гілка, тепер через константи `Const::UNSPECIFIED_IPV6` / `UNSPECIFIED_IPV4`]. Відповідь на **IPv6-loopback** можлива лише при bind на `::`; `/up` виключений із `force_ssl`-редиректу й `host_authorization` (`probe_paths` у `production.rb`), тож 200 не маскується ані 301, ані 403.
 
 Якщо потрібно примусово v4: `bind "tcp://0.0.0.0:#{ENV.fetch('PORT', 3000)}"` — поки не додаємо, dual-stack краще для майбутньої IPv6-only інфраструктури.
 
