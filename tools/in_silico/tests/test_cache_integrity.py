@@ -5537,10 +5537,10 @@ def test_coin_replicate_power_invariants():
         assert g["p_pass_at_threshold"]["lower_bound"][n] == pytest.approx(conv["alpha"], abs=1e-4)
         assert g["p_pass_at_threshold"]["every_coupon"][n] == pytest.approx(0.5 ** int(n), abs=1e-4)
     for cv in cvs:
-        tgt = g["D_p_pass_at_target"]
+        d_best = g["D_p_pass_at_best_case"]
         # non-strict: the cache rounds to 6 decimals, and a tight spread saturates the arm mean at 1.0
-        assert all(tgt["every_coupon"][cv][a] >= tgt["every_coupon"][cv][b] for a, b in itertools.pairwise(ns))
-        assert all(tgt["arm_mean"][cv][a] <= tgt["arm_mean"][cv][b] for a, b in itertools.pairwise(ns))
+        assert all(d_best["every_coupon"][cv][a] >= d_best["every_coupon"][cv][b] for a, b in itertools.pairwise(ns))
+        assert all(d_best["arm_mean"][cv][a] <= d_best["arm_mean"][cv][b] for a, b in itertools.pairwise(ns))
 
     assert COIN_CONTROL_ALLOY not in d["selection"]["candidates"]
     assert not set(COIN_BENCHMARK_ALLOYS) & set(d["selection"]["candidates"])

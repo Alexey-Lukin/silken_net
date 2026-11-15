@@ -181,7 +181,6 @@ R_INT_EBFC_EST_KOHM = (5.0, 20.0)
 # script 40 (judged on the arm's geometric mean, ⚖️ 2026-10-20) and script 100. ──
 COIN_RETENTION_30D_MIN = 0.80        # C: ≥ 80 % retention of j_max after the 30-day hold
 COIN_CHLORIDE_MIN_RATIO = 0.90       # D: the cathode not below −10 % at 0.25 M NaCl
-COIN_CHLORIDE_TARGET_RATIO = 1.075   # D: the ZIF-hybrid target +7.5 %
 COIN_UCST_RECOVERY_RATIO = 1.00      # E: the current recovers to 100 % after −10 °C → +25 °C
 COIN_HOLD_DAYS = 30
 # ── Stage-2 coin layout — MIRRORS of 01_03 §3.5 «Розкладка Stage 2» (⚖️ founder 2026-09-18) and of the coupon letter

@@ -16,6 +16,7 @@ value is plausible — the script has no real data yet.
 """
 import ast
 import importlib.util
+import json
 import re
 import sys
 from pathlib import Path
@@ -118,19 +119,29 @@ def test_cold_start_constants_mirror_canon():
 def test_coin_gate_and_layout_constants_mirror_canon():
     """The C/D/E thresholds and the coupon layout script 100 reads (00_07 HW.24) against their homes.
 
-    CAN catch: a threshold edited on one side only; a layout whose control arms × 2 + the non-electrode coupons no
-    longer give the letter's «at 19»; the letter's 12 = 3 + 3 + 6 split moving. CANNOT catch: which electrode arms
-    an alloy carries beyond the control's count — that layout lives in 01_03 §3.5 prose.
+    CAN catch: a threshold edited on one side only; the Chloride row losing any part of its ratified text (⚖️
+    2026-11-15: a floor and no target) or gaining a «+N %» figure beside it, in whatever words; script 100's best case
+    for D off 1.00 (read from its cache); a layout whose control arms × 2 + the non-electrode coupons no longer give
+    the letter's «at 19»; the letter's 12 = 3 + 3 + 6 split moving. CANNOT catch: which electrode arms an alloy carries
+    beyond the control's count — that layout lives in 01_03 §3.5 prose; a best case edited in script 100 and not re-run.
     """
     doc = (REPO / "docs" / "01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md").read_text(encoding="utf-8")
     c = re.search(r"^> - \*\*30-day stability:\*\* ≥ \*\*(\d+)% retention\*\*", doc, re.M)
-    d = re.search(r"^> - \*\*Chloride:\*\* .*НЕ нижче −(\d+)% \(ZIF-гібрид ціль \*\*\+([\d.]+)%\*\*", doc, re.M)
+    d = re.search(r"^> - \*\*Chloride:\*\* (.*)$", doc, re.M)
     e = re.search(r"^> - \*\*UCST recovery:\*\* .*відновлюється до \*\*(\d+)%\*\*", doc, re.M)
     assert c and d and e, "01_03 §3.5 gate lines not found — the pin lost its anchor"
+    ratified = ("катод НЕ нижче −10 % (цілі для базового складу канон не має; «+7.5 %» первинки — чутливість за ABTS "
+                "складу із золотом)")
+    assert ratified in d.group(1) and not re.search(r"\+\s*\d", d.group(1).replace(ratified, "")), (
+        "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §3.5: the Chloride row no longer carries the ratified text whole — "
+        f"«{ratified}» — or names a «+N %» figure beside it")
+    floor_pct = re.search(r"НЕ нижче −(\d+) %", ratified)
     assert _literal("COIN_RETENTION_30D_MIN") == pytest.approx(int(c.group(1)) / 100)
-    assert _literal("COIN_CHLORIDE_MIN_RATIO") == pytest.approx(1 - int(d.group(1)) / 100)
-    assert _literal("COIN_CHLORIDE_TARGET_RATIO") == pytest.approx(1 + float(d.group(2)) / 100)
+    assert _literal("COIN_CHLORIDE_MIN_RATIO") == pytest.approx(1 - int(floor_pct.group(1)) / 100)
     assert _literal("COIN_UCST_RECOVERY_RATIO") == pytest.approx(int(e.group(1)) / 100)
+    s100 = json.loads((ROOT / "cache/kinetics/coin_replicate_power.json").read_text(encoding="utf-8"))
+    d_best = s100["gate"]["max_cv_for_best_case"]["D"]["best_case_ratio"]
+    assert d_best == 1.0, f"script 100: gate D's best case is {d_best}, not the ratified 1.00"
 
     letter = (REPO / "docs/protocols/procurement/anchor_alloy_rfq.md").read_text(encoding="utf-8")
     q = re.search(r"\*\*Quantity: (\d+) per alloy\*\* — (\d+) for electrode testing, (\d+) for an uncoated ion-release "

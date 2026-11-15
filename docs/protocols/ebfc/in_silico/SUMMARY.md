@@ -3155,12 +3155,14 @@ titanium coupons against it and the spread known exactly, its contrast stays abo
 bound · every coupon. Canon judges by the arm mean with the bound printed beside it (⚖️ 2026-10-20, `01_03 §3.5`); all
 three stay here because the choice was priced on them. The three readings move apart with n — the margin a good arm needs shrinks under
 the first two and grows under the third — so the replicate count and the reading are one decision. The largest CV at
-which a gate's best case still passes with P 0.80 (C: an arm that loses nothing, ×1.25 above 80 %; D: an arm on its
-own +7.5 % target against −10 %; D is measured on its own arm only, so its bound has no pooled row). ⚠️ The +7.5 % is the
-source paper's number for the gold-containing hybrid (Lac/nCuCeAuZIF) — an ABTS sensitivity, with no spread or replicate
-count given — and for the Co–Cu–Ce hybrid that is the base stack here the paper has no chloride measurement at all
-([`01_03 §1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md), the ⊕ under the cathode table), so the D rows say what an
-arm sitting AT that target would need, not what the base arm is expected to do (`00_07` HW.5):
+which a gate's best case still passes with P 0.80 (C: an arm that loses nothing, ×1.25 above 80 %; D: by verdict, not
+as one more convention of the model (⚖️ 2026-11-15, `01_03 §3.5`), likewise an arm that loses nothing, against −10 %; D
+is measured on its own arm only, so its bound has no pooled row). ⚠️ For D «loses nothing» is an assumption, as it is
+for C and E: what chloride does to the mediator-free current of the base Co–Cu–Ce hybrid nobody has measured. The
+source paper's +7.5 % belongs to the gold-containing hybrid (Lac/nCuCeAuZIF) and is an ABTS sensitivity, with no spread
+or replicate count given; for the base hybrid the paper has no chloride measurement at all
+([`01_03 §1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md), the ⊕ under the cathode table), and canon names no
+target for it (`01_03 §3.5`):
 
 | gate · reading | n = 2 | 3 | 4 | 5 | 6 |
 |---|---|---|---|---|---|
@@ -3168,12 +3170,12 @@ arm sitting AT that target would need, not what the base arm is expected to do (
 | C · lower bound | 3.8 % | 9.7 % | 13.5 % | 16.5 % | 18.9 % |
 | C · lower bound, pooled | 11.6 % | 14.9 % | 17.5 % | 19.8 % | 21.8 % |
 | C · every coupon | 17.9 % | 15.3 % | 13.9 % | 13.1 % | 12.4 % |
-| D · arm mean | 30.5 % | 37.8 % | 44.1 % | 49.9 % | 55.3 % |
-| D · lower bound | 3.0 % | 7.7 % | 10.8 % | 13.1 % | 15.0 % |
-| D · every coupon | 14.2 % | 12.1 % | 11.1 % | 10.4 % | 9.9 % |
+| D · arm mean | 17.8 % | 21.9 % | 25.4 % | 28.5 % | 31.3 % |
+| D · lower bound | 1.8 % | 4.5 % | 6.3 % | 7.7 % | 8.9 % |
+| D · every coupon | 8.4 % | 7.2 % | 6.5 % | 6.1 % | 5.8 % |
 
-Under «every coupon» each added replicate fails a good arm more often: at CV 20 % an electrode exactly on D's target
-passes with probability 0.66 at n = 2 and 0.29 at n = 6. Under the arm mean an arm sitting exactly at its threshold
+Under «every coupon» each added replicate fails a good arm more often: at CV 20 % a D arm that loses nothing
+passes with probability 0.49 at n = 2 and 0.12 at n = 6. Under the arm mean an arm sitting exactly at its threshold
 passes half the time at every n. **E has no row:** its threshold is full recovery, so an electrode recovering exactly
 100 % passes with probability 0.5 (arm mean), 0.05 (lower bound) or 0.5ⁿ (every coupon) whatever the spread; only a
 recovery above 100 % (drift, rehydration — not a design state, and this model caps the best case there) would pass more

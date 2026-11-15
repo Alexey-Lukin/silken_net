@@ -14,9 +14,9 @@ a row by price — but the coin carries three DIFFERENT kinds of decision, and �
               was priced on them; they move in OPPOSITE directions with n: the arm's geometric mean ·
               its one-sided (1 − ALPHA) lower confidence bound · every coupon. Output: the margin above the threshold a
               good arm needs to pass with probability P_TARGET (one table serves every gate — the threshold cancels in
-              a ratio), the pass probability of an arm sitting exactly at the threshold, the pass probability where
-              canon names the value it expects (D's +7.5 % target; E's full recovery, which IS its threshold), and the
-              largest CV at which each gate's best case (BEST_CASE) still passes.
+              a ratio), the pass probability of an arm sitting exactly at the threshold (E's best case — full
+              recovery IS its threshold), the pass probability of D's best case, and the largest CV at which each
+              gate's best case (BEST_CASE) still passes.
   selection — the down-select among the Zone-1 candidates (every alloy but the control and the coin-only benchmark,
               01_02 §2.5 · lib.constants COIN_BENCHMARK_ALLOYS): the ratio by which the best candidate must exceed the
               others (all equal — the least favourable configuration) for the highest sample geometric mean to pick it
@@ -66,7 +66,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
     COIN_BENCHMARK_ALLOYS,
     COIN_CHLORIDE_MIN_RATIO,
-    COIN_CHLORIDE_TARGET_RATIO,
     COIN_CONTROL_ALLOY,
     COIN_ELECTRODE_ARMS,
     COIN_GOLD_COUPONS_AT_QUOTE,
@@ -101,11 +100,13 @@ MC_TRIALS = 200_000
 MC_SEED = 20261020
 MC_CELLS = ((2, 0.30), (4, 0.10))
 MC_TOLERANCE_SE = 4.0
-# The best case each gate can see, a reading of THIS model: a retention or a recovery above 100 % (drift, rehydration,
-# break-in) is not excluded physically, but it is not a stack's design state, so the margin over C's and E's thresholds
-# is capped here; D's best case is the canon's own +7.5 % target. From it: the largest CV at which that best case still
-# passes with P_TARGET.
-BEST_CASE = {"C": (1.00, COIN_RETENTION_30D_MIN), "D": (COIN_CHLORIDE_TARGET_RATIO, COIN_CHLORIDE_MIN_RATIO),
+# The best case each gate can see. C and E — a reading of THIS model: a retention or a recovery above 100 % (drift,
+# rehydration, break-in) is not excluded physically, but it is not a stack's design state, so the margin over their
+# thresholds is capped at «loses nothing». D — 1.00 by the founder's verdict of 2026-11-15 (01_03 §3.5), on its own
+# ground: canon names no chloride target for the base composition (the source paper's +7.5 % is the gold composition's
+# ABTS sensitivity), and what chloride does to this hybrid's mediator-free current nobody has measured — so 1.00 is an
+# assumption too. From it: the largest CV at which that best case still passes with P_TARGET.
+BEST_CASE = {"C": (1.00, COIN_RETENTION_30D_MIN), "D": (1.00, COIN_CHLORIDE_MIN_RATIO),
              "E": (1.00, COIN_UCST_RECOVERY_RATIO)}
 
 CANDIDATES = tuple(a for a in COIN_ELECTRODE_ARMS if a != COIN_CONTROL_ALLOY and a not in COIN_BENCHMARK_ALLOYS)
@@ -280,7 +281,8 @@ def main() -> int:
     banner("100 — Stage-2 coin: what 2…6 replicate coupons per arm resolve (assumed spread)")
     k = len(CANDIDATES)
     two = {name: {} for name in ("equal", "single", "equal_pooled", "single_pooled")}
-    margin, sel, d_target = {r: {} for r in READINGS}, {}, {r: {} for r in READINGS}
+    margin, sel, d_best = {r: {} for r in READINGS}, {}, {r: {} for r in READINGS}
+    u_d = math.log(BEST_CASE["D"][0] / BEST_CASE["D"][1])
     margin_lb_pooled = {}
     solutions = {}
     for cv in CV_ASSUMED:
@@ -289,7 +291,7 @@ def main() -> int:
             t[key(cv)] = {}
         sel[key(cv)], margin_lb_pooled[key(cv)] = {}, {}
         for r in READINGS:
-            margin[r][key(cv)], d_target[r][key(cv)] = {}, {}
+            margin[r][key(cv)], d_best[r][key(cv)] = {}, {}
         for n in N_GRID:
             dfc, dfk = pooled_df(C_ARMS, n), pooled_df(CATHODE_ARMS, n)
             sol = {"two_arm_equal": solve_increasing(lambda u, s=s, n=n: two_arm_power(u, s, n, n), P_TARGET),
@@ -301,8 +303,7 @@ def main() -> int:
                    "selection": solve_increasing(lambda u, s=s, n=n: correct_selection(u, s, n, k), P_TARGET)}
             for r in READINGS:
                 sol[r] = solve_increasing(lambda u, r=r, s=s, n=n: pass_probability(r, u, s, n), P_TARGET)
-                d_target[r][key(cv)][str(n)] = r6(pass_probability(
-                    r, math.log(COIN_CHLORIDE_TARGET_RATIO / COIN_CHLORIDE_MIN_RATIO), s, n))
+                d_best[r][key(cv)][str(n)] = r6(pass_probability(r, u_d, s, n))
                 margin[r][key(cv)][str(n)] = r6(math.exp(sol[r]))
             solutions[(n, cv)] = sol
             for name in two:
@@ -413,15 +414,15 @@ def main() -> int:
                             "own spread never averages out"},
         "gate": {
             "thresholds": {"C_retention_30d": COIN_RETENTION_30D_MIN, "D_chloride": COIN_CHLORIDE_MIN_RATIO,
-                           "D_chloride_target": COIN_CHLORIDE_TARGET_RATIO, "E_recovery": COIN_UCST_RECOVERY_RATIO},
+                           "E_recovery": COIN_UCST_RECOVERY_RATIO},
             "margin_ratio_needed": margin,
             "margin_ratio_needed_lower_bound_pooled_C": margin_lb_pooled,
             "p_pass_at_threshold": at_threshold,
-            "D_p_pass_at_target": d_target,
+            "D_p_pass_at_best_case": d_best,
             "max_cv_for_best_case": max_cv,
             "note": "margin_ratio_needed — true value / threshold for P(pass) = p_target; the same table for C, D, E. "
-                    "max_cv_for_best_case — the largest coupon-to-coupon CV at which the gate's best case (no loss · "
-                    "D's own target · full recovery) still passes with p_target; null where no spread lets it. "
+                    "max_cv_for_best_case — the largest coupon-to-coupon CV at which the gate's best case (no loss "
+                    "for C and D · full recovery for E) still passes with p_target; null where no spread lets it. "
                     "lower_bound_pooled exists for C only (the retention every arm of the hold measures)",
         },
         "selection": {"candidates": list(CANDIDATES), "control_excluded": COIN_CONTROL_ALLOY,
