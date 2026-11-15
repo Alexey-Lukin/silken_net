@@ -38,14 +38,14 @@
 #   emission_threshold · dynamic_tax_rate · slash_gamma · bounds — 05_06 §7
 #     (⚠️ bounds валідує БЕКЕНД Governance::ParameterSyncWorker при читанні назад;
 #      ProtocolParameters.setParameter не валідує значення взагалі — лише key != 0)
-#   scc_per_tree_year — tools/firmware/scc_rate.rb (E.63, calibration-pending)
+#   scc_per_tree_year — tools/firmware/scc_rate.rb (E.63, placeholder-пороги [transitional], 03_04 §4.3)
 #   slash-формула damage^gamma × min(pf, pf_max) — 05_05 §3
 #
 # СТЕЛІ [E.67] — що модель НЕ стверджує:
 #   • Ціни й попиту тут немає ЗА ПОБУДОВОЮ: канон їх не має (00_04 «не зафіксовано»,
 #     00_01 «фіатні суми НЕ фіксуються»), тож будь-яка цінова крива була б нашою
 #     вигадкою з виглядом специфікації. Модель міряє КІЛЬКІСТЬ, не вартість.
-#   • scc_per_tree_year — calibration-pending [E.63]: realistic 13.68 ⊥ фізична стеля
+#   • scc_per_tree_year — на placeholder-порогах [transitional] [E.63] (03_04 §4.3): realistic 13.68 ⊥ фізична стеля
 #     326 ⊥ канон-арбітр 50. Розкид 24× у центральному вході; сценарії нижче беруть
 #     усі три, і саме тому вихід подається діапазоном, а не числом.
 #   • Крива флоту — НАШЕ припущення (канон моделі учасників не має): лінійний ramp
@@ -326,7 +326,7 @@ def assert_run(prm)
   if errors.empty?
     puts "✅ supply_stress: канон-арбітр=#{fmt_years(arb[:years_p50])} · " \
          "realistic=#{fmt_years(scenario(prm, { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR })[:years_p50])} · " \
-         "baseline burn=0 · одиниця=монети (magnitude calibration-pending, E.63)"
+         "baseline burn=0 · одиниця=монети (magnitude на placeholder-порогах [transitional], 03_04 §4.3, E.63)"
     exit 0
   end
   warn "❌ supply_stress FAIL:"

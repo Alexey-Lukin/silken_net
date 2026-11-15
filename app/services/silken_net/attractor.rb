@@ -78,7 +78,7 @@ module SilkenNet
     # [E.63 (г)] Byte-identical mirror of firmware Metabolic.homeostasis_gp (metabolic_core.rb;
     # parity with the REAL CCM contract — attractor_spec, FW.66 S4) →
     # growth_points quantization (firmware/bio_contracts/metabolic_core.rb — the One-Home
-    # of the formula and the calibration-pending thresholds, 03_04 §4.3; edit THERE first).
+    # of the formula and the frozen placeholder thresholds [transitional], 03_04 §4.3; edit THERE first).
     DELTA_T_FAST_S = 600
     DELTA_T_SLOW_S = 7200
 

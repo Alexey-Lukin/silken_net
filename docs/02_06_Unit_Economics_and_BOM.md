@@ -277,7 +277,7 @@
 | Stored GP / packet (×2 backend upscale) | **~24** |
 | Stored GP / день / дерево | **~375** |
 | Днів до 1 SCC (10,000 GP) | **~27 днів** |
-| **Realistic продуктивність (Variant C)** | **~13.7 SCC/дерево/рік** (calibration-pending [E.63]; точка моделі за 17 с від сходинки wire-GP 12 → 11 (stored 24 → 22), де 12.5; стеля Δt=600s ≈ 326) |
+| **Realistic продуктивність (Variant C)** | **~13.7 SCC/дерево/рік** (на заморожених placeholder-порогах `[transitional]` [E.63], [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor); точка моделі за 17 с від сходинки wire-GP 12 → 11 (stored 24 → 22), де 12.5; стеля Δt=600s ≈ 326) |
 | **1 SCC = CO₂ еквівалент** | **0.5 кг CO₂** (2000 SCC = 1 tCO₂) — **дзеркало**, дім значення [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`00_04 §3`](00_04_Nature_as_a_Service_Contracts); при зміні правити ТАМ |
 | 1 дерево / рік (~13.7 SCC) | **~6.8 кг CO₂** |
 | Кластер 100 дерев / рік (~1370 SCC) | **~0.68 tCO₂** |
@@ -288,7 +288,7 @@
 
 > **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`00_04 §3`](00_04_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут.
 
-> **SCC-rate модель (single-source):** `tools/firmware/scc_rate.rb` (`--assert` docs-гейт — виводить packets×GP з ОДНОГО `delta_t`, self-consistency + anti-over-mint стеля; magnitude calibration-pending [E.63]). Канон посилається сюди, не restate'ить.
+> **SCC-rate модель (single-source):** `tools/firmware/scc_rate.rb` (`--assert` docs-гейт — виводить packets×GP з ОДНОГО `delta_t`, self-consistency + anti-over-mint стеля; magnitude на заморожених placeholder-порогах `[transitional]` [E.63], [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). Канон посилається сюди, не restate'ить.
 >
 > Детально про Lorenz attractor та формулу growth_points: [`03_04`](03_04_mruby_Lorenz_Attractor) та [`05_02`](05_02_Proof_of_Growth_Pipeline).
 

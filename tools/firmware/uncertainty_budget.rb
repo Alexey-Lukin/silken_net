@@ -30,7 +30,7 @@
 #   • `vcap` — це мВ VDDA (VREFINT-cal, FW.50), НЕ напруга іоністора [ARCH.99];
 #     BQ25570 тримає ту шину на 3.3 В, тож про запас енергії вона не каже нічого.
 #     Ім'я історичне; метрологу вимірювану величину називати правильно.
-#   • DELTA_T_FAST_S / DELTA_T_SLOW_S — placeholder до bench-кривої recharge [E.63],
+#   • DELTA_T_FAST_S / DELTA_T_SLOW_S — заморожені placeholder [transitional] (03_04 §4.3) [E.63],
 #     тож КООРДИНАТА робочої точки, а не лише її невизначеність, є попередньою.
 
 PARAMS = {
@@ -196,7 +196,7 @@ def assert_run(prm)
          "U(k=#{prm[:coverage_k].to_i})=#{b[:expanded].round(1)}% · " \
          "найбільша складова=#{((largest**2) / (b[:combined]**2) * 100).round}% дисперсії · " \
          "ланцюг зупинено на SCC " \
-         "(координата робочої точки calibration-pending, E.63)"
+         "(координата робочої точки — на заморожених placeholder-порогах [transitional], 03_04 §4.3, E.63)"
     exit 0
   end
   warn "❌ uncertainty_budget FAIL:"

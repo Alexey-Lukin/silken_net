@@ -40,7 +40,7 @@
 #define OPTIMAL_Z_TARGET 29.0
 
 /* [E.63] Metabolic growth — recharge vigor → growth_points (monotonic).
- * Calibration-pending placeholders (bench recharge curve, RUNBOOK §3.3). */
+ * Frozen placeholders [transitional] — 03_04 §4.3. */
 /* [ARCH.102] Сентинел «метаболізм не виміряно» — дзеркало
  * Attractor::DELTA_T_UNKNOWN_S. Нуль секунд між пробудженнями не є інтервалом
  * перезаряду, тож значення вільне й не забирає жодного досяжного виміру. */

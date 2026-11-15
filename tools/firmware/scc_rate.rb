@@ -128,7 +128,7 @@ if ARGV.include?("--assert")
   if errors.empty?
     puts "✅ scc_rate: realistic(Δt=#{variant_c_h}h)=#{realistic.round(1)} (#{step_note(variant_c_s)}) · " \
          "ceiling(Δt=600s)=#{ceiling.round} · арбітр(05_03)=#{ARBITER_SCC_YEAR.to_i} SCC/tree/year " \
-         "(magnitude calibration-pending, E.63)"
+         "(magnitude на placeholder-порогах [transitional], 03_04 §4.3, E.63)"
     exit 0
   end
   warn "❌ scc_rate FAIL:"
