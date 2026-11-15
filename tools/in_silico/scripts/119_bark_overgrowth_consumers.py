@@ -46,8 +46,11 @@ MODEL.
     «outlives while below» true). THE TWO EDGES ARE EXACT ONLY FOR A MARK ON THE OUTER WALL (the rim, the vent on that
     side, the crown's edge): the RF deck and the crown's flat lie inside it, so for them the edge columns are an outer
     bracket and the after-life cells of (B) — a deck's centre is on the axis — are run from the flange's top and from
-    the mid-line only. (B)'s in-air table reads a deck's standoff as its height along the axis (the tilt's 1.5 % is
-    below that table's step); every after-life cell uses the radial travel.
+    the mid-line only. Those two are ONE point of the axis — a fraction of a millimetre apart, both inside the
+    placeholder's defect — so the slow end's state hangs on them: where it turns from a pit back into a deck in air
+    for the BOM's high row (canon's limit kept on the deep edge; the install angle, from the mid-line) is printed
+    beside, as closed forms of the same inputs, not as cells. (B)'s in-air table reads a deck's standoff as its height
+    along the axis (the tilt's 1.5 % is below that table's step); every after-life cell uses the radial travel.
 (B) THE RADIO UNDER THE SURFACE. `107` refuses a source inside the stem. By RECIPROCITY it need not solve one: the far
     field an embedded line source sends towards azimuth φ equals the field a plane wave arriving from φ sets up at the
     source's point, and `107.solve` carries that interior field (amplitudes from value continuity inward, held by `107`'s
@@ -63,8 +66,11 @@ MODEL.
     `107` itself reads one sapwood width at every diameter). It DECIDES one result, so the other reading is run beside
     it on the same grid — the stems «as they stand», where a narrow-sapwood stem puts a deep deck inside the dry core:
     there the front differs by several decibels in either direction, and the pattern's rule fails on a share of the
-    cells it holds on here. The four homogeneous readings do not change, and the weak end of every closed after-life
-    cell sits on one of them (held by the cache test); the FAVOURABLE end does not — it is printed under both readings.
+    cells it holds on here. The four homogeneous readings do not change. On every closed after-life cell both ends
+    with the wood taken as sapwood sit on homogeneous rows, and so does the weak end with the stems as they stand; the
+    favourable end as they stand sits on a LAYERED stem — so the two favourable ends are two different stems, not one
+    stem under two readings, and both are printed (held by the cache test, which recomputes every row of those cells
+    by its own boundary-value system).
 (C) THE LIGHT IN THE PIT. Once the surface stands p over the crown's top the crown looks out of a pit. For a
     straight-walled pit of the dome's own radius the share of an ISOTROPIC field in the face's hemisphere that a coaxial
     disc at its bottom still receives is the closed form for two parallel coaxial discs (Howell's catalogue, C-41):
@@ -83,9 +89,10 @@ MODEL.
     keeps the install-day standoff is the whole travel.
 
 CONTROLS (runtime gates, NaN-safe; each CAN fail — in-silico §When Modifying #8):
-  direct problem — on a sub-grid of every row's embedded positions the source's OWN boundary-value problem is solved (an
-    admittance recursion inward from the air and outward from the axis, joined at the source by its jump: [∂E_z/∂ρ] for
-    the electric line, [H_z] for the tangential dipoles) and its far coefficients must equal reciprocity's. CAN catch a
+  direct problem — on a sub-grid of every row's embedded positions (the stems as they stand included) the source's OWN
+    boundary-value problem is solved (an admittance recursion inward from the air and outward from the axis, joined at
+    the source by its jump: [∂E_z/∂ρ] for the electric line, [H_z] for the tangential dipoles) and its far
+    coefficients must equal reciprocity's; `direct_rows` counts the rows it ran on. CAN catch a
     wrong reciprocity factor (the 1/ε_r, the k/β, a conjugate); CANNOT catch a wrong layer radius or permittivity — both
     paths read one stem — nor a defect of scipy's Bessel functions;
   the surface — at s = 0 the embedded formula and `107`'s exterior formula must give one field (for TM the solve's own
@@ -517,7 +524,7 @@ def main() -> int:
                  for r in json.loads(SHADOW_107.read_text(encoding="utf-8"))["cases"]}
     standoffs107 = sorted({k[3] for k in cached107})
     ctl = {"direct_max_rel": 0.0, "surface_max_rel": 0.0, "trunc_max_dF": 0.0, "cache107_max_dB": 0.0,
-           "cache107_max_eff": 0.0, "free_space_max": 0.0, "direct_positions_per_row": len(direct_at)}
+           "cache107_max_eff": 0.0, "free_space_max": 0.0, "direct_positions_per_row": len(direct_at), "direct_rows": 0}
 
     def _rel(x, y):
         return float(np.max(np.abs(x - y)) / np.max(np.abs(y)))
@@ -558,6 +565,7 @@ def main() -> int:
                                                  abs(field_db(ns, coef, RULE_DEG) - c107["field_same_current_dB"]["50"]))
                     ctl["cache107_max_eff"] = max(ctl["cache107_max_eff"], abs(row.efficiency(so) - c107["efficiency"]))
                 rows.append(row)
+                ctl["direct_rows"] += 1
     # control — free space: an embedded source in a stem of ε_r = 1 is the free source
     for pol in S107.POLARIZATIONS:
         layers = [(0.10, 1 + 0j), (0.17, 1 + 0j), (0.19, 1 + 0j)]
@@ -566,10 +574,6 @@ def main() -> int:
             f = np.abs(pattern(resp[1], coeffs_at(resp, 0.19, s, pol), PHI_DEG))
             want = np.ones(PHI_DEG.size) if pol == "TM" else np.abs(np.cos(np.deg2rad(PHI_DEG)))
             ctl["free_space_max"] = max(ctl["free_space_max"], float(np.max(np.abs(f - want))))
-    for key, tol in (("direct_max_rel", TOL_DIRECT), ("surface_max_rel", TOL_SURFACE), ("trunc_max_dF", TOL_TRUNC),
-                     ("cache107_max_dB", TOL_107_DB), ("cache107_max_eff", TOL_107_EFF), ("free_space_max", TOL_FREE)):
-        if not ctl[key] <= tol:
-            raise RuntimeError(f"control {key}: {ctl[key]:.3e} > {tol}")
 
     homogeneous = [n for n, r in S107.PERMITTIVITY.items() if len(r["layers"]) == 1]
     grown = [n for n, r in S107.PERMITTIVITY.items() if "sapwood_width_m" in r]
@@ -585,7 +589,19 @@ def main() -> int:
             f = np.abs(pattern(ns, coef, [0.0, RULE_DEG]))
             q.front[i], q.at_rule[i] = 20.0 * math.log10(f[0]), 20.0 * math.log10(f[1])
             q.crossing[i] = crossing_3db(ns, coef)
+        # control — the direct problem on these rows too: reciprocity's interior field is what they print
+        for s in direct_at:
+            ns, coef = q.coef(s)
+            ctl["direct_max_rel"] = max(ctl["direct_max_rel"],
+                                        _rel(coef, direct_coeffs(q.layers(-s), q.a + s / 1000.0, q.pol, ns, beta)))
+        ctl["direct_rows"] += 1
         as_read[(r.pol, r.reading, r.dbh_m)] = q
+    for key, tol in (("direct_max_rel", TOL_DIRECT), ("surface_max_rel", TOL_SURFACE), ("trunc_max_dF", TOL_TRUNC),
+                     ("cache107_max_dB", TOL_107_DB), ("cache107_max_eff", TOL_107_EFF), ("free_space_max", TOL_FREE)):
+        if not ctl[key] <= tol:
+            raise RuntimeError(f"control {key}: {ctl[key]:.3e} > {tol}")
+    if ctl["direct_rows"] != len(rows) + len(as_read):
+        raise RuntimeError("the direct-problem control did not run on every row it prints")
     # every row at the printed depths — what the spans below are the spans OF, and what the cache test holds the
     # homogeneous rows to a closed form with
     rows_at_marks = []
@@ -605,6 +621,27 @@ def main() -> int:
             return "deck in air"
         return "pit — the surface over the deck, the crown out or level with it: no state of the model" \
             if (crown - b0) * cos_t - LIFE_YR * rate > -CLOSED_OVER_CROWN_MM else "surface over the crown (closure taken, not shown)"
+
+    # the deck's two references are one point of the axis, both inside the placeholder's defect: where the slow end's
+    # pit turns back into a deck in air for the BOM's high row — closed forms of the same inputs, not cells
+    def hi_over_from_mid_line(theta: float) -> float:
+        """The BOM's high row over the surface after the life at the slow end, the install-day bark on the seat's
+        mid-line at an install angle θ (the same flange and placeholder; at the design point it is that cell)."""
+        b0 = bark78["flange_diameter_mm"] / 2.0 * math.tan(theta) - flange_t
+        return (deck_hi - b0) * math.cos(theta) - LIFE_YR * slow
+
+    lim = install["mid_seat"] - install["deep_edge"]          # the deep edge at the flange's top: the axis bark this far below
+    flip = (brentq(hi_over_from_mid_line, 0.0, tilt, xtol=1e-12)
+            if hi_over_from_mid_line(0.0) > 0.0 > hi_over_from_mid_line(tilt) else None)
+    slow_refs = {
+        "deck": "rf_deck_bom_high", "rate_end": "slow",
+        "references_apart_on_the_axis_mm": max(deck_refs.values()) - min(deck_refs.values()),
+        "deck_in_air_while_the_axis_bark_stands_below_mm": deck_hi - LIFE_YR * slow / cos_t,
+        "axis_bark_at_canon_limit_on_the_deep_edge_mm": lim,
+        "deck_over_surface_after_life_at_that_limit_mm": (deck_hi - lim) * cos_t - LIFE_YR * slow,
+        "deck_over_surface_after_life_from_the_mid_line_at_0_deg_mm": hi_over_from_mid_line(0.0),
+        "deck_in_air_from_the_mid_line_below_tilt_deg": None if flip is None else _down(math.degrees(flip), 1),
+        "deck_in_air_from_the_mid_line_below_tilt_deg_raw": None if flip is None else math.degrees(flip)}
 
     radio = {}
     for pol in S107.POLARIZATIONS:
@@ -702,6 +739,10 @@ def main() -> int:
                 if cells:
                     _put(block[key], field, [x for v in cells.values() for x in v[f"{field}_raw"]], 2 if "efficiency" in field else 1)
         radio[pol] = block
+    # control — at the design point the mid-line closed form IS that cell (CAN catch a closed form drifting from (B))
+    if not math.isclose(hi_over_from_mid_line(tilt), radio["TM"]["after_life"]["mid_seat:slow:rf_deck_bom_high"]["deck_over_surface_mm"],
+                        abs_tol=1e-9):
+        raise RuntimeError("the slow end's mid-line closed form does not reproduce its cell at the design point")
     # every medium of the readings — its own plane-wave attenuation, context for the depth rows, not a result of the stem
     media_names = {S107.BARK_DRY: "bark_dry_proxy", S107.BARK_WET: "bark_wet_proxy", S107.BARK_PHLOEM: "bark_phloem_proxy",
                    S107.HEART_DRY: "heartwood_dry_proxy", S107.MAV_S2_PLATEAU: "red_pine_profile_plateau",
@@ -812,7 +853,9 @@ def main() -> int:
         print("    states after the life:  " + str({end: {st: len(c) for st, c in v.items()} for end, v in b["after_life_states"].items()}))
         print(f"    deepest: {b['deepest_front_over_depth'][f'{d_max:g}']}")
         for k, v in b["after_life"].items():
-            print(f"    after {LIFE_YR:g} yr {k:40s} s {v['deck_over_surface_mm']:8.2f}  Δ {v['change_against_install_day_dB']}  [{v['state'][:24]}]")
+            as_is = f"  as they stand {v['change_as_they_stand_dB']}" if "change_as_they_stand_dB" in v else ""
+            print(f"    after {LIFE_YR:g} yr {k:40s} s {v['deck_over_surface_mm']:8.2f}  Δ {v['change_against_install_day_dB']}{as_is}  [{v['state'][:24]}]")
+    print(f"  slow end, the BOM's high row against its references: {slow_refs}")
     for dname, v in pit["by_disc"].items():
         print(f"  (C) {dname}: half at a pit {v['half_share_depth_mm']:.2f} mm deep; after the life, fast: {v['share_after_life_fast_pct']} %")
     for rate_name, v in allowance["by_rate_end"].items():
@@ -844,6 +887,12 @@ def main() -> int:
         slow_txt = (f"every one of the {len(st['slow']['pit'])} cells is a pit — no state of the model" if not st["slow"]["deck in air"]
                     else f"the deck is still in air on {len(st['slow']['deck in air'])} of the cells and in a pit — no state "
                          f"of the model — on {len(st['slow']['pit'])}")
+        if not st["slow"]["deck in air"] and slow_refs["deck_over_surface_after_life_at_that_limit_mm"] > 0 and flip is not None:
+            slow_txt += (f", on references {slow_refs['references_apart_on_the_axis_mm']:.2f} mm apart on the axis at the "
+                         f"{flange_t:g} mm placeholder and the {TILT_DESIGN_DEG:g}° point: with canon's limit kept on the deep "
+                         f"edge the BOM's high row stays "
+                         f"{_down(slow_refs['deck_over_surface_after_life_at_that_limit_mm'], 2):.2f} mm in air, and so it does "
+                         f"from the mid-line below {slow_refs['deck_in_air_from_the_mid_line_below_tilt_deg']:.1f}°")
         after = (f"After the life the surface stands over the crown at the fast end only, and there the front field at the "
                  f"same source current has moved by {cc[0]} … {cc[1]} dB against the install day with E along the stem "
                  f"({ca[0]} … {ca[1]} dB with the stems as they stand); at the slow end {slow_txt}. ")
@@ -920,6 +969,7 @@ def main() -> int:
                       "live_bark_to_flange_seat_yr_114": t114["live_bark_to_flange_seat_yr"]}},
         "radio_same_current": radio,
         "radio_rows_at_depth_marks": rows_at_marks,
+        "slow_end_deck_references": slow_refs,
         "media": media, "media_span": media_span,
         "pit": pit,
         "allowance": allowance,

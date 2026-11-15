@@ -77,10 +77,12 @@ ELEMENTS = {
 }
 
 # Materials as ATOM COUNTS, not mass fractions — the framework stoichiometry is what canon gives.
-# ZIF-8 node = M(2-methylimidazolate)2 = M·C8H10N4 (`01_03 §2.2`). Canon names the nanozyme
-# `nCoCuCeZIF` / `nCuCeAuZIF` but does NOT fix the node stoichiometry, so instead of inventing one the
-# sweep brackets it: each pure-metal node is computed, and the all-Ce node is the physical UPPER BOUND
-# on <Z> for anything canon could mean. A bound needs no stoichiometry to be true.
+# ZIF-8 node = M(2-methylimidazolate)2 = M·C8H10N4 (`01_03 §2.2`). Canon's base nanozyme is `nCoCuCeZIF`
+# (Co/Cu/Ce; the gold-bearing `nCuCeAuZIF` only as a separate proposal, `01_03 §1`) and canon does NOT fix
+# the node stoichiometry, so instead of inventing one the sweep brackets it: each pure-metal node is
+# computed, and the all-Ce node is the physical UPPER BOUND on <Z> for the base composition (Co/Cu/Ce).
+# It bounds no gold-bearing node — Z(Au) = 79 > Z(Ce) = 58 — and none is computed here. A bound needs no
+# stoichiometry to be true.
 MATERIALS = {
     "water (dose reference)": {"H": 2.0, "O": 1.0},
     "protein (laccase, avg. residue)": {"C": 5.0, "H": 8.0, "N": 1.4, "O": 1.6, "S": 0.03},

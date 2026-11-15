@@ -9456,6 +9456,68 @@ def _overgrowth_embedded_homogeneous(eps, a, rho, pol, f_hz, phi_deg):
     return 20.0 * np.log10(np.abs(F))
 
 
+def _overgrowth_layered_field_db(layers, rho, pol, f_hz, phi_deg=(0.0,)):
+    """A line source at radius ρ in a LAYERED stem, or in the air around it, by ONE global boundary-value system per order
+    — every region's amplitudes at once — sharing no code with 119's reciprocity, its admittance-recursion direct problem
+    or 107's recursion: only 107's stem description ([(outer radius, ε)] from the axis) and scipy's Bessel functions.
+    Regions: the core (J), each shell and the source's two sides (J and Y, each scaled by its largest value at the
+    region's edges, so the system stays O(1) at high order), the air outside (H⁽²⁾). Conditions: f and p·f′ continuous
+    at every interface (p = 1 for TM, 1/ε_r for TE); at the source TM steps f′ by −2j/(πρ) (the free line's unit), TE
+    steps f = H_z by 2j/(πβρ). Returns the field in dB against the free source's front lobe, F(φ) = Σ jⁿ c_n e^{jnφ}
+    with c_n the H⁽²⁾ coefficient outside."""
+    from scipy.special import h2vp, hankel2, jv, jvp, yv, yvp
+    beta = 2 * math.pi * f_hz / 299_792_458.0
+
+    def k_of(eps):
+        k = beta * np.sqrt(complex(eps))
+        return k.conjugate() if k.imag > 0 else k          # e^{jωt}: the decaying branch
+    shells, r0 = [], 0.0
+    for r_out, eps in layers:
+        shells.append((r0, r_out, complex(eps)))
+        r0 = r_out
+    shells.append((r0, math.inf, 1 + 0j))
+    regions = []
+    for r_in, r_out, eps in shells:
+        assert not math.isclose(rho, r_out, rel_tol=0.0, abs_tol=1e-12), "the source sits on an interface"
+        regions += [(r_in, rho, eps), (rho, r_out, eps)] if r_in < rho < r_out else [(r_in, r_out, eps)]
+    x = beta * max(rho, layers[-1][0])
+    ns = np.arange(-(math.ceil(x + 4.0 * x ** (1 / 3) + 12) + 10), math.ceil(x + 4.0 * x ** (1 / 3) + 12) + 11)
+    last = len(regions) - 1
+
+    def basis(j, r):
+        r_in, r_out, eps = regions[j]
+        k = k_of(eps)
+        if j == last:
+            s = hankel2(ns, k * r_in)
+            return [(hankel2(ns, k * r) / s, k * h2vp(ns, k * r) / s)]
+        out = []
+        for f, fp in ((jv, jvp), (yv, yvp)):
+            if j == 0 and f is yv:
+                continue
+            s = np.max(np.abs([f(ns, k * e) for e in ([r_out] if j == 0 else [r_in, r_out])]), axis=0)
+            out.append((f(ns, k * r) / s, k * fp(ns, k * r) / s))
+        return out
+    cols, n = [], 0
+    for j in range(last + 1):
+        cols.append(list(range(n, n + (1 if j in (0, last) else 2))))
+        n += len(cols[-1])
+    A, b = np.zeros((ns.size, n, n), complex), np.zeros((ns.size, n), complex)
+    for j in range(last):
+        r = regions[j][1]
+        for side, sign in ((j, 1.0), (j + 1, -1.0)):
+            p = 1.0 if pol == "TM" else 1.0 / regions[side][2]
+            for col, (v, dv) in zip(cols[side], basis(side, r), strict=True):
+                A[:, 2 * j, col], A[:, 2 * j + 1, col] = sign * v, sign * p * dv / beta
+        if r == rho:                                         # the source, inner side minus outer side
+            if pol == "TM":
+                b[:, 2 * j + 1] = 2j / (math.pi * rho) / beta
+            else:
+                b[:, 2 * j] = -2j / (math.pi * beta * rho)
+    coef = np.linalg.solve(A, b[..., None])[..., 0][:, cols[last][0]] / hankel2(ns, beta * regions[last][0])
+    F = np.exp(1j * np.outer(np.deg2rad(np.asarray(phi_deg, float)), ns)) @ ((1j ** ns) * coef)
+    return 20.0 * np.log10(np.abs(F))
+
+
 def test_bark_overgrowth_consumers_are_recomputed():
     """119 (00_07 HW.54, the leg «кора накриває купол») — the marks' clock, the pit and the allowance against the inputs
     they derive from; every homogeneous row of the embedded radio, and the grid's weakest cells, against a closed form
@@ -9469,15 +9531,24 @@ def test_bark_overgrowth_consumers_are_recomputed():
     interior amplitude on the homogeneous rows, at the printed depths AND at the grid's weakest front and weakest
     rule-angle cell (the closed form shares no code with the script) · a range that is not the outward rounding of its raw
     ends, or raw ends that are not its rows' · an after-life cell whose state does not follow its heights, a state list
-    that is not the cells', or a «closed»/«deck in air» span that is not its cells' · a medium of the
+    that is not the cells', or a «closed»/«deck in air» span that is not its cells' · on every closed after-life cell,
+    a span under EITHER reading that is not its rows' — every row, layered ones included, recomputed by a global
+    boundary-value system that shares with the script only 107's stem description and scipy's Bessel functions (so
+    the «stems as they stand» favourable end is held, and a «stems as they stand» run on the overgrown rows reds) · an
+    end with the wood taken as sapwood that left the homogeneous rows, or a favourable end as they stand that is a
+    homogeneous row again (the docstring's «two different stems») · a grid that stops short of the deepest after-life
+    cell or runs more than a step past it, a least crossing off the grid · the slow end's reference closed forms
+    (references apart, the in-air threshold, canon's limit on the deep edge, the mid-line angle) that are not the
+    arithmetic of their inputs · a medium of the
     readings missing from the attenuation list, or an attenuation that is not its permittivity's · a share, its
     half-depth or its years that are not the closed form's · an allowance, a flange thickness or a height ratio that is
-    not the arithmetic of its inputs, or two routes that no longer add one height · a control recorded above its tolerance · a verdict sentence a partial re-run left behind.
-    CANNOT catch: a defect only a LAYERED row would show (the script's direct-problem control gates those at runtime,
-    recorded here only as a number under its tolerance) · the layered rows off the printed depths, and with them the
-    «stems as they stand» counts, which only the script's own run produces · a wrong INPUT (a
-    rate, a deck row, a permittivity, the bearing share — their homes carry them) · anything the model declares it
-    cannot see, its premise first.
+    not the arithmetic of its inputs, or two routes that no longer add one height · a control recorded above its
+    tolerance, or a direct-problem control that skipped a row it prints · a verdict sentence a partial re-run left behind.
+    CANNOT catch: the layered rows off the printed depths and off the closed cells, and with them the «stems as they
+    stand» counts, which only the script's own run produces (its direct-problem control gates them at runtime,
+    recorded here as a number under its tolerance) · a wrong stem description or a defect of scipy's Bessel functions
+    (the global system shares both) · a wrong INPUT (a rate, a deck row, a permittivity, the bearing share — their
+    homes carry them) · anything the model declares it cannot see, its premise first.
     """
     pytest.importorskip("scipy")
     d = json.loads((RADIO / "bark_overgrowth_consumers.json").read_text(encoding="utf-8"))
@@ -9553,6 +9624,24 @@ def test_bark_overgrowth_consumers_are_recomputed():
             checked += 1
     assert checked == 2 * len(i["homogeneous_readings"]) * len(i["stems_dbh_m"]) * len(marks) > 0
     grid = round((0 - i["axis_mm"]["deck_over_surface_from"]) / i["axis_mm"]["step"]) + 1
+    step, grid_from = i["axis_mm"]["step"], i["axis_mm"]["deck_over_surface_from"]
+    # the global boundary-value system's own controls, before it judges a cell: in free space it returns the free source
+    # (1 for the line, |cos φ| for the dipole), on a homogeneous stem the closed form above (two formulas, no shared code)
+    import importlib.util
+    spec107 = importlib.util.spec_from_file_location("s107_t119", REPO / "tools/in_silico/scripts/107_stem_radio_shadow.py")
+    s107 = importlib.util.module_from_spec(spec107)
+    spec107.loader.exec_module(s107)
+    for pol, want in (("TM", [0.0, 0.0]), ("TE", [0.0, 20 * math.log10(0.5)])):
+        for rho in (0.13, 0.165, 0.185, 0.20):
+            got = _overgrowth_layered_field_db([(0.10, 1), (0.17, 1), (0.19, 1)], rho, pol, d["frequency_Hz"], [0.0, 60.0])
+            assert got == pytest.approx(want, abs=1e-9), (pol, rho)
+    for r in (r for r in rows if r["homogeneous_eps"] is not None and r["dbh_m"] == i["stems_dbh_m"][-1]):
+        eps, a = complex(r["homogeneous_eps"][0], -r["homogeneous_eps"][1]), r["surface_radius_m"]
+        for depth in (0.005, 0.04):
+            got = _overgrowth_layered_field_db([(a, eps)], a - depth, r["polarization"], d["frequency_Hz"], [0.0, i["rule_angle_deg"]])
+            want = _overgrowth_embedded_homogeneous(eps, a, a - depth, r["polarization"], d["frequency_Hz"], [0.0, i["rule_angle_deg"]])
+            assert got == pytest.approx(want, abs=1e-9), (r["reading"], r["polarization"], depth)
+    closed_checked = 0
     for pol in ("TM", "TE"):
         sel, block = [r for r in rows if r["polarization"] == pol], d["radio_same_current"][pol]
         for k in marks:
@@ -9587,6 +9676,14 @@ def test_bark_overgrowth_consumers_are_recomputed():
         assert 0 <= alt["cells_beyond_3dB_at_the_rule_angle"] <= alt["cells"]
         assert alt["least_crossing_3dB_deg"] == math.floor(alt["least_crossing_3dB_deg_raw"] * 10 + 1e-9) / 10
         assert set(alt["by_depth_mm"]) == set(marks[1:])
+        # the grid's own points: each least crossing sits on it, and the grid reaches the deepest after-life cell — and
+        # ends within one step of it (a grid cut short leaves that cell's rows out of every count above, silently;
+        # «at the grid's end» in the prose means this end)
+        for where in (on_grid, alt):
+            depth = where["least_crossing_at"]["depth_mm"]
+            assert 0 <= depth <= -grid_from and abs(depth / step - round(depth / step)) < 1e-9, (pol, depth)
+        deepest_cell = min(c["deck_over_surface_mm"] for c in block["after_life"].values())
+        assert grid_from <= deepest_cell < grid_from + step, f"{pol}: the grid ({grid_from}) does not end at the deepest after-life cell ({deepest_cell})"
         # after the life: the state of every cell from its heights (with the tilt in the travel); which cells are a
         # result is counted, never assumed for a rate end; a closed cell's weakest front is a homogeneous row's
         decks = {"rf_deck_alt_low": heights["rf_deck_alt_low"], "rf_deck_bom_high": heights["rf_deck_bom_high"]}
@@ -9622,10 +9719,32 @@ def test_bark_overgrowth_consumers_are_recomputed():
                 if cells:
                     ends = [x for k in cells for x in block["after_life"][k][key + "_raw"]]
                     assert block[name][key + "_raw"] == [min(ends), max(ends)], (pol, name, key)
+        # every closed cell under BOTH readings of the wood laid over the capsule, recomputed on every row by the global
+        # system: as they stand, the cell's whole span; with the wood taken as sapwood, both ends sit on HOMOGENEOUS rows
+        # (identical under the two readings), so the homogeneous rows alone reproduce them; and the favourable end as
+        # they stand lies above every homogeneous row — a LAYERED stem, another row than the favourable end with the wood
+        # taken as sapwood, so the pair of favourable ends compares two stems, not one stem under two readings
+        for key in block["after_life_closed"]["cells"]:
+            ref, _, deck = key.split(":")
+            cell, s_day = block["after_life"][key], (decks[deck] - install[ref]) * cos_t
+            change = {}
+            for name in i["readings"]:
+                for dbh in i["stems_dbh_m"]:
+                    layers = s107.stem_layers(dbh, s107.PERMITTIVITY[name])
+                    a = layers[-1][0]
+                    change[name, dbh] = float(
+                        _overgrowth_layered_field_db(layers, a + cell["deck_over_surface_mm"] / 1e3, pol, d["frequency_Hz"])[0]
+                        - _overgrowth_layered_field_db(layers, a + s_day / 1e3, pol, d["frequency_Hz"])[0])
+            hom = [v for (name, _), v in change.items() if name in i["homogeneous_readings"]]
+            assert cell["change_as_they_stand_dB_raw"] == pytest.approx([min(change.values()), max(change.values())], abs=1e-6), key
+            assert cell["change_against_install_day_dB_raw"] == pytest.approx([min(hom), max(hom)], abs=1e-6), \
+                f"{pol} {key}: an end with the wood taken as sapwood left the homogeneous rows — the docstring's and the prose's «two stems» no longer hold"
+            assert max(change.values()) > max(hom), f"{pol} {key}: the favourable end as they stand is a homogeneous row again"
+            closed_checked += 1
         both = block["after_life_closed"]
-        if both["cells"]:       # the weak end is a homogeneous reading's under either reading; the favourable end is not
+        if both["cells"]:       # «the weak end the same»: under either reading it is a homogeneous row's (held per cell above)
             assert both["change_as_they_stand_dB_raw"][0] == pytest.approx(both["change_against_install_day_dB_raw"][0], abs=1e-9)
-            assert both["change_as_they_stand_dB_raw"][1] >= both["change_against_install_day_dB_raw"][1]
+    assert closed_checked > 0, "no closed after-life cell was recomputed"
     # every range a document quotes is cached OUTWARD from its raw ends (in-silico §When Modifying #43 ⊕) — the control
     # on the GENERATOR: turned back to nearest, an end would sit inside the cells and this reds, not the doc pin
     def spans(node, path=""):
@@ -9725,6 +9844,32 @@ def test_bark_overgrowth_consumers_are_recomputed():
                    ("trunc_max_dF", "truncation"), ("cache107_max_dB", "cache_107_dB"), ("cache107_max_eff", "cache_107_efficiency")):
         assert c[key] <= tol[t], key
     assert c["direct_positions_per_row"] > 0
+    n_rows = len(i["readings"]) * len(i["stems_dbh_m"])
+    assert c["direct_rows"] == 2 * n_rows + 2 * len(i["readings_whose_sapwood_grows_with_depth"]) * len(i["stems_dbh_m"]), \
+        "the direct-problem control skipped rows it prints (the stems as they stand included)"
+    # the slow end against the deck's two references — one point of the axis — as closed forms of the same inputs (the
+    # script's runtime control holds the mid-line form to its cell at the design point)
+    sr, hi = d["slow_end_deck_references"], heights["rf_deck_bom_high"]
+    refs = [install[ref] for ref in i["deck_install_references"]]
+    lim = install["mid_seat"] - install["deep_edge"]
+
+    def hi_from_mid_line(theta):
+        return (hi - (bark78["flange_diameter_mm"] / 2 * math.tan(theta) - flange_t)) * math.cos(theta) - life * slow
+    assert sr["deck"] == "rf_deck_bom_high" and sr["rate_end"] == "slow"
+    assert sr["references_apart_on_the_axis_mm"] == pytest.approx(max(refs) - min(refs), abs=1e-12)
+    assert sr["deck_in_air_while_the_axis_bark_stands_below_mm"] == pytest.approx(hi - life * slow / cos_t, abs=1e-12)
+    assert sr["axis_bark_at_canon_limit_on_the_deep_edge_mm"] == pytest.approx(lim, abs=1e-12)
+    assert sr["deck_over_surface_after_life_at_that_limit_mm"] == pytest.approx((hi - lim) * cos_t - life * slow, abs=1e-12)
+    assert (sr["deck_over_surface_after_life_at_that_limit_mm"] > 0) == (lim < sr["deck_in_air_while_the_axis_bark_stands_below_mm"])
+    assert sr["deck_over_surface_after_life_from_the_mid_line_at_0_deg_mm"] == pytest.approx(hi_from_mid_line(0.0), abs=1e-12)
+    assert hi_from_mid_line(math.radians(i["tilt_deg"])) == pytest.approx(
+        d["radio_same_current"]["TM"]["after_life"]["mid_seat:slow:rf_deck_bom_high"]["deck_over_surface_mm"], abs=1e-9)
+    th = sr["deck_in_air_from_the_mid_line_below_tilt_deg_raw"]
+    if th is None:
+        assert not hi_from_mid_line(0.0) > 0 > hi_from_mid_line(math.radians(i["tilt_deg"]))
+    else:
+        assert 0 < th < i["tilt_deg"] and abs(hi_from_mid_line(math.radians(th))) < 1e-9
+        assert sr["deck_in_air_from_the_mid_line_below_tilt_deg"] == math.floor(th * 10 + 1e-9) / 10   # «in air while below»: DOWN
     # the verdict's sentences, recomposed from the fields that carry them (in-silico §When Modifying #5)
     def up(x, nd=2):
         return math.ceil(x * 10 ** nd - 1e-9) / 10 ** nd
@@ -9743,6 +9888,11 @@ def test_bark_overgrowth_consumers_are_recomputed():
     change, alt_change = tm["after_life_closed"]["change_against_install_day_dB"], tm["after_life_closed"]["change_as_they_stand_dB"]
     slow_txt = (f"every one of the {len(st['slow']['pit'])} cells is a pit — no state of the model" if not st["slow"]["deck in air"]
                 else f"still in air on {len(st['slow']['deck in air'])} of the cells and in a pit — no state of the model — on {len(st['slow']['pit'])}")
+    if not st["slow"]["deck in air"] and sr["deck_over_surface_after_life_at_that_limit_mm"] > 0 and th is not None:
+        slow_txt += (f", on references {sr['references_apart_on_the_axis_mm']:.2f} mm apart on the axis at the {flange_t:g} mm "
+                     f"placeholder and the {i['tilt_deg']:g}° point: with canon's limit kept on the deep edge the BOM's high row "
+                     f"stays {math.floor(sr['deck_over_surface_after_life_at_that_limit_mm'] * 100 + 1e-9) / 100:.2f} mm in air, "
+                     f"and so it does from the mid-line below {sr['deck_in_air_from_the_mid_line_below_tilt_deg']:.1f}°")
     for phrase in (
             f"its lower edge at {h_open:.2f} mm — {head[0]} ⊥ {head[1]} years at the fast ⊥ slow end from a surface at the "
             f"flange's top and {mid[0]} ⊥ {mid[1]} from the seat's mid-line",

@@ -6218,6 +6218,17 @@
       }
     }
   ],
+  "slow_end_deck_references": {
+    "deck": "rf_deck_bom_high",
+    "rate_end": "slow",
+    "references_apart_on_the_axis_mm": 0.3727279874438718,
+    "deck_in_air_while_the_axis_bark_stands_below_mm": -2.3968257901719223,
+    "axis_bark_at_canon_limit_on_the_deep_edge_mm": -2.627272012556128,
+    "deck_over_surface_after_life_at_that_limit_mm": 0.22694522645634407,
+    "deck_over_surface_after_life_from_the_mid_line_at_0_deg_mm": 0.8500000000000014,
+    "deck_in_air_from_the_mid_line_below_tilt_deg": 3.1,
+    "deck_in_air_from_the_mid_line_below_tilt_deg_raw": 3.1709648035705436
+  },
   "media": {
     "bark_dry_proxy": {
       "eps": [
@@ -6753,7 +6764,8 @@
     "cache107_max_dB": 0.000499897194350396,
     "cache107_max_eff": 4.992629873301624e-06,
     "free_space_max": 1.1102230246251565e-15,
-    "direct_positions_per_row": 19
+    "direct_positions_per_row": 19,
+    "direct_rows": 150
   },
   "tolerances": {
     "direct": 1e-09,
@@ -6764,5 +6776,5 @@
     "cache_107_efficiency": 6e-06
   },
   "not_computed": "what the antenna draws and loses once wrapped in wet tissue (the direction is not established) · a link margin (canon's budget is against free space, a sum across models) · whether tissue closes over the crown · a capsule in a pit · what the bark does at the wall and at the vent hole · whether the bark carries the flange (the premise) · a stem's history · the stem's curvature across the seat · the allowance's thermal, depth and load prices",
-  "verdict": "On the radome the bark does not arrive at one height. Over the rim the first opening is the vent hole, its lower edge at 9.08 mm — 1.8 ⊥ 11.2 years at the fast ⊥ slow end from a surface at the flange's top and 1.9 ⊥ 11.6 from the seat's mid-line, where the mounting requirement puts the hole, with the capsule taken as fixed and the 10° tilt in the clock — and the crown's top, the mark `114` prices untilted, the last at 18.0 mm (3.5 ⊥ 22.2 years); below the flange's top a node with a cathode meets the bark first on its side band and buffer, whose heights have no home yet. Every mark above the rim is passed inside the life at the fast end on every install reference. The vent's lower edge outlives the life on every reference only while the rate stays below 0.336 mm/yr. After the life the surface stands over the crown at the fast end only, and there the front field at the same source current has moved by -18.5 … -7.2 dB against the install day with E along the stem (-18.5 … -3.0 dB with the stems as they stand); at the slow end every one of the 4 cells is a pit — no state of the model. The weakest front on the 0.5 mm grid down to 90.5 mm is -23.7 dB against the free front lobe (thawed_red_pine_ionic, DBH 60 cm, 90.5 mm). Under the surface the pattern's rule (within 3 dB of the front at ±50°, E along the stem) fails on 0 of 8736 cells with the wood laid over the capsule taken as sapwood and on 447 of 8736 with the stems as they stand — the assumption decides it. All of it is the propagation term alone, not a link margin — what the antenna itself loses in wet tissue is not computed. A crown at the bottom of a straight pit keeps half of an isotropic field to a depth of 13.15 mm. For the vent to stay clear through the life at the slow end the install-day bark must stand at least 7.17 mm below the flange's top — a flange at least 7.17 ⊥ 9.80 ⊥ 12.43 mm thick on the seat's shallow edge ⊥ mid-line ⊥ deep edge against today's 3 mm placeholder; at the fast end it is at least 92.47 mm."
+  "verdict": "On the radome the bark does not arrive at one height. Over the rim the first opening is the vent hole, its lower edge at 9.08 mm — 1.8 ⊥ 11.2 years at the fast ⊥ slow end from a surface at the flange's top and 1.9 ⊥ 11.6 from the seat's mid-line, where the mounting requirement puts the hole, with the capsule taken as fixed and the 10° tilt in the clock — and the crown's top, the mark `114` prices untilted, the last at 18.0 mm (3.5 ⊥ 22.2 years); below the flange's top a node with a cathode meets the bark first on its side band and buffer, whose heights have no home yet. Every mark above the rim is passed inside the life at the fast end on every install reference. The vent's lower edge outlives the life on every reference only while the rate stays below 0.336 mm/yr. After the life the surface stands over the crown at the fast end only, and there the front field at the same source current has moved by -18.5 … -7.2 dB against the install day with E along the stem (-18.5 … -3.0 dB with the stems as they stand); at the slow end every one of the 4 cells is a pit — no state of the model, on references 0.37 mm apart on the axis at the 3 mm placeholder and the 10° point: with canon's limit kept on the deep edge the BOM's high row stays 0.22 mm in air, and so it does from the mid-line below 3.1°. The weakest front on the 0.5 mm grid down to 90.5 mm is -23.7 dB against the free front lobe (thawed_red_pine_ionic, DBH 60 cm, 90.5 mm). Under the surface the pattern's rule (within 3 dB of the front at ±50°, E along the stem) fails on 0 of 8736 cells with the wood laid over the capsule taken as sapwood and on 447 of 8736 with the stems as they stand — the assumption decides it. All of it is the propagation term alone, not a link margin — what the antenna itself loses in wet tissue is not computed. A crown at the bottom of a straight pit keeps half of an isotropic field to a depth of 13.15 mm. For the vent to stay clear through the life at the slow end the install-day bark must stand at least 7.17 mm below the flange's top — a flange at least 7.17 ⊥ 9.80 ⊥ 12.43 mm thick on the seat's shallow edge ⊥ mid-line ⊥ deep edge against today's 3 mm placeholder; at the fast end it is at least 92.47 mm."
 }
