@@ -4,7 +4,7 @@
  * Sources:   firmware/bio_contracts/metabolic_core.rb firmware/bio_contracts/bio_contract.rb
  * mruby:     4.0.0 (firmware/extern/mruby submodule)
  * float:     double (NO MRB_USE_FLOAT — FW.19 / FW.7 byte-parity)
- * sources sha256: 589d5a1a310636d9032b64660581816ec25ebbe6cbc7d639b6933cb5049358a3
+ * sources sha256: 0b8ba803cbb4d777529f1aa426ccc6f548d8b730181aa67679b7eaa0a902568e
  *
  * Regenerate: tools/firmware/gen_bytecode.sh
  * Drift-gate: tools/firmware/check_bytecode.py (light, stdlib)
