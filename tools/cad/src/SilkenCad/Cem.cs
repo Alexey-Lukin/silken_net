@@ -251,8 +251,8 @@ internal sealed record AnchorCem
 // Mechanical-lock shank (01_01 §4.3 A/B) — the §4.3 BLOCKER-3 lock against PEEK cold-flow creep
 // (HW.26): annular ratchet barbs on the solid Ti shank that press-fits into the PEEK sleeve. The DIN-471
 // ring as a backup was removed on BOTH ends ⚖️ 2026-09-18 (00_07 HW.26) and the Zone-3 groove with it; the
-// Zone-1 groove bounds nothing and stays in the geometry until G3. Zone 1 (real Ø11) is its own part, joined to an Ø11 gyroid anode by
-// `Zone1Anode.BuildIntegrated` (00_07 HW.26 G3 — no anchor manifest names its lock yet); the Zone-3 set (placeholder Ø) is already the cathode flange's
+// Zone-1 groove bounds nothing and stays in the geometry until G3. Zone 1 (real Ø11) is its own part, joined to the gyroid anode of
+// every SKU by `Zone1Anode.BuildIntegrated` (one lock for all, ⚖️ founder 2026-11-15, 00_07 HW.26 G3 — so no anchor manifest names it); the Zone-3 set (placeholder Ø) is already the cathode flange's
 // shank (`CathodeFlange.ShankCem` → `MechanicalLock.Build`). Canon over-specifies the tooth (h, base,
 // α, β all fixed); a triangle has 2 free params, so we keep α/β + h and DERIVE base ≈ 2.1·h — verify
 // MEASURES it against §4.3 [0.40,0.60]. Barbs emit GEOMETRY only: the 3–5× pull-out, the PEEK 150 °C
@@ -290,6 +290,14 @@ internal sealed record MechanicalLockCem
     public float GrooveOffsetMm { get; init; } = 15f;
     public float GrooveWidthMm { get; init; } = 1.1f;   // DIN-471 для Ø11 shank (§4.3 B; «0.8×0.6» = off-spec, не штатне кільце)
     public float GrooveDepthMm { get; init; } = 0.25f;
+
+    // The NECK (⚖️ founder 2026-11-15, 00_07 HW.26 G3; 01_01 §4.3 A): on an anode WIDER than this shank the shank's Ø runs on
+    // this far BELOW the sleeve's lower end, down to a flat step to the anode's Ø — so the step clears the sleeve by it and
+    // the press fixture, never the part, stops the depth. The verdict asks for no less than the fixture's stop tolerance,
+    // which nothing in the tree has measured: the Zone-1 value is a PLACEHOLDER (cem/_provenance.json).
+    // ⛔ Default 0 = no neck, on purpose: a manifest that omits it gets an anode wider than the shank REFUSED
+    //    (Zone1Anode.RequireIntegrable), never a step at the sleeve that makes the part the stop (picogk #0a).
+    public float NeckLengthMm { get; init; }
 
     public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (null ⇒ no callout — no DIN-471 band cited without a source)
     public NotesSpec? Notes { get; init; }                // drawing notes block (null ⇒ NOT SPECIFIED IN CEM per field)

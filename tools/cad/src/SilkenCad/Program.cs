@@ -146,8 +146,10 @@ internal static class Program
 
     private static int BuildIntegratedTo(AnchorCem anode, MechanicalLockCem lockCem, string strPath)
     {
-        // The two refusals that follow from the manifests alone come before the runtime starts, both as exit 2: a shank
-        // of another Ø, and a voxel too coarse for the mesh check to tell the shallow ramp from the steep face.
+        // The refusals that follow from the manifests alone come before the runtime starts, all as exit 2: a lock with a
+        // channel (the cathode's), an anode wider than the shank with a lock that declares no neck, a transition that would
+        // cut into the lock's features or the lattice's tip, a voxel too coarse for the mesh check to tell the shallow ramp
+        // from the steep face, and one too coarse for it to read the transition (Zone1Anode.LayerReadsTransition).
         Func<Vector3, Vector3> fnLockLocal;   // the placement, read backwards: it is its own inverse
         try
         {
@@ -164,24 +166,35 @@ internal static class Program
         if (!Zone1Anode.LayerResolvesRatchet(lockCem, fVoxel))
             return Fail($"build --lock: at voxel {fVoxel:0.###} mm the mesh check cannot tell this lock's shallow ramp from its steep face, " +
                         "so the ratchet direction of the body could not be judged — nothing is built; use a finer voxel_size_mm");
+        Zone1Anode.Transition oTransition = Zone1Anode.TransitionOf(anode, lockCem);
+        if (!Zone1Anode.LayerReadsTransition(oTransition, fVoxel))
+            return Fail($"build --lock: at voxel {fVoxel:0.###} mm the {(oTransition.Step ? "neck" : "transition")} spans {oTransition.LengthMm:F2} mm — fewer " +
+                        "layers than the mesh check needs to read it (Zone1Anode.LayerReadsTransition), so the body could not be judged — nothing is " +
+                        "built; use a finer voxel_size_mm or a longer neck");
         float fTop = Zone1Anode.IntegratedLengthMm(anode, lockCem);
         return RunHeadless(fVoxel, () =>
         {
             Mesh msh = Zone1Anode.BuildIntegrated(anode, lockCem).mshAsMesh();
 
             // Read the mesh once: its Z per vertex (seam), the largest and smallest radius per shank layer and the
-            // crest of every barb row by azimuth (profile), its triangles.
+            // crest of every barb row by azimuth (profile), the largest and smallest radius per layer round the
+            // transition, its triangles.
             float[] aVertexZ = new float[msh.nVertexCount()];
             float[] aLayerMax = new float[Zone1Anode.ShankLayerCount(lockCem, fVoxel)];
             float[] aLayerMin = new float[aLayerMax.Length];
             Array.Fill(aLayerMin, float.MaxValue);
             float[,] aCrest = new float[lockCem.BarbRows, MechanicalLock.CrestSectors];
+            float[] aTransitionMax = new float[Zone1Anode.TransitionLayerCount(oTransition, fVoxel)];
+            float[] aTransitionMin = new float[aTransitionMax.Length];
+            Array.Fill(aTransitionMin, float.MaxValue);
             for (int i = 0; i < aVertexZ.Length; i++)
             {
                 Vector3 v = msh.vecVertexAt(i);
+                float fR = MathF.Sqrt((v.X * v.X) + (v.Y * v.Y));
                 aVertexZ[i] = v.Z;
-                Zone1Anode.ReadShankVertex(anode, lockCem, fVoxel, v.Z, MathF.Sqrt((v.X * v.X) + (v.Y * v.Y)), aLayerMax, aLayerMin);
+                Zone1Anode.ReadShankVertex(anode, lockCem, fVoxel, v.Z, fR, aLayerMax, aLayerMin);
                 MechanicalLock.ReadCrestVertex(lockCem, fVoxel, fnLockLocal(v), aCrest);
+                Zone1Anode.ReadTransitionVertex(oTransition, fVoxel, v.Z, fR, aTransitionMax, aTransitionMin);
             }
             int[] aTriangles = new int[3 * msh.nTriangleCount()];
             for (int t = 0; t < aTriangles.Length; t += 3)
@@ -193,14 +206,16 @@ internal static class Program
             BBox3 bb = msh.oBoundingBox();
             (string strProfile, IReadOnlyList<string> aProfile) =
                 Zone1Anode.IntegratedProfileFindings(anode, lockCem, fVoxel, aLayerMax, aLayerMin, aCrest);
+            (string strTransition, IReadOnlyList<string> aTransition) = Zone1Anode.TransitionFindings(anode, lockCem, fVoxel, aTransitionMax, aTransitionMin);
             (string strSeam, IReadOnlyList<string> aSeam) = Zone1Anode.IntegratedSeamFindings(anode, lockCem, fVoxel, aVertexZ, aTriangles);
-            List<string> aFindings = [.. aProfile, .. aSeam];
+            List<string> aFindings = [.. aProfile, .. aTransition, .. aSeam];
             if (MathF.Abs(bb.vecMin.Z) > 3f * fVoxel || MathF.Abs(bb.vecMax.Z - fTop) > 3f * fVoxel)
                 aFindings.Add($"the mesh spans z {bb.vecMin.Z:F2}…{bb.vecMax.Z:F2} mm, the two manifests give 0…{fTop:F2}");
 
             Console.WriteLine($"  voxel {fVoxel:0.###} mm (anode {anode.VoxelSizeMm:0.###} · lock {lockCem.VoxelSizeMm:0.###}) · " +
                               $"z {bb.vecMin.Z:F2}…{bb.vecMax.Z:F2} mm (gyroid 0…{anode.LengthMm:F2}, shank to {fTop:F2})");
             if (strProfile.Length > 0) Console.WriteLine($"  {strProfile}");
+            if (strTransition.Length > 0) Console.WriteLine($"  {strTransition}");
             Console.WriteLine($"  {strSeam}");
             if (aFindings.Count > 0)
             {
@@ -212,8 +227,11 @@ internal static class Program
             Directory.CreateDirectory("out");
             msh.SaveToStlFile(strPath);
             Console.WriteLine($"wrote {strPath}");
-            Console.WriteLine("  ⛔ not settled by this body: its print orientation (00_07 HW.26 G4) · which lock the SKU takes — " +
-                              "the pair was named on this command line, no anchor manifest names its lock");
+            Console.WriteLine("  ⛔ not settled by this body: its print orientation (00_07 HW.26 G4 — a vertical print within 0 ± 5° ⊥ a bureau's own; in a " +
+                              "vertical print no end down serves every face: a frustum stands either way, a flat step only with the tip down, the barbs only " +
+                              "with the tip up, the seam's flat face over the lattice's pores not with the tip down)" +
+                              (oTransition.Step ? " · the neck g — a placeholder until the press fixture's stop tolerance is known (cem/_provenance.json)" : "") +
+                              " · the lock — one Zone-1 lock for every SKU (⚖️ 2026-11-15, 01_01 §4.3 A), named on this command line, no anchor manifest names it");
             Console.WriteLine("INTEGRATED OK — mesh profile and seam match the two manifests within the check's tolerances");
             return 0;
         });
@@ -1594,7 +1612,7 @@ internal static class Program
             "  smoke             foundation self-test (no output file)\n" +
             "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome | zone2_sleeve | anchor_assembly | anchor_axial_stack)\n" +
             "  build <cem.json> --parts   anchor_assembly | anchor_axial_stack: also one STL per body → out/<name>.<part>.stl, all in the assembly frame\n" +
-            "  build <anchor_zone1.json> --lock <mechanical_lock.json>   the gyroid + its lock shank as ONE body → out/<anode>.integrated.<lock>.stl, written only if the built mesh matches the two manifests — a mismatch (exit 1) writes nothing; refuses (exit 2) an anode whose Ø is not the shank's and a voxel too coarse for the check; any failure REMOVES an earlier file of that name\n" +
+            "  build <anchor_zone1.json> --lock <mechanical_lock.json>   the gyroid + its lock shank as ONE body → out/<anode>.integrated.<lock>.stl, written only if the built mesh matches the two manifests — a mismatch (exit 1) writes nothing; an anode of another Ø meets the shank through the transition of 01_01 §4.3 A — wider: a flat step and the lock's neck_length_mm of shank Ø below the sleeve; narrower: the shank's foot turned down at 25° — whose diameters, step position or face angle, and stop are read off the mesh; refuses (exit 2) a lock with a channel, a wider anode with a lock that declares no neck, a transition that would cut into the lock or the lattice, and a voxel too coarse for the check (the ratchet, or the transition: 7 layers at least); any failure REMOVES an earlier file of that name\n" +
             "  verify <cem.json> measure metrics → out/<name>.metrics.json + compare the committed *.golden.json, if any (exit 0/1)  [--write-golden]\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +

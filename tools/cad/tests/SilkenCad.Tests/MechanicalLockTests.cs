@@ -153,12 +153,15 @@ public void Shallow_Ramp_Faces_Local_Z0__The_End_That_Enters_The_Peek_First()
 private static MechanicalLockCem Zone1LockCem()
     => Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone1.json")));
 
-// Every shipped anode the Zone-1 lock integrates into — the SKUs of the shank's own Ø (Zone1Anode refuses the rest).
+// Every shipped anode the Zone-1 lock integrates into — all of them (one lock for every SKU, ⚖️ founder 2026-11-15,
+// 01_01 §4.3 A): the SKUs of the shank's own Ø directly, a wider one through a flat step and a neck, a narrower one
+// through the shank's foot turned down. Every kind must be on the roster, or part of the pins pin nothing.
 private static List<(string File, AnchorCem Cem)> IntegrableAnchors(MechanicalLockCem lockCem)
 {
-    var anchors = CemFixtures.AnchorFiles().Select(f => (f, CemFixtures.Anchor(f)))
-        .Where(a => a.Item2.OuterDiameterMm == lockCem.ShankDiameterMm).ToList();
-    Assert.Contains(anchors, a => a.f == "anchor_zone1.pine.json");   // the pilot SKU; an empty roster would pin nothing
+    var anchors = CemFixtures.AnchorFiles().Select(f => (f, CemFixtures.Anchor(f))).ToList();
+    Assert.Contains(anchors, a => a.f == "anchor_zone1.pine.json");   // the pilot SKU, Ø of the shank
+    Assert.Contains(anchors, a => a.Item2.OuterDiameterMm < lockCem.ShankDiameterMm);
+    Assert.Contains(anchors, a => a.Item2.OuterDiameterMm > lockCem.ShankDiameterMm);
     return anchors;
 }
 
@@ -422,6 +425,11 @@ public void On_The_Integrated_Anode_The_Groove_And_The_Barbs_Sit_Where_The_Lock_
         float fGrooveLo = fTop - (lockCem.GrooveOffsetMm + lockCem.GrooveWidthMm), fGrooveHi = fTop - lockCem.GrooveOffsetMm;
         float fContactLo = fTop - (lockCem.ContactStartMm + lockCem.ContactLengthMm), fContactHi = fTop - lockCem.ContactStartMm;
         float fLastToothFoot = fTop - (lockCem.ContactStartMm + ((lockCem.BarbRows - 1) * fPitch) + fBase);
+        // The transition's span, written from the manifests (its own pins are below): the lattice is its envelope under
+        // it, the lock is read above it — the neck above a flat step on a wider SKU, the turned-down foot on a narrower one.
+        bool bWider = anode.OuterDiameterMm > lockCem.ShankDiameterMm;
+        float fTurned = MathF.Max(0f, lockCem.ShankDiameterMm - anode.OuterDiameterMm) / 2f / MathF.Tan(Zone1Anode.TransitionHalfAngleDeg * MathF.PI / 180f);
+        float fLatticeTop = bWider ? anode.LengthMm - lockCem.NeckLengthMm : anode.LengthMm, fShankFoot = anode.LengthMm + fTurned;
 
         Func<float, float> fnR = Zone1Anode.IntegratedProfile(anode, lockCem);
         float fGrooveMin = float.MaxValue, fGrooveMax = float.MinValue, fBarbMin = float.MaxValue, fBarbMax = float.MinValue;
@@ -429,8 +437,9 @@ public void On_The_Integrated_Anode_The_Groove_And_The_Barbs_Sit_Where_The_Lock_
         for (int i = 0; i * fStep <= fTop; i++)
         {
             float fZ = i * fStep, fR = fnR(fZ);
-            if (fZ < anode.LengthMm - fTol)
+            if (fZ < fLatticeTop - fTol)
                 Assert.True(fR == anode.OuterDiameterMm / 2f, $"{strFile}: z = {fZ:F3} mm is lattice — the profile there is its envelope, got {fR:F3}");
+            if (fZ <= fShankFoot + fTol) continue;
             if (fR > fRShank + 1e-4f) { fBarbMin = MathF.Min(fBarbMin, fZ); fBarbMax = MathF.Max(fBarbMax, fZ); }
             else if (fR < fRShank - 1e-4f) { fGrooveMin = MathF.Min(fGrooveMin, fZ); fGrooveMax = MathF.Max(fGrooveMax, fZ); }
             fRMin = MathF.Min(fRMin, fR);
@@ -453,7 +462,8 @@ public void On_The_Integrated_Anode_The_Groove_And_The_Barbs_Sit_Where_The_Lock_
 
         Func<float, float> fnNoGroove = Zone1Anode.IntegratedProfile(anode, lockCem with { GrooveWidthMm = 0f });
         for (int i = 0; i * fStep <= fTop; i++)
-            Assert.True(fnNoGroove(i * fStep) >= fRShank - 1e-4f, $"{strFile}: a lock without a groove still notches the integrated profile");
+            Assert.True(i * fStep <= fShankFoot + fTol || fnNoGroove(i * fStep) >= fRShank - 1e-4f,
+                $"{strFile}: a lock without a groove still notches the integrated profile");
     }
 }
 
@@ -482,27 +492,31 @@ public void The_Integrated_Shank_Placement_Lands_The_Entering_End_On_The_Top_Fac
     }
 }
 
-// An anode whose Ø is not the shank's is REFUSED out loud — by the placement, the profile and the build alike — and
-// never bridged by a step: the stop is press tooling, not a part feature, and the Ø10 / Ø12 / Ø13 SKUs' shank, sleeve
-// and step are an open founder decision (00_07 HW.26 G3). The synthetic pairs keep the pin non-vacuous on the day
-// every shipped SKU shares the shank's Ø. (BuildIntegrated refuses before it touches a voxel — no runtime needed.)
-// MUTATION: drop the Ø check from Zone1Anode ⇒ red.
+// What is REFUSED out loud — by the placement, the profile and the build alike, before a voxel is touched: a lock with
+// a channel (the cathode's — the Zone-1 shank is solid, the wire is welded on top, 01_01 §1.4); a wider anode with a lock
+// that declares no neck (the step would sit at the sleeve and the part would be the depth stop, ⚖️ 2026-11-15); a
+// transition long enough to cut into the lock's lowest feature (here the groove: a Ø9 anode, synthetic) or a neck that
+// reaches past the lattice's tip. What is NOT refused: an anode of another Ø — every shipped SKU is accepted.
+// MUTATION (run 2026-11-15, each red here): drop the channel refusal · the no-neck refusal · the lattice-tip refusal ·
+// the lowest-feature refusal · bring the Ø-equality refusal back.
 [Fact]
-public void An_Anode_Of_Another_Diameter_Than_Its_Lock_Shank_Is_Refused_Not_Stepped()
+public void A_Lock_With_A_Channel__No_Neck_For_A_Wider_Anode__Or_A_Transition_That_Would_Cut_Into_The_Body_Is_Refused_And_Every_Sku_Is_Not()
 {
     MechanicalLockCem lockCem = Zone1LockCem();
-    AnchorCem pine = CemFixtures.Anchor("anchor_zone1.pine.json");
-    var pairs = CemFixtures.AnchorFiles().Select(f => (Name: f, Anode: CemFixtures.Anchor(f), Lock: lockCem))
-        .Where(p => p.Anode.OuterDiameterMm != lockCem.ShankDiameterMm)
-        .Append(("pine one mm wider (synthetic)", pine with { OuterDiameterMm = lockCem.ShankDiameterMm + 1f }, lockCem))
-        .Append(("pine one mm narrower (synthetic)", pine with { OuterDiameterMm = lockCem.ShankDiameterMm - 1f }, lockCem))
-        .Append(("pine + mechanical_lock.zone3.json", pine, Cem.Parse<MechanicalLockCem>(
-            File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone3.json")))))
-        .ToList();
-
-    foreach ((string strName, AnchorCem anode, MechanicalLockCem lk) in pairs)
-    {
-        Assert.NotEqual(anode.OuterDiameterMm, lk.ShankDiameterMm);
+    AnchorCem pine = CemFixtures.Anchor("anchor_zone1.pine.json"), oak = CemFixtures.Anchor("anchor_zone1.oak.json");
+    MechanicalLockCem zone3 = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone3.json")));
+    Assert.True(zone3.BoreDiameterMm > 0f, "the Zone-3 lock carries the cathode channel — the refusal below needs it");
+    Assert.True(oak.OuterDiameterMm > lockCem.ShankDiameterMm, "oak is wider than the shank — the no-neck refusal below needs it");
+    // Each refusal names ITS branch and not a neighbour's — one shared message would let a test pass on the wrong branch.
+    string[] aBranches = ["channel", "the part would be the depth stop", "lowest feature", "lattice's tip"];
+    (string Name, AnchorCem Anode, MechanicalLockCem Lock, string Says)[] refused =
+    [
+        ("pine + mechanical_lock.zone3.json", pine, zone3, aBranches[0]),
+        ("oak + the Zone-1 lock with no neck (synthetic)", oak, lockCem with { NeckLengthMm = 0f }, aBranches[1]),
+        ("pine at Ø9 (synthetic)", pine with { OuterDiameterMm = 9f }, lockCem, aBranches[2]),
+        ("pine shorter than the neck at Ø12 (synthetic)", pine with { OuterDiameterMm = 12f, LengthMm = lockCem.NeckLengthMm * 0.8f }, lockCem, aBranches[3]),
+    ];
+    foreach ((string strName, AnchorCem anode, MechanicalLockCem lk, string strSays) in refused)
         foreach (Action fnCall in new Action[]
                  {
                      () => Zone1Anode.ShankPlacement(anode, lk),
@@ -511,12 +525,249 @@ public void An_Anode_Of_Another_Diameter_Than_Its_Lock_Shank_Is_Refused_Not_Step
                  })
         {
             InvalidDataException ex = Assert.Throws<InvalidDataException>(fnCall);
-            Assert.True(ex.Message.Contains($"Ø{anode.OuterDiameterMm:0.###}", StringComparison.Ordinal)
-                        && ex.Message.Contains($"Ø{lk.ShankDiameterMm:0.###}", StringComparison.Ordinal)
-                        && ex.Message.Contains("HW.26 G3", StringComparison.Ordinal),
-                $"{strName}: the refusal must name both diameters and the open decision — got «{ex.Message}»");
+            Assert.True(ex.Message.Contains(strSays, StringComparison.Ordinal), $"{strName}: the refusal must say why («{strSays}») — got «{ex.Message}»");
+            foreach (string strOther in aBranches.Where(b => b != strSays))
+                Assert.False(ex.Message.Contains(strOther, StringComparison.Ordinal), $"{strName}: the refusal names another branch («{strOther}») — got «{ex.Message}»");
         }
+
+    foreach ((string strFile, AnchorCem anode) in IntegrableAnchors(lockCem))
+    {
+        _ = Zone1Anode.ShankPlacement(anode, lockCem);
+        _ = Zone1Anode.IntegratedProfile(anode, lockCem);
     }
+}
+
+// ── The gyroid-to-shank TRANSITION (Zone1Anode.TransitionOf; ⚖️ founder 2026-11-15, clause 01_01 §4.3 A) — pure maths ──
+
+// Every shipped SKU takes the one Zone-1 lock. A WIDER one keeps the shank's Ø as a neck g = neck_length_mm below the
+// sleeve's lower end (z = L), down to a FLAT step to its own Ø — so below the sleeve the body is no wider than the bore
+// for g, and from the step down it is the gyroid's; a NARROWER one meets the shank through a frustum turned on the
+// shank's foot, |Δr|/tan θ long, above z = L. Nothing above z = L is wider than the lock's own profile, nothing below it
+// wider than the gyroid's hole, and the body keeps L + S. Written from the two manifests' numbers; the roster carries
+// every kind (IntegrableAnchors).
+// ⛔ Ceiling: this is the ANALYTIC profile. The flatness BuildIntegrated actually builds is pinned by neither xUnit nor
+//    CI (no voxel runtime there) — only `build --lock` reads it off the mesh (TransitionFindings, readings 1 and 4).
+// MUTATION (run 2026-11-15, each red here): a cone in the ANALYTIC profile — Transition.RadiusAt interpolating on a Step,
+// the builder untouched ⇒ red · the step at z = L (the neck dropped from TransitionOf) ⇒ red · the frustum on the other
+// side of z = L ⇒ red · drop the transition from IntegratedProfile ⇒ red.
+[Fact]
+public void Every_Sku_Meets_The_One_Lock__A_Wider_One_Through_A_Flat_Step_And_A_Neck__A_Narrower_One_Through_A_Turned_Foot()
+{
+    MechanicalLockCem lockCem = Zone1LockCem();
+    Assert.True(lockCem.NeckLengthMm > 0f, "the Zone-1 lock declares its neck (⚖️ 2026-11-15) — without it every wider SKU is refused");
+    float fRShank = lockCem.ShankDiameterMm / 2f, fTan = MathF.Tan(Zone1Anode.TransitionHalfAngleDeg * MathF.PI / 180f), fG = lockCem.NeckLengthMm;
+    var oShank = new MechanicalLockShank(lockCem);
+    const float fStep = 0.001f;
+    foreach ((string strFile, AnchorCem anode) in IntegrableAnchors(lockCem))
+    {
+        float fRGyroid = anode.OuterDiameterMm / 2f, fL = anode.LengthMm, fTop = fL + lockCem.ShankLengthMm;
+        Zone1Anode.Transition t = Zone1Anode.TransitionOf(anode, lockCem);
+        Func<float, float> fnR = Zone1Anode.IntegratedProfile(anode, lockCem);
+        Assert.Equal(fTop, Zone1Anode.IntegratedLengthMm(anode, lockCem), 4);
+        Assert.Equal(t.ZBottomMm, Zone1Anode.SeamZMm(anode, lockCem));
+        if (fRGyroid == fRShank)
+        {
+            Assert.True(t.None, $"{strFile}: an anode of the shank's Ø needs no transition");
+            continue;
+        }
+
+        bool bWider = fRGyroid > fRShank;
+        float fZ0 = bWider ? fL - fG : fL, fZ1 = bWider ? fL : fL + ((fRShank - fRGyroid) / fTan);
+        Assert.Equal(bWider, t.Step);
+        Assert.Equal(fRGyroid, t.RBottomMm);
+        Assert.Equal(fRShank, t.RTopMm);
+        Assert.Equal(fZ0, t.ZBottomMm, 4);
+        Assert.Equal(fZ1, t.ZTopMm, 3);
+
+        for (int i = 0; i * fStep <= fTop; i++)
+        {
+            float fZ = i * fStep, fR = fnR(fZ);
+            if (fZ >= fL) Assert.True(fR <= oShank.ProfileRadius(fTop - fZ) + 1e-4f,
+                $"{strFile}: z = {fZ:F3} sits in the sleeve and stands out to r {fR:F3}, past the lock's own profile");
+            else Assert.True(fR <= fRGyroid + 1e-4f, $"{strFile}: z = {fZ:F3} stands out to r {fR:F3}, past the gyroid's own hole");
+            if (fZ < fZ0 - 1e-4f || fZ > fZ1 + 1e-4f || (bWider && fZ <= fZ0 + 1e-4f)) continue;   // lattice · lock · the step's own plane
+            float fWant = bWider ? fRShank : fRGyroid + ((fRShank - fRGyroid) * (fZ - fZ0) / (fZ1 - fZ0));
+            Assert.True(MathF.Abs(fR - fWant) < 1e-3f, $"{strFile}: z = {fZ:F3} reads r {fR:F4}, the {(bWider ? "neck" : "frustum")} asks {fWant:F4}");
+        }
+        // The stop that follows, without a judgment: below the sleeve's lower end the body is no wider than the bore for g
+        // on a wider SKU, and then the gyroid's Ø at once; on a narrower one it is never wider.
+        if (bWider)
+        {
+            Assert.True(fnR(fZ0 + 0.01f) <= fRShank + 1e-4f, $"{strFile}: just above the step the neck reads r {fnR(fZ0 + 0.01f):F3}, wider than the bore");
+            Assert.True(fnR(fZ0 - 0.01f) == fRGyroid, $"{strFile}: just below the step the body reads r {fnR(fZ0 - 0.01f):F3} — the step is not flat");
+        }
+        else Assert.True(fnR(fL - 0.05f) < fRShank, $"{strFile}: 0.05 mm below the sleeve's lower end the body reads r {fnR(fL - 0.05f):F3}, not inside the bore");
+    }
+}
+
+// The frustum's face stands in a vertical print whichever end is down (G4's first reading, 01_02 §1.6 — the second, a
+// bureau's own orientation, is not judged): the half-angle leaves it, at the full tilt 01_02 §1.6 admits, at least as
+// steep as the one face canon calls self-supporting (01_01 §4.3 A) — and the two canon numbers the rule is made of are
+// the ones those sections give.
+// MUTATION (run 2026-11-15, each red here): TransitionHalfAngleDeg = 26 · the datum 60 → 55 · the tilt 5 → 4.
+[Fact]
+public void The_Transition_Face_Is_As_Steep_As_The_Canon_Self_Supporting_Face_At_The_Full_Tilt()
+{
+    Assert.Equal(60f, Zone1Anode.SelfSupportingFaceFromHorizontalDeg);   // 01_01 §4.3 A: «downward-грань ≈ 60° від горизонталі»
+    Assert.Equal(5f, Zone1Anode.BuildTiltToleranceDeg);                  // 01_02 §1.6: «0° (вертикальний) ± 5°»
+    float fWorstFace = 90f - Zone1Anode.TransitionHalfAngleDeg - Zone1Anode.BuildTiltToleranceDeg;
+    Assert.True(fWorstFace >= Zone1Anode.SelfSupportingFaceFromHorizontalDeg,
+        $"the transition face sits {fWorstFace:F1}° from horizontal at the full tilt — flatter than the {Zone1Anode.SelfSupportingFaceFromHorizontalDeg}° face canon calls self-supporting");
+}
+
+// The per-layer reading `build --lock` takes round the transition — each layer's largest and smallest radius of any
+// vertex — made HERE from radius profiles written from the manifests' numbers, never through Zone1Anode, over the window
+// the verb reads. A solid body has vertices on its outer surface only, so its smallest radius is the profile's; fnInner
+// puts a surface inside it (lattice, a void) where that is the case under test.
+private static (float[] Max, float[] Min) TransitionReading(AnchorCem anode, MechanicalLockCem lockCem, Func<float, float> fnR,
+                                                            Func<float, float>? fnInner = null)
+{
+    float fLayer = lockCem.VoxelSizeMm;
+    Zone1Anode.Transition t = Zone1Anode.TransitionOf(anode, lockCem);   // the window only
+    float fFoot = Zone1Anode.TransitionWindowFootMm(t, fLayer);
+    int n = Zone1Anode.TransitionLayerCount(t, fLayer);
+    float[] aMax = new float[n], aMin = new float[n];
+    Array.Fill(aMin, float.MaxValue);
+    for (int j = 0; j < n; j++)
+        for (int i = 0; i <= 20; i++)
+        {
+            float fZ = fFoot + ((j + (i / 20f)) * fLayer);
+            aMax[j] = MathF.Max(aMax[j], fnR(fZ));
+            aMin[j] = MathF.Min(aMin[j], (fnInner ?? fnR)(fZ));
+        }
+    return (aMax, aMin);
+}
+
+private static (string Summary, IReadOnlyList<string> Findings) TransitionCheck(AnchorCem anode, MechanicalLockCem lockCem,
+                                                                                (float[] Max, float[] Min) reading)
+    => Zone1Anode.TransitionFindings(anode, lockCem, lockCem.VoxelSizeMm, reading.Max, reading.Min);
+
+private static IReadOnlyList<string> NoMeshFindings(AnchorCem anode, MechanicalLockCem lockCem)
+{
+    int n = Zone1Anode.TransitionLayerCount(Zone1Anode.TransitionOf(anode, lockCem), lockCem.VoxelSizeMm);
+    return TransitionCheck(anode, lockCem, (new float[n], new float[n])).Findings;
+}
+
+// A frustum from the gyroid's radius to the shank's at the given half-angle, on the shank's side of z = L on a narrower
+// SKU and below it on a wider one (there: the cone 2026-11-15 rejected).
+private static Func<float, float> FrustumProfile(AnchorCem anode, MechanicalLockCem lockCem, float fHalfAngleDeg, float fScale = 1f)
+{
+    float fRGyroid = anode.OuterDiameterMm / 2f, fRShank = lockCem.ShankDiameterMm / 2f, fL = anode.LengthMm;
+    float fLen = MathF.Abs(fRShank - fRGyroid) / MathF.Tan(fHalfAngleDeg * MathF.PI / 180f);
+    float fZ0 = fRGyroid > fRShank ? fL - fLen : fL, fZ1 = fZ0 + fLen;
+    return fZ => fZ <= fZ0 ? fRGyroid : fZ >= fZ1 ? fRShank : fScale * (fRGyroid + ((fRShank - fRGyroid) * (fZ - fZ0) / fLen));
+}
+
+// A flat step from the gyroid's radius to the neck at fGMm below z = L, the shank's radius above.
+private static Func<float, float> FlatStepProfile(AnchorCem anode, MechanicalLockCem lockCem, float fGMm, float fNeckScale = 1f)
+{
+    float fRGyroid = anode.OuterDiameterMm / 2f, fRShank = lockCem.ShankDiameterMm / 2f, fL = anode.LengthMm;
+    return fZ => fZ <= fL - fGMm ? fRGyroid : fZ < fL ? fNeckScale * fRShank : fRShank;
+}
+
+// What `build --lock` reads round the turned-down foot (broadleaf): the shipped frustum passes, its angle reads back and
+// its face is down-facing with the tip down; a frustum flatter than the tolerance lets through reds on the ANGLE alone;
+// a frustum cut in, a hollow one, a body wider than the bore below the sleeve (the part as the depth stop) and a body with
+// holes are each named; no stop is the summary.
+// The angle row is the declared ceiling of TransitionAngleToleranceDeg: 25.9° passes, 26.5° reds.
+// MUTATION (run 2026-11-15, each red here): the angle comparison dropped · the cut-in finding dropped · the solidity
+// finding dropped · the stop on a frustum not a finding.
+[Fact]
+public void The_Transition_Check_Passes_The_Turned_Foot_And_Names_What_Left_It()
+{
+    MechanicalLockCem lockCem = Zone1LockCem();
+    AnchorCem broadleaf = CemFixtures.Anchor("anchor_zone1.broadleaf.json");
+    Assert.True(broadleaf.OuterDiameterMm < lockCem.ShankDiameterMm, "broadleaf is narrower than the shank — the frustum rows need it");
+    float fRShank = lockCem.ShankDiameterMm / 2f, fTheta = Zone1Anode.TransitionHalfAngleDeg;
+    (string Summary, IReadOnlyList<string> Findings) Check(Func<float, float> fnR, Func<float, float>? fnInner = null)
+        => TransitionCheck(broadleaf, lockCem, TransitionReading(broadleaf, lockCem, fnR, fnInner));
+
+    (string strSummary, IReadOnlyList<string> aGood) = Check(FrustumProfile(broadleaf, lockCem, fTheta));
+    Assert.Empty(aGood);
+    Assert.Contains($"half-angle {fTheta:F2}°", strSummary, StringComparison.Ordinal);
+    Assert.Contains("DOWN-facing with the tip down", strSummary, StringComparison.Ordinal);
+    Assert.Contains("no stop in the part", strSummary, StringComparison.Ordinal);
+    Assert.Empty(Check(FrustumProfile(broadleaf, lockCem, 25.9f)).Findings);
+    Assert.Contains("flatter than the 60° face", Assert.Single(Check(FrustumProfile(broadleaf, lockCem, 26.5f)).Findings), StringComparison.Ordinal);
+    AssertFinds(Check(FrustumProfile(broadleaf, lockCem, 35f)).Findings, "flatter than the 60° face");
+    AssertFinds(Check(FrustumProfile(broadleaf, lockCem, fTheta, fScale: 0.97f)).Findings, "the transition reaches only");
+    Func<float, float> fnFrustum = FrustumProfile(broadleaf, lockCem, fTheta);
+    AssertFinds(Check(fZ => fZ < broadleaf.LengthMm ? fRShank + 0.1f : fnFrustum(fZ)).Findings, "the part would stop the depth");
+    Assert.Contains("is not solid", Assert.Single(Check(fnFrustum, fnInner: _ => 1f).Findings), StringComparison.Ordinal);
+    Assert.Contains("carry NO mesh", Assert.Single(NoMeshFindings(broadleaf, lockCem)), StringComparison.Ordinal);
+}
+
+// What `build --lock` reads round the FLAT step (oak · tropical): the shipped step at the lock's neck g passes, its
+// clearance reads back as a one-layer bracket holding g, and the summary says the press fixture is the stop; the
+// rejected 25° cone and a step AT the sleeve red on the clearance and on metal out of the profile; a step too high reds
+// on the clearance; a step too LOW and a missing step red on the clearance alone — nothing else reads them; a neck cut
+// in, a neck left as lattice (the solidity reading alone — it touches r 5.5 on every layer) and a body with holes are
+// each named.
+// The clearance rows are the declared ceiling of the step reading — two layers of axial tolerance beyond a bracket one
+// layer wide: a step g + 2 layers down passes, g + 4 layers reds, and between them the reading's own layer boundary
+// decides (whether a sample lands ON the step's plane is float arithmetic), so no row is pinned there.
+// MUTATION (run 2026-11-15, each red here): drop reading 4's comparison · a step SKU with no step found left without a
+// finding · drop the solidity finding · drop the cut-in finding · the voxel floor (LayerReadsTransition) made always true.
+[Fact]
+public void The_Transition_Check_Passes_The_Flat_Step_And_Names_What_Left_It()
+{
+    MechanicalLockCem lockCem = Zone1LockCem();
+    float fLayer = lockCem.VoxelSizeMm, fG = lockCem.NeckLengthMm;
+    foreach (string strFile in new[] { "anchor_zone1.oak.json", "anchor_zone1.tropical.json" })
+    {
+        AnchorCem anode = CemFixtures.Anchor(strFile);
+        Assert.True(anode.OuterDiameterMm > lockCem.ShankDiameterMm, $"{strFile} is wider than the shank — the step rows need it");
+        // The voxel floor of the reading (`build --lock` refuses below it, exit 2): the shipped neck clears it, one of six
+        // layers does not.
+        Assert.True(Zone1Anode.LayerReadsTransition(Zone1Anode.TransitionOf(anode, lockCem), fLayer), $"{strFile}: the shipped neck is below the reading's floor");
+        Assert.False(Zone1Anode.LayerReadsTransition(Zone1Anode.TransitionOf(anode, lockCem with { NeckLengthMm = 6 * fLayer }), fLayer),
+            $"{strFile}: a neck of six layers passed the reading's floor of seven");
+        (string Summary, IReadOnlyList<string> Findings) Check(Func<float, float> fnR, Func<float, float>? fnInner = null)
+            => TransitionCheck(anode, lockCem, TransitionReading(anode, lockCem, fnR, fnInner));
+        IReadOnlyList<string> Step(float fGMm, float fNeckScale = 1f) => Check(FlatStepProfile(anode, lockCem, fGMm, fNeckScale)).Findings;
+
+        (string strSummary, IReadOnlyList<string> aGood) = Check(FlatStepProfile(anode, lockCem, fG));
+        Assert.Empty(aGood);
+        Assert.Contains("a FLAT step", strSummary, StringComparison.Ordinal);
+        Assert.Contains("stop by the press fixture; the step clears the sleeve end by g = ", strSummary, StringComparison.Ordinal);
+        Assert.True(strSummary.Contains($"…{fG:F2} mm", StringComparison.Ordinal) || strSummary.Contains($"g = {fG:F2}…", StringComparison.Ordinal),
+            $"{strFile}: the clearance bracket must hold the manifest's g {fG:F2} — got «{strSummary}»");
+
+        IReadOnlyList<string> aCone = Check(FrustumProfile(anode, lockCem, Zone1Anode.TransitionHalfAngleDeg)).Findings;
+        AssertFinds(aCone, "the step clears");
+        AssertFinds(aCone, "metal out to r");
+        AssertFinds(Step(0f), "the step clears");
+        AssertFinds(Step(0f), "metal out to r");
+        AssertFinds(Step(fG - (4 * fLayer)), "the step clears");
+        Assert.Empty(Step(fG + (2 * fLayer)));
+        Assert.Contains("the step clears", Assert.Single(Step(fG + (4 * fLayer))), StringComparison.Ordinal);
+        Assert.Contains("the step to Ø", Assert.Single(Step(anode.LengthMm + 1f)), StringComparison.Ordinal);
+        AssertFinds(Step(fG, fNeckScale: 0.97f), "the transition reaches only");
+        // The neck left as the lattice clipped to Ø11: every layer still touches r 5.5, only a surface inside it tells.
+        Assert.Contains("is not solid", Assert.Single(Check(FlatStepProfile(anode, lockCem, fG), fnInner: _ => 0.3f).Findings), StringComparison.Ordinal);
+        Assert.Contains("carry NO mesh", Assert.Single(NoMeshFindings(anode, lockCem)), StringComparison.Ordinal);
+    }
+}
+
+// On a SKU whose neck replaced lattice the seam plane is the STEP: a lattice crumb under it passes, a surface between it
+// and z = L — inside what is solid neck now — reds.
+// MUTATION (run 2026-11-15, red here): SeamZMm returns z = L.
+[Fact]
+public void Where_The_Neck_Replaced_Lattice_The_Seam_Plane_Is_The_Step()
+{
+    MechanicalLockCem lockCem = Zone1LockCem();
+    AnchorCem oak = CemFixtures.Anchor("anchor_zone1.oak.json");
+    float fL = oak.LengthMm, fTop = fL + lockCem.ShankLengthMm, fFoot = Zone1Anode.TransitionOf(oak, lockCem).ZBottomMm, fLayer = 0.05f;
+    Assert.True(fFoot < fL - (4f * fLayer), "oak's step must sit below z = L for this pin to judge anything");
+    static (float[] Z, int[] T) Strip(params float[] aZ)
+        => (aZ, [.. Enumerable.Range(0, aZ.Length - 2).SelectMany(i => new[] { i, i + 1, i + 2 })]);
+    static (float[] Z, int[] T) Join((float[] Z, int[] T) a, (float[] Z, int[] T) b)
+        => ([.. a.Z, .. b.Z], [.. a.T, .. b.T.Select(i => i + a.Z.Length)]);
+    IReadOnlyList<string> Findings((float[] Z, int[] T) m) => Zone1Anode.IntegratedSeamFindings(oak, lockCem, fLayer, m.Z, m.T).Findings;
+
+    (float[] Z, int[] T) body = Strip(0f, fFoot, fL, fL + 1f, fTop);
+    Assert.Empty(Findings(Join(body, Strip(fFoot - 0.09f, fFoot - 0.06f, fFoot - 0.03f))));
+    AssertFinds(Findings(Join(body, Strip(fFoot + 0.2f, fFoot + 0.25f, fFoot + 0.3f))), "rise above the seam plane");
 }
 
 // ── The comparison `build --lock` applies to the mesh it is about to write (Zone1Anode.IntegratedProfileFindings ·

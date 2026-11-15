@@ -91,19 +91,39 @@
   the lattice alone, so the goldens, porosity, `verify` and FE go on measuring the same object, and the lock's own STL
   (`build cem/mechanical_lock.zone1.json`) stays the standalone shank — the FEA's body, and the one the lock sheet
   dimensions from the same manifest. Exit **0** = written ·
-  **1** = a finding on the BUILT mesh, nothing written · **2** = refused before anything is built (an anode whose Ø is
-  not the shank's — that transition is an open G3 leg · a voxel too coarse to tell the shallow ramp from the steep
-  face · a manifest of the wrong `kind` · `--lock` without its manifest or beside `--parts`). Once both manifests are
+  **1** = a finding on the BUILT mesh, nothing written · **2** = refused before anything is built (a lock with a channel —
+  the cathode's · a wider anode whose lock declares no neck · a transition that would cut into the lock's lowest feature
+  or past the lattice's tip · a voxel too
+  coarse to tell the shallow ramp from the steep face · one too coarse to read the transition — 7 layers at least,
+  `Zone1Anode.LayerReadsTransition`, so a neck set under 0.35 mm at voxel 0.05 is refused, never built into a finding · a manifest of the wrong `kind` · `--lock` without its manifest or beside `--parts`). Once both manifests are
   parsed, ANY non-zero exit removes an earlier STL of that name — `out/` is the vendor's copy (gotcha #17). What it
   reads off the built mesh BEFORE writing: the shank per one-voxel layer from the top face (the ratchet's direction by
   rise against fall, every layer's largest and smallest radius — barb rows, groove band, plain shank), each row's crest
   by azimuth (`MechanicalLock.CrestFindings`, the reading `verify mechanical_lock` takes), the seam (the largest
-  surface runs tip to top face, no other surface rises above the seam plane) and the Z extent against the two
-  manifests. ⛔ **What it does NOT check is a pinned table — read it, never restate a number from it:**
+  surface runs tip to top face, no other surface rises above the seam plane — the step where the neck replaced
+  lattice), the transition (below) and the Z extent against the two manifests. ⛔ **What it does NOT check is a pinned table — read it, never restate a number from it:**
   `MechanicalLockTests.The_Mesh_Check_Lets_Through_What_Its_Tolerances_Declare`, whose header also names what no
   reading here can show at all (the lattice below the seam is on that list); what the BODY does not settle — the print
-  orientation (G4), which lock a SKU takes (the pair is whatever the command line named), a voxel no golden covers —
-  is the header of `Zone1Anode.BuildIntegrated`. ⛔ **No gate runs `build --lock`, and none holds `verify` either:**
+  orientation (G4), whether the neck g is enough (a placeholder), the lock (one for every SKU — ⚖️ 2026-11-15, yet
+  named by the command line, no manifest names it), a voxel no golden covers — is the header of
+  `Zone1Anode.BuildIntegrated`.
+  ⊕ **A SKU of another Ø (broadleaf Ø10 · oak Ø12 · tropical Ø13) meets the shank through the TRANSITION** (⚖️ founder
+  2026-11-15 — clause `01_01 §4.3 A`, `Zone1Anode.TransitionOf`): one lock and one sleeve for every SKU; L + S and the
+  junction plane z = L stay. WIDER (oak · tropical): a FLAT step to Ø11 at z = L − g and a solid Ø11 neck g up to the
+  sleeve, so the depth stays the press fixture's — the neck is the lock's shank BUILT g LONGER (one solid, no two faces
+  on a plane), g = the lock manifest's `neck_length_mm`, a placeholder with a declared ground; 0 ⇒ a wider anode is
+  REFUSED, never a step at the sleeve. NARROWER (broadleaf): the shank's foot turned down inside the bore, its half-angle
+  DERIVED from two canon numbers (`TransitionHalfAngleDeg` = 90° − the 60° face `01_01 §4.3 A` calls self-supporting −
+  the ±5° tilt of `01_02 §1.6`) — ⛔ that 60° is a datum, never a threshold. ⛔ A 25° cone on oak and tropical was built
+  and REJECTED by the same verdict (its wedge splays the PEEK mouth under the service push) — do not bring it back as
+  «the shorter transition». The verb reads off the mesh the diameters; the frustum's half-angle and face, or the step's
+  position and its clearance g (a one-layer bracket — a vertex on a layer boundary feeds both layers); that the
+  transition is SOLID (no surface inside it — gotcha #17 ⊕); and the stop — none in the part on any SKU, a finding
+  otherwise. The tolerances are pinned rows of `MechanicalLockTests.The_Transition_Check_Passes_The_Turned_Foot_And_Names_What_Left_It`
+  and its flat-step twin. ⚠️ A cut that removes lattice must not end ON the plane the lattice itself ends on: a ring cut
+  topped at z = L left a 0.02 mm burr on the neck (read off the STL by layer, 2026-11-15) — it runs on past z = L. ⛔ What
+  no form of the transition settles: with the tip down the solid face of the seam spans the lattice's pore openings flat
+  on EVERY SKU (the Ø11 ones included) — `00_07` HW.23 · G4. ⛔ **No gate runs `build --lock`, and none holds `verify` either:**
   CI has no voxel runtime (gotcha #3 — the `cad_smoke` verify step is best-effort) and `pre-push` builds no mesh, so
   xUnit pins the pure comparison and the placement map, never the built body — deleting the check's call or its
   `return 1` reds nothing. A green suite says nothing about an STL in `out/`; the verb's exit code on the day it was

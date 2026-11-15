@@ -377,14 +377,23 @@ internal static class Zone1Anode
     // mirror draws the same profile with the winding reversed; measured once, the voxeliser built the same body from
     // it — it is kept out because the turn is what the assembly does, not because the mirror showed a fault.)
     //
+    // An anode whose Ø is not the shank's meets it through the gyroid-to-shank TRANSITION below (TransitionOf, ⚖️ founder
+    // 2026-11-15) — a flat step and a neck on a wider anode, the shank's foot turned down on a narrower one; a lock with a
+    // channel (the cathode's) is REFUSED, and so is a wider anode with a lock that declares no neck.
+    //
     // ⛔ What this does NOT do:
-    //   • an anode whose Ø differs from the shank's is REFUSED, not stepped: the stop is press tooling, never a part
-    //     feature (⚖️ 2026-10-12), and the shank · sleeve · step of the Ø10 / Ø12 / Ø13 SKUs is an open founder
-    //     decision (00_07 HW.26 G3);
-    //   • the print orientation of this body is open (00_07 HW.26 G4, waiting on the print bureaus' answer) — nothing
-    //     here chooses one or adds a support;
-    //   • no anchor manifest NAMES its lock yet: the caller hands the pair in, and nothing checks it is the intended one;
-    //   • the lattice ⊥ solid junction at z = L is a flat butt joint with no transition and no model (00_07 HW.23);
+    //   • the print orientation of this body is open (00_07 HW.26 G4 — a vertical print within the 0 ± 5° of 01_02 §1.6 ⊥
+    //     the orientation a print bureau would choose, waiting on their answer): nothing here chooses one or adds a
+    //     support. In a vertical print no end down serves every face: the frustum (broadleaf) stands whichever end is
+    //     down, the flat step (oak · tropical) only with the tip down, the barbs only with the tip up, and the seam's face
+    //     (two bullets down) not with the tip down;
+    //   • no anchor manifest NAMES its lock: every SKU takes the one Zone-1 lock (⚖️ founder 2026-11-15, 01_01 §4.3 A), the
+    //     caller hands the pair in, and what is refused is a lock that does not fit that rule (RequireIntegrable), not a
+    //     wrong file;
+    //   • the neck g is a PLACEHOLDER (cem/_provenance.json): the verdict asks for no less than the press fixture's stop
+    //     tolerance, which nothing in the tree knows — `build --lock` reads where the step sits, never whether g is enough;
+    //   • the lattice ⊥ solid junction (at z = L, or at the step on oak and tropical) is a flat butt joint with no model
+    //     (00_07 HW.23), and with the tip down its solid face spans the lattice's pore openings flat — on every SKU;
     //   • the CLI builds it at the FINER of the two manifests' voxels, so the gyroid in this STL is rendered on another
     //     grid than the one its golden, `verify` and porosity were measured on — Golden.cs compares no run at another
     //     voxel, so this body has NO regression baseline;
@@ -408,45 +417,143 @@ internal static class Zone1Anode
     internal static float LockLocalZ(AnchorCem anode, MechanicalLockCem lockCem, float fZ)
         => IntegratedLengthMm(anode, lockCem) - fZ;
 
-    private static void RequireShankOfAnodeDiameter(AnchorCem anode, MechanicalLockCem lockCem)
+    // ── The gyroid-to-shank TRANSITION (⚖️ founder 2026-11-15, 00_07 HW.26 G3; the clause — 01_01 §4.3 A) ──
+    // One Zone-1 lock and one sleeve with one Ø11 bore for every SKU, so a SKU of another Ø meets the shank through a
+    // transition whose form follows the side of z = L it sits on:
+    //   • Ø12 · Ø13 (oak · tropical), WIDER: the shank's Ø runs on g = NeckLengthMm below the sleeve's lower end — a solid
+    //     NECK in place of the lattice's top g — down to a FLAT step to the anode's Ø at z = L − g. The depth is held by the
+    //     press fixture (⚖️ 2026-10-12); the step meets the sleeve's end only on an over-travel beyond g, and then axially.
+    //     ⛔ A 25° cone here was built and REJECTED by that verdict: under the service push toward the sleeve (≈ 746 N,
+    //     01_01 §4.3 A ⊕ 2026-10-21) a wedge splays the PEEK sleeve's mouth radially (≈ F / tan 25°, a failure mode the
+    //     FMEA does not carry), and it spends pore length to buy one reading of G4 only;
+    //   • Ø10 (broadleaf), NARROWER: the shank's foot is turned down to the anode's Ø, a frustum on z ∈ [L, L + ℓ] inside
+    //     the sleeve's bore — nothing below the sleeve is wider than the hole the gyroid sits in, so the part makes no stop.
+    // The body keeps L + S on every SKU, and z = L stays the plane the sleeve's lower end sits on (AxialStack).
+    // The frustum's half-angle θ is the LARGEST (the shortest frustum) whose face, at the full tilt 01_02 §1.6 admits
+    // (± 5°), is still as steep as the one face canon calls self-supporting (60° from horizontal — the lock's α ramp printed
+    // ramp-down, Ti64 LPBF, 01_01 §4.3 A). The face looks down with the tip down and up with the tip up, so in a vertical
+    // print it stands whichever end is down; an orientation a bureau would choose (G4's other reading) is not judged.
+    // ⛔ 60° is NOT a threshold, and nothing here may call it one: canon gives none (01_02 §1.6 names the build axis and
+    //    its tilt, no overhang angle). It is a sufficient bound — a vendor's threshold could shorten the frustum.
+    internal const float SelfSupportingFaceFromHorizontalDeg = 60f;   // 01_01 §4.3 A — a datum, not a threshold (above)
+    internal const float BuildTiltToleranceDeg = 5f;                  // 01_02 §1.6, «Кут до build plate: 0° ± 5°»
+    internal const float TransitionHalfAngleDeg = 90f - SelfSupportingFaceFromHorizontalDeg - BuildTiltToleranceDeg;
+
+    // The body's outer radius goes RBottomMm (the gyroid's, below) → RTopMm (the shank's, above) over z ∈ [ZBottomMm,
+    // ZTopMm]: a frustum, or with Step a flat step at ZBottomMm and the neck above it. Equal radii (an anode of the
+    // shank's Ø) are no transition at all.
+    internal readonly record struct Transition(float ZBottomMm, float ZTopMm, float RBottomMm, float RTopMm, bool Step)
     {
-        if (anode.OuterDiameterMm != lockCem.ShankDiameterMm)
+        public float LengthMm => ZTopMm - ZBottomMm;
+        public bool None => RBottomMm == RTopMm;
+        public float RadiusAt(float fZ)
+            => None ? RTopMm
+             : Step ? (fZ <= ZBottomMm ? RBottomMm : RTopMm)
+             : RBottomMm + ((RTopMm - RBottomMm) * Math.Clamp((fZ - ZBottomMm) / LengthMm, 0f, 1f));
+    }
+
+    internal static Transition TransitionOf(AnchorCem anode, MechanicalLockCem lockCem)
+    {
+        float fRGyroid = anode.OuterDiameterMm / 2f, fRShank = lockCem.ShankDiameterMm / 2f, fL = anode.LengthMm;
+        if (fRGyroid > fRShank) return new(fL - lockCem.NeckLengthMm, fL, fRGyroid, fRShank, Step: true);
+        float fLength = (fRShank - fRGyroid) / MathF.Tan(TransitionHalfAngleDeg * MathF.PI / 180f);
+        return new(fL, fL + fLength, fRGyroid, fRShank, Step: false);
+    }
+
+    // Where the lattice ends and the solid begins — the plane the seam check judges: z = L, or the step where the neck
+    // replaced lattice (oak · tropical).
+    internal static float SeamZMm(AnchorCem anode, MechanicalLockCem lockCem) => TransitionOf(anode, lockCem).ZBottomMm;
+
+    // How deep, from the entering end, the lock's lowest feature reaches — a transition carved out of the shank must stop
+    // short of it, or it would change the lock instead of joining it.
+    private static float LowestLockFeatureDepthMm(MechanicalLockCem lockCem)
+        => MathF.Max(lockCem.ContactStartMm + lockCem.ContactLengthMm,
+                     MechanicalLock.HasGroove(lockCem) ? lockCem.GrooveOffsetMm + lockCem.GrooveWidthMm : 0f);
+
+    private static void RequireIntegrable(AnchorCem anode, MechanicalLockCem lockCem)
+    {
+        if (lockCem.BoreDiameterMm > 0f)
             throw new InvalidDataException(
-                $"{anode.Name} is Ø{anode.OuterDiameterMm:0.###} mm and the lock shank {lockCem.Name} is " +
-                $"Ø{lockCem.ShankDiameterMm:0.###} mm — the gyroid-to-shank transition of a SKU whose Ø differs from its " +
-                "shank's is not specified (no step, no sleeve, no groove size: an open founder decision, 00_07 HW.26 G3), " +
-                "so no integrated body is built");
+                $"{lockCem.Name} carries a Ø{lockCem.BoreDiameterMm:0.###} mm channel — a cathode (Zone-3) lock; the Zone-1 shank is " +
+                "solid, the bus wire is welded on the anode's top face (01_01 §1.4), so no integrated body is built");
+        Transition t = TransitionOf(anode, lockCem);
+        if (t.Step && lockCem.NeckLengthMm <= 0f)
+            throw new InvalidDataException(
+                $"{anode.Name} is Ø{anode.OuterDiameterMm:0.###} mm, wider than the shank of {lockCem.Name} Ø{lockCem.ShankDiameterMm:0.###} mm, and the " +
+                $"lock declares neck_length_mm {lockCem.NeckLengthMm:0.###}: with no neck the step would sit AT the sleeve's lower end and the part " +
+                "would be the depth stop, which ⚖️ 2026-10-12 / 2026-11-15 give to the press fixture (01_01 §4.3 A) — so no integrated body is built");
+        string strPair = $"{anode.Name} is Ø{anode.OuterDiameterMm:0.###} mm and the shank of {lockCem.Name} Ø{lockCem.ShankDiameterMm:0.###} mm: the ";
+        if (t.Step && t.LengthMm >= anode.LengthMm)
+            throw new InvalidDataException(
+                strPair + $"neck runs {t.LengthMm:F2} mm down from z = L and the lattice is only {anode.LengthMm:F2} mm long — the neck would reach past " +
+                "the lattice's tip, so no integrated body is built");
+        float fPlainFootMm = lockCem.ShankLengthMm - LowestLockFeatureDepthMm(lockCem);
+        if (!t.Step && t.LengthMm >= fPlainFootMm)
+            throw new InvalidDataException(
+                strPair + $"transition at {TransitionHalfAngleDeg:0.#}° runs {t.LengthMm:F2} mm up from z = L and only {fPlainFootMm:F2} mm of plain shank " +
+                "stand below the lock's lowest feature — the turned-down foot would cut into it, so no integrated body is built");
     }
 
     // Lock-local vertex → anode frame: (x, y, z) → (x, −y, LockLocalZ(z)), a proper rotation (det +1) plus the shift —
     // and its own inverse, which is how the mesh check reads a built vertex back into the lock's coordinates.
-    // Acquiring it is the refusal: BuildIntegrated cannot place a shank without passing the Ø check.
+    // Acquiring it is the refusal: BuildIntegrated cannot place a shank without passing RequireIntegrable.
     internal static Func<Vector3, Vector3> ShankPlacement(AnchorCem anode, MechanicalLockCem lockCem)
     {
-        RequireShankOfAnodeDiameter(anode, lockCem);
+        RequireIntegrable(anode, lockCem);
         return v => new Vector3(v.X, -v.Y, LockLocalZ(anode, lockCem, v.Z));
     }
 
     // Outer radius of the integrated body along the ANODE's z — pure maths, for the pins (no voxels): the lattice's
     // ENVELOPE radius over the gyroid (the lattice is a callout, never a contour — 01_02 §6), the lock's own R(z_l)
-    // over the shank (barbs, and the groove where MechanicalLock.HasGroove), 0 outside the body.
+    // over the shank (barbs, and the groove where MechanicalLock.HasGroove), the transition over its span (the frustum —
+    // on the shank's side the smaller of it and the shank, as BuildIntegrated cuts it — or the neck above the flat step),
+    // 0 outside the body.
     internal static Func<float, float> IntegratedProfile(AnchorCem anode, MechanicalLockCem lockCem)
     {
-        RequireShankOfAnodeDiameter(anode, lockCem);
+        RequireIntegrable(anode, lockCem);
         var oShank = new MechanicalLockShank(lockCem);
+        Transition t = TransitionOf(anode, lockCem);
         float fJunction = anode.LengthMm, fTop = IntegratedLengthMm(anode, lockCem), fREnvelope = anode.OuterDiameterMm / 2f;
+        float Shank(float fZ) => oShank.ProfileRadius(LockLocalZ(anode, lockCem, fZ));
         return fZ => fZ < 0f || fZ > fTop ? 0f
+                   : !t.None && fZ >= t.ZBottomMm && fZ <= t.ZTopMm ? (fZ < fJunction ? t.RadiusAt(fZ) : MathF.Min(t.RadiusAt(fZ), Shank(fZ)))
                    : fZ < fJunction ? fREnvelope
-                   : oShank.ProfileRadius(LockLocalZ(anode, lockCem, fZ));
+                   : Shank(fZ);
     }
 
     // The lattice exactly as `Build` makes it, plus the lock exactly as MechanicalLock.Build makes it (its numbers,
-    // its groove flag — nothing is copied here), turned into the anode frame.
+    // its groove flag — nothing is copied here), turned into the anode frame; then, on a SKU of another Ø, the transition:
+    //   • wider (oak · tropical): the lattice outside the shank's Ø is cut away over the neck's span — the floor of that
+    //     cut, at z = L − g, IS the flat step — and the shank is built g LONGER, so the neck is the shank itself run on
+    //     below z = L: one solid, with no two faces meeting on a plane for the mesher to leave a membrane in.
+    //     MechanicalLock measures its barbs and groove from the entering end, so the extra length lands at the far end
+    //     as plain shank (RequireIntegrable keeps the neck clear of the lattice's tip). The cut runs on 1 mm ABOVE z = L,
+    //     where the lattice has already ended and the shank is not yet added: a cut whose top face lay ON z = L, the
+    //     plane the lattice ends on, left a sliver measured as a 0.02 mm burr on the neck at the sleeve's mouth;
+    //   • narrower (broadleaf): everything outside the frustum over its span is cut away.
+    // An anode of the shank's Ø takes the placement, the lattice and the lock only — the operations, in their order, of the
+    // body built before the transition existed — its STL came out byte-identical to that body's, and broadleaf's to the
+    // frustum body built before the neck (both measured 2026-11-15).
     public static Voxels BuildIntegrated(AnchorCem anode, MechanicalLockCem lockCem)
     {
         Func<Vector3, Vector3> fnPlace = ShankPlacement(anode, lockCem);
+        Transition t = TransitionOf(anode, lockCem);
         Voxels voxBody = Build(anode);
-        voxBody.BoolAdd(MeshUtility.voxApplyTransformation(MechanicalLock.Build(lockCem), v => fnPlace(v)));
+        if (t.Step)
+        {
+            LocalFrame oStep = new(new Vector3(0f, 0f, t.ZBottomMm));
+            Voxels voxRing = new BaseCylinder(oStep, t.LengthMm + 1f, t.RBottomMm + 1f).voxConstruct();
+            voxRing.BoolSubtract(new BaseCylinder(oStep, t.LengthMm + 1f, t.RTopMm).voxConstruct());
+            voxBody.BoolSubtract(voxRing);
+        }
+        MechanicalLockCem oShank = t.Step ? lockCem with { ShankLengthMm = lockCem.ShankLengthMm + t.LengthMm } : lockCem;
+        voxBody.BoolAdd(MeshUtility.voxApplyTransformation(MechanicalLock.Build(oShank), v => fnPlace(v)));
+        if (t.None || t.Step) return voxBody;
+
+        LocalFrame oFoot = new(new Vector3(0f, 0f, t.ZBottomMm));
+        Voxels voxOutside = new BaseCylinder(oFoot, t.LengthMm, t.RTopMm + lockCem.BarbHeightMm + 1f).voxConstruct();
+        voxOutside.BoolSubtract(new BaseCone(oFoot, t.LengthMm, t.RBottomMm, t.RTopMm).voxConstruct());
+        voxBody.BoolSubtract(voxOutside);
         return voxBody;
     }
 
@@ -626,8 +733,9 @@ internal static class Zone1Anode
                 $"{fTightest:F3} mm · {strCrests}", aFindings);
     }
 
-    // The seam at z = L stands on COINCIDENT faces — two level sets that are both ≈ 0 there — so that the union fused
-    // is measured, not assumed, in two readings:
+    // The seam — at SeamZMm: z = L, where it stands on COINCIDENT faces (two level sets both ≈ 0 there), or the step where
+    // the neck replaced lattice (oak · tropical), where the lattice inside the neck's Ø runs on into the solid — is
+    // measured to have fused, not assumed, in two readings:
     //   • the largest connected surface must reach from the tree-side tip to the top face (a shank that did not fuse
     //     leaves two);
     //   • no OTHER surface may rise above the seam plane by more than half a voxel: an inner shell of the shank, a
@@ -673,12 +781,13 @@ internal static class Zone1Anode
 
         var aFindings = new List<string>();
         float fTop = IntegratedLengthMm(anode, lockCem), fTol = IntegratedCheckAxialToleranceLayers * fVoxelMm;
+        float fSeam = SeamZMm(anode, lockCem);
         (int iBody, var oBody) = oSurfaces.MaxBy(kv => kv.Value.Triangles);
         if (oBody.ZMin > fTol || oBody.ZMax < fTop - fTol)
             aFindings.Add($"the lattice and the shank are NOT one connected surface: the largest ({oBody.Triangles:N0} triangles) spans " +
-                          $"z {oBody.ZMin:F2}…{oBody.ZMax:F2} mm of 0…{fTop:F2} — the seam at z = {anode.LengthMm:F2} did not fuse");
+                          $"z {oBody.ZMin:F2}…{oBody.ZMax:F2} mm of 0…{fTop:F2} — the seam at z = {fSeam:F2} did not fuse");
         var aLoose = oSurfaces.Where(kv => kv.Key != iBody).Select(kv => kv.Value).ToList();
-        var aAbove = aLoose.Where(s => s.ZMax > anode.LengthMm + (0.5f * fVoxelMm)).ToList();
+        var aAbove = aLoose.Where(s => s.ZMax > fSeam + (0.5f * fVoxelMm)).ToList();
         if (aAbove.Count > 0)
             aFindings.Add($"{aAbove.Count} detached surface(s) of {aAbove.Sum(s => s.Triangles):N0} triangles rise above the seam plane " +
                           $"(z {aAbove.Min(s => s.ZMin):F2}…{aAbove.Max(s => s.ZMax):F2} mm) — an unfused shank, an inner shell or a bubble across the seam");
@@ -686,5 +795,207 @@ internal static class Zone1Anode
         return ($"{oSurfaces.Count} surface component(s): the body ({oBody.Triangles:N0} triangles, z {oBody.ZMin:F2}…{oBody.ZMax:F2}) + " +
                 $"{aLoose.Count} loose, {aAbove.Count} of them above the seam plane ({aLoose.Sum(s => s.Triangles):N0} triangles" +
                 (aLoose.Count > 0 ? $", z ≤ {aLoose.Max(s => s.ZMax):F2}" : "") + ")", aFindings);
+    }
+
+    // ── The TRANSITION read off the built mesh — pure, so xUnit pins the comparison; the verb feeds it. A window of layers
+    //    one voxel thick, counted UP from TransitionPadLayers below the transition's foot to as many above its head, each
+    //    holding the LARGEST radius of any vertex in it, lattice included. The readings:
+    //   1. no layer carries metal beyond the profile's largest radius over its ± 2 layers — a shoulder, a bulge, a cone
+    //      where the flat step should be;
+    //   2. no layer strictly inside the transition (2 layers clear of both ends) falls short of the smallest — a frustum or
+    //      a neck cut in; and none of them carries a surface INSIDE it — its smallest radius of any vertex below that
+    //      smallest, less the tolerance: the transition is SOLID, so a neck left as lattice, a void or an unfused face reds
+    //      (the shank check reads the same smallest radius per layer above it; measured 2026-11-15: a neck left as the
+    //      lattice clipped to Ø11 passed every other reading, because the lattice touches the clip on every layer);
+    //   3. the frustum only (broadleaf): its HALF-ANGLE, off a least-squares line through those inside layers, and from it
+    //      the face's angle from horizontal with the end down that makes it down-facing, at the full tilt of 01_02 §1.6 —
+    //      a finding when that is flatter than the self-supporting face of 01_01 §4.3 A by more than
+    //      TransitionAngleToleranceDeg; its Ø at both ends and its length, off the same line — reported;
+    //   4. the STOP: the highest layer wholly below the sleeve's lower end (z = L) that is wider than the bore. On a frustum
+    //      there must be none — the part makes no stop. On a flat step it is the step, and the clearance it leaves to the
+    //      sleeve's end is the neck g read back — a finding when the manifest's g lies further from that reading than the
+    //      axial tolerance, so a step at the sleeve (the part as the depth stop, which ⚖️ 2026-11-15 rules out) or a cone
+    //      that reaches it reds;
+    //   5. the diameters: the gyroid's below the transition, the neck's over its inside layers, the shank's above — reported.
+    // ⛔ Ceilings: the lattice below the transition is judged from above only (a lattice layer need not reach its
+    //    envelope); the angle is one line through the layer MAXIMA — the frustum's outermost generatrix over the whole
+    //    circle — so a face flatter on part of the circle only is left to readings 1 and 2; the step is read to ONE layer
+    //    (a vertex on a layer boundary feeds both layers, so the reading is a bracket one layer wide), and its flatness only
+    //    through readings 1 and 4, so a slope confined to the two layers next to it passes; whether g is ENOUGH is not
+    //    read at all — the fixture's stop tolerance is unknown, and g is a placeholder.
+    // The angle's tolerance: on broadleaf at the verb's voxel the line reads the half-angle within a hundredth of a degree
+    // (01_01 §4.3 A, the transition clause); 1° is room for a coarser voxel, and it is what a flatter frustum may get
+    // through unread.
+    internal const int TransitionPadLayers = 6;
+    internal const float TransitionAngleToleranceDeg = 1f;
+    internal const int TransitionMinInsideLayers = 3;
+
+    // The voxel FLOOR of this reading: readings 2 and 3 need TransitionMinInsideLayers layers clear of both ends by the
+    // axial tolerance, i.e. a transition at least 2·2 + 3 = 7 layers long. A shorter one is a LEGITIMATE body the check
+    // cannot read, so `build --lock` refuses it before building (exit 2), never builds it to call it a finding (exit 1).
+    // At the shipped voxel 0.05 mm the floor is 0.35 mm: the placeholder neck (0.5 mm) clears it; a neck set shorter, or
+    // a coarser voxel, is refused. On a layer exactly at the floor the reading may still find one layer short (float).
+    internal static bool LayerReadsTransition(Transition t, float fLayerMm)
+        => t.None || t.LengthMm >= (((2 * IntegratedCheckAxialToleranceLayers) + TransitionMinInsideLayers) * fLayerMm) - 1e-4f;
+
+    internal static int TransitionLayerCount(Transition t, float fLayerMm)
+        => t.None ? 0 : (int)MathF.Ceiling((t.LengthMm / fLayerMm) - 1e-3f) + (2 * TransitionPadLayers);
+
+    internal static float TransitionWindowFootMm(Transition t, float fLayerMm) => t.ZBottomMm - (TransitionPadLayers * fLayerMm);
+
+    // Feeds one mesh vertex into the window's per-layer maxima and minima — the same both-layers rule on a boundary as
+    // ReadShankVertex.
+    internal static void ReadTransitionVertex(Transition t, float fLayerMm, float fZ, float fR, float[] aLayerMax, float[] aLayerMin)
+    {
+        float fU = (fZ - TransitionWindowFootMm(t, fLayerMm)) / fLayerMm;
+        if (aLayerMax.Length == 0 || fU < -1e-3f || fU > aLayerMax.Length + 1e-3f) return;
+        int j = (int)MathF.Floor(fU);
+        Feed(j);
+        if (fU - j < 1e-3f) Feed(j - 1);
+        else if (fU - j > 1f - 1e-3f) Feed(j + 1);
+
+        void Feed(int k)
+        {
+            if (k < 0 || k >= aLayerMax.Length) return;
+            aLayerMax[k] = MathF.Max(aLayerMax[k], fR);
+            aLayerMin[k] = MathF.Min(aLayerMin[k], fR);
+        }
+    }
+
+    // IntegratedProfile as its per-layer maximum over the window — the analytic side.
+    internal static float[] TransitionLayerMaxRadius(AnchorCem anode, MechanicalLockCem lockCem, float fLayerMm)
+    {
+        const int nSub = 20;
+        Transition t = TransitionOf(anode, lockCem);
+        Func<float, float> fnRadiusAtZ = IntegratedProfile(anode, lockCem);
+        float fFoot = TransitionWindowFootMm(t, fLayerMm);
+        var aMax = new float[TransitionLayerCount(t, fLayerMm)];
+        for (int j = 0; j < aMax.Length; j++)
+            for (int i = 0; i <= nSub; i++)
+                aMax[j] = MathF.Max(aMax[j], fnRadiusAtZ(fFoot + ((j + ((float)i / nSub)) * fLayerMm)));
+        return aMax;
+    }
+
+    internal static (string Summary, IReadOnlyList<string> Findings) TransitionFindings(
+        AnchorCem anode, MechanicalLockCem lockCem, float fLayerMm, float[] aMeshMax, float[] aMeshMin)
+    {
+        Transition t = TransitionOf(anode, lockCem);
+        if (t.None) return ($"no transition: the anode is the shank's Ø{lockCem.ShankDiameterMm:0.###}", []);
+        float[] aAnalytic = TransitionLayerMaxRadius(anode, lockCem, fLayerMm);
+        int n = aAnalytic.Length;
+        if (aMeshMax.Length != n || aMeshMin.Length != n)
+            return ("", [$"the transition reading has {aMeshMax.Length} / {aMeshMin.Length} layers, its window has {n} at {fLayerMm:0.###} mm"]);
+        int nEmpty = aMeshMax.Count(r => r <= 0f);
+        if (nEmpty > 0)
+            return ("", [$"{nEmpty} of the {n} layers round the transition carry NO mesh at all — there is no body there, so nothing else is read"]);
+
+        const int nAxial = IntegratedCheckAxialToleranceLayers;
+        float fTol = IntegratedCheckRadialToleranceLayers * fLayerMm, fFoot = TransitionWindowFootMm(t, fLayerMm);
+        float LayerLo(int j) => fFoot + (j * fLayerMm);
+        string At(int j) => $"z {LayerLo(j):F2}…{LayerLo(j + 1):F2}";
+        var aFindings = new List<string>();
+
+        // 1 and 2.
+        float fWorstOut = 0f, fWorstIn = 0f, fWorstHollow = 0f;
+        string? strOut = null, strIn = null, strHollow = null;
+        var aInside = new List<int>();
+        for (int j = 0; j < n; j++)
+        {
+            int jLo = Math.Max(0, j - nAxial), jHi = Math.Min(n - 1, j + nAxial);
+            float fMax = float.MinValue, fMin = float.MaxValue;
+            for (int k = jLo; k <= jHi; k++) { fMax = MathF.Max(fMax, aAnalytic[k]); fMin = MathF.Min(fMin, aAnalytic[k]); }
+            if (aMeshMax[j] - fMax - fTol > fWorstOut)
+            {
+                fWorstOut = aMeshMax[j] - fMax - fTol;
+                strOut = $"metal out to r {aMeshMax[j]:F3} where the profile allows {fMax:F3} at {At(j)}";
+            }
+            if (LayerLo(j) < t.ZBottomMm + (nAxial * fLayerMm) - 1e-4f || LayerLo(j + 1) > t.ZTopMm - (nAxial * fLayerMm) + 1e-4f) continue;
+            aInside.Add(j);
+            if (fMin - fTol - aMeshMax[j] > fWorstIn)
+            {
+                fWorstIn = fMin - fTol - aMeshMax[j];
+                strIn = $"the transition reaches only r {aMeshMax[j]:F3} where it asks {fMin:F3} at {At(j)}";
+            }
+            if (fMin - fTol - aMeshMin[j] > fWorstHollow)
+            {
+                fWorstHollow = fMin - fTol - aMeshMin[j];
+                strHollow = $"a surface reaches in to r {aMeshMin[j]:F3} where the transition is solid to r {fMin:F3} at {At(j)}";
+            }
+        }
+        if (strOut is not null) aFindings.Add($"the built mesh leaves the transition by {fWorstOut:F3} mm beyond tolerance: {strOut}");
+        if (strIn is not null) aFindings.Add($"the built mesh leaves the transition by {fWorstIn:F3} mm beyond tolerance: {strIn}");
+        if (strHollow is not null) aFindings.Add($"the transition is not solid: {strHollow} — lattice, a void or an unfused face where the solid should be");
+        if (aInside.Count < TransitionMinInsideLayers)
+        {
+            aFindings.Add($"only {aInside.Count} layer(s) lie inside the transition at {fLayerMm:0.###} mm — too few to read it");
+            return ("", aFindings);
+        }
+
+        // 5, and 3 on a frustum.
+        float fBelow = Enumerable.Range(0, n).Where(j => LayerLo(j + 1) <= t.ZBottomMm + 1e-4f).Max(j => aMeshMax[j]);
+        float fAbove = Enumerable.Range(0, n).Where(j => LayerLo(j) >= t.ZTopMm - 1e-4f).Max(j => aMeshMax[j]);
+        string strShape;
+        if (t.Step)
+        {
+            strShape = $"design: a FLAT step at z {t.ZBottomMm:F3} and the Ø{2f * t.RTopMm:0.###} neck {t.LengthMm:F3} mm up to the sleeve's lower end " +
+                       $"(⚖️ 2026-11-15) · mesh: Ø{2f * fBelow:F3} below the step, the neck Ø{2f * aInside.Min(j => aMeshMax[j]):F3}…" +
+                       $"Ø{2f * aInside.Max(j => aMeshMax[j]):F3} over its {aInside.Count} inside layers, no surface inside r " +
+                       $"{aInside.Min(j => aMeshMin[j]):F3}, Ø{2f * fAbove:F3} above · step face (by construction, not read from the mesh), " +
+                       "vertical print: up-facing with the tip down, flat and DOWN-facing with the tip up";
+        }
+        else
+        {
+            // A layer's largest radius sits on its WIDER edge — the top, on a frustum that widens upward — so that edge is
+            // the abscissa, and the line's ends read the frustum's own Ø, not half a layer's slope off it.
+            double dXMean = aInside.Average(j => (double)LayerLo(j + 1)), dYMean = aInside.Average(j => (double)aMeshMax[j]);
+            double dSxy = aInside.Sum(j => (LayerLo(j + 1) - dXMean) * (aMeshMax[j] - dYMean));
+            double dSxx = aInside.Sum(j => Math.Pow(LayerLo(j + 1) - dXMean, 2));
+            double dSlope = dSxy / dSxx;
+            float RFit(float fZ) => (float)(dYMean + (dSlope * (fZ - dXMean)));
+            float fHalfAngle = (float)(Math.Atan(Math.Abs(dSlope)) * 180.0 / Math.PI);
+            float fFace = 90f - fHalfAngle, fWorst = fFace - BuildTiltToleranceDeg;
+            // The face looks DOWN when the part grows toward its wider end: with the tip down (+z) on a frustum that widens upward.
+            string strDown = dSlope > 0 ? "the tip down" : "the tip up", strUp = dSlope > 0 ? "the tip up" : "the tip down";
+            if (fWorst < SelfSupportingFaceFromHorizontalDeg - TransitionAngleToleranceDeg)
+                aFindings.Add($"the transition face is DOWN-facing with {strDown} at {fFace:F1}° from horizontal — {fWorst:F1}° at the " +
+                              $"±{BuildTiltToleranceDeg:0}° tilt of 01_02 §1.6, flatter than the {SelfSupportingFaceFromHorizontalDeg:0}° face 01_01 §4.3 A " +
+                              $"calls self-supporting (half-angle {fHalfAngle:F2}° from the axis)");
+            strShape = $"the shank's foot turned down, z {t.ZBottomMm:F3}…{t.ZTopMm:F3} ({t.LengthMm:F3} mm at {TransitionHalfAngleDeg:0.#}° from the " +
+                       $"axis) · mesh: Ø{2f * fBelow:F3} below, {aInside.Count} layers inside: Ø{2f * RFit(t.ZBottomMm):F3} → Ø{2f * RFit(t.ZTopMm):F3} " +
+                       $"over {MathF.Abs(t.RBottomMm - t.RTopMm) / (float)Math.Abs(dSlope):F3} mm, half-angle {fHalfAngle:F2}°, no surface inside r {aInside.Min(j => aMeshMin[j]):F3}, Ø{2f * fAbove:F3} above · " +
+                       $"face, vertical print: DOWN-facing with {strDown} at {fFace:F1}° from horizontal ({fWorst:F1}° at the ±{BuildTiltToleranceDeg:0}° " +
+                       $"tilt; the self-supporting face of 01_01 §4.3 A is {SelfSupportingFaceFromHorizontalDeg:0}°), up-facing with {strUp}";
+        }
+
+        // 4. The stop.
+        float fL = anode.LengthMm, fRShank = lockCem.ShankDiameterMm / 2f;
+        string strBore = $"the Ø{2f * fRShank:0.###} bore";
+        int jStop = Enumerable.Range(0, n).Where(j => LayerLo(j + 1) <= fL + 1e-4f && aMeshMax[j] > fRShank + fTol).DefaultIfEmpty(-1).Max();
+        string strStop = "";
+        if (!t.Step)
+        {
+            if (jStop < 0)
+                strStop = $"no stop in the part: below the sleeve's lower end (z = {fL:F2}) the body stays inside {strBore} — the press fixture stops the depth";
+            else
+                aFindings.Add($"below the sleeve's lower end (z = {fL:F2}) the body is wider than {strBore} by more than the radial tolerance from " +
+                              $"{fL - LayerLo(jStop + 1):F2} mm down (r {aMeshMax[jStop]:F3}) — the part would stop the depth, which the press fixture holds (⚖️ 2026-10-12)");
+        }
+        else if (jStop < 0)
+            aFindings.Add($"no layer below the sleeve's lower end (z = {fL:F2}) is wider than {strBore} — the step to Ø{2f * t.RBottomMm:0.###} is missing");
+        else
+        {
+            // The step lies in layer jStop, so the clearance it leaves is bracketed by that layer's two edges.
+            float fClearLo = fL - LayerLo(jStop + 1), fClearHi = fL - LayerLo(jStop), fG = lockCem.NeckLengthMm;
+            if (fG < fClearLo - (nAxial * fLayerMm) - 1e-4f || fG > fClearHi + (nAxial * fLayerMm) + 1e-4f)
+                aFindings.Add($"the step clears the sleeve's lower end by {fClearLo:F2}…{fClearHi:F2} mm (the highest layer wider than {strBore}, " +
+                              $"r {aMeshMax[jStop]:F3}, at {At(jStop)}), and the manifest's neck asks {fG:0.###} — off by more than {nAxial} layers; " +
+                              "at no clearance the part, not the press fixture, stops the depth (⚖️ 2026-11-15)");
+            else
+                strStop = $"stop by the press fixture; the step clears the sleeve end by g = {fClearLo:F2}…{fClearHi:F2} mm, read to one " +
+                          $"{fLayerMm:0.###} mm layer (manifest {fG:0.###} — a placeholder: the verdict asks for no less than the fixture's stop " +
+                          "tolerance, which is not known — 00_07 HW.26)";
+        }
+
+        return ($"transition Ø{2f * t.RBottomMm:0.###} → Ø{2f * t.RTopMm:0.###}: {strShape}" + (strStop.Length > 0 ? $"\n  {strStop}" : ""), aFindings);
     }
 }
