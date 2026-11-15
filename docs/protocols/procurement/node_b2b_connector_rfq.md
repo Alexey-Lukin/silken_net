@@ -309,6 +309,22 @@ Thank you.
 
 ---
 
+## 📤 Follow-up block (EN) — служба 3D-моделей Samtec: модель хедера FW і вістря поста
+
+> **Репо-нота (у лист НЕ йде).** Відповідь у тред детальної моделі CLP (блок «служба 3D-моделей Samtec: глибина верхнього входу CLP» вище; журнал надісланого — корпус памʼяті). ⚖️ founder 2026-11-15 — «так» на текст і канал; **надіслано 2026-11-15** відповіддю в тред (To — кресляр, що надіслав модель CLP; Cc — групова адреса служби). Ціль — нога HW.9 «звірити поріг F .305 протоколу з підлогою під вістрям поста біля краю площадки сокета» ([`00_07`](../../00_07_Action_Plan_Tracker.md)). Дзеркала: креслення FW rev DG — Fig. 1 і аркуш 2 малюють вістря загостреним, розміру скосу немає на жодному з чотирьох аркушів; коди — рядок поз. 12 [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) (обидва пости в котируванні). Що вирішує число: у крайньому положенні поперек ряду зовнішні ≈ 0.013 мм ширини поста стоять над краєм площадки сокета (контакти CLP затискають пост лише вздовж ряду); скіс ширший за ≈ 0.1 мм на бік (при 45°) — поріг протоколу чесний, вужчий — поріг F .305 оптимістичний на 0.035–0.085 мм ([`deck_stack_gap_bench_sheet`](../hardware/deck_stack_gap_bench_sheet.md) §8). **Немає свідомо:** нашого виводу про поріг, трекер-ID, рефів, дат.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+**Subject line:** Re: Detailed 3D model or top-entry insertion depth: CLP-105-02-L-D
+
+Thank you again for the CLP-105-02-L-D model. Could you also send the 3D model of the mating header FW-05-03-L-D-205-100 (and, if convenient, FW-05-03-L-D-205-095)? We need the geometry of the post tip: the FW print shows a tapered tip but does not dimension it. If a model is not available, the dimensions of the taper at the tip (its width and height, or the size of the flat at the very end) would answer our question equally well.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 5. Cross-references
 
 | Ресурс | Що бере |
