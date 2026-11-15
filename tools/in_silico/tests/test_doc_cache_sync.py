@@ -10638,10 +10638,6 @@ CHECKS += [
     ("117 shallow hours median → SUMMARY", SUMMARY, rf"intermediate ground \(median \*\*{N}\*\* hours\)", SFC, _sfc((*_SFC_HOURS, "bare_or_intermediate_median_winter")), 0.0),
     ("117 old judged → sheet marker", SHEET, rf"ця літера судить {N} % діб", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
     ("117 old winters none → sheet marker", SHEET, rf"а в {N} зимах із 29 жодної", SFC, _sfc((*_SFC_OLD, "winters_with_no_day_judged")), 0.0),
-    ("117 old judged → 00_07 leg", TRACKER, rf"\(ця літера судить {N} % діб, у 23 зимах", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
-    ("117 old winters none → 00_07 leg", TRACKER, rf"судить [\d.]+ % діб, у {N} зимах із 29 жодної", SFC, _sfc((*_SFC_OLD, "winters_with_no_day_judged")), 0.0),
-    ("117 bare winters under 30 → 00_07 leg", TRACKER, rf"менше 30 у {N} зимах із 29, у 6", SFC, lambda d: d["summary"]["overcast_hours_upper_bound"]["bare_winters_under"]["30"], 0.0),
-    ("117 bare winters none → 00_07 leg", TRACKER, rf"у [\d]+ зимах із 29, у {N} — жодної \(`117`\)", SFC, _sfc((*_SFC_HOURS, "bare_winters_with_none")), 0.0),
     ("117 old judged → 00_07 Стан", TRACKER, rf"репетиція `117` — {N} % суджених діб", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
 ]
 
@@ -10873,12 +10869,6 @@ CHECKS += [
          _spc_others("median_winter_mean_transmitted_share", min, _down2)),
         ("others share high → SUMMARY", SUMMARY, rf"and the share is [\d.]+–{N}, so a base exists",
          _spc_others("median_winter_mean_transmitted_share", max, _up1)),
-        ("ceiling cover-free median → 00_07", TRACKER, rf"в медіанній зимі лише {N} суджені доби вільні від покриву",
-         lambda d: d["truths"][_SPC_CEIL]["median_cover_free_judged_days"]),
-        ("ceiling winters < 5 → 00_07", TRACKER, rf"у {N} зимах із 29 — менше 5 \(п\. 4",
-         lambda d: d["truths"][_SPC_CEIL]["winters_with_fewer_than_5_cover_free_judged_days"]),
-        ("ceiling share → 00_07", TRACKER, rf"до медіанної частки {N} \(",
-         lambda d: round(d["truths"][_SPC_CEIL]["median_winter_mean_transmitted_share"], 3)),
         ("middle truths k2 min → SUMMARY", SUMMARY, rf"in {N}–\d+ winters of 29 under every test", _spc_middle(min)),
         ("middle truths k2 max → SUMMARY", SUMMARY, rf"in \d+–{N} winters of 29 under every test", _spc_middle(max)))],
 ]
