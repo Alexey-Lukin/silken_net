@@ -177,6 +177,25 @@ Best regards,
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
+## 📤 Reply block (EN) — MERA after the quote (date · shipping · payment)
+
+> **Репо-нота (у лист НЕ йде).** Котирування MERA прийшло 2026-11-16 10:28 (номер — у листі; ціни й суми — лише в Gmail, `legal-business` §Межі #3). Наш висновок: доставка DHL — понад дві третини ціни приладу; строк поданий без вибору — «кінець листопада або кінець грудня», а кінець грудня забирає грудень із вікна виміру ([`stem_face_winter_light`](../ebfc/stem_face_winter_light.md) §3); умов оплати документ не має, графу покупця не заповнено. Гілка доставки на EU-адресу для пересилки (аркуш §2, ⚖️ founder 2026-10-27) не знята — звідси п. 2: Нова Пошта має відділення у Варшаві й везе посилки до 30 кг в Україну від ≈ 5 днів (тарифи — переміряти в мить замовлення; що знайшов пошук, датоване 2022–2023). Блок нічого не замовляє; «так» founder-а — на текст. На мить запису — не надіслано [⊕ надіслано 2026-11-16 10:45 у треді MERA, лише продавцеві, на «так на рекомендацію» founder-а того ж дня; журнал надісланого — корпус памʼяті].
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear Mr Bartyzel,
+
+Thank you for the quote OF/002026/2026. Before I order, three short questions:
+
+1. **Delivery date.** The quote says end of November or end of December. If I order this week, which of the two applies to the MX2309, and when would it leave your warehouse?
+2. **Shipping.** The DHL line is a large part of the total. Could you instead send the logger by a Polish domestic service to a forwarding address in Poland that I would give you (a Nova Post branch), from where it goes on to Ukraine? If yes, please give the price of the logger with that domestic delivery.
+3. **Payment.** Which payment terms apply — for example prepayment by bank transfer from my sole proprietorship in Ukraine?
+
+Best regards,
+Oleksii Lukin
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
 ---
 
 ## 3. Cross-references
