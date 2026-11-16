@@ -29,8 +29,8 @@ en:
           description: 'AI Guard detected anomaly: deviation from the cluster baseline > %{deviation}%'
           title: AI Guard Anomaly
         homeostasis:
-          description: 'Tree entered deep homeostasis. Mean Z for the day: %{z_value}'
-          title: Deep Homeostasis
+          description: 'Mean Z for the day: %{z_value}. Z sets the status band — a seal of the computation, not a measurement of the tree.'
+          title: Homeostasis status band
         maintenance:
           description: 'Technician %{technician}: %{notes}'
           no_notes: No notes

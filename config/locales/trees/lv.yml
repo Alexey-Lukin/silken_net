@@ -29,8 +29,8 @@ lv:
           description: 'AI sargs konstatēja anomāliju: novirze no klastera bāzlīnijas > %{deviation}%'
           title: AI sarga anomālija
         homeostasis:
-          description: 'Koks iegāja dziļā homeostāzē. Vidējā Z dienā: %{z_value}'
-          title: Dziļa homeostāze
+          description: 'Vidējā Z dienā: %{z_value}. Z nosaka statusa joslu — tas ir aprēķina zīmogs, nevis koka mērījums.'
+          title: Statuss „homeostāze”
         maintenance:
           description: 'Tehniķis %{technician}: %{notes}'
           no_notes: Nav piezīmju

@@ -52,7 +52,7 @@ RSpec.describe TreeChronicle::TextFormatter do
 
   describe ".homeostasis_title" do
     it "returns the homeostasis title" do
-      expect(described_class.homeostasis_title).to eq("Deep Homeostasis")
+      expect(described_class.homeostasis_title).to eq("Homeostasis status band")
     end
   end
 

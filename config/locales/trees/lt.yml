@@ -30,8 +30,8 @@ lt:
           description: 'DI sargybinis aptiko anomaliją: nuokrypis nuo klasterio bazinės linijos > %{deviation}%'
           title: DI sargybinio anomalija
         homeostasis:
-          description: 'Medis pasiekė gilią homeostazę. Vidutinė Z per parą: %{z_value}'
-          title: Gili homeostazė
+          description: 'Vidutinė Z per parą: %{z_value}. Z nustato statuso juostą — tai skaičiavimo antspaudas, o ne medžio matavimas.'
+          title: Statusas „homeostazė“
         maintenance:
           description: 'Technikas %{technician}: %{notes}'
           no_notes: Pastabų nėra

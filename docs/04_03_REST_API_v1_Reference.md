@@ -829,8 +829,8 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
       "date": "2026-03-15T00:00:00+00:00",
       "event_type": "homeostasis",
       "icon": "◉",
-      "title": "Deep Homeostasis",
-      "description": "Tree entered deep homeostasis. Mean Z for the day: 4.2891",
+      "title": "Homeostasis status band",
+      "description": "Mean Z for the day: 4.2891. Z sets the status band — a seal of the computation, not a measurement of the tree.",
       "severity": "stable",
       "source_type": "AiInsight",
       "source_id": 4512

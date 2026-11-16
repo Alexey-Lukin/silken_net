@@ -31,8 +31,8 @@ uk:
           description: 'AI-вартовий виявив аномалію: відхилення від базової лінії кластера > %{deviation}%'
           title: Аномалія AI-вартового
         homeostasis:
-          description: 'Дерево увійшло в глибокий гомеостаз. Середнє Z за добу: %{z_value}'
-          title: Глибокий гомеостаз
+          description: 'Середнє Z за добу: %{z_value}. Z задає смугу статусу — це печатка обчислення, а не вимір дерева.'
+          title: Статус «гомеостаз»
         maintenance:
           description: 'Технік %{technician}: %{notes}'
           no_notes: Без нотаток

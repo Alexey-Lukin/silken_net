@@ -28,7 +28,7 @@ RSpec.describe TreeChronicleService do
         entry = result[:entries].first
 
         expect(entry.event_type).to eq(:homeostasis)
-        expect(entry.title).to eq("Deep Homeostasis")
+        expect(entry.title).to eq("Homeostasis status band")
         expect(entry.severity).to eq(:stable)
         expect(entry.source_type).to eq("AiInsight")
       end
