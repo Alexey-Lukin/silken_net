@@ -377,6 +377,9 @@ ALLOY_PROPERTIES = {
 ALPHA_PEEK_1K = 47e-6            # 1/K — PEEK 450G CTE (5.5× Ti)
 E_PEEK_PA = 4.0e9               # Pa — PEEK 450G Young's modulus (Victrex 450G datasheet, 23°C)
 NU_PEEK = 0.40                  # — PEEK Poisson's ratio
+PEEK_TG_C = 143.0               # °C — PEEK 450G glass transition (Victrex 450G datasheet, DSC); the relax-floor note below
+                                #   reads the same value. A hot mount above it (01_01 §3, step 5: PEEK at 150 °C) locks a
+                                #   bonded or friction-held liner's axial misfit near T_g, not at the assembly temperature (`127`).
 SIGMA_YIELD_PEEK_PA = 100e6     # Pa — PEEK 450G tensile yield (~98-100 MPa)
 # Board stack thermal expansion (HW.43, the pogo gap's thermal travel — script 90). FR-4 below Tg: Panasonic data sheets
 # «Laminate R-1755M» No. 19070538 and «Laminate R-1755V» No. 19070536 (both Jul. 2019, Panasonic's file server, read

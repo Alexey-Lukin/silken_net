@@ -27,7 +27,7 @@ stress −face·σ_signed (92's section moment at every x, linear beyond the win
 drawn wire (55's endurance, derate 1.0); so the root keeps the lower SF while k < k_x = σ_a,root/D, D = σ_a + (σ_m⁺ −
 σ_m,root)·σ_e/σ_y, and at every k when D ≤ 0. The station is the sections under the path's patches ± 2h (the edge
 section when no point touches) and, round the tube, each face's own half (|φ| ≤ π/2) — never the padding. (5) The liner's lower END — the leg's named subject — is read, not
-modelled: the bare side's nominal per face; the row keeps the factor its corner would need to tie the mouth's worst
+modelled (⊕ 2026-11-16: modelled by `127`): the bare side's nominal per face; the row keeps the factor its corner would need to tie the mouth's worst
 point, the summary the one that would tie the governing modelled section at each k.
 
 CONTROLS asserted in-run: the kernel at kh → 0 (σ_kk = σ_zz = −p, τ = 0); the homogeneous half-space (layer = substrate)
@@ -328,7 +328,7 @@ def station_cycle(points: list, name: str, table: TransferTable, geo, rod, off: 
 def liner_end(points: list, geo, liner, sigma_e: float) -> dict:
     """The liner's lower end on the wire — the leg's named subject, NOT modelled as a corner: the BARE side's nominal
     (moment linear from the mouth window down to it: no load between) per face, and the amplitude factor its corner
-    would need to tie the mouth's worst point; the corner itself is an open sub-leg."""
+    would need to tie the mouth's worst point; the corner itself is an open sub-leg (⊕ 2026-11-16: `127`)."""
     ei = s55.member_ei_at(geo, liner, True)
     jump = ei(geo.liner_from_mm) / ei(geo.liner_from_mm - 1e-9)          # EI composite / bare
     vals = []

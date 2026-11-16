@@ -14855,3 +14855,69 @@ def test_liner_wall126_set_sentences_follow_the_cache():
     assert f"the anchor's 48 is passed in {len(past48)} of `103`'s 18 state cells" in s and len(past48) == 8
     cold_bark = [v["at_23C_cap"] for k, v in d["cold_edge"].items() if "__flange_on_bark__adverse__" in k]
     assert f"on {sum(cold_bark)} of {len(cold_bark)} alloy × temperature cells" in s
+
+
+# ── 127 — the liner's end on the wire: the table and the headline sentence are BUILT here, the SUMMARY carries them ──
+END127 = "mechanical/bonded_liner_end_corner.json"
+
+
+def _end127_text(d: dict) -> tuple[str, str]:
+    """The SUMMARY §HW.34 «liner's end» headline sentence and readings table, composed from `127`'s cache — one source for
+    the doc and this pin (in-silico §When Modifying #5: a set or a direction is rebuilt, never typed)."""
+    lam = d["williams"]["lambda_first"]
+    kb, ks = d["bending_K"]["bonded"]["1"]["sigma1"], d["bending_K"]["slip"]["1"]["sigma1"]
+    c = d["controls"]
+    lifts = [v["contact_lifts_within_um"] for m in d["friction_zones"].values() for v in m.values()]
+    lift_up = math.ceil(max(lifts) * 10) / 10
+    sentence = (f"The bonded corner's Williams order is d^{lam - 1:.3f} (λ {lam:.4f}); the bending factor over the bare "
+                f"nominal at 1 µm is ×{kb:.3f} bonded and ×{ks:.3f} in slip; the slip fit's contact pressure is "
+                f"{c['slip_pressure_fe_MPa']:.2f} MPa (Lamé {c['lame_slip_pressure_MPa']:.2f}, `55`'s rigid wire "
+                f"{c['pressure_55_rigid_wire_MPa']:.2f}); where the grip's edge lifts, it lifts within {lift_up:.1f} µm of the end.")
+    d_max = max(float(x) for x in d["bending_K"]["bonded"])
+
+    reported = sorted(float(x) for x in d["bending_K"]["bonded"])
+
+    def window(adm):
+        """The reported distances a reading may speak for: [the first ≥ admissible-from, the last ≤ covered-to]."""
+        if not adm:
+            return reported
+        lo, hi = adm
+        return [x for x in reported if x >= lo and (hi is None or x <= hi)]
+
+    def cell(rd, adm=None):
+        ok = window(adm)
+        out = [float(k) for k, v in rd.items() if float(k) in ok and (v if isinstance(v, float) else v["ratio"]) < 1.0]
+        if not out:
+            return "—"
+        return f"≥ {d_max:g}" if max(out) >= d_max else f"{max(out):g}"
+    temps = ("forest_min", "assembly", "forest_max")
+    rows = ["| reading | k 0.388: −30 · 20 · 40 °C | k 1: −30 · 20 · 40 °C | distances it speaks for, µm: −30 · 20 · 40 °C |",
+            "|---|---|---|---|"]
+    for itf, label in (("slip", "bending alone · slip (design)"), ("bonded", "bending alone · bonded (adhesive only)")):
+        b = d["bending_alone_ratio"][itf]
+        rows.append(f"| {label} | {cell(b['0.388'])} (any T) | {cell(b['1'])} (any T) | all |")
+    for name, r in d["readings"].items():
+        cls, *rest = name.split(":")
+        label = f"{cls} · " + " · ".join(x.replace("_", " ") for x in rest)
+        adm = {t: r[t].get("_admissible_um") for t in temps}
+
+        def span(t, r=r, adm=adm):
+            if r[t].get("_grip_priced") is False:
+                return "no grip (slip)"
+            w = window(adm[t])
+            return "all" if not adm[t] else (f"{w[0]:g}–{w[-1]:g}" if w else "none")
+        rows.append(f"| {label} | " + " · ".join(cell(r[t]["0.388"], adm[t]) for t in temps) + " | "
+                    + " · ".join(cell(r[t]["1"], adm[t]) for t in temps) + " | "
+                    + (" · ".join(span(t) for t in temps) if any(adm.values()) else "all") + " |")
+    return sentence, "\n".join(rows)
+
+
+def test_end127_text_follows_the_cache():
+    """127's headline sentence and readings table stand in SUMMARY exactly as composed from the cache. CAN catch: a re-run
+    that moves a distance, an order, a factor, a pressure or a lift while the doc keeps the old one; a reading added or
+    renamed. CANNOT catch: the prose around the table (the biases, the ceilings)."""
+    d = json.loads((CACHE / END127).read_text(encoding="utf-8"))
+    text = " ".join(doc(SUMMARY).split())
+    sentence, table = _end127_text(d)
+    assert " ".join(sentence.split()) in text, f"127 headline sentence missing or stale:\n{sentence}"
+    assert " ".join(table.split()) in text, f"127 readings table missing or stale:\n{table}"
