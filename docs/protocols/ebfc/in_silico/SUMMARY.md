@@ -1243,7 +1243,7 @@ the wood's reading and moisture, and off the cube axis on the lattice's shear mo
 not strain ranges, so no amplitude here is paired with a count — the field record does that. No K_t (barb root, groove,
 the disc's fillet, the groove's corners), no barb rows' split, no static mean (the PEEK's cold pull, heat, the bark's
 growth preload and humidity strain — printed instead: the mean at which each member reaches SF 2). Ice, the collar and
-the lug root (`73`/`89`), the printed face under the weld (`102`'s seam), the PEEK side of the barbs (HW.26's FEA), the
+the lug root in their static and low-cycle forms (`73`/`89`; under the sway — `128`, the section after `108`), the printed face under the weld (`102`'s seam), the PEEK side of the barbs (HW.26's FEA), the
 storm's few cycles and the daily heat are other forms. A bearing that reacts both halves of a cycle needs the growth
 preload at least the force — `103`'s linear bearing presumes the contact holds. Cache:
 `mechanical/printed_part_sway_stress.json`.
@@ -1592,6 +1592,61 @@ every install-angle row; the tangent maximum against a brute force over the circ
 σᴵ at θ = 0 free of C44; the pole traction never falling as C44 rises; the binding thresholds read from `106`'s consumer
 block and held to its group derivation; the cache test recomputes every θ = 0 cell by another arithmetic and the
 fingerprint of the `106`, `105` and CEM fields read. Cache: `mechanical/gyroid_interface_contact_map.json`.
+
+---
+
+## HW.23 — What the Sway Puts into the Bayonet Collar's Foot and the Lug Root (script 128)
+
+`105` priced the flange disc under the bark's bearing force and left the bayonet collar and the lug root to `73`/`89`,
+whose forms are static and low-cycle; `128` prices the two places under the sway (closed forms on `105`'s own plate and
+forces, three named plate readings, no FE solve).
+
+C1 — the disc's bending under the bark's bearing force turns the collar's foot. The slope is driven by a bearing, so of `105`'s cycle readings two apply: without a preload (one-sided) and on a preload at least the force (unbounded in the tree); the reversed reading is a tie's. At the ratified wall 0.28 mm the worst cell — b zone3 fit · anode bond stiff · state2 rigid bark · upper whisker · rim only dished seat, F_F 673 N, on the «grooved + root» plate — carries σ_n 106.8 MPa with the collar's foot coupled to the disc (116.9 following it, the upper bound): without a preload it holds SF 2 up to K_f 1.37 on `55`'s as-built SLM marker and 2.35 on its wrought marker (following: 1.25 ⊥ 2.15); on a preload ≥ F the same numbers are its unnotched SF, so on the as-built marker it holds SF 2 there at no K_f, and the SLM + HIP route, whose endurance the tree has no marker for, holds it unnotched only with an endurance of at least 282 MPa (0.33 σ_y; 319 following). On `105`'s uniform plate the same cell holds SF 2 without a preload up to K_f 2.33 on the as-built marker: the shortfall is the grooved plate's — the O-ring groove turns the free plate ×1.60 at the collar (applied geometry; Kirchhoff across a step about 1.4 thicknesses wide), O'Donnell's root ×1.12 on top (a reading) and a root twice as compliant ×1.08 more. Over the walls where the collar's coupling K_c·C_d stays ≤ 0.3 (0.2, 0.28, 0.3, 0.5 mm) the coupled one-sided K_f on the as-built marker is flat, 1.36–1.41; above, it rises only through that one-degree-of-freedom coupling (K_c·C_d 1.16 at 1 mm) while following the disc it falls, so the 0.28 mm numbers do not transfer to a thicker wall. C2 — the capsule's inertia and drag put at most 0.34 N on a lug (all on one). C3 — the same bending moves the rim seat against the collar's foot by up to 11.1 µm at `105`'s largest force, so the deflection-controlled loop swings the clamp by k × that, shared by the 3 lugs: at most 1.44–111 N on a lug over `89`'s grid of k (0.3–30 N/µm, which nothing in the tree pins); a compliant element in the loop (`89`'s force-controlled branch) would cut it, at `89`'s named price — the rim's margin against tipping, which hands the lateral loads to C4. The lug root's MEAN is the clamp's eccentric load: at 0.28 mm with the lug engaged 1.3 mm a newton on one lug bends the wall's foot by 8.6 MPa (45° spread) to 20.2 MPa (strip), so `89`'s lowest clamp (force-controlled, 120 N over 3 lugs) already gives 347–811 MPa (0.39–0.92 of the yield) and the PEEK-dominated loop's lower bound at the window top (632 N) at least 1820–4246 MPa — neither reading is a bound, `73`'s pure shear, on which the ratified wall stands, does not see this bending, and the lug root is undecidable, statically and in fatigue, until the wall under a lug is a shell model (`89` path 4).
+
+The least one-sided K_f at which the collar's foot reaches SF 2 — the same number is its unnotched SF on a preload at
+least the force — per wall, over `105`'s forces and plate cases and this script's plate readings, rounded down; K_c·C_d
+is the collar's coupling in the ratified wall's worst cell:
+
+| wall, mm | K_c·C_d | coupled · as-built SLM | coupled · wrought | follow (K_f lower bound) · as-built SLM | follow · wrought |
+|---|---|---|---|---|---|
+| 0.2 | 0.05 | 1.41 | 2.42 | 1.34 | 2.30 |
+| 0.28 | 0.09 | 1.37 | 2.35 | 1.25 | 2.15 |
+| 0.3 | 0.10 | 1.36 | 2.34 | 1.23 | 2.12 |
+| 0.5 | 0.29 | 1.41 | 2.42 | 1.09 | 1.88 |
+| 0.8 | 0.73 | 1.66 | 2.85 | 0.96 | 1.64 |
+| 1 | 1.16 | 1.96 | 3.37 | 0.90 | 1.55 |
+| 1.6 (R/t < 10 — outside thin shell) | 2.83 | 3.39 | 5.81 | 0.88 | 1.51 |
+
+**How to read it.** The collar is one Ti body with the disc, so the disc's bending turns its foot: the turn is the
+disc's slope at the collar and the foot's radial shift the disc's top fibre, −(t_disc/2)·slope. The slope is driven by
+the bark's bearing, so `105`'s one-sided reading (no preload) and its on-a-preload reading (a growth preload at least
+the force, which nothing bounds) apply, never the reversed one (a tie's). «As-built SLM» and «wrought» are `55`'s
+endurance markers (0.40 σ_y × 0.5 ⊥ × 1.0), not the two routes: the SLM + HIP route's endurance is not a marker of the
+tree, which is why the verdict prints the endurance it would need. The plate readings are named by how they are built
+— `105`'s uniform plate (clamped on a rigid shank) · the same with the O-ring groove (applied geometry, between the
+shank and the collar; `105`'s plate does not carry it) · the grooved plate on a root spring (O'Donnell 1960, DOI
+10.1115/1.3644025, verified via Crossref; the commonly quoted plane-strain form, not read in the paper's body). The
+clamped root is adverse for `105`'s question at the root and kind for the turn at the collar. FOLLOW takes the plate's
+slope with the collar absent — an upper bound on the stress, so a lower bound on K_f, within one plate reading;
+COUPLED lets the collar's foot resist through its energy stiffness and is the model's reading. Where K_c·C_d is small
+the two agree (at the ratified wall within about a tenth); where it is not, the coupled column rests on a
+one-degree-of-freedom coupling (no membrane coupling) and cannot steer the wall — in the band the collar would be drawn
+in the coupled K_f is flat, and the 0.28 mm numbers do not transfer to a thicker wall. On the lug the sway's own
+forces (the capsule's inertia and drag) are negligible; what cycles the lug is the disc's bending acting through the
+deflection-controlled clamp loop, in proportion to its stiffness k, which no model in the tree gives (`89` grids it).
+The lug root's mean is the clamp's eccentric load on the thin wall, which `73`'s pure shear — the ground of the
+ratified wall — does not see; the strip and the 45° spread are named readings and bracket nothing. The collar's
+drawing and its wall belong to `00_07` HW.33.
+
+**Ceilings.** No K_t (the collar foot's fillet, the lug root); the forces are `105`'s state 2 on one source day's
+upper whisker with a rigid bark (`105`'s caveats travel with them); the groove reading is Kirchhoff across a step about
+1.4 thicknesses wide — the step's local field is not resolved, and the piecewise closed-form control shares the plate
+equation; the shank's root compliance is a reading (a softer root turns the collar more — the verdict prints the price
+of twice O'Donnell's) and its diameter the CEM's placeholder (the canon nominal lands with the collar; a wider shank
+lowers the turn); the collar is not drawn (02_02 §4.4 — the band, height and lug placement are `73`'s and `89`'s);
+walls with R/t < 10 are outside thin-shell theory; the collar's membrane coupling to the disc, the ring's lift between
+lugs and the lugs' unequal sharing are not computed; the lug on the wall is a local shell problem (FE). Cache:
+`mechanical/collar_lug_sway_fatigue.json`.
 
 ---
 

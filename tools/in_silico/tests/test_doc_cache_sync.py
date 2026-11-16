@@ -12750,6 +12750,27 @@ _PRESERVED_WITHOUT_LIVE = {
         "HW.37 · 02_03 life in open air, unsourced 0.4 V/part → capsule_envelope.json",
     "dendrometer canon read share → 114": "dendrometer canon read share, the ⊕ 2026-11-16 → 114",
 }
+# ── 128 — the carriers outside SUMMARY quote the ratified wall's worst cell; each number is pinned to the cache ────────
+_C128 = "mechanical/collar_lug_sway_fatigue.json"
+CHECKS += [
+    ("128 collar σ_n at the ratified wall → 00_07 HW.23", TRACKER, rf"нога несе σ_n {N} МПа",
+     _C128, lambda d: d["ratified_wall_cell"]["sigma_coupled_MPa"], 0.05),
+    ("128 collar one-sided K_f, as-built marker → 00_07 HW.23", TRACKER, rf"тримає SF 2 до K_f {N} на маркері «як надруковано» `55`",
+     _C128, lambda d: math.floor(d["collar_least_kf"]["coupled|printed|wall0.28"]["kf_at_sf2"]["one_sided"] * 100) / 100, 1e-9),
+    ("128 SLM + HIP endurance needed → 00_07 HW.23", TRACKER, rf"лише з витривалістю ≥ {N} МПа",
+     _C128, lambda d: math.ceil(d["ratified_wall_cell"]["endurance_needed_unnotched_sf2_on_preload_MPa"]["coupled"]), 1e-9),
+    ("128 uniform-plate K_f → 00_07 HW.23", TRACKER, rf"на однорідній пластині та сама клітинка тримає SF 2 без попереднього навантаження до K_f {N}",
+     _C128, lambda d: math.floor(d["ratified_wall_cell"]["kf_one_sided_uniform_plate_printed"] * 100) / 100, 1e-9),
+    ("128 groove slope ratio → 00_07 HW.23", TRACKER, rf"канавка повертає комір ×{N}",
+     _C128, lambda d: d["ratified_wall_cell"]["slope_ratios"]["groove"], 0.005),
+    ("128 lug per-lug loop swing → 00_07 HW.23", TRACKER, rf"тобто ≤ k × {N} мкм на вушко",
+     _C128, lambda d: math.ceil(d["lug_force_N"]["dw_um_at_max_force"] / d["inputs"]["lugs"]["count"] * 10) / 10, 1e-9),
+    ("128 lug clamp mean over yield (strip) → 02_02 §4.4", HW_POGO, rf"статично стоїть на [\d.]+–{N} межі плинності",
+     _C128, lambda d: math.floor(d["lug_clamp_mean_at_ratified_wall_MPa"]["over_yield"]["strip"] * 100) / 100, 1e-9),
+    ("128 collar σ_n at the ratified wall → S-N plan §1.3", "docs/protocols/anchor/sn_fatigue_test_plan.md",
+     rf"на ратифікованій стінці σ_n {N} МПа", _C128, lambda d: d["ratified_wall_cell"]["sigma_coupled_MPa"], 0.05),
+]
+
 _labels = [row[0] for row in CHECKS]
 assert all(_labels.count(k) == 1 for k in _PRESERVED_AT), "a _PRESERVED_AT label must name exactly one row of CHECKS"
 assert not any("premise" in k for k in _PRESERVED_AT), "a premise row mirrors canon into the script — its remedy is a re-run, not a ⊕"
@@ -15094,3 +15115,39 @@ def test_end127_text_follows_the_cache():
     sentence, table = _end127_text(d)
     assert " ".join(sentence.split()) in text, f"127 headline sentence missing or stale:\n{sentence}"
     assert " ".join(table.split()) in text, f"127 readings table missing or stale:\n{table}"
+
+
+# ── 128 — the bayonet collar's foot and the lug root under the sway: the verdict and the K_f table are BUILT here ──────
+END128 = "mechanical/collar_lug_sway_fatigue.json"
+
+
+def _end128_text(d: dict) -> tuple[str, str]:
+    """SUMMARY's `128` block: the cache's verdict verbatim and the one-sided K_f table per wall, composed from the cache —
+    one source for the doc and this pin (in-silico §When Modifying #5)."""
+    walls = d["inputs"]["walls_mm"]
+    kcd = d["ratified_wall_cell"]["kc_cd_by_wall"]
+
+    def cell(rd: str, route: str, t: float) -> str:
+        k = d["collar_least_kf"][f"{rd}|{route}|wall{t:g}"]["kf_at_sf2"]["one_sided"]
+        return f"{math.floor(k * 100) / 100:.2f}"
+    rows = ["| wall, mm | K_c·C_d | coupled · as-built SLM | coupled · wrought | follow (K_f lower bound) · as-built SLM "
+            "| follow · wrought |",
+            "|---|---|---|---|---|---|"]
+    for t in walls:
+        flag = "" if d["inputs"]["thin_shell_walls"][f"{t:g}"] else " (R/t < 10 — outside thin shell)"
+        rows.append(f"| {t:g}{flag} | {kcd[f'{t:g}']:.2f} | {cell('coupled', 'printed', t)} | "
+                    f"{cell('coupled', 'cnc_wrought', t)} | {cell('follow', 'printed', t)} | "
+                    f"{cell('follow', 'cnc_wrought', t)} |")
+    return d["verdict"], "\n".join(rows)
+
+
+def test_end128_text_follows_the_cache():
+    """128's verdict and K_f table stand in SUMMARY exactly as composed from the cache. CAN catch: a re-run that moves a
+    K_f, a force, a slope ratio or a clamp stress while the doc keeps the old one; a wall added or its thin-shell flag
+    flipped. CANNOT catch: the prose around them (the readings' legend, the ceilings)."""
+    d = json.loads((CACHE / END128).read_text(encoding="utf-8"))
+    text = " ".join(doc(SUMMARY).split())
+    verdict, table = _end128_text(d)
+    assert " ".join(verdict.split()) in text, f"128 verdict missing or stale:\n{verdict}"
+    assert " ".join(table.split()) in text, f"128 K_f table missing or stale:\n{table}"
+

@@ -122,7 +122,7 @@ lattice's shear modulus (measured for the infinite lattice by the periodic voxel
 callus annulus's stiffness is unknown (01_04 §2); (3) count how often a
 host's stem reaches the threshold — the field strain sensor (00_07 HW.43) does; `62` counts first-mode cycles, not
 strain ranges; (4) give any K_t, the barb rows' split, the force at which a barb row ratchets on its lead flank, the
-bark bearing's stiffness and preload, or any static mean; (5) price the collar and lug root (`73`/`89`), the printed
+bark bearing's stiffness and preload, or any static mean; (5) price the collar and lug root (`73`/`89`; under the sway — `128`), the printed
 face under the weld (`102`/`86`), the PEEK side (HW.26's FEA), the storm's few cycles, the daily heat.
 
 Run:  conda activate silken_md
