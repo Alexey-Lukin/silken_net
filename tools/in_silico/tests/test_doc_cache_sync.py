@@ -10788,6 +10788,170 @@ def test_magnet_temperature_set_sentences_recompose_from_the_cache():
     assert re.search(r"(?m)^\| RECo₅ \(0\.93 T\) \| [^|]+ \| [^|]+ \| [^|]+ \| none ⊥ none ⊥ none \|$", text)
 
 
+# ── the same leg, 2026-11-16: the sensor table with the axes' mismatch IN the verdict (114 `sensor_table`) and the travel
+# along the tilted axis ⟷ SUMMARY (the «sensor table» paragraph and table, (3), (4)) and 01_03 §4 ⊕ (в) 2026-11-16. A
+# thickness limit is rounded UP, a gap limit and a flip factor DOWN (the side that keeps «holds» true, §When Modifying #43).
+_ST = "sensor_table"
+_ST_FAMS = ("REFeB_sintered", "RE2Co17", "RECo5")
+
+
+def _st_lever(d, row, pair, key="REFeB_sintered:adverse"):
+    return d[_ST]["rows"][row]["pairs"][pair]["levers"][key]
+
+
+def _st_alone(d, pair):
+    return [v for r in d[_ST]["rows"].values()
+            for v in r["pairs"][pair]["mismatch_alone_takes_the_frames_at_period_mm"]["guaranteed"].values() if v]
+
+
+def _st_best_gap(d):
+    return max(r["pairs"][p]["levers"]["REFeB_sintered:adverse"]["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0
+               for r in d[_ST]["rows"].values() for p in r["pairs"])
+
+
+def _st_ratio(d, pair, f):
+    return f(v for v in d[_ST]["rows"]["TMAG5170A1"]["pairs"][pair]["mismatch_typical_over_guaranteed"].values())
+
+
+def _st_reads(d, f):
+    return f(r["pairs"][p]["read"]["share_of_E_cycle_pct"] for r in d[_ST]["rows"].values() for p in r["pairs"])
+
+
+_SC3 = lambda pair: lambda d: _floor(_st_lever(d, "TMAG5170A1", pair)["mismatch_scale_to_hold_at_infinite_thickness"]["g3"]["no_floor"])  # noqa: E731
+CHECKS += [
+    ("dendrometer sensor table, mismatch-alone period X–Y low → 114", SUMMARY, rf"at a period of {N}–[\d.]+ mm on the X–Y pair", DEN,
+     lambda d: round(min(_st_alone(d, "x_y")), 1), 0.0),
+    ("dendrometer sensor table, mismatch-alone period X–Y high → 114", SUMMARY, rf"at a period of [\d.]+–{N} mm on the X–Y pair", DEN,
+     lambda d: round(max(_st_alone(d, "x_y")), 1), 0.0),
+    ("dendrometer sensor table, mismatch-alone period X–Z low → 114", SUMMARY, rf"\({N}–[\d.]+ mm on X–Z\)", DEN,
+     lambda d: round(min(_st_alone(d, "x_z")), 1), 0.0),
+    ("dendrometer sensor table, mismatch-alone period X–Z high → 114", SUMMARY, rf"\([\d.]+–{N} mm on X–Z\)", DEN,
+     lambda d: round(max(_st_alone(d, "x_z")), 1), 0.0),
+    ("dendrometer sensor table, best gap at t 10 mm → 114", SUMMARY, rf"holds a gap up to \*\*{N} mm\*\* at best", DEN,
+     lambda d: _floor(_st_best_gap(d)), 0.0),
+    ("dendrometer sensor table, flip factor X–Y → 114", SUMMARY, rf"is at most \*\*{N} ⊥ [\d.]+\*\* of the guaranteed", DEN, _SC3("x_y"), 0.0),
+    ("dendrometer sensor table, flip factor X–Z → 114", SUMMARY, rf"is at most \*\*[\d.]+ ⊥ {N}\*\* of the guaranteed", DEN, _SC3("x_z"), 0.0),
+    ("dendrometer sensor table, read low → 114", SUMMARY, rf"a read costs {N}–[\d.]+ % of E_CYCLE across the rows", DEN,
+     lambda d: _st_reads(d, min), 0.0),
+    ("dendrometer sensor table, read high → 114", SUMMARY, rf"a read costs [\d.]+–{N} % of E_CYCLE across the rows", DEN,
+     lambda d: _st_reads(d, max), 0.0),
+    ("dendrometer travel, radial travel → 114", SUMMARY, rf"\(so {N} mm of radial travel\)", DEN,
+     lambda d: round(d["travel"]["radial_travel_flange_top_to_dome_top_mm"], 2), 0.0),
+    ("dendrometer travel, inside the life above → 114", SUMMARY, rf"inside the twenty-year life at every rate above {N} mm/yr", DEN,
+     lambda d: d["travel"]["flange_top_to_dome_top_inside_life_above_mm_per_yr"], 0.0),
+    # 01_03 §4 ⊕ (в) 2026-11-16
+    ("dendrometer canon ⊕ best gap → 114", EBFC, rf"тримає зазор щонайбільше {N} мм \(TMAG5170A1, X–Z\)", DEN,
+     lambda d: _floor(_st_best_gap(d)), 0.0),
+    ("dendrometer canon ⊕ flip X–Y → 114", EBFC, rf"не перевищує {N} ⊥ [\d.]+ гарантованого", DEN, _SC3("x_y"), 0.0),
+    ("dendrometer canon ⊕ flip X–Z → 114", EBFC, rf"не перевищує [\d.]+ ⊥ {N} гарантованого", DEN, _SC3("x_z"), 0.0),
+    *[(f"dendrometer canon ⊕ typical ratio {pair} {end} → 114", EBFC, rx, DEN,
+       lambda d, pair=pair, f=f: round(_st_ratio(d, pair, f), 2), 0.0) for pair, end, f, rx in (
+        ("x_y", "low", min, rf"типовий стовпець паспорта — {N}–[\d.]+ ⊥ [\d.]+–[\d.]+ гарантованого"),
+        ("x_y", "high", max, rf"типовий стовпець паспорта — [\d.]+–{N} ⊥ [\d.]+–[\d.]+ гарантованого"),
+        ("x_z", "low", min, rf"типовий стовпець паспорта — [\d.]+–[\d.]+ ⊥ {N}–[\d.]+ гарантованого"),
+        ("x_z", "high", max, rf"типовий стовпець паспорта — [\d.]+–[\d.]+ ⊥ [\d.]+–{N} гарантованого"))],
+    ("dendrometer canon ⊕ read µJ → 114", EBFC, rf"N зі смуги вердикту \(гарантований дрейф\): {N} мкДж", DEN,
+     lambda d: d["energy"]["hall_read_vstor_uJ"], 0.0),
+    ("dendrometer canon read share, the ⊕ 2026-11-16 → 114", EBFC, rf"мкДж, {N} % E_CYCLE на базовому рядку", DEN,
+     lambda d: d["energy"]["hall_read_share_of_E_cycle_pct"], 0.0),
+    ("dendrometer canon ⊕ read low → 114", EBFC, rf"на базовому рядку і {N}–[\d.]+ % по таблиці", DEN, lambda d: _st_reads(d, min), 0.0),
+    ("dendrometer canon ⊕ read high → 114", EBFC, rf"на базовому рядку і [\d.]+–{N} % по таблиці", DEN, lambda d: _st_reads(d, max), 0.0),
+    ("dendrometer canon ⊕ radial travel → 114", EBFC, rf"це {N} мм радіального ходу", DEN,
+     lambda d: round(d["travel"]["radial_travel_flange_top_to_dome_top_mm"], 2), 0.0),
+    ("dendrometer canon ⊕ years fast → 114", EBFC, rf"тобто {N}–[\d.]+ року, усередині", DEN,
+     lambda d: d["travel"]["outer_bark_flange_top_to_dome_top_yr_fast_slow"][0], 0.0),
+    ("dendrometer canon ⊕ years slow → 114", EBFC, rf"тобто [\d.]+–{N} року, усередині", DEN,
+     lambda d: d["travel"]["outer_bark_flange_top_to_dome_top_yr_fast_slow"][1], 0.0),
+    ("dendrometer canon ⊕ inside the life above → 114", EBFC, rf"на кожній швидкості понад {N} мм/рік; глибокий край", DEN,
+     lambda d: d["travel"]["flange_top_to_dome_top_inside_life_above_mm_per_yr"], 0.0),
+    ("dendrometer canon ⊕ deep edge → 114", EBFC, rf"глибокий край посадки — {N} мм над верхом фланця", DEN,
+     lambda d: d["travel"]["outer_bark_above_flange_top_at_install_mm"]["deep_edge"], 0.0),
+    # the mirrors of the crown years outside 01_03 §4 (в): each a dated ⊕ 2026-11-16 beside the 2026-11-12/13 one (the
+    # forester protocol's §5.2 carries one too, unpinned: it is no doc target of the `cache_doc_sync` job's path lists)
+    *[(f"dendrometer crown years ⊕ 2026-11-16 {where} {end} → 114", doc_rel, rx, DEN,
+       lambda d, i=i: d["travel"]["outer_bark_flange_top_to_dome_top_yr_fast_slow"][i], 0.0)
+      for where, doc_rel, pre in (
+          ("01_04 table", CODIT, r"радіальний хід від верху фланця до верху купола — [\d.]+ мм, "),
+          ("01_04 119 bracket", CODIT, r"несе той самий нахил і дає верхові корони "),
+          ("01_03 window", EBFC, r"після перепрогону `114` з нахилом монтажу — "))
+      for i, end, rx in ((0, "fast", pre + rf"{N}[–⊥ ]+[\d.]+ року"), (1, "slow", pre + rf"[\d.]+[–⊥ ]+{N} року"))],
+    ("dendrometer 01_04 ⊕ radial travel → 114", CODIT, rf"радіальний хід від верху фланця до верху купола — {N} мм", DEN,
+     lambda d: round(d["travel"]["radial_travel_flange_top_to_dome_top_mm"], 2), 0.0),
+    ("dendrometer 01_04 ⊕ inside the life above → 114", CODIT, rf"на кожній швидкості понад {N} мм/рік \(\[`01_03 §4`\]\(01_03_EBFC_Enzymatic_Bio_Fuel_Cell\) \(в\) ⊕ 2026-11-16\)", DEN,
+     lambda d: d["travel"]["flange_top_to_dome_top_inside_life_above_mm_per_yr"], 0.0),
+    *[(f"dendrometer canon ⊕ old verdict reproduced {fam} → 114", EBFC, rx, DEN,
+       lambda d, fam=fam: _ceil(d[_ST]["rows"]["TMAG5273A1"]["pairs"]["x_y"]["cells"][f"{fam}:adverse:g3"]["offset_only"]["t_min_mm"]), 0.0)
+      for fam, rx in (("REFeB_sintered", rf"TMAG5273A1: REFeB від {N} мм, RE₂Co₁₇ від [\d.]+ мм — контроль"),
+                      ("RE2Co17", rf"TMAG5273A1: REFeB від [\d.]+ мм, RE₂Co₁₇ від {N} мм — контроль"))],
+]
+
+
+def _st_doc_row(d, name, pair):
+    """The SUMMARY table row of one sensor row and pair, rendered from the cache with the doc's roundings."""
+    pr = d[_ST]["rows"][name]["pairs"][pair]
+    c = pr["cells"]
+    cell = lambda v: "—" if v is None else f"{_ceil(v):.2f}"  # noqa: E731
+    lim = lambda g, var: " / ".join(cell(c[f"{f}:adverse:g{g}"][var]["t_min_mm"]) for f in _ST_FAMS)  # noqa: E731
+    lv = pr["levers"]["REFeB_sintered:adverse"]
+    gl, sc = lv["gap_limit_mm_at_t10"]["with_mismatch"], lv["mismatch_scale_to_hold_at_infinite_thickness"]["g3"]["no_floor"]
+    r = pr["mismatch_typical_over_guaranteed"]
+    label = name.replace("_300mT", " (±300 mT)") + " · " + {"x_y": "X–Y", "x_z": "X–Z"}[pair]
+    gap = "—" if gl is None else f"{_floor(gl):.2f}"
+    flip = "—" if sc is None else f"{_floor(sc):.2f}"
+    ratio = "—" if r["cold"] is None else "{:.2f} ⊥ {:.2f}".format(r["cold"], r["hot"])
+    return (f"| {label} | {lim(3, 'offset_only')} | {lim(4, 'offset_only')} | {lim(3, 'with_mismatch')} | "
+            f"{gap} | {flip} | {ratio} | {pr['read']['share_of_E_cycle_pct']:.2f} |")
+
+
+def test_dendrometer_sensor_table_documents_follow_the_cache():
+    """The (2d) table in SUMMARY row for row, and the SET sentences of the paragraph and of 01_03 §4 ⊕ (в) 2026-11-16 —
+    «no row holds 3 mm or 4 mm with any family at any thickness, at any corner», «no row holds a gap of even 0.2 mm»
+    with the unwrap floor, «a unit at its typical drift would hold», «the old verdict reproduced», «class 410 would not
+    bring the cell back» — each rebuilt from the cache (a numeric pin never sees «no», «every», «would hold»).
+    CAN catch: a re-run that moves a cell or a membership the prose names; a table row left on an old number; a row
+    added to the table without a doc row. CANNOT catch: a set sentence written after this test (it must join it)."""
+    d = json.loads((CACHE / DEN).read_text())
+    text = (REPO / SUMMARY).read_text()
+    rows = d[_ST]["rows"]
+    for name, r in rows.items():
+        for pair in r["pairs"]:
+            line = _st_doc_row(d, name, pair)
+            assert line in text, f"SUMMARY no longer carries: {line}"
+    n_doc = len(re.findall(r"(?m)^\| TMAG\S+(?: \(±300 mT\))? · X–[YZ] \|", text))
+    assert n_doc == sum(len(r["pairs"]) for r in rows.values()), "the table's rows ≠ the cache's rows × pairs"
+    cells = [c for r in rows.values() for p in r["pairs"].values() for c in p["cells"].values()]
+    # «no row holds 3 mm or 4 mm with any family at any thickness, at any corner» (with the mismatch, with or without the floor)
+    assert all(c[v]["t_min_mm"] is None for c in cells for v in ("with_mismatch", "with_mismatch_and_unwrap_floor"))
+    # «with the period the unwrap needs … no row holds a gap of even 0.2 mm on that scale»
+    assert all(lv["gap_limit_mm_at_t10"]["with_mismatch_and_unwrap_floor"] is None
+               for r in rows.values() for p in r["pairs"].values() for lv in p["levers"].values())
+    # «at best (TMAG5170A1, X–Z)» and «under the radome's own 2.0 mm wall»
+    best = max(((p["levers"]["REFeB_sintered:adverse"]["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0), n, k)
+               for n, r in rows.items() for k, p in r["pairs"].items())
+    radome_wall = json.loads((REPO / "tools/cad/cem/radome.json").read_text())["wall_thickness_mm"]
+    assert best[1:] == ("TMAG5170A1", "x_z") and best[0] < radome_wall
+    # «a unit at its typical drift would hold»: the typical/guaranteed ratio under the flip factor on both branches
+    for pair in ("x_y", "x_z"):
+        pr = rows["TMAG5170A1"]["pairs"][pair]
+        s_flip = pr["levers"]["REFeB_sintered:adverse"]["mismatch_scale_to_hold_at_infinite_thickness"]["g3"]["no_floor"]
+        assert max(pr["mismatch_typical_over_guaranteed"].values()) < s_flip, pair
+    # «the TMAG3001 gives no typical column»
+    assert all(v is None for p in rows["TMAG3001A1"]["pairs"].values() for v in p["mismatch_typical_over_guaranteed"].values())
+    # «the old verdict reproduced» — the base row offset only IS (2c)'s thickness limit, every family and corner
+    mt = d["scale_magnet_temperature"]["thickness_limit_mm_at_realistic_gap"]
+    base = rows[d["inputs"]["base_sensor"]]["pairs"]["x_y"]["cells"]
+    assert all(base[f"{f}:{c}:g3"]["offset_only"]["t_min_mm"] == pytest.approx(mt[f][c], abs=1e-9) if mt[f][c] is not None
+               else base[f"{f}:{c}:g3"]["offset_only"]["t_min_mm"] is None for f in mt for c in mt[f])
+    # 01_03: «клас 410 цієї клітинки не повернув би» — the base row's t 2 mm on 3 mm needs more than the 410 class's 1.435 T
+    # even at an infinitely thick scale, at the kind corner the 2026-11-11 price named, on both pairs
+    for pair in ("x_y", "x_z"):
+        n_inf = rows["TMAG5273A1"]["pairs"][pair]["cells"]["REFeB_sintered:kind:g3"]["with_mismatch"]["need_T_at_infinite_thickness"]
+        assert n_inf is None or n_inf > 1.435, pair
+    # the rows the table names as gaps, and the angle sensors' decision
+    gaps = d["inputs"]["sensor_gaps"]
+    assert any("TLE493D" in k for k in gaps) and any("angle (saturation)" in k for k in gaps)
+
+
 # ── HW.54 Р3(б)(4) the stem-face cover rules rehearsed before the logger (117, 2026-11-10) ⟷ SUMMARY §«Can the Stem-Face
 # Cover Rules Judge a Winter at All?», the sheet's §6 marker and 00_07 HW.54. Shares are cached at 4 decimals and printed in
 # per cent at 2 (or 1), pinned EXACTLY; the draft rewrite is a rejected reading, so no sheet rule mirrors it.
@@ -12573,6 +12737,10 @@ _PRESERVED_AT = {
     "HW.37 · 02_03 life in open air, unsourced 0.2 V/part → capsule_envelope.json": 62.0,
     "HW.37 · 02_03 life in open air, unsourced 0.4 V/part → capsule_envelope.json": 19.2,
     "HW.37 · 02_03 life in open air, unsourced 0.4 V/part, the 2026-09-26 number → capsule_envelope.json": 19.1,
+    # 01_03 §4 ⊕ (в) 2026-11-01 — the read's share on 114's convention of then (N the max over both lanes), and the
+    # dated ⊕ 2026-11-16 beside it that carries N from the verdict lane
+    "dendrometer canon read share → 114": 0.58,
+    "dendrometer canon read share, the ⊕ 2026-11-16 → 114": 0.2,
 }
 # kept label → the label of the dated ⊕ row beside it that took the live pin over. Mapping to an heir — not a bare
 # set — is the point: dropping a live half without naming the row that now reads the cache would silence the gate.
@@ -12580,6 +12748,7 @@ _PRESERVED_WITHOUT_LIVE = {
     "104 V g gap, the ratified number → 104": "104 V g gap → 104",
     "HW.37 · 02_03 life in open air, unsourced 0.4 V/part, the 2026-09-26 number → capsule_envelope.json":
         "HW.37 · 02_03 life in open air, unsourced 0.4 V/part → capsule_envelope.json",
+    "dendrometer canon read share → 114": "dendrometer canon read share, the ⊕ 2026-11-16 → 114",
 }
 _labels = [row[0] for row in CHECKS]
 assert all(_labels.count(k) == 1 for k in _PRESERVED_AT), "a _PRESERVED_AT label must name exactly one row of CHECKS"
@@ -14059,7 +14228,11 @@ def _overgrowth_doc_lines(d):
     crown_ua = (f"корона ще на {_og_down(min(out)):.2f}–{_og_up(max(out)):.2f} мм над корою" if min(out) > 0
                 else f"корона над корою або щонайбільше на {_og_up(-min(out)):.2f} мм під нею")
     alt20, alt80 = atm["by_depth_mm"]["20"]["front_as_they_stand_minus_overgrown_dB"], atm["by_depth_mm"]["80"]["front_as_they_stand_minus_overgrown_dB"]
-    unt = m["crown_top_untilted_yr_fast_slow_as_114"]
+    c114 = m["crown_top_yr_fast_slow_114"]
+    # the untilted reading of the crown, rebuilt here: 01_04 §5.5 C's dated ⊕ 2026-11-13 attributes it to `114` («що
+    # нахилу не несе»), which carries the tilt since its re-run of 2026-11-16 — the ⊕ 2026-11-16 bracket beside it says so;
+    # the number itself stays the untilted arithmetic, pinned
+    unt = [round(m["clock"]["crown_top"]["over_flange_top_mm"] / i["radial_rate_mm_per_yr"][k], 1) for k in (1, 0)]
     # the crown's pit on the closed cells themselves (the deck's two references), not over the four install references
     pit_cells = [-tm["after_life"][c]["crown_over_surface_mm"] for c in closed["cells"]]
     pit_rng = [_og_down(min(pit_cells), 1), _og_up(max(pit_cells), 1)]
@@ -14089,7 +14262,7 @@ def _overgrowth_doc_lines(d):
                f"its shallow edge (the flange's underside, {-inst['shallow_edge']:.1f} mm below)"),
      "rates": f"at {i['radial_rate_mm_per_yr'][1]:.1f} ⊥ {i['radial_rate_mm_per_yr'][0]:.1f} mm/yr",
      "tilt": f"a mark z along the axis is passed after a radial travel of z·cos {i['tilt_deg']:g}°, {(1 - i['cos_tilt']) * 100:.1f} % sooner than an untilted clock",
-     "untilted": f"`114`, which carries no tilt, prices the crown's top at {_og_pair(unt)} years; here it is {_og_pair(yr('crown_top'))}",
+     "untilted": f"`114` carries the same tilt since its re-run of 2026-11-16 and prices the crown's top at {_og_pair(c114)} years, as here ({_og_pair(yr('crown_top'))})",
      "vent_mid": f"{_og_pair(yr(vent, 'mid_seat'))} years from the seat's mid-line",
      "high_u": f"at `114`'s high bearing share the slow end stretches to {high_u} years (the flange's top · deep edge · mid-line · shallow edge)",
      "every_ref": f"only while the rate stays below {m['lowest_opening']['outlives_life_below_mm_per_yr_on_every_reference']:.3f} mm/yr",

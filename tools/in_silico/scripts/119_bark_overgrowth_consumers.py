@@ -3,7 +3,8 @@
 """119 — what the rising bark passes on the RADOME, in what order, and what each consumer there stands to lose
 (00_07 HW.54, the leg «кора накриває купол усередині життя вузла»; closed forms and `107`'s exact series, no mesh).
 
-WHY. `114` (4) prices ONE mark — the bark climbs the radome's 18 mm to the crown's top in 3.6–22.5 years — and
+WHY. `114` (4) prices ONE mark — the bark climbs the radome's 18 mm (along the tilted axis) to the crown's top in
+3.5–22.2 years — and
 01_04 §5.5 C ⊕ names consumers of that number (the radio, a PV face, the dendrometer's travel). The marks stand at
 different heights, and the field product has no visit to clear them (HW.54 Р12). The leg asks for two inputs before a
 recommendation — what `107`'s radio model says once the source is under the surface, and what an allowance that keeps
@@ -28,8 +29,9 @@ MODEL.
     NOT here, because it lies BELOW the flange's top and has no height yet: the cathode's catalytic band and the
     non-catalytic buffer under it on the flange's side face — on a node that carries a cathode the lowest open surface
     and the first to meet the bark (01_04 §3.1, ⚖️ 2026-09-18); `114`'s arrival of the live bark at the flange seat is
-    quoted beside the marks for it. Where the outer bark stands at install is `114`'s bracket, rebuilt from its RAW
-    inputs (`78`'s facing spread, the flange's thickness): at the flange's top «at the latest» (canon's limit — the band
+    quoted beside the marks for it. Where the outer bark stands at install is `114`'s bracket, READ from its cache (its
+    travel block is the one home of the oblique cut since 2026-11-16; built there from `78`'s raw facing spread and the
+    flange's thickness): at the flange's top «at the latest» (canon's limit — the band
     must stand above the bark) ⊥ the faced seat's deep edge ⊥ its mid-line ⊥ its shallow edge (the flange's underside).
     THE SEAT EDGES ARE AZIMUTHS, NOT UNKNOWNS: the seat is faced square to an axis tilted by the install angle (the 10°
     design point, recovered from `78`'s spread = Ø·sin θ), so the bark's plane cuts the capsule obliquely — along the
@@ -39,7 +41,8 @@ MODEL.
     three are functions of the flange's thickness, a PLACEHOLDER the buffer's allowance must grow (00_07 HW.8.10), and
     the deep edge standing above the top is that placeholder's defect, not a property of the travel (`114`). THE TILT
     ALSO SHORTENS THE CLOCK: a mark z along the axis is passed after a RADIAL travel of z·cos θ — 1.5 % sooner than
-    `114`'s untilted years, printed beside. The rate is `114`'s two ends (01_03 §4 ⊕ (в): the slow end a measured
+    an untilted clock (`114` carries the same tilt since its re-run of 2026-11-16, and its crown years are this clock's
+    — a control). The rate is `114`'s two ends (01_03 §4 ⊕ (в): the slow end a measured
     network minimum on other trees, the fast end the lifetime MEAN of the pilot's own tree from its owner's estimate of
     age and diameter, named a ceiling there). Years = radial travel / rate — two named cells per reference, each to
     nearest; the rate below which a mark outlives the life is travel / life, rounded DOWN (the side that keeps
@@ -102,10 +105,11 @@ CONTROLS (runtime gates, NaN-safe; each CAN fail — in-silico §When Modifying 
   `107`'s cache — at `107`'s own two standoffs every exterior row must reproduce its cached front field, its field at
     the rule angle and its 2-D efficiency (CANNOT catch an error `107` shares);
   truncation — the series at N and N + 15, at the top of the axis, the surface, mid-depth and the bottom;
-  `114`'s cache — `114` subtracts the RADIAL facing spread from an axial height and carries no tilt: its install edges
-    and its years for the crown, rebuilt THAT way from raw inputs, must reproduce what it publishes (CAN catch a stale
-    cache; the oblique cut and the tilted clock are the consistent reading and are printed beside — `114` itself is
-    not corrected here, its re-run is a leg of 00_07 HW.54); the pit's closed
+  `114`'s cache — the tilt and the install edges are READ from it, so the control is on staleness and agreement: the
+    raw inputs `114` recorded (`78`'s facing spread and flange diameter, the flange CEM's thickness) must be today's and
+    its angle the design point, and its crown years must be this script's own clock from the flange's top on marks read
+    from the radome CEM here (CAN catch a stale `114` cache, a `114` whose crown mark or clock left this one; CANNOT catch
+    an error in the oblique-cut formula itself — it has one home now, and `114`'s cache test re-derives it); the pit's closed
     form must tend to 1 at a vanishing depth, fall with depth and with the disc's radius, and its half-depth root must
     return ½.
 NOT guarded: the far field's ORIENTATION (a front–back swap passes every gate here; `107`'s invariants test holds it).
@@ -459,22 +463,18 @@ def main() -> int:
     t114 = z114["travel"]
     u_ends = z114["bark_bearing"]["fraction_lost_U_at_air_dry_bark_readings"]
     bark78 = json.loads(HEAT_78.read_text(encoding="utf-8"))["bark"]
-    spread = bark78["facing_spread_mm"]                                                        # raw (in-silico #6)
-    # the seat is faced square to the anchor's axis and the axis is tilted: `78`'s spread is Ø·sin θ. θ is recovered
-    # from those two raw numbers (no new input) and must be canon's design point.
-    tilt = math.asin(spread / bark78["flange_diameter_mm"])
-    if not math.isclose(math.degrees(tilt), TILT_DESIGN_DEG, abs_tol=1e-9):
-        raise RuntimeError(f"`78`'s facing spread is not the {TILT_DESIGN_DEG:g}° design point any more")
-    cos_t = math.cos(tilt)
-    # the install-day bark over the flange's top, ALONG THE AXIS, at an azimuth of the seat: its plane cuts the tilted
-    # capsule obliquely — spread/cos θ higher at the deep edge than at the shallow one, half of that on the mid-line
-    install = {"flange_top": 0.0, "deep_edge": spread / cos_t - flange_t, "mid_seat": spread / (2.0 * cos_t) - flange_t,
-               "shallow_edge": -flange_t}
-    # control — `114` reads the spread as an axial length (cos θ → 1): its edges, rebuilt THAT way, must round to its own
-    as_114 = {"flange_top": 0.0, "deep_edge": spread - flange_t, "shallow_edge": -flange_t}
-    for ref, want in t114["outer_bark_above_flange_top_at_install_mm"].items():
-        if round(as_114[ref], 3) != want:
-            raise RuntimeError(f"install edge {ref}: {as_114[ref]} does not round to `114`'s {want}")
+    # the install tilt and the install-day bark over the flange's top along the axis — the oblique cut of the tilted seat —
+    # have ONE home, `114`'s travel block (since 2026-11-16): read RAW from it, never rebuilt here (in-silico #6)
+    tilt114 = t114["tilt"]
+    spread, tilt, cos_t = tilt114["facing_spread_mm_78"], tilt114["install_angle_rad"], tilt114["cos"]
+    install = dict(t114["install_bark_over_flange_top_mm"])
+    # control — a stale `114` cache: the raw inputs it recorded must be `78`'s and the flange CEM's of today, and its
+    # angle canon's design point (this script's mirror)
+    if not (spread == bark78["facing_spread_mm"] and tilt114["flange_diameter_mm_78"] == bark78["flange_diameter_mm"]
+            and t114["of_which_flange_thickness_placeholder_mm"] == flange_t):
+        raise RuntimeError("`114`'s travel block was built on another `78` spread or flange — re-run 114")
+    if not math.isclose(tilt114["install_angle_deg"], TILT_DESIGN_DEG, abs_tol=1e-9):
+        raise RuntimeError(f"`114`'s install angle is not the {TILT_DESIGN_DEG:g}° design point any more")
     if not (slow < fast and 0.0 <= u_ends[0] < u_ends[1] < 1.0):
         raise RuntimeError("`114`'s rate ends or bearing share are not the brackets this script reads them as")
 
@@ -497,9 +497,13 @@ def main() -> int:
                           "slow_at_the_high_bearing_share": climb < LIFE_YR * slow * (1.0 - u_ends[1])}
         clock[name] = {"over_flange_top_mm": h, "by_install_reference": by_ref}
         reached[name] = flags
-    untilted = [round(years(crown, fast), 1), round(years(crown, slow), 1)]     # control — `114` carries no tilt
-    if untilted != t114["outer_bark_flange_top_to_dome_top_yr_fast_slow"]:
-        raise RuntimeError(f"the crown's untilted years {untilted} ≠ `114`'s {t114['outer_bark_flange_top_to_dome_top_yr_fast_slow']}")
+    # control — the crown's clock from the flange's top, on this script's marks (the radome CEM through `marks_mm`), must
+    # be `114`'s: two consumers of one radial travel, its mark read independently on each side
+    crown_114 = t114["outer_bark_flange_top_to_dome_top_yr_fast_slow"]
+    if clock["crown_top"]["by_install_reference"]["flange_top"]["yr_fast_slow"] != crown_114 \
+            or not math.isclose(crown, t114["radome_height_over_flange_top_mm"], abs_tol=1e-12):
+        raise RuntimeError(f"the crown's clock {clock['crown_top']['by_install_reference']['flange_top']['yr_fast_slow']} ≠ "
+                           f"`114`'s {crown_114}")
     vent_lo = "vent_hole_lower_edge"
     lowest_opening = {
         "mark": vent_lo, "over_flange_top_mm": marks[vent_lo],
@@ -903,7 +907,7 @@ def main() -> int:
         f"edge at {marks[vent_lo]:.2f} mm — {head[0]} ⊥ {head[1]} years at the fast ⊥ slow end from a surface at the "
         f"flange's top and {mid[0]} ⊥ {mid[1]} from the seat's mid-line, where the mounting requirement puts the hole, "
         f"with the capsule taken as fixed and the {TILT_DESIGN_DEG:g}° tilt in the clock — and the crown's top, the mark "
-        f"`114` prices untilted, the last at {crown:.1f} mm ({crown_head[0]} ⊥ {crown_head[1]} years); below the flange's "
+        f"`114` prices, the last at {crown:.1f} mm ({crown_head[0]} ⊥ {crown_head[1]} years); below the flange's "
         f"top a node with a cathode meets the bark first on its side band and buffer, whose heights have no home yet. "
         + ("Every mark above the rim is passed inside the life at the fast end on every install reference. " if all_fast else
            "Not every mark above the rim is passed inside the life at the fast end. ")
@@ -938,14 +942,14 @@ def main() -> int:
             "radial_rate_source": "tools/in_silico/cache/mechanical/dendrometer_support_budget.json inputs (01_03 §4 ⊕ (в))",
             "bearing_share_U_ends_114": u_ends,
             "install_bark_over_flange_top_mm": install,
-            "install_source": "along the axis, at an azimuth of the tilted seat: flange_top = canon's limit and `114`'s "
-                              "headline; deep edge, mid-line (the axis, and the vent's mounting azimuth) and shallow edge "
-                              "from `78`'s raw facing spread over cos θ and the flange's thickness — functions of a "
-                              "PLACEHOLDER (00_07 HW.8.10)",
-            "install_edges_as_114_reads_them_mm": as_114,
+            "install_source": "`114`'s travel block (install_bark_over_flange_top_mm), the one home of the oblique cut: "
+                              "along the axis, at an azimuth of the tilted seat — flange_top = canon's limit; deep edge, "
+                              "mid-line (the axis, and the vent's mounting azimuth) and shallow edge from `78`'s raw facing "
+                              "spread over cos θ and the flange's thickness — functions of a PLACEHOLDER (00_07 HW.8.10)",
             "deck_install_references": list(deck_refs),
             "tilt_deg": TILT_DESIGN_DEG, "cos_tilt": cos_t,
-            "tilt_source": "asin(`78`'s facing spread / the flange's diameter), held to the design point (01_04 §3.2)",
+            "tilt_source": "`114`'s travel block: asin(`78`'s facing spread / the flange's diameter), held here to the "
+                           "design point (01_04 §3.2)",
             "facing_spread_mm_78": spread, "flange_thickness_placeholder_mm": flange_t,
             "rf_deck_rows_over_flange_top_mm": deck_rows, "rf_deck_bom_rows_mm": list(deck_bom),
             "rf_deck_source": "tools/in_silico/cache/mechanical/z_stack_tolerance.json vertical_stack_budget (FR4 of the "
@@ -961,7 +965,7 @@ def main() -> int:
         },
         "marks": {"order_low_to_high": order, "clock": clock, "reached_inside_life": reached,
                   "lowest_opening": lowest_opening,
-                  "crown_top_untilted_yr_fast_slow_as_114": untilted,
+                  "crown_top_yr_fast_slow_114": crown_114,
                   "below_the_flange_top": {
                       "what": "the cathode's catalytic band and the buffer under it, on the flange's side face — on a "
                               "node with a cathode the first surface to meet the bark (01_04 §3.1); no height has a home "

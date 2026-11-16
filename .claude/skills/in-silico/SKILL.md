@@ -343,7 +343,7 @@ Anchor mechanics (CPU):
      constants of the script (the founder's, by eye); a change to 124's loader, 110's open face or 79's sun re-runs 125
   107 (importlib: solve · source_coeffs · stem_layers · run_case · _span · the readings and the carrier; radio/stem_radio_shadow.json —
      its rows at its own standoffs, a control) · 114 (dendrometer_support_budget.json: the rate ends, the bearing share, and
-     the install edges as a control) · 78 (flange_cambium_heat.json: the RAW facing spread) · 52 (z_stack_tolerance.json: the
+     the install tilt and edges — the one home of the oblique cut since 2026-11-16, read raw; its crown years a control) · 78 (flange_cambium_heat.json: the RAW facing spread) · 52 (z_stack_tolerance.json: the
      RF-deck rows over the flange) · tools/cad/cem (radome: the crown, the dome's radius and the vent hole by
      `Radome.VentZMm`'s closed form — pinned from the C# side, RadomeTests; cathode flange: its placeholder thickness)
      → 119 (radio/bark_overgrowth_consumers.json — the marks the rising bark passes on the radome, the radio under the

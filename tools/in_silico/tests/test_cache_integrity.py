@@ -9108,6 +9108,17 @@ def test_113_lever_rows_follow_from_its_constants_and_the_caches():
     assert min(per) > 0 and max(per) / min(per) < 3, f"ΔE_L per σ per site {per} — a misread digit in Table 1?"
 
 
+def _den_base(d):
+    """114's base row of its sensor table, as the base tables (2) · (2b) and the (2c) block read it: ONE offset-drift row
+    (typ ⊥ max) for every axis and both branches — asserted, since those blocks price one δB — the mismatch totals and
+    the angle errors per pair."""
+    r = d["inputs"]["sensors"][d["inputs"]["base_sensor"]]
+    typ, mx = r["offset_T_per_K"]["x"]["hot"]
+    assert all(r["offset_T_per_K"][ax][br] == [typ, mx] for ax in ("x", "z") for br in ("cold", "hot"))
+    return {"offset_drift_T_per_K": {"typ": typ, "max": mx}, "angle_error_deg": r["angle_error_deg"],
+            "sens_mismatch_drift": {p: r["mismatch"][p]["hot"][0] for p in ("x_y", "x_z")}}
+
+
 def test_dendrometer_budget_is_self_consistent():
     """114 (HW.54 Р3(в)) — the cache's derived fields against the fields they derive from, so a hand edit or a partial
     re-run cannot leave a doc pin agreeing with one half of the record.
@@ -9135,8 +9146,13 @@ def test_dendrometer_budget_is_self_consistent():
             if abs(pt["anchor_term_um_per_K"]) < frames:
                 assert pt["z_f_mm"] < r["frames_crossing_depth_mm"] + 1e-9, name
     e = d["energy"]
-    assert e["hall_read_share_of_E_cycle_pct"] == pytest.approx(
-        100 * e["hall_read_vstor_uJ"] * 1e-6 / d["inputs"]["e_cycle_J"], abs=0.006)
+    for blk in (e, e["convention_to_2026_11_15"]):
+        assert blk["hall_read_share_of_E_cycle_pct"] == pytest.approx(
+            100 * blk["hall_read_vstor_uJ"] * 1e-6 / d["inputs"]["e_cycle_J"], abs=0.006)
+    # N from the verdict lane (the guaranteed drift); the old convention took the maximum over both lanes
+    assert e["samples_verdict_lane"] == max(v["two_channel_samples_for_1um_at_needed_b_r"]["max"] for v in d["scale"].values())
+    assert e["convention_to_2026_11_15"]["samples_worst_lane"] == max(
+        n for v in d["scale"].values() for n in v["two_channel_samples_for_1um_at_needed_b_r"].values())
     U = list(d["bark_bearing"]["U_rows_premise_b"].values())
     assert d["bark_bearing"]["fraction_lost_U_at_air_dry_bark_readings"] == [min(U), max(U)]
     assert d["bark_bearing"]["growth_under_reported_um_per_yr_at_795"] == pytest.approx(
@@ -9157,7 +9173,7 @@ def test_dendrometer_thickness_knob_and_linear_range_cap_are_recomputed():
     import itertools
     import math
     d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
-    inp, hall = d["inputs"], d["inputs"]["hall"]
+    inp, hall = d["inputs"], _den_base(d)
     target, fam = inp["frame_sensitivity_um_per_K"], inp["magnet_families_br_T"]
     knob = d["scale_thickness_knob"]["rows"]
     bases = d["unwrap"]["worst_change_mm_by_basis"]
@@ -9223,7 +9239,7 @@ def test_dendrometer_magnet_temperature_is_recomputed():
 
     import numpy as np
     d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
-    mt, hall, target = d["scale_magnet_temperature"], d["inputs"]["hall"], d["inputs"]["frame_sensitivity_um_per_K"]
+    mt, hall, target = d["scale_magnet_temperature"], _den_base(d), d["inputs"]["frame_sensitivity_um_per_K"]
     inp, lane = mt["inputs"], mt["lane"]
     z78 = json.loads((CACHE / "thermal/flange_cambium_heat.json").read_text())["verdict"]["worst_cell"]
     z81 = json.loads((CACHE / "thermal/capsule_cold_edge_sky.json").read_text())
@@ -9301,6 +9317,131 @@ def test_dendrometer_magnet_temperature_is_recomputed():
         for gk, tlim in v["thickness_limit_mm"].items():
             if tlim is not None:
                 assert need(tlim, float(gk[1:]), "RECo5", "isothermal", 0.0, dl, cap_l) == pytest.approx(fe["family_max_T_typical"], rel=2e-5)
+
+
+def test_dendrometer_sensor_table_holds_the_sum_rule():
+    """114 (HW.54 Р3(в), (2d)) — the sensor table's verdict against the SUM rule written out here from the cache's raw
+    rows: at each temperature edge P·δB_pair/(2π·(0.3 µm/K − P·ε/4π)) over f(edge) must put the family's strongest class
+    on the sensor, δB_pair = √(δa² + δb²), ε per kelvin by the row's declared basis.
+
+    The cold branch is judged at 25 °C (the warm end of its band, where the field within it is weakest), asserted here.
+    CAN catch: a verdict that DROPS the mismatch term (a lever's gap limit would then sit where the offset term alone
+    reaches the family's maximum, and the sum rule written here would miss it; a «no thickness» cell would carry the
+    offset-only need) · a per-kelvin drift that is not the row's datasheet value over its declared span · a branch
+    judged at the wrong edge · an infinite-thickness need that is not the sum rule at its recorded period · a «no
+    thickness» that disagrees with that need · the base row's offset-only limits drifting from (2c)'s (the old verdict,
+    reproduced) · a limit with the mismatch or the floor below the offset-only one.
+    CANNOT catch: a datasheet value transcribed wrong (the row's comment cites its section; the read is the control),
+    whether a minimum over the period was missed (the script's control 10 holds it against a brute force), or the
+    idealised field form.
+    """
+    import math
+    d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
+    mt, st, sensors = d["scale_magnet_temperature"], d["sensor_table"], d["inputs"]["sensors"]
+    inp, span = mt["inputs"], d["inputs"]["branch_span_K"]
+    target = d["inputs"]["frame_sensitivity_um_per_K"] * 1e-3
+    maxima = inp["family_maxima_T"]
+    assert st["branch_binds_at_C"]["cold"] == 25.0
+
+    def factors(fam, corner):
+        c = mt["corners"][corner]
+        if c is None:
+            return {"hot": 1.0, "cold": 1.0}
+        a = inp["coefficients_per_K_kind_adverse"][fam][c["coefficient_end"]]
+        # each branch where its band's field is weakest: the hot one at the hottest hour, the cold one at 25 °C
+        return {"hot": 1 + a * (inp["t_hot_C"][c["hot"]] - c["t_ref_need_C"]),
+                "cold": 1 + a * (st["branch_binds_at_C"]["cold"] - c["t_ref_need_C"])}
+
+    def lane(row, pair, with_mismatch=True):
+        b = "x" if pair == "x_y" else "z"
+        dbp, eps = {}, {}
+        for br in ("cold", "hot"):
+            dbp[br] = math.hypot(row["offset_T_per_K"]["x"][br][1], row["offset_T_per_K"][b][br][1])
+            m = row["mismatch"][pair][br][1] if row["mismatch"][pair][br][1] is not None else row["mismatch"][pair][br][0]
+            eps[br] = (m if row["mismatch_basis"] == "per_K" else m / span[br]) if with_mismatch else 0.0
+        return dbp, eps
+
+    def need(p, t, g, ln, f):
+        dbp, eps = ln
+        k = 2 * math.pi / p
+        geom = (1 - math.exp(-k * t)) * math.exp(-k * g)
+        return max(2 * p * dbp[e] / (2 * math.pi * (target - p * eps[e] / (4 * math.pi)) * geom * f[e]) for e in ("cold", "hot"))
+
+    base = st["rows"][d["inputs"]["base_sensor"]]["pairs"]["x_y"]["cells"]
+    for fam, by_c in mt["thickness_limit_mm_at_realistic_gap"].items():
+        for c, t_old in by_c.items():
+            t_new = base[f"{fam}:{c}:g3"]["offset_only"]["t_min_mm"]
+            assert (t_old is None and t_new is None) or t_new == pytest.approx(t_old, abs=1e-9), (fam, c)
+    for name, s in st["rows"].items():
+        row = sensors[name]
+        for pair, pr in s["pairs"].items():
+            ln, ln0 = lane(row, pair), lane(row, pair, False)
+            g_pk = pr["per_K"]["guaranteed"]
+            for br in ("cold", "hot"):
+                assert g_pk["dbp_T_per_K"][br] == pytest.approx(ln[0][br], rel=1e-12) and g_pk["eps_per_K"][br] == pytest.approx(ln[1][br], rel=1e-12)
+            for key, cell in pr["cells"].items():
+                fam, c, gk = key.split(":")
+                g, f, b_max = float(gk[1:]), factors(fam, c), maxima[fam]
+                ts = [cell[v]["t_min_mm"] for v in ("offset_only", "with_mismatch", "with_mismatch_and_unwrap_floor")]
+                inf = [math.inf if t is None else t for t in ts]
+                assert inf[0] <= inf[1] <= inf[2], (name, pair, key)
+                for v in ("with_mismatch", "with_mismatch_and_unwrap_floor"):
+                    blk = cell[v]
+                    if blk["need_T_at_infinite_thickness"] is not None:
+                        n = need(blk["p_mm_at_infinite_thickness"], 1e4, g, ln, f)
+                        assert n == pytest.approx(blk["need_T_at_infinite_thickness"], rel=1e-9), (name, pair, key, v)
+                        assert (blk["t_min_mm"] is None) == (n >= b_max), (name, pair, key, v)
+                    else:
+                        assert blk["t_min_mm"] is None, (name, pair, key, v)
+                    if blk["t_min_mm"] is not None:
+                        assert need(blk["p_mm"], blk["t_min_mm"], g, ln, f) == pytest.approx(b_max, rel=1e-9), (name, pair, key, v)
+            for key, lv in pr["levers"].items():
+                fam, c = key.split(":")
+                g_m, f = lv["gap_limit_mm_at_t10"]["with_mismatch"], factors(fam, c)
+                if g_m is None:
+                    continue
+                p = lv["p_mm_at_the_gap_limit_with_mismatch"]
+                assert need(p, 10.0, g_m, ln, f) == pytest.approx(maxima[fam], rel=1e-9), (name, pair, key)
+                assert need(p, 10.0, g_m, ln0, f) < maxima[fam] * (1 - 1e-6), (name, pair, key, "the mismatch term carries nothing")
+                assert g_m <= lv["gap_limit_mm_at_t10"]["offset_only"], (name, pair, key)
+
+
+def test_dendrometer_travel_carries_the_install_tilt():
+    """114 (HW.54 Р3(в), (4)) — the travel block along the TILTED axis, rebuilt from `78`'s raw facing spread, the flange
+    and radome CEMs: θ = asin(spread/Ø), the install-day bark over the flange's top along the axis (spread/cos θ apart
+    between the seat's edges), the radial travel (h − b₀)·cos θ to the dome's top, its years, and the one-sided rate
+    threshold rounded UP.
+
+    CAN catch: the old reading coming back (a radial spread subtracted from an axial height, or no cos θ) · years that
+    are not the radial travel over the rate ends · a threshold rounded the wrong way · a stale tilt (78 or a CEM moved).
+    CANNOT catch: whether the seat is faced square to the axis, or the install angle canon's ceiling (`119` holds it to the
+    design point).
+    """
+    import math
+    d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
+    tr = d["travel"]
+    bark78 = json.loads((CACHE / "thermal/flange_cambium_heat.json").read_text())["bark"]
+    radome = json.loads((REPO / "tools/cad/cem/radome.json").read_text())
+    flange_t = json.loads((REPO / "tools/cad/cem/cathode_flange.json").read_text())["flange_thickness_mm"]
+    spread, dia = bark78["facing_spread_mm"], bark78["flange_diameter_mm"]
+    theta = math.asin(spread / dia)
+    assert tr["tilt"]["facing_spread_mm_78"] == spread and tr["tilt"]["flange_diameter_mm_78"] == dia
+    assert tr["tilt"]["install_angle_rad"] == pytest.approx(theta, abs=1e-15) and tr["tilt"]["cos"] == pytest.approx(math.cos(theta), abs=1e-15)
+    cos_t, top = math.cos(theta), radome["cavity_height_mm"] + radome["bell_radius_mm"]
+    install = {"flange_top": 0.0, "deep_edge": spread / cos_t - flange_t, "mid_seat": spread / (2 * cos_t) - flange_t,
+               "shallow_edge": -flange_t}
+    assert tr["install_bark_over_flange_top_mm"] == pytest.approx(install, abs=1e-12)
+    assert tr["radome_height_over_flange_top_mm"] == top and tr["of_which_flange_thickness_placeholder_mm"] == flange_t
+    slow, fast = d["inputs"]["radial_rate_mm_per_yr"]
+    for ref, b0 in install.items():
+        climb = (top - b0) * cos_t
+        assert tr["outer_bark_climb_to_dome_top_mm"][ref] == round(climb, 3), ref
+        if ref != "flange_top":
+            assert tr["outer_bark_to_dome_top_yr_by_edge_fast_slow"][ref] == [round(climb / fast, 1), round(climb / slow, 1)], ref
+    assert tr["radial_travel_flange_top_to_dome_top_mm"] == pytest.approx(top * cos_t, abs=1e-12)
+    assert tr["outer_bark_flange_top_to_dome_top_yr_fast_slow"] == [round(top * cos_t / fast, 1), round(top * cos_t / slow, 1)]
+    thr = tr["flange_top_to_dome_top_inside_life_above_mm_per_yr"]
+    assert top * cos_t / 20.0 <= thr < top * cos_t / 20.0 + 0.01, "the one-sided threshold is rounded UP"
 
 
 def test_stem_face_cover_rules_rehearsal_summary_is_recomputed():
@@ -9586,7 +9727,8 @@ def test_bark_overgrowth_consumers_are_recomputed():
     assert install == pytest.approx({"flange_top": 0.0, "deep_edge": spread / cos_t - flange_t,
                                      "mid_seat": spread / (2 * cos_t) - flange_t, "shallow_edge": -flange_t}, abs=1e-12)
     assert list(install) == ["flange_top", "deep_edge", "mid_seat", "shallow_edge"]
-    assert i["install_edges_as_114_reads_them_mm"] == pytest.approx({"flange_top": 0.0, "deep_edge": spread - flange_t, "shallow_edge": -flange_t}, abs=1e-12)
+    z114 = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text(encoding="utf-8"))["travel"]
+    assert install == z114["install_bark_over_flange_top_mm"], "the oblique cut is read from `114` (its one home), unchanged"
     for name, h in heights.items():
         c = m["clock"][name]
         assert c["over_flange_top_mm"] == pytest.approx(h, abs=1e-12)
@@ -9604,7 +9746,8 @@ def test_bark_overgrowth_consumers_are_recomputed():
     by_ref = {ref: v["outlives_life_below_mm_per_yr"] for ref, v in m["clock"]["vent_hole_lower_edge"]["by_install_reference"].items()}
     assert lo["mark"] == "vent_hole_lower_edge" and lo["outlives_life_below_mm_per_yr_by_reference"] == by_ref
     assert lo["mounting_azimuth_reference"] == "mid_seat"
-    assert m["crown_top_untilted_yr_fast_slow_as_114"] == [round(heights["crown_top"] / fast, 1), round(heights["crown_top"] / slow, 1)]
+    assert m["crown_top_yr_fast_slow_114"] == z114["outer_bark_flange_top_to_dome_top_yr_fast_slow"] \
+        == m["clock"]["crown_top"]["by_install_reference"]["flange_top"]["yr_fast_slow"]
     assert lo["outlives_life_below_mm_per_yr_on_every_reference"] == min(by_ref.values()), "a «on every reference» threshold is the least"
     # the embedded radio: every homogeneous row against the closed form, every printed range against its rows
     rows, marks = d["radio_rows_at_depth_marks"], [f"{x:g}" for x in i["depth_marks_mm"]]

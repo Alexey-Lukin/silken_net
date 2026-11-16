@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """114 — whether a point dendrometer that uses the anchor as its support can hold its reading: the support's thermal
 artefact per fixation point, the magnetic scale behind the capsule wall (its period, the sensor's error terms and the
-unwrap margin through winter and outages), the energy of a read, and how soon the bark passes the capsule (00_07
-HW.54, the leg «Р3(в) — дендрометр», its instrument plan of 2026-10-30).
+unwrap margin through winter and outages), a table of sensors judged with their offset AND axis-mismatch drift in one
+verdict, the energy of a read, and how soon the bark passes the capsule along the tilted axis (00_07 HW.54, the leg
+«Р3(в) — дендрометр», its instrument plan of 2026-10-30; the sensor table and the tilt, 2026-11-16).
 
 WHY. The desk leg of 2026-10-26 (01_03 §4 ⊕, (в)) left the principle standing and named the weakest links: the scale's
 travel and geometry, the support's thermal path with PEEK in it («≈ 5–10× worse than < 0.3 µm/K of commercial frames» —
@@ -53,7 +54,9 @@ MODEL.
       ANGLE error — static and cyclic, P·AERR/360; calibrating it IN PLACE needs the scale to pass a full period, i.e. years of
         growth.
     Both pairs of axes are printed: X–Y (both axes in the field's plane, which needs the IC mounted edge-on) and X–Z
-    (the IC flat on the board). THE SENSOR'S LINEAR RANGE caps the period: the field the offset term needs at the sensor
+    (the IC flat on the board). The tables (2) · (2b) and the verdict (2c) read ONE sensor, the table's base row
+    (TMAG5273A1 — `base_lanes`, a view of that row), with the offset term only; (2d) judges every row with the sum.
+    THE SENSOR'S LINEAR RANGE caps the period: the field the offset term needs at the sensor
     is P·√2·δB/(2π·target) — the period alone sets it, not the magnet and not the thickness — so a period above
     P_cap = 2π·target·B_lin/(√2·δB) asks for a field the sensor cannot read linearly; each row prints, per range and
     drift, the best period inside the cap and the remanence needed THERE, and the magnet families with a class at or
@@ -80,22 +83,49 @@ MODEL.
     unwrap holds while every change between two delivered readings stays under P/2 (an absolute-in-period phase; the
     collector's «half a pole» was for an incremental pole counter, a different reader); the change is priced on a
     declared, season-consistent basis and the period each basis requires and every geometry's margin are printed.
+(2d) THE SENSOR TABLE (2026-11-16). `SENSORS` holds one row per device and linear range, each value transcribed from
+    the primary datasheet its comment cites (section and table), each drift with its declared basis — a per-kelvin row ⊥
+    a total from 25 °C the datasheet itself says scales linearly ⊥ a total with no ΔT, spread over the branch only by
+    our assumption (`BRANCH_SPAN_K`) — per axis and per branch (cold 25 → −40 °C ⊥ hot 25 → +125 °C), typical and
+    guaranteed columns, lifetime drifts where given. THE COMBINATION RULE — the SUM: per branch, (P/2π)·δB_pair/B +
+    (P/2π)·ε/2 ≤ 0.3 µm/K, the offset term with δB_pair = √(δa² + δb²) of the pair's axes and the mismatch term with ε the
+    pair's mismatch drift per kelvin — a linear sum of two worst-case bounds of independent sources, as (7) of the list
+    below asked (an RSS would be kinder and is not taken). Each branch binds where ITS band's field is weakest (the
+    offset term divides by the field): the hot branch at the hottest hour, the cold branch at its warm end, 25 °C — at
+    the cold edge itself the field is stronger; the range bound reads the coldest hour. So the cap generalises (2c)'s to
+    min over branches of B*·T/(K + B*·c), and the need at P is the binding branch's 2·P·δB_pair/(2π·(T − P·ε/4π)·geom·f).
+    The verdict lane: the guaranteed columns (the TMAG5273's typical mismatch, its only column, flagged). Per row and pair,
+    on (2c)'s corners and families, at 3 and 4 mm: the thickness limit offset only (the base row's IS (2c)'s, a control)
+    ⊥ with the mismatch term ⊥ with it and the unwrap floor; the levers — the gap held at a 10 mm scale, and the factor
+    on the guaranteed mismatch drift at or below which an infinitely thick scale holds each gap (the flip threshold of
+    the binding member, §When Modifying #40), beside the row's typical/guaranteed ratio; the read's energy on the verdict
+    lane; the lifetime steps (not per kelvin, not summed). The support's term (1) is NOT in the sum — a maximum over
+    unknown fixations. ANGLE (SATURATION) SENSORS: a printed, named gap (`SENSOR_GAPS`), not a model — the copies the
+    2026-11-16 desk read are mirrors and distributor copies, not primaries, and none gives an angle drift per kelvin, the
+    one row a saturation model would need beyond (2)'s field function; rows whose primaries were not read here (Infineon,
+    Melexis, Allegro) are named there too, so «the table» is never read as «every sensor».
 (3) THE ENERGY OF A READ. The read rides the node's existing wake (cadence C): the sensor's wake and measure transitions
-    once, then N two-channel samples at its active current, with the core awake throughout at its run current (02_03
+    once, then N two-channel samples at its active current, N from the VERDICT lane (the guaranteed drift — a scale
+    designed to it puts the stronger field on the sensor; to 2026-11-15 N was the maximum over the typ ⊥ max lanes, kept
+    beside as `convention_to_2026_11_15`), with the core awake throughout at its run current (02_03
     §9.4's mruby member — a ceiling: the core could sleep through a conversion; the bus transfer is not in the tree),
     taken from VSTOR through the active buck. Printed against the node's demand (`110`'s) and E_CYCLE, beside an
     absolute encoder IC of 2 mm period at its power-up current and time with the core awake through it.
 (4) THE TRAVEL WINDOW. Years until the live bark under the probe reaches the flange seat, and until the outer bark
     around the capsule reaches the dome's top (`Radome.cs`'s top over the rim, on the flange's top face), at the
-    slowest and the fastest radial increment the desk leg names.
+    slowest and the fastest radial increment the desk leg names — along the TILTED axis: the seat is faced square to the
+    anchor's axis at the install angle, so `78`'s facing spread is Ø·sin θ (θ recovered from those two raw numbers), the
+    install-day bark stands spread/cos θ higher along the axis at the deep edge than at the shallow one, and a mark h
+    along the axis is passed after a radial travel (h − b₀)·cos θ. This block is the ONE home of that oblique cut —
+    `119` reads it; until 2026-11-16 it subtracted the radial spread from an axial height and carried no tilt.
 
 INPUTS — each with its home: geometry, the anchor's α sections, the bearing's share and the green xylem's α (Sevanto et
 al. 2005, P. sylvestris, radial) from `103`'s cache; the flange's and the cambium's hottest hour from `78`'s; the
 capsule's sky-cooled cold edge from `81`'s; the B_r coefficients from 01_03 §4 ⊕ (в) (mirror below); the
 radome's and the flange's dimensions from their CEMs; cadence C and the demand from `110`'s cache; E_CYCLE and the
 active buck from lib; the core's run current and VOUT from 02_03 §9.4 (mirrors below); air temperature from the ERA5
-hourly record `71` loads; the Hall sensor's rows from its datasheet (TI SLYS045, §5.7 for A1 and §5.11, read
-2026-10-31); the encoder's, the frames' temperature sensitivity and the growth rates from the primaries the 2026-10-26
+hourly record `71` loads; the Hall sensors' rows from their datasheets (TI SLYS045C · SBASAF4 · SLYS053C, read
+2026-11-16 — the section and table in each row's comment; SLYS045 first read 2026-10-31); the encoder's, the frames' temperature sensitivity and the growth rates from the primaries the 2026-10-26
 collection read (provenance: handoff `2026-10-26_r3v_dendrometer.json`); the frost swing, the daily swing and the radial
 rate's ends from 01_03 §4 ⊕ (в).
 
@@ -133,14 +163,17 @@ WHAT IT CANNOT SEE.
       month — our assumption, (2)). Sintered ferrite has no coefficient in the tree, so (2c) solves it isothermally. The
       family maxima are the 2001/AMD1:2004 minima the canon read; the 2015 and 2023 editions are unread past the 2023
       preview, which says only that «new and high-performance grades of REFeB and RE₂Co₁₇ sintered magnets» were added
-      (it stops before Tables 12–13), so (2c) prints the need a class must reach, cell by cell. The sensor's
-      mismatch drift has no per-kelvin basis in its datasheet, and its offset drift is taken as one row for both ranges.
+      (it stops before Tables 12–13), so (2c) prints the need a class must reach, cell by cell. The base sensor's
+      mismatch drift is a typical total with no ΔT (its per-kelvin figure stands on our linear spread), and its offset
+      drift is one row for both ranges. (2d) cannot see: a guaranteed column is a bound over the population, not a unit;
+      noise, current and timing rows the datasheet gives only at another range or supply (each row's `assumed`); the
+      sensors not in the table (`SENSOR_GAPS`); the cyclic terms at the scale's own phase (the sum is at the worst phase).
   (5) Whether a scale and a probe can travel 16–100 mm past a flush capsule without a visit — the geometry (01_04
       §5.5); (4) says only when the problem starts.
   (6) Separating reversible shrinkage (TWD) from growth — the zero-growth method's job, not priced here.
-  (7) The budget: the frames' 0.3 µm/K is the whole instrument's; (1) and (2) each print against it alone, so what
-      the instrument meets is their sum with the mismatch term — not computed as one number, because the support's
-      term is a maximum over unknown fixations and the sensor's offset term a design target, not properties.
+  (7) The budget: the frames' 0.3 µm/K is the whole instrument's. (2d) sums the sensor's offset and mismatch terms
+      (since 2026-11-16 — the sum this item named); the support's term (1) still prints against it alone, because it is
+      a maximum over unknown fixations, not a property — what the instrument meets is that sum plus (1).
 
 CONTROLS (each says what it CAN and CANNOT catch).
   (1) Closure: with one α everywhere A = 0 at every fixation depth, probe depth and sensor height; CAN catch a term with
@@ -178,6 +211,18 @@ CONTROLS (each says what it CAN and CANNOT catch).
       this form (its log is convex in 2π/P). CAN catch a factor applied at the wrong end, a root off its function, a grid
       verdict that disagrees with its solve or with the brute force; CANNOT the coefficients' values, the linear form or
       the size validity (inputs and limits, named above).
+ (10) The sensor table: the base row offset only reproduces (2c)'s thickness limit and cap at every family and corner;
+      every root, every lever's gap limit and every infinite-thickness need is held to the sum rule written out again
+      apart from `need_br_lane`, and a «no thickness» cell exactly to an infinite-thickness need above the family's
+      maximum; at each lever's gap limit the offset term alone needs strictly less — so a verdict that DROPS the
+      mismatch term fails here (mutation-checked: dropping it inside `sensor_table` trips the lever check); the mismatch
+      and the floor never lower a limit; kind ≤ adverse on every limit and lever; a brute force over the period window
+      at every solved cell (a second minimum the bounded search missed would red); each per-kelvin band row covers the
+      edge it is applied at. CAN catch a dropped or mis-weighted mismatch term, a branch judged at the wrong temperature
+      in one route only, a search that missed the minimum; CANNOT a datasheet value transcribed wrong (the row's comment
+      cites the section; the read is the control) or the idealised field form.
+ (11) The read: the base row's verdict-lane read in (2d) is (3)'s; CAN catch the two drifting apart, CANNOT a wrong
+      current or timing row.
 
 Run:  python tools/in_silico/scripts/114_dendrometer_support_budget.py      # a few seconds
 """
@@ -199,8 +244,9 @@ from lib.utils import banner
 
 SI_DESCRIPTION = ("Whether a point dendrometer that uses the anchor as its support can hold its reading: the thermal "
                   "artefact of the support per fixation depth, the period a magnetic scale needs behind the capsule wall "
-                  "and the error terms of a two-axis Hall sensor reading it, the unwrap margin through winter swings and "
-                  "power outages, the energy of a read, and how soon the growing bark passes the capsule.")
+                  "and the error terms of two-axis Hall sensors reading it, judged per datasheet with the offset and the "
+                  "axis-mismatch drift summed, the unwrap margin through winter swings and power outages, the energy of a "
+                  "read, and how soon the growing bark passes the capsule along the tilted axis.")
 
 HERE = Path(__file__).resolve().parent
 OUT = CACHE_DIR / "mechanical" / "dendrometer_support_budget.json"
@@ -216,16 +262,187 @@ I_CORE_RUN_A = 8e-3
 V_OUT = 3.3
 CYCLE_MEMBERS_J = {"mruby": (8e-3, 0.15), "tx_14dbm_sf9": (23.5e-3, 0.1649)}
 E_RADIO_RX_TCXO_J = 12.58e-3
-# TI TMAG5273 (SLYS045, §5.7 «A1, B1, C1, D1», §5.11): active current (LP_LN = 0); conversion with CONV_AVG = 101b,
-# one channel, +32 × 25 µs per extra channel; sleep → standby and standby → measure; sleep current; RMS noise at
-# CONV_AVG = 101b; offset drift typ ⊥ max; sensitivity-mismatch drift «from 25 °C» per axis pair; angle error per pair
-# (25 °C, CONV_AVG = 101b); linear range at RANGE = 0b ⊥ 1b
-HALL = {"i_active_A": 2.3e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6,
-        "t_sleep_to_standby_s": 50e-6, "t_standby_to_measure_s": 70e-6, "i_sleep_A": 5e-9,
-        "noise_T": {"x_y": 22e-6, "z": 11e-6}, "offset_drift_T_per_K": {"typ": 3e-6, "max": 10e-6},
-        "sens_mismatch_drift": {"x_y": 0.05, "x_z": 0.15}, "angle_error_deg": {"x_y": 0.5, "x_z": 1.0},
-        "linear_range_T": (0.040, 0.080)}
-MISMATCH_LINEAR_SPREAD_K = (65.0, 100.0)   # IF the drift spread linearly to −40 ⊥ +125 °C — an assumption, printed
+# ── THE SENSOR TABLE (2d) — one row per device and linear range, each value transcribed from the primary datasheet
+# named in the row's `source` (PDFs from ti.com/lit/ds/symlink/, read 2026-11-16 with `pdftotext -layout`, every
+# column read by its header — in-silico §Critical Rules #41). Per axis and per temperature BRANCH (cold = 25 → −40 °C,
+# hot = 25 → +125 °C) each drift is a pair (typical, guaranteed): the guaranteed value is the larger magnitude of the
+# MIN and MAX columns, None where the datasheet gives only a typical one. `offset_basis` / `mismatch_basis` declare
+# the form: "per_K" (a per-kelvin row) ⊥ "total_linear" (a total from 25 °C to the branch's end, which the datasheet
+# itself says scales linearly with the excursion) ⊥ "total_no_dT" (a total over the operating range with no ΔT and
+# no linearity statement — per kelvin ONLY under our assumed spread to the branch's end, `BRANCH_SPAN_K`). The X and
+# Y axes share one row in every datasheet read here, so the X–Y pair takes the X row twice. The rest of a row: RMS
+# noise per axis (typical, at the conversion setting of the timing row), angle error per pair (typical, 25 °C; and
+# its maximum over temperature where given), the lifetime drifts where given, and the energy members (active current,
+# one-channel conversion, the added second channel, the wake path, sleep current). `assumed` names every member that
+# is not the datasheet's row for our operating point. ──
+BRANCH_SPAN_K = {"cold": 65.0, "hot": 100.0}   # 25 → −40 ⊥ 25 → +125 °C: the span a «from 25 °C» total is spread over
+MISMATCH_LINEAR_SPREAD_K = (65.0, 100.0)   # the base tables' (2) print: IF the drift spread linearly to −40 ⊥ +125 °C
+SENSORS = {
+    # TI SLYS045C (TMAG5273, June 2021, revised April 2026): §5.7 «Magnetic Characteristics For A1, B1, C1, D1» — BIN,
+    # Boff_TC (typ ±3.0, max ±10.0 µT/°C, one row for every axis over the operating range), SENSMS_DR (X–Y ±5 %,
+    # Y–Z/X–Z ±15 %, TYPICAL column only, no ΔT), NRMS at CONV_AVG = 101b, LP_LN = 0b (X, Y 22 µT; Z 11 µT), AERR at
+    # CONV_AVG = 101b, 25 °C (X–Y ±0.5°, X–Z ±1.0°); §5.5 IACTIVE (LP_LN = 0b) 2.3 mA, ISLEEP 5 nA; §5.11 tmeasure
+    # 825 µs (CONV_AVG = 101b, one channel; note 3: +32 × 25 µs = 800 µs per added channel), tstart_sleep 50 µs,
+    # tstart_measure 70 µs; §5.3 TA −40…125 °C
+    "TMAG5273A1": {
+        "source": "TI SLYS045C (June 2021, rev. April 2026) §5.7 · §5.5 · §5.11 · §5.3",
+        "ranges_T": (0.040, 0.080), "verdict_range_T": 0.080, "operating_C": (-40.0, 125.0),
+        "offset_basis": "per_K",
+        "offset_T_per_K": {"x": {"cold": (3.0e-6, 10.0e-6), "hot": (3.0e-6, 10.0e-6)},
+                           "z": {"cold": (3.0e-6, 10.0e-6), "hot": (3.0e-6, 10.0e-6)}},
+        "mismatch_basis": "total_no_dT",
+        "mismatch": {"x_y": {"cold": (0.05, None), "hot": (0.05, None)}, "x_z": {"cold": (0.15, None), "hot": (0.15, None)}},
+        "noise_T": {"x": 22e-6, "z": 11e-6}, "angle_error_deg": {"x_y": 0.5, "x_z": 1.0}, "angle_error_over_T_deg": None,
+        "lifetime": None,
+        "i_active_A": 2.3e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6, "t_wake_s": (50e-6, 70e-6), "i_sleep_A": 5e-9,
+        "assumed": []},
+    # the same datasheet, §5.8 «Magnetic Characteristics For A2, B2, C2, D2»: BIN ±133 ⊥ ±266 mT, Boff drift typ ±3.0,
+    # max ±10 µT/°C, SENSMS_DR ±5 % ⊥ ±15 % (typical), NRMS (CONV_AVG = 101b, LP_LN = 0b) X, Y 24 µT, Z 15 µT, AERR
+    # X–Y ±0.50°, X–Z ±1.0°; §5.5 and §5.11 are not per variant
+    "TMAG5273A2": {
+        "source": "TI SLYS045C (June 2021, rev. April 2026) §5.8 · §5.5 · §5.11 · §5.3",
+        "ranges_T": (0.133, 0.266), "verdict_range_T": 0.266, "operating_C": (-40.0, 125.0),
+        "offset_basis": "per_K",
+        "offset_T_per_K": {"x": {"cold": (3.0e-6, 10.0e-6), "hot": (3.0e-6, 10.0e-6)},
+                           "z": {"cold": (3.0e-6, 10.0e-6), "hot": (3.0e-6, 10.0e-6)}},
+        "mismatch_basis": "total_no_dT",
+        "mismatch": {"x_y": {"cold": (0.05, None), "hot": (0.05, None)}, "x_z": {"cold": (0.15, None), "hot": (0.15, None)}},
+        "noise_T": {"x": 24e-6, "z": 15e-6}, "angle_error_deg": {"x_y": 0.5, "x_z": 1.0}, "angle_error_over_T_deg": None,
+        "lifetime": None,
+        "i_active_A": 2.3e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6, "t_wake_s": (50e-6, 70e-6), "i_sleep_A": 5e-9,
+        "assumed": []},
+    # TI SBASAF4 (TMAG5170, September 2021) §6.6, TMAG5170A1, x_RANGE = 10b (±100 mT): Boff_DR_A1 X/Y 25 → 125 °C typ 0,
+    # max ±5.0; 25 → −40 °C min −6.5, typ −1.5, max 2.5; Z 25 → 125 typ 0, max ±1.5; 25 → −40 min −3.0, typ −1.0, max
+    # 1.0 µT/°C; SENSMS_DR_XY_A1 25 → 125 typ ±0.8 %, max ±4.0 %; 25 → −40 typ ±0.5 %, max ±3.4 %; SENSMS_DR_XZ_A1
+    # 25 → 125 ±1.4 ⊥ ±4.2 %, 25 → −40 ±0.1 ⊥ ±3.5 %; note (1): «drift at any temperature can be calculated from drift
+    # values at 125 °C or −40 °C», linearly in the excursion from 25 °C; Boff_DR_A1 lifetime ±50 µT and SENSLDR_A1
+    # ±0.5 % (typical); NRMS_XY_SLOW_A1 (x_RANGE = 00b, CONV_AVG = 101b, 25 °C) typ 24, max 34 µT, NRMS_Z_SLOW_A1 11 ⊥
+    # 14.2 µT; AERR X–Y ±0.4°, X–Z ±0.5° (typical, 25 °C, after 25 °C gain and offset correction); §6.5 IACT 3.4 mA
+    # (VCC 5.5 V), tmeasure 825 µs (CONV_AVG = 101, one channel; note 3: +800 µs per added axis), IDEEP_SLP 5 nA;
+    # §6.7 tstart_sleep max 50 µs, tstand_by 90 µs; §6.3 TA −40…150 °C
+    "TMAG5170A1": {
+        "source": "TI SBASAF4 (September 2021) §6.6 TMAG5170A1 · §6.5 · §6.7 · §6.3",
+        "ranges_T": (0.025, 0.050, 0.100), "verdict_range_T": 0.100, "operating_C": (-40.0, 150.0),
+        "offset_basis": "per_K",
+        "offset_T_per_K": {"x": {"cold": (1.5e-6, 6.5e-6), "hot": (0.0, 5.0e-6)},
+                           "z": {"cold": (1.0e-6, 3.0e-6), "hot": (0.0, 1.5e-6)}},
+        "mismatch_basis": "total_linear",
+        "mismatch": {"x_y": {"cold": (0.005, 0.034), "hot": (0.008, 0.040)},
+                     "x_z": {"cold": (0.001, 0.035), "hot": (0.014, 0.042)}},
+        "noise_T": {"x": 24e-6, "z": 11e-6}, "angle_error_deg": {"x_y": 0.4, "x_z": 0.5}, "angle_error_over_T_deg": None,
+        "lifetime": {"offset_T": 50e-6, "sensitivity": 0.005, "kind": "typical"},
+        "i_active_A": 3.4e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6, "t_wake_s": (50e-6, 90e-6), "i_sleep_A": 5e-9,
+        "assumed": ["noise: given at the ±50 mT range only, taken for ±100 mT",
+                    "IACT: given at VCC 5.5 V only, taken at 3.3 V",
+                    "wake: tstart_sleep + tstand_by, our reading of the mode sequence (the operating-modes table not read)"]},
+    # the same datasheet, TMAG5170A2, x_RANGE = 00b (±150 mT): Boff_DR_A2 X/Y 25 → 125 typ 1.0, max ±5.5; 25 → −40 min
+    # −8.0, typ −3.0, max 2.0; Z 25 → 125 typ −1.5, max ±3.5; 25 → −40 typ −0.4, max ±5.0 µT/°C; SENSMS_DR_XY_A2 (75 ·
+    # 150 mT) over −40…125 °C typ ±0.5 %, max ±4.0 %; SENSMS_DR_XZ_A2 ±0.2 ⊥ ±5.5 %; lifetime ±50 µT, SENSLDR_A2 ±0.6 %;
+    # NRMS (X, Y) CONV_AVG = 101b, 25 °C 28 ⊥ 41 µT, (Z) 13 ⊥ 16 µT; AERR X–Y ±0.40°, X–Z ±0.5°
+    "TMAG5170A2": {
+        "source": "TI SBASAF4 (September 2021) §6.6 TMAG5170A2 · §6.5 · §6.7 · §6.3",
+        "ranges_T": (0.075, 0.150), "verdict_range_T": 0.150, "operating_C": (-40.0, 150.0),
+        "offset_basis": "per_K",
+        "offset_T_per_K": {"x": {"cold": (3.0e-6, 8.0e-6), "hot": (1.0e-6, 5.5e-6)},
+                           "z": {"cold": (0.4e-6, 5.0e-6), "hot": (1.5e-6, 3.5e-6)}},
+        "mismatch_basis": "total_linear",
+        "mismatch": {"x_y": {"cold": (0.005, 0.040), "hot": (0.005, 0.040)},
+                     "x_z": {"cold": (0.002, 0.055), "hot": (0.002, 0.055)}},
+        "noise_T": {"x": 28e-6, "z": 13e-6}, "angle_error_deg": {"x_y": 0.4, "x_z": 0.5}, "angle_error_over_T_deg": None,
+        "lifetime": {"offset_T": 50e-6, "sensitivity": 0.006, "kind": "typical"},
+        "i_active_A": 3.4e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6, "t_wake_s": (50e-6, 90e-6), "i_sleep_A": 5e-9,
+        "assumed": ["IACT: given at VCC 5.5 V only, taken at 3.3 V",
+                    "wake: tstart_sleep + tstand_by, our reading of the mode sequence (the operating-modes table not read)"]},
+    # the same device at x_RANGE = 10b (±300 mT): Boff_DR_A2 (300 mT range, every axis) over −40…125 °C typ ±2.5, max
+    # ±12.0 µT/°C; SENSMS_DR_XY_A2 (300 mT) 25 → 125 ±0.5 ⊥ ±5.2 %, 25 → −40 ±0.9 ⊥ ±7.6 %; SENSMS_DR_XZ_A2 (300 mT)
+    # over −40…125 ±1.1 ⊥ ±6.6 %
+    "TMAG5170A2_300mT": {
+        "source": "TI SBASAF4 (September 2021) §6.6 TMAG5170A2, 300 mT range · §6.5 · §6.7 · §6.3",
+        "ranges_T": (0.300,), "verdict_range_T": 0.300, "operating_C": (-40.0, 150.0),
+        "offset_basis": "per_K",
+        "offset_T_per_K": {"x": {"cold": (2.5e-6, 12.0e-6), "hot": (2.5e-6, 12.0e-6)},
+                           "z": {"cold": (2.5e-6, 12.0e-6), "hot": (2.5e-6, 12.0e-6)}},
+        "mismatch_basis": "total_linear",
+        "mismatch": {"x_y": {"cold": (0.009, 0.076), "hot": (0.005, 0.052)},
+                     "x_z": {"cold": (0.011, 0.066), "hot": (0.011, 0.066)}},
+        "noise_T": {"x": 28e-6, "z": 13e-6}, "angle_error_deg": {"x_y": 0.4, "x_z": 0.5}, "angle_error_over_T_deg": None,
+        "lifetime": {"offset_T": 50e-6, "sensitivity": 0.006, "kind": "typical"},
+        "i_active_A": 3.4e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6, "t_wake_s": (50e-6, 90e-6), "i_sleep_A": 5e-9,
+        "assumed": ["noise and angle error: given at the ±150 mT range only, taken for ±300 mT",
+                    "IACT: given at VCC 5.5 V only, taken at 3.3 V",
+                    "wake: tstart_sleep + tstand_by, our reading of the mode sequence (the operating-modes table not read)"]},
+    # TI SLYS053C (TMAG3001, November 2023, revised May 2025) §5.7 «Magnetic Characteristics For A1»: BIN ±37 ⊥ ±75 mT;
+    # Boff_DR −40 → 25 °C typ ±1, max ±9.3; 25 → 125 °C typ ±1, max ±9.6 µT/°C (every axis); SENSMS_DR, %/°C, MIN ⊥ MAX
+    # only: X–Y −40…25 −0.027 ⊥ 0.029, 25…85 −0.032 ⊥ 0.023, 85…125 −0.041 ⊥ 0.029; X–Z or Y–Z −40…25 −0.054 ⊥ 0.027,
+    # 25…85 −0.063 ⊥ 0.023, 85…125 −0.067 ⊥ 0.036 (the 25…85 band is the hot branch's here: our hottest hour lies in
+    # it — asserted); NRMS (LP_LN = 0h, Conv_AVG = 5h) X, Y 17.5 µT, Z 10 µT; AERR 25 °C X–Y 0.4 (max ±0.95), X–Z 0.43
+    # (±1.0)°, over −40…125 °C max X–Y ±2.3°, X–Z ±1.5°; §5.5 IACTIVE (LP_LN = 0h, 3.3 V) typ 2.4 mA, ISLEEP 40 nA;
+    # §5.11 tmeasure (Conv_AVG = 5h, one channel) typ 825 µs, tstart_sleep 50 µs, tstart_measure 62 µs; §5.3 −40…125 °C
+    "TMAG3001A1": {
+        "source": "TI SLYS053C (November 2023, rev. May 2025) §5.7 · §5.5 · §5.11 · §5.3",
+        "ranges_T": (0.037, 0.075), "verdict_range_T": 0.075, "operating_C": (-40.0, 125.0),
+        "offset_basis": "per_K",
+        "offset_T_per_K": {"x": {"cold": (1.0e-6, 9.3e-6), "hot": (1.0e-6, 9.6e-6)},
+                           "z": {"cold": (1.0e-6, 9.3e-6), "hot": (1.0e-6, 9.6e-6)}},
+        "mismatch_basis": "per_K", "mismatch_hot_band_C": (25.0, 85.0),
+        "mismatch": {"x_y": {"cold": (None, 0.029e-2), "hot": (None, 0.032e-2)},
+                     "x_z": {"cold": (None, 0.054e-2), "hot": (None, 0.063e-2)}},
+        "noise_T": {"x": 17.5e-6, "z": 10e-6}, "angle_error_deg": {"x_y": 0.4, "x_z": 0.43},
+        "angle_error_over_T_deg": {"x_y": 2.3, "x_z": 1.5},
+        "lifetime": None,
+        "i_active_A": 2.4e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6, "t_wake_s": (50e-6, 62e-6), "i_sleep_A": 40e-9,
+        "assumed": ["the added channel's conversion time: not stated, taken as the TMAG5273's and TMAG5170's 800 µs"]},
+    # the same datasheet, §5.8 «Magnetic Characteristics For A2»: BIN ±120 ⊥ ±240 mT; Boff_DR −40 → 25 typ ±1, max
+    # ±9.1; 25 → 125 typ ±1, max ±8 µT/°C; SENSMS_DR X–Y −40…25 ±0.041 (−0.041 ⊥ 0.041), 25…85 −0.046 ⊥ 0.044, 85…125
+    # −0.057 ⊥ 0.055; X–Z or Y–Z −40…25 −0.063 ⊥ 0.024, 25…85 −0.074 ⊥ 0.035, 85…125 −0.083 ⊥ 0.070 %/°C; NRMS (LP_LN = 0h,
+    # Conv_AVG = 5h) X, Y 20 µT, Z 14.5 µT; AERR 25 °C X–Y ±0.43 (max ±1.4), X–Z ±0.35 (±0.85)°, over −40…125 °C max
+    # X–Y ±2.25°, X–Z ±1.4°
+    "TMAG3001A2": {
+        "source": "TI SLYS053C (November 2023, rev. May 2025) §5.8 · §5.5 · §5.11 · §5.3",
+        "ranges_T": (0.120, 0.240), "verdict_range_T": 0.240, "operating_C": (-40.0, 125.0),
+        "offset_basis": "per_K",
+        "offset_T_per_K": {"x": {"cold": (1.0e-6, 9.1e-6), "hot": (1.0e-6, 8.0e-6)},
+                           "z": {"cold": (1.0e-6, 9.1e-6), "hot": (1.0e-6, 8.0e-6)}},
+        "mismatch_basis": "per_K", "mismatch_hot_band_C": (25.0, 85.0),
+        "mismatch": {"x_y": {"cold": (None, 0.041e-2), "hot": (None, 0.046e-2)},
+                     "x_z": {"cold": (None, 0.063e-2), "hot": (None, 0.074e-2)}},
+        "noise_T": {"x": 20e-6, "z": 14.5e-6}, "angle_error_deg": {"x_y": 0.43, "x_z": 0.35},
+        "angle_error_over_T_deg": {"x_y": 2.25, "x_z": 1.4},
+        "lifetime": None,
+        "i_active_A": 2.4e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6, "t_wake_s": (50e-6, 62e-6), "i_sleep_A": 40e-9,
+        "assumed": ["the added channel's conversion time: not stated, taken as the TMAG5273's and TMAG5170's 800 µs"]},
+}
+BASE_SENSOR = "TMAG5273A1"   # the row the base tables (2) · (2b) and the 2026-11-10/11 verdict (2c) were priced on
+# Rows NOT in the table — named, so «the table» is not read as «every sensor»: what is missing is a primary read here
+SENSOR_GAPS = {
+    "TLE493D-P3B6 · TLE493D-W2B6 (Infineon)": "primary not reached on this machine's channel in this run (the product "
+        "pages carry no datasheet link for curl); the 2026-11-16 desk read a TOTAL offset drift over a range (P3B6 Rev "
+        "1.0 Tables 8/9 with a host polynomial; W2B6 v1.2 Table 9, «not production tested») — not re-read, so not priced",
+    "MLX90393 · MLX90395 (Melexis) · ALS31313 (Allegro)": "the desk read no GUARANTEED per-kelvin offset drift in them "
+        "(rev 012 · rev 6.0 · rev 9); not re-read here",
+    "TLV493D-A2BW (Infineon)": "operating range −20…85 °C per the desk — short of the record's cold edge; not re-read",
+    "angle (saturation) sensors — TLE5501, KMZ60, TAS2141, TMR3004/3005": "not modelled: the copies the desk read are "
+        "mirrors and distributor copies, not primaries, and none gives an angle drift per kelvin — the term (2d)'s "
+        "verdict would need; the field they need to saturate is (2)'s field function, the error over temperature is the "
+        "missing row",
+}
+
+
+def base_lanes() -> dict:
+    """The base row as the isothermal tables (2) · (2b) and the 2026-11-10/11 verdict (2c) read it: ONE offset drift per
+    lane (typ ⊥ max — its datasheet gives one Boff_TC row for every axis and both branches, asserted), the X–Y ⊥ X–Z
+    mismatch totals and angle errors, the X-axis noise, the linear ranges. A view of the table's row, not a second home."""
+    r = SENSORS[BASE_SENSOR]
+    rows = {r["offset_T_per_K"][ax][br] for ax in ("x", "z") for br in ("cold", "hot")}
+    assert len(rows) == 1, "the base row's offset drift is no longer one row — (2) and (2c) read it as one"
+    typ, mx = rows.pop()
+    assert all(r["mismatch"][p]["cold"] == r["mismatch"][p]["hot"] for p in ("x_y", "x_z"))
+    return {"offset_drift_T_per_K": {"typ": typ, "max": mx}, "noise_T": r["noise_T"]["x"],
+            "sens_mismatch_drift": {p: r["mismatch"][p]["hot"][0] for p in ("x_y", "x_z")},
+            "angle_error_deg": r["angle_error_deg"], "linear_range_T": r["ranges_T"]}
+
+
+BASE = base_lanes()
 # ams AS5311 (rev 1.13): supply current, power-up time; pole length 1.0 mm → a 2.0 mm magnetic period
 ENCODER_2MM = {"i_supply_A": {"typ": 16e-3, "max": 21e-3}, "t_power_up_s": 20e-3, "period_mm": 2.0}
 # The frames' temperature sensitivity — Natkon ZN11 «< 0.3 µm °C⁻¹» (Zweifel et al. 2021, New Phytol., Methods)
@@ -268,6 +485,7 @@ CLASS_SPREAD = (0.03, 0.05)   # an ASSUMED spread of a unit above its class mini
 GAP_REALISTIC_MM = 3.0                     # 01_03 §4 ⊕ (в): the assumed floor of a realistic gap (the wall plus clearances)
 VERDICT_LANE = "80mT:max"                  # the canon's verdict lane: the ±80 mT range, the guaranteed (maximum) drift
 TIE_SHALLOWEST_MM = 0.5                   # `103`'s DEPTH_MIN — its tie axis starts here
+LIFE_YR = 20.0                             # the field product's design life (01_03 §4; a goal, not a property)
 
 
 def _load(name: str, file: str):
@@ -365,38 +583,38 @@ def scale_cell(t_mm: float, g: float, wall_mm: float) -> dict:
     """One (thickness, gap) row of the scale behind the wall — the ONE home of the row, for the base table and the
     thickness knob alike."""
     p = best_period_mm(t_mm, g)
-    need_raw = {k: b_r_needed_t(p, t_mm, g, db, FRAME_UM_PER_K) for k, db in HALL["offset_drift_T_per_K"].items()}
+    need_raw = {k: b_r_needed_t(p, t_mm, g, db, FRAME_UM_PER_K) for k, db in BASE["offset_drift_T_per_K"].items()}
     need = {k: round(v, 3) for k, v in need_raw.items()}
     b_sensor = {k: round(field_amplitude_t(br, p, t_mm, g) * 1e3, 1) for k, br in need.items()}
     n_conv = {}
     for k, br in need.items():
-        noise = p / (2 * math.pi) * HALL["noise_T"]["x_y"] / field_amplitude_t(br, p, t_mm, g) * 1e3
+        noise = p / (2 * math.pi) * BASE["noise_T"] / field_amplitude_t(br, p, t_mm, g) * 1e3
         n_conv[k] = max(1, math.ceil((noise / NOISE_TARGET_UM) ** 2))
     pairs = {}
     for pair in ("x_y", "x_z"):
-        eps = HALL["sens_mismatch_drift"][pair]
+        eps = BASE["sens_mismatch_drift"][pair]
         peak = p / (2 * math.pi) * eps / 2 * 1e3
-        pairs[pair] = {"angle_error_static_cyclic_um": round(p * HALL["angle_error_deg"][pair] / 360 * 1e3, 1),
+        pairs[pair] = {"angle_error_static_cyclic_um": round(p * BASE["angle_error_deg"][pair] / 360 * 1e3, 1),
                        "mismatch_drift_cyclic_peak_um_over_datasheet_drift": round(peak, 1),
                        "mismatch_um_per_K_if_linear_over_K": [round(peak / dk, 2) for dk in MISMATCH_LINEAR_SPREAD_K[::-1]]}
     within_range = {}
-    for lin in HALL["linear_range_T"]:
-        for drift, db in HALL["offset_drift_T_per_K"].items():
+    for lin in BASE["linear_range_T"]:
+        for drift, db in BASE["offset_drift_T_per_K"].items():
             cap = period_cap_mm(lin, db, FRAME_UM_PER_K)
             p_in = best_period_mm(t_mm, g, p_max_mm=cap)
             need_in = b_r_needed_t(p_in, t_mm, g, db, FRAME_UM_PER_K)
             within_range[f"{lin * 1e3:g}mT:{drift}"] = {
                 "period_cap_mm": round(cap, 2), "best_period_within_cap_mm": p_in, "capped": p_in < p,
                 "b_r_needed_T": round(need_in, 3), "magnet_families_meeting": families_meeting(need_in),
-                "angle_error_static_cyclic_um": {pr: round(p_in * HALL["angle_error_deg"][pr] / 360 * 1e3, 1)
+                "angle_error_static_cyclic_um": {pr: round(p_in * BASE["angle_error_deg"][pr] / 360 * 1e3, 1)
                                                  for pr in ("x_y", "x_z")},
-                "mismatch_drift_cyclic_peak_um": {pr: round(p_in / (2 * math.pi) * HALL["sens_mismatch_drift"][pr] / 2 * 1e3, 1)
+                "mismatch_drift_cyclic_peak_um": {pr: round(p_in / (2 * math.pi) * BASE["sens_mismatch_drift"][pr] / 2 * 1e3, 1)
                                                   for pr in ("x_y", "x_z")}}
     return {
         "t_mm": t_mm, "g_mm": g, "best_period_mm": p, "half_period_mm": round(p / 2, 3),
         "b_r_needed_T_offset_term_only": need, "field_at_sensor_mT_at_needed_b_r": b_sensor,
-        "within_linear_range_40mT": {k: v <= HALL["linear_range_T"][0] * 1e3 for k, v in b_sensor.items()},
-        "within_linear_range_80mT": {k: v <= HALL["linear_range_T"][1] * 1e3 for k, v in b_sensor.items()},
+        "within_linear_range_40mT": {k: v <= BASE["linear_range_T"][0] * 1e3 for k, v in b_sensor.items()},
+        "within_linear_range_80mT": {k: v <= BASE["linear_range_T"][1] * 1e3 for k, v in b_sensor.items()},
         "two_channel_samples_for_1um_at_needed_b_r": n_conv, "axis_pairs": pairs,
         "surface_field_share_kept_by_2mm_period": float(f"{math.exp(-2 * math.pi * g / ENCODER_2MM['period_mm']):.2e}"),
         "gap_below_radome_wall": g < wall_mm,
@@ -414,7 +632,7 @@ def thermal_factor(alpha: float, t_c: float, t_ref: float) -> float:
 
 def lane_parts(lane: str) -> tuple[float, float]:
     lin_mt, drift = lane.split("mT:")
-    return float(lin_mt) * 1e-3, HALL["offset_drift_T_per_K"][drift]
+    return float(lin_mt) * 1e-3, BASE["offset_drift_T_per_K"][drift]
 
 
 def period_cap_thermal_mm(lane: str, a: tuple) -> float:
@@ -638,6 +856,340 @@ def control_temperature(mt: dict, rows: dict, t_hots: dict, colds: dict, z81: di
         assert abs(need_at_ref(2.0, GAP_REALISTIC_MM, lane, tuple(a))[0] - MAGNET_FAMILIES_BR_T["REFeB_sintered"][1]) < 1e-9
 
 
+# ── (2d) the sensor table: the offset AND the mismatch term in one verdict, each branch at its own temperature edge ──
+PAIR_AXES = {"x_y": ("x", "x"), "x_z": ("x", "z")}   # X and Y share one row in every datasheet read (SENSORS)
+VERDICT_GAPS_MM = (3.0, 4.0)
+VERDICT_FAMILIES = ("REFeB_sintered", "RE2Co17", "RECo5")
+TARGET_MM = FRAME_UM_PER_K * 1e-3                    # the frames' 0.3 µm/K, in mm/K
+
+
+def per_k(row: dict, pair: str, kind: int) -> dict:
+    """Per branch: the pair's offset drift √(δa² + δb²) in T/K and its mismatch drift per kelvin, on the typical (kind 0)
+    or guaranteed (kind 1) column. Where the guaranteed mismatch column is absent the typical one stands in, flagged.
+    The mismatch per kelvin follows the row's declared basis: a per-kelvin row as read; a total from 25 °C over the
+    branch's span (`BRANCH_SPAN_K`) — the datasheet's own linear statement ⊥ our assumption for a total with no ΔT."""
+    a, b = PAIR_AXES[pair]
+    out = {"dbp_T_per_K": {}, "eps_per_K": {}, "mismatch_column": {}}
+    for br in ("cold", "hot"):
+        oa, ob = row["offset_T_per_K"][a][br][kind], row["offset_T_per_K"][b][br][kind]
+        out["dbp_T_per_K"][br] = math.hypot(oa, ob)
+        m, col = row["mismatch"][pair][br][kind], ("typical", "guaranteed")[kind]
+        if m is None:
+            m, col = row["mismatch"][pair][br][0], "typical (no guaranteed column)"
+        if m is None:
+            out["eps_per_K"][br], out["mismatch_column"][br] = None, "not given"
+            continue
+        out["eps_per_K"][br] = m if row["mismatch_basis"] == "per_K" else m / BRANCH_SPAN_K[br]
+        out["mismatch_column"][br] = col
+    return out
+
+
+def make_lane(row: dict, pair: str, kind: int, with_mismatch: bool) -> dict:
+    pk = per_k(row, pair, kind)
+    return {"lin_T": row["verdict_range_T"], "dbp": pk["dbp_T_per_K"],
+            "eps": {br: (pk["eps_per_K"][br] if with_mismatch else 0.0) for br in ("cold", "hot")}}
+
+
+BRANCH_SPLIT_C = 25.0   # the datasheets' drifts are «from 25 °C»: below it the cold branch's slope, above it the hot one's
+
+
+def edge_factors(a: tuple) -> dict:
+    """The weakest unit's B_r where each branch binds, over B_r at the reference it meets its minimum at. A branch's
+    per-kelvin drift holds over its whole band, and the offset term divides by the field, so each branch binds where its
+    band's field is WEAKEST (§When Modifying #50): the hot branch at the hottest hour, the cold branch at its warm end,
+    25 °C — at the cold edge itself the field is stronger. (The range bound reads the coldest hour, in the cap.)"""
+    alpha, t_ref_need, _t_ref_cap, t_hot, _t_cold, _s = a
+    return {"hot": thermal_factor(alpha, t_hot, t_ref_need), "cold": thermal_factor(alpha, BRANCH_SPLIT_C, t_ref_need)}
+
+
+def cap_lane_mm(lane: dict, a: tuple) -> float:
+    """The longest period a batch keeps under the sum rule: per branch the field the weakest unit must put on the
+    sensor, P·δB_pair/(2π·(T − P·ε/4π)), over f where that branch binds (`edge_factors`) — once put on the sensor by
+    the strongest unit at the coldest hour —
+    stays inside the range. Each edge is linear-fractional in P, so the cap is min over edges of B*·T/(K + B*·c),
+    K = δB_pair/(2π·f), c = ε/(4π), B* = B_lin/(f_cap(T_cold)·(1 + s)); with ε = 0 it is `period_cap_thermal_mm`."""
+    alpha, _t_ref_need, t_ref_cap, _t_hot, t_cold, spread = a
+    f, b_star = edge_factors(a), lane["lin_T"] / (thermal_factor(alpha, t_cold, t_ref_cap) * (1.0 + spread))
+    caps = []
+    for e in ("cold", "hot"):
+        k_e, c_e = lane["dbp"][e] / (2 * math.pi * f[e]), lane["eps"][e] / (4 * math.pi)
+        caps.append(math.inf if k_e == 0.0 and c_e == 0.0 else b_star * TARGET_MM / (k_e + b_star * c_e))
+    return min(caps)
+
+
+def need_br_lane(p: float, t_mm: float, g_mm: float, lane: dict, f: dict) -> float:
+    """The class minimum (at T_ref) the sum rule needs at period p: per branch the offset term takes what the mismatch
+    term leaves of the frames' 0.3 µm/K — B_r = 2·P·δB_pair/(2π·(T − P·ε/4π)·geom·f) — and the binding branch decides."""
+    k = 2 * math.pi / p
+    geom = (1 - math.exp(-k * t_mm)) * math.exp(-k * g_mm)
+    worst = 0.0
+    for e in ("cold", "hot"):
+        left = TARGET_MM - p * lane["eps"][e] / (4 * math.pi)
+        if left <= 0.0:
+            return math.inf
+        worst = max(worst, p * lane["dbp"][e] / (2 * math.pi * left * f[e]))
+    return 2 * worst / geom
+
+
+def need_lane(t_mm: float, g_mm: float, lane: dict, a: tuple, p_floor: float = 0.5) -> tuple[float, float | None]:
+    """(the least need over P in [max(0.5, p_floor), min(60, cap)], the P it is read at). Offset only (ε = 0) every edge
+    term is one shape times a constant, so the least sits at P* clipped into the window (unimodal, as (2c)); with a
+    mismatch term the window is searched by a bounded scalar minimisation and its two ends — and control 10 holds every
+    solved cell against a brute force over the window, so a second minimum the search missed reds."""
+    f = edge_factors(a)
+    lo, hi = max(0.5, p_floor), min(60.0, cap_lane_mm(lane, a))
+    if lo > hi:
+        return math.inf, None
+    if lane["eps"]["cold"] == 0.0 and lane["eps"]["hot"] == 0.0:
+        p = min(max(best_period_cont_mm(t_mm, g_mm), lo), hi)
+        return need_br_lane(p, t_mm, g_mm, lane, f), p
+    r = minimize_scalar(lambda q: math.log(need_br_lane(q, t_mm, g_mm, lane, f)), bounds=(lo, hi), method="bounded",
+                        options={"xatol": 1e-9})
+    cands = [(need_br_lane(q, t_mm, g_mm, lane, f), q) for q in (float(r.x), lo, hi)]
+    return min(cands)
+
+
+def thickness_limit_lane(g_mm: float, lane: dict, a: tuple, b_r_max: float, p_floor: float = 0.5) -> float | None:
+    """The thickness from which the sum rule's need falls to `b_r_max` — it falls strictly with t at every fixed P and
+    the window does not depend on t, so the root is unique; None if an infinitely thick scale needs more."""
+    def f(t):
+        return need_lane(t, g_mm, lane, a, p_floor)[0] - b_r_max
+    if f(1e4) >= 0:
+        return None
+    assert f(0.05) > 0, (g_mm, lane, a, b_r_max)
+    return float(brentq(f, 0.05, 1e4, xtol=1e-10))
+
+
+def gap_limit_lane(t_mm: float, lane: dict, a: tuple, b_r_max: float, p_floor: float = 0.5) -> float | None:
+    """The gap at which the sum rule's need reaches `b_r_max` — it rises strictly with g at every fixed P and the window
+    does not depend on g, so the root is unique; None if even 0.2 mm needs more."""
+    def f(g):
+        return need_lane(t_mm, g, lane, a, p_floor)[0] - b_r_max
+    if f(0.2) > 0:
+        return None
+    assert f(40.0) > 0, (t_mm, lane, a, b_r_max)
+    return float(brentq(f, 0.2, 40.0, xtol=1e-10))
+
+
+LEVER_T_MM = 10.0     # the thickest scale (2b) prices — the gap a row holds there is the most a thickness buys on the grid
+
+
+def mismatch_scale_to_hold(g_mm: float, row: dict, pair: str, a: tuple, b_r_max: float, p_floor: float) -> float | None:
+    """The factor on the guaranteed mismatch drift (both branches) at or below which the family's strongest class holds
+    the gap at an infinitely thick scale — the verdict's flip threshold in its binding member (§When Modifying #40).
+    The need rises with the factor (the offset term's share shrinks and the cap with it), so the root is unique; None
+    when even no mismatch at all does not hold (the offset and range bounds alone refuse the cell)."""
+    def lane(s):
+        ln = make_lane(row, pair, 1, True)
+        return {**ln, "eps": {br: s * v for br, v in ln["eps"].items()}}
+
+    def f(s):
+        return need_lane(1e4, g_mm, lane(s), a, p_floor)[0] - b_r_max
+    if f(0.0) >= 0:
+        return None
+    if f(1.0) <= 0:
+        return 1.0
+    return float(brentq(f, 0.0, 1.0, xtol=1e-12))
+
+
+def sensor_table(args, t_hots: dict, colds: dict, unwrap_floor_mm: float) -> dict:
+    """(2d) per row, axis pair, family, corner and gap: the thickness limit offset only ⊥ with the mismatch term ⊥ with it
+    and the unwrap floor, the period each is read at, the caps; per row and pair the per-kelvin drifts, the period at
+    which the mismatch alone takes the frames' 0.3 µm/K (typical ⊥ guaranteed), the read's energy on the verdict lane."""
+    for row in SENSORS.values():   # a per-kelvin band row must cover the edge it is applied at
+        lo_c, hi_c = row.get("mismatch_hot_band_C", (25.0, row["operating_C"][1]))
+        assert lo_c <= 25.0 and max(t_hots.values()) <= hi_c and row["operating_C"][0] <= min(colds.values()), row["source"]
+    corners = ("isothermal", "kind", "adverse")
+    out = {}
+    for name, row in SENSORS.items():
+        pairs = {}
+        for pair in PAIR_AXES:
+            pk = {k: per_k(row, pair, i) for k, i in (("typical", 0), ("guaranteed", 1))}
+            alone = {k: {br: (None if v["eps_per_K"][br] in (None, 0.0) else TARGET_MM * 4 * math.pi / v["eps_per_K"][br])
+                         for br in ("cold", "hot")} for k, v in pk.items()}
+            lanes = {"offset_only": make_lane(row, pair, 1, False), "with_mismatch": make_lane(row, pair, 1, True)}
+            cells, caps = {}, {}
+            for fam in VERDICT_FAMILIES:
+                b_max = MAGNET_FAMILIES_BR_T[fam][1]
+                for c in corners:
+                    a = args(fam, c)
+                    caps[f"{fam}:{c}"] = {k: cap_lane_mm(ln, a) for k, ln in lanes.items()}
+                    for g in VERDICT_GAPS_MM:
+                        cell = {}
+                        for variant, ln, floor in (("offset_only", lanes["offset_only"], 0.5),
+                                                   ("with_mismatch", lanes["with_mismatch"], 0.5),
+                                                   ("with_mismatch_and_unwrap_floor", lanes["with_mismatch"], unwrap_floor_mm)):
+                            t_lim = thickness_limit_lane(g, ln, a, b_max, floor)
+                            n_inf, p_inf = need_lane(1e4, g, ln, a, floor)
+                            cell[variant] = {"t_min_mm": t_lim,
+                                             "p_mm": None if t_lim is None else need_lane(t_lim, g, ln, a, floor)[1],
+                                             "need_T_at_infinite_thickness": None if math.isinf(n_inf) else n_inf,
+                                             "p_mm_at_infinite_thickness": p_inf}
+                        cells[f"{fam}:{c}:g{g:g}"] = cell
+            # the levers: the gap each holds at the thickest scale priced, and the factor on the guaranteed mismatch drift
+            # below which an infinitely thick scale holds each gap — against the typical/guaranteed ratio the row prints
+            levers = {}
+            for fam in VERDICT_FAMILIES[:2]:
+                b_max = MAGNET_FAMILIES_BR_T[fam][1]
+                for c in ("kind", "adverse"):
+                    a = args(fam, c)
+                    gl = {"offset_only": gap_limit_lane(LEVER_T_MM, lanes["offset_only"], a, b_max),
+                          "with_mismatch": gap_limit_lane(LEVER_T_MM, lanes["with_mismatch"], a, b_max),
+                          "with_mismatch_and_unwrap_floor": gap_limit_lane(LEVER_T_MM, lanes["with_mismatch"], a, b_max,
+                                                                           unwrap_floor_mm)}
+                    levers[f"{fam}:{c}"] = {
+                        "gap_limit_mm_at_t10": gl,
+                        "p_mm_at_the_gap_limit_with_mismatch": None if gl["with_mismatch"] is None else need_lane(
+                            LEVER_T_MM, gl["with_mismatch"], lanes["with_mismatch"], a)[1],
+                        "mismatch_scale_to_hold_at_infinite_thickness": {
+                            f"g{g:g}": {"no_floor": mismatch_scale_to_hold(g, row, pair, a, b_max, 0.5),
+                                        "with_unwrap_floor": mismatch_scale_to_hold(g, row, pair, a, b_max, unwrap_floor_mm)}
+                            for g in VERDICT_GAPS_MM}}
+            ratio = {br: (None if pk["typical"]["eps_per_K"][br] is None or not pk["guaranteed"]["eps_per_K"][br]
+                          or "no guaranteed" in pk["guaranteed"]["mismatch_column"][br]
+                          else pk["typical"]["eps_per_K"][br] / pk["guaranteed"]["eps_per_K"][br]) for br in ("cold", "hot")}
+            # the read's energy on the verdict (guaranteed) lane: at the needed field the angle noise is at most
+            # σ·0.3 µm/K / δB_pair (the mismatch term only raises the field), σ the noisier axis of the pair
+            sig = max(row["noise_T"][ax] for ax in PAIR_AXES[pair])
+            noise_um = sig * FRAME_UM_PER_K / min(pk["guaranteed"]["dbp_T_per_K"].values())
+            n = max(1, math.ceil((noise_um / NOISE_TARGET_UM) ** 2))
+            e = energy_j(row["i_active_A"] + I_CORE_RUN_A, V_OUT,
+                         n * (row["t_conv_one_ch_s"] + row["t_add_ch_s"]) + sum(row["t_wake_s"])) / ETA_BUCK_ACTIVE
+            # lifetime drifts (typical, where given): a STEP over the life, not per kelvin — the offset step at the
+            # sensor's full range (the smallest it can be) at the offset-only adverse REFeB cap, and the cyclic peak the
+            # per-axis sensitivity drift makes if the two axes drift apart (our reading: no mismatch lifetime row)
+            life = None
+            if row["lifetime"]:
+                p_cap = caps["REFeB_sintered:adverse"]["offset_only"]
+                life = {"offset_step_um_at_full_range_at_offset_only_adverse_REFeB_cap": round(
+                            p_cap / (2 * math.pi) * math.hypot(row["lifetime"]["offset_T"], row["lifetime"]["offset_T"])
+                            / row["verdict_range_T"] * 1e3, 2),
+                        "mismatch_peak_um_if_the_axes_drift_apart_at_that_cap": round(
+                            p_cap / (2 * math.pi) * 2 * row["lifetime"]["sensitivity"] / 2 * 1e3, 1),
+                        "kind": row["lifetime"]["kind"]}
+            pairs[pair] = {"per_K": pk, "mismatch_alone_takes_the_frames_at_period_mm": alone,
+                           "mismatch_typical_over_guaranteed": ratio,
+                           "caps_mm": caps, "cells": cells, "levers": levers,
+                           "read": {"noise_um_upper_at_the_needed_field": round(noise_um, 3), "samples": n,
+                                    "vstor_uJ": round(e * 1e6, 1), "share_of_E_cycle_pct": round(e / E_CYCLE * 100, 2)},
+                           "lifetime": life}
+        out[name] = {"source": row["source"], "verdict_range_T": row["verdict_range_T"],
+                     "offset_basis": row["offset_basis"], "mismatch_basis": row["mismatch_basis"],
+                     "assumed": row["assumed"], "pairs": pairs}
+    return out
+
+
+def control_sensor_table(st: dict, args, mt: dict, t_hots: dict, colds: dict) -> None:
+    """Control 10 — see the docstring's CONTROLS."""
+    base = st[BASE_SENSOR]["pairs"]["x_y"]
+    for fam in VERDICT_FAMILIES:
+        b_max = MAGNET_FAMILIES_BR_T[fam][1]
+        for c in ("isothermal", "kind", "adverse"):
+            # the old verdict, reproduced: the base row, offset only, is (2c)'s thickness limit and cap
+            old_t, new_t = mt["thickness_limit_mm_at_realistic_gap"][fam][c], base["cells"][f"{fam}:{c}:g3"]["offset_only"]["t_min_mm"]
+            assert (old_t is None and new_t is None) or abs(old_t - new_t) < 1e-9, (fam, c, old_t, new_t)
+            assert abs(base["caps_mm"][f"{fam}:{c}"]["offset_only"] - mt["period_cap_mm"][fam][c]) < 1e-9, (fam, c)
+    def sum_rule_need(p, t, g, ln, f):   # the sum rule written out again, apart from `need_br_lane`
+        k = 2 * math.pi / p
+        geom = (1 - math.exp(-k * t)) * math.exp(-k * g)
+        return max(2 * p * ln["dbp"][e] / (2 * math.pi * (TARGET_MM - p * ln["eps"][e] / (4 * math.pi)) * geom * f[e])
+                   for e in ("cold", "hot"))
+
+    for name, s in st.items():
+        row = SENSORS[name]
+        for pair, pr in s["pairs"].items():
+            ln_m, ln_0 = make_lane(row, pair, 1, True), make_lane(row, pair, 1, False)
+            for key, lv in pr["levers"].items():
+                fam, c = key.split(":")
+                g_m = lv["gap_limit_mm_at_t10"]["with_mismatch"]
+                if g_m is not None:   # the lever's root on the sum rule — dropping the mismatch moves it off the maximum
+                    f = edge_factors(args(fam, c))
+                    p = lv["p_mm_at_the_gap_limit_with_mismatch"]
+                    assert abs(sum_rule_need(p, LEVER_T_MM, g_m, ln_m, f) - MAGNET_FAMILIES_BR_T[fam][1]) < 1e-9, (name, pair, key)
+                    assert sum_rule_need(p, LEVER_T_MM, g_m, ln_0, f) < MAGNET_FAMILIES_BR_T[fam][1] * (1 - 1e-6), (name, pair, key)
+            for key, cell in pr["cells"].items():
+                fam_, c_, gk_ = key.split(":")
+                f_ = edge_factors(args(fam_, c_))
+                for variant in ("with_mismatch", "with_mismatch_and_unwrap_floor"):
+                    v = cell[variant]
+                    if v["need_T_at_infinite_thickness"] is None:
+                        continue   # the window is empty: no period clears the floor under the cap
+                    # the recorded infinite-thickness need IS the sum rule at its period, and a cell with no thickness
+                    # limit is exactly one whose infinite-thickness need exceeds the family's maximum
+                    n = sum_rule_need(v["p_mm_at_infinite_thickness"], 1e4, float(gk_[1:]), ln_m, f_)
+                    assert abs(n - v["need_T_at_infinite_thickness"]) < 1e-9 * n, (name, pair, key, variant)
+                    assert (v["t_min_mm"] is None) == (n >= MAGNET_FAMILIES_BR_T[fam_][1]), (name, pair, key, variant)
+                fam, c, gk = key.split(":")
+                g, b_max, a = float(gk[1:]), MAGNET_FAMILIES_BR_T[fam][1], args(fam, c)
+                t0, t1, t2 = (cell[v]["t_min_mm"] for v in ("offset_only", "with_mismatch", "with_mismatch_and_unwrap_floor"))
+                inf = math.inf
+                # the mismatch term and the floor only ever raise a limit (None = no thickness)
+                assert (t0 if t0 is not None else inf) <= (t1 if t1 is not None else inf) <= (t2 if t2 is not None else inf), (name, pair, key)
+                if t1 is None:
+                    continue
+                # the root returns the family's maximum by a SEPARATE closed form of the sum rule at its recorded period —
+                # if the verdict dropped the mismatch term the root would sit at the offset-only limit and this would miss
+                p, f = cell["with_mismatch"]["p_mm"], edge_factors(a)
+                need = sum_rule_need(p, t1, g, ln_m, f)
+                assert abs(need - b_max) < 1e-9 * b_max, (name, pair, key, need)
+                # … and the mismatch term carries part of it: the offset term alone at that point needs strictly less
+                if max(ln_m["eps"].values()) > 0:
+                    assert t0 is None or t1 > t0 + 1e-6, (name, pair, key, t0, t1)
+                # brute force over each window at its limit: no period the search missed needs less
+                for variant, floor in (("with_mismatch", 0.5), ("with_mismatch_and_unwrap_floor", mt["unwrap_floor_mm"])):
+                    t_v = cell[variant]["t_min_mm"]
+                    if t_v is None:
+                        continue
+                    q = np.linspace(max(0.5, floor), min(60.0, cap_lane_mm(ln_m, a)), 4001)
+                    kq = 2 * np.pi / q
+                    geom_q = (1 - np.exp(-kq * t_v)) * np.exp(-kq * g)
+                    need_q = np.max([2 * q * ln_m["dbp"][e] / (2 * np.pi * (TARGET_MM - q * ln_m["eps"][e] / (4 * np.pi)) * f[e])
+                                     for e in ("cold", "hot")], axis=0) / geom_q
+                    assert need_q.min() >= b_max * (1 - 1e-6), (name, pair, key, variant, need_q.min(), b_max)
+    # the levers' roots return the family's maximum, and a gap limit with the mismatch never exceeds the offset-only one
+    for name, s in st.items():
+        row = SENSORS[name]
+        for pair, pr in s["pairs"].items():
+            for key, lv in pr["levers"].items():
+                fam, c = key.split(":")
+                a, b_max = args(fam, c), MAGNET_FAMILIES_BR_T[fam][1]
+                gl = lv["gap_limit_mm_at_t10"]
+                inf = math.inf
+                assert (gl["offset_only"] or -inf) >= (gl["with_mismatch"] or -inf) >= (gl["with_mismatch_and_unwrap_floor"] or -inf), (name, pair, key)
+                ln = make_lane(row, pair, 1, True)
+                if gl["with_mismatch"] is not None:
+                    assert abs(need_lane(LEVER_T_MM, gl["with_mismatch"], ln, a)[0] - b_max) < 1e-9, (name, pair, key)
+                for gk, sc in lv["mismatch_scale_to_hold_at_infinite_thickness"].items():
+                    for floor_key, floor in (("no_floor", 0.5), ("with_unwrap_floor", mt["unwrap_floor_mm"])):
+                        v = sc[floor_key]
+                        if v is None or v == 1.0:
+                            continue
+                        ln_s = {**ln, "eps": {br: v * e for br, e in ln["eps"].items()}}
+                        assert abs(need_lane(1e4, float(gk[1:]), ln_s, a, floor)[0] - b_max) < 1e-6 * b_max, (name, pair, key, gk, floor_key)
+    # the corners stay ordered kind ≤ adverse on every limit and lever (the isothermal corner, with no coefficient, is NOT
+    # ordered against them once the cold branch binds: at 25 °C the kind corner's units, met at 28 °C, stand above it)
+    inf = math.inf
+    for name, s in st.items():
+        for pair, pr in s["pairs"].items():
+            for key, cell in pr["cells"].items():
+                fam, c, gk = key.split(":")
+                if c != "kind":
+                    continue
+                adv = pr["cells"][f"{fam}:adverse:{gk}"]
+                for v, blk in cell.items():
+                    tk, ta = blk["t_min_mm"], adv[v]["t_min_mm"]
+                    assert (inf if tk is None else tk) <= (inf if ta is None else ta) + 1e-12, (name, pair, key, v)
+            for fam in VERDICT_FAMILIES[:2]:
+                lk, la = pr["levers"][f"{fam}:kind"], pr["levers"][f"{fam}:adverse"]
+                assert (la["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0) <= (lk["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0) + 1e-12
+                for gk in la["mismatch_scale_to_hold_at_infinite_thickness"]:
+                    sa = la["mismatch_scale_to_hold_at_infinite_thickness"][gk]["no_floor"]
+                    sk = lk["mismatch_scale_to_hold_at_infinite_thickness"][gk]["no_floor"]
+                    assert (sa or 0.0) <= (sk or 0.0) + 1e-12, (name, pair, fam, gk)
+    # the edges each branch is judged at: hot above 25 °C, cold below it
+    assert min(t_hots.values()) > BRANCH_SPLIT_C > max(colds.values())
+
+
 def energy_j(i_a: float, v: float, t_s: float) -> float:
     return i_a * v * t_s
 
@@ -683,10 +1235,10 @@ def control_thickness() -> None:
         periods = [best_period_mm(t, g) for t in ts]
         assert all(a <= b for a, b in itertools.pairwise(periods)), (g, periods)
         assert periods[-1] <= 2 * math.pi * g + 0.02, (g, periods[-1])
-        for db in HALL["offset_drift_T_per_K"].values():
+        for db in BASE["offset_drift_T_per_K"].values():
             needs = [b_r_needed_t(p, t, g, db, FRAME_UM_PER_K) for p, t in zip(periods, ts, strict=True)]
             assert all(a > b for a, b in itertools.pairwise(needs)), (g, db, needs)
-            for lin in HALL["linear_range_T"]:
+            for lin in BASE["linear_range_T"]:
                 cap = period_cap_mm(lin, db, FRAME_UM_PER_K)
                 assert abs(cap * math.sqrt(2) * db / (2 * math.pi * FRAME_UM_PER_K * 1e-3) - lin) < 1e-12
                 for t in ts:
@@ -698,7 +1250,7 @@ def control_field() -> None:
         assert abs(best_period_mm(1e3, g) - 2 * math.pi * g) < 0.02, g
         for t_mm in (*SCALE_T_MM, *SCALE_T_KNOB_MM):
             p = best_period_mm(t_mm, g)
-            for db in HALL["offset_drift_T_per_K"].values():
+            for db in BASE["offset_drift_T_per_K"].values():
                 b = field_amplitude_t(b_r_needed_t(p, t_mm, g, db, FRAME_UM_PER_K), p, t_mm, g)
                 assert abs(b - p * math.sqrt(2) * db / (2 * math.pi * FRAME_UM_PER_K * 1e-3)) < 1e-12, (g, t_mm)
 
@@ -857,7 +1409,7 @@ def main() -> int:
             row["b_r_needed_over_t2_same_gap"] = {
                 k: round(b_r_needed_t(row["best_period_mm"], t_mm, g, db, FRAME_UM_PER_K)
                          / b_r_needed_t(ref["best_period_mm"], 2.0, g, db, FRAME_UM_PER_K), 3)
-                for k, db in HALL["offset_drift_T_per_K"].items()}
+                for k, db in BASE["offset_drift_T_per_K"].items()}
             row["best_period_over_t2_same_gap"] = round(row["best_period_mm"] / ref["best_period_mm"], 3)
             row["unwrap_margin_by_basis"] = {b: round(row["half_period_mm"] / w, 3) for b, w in bases.items()}
             knob_rows[f"t{t_mm:g}:g{g:g}"] = row
@@ -877,6 +1429,8 @@ def main() -> int:
     floor_mm = unwrap["period_required_mm_by_basis"][UNWRAP_FLOOR_BASIS]
     mt = magnet_temperature(t_hots, colds, grid_rows, floor_mm, unwrap["sensitivity_two_growing_months"]["period_required_mm"])
     control_temperature(mt, grid_rows, t_hots, colds, z81, hours)
+    st = sensor_table(mt["_args"], t_hots, colds, floor_mm)
+    control_sensor_table(st, mt["_args"], mt, t_hots, colds)
     mt.pop("_args")
     hinge = {f"t{t:g}:g{GAP_REALISTIC_MM:g}": {c: mt["cells"][f"t{t:g}:g{GAP_REALISTIC_MM:g}"]["need_T"][f"REFeB_sintered:{c}"]
                                                for c in ("isothermal", "kind", "adverse")} for t in (1.0, 2.0)}
@@ -912,40 +1466,74 @@ def main() -> int:
     # (3) the energy of a read, riding cadence C
     cad = z110["inputs"]["cadence_c_interval_s"]
     demand = {k: v["nominal"] for k, v in z110["inputs"]["demand_uw"].items()}
-    t_sample = HALL["t_conv_one_ch_s"] + HALL["t_add_ch_s"]
-    t_wake = HALL["t_sleep_to_standby_s"] + HALL["t_standby_to_measure_s"]
-    n_worst = max(n for v in scale.values() for n in v["two_channel_samples_for_1um_at_needed_b_r"].values())
-    e_hall = energy_j(HALL["i_active_A"] + I_CORE_RUN_A, V_OUT, n_worst * t_sample + t_wake) / ETA_BUCK_ACTIVE
+    br = SENSORS[BASE_SENSOR]
+    t_sample = br["t_conv_one_ch_s"] + br["t_add_ch_s"]
+    t_wake = sum(br["t_wake_s"])
+    # N from the VERDICT lane (the guaranteed drift — the field a scale designed to the verdict puts on the sensor);
+    # until 2026-11-15 N was the maximum over the typ ⊥ max lanes, i.e. at a scale designed to the typical drift —
+    # kept beside, reproducible (`convention_to_2026_11_15`)
+    n_verdict = max(v["two_channel_samples_for_1um_at_needed_b_r"][VERDICT_LANE.split(":")[1]] for v in scale.values())
+    n_old = max(n for v in scale.values() for n in v["two_channel_samples_for_1um_at_needed_b_r"].values())
+    e_hall, e_old = (energy_j(br["i_active_A"] + I_CORE_RUN_A, V_OUT, n * t_sample + t_wake) / ETA_BUCK_ACTIVE
+                     for n in (n_verdict, n_old))
     e_enc = {k: energy_j(i + I_CORE_RUN_A, V_OUT, ENCODER_2MM["t_power_up_s"]) / ETA_BUCK_ACTIVE
              for k, i in ENCODER_2MM["i_supply_A"].items()}
     energy = {"cadence_c_s": cad, "demand_uW_110_nominal": demand,
-              "two_channel_sample_s": round(t_sample, 6), "samples_worst_lane": n_worst,
+              "two_channel_sample_s": round(t_sample, 6), "samples_verdict_lane": n_verdict,
+              "samples_from": f"the verdict lane ({VERDICT_LANE}) of the base row {BASE_SENSOR}",
               "hall_read_vstor_uJ": round(e_hall * 1e6, 1), "hall_read_avg_uW": round(e_hall / cad * 1e6, 4),
               "hall_read_share_of_E_cycle_pct": round(e_hall / E_CYCLE * 100, 2),
-              "hall_sleep_uW_at_vout": round(HALL["i_sleep_A"] * V_OUT * 1e6, 4),
-              "hall_sleep_share_of_smallest_demand_pct": round(HALL["i_sleep_A"] * V_OUT * 1e6 / min(demand.values()) * 100, 2),
+              "convention_to_2026_11_15": {
+                  "samples_worst_lane": n_old, "hall_read_vstor_uJ": round(e_old * 1e6, 1),
+                  "hall_read_share_of_E_cycle_pct": round(e_old / E_CYCLE * 100, 2),
+                  "rule": "N the maximum over the typ ⊥ max lanes — the typical lane is a scale designed to the typical "
+                          "drift, whose weaker field needs more samples; the verdict's scale is designed to the guaranteed one"},
+              "hall_sleep_uW_at_vout": round(br["i_sleep_A"] * V_OUT * 1e6, 4),
+              "hall_sleep_share_of_smallest_demand_pct": round(br["i_sleep_A"] * V_OUT * 1e6 / min(demand.values()) * 100, 2),
               "encoder_2mm_read_vstor_mJ": {k: round(v * 1e3, 3) for k, v in e_enc.items()},
               "encoder_2mm_avg_uW": {k: round(v / cad * 1e6, 3) for k, v in e_enc.items()},
               "encoder_2mm_share_of_E_cycle_pct": {k: round(v / E_CYCLE * 100, 2) for k, v in e_enc.items()}}
 
-    # (4) the travel window
-    top_over_rim = radome["cavity_height_mm"] + radome["bell_radius_mm"]           # Radome.TopZMm
-    dome_top_over_seat = flange["flange_thickness_mm"] + top_over_rim
-    bark_above_seat = (0.0, z78["bark"]["facing_spread_mm"])                       # the faced seat's shallow ⊥ deep edge
-    climb = (dome_top_over_seat - bark_above_seat[1], dome_top_over_seat - bark_above_seat[0])
+    # the base row's verdict-lane read in (2d) is this block's read (one function of the same row)
+    bx = st[BASE_SENSOR]["pairs"]["x_y"]["read"]
+    assert bx["samples"] == n_verdict and bx["vstor_uJ"] == energy["hall_read_vstor_uJ"], (bx, n_verdict)
+
+    # (4) the travel window, along the TILTED axis: the seat is faced square to the anchor's axis and the axis stands at
+    # the install angle, so `78`'s facing spread is Ø·sin θ — a RADIAL depth difference — and θ is recovered from those two
+    # raw numbers (no new input). Along the axis the bark's plane stands spread/cos θ higher at the deep edge than at the
+    # shallow one (half that on the mid-line), and a mark h along the axis is passed after a RADIAL travel (h − b₀)·cos θ.
+    # Until 2026-11-16 this block subtracted the radial spread from an axial height and carried no tilt (00_07 HW.54);
+    # it is the ONE home of the oblique cut — `119` reads it from here
+    spread, flange_d = z78["bark"]["facing_spread_mm"], z78["bark"]["flange_diameter_mm"]      # raw (§When Modifying #6)
+    tilt = math.asin(spread / flange_d)
+    cos_t = math.cos(tilt)
+    flange_t = flange["flange_thickness_mm"]
+    top_over_rim = radome["cavity_height_mm"] + radome["bell_radius_mm"]           # Radome.TopZMm, along the axis
+    dome_top_over_seat = flange_t + top_over_rim
+    install = {"flange_top": 0.0, "deep_edge": spread / cos_t - flange_t, "mid_seat": spread / (2.0 * cos_t) - flange_t,
+               "shallow_edge": -flange_t}                                          # the install-day bark over the flange's top
+    climb = {ref: (top_over_rim - b0) * cos_t for ref, b0 in install.items()}      # the radial travel to the dome's top
     slow, fast = RADIAL_RATE_MM_PER_YR
-    travel = {"dome_top_over_seat_mm": dome_top_over_seat, "of_which_flange_thickness_placeholder_mm": flange["flange_thickness_mm"],
-              "outer_bark_climb_to_dome_top_mm": [round(c, 3) for c in climb],
-              "outer_bark_to_dome_top_yr": [round(climb[0] / fast, 1), round(climb[1] / slow, 1)],
+    travel = {"tilt": {"install_angle_deg": math.degrees(tilt), "install_angle_rad": tilt, "cos": cos_t, "facing_spread_mm_78": spread,
+                       "flange_diameter_mm_78": flange_d,
+                       "from": "asin(78's facing spread / the flange's diameter) — the seat faced square to the tilted axis"},
+              "dome_top_over_seat_mm": dome_top_over_seat, "of_which_flange_thickness_placeholder_mm": flange_t,
+              "install_bark_over_flange_top_mm": install,
+              "outer_bark_climb_to_dome_top_mm": {ref: round(c, 3) for ref, c in climb.items()},
+              "outer_bark_to_dome_top_yr": [round(climb["deep_edge"] / fast, 1), round(climb["shallow_edge"] / slow, 1)],
               "outer_bark_to_dome_top_yr_by_edge_fast_slow": {
-                  "deep_edge": [round(climb[0] / fast, 1), round(climb[0] / slow, 1)],
-                  "shallow_edge": [round(climb[1] / fast, 1), round(climb[1] / slow, 1)]},
+                  ref: [round(climb[ref] / fast, 1), round(climb[ref] / slow, 1)] for ref in ("deep_edge", "mid_seat", "shallow_edge")},
               "radome_height_over_flange_top_mm": top_over_rim,
-              "outer_bark_flange_top_to_dome_top_yr_fast_slow": [round(top_over_rim / fast, 1), round(top_over_rim / slow, 1)],
-              "outer_bark_above_flange_top_at_install_mm": {"deep_edge": round(bark_above_seat[1] - flange["flange_thickness_mm"], 3),
-                                                            "shallow_edge": round(bark_above_seat[0] - flange["flange_thickness_mm"], 3)},
+              "radial_travel_flange_top_to_dome_top_mm": climb["flange_top"],
+              "outer_bark_flange_top_to_dome_top_yr_fast_slow": [round(climb["flange_top"] / fast, 1),
+                                                                 round(climb["flange_top"] / slow, 1)],
+              # a one-sided «passed inside the life at every rate above X»: X rounded UP keeps it true (§When Modifying #43)
+              "flange_top_to_dome_top_inside_life_above_mm_per_yr": math.ceil(climb["flange_top"] / LIFE_YR * 100) / 100,
+              "outer_bark_above_flange_top_at_install_mm": {ref: round(install[ref], 3) for ref in ("deep_edge", "mid_seat", "shallow_edge")},
               "live_bark_to_flange_seat_yr": {s: [round(zt / fast, 1), round(zt / slow, 1)] for s, zt in z_t.items()},
-              "twenty_year_travel_mm": [round(20 * slow, 1), round(20 * fast, 1)]}
+              "live_bark_note": "z_t read as a radial travel, untilted — not part of the 2026-11-16 correction (the leg named "
+                                "the install edges and the crown's years)",
+              "twenty_year_travel_mm": [round(LIFE_YR * slow, 1), round(LIFE_YR * fast, 1)]}
 
     # ── print ──
     print(f"  (1) the support's anchor term, µm/K (α_xylem {alpha_w * 1e6:g} ppm/K; frames < {FRAME_UM_PER_K} µm/K):")
@@ -989,6 +1577,20 @@ def main() -> int:
     for key, cell in magnet_t["cells"].items():
         if cell["holds"] != cell["holds_with_unwrap_floor"]:
             print(f"      unwrap floor bites at {key}: {cell['holds']} → {cell['holds_with_unwrap_floor']}")
+    print(f"  (2d) the sensor table — g 3 · 4 mm, adverse corner, thickness limit REFeB / RE₂Co₁₇ / RECo₅, mm "
+          f"(offset only ⊥ + mismatch ⊥ + unwrap floor {floor_mm} mm; — = none):")
+    def _t(v):
+        return "—" if v is None else f"{v:.2f}"
+    for name, r in st.items():
+        for pair, pr in r["pairs"].items():
+            cols = []
+            for g in VERDICT_GAPS_MM:
+                cols.append(" ⊥ ".join("/".join(_t(pr["cells"][f"{fam}:adverse:g{g:g}"][v]["t_min_mm"]) for fam in VERDICT_FAMILIES)
+                                       for v in ("offset_only", "with_mismatch", "with_mismatch_and_unwrap_floor")))
+            alone = pr["mismatch_alone_takes_the_frames_at_period_mm"]["guaranteed"]
+            print(f"      {name:17s} {pair}  g3 {cols[0]}  |  g4 {cols[1]}  | mismatch alone at P "
+                  f"{ {k: (None if v is None else round(v, 2)) for k, v in alone.items()} } mm; read {pr['read']}")
+    print(f"      not in the table: {list(SENSOR_GAPS)}")
     print(f"  (3) read energy: {json.dumps(energy, ensure_ascii=False)}")
     print(f"  (4) travel: {json.dumps(travel, ensure_ascii=False)}")
 
@@ -1003,7 +1605,8 @@ def main() -> int:
                    "dead_bark_under_flange_78_probe_proxy_mm": z_t, "tie_axis_mm_103": [TIE_SHALLOWEST_MM, ties],
                    "frame_sensitivity_um_per_K": FRAME_UM_PER_K, "growth": GROWTH, "frost_swing_mm": FROST_SWING_MM,
                    "daily_swing_mm": DAILY_SWING_MM, "radial_rate_mm_per_yr": RADIAL_RATE_MM_PER_YR,
-                   "growth_months_min_assumed": GROWTH_MONTHS_MIN, "hall": HALL,
+                   "growth_months_min_assumed": GROWTH_MONTHS_MIN, "sensors": SENSORS, "base_sensor": BASE_SENSOR,
+                   "sensor_gaps": SENSOR_GAPS, "branch_span_K": BRANCH_SPAN_K,
                    "mismatch_linear_spread_K_assumed": MISMATCH_LINEAR_SPREAD_K, "encoder_2mm": ENCODER_2MM,
                    "core_run_A": I_CORE_RUN_A, "v_out": V_OUT, "eta_buck_active": ETA_BUCK_ACTIVE, "e_cycle_J": E_CYCLE,
                    "gaps_mm": GAPS_MM, "scale_thickness_mm": SCALE_T_MM, "noise_target_um": NOISE_TARGET_UM,
@@ -1013,7 +1616,8 @@ def main() -> int:
                                "flange_heat": "78 cache (flange_cambium_heat.json)",
                                "radome_flange": "tools/cad/cem/radome.json · cathode_flange.json; top = Radome.TopZMm",
                                "cadence_demand": "110 cache", "air": "ERA5 hourly, Cherkasy grid point (71's loader)",
-                               "hall": "TI TMAG5273 datasheet SLYS045, §5.7 (A1) and §5.11, read 2026-10-31",
+                               "hall": "the sensor table's rows, each with its datasheet section in `sensors.*.source` "
+                                       "(TI SLYS045C · SBASAF4 · SLYS053C, read 2026-11-16; SLYS045 first read 2026-10-31)",
                                "encoder": "ams AS5311 rev 1.13",
                                "frames": "Zweifel et al. 2021 New Phytol. 10.1111/nph.17552, Methods (ZN11)",
                                "growth": "nph.17552 Table 1 · Etzold et al. 2022 Ecol. Lett. 10.1111/ele.13933 · "
@@ -1042,6 +1646,18 @@ def main() -> int:
         "scale": scale,
         "scale_thickness_knob": thickness_knob,
         "scale_magnet_temperature": magnet_t,
+        "sensor_table": {
+            "rule": "the SUM rule: per temperature branch the offset term (P/2π)·δB_pair/B plus the mismatch term "
+                    "(P/2π)·ε/2, both per kelvin, must stay within the frames' 0.3 µm/K — a linear sum of two worst-case "
+                    "bounds of independent sources (an RSS would be kinder and is not taken); δB_pair = √(δa² + δb²) of the "
+                    "pair's axes; each branch over its own band, where that band's field is weakest — 25 → +125 °C at the "
+                    "hottest hour, 25 → −40 °C at its warm end, 25 °C (at the cold edge the field is stronger) — and the "
+                    "range at the coldest hour; the guaranteed column (the mismatch's typical one where no guaranteed one "
+                    "exists, flagged). The support's term (1) is NOT summed — it is a maximum over unknown fixations",
+            "branch_binds_at_C": {"hot": "the corner's hottest hour", "cold": BRANCH_SPLIT_C},
+            "corners": "(2c)'s: isothermal · kind · adverse, the same family coefficients, hours and class band",
+            "unwrap_floor_mm": floor_mm, "gaps_mm": VERDICT_GAPS_MM,
+            "rows": st},
         "unwrap": unwrap,
         "energy": energy,
         "travel": travel,
