@@ -2621,13 +2621,13 @@ CHECKS += [
     ),
     (
         "PEEK barb, tested range low → contact_endurance_check.json §peek_barb_cyclic",
-        SUMMARY, r"MPa @ ([\d.]+e\d+)[–—-][\d.]+e\d+ cyc \(2 converging",
+        SUMMARY, r"MPa @ ([\d.]+e\d+)[–—-][\d.]+e\d+ cyc \(two readings",
         "mechanical/contact_endurance_check.json",
         lambda d: d["parts"]["peek_barb_cyclic"]["tested_range_cycles"][0], 0.5,
     ),
     (
         "PEEK barb, tested range high → contact_endurance_check.json §peek_barb_cyclic",
-        SUMMARY, r"MPa @ [\d.]+e\d+[–—-]([\d.]+e\d+) cyc \(2 converging",
+        SUMMARY, r"MPa @ [\d.]+e\d+[–—-]([\d.]+e\d+) cyc \(two readings",
         "mechanical/contact_endurance_check.json",
         lambda d: d["parts"]["peek_barb_cyclic"]["tested_range_cycles"][1], 0.5,
     ),

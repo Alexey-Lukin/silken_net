@@ -37,12 +37,17 @@ READINGS (each read in its source on 2026-11-15; ⛔ none is of an extruded 0.15
     page, not tied to the number) — a vendor claim without a DOI (in-silico §Critical Rules #44). A FLEXURAL figure:
     carried to a uniformly loaded wall it is optimistic (a bending specimen has its peak at the outer fibre only).
     (ii) Pastukhov, Kanters, Engels, Govaert 2020, J. Polym. Sci. 58(5), 716–736, doi 10.1002/pol.20190091 (Crossref
-    verified, CC BY): the BODY WAS NOT READ — Wiley returned HTTP 403 to every fetch; only the abstract was read, which
-    calls the limit «the apparent endurance (fatigue) limit for plasticity‐controlled failure», tied to an evolution of
-    the yield stress (stress- and temperature-accelerated physical aging, and strain hardening), with one model for
-    «time‐to‐failure under both static and cyclic load». The anchor's 48 (`59`'s «~41–48 MPa @ 1e7») has no page in the
-    tree. So the anchor's R is UNKNOWN, and it enters as two named readings: F1 — a fully reversed amplitude (R = −1);
-    F2 — a maximum stress at R = 0.1, carried to R = −1 by a Goodman line to the tree's σ_y (our conversion).
+    verified, CC BY 4.0): the body read in a browser on 2026-11-15 (Wiley refuses machine fetches) — tension-tension,
+    sinusoidal, R = 0.1, 1 Hz, servo-hydraulic, on injection-moulded ASTM D638 Type I bars and 0.5 mm compression-moulded
+    sheets of KETASPIRE KT-820, at 23–130 °C. Its abstract calls the limit «the apparent endurance (fatigue) limit for
+    plasticity‐controlled failure», tied to an evolution of the yield stress (stress- and temperature-accelerated physical
+    aging, and strain hardening); its body concludes the limit is not a material property — it depends on temperature,
+    processing and loading history — and not a reliable design parameter. The anchor's 48 (`59`'s «~41–48 MPa @ 1e7») is
+    not in the paper's text: a figure reading at most, unverified. So the anchor's R is known at one end only. The 30
+    (peekchina) states none, and enters as two named readings: F1 — a fully reversed amplitude (R = −1); F2 — a maximum
+    stress at R = 0.1, carried to R = −1 by a Goodman line to the tree's σ_y (our conversion). The 48, if it is
+    Pastukhov's, is F2's form, so F1 at that end has no ground: it stays in the table as a named reading only, and it is
+    neither the adverse end nor the kind one (both computed, `fatigue_adverse_reading` · `fatigue_kind_reading`).
   · F3 — Victrex «VICTREX™ PEEK properties brochure» (product guide EN 09-2018), Figure 9 «Tensile fatigue … at 5Hz at
     23°C and 120°C», series «PEEK 450G [23˚C]»; the text: «ISO tensile bars stressed at 5Hz with a sine wave between 10
     and 100% of predefined loads» — R = 0.1, σ_max read off the plot (VICTREX_FIG9), carried to R = −1 by the same
@@ -67,8 +72,8 @@ on every corner, alloy and share; the rebuilt preload reproduces `102`'s cached 
 and grips, and `102`'s thermal rows (its baseline wire, both temperature readings, hot and cold) to their rounding; every
 threshold LANDS on its target; the transcriptions are monotone where the physics owes it.
 CANNOT: (1) the TUBE — every reading is from moulded bars or an unstated specimen of bulk PEEK; an extruded 0.15 mm wall
-may differ in crystallinity, orientation and surface, and nothing here says in which direction; (2) the anchor's R, its
-specimen and Pastukhov's numbers (body not read); (3) PEEK's R = −1 strength from a source that states R; (4) creep or
+may differ in crystallinity, orientation and surface, and nothing here says in which direction; (2) the 30 MPa end's R and
+specimen (peekchina states neither), and a page for the 48 end (not in Pastukhov's text); (3) PEEK's R = −1 strength from a source that states R; (4) creep or
 ratcheting at the warm edge, or any time at the edge — the preloaded cells are read as if every cycle sat at the hottest
 hour (an adverse reading, its size not computed); (5) the fatigue readings at temperature — F1–F3 are room-temperature
 data, used undiminished at the warm edge (optimistic there); (6) the compressive half of the SWAY — symmetric, `102`'s
@@ -134,9 +139,10 @@ PEEKCHINA = ("peekchina.com/blog/fatigue-strength-of-peek-a-guide-for-gear-engin
              "dry).» — no R-ratio, specimen, frequency or source stated; a flexural figure, optimistic for an axially "
              "loaded wall; read 2026-11-15")
 PASTUKHOV = ("Pastukhov, Kanters, Engels, Govaert 2020, J. Polym. Sci. 58(5), 716–736, doi 10.1002/pol.20190091 — body "
-             "NOT read (HTTP 403 from Wiley, 2026-11-15); abstract read via Crossref: «the apparent endurance (fatigue) "
-             "limit for plasticity‐controlled failure» tied to yield-stress evolution, one model for static and cyclic "
-             "time-to-failure; `59`'s «~41–48 MPa @ 1e7» has no page in the tree")
+             "read in a browser 2026-11-15 (Wiley refuses machine fetches): tension-tension, R 0.1, 1 Hz, moulded KT-820 "
+             "bars and 0.5 mm sheets, 23–130 °C; «the apparent endurance (fatigue) limit for plasticity‐controlled "
+             "failure» tied to yield-stress evolution — not a material property, not a reliable design parameter; `59`'s "
+             "«~41–48 MPa @ 1e7» is not in its text (a figure reading at most)")
 R01_SPLIT = ((1 - VICTREX_FIG9_R) / 2, (1 + VICTREX_FIG9_R) / 2)     # σ_a, σ_m per unit σ_max at R = 0.1
 
 BASE_CORNERS = ("adverse_reversed", "adverse_one_sided", "gentle_one_sided")
@@ -563,8 +569,11 @@ def main() -> int:
                    "budget_cycles_62": d59["budget_cycles"], "source": "102 · 103 · 55 · 59 · 77 caches; 102's Pair"},
         "readings": {
             "anchor_sources": {"peekchina": PEEKCHINA, "pastukhov_2020": PASTUKHOV,
-                               "R_ratio": "not stated in the one source read; the other's body not read",
-                               "specimen": "not stated (peekchina: flexural); bulk PEEK either way — not an extruded 0.15 mm tube"},
+                               "R_ratio": ("peekchina: not stated; Pastukhov 2020: 0.1 — so the 48 end, if read off it, is F2's form "
+                                          "and F1 at that end has no ground (a named reading only, neither the adverse "
+                                          "nor the kind end)"),
+                               "specimen": ("not stated (peekchina: flexural); Pastukhov: moulded bars and 0.5 mm moulded sheets of "
+                                            "KT-820 — bulk PEEK either way, not an extruded 0.15 mm tube")},
             "fatigue_reversed_limit_MPa": fat,
             "fatigue_adverse_reading": fat_adv, "fatigue_kind_reading": fat_kind,
             "victrex": {"document": VICTREX_BROCHURE, "fig9_450G_23C_R01_cycles_max_stress": [list(r) for r in VICTREX_FIG9],

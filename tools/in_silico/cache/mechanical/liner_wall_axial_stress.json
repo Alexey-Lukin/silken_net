@@ -40,9 +40,9 @@
   "readings": {
     "anchor_sources": {
       "peekchina": "peekchina.com/blog/fatigue-strength-of-peek-a-guide-for-gear-engineers.html, «1. Flexural/Bending Fatigue Strength»: «ARKPEEK-1000: Unfilled PEEK: Endurance Limit: 30–40 MPa at 10⁶–10⁷ cycles (room temperature, dry).» — no R-ratio, specimen, frequency or source stated; a flexural figure, optimistic for an axially loaded wall; read 2026-11-15",
-      "pastukhov_2020": "Pastukhov, Kanters, Engels, Govaert 2020, J. Polym. Sci. 58(5), 716–736, doi 10.1002/pol.20190091 — body NOT read (HTTP 403 from Wiley, 2026-11-15); abstract read via Crossref: «the apparent endurance (fatigue) limit for plasticity‐controlled failure» tied to yield-stress evolution, one model for static and cyclic time-to-failure; `59`'s «~41–48 MPa @ 1e7» has no page in the tree",
-      "R_ratio": "not stated in the one source read; the other's body not read",
-      "specimen": "not stated (peekchina: flexural); bulk PEEK either way — not an extruded 0.15 mm tube"
+      "pastukhov_2020": "Pastukhov, Kanters, Engels, Govaert 2020, J. Polym. Sci. 58(5), 716–736, doi 10.1002/pol.20190091 — body read in a browser 2026-11-15 (Wiley refuses machine fetches): tension-tension, R 0.1, 1 Hz, moulded KT-820 bars and 0.5 mm sheets, 23–130 °C; «the apparent endurance (fatigue) limit for plasticity‐controlled failure» tied to yield-stress evolution — not a material property, not a reliable design parameter; `59`'s «~41–48 MPa @ 1e7» is not in its text (a figure reading at most)",
+      "R_ratio": "peekchina: not stated; Pastukhov 2020: 0.1 — so the 48 end, if read off it, is F2's form and F1 at that end has no ground (a named reading only, neither the adverse nor the kind end)",
+      "specimen": "not stated (peekchina: flexural); Pastukhov: moulded bars and 0.5 mm moulded sheets of KT-820 — bulk PEEK either way, not an extruded 0.15 mm tube"
     },
     "fatigue_reversed_limit_MPa": {
       "F1_anchor_as_reversed_amplitude_low": 30.0,
