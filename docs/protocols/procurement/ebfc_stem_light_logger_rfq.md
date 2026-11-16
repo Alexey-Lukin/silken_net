@@ -196,6 +196,24 @@ Oleksii Lukin
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
+## 📤 Order block (EN) — MERA (order on the quote, DHL, prepayment)
+
+> **Репо-нота (у лист НЕ йде).** Відповідь MERA 2026-11-16 10:54 (наш висновок — нога HW.54): строк дає виробник після замовлення, можливе відвантаження 23 листопада, далі — одна посилка на місяць; польська адреса — лише з експортним документом пересилки; оплата — лише передоплата. ⚖️ founder 2026-11-16 «Так» на подання й на цей текст. Реквізити ФОП — лише в Gmail (корпус памʼяті `user_fop_requisites`), податковий номер вписує founder сам — тому лист лежить чернеткою в треді, надсилає founder.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear Mr Bartyzel,
+
+Thank you. We would like to order 1 × HOBO MX2309 under your offer OF/002026/2026, with DHL delivery to the address in my earlier message, on prepayment. Please send a proforma invoice made out to my sole proprietorship (details below), and place the order with the producer as soon as the payment arrives, so that it can catch the shipment of 23 November if possible.
+
+Buyer: `[FOP name and registration address — fill in before sending]`
+Tax ID (RNOKPP): `[filled in by the founder]`
+
+Best regards,
+Oleksii Lukin
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
 ---
 
 ## 3. Cross-references
