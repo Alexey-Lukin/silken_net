@@ -374,7 +374,11 @@ ALLOY_PROPERTIES = {
 # (per-alloy, baseline = Ti-6Al-4V); this block is the PEEK counterpart + the frozen coaxial
 # geometry + assembly temp + the H7/s6 band. Consumed by scripts 50/51 (legacy partials) and
 # the unified thick-wall Lamé (script 56 + lib.mechanics).
-ALPHA_PEEK_1K = 47e-6            # 1/K — PEEK 450G CTE (5.5× Ti)
+ALPHA_PEEK_1K = 47e-6            # 1/K — PEEK 450G CTE (5.5× Ti). Address (⚖️ founder 2026-11-17, 00_07 HW.26): Rae, LANL
+                                 # LA-UR-24-26094 (DOI 10.2172/2377322), Victrex 450G measured −100…+100 °C, Table 2 —
+                                 # α(−30) 4.75 · α(20) 4.54 · α(40) 4.50 ×10⁻⁵, forest-window secant 4.616e-5; 47 sits inside
+                                 # that window's own spread (once the old Victrex table's value; today's datasheet prints
+                                 # 45 «Flow» / 55 «Average» as means up to 143 °C, and 120 / 140 above Tg)
 E_PEEK_PA = 4.0e9               # Pa — PEEK 450G Young's modulus (Victrex 450G datasheet, 23°C)
 NU_PEEK = 0.40                  # — PEEK Poisson's ratio
 PEEK_TG_C = 143.0               # °C — PEEK 450G glass transition (Victrex 450G datasheet, DSC); the relax-floor note below
