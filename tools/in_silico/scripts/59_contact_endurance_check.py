@@ -172,8 +172,8 @@ def pogo_spring_verdict(budget: dict) -> dict:
             "anchor_covers_budget_ceiling": anchor_covers,
             "verdict": ("PARTIAL — physically the right model (micro-motion, not full-stroke), and the "
                         f"240 MPa -> 1e10-cycle anchor {'covers' if anchor_covers else 'does NOT cover'} the "
-                        f"{budget['ceiling']:.2e}-cycle budget ceiling IF the true working stress stays near or "
-                        "below that. But the stress at the REAL sway amplitude at the pogo tip is not closed to a "
+                        f"{budget['ceiling']:.2e}-cycle budget ceiling IF the wire's shear stays near or below {BENCH_TAU_MPA:.1f} MPa (240/sqrt(3), wire_shear_conversion). "
+                        "But the stress at the REAL sway amplitude at the pogo tip is not closed to a "
                         f"number — missing datum: {SPRING_DRAWING_MISSING} + "
                         f"{SWAY_DEFLECTION_MISSING}."),
         },
