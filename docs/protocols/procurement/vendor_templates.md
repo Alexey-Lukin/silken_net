@@ -587,7 +587,7 @@ No drawings accompany this pre-qualification: part geometry (STL + dimensioned D
 
 ## 📤 Follow-up block (UA) — 3D Metal Tech: відповідь на запропоновані етапи
 
-> **Репо-нота (у лист НЕ йде).** Відповідь на лист бюро 2026-11-16 у треді DMLS pre-qual (бюро запропонувало етапи: загальна інформація · детальні відповіді на анкету лише із замовленням від 100 000 грн і після 3D-моделі · виготовлення за моделлю; чисел п. 8 і п. 11(f) у відповіді немає). Подано founder-у в чаті з рекомендацією (прийняти рамку етапів, етап 2 зараз не брати; підтвердити опубліковане на сайті — `legal-business` §Доменні правила #14 (а) — і три короткі питання без інженерної роботи), підставою (не питати опубліковане; у шкалі мовчання — найгірший випадок), ціною (C2/C6 бюро лишаються майже без доказів до part-RFQ) і найслабшою ланкою (можуть і на три питання відповісти «лише з замовленням»). **⚖️ founder 2026-11-16 — дослівно «так і шли»; надіслано того ж дня** (журнал листів у корпусі памʼяті; звертання на імʼя — лише в листі). Дані з сайту бюро — рядок 3D Metal Tech [`ua_vendor_map`](ua_vendor_map.md) §1. Нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.1.
+> **Репо-нота (у лист НЕ йде).** Відповідь на лист бюро 2026-11-16 у треді DMLS pre-qual (бюро запропонувало етапи: загальна інформація · детальні відповіді на анкету лише із замовленням понад поріг бюро і після 3D-моделі · виготовлення за моделлю; чисел п. 8 і п. 11(f) у відповіді немає). Подано founder-у в чаті з рекомендацією (прийняти рамку етапів, етап 2 зараз не брати; підтвердити опубліковане на сайті — `legal-business` §Доменні правила #14 (а) — і три короткі питання без інженерної роботи), підставою (не питати опубліковане; у шкалі мовчання — найгірший випадок), ціною (C2/C6 бюро лишаються майже без доказів до part-RFQ) і найслабшою ланкою (можуть і на три питання відповісти «лише з замовленням»). **⚖️ founder 2026-11-16 — дослівно «так і шли»; надіслано того ж дня** (журнал листів у корпусі памʼяті; звертання на імʼя — лише в листі). Дані з сайту бюро — рядок 3D Metal Tech [`ua_vendor_map`](ua_vendor_map.md) §1. Нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.1.
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-нота, у лист вона НЕ йде.
 
@@ -720,6 +720,21 @@ A short follow-up on my enquiry of 5 November below — a PEEK micro-tube of rou
 Could you confirm that it has reached the team that handles such enquiries, or tell me whom to write to instead? Partial answers are welcome — the ID and OD bands would be the most useful place to start. If an order of this size is not something you take on, a short "no" is useful too.
 
 `[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+## 📤 Correction block (EN) — PEEK micro-tube: 150 °C is mid-transition (Optinova, sent)
+
+> **Репо-нота (у лист НЕ йде).** Лист трубки 2026-11-05 (обом постачальникам) казав «150 °C, above PEEK's glass transition»; ⚖️ founder 2026-11-17 (а) виправив це в каноні — 150 °C посеред переходу. ⚖️ founder 2026-11-18, дослівно «Так, шли на всі пять» — **надіслано 2026-11-18 00:10** Optinova відповіддю на її проміжний лист (журнал листів); Zeus — ту саму поправку, якщо відповість. Звертання — лише в листі.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-нота, у лист вона НЕ йде.
+
+`[greeting — as in the thread]`
+
+Thank you for your note. One correction to our first letter: we wrote that the neighbouring PEEK is held at about 150 °C, above PEEK's glass transition. More precisely, 150 °C sits in the middle of the glass transition (for the grade we reference, onset 143 °C and midpoint 150 °C by DSC), not above it. Everything else in our request stands.
+
+Best regards,
+Oleksii Lukin
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
