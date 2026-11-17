@@ -102,10 +102,9 @@ MODEL.
     on the guaranteed mismatch drift at or below which an infinitely thick scale holds each gap (the flip threshold of
     the binding member, §When Modifying #40), beside the row's typical/guaranteed ratio; the read's energy on the verdict
     lane; the lifetime steps (not per kelvin, not summed). The support's term (1) is NOT in the sum — a maximum over
-    unknown fixations. ANGLE (SATURATION) SENSORS: a printed, named gap (`SENSOR_GAPS`), not a model — the copies the
-    2026-11-16 desk read are mirrors and distributor copies, not primaries, and none gives an angle drift per kelvin, the
-    one row a saturation model would need beyond (2)'s field function; sensors whose primaries give no guaranteed drift,
-    or were not re-read, are named there too, so «the table» is never read as «every sensor».
+    unknown fixations. ANGLE (SATURATION) SENSORS: (2g) since 2026-11-17 (until then a named gap — the 2026-11-16 desk
+    read mirrors and distributor copies only); sensors whose primaries give no guaranteed drift, or were not re-read,
+    are named in `SENSOR_GAPS`, so «the table» is never read as «every sensor».
 (2e) THE DRIFT-LINEARITY ROWS (2026-11-17). The TMAG3001's datasheet publishes SENSMS_DR_LIN · Boff_DR_LIN · SENSDRLER
     with a MAX column and no definition; TI's answer (case CS3699089, `DRIFT_LIN_DEFINITION`) defines them as the largest
     deviation of the drift curve from a best-fit line over −40…+125 °C («typically referenced to the 25 °C point» — a
@@ -122,6 +121,26 @@ MODEL.
     settings-dependent (Melexis MLX90395, Allegro ALS31313) — are judged by the same sum rule, offset and mismatch, on
     every family, corner and gap, without levers or a read; each total is derived from the datasheet's own columns by
     a reading named in the row.
+(2g) ANGLE ROWS (2026-11-17). `ANGLE_ROWS` — sensors that read the field's DIRECTION (TMR · AMR) in saturation: the
+    field must exceed the row's minimum, its size drops out to first order, and the reading moves by P·δθ/360° (θ the
+    field angle). So the frames cap the period from ABOVE, P ≤ 0.3 µm/K · 360°/δθ — the opposite of a Hall reading, whose
+    offset term the field divides — while the unwrap floor (doubled for a 180° row) and the period at which the
+    strongest class at the hottest hour saturates the row bound it from below, and the period above which the WEAKEST
+    class, thick, at the coldest hour passes the row's field maximum closes it from above too (the classes between cover
+    the window continuously). Each row reads the field in the plane of its die and the scale's field turns in the plane
+    of the motion and the scale's normal, so the package stands edge-on to the wall: the row's OWN minimum gap is the
+    wall plus the die's depth from the package's lead-free end (the shortest body the primary prints; the die centred
+    where it says so, assumed where it does not) — cells at 3 · 4 mm carry `reachable`, and every row is also judged at
+    its own minimum. No primary prints the angle drift per kelvin; each prints a SIZE over its span, or (KMZ60) a
+    worst-case simulated curve after a 25 °C calibration, with TC compensation on ⊥ off, so δθ is read on a grid: the size
+    — the limit as the change from 25 °C ⊥ the limit plus the 25 °C bound (the triangle bound; twice the limit where no
+    25 °C row is printed) — × the spread — linearly to the band's ends ⊥ a chord at the corner's own hours; a curve at the
+    corner's hours, in field degrees ⊥ in the bridge's doubled (electrical) degrees, and at its read tolerance. The members
+    a row prints per kelvin alone (the TLE5501's offset coefficient over its weakest hot amplitude, the TAS2141's
+    amplitude-synchronism coefficient as ε/2) are NECESSARY caps; the TLE5501's amplitude coefficient read per channel is
+    printed as a REJECTED member (its span would move the angle further than the row's own limit). The static cyclic error
+    (the 25 °C bound, else the row's limit) and the lifetime row (each an absolute size over the part's qualification
+    stress, not the 20-year life) at the floored period stand beside, not per kelvin, not summed. No read is priced.
 (3) THE ENERGY OF A READ. The read rides the node's existing wake (cadence C): the sensor's wake and measure transitions
     once, then N two-channel samples at its active current, N from the VERDICT lane (the guaranteed drift — a scale
     designed to it puts the stronger field on the sensor; to 2026-11-15 N was the maximum over the typ ⊥ max lanes, kept
@@ -145,7 +164,9 @@ active buck from lib; the core's run current and VOUT from 02_03 §9.4 (mirrors 
 hourly record `71` loads; the Hall sensors' rows from their datasheets (TI SLYS045C · SBASAF4 · SLYS053C, read
 2026-11-16 — the section and table in each row's comment; SLYS045 first read 2026-10-31; Infineon TLE493D-P3B6 Rev.
 1.0, Melexis MLX90395 Revision 6.0 and MLX90393 Revision 012, Allegro ALS31313 Rev. 9, read 2026-11-17), and TI's
-definition of the drift-linearity rows (case CS3699089, 2026-11-17 — `DRIFT_LIN_DEFINITION`); the encoder's, the frames' temperature sensitivity and the growth rates from the primaries the 2026-10-26
+definition of the drift-linearity rows (case CS3699089, 2026-11-17 — `DRIFT_LIN_DEFINITION`); the angle rows' from
+their primaries (Infineon TLE5501 Rev. 1.0, TI TMAG6180-Q1 SLYS037A, TDK's TAS series catalog of November 2017, NXP
+KMZ60 Rev. 2 Fig. 11 off the page image; MultiDimension TMR3004 · TMR3005 read and named a gap), read 2026-11-17; the encoder's, the frames' temperature sensitivity and the growth rates from the primaries the 2026-10-26
 collection read (provenance: handoff `2026-10-26_r3v_dendrometer.json`); the frost swing, the daily swing and the radial
 rate's ends from 01_03 §4 ⊕ (в).
 
@@ -197,7 +218,18 @@ WHAT IT CANNOT SEE.
       the offset row (its stated reference gives no field), which of its two lines the rows mean, whether the drift
       repeats after cycling or holds for 20 years (not published — a calibrated slope's validity is unbounded), the
       chamber a −40…+125 °C line would need; and it is no guarantee in the per-kelvin sense at all. (2f)
-      cannot see: a screen row's derivation of a total from absolute bounds (ours, named in the row), the read.
+      cannot see: a screen row's derivation of a total from absolute bounds (ours, named in the row), the read. (2g)
+      cannot see: which reading a datasheet means (none says whether its limit is a change or an absolute error, nor how
+      it grows inside the span); whether the «relative» error's reference line is re-set at each temperature (the TLE5501
+      and the TMAG6180 measure the error from a line set symmetric to it — then a common shift of the zero is bounded by
+      no reading at all); the members a row does not print (the TLE5501's mismatch and orthogonality drift, the TAS2141's
+      offset drift, none of the TMAG6180's guaranteed); the error's dependence on the field inside the row's band (the
+      TMAG6180's row is printed at 30 mT only, and B_r swings about 10 % over the hours); the field form's prefactor (½·B_r;
+      an ideal alternating magnetisation's fundamental is (2/π)·B_r, 27 % stronger — conservative for saturation,
+      optimistic for the field maximum); the die's position where a primary does not print it, and a holder's clearance
+      (zero taken); a scale turned on edge behind the wall, whose field would lie in the plane of a FLAT package (not
+      modelled); a real scale's harmonics; hysteresis under the daily swings' reversals (inside the TLE5501's limit, apart
+      elsewhere); the read's energy.
   (5) Whether a scale and a probe can travel 16–100 mm past a flush capsule without a visit — the geometry (01_04
       §5.5); (4) says only when the problem starts.
   (6) Separating reversible shrinkage (TWD) from growth — the zero-growth method's job, not priced here.
@@ -260,6 +292,18 @@ CONTROLS (each says what it CAN and CANNOT catch).
       window's edge never holds more than the band spread to its end. CAN catch a reading that ignores LIN or the
       offset, a cell off its sum rule, a swapped span or edge; CANNOT TI's definition read wrong or a value transcribed
       wrong (the rows cite their sources).
+ (13) Angle rows: each 180° row's floor is twice the 360° one and each row's minimum gap is the wall plus its die depth;
+      a curve returns its transcribed points and zero at 25 °C, its electrical reading doubles its field cap and its read
+      tolerance brackets its cap; each window-edge span equals the corner's hours from 25 °C, each band-end span covers it
+      and never gives a shorter cap; the triangle bound never gives a longer cap than the limit; the binding branch is the
+      larger drift and P_max·δθ/360° returns 0.3 µm/K; at each saturation and field-maximum period the field equals the
+      row's limit and a hair beyond crosses it, a «never» is checked by a scan; the strongest class passes the maximum
+      first; «reachable» is the gap against the minimum; the floor and t 2 mm never admit what the thick scale without
+      them refuses; each window starts at or above the floor and ends at or under P_max and the weakest class's maximum;
+      each member's cap returns 0.3 µm/K and a rejected member moves the angle further than its row's limit. CAN catch a
+      span from the wrong hours, a cap off its formula, a saturation or maximum root off its field, a floor not doubled, a
+      gap the package cannot reach counted as holding; CANNOT a value transcribed wrong (the rows cite their sources;
+      KMZ60's curves are read off images to ±0.05° · ±0.02°) or the idealised field form.
 
 Run:  python tools/in_silico/scripts/114_dendrometer_support_budget.py      # a few seconds
 """
@@ -523,10 +567,10 @@ SENSOR_GAPS = {
         "OFFSTHD «< ±1000 LSB» stands in the Nom column, «based on characterization on limited sample size» (note 7) — and "
         "no mismatch-drift row (SENSTHD ±3 % is the sensitivity's band, not a mismatch bound), so it is not even screened",
     "TLV493D-A2BW (Infineon)": "operating range −20…85 °C per the desk — short of the record's cold edge; not re-read",
-    "angle (saturation) sensors — TLE5501, KMZ60, TAS2141, TMR3004/3005": "not modelled: the copies the desk read are "
-        "mirrors and distributor copies, not primaries, and none gives an angle drift per kelvin — the term (2d)'s "
-        "verdict would need; the field they need to saturate is (2)'s field function, the error over temperature is the "
-        "missing row",
+    "TMR3004 · TMR3005 (MultiDimension)": "primaries read 2026-11-17 (TMR3005 datasheet V2.0, TMR3004 V1.0a — "
+        "distributor-hosted copies of MDT's documents): the angular error ±0.6° · ±1.5° stands in the Typ column at "
+        "TA = 25 °C, with no over-temperature angle row (each prints only a typical amplitude coefficient, −970 · −990 "
+        "ppm/°C), so the angle rows (2g) cannot judge them; both operate −40…85 °C",
 }
 # SCREEN ROWS (2f) — sensors whose primary gives the two drift bounds the verdict needs but not the rows a READ would be
 # priced from (their noise and conversion time are settings-dependent): judged by the same sum rule, offset and mismatch,
@@ -567,6 +611,90 @@ SCREEN_ROWS = {
        for v, rng, lsb_g, e25, ehot, ecold in (("500", 0.050, 4.0, 24.0, 40.0, 40.0), ("1000", 0.100, 2.0, 12.0, 24.0, 32.0),
                                                ("2000", 0.200, 1.0, 10.0, 20.0, 32.0))},
 }
+# ANGLE (SATURATION) ROWS (2g) — sensors that read the field's DIRECTION: the scale's field has only to exceed the row's
+# minimum and its magnitude drops out, so the reading drifts by the change of the angle error with temperature and x moves
+# by P·δθ/360° (θ the field angle the sensor reports — the AMR's included, whose output angle is the field's over its
+# 180° range). Every primary read 2026-11-17 with pdftotext; KMZ60's curve off the page image at 300 dpi.
+ANGLE_ROWS = {
+    # Infineon TLE5501 Datasheet Rev. 1.0 (2018-07-24, infineon.com) Table 12, differential: AErr,RT 0.8° «at 0 h/25 °C»
+    # and AErr,0 1.0° «at 0 h/over temperature TA = −40 °C to 150 °C», both «with compensation of offset, orthogonality and
+    # amplitude at 0h/25°C», B 25…80 mT (note 2: 20…25 and 80…100 mT add 0.2°), hysteresis and noise included (note 1);
+    # AErr,125 1.2° «over lifetime & temperature» to 125 °C under Grade 1 stress. Table 11: Aout,diff 270 / 320 / 370 mV/V
+    # at 25 °C, TCAmp −0.145 / −0.12 / 0 %/K, TCVoff −5 / 0 / 5 µV/V/K, «single and differential ended». §6.1: the field
+    # «parallel to the package surface» is sensed; §8.4: the TMR area's centre «in the center of the package»; Fig. 12
+    # (read off the page image): PG-DSO-8 body 5 −0.2 × 4 −0.2 mm, leads on the long sides.
+    "TLE5501-E0001_diff": {
+        "source": "Infineon TLE5501 Datasheet Rev. 1.0 (2018-07-24) Tables 11–12, §8.4, Fig. 12 — differential outputs",
+        "operating_C": (-40.0, 150.0), "field_min_T": 0.025, "field_max_T": 0.080, "range_deg": 360.0,
+        "total_deg": 1.0, "at_25C_deg": 0.8, "lifetime_deg": 1.2,
+        "offset_tc_V_per_V_K": 5e-6, "amplitude_min_V_per_V": 0.270, "amplitude_tc_min_per_K": -0.145e-2,
+        "amplitude_tc_max_per_K": 0.0, "mismatch_tc_per_K": None,
+        "package": "PG-DSO-8, body 4.8–5.0 × 3.8–4.0 mm, die centred", "die_to_edge_mm": 4.8 / 2,
+        "assumed": ["AErr,0 read as the change from 25 °C at any temperature in its span (limit) ⊥ the change bounded by "
+                    "AErr,0 + AErr,RT (limit_plus_25C) — the table bounds the error's size at a temperature, not its "
+                    "change; and the «relative» error is measured from a reference line set symmetric to it — if that "
+                    "line is re-set at each temperature, a common shift of the zero is bounded by neither reading",
+                    "the field held inside 25…80 mT, the rows' own band (the 0.2° adder outside it is not taken)",
+                    "edge-on on a lead-free end, the die 2.4 mm in (the shortest body)",
+                    "TCAmp is one coefficient for both channels (a common gain that cancels); read per channel its span "
+                    "is the rejected member `mismatch_if_TCAmp_per_channel`"]},
+    # TI TMAG6180-Q1 SLYS037A (2023-03, rev. 2024-03) §5.6: ANGERR_RTCAL_DE 1.0° max at VCC 3.3 V (0.95° at 5 V) — «angular
+    # error linearity across temperature after room temperature calibration (of offset / gain mismatch)», B = 30 mT, ideal
+    # magnet alignment, over the operating free-air range −40…150 °C; ANGLT_DRIFT ±0.75° (lifetime, B = 30 mT); AMR
+    # saturation ≥ 20 mT (§5.3); the AMR's 180° extended to 360° by the Hall outputs Q0/Q1; «the center of the AMR and Hall
+    # sensors lie in the center of the package»; DGK (VSSOP-8) 3 mm × 4.9 mm nominal, pins included. The TMAG6181-Q1
+    # (SLYS048B) prints the same angle rows but gives pins 4–5 to SLEEP and TURNS — no quadrant outputs — so it is not
+    # this row.
+    "TMAG6180-Q1_RTCAL_DE": {
+        "source": "TI TMAG6180-Q1 SLYS037A §5.3 · §5.6 (ANGERR_RTCAL_DE at 3.3 V) · §6 (die position)",
+        "operating_C": (-40.0, 150.0), "field_min_T": 0.030, "field_max_T": None, "range_deg": 360.0,
+        "total_deg": 1.0, "at_25C_deg": None, "lifetime_deg": 0.75,
+        "offset_tc_V_per_V_K": None, "amplitude_min_V_per_V": None, "amplitude_tc_min_per_K": None,
+        "amplitude_tc_max_per_K": None, "mismatch_tc_per_K": None,
+        "package": "VSSOP-8 (DGK), 3 mm body length nominal, AMR centred", "die_to_edge_mm": 3.0 / 2,
+        "assumed": ["the row read as the change from 25 °C (limit) ⊥ twice the row, the 25 °C error bounded by the same "
+                    "row (limit_plus_25C) — «linearity across temperature» names no reference, and TI calls the error "
+                    "«relative»: a zero re-set per temperature would leave a common shift unbounded",
+                    "the field at or above 30 mT, the row's only condition (AMR saturation starts at 20 mT)",
+                    "edge-on on a lead-free end at the nominal body length (no tolerance read)"]},
+    # TDK «TMR Angle Sensor TAS series» catalog (November 2017; Mouser-hosted TDK document) TAS2141-AAAB: «Angle Error
+    # (After compensation)» 0.6° max, T opt −40…150 °C, 20…80 mT; TCk «Temperature Coefficient of Amplitude Synchronism»
+    # −0.015 / 0.015 %/K over the same span; the offset only as an initial ±5 mV/V, with no coefficient; «Shape &
+    # dimensions (TSSOP8)»: 3.0 ± 0.2 × 4.4 ± 0.2 mm body; no die position printed.
+    "TAS2141-AAAB": {
+        "source": "TDK TMR Angle Sensor TAS series catalog (November 2017), TAS2141-AAAB characteristics and TSSOP8 shape",
+        "operating_C": (-40.0, 150.0), "field_min_T": 0.020, "field_max_T": 0.080, "range_deg": 360.0,
+        "total_deg": 0.6, "at_25C_deg": None, "lifetime_deg": None,
+        "offset_tc_V_per_V_K": None, "amplitude_min_V_per_V": None, "amplitude_tc_min_per_K": None,
+        "amplitude_tc_max_per_K": None, "mismatch_tc_per_K": 0.015e-2,
+        "package": "TSSOP8, body 2.8–3.2 × 4.2–4.6 mm, die position not printed", "die_to_edge_mm": 2.8 / 2,
+        "assumed": ["«after compensation» is not defined (when, of what) — read as a 25 °C compensation, the row as the "
+                    "change from 25 °C (limit) ⊥ twice the row (limit_plus_25C)",
+                    "the die at the package's centre (not printed), edge-on on a lead-free end at the shortest body"]},
+    # NXP KMZ60 Product data sheet Rev. 2 (2014-02-07) Figs. 11–12: «start-up angle error after calibration» with pin
+    # TCC_EN to VCC (TC compensation on) ⊥ to ground (off) — after one-point calibration at 25 °C, «from worst case
+    # simulations», «related to 180 degree angular range of the MR sensor»; read off the page image (Fig. 11 at 300 dpi,
+    # ±0.05°; Fig. 12 at 600 dpi by its crossings with the grid, ±0.02°). Hext ≥ 25 kA/m (31.4 mT). §1: the field «in the
+    # surface parallel to the chip (x-y plane)», outputs cos(2α) · sin(2α). SO8 (SOT96-1): D 4.8–5.0, E 3.8–4.0 mm.
+    "KMZ60": {
+        "source": "NXP KMZ60 Product data sheet Rev. 2 (2014-02-07) Figs. 11–12 (read off the page images), SOT96-1",
+        "operating_C": (-40.0, 150.0), "field_min_T": 4e-7 * math.pi * 25e3, "field_max_T": None, "range_deg": 180.0,
+        "curves_deg": {"fig11_tcc_on": ((-40.0, 2.45), (0.0, 0.97), (25.0, 0.0), (60.0, 1.35), (80.0, 2.2)),
+                       "fig12_tcc_off": ((-40.0, 0.36), (-20.0, 0.27), (0.0, 0.16), (25.0, 0.0), (40.0, 0.12),
+                                         (60.0, 0.28), (80.0, 0.48))},
+        "curve_read_tolerance_deg": {"fig11_tcc_on": 0.05, "fig12_tcc_off": 0.02},
+        "degree_readings": {"field": 1.0, "electrical": 0.5}, "lifetime_deg": None,
+        "offset_tc_V_per_V_K": None, "amplitude_min_V_per_V": None, "amplitude_tc_min_per_K": None,
+        "amplitude_tc_max_per_K": None, "mismatch_tc_per_K": None,
+        "package": "SO8 (SOT96-1), D 4.8–5.0 × E 3.8–4.0 mm, die position not printed", "die_to_edge_mm": 4.8 / 2,
+        "assumed": ["the curves are worst-case SIMULATIONS, not guaranteed columns; read linearly between their points",
+                    "«related to 180 degree angular range» read as degrees of the FIELD (the reading) ⊥ of the bridge's "
+                    "doubled output angle (electrical: half the field error) — printed both ways, the verdict's flip",
+                    "the AMR's 180° range: the reading wraps twice per period, so the unwrap floor on P doubles",
+                    "the die at the package's centre (not printed), edge-on on a lead-free end at the shortest body"]},
+}
+ANGLE_SIZE_READINGS = ("limit", "limit_plus_25C")
+ANGLE_SPREAD_READINGS = ("band_ends", "window_edge")
 
 
 def base_lanes() -> dict:
@@ -1455,6 +1583,244 @@ def control_linearity_and_screen(lin: dict, scr: dict, st: dict, args) -> None:
                 assert (cell["t_min_mm"] is None) == (n >= MAGNET_FAMILIES_BR_T[fam][1]), (name, pair, key)
 
 
+def angle_curve_deg(row: dict, curve: str, t_c: float) -> float:
+    """A curve row's angle error at t_c on the named curve, linear between its transcribed points (inside them only)."""
+    pts = row["curves_deg"][curve]
+    assert pts[0][0] <= t_c <= pts[-1][0], (t_c, pts)
+    return float(np.interp(t_c, [x for x, _ in pts], [y for _, y in pts]))
+
+
+def angle_p_sat_mm(b_r: float, g_mm: float, b_min: float, t_mm: float | None) -> float | None:
+    """The shortest period at which the field amplitude at the gap reaches b_min — the rotating field's magnitude is the
+    fundamental's amplitude. An infinitely thick scale (t None) gives it in closed form, 2πg/ln(B_r/2b_min); a finite one
+    has a field that peaks at P* and falls beyond it, so the root is searched below the peak; None if never reached."""
+    if t_mm is None:
+        return None if 0.5 * b_r <= b_min else 2 * math.pi * g_mm / math.log(0.5 * b_r / b_min)
+    peak = minimize_scalar(lambda q: -field_amplitude_t(b_r, q, t_mm, g_mm), bounds=(0.5, 200.0), method="bounded")
+    if field_amplitude_t(b_r, peak.x, t_mm, g_mm) < b_min:
+        return None
+    return brentq(lambda q: field_amplitude_t(b_r, q, t_mm, g_mm) - b_min, 0.05, peak.x, xtol=1e-9)
+
+
+def angle_readings(row: dict) -> list[tuple[str, str]]:
+    """(size, spread) per row: a limit row on the 2×2 grid; a curve row per curve × degree reading, at the corner's hours."""
+    if "curves_deg" in row:
+        return [(f"{cv}_{dg}", "window_edge") for cv in row["curves_deg"] for dg in row["degree_readings"]]
+    return list(itertools.product(ANGLE_SIZE_READINGS, ANGLE_SPREAD_READINGS))
+
+
+def angle_drift_deg_per_k(row: dict, size: str, spread: str, edge: dict, curve_shift: float = 0.0) -> tuple[dict, dict]:
+    """The per-kelvin FIELD-angle drift per branch and the span it is spread over (see `angle_rows`)."""
+    if spread == "band_ends":
+        span = {"cold": BRANCH_SPLIT_C - row["operating_C"][0], "hot": row["operating_C"][1] - BRANCH_SPLIT_C}
+    else:
+        span = {br: abs(edge[br] - BRANCH_SPLIT_C) for br in edge}
+    if "curves_deg" in row:
+        cv, dg = size.rsplit("_", 1)
+        k = row["degree_readings"][dg]
+        return {br: k * max(angle_curve_deg(row, cv, edge[br]) + curve_shift, 0.0) / span[br] for br in edge}, span
+    extra = row["at_25C_deg"] if row["at_25C_deg"] is not None else row["total_deg"]
+    size_deg = row["total_deg"] + (0.0 if size == "limit" else extra)
+    return {br: size_deg / span[br] for br in edge}, span
+
+
+def angle_rows(args, t_hots: dict, colds: dict, floor_mm: float, wall_mm: float) -> dict:
+    """(2g) the angle rows. Each reads the field in the plane of its die, and the scale's field turns in the plane of the
+    motion and the scale's normal, so the package stands edge-on to the wall: the row's own minimum gap is the wall plus
+    the die's depth from the package's lead-free end. Per row, reading and corner: the per-kelvin field-angle drift per
+    branch and the longest period that keeps it within the frames (P_max = 0.3 µm/K · 360°/δθ; a curve row also at its
+    read tolerance); per family and gap (3 · 4 mm and the row's own minimum) the window of periods — from the period at
+    which the strongest class at the hottest hour saturates the row (a thick scale ⊥ t 2 mm) and the unwrap floor
+    (doubled for a 180° row) up to P_max and the period above which the WEAKEST class, thick, at the coldest hour passes
+    the row's field maximum (the classes between cover the window continuously); whether the gap is reachable. The
+    per-kelvin members a row prints alone are NECESSARY caps; a rejected member reading is printed with its reason; the
+    static cyclic error and the lifetime row at the floored period stand beside, not per kelvin, not summed."""
+    out = {}
+    for name, row in ANGLE_ROWS.items():
+        assert row["operating_C"][0] <= min(colds.values()) and max(t_hots.values()) <= row["operating_C"][1], name
+        floor_eff = floor_mm * 360.0 / row["range_deg"]
+        g_min = wall_mm + row["die_to_edge_mm"]
+        gaps = [*((f"g{g:g}", g) for g in VERDICT_GAPS_MM), ("gmin", g_min)]
+        readings = {}
+        for size, spread in angle_readings(row):
+            for c in ("kind", "adverse"):
+                *_, t_hot, t_cold, _s = args("REFeB_sintered", c)
+                edge = {"cold": t_cold, "hot": t_hot}
+                dth, span = angle_drift_deg_per_k(row, size, spread, edge)
+                bind = max(dth, key=dth.get)
+                p_max = TARGET_MM * 360.0 / dth[bind]
+                band = None
+                if "curves_deg" in row:
+                    tol = row["curve_read_tolerance_deg"][size.rsplit("_", 1)[0]]
+                    hi_d = max(angle_drift_deg_per_k(row, size, spread, edge, +tol)[0].values())
+                    lo_d = max(angle_drift_deg_per_k(row, size, spread, edge, -tol)[0].values())
+                    band = [TARGET_MM * 360.0 / hi_d, math.inf if lo_d == 0.0 else TARGET_MM * 360.0 / lo_d]
+                cells = {}
+                for fam in VERDICT_FAMILIES:
+                    alpha, t_ref_need, t_ref_cap, *_ = args(fam, c)
+                    lo_cls, hi_cls = MAGNET_FAMILIES_BR_T[fam]
+                    b_r = hi_cls * thermal_factor(alpha, t_hot, t_ref_need)
+                    b_cold_hi = hi_cls * thermal_factor(alpha, t_cold, t_ref_cap)
+                    b_cold_lo = lo_cls * thermal_factor(alpha, t_cold, t_ref_cap)
+                    for gk, g in gaps:
+                        p_thick = angle_p_sat_mm(b_r, g, row["field_min_T"], None)
+                        p_t2 = angle_p_sat_mm(b_r, g, row["field_min_T"], max(SCALE_T_MM))
+                        if row["field_max_T"] is None:
+                            over_hi = over_lo = None
+                        else:
+                            over_hi = angle_p_sat_mm(b_cold_hi, g, row["field_max_T"], None)
+                            over_lo = angle_p_sat_mm(b_cold_lo, g, row["field_max_T"], None)
+                        top = min(p_max, math.inf if over_lo is None else over_lo)
+                        win = (None if p_thick is None or max(p_thick, floor_eff) > top
+                               else [max(p_thick, floor_eff), top])
+                        cells[f"{fam}:{gk}"] = {
+                            "g_mm": g, "reachable": g >= g_min - 1e-9,
+                            "p_sat_mm_thick": p_thick, "p_sat_mm_t2": p_t2,
+                            "p_over_field_max_mm_thick_cold_strongest": over_hi,
+                            "p_over_field_max_mm_thick_cold_weakest": over_lo,
+                            "holds_thick": p_thick is not None and p_thick <= p_max,
+                            "holds_thick_with_floor": win is not None,
+                            "holds_t2_with_floor": p_t2 is not None and max(p_t2, floor_eff) <= top,
+                            "window_thick_with_floor_mm": win}
+                readings[f"{c}:size_{size}:spread_{spread}"] = {
+                    "span_K": span, "drift_deg_per_K": dth, "binding_branch": bind, "p_max_mm": p_max,
+                    "p_max_mm_at_read_tolerance": band, "cells": cells}
+        members = {}
+        for c in ("kind", "adverse"):
+            *_, t_hot, _t_cold, _s = args("REFeB_sintered", c)
+            m = {}
+            if row["offset_tc_V_per_V_K"] is not None:
+                amp = row["amplitude_min_V_per_V"] * (1.0 + row["amplitude_tc_min_per_K"] * (t_hot - BRANCH_SPLIT_C))
+                d_off = math.hypot(row["offset_tc_V_per_V_K"], row["offset_tc_V_per_V_K"]) / amp
+                m["offset"] = {"rad_per_K": d_off, "cap_mm": TARGET_MM * 2 * math.pi / d_off,
+                               "amplitude_at_hot_hour_V_per_V": amp}
+            if row["mismatch_tc_per_K"] is not None:
+                d_mis = row["mismatch_tc_per_K"] / 2.0
+                m["mismatch"] = {"rad_per_K": d_mis, "cap_mm": TARGET_MM * 2 * math.pi / d_mis}
+            if row["amplitude_tc_max_per_K"] is not None:
+                d_rej = (row["amplitude_tc_max_per_K"] - row["amplitude_tc_min_per_K"]) / 2.0
+                implied = math.degrees(d_rej * (BRANCH_SPLIT_C - row["operating_C"][0]))
+                m["mismatch_if_TCAmp_per_channel"] = {
+                    "rad_per_K": d_rej, "cap_mm": TARGET_MM * 2 * math.pi / d_rej, "rejected": True,
+                    "implied_change_deg_over_cold_band": implied,
+                    "why": "read per channel, the coefficient's span would move the angle further over the cold band "
+                           "than the row's own over-temperature limit allows"}
+            members[c] = m
+        static = row.get("at_25C_deg") if row.get("at_25C_deg") is not None else row.get("total_deg")
+        life = row.get("lifetime_deg")
+        out[name] = {"source": row["source"], "range_deg": row["range_deg"], "field_min_T": row["field_min_T"],
+                     "field_max_T": row["field_max_T"], "package": row["package"], "die_to_edge_mm": row["die_to_edge_mm"],
+                     "min_gap_mm": g_min, "unwrap_floor_mm_effective": floor_eff, "assumed": row["assumed"],
+                     "readings": readings, "members_alone": members,
+                     "static_cyclic_um_at_floor": None if static is None else floor_eff * static / 360.0 * 1e3,
+                     "lifetime_row_um_at_floor": None if life is None else floor_eff * life / 360.0 * 1e3}
+    def hold_list(gk):
+        return sorted(f"{n} {k}" for n, r in out.items() for k, blk in r["readings"].items()
+                      if blk["cells"][f"REFeB_sintered:{gk}"]["reachable"]
+                      and blk["cells"][f"REFeB_sintered:{gk}"]["holds_thick_with_floor"])
+    h3, h4, hmin = hold_list("g3"), hold_list("g4"), hold_list("gmin")
+    total = sum(len(r["readings"]) for r in out.values())
+    g_mins = {n: r["min_gap_mm"] for n, r in out.items()}
+    limit_only_fav = all(":size_limit:spread_band_ends" in h for h in hmin if "curve" not in h and "fig1" not in h)
+    by_row = {}
+    for h in hmin:
+        n, k = h.split(" ", 1)
+        by_row.setdefault(n, set()).add(k.split(":", 1)[1])
+    widths = {}
+    for n, r in out.items():
+        for blk in r["readings"].values():
+            w = blk["cells"]["REFeB_sintered:gmin"]["window_thick_with_floor_mm"]
+            if w is not None:
+                widths.setdefault(n, []).append(w)
+    p_max_all = [blk["p_max_mm"] for r in out.values() for blk in r["readings"].values()]
+    caps = sorted({round(b["cap_mm"], 1) for r in out.values() for m in r["members_alone"].values()
+                   for b in m.values() if not b.get("rejected")})
+    verdict = ("an angle sensor reads the field's direction, so the frames cap the period from above (P ≤ 0.3 µm/K · "
+               "360°/δθ) while the unwrap floor and the field the sensor needs bound it from below; and it reads in the "
+               "plane of its die, so it stands edge-on to the wall: its own minimum gap is "
+               + ", ".join(f"{n} {g:.2f}" for n, g in g_mins.items()) + " mm — "
+               f"{'none' if not any(g <= 3.0 for g in g_mins.values()) else 'some'} reaches 3 mm "
+               f"(at 3 mm: {len(h3)} holding cells, at 4 mm: {len(h4)}); at its own minimum gap a thick REFeB scale, "
+               f"with the unwrap floor and under the row's field maximum, holds in {len(hmin)} of {total} "
+               f"row·reading·corner cells — " + "; ".join(
+                   f"{n} on {', '.join(sorted(ks))} ({min(w[0] for w in widths[n]):.2f}–{max(w[1] for w in widths[n]):.2f} mm)"
+                   for n, ks in sorted(by_row.items()))
+               + f"; P_max over all readings runs {min(p_max_all):.2f}–{max(p_max_all):.2f} mm; no row prints the angle "
+               f"drift per kelvin (the members two rows print alone cap P only at {', '.join(f'{c:g}' for c in caps)} mm "
+               f"— necessary, not sufficient), so each verdict reads a SIZE over a span as a slope, and the favourable "
+               f"spread is no ceiling")
+    return {"rows": out, "verdict": verdict, "holds_3mm_REFeB_with_floor": h3, "holds_4mm_REFeB_with_floor": h4,
+            "holds_at_own_min_gap_REFeB_with_floor": hmin, "min_gap_mm": g_mins, "wall_mm": wall_mm,
+            "limit_rows_hold_only_on_the_most_favourable_reading": limit_only_fav,
+            "cells_total": total, "size_readings": ANGLE_SIZE_READINGS, "spread_readings": ANGLE_SPREAD_READINGS}
+
+
+def control_angle(ang: dict, args, floor_mm: float) -> None:
+    """Control 13 — see the docstring's CONTROLS."""
+    for name, r in ang["rows"].items():
+        row = ANGLE_ROWS[name]
+        assert math.isclose(r["unwrap_floor_mm_effective"] * row["range_deg"], floor_mm * 360.0, rel_tol=1e-12), name
+        assert math.isclose(r["min_gap_mm"], ang["wall_mm"] + row["die_to_edge_mm"], rel_tol=1e-12), name
+        for cv, pts in row.get("curves_deg", {}).items():
+            for t_c, v in pts:
+                assert math.isclose(angle_curve_deg(row, cv, t_c), v, abs_tol=1e-12), (name, cv, t_c)
+            assert angle_curve_deg(row, cv, BRANCH_SPLIT_C) == 0.0, (name, cv)
+        for key, blk in r["readings"].items():
+            c, size, spread = key.split(":")
+            *_, t_hot, t_cold, _s = args("REFeB_sintered", c)
+            if spread == "spread_band_ends":
+                assert blk["span_K"]["cold"] >= BRANCH_SPLIT_C - t_cold and blk["span_K"]["hot"] >= t_hot - BRANCH_SPLIT_C, key
+                twin = r["readings"][f"{c}:{size}:spread_window_edge"]
+                assert blk["p_max_mm"] >= twin["p_max_mm"] - 1e-12, (name, key)
+            else:
+                assert math.isclose(blk["span_K"]["cold"], BRANCH_SPLIT_C - t_cold, rel_tol=1e-12), key
+                assert math.isclose(blk["span_K"]["hot"], t_hot - BRANCH_SPLIT_C, rel_tol=1e-12), key
+            if size == "size_limit_plus_25C":
+                assert blk["p_max_mm"] <= r["readings"][key.replace("size_limit_plus_25C", "size_limit")]["p_max_mm"] + 1e-12, key
+            if size.endswith("_electrical"):
+                assert math.isclose(blk["p_max_mm"], 2 * r["readings"][key.replace("_electrical", "_field")]["p_max_mm"], rel_tol=1e-12), key
+            if blk["p_max_mm_at_read_tolerance"] is not None:
+                lo, hi = blk["p_max_mm_at_read_tolerance"]
+                assert lo <= blk["p_max_mm"] <= hi, (name, key)
+            d = blk["drift_deg_per_K"][blk["binding_branch"]]
+            assert d == max(blk["drift_deg_per_K"].values()), key
+            assert math.isclose(blk["p_max_mm"] * d / 360.0, TARGET_MM, rel_tol=1e-12), key
+            for ck, cell in blk["cells"].items():
+                fam, _gk = ck.split(":")
+                alpha, t_ref_need, t_ref_cap, *_ = args(fam, c)
+                lo_cls, hi_cls = MAGNET_FAMILIES_BR_T[fam]
+                b_r = hi_cls * thermal_factor(alpha, t_hot, t_ref_need)
+                g = cell["g_mm"]
+                assert cell["reachable"] == (g >= r["min_gap_mm"] - 1e-9), (name, key, ck)
+                for tk, t_mm in (("p_sat_mm_thick", 1e6), ("p_sat_mm_t2", max(SCALE_T_MM))):
+                    q = cell[tk]
+                    if q is None:
+                        assert max(field_amplitude_t(b_r, x, t_mm, g) for x in np.linspace(0.5, 200.0, 4000)) < row["field_min_T"] * (1 + 1e-6), (name, key, ck, tk)
+                        continue
+                    assert math.isclose(field_amplitude_t(b_r, q, t_mm, g), row["field_min_T"], rel_tol=1e-6), (name, key, ck, tk)
+                    assert field_amplitude_t(b_r, q * (1 - 1e-4), t_mm, g) < row["field_min_T"], (name, key, ck, tk)
+                for tk, cls in (("p_over_field_max_mm_thick_cold_strongest", hi_cls), ("p_over_field_max_mm_thick_cold_weakest", lo_cls)):
+                    q = cell[tk]
+                    if q is not None:
+                        b_c = cls * thermal_factor(alpha, t_cold, t_ref_cap)
+                        assert math.isclose(field_amplitude_t(b_c, q, 1e6, g), row["field_max_T"], rel_tol=1e-9), (name, key, ck, tk)
+                        assert field_amplitude_t(b_c, q * (1 + 1e-4), 1e6, g) > row["field_max_T"], (name, key, ck, tk)
+                qs, qw = cell["p_over_field_max_mm_thick_cold_strongest"], cell["p_over_field_max_mm_thick_cold_weakest"]
+                assert qs is None or qw is None or qs <= qw, (name, key, ck)
+                assert not cell["holds_thick_with_floor"] or cell["holds_thick"], (name, key, ck)
+                assert not cell["holds_t2_with_floor"] or cell["holds_thick_with_floor"], (name, key, ck)
+                w = cell["window_thick_with_floor_mm"]
+                assert (w is not None) == cell["holds_thick_with_floor"], (name, key, ck)
+                if w is not None:
+                    assert w[0] >= r["unwrap_floor_mm_effective"] and w[0] <= w[1] <= blk["p_max_mm"], (name, key, ck)
+                    assert qw is None or w[1] <= qw, (name, key, ck)
+        for c, m in r["members_alone"].items():
+            for mk, blk in m.items():
+                assert math.isclose(blk["cap_mm"] * blk["rad_per_K"] / (2 * math.pi), TARGET_MM, rel_tol=1e-12), (name, c)
+                if blk.get("rejected"):
+                    assert blk["implied_change_deg_over_cold_band"] > row["total_deg"], (name, mk)
+
+
 def control_sensor_table(st: dict, args, mt: dict, t_hots: dict, colds: dict) -> None:
     """Control 10 — see the docstring's CONTROLS."""
     base = st[BASE_SENSOR]["pairs"]["x_y"]
@@ -1814,6 +2180,8 @@ def main() -> int:
     lin = linearity_reading(mt["_args"], floor_mm)
     scr = screen_rows(mt["_args"], t_hots, colds)
     control_linearity_and_screen(lin, scr, st, mt["_args"])
+    ang = angle_rows(mt["_args"], t_hots, colds, floor_mm, radome["wall_thickness_mm"])
+    control_angle(ang, mt["_args"], floor_mm)
     mt.pop("_args")
     hinge = {f"t{t:g}:g{GAP_REALISTIC_MM:g}": {c: mt["cells"][f"t{t:g}:g{GAP_REALISTIC_MM:g}"]["need_T"][f"REFeB_sintered:{c}"]
                                                for c in ("isothermal", "kind", "adverse")} for t in (1.0, 2.0)}
@@ -1988,6 +2356,18 @@ def main() -> int:
     print("  (2f) screen rows — holds any cell at 3 · 4 mm (any family, corner, thickness):")
     for name, s in scr.items():
         print(f"      {name:14s} " + "  ".join(f"{pair}: {pr['holds_any_cell']}" for pair, pr in s["pairs"].items()))
+    print(f"  (2g) angle rows: {ang['verdict']}")
+    for name, r in ang["rows"].items():
+        print(f"      {name}: min gap {r['min_gap_mm']:.2f} mm, floor {r['unwrap_floor_mm_effective']:g} mm, static "
+              f"{r['static_cyclic_um_at_floor']} µm, lifetime row {r['lifetime_row_um_at_floor']} µm at the floor")
+        for key, blk in r["readings"].items():
+            cm = blk["cells"]["REFeB_sintered:gmin"]
+            w = cm["window_thick_with_floor_mm"]
+            print(f"        {key:44s} P_max {blk['p_max_mm']:6.2f} ({blk['binding_branch']})  REFeB @gmin P_sat "
+                  f"{cm['p_sat_mm_thick']:.2f}  window {None if w is None else [round(x, 2) for x in w]}")
+        for c, m in r["members_alone"].items():
+            for mk, blk in m.items():
+                print(f"        {c}: {mk} alone caps P at {blk['cap_mm']:.1f} mm{' (rejected)' if blk.get('rejected') else ''}")
     print(f"  (3) read energy: {json.dumps(energy, ensure_ascii=False)}")
     print(f"  (4) travel: {json.dumps(travel, ensure_ascii=False)}")
 
@@ -2003,7 +2383,8 @@ def main() -> int:
                    "frame_sensitivity_um_per_K": FRAME_UM_PER_K, "growth": GROWTH, "frost_swing_mm": FROST_SWING_MM,
                    "daily_swing_mm": DAILY_SWING_MM, "radial_rate_mm_per_yr": RADIAL_RATE_MM_PER_YR,
                    "growth_months_min_assumed": GROWTH_MONTHS_MIN, "sensors": SENSORS, "base_sensor": BASE_SENSOR,
-                   "sensor_gaps": SENSOR_GAPS, "screen_rows": SCREEN_ROWS, "branch_span_K": BRANCH_SPAN_K,
+                   "sensor_gaps": SENSOR_GAPS, "screen_rows": SCREEN_ROWS, "angle_rows": ANGLE_ROWS,
+                   "branch_span_K": BRANCH_SPAN_K,
                    "mismatch_linear_spread_K_assumed": MISMATCH_LINEAR_SPREAD_K, "encoder_2mm": ENCODER_2MM,
                    "core_run_A": I_CORE_RUN_A, "v_out": V_OUT, "eta_buck_active": ETA_BUCK_ACTIVE, "e_cycle_J": E_CYCLE,
                    "gaps_mm": GAPS_MM, "scale_thickness_mm": SCALE_T_MM, "noise_target_um": NOISE_TARGET_UM,
@@ -2013,6 +2394,7 @@ def main() -> int:
                                "flange_heat": "78 cache (flange_cambium_heat.json)",
                                "radome_flange": "tools/cad/cem/radome.json · cathode_flange.json; top = Radome.TopZMm",
                                "cadence_demand": "110 cache", "air": "ERA5 hourly, Cherkasy grid point (71's loader)",
+                               "angle": "the angle rows' primaries, each in `angle_rows.*.source` (read 2026-11-17)",
                                "hall": "the sensor table's rows, each with its datasheet section in `sensors.*.source` "
                                        "(TI SLYS045C · SBASAF4 · SLYS053C, read 2026-11-16; SLYS045 first read 2026-10-31; "
                                        "Infineon TLE493D-P3B6 Rev. 1.0 and the screen rows' Melexis and Allegro "
@@ -2060,6 +2442,7 @@ def main() -> int:
         "sensor_drift_linearity": lin,
         "sensor_screen": {"rule": "the sensor table's sum rule on the screen rows' two drift bounds; no read, no levers",
                           "rows": scr},
+        "sensor_angle": ang,
         "unwrap": unwrap,
         "energy": energy,
         "travel": travel,

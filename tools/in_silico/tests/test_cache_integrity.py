@@ -9465,6 +9465,96 @@ def test_dendrometer_drift_linearity_reading_is_recomputed():
     assert f"in {len(holds)} of {total}" in lin["verdict"]
 
 
+def test_dendrometer_angle_rows_are_recomputed():
+    """114 (HW.54 Р3(в), (2g)) — the angle (saturation) rows against their raw fields: per reading the per-kelvin
+    field-angle drift per branch, the frames' cap P_max = 0.3 µm/K · 360°/δθ, the thick scale's saturation period and
+    field-maximum periods in closed form, the unwrap floor (doubled for a 180° row), the row's own minimum gap (the
+    radome's wall plus the die's depth) and the windows they leave.
+
+    CAN catch: a size reading that is not the limit (or the limit plus the 25 °C bound, twice the limit without one) · a
+    spread that is not the band's ends or the corner's own hours · a curve read off its transcribed points or a degree
+    reading not applied · a cap off its formula or judged on the smaller drift · a saturation period off 2πg/ln(B_r/2B_min)
+    at the family's strongest class and the corner's hot hour · a window not closed by the weakest class's field maximum
+    at the coldest hour · a floor not doubled · a minimum gap that is not the wall plus the die depth, or a cell below it
+    counted as holding · a «holds» list, a count or a verdict that disagrees with the cells. CANNOT catch: a value
+    transcribed wrong (each row cites its source; KMZ60's curves are read off images), the finite-thickness root (the
+    script's control 13 holds it) or the idealised field form.
+    """
+    import math
+
+    import numpy as np
+    d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
+    ang, rows_in = d["sensor_angle"], d["inputs"]["angle_rows"]
+    mt = d["scale_magnet_temperature"]
+    inp = mt["inputs"]
+    fam_br = d["inputs"]["magnet_families_br_T"]
+    floor, target = d["sensor_table"]["unwrap_floor_mm"], d["inputs"]["frame_sensitivity_um_per_K"] * 1e-3
+    wall = json.loads((REPO / "tools/cad/cem/radome.json").read_text())["wall_thickness_mm"]
+    assert ang["wall_mm"] == wall and set(ang["rows"]) == set(rows_in) and ang["rows"], "no angle row"
+
+    def p_root(b_r, g, b_lim):
+        return None if 0.5 * b_r <= b_lim else 2 * math.pi * g / math.log(0.5 * b_r / b_lim)
+
+    holds = {"g3": [], "g4": [], "gmin": []}
+    total = 0
+    for name, r in ang["rows"].items():
+        row = rows_in[name]
+        floor_eff = floor * 360.0 / row["range_deg"]
+        g_min = wall + row["die_to_edge_mm"]
+        assert r["unwrap_floor_mm_effective"] == pytest.approx(floor_eff, rel=1e-12)
+        assert r["min_gap_mm"] == pytest.approx(g_min, rel=1e-12) == ang["min_gap_mm"][name]
+        for key, blk in r["readings"].items():
+            c, size, spread = key.split(":")
+            size, spread = size[len("size_"):], spread[len("spread_"):]
+            cc = mt["corners"][c]
+            edge = {"cold": inp["t_cold_C"][cc["cold"]], "hot": inp["t_hot_C"][cc["hot"]]}
+            if spread == "band_ends":
+                span = {"cold": 25.0 - row["operating_C"][0], "hot": row["operating_C"][1] - 25.0}
+            else:
+                span = {br: abs(edge[br] - 25.0) for br in edge}
+            if "curves_deg" in row:
+                cv, dg = size.rsplit("_", 1)
+                xs, ys = zip(*row["curves_deg"][cv], strict=True)
+                dth = {br: row["degree_readings"][dg] * float(np.interp(edge[br], xs, ys)) / span[br] for br in edge}
+            else:
+                extra = row["at_25C_deg"] if row["at_25C_deg"] is not None else row["total_deg"]
+                size_deg = row["total_deg"] + (0.0 if size == "limit" else extra)
+                dth = {br: size_deg / span[br] for br in edge}
+            for br in edge:
+                assert blk["span_K"][br] == pytest.approx(span[br], rel=1e-12), (name, key, br)
+                assert blk["drift_deg_per_K"][br] == pytest.approx(dth[br], rel=1e-12), (name, key, br)
+            p_max = target * 360.0 / max(dth.values())
+            assert blk["p_max_mm"] == pytest.approx(p_max, rel=1e-12), (name, key)
+            total += 1
+            for ck, cell in blk["cells"].items():
+                fam, gk = ck.split(":")
+                coeff = inp["coefficients_per_K_kind_adverse"][fam][cc["coefficient_end"]]
+                lo_cls, hi_cls = fam_br[fam]
+                g = {"g3": 3.0, "g4": 4.0, "gmin": g_min}[gk]
+                assert cell["g_mm"] == pytest.approx(g, rel=1e-12) and cell["reachable"] == (g >= g_min - 1e-9), (name, key, ck)
+                p_sat = p_root(hi_cls * (1.0 + coeff * (edge["hot"] - cc["t_ref_need_C"])), g, row["field_min_T"])
+                if p_sat is None:
+                    assert cell["p_sat_mm_thick"] is None, (name, key, ck)
+                else:
+                    assert cell["p_sat_mm_thick"] == pytest.approx(p_sat, rel=1e-9), (name, key, ck)
+                over_lo = (None if row["field_max_T"] is None else
+                           p_root(lo_cls * (1.0 + coeff * (edge["cold"] - cc["t_ref_cap_C"])), g, row["field_max_T"]))
+                got = cell["p_over_field_max_mm_thick_cold_weakest"]
+                assert (got is None) == (over_lo is None) and (got is None or got == pytest.approx(over_lo, rel=1e-9)), (name, key, ck)
+                top = min(p_max, math.inf if over_lo is None else over_lo)
+                ok = p_sat is not None and max(p_sat, floor_eff) <= top
+                assert cell["holds_thick_with_floor"] == ok, (name, key, ck)
+                if ok:
+                    assert cell["window_thick_with_floor_mm"] == pytest.approx([max(p_sat, floor_eff), top], rel=1e-9)
+                else:
+                    assert cell["window_thick_with_floor_mm"] is None
+                if fam == "REFeB_sintered" and ok and cell["reachable"]:
+                    holds[gk].append(f"{name} {key}")
+    assert sorted(holds["g3"]) == ang["holds_3mm_REFeB_with_floor"] and sorted(holds["g4"]) == ang["holds_4mm_REFeB_with_floor"]
+    assert sorted(holds["gmin"]) == ang["holds_at_own_min_gap_REFeB_with_floor"]
+    assert total == ang["cells_total"] and f"holds in {len(holds['gmin'])} of {total}" in ang["verdict"]
+
+
 def test_dendrometer_travel_carries_the_install_tilt():
     """114 (HW.54 Р3(в), (4)) — the travel block along the TILTED axis, rebuilt from `78`'s raw facing spread, the flange
     and radome CEMs: θ = asin(spread/Ø), the install-day bark over the flange's top along the axis (spread/cos θ apart

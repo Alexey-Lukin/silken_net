@@ -10826,6 +10826,35 @@ def _st_edge_best(d):
     return max((_st_edge_gap(d, n, p), n, p) for n, r in d[_ST]["rows"].items() for p in r["pairs"])
 
 
+_ANG = "sensor_angle"
+_TLE, _TMAG, _TAS, _KMZ = "TLE5501-E0001_diff", "TMAG6180-Q1_RTCAL_DE", "TAS2141-AAAB", "KMZ60"
+
+
+def _ang_pmax(d, row=None, size=None):
+    return [b["p_max_mm"] for n, r in d[_ANG]["rows"].items() if row in (None, n)
+            for k, b in r["readings"].items() if size is None or f":size_{size}:" in k]
+
+
+def _ang_cell(d, row, corner, gk, size="limit", spread="band_ends"):
+    return d[_ANG]["rows"][row]["readings"][f"{corner}:size_{size}:spread_{spread}"]["cells"][f"REFeB_sintered:{gk}"]
+
+
+def _ang_win(d, row, corner, gk, size="limit", spread="band_ends"):
+    return _ang_cell(d, row, corner, gk, size, spread)["window_thick_with_floor_mm"]
+
+
+def _ang_member(d, row, member):
+    return [m[member][k] for m in d[_ANG]["rows"][row]["members_alone"].values() for k in ("cap_mm",)]
+
+
+def _ang_kmz_tol(d):
+    return [b["p_max_mm_at_read_tolerance"] for k, b in d[_ANG]["rows"][_KMZ]["readings"].items() if ":size_fig12_tcc_off_field:" in k]
+
+
+def _ang_kmz_win(d):
+    return [_ang_win(d, _KMZ, c, "gmin", "fig12_tcc_off_electrical", "window_edge") for c in ("kind", "adverse")]
+
+
 _P3 = "TLE493D-P3B6_comp"
 _LIN = "sensor_drift_linearity"
 
@@ -10892,6 +10921,53 @@ CHECKS += [
         ("P3B6 adverse", rf"X–Y тримає 3 мм на REFeB зі шкалою від [\d.]+ ⊥ {N} мм", lambda d: _ceil(_p3_cell(d, "adverse"))),
         ("P3B6 edge kind", rf"на шкалі 10 мм тримає лише {N} ⊥", lambda d: _floor(_p3_edge(d, "kind"))),
         ("P3B6 edge adverse", rf"на шкалі 10 мм тримає лише [\d.]+ ⊥ {N} мм", lambda d: _floor(_p3_edge(d, "adverse"))))],
+    # 2026-11-17: the angle (saturation) rows (2g) — the frames cap the period from above; edge-on, each row's own gap
+    *[(f"dendrometer angle rows {what} → 114", SUMMARY, rx, DEN, fn, 0.0) for what, rx, fn in (
+        ("min gap TLE5501", rf"\*\*{N} · [\d.]+ · [\d.]+ · [\d.]+ mm\*\* \(TLE5501", lambda d: round(d[_ANG]["min_gap_mm"][_TLE], 2)),
+        ("min gap TMAG6180", rf"\*\*[\d.]+ · {N} · [\d.]+ · [\d.]+ mm\*\* \(TLE5501", lambda d: round(d[_ANG]["min_gap_mm"][_TMAG], 2)),
+        ("min gap TAS2141", rf"\*\*[\d.]+ · [\d.]+ · {N} · [\d.]+ mm\*\* \(TLE5501", lambda d: round(d[_ANG]["min_gap_mm"][_TAS], 2)),
+        ("min gap KMZ60", rf"\*\*[\d.]+ · [\d.]+ · [\d.]+ · {N} mm\*\* \(TLE5501", lambda d: round(d[_ANG]["min_gap_mm"][_KMZ], 2)),
+        ("holds at own gap", rf"holds in \*\*{N} of \d+\*\*\s+row·reading·corner cells", lambda d: len(d[_ANG]["holds_at_own_min_gap_REFeB_with_floor"])),
+        ("cells", rf"holds in \*\*\d+ of {N}\*\*\s+row·reading·corner cells", lambda d: d[_ANG]["cells_total"]),
+        ("holds 4 mm", rf"\(at 4 mm in \*\*{N}\*\*, both the TAS2141's\)", lambda d: len(d[_ANG]["holds_4mm_REFeB_with_floor"])),
+        ("TAS window low", rf"window of \*\*{N}–[\d.]+ ⊥ [\d.]+ mm\*\* \(adverse ⊥ kind", lambda d: _ceil2(min(_ang_win(d, _TAS, c, "gmin")[0] for c in ("kind", "adverse")))),
+        ("TAS window high adverse", rf"window of \*\*[\d.]+–{N} ⊥ [\d.]+ mm\*\* \(adverse ⊥ kind", lambda d: _floor2(_ang_win(d, _TAS, "adverse", "gmin")[1])),
+        ("TAS window high kind", rf"window of \*\*[\d.]+–[\d.]+ ⊥ {N} mm\*\* \(adverse ⊥ kind", lambda d: _floor2(_ang_win(d, _TAS, "kind", "gmin")[1])),
+        ("TAS 4 mm kind", rf"at 4 mm from \*\*{N} ⊥ [\d.]+ mm\*\*", lambda d: _ceil2(_ang_win(d, _TAS, "kind", "g4")[0])),
+        ("TAS 4 mm adverse", rf"at 4 mm from \*\*[\d.]+ ⊥ {N} mm\*\*", lambda d: _ceil2(_ang_win(d, _TAS, "adverse", "g4")[0])),
+        ("TMAG window low", rf"kind corner alone, \*\*{N}–[\d.]+ mm\*\*", lambda d: _ceil2(_ang_win(d, _TMAG, "kind", "gmin")[0])),
+        ("TMAG window high", rf"kind corner alone, \*\*[\d.]+–{N} mm\*\*", lambda d: _floor2(_ang_win(d, _TMAG, "kind", "gmin")[1])),
+        ("KMZ60 window low", rf"electrical degrees, \*\*{N}–[\d.]+ mm\*\*", lambda d: _ceil2(max(w[0] for w in _ang_kmz_win(d)))),
+        ("KMZ60 window high", rf"electrical degrees, \*\*[\d.]+–{N} mm\*\*", lambda d: _floor2(min(w[1] for w in _ang_kmz_win(d)))),
+        ("KMZ60 field cap low", rf"its cap of \*\*{N}–[\d.]+ mm\*\*", lambda d: _floor2(min(_ang_pmax(d, _KMZ, "fig12_tcc_off_field")))),
+        ("KMZ60 field cap high", rf"its cap of \*\*[\d.]+–{N} mm\*\*", lambda d: _floor2(max(_ang_pmax(d, _KMZ, "fig12_tcc_off_field")))),
+        ("KMZ60 tolerance low", rf"read tolerance \(\*\*{N}–[\d.]+ mm\*\*\)", lambda d: round(min(t[0] for t in _ang_kmz_tol(d)), 2)),
+        ("KMZ60 tolerance high", rf"read tolerance \(\*\*[\d.]+–{N} mm\*\*\)", lambda d: round(max(t[1] for t in _ang_kmz_tol(d)), 2)),
+        ("TLE5501 P_sat", rf"saturates it only from P \*\*{N} mm\*\*", lambda d: _floor2(min(_ang_cell(d, _TLE, c, "gmin")["p_sat_mm_thick"] for c in ("kind", "adverse")))),
+        ("TLE5501 member low", rf"cap the period only at \*\*{N}–[\d.]+\*\* and", lambda d: _floor(min(_ang_member(d, _TLE, "offset")), 1)),
+        ("TLE5501 member high", rf"cap the period only at \*\*[\d.]+–{N}\*\* and", lambda d: _floor(max(_ang_member(d, _TLE, "offset")), 1)),
+        ("TAS2141 member", rf"and \*\*{N} mm\*\*: necessary,", lambda d: _floor(min(_ang_member(d, _TAS, "mismatch")), 1)),
+        ("rejected cap", rf"would cap it at \*\*{N} mm\*\*", lambda d: _floor2(min(_ang_member(d, _TLE, "mismatch_if_TCAmp_per_channel")))),
+        ("rejected angle", rf"would move the angle\s+\*\*{N}°\*\*", lambda d: round(d[_ANG]["rows"][_TLE]["members_alone"]["adverse"]["mismatch_if_TCAmp_per_channel"]["implied_change_deg_over_cold_band"], 2)),
+        ("static TLE5501", rf"\*\*{N} · [\d.]+ · [\d.]+ µm\*\* \(TLE5501", lambda d: round(d[_ANG]["rows"][_TLE]["static_cyclic_um_at_floor"], 1)),
+        ("static TMAG6180", rf"\*\*[\d.]+ · {N} · [\d.]+ µm\*\* \(TLE5501", lambda d: round(d[_ANG]["rows"][_TMAG]["static_cyclic_um_at_floor"], 1)),
+        ("static TAS2141", rf"\*\*[\d.]+ · [\d.]+ · {N} µm\*\* \(TLE5501", lambda d: round(d[_ANG]["rows"][_TAS]["static_cyclic_um_at_floor"], 1)),
+        ("lifetime TLE5501", rf"lifetime rows, \*\*{N}\*\* and", lambda d: round(d[_ANG]["rows"][_TLE]["lifetime_row_um_at_floor"], 1)),
+        ("lifetime TMAG6180", rf"\*\*{N} µm\*\* \(TLE5501 · TMAG6180\)", lambda d: round(d[_ANG]["rows"][_TMAG]["lifetime_row_um_at_floor"], 1)))],
+    *[(f"dendrometer canon ⊕ angle rows {what} → 114", EBFC, rx, DEN, fn, 0.0) for what, rx, fn in (
+        ("min gap TLE5501", rf"кристала від торця корпусу:\s+{N} · [\d.]+ · [\d.]+ · [\d.]+ мм", lambda d: round(d[_ANG]["min_gap_mm"][_TLE], 2)),
+        ("min gap TMAG6180", rf"кристала від торця корпусу:\s+[\d.]+ · {N} · [\d.]+ · [\d.]+ мм", lambda d: round(d[_ANG]["min_gap_mm"][_TMAG], 2)),
+        ("min gap TAS2141", rf"кристала від торця корпусу:\s+[\d.]+ · [\d.]+ · {N} · [\d.]+ мм", lambda d: round(d[_ANG]["min_gap_mm"][_TAS], 2)),
+        ("min gap KMZ60", rf"кристала від торця корпусу:\s+[\d.]+ · [\d.]+ · [\d.]+ · {N} мм", lambda d: round(d[_ANG]["min_gap_mm"][_KMZ], 2)),
+        ("holds", rf"тримає в {N} з \d+ клітинок", lambda d: len(d[_ANG]["holds_at_own_min_gap_REFeB_with_floor"])),
+        ("cells", rf"тримає в \d+ з {N} клітинок", lambda d: d[_ANG]["cells_total"]),
+        ("TAS window low", rf"вікно періоду {N}–[\d.]+ мм, на невизначеному", lambda d: _ceil2(min(_ang_win(d, _TAS, c, "gmin")[0] for c in ("kind", "adverse")))),
+        ("TAS window high", rf"вікно періоду [\d.]+–{N} мм, на невизначеному", lambda d: _floor2(min(_ang_win(d, _TAS, c, "gmin")[1] for c in ("kind", "adverse")))),
+        ("TMAG window low", rf"на сприятливому куті, {N}–[\d.]+ мм", lambda d: _ceil2(_ang_win(d, _TMAG, "kind", "gmin")[0])),
+        ("TMAG window high", rf"на сприятливому куті, [\d.]+–{N} мм", lambda d: _floor2(_ang_win(d, _TMAG, "kind", "gmin")[1])),
+        ("member low", rf"обмежує період лише на {N}–[\d.]+ і", lambda d: _floor(min(_ang_member(d, _TLE, "offset")), 1)),
+        ("member high", rf"обмежує період лише на [\d.]+–{N} і", lambda d: _floor(max(_ang_member(d, _TLE, "offset")), 1)),
+        ("TAS member", rf"і {N} мм — необхідна умова", lambda d: _floor(min(_ang_member(d, _TAS, "mismatch")), 1)))],
     ("dendrometer sensor table, flip factor X–Y → 114", SUMMARY, rf"is at most \*\*{N} ⊥ [\d.]+\*\* of the guaranteed", DEN, _SC3("x_y"), 0.0),
     ("dendrometer sensor table, flip factor X–Z → 114", SUMMARY, rf"is at most \*\*[\d.]+ ⊥ {N}\*\* of the guaranteed", DEN, _SC3("x_z"), 0.0),
     ("dendrometer sensor table, read low → 114", SUMMARY, rf"a read costs {N}–[\d.]+ % of E_CYCLE across the rows", DEN,
@@ -11041,9 +11117,26 @@ def test_dendrometer_sensor_table_documents_follow_the_cache():
     for pair in ("x_y", "x_z"):
         n_inf = rows["TMAG5273A1"]["pairs"][pair]["cells"]["REFeB_sintered:kind:g3"]["with_mismatch"]["need_T_at_infinite_thickness"]
         assert n_inf is None or n_inf > 1.435, pair
-    # the rows the table names as gaps, and the angle sensors' decision
+    # the rows the table names as gaps; the angle sensors are (2g) since 2026-11-17, their typ-only rows a gap
     gaps = d["inputs"]["sensor_gaps"]
-    assert any("TLE493D" in k for k in gaps) and any("angle (saturation)" in k for k in gaps)
+    assert any("TLE493D" in k for k in gaps) and any("TMR3004" in k and "TMR3005" in k for k in gaps)
+    assert not any("angle (saturation)" in k for k in gaps)
+    # SUMMARY (2g) / 01_03 (г): «None reaches 3 mm» · «at 4 mm … both the TAS2141's» · the TAS2141 «on its most
+    # favourable reading» · the TMAG6180 «at the kind corner alone» · the KMZ60 «only on Fig. 12 read in electrical
+    # degrees», its field reading's floor «inside the cap's read tolerance» · «the TLE5501 on none» · the rejected member
+    ang = d[_ANG]
+    assert all(g > 3.0 for g in ang["min_gap_mm"].values()) and not ang["holds_3mm_REFeB_with_floor"]
+    assert ang["holds_4mm_REFeB_with_floor"] and all(h.startswith(_TAS + " ") for h in ang["holds_4mm_REFeB_with_floor"])
+    hmin = ang["holds_at_own_min_gap_REFeB_with_floor"]
+    assert {h.split(" ")[0] for h in hmin} == {_TAS, _TMAG, _KMZ}
+    assert all(h.endswith(":size_limit:spread_band_ends") for h in hmin if h.startswith((_TAS, _TMAG)))
+    assert [h for h in hmin if h.startswith(_TMAG)] == [f"{_TMAG} kind:size_limit:spread_band_ends"]
+    assert all(":size_fig12_tcc_off_electrical:" in h for h in hmin if h.startswith(_KMZ))
+    floor_kmz = ang["rows"][_KMZ]["unwrap_floor_mm_effective"]
+    assert all(lo < floor_kmz < hi for lo, hi in _ang_kmz_tol(d)) and max(_ang_pmax(d, _KMZ, "fig12_tcc_off_field")) < floor_kmz
+    assert max(_ang_pmax(d, _TLE)) < min(_ang_cell(d, _TLE, c, "gmin")["p_sat_mm_thick"] for c in ("kind", "adverse"))
+    rej = ang["rows"][_TLE]["members_alone"]["adverse"]["mismatch_if_TCAmp_per_channel"]
+    assert rej["rejected"] and rej["implied_change_deg_over_cold_band"] > 1.0
 
 
 # ── HW.54 Р3(б)(4) the stem-face cover rules rehearsed before the logger (117, 2026-11-10) ⟷ SUMMARY §«Can the Stem-Face

@@ -764,7 +764,7 @@
       "TLE493D-W2B6 (Infineon)": "primary not re-read in this run (the 2026-11-16 desk read v1.2 Table 9 as «not production tested»); the family's P3B6 is priced as a row",
       "MLX90393 (Melexis)": "primary read 2026-11-17 (Revision 012, 2025-11-18, Table 9): no guaranteed offset drift — OFFSTHD «< ±1000 LSB» stands in the Nom column, «based on characterization on limited sample size» (note 7) — and no mismatch-drift row (SENSTHD ±3 % is the sensitivity's band, not a mismatch bound), so it is not even screened",
       "TLV493D-A2BW (Infineon)": "operating range −20…85 °C per the desk — short of the record's cold edge; not re-read",
-      "angle (saturation) sensors — TLE5501, KMZ60, TAS2141, TMR3004/3005": "not modelled: the copies the desk read are mirrors and distributor copies, not primaries, and none gives an angle drift per kelvin — the term (2d)'s verdict would need; the field they need to saturate is (2)'s field function, the error over temperature is the missing row"
+      "TMR3004 · TMR3005 (MultiDimension)": "primaries read 2026-11-17 (TMR3005 datasheet V2.0, TMR3004 V1.0a — distributor-hosted copies of MDT's documents): the angular error ±0.6° · ±1.5° stands in the Typ column at TA = 25 °C, with no over-temperature angle row (each prints only a typical amplitude coefficient, −970 · −990 ppm/°C), so the angle rows (2g) cannot judge them; both operate −40…85 °C"
     },
     "screen_rows": {
       "MLX90395-0xx": {
@@ -1004,6 +1004,169 @@
         ]
       }
     },
+    "angle_rows": {
+      "TLE5501-E0001_diff": {
+        "source": "Infineon TLE5501 Datasheet Rev. 1.0 (2018-07-24) Tables 11–12, §8.4, Fig. 12 — differential outputs",
+        "operating_C": [
+          -40.0,
+          150.0
+        ],
+        "field_min_T": 0.025,
+        "field_max_T": 0.08,
+        "range_deg": 360.0,
+        "total_deg": 1.0,
+        "at_25C_deg": 0.8,
+        "lifetime_deg": 1.2,
+        "offset_tc_V_per_V_K": 5e-06,
+        "amplitude_min_V_per_V": 0.27,
+        "amplitude_tc_min_per_K": -0.00145,
+        "amplitude_tc_max_per_K": 0.0,
+        "mismatch_tc_per_K": null,
+        "package": "PG-DSO-8, body 4.8–5.0 × 3.8–4.0 mm, die centred",
+        "die_to_edge_mm": 2.4,
+        "assumed": [
+          "AErr,0 read as the change from 25 °C at any temperature in its span (limit) ⊥ the change bounded by AErr,0 + AErr,RT (limit_plus_25C) — the table bounds the error's size at a temperature, not its change; and the «relative» error is measured from a reference line set symmetric to it — if that line is re-set at each temperature, a common shift of the zero is bounded by neither reading",
+          "the field held inside 25…80 mT, the rows' own band (the 0.2° adder outside it is not taken)",
+          "edge-on on a lead-free end, the die 2.4 mm in (the shortest body)",
+          "TCAmp is one coefficient for both channels (a common gain that cancels); read per channel its span is the rejected member `mismatch_if_TCAmp_per_channel`"
+        ]
+      },
+      "TMAG6180-Q1_RTCAL_DE": {
+        "source": "TI TMAG6180-Q1 SLYS037A §5.3 · §5.6 (ANGERR_RTCAL_DE at 3.3 V) · §6 (die position)",
+        "operating_C": [
+          -40.0,
+          150.0
+        ],
+        "field_min_T": 0.03,
+        "field_max_T": null,
+        "range_deg": 360.0,
+        "total_deg": 1.0,
+        "at_25C_deg": null,
+        "lifetime_deg": 0.75,
+        "offset_tc_V_per_V_K": null,
+        "amplitude_min_V_per_V": null,
+        "amplitude_tc_min_per_K": null,
+        "amplitude_tc_max_per_K": null,
+        "mismatch_tc_per_K": null,
+        "package": "VSSOP-8 (DGK), 3 mm body length nominal, AMR centred",
+        "die_to_edge_mm": 1.5,
+        "assumed": [
+          "the row read as the change from 25 °C (limit) ⊥ twice the row, the 25 °C error bounded by the same row (limit_plus_25C) — «linearity across temperature» names no reference, and TI calls the error «relative»: a zero re-set per temperature would leave a common shift unbounded",
+          "the field at or above 30 mT, the row's only condition (AMR saturation starts at 20 mT)",
+          "edge-on on a lead-free end at the nominal body length (no tolerance read)"
+        ]
+      },
+      "TAS2141-AAAB": {
+        "source": "TDK TMR Angle Sensor TAS series catalog (November 2017), TAS2141-AAAB characteristics and TSSOP8 shape",
+        "operating_C": [
+          -40.0,
+          150.0
+        ],
+        "field_min_T": 0.02,
+        "field_max_T": 0.08,
+        "range_deg": 360.0,
+        "total_deg": 0.6,
+        "at_25C_deg": null,
+        "lifetime_deg": null,
+        "offset_tc_V_per_V_K": null,
+        "amplitude_min_V_per_V": null,
+        "amplitude_tc_min_per_K": null,
+        "amplitude_tc_max_per_K": null,
+        "mismatch_tc_per_K": 0.00015,
+        "package": "TSSOP8, body 2.8–3.2 × 4.2–4.6 mm, die position not printed",
+        "die_to_edge_mm": 1.4,
+        "assumed": [
+          "«after compensation» is not defined (when, of what) — read as a 25 °C compensation, the row as the change from 25 °C (limit) ⊥ twice the row (limit_plus_25C)",
+          "the die at the package's centre (not printed), edge-on on a lead-free end at the shortest body"
+        ]
+      },
+      "KMZ60": {
+        "source": "NXP KMZ60 Product data sheet Rev. 2 (2014-02-07) Figs. 11–12 (read off the page images), SOT96-1",
+        "operating_C": [
+          -40.0,
+          150.0
+        ],
+        "field_min_T": 0.031415926535897934,
+        "field_max_T": null,
+        "range_deg": 180.0,
+        "curves_deg": {
+          "fig11_tcc_on": [
+            [
+              -40.0,
+              2.45
+            ],
+            [
+              0.0,
+              0.97
+            ],
+            [
+              25.0,
+              0.0
+            ],
+            [
+              60.0,
+              1.35
+            ],
+            [
+              80.0,
+              2.2
+            ]
+          ],
+          "fig12_tcc_off": [
+            [
+              -40.0,
+              0.36
+            ],
+            [
+              -20.0,
+              0.27
+            ],
+            [
+              0.0,
+              0.16
+            ],
+            [
+              25.0,
+              0.0
+            ],
+            [
+              40.0,
+              0.12
+            ],
+            [
+              60.0,
+              0.28
+            ],
+            [
+              80.0,
+              0.48
+            ]
+          ]
+        },
+        "curve_read_tolerance_deg": {
+          "fig11_tcc_on": 0.05,
+          "fig12_tcc_off": 0.02
+        },
+        "degree_readings": {
+          "field": 1.0,
+          "electrical": 0.5
+        },
+        "lifetime_deg": null,
+        "offset_tc_V_per_V_K": null,
+        "amplitude_min_V_per_V": null,
+        "amplitude_tc_min_per_K": null,
+        "amplitude_tc_max_per_K": null,
+        "mismatch_tc_per_K": null,
+        "package": "SO8 (SOT96-1), D 4.8–5.0 × E 3.8–4.0 mm, die position not printed",
+        "die_to_edge_mm": 2.4,
+        "assumed": [
+          "the curves are worst-case SIMULATIONS, not guaranteed columns; read linearly between their points",
+          "«related to 180 degree angular range» read as degrees of the FIELD (the reading) ⊥ of the bridge's doubled output angle (electrical: half the field error) — printed both ways, the verdict's flip",
+          "the AMR's 180° range: the reading wraps twice per period, so the unwrap floor on P doubles",
+          "the die at the package's centre (not printed), edge-on on a lead-free end at the shortest body"
+        ]
+      }
+    },
     "branch_span_K": {
       "cold": 65.0,
       "hot": 100.0
@@ -1064,6 +1227,7 @@
       "radome_flange": "tools/cad/cem/radome.json · cathode_flange.json; top = Radome.TopZMm",
       "cadence_demand": "110 cache",
       "air": "ERA5 hourly, Cherkasy grid point (71's loader)",
+      "angle": "the angle rows' primaries, each in `angle_rows.*.source` (read 2026-11-17)",
       "hall": "the sensor table's rows, each with its datasheet section in `sensors.*.source` (TI SLYS045C · SBASAF4 · SLYS053C, read 2026-11-16; SLYS045 first read 2026-10-31; Infineon TLE493D-P3B6 Rev. 1.0 and the screen rows' Melexis and Allegro datasheets, read 2026-11-17); TI's drift-linearity definition — case CS3699089",
       "encoder": "ams AS5311 rev 1.13",
       "frames": "Zweifel et al. 2021 New Phytol. 10.1111/nph.17552, Methods (ZN11)",
@@ -19273,6 +19437,4276 @@
         }
       }
     }
+  },
+  "sensor_angle": {
+    "rows": {
+      "TLE5501-E0001_diff": {
+        "source": "Infineon TLE5501 Datasheet Rev. 1.0 (2018-07-24) Tables 11–12, §8.4, Fig. 12 — differential outputs",
+        "range_deg": 360.0,
+        "field_min_T": 0.025,
+        "field_max_T": 0.08,
+        "package": "PG-DSO-8, body 4.8–5.0 × 3.8–4.0 mm, die centred",
+        "die_to_edge_mm": 2.4,
+        "min_gap_mm": 4.4,
+        "unwrap_floor_mm_effective": 6.9,
+        "assumed": [
+          "AErr,0 read as the change from 25 °C at any temperature in its span (limit) ⊥ the change bounded by AErr,0 + AErr,RT (limit_plus_25C) — the table bounds the error's size at a temperature, not its change; and the «relative» error is measured from a reference line set symmetric to it — if that line is re-set at each temperature, a common shift of the zero is bounded by neither reading",
+          "the field held inside 25…80 mT, the rows' own band (the 0.2° adder outside it is not taken)",
+          "edge-on on a lead-free end, the die 2.4 mm in (the shortest body)",
+          "TCAmp is one coefficient for both channels (a common gain that cancels); read per channel its span is the rejected member `mismatch_if_TCAmp_per_channel`"
+        ],
+        "readings": {
+          "kind:size_limit:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.015384615384615385,
+              "hot": 0.008
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 7.019999999999999,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.6755731428972185,
+                "p_sat_mm_t2": 5.900395984545798,
+                "p_over_field_max_mm_thick_cold_strongest": 8.425669723478883,
+                "p_over_field_max_mm_thick_cold_weakest": 10.09996789232681,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.567430857196292,
+                "p_sat_mm_t2": 8.160322194474508,
+                "p_over_field_max_mm_thick_cold_strongest": 11.234226297971844,
+                "p_over_field_max_mm_thick_cold_weakest": 13.466623856435747,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.324173942915921,
+                "p_sat_mm_t2": 9.12244478840329,
+                "p_over_field_max_mm_thick_cold_strongest": 12.357648927769029,
+                "p_over_field_max_mm_thick_cold_weakest": 14.813286242079323,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.112951978064553,
+                "p_sat_mm_t2": 6.43175354502675,
+                "p_over_field_max_mm_thick_cold_strongest": 9.694403346325561,
+                "p_over_field_max_mm_thick_cold_weakest": 10.810064189034106,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.150602637419404,
+                "p_sat_mm_t2": 8.974488386590888,
+                "p_over_field_max_mm_thick_cold_strongest": 12.925871128434082,
+                "p_over_field_max_mm_thick_cold_weakest": 14.413418918712143,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.965662901161345,
+                "p_sat_mm_t2": 10.071182294257182,
+                "p_over_field_max_mm_thick_cold_strongest": 14.218458241277492,
+                "p_over_field_max_mm_thick_cold_weakest": 15.85476081058336,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.470504265145395,
+                "p_sat_mm_t2": 6.88612403017465,
+                "p_over_field_max_mm_thick_cold_strongest": 10.57817565763665,
+                "p_over_field_max_mm_thick_cold_weakest": 11.554532870468531,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.62733902019386,
+                "p_sat_mm_t2": 9.689534758460892,
+                "p_over_field_max_mm_thick_cold_strongest": 14.1042342101822,
+                "p_over_field_max_mm_thick_cold_weakest": 15.406043827291375,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.490072922213248,
+                "p_sat_mm_t2": 10.914045247494647,
+                "p_over_field_max_mm_thick_cold_strongest": 15.514657631200421,
+                "p_over_field_max_mm_thick_cold_weakest": 16.946648210020513,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.015384615384615385,
+              "hot": 0.008
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 7.019999999999999,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.728055132921103,
+                "p_sat_mm_t2": 5.962885571925273,
+                "p_over_field_max_mm_thick_cold_strongest": 8.360949108363307,
+                "p_over_field_max_mm_thick_cold_weakest": 10.007111595216694,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.637406843894803,
+                "p_sat_mm_t2": 8.25493895013258,
+                "p_over_field_max_mm_thick_cold_strongest": 11.14793214448441,
+                "p_over_field_max_mm_thick_cold_weakest": 13.342815460288925,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.401147528284286,
+                "p_sat_mm_t2": 9.23214713686442,
+                "p_over_field_max_mm_thick_cold_strongest": 12.262725358932851,
+                "p_over_field_max_mm_thick_cold_weakest": 14.677097006317819,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.125119546981652,
+                "p_sat_mm_t2": 6.4469002520286205,
+                "p_over_field_max_mm_thick_cold_strongest": 9.685400742741821,
+                "p_over_field_max_mm_thick_cold_weakest": 10.79887145738127,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.166826062642203,
+                "p_sat_mm_t2": 8.99803086738457,
+                "p_over_field_max_mm_thick_cold_strongest": 12.913867656989094,
+                "p_over_field_max_mm_thick_cold_weakest": 14.398495276508362,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.983508668906424,
+                "p_sat_mm_t2": 10.098782994355346,
+                "p_over_field_max_mm_thick_cold_strongest": 14.205254422688006,
+                "p_over_field_max_mm_thick_cold_weakest": 15.838344804159199,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.488760743197019,
+                "p_sat_mm_t2": 6.909868441641065,
+                "p_over_field_max_mm_thick_cold_strongest": 10.563971415372231,
+                "p_over_field_max_mm_thick_cold_weakest": 11.537587639826853,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.651680990929359,
+                "p_sat_mm_t2": 9.727425738901845,
+                "p_over_field_max_mm_thick_cold_strongest": 14.08529522049631,
+                "p_over_field_max_mm_thick_cold_weakest": 15.383450186435805,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.516849090022294,
+                "p_sat_mm_t2": 10.958983541542404,
+                "p_over_field_max_mm_thick_cold_strongest": 15.493824742545943,
+                "p_over_field_max_mm_thick_cold_weakest": 16.921795205079388,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_limit:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.019083969465648856,
+              "hot": 0.03584020923970594
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 3.0133752645715886,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.6755731428972185,
+                "p_sat_mm_t2": 5.900395984545798,
+                "p_over_field_max_mm_thick_cold_strongest": 8.425669723478883,
+                "p_over_field_max_mm_thick_cold_weakest": 10.09996789232681,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.567430857196292,
+                "p_sat_mm_t2": 8.160322194474508,
+                "p_over_field_max_mm_thick_cold_strongest": 11.234226297971844,
+                "p_over_field_max_mm_thick_cold_weakest": 13.466623856435747,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.324173942915921,
+                "p_sat_mm_t2": 9.12244478840329,
+                "p_over_field_max_mm_thick_cold_strongest": 12.357648927769029,
+                "p_over_field_max_mm_thick_cold_weakest": 14.813286242079323,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.112951978064553,
+                "p_sat_mm_t2": 6.43175354502675,
+                "p_over_field_max_mm_thick_cold_strongest": 9.694403346325561,
+                "p_over_field_max_mm_thick_cold_weakest": 10.810064189034106,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.150602637419404,
+                "p_sat_mm_t2": 8.974488386590888,
+                "p_over_field_max_mm_thick_cold_strongest": 12.925871128434082,
+                "p_over_field_max_mm_thick_cold_weakest": 14.413418918712143,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.965662901161345,
+                "p_sat_mm_t2": 10.071182294257182,
+                "p_over_field_max_mm_thick_cold_strongest": 14.218458241277492,
+                "p_over_field_max_mm_thick_cold_weakest": 15.85476081058336,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.470504265145395,
+                "p_sat_mm_t2": 6.88612403017465,
+                "p_over_field_max_mm_thick_cold_strongest": 10.57817565763665,
+                "p_over_field_max_mm_thick_cold_weakest": 11.554532870468531,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.62733902019386,
+                "p_sat_mm_t2": 9.689534758460892,
+                "p_over_field_max_mm_thick_cold_strongest": 14.1042342101822,
+                "p_over_field_max_mm_thick_cold_weakest": 15.406043827291375,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.490072922213248,
+                "p_sat_mm_t2": 10.914045247494647,
+                "p_over_field_max_mm_thick_cold_strongest": 15.514657631200421,
+                "p_over_field_max_mm_thick_cold_weakest": 16.946648210020513,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.017085255424568596,
+              "hot": 0.02624301444807227
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 4.115380884071164,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.728055132921103,
+                "p_sat_mm_t2": 5.962885571925273,
+                "p_over_field_max_mm_thick_cold_strongest": 8.360949108363307,
+                "p_over_field_max_mm_thick_cold_weakest": 10.007111595216694,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.637406843894803,
+                "p_sat_mm_t2": 8.25493895013258,
+                "p_over_field_max_mm_thick_cold_strongest": 11.14793214448441,
+                "p_over_field_max_mm_thick_cold_weakest": 13.342815460288925,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.401147528284286,
+                "p_sat_mm_t2": 9.23214713686442,
+                "p_over_field_max_mm_thick_cold_strongest": 12.262725358932851,
+                "p_over_field_max_mm_thick_cold_weakest": 14.677097006317819,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.125119546981652,
+                "p_sat_mm_t2": 6.4469002520286205,
+                "p_over_field_max_mm_thick_cold_strongest": 9.685400742741821,
+                "p_over_field_max_mm_thick_cold_weakest": 10.79887145738127,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.166826062642203,
+                "p_sat_mm_t2": 8.99803086738457,
+                "p_over_field_max_mm_thick_cold_strongest": 12.913867656989094,
+                "p_over_field_max_mm_thick_cold_weakest": 14.398495276508362,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.983508668906424,
+                "p_sat_mm_t2": 10.098782994355346,
+                "p_over_field_max_mm_thick_cold_strongest": 14.205254422688006,
+                "p_over_field_max_mm_thick_cold_weakest": 15.838344804159199,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.488760743197019,
+                "p_sat_mm_t2": 6.909868441641065,
+                "p_over_field_max_mm_thick_cold_strongest": 10.563971415372231,
+                "p_over_field_max_mm_thick_cold_weakest": 11.537587639826853,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.651680990929359,
+                "p_sat_mm_t2": 9.727425738901845,
+                "p_over_field_max_mm_thick_cold_strongest": 14.08529522049631,
+                "p_over_field_max_mm_thick_cold_weakest": 15.383450186435805,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.516849090022294,
+                "p_sat_mm_t2": 10.958983541542404,
+                "p_over_field_max_mm_thick_cold_strongest": 15.493824742545943,
+                "p_over_field_max_mm_thick_cold_weakest": 16.921795205079388,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_limit_plus_25C:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.027692307692307693,
+              "hot": 0.0144
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 3.8999999999999995,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.6755731428972185,
+                "p_sat_mm_t2": 5.900395984545798,
+                "p_over_field_max_mm_thick_cold_strongest": 8.425669723478883,
+                "p_over_field_max_mm_thick_cold_weakest": 10.09996789232681,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.567430857196292,
+                "p_sat_mm_t2": 8.160322194474508,
+                "p_over_field_max_mm_thick_cold_strongest": 11.234226297971844,
+                "p_over_field_max_mm_thick_cold_weakest": 13.466623856435747,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.324173942915921,
+                "p_sat_mm_t2": 9.12244478840329,
+                "p_over_field_max_mm_thick_cold_strongest": 12.357648927769029,
+                "p_over_field_max_mm_thick_cold_weakest": 14.813286242079323,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.112951978064553,
+                "p_sat_mm_t2": 6.43175354502675,
+                "p_over_field_max_mm_thick_cold_strongest": 9.694403346325561,
+                "p_over_field_max_mm_thick_cold_weakest": 10.810064189034106,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.150602637419404,
+                "p_sat_mm_t2": 8.974488386590888,
+                "p_over_field_max_mm_thick_cold_strongest": 12.925871128434082,
+                "p_over_field_max_mm_thick_cold_weakest": 14.413418918712143,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.965662901161345,
+                "p_sat_mm_t2": 10.071182294257182,
+                "p_over_field_max_mm_thick_cold_strongest": 14.218458241277492,
+                "p_over_field_max_mm_thick_cold_weakest": 15.85476081058336,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.470504265145395,
+                "p_sat_mm_t2": 6.88612403017465,
+                "p_over_field_max_mm_thick_cold_strongest": 10.57817565763665,
+                "p_over_field_max_mm_thick_cold_weakest": 11.554532870468531,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.62733902019386,
+                "p_sat_mm_t2": 9.689534758460892,
+                "p_over_field_max_mm_thick_cold_strongest": 14.1042342101822,
+                "p_over_field_max_mm_thick_cold_weakest": 15.406043827291375,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.490072922213248,
+                "p_sat_mm_t2": 10.914045247494647,
+                "p_over_field_max_mm_thick_cold_strongest": 15.514657631200421,
+                "p_over_field_max_mm_thick_cold_weakest": 16.946648210020513,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit_plus_25C:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.027692307692307693,
+              "hot": 0.0144
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 3.8999999999999995,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.728055132921103,
+                "p_sat_mm_t2": 5.962885571925273,
+                "p_over_field_max_mm_thick_cold_strongest": 8.360949108363307,
+                "p_over_field_max_mm_thick_cold_weakest": 10.007111595216694,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.637406843894803,
+                "p_sat_mm_t2": 8.25493895013258,
+                "p_over_field_max_mm_thick_cold_strongest": 11.14793214448441,
+                "p_over_field_max_mm_thick_cold_weakest": 13.342815460288925,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.401147528284286,
+                "p_sat_mm_t2": 9.23214713686442,
+                "p_over_field_max_mm_thick_cold_strongest": 12.262725358932851,
+                "p_over_field_max_mm_thick_cold_weakest": 14.677097006317819,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.125119546981652,
+                "p_sat_mm_t2": 6.4469002520286205,
+                "p_over_field_max_mm_thick_cold_strongest": 9.685400742741821,
+                "p_over_field_max_mm_thick_cold_weakest": 10.79887145738127,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.166826062642203,
+                "p_sat_mm_t2": 8.99803086738457,
+                "p_over_field_max_mm_thick_cold_strongest": 12.913867656989094,
+                "p_over_field_max_mm_thick_cold_weakest": 14.398495276508362,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.983508668906424,
+                "p_sat_mm_t2": 10.098782994355346,
+                "p_over_field_max_mm_thick_cold_strongest": 14.205254422688006,
+                "p_over_field_max_mm_thick_cold_weakest": 15.838344804159199,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.488760743197019,
+                "p_sat_mm_t2": 6.909868441641065,
+                "p_over_field_max_mm_thick_cold_strongest": 10.563971415372231,
+                "p_over_field_max_mm_thick_cold_weakest": 11.537587639826853,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.651680990929359,
+                "p_sat_mm_t2": 9.727425738901845,
+                "p_over_field_max_mm_thick_cold_strongest": 14.08529522049631,
+                "p_over_field_max_mm_thick_cold_weakest": 15.383450186435805,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.516849090022294,
+                "p_sat_mm_t2": 10.958983541542404,
+                "p_over_field_max_mm_thick_cold_strongest": 15.493824742545943,
+                "p_over_field_max_mm_thick_cold_weakest": 16.921795205079388,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_limit_plus_25C:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.03435114503816794,
+              "hot": 0.06451237663147069
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 1.6740973692064383,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.6755731428972185,
+                "p_sat_mm_t2": 5.900395984545798,
+                "p_over_field_max_mm_thick_cold_strongest": 8.425669723478883,
+                "p_over_field_max_mm_thick_cold_weakest": 10.09996789232681,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.567430857196292,
+                "p_sat_mm_t2": 8.160322194474508,
+                "p_over_field_max_mm_thick_cold_strongest": 11.234226297971844,
+                "p_over_field_max_mm_thick_cold_weakest": 13.466623856435747,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.324173942915921,
+                "p_sat_mm_t2": 9.12244478840329,
+                "p_over_field_max_mm_thick_cold_strongest": 12.357648927769029,
+                "p_over_field_max_mm_thick_cold_weakest": 14.813286242079323,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.112951978064553,
+                "p_sat_mm_t2": 6.43175354502675,
+                "p_over_field_max_mm_thick_cold_strongest": 9.694403346325561,
+                "p_over_field_max_mm_thick_cold_weakest": 10.810064189034106,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.150602637419404,
+                "p_sat_mm_t2": 8.974488386590888,
+                "p_over_field_max_mm_thick_cold_strongest": 12.925871128434082,
+                "p_over_field_max_mm_thick_cold_weakest": 14.413418918712143,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.965662901161345,
+                "p_sat_mm_t2": 10.071182294257182,
+                "p_over_field_max_mm_thick_cold_strongest": 14.218458241277492,
+                "p_over_field_max_mm_thick_cold_weakest": 15.85476081058336,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.470504265145395,
+                "p_sat_mm_t2": 6.88612403017465,
+                "p_over_field_max_mm_thick_cold_strongest": 10.57817565763665,
+                "p_over_field_max_mm_thick_cold_weakest": 11.554532870468531,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.62733902019386,
+                "p_sat_mm_t2": 9.689534758460892,
+                "p_over_field_max_mm_thick_cold_strongest": 14.1042342101822,
+                "p_over_field_max_mm_thick_cold_weakest": 15.406043827291375,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.490072922213248,
+                "p_sat_mm_t2": 10.914045247494647,
+                "p_over_field_max_mm_thick_cold_strongest": 15.514657631200421,
+                "p_over_field_max_mm_thick_cold_weakest": 16.946648210020513,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit_plus_25C:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.030753459764223477,
+              "hot": 0.04723742600653008
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 2.286322713372869,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.728055132921103,
+                "p_sat_mm_t2": 5.962885571925273,
+                "p_over_field_max_mm_thick_cold_strongest": 8.360949108363307,
+                "p_over_field_max_mm_thick_cold_weakest": 10.007111595216694,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.637406843894803,
+                "p_sat_mm_t2": 8.25493895013258,
+                "p_over_field_max_mm_thick_cold_strongest": 11.14793214448441,
+                "p_over_field_max_mm_thick_cold_weakest": 13.342815460288925,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.401147528284286,
+                "p_sat_mm_t2": 9.23214713686442,
+                "p_over_field_max_mm_thick_cold_strongest": 12.262725358932851,
+                "p_over_field_max_mm_thick_cold_weakest": 14.677097006317819,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.125119546981652,
+                "p_sat_mm_t2": 6.4469002520286205,
+                "p_over_field_max_mm_thick_cold_strongest": 9.685400742741821,
+                "p_over_field_max_mm_thick_cold_weakest": 10.79887145738127,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.166826062642203,
+                "p_sat_mm_t2": 8.99803086738457,
+                "p_over_field_max_mm_thick_cold_strongest": 12.913867656989094,
+                "p_over_field_max_mm_thick_cold_weakest": 14.398495276508362,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.983508668906424,
+                "p_sat_mm_t2": 10.098782994355346,
+                "p_over_field_max_mm_thick_cold_strongest": 14.205254422688006,
+                "p_over_field_max_mm_thick_cold_weakest": 15.838344804159199,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.488760743197019,
+                "p_sat_mm_t2": 6.909868441641065,
+                "p_over_field_max_mm_thick_cold_strongest": 10.563971415372231,
+                "p_over_field_max_mm_thick_cold_weakest": 11.537587639826853,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.651680990929359,
+                "p_sat_mm_t2": 9.727425738901845,
+                "p_over_field_max_mm_thick_cold_strongest": 14.08529522049631,
+                "p_over_field_max_mm_thick_cold_weakest": 15.383450186435805,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.516849090022294,
+                "p_sat_mm_t2": 10.958983541542404,
+                "p_over_field_max_mm_thick_cold_strongest": 15.493824742545943,
+                "p_over_field_max_mm_thick_cold_weakest": 16.921795205079388,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          }
+        },
+        "members_alone": {
+          "kind": {
+            "offset": {
+              "rad_per_K": 2.7293357026141183e-05,
+              "cap_mm": 69.06279760120722,
+              "amplitude_at_hot_hour_V_per_V": 0.259076514665928
+            },
+            "mismatch_if_TCAmp_per_channel": {
+              "rad_per_K": 0.000725,
+              "cap_mm": 2.5999387477984492,
+              "rejected": true,
+              "implied_change_deg_over_cold_band": 2.7000636095540043,
+              "why": "read per channel, the coefficient's span would move the angle further over the cold band than the row's own over-temperature limit allows"
+            }
+          },
+          "adverse": {
+            "offset": {
+              "rad_per_K": 2.772079135416736e-05,
+              "cap_mm": 67.99789977390036,
+              "amplitude_at_hot_hour_V_per_V": 0.25508174429524205
+            },
+            "mismatch_if_TCAmp_per_channel": {
+              "rad_per_K": 0.000725,
+              "cap_mm": 2.5999387477984492,
+              "rejected": true,
+              "implied_change_deg_over_cold_band": 2.7000636095540043,
+              "why": "read per channel, the coefficient's span would move the angle further over the cold band than the row's own over-temperature limit allows"
+            }
+          }
+        },
+        "static_cyclic_um_at_floor": 15.333333333333334,
+        "lifetime_row_um_at_floor": 23.0
+      },
+      "TMAG6180-Q1_RTCAL_DE": {
+        "source": "TI TMAG6180-Q1 SLYS037A §5.3 · §5.6 (ANGERR_RTCAL_DE at 3.3 V) · §6 (die position)",
+        "range_deg": 360.0,
+        "field_min_T": 0.03,
+        "field_max_T": null,
+        "package": "VSSOP-8 (DGK), 3 mm body length nominal, AMR centred",
+        "die_to_edge_mm": 1.5,
+        "min_gap_mm": 3.5,
+        "unwrap_floor_mm_effective": 6.9,
+        "assumed": [
+          "the row read as the change from 25 °C (limit) ⊥ twice the row, the 25 °C error bounded by the same row (limit_plus_25C) — «linearity across temperature» names no reference, and TI calls the error «relative»: a zero re-set per temperature would leave a common shift unbounded",
+          "the field at or above 30 mT, the row's only condition (AMR saturation starts at 20 mT)",
+          "edge-on on a lead-free end at the nominal body length (no tolerance read)"
+        ],
+        "readings": {
+          "kind:size_limit:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.015384615384615385,
+              "hot": 0.008
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 7.019999999999999,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.005241368073518,
+                "p_sat_mm_t2": 6.298574350855413,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.00698849076469,
+                "p_sat_mm_t2": 8.768314580750447,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.0061149294191045,
+                "p_sat_mm_t2": 7.501729094906297,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": [
+                  7.0061149294191045,
+                  7.019999999999999
+                ]
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.497108302776535,
+                "p_sat_mm_t2": 6.920743963493798,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.662811070368715,
+                "p_sat_mm_t2": 9.744798948399955,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.579959686572625,
+                "p_sat_mm_t2": 8.288088925725809,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.9025021026771025,
+                "p_sat_mm_t2": 7.463995905212242,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": [
+                  6.9025021026771025,
+                  7.019999999999999
+                ]
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 9.203336136902804,
+                "p_sat_mm_t2": 10.628054835445711,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 8.052919119789953,
+                "p_sat_mm_t2": 8.986473940158227,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.015384615384615385,
+              "hot": 0.008
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 7.019999999999999,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.064028883927017,
+                "p_sat_mm_t2": 6.371062979875608,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.085371845236022,
+                "p_sat_mm_t2": 8.880351008571834,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.07470036458152,
+                "p_sat_mm_t2": 7.592666967624378,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.510854937312177,
+                "p_sat_mm_t2": 6.938679299013875,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  7.019999999999999
+                ]
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.681139916416235,
+                "p_sat_mm_t2": 9.773475050763052,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.595997426864207,
+                "p_sat_mm_t2": 8.31096209598714,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.923281629634934,
+                "p_sat_mm_t2": 7.492694393493748,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": [
+                  6.923281629634934,
+                  7.019999999999999
+                ]
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 9.231042172846578,
+                "p_sat_mm_t2": 10.675607481472293,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 8.077161901240755,
+                "p_sat_mm_t2": 9.023702375058578,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_limit:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.019083969465648856,
+              "hot": 0.03584020923970594
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 3.0133752645715886,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.005241368073518,
+                "p_sat_mm_t2": 6.298574350855413,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.00698849076469,
+                "p_sat_mm_t2": 8.768314580750447,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.0061149294191045,
+                "p_sat_mm_t2": 7.501729094906297,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.497108302776535,
+                "p_sat_mm_t2": 6.920743963493798,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.662811070368715,
+                "p_sat_mm_t2": 9.744798948399955,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.579959686572625,
+                "p_sat_mm_t2": 8.288088925725809,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.9025021026771025,
+                "p_sat_mm_t2": 7.463995905212242,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 9.203336136902804,
+                "p_sat_mm_t2": 10.628054835445711,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 8.052919119789953,
+                "p_sat_mm_t2": 8.986473940158227,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.017085255424568596,
+              "hot": 0.02624301444807227
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 4.115380884071164,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.064028883927017,
+                "p_sat_mm_t2": 6.371062979875608,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.085371845236022,
+                "p_sat_mm_t2": 8.880351008571834,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.07470036458152,
+                "p_sat_mm_t2": 7.592666967624378,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.510854937312177,
+                "p_sat_mm_t2": 6.938679299013875,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.681139916416235,
+                "p_sat_mm_t2": 9.773475050763052,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.595997426864207,
+                "p_sat_mm_t2": 8.31096209598714,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.923281629634934,
+                "p_sat_mm_t2": 7.492694393493748,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 9.231042172846578,
+                "p_sat_mm_t2": 10.675607481472293,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 8.077161901240755,
+                "p_sat_mm_t2": 9.023702375058578,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_limit_plus_25C:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.03076923076923077,
+              "hot": 0.016
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 3.5099999999999993,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.005241368073518,
+                "p_sat_mm_t2": 6.298574350855413,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.00698849076469,
+                "p_sat_mm_t2": 8.768314580750447,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.0061149294191045,
+                "p_sat_mm_t2": 7.501729094906297,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.497108302776535,
+                "p_sat_mm_t2": 6.920743963493798,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.662811070368715,
+                "p_sat_mm_t2": 9.744798948399955,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.579959686572625,
+                "p_sat_mm_t2": 8.288088925725809,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.9025021026771025,
+                "p_sat_mm_t2": 7.463995905212242,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 9.203336136902804,
+                "p_sat_mm_t2": 10.628054835445711,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 8.052919119789953,
+                "p_sat_mm_t2": 8.986473940158227,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit_plus_25C:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.03076923076923077,
+              "hot": 0.016
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 3.5099999999999993,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.064028883927017,
+                "p_sat_mm_t2": 6.371062979875608,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.085371845236022,
+                "p_sat_mm_t2": 8.880351008571834,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.07470036458152,
+                "p_sat_mm_t2": 7.592666967624378,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.510854937312177,
+                "p_sat_mm_t2": 6.938679299013875,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.681139916416235,
+                "p_sat_mm_t2": 9.773475050763052,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.595997426864207,
+                "p_sat_mm_t2": 8.31096209598714,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.923281629634934,
+                "p_sat_mm_t2": 7.492694393493748,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 9.231042172846578,
+                "p_sat_mm_t2": 10.675607481472293,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 8.077161901240755,
+                "p_sat_mm_t2": 9.023702375058578,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_limit_plus_25C:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.03816793893129771,
+              "hot": 0.07168041847941188
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 1.5066876322857943,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.005241368073518,
+                "p_sat_mm_t2": 6.298574350855413,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.00698849076469,
+                "p_sat_mm_t2": 8.768314580750447,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.0061149294191045,
+                "p_sat_mm_t2": 7.501729094906297,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.497108302776535,
+                "p_sat_mm_t2": 6.920743963493798,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.662811070368715,
+                "p_sat_mm_t2": 9.744798948399955,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.579959686572625,
+                "p_sat_mm_t2": 8.288088925725809,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.9025021026771025,
+                "p_sat_mm_t2": 7.463995905212242,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 9.203336136902804,
+                "p_sat_mm_t2": 10.628054835445711,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 8.052919119789953,
+                "p_sat_mm_t2": 8.986473940158227,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit_plus_25C:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.03417051084913719,
+              "hot": 0.05248602889614454
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 2.057690442035582,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.064028883927017,
+                "p_sat_mm_t2": 6.371062979875608,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.085371845236022,
+                "p_sat_mm_t2": 8.880351008571834,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.07470036458152,
+                "p_sat_mm_t2": 7.592666967624378,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.510854937312177,
+                "p_sat_mm_t2": 6.938679299013875,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.681139916416235,
+                "p_sat_mm_t2": 9.773475050763052,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 7.595997426864207,
+                "p_sat_mm_t2": 8.31096209598714,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.923281629634934,
+                "p_sat_mm_t2": 7.492694393493748,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 9.231042172846578,
+                "p_sat_mm_t2": 10.675607481472293,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.5,
+                "reachable": true,
+                "p_sat_mm_thick": 8.077161901240755,
+                "p_sat_mm_t2": 9.023702375058578,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          }
+        },
+        "members_alone": {
+          "kind": {},
+          "adverse": {}
+        },
+        "static_cyclic_um_at_floor": 19.166666666666668,
+        "lifetime_row_um_at_floor": 14.375000000000002
+      },
+      "TAS2141-AAAB": {
+        "source": "TDK TMR Angle Sensor TAS series catalog (November 2017), TAS2141-AAAB characteristics and TSSOP8 shape",
+        "range_deg": 360.0,
+        "field_min_T": 0.02,
+        "field_max_T": 0.08,
+        "package": "TSSOP8, body 2.8–3.2 × 4.2–4.6 mm, die position not printed",
+        "die_to_edge_mm": 1.4,
+        "min_gap_mm": 3.4,
+        "unwrap_floor_mm_effective": 6.9,
+        "assumed": [
+          "«after compensation» is not defined (when, of what) — read as a 25 °C compensation, the row as the change from 25 °C (limit) ⊥ twice the row (limit_plus_25C)",
+          "the die at the package's centre (not printed), edge-on on a lead-free end at the shortest body"
+        ],
+        "readings": {
+          "kind:size_limit:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.00923076923076923,
+              "hot": 0.0048
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 11.7,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.318249579095144,
+                "p_sat_mm_t2": 5.48310243939453,
+                "p_over_field_max_mm_thick_cold_strongest": 8.425669723478883,
+                "p_over_field_max_mm_thick_cold_weakest": 10.09996789232681,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  10.09996789232681
+                ]
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.090999438793525,
+                "p_sat_mm_t2": 7.535604625984172,
+                "p_over_field_max_mm_thick_cold_strongest": 11.234226297971844,
+                "p_over_field_max_mm_thick_cold_weakest": 13.466623856435747,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  7.090999438793525,
+                  11.7
+                ]
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.027349522974496,
+                "p_sat_mm_t2": 6.285420394386723,
+                "p_over_field_max_mm_thick_cold_strongest": 9.549092353276068,
+                "p_over_field_max_mm_thick_cold_weakest": 11.446630277970385,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  11.446630277970385
+                ]
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.700434670598932,
+                "p_sat_mm_t2": 5.929957741378274,
+                "p_over_field_max_mm_thick_cold_strongest": 9.694403346325561,
+                "p_over_field_max_mm_thick_cold_weakest": 10.810064189034106,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  10.810064189034106
+                ]
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.600579560798576,
+                "p_sat_mm_t2": 8.205046297759312,
+                "p_over_field_max_mm_thick_cold_strongest": 12.925871128434082,
+                "p_over_field_max_mm_thick_cold_weakest": 14.413418918712143,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  7.600579560798576,
+                  11.7
+                ]
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.46049262667879,
+                "p_sat_mm_t2": 6.815481744984887,
+                "p_over_field_max_mm_thick_cold_strongest": 10.98699045916897,
+                "p_over_field_max_mm_thick_cold_weakest": 12.251406080905321,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  11.7
+                ]
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.01013573777041,
+                "p_sat_mm_t2": 6.304591400923367,
+                "p_over_field_max_mm_thick_cold_strongest": 10.57817565763665,
+                "p_over_field_max_mm_thick_cold_weakest": 11.554532870468531,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  11.554532870468531
+                ]
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.013514317027214,
+                "p_sat_mm_t2": 8.77759794753792,
+                "p_over_field_max_mm_thick_cold_strongest": 14.1042342101822,
+                "p_over_field_max_mm_thick_cold_weakest": 15.406043827291375,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  8.013514317027214,
+                  11.7
+                ]
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.811487169473131,
+                "p_sat_mm_t2": 7.263374303276432,
+                "p_over_field_max_mm_thick_cold_strongest": 11.98859907865487,
+                "p_over_field_max_mm_thick_cold_weakest": 13.095137253197668,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  11.7
+                ]
+              }
+            }
+          },
+          "adverse:size_limit:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.00923076923076923,
+              "hot": 0.0048
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 11.7,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.364304443932016,
+                "p_sat_mm_t2": 5.536129984527998,
+                "p_over_field_max_mm_thick_cold_strongest": 8.360949108363307,
+                "p_over_field_max_mm_thick_cold_weakest": 10.007111595216694,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  10.007111595216694
+                ]
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.152405925242689,
+                "p_sat_mm_t2": 7.6143290843941935,
+                "p_over_field_max_mm_thick_cold_strongest": 11.14793214448441,
+                "p_over_field_max_mm_thick_cold_weakest": 13.342815460288925,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  7.152405925242689,
+                  11.7
+                ]
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.0795450364562855,
+                "p_sat_mm_t2": 6.348096929224783,
+                "p_over_field_max_mm_thick_cold_strongest": 9.475742322811747,
+                "p_over_field_max_mm_thick_cold_weakest": 11.341393141245586,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  11.341393141245586
+                ]
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.711014032195031,
+                "p_sat_mm_t2": 5.942559268516996,
+                "p_over_field_max_mm_thick_cold_strongest": 9.685400742741821,
+                "p_over_field_max_mm_thick_cold_weakest": 10.79887145738127,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  10.79887145738127
+                ]
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.6146853762600415,
+                "p_sat_mm_t2": 8.22413078997695,
+                "p_over_field_max_mm_thick_cold_strongest": 12.913867656989094,
+                "p_over_field_max_mm_thick_cold_weakest": 14.398495276508362,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  7.6146853762600415,
+                  11.7
+                ]
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.472482569821035,
+                "p_sat_mm_t2": 6.830493895648715,
+                "p_over_field_max_mm_thick_cold_strongest": 10.976787508440731,
+                "p_over_field_max_mm_thick_cold_weakest": 12.238720985032106,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  11.7
+                ]
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.025883619006004,
+                "p_sat_mm_t2": 6.323973630678033,
+                "p_over_field_max_mm_thick_cold_strongest": 10.563971415372231,
+                "p_over_field_max_mm_thick_cold_weakest": 11.537587639826853,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  11.537587639826853
+                ]
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.034511492008006,
+                "p_sat_mm_t2": 8.807521819219437,
+                "p_over_field_max_mm_thick_cold_strongest": 14.08529522049631,
+                "p_over_field_max_mm_thick_cold_weakest": 15.383450186435805,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  8.034511492008006,
+                  11.7
+                ]
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.829334768206805,
+                "p_sat_mm_t2": 7.286638843426226,
+                "p_over_field_max_mm_thick_cold_strongest": 11.972500937421863,
+                "p_over_field_max_mm_thick_cold_weakest": 13.075932658470434,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  6.9,
+                  11.7
+                ]
+              }
+            }
+          },
+          "kind:size_limit:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.011450381679389313,
+              "hot": 0.021504125543823565
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 5.0222921076193145,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.318249579095144,
+                "p_sat_mm_t2": 5.48310243939453,
+                "p_over_field_max_mm_thick_cold_strongest": 8.425669723478883,
+                "p_over_field_max_mm_thick_cold_weakest": 10.09996789232681,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.090999438793525,
+                "p_sat_mm_t2": 7.535604625984172,
+                "p_over_field_max_mm_thick_cold_strongest": 11.234226297971844,
+                "p_over_field_max_mm_thick_cold_weakest": 13.466623856435747,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.027349522974496,
+                "p_sat_mm_t2": 6.285420394386723,
+                "p_over_field_max_mm_thick_cold_strongest": 9.549092353276068,
+                "p_over_field_max_mm_thick_cold_weakest": 11.446630277970385,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.700434670598932,
+                "p_sat_mm_t2": 5.929957741378274,
+                "p_over_field_max_mm_thick_cold_strongest": 9.694403346325561,
+                "p_over_field_max_mm_thick_cold_weakest": 10.810064189034106,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.600579560798576,
+                "p_sat_mm_t2": 8.205046297759312,
+                "p_over_field_max_mm_thick_cold_strongest": 12.925871128434082,
+                "p_over_field_max_mm_thick_cold_weakest": 14.413418918712143,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.46049262667879,
+                "p_sat_mm_t2": 6.815481744984887,
+                "p_over_field_max_mm_thick_cold_strongest": 10.98699045916897,
+                "p_over_field_max_mm_thick_cold_weakest": 12.251406080905321,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.01013573777041,
+                "p_sat_mm_t2": 6.304591400923367,
+                "p_over_field_max_mm_thick_cold_strongest": 10.57817565763665,
+                "p_over_field_max_mm_thick_cold_weakest": 11.554532870468531,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.013514317027214,
+                "p_sat_mm_t2": 8.77759794753792,
+                "p_over_field_max_mm_thick_cold_strongest": 14.1042342101822,
+                "p_over_field_max_mm_thick_cold_weakest": 15.406043827291375,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.811487169473131,
+                "p_sat_mm_t2": 7.263374303276432,
+                "p_over_field_max_mm_thick_cold_strongest": 11.98859907865487,
+                "p_over_field_max_mm_thick_cold_weakest": 13.095137253197668,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.010251153254741158,
+              "hot": 0.01574580866884336
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 6.858968140118607,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.364304443932016,
+                "p_sat_mm_t2": 5.536129984527998,
+                "p_over_field_max_mm_thick_cold_strongest": 8.360949108363307,
+                "p_over_field_max_mm_thick_cold_weakest": 10.007111595216694,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.152405925242689,
+                "p_sat_mm_t2": 7.6143290843941935,
+                "p_over_field_max_mm_thick_cold_strongest": 11.14793214448441,
+                "p_over_field_max_mm_thick_cold_weakest": 13.342815460288925,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.0795450364562855,
+                "p_sat_mm_t2": 6.348096929224783,
+                "p_over_field_max_mm_thick_cold_strongest": 9.475742322811747,
+                "p_over_field_max_mm_thick_cold_weakest": 11.341393141245586,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.711014032195031,
+                "p_sat_mm_t2": 5.942559268516996,
+                "p_over_field_max_mm_thick_cold_strongest": 9.685400742741821,
+                "p_over_field_max_mm_thick_cold_weakest": 10.79887145738127,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.6146853762600415,
+                "p_sat_mm_t2": 8.22413078997695,
+                "p_over_field_max_mm_thick_cold_strongest": 12.913867656989094,
+                "p_over_field_max_mm_thick_cold_weakest": 14.398495276508362,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.472482569821035,
+                "p_sat_mm_t2": 6.830493895648715,
+                "p_over_field_max_mm_thick_cold_strongest": 10.976787508440731,
+                "p_over_field_max_mm_thick_cold_weakest": 12.238720985032106,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.025883619006004,
+                "p_sat_mm_t2": 6.323973630678033,
+                "p_over_field_max_mm_thick_cold_strongest": 10.563971415372231,
+                "p_over_field_max_mm_thick_cold_weakest": 11.537587639826853,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.034511492008006,
+                "p_sat_mm_t2": 8.807521819219437,
+                "p_over_field_max_mm_thick_cold_strongest": 14.08529522049631,
+                "p_over_field_max_mm_thick_cold_weakest": 15.383450186435805,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.829334768206805,
+                "p_sat_mm_t2": 7.286638843426226,
+                "p_over_field_max_mm_thick_cold_strongest": 11.972500937421863,
+                "p_over_field_max_mm_thick_cold_weakest": 13.075932658470434,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_limit_plus_25C:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.01846153846153846,
+              "hot": 0.0096
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 5.85,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.318249579095144,
+                "p_sat_mm_t2": 5.48310243939453,
+                "p_over_field_max_mm_thick_cold_strongest": 8.425669723478883,
+                "p_over_field_max_mm_thick_cold_weakest": 10.09996789232681,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.090999438793525,
+                "p_sat_mm_t2": 7.535604625984172,
+                "p_over_field_max_mm_thick_cold_strongest": 11.234226297971844,
+                "p_over_field_max_mm_thick_cold_weakest": 13.466623856435747,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.027349522974496,
+                "p_sat_mm_t2": 6.285420394386723,
+                "p_over_field_max_mm_thick_cold_strongest": 9.549092353276068,
+                "p_over_field_max_mm_thick_cold_weakest": 11.446630277970385,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.700434670598932,
+                "p_sat_mm_t2": 5.929957741378274,
+                "p_over_field_max_mm_thick_cold_strongest": 9.694403346325561,
+                "p_over_field_max_mm_thick_cold_weakest": 10.810064189034106,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.600579560798576,
+                "p_sat_mm_t2": 8.205046297759312,
+                "p_over_field_max_mm_thick_cold_strongest": 12.925871128434082,
+                "p_over_field_max_mm_thick_cold_weakest": 14.413418918712143,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.46049262667879,
+                "p_sat_mm_t2": 6.815481744984887,
+                "p_over_field_max_mm_thick_cold_strongest": 10.98699045916897,
+                "p_over_field_max_mm_thick_cold_weakest": 12.251406080905321,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.01013573777041,
+                "p_sat_mm_t2": 6.304591400923367,
+                "p_over_field_max_mm_thick_cold_strongest": 10.57817565763665,
+                "p_over_field_max_mm_thick_cold_weakest": 11.554532870468531,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.013514317027214,
+                "p_sat_mm_t2": 8.77759794753792,
+                "p_over_field_max_mm_thick_cold_strongest": 14.1042342101822,
+                "p_over_field_max_mm_thick_cold_weakest": 15.406043827291375,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.811487169473131,
+                "p_sat_mm_t2": 7.263374303276432,
+                "p_over_field_max_mm_thick_cold_strongest": 11.98859907865487,
+                "p_over_field_max_mm_thick_cold_weakest": 13.095137253197668,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit_plus_25C:spread_band_ends": {
+            "span_K": {
+              "cold": 65.0,
+              "hot": 125.0
+            },
+            "drift_deg_per_K": {
+              "cold": 0.01846153846153846,
+              "hot": 0.0096
+            },
+            "binding_branch": "cold",
+            "p_max_mm": 5.85,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.364304443932016,
+                "p_sat_mm_t2": 5.536129984527998,
+                "p_over_field_max_mm_thick_cold_strongest": 8.360949108363307,
+                "p_over_field_max_mm_thick_cold_weakest": 10.007111595216694,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.152405925242689,
+                "p_sat_mm_t2": 7.6143290843941935,
+                "p_over_field_max_mm_thick_cold_strongest": 11.14793214448441,
+                "p_over_field_max_mm_thick_cold_weakest": 13.342815460288925,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.0795450364562855,
+                "p_sat_mm_t2": 6.348096929224783,
+                "p_over_field_max_mm_thick_cold_strongest": 9.475742322811747,
+                "p_over_field_max_mm_thick_cold_weakest": 11.341393141245586,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.711014032195031,
+                "p_sat_mm_t2": 5.942559268516996,
+                "p_over_field_max_mm_thick_cold_strongest": 9.685400742741821,
+                "p_over_field_max_mm_thick_cold_weakest": 10.79887145738127,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.6146853762600415,
+                "p_sat_mm_t2": 8.22413078997695,
+                "p_over_field_max_mm_thick_cold_strongest": 12.913867656989094,
+                "p_over_field_max_mm_thick_cold_weakest": 14.398495276508362,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.472482569821035,
+                "p_sat_mm_t2": 6.830493895648715,
+                "p_over_field_max_mm_thick_cold_strongest": 10.976787508440731,
+                "p_over_field_max_mm_thick_cold_weakest": 12.238720985032106,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.025883619006004,
+                "p_sat_mm_t2": 6.323973630678033,
+                "p_over_field_max_mm_thick_cold_strongest": 10.563971415372231,
+                "p_over_field_max_mm_thick_cold_weakest": 11.537587639826853,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.034511492008006,
+                "p_sat_mm_t2": 8.807521819219437,
+                "p_over_field_max_mm_thick_cold_strongest": 14.08529522049631,
+                "p_over_field_max_mm_thick_cold_weakest": 15.383450186435805,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.829334768206805,
+                "p_sat_mm_t2": 7.286638843426226,
+                "p_over_field_max_mm_thick_cold_strongest": 11.972500937421863,
+                "p_over_field_max_mm_thick_cold_weakest": 13.075932658470434,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_limit_plus_25C:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.022900763358778626,
+              "hot": 0.04300825108764713
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 2.5111460538096573,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.318249579095144,
+                "p_sat_mm_t2": 5.48310243939453,
+                "p_over_field_max_mm_thick_cold_strongest": 8.425669723478883,
+                "p_over_field_max_mm_thick_cold_weakest": 10.09996789232681,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.090999438793525,
+                "p_sat_mm_t2": 7.535604625984172,
+                "p_over_field_max_mm_thick_cold_strongest": 11.234226297971844,
+                "p_over_field_max_mm_thick_cold_weakest": 13.466623856435747,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.027349522974496,
+                "p_sat_mm_t2": 6.285420394386723,
+                "p_over_field_max_mm_thick_cold_strongest": 9.549092353276068,
+                "p_over_field_max_mm_thick_cold_weakest": 11.446630277970385,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.700434670598932,
+                "p_sat_mm_t2": 5.929957741378274,
+                "p_over_field_max_mm_thick_cold_strongest": 9.694403346325561,
+                "p_over_field_max_mm_thick_cold_weakest": 10.810064189034106,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.600579560798576,
+                "p_sat_mm_t2": 8.205046297759312,
+                "p_over_field_max_mm_thick_cold_strongest": 12.925871128434082,
+                "p_over_field_max_mm_thick_cold_weakest": 14.413418918712143,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.46049262667879,
+                "p_sat_mm_t2": 6.815481744984887,
+                "p_over_field_max_mm_thick_cold_strongest": 10.98699045916897,
+                "p_over_field_max_mm_thick_cold_weakest": 12.251406080905321,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.01013573777041,
+                "p_sat_mm_t2": 6.304591400923367,
+                "p_over_field_max_mm_thick_cold_strongest": 10.57817565763665,
+                "p_over_field_max_mm_thick_cold_weakest": 11.554532870468531,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.013514317027214,
+                "p_sat_mm_t2": 8.77759794753792,
+                "p_over_field_max_mm_thick_cold_strongest": 14.1042342101822,
+                "p_over_field_max_mm_thick_cold_weakest": 15.406043827291375,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.811487169473131,
+                "p_sat_mm_t2": 7.263374303276432,
+                "p_over_field_max_mm_thick_cold_strongest": 11.98859907865487,
+                "p_over_field_max_mm_thick_cold_weakest": 13.095137253197668,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_limit_plus_25C:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.020502306509482315,
+              "hot": 0.03149161733768672
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 3.4294840700593037,
+            "p_max_mm_at_read_tolerance": null,
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.364304443932016,
+                "p_sat_mm_t2": 5.536129984527998,
+                "p_over_field_max_mm_thick_cold_strongest": 8.360949108363307,
+                "p_over_field_max_mm_thick_cold_weakest": 10.007111595216694,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.152405925242689,
+                "p_sat_mm_t2": 7.6143290843941935,
+                "p_over_field_max_mm_thick_cold_strongest": 11.14793214448441,
+                "p_over_field_max_mm_thick_cold_weakest": 13.342815460288925,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.0795450364562855,
+                "p_sat_mm_t2": 6.348096929224783,
+                "p_over_field_max_mm_thick_cold_strongest": 9.475742322811747,
+                "p_over_field_max_mm_thick_cold_weakest": 11.341393141245586,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 5.711014032195031,
+                "p_sat_mm_t2": 5.942559268516996,
+                "p_over_field_max_mm_thick_cold_strongest": 9.685400742741821,
+                "p_over_field_max_mm_thick_cold_weakest": 10.79887145738127,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 7.6146853762600415,
+                "p_sat_mm_t2": 8.22413078997695,
+                "p_over_field_max_mm_thick_cold_strongest": 12.913867656989094,
+                "p_over_field_max_mm_thick_cold_weakest": 14.398495276508362,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.472482569821035,
+                "p_sat_mm_t2": 6.830493895648715,
+                "p_over_field_max_mm_thick_cold_strongest": 10.976787508440731,
+                "p_over_field_max_mm_thick_cold_weakest": 12.238720985032106,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.025883619006004,
+                "p_sat_mm_t2": 6.323973630678033,
+                "p_over_field_max_mm_thick_cold_strongest": 10.563971415372231,
+                "p_over_field_max_mm_thick_cold_weakest": 11.537587639826853,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": true,
+                "p_sat_mm_thick": 8.034511492008006,
+                "p_sat_mm_t2": 8.807521819219437,
+                "p_over_field_max_mm_thick_cold_strongest": 14.08529522049631,
+                "p_over_field_max_mm_thick_cold_weakest": 15.383450186435805,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 3.4,
+                "reachable": true,
+                "p_sat_mm_thick": 6.829334768206805,
+                "p_sat_mm_t2": 7.286638843426226,
+                "p_over_field_max_mm_thick_cold_strongest": 11.972500937421863,
+                "p_over_field_max_mm_thick_cold_weakest": 13.075932658470434,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          }
+        },
+        "members_alone": {
+          "kind": {
+            "mismatch": {
+              "rad_per_K": 7.5e-05,
+              "cap_mm": 25.132741228718345
+            }
+          },
+          "adverse": {
+            "mismatch": {
+              "rad_per_K": 7.5e-05,
+              "cap_mm": 25.132741228718345
+            }
+          }
+        },
+        "static_cyclic_um_at_floor": 11.5,
+        "lifetime_row_um_at_floor": null
+      },
+      "KMZ60": {
+        "source": "NXP KMZ60 Product data sheet Rev. 2 (2014-02-07) Figs. 11–12 (read off the page images), SOT96-1",
+        "range_deg": 180.0,
+        "field_min_T": 0.031415926535897934,
+        "field_max_T": null,
+        "package": "SO8 (SOT96-1), D 4.8–5.0 × E 3.8–4.0 mm, die position not printed",
+        "die_to_edge_mm": 2.4,
+        "min_gap_mm": 4.4,
+        "unwrap_floor_mm_effective": 13.8,
+        "assumed": [
+          "the curves are worst-case SIMULATIONS, not guaranteed columns; read linearly between their points",
+          "«related to 180 degree angular range» read as degrees of the FIELD (the reading) ⊥ of the bridge's doubled output angle (electrical: half the field error) — printed both ways, the verdict's flip",
+          "the AMR's 180° range: the reading wraps twice per period, so the unwrap floor on P doubles",
+          "the die at the package's centre (not printed), edge-on on a lead-free end at the shortest body"
+        ],
+        "readings": {
+          "kind:size_fig11_tcc_on_field:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.0378587786259542,
+              "hot": 0.038571428571428576
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 2.7999999999999994,
+            "p_max_mm_at_read_tolerance": [
+              2.6756887566144916,
+              2.926466025442134
+            ],
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.094789122575243,
+                "p_sat_mm_t2": 6.409182718068769,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.126385496766991,
+                "p_sat_mm_t2": 8.939442587250984,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.939024046443691,
+                "p_sat_mm_t2": 10.030113485618806,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.602054022049589,
+                "p_sat_mm_t2": 7.058491265267587,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.802738696066118,
+                "p_sat_mm_t2": 9.96585193144379,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.683012565672731,
+                "p_sat_mm_t2": 11.242424879060515,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.021072299654871,
+                "p_sat_mm_t2": 7.628964478786135,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 9.361429732873162,
+                "p_sat_mm_t2": 10.902718419802088,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 10.29757270616048,
+                "p_sat_mm_t2": 12.368237750496224,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_fig11_tcc_on_field:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.03776883649410559,
+              "hot": 0.038891585513390066
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 2.7769502984859393,
+            "p_max_mm_at_read_tolerance": [
+              2.686317494637396,
+              2.8739123033831295
+            ],
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.155351782606444,
+                "p_sat_mm_t2": 6.484626359412277,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.207135710141925,
+                "p_sat_mm_t2": 9.056753307832151,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.027849281156119,
+                "p_sat_mm_t2": 10.167670873104496,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.616248818339444,
+                "p_sat_mm_t2": 7.077270711432996,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.82166509111926,
+                "p_sat_mm_t2": 9.996135678415195,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.703831600231185,
+                "p_sat_mm_t2": 11.278510558882997,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.04257296557282,
+                "p_sat_mm_t2": 7.659199591359233,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 9.390097287430427,
+                "p_sat_mm_t2": 10.953409645982905,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 10.32910701617347,
+                "p_sat_mm_t2": 12.429743701320167,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_fig11_tcc_on_electrical:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.0189293893129771,
+              "hot": 0.019285714285714288
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 5.599999999999999,
+            "p_max_mm_at_read_tolerance": [
+              5.351377513228983,
+              5.852932050884268
+            ],
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.094789122575243,
+                "p_sat_mm_t2": 6.409182718068769,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.126385496766991,
+                "p_sat_mm_t2": 8.939442587250984,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.939024046443691,
+                "p_sat_mm_t2": 10.030113485618806,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.602054022049589,
+                "p_sat_mm_t2": 7.058491265267587,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.802738696066118,
+                "p_sat_mm_t2": 9.96585193144379,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.683012565672731,
+                "p_sat_mm_t2": 11.242424879060515,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.021072299654871,
+                "p_sat_mm_t2": 7.628964478786135,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 9.361429732873162,
+                "p_sat_mm_t2": 10.902718419802088,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 10.29757270616048,
+                "p_sat_mm_t2": 12.368237750496224,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_fig11_tcc_on_electrical:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.018884418247052795,
+              "hot": 0.019445792756695033
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 5.553900596971879,
+            "p_max_mm_at_read_tolerance": [
+              5.372634989274792,
+              5.747824606766259
+            ],
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.155351782606444,
+                "p_sat_mm_t2": 6.484626359412277,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.207135710141925,
+                "p_sat_mm_t2": 9.056753307832151,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.027849281156119,
+                "p_sat_mm_t2": 10.167670873104496,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.616248818339444,
+                "p_sat_mm_t2": 7.077270711432996,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.82166509111926,
+                "p_sat_mm_t2": 9.996135678415195,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.703831600231185,
+                "p_sat_mm_t2": 11.278510558882997,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.04257296557282,
+                "p_sat_mm_t2": 7.659199591359233,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 9.390097287430427,
+                "p_sat_mm_t2": 10.953409645982905,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 10.32910701617347,
+                "p_sat_mm_t2": 12.429743701320167,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": false,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_fig12_tcc_off_field:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.0057881679389312985,
+              "hot": 0.008
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 13.499999999999998,
+            "p_max_mm_at_read_tolerance": [
+              12.389861893238207,
+              14.828655268957235
+            ],
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.094789122575243,
+                "p_sat_mm_t2": 6.409182718068769,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.126385496766991,
+                "p_sat_mm_t2": 8.939442587250984,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.939024046443691,
+                "p_sat_mm_t2": 10.030113485618806,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.602054022049589,
+                "p_sat_mm_t2": 7.058491265267587,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.802738696066118,
+                "p_sat_mm_t2": 9.96585193144379,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.683012565672731,
+                "p_sat_mm_t2": 11.242424879060515,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.021072299654871,
+                "p_sat_mm_t2": 7.628964478786135,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 9.361429732873162,
+                "p_sat_mm_t2": 10.902718419802088,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 10.29757270616048,
+                "p_sat_mm_t2": 12.368237750496224,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "adverse:size_fig12_tcc_off_field:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.00565325474115838,
+              "hot": 0.008162988988634943
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 13.230447836002815,
+            "p_max_mm_at_read_tolerance": [
+              12.43115488645766,
+              14.139588928976362
+            ],
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.155351782606444,
+                "p_sat_mm_t2": 6.484626359412277,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.207135710141925,
+                "p_sat_mm_t2": 9.056753307832151,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.027849281156119,
+                "p_sat_mm_t2": 10.167670873104496,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.616248818339444,
+                "p_sat_mm_t2": 7.077270711432996,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.82166509111926,
+                "p_sat_mm_t2": 9.996135678415195,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.703831600231185,
+                "p_sat_mm_t2": 11.278510558882997,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.04257296557282,
+                "p_sat_mm_t2": 7.659199591359233,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 9.390097287430427,
+                "p_sat_mm_t2": 10.953409645982905,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 10.32910701617347,
+                "p_sat_mm_t2": 12.429743701320167,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": false,
+                "holds_t2_with_floor": false,
+                "window_thick_with_floor_mm": null
+              }
+            }
+          },
+          "kind:size_fig12_tcc_off_electrical:spread_window_edge": {
+            "span_K": {
+              "cold": 52.4,
+              "hot": 27.901622820107306
+            },
+            "drift_deg_per_K": {
+              "cold": 0.0028940839694656492,
+              "hot": 0.004
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 26.999999999999996,
+            "p_max_mm_at_read_tolerance": [
+              24.779723786476413,
+              29.65731053791447
+            ],
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.094789122575243,
+                "p_sat_mm_t2": 6.409182718068769,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.999999999999996
+                ]
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.126385496766991,
+                "p_sat_mm_t2": 8.939442587250984,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.999999999999996
+                ]
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 8.939024046443691,
+                "p_sat_mm_t2": 10.030113485618806,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.999999999999996
+                ]
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.602054022049589,
+                "p_sat_mm_t2": 7.058491265267587,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.999999999999996
+                ]
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.802738696066118,
+                "p_sat_mm_t2": 9.96585193144379,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.999999999999996
+                ]
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.683012565672731,
+                "p_sat_mm_t2": 11.242424879060515,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.999999999999996
+                ]
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.021072299654871,
+                "p_sat_mm_t2": 7.628964478786135,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.999999999999996
+                ]
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 9.361429732873162,
+                "p_sat_mm_t2": 10.902718419802088,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.999999999999996
+                ]
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 10.29757270616048,
+                "p_sat_mm_t2": 12.368237750496224,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.999999999999996
+                ]
+              }
+            }
+          },
+          "adverse:size_fig12_tcc_off_electrical:spread_window_edge": {
+            "span_K": {
+              "cold": 58.53,
+              "hot": 38.10537855621449
+            },
+            "drift_deg_per_K": {
+              "cold": 0.00282662737057919,
+              "hot": 0.004081494494317471
+            },
+            "binding_branch": "hot",
+            "p_max_mm": 26.46089567200563,
+            "p_max_mm_at_read_tolerance": [
+              24.86230977291532,
+              28.279177857952725
+            ],
+            "cells": {
+              "REFeB_sintered:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.155351782606444,
+                "p_sat_mm_t2": 6.484626359412277,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.46089567200563
+                ]
+              },
+              "REFeB_sintered:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.207135710141925,
+                "p_sat_mm_t2": 9.056753307832151,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.46089567200563
+                ]
+              },
+              "REFeB_sintered:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.027849281156119,
+                "p_sat_mm_t2": 10.167670873104496,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.46089567200563
+                ]
+              },
+              "RE2Co17:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 6.616248818339444,
+                "p_sat_mm_t2": 7.077270711432996,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.46089567200563
+                ]
+              },
+              "RE2Co17:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 8.82166509111926,
+                "p_sat_mm_t2": 9.996135678415195,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.46089567200563
+                ]
+              },
+              "RE2Co17:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 9.703831600231185,
+                "p_sat_mm_t2": 11.278510558882997,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.46089567200563
+                ]
+              },
+              "RECo5:g3": {
+                "g_mm": 3.0,
+                "reachable": false,
+                "p_sat_mm_thick": 7.04257296557282,
+                "p_sat_mm_t2": 7.659199591359233,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.46089567200563
+                ]
+              },
+              "RECo5:g4": {
+                "g_mm": 4.0,
+                "reachable": false,
+                "p_sat_mm_thick": 9.390097287430427,
+                "p_sat_mm_t2": 10.953409645982905,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.46089567200563
+                ]
+              },
+              "RECo5:gmin": {
+                "g_mm": 4.4,
+                "reachable": true,
+                "p_sat_mm_thick": 10.32910701617347,
+                "p_sat_mm_t2": 12.429743701320167,
+                "p_over_field_max_mm_thick_cold_strongest": null,
+                "p_over_field_max_mm_thick_cold_weakest": null,
+                "holds_thick": true,
+                "holds_thick_with_floor": true,
+                "holds_t2_with_floor": true,
+                "window_thick_with_floor_mm": [
+                  13.8,
+                  26.46089567200563
+                ]
+              }
+            }
+          }
+        },
+        "members_alone": {
+          "kind": {},
+          "adverse": {}
+        },
+        "static_cyclic_um_at_floor": null,
+        "lifetime_row_um_at_floor": null
+      }
+    },
+    "verdict": "an angle sensor reads the field's direction, so the frames cap the period from above (P ≤ 0.3 µm/K · 360°/δθ) while the unwrap floor and the field the sensor needs bound it from below; and it reads in the plane of its die, so it stands edge-on to the wall: its own minimum gap is TLE5501-E0001_diff 4.40, TMAG6180-Q1_RTCAL_DE 3.50, TAS2141-AAAB 3.40, KMZ60 4.40 mm — none reaches 3 mm (at 3 mm: 0 holding cells, at 4 mm: 2); at its own minimum gap a thick REFeB scale, with the unwrap floor and under the row's field maximum, holds in 5 of 32 row·reading·corner cells — KMZ60 on size_fig12_tcc_off_electrical:spread_window_edge (13.80–27.00 mm); TAS2141-AAAB on size_limit:spread_band_ends (6.90–11.45 mm); TMAG6180-Q1_RTCAL_DE on size_limit:spread_band_ends (7.01–7.02 mm); P_max over all readings runs 1.51–27.00 mm; no row prints the angle drift per kelvin (the members two rows print alone cap P only at 25.1, 68, 69.1 mm — necessary, not sufficient), so each verdict reads a SIZE over a span as a slope, and the favourable spread is no ceiling",
+    "holds_3mm_REFeB_with_floor": [],
+    "holds_4mm_REFeB_with_floor": [
+      "TAS2141-AAAB adverse:size_limit:spread_band_ends",
+      "TAS2141-AAAB kind:size_limit:spread_band_ends"
+    ],
+    "holds_at_own_min_gap_REFeB_with_floor": [
+      "KMZ60 adverse:size_fig12_tcc_off_electrical:spread_window_edge",
+      "KMZ60 kind:size_fig12_tcc_off_electrical:spread_window_edge",
+      "TAS2141-AAAB adverse:size_limit:spread_band_ends",
+      "TAS2141-AAAB kind:size_limit:spread_band_ends",
+      "TMAG6180-Q1_RTCAL_DE kind:size_limit:spread_band_ends"
+    ],
+    "min_gap_mm": {
+      "TLE5501-E0001_diff": 4.4,
+      "TMAG6180-Q1_RTCAL_DE": 3.5,
+      "TAS2141-AAAB": 3.4,
+      "KMZ60": 4.4
+    },
+    "wall_mm": 2.0,
+    "limit_rows_hold_only_on_the_most_favourable_reading": true,
+    "cells_total": 32,
+    "size_readings": [
+      "limit",
+      "limit_plus_25C"
+    ],
+    "spread_readings": [
+      "band_ends",
+      "window_edge"
+    ]
   },
   "unwrap": {
     "worst_change_mm_by_basis": {
