@@ -9354,11 +9354,16 @@ def test_dendrometer_sensor_table_holds_the_sum_rule():
 
     def lane(row, pair, with_mismatch=True):
         b = "x" if pair == "x_y" else "z"
+        sp = row.get("branch_span_K", span)   # a row whose band ends short of +125 °C spreads its totals over its own span
         dbp, eps = {}, {}
         for br in ("cold", "hot"):
-            dbp[br] = math.hypot(row["offset_T_per_K"]["x"][br][1], row["offset_T_per_K"][b][br][1])
+            if row["offset_basis"] == "per_K":
+                oa, ob = row["offset_T_per_K"]["x"][br][1], row["offset_T_per_K"][b][br][1]
+            else:
+                oa, ob = row["offset_T_total"]["x"][br][1] / sp[br], row["offset_T_total"][b][br][1] / sp[br]
+            dbp[br] = math.hypot(oa, ob)
             m = row["mismatch"][pair][br][1] if row["mismatch"][pair][br][1] is not None else row["mismatch"][pair][br][0]
-            eps[br] = (m if row["mismatch_basis"] == "per_K" else m / span[br]) if with_mismatch else 0.0
+            eps[br] = (m if row["mismatch_basis"] == "per_K" else m / sp[br]) if with_mismatch else 0.0
         return dbp, eps
 
     def need(p, t, g, ln, f):
@@ -9384,7 +9389,8 @@ def test_dendrometer_sensor_table_holds_the_sum_rule():
                 g, f, b_max = float(gk[1:]), factors(fam, c), maxima[fam]
                 ts = [cell[v]["t_min_mm"] for v in ("offset_only", "with_mismatch", "with_mismatch_and_unwrap_floor")]
                 inf = [math.inf if t is None else t for t in ts]
-                assert inf[0] <= inf[1] <= inf[2], (name, pair, key)
+                # within the roots' precision: where the floor does not bind the two limits coincide
+                assert inf[0] <= inf[1] + 1e-9 and inf[1] <= inf[2] + 1e-9, (name, pair, key)
                 for v in ("with_mismatch", "with_mismatch_and_unwrap_floor"):
                     blk = cell[v]
                     if blk["need_T_at_infinite_thickness"] is not None:
@@ -9404,6 +9410,59 @@ def test_dendrometer_sensor_table_holds_the_sum_rule():
                 assert need(p, 10.0, g_m, ln, f) == pytest.approx(maxima[fam], rel=1e-9), (name, pair, key)
                 assert need(p, 10.0, g_m, ln0, f) < maxima[fam] * (1 - 1e-6), (name, pair, key, "the mismatch term carries nothing")
                 assert g_m <= lv["gap_limit_mm_at_t10"]["offset_only"], (name, pair, key)
+    # the screen rows (2f): the same sum rule on their two drift bounds, held to their recorded cells
+    for name, s in d["sensor_screen"]["rows"].items():
+        row = d["inputs"]["screen_rows"][name]
+        for pair, pr in s["pairs"].items():
+            ln = lane(row, pair)
+            for br in ("cold", "hot"):
+                assert pr["per_K_guaranteed"]["dbp_T_per_K"][br] == pytest.approx(ln[0][br], rel=1e-12), (name, pair)
+                assert pr["per_K_guaranteed"]["eps_per_K"][br] == pytest.approx(ln[1][br], rel=1e-12), (name, pair)
+            for key, cell in pr["cells"].items():
+                fam, c, gk = key.split(":")
+                if cell["need_T_at_infinite_thickness"] is None:
+                    assert cell["t_min_mm"] is None, (name, pair, key)
+                    continue
+                n = need(cell["p_mm_at_infinite_thickness"], 1e4, float(gk[1:]), ln, factors(fam, c))
+                assert n == pytest.approx(cell["need_T_at_infinite_thickness"], rel=1e-9), (name, pair, key)
+                assert (cell["t_min_mm"] is None) == (n >= maxima[fam]), (name, pair, key)
+            assert pr["holds_any_cell"] == any(v["t_min_mm"] is not None for v in pr["cells"].values()), (name, pair)
+
+
+def test_dendrometer_drift_linearity_reading_is_recomputed():
+    """114 (HW.54 Р3(в), (2e)) — the drift-linearity readings (TI case CS3699089) against the row's raw fields.
+
+    CAN catch: a reading whose per-kelvin mismatch drift is not k·LIN over the window edge's distance from 25 °C · an
+    offset that is not compensated as k·L_off/ΔT (L_off our full-scale reading) where the reading says so, or not the
+    raw guaranteed row where it does not · a «holds» list or a count that disagrees with the cells · a verdict that
+    calls the compensation a guarantee. CANNOT catch: TI's definition read wrong (the script's `DRIFT_LIN_DEFINITION`
+    cites the case), a value transcribed wrong, or a cell off its sum rule (the script's control 12 holds it).
+    """
+    import math
+    d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
+    lin, sensors, st = d["sensor_drift_linearity"], d["inputs"]["sensors"], d["sensor_table"]["rows"]
+    assert lin["definition"]["per_kelvin"] is False and lin["rows"], "no row read"
+    holds, total = [], 0
+    for name, r in lin["rows"].items():
+        row = sensors[name]
+        l_off = dict(row["drift_linearity"]["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]] * row["verdict_range_T"]
+        for pair, pr in r["pairs"].items():
+            raw = st[name]["pairs"][pair]["per_K"]["guaranteed"]["dbp_T_per_K"]
+            raw_eps = st[name]["pairs"][pair]["per_K"]["guaranteed"]["eps_per_K"]
+            for key, blk in pr.items():
+                _c, ro, rm = key.split(":")
+                k_off, k_mis = lin["readings_k"][ro[len("offset_"):]], lin["readings_k"][rm[len("mismatch_"):]]
+                for br in ("cold", "hot"):
+                    dt = blk["edge_distance_K"][br]
+                    want_e = raw_eps[br] if k_mis is None else k_mis * row["drift_linearity"]["mismatch"][pair] / dt
+                    assert blk["eps_per_K"][br] == pytest.approx(want_e, rel=1e-12), (name, pair, key)
+                    want = raw[br] if k_off is None else math.hypot(k_off * l_off / dt, k_off * l_off / dt)
+                    assert blk["dbp_T_per_K"][br] == pytest.approx(want, rel=1e-12), (name, pair, key, br)
+                total += 1
+                if blk["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None:
+                    holds.append(f"{name} {pair} {key}")
+    assert sorted(holds) == lin["holds_3mm_REFeB"] and total == lin["cells_total"]
+    assert f"in {len(holds)} of {total}" in lin["verdict"]
 
 
 def test_dendrometer_travel_carries_the_install_tilt():

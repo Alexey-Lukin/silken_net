@@ -4,7 +4,8 @@
 artefact per fixation point, the magnetic scale behind the capsule wall (its period, the sensor's error terms and the
 unwrap margin through winter and outages), a table of sensors judged with their offset AND axis-mismatch drift in one
 verdict, the energy of a read, and how soon the bark passes the capsule along the tilted axis (00_07 HW.54, the leg
-«Р3(в) — дендрометр», its instrument plan of 2026-10-30; the sensor table and the tilt, 2026-11-16).
+«Р3(в) — дендрометр», its instrument plan of 2026-10-30; the sensor table and the tilt, 2026-11-16; TI's answer on the
+drift-linearity rows, the Infineon row and the screen rows, 2026-11-17).
 
 WHY. The desk leg of 2026-10-26 (01_03 §4 ⊕, (в)) left the principle standing and named the weakest links: the scale's
 travel and geometry, the support's thermal path with PEEK in it («≈ 5–10× worse than < 0.3 µm/K of commercial frames» —
@@ -86,8 +87,9 @@ MODEL.
 (2d) THE SENSOR TABLE (2026-11-16). `SENSORS` holds one row per device and linear range, each value transcribed from
     the primary datasheet its comment cites (section and table), each drift with its declared basis — a per-kelvin row ⊥
     a total from 25 °C the datasheet itself says scales linearly ⊥ a total with no ΔT, spread over the branch only by
-    our assumption (`BRANCH_SPAN_K`) — per axis and per branch (cold 25 → −40 °C ⊥ hot 25 → +125 °C), typical and
-    guaranteed columns, lifetime drifts where given. THE COMBINATION RULE — the SUM: per branch, (P/2π)·δB_pair/B +
+    our assumption (`BRANCH_SPAN_K`, or a row's own `branch_span_K` where its band ends short of +125 °C) — the offset by the same two bases (a per-kelvin row ⊥ a total over the band) — per axis
+    and per branch (cold 25 → −40 °C ⊥ hot 25 → +125 °C), typical and guaranteed columns (an empty column stays empty),
+    lifetime drifts where given. THE COMBINATION RULE — the SUM: per branch, (P/2π)·δB_pair/B +
     (P/2π)·ε/2 ≤ 0.3 µm/K, the offset term with δB_pair = √(δa² + δb²) of the pair's axes and the mismatch term with ε the
     pair's mismatch drift per kelvin — a linear sum of two worst-case bounds of independent sources, as (7) of the list
     below asked (an RSS would be kinder and is not taken). Each branch binds where ITS band's field is weakest (the
@@ -102,8 +104,24 @@ MODEL.
     lane; the lifetime steps (not per kelvin, not summed). The support's term (1) is NOT in the sum — a maximum over
     unknown fixations. ANGLE (SATURATION) SENSORS: a printed, named gap (`SENSOR_GAPS`), not a model — the copies the
     2026-11-16 desk read are mirrors and distributor copies, not primaries, and none gives an angle drift per kelvin, the
-    one row a saturation model would need beyond (2)'s field function; rows whose primaries were not read here (Infineon,
-    Melexis, Allegro) are named there too, so «the table» is never read as «every sensor».
+    one row a saturation model would need beyond (2)'s field function; sensors whose primaries give no guaranteed drift,
+    or were not re-read, are named there too, so «the table» is never read as «every sensor».
+(2e) THE DRIFT-LINEARITY ROWS (2026-11-17). The TMAG3001's datasheet publishes SENSMS_DR_LIN · Boff_DR_LIN · SENSDRLER
+    with a MAX column and no definition; TI's answer (case CS3699089, `DRIFT_LIN_DEFINITION`) defines them as the largest
+    deviation of the drift curve from a best-fit line over −40…+125 °C («typically referenced to the 25 °C point» — a
+    different line), in % of the nominal sensitivity, guaranteed, NOT per kelvin. So LIN bounds the residual's SIZE
+    after a per-unit linear compensation, not its slope, and the frames' per-kelvin rule has no guaranteed reading from
+    it. What is printed instead is the sum rule computed DIRECTLY on each reading of EACH member — the offset and the
+    mismatch each raw (its guaranteed per-kelvin row, uncompensated) ⊥ compensated as a chord at the window's edge with
+    the residual's change from 25 °C ≤ LIN (a line through the 25 °C point) ⊥ ≤ 2·LIN (the best-fit line) — the edge
+    being the most favourable point (nearer 25 °C the same residual is a larger per-kelvin figure, without bound); the
+    offset compensated only in OUR full-scale reading of Boff_DR_LIN (% of the verdict range — TI's stated reference
+    gives no field for an offset); per row, pair, corner, family and gap, with and without the unwrap floor. The
+    both-raw reading is the table's own verdict (a control). The sensitivity row is a common gain's and cancels.
+(2f) SCREEN ROWS (2026-11-17). `SCREEN_ROWS` — sensors whose primary gives the two drift bounds but whose read rows are
+    settings-dependent (Melexis MLX90395, Allegro ALS31313) — are judged by the same sum rule, offset and mismatch, on
+    every family, corner and gap, without levers or a read; each total is derived from the datasheet's own columns by
+    a reading named in the row.
 (3) THE ENERGY OF A READ. The read rides the node's existing wake (cadence C): the sensor's wake and measure transitions
     once, then N two-channel samples at its active current, N from the VERDICT lane (the guaranteed drift — a scale
     designed to it puts the stronger field on the sensor; to 2026-11-15 N was the maximum over the typ ⊥ max lanes, kept
@@ -125,7 +143,9 @@ capsule's sky-cooled cold edge from `81`'s; the B_r coefficients from 01_03 §4 
 radome's and the flange's dimensions from their CEMs; cadence C and the demand from `110`'s cache; E_CYCLE and the
 active buck from lib; the core's run current and VOUT from 02_03 §9.4 (mirrors below); air temperature from the ERA5
 hourly record `71` loads; the Hall sensors' rows from their datasheets (TI SLYS045C · SBASAF4 · SLYS053C, read
-2026-11-16 — the section and table in each row's comment; SLYS045 first read 2026-10-31); the encoder's, the frames' temperature sensitivity and the growth rates from the primaries the 2026-10-26
+2026-11-16 — the section and table in each row's comment; SLYS045 first read 2026-10-31; Infineon TLE493D-P3B6 Rev.
+1.0, Melexis MLX90395 Revision 6.0 and MLX90393 Revision 012, Allegro ALS31313 Rev. 9, read 2026-11-17), and TI's
+definition of the drift-linearity rows (case CS3699089, 2026-11-17 — `DRIFT_LIN_DEFINITION`); the encoder's, the frames' temperature sensitivity and the growth rates from the primaries the 2026-10-26
 collection read (provenance: handoff `2026-10-26_r3v_dendrometer.json`); the frost swing, the daily swing and the radial
 rate's ends from 01_03 §4 ⊕ (в).
 
@@ -167,7 +187,17 @@ WHAT IT CANNOT SEE.
       mismatch drift is a typical total with no ΔT (its per-kelvin figure stands on our linear spread), and its offset
       drift is one row for both ranges. (2d) cannot see: a guaranteed column is a bound over the population, not a unit;
       noise, current and timing rows the datasheet gives only at another range or supply (each row's `assumed`); the
-      sensors not in the table (`SENSOR_GAPS`); the cyclic terms at the scale's own phase (the sum is at the worst phase).
+      sensors not in the table (`SENSOR_GAPS`); the cyclic terms at the scale's own phase (the sum is at the worst phase);
+      a drift given as a BAND over a span spread linearly over it (our assumption, `branch_span_K`) — the band may be
+      reached anywhere inside, and at the window's own edge, nearer 25 °C than the band's end, the same band is a larger
+      per-kelvin figure, so the spread reading is the favourable one — the levers print a less favourable chord
+      reading too (`band_reached_at_the_window_edge`, the band that covers the edge reached there; not a ceiling — a band
+      bounds the value, not the slope), and which reading the datasheet means it does not say.
+      (2e) cannot see: whether TI's definition holds for
+      the offset row (its stated reference gives no field), which of its two lines the rows mean, whether the drift
+      repeats after cycling or holds for 20 years (not published — a calibrated slope's validity is unbounded), the
+      chamber a −40…+125 °C line would need; and it is no guarantee in the per-kelvin sense at all. (2f)
+      cannot see: a screen row's derivation of a total from absolute bounds (ours, named in the row), the read.
   (5) Whether a scale and a probe can travel 16–100 mm past a flush capsule without a visit — the geometry (01_04
       §5.5); (4) says only when the problem starts.
   (6) Separating reversible shrinkage (TWD) from growth — the zero-growth method's job, not priced here.
@@ -223,6 +253,13 @@ CONTROLS (each says what it CAN and CANNOT catch).
       cites the section; the read is the control) or the idealised field form.
  (11) The read: the base row's verdict-lane read in (2d) is (3)'s; CAN catch the two drifting apart, CANNOT a wrong
       current or timing row.
+ (12) Linearity and screen: each (2e) reading's per-kelvin drifts, mismatch AND offset, equal the row's raw
+      row or k·LIN over the edge distance from the corner's own hours; each (2e) and screen cell's infinite-thickness need IS the sum rule at its period and «no thickness» is
+      exactly a need above the family's maximum; the floor never lowers a limit; the both-raw reading agrees with the table's verdict both ways; «from 25 °C» never needs
+      more than «best fit»; a row with zero LIN fields, compensated, keeps no drift and holds at the thinnest scale; a band reached at the
+      window's edge never holds more than the band spread to its end. CAN catch a reading that ignores LIN or the
+      offset, a cell off its sum rule, a swapped span or edge; CANNOT TI's definition read wrong or a value transcribed
+      wrong (the rows cite their sources).
 
 Run:  python tools/in_silico/scripts/114_dendrometer_support_budget.py      # a few seconds
 """
@@ -391,7 +428,12 @@ SENSORS = {
         "angle_error_over_T_deg": {"x_y": 2.3, "x_z": 1.5},
         "lifetime": None,
         "i_active_A": 2.4e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6, "t_wake_s": (50e-6, 62e-6), "i_sleep_A": 40e-9,
-        "assumed": ["the added channel's conversion time: not stated, taken as the TMAG5273's and TMAG5170's 800 µs"]},
+        "assumed": ["the added channel's conversion time: not stated, taken as the TMAG5273's and TMAG5170's 800 µs"],
+        # §5.7, MAX column only: SENSMS_DR_LIN X–Y 1.5, Y–Z or X–Z 1.5 %; Boff_DR_LIN Range 0h 0.06, Range 1h 0.04 %;
+        # SENSDRLER X, Y 3.5, Z 4.3 % — their definition is TI's answer, case CS3699089 (2026-11-17), `DRIFT_LIN_DEFINITION`
+        "drift_linearity": {"mismatch": {"x_y": 0.015, "x_z": 0.015},
+                            "offset_pct_of_range_by_range_T": ((0.037, 0.0006), (0.075, 0.0004)),
+                            "sensitivity": {"x": 0.035, "z": 0.043}}},
     # the same datasheet, §5.8 «Magnetic Characteristics For A2»: BIN ±120 ⊥ ±240 mT; Boff_DR −40 → 25 typ ±1, max
     # ±9.1; 25 → 125 typ ±1, max ±8 µT/°C; SENSMS_DR X–Y −40…25 ±0.041 (−0.041 ⊥ 0.041), 25…85 −0.046 ⊥ 0.044, 85…125
     # −0.057 ⊥ 0.055; X–Z or Y–Z −40…25 −0.063 ⊥ 0.024, 25…85 −0.074 ⊥ 0.035, 85…125 −0.083 ⊥ 0.070 %/°C; NRMS (LP_LN = 0h,
@@ -410,21 +452,120 @@ SENSORS = {
         "angle_error_over_T_deg": {"x_y": 2.25, "x_z": 1.4},
         "lifetime": None,
         "i_active_A": 2.4e-3, "t_conv_one_ch_s": 825e-6, "t_add_ch_s": 800e-6, "t_wake_s": (50e-6, 62e-6), "i_sleep_A": 40e-9,
-        "assumed": ["the added channel's conversion time: not stated, taken as the TMAG5273's and TMAG5170's 800 µs"]},
+        "assumed": ["the added channel's conversion time: not stated, taken as the TMAG5273's and TMAG5170's 800 µs"],
+        # §5.8, MAX column only: SENSMS_DR_LIN X–Y 3.2, «Z axis» (the pairs with Z) 3.5 %; Boff_DR_LIN Range 0h 0.07,
+        # Range 1h 0.04 %; SENSDRLER X, Y 2.5, Z 3.5 %
+        "drift_linearity": {"mismatch": {"x_y": 0.032, "x_z": 0.035},
+                            "offset_pct_of_range_by_range_T": ((0.120, 0.0007), (0.240, 0.0004)),
+                            "sensitivity": {"x": 0.025, "z": 0.035}}},
+    # Infineon TLE493D-P3B6 Datasheet Rev. 1.0 (2024-08-26), read 2026-11-17 in the browser (pdf.js on infineon.com —
+    # curl gets an empty 202 there): Table 4 magnetic range ±50 · ±100 · ±160 mT (extra short · short · full), operating
+    # −40…125 °C; Table 8 «Compensated magnetic drift characteristics» — «changes from the initial characteristics [0 h,
+    # 25 °C] due to external influences», all range settings, after the host polynomial of §4.1.3 with the FIXED
+    # coefficients of Table 13 (one set for the population, the on-chip temperature read once per read, which it barely moves within — no per-unit
+    # calibration), MIN ⊥ MAX only, one row per temperature span: offset drift X, Y, Z ±0.3 mT on −40…85 · −40…105 ·
+    # −40…125 °C alike; X to Y magnetic matching drift ±1.65 · ±1.7 · ±1.9 %, X/Y to Z ±6.5 · ±6.75 · ±8 %. The table's
+    # SPREAD reading takes, per branch, the row with the smallest per-kelvin figure — the cold branch from the −40…85 °C
+    # row (all three start at −40 °C; it has the tightest band), the hot one from −40…125 °C (1.9 % over 100 K < 1.65 %
+    # over 60 K; X/Y–Z 8 % over 100 K) — the LINEAR reading, the tightest row per branch (a unit drifting linearly at
+    # those two slopes meets all three rows; a curve flatter than linear inside the window the band also admits, so
+    # this is not «the most favourable» reading); `band_at_window_edge` is the
+    # −40…85 °C band reached at the window's own edge (our hottest hour lies in that span, asserted), a less
+    # favourable chord reading; Table 10 noise (rms, 1 σ, MAX column only) XY / Z
+    # full range 250 / 173, short 176 / 122, extra short 125 / 86 µT; Table 5 supply current active typ 4.2 (max 6) mA,
+    # power down typ 500 nA at 25 °C (max 6 µA at 85 °C); Tables 15–16 oscillator period typ 500 ns, Bx/By/Bz conversion
+    # 86 · 118 · 182 t_OSC (full · short · extra short), temperature conversion 86 t_OSC, trigger delay typ 16 µs, first
+    # measurement ≤ 75 µs. Table 9 (raw, without compensation, −40…105 °C: offset ±0.35 mT, matching ±1.7 ⊥ ±7.5 %) is
+    # not a row: the compensated row is the sensor as its datasheet specifies it.
+    "TLE493D-P3B6_comp": {
+        "source": "Infineon TLE493D-P3B6 Datasheet Rev. 1.0 (2024-08-26) Tables 4 · 5 · 8 · 10 · 13 · 15 · 16, §4.1.3",
+        "ranges_T": (0.050, 0.100, 0.160), "verdict_range_T": 0.160, "operating_C": (-40.0, 125.0),
+        "mismatch_hot_band_C": (25.0, 125.0),
+        "band_at_window_edge": {"band_C": (-40.0, 85.0), "offset_T": 0.3e-3, "mismatch": {"x_y": 0.0165, "x_z": 0.065}},
+        "offset_basis": "total_no_dT",
+        "offset_T_total": {"x": {"cold": (None, 0.3e-3), "hot": (None, 0.3e-3)},
+                           "z": {"cold": (None, 0.3e-3), "hot": (None, 0.3e-3)}},
+        "mismatch_basis": "total_no_dT",
+        "mismatch": {"x_y": {"cold": (None, 0.0165), "hot": (None, 0.019)},
+                     "x_z": {"cold": (None, 0.065), "hot": (None, 0.08)}},
+        "noise_T": {"x": 250e-6, "z": 173e-6}, "angle_error_deg": None, "angle_error_over_T_deg": None,
+        "lifetime": None,
+        "i_active_A": 4.2e-3, "t_conv_one_ch_s": 43e-6, "t_add_ch_s": 43e-6, "t_wake_s": (16e-6, 75e-6, 43e-6),
+        "i_sleep_A": 500e-9,
+        "assumed": ["the drift totals spread linearly over 25 → −40 °C (the −40…85 °C row) ⊥ 25 → +125 °C (the −40…125 °C "
+                    "row) — `BRANCH_SPAN_K`: the datasheet gives bands over spans, with no per-kelvin row and no linearity "
+                    "statement, and the row read per branch is the tightest one",
+                    "the host polynomial's temperature: one conversion per read, not per sample (it barely moves within a "
+                    "read; a conversion per sample would cost more)",
+                    "noise: the MAX column (no typical given), full range",
+                    "conversion: the typical oscillator period, 500 ns (max 640 ns)",
+                    "wake: trigger delay (typ) + first measurement (max) + the temperature conversion the host polynomial "
+                    "needs — our reading of the measurement sequence",
+                    "lifetime: the drifts are changes «due to external influences»; whether ageing is one, it does not say"]},
 }
+# TI's definition of the TMAG3001's drift-linearity rows (SENSMS_DR_LIN · Boff_DR_LIN · SENSDRLER), case CS3699089, TI
+# Customer Support, 2026-11-17 (our summary of their answer): the maximum deviation of the actual drift curve from a
+# BEST-FIT straight line over the full −40…+125 °C range («typically referenced to the 25 °C point»), in % of the
+# NOMINAL sensitivity — not of the full-scale range, not of the drift slope; a production-guaranteed limit over that
+# range; NOT a per-kelvin coefficient («you cannot simply divide the % value by the temperature delta»); no published
+# data on repeatability after thermal cycling or on 20-year stability. Two things in it the datasheet does not settle:
+# «best-fit» and «referenced to 25 °C» are two different lines, and a % of the nominal SENSITIVITY gives no field for an
+# OFFSET row — so (2e) prices the offset row only under our full-scale reading, labelled as such.
+DRIFT_LIN_DEFINITION = {"line": "best fit over −40…+125 °C", "unit": "% of the nominal sensitivity", "guaranteed": True,
+                        "per_kelvin": False, "repeatability_and_lifetime": "not published",
+                        "source": "TI Customer Support case CS3699089, 2026-11-17"}
 BASE_SENSOR = "TMAG5273A1"   # the row the base tables (2) · (2b) and the 2026-11-10/11 verdict (2c) were priced on
 # Rows NOT in the table — named, so «the table» is not read as «every sensor»: what is missing is a primary read here
 SENSOR_GAPS = {
-    "TLE493D-P3B6 · TLE493D-W2B6 (Infineon)": "primary not reached on this machine's channel in this run (the product "
-        "pages carry no datasheet link for curl); the 2026-11-16 desk read a TOTAL offset drift over a range (P3B6 Rev "
-        "1.0 Tables 8/9 with a host polynomial; W2B6 v1.2 Table 9, «not production tested») — not re-read, so not priced",
-    "MLX90393 · MLX90395 (Melexis) · ALS31313 (Allegro)": "the desk read no GUARANTEED per-kelvin offset drift in them "
-        "(rev 012 · rev 6.0 · rev 9); not re-read here",
+    "TLE493D-W2B6 (Infineon)": "primary not re-read in this run (the 2026-11-16 desk read v1.2 Table 9 as «not "
+        "production tested»); the family's P3B6 is priced as a row",
+    "MLX90393 (Melexis)": "primary read 2026-11-17 (Revision 012, 2025-11-18, Table 9): no guaranteed offset drift — "
+        "OFFSTHD «< ±1000 LSB» stands in the Nom column, «based on characterization on limited sample size» (note 7) — and "
+        "no mismatch-drift row (SENSTHD ±3 % is the sensitivity's band, not a mismatch bound), so it is not even screened",
     "TLV493D-A2BW (Infineon)": "operating range −20…85 °C per the desk — short of the record's cold edge; not re-read",
     "angle (saturation) sensors — TLE5501, KMZ60, TAS2141, TMR3004/3005": "not modelled: the copies the desk read are "
         "mirrors and distributor copies, not primaries, and none gives an angle drift per kelvin — the term (2d)'s "
         "verdict would need; the field they need to saturate is (2)'s field function, the error over temperature is the "
         "missing row",
+}
+# SCREEN ROWS (2f) — sensors whose primary gives the two drift bounds the verdict needs but not the rows a READ would be
+# priced from (their noise and conversion time are settings-dependent): judged by the same sum rule, offset and mismatch,
+# without the energy columns. Each drift is a TOTAL change from 25 °C derived from the datasheet's own columns — the
+# derivation is ours and named in the row — and is per kelvin only under our spread to the band's ends (`branch_span_K`).
+SCREEN_ROWS = {
+    # Melexis MLX90395 Datasheet Revision 6.0 (2020-09-15) Table 14, medium-field variant (-0xx), read 2026-11-17 with
+    # pdftotext from melexis.com: sensing range 50 mT; offset X0, Y0, Z0 −150 ⊥ 150 LSB16 «TA within TAMB» (−40…125 °C)
+    # at 2.5 µT/LSB16 (note 11: «the thermal offset drift will be within a ±30 LSB window, by characterization» — not a
+    # guaranteed column); «Thermal Drift of Sensitivity Mismatch» −3 ⊥ 3 % within TAMB, one row for every pair.
+    "MLX90395-0xx": {
+        "source": "Melexis MLX90395 Datasheet Revision 6.0 (2020-09-15) Table 14 (medium-field, -0xx)",
+        "verdict_range_T": 0.050, "operating_C": (-40.0, 125.0),
+        "offset_basis": "total_no_dT",
+        "offset_T_total": {ax: dict.fromkeys(("cold", "hot"), (None, 0.00075)) for ax in ("x", "z")},
+        "mismatch_basis": "total_no_dT",
+        "mismatch": {p: dict.fromkeys(("cold", "hot"), (None, 0.03)) for p in ("x_y", "x_z")},
+        "assumed": ["offset: an ABSOLUTE band ±375 µT over the range bounds the change from 25 °C by 750 µT (our reading)",
+                    "mismatch: the «thermal drift of sensitivity mismatch» ±3 % read as the change from 25 °C (the table "
+                    "names no reference temperature; its neighbours are at 35 °C)",
+                    "the totals spread linearly to −40 ⊥ +125 °C (`BRANCH_SPAN_K`)"]},
+    # Allegro ALS31313 Datasheet Rev. 9 (2021-05-18), performance characteristics per variant, «valid through full range
+    # of TA» (−40…125 °C), read 2026-11-17 with pdftotext from allegromicro.com: offset error X/Y and Z at BIN = 0 G —
+    # -500: ±24 LSB (25 °C) · ±40 (125 °C) · ±40 (−40 °C) at 4 LSB/G; -1000: ±12 · ±24 · ±32 at 2 LSB/G; -2000: ±10 · ±20
+    # · ±32 at 1 LSB/G; sensitivity mismatch X–Y and X/Y–Z ±5 %, no temperature condition (the header's «full range»).
+    **{f"ALS31313-{v}": {
+        "source": f"Allegro ALS31313 Datasheet Rev. 9 (2021-05-18), ALS31313KLEATR-{v} performance characteristics",
+        "verdict_range_T": rng, "operating_C": (-40.0, 125.0),
+        "offset_basis": "total_no_dT",
+        "offset_T_total": {ax: {"cold": (None, (e25 + ecold) / lsb_g * 1e-4), "hot": (None, (e25 + ehot) / lsb_g * 1e-4)}
+                           for ax in ("x", "z")},
+        "mismatch_basis": "total_no_dT",
+        "mismatch": {p: dict.fromkeys(("cold", "hot"), (None, 0.1)) for p in ("x_y", "x_z")},
+        "assumed": ["offset: the change from 25 °C bounded by the 25 °C and the end-point ABSOLUTE errors added; no bound "
+                    "between the points the table names (our reading)",
+                    "mismatch: an absolute ±5 % over the range bounds the change by 10 % (our reading)",
+                    "the totals spread linearly to −40 ⊥ +125 °C (`BRANCH_SPAN_K`)"]}
+       for v, rng, lsb_g, e25, ehot, ecold in (("500", 0.050, 4.0, 24.0, 40.0, 40.0), ("1000", 0.100, 2.0, 12.0, 24.0, 32.0),
+                                               ("2000", 0.200, 1.0, 10.0, 20.0, 32.0))},
 }
 
 
@@ -867,19 +1008,26 @@ def per_k(row: dict, pair: str, kind: int) -> dict:
     """Per branch: the pair's offset drift √(δa² + δb²) in T/K and its mismatch drift per kelvin, on the typical (kind 0)
     or guaranteed (kind 1) column. Where the guaranteed mismatch column is absent the typical one stands in, flagged.
     The mismatch per kelvin follows the row's declared basis: a per-kelvin row as read; a total from 25 °C over the
-    branch's span (`BRANCH_SPAN_K`) — the datasheet's own linear statement ⊥ our assumption for a total with no ΔT."""
+    branch's span (`BRANCH_SPAN_K`, or the row's own `branch_span_K` where its band ends short of +125 °C) — the
+    datasheet's own linear statement ⊥ our assumption for a total with no ΔT. The offset follows its basis the same way
+    (a per-kelvin row ⊥ a total over the band); a column the datasheet leaves empty stays None."""
     a, b = PAIR_AXES[pair]
+    span = row.get("branch_span_K", BRANCH_SPAN_K)
     out = {"dbp_T_per_K": {}, "eps_per_K": {}, "mismatch_column": {}}
     for br in ("cold", "hot"):
-        oa, ob = row["offset_T_per_K"][a][br][kind], row["offset_T_per_K"][b][br][kind]
-        out["dbp_T_per_K"][br] = math.hypot(oa, ob)
+        if row["offset_basis"] == "per_K":
+            oa, ob = row["offset_T_per_K"][a][br][kind], row["offset_T_per_K"][b][br][kind]
+        else:
+            ta, tb = row["offset_T_total"][a][br][kind], row["offset_T_total"][b][br][kind]
+            oa, ob = (None, None) if ta is None or tb is None else (ta / span[br], tb / span[br])
+        out["dbp_T_per_K"][br] = None if oa is None or ob is None else math.hypot(oa, ob)
         m, col = row["mismatch"][pair][br][kind], ("typical", "guaranteed")[kind]
         if m is None:
             m, col = row["mismatch"][pair][br][0], "typical (no guaranteed column)"
         if m is None:
             out["eps_per_K"][br], out["mismatch_column"][br] = None, "not given"
             continue
-        out["eps_per_K"][br] = m if row["mismatch_basis"] == "per_K" else m / BRANCH_SPAN_K[br]
+        out["eps_per_K"][br] = m if row["mismatch_basis"] == "per_K" else m / span[br]
         out["mismatch_column"][br] = col
     return out
 
@@ -1045,6 +1193,26 @@ def sensor_table(args, t_hots: dict, colds: dict, unwrap_floor_mm: float) -> dic
                             f"g{g:g}": {"no_floor": mismatch_scale_to_hold(g, row, pair, a, b_max, 0.5),
                                         "with_unwrap_floor": mismatch_scale_to_hold(g, row, pair, a, b_max, unwrap_floor_mm)}
                             for g in VERDICT_GAPS_MM}}
+                    # a BAND over a span is a set of readings (§When Modifying #11): spread over the span to the band's
+                    # end (above, favourable) ⊥ reached already at the window's own edge, nearer 25 °C — a LESS
+                    # favourable chord reading, not a ceiling: a band bounds the value, not the slope, and nearer 25 °C
+                    # the same band is a larger per-kelvin figure without bound; printed for every row with a band basis
+                    if "total_no_dT" in (row["offset_basis"], row["mismatch_basis"]):
+                        *_, t_hot_c, t_cold_c, _s = a
+                        span_e = {"cold": BRANCH_SPLIT_C - t_cold_c, "hot": t_hot_c - BRANCH_SPLIT_C}
+                        row_e = {**row, "branch_span_K": span_e}
+                        eb = row.get("band_at_window_edge")
+                        if eb is not None:   # the band that covers the window's edge, both branches
+                            assert eb["band_C"][0] <= t_cold_c and t_hot_c <= eb["band_C"][1], name
+                            row_e["offset_T_total"] = {ax: dict.fromkeys(("cold", "hot"), (None, eb["offset_T"])) for ax in ("x", "z")}
+                            row_e["mismatch"] = {p: dict.fromkeys(("cold", "hot"), (None, eb["mismatch"][p])) for p in PAIR_AXES}
+                        ln_e = make_lane(row_e, pair, 1, True)
+                        levers[f"{fam}:{c}"]["band_reached_at_the_window_edge"] = {
+                            "span_K": span_e,
+                            "gap_limit_mm_at_t10_with_mismatch": gap_limit_lane(LEVER_T_MM, ln_e, a, b_max),
+                            "gap_limit_mm_at_t10_with_mismatch_and_unwrap_floor": gap_limit_lane(LEVER_T_MM, ln_e, a, b_max, unwrap_floor_mm),
+                            "mismatch_scale_to_hold_at_infinite_thickness_no_floor": {
+                                f"g{g:g}": mismatch_scale_to_hold(g, row_e, pair, a, b_max, 0.5) for g in VERDICT_GAPS_MM}}
             ratio = {br: (None if pk["typical"]["eps_per_K"][br] is None or not pk["guaranteed"]["eps_per_K"][br]
                           or "no guaranteed" in pk["guaranteed"]["mismatch_column"][br]
                           else pk["typical"]["eps_per_K"][br] / pk["guaranteed"]["eps_per_K"][br]) for br in ("cold", "hot")}
@@ -1077,6 +1245,214 @@ def sensor_table(args, t_hots: dict, colds: dict, unwrap_floor_mm: float) -> dic
                      "offset_basis": row["offset_basis"], "mismatch_basis": row["mismatch_basis"],
                      "assumed": row["assumed"], "pairs": pairs}
     return out
+
+
+LIN_READINGS = {"raw": None, "from_25C": 1.0, "best_fit": 2.0}   # per member: the guaranteed per-kelvin row as read
+# (no compensation) ⊥ a linear compensation whose residual changes by at most k·LIN from 25 °C (TI: a best-fit line,
+# «typically referenced to the 25 °C point» — two different lines, so both are read)
+
+
+def _t_lim_safe(g_mm: float, lane: dict, a: tuple, b_r_max: float, p_floor: float = 0.5) -> float | None:
+    """`thickness_limit_lane`, with a lane that already holds at the thinnest computed scale returned as that scale."""
+    if need_lane(0.05, g_mm, lane, a, p_floor)[0] <= b_r_max:
+        return 0.05
+    return thickness_limit_lane(g_mm, lane, a, b_r_max, p_floor)
+
+
+def lin_lane(row: dict, pair: str, k_off: float | None, k_mis: float | None, d_t: dict) -> dict:
+    """A lane under one reading of each member: None keeps the guaranteed per-kelvin row (no compensation), a k gives a
+    per-unit LINEAR compensation read as a chord at the window's edge — ε′ = k·LIN/ΔT for the mismatch, δa′ = δb′ =
+    k·L_off/ΔT for the offset (L_off our full-scale reading of Boff_DR_LIN, % of the verdict range); ΔT the edge's
+    distance from 25 °C, the most favourable point: nearer 25 °C the same residual is a larger per-kelvin figure."""
+    lin = row["drift_linearity"]
+    l_off = dict(lin["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]] * row["verdict_range_T"]
+    raw = make_lane(row, pair, 1, True)
+    eps = dict(raw["eps"]) if k_mis is None else {br: k_mis * lin["mismatch"][pair] / d_t[br] for br in ("cold", "hot")}
+    dbp = (dict(raw["dbp"]) if k_off is None
+           else {br: math.hypot(k_off * l_off / d_t[br], k_off * l_off / d_t[br]) for br in ("cold", "hot")})
+    return {"lin_T": row["verdict_range_T"], "dbp": dbp, "eps": eps}
+
+
+def linearity_reading(args, floor_mm: float) -> dict:
+    """(2e) the verdict for a per-unit LINEAR compensation of the drift, read as TI defines the drift-linearity rows
+    (`DRIFT_LIN_DEFINITION`), computed DIRECTLY by the sum rule on each reading of each member (`LIN_READINGS` for the
+    offset × for the mismatch — the both-raw one is the table's own verdict, a control), per row, pair and corner (kind ⊥
+    adverse — their hours as the window's edges), family and gap: the thickness limit without and with the unwrap
+    floor, the need at an infinitely thick scale, the gap held at t 10 mm. The sensitivity row is a COMMON gain's and
+    cancels in the atan2. What none of these readings is: a per-kelvin guarantee — LIN bounds a residual's size, not its
+    slope."""
+    rows = {}
+    for name, row in SENSORS.items():
+        if "drift_linearity" not in row:
+            continue
+        pairs = {}
+        for pair in PAIR_AXES:
+            out = {}
+            for c in ("kind", "adverse"):
+                *_, t_hot, t_cold, _s = args("REFeB_sintered", c)
+                d_t = {"cold": BRANCH_SPLIT_C - t_cold, "hot": t_hot - BRANCH_SPLIT_C}
+                for ro, k_off in LIN_READINGS.items():
+                    for rm, k_mis in LIN_READINGS.items():
+                        ln = lin_lane(row, pair, k_off, k_mis, d_t)
+                        cells = {}
+                        for fam in VERDICT_FAMILIES:
+                            a, b_max = args(fam, c), MAGNET_FAMILIES_BR_T[fam][1]
+                            for g in VERDICT_GAPS_MM:
+                                n_inf, p_inf = need_lane(1e4, g, ln, a)
+                                cells[f"{fam}:g{g:g}"] = {
+                                    "t_min_mm": _t_lim_safe(g, ln, a, b_max),
+                                    "t_min_mm_with_unwrap_floor": _t_lim_safe(g, ln, a, b_max, floor_mm),
+                                    "need_T_at_infinite_thickness": None if math.isinf(n_inf) else n_inf,
+                                    "p_mm_at_infinite_thickness": p_inf}
+                        out[f"{c}:offset_{ro}:mismatch_{rm}"] = {
+                            "edge_distance_K": d_t, "eps_per_K": ln["eps"], "dbp_T_per_K": ln["dbp"], "cells": cells,
+                            "gap_limit_mm_at_t10_REFeB": gap_limit_lane(LEVER_T_MM, ln, args("REFeB_sintered", c),
+                                                                        MAGNET_FAMILIES_BR_T["REFeB_sintered"][1])}
+            pairs[pair] = out
+        lin = row["drift_linearity"]
+        rows[name] = {"mismatch_drift_lin": lin["mismatch"],
+                      "offset_drift_lin_pct_at_verdict_range": dict(lin["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]],
+                      "sensitivity_drift_lin_not_a_member": lin["sensitivity"], "pairs": pairs}
+    holds = sorted(f"{n} {p} {key}" for n, r in rows.items() for p, pr in r["pairs"].items() for key, blk in pr.items()
+                   if blk["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None)
+    total = sum(len(pr) for r in rows.values() for pr in r["pairs"].values())
+    all_comp_off = all(":offset_raw:" not in h for h in holds)
+    verdict = ("LIN bounds the SIZE of the drift's residual over −40…+125 °C, not its slope (TI: not a per-kelvin "
+               "coefficient), so the frames' per-kelvin rule has no guaranteed reading from it; at the window's edge — the "
+               f"most favourable point — the readings hold 3 mm on REFeB in {len(holds)} of {total} row·pair·corner·reading "
+               f"cells{', every one with the offset compensated' if holds and all_comp_off else ''}; nearer 25 °C the same "
+               "residual is a larger per-kelvin figure without bound, and the drift's repeatability and 20-year stability "
+               "are not published — a linear compensation is a MEASURED band, not a guarantee")
+    return {"definition": DRIFT_LIN_DEFINITION, "readings_k": LIN_READINGS, "rows": rows, "verdict": verdict,
+            "holds_3mm_REFeB": holds, "cells_total": total, "every_hold_compensates_the_offset": all_comp_off}
+
+
+def screen_rows(args, t_hots: dict, colds: dict) -> dict:
+    """(2f) the screen rows judged by the sum rule — per row, pair, family, corner and gap the thickness limit with the
+    mismatch term and the need at an infinitely thick scale; no read, no levers (their energy rows are not read)."""
+    out = {}
+    for name, row in SCREEN_ROWS.items():
+        assert row["operating_C"][0] <= min(colds.values()) and max(t_hots.values()) <= row["operating_C"][1], name
+        pairs = {}
+        for pair in PAIR_AXES:
+            ln = make_lane(row, pair, 1, True)
+            cells = {}
+            for fam in VERDICT_FAMILIES:
+                for c in ("isothermal", "kind", "adverse"):
+                    a = args(fam, c)
+                    for g in VERDICT_GAPS_MM:
+                        n_inf, p_inf = need_lane(1e4, g, ln, a)
+                        cells[f"{fam}:{c}:g{g:g}"] = {
+                            "t_min_mm": thickness_limit_lane(g, ln, a, MAGNET_FAMILIES_BR_T[fam][1]),
+                            "need_T_at_infinite_thickness": None if math.isinf(n_inf) else n_inf,
+                            "p_mm_at_infinite_thickness": p_inf}
+            pairs[pair] = {"per_K_guaranteed": per_k(row, pair, 1), "cells": cells,
+                           "holds_any_cell": any(v["t_min_mm"] is not None for v in cells.values())}
+        out[name] = {"source": row["source"], "verdict_range_T": row["verdict_range_T"], "assumed": row["assumed"],
+                     "pairs": pairs}
+    return out
+
+
+def control_linearity_and_screen(lin: dict, scr: dict, st: dict, args) -> None:
+    """Control 12 — see the docstring's CONTROLS."""
+    for name, r in lin["rows"].items():
+        row = SENSORS[name]
+        for pair, pr in r["pairs"].items():
+            raw = make_lane(row, pair, 1, True)
+            for key, blk in pr.items():
+                c, ro, rm = key.split(":")
+                ro, rm = ro[len("offset_"):], rm[len("mismatch_"):]
+                *_, t_hot, t_cold, _s = args("REFeB_sintered", c)
+                d_t = {"cold": BRANCH_SPLIT_C - t_cold, "hot": t_hot - BRANCH_SPLIT_C}   # from the corner, not the block
+                for br in ("cold", "hot"):
+                    assert abs(blk["edge_distance_K"][br] - d_t[br]) < 1e-12, (name, pair, key)
+                    want = raw["eps"][br] if LIN_READINGS[rm] is None else LIN_READINGS[rm] * row["drift_linearity"]["mismatch"][pair] / d_t[br]
+                    assert abs(blk["eps_per_K"][br] - want) <= 1e-15, (name, pair, key)
+                    l_off = dict(row["drift_linearity"]["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]] * row["verdict_range_T"]
+                    want_o = raw["dbp"][br] if LIN_READINGS[ro] is None else math.sqrt(2.0) * LIN_READINGS[ro] * l_off / d_t[br]
+                    assert abs(blk["dbp_T_per_K"][br] - want_o) <= 1e-12 * want_o, (name, pair, key)
+                for ck, cell in blk["cells"].items():
+                    fam, gk = ck.split(":")
+                    f, b_max, g = edge_factors(args(fam, c)), MAGNET_FAMILIES_BR_T[fam][1], float(gk[1:])
+                    # the both-raw reading IS the table's verdict at that corner — need and «holds» both ways, the floor too
+                    if ro == "raw" and rm == "raw":
+                        tc = st[name]["pairs"][pair]["cells"][f"{fam}:{c}:{gk}"]
+                        assert (tc["with_mismatch"]["need_T_at_infinite_thickness"] is None) == (cell["need_T_at_infinite_thickness"] is None), (name, pair, key, ck)
+                        assert (tc["with_mismatch"]["t_min_mm"] is None) == (cell["t_min_mm"] is None), (name, pair, key, ck)
+                        assert (tc["with_mismatch_and_unwrap_floor"]["t_min_mm"] is None) == (cell["t_min_mm_with_unwrap_floor"] is None), (name, pair, key, ck)
+                        nt = tc["with_mismatch"]["need_T_at_infinite_thickness"]
+                        if nt is not None:
+                            assert abs(nt - cell["need_T_at_infinite_thickness"]) < 1e-9 * nt, (name, pair, key, ck)
+                    if cell["need_T_at_infinite_thickness"] is None:
+                        assert cell["t_min_mm"] is None, (name, pair, key, ck)
+                        continue
+                    p_ = cell["p_mm_at_infinite_thickness"]
+                    kk = 2 * math.pi / p_
+                    geom = (1 - math.exp(-kk * 1e4)) * math.exp(-kk * g)
+                    n = max(2 * p_ * blk["dbp_T_per_K"][e] / (2 * math.pi * (TARGET_MM - p_ * blk["eps_per_K"][e] / (4 * math.pi)) * geom * f[e])
+                            for e in ("cold", "hot"))
+                    assert abs(n - cell["need_T_at_infinite_thickness"]) < 1e-9 * n, (name, pair, key, ck)
+                    assert (cell["t_min_mm"] is None) == (n >= b_max), (name, pair, key, ck)
+                    inf = math.inf
+                    assert (cell["t_min_mm"] if cell["t_min_mm"] is not None else inf) <= (
+                        cell["t_min_mm_with_unwrap_floor"] if cell["t_min_mm_with_unwrap_floor"] is not None else inf) + 1e-9
+            # «from 25 °C» never needs more than «best fit», member by member with the other held
+            for c in ("kind", "adverse"):
+                for other in LIN_READINGS:
+                    for ck in pr[f"{c}:offset_from_25C:mismatch_{other}"]["cells"]:
+                        for k1, k2 in ((f"{c}:offset_from_25C:mismatch_{other}", f"{c}:offset_best_fit:mismatch_{other}"),
+                                       (f"{c}:offset_{other}:mismatch_from_25C", f"{c}:offset_{other}:mismatch_best_fit")):
+                            n1, n2 = (pr[k]["cells"][ck]["need_T_at_infinite_thickness"] for k in (k1, k2))
+                            assert (n1 if n1 is not None else math.inf) <= (n2 if n2 is not None else math.inf) * (1 + 1e-9), (name, pair, k1, ck)
+    # a row whose LIN fields are ZERO leaves no drift under a compensation of both members (k = 1): a lane that ignored
+    # the LIN fields, or a compensation that ignored the offset, would keep a drift here
+    for name, row in SENSORS.items():
+        if "drift_linearity" not in row:
+            continue
+        a0 = args("REFeB_sintered", "adverse")
+        row0 = {**row, "drift_linearity": {**row["drift_linearity"], "mismatch": dict.fromkeys(PAIR_AXES, 0.0),
+                                            "offset_pct_of_range_by_range_T": tuple((rng, 0.0) for rng, _ in row["drift_linearity"]["offset_pct_of_range_by_range_T"])}}
+        z = lin_lane(row0, "x_y", 1.0, 1.0, {"cold": 58.0, "hot": 38.0})
+        assert all(v == 0.0 for v in (*z["eps"].values(), *z["dbp"].values()))
+        assert _t_lim_safe(3.0, z, a0, MAGNET_FAMILIES_BR_T["REFeB_sintered"][1]) == 0.05, name
+    # a band reached at the window's edge never holds more than the band spread to its end: the edge's distance from
+    # 25 °C is at most the span, so the per-kelvin drifts only grow (a swapped span or edge would red here)
+    for name, s in st.items():
+        span = SENSORS[name].get("branch_span_K", BRANCH_SPAN_K)
+        for pair, pr in s["pairs"].items():
+            for key, lv in pr["levers"].items():
+                e = lv.get("band_reached_at_the_window_edge")
+                if e is None:
+                    continue
+                fam_, c_ = key.split(":")
+                a_ = args(fam_, c_)
+                *_, t_hot_c, t_cold_c, _s = a_
+                assert abs(e["span_K"]["cold"] - (BRANCH_SPLIT_C - t_cold_c)) < 1e-12 and abs(e["span_K"]["hot"] - (t_hot_c - BRANCH_SPLIT_C)) < 1e-12, (name, pair, key)
+                assert all(0.0 < e["span_K"][br] <= span[br] for br in ("cold", "hot")), (name, pair, key)
+                ge, gs = e["gap_limit_mm_at_t10_with_mismatch"], lv["gap_limit_mm_at_t10"]["with_mismatch"]
+                assert (ge if ge is not None else -math.inf) <= (gs if gs is not None else -math.inf) + 1e-9, (name, pair, key)
+                for gk, se in e["mismatch_scale_to_hold_at_infinite_thickness_no_floor"].items():
+                    ss = lv["mismatch_scale_to_hold_at_infinite_thickness"][gk]["no_floor"]
+                    assert (se or 0.0) <= (ss or 0.0) + 1e-9, (name, pair, key, gk)
+    # each screen cell: its infinite-thickness need IS the sum rule at its period, and «no thickness» is exactly a need
+    # above the family's maximum — the same closed form the table's control holds its cells to
+    for name, s in scr.items():
+        row = SCREEN_ROWS[name]
+        for pair, pr in s["pairs"].items():
+            ln = make_lane(row, pair, 1, True)
+            for key, cell in pr["cells"].items():
+                fam, c, gk = key.split(":")
+                f = edge_factors(args(fam, c))
+                if cell["need_T_at_infinite_thickness"] is None:
+                    assert cell["t_min_mm"] is None, (name, pair, key)
+                    continue
+                p, g = cell["p_mm_at_infinite_thickness"], float(gk[1:])
+                k = 2 * math.pi / p
+                geom = (1 - math.exp(-k * 1e4)) * math.exp(-k * g)
+                n = max(2 * p * ln["dbp"][e] / (2 * math.pi * (TARGET_MM - p * ln["eps"][e] / (4 * math.pi)) * geom * f[e])
+                        for e in ("cold", "hot"))
+                assert abs(n - cell["need_T_at_infinite_thickness"]) < 1e-9 * n, (name, pair, key)
+                assert (cell["t_min_mm"] is None) == (n >= MAGNET_FAMILIES_BR_T[fam][1]), (name, pair, key)
 
 
 def control_sensor_table(st: dict, args, mt: dict, t_hots: dict, colds: dict) -> None:
@@ -1124,7 +1500,9 @@ def control_sensor_table(st: dict, args, mt: dict, t_hots: dict, colds: dict) ->
                 t0, t1, t2 = (cell[v]["t_min_mm"] for v in ("offset_only", "with_mismatch", "with_mismatch_and_unwrap_floor"))
                 inf = math.inf
                 # the mismatch term and the floor only ever raise a limit (None = no thickness)
-                assert (t0 if t0 is not None else inf) <= (t1 if t1 is not None else inf) <= (t2 if t2 is not None else inf), (name, pair, key)
+                # within the roots' precision (brentq xtol 1e-10): where the floor does not bind t1 and t2 coincide
+                assert (t0 if t0 is not None else inf) <= (t1 if t1 is not None else inf) + 1e-9, (name, pair, key)
+                assert (t1 if t1 is not None else inf) <= (t2 if t2 is not None else inf) + 1e-9, (name, pair, key)
                 if t1 is None:
                     continue
                 # the root returns the family's maximum by a SEPARATE closed form of the sum rule at its recorded period —
@@ -1155,7 +1533,9 @@ def control_sensor_table(st: dict, args, mt: dict, t_hots: dict, colds: dict) ->
                 a, b_max = args(fam, c), MAGNET_FAMILIES_BR_T[fam][1]
                 gl = lv["gap_limit_mm_at_t10"]
                 inf = math.inf
-                assert (gl["offset_only"] or -inf) >= (gl["with_mismatch"] or -inf) >= (gl["with_mismatch_and_unwrap_floor"] or -inf), (name, pair, key)
+                # within the roots' precision (brentq xtol 1e-10): where the floor does not bind the two roots coincide
+                assert (gl["offset_only"] or -inf) >= (gl["with_mismatch"] or -inf) - 1e-9, (name, pair, key)
+                assert (gl["with_mismatch"] or -inf) >= (gl["with_mismatch_and_unwrap_floor"] or -inf) - 1e-9, (name, pair, key)
                 ln = make_lane(row, pair, 1, True)
                 if gl["with_mismatch"] is not None:
                     assert abs(need_lane(LEVER_T_MM, gl["with_mismatch"], ln, a)[0] - b_max) < 1e-9, (name, pair, key)
@@ -1431,6 +1811,9 @@ def main() -> int:
     control_temperature(mt, grid_rows, t_hots, colds, z81, hours)
     st = sensor_table(mt["_args"], t_hots, colds, floor_mm)
     control_sensor_table(st, mt["_args"], mt, t_hots, colds)
+    lin = linearity_reading(mt["_args"], floor_mm)
+    scr = screen_rows(mt["_args"], t_hots, colds)
+    control_linearity_and_screen(lin, scr, st, mt["_args"])
     mt.pop("_args")
     hinge = {f"t{t:g}:g{GAP_REALISTIC_MM:g}": {c: mt["cells"][f"t{t:g}:g{GAP_REALISTIC_MM:g}"]["need_T"][f"REFeB_sintered:{c}"]
                                                for c in ("isothermal", "kind", "adverse")} for t in (1.0, 2.0)}
@@ -1531,8 +1914,10 @@ def main() -> int:
               "flange_top_to_dome_top_inside_life_above_mm_per_yr": math.ceil(climb["flange_top"] / LIFE_YR * 100) / 100,
               "outer_bark_above_flange_top_at_install_mm": {ref: round(install[ref], 3) for ref in ("deep_edge", "mid_seat", "shallow_edge")},
               "live_bark_to_flange_seat_yr": {s: [round(zt / fast, 1), round(zt / slow, 1)] for s, zt in z_t.items()},
-              "live_bark_note": "z_t read as a radial travel, untilted — not part of the 2026-11-16 correction (the leg named "
-                                "the install edges and the crown's years)",
+              "live_bark_note": "z_t is a RADIAL thickness — 78's dead-bark ridge (radial) minus its facing spread Ø·sin θ "
+                                "(a radial depth difference) — so the radial travel to the seat is z_t itself, with no "
+                                "cos θ: that factor turns a height ALONG the axis into a radial travel, as for the dome "
+                                "above; model (1) reads the same number along the axis, an approximation by 1/cos θ",
               "twenty_year_travel_mm": [round(LIFE_YR * slow, 1), round(LIFE_YR * fast, 1)]}
 
     # ── print ──
@@ -1591,6 +1976,18 @@ def main() -> int:
             print(f"      {name:17s} {pair}  g3 {cols[0]}  |  g4 {cols[1]}  | mismatch alone at P "
                   f"{ {k: (None if v is None else round(v, 2)) for k, v in alone.items()} } mm; read {pr['read']}")
     print(f"      not in the table: {list(SENSOR_GAPS)}")
+    print(f"  (2e) drift linearity (TI CS3699089): {lin['verdict']}")
+    for name, r in lin["rows"].items():
+        for pair, pr in r["pairs"].items():
+            for key, blk in pr.items():
+                c3 = blk["cells"]["REFeB_sintered:g3"]
+                g10 = blk["gap_limit_mm_at_t10_REFeB"]
+                print(f"      {name} {pair} {key:34s} REFeB g3 t_min {c3['t_min_mm'] if c3['t_min_mm'] is None else round(c3['t_min_mm'], 2)}"
+                      f" (floor {c3['t_min_mm_with_unwrap_floor'] if c3['t_min_mm_with_unwrap_floor'] is None else round(c3['t_min_mm_with_unwrap_floor'], 2)})"
+                      f"  gap@t10 {None if g10 is None else round(g10, 2)}")
+    print("  (2f) screen rows — holds any cell at 3 · 4 mm (any family, corner, thickness):")
+    for name, s in scr.items():
+        print(f"      {name:14s} " + "  ".join(f"{pair}: {pr['holds_any_cell']}" for pair, pr in s["pairs"].items()))
     print(f"  (3) read energy: {json.dumps(energy, ensure_ascii=False)}")
     print(f"  (4) travel: {json.dumps(travel, ensure_ascii=False)}")
 
@@ -1606,7 +2003,7 @@ def main() -> int:
                    "frame_sensitivity_um_per_K": FRAME_UM_PER_K, "growth": GROWTH, "frost_swing_mm": FROST_SWING_MM,
                    "daily_swing_mm": DAILY_SWING_MM, "radial_rate_mm_per_yr": RADIAL_RATE_MM_PER_YR,
                    "growth_months_min_assumed": GROWTH_MONTHS_MIN, "sensors": SENSORS, "base_sensor": BASE_SENSOR,
-                   "sensor_gaps": SENSOR_GAPS, "branch_span_K": BRANCH_SPAN_K,
+                   "sensor_gaps": SENSOR_GAPS, "screen_rows": SCREEN_ROWS, "branch_span_K": BRANCH_SPAN_K,
                    "mismatch_linear_spread_K_assumed": MISMATCH_LINEAR_SPREAD_K, "encoder_2mm": ENCODER_2MM,
                    "core_run_A": I_CORE_RUN_A, "v_out": V_OUT, "eta_buck_active": ETA_BUCK_ACTIVE, "e_cycle_J": E_CYCLE,
                    "gaps_mm": GAPS_MM, "scale_thickness_mm": SCALE_T_MM, "noise_target_um": NOISE_TARGET_UM,
@@ -1617,7 +2014,9 @@ def main() -> int:
                                "radome_flange": "tools/cad/cem/radome.json · cathode_flange.json; top = Radome.TopZMm",
                                "cadence_demand": "110 cache", "air": "ERA5 hourly, Cherkasy grid point (71's loader)",
                                "hall": "the sensor table's rows, each with its datasheet section in `sensors.*.source` "
-                                       "(TI SLYS045C · SBASAF4 · SLYS053C, read 2026-11-16; SLYS045 first read 2026-10-31)",
+                                       "(TI SLYS045C · SBASAF4 · SLYS053C, read 2026-11-16; SLYS045 first read 2026-10-31; "
+                                       "Infineon TLE493D-P3B6 Rev. 1.0 and the screen rows' Melexis and Allegro "
+                                       "datasheets, read 2026-11-17); TI's drift-linearity definition — case CS3699089",
                                "encoder": "ams AS5311 rev 1.13",
                                "frames": "Zweifel et al. 2021 New Phytol. 10.1111/nph.17552, Methods (ZN11)",
                                "growth": "nph.17552 Table 1 · Etzold et al. 2022 Ecol. Lett. 10.1111/ele.13933 · "
@@ -1658,6 +2057,9 @@ def main() -> int:
             "corners": "(2c)'s: isothermal · kind · adverse, the same family coefficients, hours and class band",
             "unwrap_floor_mm": floor_mm, "gaps_mm": VERDICT_GAPS_MM,
             "rows": st},
+        "sensor_drift_linearity": lin,
+        "sensor_screen": {"rule": "the sensor table's sum rule on the screen rows' two drift bounds; no read, no levers",
+                          "rows": scr},
         "unwrap": unwrap,
         "energy": energy,
         "travel": travel,

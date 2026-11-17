@@ -10800,13 +10800,48 @@ def _st_lever(d, row, pair, key="REFeB_sintered:adverse"):
 
 
 def _st_alone(d, pair):
-    return [v for r in d[_ST]["rows"].values()
+    """The mismatch-alone periods over the TI rows — the sentence that cites them explains why no TI row holds."""
+    return [v for n, r in d[_ST]["rows"].items() if n != _P3
             for v in r["pairs"][pair]["mismatch_alone_takes_the_frames_at_period_mm"]["guaranteed"].values() if v]
 
 
 def _st_best_gap(d):
+    """The best gap at t 10 mm, REFeB, adverse corner, on the table's own (spread) reading of every band — favourable."""
     return max(r["pairs"][p]["levers"]["REFeB_sintered:adverse"]["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0
                for r in d[_ST]["rows"].values() for p in r["pairs"])
+
+
+def _st_edge_gap(d, row, pair):
+    """A row's gap at t 10 mm, REFeB, on the less favourable chord reading: a per-kelvin row at the adverse corner; a row
+    with a band basis at the lower of both corners with the band reached at the window's edge (not a ceiling: a band
+    bounds the value, not the slope)."""
+    lv = d[_ST]["rows"][row]["pairs"][pair]["levers"]
+    if "band_reached_at_the_window_edge" in lv["REFeB_sintered:adverse"]:
+        return min(lv[f"REFeB_sintered:{c}"]["band_reached_at_the_window_edge"]["gap_limit_mm_at_t10_with_mismatch"] or 0.0
+                   for c in ("kind", "adverse"))
+    return lv["REFeB_sintered:adverse"]["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0
+
+
+def _st_edge_best(d):
+    return max((_st_edge_gap(d, n, p), n, p) for n, r in d[_ST]["rows"].items() for p in r["pairs"])
+
+
+_P3 = "TLE493D-P3B6_comp"
+_LIN = "sensor_drift_linearity"
+
+
+def _lin_xy_rawmis(d):
+    """(2e) the TMAG3001A1's X–Y blocks with the offset compensated (either line) and the mismatch raw, both corners."""
+    pr = d[_LIN]["rows"]["TMAG3001A1"]["pairs"]["x_y"]
+    return [b for k, b in pr.items() if k.endswith(":mismatch_raw") and ":offset_raw:" not in k]
+
+
+def _p3_cell(d, corner):
+    return d[_ST]["rows"][_P3]["pairs"]["x_y"]["cells"][f"REFeB_sintered:{corner}:g3"]["with_mismatch"]["t_min_mm"]
+
+
+def _p3_edge(d, corner):
+    return _st_lever(d, _P3, "x_y", f"REFeB_sintered:{corner}")["band_reached_at_the_window_edge"]["gap_limit_mm_at_t10_with_mismatch"]
 
 
 def _st_ratio(d, pair, f):
@@ -10827,8 +10862,36 @@ CHECKS += [
      lambda d: round(min(_st_alone(d, "x_z")), 1), 0.0),
     ("dendrometer sensor table, mismatch-alone period X–Z high → 114", SUMMARY, rf"\([\d.]+–{N} mm on X–Z\)", DEN,
      lambda d: round(max(_st_alone(d, "x_z")), 1), 0.0),
-    ("dendrometer sensor table, best gap at t 10 mm → 114", SUMMARY, rf"holds a gap up to \*\*{N} mm\*\* at best", DEN,
-     lambda d: _floor(_st_best_gap(d)), 0.0),
+    ("dendrometer sensor table, best gap at t 10 mm, edge reading → 114", SUMMARY,
+     rf"holds a gap up to \*\*{N} mm\*\* at best on the less favourable \(edge\) reading", DEN, lambda d: _floor(_st_edge_best(d)[0]), 0.0),
+    ("dendrometer sensor table, best gap at t 10 mm, favourable → 114", SUMMARY,
+     rf"lifts the best to \*\*{N} mm\*\* \(TLE493D-P3B6, X–Y\)", DEN, lambda d: _floor(_st_best_gap(d)), 0.0),
+    # 2026-11-17: TI's drift-linearity answer — (2e) computed per named chord reading; the Infineon row's two readings
+    ("dendrometer LIN cells holding → 114", SUMMARY, rf"holds in \*\*{N} of \d+\*\* row·pair·corner·reading cells", DEN,
+     lambda d: len(d[_LIN]["holds_3mm_REFeB"]), 0.0),
+    ("dendrometer LIN cells total → 114", SUMMARY, rf"holds in \*\*\d+ of {N}\*\* row·pair·corner·reading cells", DEN,
+     lambda d: d[_LIN]["cells_total"], 0.0),
+    *[(f"dendrometer LIN A1 X–Y raw mismatch {what} → 114", SUMMARY, rx, DEN, fn, 0.0) for what, rx, fn in (
+        ("thickness low", rf"from a scale \*\*{N}–[\d.]+ mm\*\* thick with the floor", lambda d: _ceil(min(b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] for b in _lin_xy_rawmis(d)))),
+        ("thickness high", rf"from a scale \*\*[\d.]+–{N} mm\*\* thick with the floor", lambda d: _ceil(max(b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] for b in _lin_xy_rawmis(d)))),
+        ("gap low", rf"with \*\*{N}–[\d.]+ mm\*\* of gap at t 10 mm, and", lambda d: _floor(min(b["gap_limit_mm_at_t10_REFeB"] for b in _lin_xy_rawmis(d)))),
+        ("gap high", rf"with \*\*[\d.]+–{N} mm\*\* of gap at t 10 mm, and", lambda d: _floor(max(b["gap_limit_mm_at_t10_REFeB"] for b in _lin_xy_rawmis(d)))))],
+    *[(f"dendrometer P3B6 X–Y {what} → 114", SUMMARY, rx, DEN, fn, 0.0) for what, rx, fn in (
+        ("thickness kind", rf"holds 3 mm on REFeB from a scale \*\*{N} ⊥ [\d.]+ mm\*\* thick \(kind ⊥ adverse;", lambda d: _ceil(_p3_cell(d, "kind"))),
+        ("thickness adverse", rf"holds 3 mm on REFeB from a scale \*\*[\d.]+ ⊥ {N} mm\*\* thick \(kind ⊥ adverse;", lambda d: _ceil(_p3_cell(d, "adverse"))),
+        ("gap kind", rf"and \*\*{N} ⊥ [\d.]+ mm\*\* of gap at t 10 mm — above the wall", lambda d: _floor(_st_lever(d, _P3, "x_y", "REFeB_sintered:kind")["gap_limit_mm_at_t10"]["with_mismatch"])),
+        ("gap adverse", rf"and \*\*[\d.]+ ⊥ {N} mm\*\* of gap at t 10 mm — above the wall", lambda d: _floor(_st_lever(d, _P3, "x_y")["gap_limit_mm_at_t10"]["with_mismatch"])),
+        ("edge kind", rf"it holds \*\*{N} ⊥ [\d.]+ mm\*\* at t 10 mm, and nothing", lambda d: _floor(_p3_edge(d, "kind"))),
+        ("edge adverse", rf"it holds \*\*[\d.]+ ⊥ {N} mm\*\* at t 10 mm, and nothing", lambda d: _floor(_p3_edge(d, "adverse"))))],
+    *[(f"dendrometer canon ⊕ {what} → 114", EBFC, rx, DEN, fn, 0.0) for what, rx, fn in (
+        ("LIN cells", rf"тримаються в {N} з \d+ клітинок", lambda d: len(d[_LIN]["holds_3mm_REFeB"])),
+        ("LIN total", rf"тримаються в \d+ з {N} клітинок", lambda d: d[_LIN]["cells_total"]),
+        ("LIN A1 X–Y low", rf"з періодом розгортання, зі шкалою від {N}–", lambda d: _ceil(min(b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] for b in _lin_xy_rawmis(d)))),
+        ("LIN A1 X–Y high", rf"з періодом розгортання, зі шкалою від [\d.]+–{N} мм", lambda d: _ceil(max(b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] for b in _lin_xy_rawmis(d)))),
+        ("P3B6 kind", rf"X–Y тримає 3 мм на REFeB зі шкалою від {N} ⊥", lambda d: _ceil(_p3_cell(d, "kind"))),
+        ("P3B6 adverse", rf"X–Y тримає 3 мм на REFeB зі шкалою від [\d.]+ ⊥ {N} мм", lambda d: _ceil(_p3_cell(d, "adverse"))),
+        ("P3B6 edge kind", rf"на шкалі 10 мм тримає лише {N} ⊥", lambda d: _floor(_p3_edge(d, "kind"))),
+        ("P3B6 edge adverse", rf"на шкалі 10 мм тримає лише [\d.]+ ⊥ {N} мм", lambda d: _floor(_p3_edge(d, "adverse"))))],
     ("dendrometer sensor table, flip factor X–Y → 114", SUMMARY, rf"is at most \*\*{N} ⊥ [\d.]+\*\* of the guaranteed", DEN, _SC3("x_y"), 0.0),
     ("dendrometer sensor table, flip factor X–Z → 114", SUMMARY, rf"is at most \*\*[\d.]+ ⊥ {N}\*\* of the guaranteed", DEN, _SC3("x_z"), 0.0),
     ("dendrometer sensor table, read low → 114", SUMMARY, rf"a read costs {N}–[\d.]+ % of E_CYCLE across the rows", DEN,
@@ -10841,7 +10904,7 @@ CHECKS += [
      lambda d: d["travel"]["flange_top_to_dome_top_inside_life_above_mm_per_yr"], 0.0),
     # 01_03 §4 ⊕ (в) 2026-11-16
     ("dendrometer canon ⊕ best gap → 114", EBFC, rf"тримає зазор щонайбільше {N} мм \(TMAG5170A1, X–Z\)", DEN,
-     lambda d: _floor(_st_best_gap(d)), 0.0),
+     lambda d: _floor(_st_edge_best(d)[0]), 0.0),
     ("dendrometer canon ⊕ flip X–Y → 114", EBFC, rf"не перевищує {N} ⊥ [\d.]+ гарантованого", DEN, _SC3("x_y"), 0.0),
     ("dendrometer canon ⊕ flip X–Z → 114", EBFC, rf"не перевищує [\d.]+ ⊥ {N} гарантованого", DEN, _SC3("x_z"), 0.0),
     *[(f"dendrometer canon ⊕ typical ratio {pair} {end} → 114", EBFC, rx, DEN,
@@ -10855,7 +10918,7 @@ CHECKS += [
     ("dendrometer canon read share, the ⊕ 2026-11-16 → 114", EBFC, rf"мкДж, {N} % E_CYCLE на базовому рядку", DEN,
      lambda d: d["energy"]["hall_read_share_of_E_cycle_pct"], 0.0),
     ("dendrometer canon ⊕ read low → 114", EBFC, rf"на базовому рядку і {N}–[\d.]+ % по таблиці", DEN, lambda d: _st_reads(d, min), 0.0),
-    ("dendrometer canon ⊕ read high → 114", EBFC, rf"на базовому рядку і [\d.]+–{N} % по таблиці", DEN, lambda d: _st_reads(d, max), 0.0),
+    ("dendrometer canon ⊕ read high → 114", EBFC, rf"з рядком Infineon — [\d.]+–{N} %", DEN, lambda d: _st_reads(d, max), 0.0),
     ("dendrometer canon ⊕ radial travel → 114", EBFC, rf"це {N} мм радіального ходу", DEN,
      lambda d: round(d["travel"]["radial_travel_flange_top_to_dome_top_mm"], 2), 0.0),
     ("dendrometer canon ⊕ years fast → 114", EBFC, rf"тобто {N}–[\d.]+ року, усередині", DEN,
@@ -10895,9 +10958,9 @@ def _st_doc_row(d, name, pair):
     lv = pr["levers"]["REFeB_sintered:adverse"]
     gl, sc = lv["gap_limit_mm_at_t10"]["with_mismatch"], lv["mismatch_scale_to_hold_at_infinite_thickness"]["g3"]["no_floor"]
     r = pr["mismatch_typical_over_guaranteed"]
-    label = name.replace("_300mT", " (±300 mT)") + " · " + {"x_y": "X–Y", "x_z": "X–Z"}[pair]
+    label = name.replace("_300mT", " (±300 mT)").replace("_comp", " (compensated)") + " · " + {"x_y": "X–Y", "x_z": "X–Z"}[pair]
     gap = "—" if gl is None else f"{_floor(gl):.2f}"
-    flip = "—" if sc is None else f"{_floor(sc):.2f}"
+    flip = "—" if sc is None else ("≥ 1" if sc >= 1.0 else f"{_floor(sc):.2f}")   # 1.0 is the function's cap: it holds
     ratio = "—" if r["cold"] is None else "{:.2f} ⊥ {:.2f}".format(r["cold"], r["hot"])
     return (f"| {label} | {lim(3, 'offset_only')} | {lim(4, 'offset_only')} | {lim(3, 'with_mismatch')} | "
             f"{gap} | {flip} | {ratio} | {pr['read']['share_of_E_cycle_pct']:.2f} |")
@@ -10917,19 +10980,50 @@ def test_dendrometer_sensor_table_documents_follow_the_cache():
         for pair in r["pairs"]:
             line = _st_doc_row(d, name, pair)
             assert line in text, f"SUMMARY no longer carries: {line}"
-    n_doc = len(re.findall(r"(?m)^\| TMAG\S+(?: \(±300 mT\))? · X–[YZ] \|", text))
+    n_doc = len(re.findall(r"(?m)^\| (?:TMAG|TLE493D-)\S+(?: \((?:±300 mT|compensated)\))? · X–[YZ] \|", text))
     assert n_doc == sum(len(r["pairs"]) for r in rows.values()), "the table's rows ≠ the cache's rows × pairs"
-    cells = [c for r in rows.values() for p in r["pairs"].values() for c in p["cells"].values()]
-    # «no row holds 3 mm or 4 mm with any family at any thickness, at any corner» (with the mismatch, with or without the floor)
+    ti = {n: r for n, r in rows.items() if n != _P3}
+    cells = [c for r in ti.values() for p in r["pairs"].values() for c in p["cells"].values()]
+    # «no TI row holds 3 mm or 4 mm with any family at any thickness, at any corner, and no row at all holds 4 mm»
     assert all(c[v]["t_min_mm"] is None for c in cells for v in ("with_mismatch", "with_mismatch_and_unwrap_floor"))
-    # «with the period the unwrap needs … no row holds a gap of even 0.2 mm on that scale»
+    assert all(c[v]["t_min_mm"] is None for r in rows.values() for p in r["pairs"].values() for k, c in p["cells"].items()
+               if k.endswith(":g4") for v in ("with_mismatch", "with_mismatch_and_unwrap_floor"))
+    # the Infineon row: its X–Y holds 3 mm on REFeB on the most favourable reading at every corner, floor too; X–Z none
+    p3 = rows[_P3]["pairs"]
+    assert all(p3["x_y"]["cells"][f"REFeB_sintered:{c}:g3"][v]["t_min_mm"] is not None
+               for c in ("isothermal", "kind", "adverse") for v in ("with_mismatch", "with_mismatch_and_unwrap_floor"))
+    assert all(c["with_mismatch"]["t_min_mm"] is None for c in p3["x_z"]["cells"].values())
+    # «with the period the unwrap needs … no TI row holds a gap of even 0.2 mm on that scale — the Infineon row's X–Y keeps
+    # its gap on the most favourable reading …, and holds none on the edge reading (its X–Z none on either)»
     assert all(lv["gap_limit_mm_at_t10"]["with_mismatch_and_unwrap_floor"] is None
-               for r in rows.values() for p in r["pairs"].values() for lv in p["levers"].values())
-    # «at best (TMAG5170A1, X–Z)» and «under the radome's own 2.0 mm wall»
-    best = max(((p["levers"]["REFeB_sintered:adverse"]["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0), n, k)
-               for n, r in rows.items() for k, p in r["pairs"].items())
+               for r in ti.values() for p in r["pairs"].values() for lv in p["levers"].values())
+    for k in ("REFeB_sintered:kind", "REFeB_sintered:adverse"):
+        lv = p3["x_y"]["levers"][k]
+        assert lv["gap_limit_mm_at_t10"]["with_mismatch_and_unwrap_floor"] == pytest.approx(lv["gap_limit_mm_at_t10"]["with_mismatch"], abs=1e-9)
+        assert lv["band_reached_at_the_window_edge"]["gap_limit_mm_at_t10_with_mismatch_and_unwrap_floor"] is None
+        assert p3["x_z"]["levers"][k]["gap_limit_mm_at_t10"]["with_mismatch_and_unwrap_floor"] is None
+    # «at best on the less favourable (edge) reading of every band (TMAG5170A1, X–Z) — under the radome's own 2.0 mm wall»
+    # and «the most favourable reading of the Infineon band lifts the best to … (TLE493D-P3B6, X–Y), above the wall»
     radome_wall = json.loads((REPO / "tools/cad/cem/radome.json").read_text())["wall_thickness_mm"]
-    assert best[1:] == ("TMAG5170A1", "x_z") and best[0] < radome_wall
+    ceiling = _st_edge_best(d)
+    assert ceiling[1:] == ("TMAG5170A1", "x_z") and ceiling[0] < radome_wall
+    fav = max(((p["levers"]["REFeB_sintered:adverse"]["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0), n, k)
+              for n, r in rows.items() for k, p in r["pairs"].items())
+    assert fav[1:] == (_P3, "x_y") and fav[0] > radome_wall
+    # (2e) «every one of them with the offset compensated: the TMAG3001A1's X–Y with its mismatch read raw … under either
+    # line for the offset, on both corners and with the unwrap floor too …; the TMAG3001A2 on no reading»; (2f) «hold no
+    # cell at 3 or 4 mm»
+    holds = d[_LIN]["holds_3mm_REFeB"]
+    assert holds and all(h.startswith("TMAG3001A1 ") and ":offset_raw:" not in h for h in holds)
+    assert all(b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] is not None for b in _lin_xy_rawmis(d))
+    xz = [h for h in holds if " x_z " in h]
+    assert xz and all(h.endswith(":mismatch_from_25C") for h in xz)
+    # «with the offset's line through 25 °C 4 mm too» — on both corners, with the floor
+    pr = d[_LIN]["rows"]["TMAG3001A1"]["pairs"]["x_y"]
+    assert all(pr[f"{c}:offset_from_25C:mismatch_raw"]["cells"]["REFeB_sintered:g4"]["t_min_mm_with_unwrap_floor"] is not None for c in ("kind", "adverse"))
+    # «its X–Y also on some readings with the mismatch compensated from 25 °C»
+    assert any(" x_y " in h and h.endswith(":mismatch_from_25C") for h in holds)
+    assert not any(p["holds_any_cell"] for s_ in d["sensor_screen"]["rows"].values() for p in s_["pairs"].values())
     # «a unit at its typical drift would hold»: the typical/guaranteed ratio under the flip factor on both branches
     for pair in ("x_y", "x_z"):
         pr = rows["TMAG5170A1"]["pairs"][pair]
