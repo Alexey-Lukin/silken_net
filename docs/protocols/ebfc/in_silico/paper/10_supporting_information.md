@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 425 · 46,395,883 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 425 · 46,395,994 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -313,7 +313,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/pad_travel_remedies.json` | `e6151b6ae0b4f8b0bba0f6d9ac9dc33b328004aa9df00d3984b2b1482b04d813` | 33,474 |
 | `tools/in_silico/cache/mechanical/pogo_sway_transfer.json` | `304d7443401bdc76a18f8ed9e407c34c0ea5c08930a79794f5601ff21bc0755d` | 16,558 |
 | `tools/in_silico/cache/mechanical/pogo_thermal_gap.json` | `e43a3336516bea3afa4c987dc15698c84b479097718bab7e2d57704191491f85` | 13,559 |
-| `tools/in_silico/cache/mechanical/printed_part_sway_stress.json` | `736ed99dc1a09a6e1e68f164cd612cba98849a9286734dad267781393794eed4` | 449,574 |
+| `tools/in_silico/cache/mechanical/printed_part_sway_stress.json` | `883080356bbeb8ecaa10c53874e71ad1b64703af53a2695f286b83c7d600f46c` | 449,685 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.json` | `434d4456b3eb5cf79e3af7da4f916419eb34accc094455d36053898485c5c055` | 67,177 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.png` | `87e017e898f28f38daedce70804a3954693580a7ed7adc5416b3dca0831aba06` | 151,967 |
 | `tools/in_silico/cache/mechanical/thermal_install_field.g1_insertion.json` | `7de39dfe8085a991e4967581e6aef2fe1106838355ae48440ed05843745af450` | 31,477 |

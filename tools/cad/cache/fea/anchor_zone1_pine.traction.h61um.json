@@ -1,0 +1,55 @@
+{
+  "_note": "STATIC (traction) in-plane modulus of the part as MODELLED, in units of E_solid, at one step. Named form and declared ceiling live on VoxelFea.TractionInPlaneModulus: t = \u03A3\u00B7n on the metal faces of the lateral cut, made self-equilibrated by the least-squares rigid-mode projection over the loaded nodes; E read from the energy against the REALISED macro stress. A reading of a finite cut specimen, not a Huet bound; read with its step ladder.",
+  "cem": "anchor_zone1_pine",
+  "topology": "network",
+  "poisson_ratio": 0.342,
+  "step_mm": 0.06111111,
+  "step_divisor": null,
+  "elements": 5911634,
+  "porosity": 0.6453393358946609,
+  "solid_calibration_theta0": 0.9999999947532656,
+  "rows": [
+    {
+      "theta_deg": 0,
+      "all_nodes_equilibration_ratio": 0.0805624511998786,
+      "all_nodes_equilibration_converged": true,
+      "load_outside_loaded_relative": 0,
+      "traction_modulus_ratio": 0.08294126532687493,
+      "macro_stress_along_d": 0.34773283260987514,
+      "macro_stress_off_axis_relative": 0.0011145363598835834,
+      "projection_relative": 0.21143691631530537,
+      "support_reaction_relative": 5.430873754610052E-07,
+      "iterations": 26576,
+      "residual": 9.974187919936549E-09,
+      "converged": true
+    },
+    {
+      "theta_deg": 22.5,
+      "all_nodes_equilibration_ratio": 0.09082462085148124,
+      "all_nodes_equilibration_converged": true,
+      "load_outside_loaded_relative": 0,
+      "traction_modulus_ratio": 0.09219838660776074,
+      "macro_stress_along_d": 0.35172990298054757,
+      "macro_stress_off_axis_relative": 0.005105990267234956,
+      "projection_relative": 0.17164270093399175,
+      "support_reaction_relative": 3.9692771993202114E-07,
+      "iterations": 25606,
+      "residual": 9.975272381447044E-09,
+      "converged": true
+    },
+    {
+      "theta_deg": 45,
+      "all_nodes_equilibration_ratio": 0.1040540399502114,
+      "all_nodes_equilibration_converged": true,
+      "load_outside_loaded_relative": 0,
+      "traction_modulus_ratio": 0.10254722713961993,
+      "macro_stress_along_d": 0.3542499953637351,
+      "macro_stress_off_axis_relative": 0.007229899844107277,
+      "projection_relative": 0.1319528215219942,
+      "support_reaction_relative": 1.4468758683338435E-07,
+      "iterations": 27428,
+      "residual": 9.98522964932945E-09,
+      "converged": true
+    }
+  ]
+}
