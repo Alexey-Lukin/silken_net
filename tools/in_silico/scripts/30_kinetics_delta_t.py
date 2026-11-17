@@ -347,8 +347,9 @@ def main() -> int:
           f" at pH 7.4 on graphite). The old 60s baseline +")
     print("      β-perturbation coupling was REVERSED in E.63 (delta_t→β was economically")
     print("      null/inverted). delta_t now drives growth_points DIRECTLY via")
-    print("      Metabolic.homeostasis_gp(delta_t); FAST/SLOW thresholds are field-scale and")
-    print("      calibration-pending on the bench recharge curve (RUNBOOK §3.2-3.3).")
+    print("      Metabolic.homeostasis_gp(delta_t); FAST/SLOW thresholds are frozen placeholders [transitional] —")
+    print("      not calibrated as a growth witness (03_04 §4.3); a bench calibration of the operating point on the")
+    print("      recharge curve (RUNBOOK §3.2-3.3) is a precondition only if minting before a witness is ratified.")
 
     banner("L4 complete — EBFC recharge-kinetics model (delta_t → growth_points, E.63)")
     return 0

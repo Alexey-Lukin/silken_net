@@ -79,5 +79,5 @@
       "ns_per_day": 8.58
     }
   ],
-  "verdict": "\u2705 Enzyme stable across ALL species"
+  "verdict": "\u2705 Structure holds (RMSD max < 3 \u00c5 over each run) on all 6 sap profiles, pH 4.2\u20136.0 \u2014 pH tolerance inside that window, not species deployment or lifetime"
 }

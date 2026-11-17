@@ -10856,6 +10856,20 @@ def _ang_kmz_win(d):
 
 
 _P3 = "TLE493D-P3B6_comp"
+_RCH = "sensor_package_reach"
+
+
+def _rch(d, row, pair):
+    return d[_RCH]["rows"][row]["pairs"][pair]["min_gap_mm"]
+
+
+def _rch_all(d, pair, i):
+    return [r["pairs"][pair]["min_gap_mm"][i] for r in d[_RCH]["rows"].values()]
+
+
+def _rch_tilt_deficit(d):
+    """The smallest shortfall of the Infineon X–Y's end-on tilt over its corners (the best margin, negated)."""
+    return -max(b["margin_mm"] for b in d[_RCH]["rows"][_P3]["pairs"]["x_y"]["end_on_tilt_REFeB"].values())
 _LIN = "sensor_drift_linearity"
 
 
@@ -10968,6 +10982,36 @@ CHECKS += [
         ("member low", rf"обмежує період лише на {N}–[\d.]+ і", lambda d: _floor(min(_ang_member(d, _TLE, "offset")), 1)),
         ("member high", rf"обмежує період лише на [\d.]+–{N} і", lambda d: _floor(max(_ang_member(d, _TLE, "offset")), 1)),
         ("TAS member", rf"і {N} мм — необхідна умова", lambda d: _floor(min(_ang_member(d, _TAS, "mismatch")), 1)))],
+    # 2026-11-17: what each Hall package can reach (2h) — flat X–Z, edge-on X–Y
+    *[(f"dendrometer package reach {what} → 114", doc, rx, DEN, fn, 0.0) for what, doc, rx, fn in (
+        ("flat low", SUMMARY, rf"every row reaches 3 mm \(\*\*{N}–[\d.]+ mm\*\*\)", lambda d: round(min(_rch_all(d, "x_z", 0)), 2)),
+        ("flat high", SUMMARY, rf"every row reaches 3 mm \(\*\*[\d.]+–{N} mm\*\*\)", lambda d: round(max(_rch_all(d, "x_z", 1)), 2)),
+        ("TMAG3001 edge low", SUMMARY, rf"chip-scale\s+package reaches \*\*{N}–[\d.]+ mm\*\*", lambda d: round(_rch(d, "TMAG3001A1", "x_y")[0], 2)),
+        ("TMAG3001 edge high", SUMMARY, rf"chip-scale\s+package reaches \*\*[\d.]+–{N} mm\*\*", lambda d: round(_rch(d, "TMAG3001A1", "x_y")[1], 2)),
+        ("TMAG5273 edge low", SUMMARY, rf"the TMAG5273 \*\*{N}–[\d.]+\*\* \(within tolerance\)", lambda d: round(_rch(d, "TMAG5273A1", "x_y")[0], 2)),
+        ("TMAG5273 edge high", SUMMARY, rf"the TMAG5273 \*\*[\d.]+–{N}\*\* \(within tolerance\)", lambda d: round(_rch(d, "TMAG5273A1", "x_y")[1], 2)),
+        ("TMAG5170 edge low", SUMMARY, rf"the TMAG5170 \*\*{N}–[\d.]+\*\*", lambda d: round(_rch(d, "TMAG5170A1", "x_y")[0], 2)),
+        ("TMAG5170 edge high", SUMMARY, rf"the TMAG5170 \*\*[\d.]+–{N}\*\*", lambda d: round(_rch(d, "TMAG5170A1", "x_y")[1], 2)),
+        ("P3B6 edge low", SUMMARY, rf"TLE493D-P3B6\s+\*\*{N}–[\d.]+ mm\*\*\. So", lambda d: _floor2(_rch(d, _P3, "x_y")[0])),
+        ("P3B6 edge high", SUMMARY, rf"TLE493D-P3B6\s+\*\*[\d.]+–{N} mm\*\*\. So", lambda d: round(_rch(d, _P3, "x_y")[1], 2)),
+        ("P3B6 best t10", SUMMARY, rf"even on a 10 mm scale \(at most \*\*{N} mm\*\*", lambda d: _floor2(d[_RCH]["rows"][_P3]["pairs"]["x_y"]["sensor_table_best_gap_t10_mm"])),
+        ("P3B6 tilt deficit", SUMMARY, rf"short by \*\*{N} mm\*\* at least", lambda d: _floor2(_rch_tilt_deficit(d))),
+        ("TMAG3001 budget edge", SUMMARY, rf"leaving\s+\*\*{N} ⊥ [\d.]+ mm\*\*", lambda d: _floor2(d[_RCH]["rows"]["TMAG3001A1"]["pairs"]["x_y"]["budget_left_at_3mm_mm"])),
+        ("TMAG3001 budget flat", SUMMARY, rf"leaving\s+\*\*[\d.]+ ⊥ {N} mm\*\*", lambda d: _floor2(d[_RCH]["rows"]["TMAG3001A1"]["pairs"]["x_z"]["budget_left_at_3mm_mm"])),
+        ("P3B6 marker low", SUMMARY, rf"which X–Y needs — {N}–[\d.]+ mm; a tilt", lambda d: _floor2(_rch(d, _P3, "x_y")[0])),
+        ("P3B6 marker high", SUMMARY, rf"which X–Y needs — [\d.]+–{N} mm; a tilt", lambda d: round(_rch(d, _P3, "x_y")[1], 2)),
+        ("P3B6 marker 2", SUMMARY, rf"but under the {N} mm its package needs edge-on", lambda d: _floor2(_rch(d, _P3, "x_y")[0])),
+        ("canon flat low", EBFC, rf"Пластом 3 мм дістають усі \({N}–[\d.]+ мм\)", lambda d: round(min(_rch_all(d, "x_z", 0)), 2)),
+        ("canon flat high", EBFC, rf"Пластом 3 мм дістають усі \([\d.]+–{N} мм\)", lambda d: round(max(_rch_all(d, "x_z", 1)), 2)),
+        ("canon TMAG3001 low", EBFC, rf"розміру кристала \({N}–[\d.]+ мм\)", lambda d: round(_rch(d, "TMAG3001A1", "x_y")[0], 2)),
+        ("canon TMAG3001 high", EBFC, rf"розміру кристала \([\d.]+–{N} мм\)", lambda d: round(_rch(d, "TMAG3001A1", "x_y")[1], 2)),
+        ("canon P3B6 low", EBFC, rf"а TLE493D-P3B6 — лише від {N}–[\d.]+ мм", lambda d: _floor2(_rch(d, _P3, "x_y")[0])),
+        ("canon P3B6 high", EBFC, rf"а TLE493D-P3B6 — лише від [\d.]+–{N} мм", lambda d: round(_rch(d, _P3, "x_y")[1], 2)),
+        ("canon P3B6 t10", EBFC, rf"\(щонайбільше {N} мм, лінійне прочитання смуги\)", lambda d: _floor2(d[_RCH]["rows"][_P3]["pairs"]["x_y"]["sensor_table_best_gap_t10_mm"])),
+        ("canon budget edge", EBFC, rf"лишається {N} ⊥ [\d.]+ мм \(ребром ⊥ пластом\)", lambda d: _floor2(d[_RCH]["rows"]["TMAG3001A1"]["pairs"]["x_y"]["budget_left_at_3mm_mm"])),
+        ("canon budget flat", EBFC, rf"лишається [\d.]+ ⊥ {N} мм \(ребром ⊥ пластом\)", lambda d: _floor2(d[_RCH]["rows"]["TMAG3001A1"]["pairs"]["x_z"]["budget_left_at_3mm_mm"])),
+        ("canon (б) marker low", EBFC, rf"найменший досяжний зазор — {N}–[\d.]+ мм, більший", lambda d: _floor2(_rch(d, _P3, "x_y")[0])),
+        ("canon (б) marker high", EBFC, rf"найменший досяжний зазор — [\d.]+–{N} мм, більший", lambda d: round(_rch(d, _P3, "x_y")[1], 2)))],
     ("dendrometer sensor table, flip factor X–Y → 114", SUMMARY, rf"is at most \*\*{N} ⊥ [\d.]+\*\* of the guaranteed", DEN, _SC3("x_y"), 0.0),
     ("dendrometer sensor table, flip factor X–Z → 114", SUMMARY, rf"is at most \*\*[\d.]+ ⊥ {N}\*\* of the guaranteed", DEN, _SC3("x_z"), 0.0),
     ("dendrometer sensor table, read low → 114", SUMMARY, rf"a read costs {N}–[\d.]+ % of E_CYCLE across the rows", DEN,
@@ -11137,6 +11181,17 @@ def test_dendrometer_sensor_table_documents_follow_the_cache():
     assert max(_ang_pmax(d, _TLE)) < min(_ang_cell(d, _TLE, c, "gmin")["p_sat_mm_thick"] for c in ("kind", "adverse"))
     rej = ang["rows"][_TLE]["members_alone"]["adverse"]["mismatch_if_TCAmp_per_channel"]
     assert rej["rejected"] and rej["implied_change_deg_over_cold_band"] > 1.0
+    # (2h): «Flat, every row reaches 3 mm» · the Infineon X–Y «the sensor table's only 3 mm hold … cannot reach» and «none
+    # it holds even on a 10 mm scale» · «the linear compensation's 3 mm holds (TMAG3001A1, X–Y and X–Z) are reachable»
+    rch = d[_RCH]
+    assert all(r["pairs"]["x_z"]["reach_3mm"] == "yes" for r in rch["rows"].values())
+    assert rch["held_at_3mm_but_unreachable"] == [f"{_P3} x_y"] and rch["no_reachable_gap_even_at_t10"] == [f"{_P3} x_y"]
+    assert [f"{n} {p}" for n, r in rch["rows"].items() for p, e in r["pairs"].items() if e["sensor_table_holds"]["g3"]] == [f"{_P3} x_y"]
+    assert rch["linearity_3mm_reachable"] == ["TMAG3001A1 x_y", "TMAG3001A1 x_z"]
+    # «tilted end-on it does no better at any angle … the best is end-on itself» · the TMAG5273 «(within tolerance)»
+    assert rch["end_on_tilt_helps"] == [] and _rch_tilt_deficit(d) > 0
+    assert all(b["beta_deg"] == 90 for b in rch["rows"][_P3]["pairs"]["x_y"]["end_on_tilt_REFeB"].values())
+    assert rch["rows"]["TMAG5273A1"]["pairs"]["x_y"]["reach_3mm"] == "tolerance"
 
 
 # ── HW.54 Р3(б)(4) the stem-face cover rules rehearsed before the logger (117, 2026-11-10) ⟷ SUMMARY §«Can the Stem-Face

@@ -9555,6 +9555,50 @@ def test_dendrometer_angle_rows_are_recomputed():
     assert total == ang["cells_total"] and f"holds in {len(holds['gmin'])} of {total}" in ang["verdict"]
 
 
+def test_dendrometer_package_reach_is_recomputed():
+    """114 (HW.54 Р3(в), (2h)) — the gap each Hall row's package can reach (the radome's wall plus the elements' depth:
+    under the top for X–Z, flat; from the lead-free end for X–Y, edge-on) against the sensor table's and the linear
+    compensation's holds.
+
+    CAN catch: an interval not built from the row's package entry and the CEM wall · a pair given the other mount's depth
+    · a reach verdict off its interval · a 3 mm hold list or a best gap at t 10 mm that drifted from (2d) · (2e) · a
+    «held but unreachable» or «reachable» list that disagrees with the rows. CANNOT catch: a position read wrong off a
+    figure (each package entry cites its figure) or the mounting itself.
+    """
+    d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
+    rch, pk_in, st = d["sensor_package_reach"], d["inputs"]["package_reach"], d["sensor_table"]["rows"]
+    lin = d["sensor_drift_linearity"]["rows"]
+    wall = json.loads((REPO / "tools/cad/cem/radome.json").read_text())["wall_thickness_mm"]
+    assert rch["wall_mm"] == wall and set(rch["rows"]) == set(st)
+    unreach, reach_lin = [], []
+    for name, r in rch["rows"].items():
+        pk = pk_in[r["package"]]
+        assert name in pk["rows"]
+        for pair, e in r["pairs"].items():
+            depth = pk["x_y_mm" if pair == "x_y" else "x_z_mm"]
+            lo, hi = wall + depth[0], wall + depth[1]
+            assert e["min_gap_mm"] == pytest.approx([lo, hi], rel=1e-12) and e["mount"] == ("edge-on" if pair == "x_y" else "flat")
+            for g, key in ((3.0, "reach_3mm"), (4.0, "reach_4mm")):
+                assert e[key] == ("yes" if g >= hi - 1e-9 else "no" if g < lo - 1e-9 else "tolerance"), (name, pair, g)
+            cells = st[name]["pairs"][pair]["cells"]
+            for g in (3, 4):
+                assert e["sensor_table_holds"][f"g{g}"] == sorted(
+                    k for k, v in cells.items() if k.endswith(f":g{g}") and v["with_mismatch"]["t_min_mm"] is not None)
+            fav = max((lv["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0) for lv in st[name]["pairs"][pair]["levers"].values())
+            assert e["sensor_table_best_gap_t10_mm"] == pytest.approx(fav, rel=1e-12)
+            assert e["sensor_table_best_gap_t10_reachable"] == ("yes" if fav >= hi - 1e-9 else "no" if fav < lo - 1e-9 else "tolerance")
+            assert e["budget_left_at_3mm_mm"] == pytest.approx(3.0 - hi, rel=1e-12)
+            if e["sensor_table_holds"]["g3"] and e["reach_3mm"] == "no":
+                unreach.append(f"{name} {pair}")
+            if name in lin:
+                lp = lin[name]["pairs"][pair]
+                holds = sorted(k for k, b in lp.items() if b["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None)
+                assert e["linearity_holds_3mm_REFeB"] == holds
+                if holds and e["reach_3mm"] == "yes":
+                    reach_lin.append(f"{name} {pair}")
+    assert sorted(unreach) == rch["held_at_3mm_but_unreachable"] and sorted(reach_lin) == rch["linearity_3mm_reachable"]
+
+
 def test_dendrometer_travel_carries_the_install_tilt():
     """114 (HW.54 Р3(в), (4)) — the travel block along the TILTED axis, rebuilt from `78`'s raw facing spread, the flange
     and radome CEMs: θ = asin(spread/Ø), the install-day bark over the flange's top along the axis (spread/cos θ apart

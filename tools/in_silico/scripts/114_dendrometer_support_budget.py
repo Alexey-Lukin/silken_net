@@ -141,6 +141,16 @@ MODEL.
     printed as a REJECTED member (its span would move the angle further than the row's own limit). The static cyclic error
     (the 25 °C bound, else the row's limit) and the lifetime row (each an absolute size over the part's qualification
     stress, not the 20-year life) at the floored period stand beside, not per kelvin, not summed. No read is priced.
+(2h) PACKAGE REACH (2026-11-17). The tables (2d) · (2e) judge the gap as given; a package cannot reach every gap. The
+    X–Z pair reads with the package flat, its top to the wall — the gap is the wall plus the elements' depth under the top;
+    the X–Y pair needs both axes in the plane of the motion and the scale's normal, so the package stands edge-on on its
+    lead-free end — the wall plus the elements' distance from that end. `PACKAGE_REACH` takes both off the primaries'
+    sensor-location figures and outlines, as an interval over the drawings' tolerances, with a holder's clearance zero;
+    per row and pair it prints whether 3 · 4 mm are reachable (yes ⊥ no ⊥ within tolerance), which of (2d)'s and (2e)'s
+    3 mm holds sit at a gap the package cannot reach, the best gap a 10 mm scale holds against the interval, what 3 mm
+    leaves for a holder, and — for an X–Y pair that holds 3 mm — the package tilted end-on by β (`end_on_tilt`): the
+    off-plane axis reads the normal component as sin β, its offset term grows by 1/sin β, and the gap shrinks to the top-
+    end corner; the largest margin over β.
 (3) THE ENERGY OF A READ. The read rides the node's existing wake (cadence C): the sensor's wake and measure transitions
     once, then N two-channel samples at its active current, N from the VERDICT lane (the guaranteed drift — a scale
     designed to it puts the stronger field on the sensor; to 2026-11-15 N was the maximum over the typ ⊥ max lanes, kept
@@ -230,6 +240,14 @@ WHAT IT CANNOT SEE.
       (zero taken); a scale turned on edge behind the wall, whose field would lie in the plane of a FLAT package (not
       modelled); a real scale's harmonics; hysteresis under the daily swings' reversals (inside the TLE5501's limit, apart
       elsewhere); the read's energy.
+      (2h) cannot see: a holder's clearance and the sub-board an edge-on package needs (zero taken — `budget_left_at_3mm_mm`
+      is what 3 mm leaves for them and the scale's running clearance); mould flash (TI allows it, not added); the elements'
+      positions where a figure gives no tolerance (TI's are single numbers; the TLE493D's Hall plane inside its hatched
+      block); a package tilted towards a LEADED side (the lead form is not dimensioned — only the end-on tilt, body only, is
+      priced); a virtual normal axis combined from two channels; the band read more favourably than linear (the Infineon
+      row's held gap is its linear reading's); the best gap taken over the levers' corners and families only (kind ·
+      adverse; REFeB · RE₂Co₁₇); static, calibratable offsets between the elements of one package; a scale turned on edge
+      behind the wall (whose field a flat package's X–Y could read — not modelled).
   (5) Whether a scale and a probe can travel 16–100 mm past a flush capsule without a visit — the geometry (01_04
       §5.5); (4) says only when the problem starts.
   (6) Separating reversible shrinkage (TWD) from growth — the zero-growth method's job, not priced here.
@@ -304,6 +322,12 @@ CONTROLS (each says what it CAN and CANNOT catch).
       span from the wrong hours, a cap off its formula, a saturation or maximum root off its field, a floor not doubled, a
       gap the package cannot reach counted as holding; CANNOT a value transcribed wrong (the rows cite their sources;
       KMZ60's curves are read off images to ±0.05° · ±0.02°) or the idealised field form.
+ (14) Package reach: each interval's bottom is the wall plus the depth's lower end and its order holds; «reachable» at
+      3 · 4 mm follows the interval; the table's 3 mm holds are recounted from (2d)'s cells; a lever's family and corner
+      that holds 3 mm at t ≤ 10 mm holds at least 3 mm at t 10 mm; a best gap below the interval leaves no 3 mm hold
+      reachable; each tilt's gap reached is the corner's projection at its β. CAN catch an interval built
+      off the wrong depth, a reach verdict off its interval, a hold list that drifted from the table; CANNOT a position
+      read wrong off a figure (each row cites its figure) or the mounting itself.
 
 Run:  python tools/in_silico/scripts/114_dendrometer_support_budget.py      # a few seconds
 """
@@ -558,6 +582,40 @@ SENSORS = {
 DRIFT_LIN_DEFINITION = {"line": "best fit over −40…+125 °C", "unit": "% of the nominal sensitivity", "guaranteed": True,
                         "per_kelvin": False, "repeatability_and_lifetime": "not published",
                         "source": "TI Customer Support case CS3699089, 2026-11-17"}
+# PACKAGE REACH (2h) — where each Hall row's elements sit in its package, read 2026-11-17 off the primaries' figures (page
+# images): the X–Z pair reads with the package FLAT, its top to the wall, so the gap is the wall plus the element's depth
+# under the top; the X–Y pair needs both axes in the plane of the motion and the scale's normal, so the package stands
+# EDGE-ON on its lead-free end, and the gap is the wall plus the element's distance from that end. Each is an interval
+# (lo, hi) over the drawing's tolerances; a holder's clearance is zero.
+PACKAGE_REACH = {
+    # TI SLYS045C §6.3.2 Fig. 6-2: X, Y, Z elements 0.73 mm under the top, 1.85 mm from the pin-1 end; outline DBV0006A-C02
+    # (p. 54, read off the page image): body 2.75–3.05 mm long, leads on the long sides — the far end 0.90–1.20 mm away
+    # (mould flash, ≤ 0.25 mm per side by note 3, not added).
+    "TMAG5273": {"rows": ("TMAG5273A1", "TMAG5273A2"),
+                 "source": "TI SLYS045C §6.3.2 Fig. 6-2; outline DBV0006A-C02 (body 2.75–3.05 mm)",
+                 "x_z_mm": (0.73, 0.73), "x_y_mm": (2.75 - 1.85, 3.05 - 1.85), "end_on": (0.73, 2.75 - 1.85)},
+    # TI SBASAF4 §7.3.2 Fig. 7-2: 0.32 mm under the top, 1.54 mm from the pin-1 end; DGK body 2.9–3.1 mm (outline) —
+    # the nearer end is the far one below 3.08 mm of body.
+    "TMAG5170": {"rows": ("TMAG5170A1", "TMAG5170A2", "TMAG5170A2_300mT"),
+                 "source": "TI SBASAF4 §7.3.2 Fig. 7-2; DGK body 2.9–3.1 mm (package outline)",
+                 "x_z_mm": (0.32, 0.32), "x_y_mm": (2.9 - 1.54, min(1.54, 3.1 - 1.54)), "end_on": (0.32, 2.9 - 1.54)},
+    # TI SLYS053C §6.3.2 Fig. 6-2: the Z element 0.25 mm under the top, 0.338 mm from the die centre along the long side
+    # (0.007 across); X 0.10 mm from Z in X (drawn across, to one side), Y 0.099 mm from Z in Y; WCSP 0.76–0.82 × 1.26–1.32
+    # mm, balls underneath, every edge lead-free — the nearest is the long side the X element is drawn towards: the
+    # farther element of the pair (Z) W/2 − 0.007 = 0.373–0.403 mm in (the end: 0.391–0.421).
+    "TMAG3001": {"rows": ("TMAG3001A1", "TMAG3001A2"),
+                 "source": "TI SLYS053C §6.3.2 Fig. 6-2 (WCSP 0.76–0.82 × 1.26–1.32 mm)",
+                 "x_z_mm": (0.25, 0.25), "x_y_mm": (0.76 / 2 - 0.007, 0.82 / 2 - 0.007), "end_on": (0.25, 0.76 / 2 - 0.007)},
+    # Infineon TLE493D-P3B6 Rev. 1.0 §2.3 Fig. 4: the sensitive area's centre 1.45 mm from datum A (the pin-1 end) with
+    # ⌀0.2 position tolerance, 0.785 mm from datum B (a long side) with ⌀0.10, and 0.65 ± 0.05 mm under the top to the
+    # LOWER edge of the hatched block (drawn ≈ 0.2 mm thick; where the Hall plane sits in it is not printed, so the depth
+    # runs 0.39–0.70); §7.2 Fig. 23: PG-TSOP6 body 2.9 ± 0.1 × 1.6 ± 0.1 mm, lead span 2.8 ± 0.1 on the long sides.
+    # Edge-on, the nearest edge is a LEADED long side, the lead tips 0.735 + (2.7 − 1.7)/2 = 1.235 mm from the centre at
+    # the drawing's favourable ends (nominal 1.385); worst case the far end, 1.45 (the end at best 1.25 — `end_on`).
+    "TLE493D-P3B6": {"rows": ("TLE493D-P3B6_comp",),
+                     "source": "Infineon TLE493D-P3B6 Datasheet Rev. 1.0 §2.3 Fig. 4 · §7.2 Fig. 23",
+                     "x_z_mm": (0.39, 0.70), "x_y_mm": (0.735 + (2.7 - 1.7) / 2, 1.45), "end_on": (0.39, 2.8 - 1.55)},
+}
 BASE_SENSOR = "TMAG5273A1"   # the row the base tables (2) · (2b) and the 2026-11-10/11 verdict (2c) were priced on
 # Rows NOT in the table — named, so «the table» is not read as «every sensor»: what is missing is a primary read here
 SENSOR_GAPS = {
@@ -1821,6 +1879,130 @@ def control_angle(ang: dict, args, floor_mm: float) -> None:
                     assert blk["implied_change_deg_over_cold_band"] > row["total_deg"], (name, mk)
 
 
+def end_on_tilt(row: dict, gk_pair: str, pk: dict, args, wall_mm: float) -> dict:
+    """An X–Y package tilted by β about the motion axis from flat (β 0) to end-on (β 90°): the axis that leaves the wall's
+    plane reads the scale's normal component as sin β, so under the sum rule its offset term grows by 1/sin β —
+    δB_pair → √(δa² + δb²/sin²β) (one row for both axes: by hypot(1, 1/sin β)/√2) — while the gap shrinks to the wall
+    plus h·cos β + e·sin β, the top-end corner of the lead-free end to the wall (h the elements' depth, e their distance
+    from that end — the drawing's favourable ends, body only: no lead is near that corner). Per corner on REFeB, the
+    largest margin over β of the gap a 10 mm scale holds over the gap reached."""
+    h, e = pk["end_on"]
+    base = make_lane(row, gk_pair, 1, True)
+    out = {}
+    for c in ("kind", "adverse"):
+        a, b_max = args("REFeB_sintered", c), MAGNET_FAMILIES_BR_T["REFeB_sintered"][1]
+        best = None
+        for deg in range(5, 91):
+            b = math.radians(deg)
+            r = math.hypot(1.0, 1.0 / math.sin(b)) / math.sqrt(2.0)
+            ln = {"lin_T": base["lin_T"], "dbp": {k: v * r for k, v in base["dbp"].items()}, "eps": dict(base["eps"])}
+            g_hold = gap_limit_lane(LEVER_T_MM, ln, a, b_max)
+            if g_hold is None:
+                continue
+            g_reach = wall_mm + h * math.cos(b) + e * math.sin(b)
+            if best is None or g_hold - g_reach > best["margin_mm"]:
+                best = {"margin_mm": g_hold - g_reach, "beta_deg": deg, "gap_held_mm": g_hold, "gap_reached_mm": g_reach}
+        out[c] = best
+    return out
+
+
+def package_reach(st: dict, lin: dict, wall_mm: float, args) -> dict:
+    """(2h) per Hall row and pair: the gap the package can reach (the wall plus the element's depth — flat for X–Z,
+    edge-on for X–Y; an interval over the drawing's tolerances) against what (2d) and (2e) hold: the cells that hold 3 · 4
+    mm, whether those gaps are reachable (yes: at or above the interval's top · no: below its bottom · tolerance: inside),
+    and the best gap a 10 mm scale holds on each reading against the interval's bottom."""
+    owner = {r: k for k, v in PACKAGE_REACH.items() for r in v["rows"]}
+    assert set(owner) == set(SENSORS), "a Hall row without its package"
+
+    def reach(g, lo, hi):
+        return "yes" if g >= hi - 1e-9 else ("no" if g < lo - 1e-9 else "tolerance")
+
+    out = {}
+    for name, r in st.items():
+        pk = PACKAGE_REACH[owner[name]]
+        pairs = {}
+        for pair, pr in r["pairs"].items():
+            depth = pk["x_y_mm" if pair == "x_y" else "x_z_mm"]
+            lo, hi = wall_mm + depth[0], wall_mm + depth[1]
+            holds = {f"g{g:g}": sorted(k for k, v in pr["cells"].items()
+                                       if k.endswith(f":g{g:g}") and v["with_mismatch"]["t_min_mm"] is not None)
+                     for g in VERDICT_GAPS_MM}
+            fav = max((lv["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0) for lv in pr["levers"].values())
+            edge = [lv["band_reached_at_the_window_edge"]["gap_limit_mm_at_t10_with_mismatch"]
+                    for lv in pr["levers"].values() if lv.get("band_reached_at_the_window_edge")]
+            entry = {"mount": "edge-on" if pair == "x_y" else "flat", "min_gap_mm": [lo, hi],
+                     "reach_3mm": reach(3.0, lo, hi), "reach_4mm": reach(4.0, lo, hi),
+                     "budget_left_at_3mm_mm": 3.0 - hi,
+                     "sensor_table_holds": holds,
+                     "sensor_table_best_gap_t10_mm": fav,
+                     "sensor_table_best_gap_t10_reachable": reach(fav, lo, hi),
+                     "sensor_table_best_gap_t10_edge_reading_mm": max((e or 0.0) for e in edge) if edge else None}
+            if pair == "x_y" and holds["g3"]:
+                entry["end_on_tilt_REFeB"] = end_on_tilt(SENSORS[name], pair, pk, args, wall_mm)
+            if name in lin["rows"]:
+                lp = lin["rows"][name]["pairs"][pair]
+                best = max((b["gap_limit_mm_at_t10_REFeB"] or 0.0) for b in lp.values())
+                entry["linearity_holds_3mm_REFeB"] = sorted(k for k, b in lp.items()
+                                                           if b["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None)
+                entry["linearity_best_gap_t10_mm"] = best
+                entry["linearity_best_gap_t10_reachable"] = reach(best, lo, hi)
+            pairs[pair] = entry
+        out[name] = {"package": owner[name], "source": pk["source"], "pairs": pairs}
+    held_unreach = sorted(f"{n} {p}" for n, r in out.items() for p, e in r["pairs"].items()
+                          if e["sensor_table_holds"]["g3"] and e["reach_3mm"] == "no")
+    lin_reach = sorted(f"{n} {p}" for n, r in out.items() for p, e in r["pairs"].items()
+                       if e.get("linearity_holds_3mm_REFeB") and e["reach_3mm"] == "yes")
+    no_gap = sorted(f"{n} {p}" for n, r in out.items() for p, e in r["pairs"].items()
+                    if e["sensor_table_best_gap_t10_mm"] > 0 and e["sensor_table_best_gap_t10_reachable"] == "no"
+                    and e["sensor_table_holds"]["g3"])
+    tilt = {f"{n} {p}": e["end_on_tilt_REFeB"] for n, r in out.items() for p, e in r["pairs"].items()
+            if "end_on_tilt_REFeB" in e}
+    tilt_helps = sorted(k for k, v in tilt.items() if any(b is not None and b["margin_mm"] >= 0.0 for b in v.values()))
+    verdict = ("the gap a package can reach is the wall plus where its elements sit — flat for X–Z, edge-on for X–Y: "
+               + "; ".join(f"{n} {p} {e['min_gap_mm'][0]:.2f}–{e['min_gap_mm'][1]:.2f} mm"
+                           for n, r in out.items() for p, e in r["pairs"].items() if n in ("TMAG5273A1", "TMAG5170A1",
+                                                                                         "TMAG3001A1", "TLE493D-P3B6_comp"))
+               + f"; the sensor table's 3 mm holds that the package cannot reach: {held_unreach or 'none'}"
+               + (f" — edge-on, none of them reaches any gap it holds even on a 10 mm scale ({', '.join(no_gap)}), and "
+                  f"tilted end-on {'some angle helps (' + ', '.join(tilt_helps) + ')' if tilt_helps else 'no angle helps'}; "
+                  "a tilt towards the leaded side (the lead form is not dimensioned) and a band reading flatter than "
+                  "linear are not excluded" if no_gap else "")
+               + f"; the linear compensation's 3 mm holds that it can reach: {lin_reach or 'none'}")
+    return {"rule": "X–Z flat (the wall plus the element's depth under the top) ⊥ X–Y edge-on on a lead-free end (the "
+                    "wall plus the element's distance from it); intervals over the drawings' tolerances; a holder's "
+                    "clearance zero", "wall_mm": wall_mm, "rows": out, "verdict": verdict,
+            "held_at_3mm_but_unreachable": held_unreach, "no_reachable_gap_even_at_t10": no_gap,
+            "end_on_tilt_helps": tilt_helps,
+            "linearity_3mm_reachable": lin_reach}
+
+
+def control_reach(rch: dict, st: dict) -> None:
+    """Control 14 — see the docstring's CONTROLS."""
+    for name, r in rch["rows"].items():
+        pk = PACKAGE_REACH[r["package"]]
+        for pair, e in r["pairs"].items():
+            depth = pk["x_y_mm" if pair == "x_y" else "x_z_mm"]
+            assert depth[0] <= depth[1] and math.isclose(e["min_gap_mm"][0], rch["wall_mm"] + depth[0], rel_tol=1e-12), (name, pair)
+            for g, key in ((3.0, "reach_3mm"), (4.0, "reach_4mm")):
+                lo, hi = e["min_gap_mm"]
+                assert e[key] == ("yes" if g >= hi - 1e-9 else "no" if g < lo - 1e-9 else "tolerance"), (name, pair, g)
+            cells, levers = st[name]["pairs"][pair]["cells"], st[name]["pairs"][pair]["levers"]
+            for lk, lv in levers.items():
+                # a lever's family and corner that holds 3 mm at t ≤ 10 mm holds at least 3 mm at t 10 mm
+                t3 = cells.get(f"{lk}:g3", {}).get("with_mismatch", {}).get("t_min_mm")
+                if t3 is not None and t3 <= LEVER_T_MM:
+                    assert (lv["gap_limit_mm_at_t10"]["with_mismatch"] or 0.0) >= 3.0 - 1e-6, (name, pair, lk)
+            if e["sensor_table_best_gap_t10_reachable"] == "no":
+                assert e["reach_3mm"] == "no" or not e["sensor_table_holds"]["g3"], (name, pair)
+            for c, b in e.get("end_on_tilt_REFeB", {}).items():
+                if b is not None:
+                    h, en = pk["end_on"]
+                    bb = math.radians(b["beta_deg"])
+                    assert math.isclose(b["gap_reached_mm"], rch["wall_mm"] + h * math.cos(bb) + en * math.sin(bb), rel_tol=1e-12), (name, c)
+            assert e["sensor_table_holds"]["g3"] == sorted(k for k, v in st[name]["pairs"][pair]["cells"].items()
+                                                          if k.endswith(":g3") and v["with_mismatch"]["t_min_mm"] is not None)
+
+
 def control_sensor_table(st: dict, args, mt: dict, t_hots: dict, colds: dict) -> None:
     """Control 10 — see the docstring's CONTROLS."""
     base = st[BASE_SENSOR]["pairs"]["x_y"]
@@ -2182,6 +2364,8 @@ def main() -> int:
     control_linearity_and_screen(lin, scr, st, mt["_args"])
     ang = angle_rows(mt["_args"], t_hots, colds, floor_mm, radome["wall_thickness_mm"])
     control_angle(ang, mt["_args"], floor_mm)
+    rch = package_reach(st, lin, radome["wall_thickness_mm"], mt["_args"])
+    control_reach(rch, st)
     mt.pop("_args")
     hinge = {f"t{t:g}:g{GAP_REALISTIC_MM:g}": {c: mt["cells"][f"t{t:g}:g{GAP_REALISTIC_MM:g}"]["need_T"][f"REFeB_sintered:{c}"]
                                                for c in ("isothermal", "kind", "adverse")} for t in (1.0, 2.0)}
@@ -2368,6 +2552,7 @@ def main() -> int:
         for c, m in r["members_alone"].items():
             for mk, blk in m.items():
                 print(f"        {c}: {mk} alone caps P at {blk['cap_mm']:.1f} mm{' (rejected)' if blk.get('rejected') else ''}")
+    print(f"  (2h) package reach: {rch['verdict']}")
     print(f"  (3) read energy: {json.dumps(energy, ensure_ascii=False)}")
     print(f"  (4) travel: {json.dumps(travel, ensure_ascii=False)}")
 
@@ -2384,6 +2569,7 @@ def main() -> int:
                    "daily_swing_mm": DAILY_SWING_MM, "radial_rate_mm_per_yr": RADIAL_RATE_MM_PER_YR,
                    "growth_months_min_assumed": GROWTH_MONTHS_MIN, "sensors": SENSORS, "base_sensor": BASE_SENSOR,
                    "sensor_gaps": SENSOR_GAPS, "screen_rows": SCREEN_ROWS, "angle_rows": ANGLE_ROWS,
+                   "package_reach": PACKAGE_REACH,
                    "branch_span_K": BRANCH_SPAN_K,
                    "mismatch_linear_spread_K_assumed": MISMATCH_LINEAR_SPREAD_K, "encoder_2mm": ENCODER_2MM,
                    "core_run_A": I_CORE_RUN_A, "v_out": V_OUT, "eta_buck_active": ETA_BUCK_ACTIVE, "e_cycle_J": E_CYCLE,
@@ -2443,6 +2629,7 @@ def main() -> int:
         "sensor_screen": {"rule": "the sensor table's sum rule on the screen rows' two drift bounds; no read, no levers",
                           "rows": scr},
         "sensor_angle": ang,
+        "sensor_package_reach": rch,
         "unwrap": unwrap,
         "energy": energy,
         "travel": travel,

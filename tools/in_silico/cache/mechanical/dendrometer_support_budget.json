@@ -1167,6 +1167,84 @@
         ]
       }
     },
+    "package_reach": {
+      "TMAG5273": {
+        "rows": [
+          "TMAG5273A1",
+          "TMAG5273A2"
+        ],
+        "source": "TI SLYS045C §6.3.2 Fig. 6-2; outline DBV0006A-C02 (body 2.75–3.05 mm)",
+        "x_z_mm": [
+          0.73,
+          0.73
+        ],
+        "x_y_mm": [
+          0.8999999999999999,
+          1.1999999999999997
+        ],
+        "end_on": [
+          0.73,
+          0.8999999999999999
+        ]
+      },
+      "TMAG5170": {
+        "rows": [
+          "TMAG5170A1",
+          "TMAG5170A2",
+          "TMAG5170A2_300mT"
+        ],
+        "source": "TI SBASAF4 §7.3.2 Fig. 7-2; DGK body 2.9–3.1 mm (package outline)",
+        "x_z_mm": [
+          0.32,
+          0.32
+        ],
+        "x_y_mm": [
+          1.3599999999999999,
+          1.54
+        ],
+        "end_on": [
+          0.32,
+          1.3599999999999999
+        ]
+      },
+      "TMAG3001": {
+        "rows": [
+          "TMAG3001A1",
+          "TMAG3001A2"
+        ],
+        "source": "TI SLYS053C §6.3.2 Fig. 6-2 (WCSP 0.76–0.82 × 1.26–1.32 mm)",
+        "x_z_mm": [
+          0.25,
+          0.25
+        ],
+        "x_y_mm": [
+          0.373,
+          0.40299999999999997
+        ],
+        "end_on": [
+          0.25,
+          0.373
+        ]
+      },
+      "TLE493D-P3B6": {
+        "rows": [
+          "TLE493D-P3B6_comp"
+        ],
+        "source": "Infineon TLE493D-P3B6 Datasheet Rev. 1.0 §2.3 Fig. 4 · §7.2 Fig. 23",
+        "x_z_mm": [
+          0.39,
+          0.7
+        ],
+        "x_y_mm": [
+          1.235,
+          1.45
+        ],
+        "end_on": [
+          0.39,
+          1.2499999999999998
+        ]
+      }
+    },
     "branch_span_K": {
       "cold": 65.0,
       "hot": 100.0
@@ -23706,6 +23784,386 @@
     "spread_readings": [
       "band_ends",
       "window_edge"
+    ]
+  },
+  "sensor_package_reach": {
+    "rule": "X–Z flat (the wall plus the element's depth under the top) ⊥ X–Y edge-on on a lead-free end (the wall plus the element's distance from it); intervals over the drawings' tolerances; a holder's clearance zero",
+    "wall_mm": 2.0,
+    "rows": {
+      "TMAG5273A1": {
+        "package": "TMAG5273",
+        "source": "TI SLYS045C §6.3.2 Fig. 6-2; outline DBV0006A-C02 (body 2.75–3.05 mm)",
+        "pairs": {
+          "x_y": {
+            "mount": "edge-on",
+            "min_gap_mm": [
+              2.9,
+              3.1999999999999997
+            ],
+            "reach_3mm": "tolerance",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": -0.19999999999999973,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.1973283239693169,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": 0.8381736906706624
+          },
+          "x_z": {
+            "mount": "flat",
+            "min_gap_mm": [
+              2.73,
+              2.73
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.27,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 0.585229049963169,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": 0.394324753706294
+          }
+        }
+      },
+      "TMAG5273A2": {
+        "package": "TMAG5273",
+        "source": "TI SLYS045C §6.3.2 Fig. 6-2; outline DBV0006A-C02 (body 2.75–3.05 mm)",
+        "pairs": {
+          "x_y": {
+            "mount": "edge-on",
+            "min_gap_mm": [
+              2.9,
+              3.1999999999999997
+            ],
+            "reach_3mm": "tolerance",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": -0.19999999999999973,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.197328323969236,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": 0.8381736906705385
+          },
+          "x_z": {
+            "mount": "flat",
+            "min_gap_mm": [
+              2.73,
+              2.73
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.27,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 0.585229049963169,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": 0.3943247537062941
+          }
+        }
+      },
+      "TMAG5170A1": {
+        "package": "TMAG5170",
+        "source": "TI SBASAF4 §7.3.2 Fig. 7-2; DGK body 2.9–3.1 mm (package outline)",
+        "pairs": {
+          "x_y": {
+            "mount": "edge-on",
+            "min_gap_mm": [
+              3.36,
+              3.54
+            ],
+            "reach_3mm": "no",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": -0.54,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.7922256023496856,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null
+          },
+          "x_z": {
+            "mount": "flat",
+            "min_gap_mm": [
+              2.32,
+              2.32
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.6800000000000002,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.9344932879416585,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null
+          }
+        }
+      },
+      "TMAG5170A2": {
+        "package": "TMAG5170",
+        "source": "TI SBASAF4 §7.3.2 Fig. 7-2; DGK body 2.9–3.1 mm (package outline)",
+        "pairs": {
+          "x_y": {
+            "mount": "edge-on",
+            "min_gap_mm": [
+              3.36,
+              3.54
+            ],
+            "reach_3mm": "no",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": -0.54,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.4966603793300581,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null
+          },
+          "x_z": {
+            "mount": "flat",
+            "min_gap_mm": [
+              2.32,
+              2.32
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.6800000000000002,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.3111533053935571,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null
+          }
+        }
+      },
+      "TMAG5170A2_300mT": {
+        "package": "TMAG5170",
+        "source": "TI SBASAF4 §7.3.2 Fig. 7-2; DGK body 2.9–3.1 mm (package outline)",
+        "pairs": {
+          "x_y": {
+            "mount": "edge-on",
+            "min_gap_mm": [
+              3.36,
+              3.54
+            ],
+            "reach_3mm": "no",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": -0.54,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 0.8624865945632163,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null
+          },
+          "x_z": {
+            "mount": "flat",
+            "min_gap_mm": [
+              2.32,
+              2.32
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.6800000000000002,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 0.9414203747329926,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null
+          }
+        }
+      },
+      "TMAG3001A1": {
+        "package": "TMAG3001",
+        "source": "TI SLYS053C §6.3.2 Fig. 6-2 (WCSP 0.76–0.82 × 1.26–1.32 mm)",
+        "pairs": {
+          "x_y": {
+            "mount": "edge-on",
+            "min_gap_mm": [
+              2.373,
+              2.403
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.597,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.9400255677771663,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null,
+            "linearity_holds_3mm_REFeB": [
+              "adverse:offset_best_fit:mismatch_from_25C",
+              "adverse:offset_best_fit:mismatch_raw",
+              "adverse:offset_from_25C:mismatch_from_25C",
+              "adverse:offset_from_25C:mismatch_raw",
+              "kind:offset_best_fit:mismatch_raw",
+              "kind:offset_from_25C:mismatch_from_25C",
+              "kind:offset_from_25C:mismatch_raw"
+            ],
+            "linearity_best_gap_t10_mm": 4.893270774400026,
+            "linearity_best_gap_t10_reachable": "yes"
+          },
+          "x_z": {
+            "mount": "flat",
+            "min_gap_mm": [
+              2.25,
+              2.25
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.75,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.3556639860806923,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null,
+            "linearity_holds_3mm_REFeB": [
+              "adverse:offset_best_fit:mismatch_from_25C",
+              "adverse:offset_from_25C:mismatch_from_25C",
+              "kind:offset_from_25C:mismatch_from_25C"
+            ],
+            "linearity_best_gap_t10_mm": 4.208387429845514,
+            "linearity_best_gap_t10_reachable": "yes"
+          }
+        }
+      },
+      "TMAG3001A2": {
+        "package": "TMAG3001",
+        "source": "TI SLYS053C §6.3.2 Fig. 6-2 (WCSP 0.76–0.82 × 1.26–1.32 mm)",
+        "pairs": {
+          "x_y": {
+            "mount": "edge-on",
+            "min_gap_mm": [
+              2.373,
+              2.403
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.597,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.7565638861902273,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null,
+            "linearity_holds_3mm_REFeB": [],
+            "linearity_best_gap_t10_mm": 2.6752504009716325,
+            "linearity_best_gap_t10_reachable": "yes"
+          },
+          "x_z": {
+            "mount": "flat",
+            "min_gap_mm": [
+              2.25,
+              2.25
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.75,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.3222250139584784,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": null,
+            "linearity_holds_3mm_REFeB": [],
+            "linearity_best_gap_t10_mm": 1.928416419895247,
+            "linearity_best_gap_t10_reachable": "no"
+          }
+        }
+      },
+      "TLE493D-P3B6_comp": {
+        "package": "TLE493D-P3B6",
+        "source": "Infineon TLE493D-P3B6 Datasheet Rev. 1.0 §2.3 Fig. 4 · §7.2 Fig. 23",
+        "pairs": {
+          "x_y": {
+            "mount": "edge-on",
+            "min_gap_mm": [
+              3.2350000000000003,
+              3.45
+            ],
+            "reach_3mm": "no",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": -0.4500000000000002,
+            "sensor_table_holds": {
+              "g3": [
+                "REFeB_sintered:adverse:g3",
+                "REFeB_sintered:isothermal:g3",
+                "REFeB_sintered:kind:g3"
+              ],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 3.1602855598626256,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": 1.8069162770404887,
+            "end_on_tilt_REFeB": {
+              "kind": {
+                "margin_mm": -0.0897144401373744,
+                "beta_deg": 90,
+                "gap_held_mm": 3.1602855598626256,
+                "gap_reached_mm": 3.25
+              },
+              "adverse": {
+                "margin_mm": -0.10514316319184669,
+                "beta_deg": 90,
+                "gap_held_mm": 3.1448568368081533,
+                "gap_reached_mm": 3.25
+              }
+            }
+          },
+          "x_z": {
+            "mount": "flat",
+            "min_gap_mm": [
+              2.39,
+              2.7
+            ],
+            "reach_3mm": "yes",
+            "reach_4mm": "yes",
+            "budget_left_at_3mm_mm": 0.2999999999999998,
+            "sensor_table_holds": {
+              "g3": [],
+              "g4": []
+            },
+            "sensor_table_best_gap_t10_mm": 1.3244107442508075,
+            "sensor_table_best_gap_t10_reachable": "no",
+            "sensor_table_best_gap_t10_edge_reading_mm": 0.7622630576487154
+          }
+        }
+      }
+    },
+    "verdict": "the gap a package can reach is the wall plus where its elements sit — flat for X–Z, edge-on for X–Y: TMAG5273A1 x_y 2.90–3.20 mm; TMAG5273A1 x_z 2.73–2.73 mm; TMAG5170A1 x_y 3.36–3.54 mm; TMAG5170A1 x_z 2.32–2.32 mm; TMAG3001A1 x_y 2.37–2.40 mm; TMAG3001A1 x_z 2.25–2.25 mm; TLE493D-P3B6_comp x_y 3.24–3.45 mm; TLE493D-P3B6_comp x_z 2.39–2.70 mm; the sensor table's 3 mm holds that the package cannot reach: ['TLE493D-P3B6_comp x_y'] — edge-on, none of them reaches any gap it holds even on a 10 mm scale (TLE493D-P3B6_comp x_y), and tilted end-on no angle helps; a tilt towards the leaded side (the lead form is not dimensioned) and a band reading flatter than linear are not excluded; the linear compensation's 3 mm holds that it can reach: ['TMAG3001A1 x_y', 'TMAG3001A1 x_z']",
+    "held_at_3mm_but_unreachable": [
+      "TLE493D-P3B6_comp x_y"
+    ],
+    "no_reachable_gap_even_at_t10": [
+      "TLE493D-P3B6_comp x_y"
+    ],
+    "end_on_tilt_helps": [],
+    "linearity_3mm_reachable": [
+      "TMAG3001A1 x_y",
+      "TMAG3001A1 x_z"
     ]
   },
   "unwrap": {

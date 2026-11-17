@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-L2 — xylem sap composition sweep: test enzyme stability across tree species.
+L2 — xylem sap composition sweep: whether the enzyme's structure holds (RMSD max < 3 Å over each run, ~100 ps by the
+default production length) across six sap PROFILES of pH 4.2–6.0 and ionic strength — pH tolerance inside that window,
+not cross-species deployment and not lifetime. The species names label profiles; every profile pH is an assumption
+(`lib/xylem_sap.py`), and measured conifer sap sits largely ABOVE this window (SUMMARY, «Xylem Sap Cross-Species
+Stability»).
 
 Purpose
 -------
 The current L2 MD uses simplified xylem sap (TIP3P-FB + NaCl 0.05M, pH 4.5).
-Real xylem sap varies significantly between tree species:
+Real xylem sap varies between tree species; the profiles assume:
   - Pinus sylvestris (pine): pH 5.0, IS 0.015M, low glucose
   - Picea abies (spruce): pH 4.2, IS 0.012M — most acidic
   - Quercus robur (oak): pH 5.5, IS 0.020M — more neutral
@@ -16,8 +20,8 @@ This script runs the same full-matrix MD (protein + FAD + genipin +
 chitosan + CNC) with different ionic strengths to simulate different
 tree species. pH is adjusted via pdbfixer protonation states.
 
-Results show whether the RMSD stability verdict holds across all species
-or if certain xylem compositions destabilize the enzyme.
+Results show whether the RMSD threshold holds on every profile — a structural check over a short run, not a
+stability or lifetime claim (`sweep_verdict`).
 
 Prerequisites: scripts 02-05 (parameterize FAD, genipin, chitosan, CNC).
 
@@ -239,6 +243,15 @@ def run_single_sap(species: str, platform) -> dict:
     return result
 
 
+def sweep_verdict(results: list[dict]) -> str:
+    """The sweep's one-line verdict, built from the runs: the RMSD threshold on every profile, and the pH span covered."""
+    phs = [r["ph"] for r in results]
+    if all(r["stable"] for r in results):
+        return (f"✅ Structure holds (RMSD max < 3 Å over each run) on all {len(results)} sap profiles, pH "
+                f"{min(phs):.1f}–{max(phs):.1f} — pH tolerance inside that window, not species deployment or lifetime")
+    return "⚠️ Some sap profiles exceed the RMSD threshold"
+
+
 def main() -> int:
     for p in (AF3_PDB, FAD_SDF, GENIPIN_SDF, CHITOSAN_SDF, CELLOBIOSE_SDF, CACHE_FILE):
         if not p.exists():
@@ -260,14 +273,11 @@ def main() -> int:
     banner("Xylem sap sweep summary")
     print(f"  {'Species':<25s} {'pH':>4s} {'IS(M)':>6s} {'RMSD mean':>10s} {'RMSD max':>9s} {'Verdict':>10s}")
     print("  " + "-" * 68)
-    all_stable = True
     for r in results:
         v = "STABLE" if r["stable"] else "UNSTABLE"
-        if not r["stable"]:
-            all_stable = False
         print(f"  {r['species']:<25s} {r['ph']:>4.1f} {r['ionic_strength_M']:>6.3f} {r['rmsd_mean_A']:>9.3f} Å {r['rmsd_max_A']:>8.3f} Å {v:>10s}")
 
-    overall = "✅ Enzyme stable across ALL species" if all_stable else "⚠️ Some species cause instability"
+    overall = sweep_verdict(results)
     print(f"\n  {overall}")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
