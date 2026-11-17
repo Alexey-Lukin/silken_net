@@ -23,7 +23,9 @@ Verdicts by part (see the three functions + `main` for the full reasoning and ca
      as micro-motion, not full-stroke cycling. By the physically-relevant low-amplitude
      stress-fatigue model, real S-N anchor points exist; since 2026-10-13 script 87 models how sway reaches
      the pin — conditional on the rim holding the capsule (the bayonet clamp keeping the rim from lifting; the O-ring reaction is `88`'s), and in inputs the
-     tree does not have — so the working stress still needs the drawing and those inputs — PARTIAL.
+     tree does not have — so the working stress still needs the spring geometry (the maker declined the drawing on
+     2026-11-17; a measured, disassembled sample is the ratified source) and those inputs — PARTIAL. The wire's shear
+     is judged against the anchors divided by sqrt(3) (von Mises), a model choice applied 2026-11-17.
   2. PEEK mechanical-lock barb (cyclic fatigue, NOT the already-tracked HW.26 static cold-flow
      creep) — two literature READINGS (30-48 MPa @ 1e6-1e7 cycles), held as the anchor until a new
      source moves them (00_07 HW.34): neither is a material limit, and for an axially or bending-
@@ -85,9 +87,11 @@ def load_budget() -> dict:
 # ONE wording for what the pogo spring still lacks: framing B's verdict and the part's `missing_datum`
 # both quote it (in-silico §When Modifying #5). ⛔ Do not narrow it to «wire diameter / rate»: a helical
 # spring's shear stress tau = 8*F*D*K_w/(pi*d^3) needs the mean coil diameter too, so (d, k) cannot close it.
-SPRING_DRAWING_MISSING = ("the full spring drawing — wire diameter, mean coil diameter, active coils and rate "
-                          "(the chosen series' mechanical dwg, 00_07 HW.9 — wire diameter and rate alone do not "
-                          "give the shear stress)")
+# 2026-11-17: the pin maker declined the drawing (proprietary or not tested) and named no wire supplier; the founder
+# ratified the same day that the geometry comes from a measured, disassembled sample (02_02 §2.2, 00_07 HW.43).
+SPRING_DRAWING_MISSING = ("the spring geometry — wire diameter, mean coil diameter, active coils and rate (the pin "
+                          "maker declined its drawing on 2026-11-17, so a measured, disassembled sample is the "
+                          "source, 00_07 HW.43 — wire diameter and rate alone do not give the shear stress)")
 SWAY_DEFLECTION_MISSING = ("the inputs script 87 names for the sway amplitude at the pin — whether the bayonet "
                            "keeps the rim from lifting at every temperature (it decides whether the pin slides at all; the "
                            "O-ring reaction is 88's band), "
@@ -96,14 +100,24 @@ SWAY_DEFLECTION_MISSING = ("the inputs script 87 names for the sway amplitude at
                            "per share of the stem's shift, 103 the share per bond state — both conditional on it), "
                            "and the stem's strain and acceleration at anchor height on host-size pines (00_07 HW.43)")
 TORSIONAL_SN_MISSING = "a torsional S-N reference for C17200"
-SPRING_MISSING = (SPRING_DRAWING_MISSING, TORSIONAL_SN_MISSING, SWAY_DEFLECTION_MISSING)  # ONE list — the count is derived
+# The torsional reference left this list on 2026-11-17: the von Mises conversion below replaces it as a model choice
+# (wire_shear_conversion), so it is a datum that would IMPROVE the frame, not one that keeps it from closing.
+SPRING_MISSING = (SPRING_DRAWING_MISSING, SWAY_DEFLECTION_MISSING)  # ONE list — the count is derived
 
 # The bench threshold of framing B, in BOTH readings (in-silico §When Modifying #11 — two readings, never a pick):
-# the 240 MPa anchor is read as NORMAL stress, while the spring wire carries SHEAR; under the conditional verdict
-# (02_02 §2.2, 2026-10-01) the wire's shear is judged against sigma / sqrt(3). Printed DOWN: «below X — no bench» is
-# the harmless region (§When Modifying #43).
+# the 240 MPa anchor is read as NORMAL stress, while the spring wire carries SHEAR; the wire's shear is judged against
+# sigma / sqrt(3) — the verdict of 02_02 §2.2 (2026-10-01) was conditional on no torsional data from the pin maker or
+# the wire supplier, and it is APPLIED since 2026-11-17 (the maker has none and named no supplier; condition ratified
+# met by the founder the same day). Printed DOWN: «below X — no bench» is the harmless region (§When Modifying #43).
 BENCH_SIGMA_MPA = 240.0
-BENCH_TAU_MPA = math.floor(BENCH_SIGMA_MPA / math.sqrt(3.0) * 10.0) / 10.0
+
+
+def tau_down(sigma_mpa: float) -> float:
+    """The von Mises shear equivalent of a normal-stress amplitude, printed down to 0.1 MPa."""
+    return math.floor(sigma_mpa / math.sqrt(3.0) * 10.0) / 10.0
+
+
+BENCH_TAU_MPA = tau_down(BENCH_SIGMA_MPA)
 
 
 def pogo_spring_verdict(budget: dict) -> dict:
@@ -138,6 +152,23 @@ def pogo_spring_verdict(budget: dict) -> dict:
                                    "wire stress may be judged only against torsional S-N data or after an equivalent-"
                                    "stress conversion, never against these points directly (in-silico #10: right number, "
                                    "wrong form).",
+            "wire_shear_conversion": {
+                "applied": True,
+                "model_choice": True,
+                "rule": "von Mises: a pure-shear amplitude tau is equivalent to sigma = sqrt(3)*tau, so the wire's "
+                        "tau is judged against the normal-stress anchors divided by sqrt(3), printed down",
+                "anchor_points_tau_MPa_cycles": [(tau_down(sig), n) for sig, n in becu_anchor_MPa_cycles],
+                "ground": "verdict 02_02 §2.2 (2026-10-01), conditional on no torsional data from the pin maker or "
+                          "the wire supplier; the pin maker answered on 2026-11-17 that its spring data are "
+                          "proprietary or not tested and named no wire supplier, and the founder ratified the "
+                          "condition as met the same day (00_07 HW.43)",
+                "price": "the multiaxial transfer is not measured for C17200's very-high-cycle mechanism in the "
+                         "tree, and the anchors describe an ultrasonic resonant specimen, not drawn spring wire "
+                         "with its surface (loading_mode_caveat)",
+                "effect": f"a threshold, not a verdict: no wire tau is computed yet ({len(SPRING_MISSING)} missing data — "
+                          "missing_datum), so framing B's verdict does not change until the re-run with them",
+                "replaced_if_found": TORSIONAL_SN_MISSING,
+            },
             "anchor_covers_budget_ceiling": anchor_covers,
             "verdict": ("PARTIAL — physically the right model (micro-motion, not full-stroke), and the "
                         f"240 MPa -> 1e10-cycle anchor {'covers' if anchor_covers else 'does NOT cover'} the "
@@ -154,8 +185,9 @@ def pogo_spring_verdict(budget: dict) -> dict:
             "anchor_read_as_normal_stress": BENCH_SIGMA_MPA,
             "wire_shear_after_von_mises_conversion": BENCH_TAU_MPA,
             "note": "the spring wire's stress is shear: against the 240 MPa anchor read as normal stress the bench "
-                    "threshold for the wire's tau is sigma/sqrt(3), printed down; the conversion is the conditional "
-                    "verdict of 02_02 §2.2 (2026-10-01) and waits for the vendor's answer on torsional data.",
+                    "threshold for the wire's tau is sigma/sqrt(3), printed down; the conversion is applied as a "
+                    "model choice (framing_B_low_amplitude_stress_fatigue.wire_shear_conversion), not a "
+                    "torsional measurement.",
             "mean_stress_not_corrected": "the anchors are read as fully reversed tests (R = -1 is stated for the "
                                          "sibling study's rig, not for the anchors themselves — loading_mode_caveat), "
                                          "while the spring works under a preload with a small alternating part: no "
@@ -280,11 +312,12 @@ def main() -> int:
     banner("Verdict")
     print(f"  None of the {len(parts)} parts is fully CLOSED by literature review alone — and that is itself")
     print("  the honest result HW.43 asked for: an ACCEPTANCE UNIT per part, not a rubber-stamped pass.")
-    print("  - Pogo spring: physically-right framing needs the sway amplitude at the pin (script 87's inputs).")
+    print("  - Pogo spring: physically-right framing needs the spring geometry (a measured sample) and the sway")
+    print("    amplitude at the pin (script 87's inputs).")
     print("  - PEEK barb: 30-48 MPa readings — a ceiling for HW.26's pending FEA, not an established limit.")
     print("  - Genipin matrix: REMOVE from the S-N framing (category mismatch); its axis is chemical, HW.5.")
     print(f"  bench (🔗) is needed for: pogo spring (if framing-B stress exceeds ~{BENCH_SIGMA_MPA:.0f} MPa read as normal stress —")
-    print(f"  {BENCH_TAU_MPA:.1f} MPa for the wire's shear after the conditional conversion; no mean-stress correction) and PEEK barb")
+    print(f"  {BENCH_TAU_MPA:.1f} MPa for the wire's shear after the von Mises conversion, a model choice; no mean-stress correction) and PEEK barb")
     print("  (if HW.26 FEA finds barb stress above ~30 MPa — the ceiling's low end, so a stress below it is not")
     print("  shown safe) — NOT for genipin (different axis, HW.5, not this item).")
 

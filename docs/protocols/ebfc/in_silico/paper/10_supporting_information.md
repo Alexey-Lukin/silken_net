@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 428 · 47,509,159 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 428 · 47,513,245 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -125,7 +125,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `540c96b92a3d8b411b7b321f13a730a123eb6c19533a49eec2aaebf67f7fa9e8` | Unified thick-wall Lamé model: press-fit interference and thermal mismatch in one model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `f7f565e9b81c5e79219605d8f411e43598f54dfb0aa17e994f754e618fcc8dd3` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `019c603112ff0c5363a0a6a44ecacc40868d69a9f5420bec569780db0b903a26` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
-| `tools/in_silico/scripts/59_contact_endurance_check.py` | `3af8675ec194de2a6116e9733403759eb9fd250dee3757c58c2187c9bcf5e5c2` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
+| `tools/in_silico/scripts/59_contact_endurance_check.py` | `fdcd24f7fa4fc428bd88a6c68be308aa5e1da881f4e8371ae3a189b227cf8ba1` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
 | `tools/in_silico/scripts/60_paper_figures.py` | `a7bea736289d89226b3543be5d955e5a3047d3aa1acff2b983f237c67b4bf811` | Publication figures, rendered entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `1c6ef6bc04313d5a541e0391bab0be023889ff029deb891d938b740ec0a60673` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `d28b6a000241f7bf54f930be78af4f46c5e058e74551286fad724d064d53f96f` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
@@ -300,7 +300,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/collar_lug_sway_fatigue.json` | `59aa08647417bc9d741a0704eff41825ef730d9019c9431acede4bd09db6a4db` | 487,127 |
 | `tools/in_silico/cache/mechanical/collar_running_clearance.json` | `3b9f44aa783c38fc39ee18bfb5eff2ae2dd3a46d38982ccfe242e68d67cd05c3` | 4,209 |
 | `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `bf2e965610f84358fdfedd69ce01838611f3cfdfcb9c2df86bf01aea49941cea` | 5,687 |
-| `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `cc57dd484c7218689e18fc45410a1e9fe46d700a44ba58cc2d452567db6a3c86` | 13,130 |
+| `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `bbbc56469be3d36fbba4e6e52b10cc52ea6ae6895029ef31ef1d97a5264719d4` | 14,541 |
 | `tools/in_silico/cache/mechanical/countersink_ring_exit.json` | `e65c9ee55331a23de93674d1b81a8a832649357933c83c1a023db67da4cb354a` | 1,229,683 |
 | `tools/in_silico/cache/mechanical/dendrometer_support_budget.json` | `ad4b5cb115b24aecfcf6a34a79e315d74a029c417407ef0811e05793b5f3da16` | 935,239 |
 | `tools/in_silico/cache/mechanical/field_strain_campaign.json` | `cd262b585a5c6c63d5f05fd564a46ec68cc5940d2c96ea28a530a57e1e246c49` | 76,422 |
