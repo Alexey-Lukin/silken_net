@@ -1,7 +1,7 @@
 # Soldier — конформне покриття Parylene C 10 µm (CVD): лист сервісові нанесення
 
 > **Що це:** RFQ-аркуш для **сервісу нанесення Parylene C** (CVD-камера, послуга на НАШИХ платах). Покриття — дві круглі плати капсули Soldier (Power Deck і RF Deck). Лист питає маскування, товщину й спосіб її виміру, engineering run, партію, ціну, строк і найперше — **чи беруть замовлення з України**. Рішення «Parylene C 10 µm» уже ухвалене ([`02_02 §3.4`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md)), тож лист його не ставить під сумнів, а купує виконання.
-> **Статус:** 🟡 робочий артефакт (не канон); **написано 2026-09-24, не надіслано, founder тексту ще не бачив — ⛔ до „так“ не надсилати.** Адресата не обрано: лист один і без імені в тексті, **адресата обирає founder** серед чотирьох EU-кандидатів ([`ua_vendor_map §5`](ua_vendor_map.md), рядок «Parylene C, CVD-нанесення»). Числа дзеркалять доми, і дім кожного названо в §1; **правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)). Дім стану — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.11.
+> **Статус:** 🟡 робочий артефакт (не канон); **написано 2026-09-24; ⚖️ founder 2026-11-17 — «так» на текст із поправкою (мезонін тепер обраний у BOM, [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 12), на адресатів і на шкалу відповідей (приватно, корпус памʼяті) — ⛔ без «шли» в день відправки не надсилати.** Адресати — **CPS-IEP і SCS, окремими листами з однаковим текстом** (рекомендація машини: Польща — найближче, SCS — великий спеціалізований сервіс із «engineering run»; Variosystems — EMS із покриттям як побічною послугою, тож для разового запиту найменш імовірний); лист без імені в тексті; кандидати — ([`ua_vendor_map §5`](ua_vendor_map.md), рядок «Parylene C, CVD-нанесення»). Числа дзеркалять доми, і дім кожного названо в §1; **правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)). Дім стану — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.11.
 > **Частина procurement-реєстру** → [`rfq_registry`](rfq_registry.md) (рядок «Капсула електроніка» · hard-constraint дім §4.D).
 >
 > ℹ️ **IP:** defensive-publication ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)): специфікація відкрита, CDA — лише на комерційні умови.
@@ -49,8 +49,8 @@
 
 ## 2. Dispatch checklist
 
-- [ ] 👤 **⛔ До «так» founder-а на цей текст не надсилати.**
-- [ ] 👤 **Адресата обирає founder** з чотирьох EU-кандидатів; текст той самий, імені в ньому немає.
+- [x] 👤 **«Так» founder-а на текст** — 2026-11-17, із поправкою про мезонін. ⛔ Відправка — лише після «шли» в день відправки.
+- [x] 👤 **Адресати** — CPS-IEP і SCS, окремими листами (⚖️ founder 2026-11-17); у день відправки — адреса з контактної сторінки кожного, звірена того ж дня.
 - [ ] 👤 **Перш ніж везти плату через кордон** (не перш ніж надіслати лист): [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.25 і §0 п. 5. Гілку «репрезентативні тестові плати» лист тримає відкритою (п. 7).
 - [ ] 👤 **Після відповіді:** висновок → [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.11; перелік масок → вхід розкладки HW.9 (масочне креслення робиться разом із нею); цін і режимів не комітити (§0 п. 7).
 
@@ -75,7 +75,7 @@ This is a request for information and an indicative quotation, not yet an order.
 - **Two printed circuit board assemblies per node**, stacked one above the other and joined by a board-to-board mezzanine connector: a power board and a radio/microcontroller board.
 - **Outline:** each board is round, **about 20–23 mm in diameter**, possibly larger. The housing is being sized around the final layout, so the outline may still change.
 - **Board:** FR4, 4 layers, 1.6 mm thick, surface finish HASL or ENIG.
-- **Components:** SMD parts plus one through-hole part: a horizontal supercapacitor about 5 mm high, the tallest component; everything else stays below about 2.5 mm (the radio is a bare chip with its own discrete RF front-end; those parts are all selected and stay below about 1.5 mm). The mezzanine connector pair is not selected yet: our leading candidate has a 1.27 mm pitch and a stack height of 8–10 mm, and finer-pitch parts are among the alternatives. A rigid-flex board (two rigid round sections joined by a flexible section) is also being considered instead of the connector pair.
+- **Components:** SMD parts plus one through-hole part: a horizontal supercapacitor about 5 mm high, the tallest component; everything else stays below about 2.5 mm (the radio is a bare chip with its own discrete RF front-end; those parts are all selected and stay below about 1.5 mm). The mezzanine connector pair is a 1.27 mm pitch header and socket with 2 × 5 contacts and a stack height of 8–10 mm; finer-pitch parts remain alternatives. A rigid-flex board (two rigid round sections joined by a flexible section) is also being considered instead of the connector pair.
 - **Operating conditions:** inside a capsule sealed with an O-ring, filled with air (possibly with a desiccant); the temperature ranges from −40 to +85 °C, over many years of outdoor service.
 
 **What must stay free of coating**
