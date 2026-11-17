@@ -38,6 +38,8 @@
 
 **+ Au-coated bracket (7-й купон, обовʼязковий — `cem/ti_coin.au.json`):** DET-electrical **стеля** (Au = найкращий electron transfer), пара до Ta біоінертної стелі → реальні сплави затиснуті між двома межами. Surface-only (дешевий Ti + thin Au), **НЕ** структурний/анкер-кандидат. ⚖️ **Не опційний з 2026-09-18:** несе катод дня 0 — межу осі «оксид ↔ DET» ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)) — і є входом гілок (1)/(2) ратифікованого правила вибору катодного важеля ([`01_03 §3.2`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)): без нього «катод на Au ≈ / помітно кращий за катод на Ti» нічим виміряти. На число 4V («at 12 and at 19») не впливає — це окремий купон.
 
+> ⚖️ **Ланцюг обробки, коли рядки друкують різні бюро — founder 2026-11-17, дослівно «так на пропозицію»:** бюро роблять лише друк, відпуск і зняття підтримок без абразиву; HIP — один виконавець для всіх титанових рядків; травлення з прогріванням — один виконавець на всі купони одним заходом (так зберігається вимога «усі купони травить один виконавець», §1 листа нижче). Так уже домовлено з першим бюро для рядка 1 ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.1).
+
 **Спільна обробка (усі купони):** SLM/LPBF друк → **HIP** (920°C/100-150МПа Ar/2-4год, §4.B — ⚠️ це режим **Ti-6Al-4V**; для решти Ti-сплавів режим не зафіксовано й EN-лист його ПИТАЄ, бо β-трансус Ti-13Nb-13Zr ≈ 735 °C лежить нижче обох температур, а один цикл на всі сплави є відкритим ⚖️ [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24, «CEM-сироти» п. (1); форма, у якій лист це питає, — присуд 2026-09-18, [`01_02 §1.7`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) → **EAAE dual-scale** активація грані (Sa 0.5-5µm + Sv 50-500nm, [`01_02 §1.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) → **dehydrogenation bake** (250°C/10⁻³mbar, <2год після rinse, H<100ppm, §4.B — ⚠️ як і HIP-режим поруч, це відкрита вісь: чи 250 °C дегазує, вирішує пара LECO+XRD за правилом R1–R3, і канон має маршрут БЕЗ bake [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.27). ✅ **Ta і Au розсуджено (⚖️ founder 2026-09-17, дім [`01_02 §1.3a`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) Failure Mode C):** Ta (п.5) — той самий bake, **HIP — N/A** (920 °C = 0.36 T_m Ta), а H — **звітом проти 15 ppm F560**, не прийманням (⊕ 2026-10-15, дім [`01_02 §1.3a`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) C); Au-купон (п.7) і Ta-покриття — Ti-підкладка проходить увесь маршрут Ti-купонів **до** покриття, bake після покриття декларує вендор, roughness factor Au — лише звіт. ⚠️ **EAAE-протокол написаний під 4V і не проганявся жодного разу (фізичної партії немає), тож per-alloy etch-tuning потрібен КОЖНОМУ купону, крім самого 4V-контролю** (CRO; coin виявить — squeeze-data SEM Sa/Sv). 🔴 ⛔ Не звужувати цю вимогу до переліку окремих сплавів: різна хімія травиться інакше, а «інша за 4V» є кожна з п'яти. **Ціна звуження не косметична — вісь травлення задає ECSA, тобто `j_max`, тобто головну метрику down-select'у: сплав, який CRO протравив 4V-протоколом, порівнюється з підтюненими сусідами й програє приладу, а не собі.**
 
 **QC/acceptance (substrate):** **SEM грані ПЕРЕД відправкою — ×5 000 (Sa) і ×50 000 (Sv)**, обов'язок заводу за [`01_02 §1.5`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); не видно нанопор при ×50 000 ⇒ травлення недостатнє ⇒ повторити Крок 4 (⛔ ПЕРШИЙ кадр §1.5, ×500 по макропорах гіроїда, на плоскому купоні предмета не має) · LECO RH404 або еквівалент, H<100ppm (рядок 2, 7Nb — ≤ 90 ppm інструкцією PO, §5a) · ICP-MS промивної води (Al<1ppb для 4V/7Nb) · контроль промивки на залишкові Cl⁻ · F⁻ · SO₄²⁻ перед bake — метод і межу виявлення називає вендор (Крок 5 [`01_02 §1.3`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); дзеркало п.14(c) DMLS-листа).
@@ -62,6 +64,8 @@
 - **Ta** — LPBF **рідко** (вартість/відбивність/ризик принтеру) → **думка-outside workaround: Ta-coating на дешевому Ti-купоні** (біоінертна Ta-поверхня без bulk-Ta друку; EBFC бачить поверхню). ⚠️ **«Bulk-Ta лише за EBM-вендором» ЗНЯТО 2026-09-11:** LPBF-Ta існує промислово (вимір `00_07` HW.24), тож маршрут не обмежений EBM; відкритим лишається інше — **bulk-Ta ⊥ Ta-покриття на Ti**, і це присуд, бо друга гілка перетворює купон на підкладку з покриттям (патерн `.au`) і тягне за собою відпал підкладки.
 - **Ti-15Zr** — Roxolid пропрієтарний (Straumann); AM-порошок research-grade → спец-постачальник або defer.
 
+> ⊕ **2026-11-17, пізніше — для Ti-6Al-7Nb знайдено активну групу:** Кошалінський технологічний університет (Польща) надрукував його 2024 року на LPBF-машині ORLAS CREATOR з порошку SLM Solutions (*Materials* 17:4604, DOI 10.3390/ma17184604, прочитано того ж дня); отже порошок продається комерційно, бракує бюро — і це шлях на потім для бюро з відкритими параметрами машини. Лист (Б) — блок нижче.
+>
 > ⊕ **Desk-прохід 2026-11-17 — рядки першої хвилі без ванадію (CP-Ti · Ti-6Al-7Nb): кандидати, не домовленості, жодному не писали** (звіт з URL кожної сторінки й переліком запитів — корпус естафет, `handoff/2026-11-17_hw24_vfree_lpbf_bureaus.md`; ключові рядки звірено повторно того ж дня). **Перша хвиля:** з титанових сплавів 3D Metal Tech друкує лише Ti-6Al-4V (їхня відповідь 16.11), ALT print — так само (на власній сторінці матеріалів лише «Титан Ti6Al4V»), а сайт Velta переліку матеріалів не має. **CP-Ti:** Amnovis (Аршот, Бельгія; ISO 13485) — валідовані Ti-6Al-4V Grade 23 і Ti Grade 1; 3D Activation (Вісбаден, є й швейцарський сайт) — «Titan Grade 2» під SLM, ISO не заявлено; 3D Systems — матеріал Ti Gr 1 для власних машин, контрактний друк ним не підтверджено; Croom Medical — титан без марки. ⚠️ Grade 4, який стоїть у рядку CP-Ti вище, жодне з цих бюро не називає — доступні Grade 1 і Grade 2. **Ti-6Al-7Nb:** комерційного бюро в Європі й Україні не знайдено — лише дослідницькі групи (Вроцлавська політехніка, Падерборнський університет) і постачальник порошку для їхніх робіт; набору параметрів для цього сплаву не публікує жоден із великих виробників машин.
 >
 > ⊕ **Desk-прохід Tier-2 2026-11-15 — кандидати, не домовленості: жодному з названих нижче ще не писали** (рядки вище НЕ переписано; звіт проходу з URL кожної сторінки — корпус естафет, `handoff/2026-11-15_hw24_tier2_vendor_hunt.md`).
@@ -194,6 +198,64 @@ The technical specification is openly published, so no confidentiality agreement
 Per-alloy **STL** plus a dimensioned **DXF** drawing with title block, one set per alloy, attached to this request. Surface acceptance is **areal Sa per ISO 25178** (0.5–5 µm) together with Sv (50–500 nm): state the instrument, evaluation area and filters you would use, and we will confirm them before the order.
 
 ---
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+## 📤 Dispatch block (EN) — друга хвиля: лише друк, рядки CP-Ti і Ta (copy-region)
+
+> **Репо-нота (в лист не йде).** ⚖️ founder 2026-11-17 — «(А) + (Б)» (купуємо доступне, сильного кандидата тримаємо дослідницьким шляхом), ланцюг обробки з окремими виконавцями (⚖️ вище в §1) і делеговано вибір адресатів; машина обрала: Amnovis — рядок CP-Ti; Croom Medical — обидва рядки; Thrustworks — рядок Ta (кандидати й звірка їхніх сторінок — §2 ⊕). Рядок, якого адресат не друкує, знімається при рендері (`--replace-line`), решта тексту однакова. Числа — з цього аркуша: Ø16 × 1 мм із вушком (§1), 12 на сплав (§1), аргон і кисень камери < 0.1 % (лист першої хвилі), стандарти — лише як хімія (§1). Розвилку «масивний Ta ⊥ Ta на Ti» лист лишає відкритою — питає обидві гілки ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24). Grade 4 — наш орієнтир, не вимога: друкований чистий титан часто міцніший за марку, тож судимо за виміряною міцністю друку. ⛔ До «так» founder-а на текст і «шли» не надсилати; у день відправки — адреса з контактної сторінки кожного й свіжі STL і креслення (`build` · `draw --vendor` для `ti_coin.cpti` / `ti_coin.ta`).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+**Subject line:** RFQ — laser-PBF coupons Ø16 × 1 mm in commercially pure titanium and tantalum: printing and stress relief only (R&D batch)
+
+Dear colleagues,
+
+We are an R&D project in Ukraine developing a sensor node for forest monitoring: a titanium anchor sits in the trunk of a living tree. We are comparing candidate anchor alloys on small flat coupons, which we use as electrodes for electrochemical tests and for measuring the release of metal ions, and we are looking for a laser powder-bed fusion service to print them. This is a request for an indicative quotation, not yet an order.
+
+**Scope: printing only.** We buy printing, a stress-relief heat treatment and support removal. Hot isostatic pressing, surface etching and a dehydrogenation bake are done afterwards by other contractors — one for all alloys of this programme, so that every coupon shares the same surface treatment. For the same reason the surface must stay as printed: please do not blast, polish or coat the coupons, and remove supports without abrasives.
+
+**Items**
+
+- **Geometry:** a flat disc Ø16 mm × 1 mm with a small tab for a clip; the attached STL and dimensioned drawing are the dimensional authority.
+- **Quantity:** 12 coupons per alloy, each alloy identified separately and each coupon packed in its own bag.
+- **Commercially pure titanium:** our reference is Grade 4 (ASTM F67, cited for chemistry only). If you print Grade 1, Grade 2 or your own commercially pure grade, quote that and state its printed yield and tensile strength.
+- **Tantalum** (ASTM F560, cited for chemistry only): bulk tantalum coupons. If you can also deposit tantalum on a titanium coupon of the same geometry, please quote that as an alternative line.
+
+**Please tell us**
+
+1. The price per coupon at 12 per alloy and at a higher count, setup or build-plate charges per alloy, the lead time, and whether a single first-article coupon is possible first.
+2. The powder you would use: designation, specification, particle size and lot traceability, and the oxygen content you certify the lot to, with the measured value.
+3. The build conditions: argon atmosphere and the chamber oxygen level you hold, and the layer thickness of your qualified parameter set.
+4. Your stress-relief regime for each alloy (temperature, time, atmosphere, cooling), or that you would not stress-relieve it.
+5. Mechanical data you can share for these materials as printed or stress-relieved: yield and tensile strength, elongation.
+6. Optionally, if you run hot isostatic pressing in-house, its price as a separate line; we may route it ourselves.
+7. Whether you accept orders from Ukraine, and how you ship (courier, terms of delivery).
+8. Your quality system (certificate and scope) and the documents you issue per lot.
+
+The technical specification of our device is openly published, so no confidentiality agreement is needed to discuss it; we are happy to sign your standard agreement covering commercial terms.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+## 📤 Letter block (EN) — (Б): Ti-6Al-7Nb, дослідницька група (copy-region)
+
+> **Репо-нота (в лист не йде).** ⚖️ founder 2026-11-17 «(Б)»: сильного кандидата без ванадію тримаємо живим дослідницьким шляхом, бо комерційного бюро для Ti-6Al-7Nb не знайдено (§2 ⊕). Адресат — група Кошалінського технологічного університету (Польща), що 2024 року надрукувала Ti-6Al-7Nb на LPBF-машині з порошку, купленого в SLM Solutions (*Materials* 17:4604, 2024, DOI 10.3390/ma17184604, відкритий доступ — прочитано 2026-11-17); вроцлавська група друкувала цей сплав 2011–2015 років — давніше, тож другою. Імена й адреси — лише в журналі листів у памʼяті. Академічний жанр: без нагадування; оплата послугою або спільна публікація — на вибір групи. ⛔ До «так» founder-а на текст і «шли» не надсилати.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+**Subject line:** Ti-6Al-7Nb by laser powder-bed fusion — a small batch of coupons for an R&D project in Ukraine
+
+Dear colleagues,
+
+We read your 2024 paper in Materials on as-built Ti-6Al-4V and Ti-6Al-7Nb produced by selective laser melting. We are an R&D project in Ukraine developing a sensor node for forest monitoring: a titanium anchor sits in the trunk of a living tree, and we are comparing vanadium-free alloys for it on small flat coupons, through electrochemical tests and the release of metal ions. Ti-6Al-7Nb is one of our candidates, and we have not found a commercial service that prints it.
+
+Could your laboratory print a small batch for us: 12 flat discs Ø16 mm × 1 mm with a small tab, printed and stress-relieved only? Hot isostatic pressing, surface etching and baking are done elsewhere. We would pay for it as a service or, if you prefer, treat it as a collaboration — the comparison of the alloys could become a joint publication.
+
+If this is possible, it would help to know the cost and time, the powder lot and its oxygen content, the parameters and stress-relief regime you would use, and any printed mechanical data you already have for this powder. We can send the STL and a drawing straight away.
+
+`[sender's signature — fill in before sending]`
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
