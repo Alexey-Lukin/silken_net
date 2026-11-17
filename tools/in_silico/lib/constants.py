@@ -380,9 +380,12 @@ ALPHA_PEEK_1K = 47e-6            # 1/K — PEEK 450G CTE (5.5× Ti). Address (�
                                  # that window's own spread (once the old Victrex table's value; today's datasheet prints
                                  # 45 «Flow» / 55 «Average» as means up to 143 °C, and 120 / 140 above Tg)
 E_PEEK_PA = 4.0e9               # Pa — PEEK 450G Young's modulus (Victrex 450G datasheet, 23°C)
-NU_PEEK = 0.40                  # — PEEK Poisson's ratio
-PEEK_TG_C = 143.0               # °C — PEEK 450G glass transition (Victrex 450G datasheet, DSC); the relax-floor note below
-                                #   reads the same value. A hot mount above it (01_01 §3, step 5: PEEK at 150 °C) locks a
+NU_PEEK = 0.40                  # — PEEK Poisson's ratio. ⛔ NO SOURCE (00_07 HW.26): published 0.380 at 23 °C (0.366 at 105,
+                                #   0.365 at 129 °C) for UNFILLED PEEK (Nyman et al. 2024, Sci. Rep. 14:31628, Table 5); none found for
+                                #   450G or below 23 °C. Kept until the cascade's sensitivity to 0.38 is measured (one constant, many caches).
+PEEK_TG_C = 143.0               # °C — PEEK 450G glass-transition ONSET (Victrex 450G datasheet, DSC; midpoint 150 °C); the relax-
+                                #   floor note below reads the same value. A hot mount at 150 °C (01_01 §3, step 4) sits at the
+                                #   transition's midpoint, NOT above it (⚖️ founder 2026-11-17, 00_07 HW.26); such a mount locks a
                                 #   bonded or friction-held liner's axial misfit near T_g, not at the assembly temperature (`127`).
 SIGMA_YIELD_PEEK_PA = 100e6     # Pa — PEEK 450G tensile yield (~98-100 MPa)
 # Board stack thermal expansion (HW.43, the pogo gap's thermal travel — script 90). FR-4 below Tg: Panasonic data sheets
@@ -413,9 +416,11 @@ ALPHA_SS302_1K = 9.6e-6 * 1.8           # 1/K — Parker Table 2-5, «Stainless 
 # quasi-Gaussian spectrum of activation energies, not two discrete terms; it motivates a relaxed floor, nothing more
 # (a fractional-Maxwell PEEK-aging fit was the other motivation); the coefficients are kept conservative — at forest temperatures
 # (−30…+40 °C, ≪ Tg 143 °C) the retained fraction is likely HIGHER than 0.65, so a residual force is UNDER-stated
-# and a required initial force OVER-stated, the safe direction for both consumers. The authoritative
+# and a required initial force OVER-stated — the safe direction for 50 and 52, NOT for a consumer whose retained force is
+# itself the load (a preload on a wall, a mean stress at a liner end — 126, 127): there the direction is per consumer. The authoritative
 # Maxwell-Wiechert fit on measured creep is the commercial FEA/Prony vendor's (00_07 HW.26, ⚖️ 2026-09-27);
-# no coefficient is invented here from paywalled data. Consumers: 50 (press-fit P_c) · 52 (bayonet clamp on the rim).
+# no coefficient is invented here from paywalled data. Consumers: 50 (press-fit P_c) · 52 (bayonet clamp on the rim) · 77 ·
+# 87 · 91 · 101 · 102 · 103 · 104 · 126 · 127 (grep `PEEK_RELAX_FLOOR`).
 PEEK_RELAX_FLOOR = 0.65         # — E∞/E0, the retained modulus fraction
 PEEK_RELAX_TAU_YEARS = 1.0      # years — relaxation time constant
 

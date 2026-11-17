@@ -96,7 +96,10 @@ derived (their K(d) stands on the FE and control 7); the FATIGUE relevance of a 
 distance — the theory of critical distances needs a ΔK_th and a plain limit of THIS wire, not in the tree; a grain size)
 is NOT computed; the ROOT's own mean (the seam residual) and (B)'s far field on `97`'s stations are not added (the bias
 above); the baseline alloy's E and ν (the bus alloy is HW.24's bake-off; `86` binds on Ta); T_lock is named, not known —
-the grip's real locking temperature lies between the press and T_g; (D) and (E) not here; one end geometry (a square end
+the grip's real locking temperature lies between the press and T_g; ONE α (ALPHA_PEEK_1K, 47·10⁻⁶ /K) over the whole
+swing from T_lock down to −30 °C (~173 K) and E independent of temperature — the measured 450G α(T) grows toward
+the top of its −100…+100 °C window and the datasheet's mean up to 143 °C is 55 «Average», so the misfit's size is
+a reading of one value, not of the curve (00_07 HW.26: the 45/55 swap flipped no flag here); (D) and (E) not here; one end geometry (a square end
 face, the full wall); the wire straight, the moment constant; `97` rows that refused path points are used as `97` uses
 them, and named in the cache.
 

@@ -75,7 +75,6 @@ CASES = MECH / "gyroid_inclusion_strain_cases.json"
 OUT = MECH / "inclusion_strain_ligament_field.json"
 MEASURES = {"max_principal": "principal_over_sigma_w", "von_mises": "von_mises_over_sigma_w"}
 QUANTILES = ("p99", "p99.9")
-LATTICE_FILLS = ("pores_carry_nothing", "pores_additive_host_sapwood")
 
 
 def _load(name: str, file: str):
@@ -180,6 +179,7 @@ def main() -> int:
                         prin = max(pool, key=lambda c: thr(c, ("max_principal",)))
                         rs = [c["multiaxial_factor"][q][m] for c in pool for m in MEASURES]
                         res[scope] = {"binds_above_theta0_ue": up0(thr(at0)), "theta0_cell": f"{at0['wood']}|s{at0['rung']}",
+                                      "theta0_t_L": at0["t_L"],
                                       "binds_above_theta_free_ue": up0(thr(free)),
                                       "theta_free_cell": f"{free['wood']}|{free['fill']}|th{free['theta_deg']:g}|s{free['rung']}",
                                       "theta_free_t_L": free["t_L"],
@@ -212,7 +212,7 @@ def main() -> int:
         f"with the install angle free ({e['theta_free_cell']}, t_L {e['theta_free_t_L']:.3f}; the off-L components change the peak "
         f"×{min(rf.values()):.2f} to ×{max(rf.values()):.2f} over the share's part there, over the fill's cells ×"
         f"{e['multiaxial_factor_range'][0]:.2f} to ×{e['multiaxial_factor_range'][1]:.2f}) and at θ = 0 above "
-        f"{e['binds_above_theta0_ue']:.0f} µε, where the cube takes more than the wood (t_L > 1); 105's uniaxial reading at t_L = 1 "
+        f"{e['binds_above_theta0_ue']:.0f} µε ({e['theta0_cell']}, t_L {e['theta0_t_L']:.3f}); 105's uniaxial reading at t_L = 1 "
         f"gives {b['uniaxial_105_t_L_1']['any_sampled_angle_ue']:.0f} µε with the angle free and {b['uniaxial_105_t_L_1']['theta0_ue']:.0f} "
         f"µε at θ = 0. On the filled fills, whose "
         f"field is not their own (direction of the error not bounded), the figure reads {b['filled_additive']['binds_above_theta_free_ue']:.0f} "
