@@ -373,7 +373,7 @@ SilkenNet
 
 ## 12. Reminder block (EN) — Veryst: one follow-up on the request of 7 November (copy-region)
 
-> **Репо-нота (в лист не йде).** Одне нагадування Veryst Engineering у треді листа §10 — після семи робочих днів тиші від відправки 2026-11-07, тобто з 2026-11-17 (правило й відлік — [`rfq_registry`](../procurement/rfq_registry.md) §3; ⚖️ founder 2026-11-05: комерційному листу — одне нагадування; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26). Нового не питає: перше речення називає предмет словами теми §10, друге — чи дійшов лист, третє дозволяє часткову відповідь і називає найкорисніше місце, з якого почати, — запитання 1 листа (чи беруться і чи (А) міряють самі), бо від нього залежить, чи решта взагалі потрібна. Поправка до сітки хвостовика (§11) Veryst не стосується: STL він не отримував, а креслення й файл геометрії правильні. ⛔ До «так» founder-а на текст не надсилати; у день відправки — звірити, що в треді немає відповіді (повний список, разом зі спамом). Підпис — `--signature "Best regards,|Oleksii Lukin"`; рядок теми треду — у скретч-копії (скіл `legal-business` §Доменні правила #13).
+> **Репо-нота (в лист не йде).** Одне нагадування Veryst Engineering у треді листа §10 — після семи робочих днів тиші від відправки 2026-11-07, тобто з 2026-11-17 (правило й відлік — [`rfq_registry`](../procurement/rfq_registry.md) §3; ⚖️ founder 2026-11-05: комерційному листу — одне нагадування; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26). Нового не питає: перше речення називає предмет словами теми §10, друге — чи дійшов лист, третє дозволяє часткову відповідь і називає найкорисніше місце, з якого почати, — запитання 1 листа (чи беруться і чи (А) міряють самі), бо від нього залежить, чи решта взагалі потрібна. Поправка до сітки хвостовика (§11) Veryst не стосується: STL він не отримував, а креслення й файл геометрії правильні. ⊕ 2026-11-17 — ⚖️ founder «шли з поправкою»: останній абзац — поправка до §(B) листа §10 («above the PEEK glass transition»), бо 150 °C стоїть посеред склування ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26); нового не питає. ⛔ До «так» founder-а на текст не надсилати; у день відправки — звірити, що в треді немає відповіді (повний список, разом зі спамом). Підпис — `--signature "Best regards,|Oleksii Lukin"`; рядок теми треду — у скретч-копії (скіл `legal-business` §Доменні правила #13).
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
@@ -382,6 +382,8 @@ Hello,
 A short follow-up on my request of 7 November below — a commercial proposal for the retention of a titanium–PEEK mechanical lock with a Prony-series model of PEEK relaxation, with the drawings, the geometry parameters and a calibration case attached.
 
 Could you confirm that it has reached the person who handles such requests? Partial answers are welcome: whether you would take this work on, and whether the PEEK relaxation data would be measured in-house or by a partner laboratory, would be the most useful place to start. If it is not work you take on, a short "no" is useful too.
+
+One correction to the request: the shrink fit at 150 °C sits at the midpoint of the PEEK 450G glass transition (onset 143 °C, midpoint 150 °C, ISO 11357-2), not above it.
 
 `[sender's signature — fill in before sending]`
 
