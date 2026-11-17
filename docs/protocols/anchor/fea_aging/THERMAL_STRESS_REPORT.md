@@ -101,8 +101,9 @@ Contact pressure from the **H7/s6 fit** (ISO 286, Ø11 → 5-34 µm diametral), 
 | 20 yr | **0.32** | **2.16** | ≤ sap → **O-ring carries the seal** |
 
 Model: `P_c(t) = P_c(0)·[E∞/E0 + (1−E∞/E0)·exp(−t/τ)]`, E∞/E0 ≈ 0.65, τ ≈ 1 yr — an **INTERIM
-literature-Prony** estimate (the 2-term structure is validated by published PEEK 450G ISV models — MDPI
-Polymers 2021 PMC8199459, two relaxing components — and kept **conservative**: at forest temps (≪ Tg 143°C)
+literature-Prony** estimate (the 2-term floor-plus-decay structure is ours — ⚠️ corrected 2026-11-17: the source once
+cited for it, Drozdov & Christiansen 2021, Polymers 13:1779 (PMC8199459), tested KETRON 1000 PEEK, not 450G, and has a
+continuous spectrum of activation energies, not two discrete terms, so it motivates a relaxed floor only — and kept **conservative**: at forest temps (≪ Tg 143°C)
 PEEK relaxation is slow → real retention likely > 0.65, so this **under-states** residual P_c). The
 authoritative multi-term Maxwell-Wiechert fit stays with an external commercial FEA executor (⚖️ ratified 2026-09-27; shortlist — `00_07` HW.26).
 

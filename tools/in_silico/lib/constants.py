@@ -402,9 +402,12 @@ ALPHA_SS302_1K = 9.6e-6 * 1.8           # 1/K — Parker Table 2-5, «Stainless 
 # PEEK keeps a relaxed (equilibrium) modulus — its crystalline phase forms a permanent elastic network — so stress
 # decays toward a floor E∞, never to zero — 2-term Prony:
 #   σ(t) = σ(0) · [ E∞/E0 + (1 − E∞/E0)·exp(−t/τ) ]
-# INTERIM literature values (HW.3.IS 2026-06-21): the 2-term STRUCTURE follows published PEEK 450G viscoelastic
-# models (MDPI Polymers 2021, PMC8199459 — an ISV model with TWO relaxing components — plus a fractional-Maxwell
-# PEEK-aging fit); the coefficients are kept conservative — at forest temperatures
+# INTERIM literature values (HW.3.IS 2026-06-21): the 2-term floor-plus-decay STRUCTURE is OURS. ⚠️ Corrected 2026-11-17
+# (00_07 HW.26; provenance — the desk pass of that day, handoff corpus): the source once cited for it, Drozdov &
+# Christiansen 2021 (Polymers 13:1779, DOI 10.3390/polym13111779, PMC8199459), is NOT a 450G model — it tested KETRON 1000
+# PEEK extruded sheet, carries no Prony constants, and splits the network into permanent and temporary chains with a
+# quasi-Gaussian spectrum of activation energies, not two discrete terms; it motivates a relaxed floor, nothing more
+# (a fractional-Maxwell PEEK-aging fit was the other motivation); the coefficients are kept conservative — at forest temperatures
 # (−30…+40 °C, ≪ Tg 143 °C) the retained fraction is likely HIGHER than 0.65, so a residual force is UNDER-stated
 # and a required initial force OVER-stated, the safe direction for both consumers. The authoritative
 # Maxwell-Wiechert fit on measured creep is the commercial FEA/Prony vendor's (00_07 HW.26, ⚖️ 2026-09-27);
