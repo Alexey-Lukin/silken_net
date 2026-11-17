@@ -191,6 +191,52 @@ Dear colleagues,
 
 ---
 
+## 📤 Follow-up block (EN) — optional DMA and stress-relaxation line (both laboratories, separate emails, in their threads)
+
+> **Репо-нота (у лист НЕ йде).** ⚖️ founder 2026-11-17, дослівно «в - обидва» ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26): дані PEEK 450G для FEA замка — базовий кейс на опублікованих (бриф [`lock_fea_prony_brief`](../outreach/lock_fea_prony_brief.md) §13), а виміри — опцією до ЦЬОГО раунду, окремого не відкриваємо. Перелік вимірів — з §13 брифу («що мусять дати виміри»). Відповіддю в треді кожного з двох листів від 16 листопада; відправка — на «шли» founder-а. Шкали раунду втоми ця опція не змінює: вона судиться окремо, як і опція трубки.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-нота, у лист вона НЕ йде.
+
+Dear colleagues,
+
+A short addition to our request on the fatigue of PEEK. For a finite-element analysis of the same part we now also need the viscoelastic and low-temperature data of the same material, and we would like to add them to your quotation as a separate optional line, on specimens of the same grade, Victrex PEEK 450G:
+
+1. DMA in tension or in bending from −40 to 160 °C at three or more frequencies (for example 0.1, 1 and 10 Hz), with the heating rate stated: storage and loss modulus and tan δ, from which we will derive the time–temperature shift below the glass transition.
+2. Stress relaxation in tension at a small initial stress (2–6 MPa) at −30, 23 and 40 °C, each for at least 1000 h, or the longest duration you can offer.
+3. Tensile tests at −30 °C: modulus, Poisson's ratio (strain gauges or a biaxial extensometer) and yield stress; and Poisson's ratio at 23 °C on the same set-up.
+4. Crystallinity of the tested material by DSC.
+
+All on dry specimens and, if you can, also on specimens saturated in water at 23 °C; please quote the dry and the saturated set separately. Please price each item separately and state the specimen geometry, the number of specimens, the lead time, and which items you would run in-house. If an item is outside your scope, a short "no" for it is very helpful.
+
+Kind regards,
+Oleksii Lukin
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+## 📤 Follow-up block (UA) — опція DMA й релаксації напружень (установа НАН, у треді ТЗ)
+
+> **Репо-нота (у лист НЕ йде).** Той самий присуд і той самий перелік, що в EN-блоці вище; відповіддю в треді ТЗ від 16 листопада; відправка — на «шли» founder-а.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Шановні колеги!
+
+Коротке доповнення до нашого технічного завдання на втомні випробування PEEK. Для скінченно-елементного розрахунку тієї самої деталі нам потрібні ще в'язкопружні й низькотемпературні характеристики того самого матеріалу, і ми просимо додати їх до вашої пропозиції окремою необов'язковою позицією — на зразках тієї самої марки, Victrex PEEK 450G:
+
+1. DMA на розтяг або згин від −40 до 160 °C на трьох і більше частотах (наприклад, 0,1, 1 і 10 Гц), зі швидкістю нагріву, вказаною у звіті: модулі накопичення й втрат і tg δ — з них ми виведемо температурно-часовий зсув нижче склування.
+2. Релаксація напружень на розтяг при малому початковому напруженні (2–6 МПа) при −30, 23 і 40 °C — кожна щонайменше 1000 год або найдовша тривалість, яку ви можете запропонувати.
+3. Випробування на розтяг при −30 °C: модуль, коефіцієнт Пуассона (тензорезистори або двоосьовий екстензометр) і межа плинності; а також коефіцієнт Пуассона при 23 °C на тій самій установці.
+4. Ступінь кристалічності випробуваного матеріалу методом ДСК.
+
+Усе — на сухих зразках і, якщо можете, також на зразках, насичених водою при 23 °C; сухий і насичений набори просимо оцінити окремо. Просимо вказати вартість кожної позиції окремо, геометрію й кількість зразків, строки і які позиції ви виконаєте власними силами. Якщо якась позиція поза вашими можливостями, коротке «ні» щодо неї теж дуже допоможе.
+
+З повагою,
+Олексій Лукін
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 4. Cross-references
 
 | Ресурс | Що бере |
