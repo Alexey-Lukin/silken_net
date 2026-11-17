@@ -233,7 +233,8 @@ oriented with the shallow flank facing downward. The sleeve is heated to 150 °C
 controlled force of 800–1200 N; the polymer flows into the space between the barbs and locks onto them as it cools.
 ⚠️ **Corrected 2026-11-17:** earlier revisions placed 150 °C above the PEEK glass transition and called the polymer
 softened; for the reference grade 150 °C is the midpoint of the transition (onset 143 °C), where the modulus is still
-about 0.8 of its room-temperature value while the yield stress has fallen to about 0.3 of it — the barbs enter by
+about 0.8 of its room-temperature value (a published model for another grade, derived by us) while the yield stress
+has fallen to about 0.3 of it (read from a manufacturer's figure) — the barbs enter by
 plastic flow, not into a soft polymer. The anchor is thus assembled without adhesives,
 threads or welding of dissimilar materials. The barbs give axial retention only — neither sealing nor
 resistance to rotation. *Practised* (pull-out retention not yet measured;
