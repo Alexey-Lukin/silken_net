@@ -141,6 +141,7 @@ FEA = REPO_ROOT / "tools/cad/cache/fea/anchor_zone1_pine.json"
 PERIODIC = REPO_ROOT / "tools/cad/cache/fea/periodic_homogenization.network.w100.c1.json"
 SRC105 = MECH / "printed_part_sway_stress.json"
 OUT = MECH / "gyroid_wood_strain_share.json"
+STRAIN_CASES_OUT = MECH / "gyroid_inclusion_strain_cases.json"   # input of `fea --periodic --strain-cases` (00_07 HW.23)
 
 # ── Güntekin & Akar 2019, Drewno 62(204):41–53, doi 10.12841/wood.1644-3985.220.09 — read in the primary 2026-10-21 ──
 # P. sylvestris sapwood (Bolu-Aladağlar, Turkey; logs ≈ 50 cm, 1–3 m above ground), compression with a biaxial
@@ -344,6 +345,7 @@ READINGS = ("stiff", "soft", "mean")
 FILLS = ("pores_carry_nothing", "pores_additive_host_sapwood", "pores_voigt_phase_bound")
 LATTICE_FILLS = ("pores_carry_nothing", "pores_additive_host_sapwood")     # the readings the lattice's C44 enters
 THETA_DEG = tuple(2.5 * i for i in range(19))          # 0 … 45°, the install rotation of the cube about the anode's axis
+SAMPLED_FIELD_DEG = (0.0, 22.5, 45.0)                    # `105`'s periodic-field angles — the strain cases' grid (00_07 HW.23)
 A_POINTS = 41                                           # Zener ratio grid, geometric from A_FLOOR·A*_V to A*_V
 A_FLOOR = 1e-3                                          # the grid's lower end as a fraction of A*_V (the range is open at 0)
 N_QUAD = 720                                            # ω points of Mura's integral (periodic integrand — midpoint rule)
@@ -1177,17 +1179,18 @@ def main() -> int:
                       for key in forms for th in (0.0, 22.5, 45.0))
     assert e_dir_worst < 1e-10, f"the off-axis modulus closed form disagrees with the tensor: {e_dir_worst}"
 
-    def t_l_form(wk: str, al: str, fill: str, key: tuple, th: float) -> float:
+    def ci_form(wk: str, al: str, fill: str, key: tuple, th: float) -> np.ndarray:
         wv = allw[wk]
         c44, ph = forms[key][2], forms[key][3]
         if fill == "pores_voigt_phase_bound":
-            ci = ph * ti_phase[al] + (1 - ph) * wv["_cm"]
-        else:
-            base, shear = fparts[key][th]
-            ci = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3 * (base + c44 * shear)
-            if fill == "pores_additive_host_sapwood":
-                ci = ci + (1 - ph) * wv["_cm"]
-        return float(inclusion_strain(wv["_cm"], ci, wv["_s"], wv["_eps"])[0] / wv["_eps"][0])
+            return ph * ti_phase[al] + (1 - ph) * wv["_cm"]
+        base, shear = fparts[key][th]
+        ci = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3 * (base + c44 * shear)
+        return ci + (1 - ph) * wv["_cm"] if fill == "pores_additive_host_sapwood" else ci
+
+    def t_l_form(wk: str, al: str, fill: str, key: tuple, th: float) -> float:
+        wv = allw[wk]
+        return float(inclusion_strain(wv["_cm"], ci_form(wk, al, fill, key, th), wv["_s"], wv["_eps"])[0] / wv["_eps"][0])
 
     # Control: on the part body the Zener form IS a point of the sweep, so the two paths must agree. CAN catch: a slip in
     # how t_l_form composes the lattice, the pores or φ. CANNOT catch: an error the sweep shares (the closed-form
@@ -1211,6 +1214,60 @@ def main() -> int:
         t_form[key] = {(al, wk, fill): [t_l_form(wk, al, fill, key, th) for th in THETA_DEG]
                        for al in ALLOY_PROPERTIES for wk in union_keys for fill in FILLS}
         assert min(min(v) for v in t_form[key].values()) > 0, f"a non-positive share on {key}"
+
+    # ── Export: the inclusion's FULL strain per cell, in the lattice's cube frame, for the periodic field (00_07 HW.23) ──
+    # t_L is one component of ε_I; the ligament field under the inclusion's own multiaxial strain needs all six. The file
+    # feeds `fea --periodic --strain-cases` (tools/cad) and `129` reads both. The material-tensor form only — the strain and
+    # the field from ONE tensor — at `105`'s three sampled angles, on the Scots pine cells; per unit far-field ε_L; the cube
+    # frame is x = [100] (θ off L in the L–T plane), z = [001] = R (the anchor's axis), engineering shear (C#'s Voigt).
+    def eps_incl_cube(wk: str, al: str, fill: str, key: tuple, th: float) -> tuple[list[float], float]:
+        wv = allw[wk]
+        e_m = inclusion_strain(wv["_cm"], ci_form(wk, al, fill, key, th), wv["_s"], wv["_eps"]) / wv["_eps"][0]
+        e_t = np.zeros((3, 3))
+        for a_, (i, j) in enumerate(VOIGT):
+            e_t[i, j] = e_t[j, i] = e_m[a_] / MW[a_]
+        co, si = math.cos(math.radians(th)), math.sin(math.radians(th))
+        q = np.array([[co, -si, 0.0], [si, co, 0.0], [0.0, 0.0, 1.0]])
+        e_c = q.T @ e_t @ q
+        back = q @ e_c @ q.T
+        assert np.abs(back - e_t).max() < 1e-14 * max(1.0, np.abs(e_t).max()), "q is not orthogonal"
+        out = [float(e_c[0, 0]), float(e_c[1, 1]), float(e_c[2, 2]),
+               float(2 * e_c[1, 2]), float(2 * e_c[0, 2]), float(2 * e_c[0, 1])]
+        if fill == "pores_carry_nothing":
+            # control — the energy of the inclusion's strain on its OWN stiffness, in the wood frame (Mandel) and in the cube
+            # frame (engineering Voigt on the rung's cubic tensor), must agree: CAN catch a dropped ×2 on the shear, a rotation
+            # of the wrong sense, another C_I than the share's; CANNOT catch an error shared by ci_form and the cubic tensor
+            # (the fills with tissue have no lattice-only tensor, so they carry the rotation of this one)
+            c11, c12, c44 = forms[key][0], forms[key][1], forms[key][2]
+            c_cub = np.array([[c11, c12, c12, 0, 0, 0], [c12, c11, c12, 0, 0, 0], [c12, c12, c11, 0, 0, 0],
+                              [0, 0, 0, c44, 0, 0], [0, 0, 0, 0, c44, 0], [0, 0, 0, 0, 0, c44]])
+            w_wood = float(e_m @ ci_form(wk, al, fill, key, th) @ e_m) / (ALLOY_PROPERTIES[al]["E_GPa"] * 1e3)
+            w_cube = float(np.array(out) @ c_cub @ np.array(out))
+            assert abs(w_wood / w_cube - 1.0) < 1e-10, f"strain energy wood ⊥ cube frame: {w_wood} vs {w_cube}"
+        return out, float(e_m[0])
+
+    strain_cases = []
+    for st in PERIODIC_RUNGS:
+        key = ("material_tensor", st)
+        for al in ALLOY_PROPERTIES:
+            for wk in live:
+                for fill in FILLS:
+                    for th in SAMPLED_FIELD_DEG:
+                        strain, t_l_check = eps_incl_cube(wk, al, fill, key, th)
+                        # control — CAN catch: the export built on another C_I or another far field than the share; CANNOT
+                        # catch a wrong cube-frame rotation (the energy invariant inside eps_incl_cube does, on the empty fill)
+                        assert abs(t_l_check - t_l_form(wk, al, fill, key, th)) < 1e-12, "export ⊥ share"
+                        strain_cases.append({"label": f"{al}|{wk}|{fill}|th{th:g}|s{st}", "steps_per_period": st,
+                                             "strain": strain, "t_L": t_l_check})
+    STRAIN_CASES_OUT.write_text(json.dumps({
+        "source": "106_gyroid_wood_strain_share.py — the inclusion's uniform strain (Eshelby, orthotropic wood), material-tensor form",
+        "frame": "lattice cube frame: x = [100] (θ off L in the L–T plane), y = [010], z = [001] = R (the anchor's axis); "
+                 "Voigt [xx, yy, zz, yz, zx, xy] with engineering shear",
+        "per": "unit far-field strain along L (the stem's axis) under uniaxial stress σ_L",
+        "rung_tensors": {str(st): {"C11": forms[("material_tensor", st)][0], "C12": forms[("material_tensor", st)][1],
+                                   "C44": forms[("material_tensor", st)][2],
+                                   "solid_fraction": forms[("material_tensor", st)][3]} for st in PERIODIC_RUNGS},
+        "cases": strain_cases}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
     def measured(keys: list[str]) -> dict:
         out = {}

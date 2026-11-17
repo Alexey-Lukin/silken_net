@@ -2153,10 +2153,10 @@ internal static class Program
         string? strName = PeriodicCacheName(bSheet, fWall, nCells);
         // ⊕ HW.23: `--strain-cases <file.json>` — the ligament field under GIVEN macro strains (the inclusion's own multiaxial
         //    strain, exported by the in-silico pipeline). It writes its OWN file, never the committed ladder above: the ladder is
-        //    pinned by canon and a bare run must reproduce it (picogk gotcha #14); the cases' file holds C beside each case so its
-        //    reader can assert the tensor is the ladder's.
+        //    pinned by canon and a bare run must reproduce it (picogk gotcha #14); the strain-field file holds C beside each row so
+        //    its reader can assert the tensor is the ladder's (and the exporter's cases name the rung tensor they were built on).
         string? strCases = ArgStr(args, "--strain-cases", null);
-        List<(string Label, double[] Strain)>? aCases = null;
+        List<(string Label, double[] Strain, int? Steps)>? aCases = null;
         string strCasesSource = "";
         if (strCases is not null)
         {
@@ -2172,7 +2172,9 @@ internal static class Program
                 double[] aStrain = [.. c.GetProperty("strain").EnumerateArray().Select(x => x.GetDouble())];
                 if (aStrain.Length != 6)
                     return Fail($"fea --periodic --strain-cases: case «{strLabel}» has {aStrain.Length} components, not 6 (Voigt, engineering shear)");
-                aCases.Add((strLabel, aStrain));
+                // a case may name the rung its strain was derived on — then it is read on that rung only, not on every row
+                int? nCaseSteps = c.TryGetProperty("steps_per_period", out JsonElement eSt) ? eSt.GetInt32() : null;
+                aCases.Add((strLabel, aStrain, nCaseSteps));
             }
             if (aCases.Count == 0 || aCases.Select(c => c.Label).Distinct().Count() != aCases.Count)
                 return Fail("fea --periodic --strain-cases: the cases must be non-empty and their labels unique");
@@ -2210,7 +2212,9 @@ internal static class Program
                         dCalibration = Math.Max(dCalibration, Math.Abs(aCs[i, j] - aD[i, j]));
             }
 
-            VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(grid, aThetas, aStrainCases: aCases);
+            List<(string Label, double[] Strain)>? aRowCases = aCases?
+                .Where(c => c.Steps is null || c.Steps == nSteps).Select(c => (c.Label, c.Strain)).ToList();
+            VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(grid, aThetas, aStrainCases: aRowCases);
             VoxelFea.CubicReading cubic = VoxelFea.Cubic(r.C);
             bConverged &= r.Converged;
             double dPorosity = Connectivity.Porosity(grid);
@@ -2271,10 +2275,14 @@ internal static class Program
                     ["von_mises_over_sigma_w"] = Quantiles(f.VonMisesOverSigmaW),
                     ["share_above_sigma_w"] = f.ShareAboveSigmaW,
                 }).ToArray();
-                double dWorstId = r.StrainFields.Max(f => f.EnergyIdentityResidual);
-                double[] aP99 = [.. r.StrainFields.Select(f => f.PrincipalOverSigmaW[Array.IndexOf(VoxelFea.FieldQuantiles, 0.99)])];
-                Console.WriteLine($"         {r.StrainFields.Length} strain cases · max|σ_i|/σ_W p99 {aP99.Min():F3}–{aP99.Max():F3} · " +
-                                  $"worst energy identity {dWorstId:E1}");
+                if (r.StrainFields.Length > 0)
+                {
+                    double dWorstId = r.StrainFields.Max(f => f.EnergyIdentityResidual);
+                    double[] aP99 = [.. r.StrainFields.Select(f => f.PrincipalOverSigmaW[Array.IndexOf(VoxelFea.FieldQuantiles, 0.99)])];
+                    Console.WriteLine($"         {r.StrainFields.Length} strain cases · max|σ_i|/σ_W p99 {aP99.Min():F3}–{aP99.Max():F3} · " +
+                                      $"worst energy identity {dWorstId:E1}");
+                }
+                else Console.WriteLine("         no strain case names this rung");
             }
         }
 

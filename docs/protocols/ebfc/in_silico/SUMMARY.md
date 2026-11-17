@@ -1237,7 +1237,7 @@ bearing, pressed by the sleeve's top face (31.9–49.1 MPa at 473 N). The Zone 3
 
 ⚠️ **Bounds.** The shank's nominal is its axial term only: the pin's bending by the stem's transverse shear and its
 anticlastic curvature (S5) is not computed. E_z* and k_p of the INFINITE lattice are read from the periodic voxel case only as the
-uniaxial-state reading above, never as a multiplier of this bound; the inclusion's field under the wood's multiaxial strain is not in that cache (its cases are uniaxial), the field under traction has no case, and the junction's stress needs a
+uniaxial-state reading above, never as a multiplier of this bound; the inclusion's field under the wood's multiaxial strain is not in that cache (its cases are uniaxial — read by `129`, the HW.23 section after `128`), the field under traction has no case, and the junction's stress needs a
 junction model (gyroid + solid + sleeve end + wood); t_L is `106`'s (next section) and hangs on the tissue in the pores,
 the wood's reading and moisture, and off the cube axis on the lattice's shear modulus; the callus annulus's stiffness is unknown. `62` counts first-mode cycles,
 not strain ranges, so no amplitude here is paired with a count — the field record does that. No K_t (barb root, groove,
@@ -1647,6 +1647,31 @@ lowers the turn); the collar is not drawn (02_02 §4.4 — the band, height and 
 walls with R/t < 10 are outside thin-shell theory; the collar's membrane coupling to the disc, the ring's lift between
 lugs and the lugs' unequal sharing are not computed; the lug on the wall is a local shell problem (FE). Cache:
 `mechanical/collar_lug_sway_fatigue.json`.
+
+---
+
+## HW.23 — The Ligament Field under the Inclusion's Own Strain (script 129)
+
+`105` reads the ligament peak under a unit UNIAXIAL macro stress at a share t_L = 1; the bonded gyroid in the wood is strained
+multiaxially (01_01 §5.2, ceiling (4)). `129` reads the field under each cell's own strain: `106` exports the Eshelby
+inclusion's full ε_I per cell (Scots pine readings × alloys × fills, per unit far-field ε_L, on the material-tensor form of
+each rung, at `105`'s three angles) into the lattice's cube frame, and `fea --periodic --strain-cases` superposes the same
+rung's six unit solutions under it (tools/cad, `periodic_strain_fields.*`).
+
+Under the inclusion's own multiaxial strain (106's Eshelby ε_I per cell, the material-tensor form of each rung, 105's three angles), on the empty-pore fill — the one where the strain and the field are one body — the ligament peak on a large stem at SF 2 (p99) binds above a surface strain of 930 µε for Ti-6Al-4V with the install angle free (rh95|stiff|pores_carry_nothing|th45|s24, t_L 0.779; the off-L components change the peak ×1.01 to ×1.01 over the share's part there, over the fill's cells ×0.98 to ×2.35) and at θ = 0 above 565 µε, where the cube takes more than the wood (t_L > 1); 105's uniaxial reading at t_L = 1 gives 731 µε with the angle free and 551 µε at θ = 0. On the filled fills, whose field is not their own (direction of the error not bounded), the figure reads 1158 µε (additive) and 1361 µε (Voigt bound). The source day on a large stem at SF 2 against the empty-pore threshold: the median (918 µε) reaches it for CP-Ti-Gr4, Ta at p99 and Ti-6Al-4V, Ti-6Al-7Nb, CP-Ti-Gr4, beta-Ti-13Nb-13Zr, Ta, Ti-15Zr at p99.9; the upper whisker (1837 µε) for Ti-6Al-4V, Ti-6Al-7Nb, CP-Ti-Gr4, beta-Ti-13Nb-13Zr, Ta, Ti-15Zr at p99 and Ti-6Al-4V, Ti-6Al-7Nb, CP-Ti-Gr4, beta-Ti-13Nb-13Zr, Ta, Ti-15Zr at p99.9.
+
+**How to read it.** The peak per unit far-field strain is q·σ_W under the cell's own ε_I, so the threshold carries the
+share t_L and the off-L components together; R = peak(ε_I) / (t_L · `105`'s uniaxial peak on the same rung, angle and
+measure) divides the share out — R > 1 means the multiaxial state raises the peak beyond what the share predicts. Only the
+empty-pore fill puts the strain and the field on one body, so it is the binding scope; the filled fills build ε_I on a body
+the field does not have, and that error has no established sign. The binding rule is `105`'s: the lowest peak over rungs ×
+measures, the highest threshold over the alloy's cells and, with the install angle free, over the three sampled angles —
+rounded up; at θ = 0 the cube takes more than the wood (t_L > 1), which is why that threshold is the lower one.
+
+**Ceilings.** Three sampled angles, not every angle; the pores' tissue enters ε_I only, never the field; the part-body C44
+forms of `106` are not read (their strain is on another body than the field's); the junction, the rim and any K_t of a
+smooth ligament are outside (01_01 §5.2 ceiling (3)); Scots pine readings only; ε_RR is the far field's (`106`'s infinite
+cylinder). Cache: `mechanical/inclusion_strain_ligament_field.json`.
 
 ---
 

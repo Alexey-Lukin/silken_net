@@ -15338,3 +15338,12 @@ def test_end128_text_follows_the_cache():
     assert " ".join(verdict.split()) in text, f"128 verdict missing or stale:\n{verdict}"
     assert " ".join(table.split()) in text, f"128 K_f table missing or stale:\n{table}"
 
+
+
+# ── 129 — the ligament field under the inclusion's own strain: the verdict stands in SUMMARY verbatim ──────────────────
+def test_129_verdict_follows_the_cache():
+    """129's verdict (built from its cache) stands in SUMMARY verbatim. CAN catch: a re-run that moves a threshold, a
+    factor, a cell or the source-day split while the doc keeps the old one. CANNOT catch: the prose around it."""
+    d = json.loads((CACHE / "mechanical/inclusion_strain_ligament_field.json").read_text(encoding="utf-8"))
+    text = " ".join(doc(SUMMARY).split())
+    assert " ".join(d["verdict"].split()) in text, f"129 verdict missing or stale:\n{d['verdict']}"
