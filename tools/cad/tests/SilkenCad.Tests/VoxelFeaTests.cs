@@ -676,6 +676,56 @@ public class VoxelFeaTests
         Assert.True(f.EnergyIdentityResidual < 1e-12);
     }
 
+    // A STRAIN case (`--strain-cases`, 00_07 HW.23) is the same superposition with the strain given: fed the very macro strain a
+    // uniaxial case derives (ε̄ = C⁻¹Σ), it must read that case's field — σ_W, every quantile, the share above — and its energy
+    // identity against εᵀ·C·ε. MUTATION: scale the superposed strain, drop a shear component or read the energy against Σ·ε of
+    // another case ⇒ the quantiles or the identity part from the uniaxial field's.
+    [Fact]
+    public void A_Strain_Case_Fed_The_Uniaxial_Strain_Reads_The_Uniaxial_Field()
+    {
+        Connectivity.Grid grid = VoxelFea.SampleLatticeCube(2.0f, 0.10f, bNetwork: true, 1, 8);
+        VoxelFea.PeriodicResult r0 = VoxelFea.PeriodicHomogenization(grid, [22.5], dTol: 1e-11);
+        double th = 22.5 * Math.PI / 180.0;
+        double[] aSigma = [Math.Cos(th) * Math.Cos(th), Math.Sin(th) * Math.Sin(th), 0.0, 0.0, 0.0, Math.Cos(th) * Math.Sin(th)];
+        double[] aEps = SolveSix(r0.C, aSigma);
+        VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(grid, [22.5], dTol: 1e-11, aStrainCases: [("uni22.5", aEps)]);
+        VoxelFea.UniaxialField u = Assert.Single(r.Fields);
+        VoxelFea.StrainCaseField s = Assert.Single(r.StrainFields);
+        Assert.True(Math.Abs(s.SigmaW - u.SigmaWPerMacroStress) < 1e-9 * u.SigmaWPerMacroStress, $"σ_W {s.SigmaW} vs {u.SigmaWPerMacroStress}");
+        for (int i = 0; i < u.PrincipalOverSigmaW.Length; i++)
+        {
+            Assert.True(Math.Abs(s.PrincipalOverSigmaW[i] - u.PrincipalOverSigmaW[i]) < 1e-9, $"principal quantile {i}");
+            Assert.True(Math.Abs(s.VonMisesOverSigmaW[i] - u.VonMisesOverSigmaW[i]) < 1e-9, $"von Mises quantile {i}");
+        }
+        Assert.Equal(u.ShareAboveSigmaW, s.ShareAboveSigmaW);
+        Assert.True(s.EnergyIdentityResidual < 1e-8, $"energy identity {s.EnergyIdentityResidual:E2}");
+        // a scaled strain scales σ_W and leaves every ratio — the quantiles are over σ_W, so they are scale-free
+        VoxelFea.PeriodicResult r2 = VoxelFea.PeriodicHomogenization(grid, dTol: 1e-11, aStrainCases: [("x3", [.. aEps.Select(x => 3.0 * x)])]);
+        VoxelFea.StrainCaseField s3 = Assert.Single(r2.StrainFields);
+        Assert.True(Math.Abs(s3.SigmaW - 3.0 * s.SigmaW) < 1e-9 * s3.SigmaW, "σ_W must scale with the strain");
+        Assert.True(Math.Abs(s3.PrincipalOverSigmaW[2] - s.PrincipalOverSigmaW[2]) < 1e-9, "a quantile over σ_W must not scale");
+    }
+
+    private static double[] SolveSix(double[,] a, double[] b)
+    {
+        int n = b.Length;
+        var m = new double[n, n + 1];
+        for (int i = 0; i < n; i++) { for (int j = 0; j < n; j++) m[i, j] = a[i, j]; m[i, n] = b[i]; }
+        for (int c = 0; c < n; c++)
+        {
+            int piv = c;
+            for (int i = c + 1; i < n; i++) if (Math.Abs(m[i, c]) > Math.Abs(m[piv, c])) piv = i;
+            for (int j = 0; j <= n; j++) (m[c, j], m[piv, j]) = (m[piv, j], m[c, j]);
+            for (int i = 0; i < n; i++)
+            {
+                if (i == c) continue;
+                double f = m[i, c] / m[c, c];
+                for (int j = c; j <= n; j++) m[i, j] -= f * m[c, j];
+            }
+        }
+        return [.. Enumerable.Range(0, n).Select(i => m[i, n] / m[i, i])];
+    }
+
     // 🔴 On the real lattice the field is NOT uniform, and the check that it is the right field is energetic: the Gauss-point
     // energy of the superposed field, over the metal and back to the cell, must equal the macro energy the tensor gives
     // (½·Σ²/E_dir) — a superposition with wrong coefficients, or a stress read at points the element matrix does not integrate,

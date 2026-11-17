@@ -1630,7 +1630,7 @@ internal static class Program
             "  fea <cem.json> --traction (--step-mm H | --step-div N)   STATIC in-plane modulus of the part at one step → cache/fea/<name>.traction.h<µm>um.json\n" +
             "  fea --periodic    the lattice's EFFECTIVE tensor (C11 · C12 · C44) and its ligament stress field, periodic conditions on one\n" +
             "                    period cell — a material, not the part → cache/fea/periodic_homogenization.*  [--wall | --period | --cells |\n" +
-            "                    --steps-per-period | --thetas | --sheet]\n" +
+            "                    --steps-per-period | --thetas | --sheet | --strain-cases <cases.json> → periodic_strain_fields.*]\n" +
             "  render <cem.json> PicoGK native-viewer screenshot → out/*.png (needs a display)\n" +
             "  section <cem.json>  the same as a −X cutaway\n" +
             "  probe <voxel-mm>  falsifiable probes of PicoGK-kernel assumptions, not of our geometry");
@@ -1683,7 +1683,9 @@ internal static class Program
             // ⛔ One specimen per run: the periodic case reads the MATERIAL (a period cell), every other verb a specimen —
             //    a flag of theirs silently ignored here would caption a material number as a part's.
             string[] aForeign = ["--fit", "--ladder", "--sweep", "--step-div", "--step-mm", "--walls", "--with-radial", "--face-offsets-mm"];
-            if (args.Any(a => aForeign.Contains(a) || a.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
+            int iCases = Array.IndexOf(args, "--strain-cases");     // its VALUE is a .json of macro strains, not a manifest
+            if (args.Where((a, i) => i != iCases + 1 || iCases < 0)
+                    .Any(a => aForeign.Contains(a) || a.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
                 return Fail("fea --periodic reads one period cell of the lattice at its own --steps-per-period ladder, not a manifest — " +
                             "a part or cube flag here would be silently ignored, so run those verbs separately");
             return FeaPeriodic(args);
@@ -2149,6 +2151,34 @@ internal static class Program
         double[] aThetas = [.. (ArgStr(args, "--thetas", "0,22.5,45") ?? "").Split(',')
             .Select(s => double.Parse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture))];
         string? strName = PeriodicCacheName(bSheet, fWall, nCells);
+        // ⊕ HW.23: `--strain-cases <file.json>` — the ligament field under GIVEN macro strains (the inclusion's own multiaxial
+        //    strain, exported by the in-silico pipeline). It writes its OWN file, never the committed ladder above: the ladder is
+        //    pinned by canon and a bare run must reproduce it (picogk gotcha #14); the cases' file holds C beside each case so its
+        //    reader can assert the tensor is the ladder's.
+        string? strCases = ArgStr(args, "--strain-cases", null);
+        List<(string Label, double[] Strain)>? aCases = null;
+        string strCasesSource = "";
+        if (strCases is not null)
+        {
+            if (!File.Exists(strCases))
+                return Fail($"fea --periodic --strain-cases: no file {strCases}");
+            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(strCases));
+            if (!doc.RootElement.TryGetProperty("cases", out JsonElement eCases) || eCases.ValueKind != JsonValueKind.Array)
+                return Fail("fea --periodic --strain-cases: the file must hold a «cases» array of {label, strain[6]}");
+            aCases = [];
+            foreach (JsonElement c in eCases.EnumerateArray())
+            {
+                string strLabel = c.GetProperty("label").GetString() ?? "";
+                double[] aStrain = [.. c.GetProperty("strain").EnumerateArray().Select(x => x.GetDouble())];
+                if (aStrain.Length != 6)
+                    return Fail($"fea --periodic --strain-cases: case «{strLabel}» has {aStrain.Length} components, not 6 (Voigt, engineering shear)");
+                aCases.Add((strLabel, aStrain));
+            }
+            if (aCases.Count == 0 || aCases.Select(c => c.Label).Distinct().Count() != aCases.Count)
+                return Fail("fea --periodic --strain-cases: the cases must be non-empty and their labels unique");
+            strCasesSource = doc.RootElement.TryGetProperty("source", out JsonElement eSrc) ? eSrc.GetString() ?? "" : "";
+            strName = PeriodicStrainFieldsCacheName(bSheet, fWall, nCells);
+        }
         if (strName is null)
             return Fail($"fea --periodic: the wall {fWall} is not a whole thousandth — the cache name carries it in thousandths");
         if (aSteps.Any(s => s * nCells % 2 != 0))
@@ -2180,7 +2210,7 @@ internal static class Program
                         dCalibration = Math.Max(dCalibration, Math.Abs(aCs[i, j] - aD[i, j]));
             }
 
-            VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(grid, aThetas);
+            VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(grid, aThetas, aStrainCases: aCases);
             VoxelFea.CubicReading cubic = VoxelFea.Cubic(r.C);
             bConverged &= r.Converged;
             double dPorosity = Connectivity.Porosity(grid);
@@ -2229,13 +2259,33 @@ internal static class Program
                     ["share_above_sigma_w"] = f.ShareAboveSigmaW,
                 }).ToArray(),
             });
+            if (aCases is not null)
+            {
+                aRows[^1]["strain_fields"] = r.StrainFields.Select(f => new Dictionary<string, object>
+                {
+                    ["label"] = f.Label,
+                    ["strain"] = f.Strain,
+                    ["sigma_w"] = f.SigmaW,
+                    ["energy_identity_residual"] = f.EnergyIdentityResidual,
+                    ["principal_over_sigma_w"] = Quantiles(f.PrincipalOverSigmaW),
+                    ["von_mises_over_sigma_w"] = Quantiles(f.VonMisesOverSigmaW),
+                    ["share_above_sigma_w"] = f.ShareAboveSigmaW,
+                }).ToArray();
+                double dWorstId = r.StrainFields.Max(f => f.EnergyIdentityResidual);
+                double[] aP99 = [.. r.StrainFields.Select(f => f.PrincipalOverSigmaW[Array.IndexOf(VoxelFea.FieldQuantiles, 0.99)])];
+                Console.WriteLine($"         {r.StrainFields.Length} strain cases · max|σ_i|/σ_W p99 {aP99.Min():F3}–{aP99.Max():F3} · " +
+                                  $"worst energy identity {dWorstId:E1}");
+            }
         }
 
         Directory.CreateDirectory(Path.Combine("cache", "fea"));
         string strOut = Path.Combine("cache", "fea", strName);
         File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
         {
-            ["_note"] = "Effective stiffness of the lattice (Voigt [xx, yy, zz, yz, zx, xy], engineering shear, units of E_solid) and its "
+            ["_note"] = (aCases is null ? "" : "STRAIN-CASE file (`--strain-cases`, 00_07 HW.23): each row also holds `strain_fields` — "
+                      + "the ligament field under each GIVEN macro strain (lattice frame, Voigt with engineering shear), superposed from "
+                      + "the same six unit solutions; σ_W is per the strain as given, the quantiles are over σ_W. ")
+                      + "Effective stiffness of the lattice (Voigt [xx, yy, zz, yz, zx, xy], engineering shear, units of E_solid) and its "
                       + "ligament stress field under a unit uniaxial macro stress along (cos θ, sin θ, 0), from PERIODIC conditions on one "
                       + "period cell — a MATERIAL property of the infinite lattice, not the shipped part, nor the finite part's modulus under "
                       + "traction. Read the steps ladder, never a row. Field quantiles are over Gauss points; the max does not "
@@ -2247,6 +2297,8 @@ internal static class Program
             ["cells_per_side"] = nCells,
             ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
             ["solid_calibration_max_abs_error"] = dCalibration,
+            ["strain_cases_source"] = aCases is null ? "" : strCasesSource,
+            ["strain_cases_file"] = aCases is null ? "" : Path.GetFileName(strCases!),
             ["rows"] = aRows,
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"solid calibration |C − D|max {dCalibration:E1} · → {strOut}");
@@ -2270,6 +2322,11 @@ internal static class Program
         string strWall = nMilli < 0 ? $"m{-nMilli}" : $"{nMilli}";
         return $"periodic_homogenization.{(bSheet ? "sheet" : "network")}.w{strWall}.c{nCells}.json";
     }
+
+    // The file of one strain-case run beside the ladder: the same topology · wall · cells, a different family, so a strain-case run
+    // can never overwrite the committed ladder.
+    internal static string? PeriodicStrainFieldsCacheName(bool bSheet, float fWall, int nCells)
+        => PeriodicCacheName(bSheet, fWall, nCells)?.Replace("periodic_homogenization.", "periodic_strain_fields.", StringComparison.Ordinal);
 
     // The Gibson-Ashby COEFFICIENTS, measured instead of assumed (00_07 HW.33).
     //

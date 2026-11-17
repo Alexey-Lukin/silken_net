@@ -1022,6 +1022,23 @@ internal static class VoxelFea
         public required double ShareAboveSigmaW { get; init; }
     }
 
+    /// <summary>The ligament field under a GIVEN macro strain (a strain case: the inclusion's own multiaxial strain, `fea --periodic
+    /// --strain-cases`, 00_07 HW.23) — the same superposition of the six unit solutions as a uniaxial field, with the strain
+    /// supplied instead of derived from a unit stress.</summary>
+    internal readonly record struct StrainCaseField
+    {
+        public required string Label { get; init; }
+        /// <summary>The macro strain superposed, Voigt [xx, yy, zz, yz, zx, xy] with engineering shear, in the lattice frame.</summary>
+        public required double[] Strain { get; init; }
+        /// <summary>σ_W = √(2·E_s·⟨w⟩_solid) under that strain, in units of E_solid × the strain given.</summary>
+        public required double SigmaW { get; init; }
+        /// <summary>|2·φ·⟨w⟩_solid / (εᵀ·C·ε) − 1|: the field's energy against the tensor's.</summary>
+        public required double EnergyIdentityResidual { get; init; }
+        public required double[] PrincipalOverSigmaW { get; init; }
+        public required double[] VonMisesOverSigmaW { get; init; }
+        public required double ShareAboveSigmaW { get; init; }
+    }
+
     internal sealed class PeriodicResult
     {
         public required float StepMm { get; init; }
@@ -1042,6 +1059,7 @@ internal static class VoxelFea
         /// <summary>max |C_ij − C_ji| over max_j |C_jj| — reciprocity of two independent solves.</summary>
         public required double ReciprocityWorst { get; init; }
         public required UniaxialField[] Fields { get; init; }
+        public StrainCaseField[] StrainFields { get; init; } = [];
     }
 
     /// <summary>
@@ -1049,7 +1067,8 @@ internal static class VoxelFea
     /// (001) plane) — the ligament stress field under a unit uniaxial macro stress along (cos θ, sin θ, 0).
     /// </summary>
     internal static PeriodicResult PeriodicHomogenization(
-        in Connectivity.Grid grid, IReadOnlyList<double>? aThetaDeg = null, double dTol = 1e-8, int nMaxIter = 200_000)
+        in Connectivity.Grid grid, IReadOnlyList<double>? aThetaDeg = null, double dTol = 1e-8, int nMaxIter = 200_000,
+        IReadOnlyList<(string Label, double[] Strain)>? aStrainCases = null)
     {
         int nx = grid.Nx, ny = grid.Ny, nz = grid.Nz;
         if (nx < 2 || ny < 2 || nz < 2 || nx % 2 != 0 || ny % 2 != 0 || nz % 2 != 0)
@@ -1123,6 +1142,8 @@ internal static class VoxelFea
 
         UniaxialField[] aFields = [.. (aThetaDeg ?? []).Select(th =>
             UniaxialStressField(th, aC, mesh, aD, aBg, aU0, aFluct, mesh.SolidFraction))];
+        StrainCaseField[] aStrainFields = [.. (aStrainCases ?? []).Select(sc =>
+            StrainCase(sc.Label, sc.Strain, aC, mesh, aD, aBg, aU0, aFluct, mesh.SolidFraction))];
 
         return new PeriodicResult
         {
@@ -1138,6 +1159,7 @@ internal static class VoxelFea
             HillMandelWorst = dHillMandel,
             ReciprocityWorst = dReciprocity,
             Fields = aFields,
+            StrainFields = aStrainFields,
         };
     }
 
@@ -1380,6 +1402,55 @@ internal static class VoxelFea
         double dCompliance = 0.0; // Σ·ε̄ = 1/E_dir for a unit stress
         for (int i = 0; i < 6; i++) dCompliance += aSigmaMacro[i] * aStrainMacro[i];
 
+        (double dMeanEnergySolid, double[] aPrincipal, double[] aVonMises, int nAbove) =
+            FieldUnderMacroStrain(aStrainMacro, mesh, aD, aBg, aU0, aFluct);
+        double dSigmaW = Math.Sqrt(2.0 * dMeanEnergySolid);  // E_s = 1
+        return new UniaxialField
+        {
+            ThetaDeg = dThetaDeg,
+            ModulusRatio = 1.0 / dCompliance,
+            SigmaWPerMacroStress = dSigmaW,
+            EnergyIdentityResidual = Math.Abs((2.0 * dSolidFraction * dMeanEnergySolid / dCompliance) - 1.0),
+            PrincipalOverSigmaW = [.. FieldQuantiles.Select(q => Quantile(aPrincipal, q) / dSigmaW)],
+            VonMisesOverSigmaW = [.. FieldQuantiles.Select(q => Quantile(aVonMises, q) / dSigmaW)],
+            ShareAboveSigmaW = (double)nAbove / aPrincipal.Length,
+        };
+    }
+
+    // A GIVEN macro strain — the inclusion's own multiaxial strain (00_07 HW.23): the same superposition and the same reading,
+    // with the energy identity now against εᵀ·C·ε (for a uniaxial case εᵀ·C·ε = Σ·ε̄ = 1/E_dir, the identity above).
+    private static StrainCaseField StrainCase(
+        string strLabel, double[] aStrainMacro, double[,] aC, Mesh mesh, double[,] aD, double[][] aBg, double[][] aU0,
+        double[][] aFluct, double dSolidFraction)
+    {
+        if (aStrainMacro.Length != 6)
+            throw new ArgumentException($"strain case «{strLabel}»: a macro strain has six Voigt components, got {aStrainMacro.Length}");
+        double dMacroEnergy2 = 0.0; // εᵀ·C·ε = 2 × the macro energy density
+        for (int i = 0; i < 6; i++)
+            for (int j = 0; j < 6; j++) dMacroEnergy2 += aStrainMacro[i] * aC[i, j] * aStrainMacro[j];
+        if (!(dMacroEnergy2 > 0.0))
+            throw new ArgumentException($"strain case «{strLabel}»: εᵀ·C·ε = {dMacroEnergy2} — a zero or non-physical strain");
+
+        (double dMeanEnergySolid, double[] aPrincipal, double[] aVonMises, int nAbove) =
+            FieldUnderMacroStrain(aStrainMacro, mesh, aD, aBg, aU0, aFluct);
+        double dSigmaW = Math.Sqrt(2.0 * dMeanEnergySolid);
+        return new StrainCaseField
+        {
+            Label = strLabel,
+            Strain = [.. aStrainMacro],
+            SigmaW = dSigmaW,
+            EnergyIdentityResidual = Math.Abs((2.0 * dSolidFraction * dMeanEnergySolid / dMacroEnergy2) - 1.0),
+            PrincipalOverSigmaW = [.. FieldQuantiles.Select(q => Quantile(aPrincipal, q) / dSigmaW)],
+            VonMisesOverSigmaW = [.. FieldQuantiles.Select(q => Quantile(aVonMises, q) / dSigmaW)],
+            ShareAboveSigmaW = (double)nAbove / aPrincipal.Length,
+        };
+    }
+
+    // The field one macro strain superposes from the six solved unit fields, read at every Gauss point: the mean energy over
+    // the metal (equal Gauss volumes), and the sorted samples of the largest absolute principal stress and of von Mises.
+    private static (double MeanEnergySolid, double[] PrincipalSorted, double[] VonMisesSorted, int AboveSigmaW) FieldUnderMacroStrain(
+        double[] aStrainMacro, Mesh mesh, double[,] aD, double[][] aBg, double[][] aU0, double[][] aFluct)
+    {
         var aU0Total = new double[24];
         var aFluctTotal = new double[aFluct[0].Length];
         for (int k = 0; k < 6; k++)
@@ -1413,21 +1484,12 @@ internal static class VoxelFea
             }
         }
 
-        double dMeanEnergySolid = dEnergySum / nGauss;      // equal Gauss volumes: the mean over the metal
-        double dSigmaW = Math.Sqrt(2.0 * dMeanEnergySolid);  // E_s = 1
+        double dMeanEnergySolid = dEnergySum / nGauss;
+        double dSigmaW = Math.Sqrt(2.0 * dMeanEnergySolid);
         int nAbove = aPrincipal.Count(p => p > dSigmaW);
         Array.Sort(aPrincipal);
         Array.Sort(aVonMises);
-        return new UniaxialField
-        {
-            ThetaDeg = dThetaDeg,
-            ModulusRatio = 1.0 / dCompliance,
-            SigmaWPerMacroStress = dSigmaW,
-            EnergyIdentityResidual = Math.Abs((2.0 * dSolidFraction * dMeanEnergySolid / dCompliance) - 1.0),
-            PrincipalOverSigmaW = [.. FieldQuantiles.Select(q => Quantile(aPrincipal, q) / dSigmaW)],
-            VonMisesOverSigmaW = [.. FieldQuantiles.Select(q => Quantile(aVonMises, q) / dSigmaW)],
-            ShareAboveSigmaW = (double)nAbove / nGauss,
-        };
+        return (dMeanEnergySolid, aPrincipal, aVonMises, nAbove);
     }
 
     // Nearest-rank quantile of an ascending-sorted sample; q = 1 is the maximum.
