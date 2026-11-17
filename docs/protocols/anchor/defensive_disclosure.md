@@ -1,10 +1,10 @@
 # Defensive Disclosure — SilkenNet self-powered tree-health monitor (prior art)
 
 > **Author / discloser:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
-> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-11-15
+> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-11-17
 > **First published on 2026-10-04:** §2.1 and §3.1 as they then stood, and every passage or table entry marked
 > «added 2026-10-04» or «corrected 2026-10-04». Passages marked «added 2026-10-12» (§5), «corrected 2026-10-23» (§2.1), «corrected
-> 2026-10-25» (§1 SYNERGY A, §2, §2.1(9)) and «corrected 2026-11-15» (§2) post-date the Technical Disclosure Commons print and are not re-issued there: what was disclosed stays disclosed, and the correction
+> 2026-10-25» (§1 SYNERGY A, §2, §2.1(9)) «corrected 2026-11-15» (§2) and «corrected 2026-11-17» (§2.1(3)) post-date the Technical Disclosure Commons print and are not re-issued there: what was disclosed stays disclosed, and the correction
 > serves the next reader of this repository.
 > **Status:** published on Technical Disclosure Commons on 2026-10-06 (submitted 2026-10-04, printed from
 > commit `5bd8636f5` of this file) — https://www.tdcommons.org/dpubs_series/12006, under CC BY-SA 4.0.
@@ -229,9 +229,12 @@ leading flank 30°, trailing flank 70°, the base following from the height and 
 point: height 0.28 mm, base ≈ 0.59 mm) — in 3–5 rows over the 8–15 mm PEEK contact length of the anode
 shank and 3 rows on the flange shank. In each part's own frame the shallow flank faces the end that enters
 the sleeve first. Printed in the same powder-bed cycle as their part, the barbs are self-supporting when
-oriented with the shallow flank facing downward. The sleeve is heated to 150 °C, above the PEEK glass
-transition (143 °C for the reference grade), and pressed on with a controlled force of 800–1200 N; the
-softened polymer fills the space between the barbs and locks onto them as it cools. The anchor is thus assembled without adhesives,
+oriented with the shallow flank facing downward. The sleeve is heated to 150 °C and pressed on with a
+controlled force of 800–1200 N; the polymer flows into the space between the barbs and locks onto them as it cools.
+⚠️ **Corrected 2026-11-17:** earlier revisions placed 150 °C above the PEEK glass transition and called the polymer
+softened; for the reference grade 150 °C is the midpoint of the transition (onset 143 °C), where the modulus is still
+about 0.8 of its room-temperature value while the yield stress has fallen to about 0.3 of it — the barbs enter by
+plastic flow, not into a soft polymer. The anchor is thus assembled without adhesives,
 threads or welding of dissimilar materials. The barbs give axial retention only — neither sealing nor
 resistance to rotation. *Practised* (pull-out retention not yet measured;
 [`01_01 §3`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) ·
