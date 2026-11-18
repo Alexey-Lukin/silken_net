@@ -65,7 +65,7 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 > manuscript is printed from the tagged commit — so everything the manuscript prints, the DOI included, is
 > final BEFORE the tag. (1) Open a new Zenodo upload draft and reserve its DOI («Get a DOI now!»); keep the
 > draft until publication, since deleting it loses the DOI [founder's account]. (2) Answer EVERY `[finalise`
-> marker of this file — the DOI in Data Availability, and the AI-use, Competing Interests and Funding items
+> marker of this file — the AI-use, Competing Interests and Funding items (the DOI in Data Availability is already in: step (1) was done 2026-11-18)
 > [founder's words]. (3) From a clean tree — 72 hashes the working-tree bytes of the tracked files, so a
 > modified, uncommitted file would enter the SI as bytes the commit does not hold — re-render the SI LAST
 > (script 72), commit and push. (4) Before any tag, on a fresh clone of that commit:
