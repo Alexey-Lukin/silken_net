@@ -6,7 +6,7 @@ Computes the Os(III)+e⁻→Os(II) ΔSCF reduction energy for cis-[Os(4,4'-X-bpy
 across a 4,4'-substituent series at CONSTANT charge (+1/+2), isolating the
 electronic effect (no charge change → no differential-PCM confounder; that is ②).
 Establishes (a) the Hammett LFER for the Os(III/II) potential and (b) the
-cascade-alignment design rule Δ = HOMO(FADH₂) − LUMO(Os III) vs substituent.
+cascade-alignment trend Δ = HOMO(FADH₂) − LUMO(Os III) vs substituent.
 
 Pre-check (dmbpy/bpy/dcbpy) PASSED 2026-06-05: monotonic with σ, reproduces 21b
 (Δ=0.000). The LFER slope is COMPUTED here (not hardcoded) over the linear-regime
@@ -92,7 +92,7 @@ from lib.utils import banner
 # The σ_para values are a NAMED ASSUMPTION (paper §2.3, 09_references disposition route (b), 2026-10-02):
 # the conventional tabulated constants, as compiled by Hansch, Leo & Taft (Chem. Rev. 1991, 91, 165 —
 # Crossref-confirmed, the values NOT checked against its full text, which is paywalled). The fitted slope
-# inherits them, and the slope is the quantitative part of the design rule (00_02 §2.1) — so their error is its error;
+# inherits them, and the slope is the quantitative part of the Hammett trend (00_02 §2.1) — so their error is its error;
 # its method dependence is a second, separate uncertainty (the `vs_b3lyp` block of OUT_WB97X).
 # Each X-bpy has exactly 2 aromatic ring N (substituent N of NMe₂/NH₂/NO₂ is
 # non-aromatic → excluded by build_chelate's ring-N filter). Constant charge +1/+2.
@@ -541,7 +541,7 @@ def main() -> int:
         print(f"\n  E° monotonic with σ? {'✅' if mono_E else '❌'}   "
               f"cascade Δ monotonic (rises with σ)? {'✅' if mono_casc else '❌'}")
         print(f"  Most favourable cascade: {best['name']} (Δ={best['cascade_delta_eV']:+.4f} eV) "
-              f"→ design rule: electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment")
+              f"→ trend: electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment")
 
     # ── Hammett LFER slope (computed → JSON = single source for fig 60 / table 61 / prose) ──
     by_name = {c["name"]: c for c in results["complexes"]}

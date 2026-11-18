@@ -50,7 +50,7 @@ insights to sell (all are "new physical insight"):
 3. **An honest, mechanistic cathode finding.** The λ(Co)- and λ(Cu)-conditional DET (a *finding*, corrected from
    an earlier artifact) + the low-λ-metal / conductive-MOF / enzyme-free design levers.
 
-> **Rule of thumb:** every claim is one of {*positive result*, *quantified limitation*, *design rule*,
+> **Rule of thumb:** every claim is one of {*positive result*, *quantified limitation*, *trend read against measurement*,
 > *prediction*}. None is "validation". An honest limit, properly measured, is a strong paper; a
 > dishonest positive gets desk-rejected or retracted.
 
@@ -86,12 +86,12 @@ like-for-like cascade plot. Pitfall: don't bury the honest numbers — lead with
 
 ### Discussion (can merge with Results at JPCB)
 What the results *mean*: the methods lesson (when does implicit solvent fail, and by how much), the
-design rule's reach, the cathode mitigation path, and an explicit **Limitations** paragraph (vertical
+Hammett trend's reach, the cathode mitigation path, and an explicit **Limitations** paragraph (vertical
 geometries, no spin-orbit on Os, single-shell solvation, QM-cluster vs QM/MM). Naming your own limits
 *increases* trust — reviewers find them anyway.
 
 ### Conclusions (short, punchy)
-3–5 sentences: the insight, the design rule, the methods lesson, and the experimental closure (Ti-coin
+3–5 sentences: the insight, the Hammett trend, the methods lesson, and the experimental closure (Ti-coin
 EIS brackets). No new information.
 
 ## 4. Mechanics
