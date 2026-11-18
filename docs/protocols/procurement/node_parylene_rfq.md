@@ -108,6 +108,24 @@ This is a request for information and an indicative quotation, not yet an order.
 
 ---
 
+## 📤 Reminder block (EN) — Parylene coating service that stays silent
+
+> **Репо-нота (у лист НЕ йде).** Одне нагадування кожному з двох адресатів, якщо мовчить (запити 2026-11-17; правило й лічба — [`rfq_registry`](rfq_registry.md) §3; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.11). Один запит пішов листом — йому відповіддю в треді; другий — веб-формою, треду немає, тож іде тією самою формою, а текст сам називає предмет. Нового не питає: найменша корисна відповідь — чи беруть замовлення з України разом з інженерним прогоном на одну–три плати (п. 1) і чи рутинне для них маскування пружинних пінів (п. 2). Написано 2026-11-19 заздалегідь; founder тексту ще не бачив — відправка лише на його «так» на прочитаний текст; у день відправки — звірка скриньки разом зі спамом. Підпис — `--signature "Best regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear colleagues,
+
+A short follow-up on our enquiry of 17 November — Parylene C conformal coating, 10 µm, on two small round PCB assemblies, starting with an engineering run of one to three boards.
+
+Could you confirm that it has reached the person who handles such enquiries? A partial answer is welcome: the most useful place to start is whether you accept orders from Ukraine, including a first engineering run of one to three boards (item 1), and whether masking spring-loaded contact pins is routine for you (item 2). If an order of this kind is not something you take on, a short "no" is useful too.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 3. Cross-references
 
 | Ресурс | Що бере |

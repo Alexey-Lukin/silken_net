@@ -309,6 +309,24 @@ Thank you.
 
 ---
 
+## 📤 Reminder block (EN) — Mouser Europe: запит котирування, поданий формою
+
+> **Репо-нота (у лист НЕ йде).** Одне нагадування за запитом котирування, поданим формою сайту (правило й лічба — [`rfq_registry`](rfq_registry.md) §3; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.29). Gmail-треду немає, тож текст сам називає позиції; канал — лист службі інтернет-клієнтів, названій на сторінці підтвердження (адреса — корпус памʼяті), або та сама форма; вибір каналу — founder у день відправки. Нового не питає: найменша корисна відповідь — чи збирає Samtec два хедери зі стекером .205″ і з яким строком (п. 1 запиту). Написано 2026-11-19 заздалегідь; founder тексту ще не бачив — відправка лише на його «так» на прочитаний текст; у день відправки — звірка скриньки разом зі спамом. Підпис — `--signature "Best regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Hello,
+
+On 12 November I submitted a quotation request through the quote form on your website, and the page confirmed that it had been received. It covered three Samtec parts for delivery to Ukraine: FW-05-03-L-D-205-095 (5 pieces), FW-05-03-L-D-205-100 (5 pieces) and CLP-105-02-L-D (10 pieces); the two FW headers have a stacker height of .205", which Samtec makes to order. I have not had a reply yet, so I am checking whether the request reached your quotation team.
+
+The most useful first answer is whether Samtec can build the two FW headers, and with what lead time; the other points of the request can follow later. If you cannot quote these parts, a short note saying so would help as well.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 📤 Follow-up block (EN) — служба 3D-моделей Samtec: модель хедера FW і вістря поста
 
 > **Репо-нота (у лист НЕ йде).** Відповідь у тред детальної моделі CLP (блок «служба 3D-моделей Samtec: глибина верхнього входу CLP» вище; журнал надісланого — корпус памʼяті). ⚖️ founder 2026-11-15 — «так» на текст і канал; **надіслано 2026-11-15** відповіддю в тред (To — кресляр, що надіслав модель CLP; Cc — групова адреса служби). ⊕ Відповідь 2026-11-16: два вкладення, названі `-205-095` і `-205-100`, побайтово однакові — в обох модель `-205-100`; що з неї виміряно — [`deck_stack_gap_bench_sheet`](../hardware/deck_stack_gap_bench_sheet.md) §8 ⊕ 2026-11-16. Ціль — нога HW.9 «звірити поріг F .305 протоколу з підлогою під вістрям поста біля краю площадки сокета» ([`00_07`](../../00_07_Action_Plan_Tracker.md)). Дзеркала: креслення FW rev DG — Fig. 1 і аркуш 2 малюють вістря загостреним, розміру скосу немає на жодному з чотирьох аркушів; коди — рядок поз. 12 [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) (обидва пости в котируванні). Що вирішує число: у крайньому положенні поперек ряду зовнішні ≈ 0.013 мм ширини поста стоять над краєм площадки сокета (контакти CLP затискають пост лише вздовж ряду); скіс ширший за ≈ 0.1 мм на бік (при 45°) — поріг протоколу чесний, вужчий — поріг F .305 оптимістичний на 0.035–0.085 мм ([`deck_stack_gap_bench_sheet`](../hardware/deck_stack_gap_bench_sheet.md) §8). **Немає свідомо:** нашого виводу про поріг, трекер-ID, рефів, дат.

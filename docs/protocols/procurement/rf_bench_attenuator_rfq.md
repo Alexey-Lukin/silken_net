@@ -82,6 +82,24 @@ Thank you in advance.
 
 ---
 
+## 📤 Reminder block (EN) — SGLabs: one follow-up on the price enquiry
+
+> **Репо-нота (у лист НЕ йде).** Одне нагадування у треді запиту ціни (лист 2026-11-15; правило й лічба — [`rfq_registry`](rfq_registry.md) §3; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.33). Нового не питає: найменша корисна відповідь — ціна одного приладу у версії SMA, наявність і чи відвантажують в Україну (пп. 2 і 3 листа). Написано 2026-11-19 заздалегідь; founder тексту ще не бачив — відправка лише на його «так» на прочитаний текст; у день відправки — звірка скриньки разом зі спамом. Підпис — `--signature "Best regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear SGLabs team,
+
+A short follow-up on my price enquiry of 15 November below — one Step Attenuator 90 dB in the SMA version, delivered to Cherkasy, Ukraine.
+
+Could you confirm that it has reached you? A short reply would already help: the price of one SMA unit, whether it is in stock, and whether you ship to Ukraine (items 2 and 3 of that email). The other answers can follow later, in English or Italian. If you do not ship to Ukraine, a short "no" is useful too.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 3. Cross-references
 
 | Ресурс | Що бере |

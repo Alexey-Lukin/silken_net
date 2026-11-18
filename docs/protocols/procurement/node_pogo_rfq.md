@@ -250,6 +250,24 @@ One point remains open from item 1: the quotation for the non-standard plating, 
 
 ---
 
+## 📤 Reminder block (EN) — Mill-Max: one follow-up on the quotation channel
+
+> **Репо-нота (у лист НЕ йде).** Одне нагадування у тому самому треді, якщо на Follow-up 2 (надіслано 2026-11-18) відповіді немає (правило й лічба — [`rfq_registry`](rfq_registry.md) §3; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.9). Нового не питає — повторює єдине питання того листа: яким каналом отримати котирування нестандартного покриття. Написано 2026-11-19 заздалегідь; founder тексту ще не бачив — відправка лише на його «так» на прочитаний текст; у день відправки — звірка скриньки разом зі спамом. Підпис — як у цьому треді: `--signature "Kind regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Hello,
+
+A short follow-up on our message of 18 November below. One question remains open: since you do not ship to Ukraine directly, through which channel should we request the quotation for the non-standard plating — 30 µin of hard gold over 50 µin of nickel on the plunger, series 0906 and 0908?
+
+A one-line answer is enough: whether an authorised distributor can request this quotation from you, and what we should give them to identify the part.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 4. Cross-references
 
 | Ресурс | Що бере |
