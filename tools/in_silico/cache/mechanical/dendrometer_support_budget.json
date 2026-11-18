@@ -14720,12 +14720,33 @@
       "guaranteed": true,
       "per_kelvin": false,
       "repeatability_and_lifetime": "not published",
-      "source": "TI Customer Support case CS3699089, 2026-11-17"
+      "source": "TI Customer Support case CS3699089, 2026-11-17",
+      "offset_row_2026_11_18": {
+        "unit": "% of the total offset drift over the full temperature range",
+        "line_held_to_25C": false,
+        "from_25C_factor": 2.0,
+        "source": "TI Customer Support case CS3699089, follow-up 2026-11-18"
+      }
     },
     "readings_k": {
       "raw": null,
       "from_25C": 1.0,
       "best_fit": 2.0
+    },
+    "offset_readings": {
+      "raw": null,
+      "from_25C": [
+        1.0,
+        "range"
+      ],
+      "best_fit": [
+        2.0,
+        "range"
+      ],
+      "ti_total_drift": [
+        2.0,
+        "total_drift"
+      ]
     },
     "rows": {
       "TMAG3001A1": {
@@ -14734,6 +14755,10 @@
           "x_z": 0.015
         },
         "offset_drift_lin_pct_at_verdict_range": 0.0004,
+        "offset_residual_T_by_basis": {
+          "range": 3e-05,
+          "total_drift": 6.336e-07
+        },
         "sensitivity_drift_lin_not_a_member": {
           "x": 0.035,
           "z": 0.043
@@ -15217,6 +15242,165 @@
               },
               "gap_limit_mm_at_t10_REFeB": 1.553271427086177
             },
+            "kind:offset_ti_total_drift:mismatch_raw": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.00029,
+                "hot": 0.00032
+              },
+              "dbp_T_per_K": {
+                "cold": 3.420021805799973e-08,
+                "hot": 6.422893169309547e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.017736908004807764,
+                  "p_mm_at_infinite_thickness": 7.2498292215598905
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.04031255957436989,
+                  "p_mm_at_infinite_thickness": 8.021087625554207
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.01742540648158455,
+                  "p_mm_at_infinite_thickness": 7.249829114316918
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.03960457689164756,
+                  "p_mm_at_infinite_thickness": 8.021087625279185
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.017469235133375945,
+                  "p_mm_at_infinite_thickness": 7.24982922208669
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.05270573079150711,
+                  "t_min_mm_with_unwrap_floor": 0.052705730791507206,
+                  "need_T_at_infinite_thickness": 0.039704190935759755,
+                  "p_mm_at_infinite_thickness": 8.021087625498083
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 9.128232432466058
+            },
+            "kind:offset_ti_total_drift:mismatch_from_25C": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.00028625954198473283,
+                "hot": 0.0005376031385955891
+              },
+              "dbp_T_per_K": {
+                "cold": 3.420021805799973e-08,
+                "hot": 6.422893169309547e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.4321644810276957,
+                  "need_T_at_infinite_thickness": 0.052649848419898004,
+                  "p_mm_at_infinite_thickness": 5.111029206280878
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.10992775955136687,
+                  "t_min_mm_with_unwrap_floor": 1.8163639447433952,
+                  "need_T_at_infinite_thickness": 0.17197526580371786,
+                  "p_mm_at_infinite_thickness": 5.482684660557663
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.5842725105958935,
+                  "need_T_at_infinite_thickness": 0.051725194135406875,
+                  "p_mm_at_infinite_thickness": 5.1110292063154255
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.1420722085985939,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.1689549785450786,
+                  "p_mm_at_infinite_thickness": 5.48268465621405
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.7378199386894695,
+                  "need_T_at_infinite_thickness": 0.05185529414340377,
+                  "p_mm_at_infinite_thickness": 5.111029206493474
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.17136774984845596,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.1693799367192769,
+                  "p_mm_at_infinite_thickness": 5.4826846568151115
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 5.918747017695882
+            },
+            "kind:offset_ti_total_drift:mismatch_best_fit": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.0005725190839694657,
+                "hot": 0.0010752062771911782
+              },
+              "dbp_T_per_K": {
+                "cold": 3.420021805799973e-08,
+                "hot": 6.422893169309547e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.3675004608132732,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.7740829609528806,
+                  "p_mm_at_infinite_thickness": 2.9563147953034976
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 6.194218196433742,
+                  "p_mm_at_infinite_thickness": 3.076960389986801
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.5494101334751633,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.7604882565448405,
+                  "p_mm_at_infinite_thickness": 2.956314794944501
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 6.0854332603646615,
+                  "p_mm_at_infinite_thickness": 3.076960389841013
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.8024432378740517,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.7624010483653794,
+                  "p_mm_at_infinite_thickness": 2.9563147952752726
+                },
+                "RECo5:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 6.100739436186169,
+                  "p_mm_at_infinite_thickness": 3.0769603900055285
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 3.287507146581511
+            },
             "adverse:offset_raw:mismatch_raw": {
               "edge_distance_K": {
                 "cold": 58.53,
@@ -15693,6 +15877,165 @@
                 }
               },
               "gap_limit_mm_at_t10_REFeB": 2.104267220409284
+            },
+            "adverse:offset_ti_total_drift:mismatch_raw": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.00029,
+                "hot": 0.00032
+              },
+              "dbp_T_per_K": {
+                "cold": 3.0618339761475925e-08,
+                "hot": 4.7029881191061394e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.013388639592057026,
+                  "p_mm_at_infinite_thickness": 7.249829116499091
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.030429786918230995,
+                  "p_mm_at_infinite_thickness": 8.021087625785425
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.012837674453272973,
+                  "p_mm_at_infinite_thickness": 7.249829225234013
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.029177549776638313,
+                  "p_mm_at_infinite_thickness": 8.021087625604768
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.012896643192800358,
+                  "p_mm_at_infinite_thickness": 7.249829117297354
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.029311574310372065,
+                  "p_mm_at_infinite_thickness": 8.021087625588217
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 9.56731476437422
+            },
+            "adverse:offset_ti_total_drift:mismatch_from_25C": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.00025627883136852895,
+                "hot": 0.000393645216721084
+              },
+              "dbp_T_per_K": {
+                "cold": 3.0618339761475925e-08,
+                "hot": 4.7029881191061394e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.01934884328906642,
+                  "p_mm_at_infinite_thickness": 6.3504448083553555
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.04971914513943161,
+                  "p_mm_at_infinite_thickness": 6.93450630693825
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.018552605698624755,
+                  "p_mm_at_infinite_thickness": 6.35044480834573
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.0476731183184376,
+                  "p_mm_at_infinite_thickness": 6.93450630699695
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.0186378254770962,
+                  "p_mm_at_infinite_thickness": 6.350444808335514
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.056001711806660796,
+                  "t_min_mm_with_unwrap_floor": 0.05807010072375422,
+                  "need_T_at_infinite_thickness": 0.04789210063543047,
+                  "p_mm_at_infinite_thickness": 6.93450630696227
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 8.043760547946952
+            },
+            "adverse:offset_ti_total_drift:mismatch_best_fit": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.0005125576627370579,
+                "hot": 0.000787290433442168
+              },
+              "dbp_T_per_K": {
+                "cold": 3.0618339761475925e-08,
+                "hot": 4.7029881191061394e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.061051303917211065,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.13849839303872435,
+                  "p_mm_at_infinite_thickness": 3.818441923486687
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.4182995910492386,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.6858723404753567,
+                  "p_mm_at_infinite_thickness": 4.0221376935056234
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.07656311549326707,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.13279895017768722,
+                  "p_mm_at_infinite_thickness": 3.8184419235876517
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.5783619280575653,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.6576475349109189,
+                  "p_mm_at_infinite_thickness": 4.022137693510097
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.09217327126055734,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.13340895058944718,
+                  "p_mm_at_infinite_thickness": 3.8184419235793636
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.7879741499670635,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.6606683815859257,
+                  "p_mm_at_infinite_thickness": 4.022137693463487
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 4.46994500302965
             }
           },
           "x_z": {
@@ -16173,6 +16516,165 @@
               },
               "gap_limit_mm_at_t10_REFeB": 1.553271427086177
             },
+            "kind:offset_ti_total_drift:mismatch_raw": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.00054,
+                "hot": 0.00063
+              },
+              "dbp_T_per_K": {
+                "cold": 3.420021805799973e-08,
+                "hot": 6.422893169309547e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.08356691319600686,
+                  "p_mm_at_infinite_thickness": 4.5420616671144725
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.1918992293284922,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.3184067772368751,
+                  "p_mm_at_infinite_thickness": 4.833219482055296
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.054371750838139096,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.08209928305750902,
+                  "p_mm_at_infinite_thickness": 4.542061667122253
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.25309572068717534,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.3128148106952999,
+                  "p_mm_at_infinite_thickness": 4.833219482758478
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.0649710162709442,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.08230578044356739,
+                  "p_mm_at_infinite_thickness": 4.542061667032515
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.3113303351381294,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.3136016073434955,
+                  "p_mm_at_infinite_thickness": 4.833219482661558
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 5.178043358049983
+            },
+            "kind:offset_ti_total_drift:mismatch_from_25C": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.00028625954198473283,
+                "hot": 0.0005376031385955891
+              },
+              "dbp_T_per_K": {
+                "cold": 3.420021805799973e-08,
+                "hot": 6.422893169309547e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.4321644810276957,
+                  "need_T_at_infinite_thickness": 0.052649848419898004,
+                  "p_mm_at_infinite_thickness": 5.111029206280878
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.10992775955136687,
+                  "t_min_mm_with_unwrap_floor": 1.8163639447433952,
+                  "need_T_at_infinite_thickness": 0.17197526580371786,
+                  "p_mm_at_infinite_thickness": 5.482684660557663
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.5842725105958935,
+                  "need_T_at_infinite_thickness": 0.051725194135406875,
+                  "p_mm_at_infinite_thickness": 5.1110292063154255
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.1420722085985939,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.1689549785450786,
+                  "p_mm_at_infinite_thickness": 5.48268465621405
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.7378199386894695,
+                  "need_T_at_infinite_thickness": 0.05185529414340377,
+                  "p_mm_at_infinite_thickness": 5.111029206493474
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.17136774984845596,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.1693799367192769,
+                  "p_mm_at_infinite_thickness": 5.4826846568151115
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 5.918747017695882
+            },
+            "kind:offset_ti_total_drift:mismatch_best_fit": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.0005725190839694657,
+                "hot": 0.0010752062771911782
+              },
+              "dbp_T_per_K": {
+                "cold": 3.420021805799973e-08,
+                "hot": 6.422893169309547e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.3675004608132732,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.7740829609528806,
+                  "p_mm_at_infinite_thickness": 2.9563147953034976
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 6.194218196433742,
+                  "p_mm_at_infinite_thickness": 3.076960389986801
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.5494101334751633,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.7604882565448405,
+                  "p_mm_at_infinite_thickness": 2.956314794944501
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 6.0854332603646615,
+                  "p_mm_at_infinite_thickness": 3.076960389841013
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.8024432378740517,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.7624010483653794,
+                  "p_mm_at_infinite_thickness": 2.9563147952752726
+                },
+                "RECo5:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 6.100739436186169,
+                  "p_mm_at_infinite_thickness": 3.0769603900055285
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 3.287507146581511
+            },
             "adverse:offset_raw:mismatch_raw": {
               "edge_distance_K": {
                 "cold": 58.53,
@@ -16649,6 +17151,165 @@
                 }
               },
               "gap_limit_mm_at_t10_REFeB": 2.104267220409284
+            },
+            "adverse:offset_ti_total_drift:mismatch_raw": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.00054,
+                "hot": 0.00063
+              },
+              "dbp_T_per_K": {
+                "cold": 3.0618339761475925e-08,
+                "hot": 4.7029881191061394e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.06308017622343054,
+                  "p_mm_at_infinite_thickness": 4.542061667081399
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.14005758252527753,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.2403481814833437,
+                  "p_mm_at_infinite_thickness": 4.833219485057601
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.06048432040040253,
+                  "p_mm_at_infinite_thickness": 4.54206166715275
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.17765553239290033,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.230457447756668,
+                  "p_mm_at_infinite_thickness": 4.833219485937969
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.06076214985839074,
+                  "p_mm_at_infinite_thickness": 4.5420616670538125
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.21643669394055964,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.2315160339716692,
+                  "p_mm_at_infinite_thickness": 4.833219485843928
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 5.405031662196663
+            },
+            "adverse:offset_ti_total_drift:mismatch_from_25C": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.00025627883136852895,
+                "hot": 0.000393645216721084
+              },
+              "dbp_T_per_K": {
+                "cold": 3.0618339761475925e-08,
+                "hot": 4.7029881191061394e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.01934884328906642,
+                  "p_mm_at_infinite_thickness": 6.3504448083553555
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.04971914513943161,
+                  "p_mm_at_infinite_thickness": 6.93450630693825
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.018552605698624755,
+                  "p_mm_at_infinite_thickness": 6.35044480834573
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.0476731183184376,
+                  "p_mm_at_infinite_thickness": 6.93450630699695
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.0186378254770962,
+                  "p_mm_at_infinite_thickness": 6.350444808335514
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.056001711806660796,
+                  "t_min_mm_with_unwrap_floor": 0.05807010072375422,
+                  "need_T_at_infinite_thickness": 0.04789210063543047,
+                  "p_mm_at_infinite_thickness": 6.93450630696227
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 8.043760547946952
+            },
+            "adverse:offset_ti_total_drift:mismatch_best_fit": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.0005125576627370579,
+                "hot": 0.000787290433442168
+              },
+              "dbp_T_per_K": {
+                "cold": 3.0618339761475925e-08,
+                "hot": 4.7029881191061394e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.061051303917211065,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.13849839303872435,
+                  "p_mm_at_infinite_thickness": 3.818441923486687
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.4182995910492386,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.6858723404753567,
+                  "p_mm_at_infinite_thickness": 4.0221376935056234
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.07656311549326707,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.13279895017768722,
+                  "p_mm_at_infinite_thickness": 3.8184419235876517
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.5783619280575653,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.6576475349109189,
+                  "p_mm_at_infinite_thickness": 4.022137693510097
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.09217327126055734,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.13340895058944718,
+                  "p_mm_at_infinite_thickness": 3.8184419235793636
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.7879741499670635,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.6606683815859257,
+                  "p_mm_at_infinite_thickness": 4.022137693463487
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 4.46994500302965
             }
           }
         }
@@ -16659,6 +17320,10 @@
           "x_z": 0.035
         },
         "offset_drift_lin_pct_at_verdict_range": 0.0004,
+        "offset_residual_T_by_basis": {
+          "range": 9.6e-05,
+          "total_drift": 6.006e-07
+        },
         "sensitivity_drift_lin_not_a_member": {
           "x": 0.025,
           "z": 0.035
@@ -17142,6 +17807,165 @@
               },
               "gap_limit_mm_at_t10_REFeB": 0.651222559491316
             },
+            "kind:offset_ti_total_drift:mismatch_raw": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.00041,
+                "hot": 0.00046
+              },
+              "dbp_T_per_K": {
+                "cold": 3.241895670081225e-08,
+                "hot": 6.088367483408008e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.03385744721908451,
+                  "p_mm_at_infinite_thickness": 5.711986640346184
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.0675134774190175,
+                  "t_min_mm_with_unwrap_floor": 0.08890103144801818,
+                  "need_T_at_infinite_thickness": 0.09717444066355226,
+                  "p_mm_at_infinite_thickness": 6.18018226832162
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.03326283138309236,
+                  "p_mm_at_infinite_thickness": 5.71198666665655
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.08649906063616071,
+                  "t_min_mm_with_unwrap_floor": 0.11402466773139494,
+                  "need_T_at_infinite_thickness": 0.09546783056686256,
+                  "p_mm_at_infinite_thickness": 6.180182268128313
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.052917348309240476,
+                  "need_T_at_infinite_thickness": 0.03334649457085365,
+                  "p_mm_at_infinite_thickness": 5.711986591743034
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.10350351002476225,
+                  "t_min_mm_with_unwrap_floor": 0.13657585235178007,
+                  "need_T_at_infinite_thickness": 0.0957079527303035,
+                  "p_mm_at_infinite_thickness": 6.1801822683815795
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 6.804927173871872
+            },
+            "kind:offset_ti_total_drift:mismatch_from_25C": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.0006106870229007634,
+                "hot": 0.00114688669567059
+              },
+              "dbp_T_per_K": {
+                "cold": 3.241895670081225e-08,
+                "hot": 6.088367483408008e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.5959466779237907,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 1.0500493688362809,
+                  "p_mm_at_infinite_thickness": 2.7989816801790535
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 9.468751674673834,
+                  "p_mm_at_infinite_thickness": 2.906893252426655
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 1.2348955433138247,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 1.0316080498779039,
+                  "p_mm_at_infinite_thickness": 2.798981680233317
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 9.302458284141293,
+                  "p_mm_at_infinite_thickness": 2.906893252446095
+                },
+                "RECo5:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 1.0342027663943347,
+                  "p_mm_at_infinite_thickness": 2.798981680256429
+                },
+                "RECo5:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 9.325855971040042,
+                  "p_mm_at_infinite_thickness": 2.9068932524015265
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 3.1348893944416254
+            },
+            "kind:offset_ti_total_drift:mismatch_best_fit": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.0012213740458015267,
+                "hot": 0.00229377339134118
+              },
+              "dbp_T_per_K": {
+                "cold": 3.241895670081225e-08,
+                "hot": 6.088367483408008e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 324.81982999248424,
+                  "p_mm_at_infinite_thickness": 1.5117296421493345
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 19809.331311876897,
+                  "p_mm_at_infinite_thickness": 1.5426598875051734
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 319.1152352689656,
+                  "p_mm_at_infinite_thickness": 1.5117296648874061
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 19461.433195925067,
+                  "p_mm_at_infinite_thickness": 1.542659887513957
+                },
+                "RECo5:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 319.9178788424575,
+                  "p_mm_at_infinite_thickness": 1.5117296648906249
+                },
+                "RECo5:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 19510.382893586804,
+                  "p_mm_at_infinite_thickness": 1.5426598874976745
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 1.7238734371770732
+            },
             "adverse:offset_raw:mismatch_raw": {
               "edge_distance_K": {
                 "cold": 58.53,
@@ -17618,6 +18442,165 @@
                 }
               },
               "gap_limit_mm_at_t10_REFeB": 0.8816320314460758
+            },
+            "adverse:offset_ti_total_drift:mismatch_raw": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.00041,
+                "hot": 0.00046
+              },
+              "dbp_T_per_K": {
+                "cold": 2.9023634565565723e-08,
+                "hot": 4.4580408212360276e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.025557169163900672,
+                  "p_mm_at_infinite_thickness": 5.711986644830568
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.05049766023900108,
+                  "t_min_mm_with_unwrap_floor": 0.06643159720372492,
+                  "need_T_at_infinite_thickness": 0.07335176814647588,
+                  "p_mm_at_infinite_thickness": 6.1801822682217
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.024505448474991417,
+                  "p_mm_at_infinite_thickness": 5.711986644772728
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.06292503297820867,
+                  "t_min_mm_with_unwrap_floor": 0.08283761239027146,
+                  "need_T_at_infinite_thickness": 0.070333218962371,
+                  "p_mm_at_infinite_thickness": 6.180182268326655
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": 0.05,
+                  "need_T_at_infinite_thickness": 0.024618012118304163,
+                  "p_mm_at_infinite_thickness": 5.711986643088391
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.07526655031363044,
+                  "t_min_mm_with_unwrap_floor": 0.09915380355837858,
+                  "need_T_at_infinite_thickness": 0.07065628847813181,
+                  "p_mm_at_infinite_thickness": 6.180182268218437
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 7.113846171514628
+            },
+            "adverse:offset_ti_total_drift:mismatch_from_25C": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.0005467281735861951,
+                "hot": 0.0008397764623383126
+              },
+              "dbp_T_per_K": {
+                "cold": 2.9023634565565723e-08,
+                "hot": 4.4580408212360276e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.07251173743539792,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.1706816597279599,
+                  "p_mm_at_infinite_thickness": 3.6256938974233246
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.6315200345192983,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.9225205869693681,
+                  "p_mm_at_infinite_thickness": 3.808851114967212
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.09124387897960594,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.16365782107031934,
+                  "p_mm_at_infinite_thickness": 3.625693897472684
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.9836988294141638,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.8845573062539572,
+                  "p_mm_at_infinite_thickness": 3.808851114991912
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.1102309729778422,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.1644095690179278,
+                  "p_mm_at_infinite_thickness": 3.625693897463688
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 1.8835603625436503,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.888620443201338,
+                  "p_mm_at_infinite_thickness": 3.808851114961659
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 4.262707250881506
+            },
+            "adverse:offset_ti_total_drift:mismatch_best_fit": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.0010934563471723903,
+                "hot": 0.0016795529246766252
+              },
+              "dbp_T_per_K": {
+                "cold": 2.9023634565565723e-08,
+                "hot": 4.4580408212360276e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 11.369419092300072,
+                  "p_mm_at_infinite_thickness": 2.0057488740670575
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 249.10242620482538,
+                  "p_mm_at_infinite_thickness": 2.0605641715334535
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 10.901548288473288,
+                  "p_mm_at_infinite_thickness": 2.0057488740197074
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 238.85144051791477,
+                  "p_mm_at_infinite_thickness": 2.060564171620273
+                },
+                "RECo5:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 10.951623601086014,
+                  "p_mm_at_infinite_thickness": 2.0057488740235865
+                },
+                "RECo5:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 239.9485838076052,
+                  "p_mm_at_infinite_thickness": 2.060564171610615
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 2.344866226494438
             }
           },
           "x_z": {
@@ -18098,6 +19081,165 @@
               },
               "gap_limit_mm_at_t10_REFeB": 0.6107490494493238
             },
+            "kind:offset_ti_total_drift:mismatch_raw": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.00063,
+                "hot": 0.00074
+              },
+              "dbp_T_per_K": {
+                "cold": 3.241895670081225e-08,
+                "hot": 6.088367483408008e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.06339448325875095,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.13729871884027692,
+                  "p_mm_at_infinite_thickness": 4.0105438142841
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.38959268355361504,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.6283984170851882,
+                  "p_mm_at_infinite_thickness": 4.23585526195356
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.08158729610910277,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.13488743272187625,
+                  "p_mm_at_infinite_thickness": 4.01054381398039
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.5500419502130616,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.6173622734653395,
+                  "p_mm_at_infinite_thickness": 4.235855261946214
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.09802742720267654,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.13522670367811188,
+                  "p_mm_at_infinite_thickness": 4.0105438138477005
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.7322751972826427,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.6189150726004105,
+                  "p_mm_at_infinite_thickness": 4.235855261918111
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 4.555554839405836
+            },
+            "kind:offset_ti_total_drift:mismatch_from_25C": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.00066793893129771,
+                "hot": 0.001254407323389708
+              },
+              "dbp_T_per_K": {
+                "cold": 3.241895670081225e-08,
+                "hot": 6.088367483408008e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 1.797578209103656,
+                  "p_mm_at_infinite_thickness": 2.5920600918968253
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 19.390849205825397,
+                  "p_mm_at_infinite_thickness": 2.684343155325525
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 1.7660085381048072,
+                  "p_mm_at_infinite_thickness": 2.5920600919175407
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 19.05030061288184,
+                  "p_mm_at_infinite_thickness": 2.6843431553162365
+                },
+                "RECo5:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 1.7704504300835682,
+                  "p_mm_at_infinite_thickness": 2.5920600918982646
+                },
+                "RECo5:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 19.098216223514264,
+                  "p_mm_at_infinite_thickness": 2.6843431553347594
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 2.902950724340306
+            },
+            "kind:offset_ti_total_drift:mismatch_best_fit": {
+              "edge_distance_K": {
+                "cold": 52.4,
+                "hot": 27.901622820107306
+              },
+              "eps_per_K": {
+                "cold": 0.00133587786259542,
+                "hot": 0.002508814646779416
+              },
+              "dbp_T_per_K": {
+                "cold": 3.241895670081225e-08,
+                "hot": 6.088367483408008e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 951.9161341661784,
+                  "p_mm_at_infinite_thickness": 1.3917198702034412
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 83076.46715142578,
+                  "p_mm_at_infinite_thickness": 1.4178916913652337
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 935.1982639661876,
+                  "p_mm_at_infinite_thickness": 1.3917198702593352
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 81617.45039074478,
+                  "p_mm_at_infinite_thickness": 1.4178916913358552
+                },
+                "RECo5:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 937.5504890985326,
+                  "p_mm_at_infinite_thickness": 1.3917198702522726
+                },
+                "RECo5:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 81822.7358638302,
+                  "p_mm_at_infinite_thickness": 1.4178916913401474
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 1.5947350699838074
+            },
             "adverse:offset_raw:mismatch_raw": {
               "edge_distance_K": {
                 "cold": 58.53,
@@ -18574,12 +19716,171 @@
                 }
               },
               "gap_limit_mm_at_t10_REFeB": 0.8269694038216141
+            },
+            "adverse:offset_ti_total_drift:mismatch_raw": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.00063,
+                "hot": 0.00074
+              },
+              "dbp_T_per_K": {
+                "cold": 2.9023634565565723e-08,
+                "hot": 4.4580408212360276e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.05,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.10363943154609369,
+                  "p_mm_at_infinite_thickness": 4.010543813056843
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": 0.2707113202159625,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.4743442275447429,
+                  "p_mm_at_infinite_thickness": 4.235855261940923
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.059022706530150286,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.09937449384329902,
+                  "p_mm_at_infinite_thickness": 4.0105438123253085
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": 0.3555972516055744,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.4548241611956833,
+                  "p_mm_at_infinite_thickness": 4.235855261902895
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.07080346615058272,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.09983096192592886,
+                  "p_mm_at_infinite_thickness": 4.010543810373097
+                },
+                "RECo5:g4": {
+                  "t_min_mm": 0.45089408083901095,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.4569133563680589,
+                  "p_mm_at_infinite_thickness": 4.235855262031577
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 4.7497424142523474
+            },
+            "adverse:offset_ti_total_drift:mismatch_from_25C": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.0005979839398599009,
+                "hot": 0.0009185055056825294
+              },
+              "dbp_T_per_K": {
+                "cold": 2.9023634565565723e-08,
+                "hot": 4.4580408212360276e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": 0.10362814082553219,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.2530141457455925,
+                  "p_mm_at_infinite_thickness": 3.370489628332374
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 1.5592652272714638,
+                  "p_mm_at_infinite_thickness": 3.528209411379398
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": 0.1316410481610323,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.2426021861908853,
+                  "p_mm_at_infinite_thickness": 3.370489628443609
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 1.4950988288530278,
+                  "p_mm_at_infinite_thickness": 3.528209411363772
+                },
+                "RECo5:g3": {
+                  "t_min_mm": 0.16063169372772776,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 0.24371655820416016,
+                  "p_mm_at_infinite_thickness": 3.3704896284280075
+                },
+                "RECo5:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 1.5019664351104713,
+                  "p_mm_at_infinite_thickness": 3.5282094113916402
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 3.947513046619033
+            },
+            "adverse:offset_ti_total_drift:mismatch_best_fit": {
+              "edge_distance_K": {
+                "cold": 58.53,
+                "hot": 38.10537855621449
+              },
+              "eps_per_K": {
+                "cold": 0.0011959678797198018,
+                "hot": 0.0018370110113650588
+              },
+              "dbp_T_per_K": {
+                "cold": 2.9023634565565723e-08,
+                "hot": 4.4580408212360276e-08
+              },
+              "cells": {
+                "REFeB_sintered:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 24.98355100787974,
+                  "p_mm_at_infinite_thickness": 1.8507073177544016
+                },
+                "REFeB_sintered:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 711.6489485449032,
+                  "p_mm_at_infinite_thickness": 1.8972774593180672
+                },
+                "RE2Co17:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 23.95543567519567,
+                  "p_mm_at_infinite_thickness": 1.8507073175266646
+                },
+                "RE2Co17:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 682.3633920098556,
+                  "p_mm_at_infinite_thickness": 1.8972774594219495
+                },
+                "RECo5:g3": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 24.06547288261499,
+                  "p_mm_at_infinite_thickness": 1.8507073176971733
+                },
+                "RECo5:g4": {
+                  "t_min_mm": null,
+                  "t_min_mm_with_unwrap_floor": null,
+                  "need_T_at_infinite_thickness": 685.4977688218645,
+                  "p_mm_at_infinite_thickness": 1.897277459410322
+                }
+              },
+              "gap_limit_mm_at_t10_REFeB": 2.1692967984499725
             }
           }
         }
       }
     },
-    "verdict": "LIN bounds the SIZE of the drift's residual over −40…+125 °C, not its slope (TI: not a per-kelvin coefficient), so the frames' per-kelvin rule has no guaranteed reading from it; at the window's edge — the most favourable point — the readings hold 3 mm on REFeB in 10 of 72 row·pair·corner·reading cells, every one with the offset compensated; nearer 25 °C the same residual is a larger per-kelvin figure without bound, and the drift's repeatability and 20-year stability are not published — a linear compensation is a MEASURED band, not a guarantee",
+    "verdict": "LIN bounds the SIZE of the drift's residual over −40…+125 °C, not its slope (TI: not a per-kelvin coefficient), so the frames' per-kelvin rule has no guaranteed reading from it; at the window's edge — the most favourable point — the readings hold 3 mm on REFeB in 10 of 72 row·pair·corner·reading cells, every one with the offset compensated; nearer 25 °C the same residual is a larger per-kelvin figure without bound, and the drift's repeatability and 20-year stability are not published — a linear compensation is a MEASURED band, not a guarantee. The offset row has two readings of what LIN is a share of: TI's follow-up (2026-11-18) — the total offset drift over the full range, a best-fit line not held to 25 °C — holds 3 mm on REFeB in 19 of 24 of its cells, 8 with the unwrap floor; TI's answer excludes a share of the full-scale range, and our full-scale reading is kept as the adverse bound (its residual is ×47–×160 TI's, whose own is ×15–×24 below one read's noise): on the same line it holds in 4 of 24, 4 with the floor. With that line not through 25 °C the offset's «from 25 °C» cells are a control — 6 of the 10 holds above; without them 4 of 48",
     "holds_3mm_REFeB": [
       "TMAG3001A1 x_y adverse:offset_best_fit:mismatch_from_25C",
       "TMAG3001A1 x_y adverse:offset_best_fit:mismatch_raw",
@@ -18593,7 +19894,78 @@
       "TMAG3001A1 x_z kind:offset_from_25C:mismatch_from_25C"
     ],
     "cells_total": 72,
-    "every_hold_compensates_the_offset": true
+    "every_hold_compensates_the_offset": true,
+    "population": "holds_3mm_REFeB and cells_total count OUR readings of the offset; TI's total-drift reading is `ti_total_drift_reading`",
+    "ti_total_drift_reading": {
+      "holds_3mm_REFeB": [
+        "TMAG3001A1 x_y adverse:offset_ti_total_drift:mismatch_best_fit",
+        "TMAG3001A1 x_y adverse:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A1 x_y adverse:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A1 x_y kind:offset_ti_total_drift:mismatch_best_fit",
+        "TMAG3001A1 x_y kind:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A1 x_y kind:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A1 x_z adverse:offset_ti_total_drift:mismatch_best_fit",
+        "TMAG3001A1 x_z adverse:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A1 x_z adverse:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A1 x_z kind:offset_ti_total_drift:mismatch_best_fit",
+        "TMAG3001A1 x_z kind:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A1 x_z kind:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A2 x_y adverse:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A2 x_y adverse:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A2 x_y kind:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A2 x_y kind:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A2 x_z adverse:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A2 x_z adverse:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A2 x_z kind:offset_ti_total_drift:mismatch_raw"
+      ],
+      "cells_total": 24,
+      "holds_3mm_REFeB_with_unwrap_floor": [
+        "TMAG3001A1 x_y adverse:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A1 x_y adverse:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A1 x_y kind:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A1 x_y kind:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A1 x_z adverse:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A1 x_z kind:offset_ti_total_drift:mismatch_from_25C",
+        "TMAG3001A2 x_y adverse:offset_ti_total_drift:mismatch_raw",
+        "TMAG3001A2 x_y kind:offset_ti_total_drift:mismatch_raw"
+      ],
+      "residual_ours_over_ti": {
+        "TMAG3001A1": 47.34848484848485,
+        "TMAG3001A2": 159.84015984015983
+      },
+      "one_read_noise_over_residual": {
+        "TMAG3001A1": 15.782828282828286,
+        "TMAG3001A2": 24.14252414252414
+      }
+    },
+    "best_fit_full_scale_ours": {
+      "holds_3mm_REFeB": [
+        "TMAG3001A1 x_y adverse:offset_best_fit:mismatch_from_25C",
+        "TMAG3001A1 x_y adverse:offset_best_fit:mismatch_raw",
+        "TMAG3001A1 x_y kind:offset_best_fit:mismatch_raw",
+        "TMAG3001A1 x_z adverse:offset_best_fit:mismatch_from_25C"
+      ],
+      "cells_total": 24,
+      "holds_3mm_REFeB_with_unwrap_floor": [
+        "TMAG3001A1 x_y adverse:offset_best_fit:mismatch_from_25C",
+        "TMAG3001A1 x_y adverse:offset_best_fit:mismatch_raw",
+        "TMAG3001A1 x_y kind:offset_best_fit:mismatch_raw",
+        "TMAG3001A1 x_z adverse:offset_best_fit:mismatch_from_25C"
+      ]
+    },
+    "offset_from_25C_control": {
+      "holds_3mm_REFeB": [
+        "TMAG3001A1 x_y adverse:offset_from_25C:mismatch_from_25C",
+        "TMAG3001A1 x_y adverse:offset_from_25C:mismatch_raw",
+        "TMAG3001A1 x_y kind:offset_from_25C:mismatch_from_25C",
+        "TMAG3001A1 x_y kind:offset_from_25C:mismatch_raw",
+        "TMAG3001A1 x_z adverse:offset_from_25C:mismatch_from_25C",
+        "TMAG3001A1 x_z kind:offset_from_25C:mismatch_from_25C"
+      ],
+      "cells_total": 24,
+      "holds_without_it": 4,
+      "cells_without_it": 48
+    }
   },
   "sensor_screen": {
     "rule": "the sensor table's sum rule on the screen rows' two drift bounds; no read, no levers",
@@ -24020,7 +25392,38 @@
               "kind:offset_from_25C:mismatch_raw"
             ],
             "linearity_best_gap_t10_mm": 4.893270774400026,
-            "linearity_best_gap_t10_reachable": "yes"
+            "linearity_best_gap_t10_reachable": "yes",
+            "linearity_ti_total_drift": {
+              "holds_3mm_REFeB": [
+                "adverse:offset_ti_total_drift:mismatch_best_fit",
+                "adverse:offset_ti_total_drift:mismatch_from_25C",
+                "adverse:offset_ti_total_drift:mismatch_raw",
+                "kind:offset_ti_total_drift:mismatch_best_fit",
+                "kind:offset_ti_total_drift:mismatch_from_25C",
+                "kind:offset_ti_total_drift:mismatch_raw"
+              ],
+              "holds_3mm_REFeB_with_unwrap_floor": [
+                "adverse:offset_ti_total_drift:mismatch_from_25C",
+                "adverse:offset_ti_total_drift:mismatch_raw",
+                "kind:offset_ti_total_drift:mismatch_from_25C",
+                "kind:offset_ti_total_drift:mismatch_raw"
+              ],
+              "cells": 6,
+              "gap_t10_mm_min_max": [
+                3.287507146581511,
+                9.56731476437422
+              ],
+              "worst_gap_t10_reachable": "yes"
+            },
+            "linearity_without_offset_from_25C": {
+              "holds_3mm_REFeB": [
+                "adverse:offset_best_fit:mismatch_from_25C",
+                "adverse:offset_best_fit:mismatch_raw",
+                "kind:offset_best_fit:mismatch_raw"
+              ],
+              "best_gap_t10_mm": 3.980947531654393,
+              "best_gap_t10_reachable": "yes"
+            }
           },
           "x_z": {
             "mount": "flat",
@@ -24044,7 +25447,34 @@
               "kind:offset_from_25C:mismatch_from_25C"
             ],
             "linearity_best_gap_t10_mm": 4.208387429845514,
-            "linearity_best_gap_t10_reachable": "yes"
+            "linearity_best_gap_t10_reachable": "yes",
+            "linearity_ti_total_drift": {
+              "holds_3mm_REFeB": [
+                "adverse:offset_ti_total_drift:mismatch_best_fit",
+                "adverse:offset_ti_total_drift:mismatch_from_25C",
+                "adverse:offset_ti_total_drift:mismatch_raw",
+                "kind:offset_ti_total_drift:mismatch_best_fit",
+                "kind:offset_ti_total_drift:mismatch_from_25C",
+                "kind:offset_ti_total_drift:mismatch_raw"
+              ],
+              "holds_3mm_REFeB_with_unwrap_floor": [
+                "adverse:offset_ti_total_drift:mismatch_from_25C",
+                "kind:offset_ti_total_drift:mismatch_from_25C"
+              ],
+              "cells": 6,
+              "gap_t10_mm_min_max": [
+                3.287507146581511,
+                8.043760547946952
+              ],
+              "worst_gap_t10_reachable": "yes"
+            },
+            "linearity_without_offset_from_25C": {
+              "holds_3mm_REFeB": [
+                "adverse:offset_best_fit:mismatch_from_25C"
+              ],
+              "best_gap_t10_mm": 3.453352413625709,
+              "best_gap_t10_reachable": "yes"
+            }
           }
         }
       },
@@ -24070,7 +25500,30 @@
             "sensor_table_best_gap_t10_edge_reading_mm": null,
             "linearity_holds_3mm_REFeB": [],
             "linearity_best_gap_t10_mm": 2.6752504009716325,
-            "linearity_best_gap_t10_reachable": "yes"
+            "linearity_best_gap_t10_reachable": "yes",
+            "linearity_ti_total_drift": {
+              "holds_3mm_REFeB": [
+                "adverse:offset_ti_total_drift:mismatch_from_25C",
+                "adverse:offset_ti_total_drift:mismatch_raw",
+                "kind:offset_ti_total_drift:mismatch_from_25C",
+                "kind:offset_ti_total_drift:mismatch_raw"
+              ],
+              "holds_3mm_REFeB_with_unwrap_floor": [
+                "adverse:offset_ti_total_drift:mismatch_raw",
+                "kind:offset_ti_total_drift:mismatch_raw"
+              ],
+              "cells": 6,
+              "gap_t10_mm_min_max": [
+                1.7238734371770732,
+                7.113846171514628
+              ],
+              "worst_gap_t10_reachable": "no"
+            },
+            "linearity_without_offset_from_25C": {
+              "holds_3mm_REFeB": [],
+              "best_gap_t10_mm": 2.0919526875278422,
+              "best_gap_t10_reachable": "no"
+            }
           },
           "x_z": {
             "mount": "flat",
@@ -24090,7 +25543,26 @@
             "sensor_table_best_gap_t10_edge_reading_mm": null,
             "linearity_holds_3mm_REFeB": [],
             "linearity_best_gap_t10_mm": 1.928416419895247,
-            "linearity_best_gap_t10_reachable": "no"
+            "linearity_best_gap_t10_reachable": "no",
+            "linearity_ti_total_drift": {
+              "holds_3mm_REFeB": [
+                "adverse:offset_ti_total_drift:mismatch_from_25C",
+                "adverse:offset_ti_total_drift:mismatch_raw",
+                "kind:offset_ti_total_drift:mismatch_raw"
+              ],
+              "holds_3mm_REFeB_with_unwrap_floor": [],
+              "cells": 6,
+              "gap_t10_mm_min_max": [
+                1.5947350699838074,
+                4.7497424142523474
+              ],
+              "worst_gap_t10_reachable": "no"
+            },
+            "linearity_without_offset_from_25C": {
+              "holds_3mm_REFeB": [],
+              "best_gap_t10_mm": 1.5457489455185154,
+              "best_gap_t10_reachable": "no"
+            }
           }
         }
       },
@@ -24153,7 +25625,7 @@
         }
       }
     },
-    "verdict": "the gap a package can reach is the wall plus where its elements sit — flat for X–Z, edge-on for X–Y: TMAG5273A1 x_y 2.90–3.20 mm; TMAG5273A1 x_z 2.73–2.73 mm; TMAG5170A1 x_y 3.36–3.54 mm; TMAG5170A1 x_z 2.32–2.32 mm; TMAG3001A1 x_y 2.37–2.40 mm; TMAG3001A1 x_z 2.25–2.25 mm; TLE493D-P3B6_comp x_y 3.24–3.45 mm; TLE493D-P3B6_comp x_z 2.39–2.70 mm; the sensor table's 3 mm holds that the package cannot reach: ['TLE493D-P3B6_comp x_y'] — edge-on, none of them reaches any gap it holds even on a 10 mm scale (TLE493D-P3B6_comp x_y), and tilted end-on no angle helps; a tilt towards the leaded side (the lead form is not dimensioned) and a band reading flatter than linear are not excluded; the linear compensation's 3 mm holds that it can reach: ['TMAG3001A1 x_y', 'TMAG3001A1 x_z']",
+    "verdict": "the gap a package can reach is the wall plus where its elements sit — flat for X–Z, edge-on for X–Y: TMAG5273A1 x_y 2.90–3.20 mm; TMAG5273A1 x_z 2.73–2.73 mm; TMAG5170A1 x_y 3.36–3.54 mm; TMAG5170A1 x_z 2.32–2.32 mm; TMAG3001A1 x_y 2.37–2.40 mm; TMAG3001A1 x_z 2.25–2.25 mm; TLE493D-P3B6_comp x_y 3.24–3.45 mm; TLE493D-P3B6_comp x_z 2.39–2.70 mm; the sensor table's 3 mm holds that the package cannot reach: ['TLE493D-P3B6_comp x_y'] — edge-on, none of them reaches any gap it holds even on a 10 mm scale (TLE493D-P3B6_comp x_y), and tilted end-on no angle helps; a tilt towards the leaded side (the lead form is not dimensioned) and a band reading flatter than linear are not excluded; the linear compensation's 3 mm holds that it can reach: ['TMAG3001A1 x_y', 'TMAG3001A1 x_z']; on TI's total-drift reading of the offset, reachable and held at 3 mm on EVERY reading of the mismatch: ['TMAG3001A1 x_y', 'TMAG3001A1 x_z'] without the unwrap floor, none with it",
     "held_at_3mm_but_unreachable": [
       "TLE493D-P3B6_comp x_y"
     ],
@@ -24164,7 +25636,12 @@
     "linearity_3mm_reachable": [
       "TMAG3001A1 x_y",
       "TMAG3001A1 x_z"
-    ]
+    ],
+    "linearity_ti_total_drift_3mm_reachable_on_every_mismatch_reading": [
+      "TMAG3001A1 x_y",
+      "TMAG3001A1 x_z"
+    ],
+    "linearity_ti_total_drift_3mm_reachable_on_every_mismatch_reading_with_unwrap_floor": []
   },
   "unwrap": {
     "worst_change_mm_by_basis": {

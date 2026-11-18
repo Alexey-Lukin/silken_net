@@ -10889,10 +10889,26 @@ def _rch_tilt_deficit(d):
 _LIN = "sensor_drift_linearity"
 
 
+def _lin_resid(d, basis):
+    """(2e) the TMAG3001A1's offset residual LIN bounds, in tesla, on one basis (`range` — ours ⊥ `total_drift` — TI's)."""
+    return d[_LIN]["rows"]["TMAG3001A1"]["offset_residual_T_by_basis"][basis]
+
+
+def _lin_ti(d):
+    """(2e) the block of TI's total-drift reading of the offset (2026-11-18)."""
+    return d[_LIN]["ti_total_drift_reading"]
+
+
+def rch_ti_reach(d):
+    """(2h) the rows·pairs TI's reading holds at 3 mm on every mismatch reading AND whose package reaches 3 mm."""
+    return d["sensor_package_reach"]["linearity_ti_total_drift_3mm_reachable_on_every_mismatch_reading"]
+
+
 def _lin_xy_rawmis(d):
     """(2e) the TMAG3001A1's X–Y blocks with the offset compensated (either line) and the mismatch raw, both corners."""
     pr = d[_LIN]["rows"]["TMAG3001A1"]["pairs"]["x_y"]
-    return [b for k, b in pr.items() if k.endswith(":mismatch_raw") and ":offset_raw:" not in k]
+    return [b for k, b in pr.items() if k.endswith(":mismatch_raw") and ":offset_raw:" not in k
+            and ":offset_ti_total_drift:" not in k]   # OUR readings of the offset; TI's (2026-11-18) is pinned apart
 
 
 def _p3_cell(d, corner):
@@ -10930,6 +10946,38 @@ CHECKS += [
      lambda d: len(d[_LIN]["holds_3mm_REFeB"]), 0.0),
     ("dendrometer LIN cells total → 114", SUMMARY, rf"holds in \*\*\d+ of {N}\*\* row·pair·corner·reading cells", DEN,
      lambda d: d[_LIN]["cells_total"], 0.0),
+    # 2026-11-18: TI's follow-up — the offset's total-drift reading beside our full-scale one (never one population);
+    # every count without ⊥ with the unwrap floor, the «from 25 °C» control cells named apart
+    *[(f"dendrometer LIN TI reading {what} → 114", SUMMARY, rx, DEN, fn, 0.0) for what, rx, fn in (
+        ("residual A1", rf"the residual LIN bounds is \*\*{N} µT\*\* for the TMAG3001A1", lambda d: _floor(_lin_resid(d, "total_drift") * 1e6)),
+        ("ratio A1", rf"×{N} below the [\d.]+ µT of our full-scale reading", lambda d: _floor(_lin_resid(d, "range") / _lin_resid(d, "total_drift"), 0)),
+        ("ours A1", rf"×[\d.]+ below the {N} µT of our full-scale reading", lambda d: round(_lin_resid(d, "range") * 1e6, 6)),
+        ("cells holding", rf"holds in \*\*{N} of \d+\*\* of its cells without the unwrap floor", lambda d: len(_lin_ti(d)["holds_3mm_REFeB"])),
+        ("cells total", rf"holds in \*\*\d+ of {N}\*\* of its cells without the unwrap floor", lambda d: _lin_ti(d)["cells_total"]),
+        ("cells holding, floor", rf"and in \*\*{N} of \d+\*\* with it: with the floor", lambda d: len(_lin_ti(d)["holds_3mm_REFeB_with_unwrap_floor"])),
+        ("cells total, floor", rf"and in \*\*\d+ of {N}\*\* with it: with the floor", lambda d: _lin_ti(d)["cells_total"]),
+        ("noise over residual A1", rf"is ×{N} below the noise of one read", lambda d: _floor(_lin_ti(d)["one_read_noise_over_residual"]["TMAG3001A1"], 0)),
+        ("ours best-fit holding", rf"it holds in \*\*{N} of \d+\*\* cells, with or without the floor", lambda d: len(d[_LIN]["best_fit_full_scale_ours"]["holds_3mm_REFeB"])),
+        ("ours best-fit total", rf"it holds in \*\*\d+ of {N}\*\* cells, with or without the floor", lambda d: d[_LIN]["best_fit_full_scale_ours"]["cells_total"]),
+        ("control holds", rf"{N} of the \d+ holds, and without them \d+ of \d+", lambda d: len(d[_LIN]["offset_from_25C_control"]["holds_3mm_REFeB"])),
+        ("control of", rf"\d+ of the {N} holds, and without them \d+ of \d+", lambda d: len(d[_LIN]["holds_3mm_REFeB"])),
+        ("without control holds", rf"\d+ of the \d+ holds, and without them {N} of \d+", lambda d: d[_LIN]["offset_from_25C_control"]["holds_without_it"]),
+        ("without control cells", rf"\d+ of the \d+ holds, and without them \d+ of {N}", lambda d: d[_LIN]["offset_from_25C_control"]["cells_without_it"]))],
+    *[(f"dendrometer canon ⊕ TI reading {what} → 114", EBFC, rx, DEN, fn, 0.0) for what, rx, fn in (
+        ("residual A1", rf"залишок для TMAG3001A1 — {N} мкТл", lambda d: _floor(_lin_resid(d, "total_drift") * 1e6)),
+        ("ratio A1", rf"у {N} разів менший за [\d.]+ мкТл нашого повношкального", lambda d: _floor(_lin_resid(d, "range") / _lin_resid(d, "total_drift"), 0)),
+        ("ours A1", rf"у [\d.]+ разів менший за {N} мкТл нашого повношкального", lambda d: round(_lin_resid(d, "range") * 1e6, 6)),
+        ("cells holding", rf"втримують {N} з \d+ клітинок цього прочитання", lambda d: len(_lin_ti(d)["holds_3mm_REFeB"])),
+        ("cells total", rf"втримують \d+ з {N} клітинок цього прочитання", lambda d: _lin_ti(d)["cells_total"]),
+        ("cells holding, floor", rf"без періоду розгортання та {N} з \d+ з ним", lambda d: len(_lin_ti(d)["holds_3mm_REFeB_with_unwrap_floor"])),
+        ("cells total, floor", rf"без періоду розгортання та \d+ з {N} з ним", lambda d: _lin_ti(d)["cells_total"]),
+        ("noise over residual A1", rf"у {N} разів менший за шум одного читання", lambda d: _floor(_lin_ti(d)["one_read_noise_over_residual"]["TMAG3001A1"], 0)),
+        ("ours best-fit holding", rf"воно втримує {N} з \d+ клітинок, з періодом розгортання й без", lambda d: len(d[_LIN]["best_fit_full_scale_ours"]["holds_3mm_REFeB"])),
+        ("ours best-fit total", rf"воно втримує \d+ з {N} клітинок, з періодом розгортання й без", lambda d: d[_LIN]["best_fit_full_scale_ours"]["cells_total"]),
+        ("control holds", rf"це {N} із \d+, без них — \d+ з \d+", lambda d: len(d[_LIN]["offset_from_25C_control"]["holds_3mm_REFeB"])),
+        ("control of", rf"це \d+ із {N}, без них — \d+ з \d+", lambda d: len(d[_LIN]["holds_3mm_REFeB"])),
+        ("without control holds", rf"це \d+ із \d+, без них — {N} з \d+", lambda d: d[_LIN]["offset_from_25C_control"]["holds_without_it"]),
+        ("without control cells", rf"це \d+ із \d+, без них — \d+ з {N}", lambda d: d[_LIN]["offset_from_25C_control"]["cells_without_it"]))],
     *[(f"dendrometer LIN A1 X–Y raw mismatch {what} → 114", SUMMARY, rx, DEN, fn, 0.0) for what, rx, fn in (
         ("thickness low", rf"from a scale \*\*{N}–[\d.]+ mm\*\* thick with the floor", lambda d: _ceil(min(b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] for b in _lin_xy_rawmis(d)))),
         ("thickness high", rf"from a scale \*\*[\d.]+–{N} mm\*\* thick with the floor", lambda d: _ceil(max(b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] for b in _lin_xy_rawmis(d)))),
@@ -11154,6 +11202,38 @@ def test_dendrometer_sensor_table_documents_follow_the_cache():
     assert all(b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] is not None for b in _lin_xy_rawmis(d))
     xz = [h for h in holds if " x_z " in h]
     assert xz and all(h.endswith(":mismatch_from_25C") for h in xz)
+    # ⊕ 2026-11-18, TI's total-drift reading: «the A1 on every reading of the mismatch, on both pairs and both corners» ·
+    # «the A2 on some» · ours on the best-fit line «all the A1's, its X–Y with the mismatch left raw on both corners» ·
+    # «on both readings of the offset the A1's X–Y holds 3 mm … with the mismatch at its guaranteed raw row»
+    ti = d[_LIN]["ti_total_drift_reading"]
+    a1 = d[_LIN]["rows"]["TMAG3001A1"]["pairs"]
+    ti_a1 = [f"TMAG3001A1 {p_} {k}" for p_, pr_ in a1.items() for k in pr_ if ":offset_ti_total_drift:" in k]
+    assert ti_a1 and set(ti_a1) <= set(ti["holds_3mm_REFeB"])
+    ti_a2 = [h for h in ti["holds_3mm_REFeB"] if h.startswith("TMAG3001A2 ")]
+    n_a2 = sum(1 for pr_ in d[_LIN]["rows"]["TMAG3001A2"]["pairs"].values() for k in pr_ if ":offset_ti_total_drift:" in k)
+    assert 0 < len(ti_a2) < n_a2
+    ours = d[_LIN]["best_fit_full_scale_ours"]["holds_3mm_REFeB"]
+    assert ours and all(h.startswith("TMAG3001A1 ") for h in ours)
+    assert all(f"TMAG3001A1 x_y {c}:offset_{o}:mismatch_raw" in ours + ti["holds_3mm_REFeB"]
+               for c in ("kind", "adverse") for o in ("best_fit", "ti_total_drift"))
+    assert all(v > 1.0 for v in ti["residual_ours_over_ti"].values())      # «the adverse bound»: ours is the larger residual
+    assert rch_ti_reach(d) == ["TMAG3001A1 x_y", "TMAG3001A1 x_z"]          # held on every mismatch reading — WITHOUT the floor
+    assert d["sensor_package_reach"]["linearity_ti_total_drift_3mm_reachable_on_every_mismatch_reading_with_unwrap_floor"] == []
+    assert d["sensor_package_reach"]["rows"]["TMAG3001A1"]["pairs"]["x_y"]["reach_3mm"] == "yes"   # «a gap its package reaches»
+    # «with the floor, the A1's X–Y with the mismatch raw or compensated from 25 °C, its X–Z only with the mismatch
+    # compensated from 25 °C, the A2's X–Y with the mismatch raw — each on both corners; … best-fit … nowhere with the floor»
+    want_floor = sorted(f"{n} {p_} {c}:offset_ti_total_drift:mismatch_{m}" for c in ("kind", "adverse") for n, p_, m in (
+        ("TMAG3001A1", "x_y", "raw"), ("TMAG3001A1", "x_y", "from_25C"), ("TMAG3001A1", "x_z", "from_25C"), ("TMAG3001A2", "x_y", "raw")))
+    assert ti["holds_3mm_REFeB_with_unwrap_floor"] == want_floor
+    # ours on the best-fit line: «with or without the floor — the A1's X–Y with the mismatch raw on both corners, and both
+    # its pairs at the adverse corner with the mismatch compensated from 25 °C»
+    bf = d[_LIN]["best_fit_full_scale_ours"]
+    assert bf["holds_3mm_REFeB"] == bf["holds_3mm_REFeB_with_unwrap_floor"] == sorted(
+        [f"TMAG3001A1 x_y {c}:offset_best_fit:mismatch_raw" for c in ("kind", "adverse")]
+        + [f"TMAG3001A1 {p_} adverse:offset_best_fit:mismatch_from_25C" for p_ in ("x_y", "x_z")])
+    # «on both readings of the offset the A1's X–Y holds 3 mm … raw … with the unwrap floor too»
+    assert all(a1["x_y"][f"{c}:offset_{o}:mismatch_raw"]["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] is not None
+               for c in ("kind", "adverse") for o in ("best_fit", "ti_total_drift"))
     # «with the offset's line through 25 °C 4 mm too» — on both corners, with the floor
     pr = d[_LIN]["rows"]["TMAG3001A1"]["pairs"]["x_y"]
     assert all(pr[f"{c}:offset_from_25C:mismatch_raw"]["cells"]["REFeB_sintered:g4"]["t_min_mm_with_unwrap_floor"] is not None for c in ("kind", "adverse"))

@@ -117,6 +117,16 @@ MODEL.
     offset compensated only in OUR full-scale reading of Boff_DR_LIN (% of the verdict range — TI's stated reference
     gives no field for an offset); per row, pair, corner, family and gap, with and without the unwrap floor. The
     both-raw reading is the table's own verdict (a control). The sensitivity row is a common gain's and cancels.
+    ⊕ 2026-11-18, TI's follow-up in the same case: Boff_DR_LIN is a % of the TOTAL offset drift over the full
+    temperature range (their figure: the Boff_DR maximum times the span) — not of the range, not of the sensitivity —
+    and its line is a best fit NOT held to the 25 °C point (from 25 °C the deviation is up to about twice LIN). So the
+    offset has a fourth reading, `ti_total_drift` (k = 2 on that basis; the total drift in a number is OUR step from
+    their words — the largest guaranteed per-kelvin maximum times the full operating span). TI's answer excludes a
+    share of the full-scale range in so many words; OUR full-scale reading is kept beside it as the ADVERSE BOUND, not as
+    a rival definition — the datasheet prints none, the two answers of the case name two bases (the nominal
+    sensitivity, then the total drift), and the residual TI's reading leaves is far below the sensor's own noise — so a
+    consumer takes the adverse one until the bench measures the residual. The offset's «from 25 °C» (k = 1) cells are a
+    control since that answer: TI's line does not pass through 25 °C; the counts name them apart.
 (2f) SCREEN ROWS (2026-11-17). `SCREEN_ROWS` — sensors whose primary gives the two drift bounds but whose read rows are
     settings-dependent (Melexis MLX90395, Allegro ALS31313) — are judged by the same sum rule, offset and mismatch, on
     every family, corner and gap, without levers or a read; each total is derived from the datasheet's own columns by
@@ -306,7 +316,8 @@ CONTROLS (each says what it CAN and CANNOT catch).
  (12) Linearity and screen: each (2e) reading's per-kelvin drifts, mismatch AND offset, equal the row's raw
       row or k·LIN over the edge distance from the corner's own hours; each (2e) and screen cell's infinite-thickness need IS the sum rule at its period and «no thickness» is
       exactly a need above the family's maximum; the floor never lowers a limit; the both-raw reading agrees with the table's verdict both ways; «from 25 °C» never needs
-      more than «best fit»; a row with zero LIN fields, compensated, keeps no drift and holds at the thinnest scale; a band reached at the
+      more than «best fit»; TI's total-drift reading of the offset is its own residual over the edge distance, and where that
+      residual is the smaller one it never needs more than our full-scale best fit; a row with zero LIN fields, compensated, keeps no drift and holds at the thinnest scale; a band reached at the
       window's edge never holds more than the band spread to its end. CAN catch a reading that ignores LIN or the
       offset, a cell off its sum rule, a swapped span or edge; CANNOT TI's definition read wrong or a value transcribed
       wrong (the rows cite their sources).
@@ -579,9 +590,23 @@ SENSORS = {
 # data on repeatability after thermal cycling or on 20-year stability. Two things in it the datasheet does not settle:
 # «best-fit» and «referenced to 25 °C» are two different lines, and a % of the nominal SENSITIVITY gives no field for an
 # OFFSET row — so (2e) prices the offset row only under our full-scale reading, labelled as such.
+# ⊕ The follow-up answer in the same case, 2026-11-18 (our summary): Boff_DR_LIN «is defined relative to the total offset
+# drift (Boff_DR) across the full temperature range, not relative to nominal sensitivity or magnetic full-scale range»;
+# «offset drift linear error (µT) = Boff_DR_LIN × total offset drift over temperature span», the budget named as the
+# Boff_DR maximum per °C over −40…125 °C; the line is a best fit over that range, «not constrained to pass through the
+# 25 °C point», and against a 25 °C baseline the deviation «could be up to approximately twice the listed LIN value».
+# The answer excludes the full-scale reading explicitly («It is not a fixed percentage of the full-scale magnetic range»).
+# (2e) still prints it beside TI's (`OFFSET_LIN_READINGS`) as the ADVERSE BOUND — the datasheet prints no definition, the
+# case's first answer named another base (% of the nominal sensitivity), and the residual TI's reading gives is far below
+# the row's own noise — until the bench measures the residual. That the row prints one value per range decides nothing:
+# the absolute residual differs by range on either reading.
 DRIFT_LIN_DEFINITION = {"line": "best fit over −40…+125 °C", "unit": "% of the nominal sensitivity", "guaranteed": True,
                         "per_kelvin": False, "repeatability_and_lifetime": "not published",
-                        "source": "TI Customer Support case CS3699089, 2026-11-17"}
+                        "source": "TI Customer Support case CS3699089, 2026-11-17",
+                        "offset_row_2026_11_18": {
+                            "unit": "% of the total offset drift over the full temperature range",
+                            "line_held_to_25C": False, "from_25C_factor": 2.0,
+                            "source": "TI Customer Support case CS3699089, follow-up 2026-11-18"}}
 # PACKAGE REACH (2h) — where each Hall row's elements sit in its package, read 2026-11-17 off the primaries' figures (page
 # images): the X–Z pair reads with the package FLAT, its top to the wall, so the gap is the wall plus the element's depth
 # under the top; the X–Y pair needs both axes in the plane of the motion and the scale's normal, so the package stands
@@ -1436,6 +1461,25 @@ def sensor_table(args, t_hots: dict, colds: dict, unwrap_floor_mm: float) -> dic
 LIN_READINGS = {"raw": None, "from_25C": 1.0, "best_fit": 2.0}   # per member: the guaranteed per-kelvin row as read
 # (no compensation) ⊥ a linear compensation whose residual changes by at most k·LIN from 25 °C (TI: a best-fit line,
 # «typically referenced to the 25 °C point» — two different lines, so both are read)
+# The OFFSET's readings: (k, the basis LIN is a % of). `range` — OUR full-scale reading (the verdict range), kept as the
+# adverse bound; `total_drift` — TI's follow-up of 2026-11-18 (in a number, our step: the largest Boff_DR maximum times
+# the full operating span), whose line is not held to 25 °C, hence k = 2 only. `from_25C` on the range is a control
+# since that answer (no such line in it) — still computed, and counted apart.
+OFFSET_LIN_READINGS = {"raw": None, "from_25C": (1.0, "range"), "best_fit": (2.0, "range"),
+                       "ti_total_drift": (DRIFT_LIN_DEFINITION["offset_row_2026_11_18"]["from_25C_factor"], "total_drift")}
+TI_OFFSET_KEY = ":offset_ti_total_drift:"   # the cell keys of TI's reading — counted beside ours, never among them
+
+
+def offset_lin_residual_t(row: dict, basis: str) -> float:
+    """L_off — the size LIN bounds, in tesla: LIN's % of the verdict range (`range`) ⊥ of the total offset drift over the
+    full operating range, the largest guaranteed per-kelvin maximum of any axis and branch times the span (`total_drift`
+    — TI's figure, 2026-11-18)."""
+    pct = dict(row["drift_linearity"]["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]]
+    if basis == "range":
+        return pct * row["verdict_range_T"]
+    assert basis == "total_drift" and row["offset_basis"] == "per_K", (basis, row["offset_basis"])
+    per_k = max(v[1] for axis in row["offset_T_per_K"].values() for v in axis.values())
+    return pct * per_k * (row["operating_C"][1] - row["operating_C"][0])
 
 
 def _t_lim_safe(g_mm: float, lane: dict, a: tuple, b_r_max: float, p_floor: float = 0.5) -> float | None:
@@ -1445,13 +1489,14 @@ def _t_lim_safe(g_mm: float, lane: dict, a: tuple, b_r_max: float, p_floor: floa
     return thickness_limit_lane(g_mm, lane, a, b_r_max, p_floor)
 
 
-def lin_lane(row: dict, pair: str, k_off: float | None, k_mis: float | None, d_t: dict) -> dict:
+def lin_lane(row: dict, pair: str, k_off: float | None, k_mis: float | None, d_t: dict, off_basis: str = "range") -> dict:
     """A lane under one reading of each member: None keeps the guaranteed per-kelvin row (no compensation), a k gives a
     per-unit LINEAR compensation read as a chord at the window's edge — ε′ = k·LIN/ΔT for the mismatch, δa′ = δb′ =
-    k·L_off/ΔT for the offset (L_off our full-scale reading of Boff_DR_LIN, % of the verdict range); ΔT the edge's
-    distance from 25 °C, the most favourable point: nearer 25 °C the same residual is a larger per-kelvin figure."""
+    k·L_off/ΔT for the offset (L_off — `offset_lin_residual_t` on `off_basis`: our full-scale reading of Boff_DR_LIN ⊥
+    TI's total-drift one); ΔT the edge's distance from 25 °C, the most favourable point: nearer 25 °C the same residual
+    is a larger per-kelvin figure."""
     lin = row["drift_linearity"]
-    l_off = dict(lin["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]] * row["verdict_range_T"]
+    l_off = offset_lin_residual_t(row, off_basis)
     raw = make_lane(row, pair, 1, True)
     eps = dict(raw["eps"]) if k_mis is None else {br: k_mis * lin["mismatch"][pair] / d_t[br] for br in ("cold", "hot")}
     dbp = (dict(raw["dbp"]) if k_off is None
@@ -1477,9 +1522,10 @@ def linearity_reading(args, floor_mm: float) -> dict:
             for c in ("kind", "adverse"):
                 *_, t_hot, t_cold, _s = args("REFeB_sintered", c)
                 d_t = {"cold": BRANCH_SPLIT_C - t_cold, "hot": t_hot - BRANCH_SPLIT_C}
-                for ro, k_off in LIN_READINGS.items():
+                for ro, off in OFFSET_LIN_READINGS.items():
+                    k_off, off_basis = (None, "range") if off is None else off
                     for rm, k_mis in LIN_READINGS.items():
-                        ln = lin_lane(row, pair, k_off, k_mis, d_t)
+                        ln = lin_lane(row, pair, k_off, k_mis, d_t, off_basis)
                         cells = {}
                         for fam in VERDICT_FAMILIES:
                             a, b_max = args(fam, c), MAGNET_FAMILIES_BR_T[fam][1]
@@ -1498,19 +1544,55 @@ def linearity_reading(args, floor_mm: float) -> dict:
         lin = row["drift_linearity"]
         rows[name] = {"mismatch_drift_lin": lin["mismatch"],
                       "offset_drift_lin_pct_at_verdict_range": dict(lin["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]],
+                      "offset_residual_T_by_basis": {b: offset_lin_residual_t(row, b) for b in ("range", "total_drift")},
                       "sensitivity_drift_lin_not_a_member": lin["sensitivity"], "pairs": pairs}
-    holds = sorted(f"{n} {p} {key}" for n, r in rows.items() for p, pr in r["pairs"].items() for key, blk in pr.items()
-                   if blk["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None)
-    total = sum(len(pr) for r in rows.values() for pr in r["pairs"].values())
+    # the population of `holds` and `total` is OUR readings of the offset (raw ⊥ full-scale from 25 °C ⊥ full-scale best
+    # fit) — what the 2026-11-17 verdict counted; TI's total-drift reading (2026-11-18) is counted beside it, never mixed in
+    all_holds = sorted(f"{n} {p} {key}" for n, r in rows.items() for p, pr in r["pairs"].items() for key, blk in pr.items()
+                       if blk["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None)
+    ti_keys = [k for r in rows.values() for pr in r["pairs"].values() for k in pr if TI_OFFSET_KEY in k]
+    ti_holds = [h for h in all_holds if TI_OFFSET_KEY in h]
+    holds = [h for h in all_holds if TI_OFFSET_KEY not in h]
+    total = sum(len(pr) for r in rows.values() for pr in r["pairs"].values()) - len(ti_keys)
     all_comp_off = all(":offset_raw:" not in h for h in holds)
+    ours_keys = [k for r in rows.values() for pr in r["pairs"].values() for k in pr if ":offset_best_fit:" in k]
+    ours_holds = [h for h in holds if ":offset_best_fit:" in h]
+    floor_holds = sorted(f"{n} {p} {key}" for n, r in rows.items() for p, pr in r["pairs"].items() for key, blk in pr.items()
+                         if blk["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] is not None)
+    ti_floor = [h for h in floor_holds if TI_OFFSET_KEY in h]
+    ours_floor = [h for h in floor_holds if ":offset_best_fit:" in h]
+    ctrl_keys = [k for r in rows.values() for pr in r["pairs"].values() for k in pr if ":offset_from_25C:" in k]
+    ctrl_holds = [h for h in holds if ":offset_from_25C:" in h]
+    noise_over_ti = {n: min(SENSORS[n]["noise_T"].values()) / r["offset_residual_T_by_basis"]["total_drift"] for n, r in rows.items()}
+    ratio = {n: r["offset_residual_T_by_basis"]["range"] / r["offset_residual_T_by_basis"]["total_drift"] for n, r in rows.items()}
     verdict = ("LIN bounds the SIZE of the drift's residual over −40…+125 °C, not its slope (TI: not a per-kelvin "
                "coefficient), so the frames' per-kelvin rule has no guaranteed reading from it; at the window's edge — the "
                f"most favourable point — the readings hold 3 mm on REFeB in {len(holds)} of {total} row·pair·corner·reading "
                f"cells{', every one with the offset compensated' if holds and all_comp_off else ''}; nearer 25 °C the same "
                "residual is a larger per-kelvin figure without bound, and the drift's repeatability and 20-year stability "
-               "are not published — a linear compensation is a MEASURED band, not a guarantee")
-    return {"definition": DRIFT_LIN_DEFINITION, "readings_k": LIN_READINGS, "rows": rows, "verdict": verdict,
-            "holds_3mm_REFeB": holds, "cells_total": total, "every_hold_compensates_the_offset": all_comp_off}
+               "are not published — a linear compensation is a MEASURED band, not a guarantee. The offset row has two "
+               "readings of what LIN is a share of: TI's follow-up (2026-11-18) — the total offset drift over the full "
+               f"range, a best-fit line not held to 25 °C — holds 3 mm on REFeB in {len(ti_holds)} of {len(ti_keys)} of its "
+               f"cells, {len(ti_floor)} with the unwrap floor; TI's answer excludes a share of the full-scale range, and "
+               f"our full-scale reading is kept as the adverse bound (its residual is ×{min(ratio.values()):.0f}–"
+               f"×{max(ratio.values()):.0f} TI's, whose own is ×{math.floor(min(noise_over_ti.values()))}–"
+               f"×{math.floor(max(noise_over_ti.values()))} below one read's noise): on the same line it holds in "
+               f"{len(ours_holds)} of {len(ours_keys)}, {len(ours_floor)} with the floor. With that line not through 25 °C "
+               f"the offset's «from 25 °C» cells are a control — {len(ctrl_holds)} of the {len(holds)} holds above; "
+               f"without them {len(holds) - len(ctrl_holds)} of {total - len(ctrl_keys)}")
+    return {"definition": DRIFT_LIN_DEFINITION, "readings_k": LIN_READINGS, "offset_readings": OFFSET_LIN_READINGS,
+            "rows": rows, "verdict": verdict,
+            "holds_3mm_REFeB": holds, "cells_total": total, "every_hold_compensates_the_offset": all_comp_off,
+            "population": "holds_3mm_REFeB and cells_total count OUR readings of the offset; TI's total-drift reading is "
+                          "`ti_total_drift_reading`",
+            "ti_total_drift_reading": {"holds_3mm_REFeB": ti_holds, "cells_total": len(ti_keys),
+                                       "holds_3mm_REFeB_with_unwrap_floor": ti_floor,
+                                       "residual_ours_over_ti": ratio, "one_read_noise_over_residual": noise_over_ti},
+            "best_fit_full_scale_ours": {"holds_3mm_REFeB": ours_holds, "cells_total": len(ours_keys),
+                                         "holds_3mm_REFeB_with_unwrap_floor": ours_floor},
+            "offset_from_25C_control": {"holds_3mm_REFeB": ctrl_holds, "cells_total": len(ctrl_keys),
+                                        "holds_without_it": len(holds) - len(ctrl_holds),
+                                        "cells_without_it": total - len(ctrl_keys)}}
 
 
 def screen_rows(args, t_hots: dict, colds: dict) -> dict:
@@ -1554,9 +1636,16 @@ def control_linearity_and_screen(lin: dict, scr: dict, st: dict, args) -> None:
                     assert abs(blk["edge_distance_K"][br] - d_t[br]) < 1e-12, (name, pair, key)
                     want = raw["eps"][br] if LIN_READINGS[rm] is None else LIN_READINGS[rm] * row["drift_linearity"]["mismatch"][pair] / d_t[br]
                     assert abs(blk["eps_per_K"][br] - want) <= 1e-15, (name, pair, key)
-                    l_off = dict(row["drift_linearity"]["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]] * row["verdict_range_T"]
-                    want_o = raw["dbp"][br] if LIN_READINGS[ro] is None else math.sqrt(2.0) * LIN_READINGS[ro] * l_off / d_t[br]
+                    off = OFFSET_LIN_READINGS[ro]
+                    # the residual rebuilt here from the row's own fields, not through `offset_lin_residual_t`
+                    pct = dict(row["drift_linearity"]["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]]
+                    l_by = {"range": pct * row["verdict_range_T"],
+                            "total_drift": pct * max(v[1] for ax in row["offset_T_per_K"].values() for v in ax.values())
+                            * (row["operating_C"][1] - row["operating_C"][0])}
+                    want_o = raw["dbp"][br] if off is None else math.sqrt(2.0) * off[0] * l_by[off[1]] / d_t[br]
                     assert abs(blk["dbp_T_per_K"][br] - want_o) <= 1e-12 * want_o, (name, pair, key)
+                    for b in l_by:
+                        assert abs(r["offset_residual_T_by_basis"][b] - l_by[b]) <= 1e-18, (name, b)
                 for ck, cell in blk["cells"].items():
                     fam, gk = ck.split(":")
                     f, b_max, g = edge_factors(args(fam, c)), MAGNET_FAMILIES_BR_T[fam][1], float(gk[1:])
@@ -1590,6 +1679,12 @@ def control_linearity_and_screen(lin: dict, scr: dict, st: dict, args) -> None:
                                        (f"{c}:offset_{other}:mismatch_from_25C", f"{c}:offset_{other}:mismatch_best_fit")):
                             n1, n2 = (pr[k]["cells"][ck]["need_T_at_infinite_thickness"] for k in (k1, k2))
                             assert (n1 if n1 is not None else math.inf) <= (n2 if n2 is not None else math.inf) * (1 + 1e-9), (name, pair, k1, ck)
+                        # TI's total-drift reading (k = 2) against our full-scale best fit (k = 2), the other member held:
+                        # the smaller residual never needs more — a swapped basis would red here
+                        lo_b, hi_b = sorted(("ti_total_drift", "best_fit"),
+                                            key=lambda q: r["offset_residual_T_by_basis"]["total_drift" if q == "ti_total_drift" else "range"])
+                        n1, n2 = (pr[f"{c}:offset_{q}:mismatch_{other}"]["cells"][ck]["need_T_at_infinite_thickness"] for q in (lo_b, hi_b))
+                        assert (n1 if n1 is not None else math.inf) <= (n2 if n2 is not None else math.inf) * (1 + 1e-9), (name, pair, c, other, ck)
     # a row whose LIN fields are ZERO leaves no drift under a compensation of both members (k = 1): a lane that ignored
     # the LIN fields, or a compensation that ignored the offset, would keep a drift here
     for name, row in SENSORS.items():
@@ -1940,18 +2035,42 @@ def package_reach(st: dict, lin: dict, wall_mm: float, args) -> dict:
             if pair == "x_y" and holds["g3"]:
                 entry["end_on_tilt_REFeB"] = end_on_tilt(SENSORS[name], pair, pk, args, wall_mm)
             if name in lin["rows"]:
-                lp = lin["rows"][name]["pairs"][pair]
+                lp_all = lin["rows"][name]["pairs"][pair]
+                # our readings of the offset ⊥ TI's total-drift one, kept apart (key «:offset_ti_total_drift:»)
+                lp = {k: b for k, b in lp_all.items() if ":offset_ti_total_drift:" not in k}
+                lp_ti = {k: b for k, b in lp_all.items() if ":offset_ti_total_drift:" in k}
                 best = max((b["gap_limit_mm_at_t10_REFeB"] or 0.0) for b in lp.values())
                 entry["linearity_holds_3mm_REFeB"] = sorted(k for k, b in lp.items()
                                                            if b["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None)
                 entry["linearity_best_gap_t10_mm"] = best
                 entry["linearity_best_gap_t10_reachable"] = reach(best, lo, hi)
+                ti_gaps = [b["gap_limit_mm_at_t10_REFeB"] or 0.0 for b in lp_ti.values()]
+                entry["linearity_ti_total_drift"] = {
+                    "holds_3mm_REFeB": sorted(k for k, b in lp_ti.items()
+                                              if b["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None),
+                    "holds_3mm_REFeB_with_unwrap_floor": sorted(
+                        k for k, b in lp_ti.items() if b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] is not None),
+                    "cells": len(lp_ti), "gap_t10_mm_min_max": [min(ti_gaps), max(ti_gaps)],
+                    "worst_gap_t10_reachable": reach(min(ti_gaps), lo, hi)}
+                # the offset's «from 25 °C» cells are a control since TI's answer of 2026-11-18: the same two figures without them
+                lp_nc = {k: b for k, b in lp.items() if ":offset_from_25C:" not in k}
+                best_nc = max((b["gap_limit_mm_at_t10_REFeB"] or 0.0) for b in lp_nc.values())
+                entry["linearity_without_offset_from_25C"] = {
+                    "holds_3mm_REFeB": sorted(k for k, b in lp_nc.items()
+                                              if b["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None),
+                    "best_gap_t10_mm": best_nc, "best_gap_t10_reachable": reach(best_nc, lo, hi)}
             pairs[pair] = entry
         out[name] = {"package": owner[name], "source": pk["source"], "pairs": pairs}
     held_unreach = sorted(f"{n} {p}" for n, r in out.items() for p, e in r["pairs"].items()
                           if e["sensor_table_holds"]["g3"] and e["reach_3mm"] == "no")
     lin_reach = sorted(f"{n} {p}" for n, r in out.items() for p, e in r["pairs"].items()
                        if e.get("linearity_holds_3mm_REFeB") and e["reach_3mm"] == "yes")
+    ti_all = sorted(f"{n} {p}" for n, r in out.items() for p, e in r["pairs"].items()
+                    if "linearity_ti_total_drift" in e and e["reach_3mm"] == "yes"
+                    and len(e["linearity_ti_total_drift"]["holds_3mm_REFeB"]) == e["linearity_ti_total_drift"]["cells"])
+    ti_all_floor = sorted(f"{n} {p}" for n, r in out.items() for p, e in r["pairs"].items()
+                          if "linearity_ti_total_drift" in e and e["reach_3mm"] == "yes"
+                          and len(e["linearity_ti_total_drift"]["holds_3mm_REFeB_with_unwrap_floor"]) == e["linearity_ti_total_drift"]["cells"])
     no_gap = sorted(f"{n} {p}" for n, r in out.items() for p, e in r["pairs"].items()
                     if e["sensor_table_best_gap_t10_mm"] > 0 and e["sensor_table_best_gap_t10_reachable"] == "no"
                     and e["sensor_table_holds"]["g3"])
@@ -1967,13 +2086,17 @@ def package_reach(st: dict, lin: dict, wall_mm: float, args) -> dict:
                   f"tilted end-on {'some angle helps (' + ', '.join(tilt_helps) + ')' if tilt_helps else 'no angle helps'}; "
                   "a tilt towards the leaded side (the lead form is not dimensioned) and a band reading flatter than "
                   "linear are not excluded" if no_gap else "")
-               + f"; the linear compensation's 3 mm holds that it can reach: {lin_reach or 'none'}")
+               + f"; the linear compensation's 3 mm holds that it can reach: {lin_reach or 'none'}"
+               + f"; on TI's total-drift reading of the offset, reachable and held at 3 mm on EVERY reading of the mismatch: "
+                 f"{ti_all or 'none'} without the unwrap floor, {ti_all_floor or 'none'} with it")
     return {"rule": "X–Z flat (the wall plus the element's depth under the top) ⊥ X–Y edge-on on a lead-free end (the "
                     "wall plus the element's distance from it); intervals over the drawings' tolerances; a holder's "
                     "clearance zero", "wall_mm": wall_mm, "rows": out, "verdict": verdict,
             "held_at_3mm_but_unreachable": held_unreach, "no_reachable_gap_even_at_t10": no_gap,
             "end_on_tilt_helps": tilt_helps,
-            "linearity_3mm_reachable": lin_reach}
+            "linearity_3mm_reachable": lin_reach,
+            "linearity_ti_total_drift_3mm_reachable_on_every_mismatch_reading": ti_all,
+            "linearity_ti_total_drift_3mm_reachable_on_every_mismatch_reading_with_unwrap_floor": ti_all_floor}
 
 
 def control_reach(rch: dict, st: dict) -> None:

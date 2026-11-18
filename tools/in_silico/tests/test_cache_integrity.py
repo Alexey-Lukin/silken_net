@@ -9433,36 +9433,72 @@ def test_dendrometer_drift_linearity_reading_is_recomputed():
     """114 (HW.54 Р3(в), (2e)) — the drift-linearity readings (TI case CS3699089) against the row's raw fields.
 
     CAN catch: a reading whose per-kelvin mismatch drift is not k·LIN over the window edge's distance from 25 °C · an
-    offset that is not compensated as k·L_off/ΔT (L_off our full-scale reading) where the reading says so, or not the
-    raw guaranteed row where it does not · a «holds» list or a count that disagrees with the cells · a verdict that
-    calls the compensation a guarantee. CANNOT catch: TI's definition read wrong (the script's `DRIFT_LIN_DEFINITION`
+    offset that is not compensated as k·L_off/ΔT where the reading says so — L_off our full-scale reading, or, for TI's
+    reading of 2026-11-18, LIN's share of the total offset drift over the full operating range, both rebuilt here from the
+    row's raw fields — or not the raw guaranteed row where it does not · a «holds» list or a count that disagrees with the
+    cells, TI's reading counted among ours or ours among TI's · a verdict that calls the compensation a guarantee. CANNOT catch: TI's definition read wrong (the script's `DRIFT_LIN_DEFINITION`
     cites the case), a value transcribed wrong, or a cell off its sum rule (the script's control 12 holds it).
     """
     import math
     d = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
     lin, sensors, st = d["sensor_drift_linearity"], d["inputs"]["sensors"], d["sensor_table"]["rows"]
     assert lin["definition"]["per_kelvin"] is False and lin["rows"], "no row read"
-    holds, total = [], 0
+    holds, total, ti_holds, ti_total, floor_holds = [], 0, [], 0, []
+    assert set(lin["offset_readings"]) == {"raw", "from_25C", "best_fit", "ti_total_drift"}
+    assert lin["offset_readings"]["ti_total_drift"] == [2.0, "total_drift"]   # TI: the line is not held to 25 °C
     for name, r in lin["rows"].items():
         row = sensors[name]
-        l_off = dict(row["drift_linearity"]["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]] * row["verdict_range_T"]
+        pct = dict(row["drift_linearity"]["offset_pct_of_range_by_range_T"])[row["verdict_range_T"]]
+        l_by = {"range": pct * row["verdict_range_T"],
+                "total_drift": pct * max(v[1] for ax in row["offset_T_per_K"].values() for v in ax.values())
+                * (row["operating_C"][1] - row["operating_C"][0])}
+        assert r["offset_residual_T_by_basis"] == pytest.approx(l_by, rel=1e-12), name
         for pair, pr in r["pairs"].items():
             raw = st[name]["pairs"][pair]["per_K"]["guaranteed"]["dbp_T_per_K"]
             raw_eps = st[name]["pairs"][pair]["per_K"]["guaranteed"]["eps_per_K"]
             for key, blk in pr.items():
                 _c, ro, rm = key.split(":")
-                k_off, k_mis = lin["readings_k"][ro[len("offset_"):]], lin["readings_k"][rm[len("mismatch_"):]]
+                off, k_mis = lin["offset_readings"][ro[len("offset_"):]], lin["readings_k"][rm[len("mismatch_"):]]
+                k_off, l_off = (None, None) if off is None else (off[0], l_by[off[1]])
+                is_ti = ro == "offset_ti_total_drift"
                 for br in ("cold", "hot"):
                     dt = blk["edge_distance_K"][br]
                     want_e = raw_eps[br] if k_mis is None else k_mis * row["drift_linearity"]["mismatch"][pair] / dt
                     assert blk["eps_per_K"][br] == pytest.approx(want_e, rel=1e-12), (name, pair, key)
                     want = raw[br] if k_off is None else math.hypot(k_off * l_off / dt, k_off * l_off / dt)
                     assert blk["dbp_T_per_K"][br] == pytest.approx(want, rel=1e-12), (name, pair, key, br)
-                total += 1
+                total, ti_total = total + (not is_ti), ti_total + is_ti
                 if blk["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None:
-                    holds.append(f"{name} {pair} {key}")
+                    (ti_holds if is_ti else holds).append(f"{name} {pair} {key}")
+                if blk["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] is not None:
+                    floor_holds.append(f"{name} {pair} {key}")
     assert sorted(holds) == lin["holds_3mm_REFeB"] and total == lin["cells_total"]
     assert f"in {len(holds)} of {total}" in lin["verdict"]
+    ti = lin["ti_total_drift_reading"]
+    ti_floor = sorted(h for h in floor_holds if ":offset_ti_total_drift:" in h)
+    assert sorted(ti_holds) == ti["holds_3mm_REFeB"] and ti_total == ti["cells_total"]
+    assert ti_floor == ti["holds_3mm_REFeB_with_unwrap_floor"] and set(ti_floor) <= set(ti_holds)
+    assert f"in {len(ti_holds)} of {ti_total} of its cells, {len(ti_floor)} with the unwrap floor" in lin["verdict"]
+    ours = lin["best_fit_full_scale_ours"]
+    n_ours = sum(1 for r in lin["rows"].values() for pr in r["pairs"].values() for k in pr if ":offset_best_fit:" in k)
+    ours_floor = sorted(h for h in floor_holds if ":offset_best_fit:" in h)
+    assert ours["holds_3mm_REFeB"] == [h for h in sorted(holds) if ":offset_best_fit:" in h] and ours["cells_total"] == n_ours
+    assert ours["holds_3mm_REFeB_with_unwrap_floor"] == ours_floor
+    assert f"it holds in {len(ours['holds_3mm_REFeB'])} of {n_ours}, {len(ours_floor)} with the floor" in lin["verdict"]
+    # the adverse bound: ours is the larger residual on every row, by exactly the two bases' ratio; TI's sits under the noise
+    for name, r in lin["rows"].items():
+        byb = r["offset_residual_T_by_basis"]
+        assert ti["residual_ours_over_ti"][name] == pytest.approx(byb["range"] / byb["total_drift"], rel=1e-12) and byb["range"] > byb["total_drift"]
+        assert ti["one_read_noise_over_residual"][name] == pytest.approx(min(sensors[name]["noise_T"].values()) / byb["total_drift"], rel=1e-12)
+        assert ti["one_read_noise_over_residual"][name] > 1.0
+    # the offset's «from 25 °C» cells — a control since TI's answer — are named apart from the count they sit in
+    ctrl = lin["offset_from_25C_control"]
+    n_ctrl = sum(1 for r in lin["rows"].values() for pr in r["pairs"].values() for k in pr if ":offset_from_25C:" in k)
+    ctrl_holds = [h for h in sorted(holds) if ":offset_from_25C:" in h]
+    assert ctrl["holds_3mm_REFeB"] == ctrl_holds and ctrl["cells_total"] == n_ctrl
+    assert (ctrl["holds_without_it"], ctrl["cells_without_it"]) == (len(holds) - len(ctrl_holds), total - n_ctrl)
+    assert f"{len(ctrl_holds)} of the {len(holds)} holds above; without them {len(holds) - len(ctrl_holds)} of {total - n_ctrl}" in lin["verdict"]
+    assert "excludes a share of the full-scale range" in lin["verdict"] and "kept as the adverse bound" in lin["verdict"]
 
 
 def test_dendrometer_angle_rows_are_recomputed():
@@ -9570,7 +9606,7 @@ def test_dendrometer_package_reach_is_recomputed():
     lin = d["sensor_drift_linearity"]["rows"]
     wall = json.loads((REPO / "tools/cad/cem/radome.json").read_text())["wall_thickness_mm"]
     assert rch["wall_mm"] == wall and set(rch["rows"]) == set(st)
-    unreach, reach_lin = [], []
+    unreach, reach_lin, reach_ti, reach_ti_floor = [], [], [], []
     for name, r in rch["rows"].items():
         pk = pk_in[r["package"]]
         assert name in pk["rows"]
@@ -9591,12 +9627,37 @@ def test_dendrometer_package_reach_is_recomputed():
             if e["sensor_table_holds"]["g3"] and e["reach_3mm"] == "no":
                 unreach.append(f"{name} {pair}")
             if name in lin:
-                lp = lin[name]["pairs"][pair]
+                # our readings of the offset ⊥ TI's total-drift one (2026-11-18) — two populations, never one list
+                lp = {k: b for k, b in lin[name]["pairs"][pair].items() if ":offset_ti_total_drift:" not in k}
+                lp_ti = {k: b for k, b in lin[name]["pairs"][pair].items() if ":offset_ti_total_drift:" in k}
                 holds = sorted(k for k, b in lp.items() if b["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None)
                 assert e["linearity_holds_3mm_REFeB"] == holds
+                best = max((b["gap_limit_mm_at_t10_REFeB"] or 0.0) for b in lp.values())
+                assert e["linearity_best_gap_t10_mm"] == pytest.approx(best, rel=1e-12)
                 if holds and e["reach_3mm"] == "yes":
                     reach_lin.append(f"{name} {pair}")
+                ti = e["linearity_ti_total_drift"]
+                ti_holds = sorted(k for k, b in lp_ti.items() if b["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None)
+                gaps = [b["gap_limit_mm_at_t10_REFeB"] or 0.0 for b in lp_ti.values()]
+                assert lp_ti and ti["cells"] == len(lp_ti) and ti["holds_3mm_REFeB"] == ti_holds
+                assert ti["gap_t10_mm_min_max"] == pytest.approx([min(gaps), max(gaps)], rel=1e-12)
+                assert ti["worst_gap_t10_reachable"] == ("yes" if min(gaps) >= hi - 1e-9 else "no" if min(gaps) < lo - 1e-9 else "tolerance")
+                ti_floor = sorted(k for k, b in lp_ti.items() if b["cells"]["REFeB_sintered:g3"]["t_min_mm_with_unwrap_floor"] is not None)
+                assert ti["holds_3mm_REFeB_with_unwrap_floor"] == ti_floor
+                if len(ti_holds) == len(lp_ti) and e["reach_3mm"] == "yes":
+                    reach_ti.append(f"{name} {pair}")
+                if len(ti_floor) == len(lp_ti) and e["reach_3mm"] == "yes":
+                    reach_ti_floor.append(f"{name} {pair}")
+                # without the offset's «from 25 °C» control cells
+                lp_nc = {k: b for k, b in lp.items() if ":offset_from_25C:" not in k}
+                nc = e["linearity_without_offset_from_25C"]
+                best_nc = max((b["gap_limit_mm_at_t10_REFeB"] or 0.0) for b in lp_nc.values())
+                assert nc["holds_3mm_REFeB"] == sorted(k for k, b in lp_nc.items() if b["cells"]["REFeB_sintered:g3"]["t_min_mm"] is not None)
+                assert nc["best_gap_t10_mm"] == pytest.approx(best_nc, rel=1e-12) and best_nc <= best + 1e-12
+                assert nc["best_gap_t10_reachable"] == ("yes" if best_nc >= hi - 1e-9 else "no" if best_nc < lo - 1e-9 else "tolerance")
     assert sorted(unreach) == rch["held_at_3mm_but_unreachable"] and sorted(reach_lin) == rch["linearity_3mm_reachable"]
+    assert sorted(reach_ti) == rch["linearity_ti_total_drift_3mm_reachable_on_every_mismatch_reading"]
+    assert sorted(reach_ti_floor) == rch["linearity_ti_total_drift_3mm_reachable_on_every_mismatch_reading_with_unwrap_floor"]
 
 
 def test_dendrometer_travel_carries_the_install_tilt():
