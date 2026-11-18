@@ -273,7 +273,12 @@ SELF=${BASH_SOURCE[0]:-$0}
 # ⊕ 26285 → 25784 (−501) — мертвий носій знято (DOC-T.123): блок WRITE-TIME у верхньому HTML-коментарі
 #   харнес вирізає ще до інʼєкції індексу; правила тепер несе write_time_once. Зекономлене не стає запасом.
 # ⊕ 25784 → 25780 (−4) — `project_vilize_07_08` → `project_vilize_00b`: «07_08» читалось як канон-адреса `NN_NN`.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25780}
+# ⊕ 25780 → 25836 (+56) — два нові доми в рядку закупівель (курація 2026-11-18): подієвий дім `project_02c_purchase_runbook`
+#   (механіка купівлі, виселена з роутера, що читається на старті пʼяти пакетів) і реєстр `log_spend_ledger` (founder того ж
+#   дня: «це мабуть важливо щоб бачити цю картину і хоч трохи тримати на думці» — тому з посиланням, хоч журнал його й не
+#   потребує). Гачки англійською; тим самим ходом із гачка `vilize_sweep_method` знято два дрейфливі лічильники (−18).
+#   Облік податку за присудом 10-17 (1), не «за коректність»: коректності тут ніхто не лагодив.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25836}
 # The OUTER wall is not ours: Claude Code loads only the first 200 lines / 25 KB of MEMORY.md at session start and drops
 # the rest WITHOUT a sign (docs: code.claude.com/docs/en/memory). Unit measured 2026-10-17: NOT bytes (26 805 B loaded
 # whole, no «over its read limit» error in any transcript); characters and UTF-16 units cannot be told apart here
@@ -491,7 +496,12 @@ rb_dark() {
 # 2026-11-05: 179 → 180 — `project_gmail_letters` (журнал надісланих листів; founder: «запамятовуй всі листи які шлемо в gmail»); підлога за ним.
 # 2026-11-07: 180 → 181 — журнал-близнюк `log_gmail_letters` (тіла відповідей, винесені з `project_gmail_letters`, коли той підійшов до стелі файлу); підлога за ним.
 # 2026-11-08: 181 → 182 — подієвий дім `project_02c_rfq_scoring` (🔒 шкала підрахунку RFQ, виселена з `project_procurement`, щоб той зійшов під стелю старту); підлога за ним.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-184}
+# 2026-11-18: 184 → 187 — курація: подієвий дім `project_02c_purchase_runbook` і журнал-двійник `log_procurement` (обидва виселено
+# з `project_procurement`: старт-член пʼяти пакетів подвоївся за три тижні до 2× стелі старту) · реєстр `log_spend_ledger`
+# (founder: список витрачених на проєкт грошей); підлога за ними.
+# 2026-11-18: 187 → 188 — `log_letter_threads` (стан тредів листування, рядок на тред; ⚖️ founder «так» на спільну рекомендацію
+# сесій цементації й курації: один дім стану замість 5–10 носіїв на подію); підлога за ним.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-188}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -632,7 +642,14 @@ index_reach_expected() {
 # 2026-10-17: 40668 → 40694 (+26) — ЗА КОРЕКТНІСТЬ: опис професії founder-а його словами (Senior Lead Full-Stack Engineer); перелік стеку
 # в описі стиснуто (−18 B), повний — у тілі файлу.
 # 2026-11-05: 40694 → 40831 (+137) — опис нового дому `project_gmail_letters` (журнал надісланих листів): написано 339 B, стиснуто до 193 B, далі — манікюр; чужих тригерів не різали.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-40831}
+# 2026-11-18: 40831 → 40954 (+123) — описи трьох нових домів (`project_02c_purchase_runbook` · `log_procurement` ·
+# `log_spend_ledger`), англійською й по одному тригеру кожен (написано 285 B, стиснуто до 123); описи хаба й журналу листів
+# переписано під нову роль у межах старого ратчета; чужих тригерів не різали.
+# 2026-11-18: 40954 → 40961 (+7) — ЗА КОРЕКТНІСТЬ: опис `project_04_namespace_contours` казав «v2 = won't-do назавжди», тіло —
+# «ймовірно назавжди» (переказ зрізав слово-обмеження, +18); опис `project_vilize_03b_edge_crypto` казав «відкрите лише в
+# 00_07 §03b», а тіло шле відкриті ноги ще в §03a і §06 (−11).
+# 2026-11-18: 40961 → 41009 (+48) — опис нового дому `log_letter_threads` (стан тредів листування), один тригер англійською.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-41009}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
