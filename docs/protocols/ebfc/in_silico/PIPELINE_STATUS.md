@@ -1,7 +1,7 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
 > **Last updated:** 2026-10-19 (the flavin chain `21g` · `33` · `29b` re-run from the butterfly minimum, `00_07` HW.5.IS); 2026-09-26 (HW.37 capsule thermal envelope, script 71); 2026-09-19 (L4 re-anchored 2026-09-18 — `J_MAX_25C` 881 µA/cm², `K_M` 13.9 mM, pH-bracket beside the ceiling; 2026-10-16 the 1,5-dihydro FADH₂ chain integrated (`00_07` HW.5.IS); earlier: OS-RECOMPUTE — dimethyl mediator +309 mV, ② chloro-bracket, adiabatic ΔSCF +1.03 eV, PCET cascade +1.627 eV). Suite count is not quoted here — run `python -m pytest tests -q` in `tools/in_silico/`
-> **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
+> **Zero-Lab gate (in-silico, TRL 3):** ✅ PASSED (2026-05-25) — TRL 3 validated + GO toward TRL 4, not TRL 4; for the EBFC the 3→4 transition closes on the first signed in-vitro lab report of a Ti-coin measurement (`00_03 §4.1`, founder's ruling 2026-11-18)
 
 ---
 
