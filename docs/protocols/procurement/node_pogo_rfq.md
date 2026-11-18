@@ -230,6 +230,26 @@ Thank you in advance.
 ---
 
 
+## 📤 Follow-up 2 (EN) — Mill-Max: через кого котирувати нестандартне покриття (чернетка, не надіслано)
+
+> **Репо-нота (у лист НЕ йде).** На Follow-up 1 відповів 2026-11-18 інженер, не відділ продажу: зразків і стандартних деталей напряму в Україну не відвантажують — радять авторизованого дистрибʼютора; про мішень — механіка повного радіуса, без числа ([`02_02 §1.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) і `§2.2`, ⊕ 2026-11-18). П. 1 листа — котирування 30 µin — лишився без відповіді. Цей лист питає одне: яким каналом таке котирування взагалі отримати, якщо прямого відвантаження немає. **Немає свідомо:** повтору питань про зразки (їх купуємо стандартними деталями в дистрибʼютора) і про мішень (відповідь є; далі — наш вимір на зразках). Іде відповіддю «усім» у той самий тред; тему ставить пошта, рядок теми нижче — для збирача. ⛔ До «так» founder-а на цей текст не надсилати. Підпис — `--signature "Kind regards,|Oleksii Lukin"`.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+**Subject line:** Re: Quotation and samples — series 0906 and 0908 spring-loaded pins, 30 µin hard gold on the plunger
+
+Hello,
+
+Thank you — this answers items 2 and 3 of our message. We will buy the standard parts for evaluation through an authorised distributor.
+
+One point remains open from item 1: the quotation for the non-standard plating, 30 µin of hard gold over 50 µin of nickel on the plunger, for series 0906 and 0908. Since you do not ship to Ukraine directly, should this quotation also be requested through a distributor? If so, can any authorised distributor request it from you — we already buy from Mouser Europe — and what should we give them to identify the part: a Mill-Max part number, or a reference to this correspondence?
+
+`[sender's signature and contact details — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 4. Cross-references
 
 | Ресурс | Що бере |
