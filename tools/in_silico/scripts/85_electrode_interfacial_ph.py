@@ -5,7 +5,11 @@
 (00_07 HW.5.IS, the 🤖 leg «оцінка інтерфейсного ΔpH на катоді» — its COIN half; the anchor CATHODE waits on HW.53,
 whose answer decides which electrolyte it sees at all). One anchor number, conditional (2026-10-17, the leg «pH на грані
 АНОДА в анкері»): the anchor's anode with its gap filled with stagnant sap — the state the HW.53 bench sets by hand, so
-no bench run says whether a living stem keeps it (`anchor_anode`).
+no bench run says whether a living stem keeps it (`anchor_anode`). And one cathode number beside it, equally conditional
+(2026-11-18, `anchor_cathode_sap_film`): what a STAGNANT FILM OF SAP could carry to the anchor cathode's face — the
+condition canon's BOD row names («if the layer sees sap») and the route HW.53's rejected open edge and fallback wick
+would rely on; a number beside the ratified bridge verdict (⚖️ 2026-10-18), computed at the founder's request ahead of
+the bench — not the anchor cathode's answer.
 
 THE QUESTION. Laccase in ZIF inactivates at pH ≥ 6 (01_03 §3.2, the BOD row). The coin letter
 (docs/protocols/procurement/anchor_coin_electrochem_rfq.md) says «Cathode medium: pH 4.5, air-exposed.» and names no
@@ -107,7 +111,9 @@ from lib.utils import banner
 SI_DESCRIPTION = ("How far each Ti-coin electrode's own current shifts the pH at its face in the media the test letter "
                   "allows, from a steady diffusion-layer equation: the cathode as a fraction of its oxygen supply limit, "
                   "the anode as the diffusion-layer thickness its predicted current tolerates; and the anchor's anode, "
-                  "conditional on sap filling its gap, as the current at which its face leaves the enzyme's pH band.")  # its row in the paper SI (72): English, no repo jargon
+                  "conditional on sap filling its gap, as the current at which its face leaves the enzyme's pH band; and, "
+                  "for the anchor's cathode, the current-times-thickness a stagnant sap film can carry before its face "
+                  "reaches the laccase threshold.")  # its row in the paper SI (72): English, no repo jargon
 SCRIPTS = Path(__file__).resolve().parent
 OUT = CACHE_DIR / "kinetics" / "electrode_interfacial_ph.json"
 
@@ -589,6 +595,78 @@ def anchor_anode() -> dict:
     return out
 
 
+def anchor_cathode_sap_film() -> dict:
+    """What a STAGNANT FILM OF SAP could carry to the anchor cathode's face — one conditional reading, NOT the anchor
+    cathode's answer, computed at the founder's request of 2026-11-18 ahead of the HW.53 bench (the leg's own ⏸ says a
+    cathode on dead bark more often sees stemflow and hygroscopic water than sap, so the malate of `67` is the kind buffer
+    to price against, and the bench has not run).
+    WHERE IT SITS. HW.53's direction is ratified (⚖️ founder 2026-10-18, 01_03 §2.2): a DESIGNED ionic bridge from the
+    layer's lower edge to the bark; the membrane's open lower edge is rejected and an edge wick kept as the fallback. A
+    film of sap at the face is what those two would rely on (the bench protocol on the wick: «the same sap film»), and it
+    is the condition canon's BOD row names («if the cathode layer sees sap»). So this is a number BESIDE that verdict —
+    what the rejected and the fallback routes could carry — not a choice of electrolyte. The cathode's wetted area is
+    in no manifest (the band's height hangs on a placeholder).
+    WHAT IS COMPUTED. In the anchor O₂ reaches the layer from the AIR side (the PTFE-GDL, 01_03 §2.2), not through the
+    liquid, so the coin cathode's δ-free ratio to the O₂ limit does not apply; what the film itself bounds is the product
+        j·δ ≤ K = F·Σ_k D_k·Δc_k    (bulk at the sap's pH, face at PH_LACCASE_OFF; the same equation as the coin block),
+    geometry-free, and — against the anchor's own cold-start draw, one cell in series, so the cathode carries the whole of
+    it — the film thickness per cm² of wetted cathode, δ*/A = K/I_cs. The BINDING column is the larger current (typ):
+    V_IN(CS) MAX gives the smaller current and the thicker film, so «worst» is the lenient end here. Over 67's malate
+    readings × the two ends of malate's D × TEMPS_C.
+    WHICH SIDE. A film NORMAL to the face over the whole wetted area is the kindest geometry there is: the layer the bench
+    builds has both faces closed and is fed from its EDGE, which carries far less (not computed). For the enzyme inside
+    the porous layer K is an upper bound (protons are consumed inside it). A CO₂/HCO₃⁻ buffer the recipe lacks and any
+    flow along the film raise K; a colder stem lowers it (every D falls); the sign of migration is not established here
+    (the coin block's adversary found −1.5 … −2 %; a few per cent either way). NOT priced, and adverse: conifer sap in
+    winter turns alkaline to about 6.9 (01_03 §3.2) — the margin is then gone before any current — and water with no malate
+    (rain, stemflow).
+    CONTROL — what it can and cannot catch: with the malate taken out of the recipe the bound protons must vanish, so
+    the supply has to fall to its free-H⁺ term. It fails on a proton carrier booked twice or wrongly, and on a recipe key
+    that does not remove the malate (it caught exactly that while this block was written); it shares `face_state` and
+    D_H with what it checks, so it says nothing about the pKa set, the D bracket, the units or the division by the
+    current — K itself was recomputed independently by the adversarial pass of 2026-11-18 (within 0.3 %)."""
+    out = {"condition": "a stagnant film of the recipe's sap lies between bulk sap and the cathode's face — canon's «if the "
+                        "layer sees sap», the route HW.53's rejected open edge and its fallback wick would rely on; the "
+                        "ratified direction is a designed ionic bridge (founder, 2026-10-18), which this block does not model",
+           "oxygen": "from the air side through the PTFE-GDL — the film is not asked to carry it",
+           "geometry": "a film normal to the face over the whole wetted area — the kindest geometry; an edge-fed layer "
+                       "carries far less (not computed)",
+           "cold_start_uA": {k: round(v, 1) for k, v in COLD_START_UA.items()},
+           "binding_cold_start_column": max(COLD_START_UA, key=COLD_START_UA.get),
+           "face_pH": PH_LACCASE_OFF, "by_sap": {}}
+    bind = out["binding_cold_start_column"]
+    to_ua_um = F_CONST * 1e7          # (cm²/s · mol/L) → µA/cm² · µm:  ×F · 1e-3 L/cm³ · 1e6 µA/A · 1e4 µm/cm
+    points = {"pine": S67.RATIFIED_POINT_MM, "beech_q8": S67.BROADLEAF_POINT_MM}     # the recipes SAPS was built from
+    for sap, (totals, ph_b) in SAPS.items():
+        assert ph_b < PH_LACCASE_OFF, f"{sap}: the bulk is already at the threshold — no film to price"
+        no_malate = S67.totals_mm({**points[sap], "malic": 0.0})
+        ks, shares = [], []
+        for t_c in TEMPS_C:
+            for sc in READINGS:
+                free = d_h(t_c) * (face_state(ph_b, sc, t_c, totals)["h"] - face_state(PH_LACCASE_OFF, sc, t_c, totals)["h"])
+                free_bare = d_h(t_c) * (face_state(ph_b, sc, t_c, no_malate)["h"]
+                                        - face_state(PH_LACCASE_OFF, sc, t_c, no_malate)["h"])
+                bare = proton_supply(ph_b, PH_LACCASE_OFF, sc, 1e-5, 1.0, t_c, no_malate)
+                if abs(bare - free_bare) > 0.02 * free_bare:   # CONTROL: no malate → only free H⁺ (and micromolar bisulfate) is left
+                    raise SystemExit(f"{sap}, {sc.key}, {t_c} °C: with the malate removed the film still carries "
+                                     f"{bare / free_bare:.3f}× its free-H⁺ term — bound protons are booked to something else")
+                for d in d_mal(t_c).values():
+                    k = proton_supply(ph_b, PH_LACCASE_OFF, sc, d, 1.0, t_c, totals)
+                    ks.append(k * to_ua_um)
+                    shares.append(free / k)
+        lo, hi = min(ks), max(ks)
+        per_cm2 = {name: [round(lo / i_cs, 1), round(hi / i_cs, 1)] for name, i_cs in COLD_START_UA.items()}
+        out["by_sap"][sap] = {
+            "bulk_pH": ph_b, "margin_pH": round(PH_LACCASE_OFF - ph_b, 2), "corners": len(ks),
+            "K_uA_cm2_um": [round(lo, 1), round(hi, 1)],
+            "free_H_share": [round(min(shares), 2), round(max(shares), 2)],
+            "film_um_per_cm2_at_cold_start": per_cm2,
+            "reading": f"on this reading a stagnant film of this sap carries j·δ ≤ {lo:.0f}–{hi:.0f} µA/cm²·µm before the "
+                       f"face reaches pH {PH_LACCASE_OFF}; at the anchor's cold-start draw ({bind} column, the larger "
+                       f"current) that is {per_cm2[bind][0]}–{per_cm2[bind][1]} µm of film per cm² of wetted cathode"}
+    return out
+
+
 def diagnostic_medium() -> dict:
     """The anode's day-0 check of ⚖️ 2026-10-12 (01_03 §3.5): the ratified sap at 5.75 with malic acid at BUFFERED_MALIC_MM —
     what it changes besides the buffer (ionic strength, KOH) and how much capacity it adds down to pH 4.5."""
@@ -609,7 +687,7 @@ def main() -> int:
     liu = checks["liu_fem_point"]
     print(f"  control 2 (Liu FEM, centre ≈ {LIU['ph_centre']}): conserving film {liu['film_pH_centre']}, single-D "
           f"bracket {liu['single_D_bracket_pH']}, passes for δ/a in {liu['passing_delta_over_radius']}")
-    cat, ano, diag, anc = cathode(), anode(), diagnostic_medium(), anchor_anode()
+    cat, ano, diag, anc, cfilm = cathode(), anode(), diagnostic_medium(), anchor_anode(), anchor_cathode_sap_film()
     for name, m in cat["media"].items():
         print(f"  cathode in {name}: f(pH 6) {m['f_pH6']} — citrate-like D {m['f_pH6_by_D_end']['citrate_like']}, "
               f"succinate-like {m['f_pH6_by_D_end']['succinate_like']}; crosses below the O₂ limit in "
@@ -655,15 +733,22 @@ def main() -> int:
     print(f"      grid transitions {({a: g['transitions'] for a, g in fl['grid_check'].items()})}; pair "
           f"{fl['pair_example']['shift']} → margin {fl['pair_example']['margin_uA']} µA; menu outside the read-off noise: "
           f"{({k: m['outside_read_off_noise'] for k, m in fl['menu'].items()})}")
+    print(f"  anchor cathode, IF a stagnant sap film feeds its face (one conditional reading beside HW.53's bridge verdict; O₂ "
+          f"comes from the air side; binding cold-start column: {cfilm['binding_cold_start_column']}) — up to pH {cfilm['face_pH']}:")
+    for sap, v in cfilm["by_sap"].items():
+        print(f"    {sap} [bulk pH {v['bulk_pH']}, margin {v['margin_pH']}]: j·δ ≤ {v['K_uA_cm2_um']} µA/cm²·µm (free H⁺ "
+              f"{v['free_H_share']} of it); at cold start {v['film_um_per_cm2_at_cold_start']} µm per cm² of wetted cathode")
     out = {"script": Path(__file__).name,
            "question": "pH at the Stage-2 coin electrodes' faces under their own current, in the media the letter allows",
-           "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap; the anchor "
-                    "cathode waits on HW.53, and which gap state a living stem keeps is not known",
+           "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap and what a "
+                    "stagnant sap film could carry to the anchor CATHODE's face; the anchor cathode itself waits on HW.53 "
+                    "(which electrolyte it sees), and which gap state a living stem keeps is not known",
            "recipe_mM": S67.RATIFIED_POINT_MM, "readings": [sc.key for sc in READINGS], "t_c": list(TEMPS_C),
            "constants": {f"{t_c:.0f}C": {"D_H_cm2_s": d_h(t_c), "D_O2_cm2_s": d_o2(t_c), "C_O2_air_mol_l": c_o2(t_c),
                                           "D_mal_cm2_s": d_mal(t_c)} for t_c in TEMPS_C}
                         | {"delta_natural_convection_um": list(DELTA_NATURAL_CONVECTION_UM), "sources": SOURCES},
            "checks": checks, "cathode": cat, "anode": ano, "anode_check_medium": diag, "anchor_anode_sap_gap": anc,
+           "anchor_cathode_sap_film": cfilm,
            "not_modelled": ["which medium and convection the laboratory will use (the letter fixes neither)",
                             "the pH inside the coatings — every shift here is a lower bound at the enzyme",
                             "glucose transport at the coin anode (the anchor anode's is 109's)",
@@ -673,7 +758,10 @@ def main() -> int:
                             "the anchor anode's gap state in a living stem, the pH inside its gyroid lattice and the wood "
                             "wall's own resistance (both lower its currents); migration, flow through the gap and a "
                             "CO2/HCO3- buffer (each raises them); the anchor's working current after cold start — the "
-                            "EBFC's own P–V curve (HW.13)"]}
+                            "EBFC's own P–V curve (HW.13)",
+                            "the anchor cathode's wetted area (no manifest), its edge-fed geometry and transport inside the ratified "
+                            "ionic bridge (HW.53) — the sap-film block is one conditional reading in the kindest geometry; "
+                            "winter-alkaline sap, water with no malate and a colder stem (each adverse) are not computed"]}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     banner(f"✅ saved {OUT.relative_to(REPO_ROOT)}")

@@ -1,7 +1,7 @@
 {
   "script": "85_electrode_interfacial_ph.py",
   "question": "pH at the Stage-2 coin electrodes' faces under their own current, in the media the letter allows",
-  "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap; the anchor cathode waits on HW.53, and which gap state a living stem keeps is not known",
+  "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap and what a stagnant sap film could carry to the anchor CATHODE's face; the anchor cathode itself waits on HW.53 (which electrolyte it sees), and which gap state a living stem keeps is not known",
   "recipe_mM": {
     "malic": 0.4,
     "oxalic": 0.0,
@@ -2101,6 +2101,67 @@
       "reading": "per axis, ONE dated median moved, the rest as read; shift_to_flip is the bisection's flip end and no_flip_end its other end (the true edge lies between); under the rule the point moves in steps, so a threshold sits where a step falls; a null shift means no flip out to five read-off errors"
     }
   },
+  "anchor_cathode_sap_film": {
+    "condition": "a stagnant film of the recipe's sap lies between bulk sap and the cathode's face — canon's «if the layer sees sap», the route HW.53's rejected open edge and its fallback wick would rely on; the ratified direction is a designed ionic bridge (founder, 2026-10-18), which this block does not model",
+    "oxygen": "from the air side through the PTFE-GDL — the film is not asked to carry it",
+    "geometry": "a film normal to the face over the whole wetted area — the kindest geometry; an edge-fed layer carries far less (not computed)",
+    "cold_start_uA": {
+      "typ": 25.0,
+      "worst": 21.4
+    },
+    "binding_cold_start_column": "typ",
+    "face_pH": 6.0,
+    "by_sap": {
+      "pine": {
+        "bulk_pH": 5.75,
+        "margin_pH": 0.25,
+        "corners": 28,
+        "K_uA_cm2_um": [
+          191.3,
+          386.5
+        ],
+        "free_H_share": [
+          0.19,
+          0.35
+        ],
+        "film_um_per_cm2_at_cold_start": {
+          "typ": [
+            7.7,
+            15.5
+          ],
+          "worst": [
+            8.9,
+            18.0
+          ]
+        },
+        "reading": "on this reading a stagnant film of this sap carries j·δ ≤ 191–387 µA/cm²·µm before the face reaches pH 6.0; at the anchor's cold-start draw (typ column, the larger current) that is 7.7–15.5 µm of film per cm² of wetted cathode"
+      },
+      "beech_q8": {
+        "bulk_pH": 5.95,
+        "margin_pH": 0.05,
+        "corners": 28,
+        "K_uA_cm2_um": [
+          49.7,
+          122.8
+        ],
+        "free_H_share": [
+          0.1,
+          0.22
+        ],
+        "film_um_per_cm2_at_cold_start": {
+          "typ": [
+            2.0,
+            4.9
+          ],
+          "worst": [
+            2.3,
+            5.7
+          ]
+        },
+        "reading": "on this reading a stagnant film of this sap carries j·δ ≤ 50–123 µA/cm²·µm before the face reaches pH 6.0; at the anchor's cold-start draw (typ column, the larger current) that is 2.0–4.9 µm of film per cm² of wetted cathode"
+      }
+    }
+  },
   "not_modelled": [
     "which medium and convection the laboratory will use (the letter fixes neither)",
     "the pH inside the coatings — every shift here is a lower bound at the enzyme",
@@ -2108,6 +2169,7 @@
     "a standard laccase buffer as the cathode medium",
     "salting-out of O2 in the 0.25 M NaCl steps of test D (raises f)",
     "the anode at 20 °C — L4's current is a 25 °C ceiling",
-    "the anchor anode's gap state in a living stem, the pH inside its gyroid lattice and the wood wall's own resistance (both lower its currents); migration, flow through the gap and a CO2/HCO3- buffer (each raises them); the anchor's working current after cold start — the EBFC's own P–V curve (HW.13)"
+    "the anchor anode's gap state in a living stem, the pH inside its gyroid lattice and the wood wall's own resistance (both lower its currents); migration, flow through the gap and a CO2/HCO3- buffer (each raises them); the anchor's working current after cold start — the EBFC's own P–V curve (HW.13)",
+    "the anchor cathode's wetted area (no manifest), its edge-fed geometry and transport inside the ratified ionic bridge (HW.53) — the sap-film block is one conditional reading in the kindest geometry; winter-alkaline sap, water with no malate and a colder stem (each adverse) are not computed"
   ]
 }
