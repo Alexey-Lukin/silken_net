@@ -507,7 +507,9 @@ rb_dark() {
 # (founder: список витрачених на проєкт грошей); підлога за ними.
 # 2026-11-18: 187 → 188 — `log_letter_threads` (стан тредів листування, рядок на тред; ⚖️ founder «так» на спільну рекомендацію
 # сесій цементації й курації: один дім стану замість 5–10 носіїв на подію); підлога за ним.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-188}
+# 2026-11-19: 188 → 189 — журнал-двійник `log_external_sources` (дослівні інстанси й рецепти окремих сайтів, виселені з
+# `feedback_external_sources`: дім за три тижні виріс на 12.7 kB і став за 200 B до стелі файлу, а росла в ньому карта сайтів).
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-189}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -1068,7 +1070,8 @@ index_check() {
     echo "      then hub-inline a row under a neighbour (ORPHAN wants a LINK, not a row — the pointer survives);"
     echo "      deleting or merging a FILE is the LAST lever and FLOOR gates it"
     echo "      ⚠️ Cyrillic costs 2 B/char: 08-09→10-17 bytes +11.6% while chars +2.7% — most bumps were hooks turning Ukrainian, not growth."
-    echo "      New hooks in English, never translate old ones (trap 7); bump only «за коректність», naming the defect beside IDX_BASELINE (⚖️ 2026-10-17)"
+    echo "      New hooks in English, never translate old ones (trap 7). A bump is TAX ACCOUNTING, not a ban (⚖️ 2026-10-17 re-verdict (1)):"
+    echo "      record it beside IDX_BASELINE and name what bought it — the defect it cures, or the new home / standing rule it carries."
   elif [ "$sz" -lt $((IDX_BASELINE - 400)) ]; then
     # "Smaller" is not "better" until you know WHICH of the three events it was.
     # Reach is the discriminator the old wording never asked for: compression and
