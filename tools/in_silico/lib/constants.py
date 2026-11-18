@@ -406,8 +406,13 @@ NU_PEEK = 0.40                  # — PEEK Poisson's ratio. ⛔ NO SOURCE for 45
                                 #   clamp scripts and their downstream readers ≤ 1.8 % — the one sensitive consumer is `127`, whose
                                 #   liner-end SFs move by −25…+20 % by reading (a bimaterial corner feels the Poisson mismatch). Price:
                                 #   the constant stays unsourced, and a base case run at 0.38 sits ≈ 0.5 % off this Lamé pressure.
-                                #   Weakest link: nothing is published below 23 °C; the slow consumers `92` · `97` · `116` are
-                                #   tracked in 00_07 HW.26.
+                                #   Weakest link: nothing is published below 23 °C. The slow consumers were read the same day, AFTER the
+                                #   verdict (same scratch method): `92` and `97` move no count, threshold crossing or verdict clause (peaks
+                                #   ≤ 1.5 %, exit SFs ≤ 2.7 %, one printed threshold 0.66 → 0.67); `116` flips ONE of its 739 flags — the
+                                #   end-point cell «zero interference · 50 µm · r_exit 0.1 mm · depth 1.0 mm» crosses 1·σ_y from above to
+                                #   below (peak 100.41 → 99.03 MPa), no summary moves — so «flipped no flag» above holds for the consumers
+                                #   run before the verdict only; the kept 0.40 reads that knife-edge cell on the adverse side, and it lies
+                                #   outside the ratified 0.2 mm exit radius. Resubmitted to the founder (00_07 HW.26).
 PEEK_TG_C = 143.0               # °C — PEEK 450G glass-transition ONSET (Victrex 450G datasheet, DSC; midpoint 150 °C); the relax-
                                 #   floor note below reads the same value. A hot mount at 150 °C (01_01 §3, step 4) sits at the
                                 #   transition's midpoint, NOT above it (⚖️ founder 2026-11-17, 00_07 HW.26); such a mount locks a
