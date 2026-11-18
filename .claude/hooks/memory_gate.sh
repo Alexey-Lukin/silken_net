@@ -281,7 +281,10 @@ SELF=${BASH_SOURCE[0]:-$0}
 # ⊕ 25836 → 25860 (+24) — ЗА КОРЕКТНІСТЬ, того ж дня: стискаючи рядок, я зняв тригер «append on EVERY send» біля журналу листів —
 #   єдине слово про МИТЬ у файлі, що вантажиться щосесії (адверсар рамки «що перестало існувати»); повернуто «row on EVERY send»
 #   і поруч «row on EVERY payment».
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25860}
+# ⊕ 25860 → 26102 (+242) — стояча вказівка founder-а 2026-11-18 («якщо у нашого проекту нема майбутнього, то напишеш») стала
+#   рядком завжди-завантаженої преамбули: її мить — будь-яка сесія, де приходить лаб-звіт чи польові дані, тож носій у файлі,
+#   який відкривають за подією, її не доніс би. Тіло (три умови, зобовʼязання машини) — `user_solo_founder`. Облік податку (1).
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26102}
 # The OUTER wall is not ours: Claude Code loads only the first 200 lines / 25 KB of MEMORY.md at session start and drops
 # the rest WITHOUT a sign (docs: code.claude.com/docs/en/memory). Unit measured 2026-10-17: NOT bytes (26 805 B loaded
 # whole, no «over its read limit» error in any transcript); characters and UTF-16 units cannot be told apart here
