@@ -380,9 +380,17 @@ ALPHA_PEEK_1K = 47e-6            # 1/K — PEEK 450G CTE (5.5× Ti). Address (�
                                  # that window's own spread (once the old Victrex table's value; today's datasheet prints
                                  # 45 «Flow» / 55 «Average» as means up to 143 °C, and 120 / 140 above Tg)
 E_PEEK_PA = 4.0e9               # Pa — PEEK 450G Young's modulus (Victrex 450G datasheet, 23°C)
-NU_PEEK = 0.40                  # — PEEK Poisson's ratio. ⛔ NO SOURCE (00_07 HW.26): published 0.380 at 23 °C (0.366 at 105,
-                                #   0.365 at 129 °C) for UNFILLED PEEK (Nyman et al. 2024, Sci. Rep. 14:31628, Table 5); none found for
-                                #   450G or below 23 °C. Kept until the cascade's sensitivity to 0.38 is measured (one constant, many caches).
+NU_PEEK = 0.40                  # — PEEK Poisson's ratio. ⛔ NO SOURCE for 450G: published 0.380 ± 0.002 at 23 °C (0.366 at 105,
+                                #   0.365 at 129 °C) for another UNFILLED grade, machined solid (Nyman et al. 2024, Sci. Rep. 14:31628,
+                                #   Table 5 — read 2026-11-18); none found for 450G or below 23 °C. KEPT at 0.40, with no source claimed
+                                #   (⚖️ founder 2026-11-18, 00_07 HW.26). Ground: the consumers re-run at 0.38 in a scratch tree (a
+                                #   sensitivity run, NOT a committed cache — its field-by-field diff lives in the hand-off corpus)
+                                #   flipped no flag: the Lamé family (`50` · `51` · `56`) moves ≤ 0.7 %, the bus, torque, shear-lag and
+                                #   clamp scripts and their downstream readers ≤ 1.8 % — the one sensitive consumer is `127`, whose
+                                #   liner-end SFs move by −25…+20 % by reading (a bimaterial corner feels the Poisson mismatch). Price:
+                                #   the constant stays unsourced, and a base case run at 0.38 sits ≈ 0.5 % off this Lamé pressure.
+                                #   Weakest link: nothing is published below 23 °C; the slow consumers `92` · `97` · `116` are
+                                #   tracked in 00_07 HW.26.
 PEEK_TG_C = 143.0               # °C — PEEK 450G glass-transition ONSET (Victrex 450G datasheet, DSC; midpoint 150 °C); the relax-
                                 #   floor note below reads the same value. A hot mount at 150 °C (01_01 §3, step 4) sits at the
                                 #   transition's midpoint, NOT above it (⚖️ founder 2026-11-17, 00_07 HW.26); such a mount locks a
