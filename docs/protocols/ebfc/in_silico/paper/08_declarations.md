@@ -52,10 +52,12 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   [`10_supporting_information.md`](10_supporting_information.md) (script 72 — sha256 of every committed
   file it lists). Superseded records stay in the caches and are not reported: an earlier cathode margin on a broken cluster
   geometry with an assumed λ = 0.7 eV, and the margins on the crude two-solution coupling (the cache `cathode_ket_lambda`
-  keeps both scenarios beside the reported ones). The manuscript and its computations are developed openly in a public repository — the development tree of this preprint, whose history predates it. [finalise — repository DOI; in a later journal version also the ChemRxiv preprint DOI
-  beside it — ⚖️ 2026-10-03]
+  keeps both scenarios beside the reported ones). The manuscript and its computations are developed openly in a public repository — the development tree of this preprint, whose history predates it; the tree at the commit this manuscript is printed from is archived on Zenodo,
+  https://doi.org/10.5281/zenodo.24338954.
 
-> Data Availability — provenance: publish-to-protect, `00_01 §8`.
+> Data Availability — provenance: publish-to-protect, `00_01 §8`. The DOI was reserved 2026-11-18 in an unpublished Zenodo
+> draft (the marker it answered read «repository DOI; in a later journal version also the ChemRxiv preprint DOI beside
+> it — ⚖️ 2026-10-03» — the journal half stays a note for that branch); it resolves once the record is published (step 6).
 > *Snapshot recipe.* ⚖️ The founder ratified the route on 2026-10-12 — a manual Zenodo upload with a reserved DOI
 > (grounds, price and weakest link in `00_02 §2.1`). The order below, the verification before publication and
 > the ⛔ on a GitHub Release are the machine's, added when the ruling was applied the same day. Neither §2.7 nor
