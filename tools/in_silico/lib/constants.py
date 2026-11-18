@@ -377,8 +377,25 @@ ALLOY_PROPERTIES = {
 ALPHA_PEEK_1K = 47e-6            # 1/K — PEEK 450G CTE (5.5× Ti). Address (⚖️ founder 2026-11-17, 00_07 HW.26): Rae, LANL
                                  # LA-UR-24-26094 (DOI 10.2172/2377322), Victrex 450G measured −100…+100 °C, Table 2 —
                                  # α(−30) 4.75 · α(20) 4.54 · α(40) 4.50 ×10⁻⁵, forest-window secant 4.616e-5; 47 sits inside
-                                 # that window's own spread (once the old Victrex table's value; today's datasheet prints
-                                 # 45 «Flow» / 55 «Average» as means up to 143 °C, and 120 / 140 above Tg)
+                                 # that window's own spread (once the old Victrex table's value — Rae himself cites 4.7e-5 as that table's «below Tg»; today's datasheet prints
+                                 # 45 «Flow» / 55 «Average» as means up to 143 °C, and 120 / 140 above Tg).
+                                 # Rae's polynomial, T in °C, normalised at 21 °C: α(T) = 4.637e-5 − 5.55e-8·T − 7.355e-11·T²
+                                 #   + 1.5704e-11·T³; 47 is 1.8 % above the −30…+40 °C secant. Ground of «keep 47»: that 1.8 %
+                                 #   is smaller than α's own spread over the window, and one α instead of α(T) is the models'
+                                 #   ceiling anyway. Sensitivity (2026-11-17, the 14 direct consumers re-run at the datasheet's
+                                 #   45e-6 and 55e-6 in scratch trees — NOT committed caches; the diff lives in the hand-off
+                                 #   corpus): at 45 flags flip only in `126` (15 liner-wall cells — «wall limit at 23 °C» at the
+                                 #   hot preload near the capsule edge); at 55 in `126` (66 cells), `103` (the Zone-3 fit's state
+                                 #   3 «reached at any depth», hot and cold), `104` (the Ta seam bound) and `102` (the Ti-15Zr
+                                 #   seam); `114`'s verdict does not move; `50`·`51`·`55`·`56`·`77` flip nothing, but their
+                                 #   numbers move — most the press-fit's lower interference bound (`56`, ~28 % at 45) and the
+                                 #   centre of the bus interference window (`55`), i.e. the band 00_07 HW.3 asks for and the
+                                 #   FEA brief's lower bound (~8.5 µm). Rejected: Rae's secant with a cascade re-run (`126`
+                                 #   cells already flipped at 45, so the secant could cross that knife-edge). Price: the `126`
+                                 #   cells that flipped at 45 stay a knife-edge and are read as one.
+                                 #   Above Tg the datasheet's 120 / 140 would apply (47 carried to a 150 °C install would understate
+                                 #   the expansion over the last 7 K): no consumer carries a span above Tg
+                                 #   (`127` locks at Tg), so that ceiling touches nothing today.
 E_PEEK_PA = 4.0e9               # Pa — PEEK 450G Young's modulus (Victrex 450G datasheet, 23°C)
 NU_PEEK = 0.40                  # — PEEK Poisson's ratio. ⛔ NO SOURCE for 450G: published 0.380 ± 0.002 at 23 °C (0.366 at 105,
                                 #   0.365 at 129 °C) for another UNFILLED grade, machined solid (Nyman et al. 2024, Sci. Rep. 14:31628,

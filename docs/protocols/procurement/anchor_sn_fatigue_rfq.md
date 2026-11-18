@@ -441,6 +441,24 @@ Nothing is required from us for an initial quotation. On request we supply the m
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
+## 📤 Reminder block (EN) — one follow-up to a test house that stays silent (separate emails, in the thread)
+
+> **Репо-нота (у лист НЕ йде).** Одне нагадування у треді EN-листа кожному з трьох закордонних тест-хаусів, що мовчить (листи 2026-11-18; правило й відлік — [`rfq_registry`](rfq_registry.md) §3, ⚖️ founder 2026-11-18: університетські підрозділи, що продають послуги, — комерційний жанр; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.23). Нового не питає; найменша корисна відповідь — чи беруть базовий кейс і на якій машині. Написано 2026-11-18 заздалегідь; ⛔ founder ЦЬОГО тексту ще не бачив («так» на шість нагадувань 2026-11-18 його не охоплює) — до його «так» не надсилати; у день відправки — звірка скриньки. Листові на особисту скриньку звертання — на прізвище, як у самому листі (`--replace-line`). Підпис — `--signature "Best regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear colleagues,
+
+A short follow-up on my request of 18 November below — axial fatigue (S-N) testing of laser powder-bed-fused Ti-6Al-4V in synthetic xylem sap.
+
+Could you confirm that it has reached the group that handles such requests, or tell me whom to write to instead? A partial answer is welcome: the most useful place to start is whether the base case — a conventional axial machine, fully reversed loading, in a liquid cell at a constant temperature — is something you run, and on which machine. If a programme of this kind is not something you take on, a short "no" is useful too.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 4. Cross-references
 
 | Ресурс | Що бере |
