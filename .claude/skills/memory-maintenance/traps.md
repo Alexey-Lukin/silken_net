@@ -5,7 +5,7 @@
 > report a corpus number. The one-line index in `SKILL.md` is the carrier; this file is the
 > mechanism. Edit rules HERE — the index is generated (`ruby scripts/guard_craft_index.rb --write`).
 >
-> **Numbering is append-only:** these numbers are cited from 10 memory files and from
+> **Numbering is append-only:** these numbers are cited from memory files and from
 > `docs/00_07` (as «пастка (N)»), so a vanished number orphans its citations. The
 > `floor` guard in `scripts/guard_craft_index.rb` backstops bulk loss.
 > ⚠️ Those citations carry no `#`, so `skill_item_check` cannot see them — the floor is
