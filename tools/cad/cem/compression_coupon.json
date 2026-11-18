@@ -1,0 +1,32 @@
+{
+  "_note": "ISO 13314:2011 compression coupon - RATIFIED founder 2026-11-17 (canon 01_01 5.2, consequence (в); 00_07 HW.33): the anode's own lattice (network, wall level 0.10) at ONE constant period 2.0 mm - the anode's RIM period, its thinnest ligaments - as a plain cylinder O20 x 30 mm, 10 x 15 cells. Six are ordered (5 + 1 preliminary); the count is an order line, not geometry. It validates the LATTICE pair C/n (a material), never the anode's E_app: one period does not represent the anode's gradient (core 2.5 mm). Its own kind and not an anchor_zone1 manifest, but the SAME field: CompressionCoupon.Lattice maps it onto the anode generator. edm_end_stock_mm is ABSENT on purpose - the stock for the wire-EDM cut is the vendor's number; without it build writes the finished geometry (the file to quote from) and the sheet asks for the stock. porosity_min/max are the ANODE's acceptance band, carried as fields because verify checks the coupon's CAD model against it - a choice of this application: the verdict names no porosity criterion for the coupon, whose printed density is reported, not judged. The notes below are written for the shop: no tracker ids, no canon references.",
+  "kind": "compression_coupon",
+  "name": "iso13314_compression_coupon",
+  "voxel_size_mm": 0.1,
+  "diameter_mm": 20.0,
+  "length_mm": 30.0,
+  "gyroid_period_mm": 2.0,
+  "gyroid_wall_param": 0.10,
+  "topology": "network",
+  "porosity_target": 0.65,
+  "porosity_min": 0.60,
+  "porosity_max": 0.70,
+  "tolerances": {
+    "features": [
+      { "feature": "diameter_as_printed" },
+      { "feature": "length_between_cut_faces" }
+    ]
+  },
+  "notes": {
+    "material": "The SAME alloy as the anode parts of this order, from the SAME BUILD - this sheet names no alloy of its own. The coupon is a witness of the anodes' lattice",
+    "process": "Printed in the SAME BUILD as the anode parts, then carried through EVERY thermal and chemical step the anodes receive: the coupon is tested in the anodes' FINAL condition. Orientation in the build: the cylinder axis lies as the long axis of the anode parts in the same build - the compression load runs along the axis the anode carries its load on. State the orientation used",
+    "surface_finish": "Cylinder side surface AS PRINTED ('with skin' - it is reported so in the compression test report): no machining of the side; it receives only what the anode lattice receives. The two end faces are cut (see Post-process)",
+    "post_process": "Both end faces cut by electrical discharge machining (wire EDM or an equivalent electro-erosion cut), parallel to each other and perpendicular to the cylinder axis, to the length between the cut faces dimensioned on this sheet. PARALLELISM AND PERPENDICULARITY VALUES: NOT SPECIFIED IN CEM - state your achievable figures. Whether the cut comes before or after the anodes' chemical steps is NOT SPECIFIED IN CEM - state your sequence",
+    "coating_restriction": "No coating of any kind - bare metal, in the surface condition of the anode lattice",
+    "lattice_spec": "Gyroid, NETWORK topology (one connected metal ligament network, one through pore space), CONSTANT cell period 2.0 mm, wall level 0.10 - the lattice type and the wall level of the anode part 'anchor_zone1_pine' of this order, at that part's rim (outer-edge) cell period. Porosity 65 % nominal (the acceptance band 60-70 % is the anode parts' own; the coupon's relative density is REPORTED from micro-CT, not judged by this sheet). The lattice is defined by the STL supplied with this sheet; this drawing shows the envelope only",
+    "inspection": "Relative density of THIS coupon - the density the compression result is evaluated at - by micro-CT, not by the Archimedes method (adhered powder particles make it read high). This note is for the coupon only: the anode parts keep the inspection of their own sheets. Report the scan voxel size and the segmentation-threshold method with the result",
+    "extra": [
+      "Quantity 6, all in one build with the anodes: compression test per ISO 13314:2011 - 5 test coupons + 1 preliminary coupon that sets the plateau stress for the unloading loop"
+    ]
+  }
+}

@@ -248,6 +248,39 @@ internal sealed record AnchorCem
     public ToleranceSpec? Tolerances { get; init; }
 }
 
+// ISO 13314 compression coupon (canon 01_01 §5.2 (в), ⚖️ founder 2026-11-17; 00_07 HW.33): a plain cylinder of the
+// ANODE's lattice — same topology, same wall level — at ONE constant period, printed in the anodes' build. It is its
+// own kind and not an `anchor_zone1` manifest because the anode sheet prints anode callouts (bus wire, coating
+// boundary) and the `anchor_zone1.*` glob pins anode fields; the FIELD is not its own: `CompressionCoupon.Lattice`
+// maps this record onto an AnchorCem and `Zone1Anode.Gyroid` computes it — one implementation, never a second.
+// 🔴 Every geometry field is `required`: a manifest that omits one fails the parse by name instead of building from
+// a record default nobody chose (picogk #0a) — there IS no default here to be load-bearing. The two nullable fields
+// are absences with a meaning, and each prints loud on the sheet (picogk #11).
+internal sealed record CompressionCouponCem
+{
+    public required string Kind { get; init; }
+    public required string Name { get; init; }
+    public required float VoxelSizeMm { get; init; }
+    public required float DiameterMm { get; init; }
+    public required float LengthMm { get; init; }          // between the CUT end faces — the tested height, never the printed one
+    // Stock left on EACH end for the wire-EDM cut — a VENDOR input (kerf, plate removal), so no number of ours:
+    // null ⇒ `build` writes the finished geometry and the sheet asks for it; set ⇒ the body is printed longer by
+    // 2 × this, the lattice between the cut planes unchanged (`CompressionCoupon.Build`).
+    public float? EdmEndStockMm { get; init; }
+    public required float GyroidPeriodMm { get; init; }    // ONE period — no rim field: a constant lattice is the point of the specimen
+    public required float GyroidWallParam { get; init; }   // dimensionless LEVEL on network — the anode's meaning (AnchorCem.GyroidWallParam)
+    public required string Topology { get; init; }         // network | sheet — DECLARED, never defaulted (CompressionCoupon.Lattice refuses anything else)
+    public required float PorosityTarget { get; init; }    // the nominal `verify` aims at
+    // The band `verify` checks the coupon's CAD MODEL against — the ANODE's acceptance band (01_01 §5.2 · 01_02 §1.2), a choice of
+    // this application (the coupon verdict names no porosity criterion; the printed coupon's density is reported), carried as fields
+    // because no code home holds it: the anode's `verify` gates a wide sanity band and its golden, never this band.
+    public required float PorosityMin { get; init; }
+    public required float PorosityMax { get; init; }
+    public float? SlmMinWallMm { get; init; }              // vendor's minimum printable wall — the same input as AnchorCem.SlmMinWallMm, read by the same as-printed check
+    public ToleranceSpec? Tolerances { get; init; }
+    public NotesSpec? Notes { get; init; }
+}
+
 // Mechanical-lock shank (01_01 §4.3 A/B) — the §4.3 BLOCKER-3 lock against PEEK cold-flow creep
 // (HW.26): annular ratchet barbs on the solid Ti shank that press-fits into the PEEK sleeve. The DIN-471
 // ring as a backup was removed on BOTH ends ⚖️ 2026-09-18 (00_07 HW.26) and the Zone-3 groove with it; the

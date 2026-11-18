@@ -1321,6 +1321,156 @@ internal static class Drawing
         return doc.Save(path);
     }
 
+    // ── ISO 13314 compression coupon (canon 01_01 §5.2 (в), 00_07 HW.33) — END view (Ø) + SIDE (the envelope, with
+    // the cut planes when the manifest carries the vendor's stock). The lattice is a CALLOUT over the plain cylinder,
+    // never a contour — the same canon rule the anode sheet obeys (01_02 §6). This sheet is written to LEAVE: its own
+    // words carry no canon or tracker reference, and every instruction on it comes from the manifest's notes.
+    //
+    // 🔴 The one absence this sheet exists to say out loud is the END STOCK for the wire-EDM cut: it is the vendor's
+    //    number (kerf, plate removal), so the manifest ships without it and the sheet ASKS — a stock invented here
+    //    would be printed, cut and tested as if someone had chosen it (picogk #11). ONE formatter for the notes line
+    //    of both readers, so they cannot disagree on what is asked.
+    internal static string CouponStockLine(CompressionCouponCem cem)
+        => cem.EdmEndStockMm is { } fStock
+            ? $"END STOCK FOR WIRE-EDM CUT (each end): {N(fStock)} mm — PRINTED LENGTH {N(SilkenCad.CompressionCoupon.PrintedLengthMm(cem))} mm, "
+              + $"{N(cem.LengthMm)} mm BETWEEN THE CUT FACES; cut planes at Z = 0 and Z = {N(cem.LengthMm)} of the print file"
+            : $"END STOCK FOR WIRE-EDM CUT (each end): {NotSpecified} — state yours; the print file is regenerated with it. "
+              + $"This sheet and its STL show the FINISHED specimen, {N(cem.LengthMm)} mm between the cut faces";
+
+    // The short form of the same statement, beside the length dimension on the view.
+    private static string CouponStockTag(CompressionCouponCem cem)
+        => cem.EdmEndStockMm is { } fStock
+            ? $"end stock for the wire-EDM cut: {N(fStock)} mm each end (dashed = cut planes) — see NOTES 3"
+            : $"end stock for the wire-EDM cut: {NotSpecified} — see NOTES 3";
+
+    private static string CouponLengthLabel(CompressionCouponCem cem)
+        => cem.EdmEndStockMm is null ? N(cem.LengthMm) : $"{N(cem.LengthMm)} between cut faces";
+
+    // Notes block = three computed lines (every value from the manifest's own fields) + the fixed CEM field set.
+    //   1 · the lattice — and the acceptance band beside the nominal, both named for what they are;
+    //   2 · the specimen — the finished cylinder and how many cells it holds;
+    //   3 · the end stock (above).
+    private static List<string> CouponNotes(CompressionCouponCem cem)
+    {
+        AnchorCem lattice = SilkenCad.CompressionCoupon.Lattice(cem);
+        string strFloorSrc = cem.SlmMinWallMm is null ? "our default, NOT your machine's figure — state yours" : "vendor input, this CEM";
+        (float fCellsD, float fCellsH) = SilkenCad.CompressionCoupon.CellsAcross(cem);
+        string lead = $"Lattice parameters (from this manifest's own fields): gyroid, topology {cem.Topology}; cell period "
+            + $"{N(cem.GyroidPeriodMm)} mm constant; wall level {N(cem.GyroidWallParam)} (a dimensionless level of the gyroid equation — NOT mm); "
+            + $"porosity {N(cem.PorosityTarget * 100)} % nominal (the anode parts' acceptance band is {N(cem.PorosityMin * 100)}–{N(cem.PorosityMax * 100)} %; the coupon's relative density is reported, not judged by this sheet); "
+            + $"minimum printable wall assumed by our own check {N(TopologyCrossChecks.FloorMmFor(lattice))} mm [{strFloorSrc}].";
+        var lines = NotesLines(cem.Notes, lead);
+        lines.Insert(1, $"Specimen: cylinder Ø{N(cem.DiameterMm)} × {N(cem.LengthMm)} mm between the cut end faces; height/diameter "
+            + $"{N(SilkenCad.CompressionCoupon.AspectRatio(cem))}; {N(fCellsD)} lattice cells across the diameter, {N(fCellsH)} along the height.");
+        lines.Insert(2, CouponStockLine(cem));
+        return lines;
+    }
+
+    public static string CompressionCoupon(CompressionCouponCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
+    {
+        double rOut = cem.DiameterMm / 2.0 * Px;
+        double fStockMm = cem.EdmEndStockMm ?? 0.0;
+        double frontCx = 40 + rOut, cy = 90 + rOut;
+        double sideX = frontCx + rOut + 110, printedPx = SilkenCad.CompressionCoupon.PrintedLengthMm(cem) * Px;
+        double cutL = sideX + (fStockMm * Px), cutR = cutL + (cem.LengthMm * Px);
+        double sideTop = cy - rOut, sideBot = cy + rOut;
+        bool bStock = cem.EdmEndStockMm is not null;
+        var b = new StringBuilder();
+
+        b.AppendLine(Text(20, 30, "COMPRESSION COUPON  (gyroid lattice cylinder — envelope card)", 15, "start", Stroke, "bold"));
+        b.AppendLine(Text(20, 46, $"Compression test specimen · {cem.Name}", 10, "start", "#555"));
+
+        // END — the envelope Ø. What it bounds is the lattice: marked by a callout, never drawn.
+        b.AppendLine(Circle(frontCx, cy, rOut, Stroke, 1.2));
+        b.AppendLine(Centre(frontCx, cy, rOut, b));
+        HDim(b, frontCx - rOut, frontCx + rOut, sideBot + 22, $"Ø{N(cem.DiameterMm)}", sideBot);
+        b.AppendLine(Text(frontCx, sideBot + 40, "END", 10, "middle", "#555"));
+        b.AppendLine(Text(frontCx - rOut, sideTop - 10, "gyroid lattice — SPEC, not drawn", 9, "start", Dim));
+
+        // SIDE — the printed envelope; with stock in the manifest the two cut planes are drawn and the tested
+        // length is dimensioned BETWEEN them, the printed length under it.
+        b.AppendLine(Rect(sideX, sideTop, printedPx, 2 * rOut, Stroke, 1.2));
+        if (bStock)
+        {
+            b.AppendLine(Line(cutL, sideTop - 8, cutL, sideBot + 8, Stroke, 0.6, "6 3"));
+            b.AppendLine(Line(cutR, sideTop - 8, cutR, sideBot + 8, Stroke, 0.6, "6 3"));
+        }
+        HDim(b, cutL, cutR, sideBot + 22, CouponLengthLabel(cem), sideBot);
+        double capY = sideBot + 40;
+        if (bStock)
+        {
+            HDim(b, sideX, sideX + printedPx, sideBot + 46, $"{N(SilkenCad.CompressionCoupon.PrintedLengthMm(cem))} printed", sideBot);
+            capY = sideBot + 64;
+        }
+        VDim(b, sideTop, sideBot, sideX + printedPx + 26, $"Ø{N(cem.DiameterMm)}", sideX + printedPx);
+        b.AppendLine(Text(sideX + (printedPx / 2), capY, "SIDE (envelope)", 10, "middle", "#555"));
+        b.AppendLine(Text(sideX, capY + 18, CouponStockTag(cem), 9, "start", Stroke, "bold"));
+
+        const double w = 820;
+        double bottom = NotesAndTolerances(b, 20, capY + 46, (int)((w - 40) / Glyph9),
+                                           CouponNotes(cem), ToleranceLines(cem.Tolerances));
+
+        string strSsot = $"cem/{strCemFile}";
+        var rows = new[]
+        {
+            ("PART", "Compression coupon (gyroid)"),
+            ("MATERIAL", Cell(NoteCell(cem.Notes?.Material, SheetForm.Full))),
+            ("PROCESS", Cell(NoteCell(cem.Notes?.Process, SheetForm.Full))),
+            ("UNITS / SCALE", "mm / 6:1"),
+            ("REV", Cell(sha, ptr: "→ FOOTER")),
+            // strCemFile, never cem.Name: the manifest file and the specimen's name differ by design.
+            ("SSOT", Cell(strSsot, ptr: "→ FOOTER")),
+            ("CEM SHA-256", Cell(CemSha256Value(cemSha256), ptr: "→ FOOTER")),
+        };
+        double tbY = bottom + 18;
+        TitleBlock(b, w - 280, tbY, rows);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256);
+    }
+
+    // ── Compression coupon DXF (CAD-native factory deliverable, 1:1 mm Y-up) — the same two views in real mm; the
+    // cut planes ride the DIMENSIONS layer, so the GEOMETRY layer holds the printed envelope alone. ──
+    public static bool CompressionCouponDxf(CompressionCouponCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
+    {
+        var doc = new DxfDocument();
+        var geo = new Layer("GEOMETRY");
+        var dmn = new Layer("DIMENSIONS") { Color = AciColor.Blue };
+        var nte = new Layer("NOTES") { Color = AciColor.Cyan };
+
+        double rO = cem.DiameterMm / 2.0, cx = 0, cy = 0;
+        double fStockMm = cem.EdmEndStockMm ?? 0.0, printed = SilkenCad.CompressionCoupon.PrintedLengthMm(cem);
+
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rO) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx - rO - 2, cy), new Vector2(cx + rO + 2, cy)) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx, cy - rO - 2), new Vector2(cx, cy + rO + 2)) { Layer = geo });
+        DxfHDim(doc, dmn, cx - rO, cx + rO, cy - rO - 5, $"%%c{N(cem.DiameterMm)}");
+        doc.Entities.Add(new Text("END", new Vector2(cx - (rO / 2), cy - rO - 11), 2.0) { Layer = nte });
+
+        double sx = rO + 16, top = cy - rO, bot = cy + rO;
+        double cutL = sx + fStockMm, cutR = cutL + cem.LengthMm;
+        var env = new[] { new Vector2(sx, top), new Vector2(sx + printed, top), new Vector2(sx + printed, bot), new Vector2(sx, bot) };
+        for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(env[i], env[(i + 1) % 4]) { Layer = geo });
+        DxfHDim(doc, dmn, cutL, cutR, bot + 5, CouponLengthLabel(cem));
+        if (cem.EdmEndStockMm is not null)
+        {
+            doc.Entities.Add(new Line(new Vector2(cutL, top - 1.5), new Vector2(cutL, bot + 1.5)) { Layer = dmn });
+            doc.Entities.Add(new Line(new Vector2(cutR, top - 1.5), new Vector2(cutR, bot + 1.5)) { Layer = dmn });
+            DxfHDim(doc, dmn, sx, sx + printed, bot + 12, $"{N(printed)} printed");
+        }
+        doc.Entities.Add(new Text("SIDE (envelope)", new Vector2(sx, top - 11), 2.0) { Layer = nte });
+
+        var lines = new List<string> { "NOTES:" };
+        var nl = CouponNotes(cem);
+        for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
+        var tl = ToleranceLines(cem.Tolerances);
+        if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
+        lines.Add($"SilkenNet compression coupon | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
+        lines.Add(CemIdentityLine(cemSha256));
+        double yy = top - 20;
+        foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rO, yy), 1.6) { Layer = nte }); yy -= 3.2; }
+
+        return doc.Save(path);
+    }
+
     // Manual horizontal linear dimension in DXF: two short extension ticks + a dimension line + a value.
     // `witnessFrom` — the feature's edge, when the dimension stands off it; without it, the short ticks of a dimension under its feature.
     private static void DxfHDim(DxfDocument doc, Layer layer, double x1, double x2, double y, string label, double? witnessFrom = null)

@@ -119,6 +119,8 @@ public class ResolutionTests
         {
             "ti_coin" => Feat<TiCoinCem>(strJson, (c, v) => Resolution.Features(c, v), c => c.VoxelSizeMm),
             "anchor_zone1" => Feat<AnchorCem>(strJson, (c, v) => Resolution.Features(c, v), c => c.VoxelSizeMm),
+            // The compression coupon IS the anode's lattice in another envelope — measured through the same record `verify` reads.
+            "compression_coupon" => Feat<CompressionCouponCem>(strJson, (c, v) => Resolution.Features(CompressionCoupon.Lattice(c), v), c => c.VoxelSizeMm),
             "mechanical_lock" => Feat<MechanicalLockCem>(strJson, (c, v) => Resolution.Features(c, v), c => c.VoxelSizeMm),
             "cathode_flange" => Feat<CathodeFlangeCem>(strJson, (c, v) => Resolution.Features(c, v), c => c.VoxelSizeMm),
             "radome" => Feat<RadomeCem>(strJson, (c, v) => Resolution.Features(c, v), c => c.VoxelSizeMm),

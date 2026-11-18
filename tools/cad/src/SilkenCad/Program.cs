@@ -256,6 +256,11 @@ internal static class Program
                 AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => Export(Zone1Anode.Build(cem), cem.Name));
             }
+            case "compression_coupon":
+            {
+                CompressionCouponCem cem = Cem.Parse<CompressionCouponCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => ExportCoupon(cem));
+            }
             case "mechanical_lock":
             {
                 MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
@@ -301,6 +306,26 @@ internal static class Program
             default:
                 return Fail($"unknown CEM kind: {strKind}");
         }
+    }
+
+    // The compression coupon's STL is a file that LEAVES (part-RFQ pack), and out/ is watched by no gate (picogk #17) — so
+    // the verb reads the bbox of the very mesh it wrote against the manifest, and says WHICH body that is: the finished
+    // specimen, or the print body with the vendor's cut stock on each end.
+    private static int ExportCoupon(CompressionCouponCem cem)
+    {
+        BBox3 bb = ExportMesh(CompressionCoupon.Build(cem), cem.Name).oBoundingBox();
+        float fTol = 3f * cem.VoxelSizeMm;                             // the length tolerance verify's part gates use
+        float fZMin = CompressionCoupon.PrintedZMinMm(cem), fZMax = fZMin + CompressionCoupon.PrintedLengthMm(cem);
+        Vector3 vecSize = bb.vecSize();
+        bool bOk = MathF.Abs(vecSize.X - cem.DiameterMm) <= fTol && MathF.Abs(vecSize.Y - cem.DiameterMm) <= fTol
+                   && MathF.Abs(bb.vecMin.Z - fZMin) <= fTol && MathF.Abs(bb.vecMax.Z - fZMax) <= fTol;
+        Console.WriteLine($"  bbox {vecSize.X:F2} × {vecSize.Y:F2} mm, z {bb.vecMin.Z:F2}…{bb.vecMax.Z:F2} mm " +
+                          $"(manifest: Ø{cem.DiameterMm:0.##}, z {fZMin:0.##}…{fZMax:0.##})" + (bOk ? "" : " ⚠ NOT the manifest's body"));
+        Console.WriteLine(cem.EdmEndStockMm is { } fStock
+            ? $"  PRINT body: {fStock:0.###} mm of wire-EDM stock on each end — cut planes at z = 0 and z = {cem.LengthMm:0.##} of this STL"
+            : $"  FINISHED geometry Ø{cem.DiameterMm:0.##} × {cem.LengthMm:0.##} — the CEM carries no edm_end_stock_mm, so this is the file " +
+              "to QUOTE from, not the print file: rebuild once the vendor states the stock");
+        return bOk ? 0 : 1;
     }
 
     // `build --parts` (2026-10-15): the merged STL exactly as plain `build` writes it, then ONE STL per body, each left in
@@ -374,6 +399,8 @@ internal static class Program
                     return ReportAnchor(cem, voxAnode, voxEnv, strCemPath, bWriteGolden);
                 });
             }
+            case "compression_coupon":
+                return VerifyCoupon(Cem.Parse<CompressionCouponCem>(strJson), strCemPath, bWriteGolden);
             case "mechanical_lock":
             {
                 MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
@@ -943,6 +970,15 @@ internal static class Program
                 strName = cem.Name; strSvg = Drawing.Zone2Sleeve(cem, strRev, cemSha256: strCemSha256); fnDxf = p => Drawing.Zone2SleeveDxf(cem, strRev, p, cemSha256: strCemSha256);
                 break;
             }
+            case "compression_coupon":
+            {
+                // strFile (not cem.Name): the manifest is cem/compression_coupon.json while its `name` is the
+                // specimen's (iso13314_compression_coupon) — the SSOT row names the file a reader can open.
+                CompressionCouponCem cem = Cem.Parse<CompressionCouponCem>(strJson);
+                string strFile = Path.GetFileName(strCemPath);
+                strName = cem.Name; strSvg = Drawing.CompressionCoupon(cem, strRev, strFile, cemSha256: strCemSha256); fnDxf = p => Drawing.CompressionCouponDxf(cem, strRev, strFile, p, cemSha256: strCemSha256);
+                break;
+            }
             default:
                 // ⛔ `radome` is deliberately absent, and the reason is not effort. The crown ground is spent (flat
                 // crown R5, ⚖️ 2026-09-11, APPLIED 2026-09-22 once ⚖️ HW.30 settled the pad); THREE grounds remain:
@@ -952,7 +988,7 @@ internal static class Program
                 // (HW.32) — a sheet issued from today's generator would print all three as decisions. It ships
                 // with the LAST of those changes. (Flat rim + rim boss
                 // applied 2026-09-14, crown 09-22.)
-                return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
+                return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve | compression_coupon (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
         }
 
         string strSvgPath = Path.Combine(strOutDir, $"{strName}.drawing.svg");
@@ -1077,6 +1113,7 @@ internal static class Program
     {
         "ti_coin" => TiCoin.Build(Cem.Parse<TiCoinCem>(strJson)),
         "anchor_zone1" => Zone1Anode.Build(Cem.Parse<AnchorCem>(strJson)),
+        "compression_coupon" => CompressionCoupon.Build(Cem.Parse<CompressionCouponCem>(strJson)),
         "mechanical_lock" => MechanicalLock.Build(Cem.Parse<MechanicalLockCem>(strJson)),
         "cathode_flange" => CathodeFlange.Build(Cem.Parse<CathodeFlangeCem>(strJson)),
         "radome" => Radome.Build(Cem.Parse<RadomeCem>(strJson)),
@@ -1129,8 +1166,11 @@ internal static class Program
     // Anchor verify: graded-aware golden metrics (per-shell porosity + finest period) → metrics.json,
     // plus the CI gate (sanity + DMLS floor + sane porosity band). Detailed profile asserts
     // (flat-vs-monotone, gradient present) live in the xUnit suite, not here.
+    // `fnAlso` — the extra judge of a kind that IS this lattice in another envelope (the compression coupon): it prints
+    // its own lines after the anode's and its verdict joins the one VERIFY line, so a reused report never ends in two.
     private static int ReportAnchor(AnchorCem cem, Voxels voxAnode, Voxels voxEnvelope,
-                                    string? strCemPath = null, bool bWriteGolden = false)
+                                    string? strCemPath = null, bool bWriteGolden = false,
+                                    Func<GeometryMetrics, bool>? fnAlso = null)
     {
         GeometryMetrics oM = Validation.MeasureAnchor(cem, voxAnode, voxEnvelope);
 
@@ -1219,9 +1259,97 @@ internal static class Program
                 bGolden = Golden.Check(strCemPath, oM, cem.VoxelSizeMm);
         }
 
-        bool bOk = bSane && bFloor && bPorositySane && bConnSound && bRodOk && bGolden;
+        bool bAlso = fnAlso?.Invoke(oM) ?? true;
+        bool bOk = bSane && bFloor && bPorositySane && bConnSound && bRodOk && bGolden && bAlso;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
+    }
+
+    // Compression-coupon verify (canon 01_01 §5.2 (в), 00_07 HW.33). The lattice half IS the anode's report — same
+    // measurement, same connectivity and print-floor gates — on the record `CompressionCoupon.Lattice` returns, i.e. on
+    // the FINISHED specimen. On top of it, three things the anode branch does not do:
+    //   · the specimen window of ISO 13314 §6.1 (CompressionCoupon.SpecimenFindings) — gated;
+    //   · the anode parts' acceptance band, carried by the manifest, as a check of the CAD MODEL — gated; never an acceptance of the printed coupon, whose density is reported (the anode's `verify` judges a sanity band
+    //     and its golden; the 60–70 % band reaches the anode shop as a note only);
+    //   · the shipped pine anode's golden porosity beside the coupon's — a REFERENCE: the coupon exists to stand for
+    //     that lattice, and no threshold on the difference is ratified, so none is applied.
+    // 🔴 A constant-period lattice on a voxel that divides its period is PHASE-LOCKED (picogk #16): every cell is
+    //    sampled at the same phases, so the grid's error is coherent instead of averaging out. The manifest voxel stays
+    //    the gated one; the same body is measured once more at `CouponControlVoxelFactor` × that voxel — FIRST, in its
+    //    own Library.Go, so its line lands inside the report, above the verdict — and printed beside the gated number,
+    //    so that number is never read alone (what the control can and cannot show: the comment on the factor).
+    private static int VerifyCoupon(CompressionCouponCem cem, string strCemPath, bool bWriteGolden)
+    {
+        AnchorCem lattice = CompressionCoupon.Lattice(cem);
+        float fControl = cem.VoxelSizeMm * CouponControlVoxelFactor;
+        double? dControl = null;
+        int iControl = RunHeadless(fControl, () =>
+        {
+            Voxels voxEnv = Zone1Anode.Envelope(lattice);
+            dControl = Validation.Measure(cem.Name, fControl, Zone1Anode.Anode(lattice, voxEnv), voxEnv).Porosity;
+            return 0;
+        });
+        int iRc = RunHeadless(cem.VoxelSizeMm, () =>
+        {
+            Voxels voxEnv = Zone1Anode.Envelope(lattice);
+            return ReportAnchor(lattice, Zone1Anode.Anode(lattice, voxEnv), voxEnv, strCemPath, bWriteGolden, oM =>
+            {
+                (float fCellsD, float fCellsH) = CompressionCoupon.CellsAcross(cem);
+                IReadOnlyList<string> aWindow = CompressionCoupon.SpecimenFindings(cem);
+                Console.WriteLine($"  coupon: Ø{cem.DiameterMm:0.##} × {cem.LengthMm:0.##} mm between the cut faces, H/D {CompressionCoupon.AspectRatio(cem):0.##} " +
+                                  $"· cells {fCellsD:0.#} across Ø, {fCellsH:0.#} along H (ISO 13314 §6.1: H/D {CompressionCoupon.AspectMin:0}–{CompressionCoupon.AspectMax:0}, " +
+                                  $"each dimension ≥ {CompressionCoupon.MinDimensionMm:0} mm; ≥ 10 cells is the stricter reading, reported not gated)");
+                foreach (string strFinding in aWindow)
+                    Console.WriteLine($"  ⚠ {strFinding}");
+                bool bBand = oM.Porosity is { } dP && dP >= cem.PorosityMin && dP <= cem.PorosityMax;
+                Console.WriteLine($"  model check against the anode parts' acceptance band (this manifest's porosity_min/max; the CAD model, not the printed coupon): {cem.PorosityMin:P0}–{cem.PorosityMax:P0} → porosity {oM.Porosity:P2} " +
+                                  (bBand ? "✓ inside" : "⚠ OUTSIDE"));
+                Console.WriteLine($"  {AnodeReferenceLine(strCemPath, oM.Porosity, cem.VoxelSizeMm)}");
+                WarnCouponLock(cem.VoxelSizeMm, lattice, "this is the GATED voxel");
+                Console.WriteLine($"  control voxel {fControl:0.###} mm (not gated): porosity {dControl:P2} — {(dControl - oM.Porosity) * 100:+0.00;-0.00} pp " +
+                                  $"against the gated {cem.VoxelSizeMm:0.###} mm");
+                WarnCouponLock(fControl, lattice, "the control was meant to be unlocked — move CouponControlVoxelFactor");
+                return aWindow.Count == 0 && bBand;
+            });
+        });
+        return iRc != 0 ? iRc : iControl;
+    }
+
+    // 1.1 × the manifest voxel: on the shipped coupon 0.11 mm against a 2.0 mm period — 18.18 steps a cell, so the
+    // sampled phase repeats only every 11 cells (22 mm, wider than the Ø20 section), and 10 % coarser is close enough
+    // that the resolution term of picogk #4 stays small. `WarnCouponLock` says so out loud if a future voxel or period
+    // makes this factor land on a locked step.
+    // ⚠️ What the control is NOT: a proof that the lock is harmless. Measured on this body over a ladder of voxels, the
+    // locked and unlocked readings scatter together within about a tenth of a point — the rendered volume is read off
+    // the interpolated mesh, not a count of sampled cells, so the lock that staircases the FE sampler barely shows
+    // here — and one control voxel cannot separate the lock from that scatter. It is printed so the gated number is
+    // never read alone.
+    private const float CouponControlVoxelFactor = 1.1f;
+
+    private static void WarnCouponLock(float fVoxelMm, AnchorCem lattice, string strNote)
+    {
+        int nCells = VoxelFea.PhaseLockCells(fVoxelMm, lattice);
+        if (nCells > 0)
+            Console.WriteLine($"  ⚠ voxel {fVoxelMm:0.###} mm divides the {lattice.GyroidPeriodMm:0.##} mm period (phase repeats every {nCells} cell(s)) — " +
+                              $"phase-locked sampling, the grid's error is coherent across cells; {strNote} (VoxelFea.PhaseLockCells)");
+    }
+
+    // The shipped pine anode's committed baseline, read from beside the coupon's manifest. ⛔ A reference, never a
+    // gate — and an absent or unreadable baseline says so instead of dropping the line (picogk #11).
+    internal const string AnodeReferenceGolden = "anchor_zone1.pine.golden.json";
+
+    internal static string AnodeReferenceLine(string strCouponCemPath, double? dCouponPorosity, float fCouponVoxelMm)
+    {
+        string strPath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(strCouponCemPath)) ?? ".", AnodeReferenceGolden);
+        if (!File.Exists(strPath))
+            return $"anode reference: NOT FOUND ({AnodeReferenceGolden} is not beside this manifest) — coupon ⊥ anode not compared";
+        using JsonDocument oDoc = JsonDocument.Parse(File.ReadAllText(strPath));
+        if (!oDoc.RootElement.TryGetProperty("porosity", out JsonElement oP) || !oDoc.RootElement.TryGetProperty("voxel_size_mm", out JsonElement oV))
+            return $"anode reference: {AnodeReferenceGolden} carries no porosity / voxel_size_mm — coupon ⊥ anode not compared";
+        double dAnode = oP.GetDouble(), dVoxel = oV.GetDouble();
+        string strGrid = Golden.SameGrid(dVoxel, fCouponVoxelMm) ? "same voxel" : $"⚠ another voxel than this run's {fCouponVoxelMm:0.###} mm";
+        return $"anode reference ({AnodeReferenceGolden}, graded period, voxel {dVoxel:0.###} mm — {strGrid}): porosity {dAnode:P2}; " +
+               $"coupon − anode = {(dCouponPorosity - dAnode) * 100:+0.00;-0.00} pp (reference only — no threshold on the difference is ratified)";
     }
 
     // Mechanical-lock verify (01_01 §4.3): golden barb metrics → metrics.json + the CI gate. Barb
@@ -1610,7 +1738,7 @@ internal static class Program
         Console.WriteLine(
             "silkencad — SilkenNet Code-as-CAD (PicoGK)\n" +
             "  smoke             foundation self-test (no output file)\n" +
-            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome | zone2_sleeve | anchor_assembly | anchor_axial_stack)\n" +
+            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | compression_coupon | mechanical_lock | cathode_flange | radome | zone2_sleeve | anchor_assembly | anchor_axial_stack)\n" +
             "  build <cem.json> --parts   anchor_assembly | anchor_axial_stack: also one STL per body → out/<name>.<part>.stl, all in the assembly frame\n" +
             "  build <anchor_zone1.json> --lock <mechanical_lock.json>   the gyroid + its lock shank as ONE body → out/<anode>.integrated.<lock>.stl, written only if the built mesh matches the two manifests — a mismatch (exit 1) writes nothing; an anode of another Ø meets the shank through the transition of 01_01 §4.3 A — wider: a flat step and the lock's neck_length_mm of shank Ø below the sleeve; narrower: the shank's foot turned down at 25° — whose diameters, step position or face angle, and stop are read off the mesh; refuses (exit 2) a lock with a channel, a wider anode with a lock that declares no neck, a transition that would cut into the lock or the lattice, and a voxel too coarse for the check (the ratchet, or the transition: 7 layers at least); any failure REMOVES an earlier file of that name\n" +
             "  verify <cem.json> measure metrics → out/<name>.metrics.json + compare the committed *.golden.json, if any (exit 0/1)  [--write-golden]\n" +
@@ -1620,7 +1748,7 @@ internal static class Program
             "  cellshape <cem.json>  cell SHAPE of an anchor_zone1 SKU by height × radius (line-intercept fabric) beside the phase map's\n" +
             "                    prediction, and the two HW.33 alternatives → cache/topology/cellshape.<name>.json  [--zbin-mm | --shells |\n" +
             "                    --centres | --axial-period-mm] — a probe: no golden, no OK/FAILED\n" +
-            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)\n" +
+            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve | compression_coupon)\n" +
             "  build-record <cem.json>...  one batch's build-record JSON → stdout (commit + manifest sha256 + golden metrics; vendor fields EMPTY, filled from the order)\n" +
             "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --step-mm H | --sweep]\n" +
             "  fea <cem.json> --dilate downskin|iso   face-offset SENSITIVITY of the intent, not the printed body → cache/fea/dilation_sensitivity.*  [--face-offsets-mm | --step-div N | --step-mm H]\n" +
