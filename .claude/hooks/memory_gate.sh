@@ -1216,7 +1216,7 @@ end
 files.sort.each do |f|
   next unless inbound[f].zero?
   puts(f.start_with?("log_") ?
-    "UNSTRUNG #{f}.md is a journal nothing links to — it has no index row either, so it is unreachable" :
+    "UNSTRUNG #{f}.md is a journal nothing links to — hang a [[string]] off its rule file: a journal needs NO index row (trap 22), the string is its only lifeline" :
     "UNSTRUNG #{f}.md has an index row but nothing links to it — a row orients on the first read, the string is what carries recall afterwards")
 end
 RUBY
@@ -2070,7 +2070,7 @@ route_check() {
     # point of it being cheap to append to. So demand the string instead.
     log_*)
       grep -rlq "\[\[$slug\]\]" "$MEM_DIR"/*.md 2>/dev/null ||
-        echo "NEW   $bn is a journal nothing links to — hang it off its rule file or it is unreachable"
+        echo "NEW   $bn is a journal nothing links to — hang a [[$slug]] string off its rule file; a journal needs NO index row (trap 22)"
       ;;
     *)
       # The message used to end "…and give it at least one inbound string" while
@@ -2313,6 +2313,10 @@ selftest() {
   #    rule file is exactly when its journal's last string gets severed.
   _st_build "$d"; sed '/log_gamma/d' "$d/feedback_alpha.md" >"$d/.t" && mv "$d/.t" "$d/feedback_alpha.md"
   _st_check "UNSTRUNG on a journal nothing links to" expect 'UNSTRUNG'
+  # 6'. …and its ADVICE is a string, never an index row. Measured 2026-11-19: the old text
+  #     («it has no index row either») was read by a parallel session as «add a row to
+  #     MEMORY.md» — it did, twice, and asked for an IDX_BASELINE bump to pay for it.
+  _st_check "UNSTRUNG journal advice names the string, not an index row" expect 'needs NO index row'
 
   # 6a. The SAME severance on a rule file. The journal-only version was silent
   #     here, and silence is the expensive direction: the file keeps its index
