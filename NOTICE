@@ -65,16 +65,19 @@ AlphaFold 3 Server outputs - NON-COMMERCIAL, under their own Terms:
   open-source release + scientific publication of outputs (their restriction #1),
   which is how they appear here.
     Beyond mere presence, the in-silico pipeline also USES the predicted structure
-    as an MD/DFT input (an R&D step). Our position: (a) restriction #1's exception
-    for use "indirectly via a scientific publication [or] open source release"
-    covers this — the exception is DISJUNCTIVE, and we stand on the second limb
-    alone: the whole pipeline, its inputs and its results are AGPL-open and
-    released in this repository. The manuscript ("Стаття 1",
-    docs/protocols/ebfc/in_silico/paper) is a draft, NOT yet submitted or
-    published — do not read it as an accrued fact here (00_01 §8; its own cover
-    letter states "has not been published previously"; status in docs/00_07,
-    HW.5.IS — UNI.3 tracks a different, method-paper leg). It will strengthen this position when it lands; it does not carry
-    it today; (b) our MD is
+    as an MD/DFT input (an R&D step). For whoever ran the job (job_request
+    "dialect": "alphafoldserver"), that use is governed not by the Output Terms
+    but by the AlphaFold Server Additional Terms of Service and Prohibited Use
+    Policy (both May 8, 2024; the Output Terms say so themselves,
+    terms_of_use.md lines 17-19). Their item 1 prohibits use "in connection
+    with any commercial activities" (journalism only); the "scientific
+    publication, open source release" exception sits only in the sub-item on
+    sharing Output with a commercial organization. Our position: (a) whether
+    pre-commercial R&D of a project that plans a commercial service is such
+    use is OPEN and put to counsel (docs/protocols/legal/securities_review.md,
+    Block 5 item 4); the open-source-release limb covers sharing the outputs
+    here, not our own use; the governing law of the Google terms is
+    California, subject to local law; (b) our MD is
     stability simulation (RMSD / Rg / D_eff), NOT a protein-ligand binding-or-
     interaction predictor of the Glide/AutoDock class named in restriction #2.
     Residual interpretive risk is accepted at this pre-commercial stage. Mitigation
