@@ -509,7 +509,9 @@ rb_dark() {
 # сесій цементації й курації: один дім стану замість 5–10 носіїв на подію); підлога за ним.
 # 2026-11-19: 188 → 189 — журнал-двійник `log_external_sources` (дослівні інстанси й рецепти окремих сайтів, виселені з
 # `feedback_external_sources`: дім за три тижні виріс на 12.7 kB і став за 200 B до стелі файлу, а росла в ньому карта сайтів).
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-189}
+# 2026-11-19: 189 → 190 — журнал-двійник `log_rfq_scoring` (тіла підстав RFQ-шкал: провенанс судів, ціни, найслабші ланки;
+# виселила сесія HW.5, коли новий примірник шкали для неферментних хімічних ТЗ пробив стелю `project_02c_rfq_scoring`).
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-190}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
