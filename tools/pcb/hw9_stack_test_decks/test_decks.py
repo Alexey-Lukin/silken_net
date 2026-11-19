@@ -193,18 +193,50 @@ def test_points_are_the_bench_sheets():
         assert abs(at[name][0] + x) < w_ / 2 and abs(at[name][1] - decks.PAIR[1] - y) < h_ / 2
         rows.add(math.copysign(1, y))
     assert rows == {1, -1}
-    # the strip under the holes, the bodies' ends clear of the posts, the windows round the pair
+    # the strip under the holes, the windows round the pair (the bodies' points: the Ruby-free test below)
     pad_inner = footprints.post_gap()[0]
     assert at["Z_strip"] == decks.PAIR
-    column, post = abs(footprints.pads("FW")[0][1]), footprints.POST * footprints.INCH / 2
-    for part, ends in (("FW", ("Z_A1", "Z_A2")), ("CLP", ("Z_E1", "Z_E2"))):
-        for name, s in zip(ends, (-1, 1), strict=True):
-            x, y = at[name]
-            assert y == decks.PAIR[1] and s * x > column + post and abs(x) < footprints.body(part)[0] / 2
+    column = abs(footprints.pads("FW")[0][1])
     assert at["P_1"] == (-column, decks.PAIR[1]) and at["P_2"] == (column, decks.PAIR[1])
     assert at["P_A"][1] < decks.PAIR[1] - pad_inner and at["P_B"][1] > decks.PAIR[1] + pad_inner
     xs, ys = [x for x, _ in decks.outline()], [y for _, y in decks.outline()]
     assert all(min(xs) < x < max(xs) and min(ys) < y < max(ys) for x, y in at.values())
+
+
+def test_body_points_stand_inside_the_leads_support():
+    """deck_stack_gap_bench_sheet.md §2.2: unsoldered, the header and the socket stand on their leads, and a point past the
+    outer leads tips the part under the probe. Z_A and Z_E — and so A and h, the same points of the part — stand between
+    the two outer columns, inside the outer leads' nominal support: the header's at the centre of four posts, the socket's
+    on solid entry face between the cavities' chamfers. No Ruby: G does not move these points."""
+    at = {name: (x - decks.PAIR[0], y - decks.PAIR[1]) for name, _d, _f, x, y in decks.points({"G": (-6.5, -0.42)})}
+    inch = footprints.INCH
+    canon = (ROOT / "docs/02_01_Hardware_Architecture_and_BOM.md").read_text(encoding="utf-8")
+    chamfer = float(re.search(r"фаски входу \(([\d.]+) → [\d.]+ на глибині", canon).group(1)) / 2   # the CLP model, pos. 12
+    for part, ends in (("FW", ("Z_A1", "Z_A2")), ("CLP", ("Z_E1", "Z_E2"))):
+        pitch, row = footprints.PARTS[part]["pitch"] * inch, footprints.PARTS[part]["row_pitch"] * inch / 2
+        cols = sorted({x for _n, x, _y, _w, _h in footprints.pads(part)})
+        for name, s in zip(ends, (-1, 1), strict=True):
+            x, y = at[name]
+            assert y == 0 and s * x > 0                                  # on the pair's centreline, one near each end
+            # between the two outer columns — so inside the outer leads' support, whose edge lies a lead's half-width
+            # past the outer column
+            assert max(cols) - pitch < abs(x) < max(cols)
+            if part == "FW":       # the centre of four posts: the true distance in plan to each post's square, the same
+                post = footprints.POST * inch / 2                        # for the nearest four, the sheet's 0.611 mm
+                gaps = sorted(disc_rect_gap(at[name], 0.0, (c, r), post, post) for c in cols for r in (-row, row))
+                assert gaps[0] == pytest.approx(gaps[3]) and gaps[0] == pytest.approx(0.611, abs=5e-4) and gaps[4] > gaps[3]
+            else:                  # on solid entry face: outside every cavity's entry chamfer, the sheet's 0.359 mm off
+                gaps = [disc_rect_gap(at[name], 0.0, (c, r), chamfer, chamfer) for c in cols for r in (-row, row)]
+                assert min(gaps) == pytest.approx(0.359, abs=5e-4)
+
+
+def test_sheets_lever_is_the_points():
+    """deck_stack_gap_bench_sheet.md §5: seat_F, read at Z_A, is carried out to P_j by the ratio of their distances from
+    the pair's centre — the sheet writes that ratio as numbers, so they must be the generator's points."""
+    sheet = (ROOT / "docs/protocols/hardware/deck_stack_gap_bench_sheet.md").read_text(encoding="utf-8")
+    p, z = (float(v) for v in re.search(r"seat_F\(P_j\) = s̄_F \+ \(seat_F,j − s̄_F\) · ([\d.]+) / ([\d.]+)", sheet).groups())
+    at = {name: x - decks.PAIR[0] for name, _d, _f, x, _y in decks.points({"G": (-6.5, -0.42)})}
+    assert (p, z) == (pytest.approx(abs(at["P_2"]), abs=5e-4), pytest.approx(abs(at["Z_A2"]), abs=5e-4))
 
 
 def test_threshold_of_the_written_decks_is_the_canons_example():

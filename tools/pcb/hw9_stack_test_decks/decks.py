@@ -24,7 +24,7 @@ import math
 import subprocess
 from pathlib import Path
 
-from footprints import COURTYARD_MARGIN, INCH, POST, STANDOFF, body, courtyard, pads, post_gap
+from footprints import COURTYARD_MARGIN, INCH, PARTS, STANDOFF, body, courtyard, pads, post_gap
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -136,8 +136,11 @@ def points(node: dict) -> list:
     above. P_H1 sits on H1's ring on the side away from G (§2.1), and so do the first of H1's three ring points and the
     point on its disc, which the sheet compares with it (§4.2, §4.3); H2 takes the mirror of H1's side. P_1, P_2 over the
     end columns of posts, on the pair's centreline; P_A, P_B across the standoffs' line, at the socket's courtyard on
-    either side; the header's and the socket's end points midway between the outer post's face and the body's end;
-    index 1 is the end of pad 1. Where the sheet does not fix a point, the choice is ours — README."""
+    either side; the header's and the socket's points near either end, midway between the two outer columns of posts
+    (cavities), on the pair's centreline — for the header the centre of four posts — so that each stands inside the
+    nominal support of the part lying unsoldered on its leads (§2.2: a point past the outer leads tips the part under the
+    probe); the sheet carries the header's seam wedge from them out to P_1, P_2 (§5); index 1 is the end of pad 1. Where
+    the sheet does not fix a point, the choice is ours — README."""
     (h1x, h1y), (h2x, h2y) = STANDOFFS
     gx, gy = node["G"]
     d = math.hypot(h1x - gx, h1y - gy)
@@ -150,8 +153,8 @@ def points(node: dict) -> list:
 
     fw1, clp1, clp2 = pads("FW")[0], pads("CLP")[0], pads("CLP")[1]
     column = abs(fw1[1])                                       # the outer column of posts
-    post = POST * INCH / 2
-    ends = {part: (column + post + body(part)[0] / 2) / 2 for part in ("FW", "CLP")}
+    ends = {part: abs(pads(part)[0][1]) - PARTS[part]["pitch"] * INCH / 2   # each part's own two outer columns, midway
+            for part in ("FW", "CLP")}
     pad_r = (STANDOFF["hole_d"] + STANDOFF["pad_d"]) / 4
     out = [(f"Z_pad{h}", "lower", *on(h, pad_r)) for h in at]
     out += [("Z_padF", "lower", PAIR[0] + fw1[1], PAIR[1] + fw1[2])]
