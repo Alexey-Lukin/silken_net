@@ -79,6 +79,42 @@ Dear colleagues,
 
 ---
 
+## 📤 Reminder block (EN) — LEHVOSS: after our reply on the buyer
+
+> **Репо-нота (у лист НЕ йде).** Одне нагадування LEHVOSS — Reply all у треді нашої відповіді 2026-11-10 на його умову (точна назва компанії й деталі, перш ніж ділитися даними): менеджерові, загальна скринька компаундів — у копії, як у тій відповіді; одержувачів звірити з рядком форми перед Send (імена й адреси — журнал листів корпусу памʼяті, не тут). **Відлік — від нашої відповіді, не від листа 2026-11-09** (нога [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.37: «нагадування LEHVOSS переходить на цю відповідь»): сьомий робочий день після 2026-11-10 — 2026-11-19; правило й лічба — [`rfq_registry`](rfq_registry.md) §3. Нового не питає: повторює відкрите питання нашої відповіді — чи прийнятний покупець — фізична особа-підприємець (щабель 2 драбини покупця, там само §3); після неї адресат замовк, тож тиша найімовірніше висить саме на цьому — та сама форма, що в надісланому нагадуванні toolcraft ([`anchor_radome_fabrication_rfq`](anchor_radome_fabrication_rfq.md)). Найменша корисна відповідь на сам лист — пп. 1–2 (марка з α ≤ 0.5 і її виміряне α з методом); решта пунктів лишається чинною; слова предмета ≡ надісланому листу. ⚠️ Тіла нашої відповіді 2026-11-10 у дереві немає (лише в Gmail; хеш — у журналі): перед збиранням прочитати її в треді й звірити з нею перше речення нагадування. ⛔ До «так» founder-а на цей текст не надсилати; у день відправки — звірка скриньки разом зі спамом і пошук за доменом адресата (відповідь могла прийти новим тредом). **Немає свідомо:** трекер-ID, канон-рефів, ISO-дат і гліфів · імені у звертанні (ставить `--replace-line` — як у нашій відповіді 2026-11-10) · слова «below»: вставка тіла через Trusted Types затирає цитату попереднього листа · підстави присуду про α і наших RF-бюджетів. Збирання — `letter_body.rb --heading "## 📤 Reminder block (EN) — LEHVOSS"`, підпис — `--signature "Best regards,|Oleksii Lukin"`, `--replace-line` для рядка звертання; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear `[addressee's name — fill in before sending]`,
+
+On 10 November we replied to your request for our company name and more details: who the buyer would be, a few more words about the project and our expected quantities, and a link to its openly published specification. We are writing to check that our reply reached you, and to ask again whether a sole proprietor as the customer is acceptable for you.
+
+If it is, a partial answer is welcome — the most useful place to start is item 1 of our enquiry of 9 November: which of your PEEK compounds can give a solar absorptance α ≤ 0.5, in a light UV-stable shade or a darker one with an NIR-reflective pigment, and the measured value for each, with the method (item 2). The rest can follow later in this thread. If it is not, or if this is not a project you can support, a short "no" is useful too.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
+## 📤 Reminder block (EN) — Colloids: one follow-up on the enquiry
+
+> **Репо-нота (у лист НЕ йде).** Одне нагадування Colloids — відповіддю в треді листа 2026-11-09 (відповіді від адресата не було; адреса — журнал листів корпусу памʼяті, не тут). Правило й лічба — [`rfq_registry`](rfq_registry.md) §3: сьомий робочий день після 2026-11-09 — 2026-11-18; дата минула, тож лист іде в день «так»; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.37 «одне нагадування на лист марки радома». Нового не питає: перший абзац називає предмет словами теми листа, другий — найменшу корисну відповідь: чи дає якийсь концентрат під PEEK α ≤ 0.5 (п. 1) і виміряне α — з методом і ступенем розведення (п. 2); решта пунктів листа лишається чинною. ⛔ До «так» founder-а на цей текст не надсилати; у день відправки — звірка скриньки разом зі спамом і пошук за доменом адресата (відповідь могла прийти новим тредом). **Немає свідомо:** трекер-ID, канон-рефів, ISO-дат і гліфів · «below» (Trusted Types затирає цитату) · підстави присуду про α і наших RF-бюджетів. Збирання — `letter_body.rb --heading "## 📤 Reminder block (EN) — Colloids"`, підпис — `--signature "Best regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13).
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear colleagues,
+
+A short follow-up on our enquiry of 9 November — a pigmented PEEK grade or a PEEK colour concentrate with a low solar absorptance (α ≤ 0.5) for a small outdoor radome at 868 MHz.
+
+Could you confirm that it has reached the person who handles such enquiries? A partial answer is welcome: the most useful place to start is whether any of your colour concentrates for PEEK can give α ≤ 0.5, in a light UV-stable shade or a darker one with an NIR-reflective pigment (item 1), and its measured solar absorptance or reflectance, with the method and the let-down ratio, if you have it (item 2). The rest can follow later in this thread. If this is not something you can offer, a short "no" is useful too.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 3. Cross-references
 
 | Ресурс | Що бере |
