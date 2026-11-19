@@ -129,7 +129,7 @@ Thank you in advance.
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
-Dear Mr Bahonjic,
+Dear `[name]`,
 
 Thank you for the quick reply and for the referral. I will contact MERA first; if they cannot supply in time, I will come back to you for a quote.
 
@@ -183,7 +183,7 @@ Best regards,
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
-Dear Mr Bartyzel,
+Dear `[name]`,
 
 Thank you for the quote OF/002026/2026. Before I order, three short questions:
 
@@ -202,7 +202,7 @@ Oleksii Lukin
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
-Dear Mr Bartyzel,
+Dear `[name]`,
 
 Thank you. We would like to order 1 × HOBO MX2309 under your offer OF/002026/2026, with DHL delivery to the address in my earlier message, on prepayment. Please send a proforma invoice made out to my sole proprietorship (details below), and place the order with the producer as soon as the payment arrives, so that it can catch the shipment of 23 November if possible.
 

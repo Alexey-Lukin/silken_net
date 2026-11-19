@@ -1004,7 +1004,7 @@ Could you confirm that it has reached the person who handles such requests? A pa
 
 **Subject line:** Re: FW: Donaldson inquiry
 
-Dear Silviya,
+Dear `[name]`,
 
 Thank you for picking up our enquiry. One question first, because it decides the rest: does Donaldson supply Tetratex™ ePTFE as membrane stock (sheet, roll or die-cut pieces), and not only built into a vent? If that sits with another team, please pass this on and copy us.
 
