@@ -174,7 +174,7 @@ Thank you in advance.
 
 **Subject line:** Re: RFQ: FW-SM + CLP, 1.27 mm, 2 × 5 SMT — part numbers for 8.0 mm and 10.0 mm mated height, tolerance, samples
 
-Hi `[name]`,
+Hi `[in the sent letter — name]`,
 
 Thank you for the quick and clear feedback. Three questions for Engineering, so that the part numbers can be fixed:
 
@@ -216,7 +216,7 @@ Thank you in advance.
 
 **Subject line:** Re: RFQ: FW-SM + CLP, 1.27 mm, 2 × 5 SMT — part numbers for 8.0 mm and 10.0 mm mated height, tolerance, samples
 
-Hi `[name]`,
+Hi `[in the sent letter — name]`,
 
 Thank you for pointing us to the 3D Models Group: they sent the detailed model of CLP-105-02-L-D. In it, the post path below the contact points is open down to the board, so with the header body seated on the CLP the post does not bottom out, and the working insertion range of the pair is set by the stacker and post heights. We set the board spacing with standoffs, as your specification recommends, so the pair must stay engaged across the standoff tolerance. Four questions for Engineering about FW-05-03-L-D with CLP-105-02-L-D:
 
@@ -239,7 +239,7 @@ Commercial questions will go through an authorised distributor, as you advised.
 
 **Subject line:** Re: RFQ: FW-SM + CLP, 1.27 mm, 2 × 5 SMT — part numbers for 8.0 mm and 10.0 mm mated height, tolerance, samples
 
-Hi `[name]`,
+Hi `[in the sent letter — name]`,
 
 Thank you, this helps. Three short points, so that we can finalise the part number:
 

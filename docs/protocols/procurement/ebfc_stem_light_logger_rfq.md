@@ -129,7 +129,7 @@ Thank you in advance.
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
-Dear `[name]`,
+Dear `[in the sent letter — name]`,
 
 Thank you for the quick reply and for the referral. I will contact MERA first; if they cannot supply in time, I will come back to you for a quote.
 
@@ -183,9 +183,9 @@ Best regards,
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
-Dear `[name]`,
+Dear `[in the sent letter — name]`,
 
-Thank you for the quote OF/002026/2026. Before I order, three short questions:
+Thank you for the quote `[in the sent letter — their offer number]`. Before I order, three short questions:
 
 1. **Delivery date.** The quote says end of November or end of December. If I order this week, which of the two applies to the MX2309, and when would it leave your warehouse?
 2. **Shipping.** The DHL line is a large part of the total. Could you instead send the logger by a Polish domestic service to a forwarding address in Poland that I would give you (a Nova Post branch), from where it goes on to Ukraine? If yes, please give the price of the logger with that domestic delivery.
@@ -202,9 +202,9 @@ Oleksii Lukin
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
-Dear `[name]`,
+Dear `[in the sent letter — name]`,
 
-Thank you. We would like to order 1 × HOBO MX2309 under your offer OF/002026/2026, with DHL delivery to the address in my earlier message, on prepayment. Please send a proforma invoice made out to my sole proprietorship (details below), and place the order with the producer as soon as the payment arrives, so that it can catch the shipment of 23 November if possible.
+Thank you. We would like to order 1 × HOBO MX2309 under your offer `[in the sent letter — their offer number]`, with DHL delivery to the address in my earlier message, on prepayment. Please send a proforma invoice made out to my sole proprietorship (details below), and place the order with the producer as soon as the payment arrives, so that it can catch the shipment of 23 November if possible.
 
 Buyer: `[FOP name and registration address — fill in before sending]`
 Tax ID (RNOKPP): `[filled in by the founder]`
