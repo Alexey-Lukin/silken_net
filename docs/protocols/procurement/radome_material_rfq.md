@@ -115,6 +115,34 @@ Could you confirm that it has reached the person who handles such enquiries? A p
 
 ---
 
+## 📤 Reply block (EN) — LEHVOSS: PEEK as baseline, the distributor introduction, the standard-material route
+
+> **Репо-нота (у лист НЕ йде).** LEHVOSS відповів 2026-11-19 18:31 (тіло — журнал листів корпусу памʼяті): марки й даних не дали; порада — друкований корпус зі стандартного матеріалу під світлою фарбою; пропонують звести з офіційним дистрибʼютором. ⚖️ founder 2026-11-19, за рекомендацією: PEEK лишається базовим, знайомство з дистрибʼютором приймаємо, і в тому ж листі просимо дані і по PEEK з низьким α, і по стандартній альтернативі — UV-стійкий PC/ASA, яку канон називає ([`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md)). Лист не судить чинних присудів: α ≤ 0.5 на весь строк (делеговані 2026-09-27 · 2026-10-01) і зняття поверхневого покриття радома (⚖️ founder 2026-09-17) — гілку «фарба» відкривають лише дані (тригер — нога [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.37). Дистрибʼютор — новий адресат: звірка публічним реєстром і окремий лист на «так» founder-а. Числа звірено з домами: −40…+85 — [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md); α 0.5 — `02_01 §5.2`; 6 і 60 кг — надісланий лист і [`02_06 §1.2`](../../02_06_Unit_Economics_and_BOM.md). Reply all (менеджер; скринька компаундів — у копії, перевірити перед Send). Звертання — заповнювач, імʼя з треду; підпис — `--signature "Best regards,|Oleksii Lukin"`. Чекає «так» founder-а на цей текст.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear `[name]`,
+
+Thank you for checking with your team, and for the candid advice.
+
+We understand why PEEK looks like more than this part needs, and at our volumes cost matters to us as well. For now PEEK remains our baseline, for three reasons. The cover is more than a shell: its rim is the sealing face of the capsule, held down by a bayonet clamp, and it has to keep its shape and that clamp load for many years between −40 and +85 °C. Its outer surface sits next to living bark and has to stay smooth. And the low solar absorptance (0.5 or lower) has to hold over the whole service life, not only as delivered, which is why so far we have looked for it in the material itself rather than in a surface layer that can wear, chalk or come off. If you can share which material and finish were used in the similar application you mention, and how they have held up outdoors, we would be glad to learn from it.
+
+Yes, please connect us with your official distributor partner in Ukraine. Email works best for us, and you are welcome to forward this whole thread to them and copy us. What we would ask them:
+
+1. Whether a pigmented PEEK compound from your range is available in a light, UV-stable shade, or in a darker one with an NIR-reflective pigment, and its measured solar absorptance or reflectance, with the method, before and after UV weathering.
+2. Its relative permittivity and loss tangent near 868 MHz.
+3. Supply form and minimum quantities for prototypes and for about 6 kg and 60 kg of compound, and whether they also stock PEEK rod and thin sheet for machining prototypes.
+4. For the light-paint route you suggest: which paint, its colour or solar absorptance after UV weathering, its adhesion to the substrate over years outdoors, and confirmation that it contains no metallic or carbon pigments, which could screen or absorb the 868 MHz signal.
+5. If a standard material would serve better than PEEK — for example a UV-stable PC/ASA — which grade, its solar absorptance before and after UV weathering, its permittivity and loss tangent near 868 MHz, and its notched impact strength at −40 °C.
+
+Thank you again for your time.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 3. Cross-references
 
 | Ресурс | Що бере |

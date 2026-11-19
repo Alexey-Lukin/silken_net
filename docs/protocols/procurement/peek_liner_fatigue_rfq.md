@@ -267,9 +267,36 @@ Oleksii Lukin
 
 ---
 
+## 📤 Reply block (EN) — OFI: feedback on their inline answers (in thread)
+
+> **Репо-нота (у лист НЕ йде).** OFI відповів 2026-11-19 18:25 прямо в тексті листа (перша відповідь EN-каналу; тіло — журнал листів корпусу памʼяті): база розтяг–розтяг при 23 і 55 °C — у їхніх можливостях; кількість рівнів і зразків повернули нам; температуру зразка під час прогону не міряють; R −1 і стиск — ні; трубка — нижче каліброваного діапазону сили; DMA, розтяг при −30 °C і ДСК — так; релаксація — короткі прогони з логарифмічною екстраполяцією. ⚖️ founder 2026-11-19, за рекомендацією («так» на три подання): база — 4 рівні деформації × 2 зразки на кожну температуру (16 і запасні на розсуд лаби), прогнозу довговічності не шлемо (прецедент — [`anchor_sn_fatigue_rfq`](anchor_sn_fatigue_rfq.md), «Scope of request»), рівні — процедурою лаби; трубка — одним реченням з обома гілками; кондиціювання — їхня стандартна практика, мокрого набору в це котирування не додаємо. Керування деформацією — прочитання машини, що воно покриває «керування переміщенням» присуду §0 (3): надісланий Base case сам казав «levels in displacement (or strain)». Числа їхніх машин у листі — лише «you describe» (скіл `legal-business` §Межі #3). Стеля, що лишається: крива 55 °C піде без виміряної температури зразка; релаксація — короткі прогони з екстраполяцією, а не ≥ 1000 год брифу FEA/Prony ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26). Звертання — заповнювач, імʼя з треду в мить відправки (`--replace-line`); підпис — `--signature "Best regards,|Oleksii Lukin"`. Чекає «так» founder-а на цей текст.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+Dear `[name]`,
+
+Thank you for the detailed answers. Here is our feedback, point by point, so that you can prepare the proposal.
+
+1. **Levels and specimens.** We do not send an expected fatigue life or strength: we would like the levels to follow a procedure agreed before testing rather than an expected result. Please plan one S-N curve at 23 °C and one at 55 °C, each with four strain levels and two specimens per level — sixteen specimens in total, plus any spares you consider necessary — spread so that the highest level fails early and the lowest reaches run-out at 10⁷ cycles. If you would set the levels from a tensile test on the same moulded batch at each temperature, please include it. For the estimate, please assume that both specimens at the lowest level of each curve run out, and price the others as a fixed amount per specimen plus machine time per day, so that the final cost follows the actual lives.
+2. **Control.** Strain control, please, with R = 0.1 set on strain at the start and both force and strain recorded. As the stress relaxes, the minimum force may approach zero, and compression loading is not available: how would you keep the specimen in tension, and how would you report it?
+3. **Temperature.** Understood that the specimen temperature cannot be measured during the run. Please make the room-temperature self-heating check at each level's strain amplitude and chosen frequency, report the temperature rise you measured and the frequency you chose for each level, and log the chamber temperature throughout each test.
+4. **Stop criterion.** Fracture is fine.
+5. **Specimens.** As in our first letter, the grade of the tube is still open; we will name it once the tube supplier is chosen. Moulding as you describe is welcome: please state the minimum amount of granulate the moulder needs and whether you or we would source it. For preconditioning, please use your standard practice for PEEK fatigue specimens and state it in the proposal.
+6. **Options.** Please leave out fully reversed loading. The tube would be tension only; its forces are of the order of 10–50 N, with the minimum at R = 0.1 a tenth of the maximum — below the calibrated range you describe. If you can fit a lower-range load cell calibrated over that range, please quote the tube with it and tell us how you would measure displacement amplitudes of tens of micrometres on it; if not, please leave the tube out. For longer run-outs, a pro-rata price per further 10⁷ cycles is all we need.
+7. **DMA** (the optional line, for the PEEK 450G sleeve, not the tube). The sleeve works between about −30 and +40 °C for many years, well below Tg, and no test runs that long. We would build a long-time master curve at those temperatures by shifting moduli measured at several frequencies and temperatures along the time axis — this is what we meant by the shift below Tg. The shifting and fitting are on our side; from you we need, at each temperature step, the storage and loss moduli at three or more frequencies, as raw data per frequency. Your range from −50 °C to above 200 °C is fine. If in your experience such a shift does not hold well for PEEK below Tg, that would be useful to know.
+8. **Stress relaxation** (same line). Understood that 1000 h is not practical. Please quote the longest test you normally run at −30, 23 and 40 °C and send us the measured curves; your extrapolation is welcome as a separate item, but we will fit the measured data ourselves.
+9. **Water-saturated set** (same line). Please tell us whether it is possible.
+10. The remaining points of our request — queue and duration, whether you can run several specimens in parallel, accreditation, the data we listed and any conditions on publication — can simply be answered in the proposal.
+
+`[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
 ## 📤 Reminder block (EN) — one follow-up to a laboratory that stays silent (separate emails, in the thread)
 
-> **Репо-нота (у лист НЕ йде).** Одне нагадування у треді запиту кожній із двох закордонних лабораторій, що мовчить (правило й відлік — [`rfq_registry`](rfq_registry.md) §3; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.34). Нового не питає; найменша корисна відповідь — чи беруть базовий кейс і на якій машині. Написано 2026-11-18 заздалегідь; ⚖️ founder 2026-11-18 — «Так» на шість текстів нагадувань (подано переліком блоків; у чаті тексти не показувались); у день відправки — звірка скриньки. Підпис — `--signature "Best regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13).
+> **Репо-нота (у лист НЕ йде).** Одне нагадування у треді запиту кожній із двох закордонних лабораторій, що мовчить (правило й відлік — [`rfq_registry`](rfq_registry.md) §3; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.34). Нового не питає; найменша корисна відповідь — чи беруть базовий кейс і на якій машині. Написано 2026-11-18 заздалегідь; ⚖️ founder 2026-11-18 — «Так» на шість текстів нагадувань (подано переліком блоків; у чаті тексти не показувались); у день відправки — звірка скриньки. Підпис — `--signature "Best regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13). ⊕ OFI відповів 2026-11-19 18:25 (Reply block вище) — нагадування лише Leoben.
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 

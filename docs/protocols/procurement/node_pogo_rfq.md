@@ -252,7 +252,7 @@ One point remains open from item 1: the quotation for the non-standard plating, 
 
 ## 📤 Reminder block (EN) — Mill-Max: one follow-up on the quotation channel
 
-> **Репо-нота (у лист НЕ йде).** Одне нагадування у тому самому треді, якщо на Follow-up 2 (надіслано 2026-11-18) відповіді немає (правило й лічба — [`rfq_registry`](rfq_registry.md) §3; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.9). Нового не питає — повторює єдине питання того листа: яким каналом отримати котирування нестандартного покриття. Написано 2026-11-19 заздалегідь; ⚖️ founder 2026-11-19 — «так на всі» (тексти нагадувань подано переліком блоків із датами; у чаті повністю показано лише текст кліматичної лабораторії); у день відправки — звірка скриньки разом зі спамом. Підпис — як у цьому треді: `--signature "Kind regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13).
+> **Репо-нота (у лист НЕ йде).** Одне нагадування у тому самому треді, якщо на Follow-up 2 (надіслано 2026-11-18) відповіді немає (правило й лічба — [`rfq_registry`](rfq_registry.md) §3; нога — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.9). Нового не питає — повторює єдине питання того листа: яким каналом отримати котирування нестандартного покриття. Написано 2026-11-19 заздалегідь; ⚖️ founder 2026-11-19 — «так на всі» (тексти нагадувань подано переліком блоків із датами; у чаті повністю показано лише текст кліматичної лабораторії); у день відправки — звірка скриньки разом зі спамом. Підпис — як у цьому треді: `--signature "Kind regards,|Oleksii Lukin"`; рядок теми треду дописують у скретч-копії (скіл `legal-business` §Доменні правила #13). ⊕ **Не надсилається** — інженер відповів 2026-11-19 16:11 (Follow-up 3 вище).
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
@@ -263,6 +263,32 @@ A short follow-up on our message of 18 November below. One question remains open
 A one-line answer is enough: whether an authorised distributor can request this quotation from you, and what we should give them to identify the part.
 
 `[sender's signature — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
+## 📤 Follow-up 3 (EN) — Mill-Max: the on-hand 50 µin plating, conditionally
+
+> **Репо-нота (у лист НЕ йде).** На Follow-up 2 інженер відповів 2026-11-19 (16:11; тіло — журнал листів корпусу памʼяті): питання каналу — до відділу продажу, натомість — наявне покриття плунжера 50 µin твердого золота поверх 50 µin нікелю, запит у Sales він передасть сам. ⚖️ founder 2026-11-19, за рекомендацією: форма ратифікованих 0.76 / 1.27 мкм — **мінімум** для обох шарів ([`02_02 §2.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) ⊕) і «так, але умовно» на варіант 50/50 — тож лист приймає його лише з підтвердженнями: P/N · форма допуску обох шарів · тип золота · «нічого іншого не змінено», включно з посадкою плунжера в корпусі · MOQ, ціна, строк і дистрибʼютор для України. **Немає свідомо:** котирування 30 µin (за формою «мінімум» переваги не дає) · вибору серії. Таблиці кодів покриття на сайті виробника перед листом не відкривали — якщо 50 µin є каталожним кодом, відповідь звузить пп. 1–3. Іде відповіддю в тред інженерові, відділ продажу — у копії вручну (як Follow-up 2); тему ставить пошта. Підпис — `--signature "Kind regards,|Oleksii Lukin"`. Чекає «так» founder-а на цей текст.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+**Subject line:** Re: Quotation and samples — series 0906 and 0908 spring-loaded pins, 30 µin hard gold on the plunger
+
+Hello,
+
+Thank you — the 50 µin option you have on hand looks suitable, and we would like to pursue it instead of the custom 30 µin plating, subject to the confirmations below. Please submit the request to Sales for both series: 0906-1-15-20-75-14-11-0 and the equivalent 0908 part, each with the standard full-radius tip and the standard spring. We have not chosen between the two series yet.
+
+Our requirement for the plunger is at least 30 µin of hard gold over at least 50 µin of nickel. To confirm that this option meets it, we would ask Sales, for each series:
+
+1. The part number with this plating.
+2. Whether 50 µin of gold and 50 µin of nickel are minimum thicknesses or nominal ones — and if nominal, with what tolerance.
+3. That the gold is the same hard gold as in the standard plating (ASTM B488, Type 1, Code C).
+4. That nothing else differs from the standard part — the barrel and its plating, the spring, the dimensions, the fit of the plunger in the barrel, the travel and the force — and, for our records, what the inside of the barrel is plated with.
+5. The minimum order quantity, the price and the lead time, and — since you do not ship to Ukraine directly — which authorised distributor can supply this part, and samples of it, to us. We already buy from Mouser Europe.
+
+`[sender's signature and contact details — fill in before sending]`
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
