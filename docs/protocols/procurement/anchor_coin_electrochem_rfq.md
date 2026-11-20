@@ -545,6 +545,90 @@ Thank you in advance.
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
 
+## 📤 Pilot block (EN) — one anode/cathode pair, day 0 (smaller ask than the full RFQ)
+
+> **Репо-нота (у лист НЕ йде).** Хід 2 брейншторму 2026-11-20 («так на всі шість», founder): замість ТЗ із 33 пунктів — запит на сторінку «пілот однієї пари», бо лабораторій, що продають випробування ферментних біоелектродів, у Європі майже немає, а групи з біоелектрохімією й двома каналами є. Предмет — рівно подія TRL 3 → 4 для EBFC (⚖️ founder 2026-11-20, [`00_03 §4.1`](../../00_03_TRL_Matrix_HIL_and_Beyond.md): пара анод/катод із нанесеним стеком на Ti-6Al-4V, функція дня 0, підписаний звіт; підписант — не постачальник матеріалів стека, П4). **Дзеркало, не новий зміст:** кожне число — з EN-блоку ↑ (§1–§3); з батареї взято лише A (у скороченні: CV без і з глюкозою) і B (розімкнене коло, робоча точка ≈ 25 µA, опір перегородки). **Немає** — як і в EN-блоці: наших порогів pass/fail (сліпий аналіз; «ні» події П3(б1) лист не називає), in-silico прогнозів, імен інших кандидатів і постачальників, трекер-ID, статус-маркерів. **Адресати й рядок під адресата** (канали — рольові скриньки й форми з офіційних сторінок, звірені read-only 2026-11-20; самі адреси — у журналі листів, не в репо): IChF PAN — офіс для компаній, рядок «We are writing to IPC PAS for companies: your Science for business pages offer a potentiostat/galvanostat for commissioned measurements.» · CNBCh UW — контакт співпраці зі сторінки Kontakt, рядок «We are writing through your cooperation contact: your offer catalogue lists electrochemical studies of electrodes modified with enzymes and nanoparticles.» · VU LSC — Open Access Center, лист разом із заповненою формою заявки (поля клієнта заповнює 👤 founder), рядок «We are applying for Open Access Center services performed by University staff (application form attached); the instrument we have in mind is the one listed as Electrochemistry including EIS.» **Правило нагадувань:** комерційний вхід — одне нагадування на сьомий робочий день тиші ([`rfq_registry`](rfq_registry.md) §3). Відповідь, що називає виконавця, звіряти з П4 і делегованим ⚖️ 2026-11-20 про роль ІБК ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5): виконавець виміру — не співробітник постачальника стека під жодною афіліацією. Текст — на «так» founder-а; не надіслано.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+### Subject line
+
+Pilot measurement request — one enzymatic anode/cathode pair on titanium-alloy coupons (open-circuit voltage, load point, CV) in synthetic xylem sap
+
+### Body
+
+Dear colleagues,
+
+We are a small R&D project in Ukraine developing an enzymatic bio-fuel cell meant to sit inside a living tree and power a forest-monitoring sensor. Before building full-size parts we validate the electrode chemistry on flat titanium-alloy coupons, and we are looking for a laboratory that can run a short pilot measurement and sign the report.
+
+`[addressee line — taken from the repo note above, fill in before sending]`
+
+**What we ask for — a pilot on one anode/cathode pair (please also price two pairs):**
+
+- **Specimens:** flat discs Ø16 mm × 1 mm, Ti-6Al-4V, acid-etched; one active face of 2.01 cm² projected area — please expose only that face, for example through an O-ring window, and normalise current to that area.
+- **Electrodes:** anode — FAD-dependent glucose dehydrogenase wired by an osmium redox polymer on carbon nanotubes, under a hydrogel and a Nafion-type membrane (the mediator's published formal potential is +309 mV vs NHE, given so you can set the window); cathode — laccase with a Co/Cu/Ce zeolitic-imidazolate-framework nanozyme on carbon nanotubes.
+- **Day 0, each electrode:** cyclic voltammetry of the anode without glucose and at 10 mM glucose; catalytic CV of the cathode in its air-exposed medium; EIS if you offer it.
+- **The pair:** open-circuit voltage, then the cell voltage while drawing a constant current of about 25 µA, read soon after. The cell has two compartments — anode in the sap, cathode in its own medium; please tell us how they are joined and, if you can, measure the resistance of that joint alone between two inert electrodes.
+- **Media:** anode — synthetic Scots-pine xylem sap: malic acid 0.40 mM, KNO₃ 0.0049 mM (4.9 µM), CaCl₂ 0.18 mM, MgSO₄ 0.062 mM, KOH to pH 5.75, glucose 10 mM; cathode — the same salts with malic acid at 10 mM, KOH to pH 4.5, air-exposed. Temperature 20–25 °C, logged.
+- **Deliverable:** raw data files (time, potential, current) and a short report signed by the person responsible, stating the instrument, the reference electrode with its conversion to SHE, the cell configuration, and what was done.
+
+**Who applies the layers** — please tell us which you can offer: (A) you apply them to our coupons from materials we supply, following our written protocol; or (B) we deliver coupons already functionalised and you measure only, in which case tell us how soon after receipt the first measurement can start. Functionalised coupons must not be sterilised, and no sodium azide or other preservative may be added to any medium.
+
+We deliberately send no pass/fail thresholds: we want the measurement blind to the expected outcome. For the same reason we keep supply and measurement in separate hands — the laboratory doing the measurement should not supply any of the electrode materials.
+
+The coupons are being prepared for printing now; we are lining up the measurement so that it can start when they and the electrode materials are ready. This is a request for a quotation and a capability statement, not yet an order. Could you tell us:
+
+1. whether you can do this, and with option (A) or (B);
+2. an indicative price and your current queue;
+3. whether you accept an order from a Ukrainian registered sole proprietor, paid by bank transfer against your invoice.
+
+Thank you in advance.
+
+`[sender's signature and contact details — fill in before sending]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+## 📤 Pilot block (UA) — ІМБГ: заявка через ЦККНП, пілот однієї пари
+
+> **Репо-нота (у лист НЕ йде).** Той самий пілот, що EN-блок ↑, українською — для ІМБГ НАН через ЦККНП: його сторінка приймає заявки й на роботи за участі підрозділів інституту, і категорія «суб'єкт господарювання» у формі є (звірено read-only 2026-11-20). **Відхилення від форми листа:** вхід ЦККНП — заповнена форма заявки (Додаток 2) вкладенням, тема листа — та, яку просить сторінка; лист лише супровідний. Поля 2.1–2.2 (заявник, категорія) заповнює 👤 founder; зміст полів 2.3–2.5 — нижче copy-регіону. **Чим це не нагадування:** ТЗ 1 відділу біомолекулярної електроніки пішло 2026-11-09, нагадування — 2026-11-17, і нагадувань більше не буде ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24); це нове, менше прохання іншим, рольовим каналом, і лист чесно каже про попереднє ТЗ. Текст — на «так» founder-а; не надіслано.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+**Тема:** Заявка на доступ до обладнання ЦККНП ІМБГ НАН України
+
+Шановні колеги!
+
+Надсилаю заявку на роботу за участі відділу біомолекулярної електроніки — форма у вкладенні. 9 листопада ми надсилали відділу повний проєкт технічного завдання на електрохімічні випробування ферментних електродів на титанових купонах; ця заявка — менший перший крок: пілотний вимір однієї пари електродів.
+
+**Що просимо (ціну прохання — також на дві пари):**
+
+- **Зразки:** плоскі диски Ø16 мм × 1 мм зі сплаву Ti-6Al-4V після кислотного травлення; одна робоча грань площею 2,01 см² (проєкційна) — відкрити лише її, наприклад вікном з ущільнювальним кільцем, і нормувати струм на цю площу.
+- **Електроди:** анод — FAD-залежна глюкозодегідрогеназа, «підключена» осмієвим редокс-полімером на вуглецевих нанотрубках, під гідрогелем і мембраною типу Nafion (опублікований формальний потенціал медіатора +309 мВ відносно НВЕ — щоб задати вікно); катод — лаказа з Co/Cu/Ce цеолітно-імідазолатним нанозимом на вуглецевих нанотрубках.
+- **День 0, кожен електрод:** циклічна вольтамперометрія анода без глюкози і при 10 мМ глюкози; каталітична ЦВА катода в його середовищі з доступом повітря; імпедансна спектроскопія, якщо можете.
+- **Пара:** напруга розімкненого кола, потім напруга комірки під сталим струмом близько 25 мкА, знята невдовзі після неї. Комірка двокамерна — анод у соку, катод у своєму середовищі; просимо написати, як розділено камери, і, якщо можливо, виміряти опір самої перегородки між двома інертними електродами.
+- **Середовища:** анод — синтетичний ксилемний сік сосни звичайної: яблучна кислота 0,40 мМ, KNO₃ 0,0049 мМ (4,9 мкМ), CaCl₂ 0,18 мМ, MgSO₄ 0,062 мМ, KOH до pH 5,75, глюкоза 10 мМ; катод — ті самі солі з яблучною кислотою 10 мМ, KOH до pH 4,5, з доступом повітря. Температура 20–25 °C із записом.
+- **Результат:** файли сирих даних (час, потенціал, струм) і короткий звіт за підписом відповідальної особи: прилад, електрод порівняння з перерахунком до СВЕ, конфігурація комірки, що саме виконано.
+
+**Хто наносить шари** — просимо вказати, що можете запропонувати: (А) ви наносите їх на наші купони з наших матеріалів за нашим письмовим протоколом; (Б) ми надсилаємо вже функціоналізовані купони, а ви лише вимірюєте — тоді напишіть, як скоро після отримання можливий перший вимір. Функціоналізовані купони не можна стерилізувати, а в середовища не можна додавати азид натрію чи інші консерванти.
+
+Порогів «пройшов / не пройшов» ми свідомо не надсилаємо: вимір має бути сліпим щодо очікуваного результату. З тієї самої причини постачання й вимір у нас у різних руках — лабораторія, що вимірює, не постачає матеріалів електродів.
+
+Купони зараз готуємо до друку; ми домовляємося про вимір заздалегідь, щоб почати, щойно будуть готові купони й матеріали електродів. Це запит пропозиції та можливостей, ще не замовлення. Просимо відповісти:
+
+1. чи можете взятися за таку роботу і у варіанті (А) чи (Б);
+2. орієнтовну вартість і чергу;
+3. як оформити роботу із замовником-ФОП (оплата за рахунком).
+
+Дякуємо!
+
+`[підпис і контакти відправника — заповнити перед відправкою]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+> **Поля форми ЦККНП 2.3–2.5 (у форму, не в лист; 2.1–2.2 — 👤 founder):** **2.3** підстава — «виконання роботи за договорами з … зовнішніми замовниками» і «платний доступ до обладнання»; назва теми — «Пілотна перевірка ферментних електродів на титанових купонах у синтетичному ксилемному соку»; джерело фінансування — власні кошти замовника; оплата — так. **2.4** прилад — потенціостат з імпедансною спектроскопією (відділ біомолекулярної електроніки); мета — функція пари анод/катод дня 0; опис — як у листі; обсяг — одна пара (опційно дві), вимір дня 0. **2.5** зразки — 2 (опційно 4) купони Ø16 × 1 мм Ti-6Al-4V, з нанесеними шарами (Б) або без них разом із матеріалами (А); без стерилізації, транспортування в холоді; витратні матеріали — середовища за рецептом із листа; операторський супровід — так.
+
+---
+
 ## 8. Cross-references
 
 | Ресурс | Що бере |
