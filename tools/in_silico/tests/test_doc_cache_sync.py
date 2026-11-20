@@ -10730,12 +10730,8 @@ CHECKS += [
       for fam, i, rx in (("REFeB_sintered", 0, rf"температурний коефіцієнт Br \(REFeB −{N}…−[\d.]+ %/°C"),
                          ("REFeB_sintered", 1, rf"температурний коефіцієнт Br \(REFeB −[\d.]+…−{N} %/°C"),
                          ("RECo5", 1, rf"RECo₅ −{N} %/°C, RE₂Co₁₇"), ("RE2Co17", 1, rf"RE₂Co₁₇ −{N} %/°C — типові"))],
-    # 00_07 HW.54 — the desk leg's sentence
-    ("magnet temperature design rule REFeB → 00_07 → 114", TRACKER, rf"тримає шкала REFeB від {N} мм чи", DEN,
-     lambda d: _ceil(d[_MT]["thickness_limit_mm_at_realistic_gap"]["REFeB_sintered"]["adverse"]), 0.0),
-    ("magnet temperature design rule RE2Co17 → 00_07 → 114", TRACKER, rf"чи RE₂Co₁₇ від {N} мм завтовшки \(несприятливий кут, екземпляр",
-     DEN, lambda d: _ceil(d[_MT]["thickness_limit_mm_at_realistic_gap"]["RE2Co17"]["adverse"]), 0.0),
-    *_mt_pair(rf"лишається під {N} ⊥ [\d.]+ °C", rf"лишається під [\d.]+ ⊥ {N} °C", TRACKER, lambda c: (*_BE, c), _F1),
+    # ⛔ no TRACKER pin on these numbers: 00_07 HW.54's desk leg points to 01_03 §4 (в), and the EBFC pins above hold
+    # the same cache fields — a tracker leg carries pointers, not mirrors (00_05 §5)
     ("magnet temperature unread editions → 01_03 §4 → 114", EBFC, rf"Це нижче {N} Тл, яких потребує несприятливий кут клітинки",
      DEN, lambda d: _ceil(d[_MT]["cells"]["t2:g3"]["need_T"]["REFeB_sintered:adverse"], 3), 0.0),
 ]
@@ -11322,7 +11318,6 @@ CHECKS += [
     ("117 shallow hours median → SUMMARY", SUMMARY, rf"intermediate ground \(median \*\*{N}\*\* hours\)", SFC, _sfc((*_SFC_HOURS, "bare_or_intermediate_median_winter")), 0.0),
     ("117 old judged → sheet marker", SHEET, rf"ця літера судить {N} % діб", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
     ("117 old winters none → sheet marker", SHEET, rf"а в {N} зимах із 29 жодної", SFC, _sfc((*_SFC_OLD, "winters_with_no_day_judged")), 0.0),
-    ("117 old judged → 00_07 Стан", TRACKER, rf"репетиція `117` — {N} % суджених діб", SFC, _sfc((*_SFC_OLD, "judged_share_all_days"), 100, 1), 0.0),
 ]
 
 # …and the rules rewritten 2026-11-15, rehearsed on a perfect logger (the same script) ⟷ SUMMARY's paragraph «The rules
