@@ -3174,7 +3174,7 @@ _st_check "a variant marker (N) ⊕ counts as the body (no TWINLESS)" reject 'TW
     pass=$((pass+1)); printf '  ok    %s\n' "a healthy WRITE says nothing about darkness"
   fi
 
-  # 32a–32d [2026-11-21]. The hook branch is the `*)` arm, so a typo'd mode or a bare
+  # 32a–32e [2026-11-21]. The hook branch is the `*)` arm, so a typo'd mode or a bare
   # call by hand used to land in `cat` and wait forever on an open pipe. Three
   # positive cases (unknown mode · silent open pipe · empty stdin all REFUSE, exit 2)
   # and one negative control: the hook's own form — one JSON line, no trailing newline,
@@ -3189,13 +3189,13 @@ _st_check "a variant marker (N) ⊕ counts as the body (no TWINLESS)" reject 'TW
     fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %s\n' "a typo'd mode refuses instead of falling into the hook branch" "$rc" "$out"
   fi
   out=$( { sleep 6; } | _st_bare 2>&1 ); rc=$?
-  if [ "$rc" -eq 2 ] && printf '%s' "$out" | grep -q 'no hook JSON on stdin'; then
+  if [ "$rc" -eq 2 ] && printf '%s' "$out" | grep -q 'no input on stdin'; then
     pass=$((pass+1)); printf '  ok    %s\n' "a bare call on a silent open pipe refuses, does not hang"
   else
     fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %s\n' "a bare call on a silent open pipe refuses, does not hang" "$rc" "$out"
   fi
   out=$(_st_bare </dev/null 2>&1); rc=$?
-  if [ "$rc" -eq 2 ] && printf '%s' "$out" | grep -q 'no hook JSON on stdin'; then
+  if [ "$rc" -eq 2 ] && printf '%s' "$out" | grep -q 'no input on stdin'; then
     pass=$((pass+1)); printf '  ok    %s\n' "a bare call on empty stdin refuses"
   else
     fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %s\n' "a bare call on empty stdin refuses" "$rc" "$out"
@@ -3205,6 +3205,16 @@ _st_check "a variant marker (N) ⊕ counts as the body (no TWINLESS)" reject 'TW
     pass=$((pass+1)); printf '  ok    %s\n' "the hook's own JSON (no trailing newline) still passes through silently"
   else
     fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %s\n' "the hook's own JSON (no trailing newline) still passes through silently" "$rc" "$out"
+  fi
+  # 32e — the hook's JSON is ONE line carrying the whole edited file; a line-wide
+  # `read -t 5` crawled a pipe byte by byte and refused a 24 MB payload. Through a PIPE
+  # on purpose: from a regular file `read` takes blocks and the defect hides.
+  out=$( { printf '{"tool_name":"Edit","tool_input":{"file_path":"/elsewhere/x.md"},"x":"'
+           head -c 24000000 /dev/zero | tr '\0' 'a'; printf '"}'; } | _st_bare 2>&1 ); rc=$?
+  if [ "$rc" -eq 0 ] && [ -z "$out" ]; then
+    pass=$((pass+1)); printf '  ok    %s\n' "a 24 MB one-line hook payload through a pipe passes, not refused"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %.200s\n' "a 24 MB one-line hook payload through a pipe passes, not refused" "$rc" "$out"
   fi
 
   rm -rf "$root"
@@ -3558,19 +3568,24 @@ RUBY
   *)
     # The hook stance is reached with NO argument and its JSON already on stdin. A call
     # by hand landed here too — a typo'd mode, or a bare call — and `cat` then waited on
-    # an open pipe forever: ten minutes on 2026-10-25, and twice for hours on 2026-11-21
+    # an open pipe forever: ten minutes on 2026-10-25, and twice for hours on 2026-11-20/21
     # inside a backgrounded Bash, after the skill had warned in prose («always name a
     # mode»). A rule that relapsed is in the wrong form, so the refusal lives here.
+    # The timeout guards the FIRST CHARACTER only (`-n 1`): `read` without it reads a
+    # pipe byte by byte up to the newline, and the hook's JSON is ONE line carrying the
+    # whole file (`originalFile`), so a 24 MB payload took >5 s and was refused as «no
+    # input» — measured by the adversary of this patch, pinned by case 32e below.
+    # Ceiling: input that arrives but is not JSON exits 0 silently, as before.
     if [ -n "${1:-}" ]; then
       printf 'memory_gate: unknown mode %s — the modes are the case block of this file\n' "$1" >&2
       exit 2
     fi
     first=''   # `set -u`: a timed-out `read` leaves the variable unset in bash 3.2
-    if ! IFS= read -r -t 5 first && [ -z "$first" ]; then
-      printf 'memory_gate: no hook JSON on stdin within 5 s — by hand, name a mode (--audit · --stale-state · …) and feed < /dev/null\n' >&2
+    if ! IFS= read -r -t 5 -n 1 first && [ -z "$first" ]; then
+      printf 'memory_gate: no input on stdin within 5 s — by hand, name a mode (--audit · --stale-state · …) and feed < /dev/null\n' >&2
       exit 2
     fi
-    input="$first"$'\n'"$(cat)"
+    input="$first$(cat)"
     fp=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
     case "$fp" in "$MEM_DIR"/*.md) ;; *) exit 0 ;; esac
     msgs=$( { # [DOC-T.64] Same reasoning as the override banner below, one axis over:
