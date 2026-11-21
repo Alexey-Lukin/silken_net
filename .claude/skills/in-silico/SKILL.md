@@ -10,7 +10,7 @@ description: "Use when working on the silken_net in-silico surface — the EBFC 
 **Bodies live in `rules.md` — open it before running or changing DFT/MD, declaring an anchor dimension,
 or quoting a literature constant or a source.** #19–#35: DFT and MD gotchas · #36–#46: citation rules · #47 on: rules appended later, any group. Below is one generated line per rule: the line is the CARRIER; the
 mechanism, the incident and the bounds are in the companion. Numbering is append-only — cite
-`in-silico §Critical Rules #N` (the section name disambiguates).
+`in-silico §Critical Rules #N` (the section name disambiguates from §When Modifying).
 
 <!-- INSILICO-RULES-INDEX:AUTO — generated from rules.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
