@@ -3174,11 +3174,13 @@ _st_check "a variant marker (N) ⊕ counts as the body (no TWINLESS)" reject 'TW
     pass=$((pass+1)); printf '  ok    %s\n' "a healthy WRITE says nothing about darkness"
   fi
 
-  # 32a–32e [2026-11-21]. The hook branch is the `*)` arm, so a typo'd mode or a bare
+  # 37a–37e [2026-11-21]. The hook branch is the `*)` arm, so a typo'd mode or a bare
   # call by hand used to land in `cat` and wait forever on an open pipe. Three
   # positive cases (unknown mode · silent open pipe · empty stdin all REFUSE, exit 2)
-  # and one negative control: the hook's own form — one JSON line, no trailing newline,
-  # exactly what `_st_write` pipes — must still pass through silently. The silent-pipe
+  # and two negative controls: the hook's own form — one JSON line, no trailing newline,
+  # exactly what `_st_write` pipes — must still pass through silently (37d), and input
+  # whose first character arrives at once must be read to its end however long the
+  # rest takes (37e). The silent-pipe
   # case costs ~6 s on purpose: with the refusal removed it FAILS when the writer exits
   # (cat returns, empty input, exit 0) instead of hanging the battery.
   _st_bare() { env MEMORY_GATE_SELFTEST=1 MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" bash "$SELF" "$@"; }
@@ -3206,16 +3208,27 @@ _st_check "a variant marker (N) ⊕ counts as the body (no TWINLESS)" reject 'TW
   else
     fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %s\n' "the hook's own JSON (no trailing newline) still passes through silently" "$rc" "$out"
   fi
-  # 32e — the hook's JSON is ONE line carrying the whole edited file; a line-wide
-  # `read -t 5` crawled a pipe byte by byte and refused a 24 MB payload. Through a PIPE
-  # on purpose: from a regular file `read` takes blocks and the defect hides.
-  out=$( { printf '{"tool_name":"Edit","tool_input":{"file_path":"/elsewhere/x.md"},"x":"'
-           head -c 24000000 /dev/zero | tr '\0' 'a'; printf '"}'; } | _st_bare 2>&1 ); rc=$?
-  if [ "$rc" -eq 0 ] && [ -z "$out" ]; then
-    pass=$((pass+1)); printf '  ok    %s\n' "a 24 MB one-line hook payload through a pipe passes, not refused"
-  else
-    fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %.200s\n' "a 24 MB one-line hook payload through a pipe passes, not refused" "$rc" "$out"
-  fi
+# 37e — the timeout must guard the FIRST CHARACTER only. The hook's JSON is one line
+# carrying the whole edited file; a line-wide `read -t 5` crawled a pipe byte by byte
+# (a 24 MB payload took >5 s on bash 3.2 and was refused). Pinned by TIME, not size,
+# so it discriminates on any bash and any machine: the opening of a valid hook JSON
+# arrives at once, its closing after 6 s, and the write stance must still run — the
+# once-per-session WRITE-TIME line is the positive marker. The old form fails on both
+# shells the gate meets: bash 3.2 (local) discards the partial line and refuses, bash 5
+# (CI, ubuntu) keeps it and glues a newline into the JSON string, so jq drops the path
+# and the gate exits 0 silent. ~6 s on purpose.
+_st_build "$d"
+_dl_sid="selftest-dl-$$-$RANDOM"
+out=$( { printf '{"session_id":"%s","tool_name":"Edit","tool_input":{"file_path":"%s/feedback_alpha.md"},"x":"' "$_dl_sid" "$d"
+         sleep 6; printf 'a"}'; } |
+       env MEMORY_GATE_SELFTEST=1 MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" \
+           MEMORY_GATE_IDX_BASELINE="$(wc -c <"$d/MEMORY.md" | tr -d ' ')" MEMORY_GATE_DESC_BASELINE=800 \
+           MEMORY_GATE_CORPUS_FLOOR="$(ls "$d"/*.md 2>/dev/null | wc -l | tr -d ' ')" bash "$SELF" 2>&1 ); rc=$?
+if [ "$rc" -eq 0 ] && printf '%s' "$out" | grep -q 'WRITE-TIME'; then
+  pass=$((pass+1)); printf '  ok    %s\n' "hook input whose rest arrives after 6 s is read whole, not refused"
+else
+  fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %.300s\n' "hook input whose rest arrives after 6 s is read whole, not refused" "$rc" "$out"
+fi
 
   rm -rf "$root"
   printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
@@ -3574,8 +3587,11 @@ RUBY
     # The timeout guards the FIRST CHARACTER only (`-n 1`): `read` without it reads a
     # pipe byte by byte up to the newline, and the hook's JSON is ONE line carrying the
     # whole file (`originalFile`), so a 24 MB payload took >5 s and was refused as «no
-    # input» — measured by the adversary of this patch, pinned by case 32e below.
-    # Ceiling: input that arrives but is not JSON exits 0 silently, as before.
+    # input» — measured by the adversary of this patch; pinned by selftest case 37e
+    # («hook input whose rest arrives after 6 s is read whole»). Ceilings: input that
+    # arrives but is not JSON exits 0 silently, as before; input whose first character
+    # arrives on a pipe that then stays open waits in `cat` — the guard covers the first
+    # character only.
     if [ -n "${1:-}" ]; then
       printf 'memory_gate: unknown mode %s — the modes are the case block of this file\n' "$1" >&2
       exit 2
