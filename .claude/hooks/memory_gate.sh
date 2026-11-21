@@ -3174,6 +3174,39 @@ _st_check "a variant marker (N) ⊕ counts as the body (no TWINLESS)" reject 'TW
     pass=$((pass+1)); printf '  ok    %s\n' "a healthy WRITE says nothing about darkness"
   fi
 
+  # 32a–32d [2026-11-21]. The hook branch is the `*)` arm, so a typo'd mode or a bare
+  # call by hand used to land in `cat` and wait forever on an open pipe. Three
+  # positive cases (unknown mode · silent open pipe · empty stdin all REFUSE, exit 2)
+  # and one negative control: the hook's own form — one JSON line, no trailing newline,
+  # exactly what `_st_write` pipes — must still pass through silently. The silent-pipe
+  # case costs ~6 s on purpose: with the refusal removed it FAILS when the writer exits
+  # (cat returns, empty input, exit 0) instead of hanging the battery.
+  _st_bare() { env MEMORY_GATE_SELFTEST=1 MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" bash "$SELF" "$@"; }
+  out=$(_st_bare --audt </dev/null 2>&1); rc=$?
+  if [ "$rc" -eq 2 ] && printf '%s' "$out" | grep -q 'unknown mode --audt'; then
+    pass=$((pass+1)); printf '  ok    %s\n' "a typo'd mode refuses instead of falling into the hook branch"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %s\n' "a typo'd mode refuses instead of falling into the hook branch" "$rc" "$out"
+  fi
+  out=$( { sleep 6; } | _st_bare 2>&1 ); rc=$?
+  if [ "$rc" -eq 2 ] && printf '%s' "$out" | grep -q 'no hook JSON on stdin'; then
+    pass=$((pass+1)); printf '  ok    %s\n' "a bare call on a silent open pipe refuses, does not hang"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %s\n' "a bare call on a silent open pipe refuses, does not hang" "$rc" "$out"
+  fi
+  out=$(_st_bare </dev/null 2>&1); rc=$?
+  if [ "$rc" -eq 2 ] && printf '%s' "$out" | grep -q 'no hook JSON on stdin'; then
+    pass=$((pass+1)); printf '  ok    %s\n' "a bare call on empty stdin refuses"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %s\n' "a bare call on empty stdin refuses" "$rc" "$out"
+  fi
+  out=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"/elsewhere/x.md"}}' | _st_bare 2>&1); rc=$?
+  if [ "$rc" -eq 0 ] && [ -z "$out" ]; then
+    pass=$((pass+1)); printf '  ok    %s\n' "the hook's own JSON (no trailing newline) still passes through silently"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         got rc=%s: %s\n' "the hook's own JSON (no trailing newline) still passes through silently" "$rc" "$out"
+  fi
+
   rm -rf "$root"
   printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ]
@@ -3523,7 +3556,21 @@ RUBY
     [ -z "$out" ]
     ;;
   *)
-    input=$(cat)
+    # The hook stance is reached with NO argument and its JSON already on stdin. A call
+    # by hand landed here too — a typo'd mode, or a bare call — and `cat` then waited on
+    # an open pipe forever: ten minutes on 2026-10-25, and twice for hours on 2026-11-21
+    # inside a backgrounded Bash, after the skill had warned in prose («always name a
+    # mode»). A rule that relapsed is in the wrong form, so the refusal lives here.
+    if [ -n "${1:-}" ]; then
+      printf 'memory_gate: unknown mode %s — the modes are the case block of this file\n' "$1" >&2
+      exit 2
+    fi
+    first=''   # `set -u`: a timed-out `read` leaves the variable unset in bash 3.2
+    if ! IFS= read -r -t 5 first && [ -z "$first" ]; then
+      printf 'memory_gate: no hook JSON on stdin within 5 s — by hand, name a mode (--audit · --stale-state · …) and feed < /dev/null\n' >&2
+      exit 2
+    fi
+    input="$first"$'\n'"$(cat)"
     fp=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
     case "$fp" in "$MEM_DIR"/*.md) ;; *) exit 0 ;; esac
     msgs=$( { # [DOC-T.64] Same reasoning as the override banner below, one axis over:
