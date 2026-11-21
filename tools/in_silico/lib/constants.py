@@ -78,6 +78,8 @@ S2_MAX_DOUBLET = 0.80
 #   docs/protocols/procurement/ebfc_chem_rfq.md Spec A points there rather than restating it).
 # Pinned doc↔code by tools/in_silico/tests/test_doc_cache_sync.py::test_ratified_gene_mirrors_canon,
 # which reads BOTH docs and fails if either stops naming exactly this set.
+# The order carrier docs/protocols/ebfc/in_silico/ratified_gene_arms.fasta (arm14 = this set) is built from it and
+# the L1 block and pinned by test_gene_arms_*; edit the set here and the pin reds until the file is regenerated.
 # ⛔ The AF3 input sequence is NOT rewritten by these three (L1 §2): the shipped model, the MD runs
 # and every SASA number stand on the `11 N→Q` string. Re-predicting on the compensated sequence is a
 # separate run with its own provenance.

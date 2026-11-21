@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 428 · 47,637,531 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 428 · 47,642,893 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -28,7 +28,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 |---|---|---|
 | `tools/in_silico/lib/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/lib/beam_contact.py` | `5a8c75cb965b62461a7ac6a22fdb09b73516311ce8e4f1b40e3382d2041a6f63` | A clamped Euler-Bernoulli rod in a rigid channel — unilateral contact solved by an active set. |
-| `tools/in_silico/lib/constants.py` | `78047bae5d92e1d406e8b2bc9b619dd46369c4bfde9adba92fb99e4a91203048` | Shared physical and project constants for the in-silico pipeline. |
+| `tools/in_silico/lib/constants.py` | `1f8c9ff2237e6ac3154986f1c0c2a0bd043b9cad51805bfd201ce14392cd2e1f` | Shared physical and project constants for the in-silico pipeline. |
 | `tools/in_silico/lib/dft_utils.py` | `d2a4008c6a3de0984d592beef374f972920dc4f01e505b700cac654c8dc126ca` | Shared DFT utility functions for L3 quantum chemistry scripts. |
 | `tools/in_silico/lib/flavin.py` | `32d7f91f691dbf2868d619a3f928cb5819f708507271477c1f78d7deb406b044` | Lumiflavin — the ONE home of the flavin SMILES the L3 chain computes on, and the check that the reduced form is the |
 | `tools/in_silico/lib/geometry.py` | `70dcca1d51fc0f4fd166b5d6dd13345c74b87eb6aa516327d5f8b2f0688be30e` | Shared geometry utilities for placing molecules in MD boxes. |
@@ -170,7 +170,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/toc_graphic_draft.py` | `2ac953b8ca162a749038f900aec446be2831b5357a957a39c29eca8f173cc7c3` | TOC graphic (not a numbered figure) — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `3c04be7a32891018b3ba89ad8c14c8dfd9eb81e814012974fb07c96a522eaa18` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `a55a9b902e5582450a3643397c814b65d26dc26d78b00ab2a1e6aed3e0732658` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `3e175ca55ed8aee7b933971f5da470ade997a056be5679810abe262249028846` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `921e1b000bb951cae27fb7cdac3dea6c0ed6a52d0aac868a5e7bce70e1872cc7` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 

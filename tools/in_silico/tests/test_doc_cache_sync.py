@@ -4962,6 +4962,96 @@ def test_ratified_gene_mirrors_canon(doc_rel, pattern, sep):
         f"sequence the mirror names.")
 
 
+# ── the order carrier: the FASTA a human copies into the CRO's order form (00_07 HW.5, ⚖️ N68) ──
+# Ordering is a 👤 act and a slip of the hand is irreversible, so the sequence that goes out is a FILE, not
+# «the L1 block plus three substitutions from memory». The file is built from the 600-aa AF3 block of L1 and the
+# code mirror above; these pins keep the three in step and carry the N-X-S/T scan the ratified set fails by
+# EXACTLY ONE site (A70S makes NNS 68–70) — the finding behind the open N68 verdict. If a verdict ever changes the
+# set, `_ARM_SEQUONS` changes with it on purpose: that edit IS the record that the scan result was re-read.
+FASTA = "docs/protocols/ebfc/in_silico/ratified_gene_arms.fasta"
+_L1_BLOCK_MARK = "**Мутована послідовність (input для AlphaFold 3):**"
+_NXST = re.compile(r"(?=N[^P][ST])")            # overlapping N-X-S/T with X != P — the glycosylation sequon
+_ARMS = {                                         # arm -> substitutions on top of the L1 block
+    "arm14": lambda mirror: tuple(mirror),
+    "arm13": lambda mirror: tuple(c for c in mirror if c != "A70S"),
+    "arm15": lambda mirror: (*mirror, "N68Q"),
+}
+_ARM_SEQUONS = {"arm14": [(68, "NNS")], "arm13": [], "arm15": []}
+
+
+def _l1_block() -> str:
+    lines = doc(L1).split("\n")
+    i = next(k for k, ln in enumerate(lines) if ln.startswith(_L1_BLOCK_MARK))
+    j = next(k for k in range(i, len(lines)) if lines[k].strip() == "```")
+    assert lines[j + 2].strip() == "```", "the AF3 block is no longer a one-line fence"
+    return lines[j + 1].strip()
+
+
+def _apply(seq: str, codes) -> str:
+    out = list(seq)
+    for c in codes:
+        a, pos, b = c[0], int(c[1:-1]), c[-1]
+        assert out[pos - 1] == a, f"{c}: position {pos} holds {out[pos - 1]!r} in the base, not {a!r}"
+        out[pos - 1] = b
+    return "".join(out)
+
+
+def _sequons(seq: str):
+    return [(m.start() + 1, seq[m.start():m.start() + 3]) for m in _NXST.finditer(seq)]
+
+
+def _fasta_arms() -> dict:
+    recs = [ln for ln in (REPO / FASTA).read_text(encoding="utf-8").split("\n") if ln and not ln.startswith(";")]
+    assert recs and len(recs) % 2 == 0 and all(
+        recs[k].startswith(">") and not recs[k + 1].startswith(">") for k in range(0, len(recs), 2)), \
+        f"{FASTA}: every record must be one header line followed by ONE sequence line"
+    return {recs[k].split()[0][len(">dgrGcGDH_"):]: (recs[k], recs[k + 1]) for k in range(0, len(recs), 2)}
+
+
+@pytest.mark.parametrize("arm", sorted(_ARMS))
+def test_gene_arms_fasta_is_l1_block_plus_declared_substitutions(arm):
+    """Each FASTA line equals the L1 block plus that arm's substitutions, and its header names the same codes.
+
+    arm14 is the code mirror itself (the ratified set); arm13 drops A70S and arm15 adds N68Q — the two arms the
+    open N68 verdict may still pick. Edit L1 or `lib/constants.py` and this goes red until the file is
+    regenerated; the failure prints the line that is expected.
+    CAN catch: a hand-edited residue, a stale arm after the block or the mirror moved, a header that disagrees
+    with its line, an arm whose substitution no longer fits the base residue.
+    CANNOT catch: whether the SET is right (a founder verdict, home L1 §2), nor the final cassette — leader,
+    tags and linkers are the CRO's and need written sign-off before synthesis (letter to the CRO).
+    """
+    mirror = _mirror_in_code()
+    codes = _ARMS[arm](mirror)
+    expected = _apply(_l1_block(), codes)
+    header, got = _fasta_arms()[arm]
+    assert len(got) == 600 and set(got) <= set("ACDEFGHIKLMNPQRSTVWY"), f"{FASTA} {arm}: not a 600-aa line"
+    assert got == expected, (
+        f"{FASTA} {arm} differs from the L1 block + {codes}. Regenerate the line; expected:\n{expected}")
+    declared = tuple(re.search(r"subs=(\S+)", header).group(1).split(","))
+    assert declared == codes, f"{FASTA} {arm}: header says {declared}, the arm is built from {codes}"
+
+
+def test_gene_arms_sequon_scan():
+    """The ratified set leaves EXACTLY ONE N-X-S/T (NNS 68–70, made by A70S); the L1 block and the other arms have none.
+
+    CAN catch: a change that adds or removes a glycosylation site in any arm, or a block that already carries one.
+    CANNOT catch: a site created by the CRO's leader, tags or linkers (the scan covers the 600-residue string,
+    not the cassette that is synthesised) — the sign-off request in the letter covers that step.
+    """
+    assert _sequons(_l1_block()) == [], "the L1 block must carry no N-X-S/T"
+    arms = _fasta_arms()
+    for arm, want in _ARM_SEQUONS.items():
+        assert _sequons(arms[arm][1]) == want, f"{arm}: sequons {_sequons(arms[arm][1])}, expected {want}"
+
+
+def test_gene_arms_only_the_ratified_arm_is_marked_ratified():
+    """Exactly arm14 says RATIFIED; the arms of an open verdict say NOT_RATIFIED — so a hand never orders one by mistake."""
+    arms = _fasta_arms()
+    assert set(arms) == set(_ARMS), f"arms in the file: {sorted(arms)}"
+    assert arms["arm14"][0].split()[1] == "RATIFIED"
+    assert all(arms[a][0].split()[1] == "NOT_RATIFIED" for a in arms if a != "arm14")
+
+
 # ── doc↔code: the press-fit case a contractor EXECUTES carries constants.py numbers (00_07 HW.26) ──
 # The calibration case (Додаток 3, UA + EN twins) and the FEA/Prony request quote the assembly
 # temperature, the cold extreme and the fit band of `lib/constants.py` — the inputs of `56` and of
