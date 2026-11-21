@@ -8,9 +8,9 @@ description: "Use when working on the silken_net in-silico surface — the EBFC 
 ## Critical Rules
 
 **Bodies live in `rules.md` — open it before running or changing DFT/MD, declaring an anchor dimension,
-or quoting a literature constant or a source.** #19–#35 are the DFT and MD gotchas, #36–#46 the citation rules (§Paper Citations below routes there), and from #47 on the rules appended after them, whatever their group. Below is one generated line per rule: the line is the CARRIER; the
+or quoting a literature constant or a source.** #19–#35: DFT and MD gotchas · #36–#46: citation rules · #47 on: rules appended later, any group. Below is one generated line per rule: the line is the CARRIER; the
 mechanism, the incident and the bounds are in the companion. Numbering is append-only — cite
-`in-silico §Critical Rules #N` (the section name disambiguates from §When Modifying).
+`in-silico §Critical Rules #N` (the section name disambiguates).
 
 <!-- INSILICO-RULES-INDEX:AUTO — generated from rules.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
@@ -132,6 +132,7 @@ head, compressed, and what the rule forbids is in the body (instance — head of
 54. A verdict read off a GRID of an input is a claim about its points, not a threshold — solve the crossing or put the grid in the sentence; a fix tends to write a new grid quantifier
 55. A factor that cancels in a RELATIVE reading does not cancel in ABSOLUTE bounds on the same field — and two such bounds bind at OPPOSITE extremes of it — a verdict that skips them says «isothermal», its estimate names every input
 56. A stochastic acceptance test is judged over SEEDS, never on one noise draw
+57. A sequence you will order is a pinned FILE, never memory
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
