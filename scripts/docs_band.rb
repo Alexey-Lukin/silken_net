@@ -124,8 +124,10 @@ unless untracked.empty?
   warn "\n::error::docs_band: #{untracked.size} untracked-файл(ів) у in-scope теках — крок `spdx_headers` їх НЕ ПОБАЧИТЬ"
   untracked.first(10).each { |f| warn "  ? #{f}" }
   warn "  `git add` їх перед смугою, інакше вона зелена на дереві, яке покладе CI (стеля 2 в шапці)."
-  warn "  ⚠️ Крім ТЕПЛОГО виходу фонового обчислення (кеш, який ще пишеться): його не стейджать (in-silico §When Modifying #21) —"
-  warn "     тоді смуга йде в чистому worktree: `git worktree add --detach <tmp> HEAD && git diff --binary HEAD | git -C <tmp> apply --index`,"
+  warn "  ⚠️ Крім ТЕПЛОГО виходу фонового обчислення (кеш, який ще пишеться; in-silico §When Modifying #21) і ЧУЖОГО файла"
+  warn "     сусідньої сесії (`git add` поклав би його у твій коміт) — їх не стейджать, а смуга йде в чистому worktree:"
+  warn "     `git worktree add --detach <tmp> HEAD && git diff --binary HEAD -- <свої шляхи> | git -C <tmp> apply --index`"
+  warn "     (сусідка в дереві — лише СВОЇ шляхи: повний `git diff HEAD` повіз би й її ханки; усе закомічено — досить голого HEAD),"
   warn "     там `ruby scripts/docs_band.rb`, потім `git worktree remove --force <tmp>` (untracked туди не потрапляє за побудовою)."
   warn "     (`--index` — бо без нього НОВІ файли діфу лягають у worktree untracked, і ця сама відмова повторюється вже там.)"
   exit 1 unless list_only
