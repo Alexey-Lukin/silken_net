@@ -25,7 +25,7 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка SCC/SFC; §Slashing — `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX, penalty_factor_base) |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Повний канон політики slashing |
 | [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Резервування, failover, Web3 fallback (Slashing/Insurance при недоступності мостів) |
-| [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) | NaaS-контракти; §Insurance Pool & Etherisc — параметри страхування |
+| [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) | NaaS-контракти; §7 — параметричне страхування (зокрема Etherisc-режим) |
 | [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | Юніт-економіка та BOM |
 | [`00_02` — Academic Integration and IP](00_02_Academic_Integration_and_IP) | Академічні партнери + план публікацій + **§4 IP-інструменти** (TISC · ™-заявка · UA-юр-review) — виконавчий шар постави §8 |
 | [`NOTICE`](../NOTICE) | Мапа ліцензійних зон + third-party винятки (AF3 non-commercial) + inbound-обовʼязки перед чужими ліцензіями (UNI.3) + non-assertion pledge — **SSOT самих значень**, §8 їх дзеркалить |
@@ -160,7 +160,7 @@
 3. **Points конвертуються в SCC токени** на Polygon (курс емісії — [`05_03`](05_03_Tokenomics_SCC_and_SFC)). Курс SCC→tCO₂ — внутрішня облікова конвенція, не кредит реєстру: on-chain конверсія `ProtocolParameters.sol#sccPerTonneCo2()` (carbon-курс — [`00_04 §3`](00_04_Nature_as_a_Service_Contracts)). Ринкової ціни SCC протокол не тримає ([`00_04 §3`](00_04_Nature_as_a_Service_Contracts)), тож фіатних сум тут немає — вони застаріли б і виглядали б маніпулятивно.
 4. **Клієнт отримує SCC як атестацію обсягу наданої послуги** — пропорційно до балів кластера.
 5. **Деградація кластера** запускає **двокатегорійну реакцію** (див. §6): або slashing, або страхове відшкодування, а за невизначеності — safety-default: Field Audit без спалювання.
-6. **Параметричне страхування** забезпечує автоматичні виплати при катастрофічних подіях, що виходять за рамки операторського контролю (форс-мажор).
+6. **Параметричне страхування** при катастрофічних подіях поза операторським контролем (форс-мажор): виплата лише за двома незалежними тригерами — власний сигнал її не рухає ([`00_04 §7`](00_04_Nature_as_a_Service_Contracts)); сьогодні механіка інертна ([`00_07`](00_07_Action_Plan_Tracker) INS.1).
 
 Це створює економічний зворотний зв'язок: клієнти зацікавлені у здоров'ї лісу, а не лише в обсязі SCC.
 

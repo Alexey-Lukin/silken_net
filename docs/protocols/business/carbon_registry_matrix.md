@@ -109,7 +109,7 @@
 
 ### 2.2 Puro.earth — важлива both/and-корекція (death-path, не living-carbon)
 
-Puro **НЕ покриває** живий-ліс ARR/IFM — це engineered/durable-CDR стандарт. **АЛЕ** у SilkenNet Puro вже живе на ІНШОМУ треку: коли дерево вмирає біологічно (`Tree.status = :deceased`), `PuroEarthPassportWorker` генерує **biochar CORC** на Puro.earth ([`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md), рядок «Смерть дерева»). Тобто:
+Puro **НЕ покриває** живий-ліс ARR/IFM — це engineered/durable-CDR стандарт. **АЛЕ** у SilkenNet Puro вже живе на ІНШОМУ треку: коли смерть дерева засвідчує ДРУГИЙ підписант (`MaintenanceRecord#attest!` запису `biomass_extraction` → `Tree.status = :deceased`), `PuroEarthPassportWorker` готує заявку на **biochar CORC**, яку видає Puro.earth ([`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md), рядок «Смерть дерева»). Тобто:
 - Живий ліс (carbon-sink, поглинання) → Verra/GS/Isometric-клас (§2, з metrology-gap §1).
 - Мертве дерево → biochar → Puro CORC (durable removal; **КОД** під це написаний і позначений `[MAINNET READY]` — ⚠️ мітка про наш код, не про канал: акаунта Puro немає, `ORACLE_PURO_PRIVATE_KEY` activation-gated, наскрізного прогону не було жодного).
 Це **не конфлікт, а два різні продукти** з одного лісу. Puro-експорт — уже доведений патерн (ARCH.5), що обслуговує лише death-path.

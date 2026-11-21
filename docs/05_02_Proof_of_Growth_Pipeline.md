@@ -778,7 +778,7 @@ blockchain_transactions
 >
 > Що лишається несучим ТУТ і живе в кроках конвеєра вище: **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитись у РІЗНІ адреси ([E.2] — фізичний розділ blast-radius; мінтер не палить, слешер не емітує).
 
-> **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитися в РІЗНІ адреси: однакові ключі дали б їм один Kredis-lock `lock:web3:oracle:<addr>` → mint стопорив би time-sensitive slash (а `LockTimeout` там тихо обриває burn). Під `WEB3_STRICT_MODE` `Security::Web3NetworkGuard` boot-енфорсить розділення + відмовляє значенню під retired-ім'ям `ORACLE_PRIVATE_KEY` (canon B-02 — [`00_04`](00_04_Nature_as_a_Service_Contracts); INF.22).
+> **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитися в РІЗНІ адреси: однакові ключі дали б їм один Kredis-lock `lock:web3:oracle:<addr>` → mint стопорив би time-sensitive slash (а `LockTimeout` там тихо обриває burn). Під `WEB3_STRICT_MODE` `Security::Web3NetworkGuard` boot-енфорсить розділення + відмовляє значенню під retired-ім'ям `ORACLE_PRIVATE_KEY` (канон розділення ключів — [`00_04 §6`](00_04_Nature_as_a_Service_Contracts); INF.22).
 
 ---
 

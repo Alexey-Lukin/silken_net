@@ -403,7 +403,7 @@ function slashUpTo(address investor, uint256 maxAmount, bytes32 contextHash)
 - **Валідація:** `investor != address(0)`, `maxAmount > 0`, `balanceOf > 0` (revert: `"SCC: nothing to slash"` — повне виведення бекенд ескалює як evasion). **Пауза не блокує** (той самий `_burn`-bypass, що `slash()`). Подія — `TokenSlashed(investor, slashed, contextHash)` з **фактично** спаленою сумою. Доведено символьно двома рушіями — Halmos і hevm (`prove_slashUpTo_clampsToBalance`) — + Medusa (`property_supplyAccounting`).
 - **[CONTRACT.1] `contextHash`-атрибуція:** `bytes32(intent BlockchainTransaction.id)` — subgraph/аудитор атрибутує on-chain slash-подію прямо до backend-інтенту (ARCH.45 durable marker створюється ДО broadcast, тож id уже існує); manual DAO/Timelock `slash()` емітить `bytes32(0)`. Subgraph: `SlashingEvent.contextHash` / `GovernanceSlashEvent.contextHash` (`subgraph/schema.graphql`).
 
-> **Страхова премія — НЕ on-chain SCC-подія (знято [SEC.1], 2026-06-15).** Премія NaaS-контракту (5% від плати за послугу — колонка `total_service_fee`, доти `total_funding`) — **off-chain USDC-факт** у БД (`NaasContract`; концепт-дім [`00_04`](00_04_Nature_as_a_Service_Contracts), ризик-політика [`05_05`](05_05_Slashing_and_Risk_Policy)). Колишній `recordPremiumPaid()` + `PremiumPaid`-event на SCC-токені був **never-fed** (жоден backend-виклик) і архітектурно чужорідним (SCC-event для USDC-факту) → видалено з контракту/тестів/subgraph. Real-Yield звіт бере премію з БД (`NaasContract.total_insurance_premiums`, [`04_03`](04_03_REST_API_v1_Reference) `reports#financial_summary`). Не плутати з **Dynamic-Tax SCC-пулом** — окремий on-chain механізм поповнення страхового пулу ([`05_02`](05_02_Proof_of_Growth_Pipeline)).
+> **Страхова премія — НЕ on-chain SCC-подія (знято [SEC.1], 2026-06-15).** Премія NaaS-контракту (5% від плати за послугу — колонка `total_service_fee`, доти `total_funding`) — **off-chain USDC-величина** у БД (`NaasContract`; обчислюється як 5% від `total_service_fee`, запису руху грошей у коді немає; концепт-дім [`00_04`](00_04_Nature_as_a_Service_Contracts), ризик-політика [`05_05`](05_05_Slashing_and_Risk_Policy)). Колишній `recordPremiumPaid()` + `PremiumPaid`-event на SCC-токені був **never-fed** (жоден backend-виклик) і архітектурно чужорідним (SCC-event для USDC-факту) → видалено з контракту/тестів/subgraph. Real-Yield звіт бере премію з БД (`NaasContract.total_insurance_premiums`, [`04_03`](04_03_REST_API_v1_Reference) `reports#financial_summary`). Не плутати з **Dynamic-Tax SCC-пулом** — окремий on-chain механізм поповнення страхового пулу ([`05_02`](05_02_Proof_of_Growth_Pipeline)).
 
 #### `pause()` / `unpause()`
 
@@ -712,11 +712,11 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 
 | Контракт дія | Сервіс | Воркер | Черга | Retry |
 |---|---|---|---|---|
-| `SCC.mint()` | `BlockchainMintingService` | `MintCarbonCoinWorker` | `web3_critical` | 5 |
-| `SCC.batchMint()` | `BlockchainMintingService` | `MintCarbonCoinWorker` | `web3_critical` | 5 |
-| `SFC.mint()` | `BlockchainMintingService` | `MintCarbonCoinWorker` | `web3_critical` | 5 |
-| `SFC.batchMint()` | `BlockchainMintingService` | `MintCarbonCoinWorker` | `web3_critical` | 5 |
-| `SCC.slash()` | `BlockchainBurningService` | `BurnCarbonTokensWorker` | `critical` | 5 |
+| `SCC.mint()` | `BlockchainMintingService.call_batch` (батч з одного рядка йде одиночним `mint`) | `MintBatchCollectorWorker` (живий шлях); `MintCarbonCoinWorker` — лише латентний PATH 1 | `web3` | 3 |
+| `SCC.batchMint()` | `BlockchainMintingService.call_batch` | `MintBatchCollectorWorker` (cron кожні 5 хв — живий шлях; `MintCarbonCoinWorker` — лише латентний PATH 1) | `web3` | 3 |
+| `SFC.mint()` | `BlockchainMintingService` | — емісії SFC за ріст немає: сервіс блокує SFC-рядки ([`00_04 §1.3`](00_04_Nature_as_a_Service_Contracts)) | — | — |
+| `SFC.batchMint()` | `BlockchainMintingService` | — те саме: живого писача немає | — | — |
+| `SCC.slashUpTo()` (бекенд `slash()` не кличе) | `BlockchainBurningService` | `BurnCarbonTokensWorker` | `critical` | 5 |
 | TX підтвердження | — | `BlockchainConfirmationWorker` | `web3_critical` | 10 |
 | Tokenomics eval | — | `TokenomicsEvaluatorWorker` | `web3_emission` | — |
 | Events indexing | `TheGraph::QueryService` | — | — | — |

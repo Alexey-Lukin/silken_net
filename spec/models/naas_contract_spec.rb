@@ -499,7 +499,7 @@ RSpec.describe NaasContract, type: :model do
       expect(described_class.total_insurance_premiums).to eq(BigDecimal("20000.0"))
     end
 
-    it "excludes draft (premium not yet paid) and cancelled (refunded)" do
+    it "excludes draft (premium not yet paid) and cancelled (exclusion ground open — ARCH.123)" do
       create(:naas_contract, status: :draft, organization: organization, cluster: cluster, total_service_fee: 500_000)
       create(:naas_contract, status: :cancelled, organization: organization, cluster: cluster, total_service_fee: 500_000)
       expect(described_class.total_insurance_premiums).to eq(BigDecimal("0.0"))

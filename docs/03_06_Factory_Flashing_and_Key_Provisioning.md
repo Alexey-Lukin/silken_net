@@ -144,7 +144,7 @@
 
 **Power impact (Гілка B):** ATECC active ~69 мкДж/пакет → ≈0.2% active-циклу Soldier (точні числа — 03_05 §3.7, дзеркало SSOT там). ⚠️ Sleep 150 нА always-on **перекидає баланс Сценарію C у мінус** (запасу в його точці немає — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) → SE обов'язково за load-switch гейтом (розрахунок і вимога — 03_05 §3.7). Енергія active **мала, але не вирішальна**; сама вісь «SE AES щопакета vs лише provisioning» — **ВИРІШЕНО (SEC.14, 2026-07-03): provisioning-only**, streaming AES = вбудований radio-AES STM32; розбір осей і наслідки — 03_05 §3.7 (Статус).
 
-**Cost impact (Гілка B):** +$0.60/unit (ATECC608B 10k MOQ) або +$0.85/unit (STSAFE-A110). Cross-ref [`00_04`](00_04_Nature_as_a_Service_Contracts) unit economics.
+**Cost impact (Гілка B):** +$0.60/unit (ATECC608B 10k MOQ) або +$0.85/unit (STSAFE-A110). Cross-ref [`02_06`](02_06_Unit_Economics_and_BOM) unit economics.
 
 **Вибір гілки — критерії прийняття рішення:**
 

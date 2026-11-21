@@ -850,10 +850,10 @@ end
   # стану. Доти `ContractTerminationService`-спека пінила `:cancelled`, а ця пінила
   # `:breached`, і ЖОДНА не перетинала шва: сервіс наприкінці contractual-шляху
   # перезаписував чужий термінальний стан, і жоден пін цього не бачив.
-  # 💰 Ціна була не реєстровою: `NaasContract.total_insurance_premiums` рахує
-  # `[active, fulfilled, breached]` з власним коментарем «cancelled повертається —
-  # виключено», тож перезапис утримував 5% премії у Real-Yield звіті за договором,
-  # який замовник ЗАКОННО скасував.
+  # 💰 Ціна була не лише реєстровою, а звітною (премія у звіті клієнта під міткою «сплачено»): `NaasContract.total_insurance_premiums` рахує
+  # `[active, fulfilled, breached]` і cancelled виключає, тож перезапис утримував 5%
+  # премії у Real-Yield звіті за договором, який замовник ЗАКОННО скасував (підставу
+  # виключення «премія повертається» спростовано — відкрите питання 00_07 ARCH.123).
   describe "contractual forfeiture does NOT overwrite the customer's own termination" do
     let!(:tree) { create(:tree, cluster: cluster) }
 

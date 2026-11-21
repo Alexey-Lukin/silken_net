@@ -6,7 +6,8 @@ class NaasContract < ApplicationRecord
   include Auditable
 
   # [HYBRID PROTOCOL GAIA]: Ставка корпоративної страхової премії (Corporate Premium).
-  # 5% від total_service_fee кожного NaaS-контракту направляється до DAO Treasury Parametric Insurance Pool.
+  # 5% від total_service_fee кожного NaaS-контракту — обчислювана страхова премія (звітна величина;
+  # переказу до DAO Treasury в коді немає — 00_04 §1.1).
   INSURANCE_PREMIUM_RATE = BigDecimal("0.05")
 
   # --- ЗВ'ЯЗКИ ---
@@ -17,7 +18,7 @@ class NaasContract < ApplicationRecord
   # --- СТАТУСИ (The Lifecycle of Trust) ---
   enum :status, {
     draft: 0,      # Підготовка, очікування оплати послуги замовником
-    active: 1,     # Контракт у силі, емісія токенів дозволена
+    active: 1,     # Контракт у силі (емісія SCC статусу договору НЕ читає — гейт дерево+KYC+баланс)
     fulfilled: 2,  # Успішне завершення (Audit pass)
     breached: 3,   # ПОРУШЕНО (Slashing Protocol активовано)
     cancelled: 4   # Достроково розірвано замовником (Early Exit)
@@ -40,11 +41,11 @@ class NaasContract < ApplicationRecord
     state :cancelled
 
     # Активація контракту (після підтвердження оплати)
-    # [HYBRID PROTOCOL GAIA]: При активації контракту insurance_premium_amount (5% від total_service_fee)
-    # у USDC направляється до DAO Treasury Parametric Insurance Pool.
-    # Це забезпечує фінансування страхового пулу для параметричних виплат.
+    # [HYBRID PROTOCOL GAIA]: insurance_premium_amount (5% від total_service_fee) — ОБЧИСЛЮВАНА
+    # величина: переказу до DAO Treasury в коді немає (activate! без колбека), премія живе
+    # як звітний показник (00_04 §1.1).
     # ⛔ Перелік перилів тут НЕ дублюємо — дім один: `ParametricInsurance#trigger_event`
-    # (сьогодні їх два, і кожен мусить мати вимірювача — 00_04 §INS.1).
+    # (сьогодні їх два, і кожен мусить мати вимірювача — 00_04 §7).
     event :activate do
       transitions from: :draft, to: :active
     end
@@ -69,8 +70,8 @@ class NaasContract < ApplicationRecord
   # HYBRID PROTOCOL GAIA: Corporate Premium (Insurance Pool Funding)
   # =========================================================================
 
-  # Сума страхової премії (5% від total_service_fee), що направляється до DAO Treasury
-  # Parametric Insurance Pool при активації контракту.
+  # Сума страхової премії (5% від total_service_fee) — обчислювана величина; переказу до
+  # DAO Treasury в коді немає (00_04 §1.1).
   def insurance_premium_amount
     (total_service_fee * INSURANCE_PREMIUM_RATE).round(2)
   end
@@ -80,10 +81,11 @@ class NaasContract < ApplicationRecord
     (total_service_fee - insurance_premium_amount).round(2)
   end
 
-  # [SEC.1] Сукупна страхова премія (5% від плати за послугу), спрямована до DAO Treasury
-  # Parametric Insurance Pool через активовані контракти. Премія сплачується при
-  # активації (USDC) і лишається в пулі через fulfilled/breached; draft ще не сплачено,
-  # cancelled повертається — обидва виключені. Це DB-джерело правди для premium-показника
+  # [SEC.1] Сукупна страхова премія (5% від плати за послугу) за активованими контрактами —
+  # ОБЧИСЛЕНИЙ показник, не рух грошей (00_04 §1.1); рахуються active/fulfilled/breached,
+  # draft і cancelled виключені. ⚠️ Колишня підстава виключення cancelled («премія
+  # повертається») суперечить присуду «повернення немає» (00_04 §4, Опція 1 MSA), тож чи
+  # рахувати премію скасованого договору — відкрите питання (00_07 ARCH.123). Це DB-джерело правди для premium-показника
   # Real-Yield звіту: премія — off-chain USDC-факт, НЕ on-chain SCC-подія (знятий
   # `PremiumPaid` — канон 05_03).
   def self.total_insurance_premiums

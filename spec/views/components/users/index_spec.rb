@@ -113,7 +113,7 @@ RSpec.describe Users::Index do
 
         # ⚠️ «Замовник», а не «Інвестор»: мітку ролі `subscriber` продиктував гейт
         # `offering_lexicon_check` [BIZ.22] — інвестиційна рамка на customer-facing
-        # поверхні є фактором Howey (`00_04 §1`), тож enum-ТОКЕН лишається технічним,
+        # поверхні є фактором Howey (`00_07` BIZ.22), тож enum-ТОКЕН лишається технічним,
         # а людська назва описує СЕРВІСНУ роль.
         expect(localized).to include("Адміністратор", "Лісник", "Замовник")
         expect(localized).not_to include(">forester<")

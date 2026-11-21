@@ -23,7 +23,7 @@
 | Ресурс | Зв'язок |
 |---|---|
 | [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) | NaaS/RWA-право (господарник — §4.2; вхід — Аблязов); фінансові константи |
-| [`00_04` — Unit Economics and BOM](00_04_Nature_as_a_Service_Contracts) | Юніт-економіка |
+| [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | Юніт-економіка |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (governance/treasury — утримуємо) |
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — DFT-редокс self-owned; in vitro — профільний біохімік/електрохімік TBD |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall (Стаття 2) |

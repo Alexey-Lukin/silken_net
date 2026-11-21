@@ -20,14 +20,15 @@ class DailyAggregationWorker
 
     # [A-3: Wiki 04_02 §11 — Sidekiq Batch для покластерної обробки]
     # Замість синхронного InsightGeneratorService.call (OOM-ризик при 10M+ дерев),
-    # запускаємо батч-оркестратор. InsightBatchCallbacks#on_success автоматично
-    # запустить ClusterHealthCheckWorker після завершення всіх чанків.
+    # запускаємо батч-оркестратор. Його колбек InsightBatchCallbacks#on_success без
+    # sidekiq-pro у проді не виконується (04_02 §11 DOC-R.10) — арбітраж
+    # (ClusterHealthCheckWorker) запускає власний cron 02:00 UTC.
     #
     # Перевіряємо наявність телеметрії перед запуском батчу.
     # EDGE CASE: якщо телеметрія існує, але всі дерева неактивні —
     # оркестратор побачить порожній cluster_baselines і поверне nil без запуску батчу.
-    # ClusterHealthCheckWorker НЕ запуститься в цьому випадку. Це прийнятно:
-    # якщо немає активних дерев — аудит NaaS контрактів не потрібен.
+    # Батч тоді не стартує; арбітраж (ClusterHealthCheckWorker) однаково прожене
+    # власний cron 02:00 UTC — від цього батча він не залежить.
     has_telemetry = TelemetryLog.where(created_at: target_date.beginning_of_day..target_date.end_of_day).exists?
 
     if has_telemetry

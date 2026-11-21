@@ -66,7 +66,7 @@ RSpec.describe ClusterBlueprint, type: :model do
 
   # [ARCH.84] Доти: «health_index defaults to 1.0 when unset». API більше не вигадує
   # число — невиміряний кластер їде як `null`, і це змінює клієнтський контракт
-  # (`00_04 §GET /contracts/stats` описує шкалу 0..1 для сусіднього поля).
+  # (`04_03 §5.14б` описує шкалу 0..1 для сусіднього поля).
   describe "health_index carries «not measured» as null" do
     it "renders null for a cluster that has no reading yet" do
       parsed = JSON.parse(described_class.render(cluster, view: :index))

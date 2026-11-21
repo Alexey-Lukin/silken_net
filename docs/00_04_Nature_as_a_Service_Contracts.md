@@ -18,12 +18,11 @@
 | Ресурс | Зв'язок |
 |---|---|
 | `app/models/naas_contract.rb` | NaasContract lifecycle (AASM) — SSOT коду |
-| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC-контракти, ролі й ключі, mint-курс (дім); курс SCC→tCO₂ гейтом заякорено в §3 цієї сторінки ([`00_06 §3`](00_06_SSOT_Documentation_Standard), rate-guard self-anchor) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
 | [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | Юніт-економіка, BOM, CAPEX/OPEX — друга половина питання клієнта |
 | [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | MSA / KYC legal (UA-юр-канал: §1.4 · §4.2) |
-| [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура (BOM source для [`02_06 §1`](02_06_Unit_Economics_and_BOM)) |
-| [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | Шлюз Королева (Queen BOM → [`02_06 §4`](02_06_Unit_Economics_and_BOM)) |
+| [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) | Що вузол сьогодні НЕ вимірює й чого клієнтові не обіцяємо (§6 — реального часу про рубку немає) · мікрокліматичний ADR (§3.4) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | `§00b` юр/бізнес-дім — родина `BIZ.*` (⚠️ до 2026-08-22 секція звалася `§07`; тут виправлено, бо це ЖИВИЙ вказівник — історичну прозу про «§07-кампанію» в корпусі не чіпати) (винятки, чий дім деінде: BIZ.17 · BIZ.24 · BIZ.25 → `§02c` — виробництво, постачання та регуляторика; BIZ.13 → [`05_05`](05_05_Slashing_and_Risk_Policy)) |
 
 ## 📑 Зміст
@@ -37,7 +36,6 @@
 - [6. Ієрархія Ролей та Доступу](#-6-ієрархія-ролей-та-доступу)
 - [7. Параметричне Страхування (Insurance Layer)](#-7-параметричне-страхування-insurance-layer)
 - [8. Юридичні та бізнес-передумови (дім стану — трекер BIZ.*)](#-8-юридичні-та-бізнес-передумови-дім-стану--трекер-biz)
-- [9. Міжланцюгові Залежності (Cross-Module Dependencies)](#-9-міжланцюгові-залежності-cross-module-dependencies)
 - [10. API-поверхня NaaS-контрактів — дім (04_03_REST_API_v1_Reference)](#-10-api-поверхня-naas-контрактів--дім-04_03)
 - [Висновки (Summary)](#-висновки-summary)
 <!-- TOC:AUTO:END -->
@@ -54,21 +52,20 @@ NaaS — це модель підписки, де клієнти (Організ
 
 **Що входить у послугу:**
 - SilkenCarbonCoin (SCC) — облікова одиниця за сигнал вузлів конкретних дерев (внутрішня конвенція, §3; приросту вузол сьогодні не вимірює — [`01_03 §4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)); не офсет — офсетом є лише кредит, виданий реєстром.
-- Real-time dashboard зі станом лісового кластера (платформа + Prometheus/Grafana).
-- Параметричне страхування кластера (`ParametricInsurance`) від `critical_fire` та `extreme_drought`.
+- Дашборд стану лісового кластера на платформі — оновлюється з каденсом пакетів вузла (години, а не секунди; модель каденсу — [`02_06 §7.1`](02_06_Unit_Economics_and_BOM)), **не в реальному часі**: подієвих сигналів про дерево (рубка, пилка) послуга не містить ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM), `msa_skeleton §B.4.2`). Grafana — канал оператора, не клієнтська поверхня.
+- Параметричне страхування кластера (`ParametricInsurance`) від `critical_fire` та `extreme_drought`. ⚠️ **Сьогодні ІНЕРТНЕ:** прод-шляху створення поліса немає, kill-switch вимкнено, і незалежного Trigger-2 не дає ніхто для жодного перилу — тож виплати немає звідки взятись (§7, [`00_07`](00_07_Action_Plan_Tracker) INS.1).
 - Корпоративний ESG-звіт.
 - **(Roadmap, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM))** Гіперлокальні мікрокліматичні дані (t°/RH/тиск/VPD з BME280) — data-as-a-service для агрохолдингів і страховиків: 1000+ датчиків *усередині* екосистеми проти усереднених метеостанцій на 50 км². Окреме джерело доходу поза SCC; має кількісно вимірювати біопреципітацію.
-- **(Roadmap, deferred SLA-фасети)** Predictive tree-fall як SLA-підписка — конкретні дерева, що впадуть під вітром (`z_value` + гіро-аналіз стовбура, [`03_04`](03_04_mruby_Lorenz_Attractor)) для енерго-ЛЕП / автотрас+залізниці (Service-of-Roads) / муніципальних парків (позови за аварійні стовбури) + захист берегозахисних лісосмуг Дніпра. SLA-дім → §2.
 
 **Умови входу:**
-- KYC/KYB верифікація через **зовнішнього identity-провайдера** за стандартом ERC-3643. Поле `hadron_kyc_status = 'approved'` на `Wallet` є обов'язковою guard clause перед будь-яким мінтингом SCC. 🔴 **Провайдера ЩЕ НЕ ОБРАНО, і це не формальність, а вхідна умова, яку сьогодні НЕМА ЧИМ виконати** [ARCH.118]: імʼя `hadron_*` у колонці й сервісі історичне — продукту «Polygon Hadron» не існує (`api.hadron.polygon.technology` без DNS, перевимір 2026-09-04), тож єдиний писач `approved` не має адресата. Вибір провайдера (Sumsub / Veriff / Onfido / Persona) і перейменування схеми — один присуд [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`; **до нього ця умова входу не може бути виконана жодним клієнтом**.
+- KYC/KYB верифікація через **зовнішнього identity-провайдера** за стандартом ERC-3643. Guard clause перед будь-яким мінтингом SCC — `hadron_kyc_status = 'approved'` **бенефіціара** ([`05_02`](05_02_Proof_of_Growth_Pipeline) [KYC.1]): гаманець із власною адресою читає власний статус, custodial-гаманець (дефолт — `Wallet` народжується з деревом без адреси) — статус організації `organizations.hadron_kyc_status`, і SCC тоді йде на адресу організації. 🔴 **Провайдера ЩЕ НЕ ОБРАНО, і це не формальність, а вхідна умова, яку сьогодні НЕМА ЧИМ виконати** [ARCH.118]: імʼя `hadron_*` у колонці й сервісі історичне — продукту «Polygon Hadron» не існує (`api.hadron.polygon.technology` без DNS, перевимір 2026-09-04), тож єдиний писач `approved` не має адресата. Вибір провайдера (Sumsub / Veriff / Onfido / Persona) і перейменування схеми — один присуд [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`; **до нього ця умова входу не може бути виконана жодним клієнтом**.
 - `total_service_fee > 0` (валідація моделі).
-- `start_date < end_date`.
+- `start_date ≤ end_date` (модель відхиляє лише `end_date < start_date`, рівні дати проходять).
 
 **Страхова премія (Hybrid Protocol Gaia):**
-При активації контракту 5% від `total_service_fee` направляється до DAO Treasury Parametric Insurance Pool (константа `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`). Залишок 95% — `forester_share_amount` — **обчислюється** як частка форестера, але диспенс-шляху ще немає (метод не має жодного call-site поза власною спекою) → [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy).
+5% від `total_service_fee` — **обчислюється** як страхова премія (константа `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`) і з'являється у звіті організації як `insurance_premiums_paid_usdc`; ⚠️ **переказу до DAO Treasury в коді немає** — `activate!` не має колбека, а сума є добутком колонки, не записом руху грошей ([`05_03`](05_03_Tokenomics_SCC_and_SFC), страхова премія — off-chain USDC-факт). Чи існуватиме реальний off-chain потік премії, — бізнес-факт першого договору, не код. Залишок 95% — `forester_share_amount` — так само **обчислюється** як частка форестера, диспенс-шляху теж немає (метод не має жодного call-site поза власною спекою) → [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy).
 
-**Поточний стан:** Бізнес-логіка реалізована в коді. Юридичного шаблону угоди (Term Sheet, Master Service Agreement) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.2 (B2B MSA).
+**Поточний стан:** у коді є стан-машина договору, слешинг-чокпоінт (positive-A gate) і термінація з погодженою форфейтурою; але жоден перехід не має клієнтського шляху — `activate!` і `terminate_early!` викликають лише з консолі, а `fulfill!` не викликає ніхто ([`00_07`](00_07_Action_Plan_Tracker) ARCH.123). Юридичного шаблону угоди (Term Sheet, Master Service Agreement) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.2 (B2B MSA).
 
 ---
 
@@ -81,7 +78,7 @@ NaaS — це модель підписки, де клієнти (Організ
 **Що входить у послугу:**
 - Моніторинг здоров'я власних дерев (Soldier-вузли).
 - SCC токени на свій `Wallet` (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)).
-- Мікро-нагороди у USDC на Solana (0.01–0.0162 USDC за кожен LoRa пакет телеметрії — формула-дім [`04_02`](04_02_Business_Logic_and_Services)).
+- Мікро-нагороди у USDC на Solana (0.01–0.0162 USDC за кожен LoRa пакет телеметрії — формула-дім [`04_02`](04_02_Business_Logic_and_Services)). ⚠️ Сьогодні автоматичної виплати немає: єдиний enqueue `SolanaMicroRewardWorker` стоїть у колбеку латентного oracle-шляху PATH 1 ([`00_07`](00_07_Action_Plan_Tracker) ARCH.53), а сама виплата вимагає `verified_by_iotex?`, тоді як нога IoTeX activation-gated ([`05_01`](05_01_Multichain_Architecture)).
 - Celo ReFi нагороди (5 cUSD за здоровий кластер на добу) — якщо кластер проходить щоденний аудит. ⚠️ Сьогодні на паузі: без прямого сигналу стрес «не виміряно», і виплата чекає першого прямого сигналу (⚖️ E.64 (Б), 2026-10-10 — [`05_01`](05_01_Multichain_Architecture), картка `CeloRewardWorker`).
 
 **Умови входу:**
@@ -89,7 +86,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - Роль `User.role = :subscriber` або `User.role = :forester`.
 - `Wallet` автоматично створюється при реєстрації Tree-вузла.
 
-**Поточний стан:** Бекенд-інфраструктура (онбординг / Wallet / rewards) готова; on-chain SCC-мінт gated на деплой контрактів (SEC.1) + securities-**ВИСНОВОК** крипто-юриста перед першим live-mint ([`00_07`](00_07_Action_Plan_Tracker) BIZ.22, канал UNI.16). ⚠️ Гейтом є висновок, а не присуд: **напрямок** (сервісна модель, ERC-3643 відхилено) ратифіковано ⚖️ 2026-08-28 — той самий дискримінатор, який [`00_01 §8`](00_01_Vision_Mission_and_Roadmap) уже застосував до token/value-контуру. Публічного B2C онбординг-флоу (лендинг, ToS, Privacy Policy) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 (B2C ToS/Privacy).
+**Поточний стан:** у бекенді є провізіонування дерева й автоматичний `Wallet`; онбордингу користувача й організації як шляху застосунку **немає** — самореєстрацію знято разом з OAuth ([`00_07`](00_07_Action_Plan_Tracker) ARCH.69 §🗄️; реєстрація, коли зʼявиться споживач, — поштою), ролі й організації заводять із консолі; винагороди — Solana латентна (вище), Celo на паузі (E.64). On-chain SCC-мінт gated на деплой контрактів (SEC.1) + securities-**ВИСНОВОК** крипто-юриста перед першим live-mint ([`00_07`](00_07_Action_Plan_Tracker) BIZ.22, канал UNI.16). ⚠️ Гейтом є висновок, а не присуд: **напрямок** (сервісна модель, ERC-3643 відхилено) ратифіковано ⚖️ 2026-08-28 — той самий дискримінатор, який [`00_01 §8`](00_01_Vision_Mission_and_Roadmap) уже застосував до token/value-контуру. Публічного B2C онбординг-флоу (лендинг, ToS, Privacy Policy) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 (B2C ToS/Privacy).
 
 ---
 
@@ -98,14 +95,14 @@ NaaS — це модель підписки, де клієнти (Організ
 **Хто:** Власники SilkenForestCoin (SFC) — токену управління DAO.
 
 **Що дає SFC:**
-- Право голосу у протокольних рішеннях (зміна параметрів слешингу, схвалення нових кластерів).
+- Право голосу у протокольних рішеннях — параметри `ProtocolParameters` (серед них пороги слешингу) і ролі контрактів через Timelock ([`05_06 §2`](05_06_Governance_and_DAO)); схвалення кластерів on-chain-функції не має — кластери є записами бекенду.
 - SFC мінтується за ті ж самі кластери, що генерують SCC, але через окремий виклик `SilkenForestCoin.mint(to, amount, clusterId, archiveRoot)` з `MINTER_ROLE`. 🔴 **ОБІЦЯНКА, А НЕ ОПИС — код цього не робить** (виміряно 2026-08-26): `Wallet#lock_and_mint!` дефолтить `token_type: :carbon_coin`, і його ЄДИНИЙ живий викликач третього аргумента не передає, тож емісії SFC за ріст не існує. 🔴 **І живих writer'ів `forest_coin` у дереві НУЛЬ** (переміряно 2026-08-29): страхова виплата була останнім, і її знято ТИМ САМИМ заходом — енум `ParametricInsurance` звужено до `{ carbon_coin: 0 }`. Правила емісії SFC (курс, бенефіціар, стеля голосів) не визначені ніде — осі присуду в [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89.
 
 **Умови входу:**
 - Участь у верифікованій екосистемі (SCC-адреса на Polygon).
 - Gasless approvals через EIP-2612 (`ERC20Permit`).
 
-**Поточний стан:** SFC смарт-контракт code-complete + CI-audited, на MAINNET **ще не задеплоєно** (testnet-двійники Amoy/Sepolia живі з 2026-09-01/02 — DEPLOY-1 Фаза 2t, адреси в [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform); mainnet гейтований SEC.1). DAO Governance процес (Snapshot / Governor) — не визначений → механіка [`05_06`](05_06_Governance_and_DAO); юр-оформлення DAO → [`00_07`](00_07_Action_Plan_Tracker) BIZ.*.
+**Поточний стан:** SFC смарт-контракт code-complete + CI-audited, на MAINNET **ще не задеплоєно** (testnet-двійники Amoy/Sepolia живі з 2026-09-01/02 — DEPLOY-1 Фаза 2t, адреси в [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform); mainnet гейтований SEC.1). Механіку DAO Governance (Governor + Timelock + `ProtocolParameters` → `SystemParameter`) визначено й реалізовано — [`05_06`](05_06_Governance_and_DAO); її mainnet-активація — SEC.1, юр-оболонка DAO — [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 (§8).
 
 ---
 
@@ -113,19 +110,19 @@ NaaS — це модель підписки, де клієнти (Організ
 
 | Юридична Подія | D-MRV Тригер | Rails Worker | Смарт-Контракт | Функція | Наслідок |
 |---|---|---|---|---|---|
-| **Послуга надана** (дерево здорове за ПРЯМИМ сигналом — ⚠️ Z сюди НЕ входить і ніколи не входив: умова праворуч читає `stress_index`, а Z є печаткою ЦІЛІСНОСТІ обчислення, не оракулом здоровʼя [E.64, ⚖️ 2026-09-05]) | `growth_points` ≥ 0, `stress_index < 0.83` ⚠️ **DAO-керований поточний дефолт**, не фіксована умова. ⚠️ Виміряно 2026-10-10: мінт-шлях праворуч `stress_index` НЕ читає (його читають слешинг-тригер і розмір спалення, страховий Trigger-1, Celo-гейт, `health_index` кластера, хроніка й Filecoin-пін), а без прямого сигналу стрес — `nil` (⚖️ E.64 (Б), [`05_05 §7`](05_05_Slashing_and_Risk_Policy)); умова лишається договірною, не кодовою | `TokenomicsEvaluatorWorker` (щогодинний cron) → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService` (`telemetry_log: nil` для Path 2) | `SilkenCarbonCoin.sol` | `mint(to, amount, treeDid, archiveRoot)` / `batchMint` | Клієнт отримує SCC на `Wallet.crypto_public_address`. **Guards (Path 2 — tokenomics aggregate):** `hadron_kyc_status = "approved"` (єдиний обов'язковий perimeter); `verified_by_iotex?` / `oracle_status` свідомо пропускаються — `growth_points` вже зараховані через AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService` (per-packet integrity). Альтернативний Path 1 (oracle-driven per-telemetry mint) — **латентний**: `ChainlinkDispatchWorker` dispatch = local-marker без RPC, callback unwired ([`00_07` ARCH.53](00_07_Action_Plan_Tracker)); живий мінт-шлях = Path 2 (вище). Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline). |
-| **Пакетна емісія** (ціла лісова ділянка) | Batch з ≤100 дерев | `MintCarbonCoinWorker` (Gas Saving Mode) | `SilkenCarbonCoin.sol` | `batchMint(recipients[], amounts[], treeDids[], archiveRoot)` | Масова емісія для всього кластера |
+| **Послуга надана** (дерево здорове за ПРЯМИМ сигналом — ⚠️ Z сюди НЕ входить і ніколи не входив: умова праворуч читає `stress_index`, а Z є печаткою ЦІЛІСНОСТІ обчислення, не оракулом здоровʼя [E.64, ⚖️ 2026-09-05]) | `growth_points` ≥ 0, `stress_index < 0.83` ⚠️ **DAO-керований поточний дефолт**, не фіксована умова. ⚠️ Виміряно 2026-10-10: мінт-шлях праворуч `stress_index` НЕ читає (його читають слешинг-тригер і розмір спалення, страховий Trigger-1, Celo-гейт, `health_index` кластера, хроніка й Filecoin-пін), а без прямого сигналу стрес — `nil` (⚖️ E.64 (Б), [`05_05 §7`](05_05_Slashing_and_Risk_Policy)); умова лишається договірною, не кодовою | `TokenomicsEvaluatorWorker` (щогодинний cron) → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService` (`telemetry_log: nil` для Path 2) | `SilkenCarbonCoin.sol` | `mint(to, amount, treeDid, archiveRoot)` / `batchMint` | Клієнт отримує SCC на `Wallet.crypto_public_address`, а custodial-гаманець без власної адреси (дефолт) — на адресу організації. **Guards (Path 2 — tokenomics aggregate):** KYC **бенефіціара** `hadron_kyc_status = "approved"` (власна адреса → власний статус, custodial → статус організації, [KYC.1]; per-tx skip, не raise) · активне дерево (`Wallet#lock_and_mint!`) · skip дерев із `peaq_did_compromised` [SEC.13]; `verified_by_iotex?` / `oracle_status` свідомо пропускаються — `growth_points` вже зараховані через AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService` (per-packet integrity). Альтернативний Path 1 (oracle-driven per-telemetry mint) — **латентний**: `ChainlinkDispatchWorker` dispatch = local-marker без RPC, callback unwired ([`00_07` ARCH.53](00_07_Action_Plan_Tracker)); живий мінт-шлях = Path 2 (вище). Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline). |
+| **Пакетна емісія** (ціла лісова ділянка) | Batch з ≤100 дерев | `MintBatchCollectorWorker` (cron кожні 5 хв) → `BlockchainMintingService.call_batch` ([`04_02`](04_02_Business_Logic_and_Services)) | `SilkenCarbonCoin.sol` | `batchMint(recipients[], amounts[], treeDids[], archiveRoot)` | Масова емісія для всього кластера |
 | **Дерево під стресом** (`stress_index ≥ 0.83` — **DAO-керований дефолт**) | AiInsight.stress_index | `ClusterHealthCheckWorker` | — | Облік у D-MRV арбітражі | Якщо >20% кластера — тригер слешингу |
-| **Порушення контракту** (>20% дерев, ЩО ЗАСВІДЧИЛИ) | `critical_insights_count > witnessing_trees / 5` — 🔴 [SLASH-1, ⚖️ 2026-08-26] знаменник більше НЕ «всі активні»: мовчазне дерево не подає `AiInsight`, тож у чисельник потрапити не може, а в знаменнику стояло — тобто мовчання рахувалось свідченням про виживання й розбавляло шкоду. **Для клієнта умова стала СТРОГІШОЮ, і це названо тут явно**, бо йшлося про контрактну подію; ⛔ але тиша сама по собі й далі НІКОЛИ не карає (мовчазне дерево лише перестає бути доказом здоров'я), а нижче межі виродження вироку немає взагалі — Field Audit ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)) | `ClusterHealthCheckWorker` (тригериться через `InsightBatchCallbacks#on_success` — коли всі `GenerateClusterInsightWorker` за добу зелені) → `BurnCarbonTokensWorker` | `SilkenCarbonCoin.sol` | `slash(investor, amount)` (gated) | [SLASH-1] **positive-A gate** ([`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)): прямий доказ Кат-A (`vandalism_breach` — єдиний A-сигнал у коді; авто-writer'а немає → ручна C→A ескалація, на практиці freeze-first) → SCC спалюються + `status = :breached`; інакше (вкл. `chainsaw_detected` — поза A-сетом, і писача-Солдата в нього більше немає: пʼєзо зрізано ⚖️ 2026-09-29, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) → `:frozen` + Field-Audit `EwsAlert` (no burn, контракт лишається активним до C→A класифікації) |
+| **Порушення контракту** (>20% дерев, ЩО ЗАСВІДЧИЛИ — поточний дефолт, DAO-керований) | `critical_insights_count > witnessing_trees × slash_threshold` (`SystemParameter`, поточний дефолт 0.2, DAO-керований — [`05_06`](05_06_Governance_and_DAO); у MSA — лише як «поточний дефолт», як і `stress_threshold`, §3) — 🔴 [SLASH-1, ⚖️ 2026-08-26] знаменник більше НЕ «всі активні»: мовчазне дерево не подає `AiInsight`, тож у чисельник потрапити не може, а в знаменнику стояло — тобто мовчання рахувалось свідченням про виживання й розбавляло шкоду. **Для клієнта умова стала СТРОГІШОЮ, і це названо тут явно**, бо йшлося про контрактну подію; ⛔ але тиша сама по собі й далі НІКОЛИ не карає (мовчазне дерево лише перестає бути доказом здоров'я), а нижче межі виродження вироку немає взагалі — Field Audit ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)) | `ClusterHealthCheckWorker` (щоденний cron 02:00 UTC `cluster_health_arbitration`; Batch-колбек `InsightBatchCallbacks#on_success` у проді не виконується — `sidekiq-pro` поза Gemfile, [`04_02 §11`](04_02_Business_Logic_and_Services) DOC-R.10) → `BurnCarbonTokensWorker` | `SilkenCarbonCoin.sol` | `slashUpTo(investor, maxAmount, contextHash)` (gated; бекенд `slash()` не кличе) | [SLASH-1] **positive-A gate** ([`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)): прямий доказ Кат-A (`vandalism_breach` — єдиний A-сигнал у коді; авто-writer'а немає → ручна C→A ескалація, на практиці freeze-first) → SCC спалюються + `status = :breached`; інакше (вкл. `chainsaw_detected` — поза A-сетом, і писача-Солдата в нього більше немає: пʼєзо зрізано ⚖️ 2026-09-29, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) → `:frozen` + Field-Audit `EwsAlert` (no burn, контракт лишається активним до C→A класифікації) |
 | **Відсутність даних** (cluster-wide blackout — Starlink/шлюз) | `AiInsight.empty?` для кластера | `ContractHealthCheckService#flag_data_blackout!` | — (no on-chain дія) | `EwsAlert(:field_audit)` | **Force-majeure-сигнатура** (вкрадений/знищений шлюз, блекаут) → Field Audit (Category C), **НЕ** slash — карати лісника за збитий шлюз = false slash ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)) |
-| **Дерево згоріло** (`critical_fire`) | `EwsAlert` `fire_detected` — термальний поріг `temperature_c ≥ fire_limit` (`AlertDispatchService`, біом-адаптивний) | `EcosystemHealingWorker` → `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметричне страхування активується |
-| **Посуха** (`extreme_drought`) | `EwsAlert` `severe_drought` — авто-писача **НЕМАЄ** (з 2026-10-10): серверну Z-смугу знято як вердикт про здоровʼя (⚖️ 2026-09-05, E.64 (A)), а пристрійний wire-статус `stress` — реалізацією гілки (Б) ([`00_07`](00_07_Action_Plan_Tracker) FW.66): він Z-похідний і свідчив про МОРОЗ, а не про воду (теплий ланцюг — 0.022 % циклів за −25 °C … 0–1 подія на 180 000 циклів за +20…+30 °C, [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor)). Платити цей алерт не може (писача `:verified` для посухи немає), а наслідки, що висіли на гілці без гейта, — протокол поливу з CRITICAL `emergency_response_undeliverable` і, за гейтами, утримання виплат кластера та CRITICAL `field_audit` `non_fire_peril` — пішли разом із нею: споживачі лишились і чекають писача. Перил юридично живий, а верифікованого машинного кандидата не породжує ніщо — виплату рухає лише людський Field-Audit, доки не з'явиться ПРЯМИЙ вимірювач вологи ([`00_07`](00_07_Action_Plan_Tracker) E.64) | `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметрична виплата |
-| **Дострокове розірвання** (Early Exit клієнта) | `ContractTerminationService.call(contract)` | Sync (API call) | `SilkenCarbonCoin.sol` | `slashUpTo(wallet, min(net_minted_SCC_кластера_за_ТЕРМІН_ДОГОВОРУ, balanceOf))` — 🔴 [SLASH-1] **МОНЕТИ, не бали**; координата бази кластерна, але вікно — **термін цього договору** (`start_date … cancelled_at`, ⚖️ 2026-09-04 — §4 нижче несе підставу). Спалення — лише якщо `burn_accrued_points = true`; `contractual: true` — пропускає positive-A gate, бо це погоджена форфейтура, не slash-за-провину | `NaasContract.status = :cancelled`, ⛔ **повернення НЕМАЄ** — передоплачена послуга не повертається, early-exit-fee не існує (⚖️ 2026-08-29, §4 нижче + `msa_skeleton §B.6.3`) |
-| **Успішне завершення** (контракт закінчився) | `NaasContract.pending_completion` + аудит | `ClusterHealthCheckWorker` → `fulfill!` | — | — | `NaasContract.status = :fulfilled`, звіт в Filecoin |
-| **Смерть дерева** (біологічна) | `Tree.status = :deceased`, MaintenanceRecord | `EcosystemHealingWorker` (смерть) → **`MaintenanceRecord#attest!`** → `PuroEarthPassportWorker` — заявку подає незалежний ПІДПИС, не зцілення ([E.20] ⚖️ 2026-08-24) | Puro.earth (`PuroEarthPassportWorker` ✅ код; on-chain post-TRL 7) | D-MRV Biomass Passport | Biochar CORC генерація на Puro.earth |
-| **Щотижнева фіналізація** | Cron (понеділок 03:00 UTC) | `EthereumAnchorWorker` | Ethereum L1 | `anchorStateRoot(bytes32)` | State Root → Ethereum Mainnet |
+| **Дерево згоріло** (`critical_fire`) | `EwsAlert` `fire_detected` — термальний поріг `temperature_c ≥ fire_limit` (`AlertDispatchService`, біом-адаптивний); це подія, яку має ПІДТВЕРДИТИ Trigger-2, а не тригер озброєння | dual-trigger §7: `InsuranceOracleWorker` озброює поліс (Trigger-1) → незалежне підтвердження (Trigger-2 — не підключено) → `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметричне страхування активується |
+| **Посуха** (`extreme_drought`) | `EwsAlert` `severe_drought` — авто-писача **НЕМАЄ** (з 2026-10-10): серверну Z-смугу знято як вердикт про здоровʼя (⚖️ 2026-09-05, E.64 (A)), а пристрійний wire-статус `stress` — реалізацією гілки (Б) ([`00_07`](00_07_Action_Plan_Tracker) FW.66): він Z-похідний і свідчив про МОРОЗ, а не про воду (теплий ланцюг — 0.022 % циклів за −25 °C … 0–1 подія на 180 000 циклів за +20…+30 °C, [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor)). Платити цей алерт не може (писача `:verified` для посухи немає), а наслідки, що висіли на гілці без гейта, — протокол поливу з CRITICAL `emergency_response_undeliverable` і, за гейтами, утримання виплат кластера та CRITICAL `field_audit` `non_fire_peril` — пішли разом із нею: споживачі лишились і чекають писача. Перил юридично живий, а верифікованого машинного кандидата не породжує ніщо — і людського шляху до виплати в застосунку теж немає: виплату рухає лише підтвердження `satellite_status: :verified` власного перилу, людського чи DAO-писача якого в застосунку немає (консольний запис цього поля був би підміною незалежного доказу, а не шляхом), а Field-Audit лише ТРИМАЄ (`:inconclusive`) — доки не з'явиться ПРЯМИЙ вимірювач вологи ([`00_07`](00_07_Action_Plan_Tracker) E.64 · INS.1) | `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметрична виплата |
+| **Дострокове розірвання** (Early Exit клієнта) | `ContractTerminationService.call(contract)` | Sync, з консолі оператора (`terminate_early!`; API- чи UI-шляху немає) | `SilkenCarbonCoin.sol` | `slashUpTo(orgAddress, min(net_minted_SCC_кластера_за_ТЕРМІН_ДОГОВОРУ, balanceOf), contextHash)` — 🔴 [SLASH-1] **МОНЕТИ, не бали**; координата бази кластерна, але вікно — **термін цього договору** (`start_date … cancelled_at`, ⚖️ 2026-09-04 — §4 нижче несе підставу). Спалення — лише якщо `burn_accrued_points = true`; `contractual: true` — пропускає positive-A gate, бо це погоджена форфейтура, не slash-за-провину | `NaasContract.status = :cancelled`, ⛔ **повернення НЕМАЄ** — передоплачена послуга не повертається, early-exit-fee не існує (⚖️ 2026-08-29, §4 нижче + `msa_skeleton §B.6.3`) |
+| **Успішне завершення** (контракт закінчився) | ⚠️ **писача НЕМАЄ:** scope `NaasContract.pending_completion` визначено, але не читає ніхто | ⚠️ `fulfill!` не викликає жоден код ([`00_07`](00_07_Action_Plan_Tracker) ARCH.123) | — | — | Сьогодні договір після `end_date` **лишається `:active`** — далі під щоденним аудитом і Celo-гейтом (Celo на паузі), а слешинг-тригер для нього звужено, не закрито: новий доказ Кат-A, записаний після `end_date`, спалення не відчиняє (`Slashing::CauseEvidence` судить лише доказ, записаний у термін договору), але доказ, записаний у термін, ще `slash_evidence_validity_hours` після запису (дефолт 168 год, DAO-межі 1..8760) відчиняє вирок і після `end_date`; закриття — лише з консолі, Filecoin-звіту завершення немає |
+| **Смерть дерева** (біологічна) | `MaintenanceRecord` типу `biomass_extraction`, засвідчений ДРУГИМ підписантом | **`MaintenanceRecord#attest!`** → `declare_deceased!` (→ `Tree.status = :deceased`) + `PuroEarthPassportWorker` — смерть оголошує незалежний ПІДПИС, не зцілення; `EcosystemHealingWorker` смерті більше не оголошує ([E.20] ⚖️ 2026-08-24/25) | Puro.earth (`PuroEarthPassportWorker` ✅ код; on-chain post-TRL 7) | D-MRV Biomass Passport | Заявка на biochar CORC — видає Puro.earth за власною методологією, не ми (акаунта Puro немає, наскрізного прогону не було — [`carbon_registry_matrix`](protocols/business/carbon_registry_matrix.md)) |
+| **Щотижнева фіналізація** | Cron (понеділок 03:00 UTC) | `EthereumAnchorWorker` | Ethereum L1 | `storeStateRoot(bytes32)` ([`05_04`](05_04_Ethereum_L1_State_Anchor)) | State Root → Ethereum L1 (mainnet — після SEC.1) |
 
-> **[INS.1] Insurance-перили потребують НЕЗАЛЕЖНОГО Trigger-2 — не платяться напряму.** Рядки «Дерево згоріло / Посуха» — це ЛЕГАЛЬНИЙ наслідок; механічно виплата йде лише за **dual-trigger** (Trigger-1 AI-кандидат + Trigger-2 незалежне підтвердження, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)). 🔴 **Реального Trigger-2 сьогодні НЕМАЄ для ЖОДНОГО перилу.** Пожежного вендора (dClimate FIRMS) зрізано ⚖️ 2026-09-05, і пожежна нога не підключена так само, як посушна; **посуха супутникового оракула не має** й поготів ⊕ не має й Trigger-1 (рядок вище — писача знято), тобто перил стоїть БЕЗ ОБОХ ніг → `Dclimate::VerificationService` ескалює її у `:inconclusive`/**Field-Audit** (Кат-C, ніколи `rejected_fraud`/slash), доки не з'явиться реальне drought-джерело (👤 [`00_07` INS.1/S3.2](00_07_Action_Plan_Tracker)).
+> **[INS.1] Insurance-перили потребують НЕЗАЛЕЖНОГО Trigger-2 — не платяться напряму.** Рядки «Дерево згоріло / Посуха» — це ЛЕГАЛЬНИЙ наслідок; механічно виплата йде лише за **dual-trigger** (Trigger-1 AI-кандидат + Trigger-2 незалежне підтвердження, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)). 🔴 **Реального Trigger-2 сьогодні НЕМАЄ для ЖОДНОГО перилу.** Пожежного вендора (dClimate FIRMS) зрізано ⚖️ 2026-09-05, і пожежна нога не підключена так само, як посушна; **посуха супутникового оракула не має** й поготів ⊕ не має й Trigger-1 (рядок вище — писача знято), тобто перил стоїть БЕЗ ОБОХ ніг: посушного алерту не народжує ніщо, тож і ескалації `:inconclusive`/**Field-Audit** (Кат-C, ніколи `rejected_fraud`/slash), яку `Dclimate::VerificationService` дав би такому алерту, сьогодні немає на чому статись, доки не з'явиться реальне drought-джерело (👤 [`00_07` INS.1/S3.2](00_07_Action_Plan_Tracker)).
 
 ---
 
@@ -133,15 +130,15 @@ NaaS — це модель підписки, де клієнти (Організ
 
 | Параметр | Значення | Джерело |
 |---|---|---|
-| **Конверсія: growth_points → SCC** | 10,000 growth_points = 1 SCC | [`05_03`](05_03_Tokenomics_SCC_and_SFC), `TokenomicsEvaluatorWorker` |
-| **Денне накопичення** | **`[transitional]`** (`delta_t`-каденція + GP-магнітуда = заморожені placeholder, [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor); bench-калібрування — лише передумова мінту до свідка). Self-consistent realistic (Variant C, `delta_t` ≈ 1.54 год — енергомодель з обраним радіо-фронтендом і без інференсу в циклі [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power), ⚖️ founder 2026-09-26 · делеговано 2026-09-29, дім присуду [`02_06 §7.1`](02_06_Unit_Economics_and_BOM); CCM-кадр 30 Б зсуває каденс до ≈ 1.81 год, тобто пакетів на добу МЕНШЕ, [`00_07`](00_07_Action_Plan_Tracker) ARCH.8): ~15.6 пакета/добу × ~24 stored GP = **~375 growth_points/добу → ~13.7 SCC/дерево/рік**. ⚠️ Це точка моделі за 17 с від сходинки wire-GP 12 → 11 (stored 24 → 22; там 12.5, −9 %, [`02_06 §7.1`](02_06_Unit_Economics_and_BOM)), а сама вона рухається з кожною зміною ціни циклу прошивки (зріз пʼєзо підняв її з ~5.4) — тож у MSA/SLA її НЕ можна подавати як обіцянку продуктивності. Магнітуда = f(EBFC recharge): швидший `delta_t` → вище (фіз. стеля Δt=600s ≈ 326 SCC/рік; 1 TX/год = energy-negative без мітигацій). wire 5–31 × [FW.29] ×2 | [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`02_06 §7.1`](02_06_Unit_Economics_and_BOM), [`02_03 §9`](02_03_BQ25570_MPPT_Nano_Power) |
+| **Конверсія: growth_points → SCC** | 10,000 growth_points = 1 SCC — поточне значення, DAO-live (`TokenomicsEvaluatorWorker.emission_threshold`), тож у MSA — лише як «поточний», дім значення — [`05_03`](05_03_Tokenomics_SCC_and_SFC) | [`05_03`](05_03_Tokenomics_SCC_and_SFC), `TokenomicsEvaluatorWorker` |
+| **Денне накопичення** | **`[transitional]`** (`delta_t`-каденція + GP-магнітуда = заморожені placeholder, [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor); bench-калібрування — лише передумова мінту до свідка). Величину тут НЕ переказуємо: самоузгоджена модель (пакети на добу × stored GP з ОДНОГО `delta_t`) — дім [`02_06 §7.1`](02_06_Unit_Economics_and_BOM), єдине джерело числа — `tools/firmware/scc_rate.rb` (`--assert` у смузі `Docs`). ⚠️ Модельна точка рухається з кожною зміною ціни циклу прошивки, стоїть на цілі сну класу Standby (у відвантаженому STOP2 — на порядок нижче) і падає з CCM-кадром — тож у MSA/SLA її НЕ можна подавати як обіцянку продуктивності. | [`02_06 §7.1`](02_06_Unit_Economics_and_BOM), `tools/firmware/scc_rate.rb`, [`02_03 §9`](02_03_BQ25570_MPPT_Nano_Power) |
 | **Поріг емісії** | `Wallet.available_balance >= 10,000` (NET — сконвертоване лишається в `locked_balance`, [ARCH.94]) | `TokenomicsEvaluatorWorker` |
-| **Страхова премія** | 5% від `total_service_fee` → DAO Treasury Pool | `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")` |
+| **Страхова премія** | 5% від `total_service_fee` — обчислюється (звітна величина `insurance_premiums_paid_usdc`); переказу до DAO Treasury в коді немає (§1.1) | `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")` |
 | **Частка форестера** | 95% від `total_service_fee` — обчислюється, не диспенситься ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)) | `NaasContract#forester_share_amount` |
 | **Celo ReFi нагорода** | 5 cUSD / здоровий кластер / добу (⚠️ на паузі до першого прямого сигналу стресу — ⚖️ E.64 (Б), 2026-10-10) | `CeloRewardWorker`, `Celo::CommunityRewardService` |
 | **Solana мікро-нагорода** | 0.01–0.0162 USDC / LoRa пакет (10 000 + GP×100 lamports; stored GP ≤ 62 = wire 5-bit ×2) | `SolanaMicroRewardWorker`, `Solana::MintingService`; формула-дім [`04_02`](04_02_Business_Logic_and_Services) |
 | **Штраф / повернення при достроковому розірванні** | **НЕ існують** — Опція 1 MSA ([`msa_skeleton §B.6.3`](protocols/legal/msa_skeleton.md), ⚖️ founder 2026-08-29): передоплачена послуга не повертається, early-exit-fee немає взагалі; формули `calculate_early_exit_fee`/`calculate_prorated_refund` зняті з коду [BIZ.22, ⚖️ 2026-08-30] — redemption-механіка = securities-сигнал F5/F6 | `ContractTerminationService` (cancel + погоджена форфейтура) |
-| **Поріг слешингу** | >20% дерев, ЩО ЗАСВІДЧИЛИ за добу, з `stress_index >= 0.83` — **поточний дефолт, DAO-керований**: `SystemParameter.current(:stress_threshold, default: 0.83)` ← `ProtocolParameters.sol` (bounds 0.65..1.0, [GOV.1]). ⚠️ Значення змінюється голосуванням, тож у MSA/SLA його НЕ можна подавати як зафіксовану контрактну умову — або цитуй як «поточний дефолт», або фіксуй КОНТРАКТНУ стелю окремо від протокольної | `ContractHealthCheckService` |
+| **Поріг слешингу** | частка `slash_threshold` (дефолт 0.2, тобто >20%) дерев, ЩО ЗАСВІДЧИЛИ за добу, з `stress_index >= 0.83` — **обидва числа поточні дефолти, DAO-керовані**: `SystemParameter.current(:slash_threshold, default: 0.2)` і `SystemParameter.current(:stress_threshold, default: 0.83)` ← `ProtocolParameters.sol` (bounds 0.65..1.0 для стресу, [GOV.1]; обидва — [`05_06`](05_06_Governance_and_DAO)). ⚠️ Значення змінюється голосуванням, тож у MSA/SLA його НЕ можна подавати як зафіксовану контрактну умову — або цитуй як «поточний дефолт», або фіксуй КОНТРАКТНУ стелю окремо від протокольної | `ContractHealthCheckService` |
 | **1 SCC = X кг CO₂** | ✅ **2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂)** — `SystemParameter.current(:scc_per_tonne_co2, default: 2000)`, `ProtocolParameters.sol#sccPerTonneCo2()`. **Внутрішня облікова конвенція** Proof-of-Growth (Condition-прочитання — [`02_06 §7`](02_06_Unit_Economics_and_BOM)), НЕ registry-визнаний tCO₂e-кредит: продаваний кредит лише через незалежну методологію (BIZ.9); трек = MRV-Data-Provider/permanence-monitor | [BIZ.1] |
 | **1 SCC = $Y (контрактна вартість)** | ⚠️ **Не зафіксовано, і курсу протокол не тримає ВЗАГАЛІ** — ні читача ціни, ні governance-параметра fallback-ціни: система міряє КІЛЬКІСТЬ (SCC), вартість множить сам споживач. Єдине місце, де долар за SCC узагалі фігурує, — sensitivity-крива payback-моделі [`02_06 §7.3`](02_06_Unit_Economics_and_BOM) ($0.15…$5.00), і це **вхід сценарію, а не курс системи**: цитувати її як ціну — помилка жанру. ⛔ Не заводь «тимчасовий» курс у сіди/`ProtocolParameters` заради одного екрана: ключ без читача = ручка, якою нікому крутити (гейт ARCH.104). Ціна повернення механізму названа чесно — це читання DEX-quoter'а (+ кеш і мітка при мовчанні), не архітектура; тригер — перший реальний споживач ціни (Tier A / registry-канал) | — (нема реалізації за призначенням) |
 
@@ -156,40 +153,45 @@ Organization pays for monitoring
     NaasContract (status: draft)
     start_date, end_date, total_service_fee
     cancellation_terms (JSONB)
-    5% → DAO Insurance Pool (INSURANCE_PREMIUM_RATE)
+    5% premium — computed only, no transfer (§1.1)
            │
-           │ activate!
+           │ activate!   (console only — no caller in code)
            ▼
     NaasContract (status: active)
-    Trees earn growth_points per LoRa packet
-    10,000 points → MintCarbonCoinWorker → SCC.mint()
+    SCC emission does NOT read the contract status:
+    tree active + beneficiary KYC + balance
+    → MintBatchCollectorWorker (cron */5) → SCC.batchMint()
            │
      ┌─────┴──────────────────┐
      │                        │
      ▼                        ▼
 Daily Health Check         Catastrophic Event
 (ClusterHealthCheck        (critical_fire, drought)
- Worker via
- InsightBatchCallbacks)
+ Worker, cron 02:00 UTC)
      │                        │
-     │ >20% critical           │
-     │ stress_index            │
+     │ > slash_threshold       │ Trigger-1 arms the policy
+     │ of witnesses critical   │ (InsuranceOracleWorker)
      ▼                        ▼
-NaasContract (:breached)  InsurancePayoutWorker
-BurnCarbonTokens          (SCC mint або Etherisc
-Worker → SCC.slash()       DIP triggerClaim())
-EwsAlert created
-AuditLog → Filecoin
+positive-A gate (05_05 §3.2) Trigger-2: independent
+ ├ Cat-A → :breached         confirmation — NOT wired
+ │  BurnCarbonTokensWorker     │
+ │  → SCC.slashUpTo()          ▼
+ └ else → :frozen          InsurancePayoutWorker
+   + Field-Audit EwsAlert  (SCC mint або Etherisc
+   (the default today)      DIP triggerClaim())
      │                        │
-     │ ≤20% stress             │
+     │ ≤ slash_threshold       │
      ▼                        │
 NaasContract (:active)         │
 CeloRewardWorker               │
 (5 cUSD/cluster/day; ⏸ E.64)   │
      │                        │
-     │ end_date reached        │
+     │ end_date reached:       │
+     │ NO writer (ARCH.123) —  │
+     │ contract stays :active  │
      ▼                        │
 NaasContract (:fulfilled)      │
+ (console only today)          │
 EthereumAnchorWorker ◄─────────┘
 (weekly State Root → L1)
 ```
@@ -201,14 +203,14 @@ EthereumAnchorWorker ◄─────────┘
 > 🔴 **Що саме означає «нараховане» — ⚖️ присуд 2026-09-04 (делеговано founder'ом): емісія кластера, намінтована ПОКИ ЦЕЙ ДОГОВІР ДІЯВ** (`start_date … cancelled_at`), а не за весь час життя кластера. Доти вікна не було зовсім, тож достроковий вихід із місячного **продовження** палив емісію за роки під ПОПЕРЕДНІМ договором — повністю виконаним і оплаченим; це конфіскація, а не форфейтура, і напрямок помилки завжди був проти утримувача. 🔑 Присуд рухає код **У БІК** підписуваного документа, а не від нього: [`msa_skeleton §B.6.4`](protocols/legal/msa_skeleton.md) взагалі заперечує burn при termination-for-convenience («токен, раз виданий, є власністю Клієнта»), а кожна клієнт-видима поверхня — MSA, §5 нижче й усі чотири локалі (`contracts.show.legal.burn_points`) — каже «**нараховані**» без жодної шкали, тобто читається як «за цим договором». **Після присуду цей підпис став ПРАВДИВИМ** для кожного кластера з одним договором, включно з усім B2C (де кластер однодеревний за побудовою, §1.2). ⚖️ **Перетин термінів — присуд 2026-09-04: НЕ забороняємо, РОЗКРИВАЄМО.** Питання звучало «заборонити перетин чи попередити підписанта», і вимір зняв першу опцію: [`msa_skeleton §B.3`](protocols/legal/msa_skeleton.md) робить **Order Form** носієм ділянки, Service Term І обраного Tier'а, а сам Order Form «замінює `NaasContract`-запис» — отже зміна Tier'а всередині терміну природно дає ДРУГИЙ запис із перехлестом, і схемна заборона суперечила б структурі договору, який ми ж пишемо. ⊕ Другий вимір знімає й гостроту: `clusters.organization_id` один, а `activate!` не має ЖОДНОГО викликача в коді — договори переводить у дію людина з консолі, тож найчастіша форма співіснування є **достроковим продовженням**, чиї терміни НЕ перетинаються, і вікно розводить його точно. 🔴 **Тож лишається рівно обовʼязок РОЗКРИТТЯ, і він тепер формулюється точно:** база = емісія кластера за Service Term ЦЬОГО Order Form, а якщо термін іншого Order Form накриває той самий період, його емісія лежить усередині тієї ж бази — тобто достроковий вихід з одного залучення може спалити монети, за які платив і другий. Жоден підписуваний документ цього не каже; клауза належить [`msa_skeleton §B.6.4`](protocols/legal/msa_skeleton.md), а стан її написання — [`00_07`](00_07_Action_Plan_Tracker) `BIZ.2` (дім MSA). ⚠️ Нового пункту під це свідомо НЕ заводимо: відкритої роботи тут рівно одна — КЛАУЗА, а BIZ.2 уже закривав дефект того самого роду (подвійне визначення Tier, ⚖️ 2026-08-28). Обчислювальна половина лишається провенансом `SLASH-1`. ⛔ Носія «яка монета під яким договором» не заводимо: величина не має ВИЗНАЧЕННЯ, доки кластер несе кілька договорів ([ARCH.103] зняв `emitted_tokens` саме тому).
 
 ```
-Client → terminate_early!
+Operator (console) → terminate_early!   (no API or UI path)
            │
            ▼
 ContractTerminationService
   validate_termination! (min_days_before_exit)
            │
            ├─ burn_accrued_points = true
-           │      → BurnCarbonTokensWorker → SCC.slash()
+           │      → BurnCarbonTokensWorker → SCC.slashUpTo()
            │
            ▼
 NaasContract (status: cancelled, cancelled_at: now)
@@ -240,7 +242,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 |---|---|---|
 | `tree_id` | bigint FK | Прив'язка до конкретного дерева |
 | `balance` | numeric | **GROSS**-лічильник `growth_points`: усе, що дерево заробило за життя — він **НЕ спадає при мінті** [ARCH.94]. ⛔ Не читати як «доступні»: скільки ще конвертовно, каже `available_balance` |
-| `locked_balance` | numeric (default: 0.0) | Заблоковані бали під час мінтингу (pessimistic lock) |
+| `locked_balance` | numeric (default: 0.0) | NET-позначка балів, уже СКОНВЕРТОВАНИХ у SCC: ставить її `lock_and_mint!`; після успішного мінту не звільняється (семантика RESERVE, не ескроу [ARCH.94], [`04_01 §6`](04_01_Data_Models_and_Entities)), повертається лише на провалі mint-tx (`BlockchainTransaction#release_locked_points_on_fail!`, rollback) |
 | `crypto_public_address` | varchar | Polygon-адреса для SCC |
 | `organization_id` | bigint FK | Організація-власник (для агрегованого гаманця) |
 | `solana_public_address` | varchar | Solana-адреса для USDC мікро-нагород |
@@ -257,7 +259,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | `payout_amount` | numeric | Сума виплати |
 | `threshold_value` | numeric | Поріг для тригера (% аномальних дерев) |
 | `token_type` | integer (default: 0) | Тип токена виплати — **лише SCC** (`carbon_coin`); SFC знято з енуму присудом DOC-T.89, ціле `1` зарезервоване |
-| `required_confirmations` | integer (default: 3) | Мін. підтверджень D-MRV перед виплатою |
+| `required_confirmations` | integer (default: 3) | Мін. число РІЗНИХ `model_source` серед аномальних інсайтів для Trigger-1 — ⚠️ генератор пише `model_source` NULL, тож за будь-якого значення > 1 (зокрема дефолтного 3) Trigger-1 не озброюється ніколи (§7, [`00_07`](00_07_Action_Plan_Tracker) INS.1) |
 | `paid_at` | timestamp | Час виплати |
 | `etherisc_policy_id` | varchar | ID Etherisc DIP policy (режим Oracle, виплата в USDC) |
 
@@ -277,7 +279,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ## 🛡️ 7. Параметричне Страхування (Insurance Layer)
 
-Страхування надається паралельно з NaaS контрактом. **[INS.1] Dual-trigger:** денний AI-оракул (`ParametricInsurance#evaluate_daily_health!` через `InsuranceOracleWorker`, за прапором `:parametric_insurance_oracle_enabled`) лише ОЗБРОЮЄ кандидата (`:triggered`); виплата йде ЛИШЕ за НЕЗАЛЕЖНИМ підтвердженням (супутниковий канал — сьогодні НЕ підключений, ⚖️ 2026-09-05 / Field-Audit) — політика-дім [`05_05 §4`](05_05_Slashing_and_Risk_Policy).
+Страхування надається паралельно з NaaS контрактом. **[INS.1] Dual-trigger:** денний AI-оракул (`ParametricInsurance#evaluate_daily_health!` через `InsuranceOracleWorker`, за прапором `:parametric_insurance_oracle_enabled`) лише ОЗБРОЮЄ кандидата (`:triggered`); виплата йде ЛИШЕ за НЕЗАЛЕЖНИМ підтвердженням (`satellite_status: :verified` власного перилу; супутниковий канал сьогодні НЕ підключений, ⚖️ 2026-09-05, а людського чи DAO-писача цього підтвердження в застосунку немає — Field-Audit лише тримає виплату) — політика-дім [`05_05 §4`](05_05_Slashing_and_Risk_Policy).
 
 **Два режими виплати:**
 
@@ -285,9 +287,9 @@ NaasContract (status: cancelled, cancelled_at: now)
 2. **Oracle mode (Etherisc DIP):** Якщо `etherisc_policy_id` присутній, система переключається в режим Oracle: `Etherisc::ClaimService` → `triggerClaim()` → виплата USDC з децентралізованого пулу ліквідності Etherisc. Це запобігає інфляційному тиску на внутрішню токеноміку (Internal-mode натомість капить інфляцію через `ReserveGate` ↑). **[ARCH.45]** `triggerClaim` НЕ idempotent на нашому боці → orphaned `:pending` recovery-tx ескалює в `manual_review` (не сліпий re-claim) проти double-pay ([`04_02 §4`](04_02_Business_Logic_and_Services)). ⛔ **Аудит-рядок цієї виплати несе `token_type: :usdc`, а не тип поліса** [INS.1, 2026-11-04]: під `carbon_coin` підтверджена ЗОВНІШНЯ USDC-виплата рахувалась би в `net_minted_supply(:carbon_coin)` — базу слешингу й `total_scc_supply` L1-якоря (вісь «валюта ⊥ транспорт», ARCH.120).
 
 **Guard clauses перед виплатою:**
-- `required_confirmations` (default: 3) незалежних D-MRV підтверджень (Trigger-1 oracle-consensus).
-- `ParametricInsurance.status = :active` (ще не тригернуто раніше).
-- **[INS.1] Незалежне підтвердження (Trigger-2):** `InsurancePayoutWorker#awaiting_independent_confirmation?` — payout лише за verified Trigger-2 **власного перилу поліса** (fire — супутниковий канал НЕ ПІДКЛЮЧЕНО (вендора зрізано ⚖️ 2026-09-05; джерело назване, дротування — ні); посуха — Field-Audit/DAO, супутникового drought-оракула немає → `:inconclusive`, ніколи `rejected_fraud`, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)); без нього → hold (basis-risk guard). ⚠️ Практичний наслідок для клієнта, який варто називати в умовах: поліс від посухи сьогодні **не має шляху до авто-виплати** — його рухає лише людський Field-Audit, доки не приземлиться реальне drought-джерело.
+- Trigger-1 (озброєння, `evaluate_daily_health!`): поліс у `:active`; аномальними рахуються інсайти зі `stress_index` у смузі 0.8..1.0, і за `required_confirmations` > 1 — лише від щонайменше стількох РІЗНИХ `model_source`; озброює частка підтверджено-аномальних серед дерев, що свідчили, ≥ `threshold_value`. ⚠️ Незалежних AI-джерел у дереві немає — генератор один і пише `model_source` NULL, тож за дефолтного 3 (як і будь-якого > 1) Trigger-1 не озброюється ніколи; це друга, незалежна від `stress_index = nil` (E.64), причина інертності ([`00_07`](00_07_Action_Plan_Tracker) INS.1).
+- Перед виплатою: `ParametricInsurance.status = :triggered` (озброєно Trigger-1); воркер перевіряє це вдруге під замком.
+- **[INS.1] Незалежне підтвердження (Trigger-2):** `InsurancePayoutWorker#awaiting_independent_confirmation?` — payout лише за verified Trigger-2 **власного перилу поліса** (fire — супутниковий канал НЕ ПІДКЛЮЧЕНО (вендора зрізано ⚖️ 2026-09-05; джерело назване, дротування — ні); посуха — супутникового drought-оракула немає → `:inconclusive`, ніколи `rejected_fraud`, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)); без нього → hold (basis-risk guard). ⚠️ Практичний наслідок для клієнта, який варто називати в умовах: **жоден поліс сьогодні не має шляху до виплати в застосунку** — ні автоматичного, ні людського (консольний запис підтвердження був би підміною незалежного доказу, а не шляхом): Field-Audit виплату лише тримає, а писача підтвердження `:verified` для людини чи DAO в застосунку немає; доки не приземлиться реальне джерело Trigger-2.
 - **[INS.1] No-data guard:** активні дерева Є, нуль AiInsight (катастрофа знищила сенсори) → `escalate_no_data_field_audit!` (Field Audit), а НЕ тихий `damage_ratio = 0` («не карати жертву», [`05_05 §6`](05_05_Slashing_and_Risk_Policy)).
 - Майстер-прапор `:parametric_insurance_oracle_enabled` (kill-switch, default off → інертно до DAO/founder-активації).
 
@@ -309,20 +311,10 @@ NaasContract (status: cancelled, cancelled_at: now)
 | SFC vote-escrow у вікні breach→slash | [`00_07`](00_07_Action_Plan_Tracker) BIZ.14 |
 | Customer-facing availability-SLA (≠ `§2` — та таблиця про юр-подію→tx) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.18 |
 | Company-level E&O / liability (≠ INS.1 — той страхує КЛІЄНТА) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.21 |
-| Securities fact-pattern: інвест-МОВУ знято з вітрини й локалей, refund/exit-fee — з коду; **механіка знята НЕ вся** (живі pooled 5%/95%, форфейтура-опція, custodial-гаманець, DePIN-винагороди), і відкритий — висновок крипто-юриста на as-built перед першим live-mint | [`00_07`](00_07_Action_Plan_Tracker) BIZ.22 |
+| Biodiversity-монетизація як другий вимір поверх вуглецю (stewardship ⊥ offset; desk — [`carbon_integrity_standards`](protocols/business/carbon_integrity_standards.md)) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.23 |
+| Securities fact-pattern: інвест-МОВУ знято з вітрини й локалей, refund/exit-fee — з коду; **механіка знята НЕ вся** (обчислювані pooled 5%/95% — переказу в коді немає, §1.1 — · форфейтура-опція, custodial-гаманець, DePIN-винагороди), і відкритий — висновок крипто-юриста на as-built перед першим live-mint | [`00_07`](00_07_Action_Plan_Tracker) BIZ.22 |
 
 🔴 **Чому дублювання тут було небезпечнішим за звичайний drift, і це доказ, а не побоювання.** Дві заяви цієї секції встигли розійтися з трекером у бік, який шкодить: (1) вона називала підставою RWA-пілоту «двосторонній меморандум ЧНУ + СЄУ» — документ, що не підписаний, не планується і не міг би дати прав на ділянку ПЗФ, бо обидві сторони є ВНЗ, а не розпорядниками лісу; (2) вона оцінювала вікно vote-escrow у «1–5 хв», тоді як звірка з кодом показала, що бекенд-автоматизації SFC-slash **не існує взагалі**, тобто вікно невизначене. Обидві виправлені у своїх домах. **Правило, куплене цим:** сторінка, що специфікує ВІДКРИТЕ, застаріває швидше за сторінку, що описує ЗБУДОВАНЕ, — тож відкрите живе в трекері, а канон на нього вказує.
-
----
-
-## 🔗 9. Міжланцюгові Залежності (Cross-Module Dependencies)
-
-```
-[05_03 Tokenomics] ──── СИНХРОНІЗОВАНО ────► [00_04 NaaS Contracts]
-[§1-§7 NaaS Contracts] ── ЖИВЛЯТЬ ──► [02_06 Unit Economics & BOM]
-[00_04 NaaS Contracts] ──── БЛОКУЄ ────► B2B Sales (onboarding)
-[05_02 Proof of Growth] ──── ЗАБЕЗПЕЧУЄ ────► [00_04 NaaS Contracts]
-```
 
 ---
 
@@ -330,15 +322,15 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 > 🏠 **One-Home:** повний контракт REST API v1 — маршрути, формати відповідей, RBAC — живе в [`04_03`](04_03_REST_API_v1_Reference), і кожен рядок там стоїть під гейтом `route_doc_parity_spec`. Портфельна аналітика NaaS-контрактів описана в [`04_03 §5.14б`](04_03_REST_API_v1_Reference).
 >
-> ⛔ **Не вести тут другого переліку ендпоінтів — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Копія мала НУЛЬ вхідних рефів, стояла поза Метою цієї сторінки («за яким договором», не «яким HTTP»), і подавала `attested_value_usd` звичайним полем — тоді як [`04_03 §5.14б`](04_03_REST_API_v1_Reference) несе присуд «**`null` НАЗАВЖДИ**» (⚖️ founder 2026-08-20). Ціна саме тут була найвища: аудиторія цієї сторінки комерційна, і вона прочитала б поле як живу фіат-оцінку активу.
+> ⛔ **Не вести тут другого переліку ендпоінтів — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Копія мала НУЛЬ вхідних рефів у `docs/` (три коментарі коду й спек, що цитували її шкалу `0..1`, перенаправлено на [`04_03 §5.14б`](04_03_REST_API_v1_Reference) 2026-11-21), стояла поза Метою цієї сторінки («за яким договором», не «яким HTTP»), і подавала `attested_value_usd` звичайним полем — тоді як [`04_03 §5.14б`](04_03_REST_API_v1_Reference) несе присуд «**`null` НАЗАВЖДИ**» (⚖️ founder 2026-08-20). Ціна саме тут була найвища: аудиторія цієї сторінки комерційна, і вона прочитала б поле як живу фіат-оцінку активу.
 
 ## 📌 Висновки (Summary)
 
 | Аспект | Поточний стан |
 |---|---|
-| **Бізнес-логіка (код)** | ✅ Реалізована: lifecycle, slashing, early exit. Insurance-механіка (oracle/payout) є, але **INERT** — kill-switch off, без prod creation-path полісів |
+| **Бізнес-логіка (код)** | 🟡 Стан-машина договору, слешинг-чокпоінт (дефолтний результат — freeze, positive-A gate [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)) і термінація з форфейтурою — реалізовані; життєвий цикл — ні: `activate!` і `terminate_early!` лише з консолі, `fulfill!` без писача (ARCH.123). Insurance-механіка (oracle/payout) є, але **INERT** — kill-switch off, без prod creation-path полісів, Trigger-1 за дефолтного `required_confirmations` (> 1) не озброюється (§7), Trigger-2 не дає ніхто |
 | **On-chain механіка** | 🟡 Контракти **code-complete + CI-audited** (Slither/Aderyn/Halmos+hevm/Medusa), але на MAINNET **ще не задеплоєно** (testnet-двійники Amoy/Sepolia живі з 2026-09-01/02 — DEPLOY-1 Фаза 2t, адреси в [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)); mainnet-deploy gated на SEC.1 (Safe/Timelock) + BIZ.22 (securities-**висновок** юриста перед першим live-mint; напрямок ратифіковано 2026-08-28, гейтом лишається консультація) |
-| **D-MRV підкріплення** | peaq DID + IoTeX ZK + The Graph (живі); Chainlink oracle PATH 1 = **latent** (unwired local-marker, ARCH.53) |
+| **D-MRV підкріплення** | peaq DID · IoTeX W3bstream · The Graph — код є, але всі три **activation-gated** (стан кожної ноги — таблиця [`05_01`](05_01_Multichain_Architecture), тут не переказується); Chainlink oracle PATH 1 = **latent** (unwired local-marker, ARCH.53) |
 | **B2B продажі** | 🔴 Заблоковано: MSA, SLA, KYC відсутні |
 | **B2C онбординг** | 🔴 Заблоковано: ToS, Privacy Policy відсутні |
 | **CO₂ методологія** | ✅ 2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂) — on-chain + SystemParameter. **Внутрішня облікова конвенція**, НЕ registry-визнаний кредит (§3) |

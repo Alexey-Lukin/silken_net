@@ -171,7 +171,7 @@ module Api
           # його ключів теж орг-рівневі (`total_contracted`, `cluster_health`).
           total_tokens_minted: BlockchainTransaction.for_organization(organization.id)
                                                     .net_minted_supply(:carbon_coin).to_f.round(4),
-          # [ARCH.84] Скаляр лишається тим, що описує клієнтський контракт (`00_04`,
+          # [ARCH.84] Скаляр лишається тим, що описує клієнтський контракт (`04_03 §5.14б`,
           # шкала 0..1) — але тепер він **nullable**: `null` = не виміряно, і це не
           # те саме, що виміряний 0.0. Дві ноги покриття додано, бо саме вони не
           # дають прочитати середнє по одному кластеру як твердження про сто.
