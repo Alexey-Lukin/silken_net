@@ -7,8 +7,9 @@ Pure stdlib + pytest (lib/ is stdlib at import; openmm loads lazily) — run by 
 job of in_silico_smoke.yml, as test_unified_lame is.
 CAN catch: a wrong R_int ceiling formula or unit (pinned to the 02_03 §1.5 table rows), a V_OC gate
 on the wrong threshold, the typ ceiling dropping out of the printed R_int gate row, an unclassified
-EXPERIMENTAL key passing silently, R_ct compared without an area, and the cold-start constants
-drifting from the 02_03 §1.1 table.
+EXPERIMENTAL key passing silently, R_ct compared without an area, the cold-start constants
+drifting from the 02_03 §1.1 table, and an agreement metric that cannot fail below the measurement (the
+symmetric fold — a prediction N× low must land where one N× high does).
 ⚠️ `test_gates_judge_on_worst_case_threshold` pins a RATIFIED verdict — the R_int ceiling judged at
 VIN(CS) max (⚖️ 2026-10-01, 01_03 §3.5 · 00_07 HW.24) — until HW.46 measures VIN(CS) of our batch.
 CANNOT catch: whether the lab's equivalent circuit makes R_ct one number, or whether a measured
@@ -95,7 +96,34 @@ def test_rct_compared_per_area():
     preds = {"Rct_ohm_cm2": 145.8}
     rows = v40.compare(preds, {"Rct_ohm": 72.9, "exposed_area_cm2": 2.0})
     assert rows[0]["measured"] == pytest.approx(145.8)
-    assert rows[0]["err_pct"] == pytest.approx(0.0)
+    assert rows[0]["fold"] == pytest.approx(1.0) and rows[0]["within_fold_2"]
+
+
+@pytest.mark.parametrize("factor", [10.0, 3.0, 2.5])
+def test_agreement_fails_below_the_measurement_as_above(factor):
+    # 00_07 HW.24: |p − m| / m stayed under 100 % for ANY under-prediction, so a 10× low prediction read as agreement.
+    # The fold is symmetric — the same factor above and below lands on the same mark and the same verdict.
+    measured = 450.0
+    above = v40.compare({"Km_mM": measured * factor}, {"Km_mM": measured})[0]
+    below = v40.compare({"Km_mM": measured / factor}, {"Km_mM": measured})[0]
+    assert above["fold"] == pytest.approx(below["fold"]) == pytest.approx(factor)
+    assert not above["within_fold_2"] and not below["within_fold_2"]
+    assert v40.match_mark(above["fold"]) == v40.match_mark(below["fold"]) == "❌"
+    assert (above["direction"], below["direction"]) == ("over", "under")
+
+
+def test_agreement_marks_are_symmetric_at_the_edges():
+    measured = 30.0
+    for factor, mark in ((1.5, "✅"), (2.0, "⚠️")):
+        for predicted in (measured * factor, measured / factor):
+            row = v40.compare({"Cdl_uF_cm2": predicted}, {"Cdl_uF_cm2": measured})[0]
+            assert row["within_fold_2"] and v40.match_mark(row["fold"]) == mark, (factor, predicted)
+
+
+@pytest.mark.parametrize("exp", [{"Km_mM": 0}, {"Km_mM": -5.0}, {"Rct_ohm": 180, "exposed_area_cm2": 0}])
+def test_a_fold_refuses_a_non_positive_value(exp):
+    with pytest.raises(SystemExit):
+        v40.check_keys(exp)
 
 
 def _literal(symbol: str) -> float:

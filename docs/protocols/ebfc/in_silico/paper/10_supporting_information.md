@@ -4,7 +4,7 @@
 >
 > **Provenance line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b on the shipped cluster reproduces within its own SCF resolution (|g| / t_ij; §2.7 gives both values); the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 428 · 47,642,893 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 428 · 47,646,244 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -105,7 +105,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/29_dft_reorganization_energy.py` | `df4810ffcdf6564fa804af59c4e12d731fa4064091ecda64b1f7f894995f8267` | L3 — Nelsen 4-point reorganization energy λ for FADH₂/FADH₂⁺. |
 | `tools/in_silico/scripts/29b_dft_semiquinone_lambda.py` | `68b97db41efad364c7657e370d5dad09ca206c83607e6efab3bc887093c68f59` | L3 — Nelsen 4-point reorganization energy λ for the FADH•/FADH⁻ anode couple. |
 | `tools/in_silico/scripts/29c_outer_sphere_lambda.py` | `6af24fdc17e8f4028748c31d82f9059a5be57b29168d2970b56acafa60e5e8ac` | 29c — outer-sphere (solvent) reorganization energy λ_o for the anode FAD→Os ET. |
-| `tools/in_silico/scripts/30_kinetics_delta_t.py` | `dfdef91eef15c77181b1041ddcf3ac729dcdbf287eec1a2aff290235ac9ec550` | L4 — EBFC kinetics: predict delta_t (supercapacitor charge time) from |
+| `tools/in_silico/scripts/30_kinetics_delta_t.py` | `65e3195c08416f7904c03c9a2bc63462ea420eedcaa864eb94c46edc2dc75f71` | L4 — EBFC kinetics: predict delta_t (supercapacitor charge time) from |
 | `tools/in_silico/scripts/30b_kinetics_monte_carlo.py` | `32e86c4eebd08d6ae06c68a83f1b35a8287e765b62566aa55465a2d71b71d732` | L4b — Monte Carlo uncertainty analysis for delta_t predictions. |
 | `tools/in_silico/scripts/31_eis_impedance_model.py` | `75d2566cbfe471907ee69987aba4eea5a51603834f23022a787e004f0bdbe013` | L4b — EIS (Electrochemical Impedance Spectroscopy) model for Gen 2.0 EBFC. |
 | `tools/in_silico/scripts/31b_cathode_det_rct.py` | `1b8e5bce935e30a818a64ac26ac4006dfa673a0f49ea47626a341590b7794e08` | 31b — cathode DET charge-transfer resistance band (③, INDICATIVE). |
@@ -115,7 +115,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/34_dft_microsolvation.py` | `402397eeec274ecdcdd1bb720b16a69e81a35060f804f1145ce694ba9ab4a949` | L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple. |
 | `tools/in_silico/scripts/34b_wb97x_speciation.py` | `33843c1fffdd84edf8780c25c7cea1be2446b562261d356aeafd82e8cf1ee9af` | L3 — ωB97X ΔSCF cross-check of the ② mediator speciation (chloro → aqua → bis-Im). |
 | `tools/in_silico/scripts/35_dft_metal_reorganization.py` | `75b874606752919a50020a1ba22ce1538c5d17dd50d1a4a91f957c5438a10f22` | L3b task ③ — computed inner-sphere reorganization energy λ for the ZIF metal hops. |
-| `tools/in_silico/scripts/40_validate_vs_experiment.py` | `33a37aa3f700472744ee6ff887215aa8c64d9a861a616a2c1c7a10f91144e138` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
+| `tools/in_silico/scripts/40_validate_vs_experiment.py` | `5edbcc4dd9827bb0ba8cc60c57a334431ba4ac9c605433f7c3f619efd6a62850` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | `1b3a3f34069691d34fe02f3619c6e65437089ad98c176c9a3f7b9b0688633218` | Lamé thermal-mismatch stress for the titanium–PEEK press-fit. |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `c7d4940828c0884580307b356a71676f05651ae53d3c1b9cf07186d8cb2256c9` | Component degradation models: Arrhenius ageing, Kirkendall diffusion, H7/s6 press-fit and EDLC endurance hours. |
 | `tools/in_silico/scripts/52_z_stack_tolerance.py` | `628844c56b56c10280e6481f5fbfcbff18613bbec2d79bcece2a1f8e5963372d` | Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs). |
@@ -172,7 +172,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/tests/test_cache_integrity.py` | `3c04be7a32891018b3ba89ad8c14c8dfd9eb81e814012974fb07c96a522eaa18` | Verify integrity of committed in-silico cache and ligand files. |
 | `tools/in_silico/tests/test_doc_cache_sync.py` | `3e175ca55ed8aee7b933971f5da470ade997a056be5679810abe262249028846` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
-| `tools/in_silico/tests/test_validate_vs_experiment.py` | `921e1b000bb951cae27fb7cdac3dea6c0ed6a52d0aac868a5e7bce70e1872cc7` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
+| `tools/in_silico/tests/test_validate_vs_experiment.py` | `9a58ba646f1118e50b2c9cc3928c778d5f31c78c4b946a578182cea76b92d7b7` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
 ## S3. Reference outputs — the committed caches
 

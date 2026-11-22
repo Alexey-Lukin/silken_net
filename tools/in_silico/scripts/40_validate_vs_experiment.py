@@ -37,6 +37,10 @@ What the checks here CAN and CANNOT catch (in-silico §When Modifying #8):
     so both are compared as Ω·cm². A second time constant in the lab's equivalent circuit
     would make R_ct not one number — this script cannot see that; read the lab's fit.
   - R_s depends on the cell geometry, so it is reported only.
+  - «Overall agreement» is a SYMMETRIC fold max(p/m, m/p): a prediction N× below the measurement fails exactly as one
+    N× above does. ⛔ Not |p − m| / m — it cannot reach 100 % for any under-prediction, so it never failed below the
+    measurement (00_07 HW.24). The ✅ ≤ ×1.5 · ⚠️ ≤ ×2 marks are this script's reading, printed beside the TRL 3→4
+    event and never judging it (00_03 §4.1 П3(б1)). It cannot say WHICH side is wrong — a fold is not an error bar.
   - The R_int gate uses the WORST-CASE VIN(CS) (max) — ⚖️ RATIFIED by the founder 2026-10-01
     (01_03 §3.5, 00_07 HW.24), the same end of the datasheet range as the V_OC gate, until HW.46
     measures VIN(CS) of our batch. The convention flips a verdict — a coin at V_OC exactly at
@@ -213,6 +217,9 @@ def check_keys(exp: dict) -> None:
         raise SystemExit(f"EXPERIMENTAL keys in no class: {sorted(unknown)} — classify them above")
     if "Rct_ohm" in exp and "exposed_area_cm2" not in exp:
         raise SystemExit("Rct_ohm needs exposed_area_cm2: Ω is comparable only per cm²")
+    for key in (set(COMPARED) | METADATA) & set(exp):
+        if not _positive(exp[key]):
+            raise SystemExit(f"{key} must be a finite positive number — a fold against the prediction needs one")
     if "R_int_ohm" in exp and "OCV_mV" not in exp:
         raise SystemExit("R_int_ohm needs OCV_mV: its ceiling is a function of V_OC (02_03 §1.5)")
     if "R_int_ohm" in exp and "R_partition_ohm" not in exp:
@@ -307,17 +314,35 @@ def gate_line(g: dict) -> str:
             f"{'PASS' if g['pass'] else 'FAIL'}{split}{typ}")
 
 
+# Agreement marks — this script's printed reading, never a gate (00_03 §4.1 П3(б1): the event is the lab's signed report).
+# A SYMMETRIC fold: a prediction N× above and N× below the measurement sit on the same mark.
+FOLD_GOOD = 1.5
+FOLD_AGREE = 2.0
+
+
 def compare(preds: dict, exp: dict) -> list[dict]:
+    """Prediction ⊥ measurement as a symmetric fold max(p/m, m/p). ⛔ Not |p − m| / m: for any prediction below the
+    measurement that ratio stays under 100 %, so a 10× under-prediction read as «within 100 %» (00_07 HW.24)."""
     rows = []
     for key, pred_key in COMPARED.items():
         if key not in exp:
             continue
         measured = exp[key] * exp["exposed_area_cm2"] if key == "Rct_ohm" else exp[key]
         predicted = preds[pred_key]
-        err_pct = abs(predicted - measured) / measured * 100
+        if not (_positive(predicted) and _positive(measured)):
+            raise SystemExit(f"{pred_key}: a fold needs a positive prediction and measurement "
+                             f"(got {predicted!r} ⊥ {measured!r})")
+        ratio = predicted / measured
+        fold = max(ratio, 1.0 / ratio)
         rows.append({"key": pred_key, "predicted": predicted, "measured": measured,
-                     "err_pct": err_pct, "within_100pct": err_pct < 100})
+                     "ratio_pred_over_meas": ratio, "fold": fold,
+                     "direction": "equal" if ratio == 1.0 else ("over" if ratio > 1.0 else "under"),
+                     "within_fold_2": fold <= FOLD_AGREE})
     return rows
+
+
+def match_mark(fold: float) -> str:
+    return "✅" if fold <= FOLD_GOOD else "⚠️" if fold <= FOLD_AGREE else "❌"
 
 
 def main() -> int:
@@ -340,18 +365,17 @@ def main() -> int:
         print("\n  ⚠️  No experimental data yet — fill EXPERIMENTAL dict when Ti-coin data arrives")
     else:
         banner("COMPARISON: Predicted vs Experimental")
-        print(f"\n  {'Parameter':<25s} {'Predicted':>10s} {'Measured':>10s} {'Error %':>10s} {'Match':>8s}")
+        print(f"\n  {'Parameter':<25s} {'Predicted':>10s} {'Measured':>10s} {'Pred/Meas':>10s} {'Match':>8s}")
         print("  " + "-" * 65)
         rows = compare(preds, EXPERIMENTAL)
         for row in rows:
-            match = "✅" if row["err_pct"] < 50 else "⚠️" if row["err_pct"] < 100 else "❌"
             print(f"  {row['key']:<25s} {row['predicted']:>10.1f} {row['measured']:>10.1f} "
-                  f"{row['err_pct']:>9.1f}% {match:>8s}")
+                  f"{row['ratio_pred_over_meas']:>9.2f}× {match_mark(row['fold']):>8s}")
         for key in sorted(REPORTED_ONLY & set(EXPERIMENTAL)):
             print(f"  {key:<25s} {'—':>10s} {EXPERIMENTAL[key]:>10.1f}  NO PREDICTION — reported only")
-        matches = [row["within_100pct"] for row in rows]
-        overall = sum(matches) / len(matches) * 100 if matches else 0
-        print(f"\n  Overall agreement: {overall:.0f}% ({sum(matches)}/{len(matches)} within 100%)")
+        matches = [row["within_fold_2"] for row in rows]
+        print(f"\n  Overall agreement: {sum(matches)}/{len(matches)} within ×{FOLD_AGREE:g} either way "
+              f"(✅ ≤ ×{FOLD_GOOD:g} · ⚠️ ≤ ×{FOLD_AGREE:g} · ❌ beyond) — printed, never judges the event")
 
         gates = acceptance_gates(EXPERIMENTAL)
         if gates:

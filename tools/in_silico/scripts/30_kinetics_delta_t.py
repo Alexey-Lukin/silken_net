@@ -26,7 +26,7 @@ Key literature parameters
                                 printed beside the ceiling, ⚖️ 2026-09-18 (§4b; lib/constants.py)
   Km = 13.9 mM                — K_M^app of that same row and the same fit, so the pair moves together.
                                 Apparent: it carries the hydrogel's mass-transfer resistance
-  V_op = 0.5 V                — EBFC under load (OCV 0.6-0.8 V, 01_03 §1)
+  V_op = 0.5 V                — EBFC under load (OCV ~0.5-0.7 V, calculated, not measured — 01_03 §1)
   η_bq = 0.68                 — BQ25570 boost efficiency @ P_EBFC≈15µW (docs/02_03 §9.1
                                  table is source of truth; TI SLUSBH2G gives no closed-form
                                  η(P_IN) — see constants.py ETA_BQ comment, [HW.47] 2026-09-09)
