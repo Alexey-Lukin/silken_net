@@ -4,7 +4,7 @@
 
 ## 1. Що це
 
-Планетарна Bio-IoT **D-MRV** платформа моніторингу лісів: Ti-анкер + первинний елемент (⚖️ 2026-11-22 **перекорінення**: EBFC знято, стан ДО — `00_07` DOC-T.131) → STM32 **«Soldier»** (sense→Lorenz→encrypt→LoRa 868) → **«Queen»** gateway (CoAP) → Rails 8.1 / Ruby 4.0.9 / Postgres / Sidekiq → 10-chain Web3 **Proof-of-Growth** → mint SCC (**10 000 growth_points = 1 SCC**, Polygon ERC-20; слешинг — §6 SLASH-1).
+Планетарна Bio-IoT **D-MRV** платформа моніторингу лісів: Ti-анкер + первинний елемент (⚖️ 2026-11-22 **перекорінення**: EBFC знято; чинне — `00_07` DOC-T.131) → STM32 **«Soldier»** (sense→Lorenz→encrypt→LoRa 868) → **«Queen»** gateway (CoAP) → Rails 8.1 / Ruby 4.0.9 / Postgres / Sidekiq → 10-chain Web3 **Proof-of-Growth** → mint SCC (**10 000 growth_points = 1 SCC**, Polygon ERC-20; слешинг — §6 SLASH-1).
 
 **Чесний стан: System TRL = 3** — 🔴 **in-silico ≠ TRL 4 за NASA/ISO**, хоч би яким зеленим був Zero-Lab; найближча віха (не TRL-гейт) — польовий свідок (`00_07` 🚦). Per-module TRL — `docs/00_03 §1` (друкує `doc_structure_map.rb`). **Polyglot:** Rails (Ruby) · firmware-C (STM32) · mruby (`bio_contract`) · Solidity (Foundry) · in-silico Python (DFT/MD) · .NET C# (PicoGK CAD).
 
