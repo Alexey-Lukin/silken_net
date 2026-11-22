@@ -376,13 +376,18 @@ module DocsLinter
 
   # [SSOT anti-drift] Tokenomics / carbon RATE One-Home (HARD after the 2026-05-31
   # dedup). The mint rate (`10,000 growth_points = 1 SCC`) and carbon rate
-  # (`2000 SCC = 1 tCO₂`) are governance-CHANGEABLE parameters (05_06), so they get
-  # ONE home: 05_03 (technical) + 00_04 §3 (business view). Re-stating the VALUE
+  # (`2000 SCC = 1 tCO₂`) are governance-CHANGEABLE parameters (05_06), so each has ONE
+  # home: the mint rate 05_03 (technical) + 00_04 §3 (business view), the carbon rate
+  # 00_04 §3 alone (05_03 carries that number only inside the MAX_SUPPLY derivation —
+  # a consumer; DOC-T.130). Re-stating the VALUE
   # elsewhere drifts the instant governance re-prices — exactly the silent dup found
   # across 8 docs (00_01/04_01/05_01/05_02/05_06/00_04 body/03_03). Other docs must
   # REFERENCE the home, never restate the number. Exempt: 05_03 + 00_04 (homes) and
   # 00_07 (tracker archive). A line that itself references the home or is a
   # labelled mirror is not flagged — same shape as lorenz_formula_drift.
+  # ⛔ Declared ceiling: the owner exemption is per-DOC, so the carbon number inside 05_03
+  # is neither drift-checked here nor anchored below — a carbon re-price sweeps 05_03 by
+  # hand, and the anchor's violation text names it among the mirrors.
   RATE_OWNER_DOC     = /\A05_03_|\A00_04_|\A00_07_/
   TOKENOMICS_RATE_RE = /10[ .,]?000[^\n]{0,30}=\s*1\s*SCC/i
   CARBON_RATE_RE     = /2[ .,]?000\s*SCC\s*=\s*1\s*[тt]/i
@@ -397,7 +402,7 @@ module DocsLinter
       if line.match?(TOKENOMICS_RATE_RE)
         "mint rate `10,000 gp = 1 SCC` re-stated outside home (05_03 / 00_04 §3; a doc that must name it keeps the number and marks the SAME line as a mirror) → #{line.strip[0, 90]}"
       elsif line.match?(CARBON_RATE_RE)
-        "carbon rate `2000 SCC = 1 tCO₂` re-stated outside home (05_03 / 00_04 §3; a doc that must name it keeps the number and marks the SAME line as a mirror) → #{line.strip[0, 90]}"
+        "carbon rate `2000 SCC = 1 tCO₂` re-stated outside home (00_04 §3; a doc that must name it keeps the number and marks the SAME line as a mirror) → #{line.strip[0, 90]}"
       end
     end
   end
@@ -421,7 +426,7 @@ module DocsLinter
 
       "home #{basename[/\A\d\d_\d\d/]} no longer matches the guard's #{const} (#{label}) — " \
         "re-price? Update the regex in lib/docs_linter.rb AND sweep the mirrors: " \
-        "02_06 §7 ROI, 03_04/05_02 references"
+        "02_06 §7 ROI, 03_04/05_02 references, the MAX_SUPPLY derivation in 05_03"
     end
   end
 

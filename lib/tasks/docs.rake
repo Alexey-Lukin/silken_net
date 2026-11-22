@@ -476,7 +476,7 @@ namespace :docs do
     if rate_drift.empty?
       puts "  rate One-Home: no tokenomics/carbon rate value restated outside 05_03/00_04 ✓"
     else
-      puts "  RATE DRIFT (#{rate_drift.size}) — mint/carbon rate value belongs only in 05_03 / 00_04 §3:"
+      puts "  RATE DRIFT (#{rate_drift.size}) — mint rate belongs only in 05_03 / 00_04 §3, carbon rate only in 00_04 §3:"
       rate_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
     rate_homes_missing = DocsLinter::RATE_ANCHOR_HOMES.keys - rate_anchor_seen

@@ -84,7 +84,7 @@ description: "Use when working on the silken_net legal / business / academic-par
 |---|---|
 | Типи NaaS-контрактів, умови входу, що входить у послугу | [`00_04 §1`](../../../docs/00_04_Nature_as_a_Service_Contracts.md) |
 | Юр-подія → on-chain tx (mint / slash / payout / anchor) | [`00_04 §2`](../../../docs/00_04_Nature_as_a_Service_Contracts.md) — ⚠️ це НЕ availability-SLA |
-| Фінансові константи (бізнес-в'ю) | [`00_04 §3`](../../../docs/00_04_Nature_as_a_Service_Contracts.md); технічний дім тих самих курсів — [`05_03`](../../../docs/05_03_Tokenomics_SCC_and_SFC.md) |
+| Фінансові константи (бізнес-в'ю) | [`00_04 §3`](../../../docs/00_04_Nature_as_a_Service_Contracts.md); технічний дім курсу карбування — [`05_03`](../../../docs/05_03_Tokenomics_SCC_and_SFC.md), курс SCC→tCO₂ — лише `00_04 §3` |
 | Життєвий цикл контракту · схема даних · ролі | [`00_04 §4`](../../../docs/00_04_Nature_as_a_Service_Contracts.md) · `§5` · `§6` |
 | Параметричне страхування **клієнта** | [`00_04 §7`](../../../docs/00_04_Nature_as_a_Service_Contracts.md); політика-дім — [`05_05 §4`](../../../docs/05_05_Slashing_and_Risk_Policy.md) |
 | Яких юр/бізнес-артефактів бракує | [`00_04 §8`](../../../docs/00_04_Nature_as_a_Service_Contracts.md) |

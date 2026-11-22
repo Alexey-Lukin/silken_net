@@ -278,15 +278,15 @@
 | Stored GP / день / дерево | **~375** |
 | Днів до 1 SCC (10,000 GP) | **~27 днів** |
 | **Realistic продуктивність (Variant C)** | **~13.7 SCC/дерево/рік** (на заморожених placeholder-порогах `[transitional]` [E.63], [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor); точка моделі за 17 с від сходинки wire-GP 12 → 11 (stored 24 → 22), де 12.5; стеля Δt=600s ≈ 326) |
-| **1 SCC = CO₂ еквівалент** | **0.5 кг CO₂** (2000 SCC = 1 tCO₂) — **дзеркало**, дім значення [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`00_04 §3`](00_04_Nature_as_a_Service_Contracts); при зміні правити ТАМ |
+| **1 SCC = CO₂ еквівалент** | **0.5 кг CO₂** (2000 SCC = 1 tCO₂) — **дзеркало**, дім значення [`00_04 §3`](00_04_Nature_as_a_Service_Contracts); при зміні правити ТАМ |
 | 1 дерево / рік (~13.7 SCC) | **~6.8 кг CO₂** |
 | Кластер 100 дерев / рік (~1370 SCC) | **~0.68 tCO₂** |
 
 > 🔴 **ШІСТЬ числових рядків вище — ECB-ера (кадр 16 Б), тобто те, що відвантажено сьогодні; мітка стоїть тут, бо врізка над таблицею її має, а сама таблиця не мала — і читач бере ХІД із таблиці.** Ерні: packets/day · wire GP · stored GP · GP/добу · днів до 1 SCC · realistic SCC/рік. Під CCM-кадром 30 Б каденс іде на ≈ 1.81 год, метаболічна `m` ≈ 0.10, і wire GP сідає з 12 на 8: **13.68 → 7.75 SCC/дерево/рік (−43 %)**, а похідні рядки CO₂ — 6.8 → **3.9 кг** і 0.68 → **0.39 tCO₂**.
-> ⛔ **Від ери НЕ залежать три величини в цій же таблиці, і їх не чіпати:** «1 SCC = 0.5 кг CO₂» — **дзеркало** [`05_03`](05_03_Tokenomics_SCC_and_SFC) й on-chain `ProtocolParameters`, правити ТАМ (курс не є функцією каденсу) · фізична стеля ≈326 SCC при Δt = 600 с — `scc_rate.rb` друкує її однаковою в обох ерах · множник ×2 backend-upscale.
+> ⛔ **Від ери НЕ залежать три величини в цій же таблиці, і їх не чіпати:** «1 SCC = 0.5 кг CO₂» — **дзеркало** [`00_04 §3`](00_04_Nature_as_a_Service_Contracts) й on-chain `ProtocolParameters`, правити ТАМ (курс не є функцією каденсу) · фізична стеля ≈326 SCC при Δt = 600 с — `scc_rate.rb` друкує її однаковою в обох ерах · множник ×2 backend-upscale.
 > ⚠️ **CCM-точку (6512 с) обидві моделі тепер приймають:** `uncertainty_budget.rb delta_t_s=6512 --assert` дає `U(k=2)` ≈ 20 %, `scc_rate.rb variant_c_s=6512 --assert` — 7.75 (вікно [5, 15], що колись падало на CCM-точці, знято 2026-09-27: воно судило величину робочої точки, а не формулу — ⚖️ делеговано, шапка `scc_rate.rb`). Вимір і важелі розвилки (підйом `DELTA_T_SLOW_S` відхилено, SF — доданий) — [`00_07`](00_07_Action_Plan_Tracker) ARCH.8 (там же ⛔ «не відвантажувати CCM», доки не зміряно `P_gen`, link budget на SF8, самопрозряд EDLC і струм спокою клампа VSTOR).
 
-> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`00_04 §3`](00_04_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут.
+> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** [`00_04 §3`](00_04_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут.
 
 > **SCC-rate модель (single-source):** `tools/firmware/scc_rate.rb` (`--assert` docs-гейт — виводить packets×GP з ОДНОГО `delta_t`, self-consistency + anti-over-mint стеля; magnitude на заморожених placeholder-порогах `[transitional]` [E.63], [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). Канон посилається сюди, не restate'ить.
 >
