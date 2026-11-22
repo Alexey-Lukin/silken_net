@@ -2,7 +2,7 @@
 
 > ⛔ **The EBFC is cut from the product and the critical path** (founder's verdict, 2026-11-22 —
 > [`docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §4`](../../docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md), first paragraph).
-> The chemistry scripts here are an unpublished record (the paper is not published — same date); do not add or re-run one for the product.
+> The chemistry scripts here stay a repository record: the paper will not be published (same date — `docs/00_02_Academic_Integration_and_IP.md`, §2.1); do not add or re-run one for the product.
 > What returns the EBFC to the candidates is named in that paragraph, not here.
 
 This directory hosts the **Python-based simulation environment** for the EBFC
