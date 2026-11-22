@@ -209,6 +209,13 @@
   notes list `draw --vendor` prints goes to the founder beside the diff, before «шли». ⊕ The PO pack carries ALL alloys' sheets and STLs (⚖️ founder 2026-11-07), and the three paragraphs to paste into the PO — identification · item-2 hydrogen · «Drawings and STL files» — live in `anchor_alloy_rfq` §5a; a NEW addressee gets the letter without the replacement paragraph, its attachments being new already. ⊕ **A PRINT-ONLY request rides with sheets whose notes describe the WHOLE chain** (2026-11-17, `00_07` HW.24, the second wave after the chain-split verdict in `anchor_alloy_rfq`): `draw --vendor` still prints HIP · EAAE · the bake · SEM as a factory obligation, which contradicts «printing, stress relief and support removal only». ⚖️ founder (а): the LETTER carries one scope sentence in its geometry line (the exact sentence — the second-wave copy region of `anchor_alloy_rfq`); a print-only vendor variant of the sheet was the rejected alternative (manifest edits, hours). ⚠️ The sheet still prints HIP for Ta as «NOT APPLIED» but the letter's chain paragraph said HIP «for all alloys» — a correction followed on 2026-11-18: read the letter's chain paragraph against EACH alloy's sheet, not only against the scope sentence. Before it, grep each sheet's
   SVG text for every numeric field of the kind's manifest (gotcha #11 ⊕ — the loop radii); traps of the stamp and the
   submodule — gotcha #17 ⊕.
+  ⊕ **A BATCH fact enters a coupon manifest as a scoped EXCEPTION, never as a change of the requirement** (2026-11-22,
+  `00_07` HW.24 — the first 4V order was accepted from Grade 23 (ELI) powder): every `ti_coin*.json` sheet rides in
+  every PO pack (above), so the requirement sentence is what the NEXT vendor quotes against, and an exception named
+  relatively («our first order») reads to a new vendor as its own — name the order by alloy and date and say it
+  covers that order only. Write only what the vendor's document certifies: a powder-lot certificate describes the
+  lot at release, not reused feed nor the printed part (the printed coupons' oxygen is an open leg of `00_07` HW.1).
+  Our rationale («so it still serves as the control») goes inside `[[…]]` — the adversary caught both on the first draft.
   ⚠️ **«Lamé-µm, NOT a blind ISO-286 lookup» is the canon REQUIREMENT (`01_01 §4.2`), and the shipped band
   does not meet it yet** — `zone2_sleeve.json`'s 5–34 µm is an ISO 286 H7/r6 read (`tools/in_silico/lib/constants.py`),
   which Lamé merely consumes to get a contact pressure. The verdict is taken — no table class, the band is

@@ -12,7 +12,7 @@
     ]
   },
   "notes": {
-    "material": "Ti-6Al-4V Grade 5 per ASTM F2924 (Additive Manufacturing, powder bed fusion) - the ONE alloy of this [[bake-off||order]] for which we cite an AM material spec. NOT F136: that is the wrought ELI (Grade 23) spec and this coupon is the Grade-5 print reference",
+    "material": "Ti-6Al-4V Grade 5 per ASTM F2924 (Additive Manufacturing, powder bed fusion) - the ONE alloy of this [[bake-off||order]] for which we cite an AM material spec. NOT F136: that is the wrought ELI (Grade 23) spec and this coupon is the Grade-5 print reference. EXCEPTION, our first Ti-6Al-4V coupon print order only (placed November 2026): those coupons are printed from the printer's Ti-6Al-4V powder whose maker's certificate states Grade 23 (ELI), accepted for that order[[ (2026-11-18, 01_02 2.5)]] - a grade with the same nominal Al and V and a lower oxygen limit[[, so the 4V control role holds]]. The certificate describes the powder as its maker supplied it; it does not certify the printed coupons (powder reuse, oxygen). The exception covers that order only[[; whether a later 4V coupon order may also be ELI is an open leg (00_07 HW.24)]]",
     "process": "SLM/DMLS + HIP + vacuum anneal 800C/2h (controlled cool)[[ (01_02 1.3 Step 2)]] + dehydrogenation bake[[ (01_02 1.3); flat coupon — minutes/pennies to print]]",
     "post_process": "dehydrogenation bake 250C (+/-25C) / 1e-3 mbar / 2-4 h (3 h nominal), starting no later than 2 h after the rinse[[ (01_02 1.3 Step 5b)]] - MANDATORY after EAAE",
     "surface_finish": "[[EAAE dual-scale||EAAE (dual-scale activation etch)]] on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm[[ (01_02 1.2) — raises ECSA for enzyme immobilisation]]",
