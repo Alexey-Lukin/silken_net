@@ -1,5 +1,10 @@
 # `tools/in_silico/` — Zero-Lab Computational Stack (L1 → L4)
 
+> ⛔ **The EBFC is cut from the product and the critical path** (founder's verdict, 2026-11-22 —
+> [`docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §4`](../../docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md), first paragraph).
+> The chemistry scripts here are the record behind the paper; do not add or re-run one for the product.
+> What returns the EBFC to the candidates is named in that paragraph, not here.
+
 This directory hosts the **Python-based simulation environment** for the EBFC
 in-silico validation pipeline described in
 [`docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §3.4`](../../docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md).
