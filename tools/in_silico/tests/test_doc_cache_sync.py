@@ -5555,10 +5555,6 @@ CHECKS += [
      FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_film"]["transient"][0], 0.005),
     ("face pH: free H⁺ share at the sap 4.5 crossing → 85", SUMMARY, rf"carries most of\nthe supply \({N} % at the low-D corner",
      FACE_PH, lambda d: 100 * d["cathode"]["free_H_share_of_supply_sap_pH4.5_low_D"], 0.5),
-    ("face pH: anode check-medium ionic strength low → 85", EBFC, rf"іонна сила теж рухається \({N} → [\d.]+ моль/л",
-     FACE_PH, lambda d: d["anode_check_medium"]["ionic_strength_mol_l"][0], 0.00005),
-    ("face pH: anode check-medium ionic strength high → 85", EBFC, rf"іонна сила теж рухається \([\d.]+ → {N} моль/л",
-     FACE_PH, lambda d: d["anode_check_medium"]["ionic_strength_mol_l"][1], 0.0005),
     ("face pH: sap 4.5 f low → 85", SUMMARY, rf"the sap brought to 4\.5 \| \*\*{N}–",
      FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6"][0], 0.005),
     ("face pH: sap 4.5 f high → 85", SUMMARY, rf"the sap brought to 4\.5 \| \*\*[\d.]+–{N}\*\*",
@@ -5617,12 +5613,6 @@ CHECKS += [
      FACE_PH, lambda d: d["constants"]["delta_natural_convection_um"][0], 0.0),
     ("face pH: unstirred δ high → 85", SUMMARY, rf"Unstirred aqueous layers are [\d.]+–{N} µm",
      FACE_PH, lambda d: d["constants"]["delta_natural_convection_um"][1], 0.0),
-    ("face pH: 01_03 §3.5 anode δ* low → 85", EBFC, rf"щойно дифузійний шар товщий за {N}–[\d.]+ мкм, а нерозмішувана",
-     FACE_PH, lambda d: _anode(d, 4.5, _ANODE_RUNS, 0), 0.5),
-    ("face pH: 01_03 §3.5 anode δ* high → 85", EBFC, rf"щойно дифузійний шар товщий за [\d.]+–{N} мкм, а нерозмішувана",
-     FACE_PH, lambda d: _anode(d, 4.5, _ANODE_RUNS, 1), 0.5),
-    ("face pH: 01_03 §3.5 unstirred δ low → 85", EBFC, rf"нерозмішувана комірка дає {N}–[\d.]+ мкм",
-     FACE_PH, lambda d: d["constants"]["delta_natural_convection_um"][0], 0.0),
     # ── the anchor's anode with sap in its gap (2026-10-17) — conditional; the currents are upper bounds ──
     ("face pH: anchor anode envelope area, pine → 85", SUMMARY, rf"envelope Ø11, \*\*{N} cm²\*\*",
      FACE_PH, lambda d: _pine85(d)["geometry"]["envelope_lateral_area_cm2"], 0.05),
@@ -6838,16 +6828,9 @@ def test_paper_33_acceptor_column_claim_holds():
         assert all(a < b for a, b in itertools.pairwise(seq)), f"the column is not monotonic on {g}, yet the paper says it is"
 
 
-# ── HW.5.IS malate chelation (93, 2026-10-15) ⟷ the ⊕ under the cathode medium's weakest link (01_03 §3.5) + SUMMARY ──
+# ── HW.5.IS malate chelation (93, 2026-10-15) ⟷ SUMMARY (its 01_03 §3.5 mirror was cut with the chemistry, Б1) ──
 MALATE_CHEL = "chemistry/malate_metal_chelation.json"
-CANON_0103 = "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md"
 CHECKS += [
-    ("malate α Co upper → 93", CANON_0103, rf"Co\(II\): \*\*α ≈ [\d.]+–{N}\*\*",
-     MALATE_CHEL, lambda d: d["by_metal"]["Co"]["alpha_max_ADVERSE"], 0.5),
-    ("malate α Cu upper → 93", CANON_0103, rf"Cu\(II\): \*\*α ≈ [\d.]+–{N}\*\*",
-     MALATE_CHEL, lambda d: d["by_metal"]["Cu"]["alpha_max_ADVERSE"], 5.0),
-    ("malate α Ce (Buzko) upper → 93", CANON_0103, rf"Ce\(III\): \*\*α ≈ [\d.]+–{N}\*\* за єдиним",
-     MALATE_CHEL, lambda d: max(x["alpha"] for x in d["readings"]["ce_buzko"]["rows"].values()), 5.0),
     ("malate α Ce adverse (secondary) → 93", SUMMARY, rf"\| Ce\(III\) \| \*\*[\d.]+ – {N}\*\* \|",
      MALATE_CHEL, lambda d: d["by_metal"]["Ce"]["alpha_max_ADVERSE"], 50.0),
 ]

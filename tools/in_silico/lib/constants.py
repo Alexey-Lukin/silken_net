@@ -178,14 +178,14 @@ BQ25570_PIN_CS_UW = 15.0         # µW — a POWER, not 15 µA (02_03 §1.1)
 # Combi-CLEA electrode and relabelled Gen 2.0 later (provenance: 02_03 §1.5 ⊕, 00_07 HW.53); a coin in sap, i.e. with
 # NO path through a tree. MIRROR of 02_03 §1.5 prose, edit there; consumed by 84 as one of two readings.
 R_INT_EBFC_EST_KOHM = (5.0, 20.0)
-# ── Stage-2 coin: the other acceptance thresholds — MIRRORS of 01_03 §3.5 («Квантитативні acceptance-пороги»), edit
-# there. Each is a RATIO of one coupon's current to its own reference (day 0 · chloride-free start · pre-freeze); read by
+# ── Stage-2 coin: the other acceptance thresholds — were MIRRORS of 01_03 §3.5, whose body was cut with the chemistry (Б1,
+# tag pre-reroot-2026-11-22); they go with scripts 40/100 in the block's deletion commit. Each is a RATIO of one coupon's current to its own reference (day 0 · chloride-free start · pre-freeze); read by
 # script 40 (judged on the arm's geometric mean, ⚖️ 2026-10-20) and script 100. ──
 COIN_RETENTION_30D_MIN = 0.80        # C: ≥ 80 % retention of j_max after the 30-day hold
 COIN_CHLORIDE_MIN_RATIO = 0.90       # D: the cathode not below −10 % at 0.25 M NaCl
 COIN_UCST_RECOVERY_RATIO = 1.00      # E: the current recovers to 100 % after −10 °C → +25 °C
 COIN_HOLD_DAYS = 30
-# ── Stage-2 coin layout — MIRRORS of 01_03 §3.5 «Розкладка Stage 2» (⚖️ founder 2026-09-18) and of the coupon letter
+# ── Stage-2 coin layout — were MIRRORS of 01_03 §3.5 «Розкладка Stage 2» (cut with the chemistry, Б1) and of the coupon letter
 # anchor_alloy_rfq («12 per alloy — 3 for electrode testing, 3 for an uncoated ion-release series and 6 … in reserve»;
 # Ti-6Al-4V quoted at 12 and at 19 = its five electrode arms × 2 + 3 + 6). Edit there. These are the letter's QUOTE
 # point; the PO orders electrode arms × n + 3 + 6 per alloy and n gold coupons (⚖️ delegated 2026-10-20, 01_03 §3.5
