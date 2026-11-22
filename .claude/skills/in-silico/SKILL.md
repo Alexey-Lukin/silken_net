@@ -142,7 +142,7 @@ head, compressed, and what the rule forbids is in the body (instance — head of
 
 | Document | What it covers |
 |----------|---------------|
-| `docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §3.4` | Pipeline spec, TRL gate, L1-L4 definitions, artifact table |
+| `docs/00_03_TRL_Matrix_HIL_and_Beyond.md §3.6` | In-silico as HIL and its TRL boundary (the chemistry pipeline spec, `01_03 §3.4`, was cut with the chemistry — body at tag `pre-reroot-2026-11-22`) |
 | `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md` | Live status: running/queued/completed scripts, decision matrix |
 | `docs/protocols/ebfc/in_silico/SUMMARY.md` | All L1-L4 results in one page |
 | `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md` | DFT details, cascade methods comparison, ΔSCF, L3b cathode |

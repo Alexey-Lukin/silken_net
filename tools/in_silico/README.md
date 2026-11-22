@@ -5,9 +5,9 @@
 > The chemistry scripts here stay a repository record: the paper will not be published (same date — `docs/00_02_Academic_Integration_and_IP.md`, §2.1); do not add or re-run one for the product (the machine's reading of the verdict).
 > What returns the EBFC to the candidates is named in that paragraph, not here.
 
-This directory hosts the **Python-based simulation environment** for the EBFC
-in-silico validation pipeline described in
-[`docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §3.4`](../../docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md).
+This directory hosts the **Python-based simulation environment** for the in-silico work: in-silico as HIL and its TRL boundary —
+[`docs/00_03_TRL_Matrix_HIL_and_Beyond.md §3.6`](../../docs/00_03_TRL_Matrix_HIL_and_Beyond.md); the EBFC chemistry pipeline spec
+(`01_03 §3.4`) was cut with the chemistry — its body is at tag `pre-reroot-2026-11-22`.
 
 | Level | Tool | What we model |
 |-------|------|---------------|
