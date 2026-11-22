@@ -1,5 +1,7 @@
 # 🌿 Silken Net
 
+> ⚠️ **2026-11-22 — the project is being re-rooted.** The enzymatic fuel cell (EBFC) is cut from the product; hardware is now designed for sampled witness trees on a primary cell; the product direction is an open radio dendrometer; the EBFC paper will not be published. Everything below still describes the previous design until it is rewritten. The verdicts live in [`docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md`](docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (§4, first paragraph) and [`docs/00_01_Vision_Mission_and_Roadmap.md`](docs/00_01_Vision_Mission_and_Roadmap.md) (§2).
+
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13358/badge)](https://www.bestpractices.dev/projects/13358)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Alexey-Lukin/silken_net/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Alexey-Lukin/silken_net)
 
