@@ -96,6 +96,7 @@ description: "Use when working on the silken_net legal / business / academic-par
 | TISC · ™ · UA-юр-review · послідовність кроків | [`00_02 §4`](../../../docs/00_02_Academic_Integration_and_IP.md) |
 | Бренд-архітектура | [`00_02 §5`](../../../docs/00_02_Academic_Integration_and_IP.md) |
 | Робочі чернетки (юр / бізнес) | `docs/protocols/legal/legal_registry.md` · `docs/protocols/business/business_registry.md` |
+| Ринок вузла: конкуренти й ціни, хто платить (публічні закупівлі), болі користувачів, обсяг ніші, суміжні ринки, аналогії відкритого заліза | `docs/protocols/business/dendrometer_market_scan.md` (кожне число — з рівнем джерела; що зі зведень не нести — його §6); стан і подання — `00_07` BIZ.27. Числа сюди не переносити |
 | Вендори / RFQ | `docs/protocols/procurement/rfq_registry.md` · кандидати-адресати по Україні (вендори · інститути · ВНЗ) — `docs/protocols/procurement/ua_vendor_map.md` |
 | «Пакет → людина → що просимо» · prep конкретної зустрічі · тексти запитів вартості | `docs/protocols/outreach/legal_business_outreach.md` · `owner_meeting_briefs.md` · `advisor_fee_requests.md` |
 | Self-review перед сабмітом статті | `docs/protocols/paper/self_review_checklist.md` |

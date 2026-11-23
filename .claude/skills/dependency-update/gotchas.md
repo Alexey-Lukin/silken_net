@@ -42,6 +42,7 @@
   (`contracts/`, `subgraph/`), rubygems.org (gems), PyPI release history (ML/in-silico). Every `uses:`
   is SHA-pinned (`06_07 §1a`), so an action patch reaches CI only through a PR — date its diff (`#11`);
   what still floats is the payload (`#15`, `#43`).
+  ⊕ **When the profile does NOT discharge it, measure the ARTIFACT instead of waiting** (2026-11-23, puma 8.0.4 at ≈ 6 d 10 h, ⚖️ founder «бампни, бо буде червоний білд до завтра»): native extension compiled at install, no build attestation (only MFA) — exactly the class this quarantine guards. The cheap discharge: fetch the old and new `.gem` from rubygems, check the new one's SHA-256 against the API `sha`, unpack `data.tar.gz` and `metadata.gz` of both, and require (a) the changed files == the tag compare (`gh api repos/<o>/<r>/compare/vA...vB`, tests excluded — they do not ship) and (b) a metadata diff of version + date only (no new dependency, extension or hook). Minutes, not a week, and it names what was checked; the commit body carries the four changed paths. ⚠️ It discharges «the published artifact ≠ its source», not «the source is benign» — a malicious commit in the tag passes it; for that half the publisher profile still decides.
 5. 🔴 **The age rule cuts BOTH ways — a fresh PR can carry a long-ripe artifact** (2026-08-06). `#499`
   (`library/ruby` digest) opened that morning, i.e. "an hour old" by its title — but the digest itself
   had been pushed **23 days** earlier. Dating the artifact instead of the PR is what surfaced that we
