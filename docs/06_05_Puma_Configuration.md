@@ -2,14 +2,14 @@
 
 ## 🎯 Мета
 
-Зафіксувати архітектурні рішення та операційні runbook'и для Puma 8.0.3 — production HTTP-сервера SilkenNet. Документ описує **поточний стан** конфігурації та причини кожного вибору.
+Зафіксувати архітектурні рішення та операційні runbook'и для Puma — production HTTP-сервера SilkenNet. Документ описує **поточний стан** конфігурації та причини кожного вибору.
 
 ---
 
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — конфігурація відповідає SSOT; IO-bound пул, cluster hooks і graceful shutdown **зашиті й покриті host-тестами**. ⚠️ **Верифікація на живому трафіку судиться не тут:** дім факту «чи слот обслуговує» — [`06_01 §Статус`](06_01_Deployment_Kamal_Terraform), і читати треба ЙОГО, а не цитату звідси — ця цитата протухала двічі, обидва рази в бік БІДНОСТІ. Production verification → [`00_07`](00_07_Action_Plan_Tracker) S1.1.
-- **Версія:** `puma (8.0.3)` (`Gemfile.lock`)
+- **Версія:** `puma (8.0.4)` (`Gemfile.lock`)
 - **Конфігураційний SSOT:** `config/puma.rb`
 - **Runtime-архітектура:** `Cloudflare (TLS, HTTP/2) → kamal-proxy (origin-TLS) → Thruster (gzip, статика, буферизація) → Puma (clustered, preload_app!) → Rails 8.1` — Thruster TLS НЕ термінує і HTTP/2 не дає: обидва живуть на плечі Cloudflare, origin-TLS — у kamal-proxy ([`06_01 §TLS`](06_01_Deployment_Kamal_Terraform))
 - **Puma middleware:** немає — `MarkWeb3RequestsAsIoBound` знято 2026-08-14 ([ARCH.80]; обґрунтування було мертве на обох шляхах)
