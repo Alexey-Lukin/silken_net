@@ -1,6 +1,6 @@
 # Business Registry — SilkenNet (бізнес-концерн)
 
-> **Що це:** індекс **робочих бізнес-артефактів** SilkenNet. Периметр — **УСІ** рядки таблиці нижче, а не якийсь їх рід: SLA-exhibit · carbon/biodiversity-реєстри · страхова спека · enterprise-readiness · integrity- та OSS/Web3-стандарт-ландшафти · **outreach-dispatch-карта** (⛔ числа тут немає навмисно: опис, що перелічує роди, ховає рядок, якого не назвав) — один рядок на артефакт: про що, чий канон він дзеркалить, де живе його стан.
+> **Що це:** індекс **робочих бізнес-артефактів** SilkenNet. Периметр — **УСІ** рядки таблиці нижче, а не якийсь їх рід: SLA-exhibit · carbon/biodiversity-реєстри · страхова спека · enterprise-readiness · integrity- та OSS/Web3-стандарт-ландшафти · скан ринку дендрометра · **outreach-dispatch-карта** (⛔ числа тут немає навмисно: опис, що перелічує роди, ховає рядок, якого не назвав) — один рядок на артефакт: про що, чий канон він дзеркалить, де живе його стан.
 > **Concern-шар** (як [`procurement/`](../procurement/rfq_registry.md) / [`paper/`](../paper/self_review_checklist.md)) — **НЕ канон**: усе всередині — робочі чернетки й вказівники, **не підписані документи**; правити факт у його домі ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)), не тут.
 > **⏳ Станом на 2026-07-25** (вміст кожного артефакта — за датою в його власній шапці).
 > **⚠️ Не юридична / податкова / фінансова порада.** Робочий вхід у платну консультацію з фахівцем, не її заміна.
@@ -29,6 +29,7 @@
 | [`b2b_readiness.md`](b2b_readiness.md) | Що вимагає enterprise-procurement × наша phase-gated готовність | [`00_03`](../../00_03_TRL_Matrix_HIL_and_Beyond.md) (чесний TRL) · [`00_04 §1.1`](../../00_04_Nature_as_a_Service_Contracts.md) | живить **BIZ.2** / **BIZ.18** |
 | [`carbon_integrity_standards.md`](carbon_integrity_standards.md) | Buyer-side integrity-стек: ICVCM CCP, VCMI, Oxford, SBTi, ISO 14064, IAPB | [`02_06 §7.1`](../../02_06_Unit_Economics_and_BOM.md) (growth_points → CO₂-еквівалент) · [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) | **BIZ.9** / **BIZ.23** (biodiversity = stewardship, не offset) |
 | [`oss_web3_standards.md`](oss_web3_standards.md) | Web3-токен + open-source best practices: SPDX/REUSE, SBOM/CRA, DCO, AGPL | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (ліцензійна матриця) · [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) | UNI.20 §🗄️ (DCO — політика `00_01 §8`) / **BIZ.24** (CRA/SBOM) |
+| [`dendrometer_market_scan.md`](dendrometer_market_scan.md) | Ринок дендрометра, звірка з первинками: ціни й функції конкурентів · хто платить (публічні закупівлі) · що пишуть дослідники · міста й молоді дерева | — (зовнішні первинки) · присуд про напрям — [`00_01 §2`](../../00_01_Vision_Mission_and_Roadmap.md) | **BIZ.27** (друга хвиля — нога ринків) |
 
 ---
 
