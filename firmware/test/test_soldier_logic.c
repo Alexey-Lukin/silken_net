@@ -4703,6 +4703,51 @@ TEST(test_adc_temp_wire_measured_never_hits_sentinel) {
     ASSERT_EQ(Adc_Temp_Wire_C(1, 300), 127);
 }
 
+/* [Б3 · DOC-T.131] Golden vectors from sensor PHYSICS, not from the formula: WL-typical
+ * V30 = 0.76 V and 2.5 mV/°C give TS_CAL1/2 = 943/1253 at 3.3 V; each raw is what the
+ * silicon would read at the stated real T and VDDA. The pinned-3300 reading is in the
+ * comment — the defect this replaces. These pin the FUNCTIONS; the main.c call site is not
+ * host-compiled and is unguarded — the ARM compile only proves it builds (skill firmware #19). */
+#define TS_CAL1_TYP 943u
+#define TS_CAL2_TYP 1253u
+
+TEST(test_adc_temp_follows_measured_vdda) {
+    ASSERT_EQ(Adc_Temp_C(788, 3300, TS_CAL1_TYP, TS_CAL2_TYP), -20);  /* pinned: −20 */
+    ASSERT_EQ(Adc_Temp_C(867, 3000, TS_CAL1_TYP, TS_CAL2_TYP), -20);  /* pinned: +6  */
+    ASSERT_EQ(Adc_Temp_C(722, 3600, TS_CAL1_TYP, TS_CAL2_TYP), -20);  /* pinned: −41 */
+}
+
+TEST(test_adc_temp_guards_see_real_temperature) {
+    /* Real −16 °C at VDDA 3.0 V: the frost deferral fires (pinned 3300 read +10 °C → TX). */
+    int8_t frost = Adc_Temp_Wire_C(1, Adc_Temp_C(880, 3000, TS_CAL1_TYP, TS_CAL2_TYP));
+    ASSERT_EQ(frost, -16);
+    ASSERT_TRUE(Should_Defer_TX(frost, 3000));
+    /* Real 30 °C at VDDA 3.0 V stays 30 — pinned 3300 read exactly fire_detected's default 60 °C. */
+    ASSERT_EQ(Adc_Temp_C(1037, 3000, TS_CAL1_TYP, TS_CAL2_TYP), 30);
+}
+
+TEST(test_adc_temp_unmeasured_vdda_is_not_a_temperature) {
+    /* A zero reference (Adc_Vdda_Mv on a VREFINT fault) never becomes a °C — without the guard
+     * it reads −274. What the frame carries then is the call site's choice (main.c). */
+    ASSERT_EQ(Adc_Temp_C(867, 0, TS_CAL1_TYP, TS_CAL2_TYP), ADC_TEMP_CALC_ERROR_C);
+    ASSERT_EQ(Adc_Temp_Wire_C(1, Adc_Temp_C(867, 0, TS_CAL1_TYP, TS_CAL2_TYP)), ADC_TEMP_UNMEASURED_C);
+    /* Blank calibration — the vendor macro's own error branch. */
+    ASSERT_EQ(Adc_Temp_C(867, 3000, 1000, 1000), ADC_TEMP_CALC_ERROR_C);
+}
+
+TEST(test_adc_temp_ref_trusts_only_a_live_vdda) {
+    /* A failed or impossible VREFINT reading falls back to the old 3300 — never the sentinel
+     * (it transmits in frost) and never a °C built on a rail no living MCU has. */
+    ASSERT_EQ(Adc_Temp_Ref_Mv(0), 3300);
+    ASSERT_EQ(Adc_Temp_Ref_Mv(1799), 3300);
+    ASSERT_EQ(Adc_Temp_Ref_Mv(1800), 1800);
+    ASSERT_EQ(Adc_Temp_Ref_Mv(3000), 3000);
+    ASSERT_EQ(Adc_Temp_Ref_Mv(3900), 3900);
+    ASSERT_EQ(Adc_Temp_Ref_Mv(3901), 3300);
+    /* Real 20 °C on a true 3.3 V rail, VREFINT wrongly says 4.0 V: trusted, it reads 82 °C. */
+    ASSERT_EQ(Adc_Temp_C(912, Adc_Temp_Ref_Mv(4000), TS_CAL1_TYP, TS_CAL2_TYP), 20);
+}
+
 TEST(test_adc_pin_zero) {
     ASSERT_EQ(Adc_Pin_Mv(0, 3300), 0);
 }
@@ -5502,6 +5547,10 @@ int main(void)
     RUN(test_adc_pin_two_thirds);
     RUN(test_adc_temp_wire_failed_read_is_sentinel);
     RUN(test_adc_temp_wire_measured_never_hits_sentinel);
+    RUN(test_adc_temp_follows_measured_vdda);
+    RUN(test_adc_temp_guards_see_real_temperature);
+    RUN(test_adc_temp_unmeasured_vdda_is_not_a_temperature);
+    RUN(test_adc_temp_ref_trusts_only_a_live_vdda);
     RUN(test_adc_pin_zero);
     RUN(test_adc_raw_to_mv_direct);
     RUN(test_adc_raw_to_mv_divider_2to1);

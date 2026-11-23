@@ -305,9 +305,6 @@ static inline int HAL_UART_Receive(UART_HandleTypeDef *h, uint8_t *d, uint16_t s
     (void)h; (void)d; (void)s; (void)t; return HAL_TIMEOUT;
 }
 
-/* Temperature macro stub */
-#define __LL_ADC_CALC_TEMPERATURE(vref, raw, res) ((int)(25 + ((raw - 1000) / 10)))
-
 /* Radio driver stub */
 typedef struct {
     void (*Init)(void*);

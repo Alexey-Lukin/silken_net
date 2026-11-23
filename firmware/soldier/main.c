@@ -45,6 +45,9 @@ _Static_assert(ADC_VREFINT_CAL_MV == VREFINT_CAL_VREF,
                "[FW.50] ADC_VREFINT_CAL_MV мусить дорівнювати VREFINT_CAL_VREF (stm32wlxx_ll_adc.h)");
 _Static_assert(ADC_TEMP_CALC_ERROR_C == LL_ADC_TEMPERATURE_CALC_ERROR,
                "[FW.50] ADC_TEMP_CALC_ERROR_C мусить дорівнювати LL_ADC_TEMPERATURE_CALC_ERROR");
+_Static_assert(ADC_TS_CAL1_TEMP_C == TEMPSENSOR_CAL1_TEMP && ADC_TS_CAL2_TEMP_C == TEMPSENSOR_CAL2_TEMP
+               && ADC_TS_CAL_VREF_MV == TEMPSENSOR_CAL_VREFANALOG,
+               "[Б3] Adc_Temp_C мусить мати точки каліброванки stm32wlxx_ll_adc.h");
 #include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
 #include "../common/stack_canary.h" // [SEC.21] сів вартової канарки (One-Home з host-тестами)
 #include "../common/fw_report.h"    // [SEC.20] wire-звіт contract-стану (байти 12..13 / CCM байт 11)
@@ -1942,18 +1945,26 @@ int main(void)
     lora_payload[5] = (uint8_t)(vcap_voltage & 0xFF);
 
     // Байт 6: Температура (°C)
+    // [Б3] Опора датчика — ЗМІРЯНА VDDA (vcap_voltage ↑), не пришпилені 3300 мВ: відлік обернено
+    // пропорційний опорі, ≈ 2.3–3.1 °C на 1 % відхилу VDDA (тип.) — без точного регулятора 3.3 В це
+    // до десятків градусів у FW.10 і fire_detected. Збій VREFINT → давні 3300 (Adc_Temp_Ref_Mv), тож
+    // підстава ⚖️ 2026-10-10 «читання незалежні» тримається (03_01 §1.8а). ⛔ Не «спрощувати» до
+    // голого vcap_voltage: нуль VDDA дав би CCM-сентинел, що передає на морозі.
+    uint16_t temp_vref_mv = Adc_Temp_Ref_Mv(vcap_voltage);
 #if FW2_CCM_ENABLED
-    // [FW.50 · FW.66 (Б)] CCM-ера: невдалий відлік — сентинел «не виміряно» (adc_convert.h),
-    // а не °C, які формула зробила б із сирого нуля. ECB-збірку свідомо не латаємо: там байт —
-    // вхід ρ Лоренца, і ця ера в поле не йде (00_07 FW.50). ⚠️ Перехідний стан: Лоренц у
+    // [FW.50 · FW.66 (Б)] CCM-ера: невдалий відлік датчика — сентинел «не виміряно» (adc_convert.h),
+    // а не °C, які формула зробила б із сирого нуля. ⚠️ Перехідний стан: Лоренц у
     // CCM-збірці ще живий до (Б), і −128 доходить і до нього — ρ клампиться до RHO_MIN;
     // зміряно на 2000 фазах, що статус циклу лишається гомеостазом (stress — ≈0.05 %), а
     // бекенд CCM-ери z не судить; зникне разом із Лоренцом.
     lora_payload[6] = (uint8_t)Adc_Temp_Wire_C(temp_read_ok,
-        __LL_ADC_CALC_TEMPERATURE(3300, internal_temp, LL_ADC_RESOLUTION_12B));
+        Adc_Temp_C(internal_temp, temp_vref_mv, *TEMPSENSOR_CAL1_ADDR, *TEMPSENSOR_CAL2_ADDR));
 #else
+    // ECB-ера сентинела не має (00_07 FW.50) і в поле не йде: FW.2-фліп — до першого
+    // field-deploy (00_07 🚦 «Перед польовим деплоєм»).
     (void)temp_read_ok;
-    lora_payload[6] = (int8_t)__LL_ADC_CALC_TEMPERATURE(3300, internal_temp, LL_ADC_RESOLUTION_12B);
+    lora_payload[6] = (int8_t)Adc_Temp_C(internal_temp, temp_vref_mv,
+                                         *TEMPSENSOR_CAL1_ADDR, *TEMPSENSOR_CAL2_ADDR);
 #endif
 
     // [FW.28] Атомарне хапання звуку: замикаємо вікно між ISR та пакуванням
