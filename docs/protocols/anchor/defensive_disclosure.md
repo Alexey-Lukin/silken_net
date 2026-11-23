@@ -278,8 +278,8 @@ not the flavin N5 — and whose steps are summed constant weights, not Beratan�
 analysis nor a measured exit, and the variant stands as disclosed on that placement. ⚠️ The rate benefit of deglycosylation was measured on enzymatically deglycosylated enzyme; its
 transfer to this gene-level construct is an assumption, not a measurement. *Practised* (the frozen
 sequence of the reference design; not yet expressed;
-[`L1_protein_architecture.md`](../ebfc/in_silico/L1_protein_architecture.md) §2 ·
-[`ebfc_chem_rfq.md`](../procurement/ebfc_chem_rfq.md) Spec A).
+[`L1_protein_architecture.md`](https://github.com/Alexey-Lukin/silken_net/blob/933112c3f0817a6c0e10f9af2312893366f790e4/docs/protocols/ebfc/in_silico/L1_protein_architecture.md) §2 ·
+[`ebfc_chem_rfq.md`](https://github.com/Alexey-Lukin/silken_net/blob/933112c3f0817a6c0e10f9af2312893366f790e4/docs/protocols/procurement/ebfc_chem_rfq.md) Spec A).
 
 **(6) Several anchors on one node: parallel within a trunk, series only between trunks.** Several anchors
 may feed one node's charger. Within one trunk they are connected only in parallel. Series connection within
@@ -443,7 +443,7 @@ repository, on and since the dates above**, and is incorporated here by referenc
 | [`02_01`](../../02_01_Hardware_Architecture_and_BOM.md) | Climate sensor, VPD index and vented sensor pocket (§3.4) — added 2026-10-04 |
 | [`02_02`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) | Blind-mate coaxial interface and bayonet retention (§1, §4) — added 2026-10-04 |
 | [`02_05`](../../02_05_Queen_Hardware_and_Starlink.md) | Cluster gateway and its solar-and-battery power (§3) — added 2026-10-04 |
-| [`L1_protein_architecture.md`](../ebfc/in_silico/L1_protein_architecture.md) | Gene-level deglycosylated enzyme: sites, substitutions, sequence (§2) — added 2026-10-04 |
+| [`L1_protein_architecture.md`](https://github.com/Alexey-Lukin/silken_net/blob/933112c3f0817a6c0e10f9af2312893366f790e4/docs/protocols/ebfc/in_silico/L1_protein_architecture.md) | Gene-level deglycosylated enzyme: sites, substitutions, sequence (§2) — added 2026-10-04 |
 
 Those documents are part of the same dated, publicly accessible repository; together with this disclosure
 they constitute an enabling publication of the combination described in §2 and §3.
@@ -490,5 +490,5 @@ defensively, an irrevocable non-assertion pledge applies to all good-faith users
 | [`01_02`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · [`01_04`](../../01_04_CODIT_and_Xylemointegration.md) | anchor surface, coatings and implantation canon |
 | [`02_01`](../../02_01_Hardware_Architecture_and_BOM.md) · [`02_02`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`02_03`](../../02_03_BQ25570_MPPT_Nano_Power.md) · [`02_05`](../../02_05_Queen_Hardware_and_Starlink.md) | node, interface, power and gateway canon |
 | [`03_04`](../../03_04_mruby_Lorenz_Attractor.md) | Lorenz integrity seal and its status bands; the `delta_t` → reward mapping — corrected 2026-10-04 |
-| [`L1_protein_architecture.md`](../ebfc/in_silico/L1_protein_architecture.md) | the deglycosylated enzyme sequence |
+| [`L1_protein_architecture.md`](https://github.com/Alexey-Lukin/silken_net/blob/933112c3f0817a6c0e10f9af2312893366f790e4/docs/protocols/ebfc/in_silico/L1_protein_architecture.md) | the deglycosylated enzyme sequence |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | state: disclosure execution, trademark timing |

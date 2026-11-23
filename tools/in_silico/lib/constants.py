@@ -5,18 +5,11 @@ from pathlib import Path
 # ── Project paths ──
 # lib/constants.py → tools/in_silico/lib/ → parents[3] = repo root
 REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
 CACHE_DIR = REPO_ROOT / "tools/in_silico/cache"
-DFT_CACHE = CACHE_DIR / "dft"
 KINETICS_DIR = CACHE_DIR / "kinetics"
-RUNS_DIR = CACHE_DIR / "runs"
-CACHE_FILE = CACHE_DIR / "gaff_cache.json"
 AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
-PAPER_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/paper"
-PAPER_FIG_DIR = PAPER_DIR / "figures"
 
 # ── Force field ──
-GAFF_VERSION = "gaff-2.11"
 # Water model — One-Home (кожен MD-скрипт ЧИТАЄ це, не хардкодить XML/ярлик
 # інлайн, інакше load↔label дрейфують). Свідомо TIP3P-**FB** (Wang, Martínez,
 # Pande 2014, JPCL 5:3863 — force-balance reparametrizація TIP3P: краща
@@ -25,17 +18,10 @@ GAFF_VERSION = "gaff-2.11"
 # розбіжність = bulk-water properties, не protein-specific (для EBFC-enzyme
 # MD прийнятно) — але це ЯВНИЙ вибір, не мовчазний default.
 WATER_MODEL_XML = "amber14/tip3pfb.xml"
-WATER_MODEL_LABEL = "TIP3P-FB"
 
 # ── Physical constants (CODATA 2018) ──
 F_CONST = 96485.33289        # C/mol — Faraday constant
 R_GAS = 8.31446261815324     # J/(mol·K) — gas constant
-HARTREE_TO_EV = 27.211386245988
-# SCF energy tolerance of the two-solution ΔSCF couplings of the ZIF clusters (script 24 `mf.conv_tol`; paper §2.2
-# «10⁻⁵ E_h»). Script 24 still types it locally; 25 reads it from here to judge whether a coupling — HALF the energy
-# difference of two SCF solutions — stands clear of the tolerance both were converged to (self-review cluster 8).
-ZIF_DSCF_CONV_TOL_HA = 1e-5
-BOHR_TO_ANG = 0.529177249
 
 # ── MD water box (01_03 §3.4) ──
 # PH is the PROTONATION pH of every committed L2 run — not the sap set-point, which is the measured 5.75
@@ -46,44 +32,9 @@ BOHR_TO_ANG = 0.529177249
 PH = 4.5
 IONIC_STRENGTH = 0.05        # M — NaCl
 TEMPERATURE_K = 298.15       # K — reference temperature
-PRESSURE_ATM = 1.0
-WATER_PADDING_NM = 1.0       # nm around protein
 
 # ── MD parameters ──
 TIMESTEP_FS = 2.0
-EQUIL_NVT_PS = 50
-EQUIL_NPT_PS = 100
-
-# ── Ligand counts (Gen 2.0 matrix) ──
-N_GENIPIN = 10
-N_CHITOSAN = 5
-N_CELLOBIOSE = 8
-
-# ── DFT basis sets ──
-BASIS_LIGHT = "6-31g(d)"
-BASIS_OS = "lanl2dz"
-ECP_OS = "lanl2dz"
-SOLVENT_EPS_WATER = 78.3553
-# Acceptance of an Os(III) UKS doublet: <S²> at most this (a pure doublet is 0.75; the clean ωB97X Os(III) points
-# sit at 0.7546–0.7560). OUR threshold, not a standard — ⚖️ founder 2026-10-09, 00_07 HW.5.IS; a converged SCF is a
-# stationary point, not the ground state (in-silico §Critical Rules #14).
-S2_MAX_DOUBLET = 0.80
-
-# ── CHEM.11 — the three compensating substitutions of the ORDERED gene (mirror of L1 §2) ──
-# The frozen dgrFAD-GDH sequence is `600 aa · 11 N→Q` PLUS these three: ⚖️ founder 2026-09-17
-# (`L80D`, `A70S`) and 2026-09-18 (`I401S`, after script 70 measured the conservation of 401).
-# One-letter codes, exactly as canon writes them.
-# ⚠️ This is a MIRROR, not the home. The home is
-#   docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2 (the sequence owner; the order sheet
-#   docs/protocols/procurement/ebfc_chem_rfq.md Spec A points there rather than restating it).
-# Pinned doc↔code by tools/in_silico/tests/test_doc_cache_sync.py::test_ratified_gene_mirrors_canon,
-# which reads BOTH docs and fails if either stops naming exactly this set.
-# The order carrier docs/protocols/ebfc/in_silico/ratified_gene_arms.fasta (arm14 = this set) is built from it and
-# the L1 block and pinned by test_gene_arms_*; edit the set here and the pin reds until the file is regenerated.
-# ⛔ The AF3 input sequence is NOT rewritten by these three (L1 §2): the shipped model, the MD runs
-# and every SASA number stand on the `11 N→Q` string. Re-predicting on the compensated sequence is a
-# separate run with its own provenance.
-RATIFIED_GENE_COMPENSATIONS = ("L80D", "A70S", "I401S")
 
 # ── EBFC parameters (from literature, 01_03 §1) ──
 J_MAX_25C = 881e-6           # A/cm² — Michaelis-Menten ASYMPTOTE of dgrGcGDH + Os-polymer, Zafar 2012
@@ -142,12 +93,6 @@ PH_KINETICS_SYGMUND = {
 # Why both forms are kept: they disagree (k_cat ratio 0.474 ⊥ 0.428, K_m ratio 0.537 ⊥ 0.591), and the
 # disagreement IS the bracket — electing one would manufacture a precision the source does not carry.
 
-EA_ENZYME = 40_000.0         # J/mol — Arrhenius activation energy (typical FAD enzyme)
-# The MEASURED one for this enzyme family, same paper as PH_KINETICS_SYGMUND: «The activation energy was calculated to
-# be 19.5 kJ mol-1 from initial rates in the range of 26 to 51°C and is quite similar to the naturally produced GDH
-# (21 kJ mol-1)» (Sygmund 2011, full text via Europe PMC PMC3252255) — free enzyme, above 26 °C; a reading BESIDE
-# EA_ENZYME (which L4 uses), not a replacement of it.
-EA_SYGMUND_GCGDH = 19_500.0  # J/mol
 V_OP = 0.5                   # V — EBFC operating voltage under load
 A_ELECTRODE = 2.0            # cm² — ONE face of the Ø16×1 mm Ti-coin COUPON (π·8² =
 # 2.01 cm²), never the anchor. Canon home docs/01_01 §6 ties the number to that face and
@@ -174,41 +119,6 @@ ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — 
 BQ25570_VIN_CS_TYP_MV = 600.0    # mV
 BQ25570_VIN_CS_MAX_MV = 700.0    # mV
 BQ25570_PIN_CS_UW = 15.0         # µW — a POWER, not 15 µA (02_03 §1.1)
-# The prose estimate of the EBFC electrodes' R_int — NO primary: born 2026-05-15 (a27783ef6) for the retired Gen 1.0
-# Combi-CLEA electrode and relabelled Gen 2.0 later (provenance: 02_03 §1.5 ⊕, 00_07 HW.53); a coin in sap, i.e. with
-# NO path through a tree. MIRROR of 02_03 §1.5 prose, edit there; consumed by 84 as one of two readings.
-R_INT_EBFC_EST_KOHM = (5.0, 20.0)
-# ── Stage-2 coin: the other acceptance thresholds — were MIRRORS of 01_03 §3.5, whose body was cut with the chemistry (Б1,
-# tag pre-reroot-2026-11-22); they go with scripts 40/100 in the block's deletion commit. Each is a RATIO of one coupon's current to its own reference (day 0 · chloride-free start · pre-freeze); read by
-# script 40 (judged on the arm's geometric mean, ⚖️ 2026-10-20) and script 100. ──
-COIN_RETENTION_30D_MIN = 0.80        # C: ≥ 80 % retention of j_max after the 30-day hold
-COIN_CHLORIDE_MIN_RATIO = 0.90       # D: the cathode not below −10 % at 0.25 M NaCl
-COIN_UCST_RECOVERY_RATIO = 1.00      # E: the current recovers to 100 % after −10 °C → +25 °C
-COIN_HOLD_DAYS = 30
-# ── Stage-2 coin layout — were MIRRORS of 01_03 §3.5 «Розкладка Stage 2» (cut with the chemistry, Б1) and of the coupon letter
-# anchor_alloy_rfq («12 per alloy — 3 for electrode testing, 3 for an uncoated ion-release series and 6 … in reserve»;
-# Ti-6Al-4V quoted at 12 and at 19 = its five electrode arms × 2 + 3 + 6). Edit there. These are the letter's QUOTE
-# point; the PO orders electrode arms × n + 3 + 6 per alloy and n gold coupons (⚖️ delegated 2026-10-20, 01_03 §3.5
-# «Репліки»). Per alloy: electrode arm → does it run the 30-day hold C. Ti-6Al-4V is the control, never a Zone-1
-# candidate (01_02 §2.5). The gold-coated coupon is an extra Ti coupon, cathode day 0 only — one at the quote point. ──
-COIN_CONTROL_ALLOY = "Ti-6Al-4V"
-# Coin-only reference, not a Zone-1 candidate: cem/ti_coin.ta.json («coin-only, NOT an anchor candidate») and the coupon
-# letter («benchmark біоінертності … coin-only»). ⚠️ 01_02 §2.5 rule (в) still lists Ta's σ_e among «V-free кандидати».
-COIN_BENCHMARK_ALLOYS = ("Ta",)
-COIN_ELECTRODE_ARMS = {
-    "Ti-6Al-4V": {"anode": True, "cathode_nanozyme": True, "cathode_no_nanozyme": True,
-                  "cathode_chloride_D": False, "anode_membrane_E": False},
-    "Ti-6Al-7Nb": {"anode": True, "cathode": False},
-    "CP-Ti Gr4": {"anode": True},
-    "Ti-13Nb-13Zr": {"anode": True, "cathode": False},
-    "Ta": {"anode": True, "cathode": False},
-    "Ti-15Zr": {"anode": True, "cathode": False},
-}
-COIN_GOLD_COUPONS_AT_QUOTE = 1
-COIN_QUOTE_PER_ALLOY = 12
-COIN_QUOTE_CONTROL_HIGH = 19
-COIN_UNCOATED_ICPMS_PER_ALLOY = 3
-COIN_RESERVE_12WK_PER_ALLOY = 6
 # ── Node energy chain — MIRRORS of 02_03 §9.4/§9.6 Scenario C (ECB 16 B frame, SF9,
 # +14 dBm, 300 nA sleep — the Standby-class target, not the shipped STOP2, 00_07 FW.54);
 # the chain's home is tools/firmware/tx_cadence_budget.rb,
@@ -237,61 +147,14 @@ V_OP_02_03_TABLE = 0.325     # V
 # P_SLEEP_VSTOR above is §9.6 Scenario C's TARGET, whose mechanism a primary refuted (FW.54) while the target stands.
 # And §9.3's own illustration of the EDLC leak no balance carries: «+1 мкА на 4.5 В = +4.5 мкВт» — an illustration,
 # not a measurement (the part's leak is unmeasured). Mirrors — edit in 02_03 §9.3.
+# Both sleep drains (P_SLEEP_VSTOR · P_SLEEP_VSTOR_STOP2) carry the BQ's quiescent P_BQ_Q 2.20 µW (488 nA × 4.5 V) as a
+# NAMED conservative margin (⚖️ founder 2026-11-09, 02_03 §9.3 · 00_07 HW.54): if the datasheet η of §9.1 is net-like,
+# at least ≈ 2.0 µW of it is counted twice — kept, because removing it would make the model optimistic exactly there.
 P_SLEEP_VSTOR_STOP2 = 9.26e-6       # W
 P_EDLC_LEAK_1UA_ILLUSTRATION = 4.5e-6  # W
 E_CYCLE = 33.33e-3           # J — E_active_from_VSTOR per wake cycle (no inference since the piezo cut, ⚖️ 2026-09-29, 02_01 §6)
 P_SLEEP_VSTOR = 4.18e-6      # W — sleep drain from VSTOR between cycles
 BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)
-
-# ── Glucose diffusion ──
-D_EFF_GLUCOSE = 2e-6         # cm²/s — through chitosan/Nafion matrix (literature)
-DELTA_MEMBRANE = 20e-4       # cm (20 µm) — Layers 4+5 thickness
-N_ELECTRONS = 2              # electrons per glucose (FAD → FADH₂)
-
-# ── Cascade anchors (experimental E°, verified — the AUTHORITATIVE cascade verdict;
-#    computed like for like the cascade is downhill in every Os form within the protocol, B3LYP/6-31G(d) (uphill for the device cell on the relaxed
-#    electronic flavin level at ωB97X/def2-TZVP on both sides — 95 `higher_tier`) — spin–orbit coupling on Os, which
-#    it omits, reverses the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] — its magnitude method-dependent — 95, SUMMARY). One-Home: SUMMARY/L3/paper link here.
-# Os mediator [Os(4,4'-dimethyl-bpy)₂(PVI)Cl]⁺: +309 mV vs NHE (Zafar et al. 2012, Anal. Chem. 84, 334,
-#   doi:10.1021/ac202647z, Table 1 — the best-performing of six Os polymers, +15…+489 mV window, wired to GcGDH;
-#   its Ag/AgCl(0.1M KCl) reference is +288 mV vs NHE, p. 336). The reading +21 mV vs that reference is printed in the
-#   OTHER Zafar et al. 2012, Anal. Bioanal. Chem. 402, 2069 (PMC3275720).
-# FAD-GDH bound FAD: −265 mV vs SHE (Schachinger, Ma, Ludwig 2023, Electrochem. Commun. 146, 107405).
-E_OS_MEDIATOR_MV_NHE = 309        # was a +200 mV under-specified anchor pre-OS-RECOMPUTE
-E_FAD_GDH_MV_SHE = -265
-OS_DEVICE_MEDIATOR_LIGAND = "4,4'-dimethyl-2,2'-bipyridine"  # os_complex.json identity (21f = sole owner)
-CASCADE_DRIVING_FORCE_MV = E_OS_MEDIATOR_MV_NHE - E_FAD_GDH_MV_SHE   # +574 mV (−0.574 eV downhill)
-# Shared shifts of the like-for-like cascade (95 `shared_shifts`) — choices EVERY cell shares, so the cells cannot test them.
-# Spin–orbit coupling on Os(II/III) is NOT computed here (LANL2DZ is a scalar-relativistic ECP). Srnec, Chalupský, Fojta,
-#   Zendlová, Havran, Hocek, Kývala & Rulíšek 2008, J. Am. Chem. Soc. 130, 10947 (DOI 10.1021/ja800616s; ABSTRACT read,
-#   2026-10-19): with SOC, «an approximately −300 mV shift for the osmium(II/III) complexes», systematic over six ligand sets
-#   ([M(bipy)₃] among them); the Os³⁺ ²T₂g splits by 4155–5061 cm⁻¹ («the main contribution»), so ζ ≈ 0.34–0.42 eV. It
-#   stabilises Os(III) (t2g⁵), so it LOWERS E°(Os) and every cascade with it — a literature size at the octahedral value
-#   (a lower symmetry quenches it), carried as a shift of every cell, never added to a computed E°.
-OS_SOC_SHIFT_V = -0.30
-# The same abstract's Os³⁺ ²T₂g Kramers-doublet ↔ quartet splitting, cm⁻¹ (= 3ζ/2 in octahedral symmetry) — the ζ range
-#   the one-hole quenching model `94` starts from.
-OS3_SOC_SPLIT_CM1 = (4155.0, 5061.0)
-# ⊕ 2026-10-20 (00_07 HW.5.IS, ⚖️ (к) founder 2026-10-20): the same paper's SI Table S2 (CASSCF(5,3)/CASPT2/CASSI, basis
-#   TZP/DZ), every Os row — the 2²A and 3²A states of the t2g hole WITHOUT SOC, cm⁻¹ above 1²A, and ΔE0, the SOC shift of
-#   E°, mV — read 2026-10-20 from the SI PDF's text layer (pdf.js, page S3). The abstract's «≈ −300 mV» summarises rows that
-#   spread from −152 to −400 mV; the cascade reads the row of the closest ligand set, [Os(bipy)₃], with the octahedral
-#   value kept as the abstract's summary — not an upper count, `95` sets every row against the cells — and `94` calibrates its one-hole model on all six.
-SRNEC_TABLE_S2_OS = {
-    "[OsCl6]4-/3-": (78.0, 194.0, -400.0),
-    "[Os(NH3)6]2+/3+": (610.0, 638.0, -362.0),
-    "[Os(CN)6]4-/3-": (293.0, 305.0, -333.0),
-    "[Os(en)3]2+/3+": (1609.0, 1709.0, -292.0),
-    "[Os(bipy)3]2+/3+": (2265.0, 2281.0, -250.0),
-    "[Os(H2O)6]2+/3+": (4845.0, 6389.0, -152.0),
-}
-OS_SOC_SHIFT_BIPY_V = SRNEC_TABLE_S2_OS["[Os(bipy)3]2+/3+"][2] / 1000.0
-# The other absolute-SHE value in common use beside 32's Isse–Gennaro 4.281 V; the flavin's E° does not move with it when
-#   the proton free energy moves consistently, so E°(Os), which has no proton, carries the whole difference.
-SHE_ABS_ALT_V = 4.44  # Trasatti 1986, IUPAC Recommendations, eqn (19): (4.44 ± 0.02) V (paper ref 64; read 2026-11-01)
-# Nernst slope, V per pH unit at 298 K — the proton term of the 2e⁻/2H⁺ flavin couple (32) and of the one-electron
-#   proton-coupled route printed at pH 7 beside it (61, Table 2b; self-review round 2 К4, 2026-10-23).
-NERNST_SLOPE_V = 0.05916
 
 # ── Structural alloy candidates — Stage-2 coin bake-off (01_02 §2.5, HW.24) ──
 # Composition (wt%) + mechanical/thermal props feeding the V/Al-release (script 51) + Lamé (script 50)

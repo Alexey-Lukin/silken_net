@@ -589,8 +589,7 @@ if printf '%s\n' "$_changed" | grep -qE '^tools/in_silico/|^docs/'; then
         echo "pre-push BLOCKED — the pushed commit fails the \`cache_doc_sync\` job's tests (ran on $_si_py):"
         echo "  $(echo $_si_tests | tr '\n' ' ')"
         echo "Fix:  a doc↔cache pin names a doc line and the cache number it must match — fix the doc, the cache"
-        echo "      (regenerate by its script) or, if the doc text is GONE on purpose, the pin; SI manifest — run"
-        echo "      $_si_py tools/in_silico/scripts/72_paper_supporting_information.py on a CLEAN tree and commit it."
+        echo "      (regenerate by its script) or, if the doc text is GONE on purpose, the pin."
         echo "Then re-push.  (Emergency bypass: git push --no-verify)"
         exit 1
       elif [ "$_si_rc" -ne 0 ]; then

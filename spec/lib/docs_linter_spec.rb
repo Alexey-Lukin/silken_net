@@ -563,11 +563,11 @@ end
         "01_02_Ti", "ростер — дзеркало, правити в домі (Cursor/Copilot)\n")).to be_empty
     end
 
-    # ⚖️ founder 2026-10-11 (00_02 §2.1): the preprint's AI-use disclosure must name its tools (ChemRxiv). Both negative
-    # halves are load-bearing: the rest of the same file, and the same heading in another file, must still go red.
-    # The methods paper carries the same section under the same edges (arXiv moderation policy); a near-miss basename
+    # The exception's form — ⚖️ founder 2026-10-11 (00_02 §2.1): a preprint's AI-use disclosure must name its tools. Both
+    # negative halves are load-bearing: the rest of the same file, and the same heading in another file, must still go red.
+    # The methods paper carries that section (arXiv moderation policy, ⚖️ 2026-11-08); a near-miss basename
     # stays red, so the key cannot quietly widen into a prefix match.
-    %w[08_declarations agent_self_deception_taxonomy].each do |file|
+    %w[agent_self_deception_taxonomy].each do |file|
       it "exempts only the «## AI Use Disclosure» section of #{file}" do
         text = "## AI Use Disclosure\n- Claude Code assisted; Gemini may have been used.\n## Other required declarations\n- Copilot did X\n"
         hits = described_class.ai_vendor_name_drift(file, text)

@@ -79,7 +79,7 @@
 | параметр шорсткості (`Sa` ⊥ `Ra`) | «параметр і прилад назвіть — обидва годяться, аби названий» | присуду немає: `Sa` HW.2 судить каталітичні поверхні й поверхонь цього тесту не покриває ([`01_02 §1.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)); параметр дроту — відповідь DMLS-вендора ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.34, нога «бік дроту»), кромки каналу й трубки — називає сама лабораторія (п. 5) |
 | холодний кінець −30 °C і повзання за 20 років | ⛔ не покрито: у рідині за −30 °C тесту не буває, а повзання — інша вісь | `wear_budget.not_modelled.temperature_and_creep` |
 
-⛔ **Не цей тест:** прискорений корозійний ([`anchor_accelerated_corrosion_rfq`](anchor_accelerated_corrosion_rfq.md)) · coin ([`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md)) · S-N ([`anchor_sn_fatigue_rfq`](anchor_sn_fatigue_rfq.md)) · IP68 зібраного анкера з живим каналом (HW.8.5) · тест опору анод↔катод до відвантаження (FMEA `#22`) — той ловить ВІДСУТНІЙ лайнер, а не протертий.
+⛔ **Не цей тест:** прискорений корозійний ([`anchor_accelerated_corrosion_rfq`](anchor_accelerated_corrosion_rfq.md)) · coin (`anchor_coin_electrochem_rfq` (тег `pre-reroot-2026-11-22`)) · S-N ([`anchor_sn_fatigue_rfq`](anchor_sn_fatigue_rfq.md)) · IP68 зібраного анкера з живим каналом (HW.8.5) · тест опору анод↔катод до відвантаження (FMEA `#22`) — той ловить ВІДСУТНІЙ лайнер, а не протертий.
 
 ### 2a. Як відповідь стає вироком (у лист НЕ йде)
 

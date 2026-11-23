@@ -33,7 +33,6 @@ on:
       - 'docs/02_01_Hardware_Architecture_and_BOM.md'
       - 'docs/02_02_Blind_Mate_Pogo_Pin_Interface.md'
       - 'docs/02_03_BQ25570_MPPT_Nano_Power.md'
-      - 'docs/protocols/procurement/ebfc_chem_rfq.md'
       - 'docs/protocols/procurement/vendor_templates.md'
       - 'docs/protocols/procurement/anchor_flange_cnc_rfq.md'
       - 'docs/protocols/procurement/anchor_liner_tribo_rfq.md'
@@ -41,16 +40,13 @@ on:
       - 'docs/protocols/outreach/lock_fea_prony_brief.md'
       - 'docs/protocols/anchor/gdl_rain_dew_stand.md'
       - 'docs/protocols/anchor/install_and_log_bench.md'
-      - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
       - 'docs/protocols/hardware/rf_mockup_bench_sheet.md'
       - 'docs/00_07_Action_Plan_Tracker.md'
       - 'docs/protocols/anchor/field_strain_sensor_sheet.md'
       - 'docs/protocols/outreach/forest_access_application.md'
       - 'docs/protocols/ebfc/stem_face_winter_light.md'
       - 'docs/protocols/anchor/sn_fatigue_test_plan.md'
-      - 'docs/protocols/ebfc/cathode_gdl_orr_test.md'
       - 'docs/protocols/procurement/anchor_accelerated_corrosion_rfq.md'
-      - 'docs/protocols/procurement/anchor_coin_electrochem_rfq.md'
       - 'docs/protocols/procurement/anchor_sn_fatigue_rfq.md'
       # The CAD inputs the scripts read at runtime (CEM manifests, the voxel-FE caches): a change there
       # stales the caches built on them, and only the cache test in `smoke` can see it.
@@ -86,12 +82,10 @@ jobs:
               - 'docs/02_01_Hardware_Architecture_and_BOM.md'
               - 'docs/02_02_Blind_Mate_Pogo_Pin_Interface.md'
               - 'docs/02_03_BQ25570_MPPT_Nano_Power.md'
-              - 'docs/protocols/procurement/ebfc_chem_rfq.md'
               - 'docs/protocols/anchor/fea_aging/calibration_case_*.md'
               - 'docs/protocols/outreach/lock_fea_prony_brief.md'
               - 'docs/protocols/anchor/gdl_rain_dew_stand.md'
               - 'docs/protocols/anchor/install_and_log_bench.md'
-              - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
               - 'docs/protocols/hardware/rf_mockup_bench_sheet.md'
               - 'tools/cad/cem/**'
               - 'tools/cad/cache/fea/**'
@@ -108,9 +102,7 @@ jobs:
               - 'docs/protocols/procurement/anchor_flange_cnc_rfq.md'
               - 'docs/protocols/procurement/anchor_liner_tribo_rfq.md'
               - 'docs/protocols/anchor/sn_fatigue_test_plan.md'
-              - 'docs/protocols/ebfc/cathode_gdl_orr_test.md'
               - 'docs/protocols/procurement/anchor_accelerated_corrosion_rfq.md'
-              - 'docs/protocols/procurement/anchor_coin_electrochem_rfq.md'
               - 'docs/protocols/procurement/anchor_sn_fatigue_rfq.md'
 
   lock_sync:
@@ -224,10 +216,9 @@ jobs:
     # swap, the −1.054↔−1.051 provenance mix, the xylem-pH column drift).
     # (test_cache_integrity imports numpy/openmm-bound lib/ modules → it runs in the
     # `smoke` conda job above, NOT here. This bare-pytest job imports stdlib only:
-    # test_validate_vs_experiment reaches lib/constants + lib/utils, whose openmm
-    # import is lazy, and test_unified_lame reaches lib/mechanics — both were run
-    # bare before they were added. The 02_03 §1.1 ⟷ lib/constants mirror pin lives
-    # in the first, so an edit to only one side of that mirror cannot pass green.)
+    # test_unified_lame reaches lib/mechanics, run bare before it was added. The
+    # 02_03 §1.1 ⟷ lib/constants mirror pin lives in test_doc_cache_sync, so an
+    # edit to only one side of that mirror cannot pass green.)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -244,7 +235,6 @@ jobs:
       - name: Doc↔cache numeric-drift guard + stdlib-only unit tests
         run: >-
           python3 -m pytest tools/in_silico/tests/test_doc_cache_sync.py
-          tools/in_silico/tests/test_validate_vs_experiment.py
           tools/in_silico/tests/test_unified_lame.py -q
 
   in-silico-ok:

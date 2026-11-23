@@ -1,14 +1,14 @@
 ---
 name: in-silico
-description: "Use when working on the silken_net in-silico surface — the EBFC Gen 2.0 Zero-Lab DFT+MD pipeline (tools/in_silico/, silken_md conda env): L1 AlphaFold-3 protein architecture, L2 OpenMM MD, L3 PySCF quantum chemistry (ΔSCF redox cascade, Hammett mediator series, ZIF-cathode DET, cluster-continuum solvation), L4 kinetics/EIS, the Стаття 1 computes, and the anchor-mechanics series (Lamé press-fit and thermal stress, pogo Z-stack tolerance, EDLC aging + Kirkendall, bus mechanics and contact, per-alloy oxide-DET, PTFE-GDL breakthrough, the thermal-install cambium field, gyroid ligament thickness, sap saturation and its recipe window; the roster is `ls scripts/`; §01/§02/HW.* machine-half). Operational playbook: the script dependency graph, the critical rules (rules.md) and the when-modifying discipline (modifying.md) behind one-line indexes, the DFT/MD gotchas, the conda-lock env and the cache-is-SSOT discipline; routes to the 01_03 §3.4 + protocols/ebfc/in_silico canon, does not restate results. Examples: \"run or add a DFT/MD script\", \"why does the Os(III) SCF oscillate forever\", \"the FADH2->Os cascade comes out uphill\", \"set up the in-silico env\", \"why is density_fit slower for Ce\", \"add a ligand to the pipeline\", \"check the cascade verdict\", \"порахуй Z-stack tolerance\", \"онови Arrhenius aging модель\", \"press-fit Lamé для Zone1↔2\". ⛔ EBFC is cut from the product (founder 2026-11-22, 01_03 §4): chemistry half = repository record, Стаття 1 will not be published; no new chemistry runs (machine’s reading)."
+description: "Use when working on the silken_net in-silico surface (tools/in_silico/, silken_md conda env) — the anchor-mechanics series (Lamé press-fit and thermal stress, pogo Z-stack, O-ring and bayonet clamp, bus wire and liner contact, coaxiality, wood share and sway stress of the printed parts, gyroid ligament, PTFE-GDL membrane breakthrough, EDLC aging + Kirkendall), the capsule thermal envelope and cambium heat/frost, the stem's radio shadow at 868 MHz and bark overgrowth, winter PV autonomy, snow and frost, the stem-face logger, the point dendrometer's support budget, wind and field-strain campaigns, and the synthetic sap recipe (roster: `ls scripts/`). Operational playbook: the script dependency graph, the critical rules (rules.md) and the when-modifying discipline (modifying.md) behind one-line indexes, the citation (DOI-verify) rules, the conda-lock env and the cache-is-SSOT discipline; routes to 00_03 §3.6 + the protocols/ebfc/in_silico canon, does not restate results. Examples: \"порахуй Z-stack tolerance\", \"онови Arrhenius aging модель\", \"press-fit Lamé для Zone1↔2\", \"how cold does the capsule get on a clear winter night\", \"does the stem shadow the 868 MHz link\", \"winter PV autonomy for this aperture\", \"verify a literature constant against Crossref\". ⛔ The EBFC chemistry half (DFT, MD beyond the CI smoke, the enzyme-kinetics scripts, Стаття 1) is cut from the product and deleted from this tree (⚖️ founder 2026-11-22, 01_03 §4; bodies at tag pre-reroot-2026-11-22): no new chemistry runs."
 ---
 
-# In-Silico Pipeline (EBFC Gen 2.0 Zero-Lab Proof)
+# In-Silico Pipeline (anchor mechanics · capsule · radio · PV · dendrometer)
 
 ## Critical Rules
 
-**Bodies live in `rules.md` — open it before running or changing DFT/MD, declaring an anchor dimension,
-or quoting a literature constant or a source.** #19–#35: DFT and MD gotchas · #36–#46: citation rules (→ §Paper Citations) · #47 on: rules appended later, any group. Below is one generated line per rule: the line is the CARRIER; the
+**Bodies live in `rules.md` — open it before declaring an anchor dimension, touching the MD smoke,
+or quoting a literature constant or a source.** #2–#5 · #16 · #19–#35 except #24: retired DFT/MD gotchas (bodies at tag `pre-reroot-2026-11-22`) · #36–#46: citation rules (→ §Paper Citations) · #47 on: rules appended later, any group. Below is one generated line per rule: the line is the CARRIER; the
 mechanism, the incident and the bounds are in the companion. Numbering is append-only — cite
 `in-silico §Critical Rules #N` (the section name disambiguates from §When Modifying).
 
@@ -16,10 +16,10 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 
 0. `conda env list` in a non-interactive shell answers about ITSELF, not about the machine — ask the FILESYSTEM
 1. Shared lib is SSOT — every SHARED or canon-mirrored constant, every cache root and `banner()` come from `lib/` and are never redefined locally
-2. A SMILES fix cascades — fixing one in 02-08 means rerunning ALL downstream MD that uses that ligand
-3. DFT: NEVER two heavy jobs on same CPU
-4. No density_fit() for Os/Ce — the auto-generated aux basis for heavy metals is 3× SLOWER than standard integrals
-5. Open-shell transition metals can oscillate forever — `level_shift=0.3` stops UKS on Os(III), Co-Ce and Ce; it steers the PATH an SCF takes (hence possibly the state it lands on), not the orbital energies a converged run reports, so switch it on only where the SCF oscillates
+2. Retired — DFT/MD: a SMILES fix cascades into every downstream MD run that uses that ligand; body at tag `pre-reroot-2026-11-22`
+3. Retired — DFT: never run two heavy jobs on the same CPU; body at tag `pre-reroot-2026-11-22`
+4. Retired — DFT: no density_fit() for the heavy metals Os and Ce; body at tag `pre-reroot-2026-11-22`
+5. Retired — DFT: level_shift for open-shell transition metals that oscillate; body at tag `pre-reroot-2026-11-22`
 6. MD goes NaN at the NVT ramp unless it pre-relaxes at 10K and ramps from 50K in 10K steps
 7. MD trajectories are gitignored — commit only the JSON/PNG summaries
 8. The CI smoke MD went NaN from BOX SIZE, not RNG — shrink the box (drop disordered tails), never just re-run or raise the iteration cap
@@ -30,26 +30,26 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 13. A THIRD-PARTY instrument writes "I did not measure this" with the SAME value it writes measurements — and nothing in our tree can see it, because the sentinel lives in that tool's code
 14. A converged SCF certifies a STATIONARY POINT, not the ground state — the Newton rescue in `dft_singlepoint` converges from wherever the failed SCF stopped, and on an open shell that can be a spin-contaminated state the cache records as `converged: true`
 15. A model of how a load TRAVELS between two parts is a list of paths before it is a number — inventory every coupling canon already defines between the two ends, and every load that does not depend on the one you set out to price, before computing any of them
-16. A reduced-cofactor SMILES is a TAUTOMER claim, and the formula cannot check it — before a cascade runs on it, verify WHERE the hydrogens sit against the species the text names
+16. Retired — Chemistry: a reduced-cofactor SMILES is a tautomer claim the formula cannot check; body at tag `pre-reroot-2026-11-22`
 17. A coupling taken as half the difference of two SCF solutions is a coupling only if the two states are CHARGE-LOCALISED and their difference clears the SCF tolerance — both halves fail silently, and the rate they feed is squared in the first and meaningless in the second
 18. A converged GEOMETRY certifies a STATIONARY POINT, not a minimum — and a symmetric start has no gradient out of its symmetry plane, so it converges to the symmetric stationary point, which only a Hessian classifies
-19. PySCF has no SDD basis — take `lanl2dz` for Cu and Co and `stuttgart_rsc` for Ce, which `lanl2dz` does not carry
-20. PySCF does not run `wb97x-d` — use plain `wb97x`, whose range separation carries the fix; dispersion is the small part
-21. ωB97X Koopmans orbital energies are not redox potentials — compare molecules by total energies (ΔSCF), never by their LUMOs
-22. Adiabatic ΔSCF here is a composite — geometry at B3LYP/def2-SVP, single point at ωB97X/def2-TZVP — orders of magnitude cheaper than a full ωB97X optimisation
-23. Cl on the Os complex's flat PES never meets the GAU displacement criterion, and a loosely converged minimum is read against the crystal ranges and every measured series
+19. Retired — DFT: PySCF has no SDD basis, so take lanl2dz and stuttgart_rsc; body at tag `pre-reroot-2026-11-22`
+20. Retired — DFT: PySCF does not run wb97x-d, so use plain wb97x; body at tag `pre-reroot-2026-11-22`
+21. Retired — DFT: ωB97X Koopmans orbital energies are not redox potentials; body at tag `pre-reroot-2026-11-22`
+22. Retired — DFT: the composite adiabatic ΔSCF protocol of the cascade; body at tag `pre-reroot-2026-11-22`
+23. Retired — DFT: Cl on the Os complex never meets the GAU displacement criterion; body at tag `pre-reroot-2026-11-22`
 24. A PySCF version gap far above the SCF tolerance on a metal-in-PCM cache is a different Hamiltonian, not numerics — read every release in between before naming a cause
-25. Optimise geometry only through `lib/dft_utils.dft_optimize` — PySCF's gradient omits the grid response by default and its own optimiser drops the convergence flag
-26. Spin parity follows the electron count — an odd count takes an odd 2S, and `spin = mol.nelectron % 2` is only the fallback
-27. Never put H⁺ or H₃O⁺ in PCM — a proton-coupled couple takes the thermodynamic proton reference that `32` and `33` share, not explicit water
-28. GAFF renames FAD to «UNK» with suffixed atom names, and a truncated flavin fragment can come out odd — set its charge from the electron count
-29. The Os axial ligand moves E°(III/II) by hundreds of meV, and the chloro↔{aqua, bis-Im} bracket is functional-robust while the aqua↔bis-Im order is not — quote ① WITH its method
-30. `lo.PM` / `lo.Boys` crash on PySCF's `lib.einsum` bug — for the two-orbital FO-DFT localisation diagonalise the metal-projected population matrix instead
-31. Fibonacci-sphere placement is deterministic yet can make a bad contact at one temperature — cure it with Critical Rule #6, never by dropping a temperature
-32. `GAFFTemplateGenerator` matches a molecule by its graph structure, so one `Molecule` per unique chemical species is enough
-33. A few-Å RMSD over an L2 run is normal relaxation of an AF3 structure — judge folding by Rg, and do not re-propose a bit-level trajectory pin
-34. A full DCD load kills memory — read trajectories through mdtraj with a stride, never whole
-35. A PBC-wrapped cofactor splits a contact graph — `traj.image_molecules(inplace=True)` on the FULL topology before `atom_slice`, not `make_molecules_whole()`
+25. Retired — DFT: optimise geometry only through the shared dft_optimize wrapper; body at tag `pre-reroot-2026-11-22`
+26. Retired — DFT: spin parity follows the electron count of the molecule; body at tag `pre-reroot-2026-11-22`
+27. Retired — DFT: never put H⁺ or H₃O⁺ into the PCM continuum; body at tag `pre-reroot-2026-11-22`
+28. Retired — MD: GAFF renames FAD and a truncated flavin can come out odd; body at tag `pre-reroot-2026-11-22`
+29. Retired — DFT: the Os axial ligand moves E°(III/II) by hundreds of meV; body at tag `pre-reroot-2026-11-22`
+30. Retired — DFT: lo.PM and lo.Boys crash on PySCF's einsum bug; body at tag `pre-reroot-2026-11-22`
+31. Retired — MD: Fibonacci-sphere placement can make one bad contact at one temperature; body at tag `pre-reroot-2026-11-22`
+32. Retired — MD: GAFFTemplateGenerator matches a molecule by its graph structure; body at tag `pre-reroot-2026-11-22`
+33. Retired — MD: a few-Å RMSD over an AF3 structure is normal relaxation; body at tag `pre-reroot-2026-11-22`
+34. Retired — MD: never load a full DCD trajectory into memory; body at tag `pre-reroot-2026-11-22`
+35. Retired — MD: image the molecules on the full topology before atom_slice; body at tag `pre-reroot-2026-11-22`
 36. Verify every DOI end-to-end against Crossref, and when a fetch reads it, demand «NOT FOUND if error, NO outside knowledge» — the guard against citing from memory
 37. 🔑 Crossref `issued` = the ONLINE year; a citation uses the ISSUE/volume year
 38. A constant read from a SCANNED primary: read the page image, never the text layer — and make the script hold the transcription to the source
@@ -75,7 +75,7 @@ head, compressed, and what the rule forbids is in the body (instance — head of
 
 <!-- INSILICO-MODIFYING-INDEX:AUTO — generated from modifying.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
-1. Adding a ligand is a five-step chain, and skipping the last step leaves downstream MD stale
+1. Retired — Chemistry: adding a ligand is a five-step chain ending in downstream MD; body at tag `pre-reroot-2026-11-22`
 2. Change a SHARED or canon-mirrored constant only in `tools/in_silico/lib/constants.py`, then find every cached JSON that used it — a coefficient private to one script's model changes in that script
 3. After any change run the in-silico tests, commit, then update every SSOT doc that quotes the result
 4. Drift-proof comments/constants — never hardcode a mirror of another script's result; LOAD it from that script's cache JSON at runtime
@@ -97,14 +97,14 @@ head, compressed, and what the rule forbids is in the body (instance — head of
 20. Script-list One-Home: README = inventory (what + cost), SUMMARY = results, PIPELINE_STATUS = per-script status and volatile counts
 21. Don't `git add -A` a still-warm background-compute output
 21a. An overnight SCF needs `caffeinate -i`, or macOS idle-sleep kills it — and the loss is silent
-22. A new DFT script imports `lib.constants` + `lib.utils` + `lib.dft_utils` and runs its SCF through `dft_singlepoint`, whose defaults already carry Critical Rules #4 and #5
-23. A new MD script imports `lib.constants` + `lib.geometry` + `lib.utils`, protonates through `lib.md_utils.prepare_protein` and follows Critical Rule #6 for minimisation, pre-relax and ramp
+22. Retired — DFT: what a new DFT script imports and how it runs its SCF; body at tag `pre-reroot-2026-11-22`
+23. Retired — MD: what a new MD script imports and how it protonates and ramps; body at tag `pre-reroot-2026-11-22`
 24. New script — the number is a shared namespace (take the next free N from `ls scripts/`, never a remembered range), and the lattice's elastic knockdown is not this half's to compute
 25. A model-feeding FORMULA can be wrong, not just a stale mirror
 26. In a stochastic pipeline the noise floor measured from REFERENCE replicates under-estimates the pipeline's own scatter — and the cheapest independent estimate sits where the perturbation does NOT act
 27. A cluster BUILDER can orient a ligand by a quantity that is not the bond it must form — the accident holds only for the ligand it was tuned on, and CORRECTING it is where the real damage happens
 28. A number you derive to CHECK a claim inherits an idealization, and the idealization — not the arithmetic — is what must be justified. Both instances below were MINE, both were arithmetically right, and one of them shipped into canon before I caught it
-29. The SI manifest (`72`) hashes every committed file of its sections S1–S7 (env · scripts · lib · tests · caches · inputs · geometries · figures), so it is re-rendered LAST — after the final edit to anything it lists, including a file that did not exist when it last ran
+29. Retired — Paper: the SI manifest generator is re-rendered last after every edit; body at tag `pre-reroot-2026-11-22`
 30. A seasonal crossing counted as «the first run ≥ threshold from 1 January» calls a winter thaw spring — make the crossing SUSTAINED and declare that rule as ours, on BOTH edges
 31. A pin over a numeric GENERATOR holds only in the environment that wrote its reference — and this pipeline now runs in THREE: the recorded osx-arm64 env writes the files, the lock pins a DIFFERENT RDKit on linux-64 than on osx-arm64, and CI runs the linux-64 one
 32. A count against a threshold on QUANTIZED input has ties — and an iterative solver's tolerance decides them silently: return the degenerate root EXACTLY, and keep a control that equates the no-forcing run with its input
@@ -117,7 +117,7 @@ head, compressed, and what the rule forbids is in the body (instance — head of
 39. Judging your rows against ANOTHER script's threshold: compute its quantity for YOUR rows with ITS formula, inputs and pick — «my mean and my amplitude are each below its inputs» is not the threshold, and its inputs may sit at another play, geometry or definition of «mean»
 40. When a quantity your verdict stands on has a COMPUTED and an ASSUMED value that disagree, the verdict is CONDITIONAL on it — publish the threshold at which it flips, per named reading, instead of picking the kind value and calling the other one an artefact
 41. Before you apply a closed form to numbers taken from ANOTHER script's cache, name the two BODIES of that script's contact (or of whatever pair the formula is about) from ITS OWN `MODEL` section — never from the wording of the leg you are closing, and never from your mental picture of the part
-42. A new script in this package must declare an English `SI_DESCRIPTION`, or the paper-SI generator refuses to render and the doc↔cache pin reds with it
+42. Retired — Paper: a new script declares an English SI_DESCRIPTION for the SI generator; body at tag `pre-reroot-2026-11-22`
 43. A threshold quoted in a one-sided sentence is rounded toward the side that keeps the sentence TRUE, and the sentence is written so that side is the conservative one; and the statistic behind a physical «never» is checked for what it can SEE before it becomes the claim
 44. A cap on a SERIES route is its WEAKEST link, and so is what follows from ONE part's limit («how far before it yields»); a link's give-way threshold needs THAT link's own compliance, or it comes out an order of magnitude low
 45. «Conservative», «overstates», «the adverse end» is a claim about the DIRECTION of an error, and it needs a ground of its own — check that it does not rest on the datum you excluded, or on the input's extremes standing in for the output's
@@ -138,27 +138,17 @@ head, compressed, and what the rule forbids is in the body (instance — head of
 
 ## SSOT Documents — Read These First
 
-> ⛔ **The EBFC is cut from the product and the critical path (⚖️ founder 2026-11-22 — `01_03 §4`, first paragraph; the cut is led by `00_07` HW.54).** The chemistry half of this pipeline stays as an unpublished record in the repository: Стаття 1 will not be published (⚖️ founder 2026-11-22 — `00_02 §2.1`). From the verdict itself: the one event that returns the EBFC to the candidates is a published demonstration of years of continuous operation of an enzymatic electrode. Operational reading (the machine’s, not the founder’s words): do not start a new chemistry run, add a ligand, re-open a mediator, cathode or enzyme lever, or quote a pipeline number as a property of the product. In the anchor-mechanics series the scripts that price an enzyme, mediator or cathode-membrane lever (`53`, `57`) fall under this line too; the rest waits for the open verdict on which anchor parts keep a role without the cell (`00_07` HW.54).
+> ⛔ **The EBFC chemistry is cut from the product and the critical path (⚖️ founder 2026-11-22 — `01_03 §4`, first paragraph), and its half of this pipeline is not in the tree** — the DFT scripts, the MD scripts bar the CI smoke `01`, the enzyme-kinetics scripts (`lib/kinetics` stays for `57`), their caches, the L1/L3 pages and the Стаття 1 paper (which will not be published, ⚖️ founder 2026-11-22 — `00_02 §2.1`); bodies at tag `pre-reroot-2026-11-22`. From the verdict itself: the one event that returns the EBFC to the candidates is a published demonstration of years of continuous operation of an enzymatic electrode. Operational reading (the machine’s, not the founder’s words): do not start a new chemistry run or quote a former pipeline number as a property of the product. `57` (PTFE-GDL membrane breakthrough) stays as a subject of the anchor block until the open verdict on which anchor parts keep a role without the cell (`00_07` HW.54); its O₂-budget half prices the cut cathode.
 
 | Document | What it covers |
 |----------|---------------|
 | `docs/00_03_TRL_Matrix_HIL_and_Beyond.md §3.6` | In-silico as HIL and its TRL boundary (the chemistry pipeline spec, `01_03 §3.4`, was cut with the chemistry — body at tag `pre-reroot-2026-11-22`) |
-| `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md` | Live status: running/queued/completed scripts, decision matrix |
-| `docs/protocols/ebfc/in_silico/SUMMARY.md` | All L1-L4 results in one page |
-| `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md` | DFT details, cascade methods comparison, ΔSCF, L3b cathode |
-| `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | AlphaFold 3 results, d_FAD distance; §2 = the CHEM.11 freeze design (N→Q sequons, the 600 aa invariant, compensating substitutions) |
+| `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md` | Per-script status of the live half |
+| `docs/protocols/ebfc/in_silico/SUMMARY.md` | All results of the live half in one page |
 | `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §2.1` | Synthetic xylem sap — the RATIFIED recipe point and pH setpoint; owner-script `67`, doc↔cache pinned, and every salt concentration in `docs/protocols/` held to the live point by `test_sap_recipe_mirrors_match_the_live_point` — a moved point reds every letter that still carries the old one. ⚠️ число одразу після назви солі пін читає як мМ, хоч би яка стояла одиниця — іншу одиницю пиши лише в дужках ПІСЛЯ мМ-форми (`KNO₃ 0.0049 mM (4.9 µM)`; спіймано до коміту 6e4046902). |
-| `docs/00_02_Academic_Integration_and_IP.md` §1 | Partner registry: DFT-redox is self-owned (Стаття 1 goes WITHOUT an external collaborator — ⚖️ founder 2026-09-23, explicit-water QM/MM is its named limit; a collaborator is a follow-up option only) · in-vitro EBFC enzymology = profile biochemist/electrochemist, TBD · xylem-sap composition — no partner: the recipe point is ratified (pH from a primary source; the ions re-anchored ⚖️ 2026-10-18 on measured conifer sap — Norway spruce, not Scots pine — `01_02 §2.1`; our pine's own sap comes from the log-day logs, `00_07` HW.3) |
-| `docs/00_02_Academic_Integration_and_IP.md` §2 | Publication plan — Стаття 1 |
-| `docs/00_07_Action_Plan_Tracker.md` | HW.5.IS section — operational task status |
+| `docs/00_07_Action_Plan_Tracker.md` | Open work: HW.54 (the witness pilot) · HW.3 / HW.33 / HW.34 / HW.43 (anchor mechanics, row below) · DOC-T.131 (the reroot campaign) |
 | `01_01 §1.4` / `01_01 §4.2` · `02_02 §2.2` / `02_02 §3.5` · `01_02 §2.2` · `00_07` HW.3 / HW.33 / HW.34 / HW.43 | Anchor-mechanics canon (ratified verdicts live THERE) + the open-work items: `50`/`51`/`56` → the Zone1↔2 band window (§4.2, HW.3) · `55`/`68` → the bus wire and its liner (§1.4, HW.34) · `52` → the Z-stack and the O-ring gland (`02_02 §3.5`, HW.33) · `59` → contact-part endurance (`02_02 §2.2` + `01_02 §2.2`, HW.43) |
-| `tools/in_silico/README.md` | Setup, quickstart, GPU notes, GAFF explanation |
-
-## Cascade Verdict Summary
-
-**Direction only:** the cascade FAD→Os is **downhill** from measured E°s. Raw DFT on the 1,5-dihydro FADH₂ (the chain's donor since 2026-10-15 — Critical Rule #16) comes out **downhill on the B3LYP-Koopmans offset (programmatic geometry; ≈ 0 on Os(III)'s own minimum), uphill on the adiabatic and the vertical ΔSCF and the PCET route** (the adiabatic ΔSCF read downhill only on the saddle its chain's planar start converged to — re-run from the minimum 2026-10-19; the Koopmans offset stands on the planar MMFF flavin, the shape that run shows to be a DFT saddle) — and none of these one-electron readings is like-for-like with the measured two-electron, two-proton driving force, so none of them measures «the gap». ⛔ «Uphill in every method» was a 4a,5-dihydro artefact — do not quote it (on the minimum its only counterexample left is the +0.068 programmatic-geometry Koopmans offset, −0.003 on Os(III)'s own minimum — and the like-for-like result does not rest on it); ⛔ nor read a Koopmans offset or a bare ΔSCF against −0.574 eV as a gap. The like-for-like comparison (2e⁻/2H⁺ FAD against each Os form on one SHE scale, `95`) is the paper's cascade result: **downhill in every form at every donor level within the protocol at B3LYP/6-31G(d) (with both sides at ωB97X/def2-TZVP the device cell on the relaxed electronic flavin level turns uphill, `95` `higher_tier` — ⚖️ founder 2026-10-30 (a)) — spin–orbit coupling on Os, which it omits, reverses the device couple on one flavin level at the size ref 63 computes for [Os(bpy)₃] (the reading taken, ⚖️ founder 2026-10-20; the other rows of the same table are the range, up to −400 mV — «upper count» withdrawn ⚖️ 2026-10-23), so the protocol does not determine its sign (`95` `shared_shifts`) — its magnitude method-dependent, the gap attributed to no side, near-exact agreements named cancellations** (⚖️ founder 2026-10-16 «напрямок + таблиця»); the old decomposition of the 4a,5 one-electron gap into a solvation bracket + a substituent term is withdrawn; the magnitude needs explicit-water QM/MM, spin–orbit coupling on Os and a film model, a follow-up. **The verdict's home is `SUMMARY.md` §Anode («Conclusion») + `01_03 §3.4`; its magnitudes, its citations and the like-for-like table live there and in `L3_quantum_chemistry.md`.**
-
-🔴 **A router may carry the DIRECTION of a verdict (downhill / uphill / blocked); the moment it carries the number it is a mirror — and this one feeds a TRL judgement.** A number set beside the verdict is taken from here, and the reader never reaches the line saying it is not kept here. Verify any value against `SUMMARY.md` before quoting it onward; the doc↔cache pins are `CHECKS` in `tools/in_silico/tests/test_doc_cache_sync.py`, and they reach the docs, never this skill.
+| `tools/in_silico/README.md` | Setup, quickstart, script inventory |
 
 ## Paper Citations (DOI-verify)
 
@@ -172,69 +162,8 @@ Edges only — `A → B` means B reads A's cache, imports A, or loads A's ligand
 and per-script status is `PIPELINE_STATUS`; a change re-runs everything downstream of it (§When Modifying #15).
 
 ```
-Parameterization (CPU) → L2 MD (GPU), via ligand SDF + gaff_cache:
-  02 FAD · 03 GEN · 04 CSO · 05 CLB · 06 PPy · 07 PVI · 08 SBMA
-  10 ← 02,03 · 11 · 12 · 14 ← 02-05 · 13 ← 08 · 15 ← 02,03,07 · 16 ← 03,04,05
-  lib/md_utils.prepare_protein → 10 · 11 · 12 · 14 · 15      lib/xylem_sap → 14
-
-L3 DFT anode (CPU):
-  20 (FAD, lumiflavin.json) → 21b · 21c · 21e · 21f · 22 · 32 · 34
-  21f (Os dimethyl; SOLE owner of os_complex.json) → 22 (cascade) → 21d (ωB97X; reads comparison.json)
-  21f · 21d (the ωB97X Os caches) → 21g (adiabatic ΔSCF) · 33 (PCET cascade) · 21e `wb97x` (the centre pair of `vs_b3lyp`)
-  34b (its chloro forms — ωB97X with the small basis) + its FORMS row (importlib) → 21e `wb97x` (`centre_decomposition`)
-  21e `wb97x-631gd` (34b's tier at the axis ends; own cache) → 21e `wb97x` · `wb97x-compare` (`ends_decomposition`, read when it exists;
-     `wb97x-compare` rewrites `vs_b3lyp` from the caches alone, no SCF)
-  21e (default · os_mediator_series.json) → 21e `b3lyp-osdef2` (the same protocol, def2-TZVP/ECP on Os; own cache, `vs_lanl2dz`) · `b3lyp-iefpcm` ·
-     `b3lyp-uffcavity` · `b3lyp-gas` (one knob each — the continuum's formulation · its radii · none; own caches, `vs_series`)
-     · `b3lyp-pyaxial` (the axial N-donor) · `b3lyp-relaxed-os2` (the geometry: lib/dft_utils.dft_optimize, geomeTRIC)
-  21e `b3lyp-relaxed-os2` (os_mediator_series_relaxed_os2.json — its accepted Os(II) point and geometry) → 21e `b3lyp-relaxed-os3`
-     (Os(III) relaxed from it; own cache, `vs_vertical`; a moved Os(II) energy discards the record)
-  21e (SERIES σ table, importlib · os_mediator_series.json) · 21f · 21d (the ωB97X centre caches) · 21e `b3lyp-osdef2`, the three
-     continuum variants, `b3lyp-pyaxial`, `b3lyp-relaxed-os2` and `b3lyp-relaxed-os3` (read when each exists and holds its comparison; the donor reading
-     needs every DONOR's adiabatic row, an acceptor is read only once both its rows exist — block `acceptors`) → 83 (computed ⊥ three measured series — ref 8's PVI polymers · MeCN · aqueous; writes os_series_vs_measured.json)
-  21e (os_mediator_series.json) · 83 (os_series_vs_measured.json, incl. its relaxed acceptor rows) → 113 (os_series_vs_lever.json — Lever's E_L scheme ⊥ computed ⊥ measured, no SCF; a re-run of 21e or 83 re-runs 113)
-  lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check) · 75 · 76 (`close_chelate=True` — the only caller)
-  21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
-  21f (importlib TIERS) · reproduction/lock_rerun_2026-10-01.json (the base) → 76 (C-min; writes reproduction/, runs ONLY in silken_lock)
-  29 (Nelsen λ) standalone · 29b (semiquinone λ) → 29c (outer-sphere λ)
-  32 (E°(FAD) · SHE_abs · the measured free flavin) · 21f · 34 · 21e relaxed (the dmbpy ΔE_red of each Os form) → 95
-     (cascade_like_for_like.json — the cascade like-for-like, no SCF; a change to any of them re-runs 95)
-  95 (`shared_shifts.terms.spin_orbit_os.first_flip_at_V`) · lib.constants OS_SOC_SHIFT_V · OS3_SOC_SPLIT_CM1 ·
-     SRNEC_TABLE_S2_OS (ref 63's SI Table S2 Os rows — the calibration set) → 94 (os_soc_quenching_model.json — the t2g
-     splitting that keeps every cell downhill with a quenched SOC, held to that table; no SCF); lib.constants
-     OS_SOC_SHIFT_BIPY_V (the table's [Os(bipy)₃] row, ⚖️ (к) 2026-10-20 — the reading taken) → 95's `spin_orbit_os_ref63_bipy`
-  20 (importlib: the RDKit/MMFF builder, checked against ligands/lumiflavin_{ox,red}.xyz) · 32 (importlib: the proton
-     reference and SHE) → 32b (pcet_redox_potential_thermo.json + ligands/lumiflavin_*_opt.xyz); 32b → 95 (the donor at its four levels; 95 refuses when 32b's MMFF level is not 32's)
-  lib/dft_utils.relax_to_minimum (the saddle escape: Hessian → step off → re-optimise; ONE home) → 32b · and through `relax_checked`
-     → 21g · 33 · 29b — a change to the loop or its gates re-runs all four; 32b (pcet_redox_potential_thermo.json: the reduced
-     flavin's minimum) → 33 (its FADH₂ control — same builder, protocol and escape)
-  21e relaxed (os_mediator_series_relaxed_os2/os3.json — the dmbpy geometries, energies and acceptance) · 21e (importlib:
-     _acceptance, OS3_MIN_OS_SPIN, VARIANT_MAX_CYCLE) · 32 (importlib: SHE) → 96 (os_couple_thermo.json — the Os couple
-     at electronic · + ZPE · RRHO); 96 → 95 (`both_sided`, read when 96's cache exists) — a re-run of 21e relaxed re-runs 96, then 95
-  28 (tunneling, PDB only) → 28b (CHEM.16) · 69 (CHEM.11)
-  11 (DCD) → 27 · 28b
-  69 → `69 --ratified` (own out-path, own reference sample; reads 69's OWN cache for the
-     tie-built twin, so the ordered gene and the published build sit in ONE sample)
-  70 (CHEM.11 site conservation) standalone — reads committed alignments in `data/chem11_conservation/`,
-     never the network; it is the SECOND axis of CHEM.11 and is never merged into 69's patch score
-  21 · 21b · 21c write their own caches; nothing downstream reads them — but 21b's LIGAND does travel:
-     21b (its own copy of the Os constants, not lib/os_geometry) → ligands/os_bpy_im_cl.xyz → 21c · 21d
-
-L3b DFT cathode (CPU):
-  23 (ZIF clusters) → 24 · 24b      24 → 24b (FO-DFT, CHEM.14)      24 · 24b · 35 (metal λ) → 25 (k_ET vs λ ③)
-  24b (importlib: `couple`, the ONE home of the two-state diabatisation) → 24d · 24e — a change to it re-runs 24b and 24d
-     (24e is a dated record, re-run only as a new probe); 24d (cu_ru_fodft.json) · 29c (outer_sphere_lambda.json, the anode's
-     λ_o — a scale only) → 25
-  24 (importlib) + 25 → 24c → 24d      25 + 31 → 31b
-
-L4 kinetics (CPU, seconds):
-  lib/kinetics (MM + the [S]-dependent pH-ratio form; ONE home) → 30 · 30b · 85 — a change re-runs all three
-  lib J_MAX_25C → 30 · 30b · 31 · 57      22 · 30 · 30b · 31 → 40
-  67 (speciation, importlib) · lib J_MAX_25C · KM_GLUCOSE · ph_current_ratio → 85 (electrode_interfacial_ph.json — the pH at
-     the coin electrodes' faces; a change to 67's speciation or to the L4 anchor re-runs 85) · tools/cad/cem → 85 (the
-     anchor anode's envelope and its bore, at runtime — a change to anchor_zone1 or zone2_sleeve re-runs 85)
-
-Paper: 60 (figures) · 61 (tables) read the L3/L3b caches — re-run them after any upstream change
+L4 (CPU, seconds):
+  lib/kinetics · lib J_MAX_25C → 57 (the PTFE-GDL membrane's O₂ budget)
 
 Anchor mechanics (CPU):
   lib/mechanics → 50 · 51 · 55 · 56 · 77      lib/beam_contact (ONE contact solver) → 55 · 68 — a solver change re-runs BOTH
@@ -306,8 +235,6 @@ Anchor mechanics (CPU):
      interface read as a pressed frictional contact; the growth-pressure readings live in the script; a sha256 of the
      106, 105 and CEM fields it read, recomputed by its cache test); a re-run of 106 or 105, or a change to the pine
      anode's CEM, re-runs 108
-  85 (electrode_interfacial_ph.json `anchor_anode_sap_gap`: the anode gap's film, area and bottom cap, and its proton limits) → 109
-     (anode_glucose_threshold.json); a re-run of 85 re-runs 109
   71 (importlib: the hourly ERA5 loader, the dome's geometry) · 79 (importlib: the site, the sun, the face factors, the snow and
      reflected ends, its sun and clock gates) → 110 (winter_pv_autonomy.json; the EDLC, boost and demand readings are lib
      constants); a change to 71's loader or the radome CEM it reads the dome from (tools/cad/cem), or to 79's sun, faces,
@@ -382,10 +309,6 @@ Anchor mechanics (CPU):
   71 → 98 (importlib: 71's hourly loader — the ERA5 10 m wind, fixed UTC+3; the field strain campaign's length replayed
      year by year per start month and its battery trips, power figures read in the two TreeMMoSys primaries) — a change to
      71's loader or the ERA5 file re-runs 98
-  21e (importlib: SERIES; lib/os_geometry builder; os_mediator_series.json · _gas.json · _relaxed_os2/os3.json — their
-     timed SCFs and relaxations) · 21f's ωB97X extremes (os_mediator_series_wb97x.json) · 34 (microsolvation_dmbpy.json —
-     the open-shell upper reading) · 96 (os_couple_thermo.json — the RKS Hessian ratio) → 99 (coating_cluster_cost.json —
-     basis sizes of coating clusters, SCF, relaxation and Hessian cost extrapolated from them, no SCF); a re-run of any re-runs 99
   52 · 71 · 73 · 82 · 88 → 89 (caches only, plus 88's `wall_for_force` and its directional `up`/`down` by importlib and the radome CEM's lock-groove span:
      the bayonet clamp over its fit and temperature) — a change to any of the five re-runs 89
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·
@@ -394,7 +317,4 @@ Anchor mechanics (CPU):
      firmware/common/lora_phy.h (the carrier) · lib DBH_MIN_CM · DBH_MAX_CM · BARK_DEAD_RIDGE_DBH38_MM ·
      BARK_SINGLE_RIDGE_MM_BY_DBH_CM · LIVE_PHLOEM_MM_THIN_END · LIVE_PHLOEM_MM_THICK_END_READING → 107 (radio/stem_radio_shadow.json
      — the stem's radio shadow at 868 MHz; its permittivity readings live in the script); a re-run of 52 re-runs 107
-  58 (T_PHLOEM, importlib — never its frozen L_A_INSERT, §When Modifying #37) · 78 (`bark_bracket`, importlib) · 31 · 31b (eis_model.json · cathode_det_rct.json — the
-     electrodes' own R_int readings) · tools/cad/cem (anode, lock shank, sleeve, flange at runtime) → 84 (cathode_ionic_path.json —
-     the R_Ω requirements; a change to any of them re-runs 84)
 ```
