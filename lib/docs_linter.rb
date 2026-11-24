@@ -915,7 +915,10 @@ module DocsLinter
   # link is invisible to every gate on this walk — which is how CommonMark renders it
   # (no link at all); only `dangling` still checks its target. (4) An href whose
   # `#fragment` wraps onto the next line is not seen (zero in the tree at the fix).
-  CANON_HREF_RE = /\]\(((\d\d_\d\d)_[A-Za-z0-9_]+)(?:#[^)]*)?\)/
+  # `.md` is optional because a top-level NON-wiki doc writes it (⚖️ 2026-11-24, `00_06 §1`):
+  # GitHub serves no extensionless blob, and without the suffix here `crossref_label_form` and
+  # `section_label_drift` went blind on those links. Group 1 stays the bare slug for every reader.
+  CANON_HREF_RE = /\]\(((\d\d_\d\d)_[A-Za-z0-9_]+)(?:\.md)?(?:#[^)]*)?\)/
 
   def canon_links(text)
     labelled_links(text, CANON_HREF_RE).map { |label, m| [ label, m[1], m[2] ] }

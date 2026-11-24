@@ -128,8 +128,8 @@ jobs:
 
       - name: Unit-test the doc linters (engine + ToC)
         # Pure-function specs (spec_helper, no Rails/DB). COVERAGE=0 skips the
-        # whole-suite minimum_coverage gate — a 2-file subset measures ≈0% overall.
-        run: COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb
+        # whole-suite minimum_coverage gate — a subset run measures ≈0% overall.
+        run: COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb spec/lib/doc_relative_link_check_spec.rb
 
       - name: Cross-tree gates (specs whose INPUT lives outside app/lib/spec)
         # [DOC-T.75, присуд founder 2026-08-14 · розширено DOC-T.76 2026-08-15]
@@ -192,6 +192,13 @@ jobs:
         # Pure Ruby, no Rails — the protocols/ subtree refs canon by relative path,
         # which the top-level gates never see; verifies every such ref resolves.
         run: ruby scripts/protocols_ref_check.rb
+
+      - name: Relative links from docs/** resolve (DOC-T.131 — the gap between check_refs and protocols_ref_check)
+        # Pure Ruby, no Rails: every relative link from docs/** (sheet, letter, cache, script, config, and
+        # any canon-link form the two neighbour gates do not judge) must resolve in git ls-files, and its
+        # target must sit under this workflow's changes filter. ⚖️ founder 2026-11-24; why, price and
+        # ceiling — the script header.
+        run: ruby scripts/doc_relative_link_check.rb
 
       - name: Queen energy-budget deploy-gate (HW.39)
         # Pure Ruby, no Rails — параметрична модель = SSOT енерго-чисел 02_05 §4;

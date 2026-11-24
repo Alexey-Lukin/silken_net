@@ -20,7 +20,9 @@
 #   (4) a bare code-span `NN_NN` mention → its NN_NN prefix must match an existing doc.
 #
 # Intra-subtree filename-links (`[`SUMMARY.md`](SUMMARY.md)`, paper/ drafts) are the subtree's
-# OWN convention, not NN_NN canon refs → out of scope by design.
+# OWN convention, not NN_NN canon refs → out of scope by design; whether such a link
+# RESOLVES is judged by `scripts/doc_relative_link_check.rb` (DOC-T.131) — the zone between
+# this gate and `docs:check_refs` had no owner until then (§Guard-craft #110).
 #
 # Pure Ruby, no Rails. Run from repo root: `ruby scripts/protocols_ref_check.rb`.
 require_relative "../lib/tracker/dashboard"

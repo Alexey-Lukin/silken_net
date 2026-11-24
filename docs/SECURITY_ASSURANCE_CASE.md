@@ -14,8 +14,8 @@
 >
 > **Status.** Living document — last reviewed 2026-07-16. This is a *synthesis*: it argues and points to the
 > canonical homes for mechanism detail rather than restating them (one-home, registered in
-> [`00_06`](00_06_SSOT_Documentation_Standard)). Open items are tracked in
-> [`00_07`](00_07_Action_Plan_Tracker) (`SEC.*` / `FW.*` IDs).
+> [`00_06`](00_06_SSOT_Documentation_Standard.md)). Open items are tracked in
+> [`00_07`](00_07_Action_Plan_Tracker.md) (`SEC.*` / `FW.*` IDs).
 
 ---
 
@@ -45,10 +45,10 @@ Each claim is backed by the trust-boundary guards (§3), the secure-design argum
 
 | Asset | Where it lives | Why it matters |
 |---|---|---|
-| **Telemetry integrity** (sensor → mint) | `app/services/telemetry_unpacker_service.rb`, firmware sense path; canon [`03_04`](03_04_mruby_Lorenz_Attractor), [`05_02`](05_02_Proof_of_Growth_Pipeline) | Forged/replayed telemetry inflates `growth_points` → false SCC mint → economic fraud. |
-| **SCC funds & minting authority** | `contracts/*.sol` (`MINTER_ROLE`), `app/services/blockchain_minting_service.rb`; canon [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Unauthorized minting drains collateral / commits carbon-credit fraud (RWA). |
-| **Cryptographic keys** | LoRa AES (per-device, `firmware/common/`), CoAP AES-256 (Queen Flash), Ed25519 device identity (`HardwareKey`), Rails `master.key`, oracle secp256k1 keys (ENV); canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) | Key compromise → decrypt history, impersonate device, or mint without authority. |
-| **DCI anti-fraud signal** (Lorenz Z) | backend `app/services/silken_net/attractor.rb` ⟷ device `firmware/bio_contracts/bio_contract.rb`; canon [`05_02`](05_02_Proof_of_Growth_Pipeline), [`03_04`](03_04_mruby_Lorenz_Attractor) | The cross-check that detects device tampering; its integrity is the fraud tripwire. ⚠️ (2026-10-05) Only while the warm chain holds — it breaks on a lost, duplicated or frost-deferred frame and on a device cold start, and the categorical check never sees a forger who always claims homeostasis ([`03_04 §7.3`](03_04_mruby_Lorenz_Attractor), [`00_07`](00_07_Action_Plan_Tracker) FW.66). Since the founder verdict of 2026-10-05 (FW.66 leg 1) a categorical mismatch no longer pages: it increments `silkennet_dci_categorical_mismatch_total`, an observation counter, while the fraud page keeps its other seven sources. Under the ratified branch (Б) Lorenz leaves the device and the seal passes to the CCM MIC + the replay bound SEC.40 + QATT + the E.60 raw-record anchor. |
+| **Telemetry integrity** (sensor → mint) | `app/services/telemetry_unpacker_service.rb`, firmware sense path; canon [`03_04`](03_04_mruby_Lorenz_Attractor.md), [`05_02`](05_02_Proof_of_Growth_Pipeline.md) | Forged/replayed telemetry inflates `growth_points` → false SCC mint → economic fraud. |
+| **SCC funds & minting authority** | `contracts/*.sol` (`MINTER_ROLE`), `app/services/blockchain_minting_service.rb`; canon [`05_03`](05_03_Tokenomics_SCC_and_SFC.md) | Unauthorized minting drains collateral / commits carbon-credit fraud (RWA). |
+| **Cryptographic keys** | LoRa AES (per-device, `firmware/common/`), CoAP AES-256 (Queen Flash), Ed25519 device identity (`HardwareKey`), Rails `master.key`, oracle secp256k1 keys (ENV); canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security.md), [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning.md) | Key compromise → decrypt history, impersonate device, or mint without authority. |
+| **DCI anti-fraud signal** (Lorenz Z) | backend `app/services/silken_net/attractor.rb` ⟷ device `firmware/bio_contracts/bio_contract.rb`; canon [`05_02`](05_02_Proof_of_Growth_Pipeline.md), [`03_04`](03_04_mruby_Lorenz_Attractor.md) | The cross-check that detects device tampering; its integrity is the fraud tripwire. ⚠️ (2026-10-05) Only while the warm chain holds — it breaks on a lost, duplicated or frost-deferred frame and on a device cold start, and the categorical check never sees a forger who always claims homeostasis ([`03_04 §7.3`](03_04_mruby_Lorenz_Attractor.md), [`00_07`](00_07_Action_Plan_Tracker.md) FW.66). Since the founder verdict of 2026-10-05 (FW.66 leg 1) a categorical mismatch no longer pages: it increments `silkennet_dci_categorical_mismatch_total`, an observation counter, while the fraud page keeps its other seven sources. Under the ratified branch (Б) Lorenz leaves the device and the seal passes to the CCM MIC + the replay bound SEC.40 + QATT + the E.60 raw-record anchor. |
 | **Audit-log integrity** | `app/models/audit_log.rb` (per-org SHA-256 hash chain) | A tamper-evident record for forensic reconstruction and dispute resolution. |
 | **User credentials & session tokens** | `app/models/user.rb` (Argon2id digest), Rails 8 `generates_token_for` | Theft → impersonation; bounded by hashing + token expiry/invalidation. |
 
@@ -84,7 +84,7 @@ the guard that enforces it.
 *Guards:*
 - **AES-128 link encryption** — shipping build is AES-128-**ECB** (transitional); the authenticated
   AES-128-**CCM** path (8-byte MIC + 24-bit monotonic Frame Counter) is implemented and bench-gated
-  (`FW2_CCM_ENABLED` / `TELEMETRY_CCM_ENABLED`). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security),
+  (`FW2_CCM_ENABLED` / `TELEMETRY_CCM_ENABLED`). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security.md),
   `firmware/common/lora_ccm.h`.
 - **Two-key model (FW.2 gate (в), 2026-07-03)** — the money-path (telemetry/panic CCM uplink) rides a
   **per-device session key** (HKDF, so a node compromise cannot forge a neighbour's mint), while the
@@ -93,13 +93,13 @@ the guard that enforces it.
   exposes the cluster's control-plane; OTA images stay separately authenticated by the cluster's
   Ed25519 seal (dual-gate) — the node holds only the public key, so an extracted node cannot sign a
   contract (FW.23, since 2026-10-06; the earlier symmetric K_ota HMAC key sat on every node).
-  Canon [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning).
+  Canon [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security.md), [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning.md).
 - **Replay protection** — CCM Frame Counter + a backend sliding replay window per (DID, key epoch) in Postgres with no expiry (SEC.40, since 2026-10-05; before that a 25 h cache window); for the interim panic path,
-  a monotonic panic counter + an atomic Postgres unique-insert nonce (SEC.10 · SEC.39). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security),
-  [`05_02`](05_02_Proof_of_Growth_Pipeline).
+  a monotonic panic counter + an atomic Postgres unique-insert nonce (SEC.10 · SEC.39). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security.md),
+  [`05_02`](05_02_Proof_of_Growth_Pipeline.md).
 - **Sanity bounds + DCI** — `TelemetryUnpackerService#valid_sensor_data?` rejects out-of-range ADC/temp;
   on the ECB path `check_z_divergence!` counts a device whose categorical status disagrees with the
-  backend recomputation (DCI, SEC.11 in [`05_02`](05_02_Proof_of_Growth_Pipeline)) — an observation with its
+  backend recomputation (DCI, SEC.11 in [`05_02`](05_02_Proof_of_Growth_Pipeline.md)) — an observation with its
   own counter, not a rejection (FW.66 leg 1); the CCM path carries no Lorenz (FW.66 (Б)) and rests on the
   CCM MIC and the SEC.40 replay window. ⚠️ Neither stops a forger who holds the device key: that residual is
   bounded only by the 5-bit GP cap and the E.64 per-tree credit cap. The server-side GP recompute (FW.66 (Б),
@@ -110,7 +110,7 @@ the guard that enforces it.
 *Crosses:* an AES-256-CBC batch of per-device-encrypted records.
 *Trust shift:* gateway buffer → persisted, auditable backend state.
 *Guards:*
-- **AES-256-CBC transport** with a per-batch random (HRNG) IV ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)).
+- **AES-256-CBC transport** with a per-batch random (HRNG) IV ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security.md)).
 - **Machine-to-machine auth** — `app/controllers/api/v1/m2m_auth_controller.rb`: gateway authenticates with
   an Ed25519 signature; a `SETNX` nonce + timestamp window blocks replay.
 - **L1 gateway attestation** — Ed25519 batch signature verified against the `HardwareKey` registry
@@ -118,19 +118,19 @@ the guard that enforces it.
 - **L1 device-event channel** — the separate `PUT device/event/<uid>` (SEC.21 canary-trip) crosses the same
   boundary under its OWN Ed25519 gateway signature (domain tag `SLKN-QEVT1`, distinct from the batch's
   `SLKN-QATT2`), verified by `DeviceEventWorker` against the same `HardwareKey.ed25519_public_key_hex` registry —
-  Rails never touches a LoRa key here ([`03_05 §2.2а`](03_05_Hardware_Symmetric_Crypto_and_Security)). Trust
+  Rails never touches a LoRa key here ([`03_05 §2.2а`](03_05_Hardware_Symmetric_Crypto_and_Security.md)). Trust
   L1-observational: the event never moves the money-path.
 - **KENOSIS ingestion boundary** — `TelemetryLog` carries no ActiveRecord validations by design; the single
   validation home is `valid_sensor_data?` in the unpacker service (`CLAUDE.md`,
-  [`05_02`](05_02_Proof_of_Growth_Pipeline)).
+  [`05_02`](05_02_Proof_of_Growth_Pipeline.md)).
 
 ### Boundary C — Telemetry → IoTeX W3bstream verification
 *Crosses:* the device Z-value + DID + chaotic data.
 *Trust shift:* backend-unpacked data → externally attested proof.
 *Guard:* **Dual-Computation Integrity** — backend (`SilkenNet::Attractor`, IEEE-754 double) and device
 (mruby Float) compute Z from the same persisted state with identical Lorenz constants (owned in
-[`03_04`](03_04_mruby_Lorenz_Attractor)); a divergence beyond tolerance was meant to flag tampering — ⚠️ measured blind to the homeostasis forger (FW.66 leg 1, 2026-10-05): it woke honest trees with a desynchronised chain and never a forger who always claims homeostasis, so it now feeds its own counter, not the fraud P0; under the ratified branch (Б) Lorenz leaves the device, and this boundary is guarded by the CCM MIC + the replay bound SEC.40 + QATT + the E.60 raw-record anchor — ⚠️ leaf v2 landed 2026-10-11 (FW.66 S8) and commits to the IDENTITY of the raw CCM air frame, not to a measurement: the frame is ciphertext under a session key the ratchet destroys, so its MIC and contents are checkable only by the key holder while that key lives. Since FW.66 S8b (ratified 2026-10-11) the v2 leaf also carries what the server DERIVED from the frame — the EMA input of the points formula (the server's statement) and the frame's points before weighting (0 or the v2 formula of that input, frozen with the leaf version; their consistency is checked offline, not the input) — plus the sha256 of the Queen-signed QATT envelope of its batch; the lineage bundle carries those envelopes and the offline verifier checks their Ed25519 signatures (strict, S < L — SEC.43) under a key whose registration is recorded in the org AuditLog chain (the weekly anchor's leaf0 seals the heads of ALL AuditLog chains, and the bundle carries the path from its own organization's head — ARCH.122). The measurement itself and the tx amount stay issuer-asserted (the issuer holds the session keys; the family coefficient and the E.64 bucket apply outside the leaf) (DCI, SEC.11 in
-[`05_02`](05_02_Proof_of_Growth_Pipeline)). Per-device signing strengthens along the trust-origin ladder
+[`03_04`](03_04_mruby_Lorenz_Attractor.md)); a divergence beyond tolerance was meant to flag tampering — ⚠️ measured blind to the homeostasis forger (FW.66 leg 1, 2026-10-05): it woke honest trees with a desynchronised chain and never a forger who always claims homeostasis, so it now feeds its own counter, not the fraud P0; under the ratified branch (Б) Lorenz leaves the device, and this boundary is guarded by the CCM MIC + the replay bound SEC.40 + QATT + the E.60 raw-record anchor — ⚠️ leaf v2 landed 2026-10-11 (FW.66 S8) and commits to the IDENTITY of the raw CCM air frame, not to a measurement: the frame is ciphertext under a session key the ratchet destroys, so its MIC and contents are checkable only by the key holder while that key lives. Since FW.66 S8b (ratified 2026-10-11) the v2 leaf also carries what the server DERIVED from the frame — the EMA input of the points formula (the server's statement) and the frame's points before weighting (0 or the v2 formula of that input, frozen with the leaf version; their consistency is checked offline, not the input) — plus the sha256 of the Queen-signed QATT envelope of its batch; the lineage bundle carries those envelopes and the offline verifier checks their Ed25519 signatures (strict, S < L — SEC.43) under a key whose registration is recorded in the org AuditLog chain (the weekly anchor's leaf0 seals the heads of ALL AuditLog chains, and the bundle carries the path from its own organization's head — ARCH.122). The measurement itself and the tx amount stay issuer-asserted (the issuer holds the session keys; the family coefficient and the E.64 bucket apply outside the leaf) (DCI, SEC.11 in
+[`05_02`](05_02_Proof_of_Growth_Pipeline.md)). Per-device signing strengthens along the trust-origin ladder
 (L0 custodial → L1 gateway → L2 SE050 device).
 
 ### Boundary D — Chainlink callback → minting trigger
@@ -158,7 +158,7 @@ the guard that enforces it.
 ### Boundary F — Slashing gate (cluster degradation → irreversible burn)
 *Crosses:* cluster stress signal, locked investor balance.
 *Trust shift:* an unauthenticated stress index → an irreversible burn.
-*Guards* (canon [`05_05`](05_05_Slashing_and_Risk_Policy), `app/services/slashing/`):
+*Guards* (canon [`05_05`](05_05_Slashing_and_Risk_Policy.md), `app/services/slashing/`):
 - **Positive-A-evidence gate (SLASH-1)** — a burn requires proven operator-fault evidence (a critical,
   unresolved tamper alert); absent that, the default-safe action is **freeze** (Field Audit), never burn.
 - **Force-majeure separation** — confirmed natural disasters route to insurance, not
@@ -170,7 +170,7 @@ the guard that enforces it.
 
 The principles are implemented in code, not just asserted. This is summarized here and detailed (with the
 exact crypto modes and the deployment hardening) in `SECURITY.md` and canon
-[`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security):
+[`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security.md):
 
 - **Fail-safe / deny-by-default** — minting and slashing refuse unless every precondition holds (§3 E/F);
   in production `WEB3_STRICT_MODE` turns missing security config into a hard failure rather than a silent
@@ -214,15 +214,15 @@ with a per-request nonce, a full security-header set, and `httponly`/`secure`/`s
 ## 6. Residual risks & assumptions
 
 An assurance case is credible because it states what is **not** yet fully closed. These are tracked in
-[`00_07`](00_07_Action_Plan_Tracker):
+[`00_07`](00_07_Action_Plan_Tracker.md):
 
 - **Transitional LoRa AES-128-ECB (no MIC).** The shipping link mode is ECB: deterministic and
   unauthenticated, so a whole-block replay of an old "healthy" packet is possible at the link layer. It is
   bounded today by DCI divergence + sanity bounds + the panic replay counter, and closed by the
-  bench-gated **AES-128-CCM** path (`FW.2`). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security).
+  bench-gated **AES-128-CCM** path (`FW.2`). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security.md).
 - **L0-custodial device signing.** Until the per-device hardware key (L2, SE050) is provisioned, device
   attestation is custodial/gateway-level (L1) — the backend is part of the trust base for device identity.
-  Roadmap: SE050-MIGRATION in [`00_07`](00_07_Action_Plan_Tracker).
+  Roadmap: SE050-MIGRATION in [`00_07`](00_07_Action_Plan_Tracker.md).
 - **RDP Level 2** (firmware read-out protection) is **pending** (SEC.2) — physical extraction of a deployed
   MCU is not yet locked out.
 - **MFA is a live control since 2026-08-20 (`S6.21`, archived): TOTP (RFC 6238, `rotp`) with
@@ -244,7 +244,7 @@ An assurance case is credible because it states what is **not** yet fully closed
   device key — higher blast-radius than the minter key; on compromise the derived Lorenz seed breaks the DCI
   anti-fraud invariant for the whole flashed fleet until an SWD re-flash) → GCP-KMS-MAC + an Expand-only KDF
   (pre-mainnet, firmware-coordinated). **`RAILS_MASTER_KEY` belongs in the same sentence:** it unlocks the
-  credentials vault and — via the entangled `secret_key_base` ([`06_04 §5.2`](06_04_Secrets_Checklist)) —
+  credentials vault and — via the entangled `secret_key_base` ([`06_04 §5.2`](06_04_Secrets_Checklist.md)) —
   forges sessions and every `generates_token_for` token; its *runtime* need was dissolved on 2026-09-02 (Phase-2 shipped: no process carries it; the vault holds only `secret_key_base`, which travels as its own secret — so the irreplaceable key is now `SECRET_KEY_BASE`)
   (credentials→ENV shipped 2026-07; the Phase-2 drop shipped 2026-09-02 — `SEC.22`), and both master keys are effectively
   un-rotatable today. Until those land they are provider-visible; bounded-blast operational credentials
@@ -256,7 +256,7 @@ An assurance case is credible because it states what is **not** yet fully closed
   adds a new Art.28 vendor plus a network call on an otherwise offline in-process hot path while the secret
   merely moves one level (the Vault token lives in the same `/proc/environ`), and pinning the key to the
   Ingress Anchor would CONCENTRATE a money key next to the master key on a deploy-SA host while reversing a
-  HARD-gated invariant (`anchor_coap_env_spec` forbids it by name). The KMS path ([`06_04 §5.5`](06_04_Secrets_Checklist)) is
+  HARD-gated invariant (`anchor_coap_env_spec` forbids it by name). The KMS path ([`06_04 §5.5`](06_04_Secrets_Checklist.md)) is
   secp256k1-only by construction and does not reach Ed25519. The float itself is now measured, not assumed:
   `silkennet_payout_float_balance` (declared diagnostic tier; threshold = a deploy-day decision, `SEC.22`).
   ⚠️ [OPS.37] Retiring the decentralized-compute target did NOT close this residual, and saying so matters:
@@ -265,10 +265,10 @@ An assurance case is credible because it states what is **not** yet fully closed
   readable by the same root. What the cut DID close is narrower and real: the one long-lived service-account
   key that existed only to authenticate from outside the VPC no longer exists anywhere in the tree. The third at-rest copy in the GCS Terraform-state bucket is now
   CMEK-sealed with public-access-prevention and a deliberately short 10-version/30-day retention
-  ([`06_04 §5.6`](06_04_Secrets_Checklist), 2026-07-10). Rotation-on-compromise runbooks for the two master
+  ([`06_04 §5.6`](06_04_Secrets_Checklist.md), 2026-07-10). Rotation-on-compromise runbooks for the two master
   keys are **written** — an ordered-degradation playbook, honest that neither key rotates cleanly →
-  [`06_04 §5.8`](06_04_Secrets_Checklist). Program + phasing: `SEC.22`
-  ([`00_07`](00_07_Action_Plan_Tracker)); mechanism → [`06_04 §5.5`](06_04_Secrets_Checklist).
+  [`06_04 §5.8`](06_04_Secrets_Checklist.md). Program + phasing: `SEC.22`
+  ([`00_07`](00_07_Action_Plan_Tracker.md)); mechanism → [`06_04 §5.5`](06_04_Secrets_Checklist.md).
 
 ---
 
@@ -290,7 +290,7 @@ The claims above are backed by enforced, automated evidence — not by assertion
   findings, and a red audit now physically blocks the merge. CodeQL (default setup, 6 languages) and
   OpenSSF Scorecard report findings without being merge-required. The exact required-check surface (all
   **9** deterministic PR-gates — `CI passed` + `Docs passed` + `Solidity passed` + `DCO passed` + `Subgraph passed` + the
-  CAD/ML/In-silico/IaC smoke aggregates) → [`06_07 §2`](06_07_CICD_and_Runbook_Index).
+  CAD/ML/In-silico/IaC smoke aggregates) → [`06_07 §2`](06_07_CICD_and_Runbook_Index.md).
 - **Composition analysis (SCA).** Dependabot (weekly), bundler-audit (every CI), OpenSSF Scorecard (weekly).
 - **Repository history — audited, and the verdict is CLEAN** [SEC.22]. `config/master.key` was **never
   committed** (it is gitignored from the initial commit), so no rotation is owed for a historical leak;
@@ -312,10 +312,10 @@ The claims above are backed by enforced, automated evidence — not by assertion
 ## References (canonical homes — one-home)
 
 - `SECURITY.md` — vulnerability reporting, scope, known limitations, release-artifact verification.
-- [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) — AES modes, key management, IV, SE050, PQC roadmap.
-- [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) — per-device key derivation.
-- [`05_02`](05_02_Proof_of_Growth_Pipeline) — telemetry → verification → mint, DCI (SEC.11), replay (SEC.10).
-- [`05_03`](05_03_Tokenomics_SCC_and_SFC) — token contracts, roles, supply cap.
-- [`05_05`](05_05_Slashing_and_Risk_Policy) — slashing categories, positive-A-evidence gate, insurance.
-- [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) — supply-chain hardening (IaC policy); CI/CD inventory in [`06_07`](06_07_CICD_and_Runbook_Index).
-- [`00_07`](00_07_Action_Plan_Tracker) — open `SEC.*` / `FW.*` items and their status.
+- [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security.md) — AES modes, key management, IV, SE050, PQC roadmap.
+- [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning.md) — per-device key derivation.
+- [`05_02`](05_02_Proof_of_Growth_Pipeline.md) — telemetry → verification → mint, DCI (SEC.11), replay (SEC.10).
+- [`05_03`](05_03_Tokenomics_SCC_and_SFC.md) — token contracts, roles, supply cap.
+- [`05_05`](05_05_Slashing_and_Risk_Policy.md) — slashing categories, positive-A-evidence gate, insurance.
+- [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index.md) — supply-chain hardening (IaC policy); CI/CD inventory in [`06_07`](06_07_CICD_and_Runbook_Index.md).
+- [`00_07`](00_07_Action_Plan_Tracker.md) — open `SEC.*` / `FW.*` items and their status.

@@ -925,6 +925,11 @@ end
         "[`08_02 §1A`](08_02_Academic_Institutions_Registry)", headings)).to be_empty
     end
 
+    it "judges a `.md` href too — the form a top-level non-wiki doc writes (00_06 §1)" do
+      md = "координація — [`08_02 §1.3`](08_02_Academic_Institutions_Registry.md)"
+      expect(described_class.section_label_drift(md, headings)).to contain_exactly(a_string_matching(/§1\.3/))
+    end
+
     it "skips a bare single-char ref and a label citing no section" do
       expect(described_class.section_label_drift(
         "[`08_02 §2`](08_02_Academic_Institutions_Registry)", headings)).to be_empty
@@ -1128,6 +1133,7 @@ end
         fullname  [`05_05_Slashing_and_Risk_Policy`](05_05_Slashing_and_Risk_Policy)
       MD
       expect(described_class.crossref_label_form(bad).size).to eq(3)
+      expect(described_class.crossref_label_form("[05_05 §3](05_05_Slashing_and_Risk_Policy.md)").size).to eq(1)
     end
 
     it "leaves a pure prose-phrase label (no doc-id) alone" do

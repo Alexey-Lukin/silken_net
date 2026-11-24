@@ -898,7 +898,7 @@ z_{n+1} = z_n + dz/dt · DT
 ### 8.2 Що рахує сервер
 
 - **Лоренца, DCI й `K_seed` на CCM-шляху немає** (`TelemetryUnpackerService#process_ccm_chunk`; S2): рядок пишеться без `z`, числову DCI FW.31 знято з кодом (§7.1).
-- **Бали кадру рахує сервер**, а байт статусу пристрою — лише тест відповідності (`TelemetryUnpackerService#ccm_growth_points`; форма, підстава й ціна — присуд (1) і ⊕ до нього в §7.3). Тест ловить чужий контракт на справжній прошивці, а не власника ключа: той обирає EMA сам (межа — [`SECURITY_ASSURANCE_CASE`](SECURITY_ASSURANCE_CASE), Boundary A; стелі — 5 біт і відро E.64, [`05_03`](05_03_Tokenomics_SCC_and_SFC)).
+- **Бали кадру рахує сервер**, а байт статусу пристрою — лише тест відповідності (`TelemetryUnpackerService#ccm_growth_points`; форма, підстава й ціна — присуд (1) і ⊕ до нього в §7.3). Тест ловить чужий контракт на справжній прошивці, а не власника ключа: той обирає EMA сам (межа — [`SECURITY_ASSURANCE_CASE`](SECURITY_ASSURANCE_CASE.md), Boundary A; стелі — 5 біт і відро E.64, [`05_03`](05_03_Tokenomics_SCC_and_SFC)).
 - **Ера контракту** — колонка `bio_contract_firmwares.wire_era` і гард диспетчера OTA за пульсом Королев ([`04_02`](04_02_Business_Logic_and_Services)); у вікні cutover'а — правило чекліста фліпу FW.2 ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)).
 - **Якір сирих записів** — лист Меркла v2 ([`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)).
 
