@@ -1,0 +1,3356 @@
+{
+ "script": "130_thin_rod_dendrometer_support.py",
+ "leg": "00_07 HW.54 «ролі деталей анкера без комірки» · DOC-T.131 «конструкція анкера без комірки» — рахунок тонкої опори",
+ "what": "a monolithic rod in the stem as the point dendrometer's support: 114's loop with the rod as the section list — in-wood term on the install-day axis, above-bark term per rod × scale, two conventions, life drift",
+ "inputs": {
+  "alpha_xylem_green_ppm_K": 7.9,
+  "alpha_xylem_source": "103's cache (Sevanto et al. 2005, P. sylvestris, fresh water-saturated xylem, 5–45 °C, radial, bark excluded — one reading, the table's mean)",
+  "frame_sensitivity_um_per_K": 0.3,
+  "axis_mm": 100.0,
+  "depths_mm": [
+   5.0,
+   10.0,
+   20.0,
+   30.0,
+   50.0,
+   100.0
+  ],
+  "install_tie_mm": 30.0,
+  "radial_rate_mm_per_yr": [
+   0.8,
+   5.0
+  ],
+  "life_yr": 20.0,
+  "life_travel_mm": [
+   16.0,
+   100.0
+  ],
+  "dead_bark_mm_by_dbh": {
+   "dbh38": [
+    13.5,
+    21.0
+   ],
+   "dbh60": [
+    22.0,
+    35.0
+   ]
+  },
+  "h_c_named_mm": {
+   "install_min": 13.5,
+   "install_max": 35.0,
+   "install_min_plus_life_travel_slow": 29.5,
+   "install_max_plus_life_travel_fast": 135.0
+  },
+  "scale_alphas_ppm_K": {
+   "Ti-6Al-4V": 8.6,
+   "Ti-6Al-7Nb": 8.4,
+   "CP-Ti-Gr4": 8.6,
+   "beta-Ti-13Nb-13Zr": 8.8,
+   "Ta": 6.5,
+   "Ti-15Zr": 8.5,
+   "SS302": 17.28,
+   "steel_mild": 12.06,
+   "matched_to_wood": 7.9
+  },
+  "air_proxy_spans_K": {
+   "diurnal_growing_p50": 9.8,
+   "diurnal_growing_p95": 14.2,
+   "seasonal_unfrozen_p5_p95": 22.1
+  },
+  "unfrozen_days_share_114": 0.717,
+  "choices": {
+   "axis_mm": "ours — the install-day tie axis; beyond it a crossing is «beyond the axis»",
+   "install_tie_mm": "ours — the tie the above-bark cells and the life years start from; the SS302 years depend on it sitting just above that rod's crossing",
+   "h_c_named_mm": "install = lib's single-ridge bark minus the live phloem readings (furrows are thinner — no primary in the tree; the thick end's live phloem is lib's assumed reading); life = install + 114's rate × life, paired min+slow · max+fast — ours; the life heights mean a FIXED clamp set to clear twenty years of growth"
+  }
+ },
+ "rods": {
+  "Ti-6Al-4V": {
+   "alpha_ppm_K": 8.6,
+   "alpha_source": "lib ALLOY_PROPERTIES alpha_1K — lib cites no source for it",
+   "alpha_w_minus_alpha_rod_ppm_K": -0.7,
+   "sign": "negative on the one α_w reading (Δα -0.70 ppm/K); it flips if α_w > 8.6 ppm/K — conditional (one α_w reading; lib's α cites no source)",
+   "crossing_below_live_bark_mm": {
+    "A_scale_matched_to_rod": "beyond the axis",
+    "B_scale_matched_to_wood_on_the_rods_own_dead_bark": {
+     "install_min": "beyond the axis",
+     "install_max": "beyond the axis"
+    },
+    "B_for_comparison_with_114_anchor_on_its_dead_bark": {
+     "thin_contact_78": "beyond the axis",
+     "thick_side_78": "beyond the axis"
+    }
+   },
+   "depths": {
+    "5": {
+     "A_in_wood_um_per_K": -0.0035,
+     "x_frames": 0.012,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -51.4,
+      68.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.03,
+      "diurnal_growing_p95": 0.05,
+      "seasonal_unfrozen_p5_p95": 0.08
+     }
+    },
+    "10": {
+     "A_in_wood_um_per_K": -0.007,
+     "x_frames": 0.023,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -21.4,
+      38.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.07,
+      "diurnal_growing_p95": 0.1,
+      "seasonal_unfrozen_p5_p95": 0.15
+     }
+    },
+    "20": {
+     "A_in_wood_um_per_K": -0.014,
+     "x_frames": 0.047,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -6.4,
+      23.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.14,
+      "diurnal_growing_p95": 0.2,
+      "seasonal_unfrozen_p5_p95": 0.31
+     }
+    },
+    "30": {
+     "A_in_wood_um_per_K": -0.021,
+     "x_frames": 0.07,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -1.4,
+      18.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.21,
+      "diurnal_growing_p95": 0.3,
+      "seasonal_unfrozen_p5_p95": 0.46
+     }
+    },
+    "50": {
+     "A_in_wood_um_per_K": -0.035,
+     "x_frames": 0.117,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      2.6,
+      14.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.34,
+      "diurnal_growing_p95": 0.5,
+      "seasonal_unfrozen_p5_p95": 0.77
+     }
+    },
+    "100": {
+     "A_in_wood_um_per_K": -0.07,
+     "x_frames": 0.233,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      5.6,
+      11.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.69,
+      "diurnal_growing_p95": 0.99,
+      "seasonal_unfrozen_p5_p95": 1.55
+     }
+    }
+   },
+   "above_bark_at_install_tie_30mm": {
+    "Ti-6Al-4V": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     }
+    },
+    "Ti-6Al-7Nb": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0027,
+      "total_at_install_tie_um_per_K": -0.0237,
+      "x_frames": 0.079,
+      "total_air_proxy_um_p95": 0.34
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.007,
+      "total_at_install_tie_um_per_K": -0.028,
+      "x_frames": 0.093,
+      "total_air_proxy_um_p95": 0.4
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0059,
+      "total_at_install_tie_um_per_K": -0.0269,
+      "x_frames": 0.09,
+      "total_air_proxy_um_p95": 0.38
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.027,
+      "total_at_install_tie_um_per_K": -0.048,
+      "x_frames": 0.16,
+      "total_air_proxy_um_p95": 0.68
+     }
+    },
+    "CP-Ti-Gr4": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     }
+    },
+    "beta-Ti-13Nb-13Zr": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0027,
+      "total_at_install_tie_um_per_K": -0.0183,
+      "x_frames": 0.061,
+      "total_air_proxy_um_p95": 0.26
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.007,
+      "total_at_install_tie_um_per_K": -0.014,
+      "x_frames": 0.047,
+      "total_air_proxy_um_p95": 0.2
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0059,
+      "total_at_install_tie_um_per_K": -0.0151,
+      "x_frames": 0.05,
+      "total_air_proxy_um_p95": 0.21
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.027,
+      "total_at_install_tie_um_per_K": 0.006,
+      "x_frames": 0.02,
+      "total_air_proxy_um_p95": 0.09
+     }
+    },
+    "Ta": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0284,
+      "total_at_install_tie_um_per_K": -0.0494,
+      "x_frames": 0.165,
+      "total_air_proxy_um_p95": 0.7
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0735,
+      "total_at_install_tie_um_per_K": -0.0945,
+      "x_frames": 0.315,
+      "total_air_proxy_um_p95": 1.34
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.062,
+      "total_at_install_tie_um_per_K": -0.083,
+      "x_frames": 0.277,
+      "total_air_proxy_um_p95": 1.18
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.2835,
+      "total_at_install_tie_um_per_K": -0.3045,
+      "x_frames": 1.015,
+      "total_air_proxy_um_p95": 4.32
+     }
+    },
+    "Ti-15Zr": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0014,
+      "total_at_install_tie_um_per_K": -0.0224,
+      "x_frames": 0.075,
+      "total_air_proxy_um_p95": 0.32
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0035,
+      "total_at_install_tie_um_per_K": -0.0245,
+      "x_frames": 0.082,
+      "total_air_proxy_um_p95": 0.35
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.003,
+      "total_at_install_tie_um_per_K": -0.024,
+      "x_frames": 0.08,
+      "total_air_proxy_um_p95": 0.34
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.0135,
+      "total_at_install_tie_um_per_K": -0.0345,
+      "x_frames": 0.115,
+      "total_air_proxy_um_p95": 0.49
+     }
+    },
+    "SS302": {
+     "install_min": {
+      "above_bark_um_per_K": 0.1172,
+      "total_at_install_tie_um_per_K": 0.0962,
+      "x_frames": 0.321,
+      "total_air_proxy_um_p95": 1.37
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.3038,
+      "total_at_install_tie_um_per_K": 0.2828,
+      "x_frames": 0.943,
+      "total_air_proxy_um_p95": 4.02
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.2561,
+      "total_at_install_tie_um_per_K": 0.2351,
+      "x_frames": 0.784,
+      "total_air_proxy_um_p95": 3.34
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 1.1718,
+      "total_at_install_tie_um_per_K": 1.1508,
+      "x_frames": 3.836,
+      "total_air_proxy_um_p95": 16.34
+     }
+    },
+    "steel_mild": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0467,
+      "total_at_install_tie_um_per_K": 0.0257,
+      "x_frames": 0.086,
+      "total_air_proxy_um_p95": 0.37
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.1211,
+      "total_at_install_tie_um_per_K": 0.1001,
+      "x_frames": 0.334,
+      "total_air_proxy_um_p95": 1.42
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.1021,
+      "total_at_install_tie_um_per_K": 0.0811,
+      "x_frames": 0.27,
+      "total_air_proxy_um_p95": 1.15
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.4671,
+      "total_at_install_tie_um_per_K": 0.4461,
+      "x_frames": 1.487,
+      "total_air_proxy_um_p95": 6.33
+     }
+    },
+    "matched_to_wood": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0095,
+      "total_at_install_tie_um_per_K": -0.0305,
+      "x_frames": 0.102,
+      "total_air_proxy_um_p95": 0.43
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0245,
+      "total_at_install_tie_um_per_K": -0.0455,
+      "x_frames": 0.152,
+      "total_air_proxy_um_p95": 0.65
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0207,
+      "total_at_install_tie_um_per_K": -0.0417,
+      "x_frames": 0.139,
+      "total_air_proxy_um_p95": 0.59
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.0945,
+      "total_at_install_tie_um_per_K": -0.1155,
+      "x_frames": 0.385,
+      "total_air_proxy_um_p95": 1.64
+     }
+    }
+   },
+   "scale_mismatch_allowed_ppm_K_at_install_tie": {
+    "install_min": 20.667,
+    "install_max": 7.971,
+    "install_min_plus_life_travel_slow": 9.458,
+    "install_max_plus_life_travel_fast": 2.067
+   },
+   "life_drift": {
+    "scale_matched_to_rod_or_clamp_keeping_h_c": {
+     "um_per_K_per_year_at_rate_ends": [
+      0.0006,
+      0.0035
+     ],
+     "years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends": [
+      "beyond the axis",
+      "beyond the axis"
+     ]
+    },
+    "fixed_clamp_um_per_K_per_year_at_rate_ends_by_scale": {
+     "Ti-6Al-4V": [
+      0.0006,
+      0.0035
+     ],
+     "Ti-6Al-7Nb": [
+      0.0004,
+      0.0025
+     ],
+     "CP-Ti-Gr4": [
+      0.0006,
+      0.0035
+     ],
+     "beta-Ti-13Nb-13Zr": [
+      0.0007,
+      0.0045
+     ],
+     "Ta": [
+      0.0011,
+      0.007
+     ],
+     "Ti-15Zr": [
+      0.0005,
+      0.003
+     ],
+     "SS302": [
+      0.0075,
+      0.0469
+     ],
+     "steel_mild": [
+      0.0033,
+      0.0208
+     ],
+     "matched_to_wood": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "Ti-6Al-7Nb": {
+   "alpha_ppm_K": 8.4,
+   "alpha_source": "lib ALLOY_PROPERTIES alpha_1K — lib cites no source for it",
+   "alpha_w_minus_alpha_rod_ppm_K": -0.5,
+   "sign": "negative on the one α_w reading (Δα -0.50 ppm/K); it flips if α_w > 8.4 ppm/K — conditional (one α_w reading; lib's α cites no source)",
+   "crossing_below_live_bark_mm": {
+    "A_scale_matched_to_rod": "beyond the axis",
+    "B_scale_matched_to_wood_on_the_rods_own_dead_bark": {
+     "install_min": "beyond the axis",
+     "install_max": "beyond the axis"
+    },
+    "B_for_comparison_with_114_anchor_on_its_dead_bark": {
+     "thin_contact_78": "beyond the axis",
+     "thick_side_78": "beyond the axis"
+    }
+   },
+   "depths": {
+    "5": {
+     "A_in_wood_um_per_K": -0.0025,
+     "x_frames": 0.008,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -51.6,
+      68.4
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.02,
+      "diurnal_growing_p95": 0.04,
+      "seasonal_unfrozen_p5_p95": 0.06
+     }
+    },
+    "10": {
+     "A_in_wood_um_per_K": -0.005,
+     "x_frames": 0.017,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -21.6,
+      38.4
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.05,
+      "diurnal_growing_p95": 0.07,
+      "seasonal_unfrozen_p5_p95": 0.11
+     }
+    },
+    "20": {
+     "A_in_wood_um_per_K": -0.01,
+     "x_frames": 0.033,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -6.6,
+      23.4
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.1,
+      "diurnal_growing_p95": 0.14,
+      "seasonal_unfrozen_p5_p95": 0.22
+     }
+    },
+    "30": {
+     "A_in_wood_um_per_K": -0.015,
+     "x_frames": 0.05,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -1.6,
+      18.4
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.15,
+      "diurnal_growing_p95": 0.21,
+      "seasonal_unfrozen_p5_p95": 0.33
+     }
+    },
+    "50": {
+     "A_in_wood_um_per_K": -0.025,
+     "x_frames": 0.083,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      2.4,
+      14.4
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.24,
+      "diurnal_growing_p95": 0.35,
+      "seasonal_unfrozen_p5_p95": 0.55
+     }
+    },
+    "100": {
+     "A_in_wood_um_per_K": -0.05,
+     "x_frames": 0.167,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      5.4,
+      11.4
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.49,
+      "diurnal_growing_p95": 0.71,
+      "seasonal_unfrozen_p5_p95": 1.1
+     }
+    }
+   },
+   "above_bark_at_install_tie_30mm": {
+    "Ti-6Al-4V": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0027,
+      "total_at_install_tie_um_per_K": -0.0123,
+      "x_frames": 0.041,
+      "total_air_proxy_um_p95": 0.17
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.007,
+      "total_at_install_tie_um_per_K": -0.008,
+      "x_frames": 0.027,
+      "total_air_proxy_um_p95": 0.11
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0059,
+      "total_at_install_tie_um_per_K": -0.0091,
+      "x_frames": 0.03,
+      "total_air_proxy_um_p95": 0.13
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.027,
+      "total_at_install_tie_um_per_K": 0.012,
+      "x_frames": 0.04,
+      "total_air_proxy_um_p95": 0.17
+     }
+    },
+    "Ti-6Al-7Nb": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.015,
+      "x_frames": 0.05,
+      "total_air_proxy_um_p95": 0.21
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.015,
+      "x_frames": 0.05,
+      "total_air_proxy_um_p95": 0.21
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.015,
+      "x_frames": 0.05,
+      "total_air_proxy_um_p95": 0.21
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.015,
+      "x_frames": 0.05,
+      "total_air_proxy_um_p95": 0.21
+     }
+    },
+    "CP-Ti-Gr4": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0027,
+      "total_at_install_tie_um_per_K": -0.0123,
+      "x_frames": 0.041,
+      "total_air_proxy_um_p95": 0.17
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.007,
+      "total_at_install_tie_um_per_K": -0.008,
+      "x_frames": 0.027,
+      "total_air_proxy_um_p95": 0.11
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0059,
+      "total_at_install_tie_um_per_K": -0.0091,
+      "x_frames": 0.03,
+      "total_air_proxy_um_p95": 0.13
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.027,
+      "total_at_install_tie_um_per_K": 0.012,
+      "x_frames": 0.04,
+      "total_air_proxy_um_p95": 0.17
+     }
+    },
+    "beta-Ti-13Nb-13Zr": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0054,
+      "total_at_install_tie_um_per_K": -0.0096,
+      "x_frames": 0.032,
+      "total_air_proxy_um_p95": 0.14
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.014,
+      "total_at_install_tie_um_per_K": -0.001,
+      "x_frames": 0.003,
+      "total_air_proxy_um_p95": 0.01
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0118,
+      "total_at_install_tie_um_per_K": -0.0032,
+      "x_frames": 0.011,
+      "total_air_proxy_um_p95": 0.05
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.054,
+      "total_at_install_tie_um_per_K": 0.039,
+      "x_frames": 0.13,
+      "total_air_proxy_um_p95": 0.55
+     }
+    },
+    "Ta": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0256,
+      "total_at_install_tie_um_per_K": -0.0406,
+      "x_frames": 0.135,
+      "total_air_proxy_um_p95": 0.58
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0665,
+      "total_at_install_tie_um_per_K": -0.0815,
+      "x_frames": 0.272,
+      "total_air_proxy_um_p95": 1.16
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.056,
+      "total_at_install_tie_um_per_K": -0.071,
+      "x_frames": 0.237,
+      "total_air_proxy_um_p95": 1.01
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.2565,
+      "total_at_install_tie_um_per_K": -0.2715,
+      "x_frames": 0.905,
+      "total_air_proxy_um_p95": 3.86
+     }
+    },
+    "Ti-15Zr": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0014,
+      "total_at_install_tie_um_per_K": -0.0136,
+      "x_frames": 0.045,
+      "total_air_proxy_um_p95": 0.19
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0035,
+      "total_at_install_tie_um_per_K": -0.0115,
+      "x_frames": 0.038,
+      "total_air_proxy_um_p95": 0.16
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.003,
+      "total_at_install_tie_um_per_K": -0.012,
+      "x_frames": 0.04,
+      "total_air_proxy_um_p95": 0.17
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0135,
+      "total_at_install_tie_um_per_K": -0.0015,
+      "x_frames": 0.005,
+      "total_air_proxy_um_p95": 0.02
+     }
+    },
+    "SS302": {
+     "install_min": {
+      "above_bark_um_per_K": 0.1199,
+      "total_at_install_tie_um_per_K": 0.1049,
+      "x_frames": 0.35,
+      "total_air_proxy_um_p95": 1.49
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.3108,
+      "total_at_install_tie_um_per_K": 0.2958,
+      "x_frames": 0.986,
+      "total_air_proxy_um_p95": 4.2
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.262,
+      "total_at_install_tie_um_per_K": 0.247,
+      "x_frames": 0.823,
+      "total_air_proxy_um_p95": 3.51
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 1.1988,
+      "total_at_install_tie_um_per_K": 1.1838,
+      "x_frames": 3.946,
+      "total_air_proxy_um_p95": 16.81
+     }
+    },
+    "steel_mild": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0494,
+      "total_at_install_tie_um_per_K": 0.0344,
+      "x_frames": 0.115,
+      "total_air_proxy_um_p95": 0.49
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.1281,
+      "total_at_install_tie_um_per_K": 0.1131,
+      "x_frames": 0.377,
+      "total_air_proxy_um_p95": 1.61
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.108,
+      "total_at_install_tie_um_per_K": 0.093,
+      "x_frames": 0.31,
+      "total_air_proxy_um_p95": 1.32
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.4941,
+      "total_at_install_tie_um_per_K": 0.4791,
+      "x_frames": 1.597,
+      "total_air_proxy_um_p95": 6.8
+     }
+    },
+    "matched_to_wood": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0067,
+      "total_at_install_tie_um_per_K": -0.0217,
+      "x_frames": 0.072,
+      "total_air_proxy_um_p95": 0.31
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0175,
+      "total_at_install_tie_um_per_K": -0.0325,
+      "x_frames": 0.108,
+      "total_air_proxy_um_p95": 0.46
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0147,
+      "total_at_install_tie_um_per_K": -0.0297,
+      "x_frames": 0.099,
+      "total_air_proxy_um_p95": 0.42
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.0675,
+      "total_at_install_tie_um_per_K": -0.0825,
+      "x_frames": 0.275,
+      "total_air_proxy_um_p95": 1.17
+     }
+    }
+   },
+   "scale_mismatch_allowed_ppm_K_at_install_tie": {
+    "install_min": 21.111,
+    "install_max": 8.143,
+    "install_min_plus_life_travel_slow": 9.661,
+    "install_max_plus_life_travel_fast": 2.111
+   },
+   "life_drift": {
+    "scale_matched_to_rod_or_clamp_keeping_h_c": {
+     "um_per_K_per_year_at_rate_ends": [
+      0.0004,
+      0.0025
+     ],
+     "years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends": [
+      "beyond the axis",
+      "beyond the axis"
+     ]
+    },
+    "fixed_clamp_um_per_K_per_year_at_rate_ends_by_scale": {
+     "Ti-6Al-4V": [
+      0.0006,
+      0.0035
+     ],
+     "Ti-6Al-7Nb": [
+      0.0004,
+      0.0025
+     ],
+     "CP-Ti-Gr4": [
+      0.0006,
+      0.0035
+     ],
+     "beta-Ti-13Nb-13Zr": [
+      0.0007,
+      0.0045
+     ],
+     "Ta": [
+      0.0011,
+      0.007
+     ],
+     "Ti-15Zr": [
+      0.0005,
+      0.003
+     ],
+     "SS302": [
+      0.0075,
+      0.0469
+     ],
+     "steel_mild": [
+      0.0033,
+      0.0208
+     ],
+     "matched_to_wood": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "CP-Ti-Gr4": {
+   "alpha_ppm_K": 8.6,
+   "alpha_source": "lib ALLOY_PROPERTIES alpha_1K — lib cites no source for it",
+   "alpha_w_minus_alpha_rod_ppm_K": -0.7,
+   "sign": "negative on the one α_w reading (Δα -0.70 ppm/K); it flips if α_w > 8.6 ppm/K — conditional (one α_w reading; lib's α cites no source)",
+   "crossing_below_live_bark_mm": {
+    "A_scale_matched_to_rod": "beyond the axis",
+    "B_scale_matched_to_wood_on_the_rods_own_dead_bark": {
+     "install_min": "beyond the axis",
+     "install_max": "beyond the axis"
+    },
+    "B_for_comparison_with_114_anchor_on_its_dead_bark": {
+     "thin_contact_78": "beyond the axis",
+     "thick_side_78": "beyond the axis"
+    }
+   },
+   "depths": {
+    "5": {
+     "A_in_wood_um_per_K": -0.0035,
+     "x_frames": 0.012,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -51.4,
+      68.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.03,
+      "diurnal_growing_p95": 0.05,
+      "seasonal_unfrozen_p5_p95": 0.08
+     }
+    },
+    "10": {
+     "A_in_wood_um_per_K": -0.007,
+     "x_frames": 0.023,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -21.4,
+      38.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.07,
+      "diurnal_growing_p95": 0.1,
+      "seasonal_unfrozen_p5_p95": 0.15
+     }
+    },
+    "20": {
+     "A_in_wood_um_per_K": -0.014,
+     "x_frames": 0.047,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -6.4,
+      23.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.14,
+      "diurnal_growing_p95": 0.2,
+      "seasonal_unfrozen_p5_p95": 0.31
+     }
+    },
+    "30": {
+     "A_in_wood_um_per_K": -0.021,
+     "x_frames": 0.07,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -1.4,
+      18.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.21,
+      "diurnal_growing_p95": 0.3,
+      "seasonal_unfrozen_p5_p95": 0.46
+     }
+    },
+    "50": {
+     "A_in_wood_um_per_K": -0.035,
+     "x_frames": 0.117,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      2.6,
+      14.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.34,
+      "diurnal_growing_p95": 0.5,
+      "seasonal_unfrozen_p5_p95": 0.77
+     }
+    },
+    "100": {
+     "A_in_wood_um_per_K": -0.07,
+     "x_frames": 0.233,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      5.6,
+      11.6
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.69,
+      "diurnal_growing_p95": 0.99,
+      "seasonal_unfrozen_p5_p95": 1.55
+     }
+    }
+   },
+   "above_bark_at_install_tie_30mm": {
+    "Ti-6Al-4V": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     }
+    },
+    "Ti-6Al-7Nb": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0027,
+      "total_at_install_tie_um_per_K": -0.0237,
+      "x_frames": 0.079,
+      "total_air_proxy_um_p95": 0.34
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.007,
+      "total_at_install_tie_um_per_K": -0.028,
+      "x_frames": 0.093,
+      "total_air_proxy_um_p95": 0.4
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0059,
+      "total_at_install_tie_um_per_K": -0.0269,
+      "x_frames": 0.09,
+      "total_air_proxy_um_p95": 0.38
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.027,
+      "total_at_install_tie_um_per_K": -0.048,
+      "x_frames": 0.16,
+      "total_air_proxy_um_p95": 0.68
+     }
+    },
+    "CP-Ti-Gr4": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     }
+    },
+    "beta-Ti-13Nb-13Zr": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0027,
+      "total_at_install_tie_um_per_K": -0.0183,
+      "x_frames": 0.061,
+      "total_air_proxy_um_p95": 0.26
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.007,
+      "total_at_install_tie_um_per_K": -0.014,
+      "x_frames": 0.047,
+      "total_air_proxy_um_p95": 0.2
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0059,
+      "total_at_install_tie_um_per_K": -0.0151,
+      "x_frames": 0.05,
+      "total_air_proxy_um_p95": 0.21
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.027,
+      "total_at_install_tie_um_per_K": 0.006,
+      "x_frames": 0.02,
+      "total_air_proxy_um_p95": 0.09
+     }
+    },
+    "Ta": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0284,
+      "total_at_install_tie_um_per_K": -0.0494,
+      "x_frames": 0.165,
+      "total_air_proxy_um_p95": 0.7
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0735,
+      "total_at_install_tie_um_per_K": -0.0945,
+      "x_frames": 0.315,
+      "total_air_proxy_um_p95": 1.34
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.062,
+      "total_at_install_tie_um_per_K": -0.083,
+      "x_frames": 0.277,
+      "total_air_proxy_um_p95": 1.18
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.2835,
+      "total_at_install_tie_um_per_K": -0.3045,
+      "x_frames": 1.015,
+      "total_air_proxy_um_p95": 4.32
+     }
+    },
+    "Ti-15Zr": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0014,
+      "total_at_install_tie_um_per_K": -0.0224,
+      "x_frames": 0.075,
+      "total_air_proxy_um_p95": 0.32
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0035,
+      "total_at_install_tie_um_per_K": -0.0245,
+      "x_frames": 0.082,
+      "total_air_proxy_um_p95": 0.35
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.003,
+      "total_at_install_tie_um_per_K": -0.024,
+      "x_frames": 0.08,
+      "total_air_proxy_um_p95": 0.34
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.0135,
+      "total_at_install_tie_um_per_K": -0.0345,
+      "x_frames": 0.115,
+      "total_air_proxy_um_p95": 0.49
+     }
+    },
+    "SS302": {
+     "install_min": {
+      "above_bark_um_per_K": 0.1172,
+      "total_at_install_tie_um_per_K": 0.0962,
+      "x_frames": 0.321,
+      "total_air_proxy_um_p95": 1.37
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.3038,
+      "total_at_install_tie_um_per_K": 0.2828,
+      "x_frames": 0.943,
+      "total_air_proxy_um_p95": 4.02
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.2561,
+      "total_at_install_tie_um_per_K": 0.2351,
+      "x_frames": 0.784,
+      "total_air_proxy_um_p95": 3.34
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 1.1718,
+      "total_at_install_tie_um_per_K": 1.1508,
+      "x_frames": 3.836,
+      "total_air_proxy_um_p95": 16.34
+     }
+    },
+    "steel_mild": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0467,
+      "total_at_install_tie_um_per_K": 0.0257,
+      "x_frames": 0.086,
+      "total_air_proxy_um_p95": 0.37
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.1211,
+      "total_at_install_tie_um_per_K": 0.1001,
+      "x_frames": 0.334,
+      "total_air_proxy_um_p95": 1.42
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.1021,
+      "total_at_install_tie_um_per_K": 0.0811,
+      "x_frames": 0.27,
+      "total_air_proxy_um_p95": 1.15
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.4671,
+      "total_at_install_tie_um_per_K": 0.4461,
+      "x_frames": 1.487,
+      "total_air_proxy_um_p95": 6.33
+     }
+    },
+    "matched_to_wood": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0095,
+      "total_at_install_tie_um_per_K": -0.0305,
+      "x_frames": 0.102,
+      "total_air_proxy_um_p95": 0.43
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0245,
+      "total_at_install_tie_um_per_K": -0.0455,
+      "x_frames": 0.152,
+      "total_air_proxy_um_p95": 0.65
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0207,
+      "total_at_install_tie_um_per_K": -0.0417,
+      "x_frames": 0.139,
+      "total_air_proxy_um_p95": 0.59
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.0945,
+      "total_at_install_tie_um_per_K": -0.1155,
+      "x_frames": 0.385,
+      "total_air_proxy_um_p95": 1.64
+     }
+    }
+   },
+   "scale_mismatch_allowed_ppm_K_at_install_tie": {
+    "install_min": 20.667,
+    "install_max": 7.971,
+    "install_min_plus_life_travel_slow": 9.458,
+    "install_max_plus_life_travel_fast": 2.067
+   },
+   "life_drift": {
+    "scale_matched_to_rod_or_clamp_keeping_h_c": {
+     "um_per_K_per_year_at_rate_ends": [
+      0.0006,
+      0.0035
+     ],
+     "years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends": [
+      "beyond the axis",
+      "beyond the axis"
+     ]
+    },
+    "fixed_clamp_um_per_K_per_year_at_rate_ends_by_scale": {
+     "Ti-6Al-4V": [
+      0.0006,
+      0.0035
+     ],
+     "Ti-6Al-7Nb": [
+      0.0004,
+      0.0025
+     ],
+     "CP-Ti-Gr4": [
+      0.0006,
+      0.0035
+     ],
+     "beta-Ti-13Nb-13Zr": [
+      0.0007,
+      0.0045
+     ],
+     "Ta": [
+      0.0011,
+      0.007
+     ],
+     "Ti-15Zr": [
+      0.0005,
+      0.003
+     ],
+     "SS302": [
+      0.0075,
+      0.0469
+     ],
+     "steel_mild": [
+      0.0033,
+      0.0208
+     ],
+     "matched_to_wood": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "beta-Ti-13Nb-13Zr": {
+   "alpha_ppm_K": 8.8,
+   "alpha_source": "lib ALLOY_PROPERTIES alpha_1K — lib cites no source for it",
+   "alpha_w_minus_alpha_rod_ppm_K": -0.9,
+   "sign": "negative on the one α_w reading (Δα -0.90 ppm/K); it flips if α_w > 8.8 ppm/K — conditional (one α_w reading; lib's α cites no source)",
+   "crossing_below_live_bark_mm": {
+    "A_scale_matched_to_rod": "beyond the axis",
+    "B_scale_matched_to_wood_on_the_rods_own_dead_bark": {
+     "install_min": "beyond the axis",
+     "install_max": "beyond the axis"
+    },
+    "B_for_comparison_with_114_anchor_on_its_dead_bark": {
+     "thin_contact_78": "beyond the axis",
+     "thick_side_78": "beyond the axis"
+    }
+   },
+   "depths": {
+    "5": {
+     "A_in_wood_um_per_K": -0.0045,
+     "x_frames": 0.015,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -51.2,
+      68.8
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.04,
+      "diurnal_growing_p95": 0.06,
+      "seasonal_unfrozen_p5_p95": 0.1
+     }
+    },
+    "10": {
+     "A_in_wood_um_per_K": -0.009,
+     "x_frames": 0.03,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -21.2,
+      38.8
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.09,
+      "diurnal_growing_p95": 0.13,
+      "seasonal_unfrozen_p5_p95": 0.2
+     }
+    },
+    "20": {
+     "A_in_wood_um_per_K": -0.018,
+     "x_frames": 0.06,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -6.2,
+      23.8
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.18,
+      "diurnal_growing_p95": 0.26,
+      "seasonal_unfrozen_p5_p95": 0.4
+     }
+    },
+    "30": {
+     "A_in_wood_um_per_K": -0.027,
+     "x_frames": 0.09,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -1.2,
+      18.8
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.26,
+      "diurnal_growing_p95": 0.38,
+      "seasonal_unfrozen_p5_p95": 0.6
+     }
+    },
+    "50": {
+     "A_in_wood_um_per_K": -0.045,
+     "x_frames": 0.15,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      2.8,
+      14.8
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.44,
+      "diurnal_growing_p95": 0.64,
+      "seasonal_unfrozen_p5_p95": 0.99
+     }
+    },
+    "100": {
+     "A_in_wood_um_per_K": -0.09,
+     "x_frames": 0.3,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      5.8,
+      11.8
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.88,
+      "diurnal_growing_p95": 1.28,
+      "seasonal_unfrozen_p5_p95": 1.99
+     }
+    }
+   },
+   "above_bark_at_install_tie_30mm": {
+    "Ti-6Al-4V": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0027,
+      "total_at_install_tie_um_per_K": -0.0297,
+      "x_frames": 0.099,
+      "total_air_proxy_um_p95": 0.42
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.007,
+      "total_at_install_tie_um_per_K": -0.034,
+      "x_frames": 0.113,
+      "total_air_proxy_um_p95": 0.48
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0059,
+      "total_at_install_tie_um_per_K": -0.0329,
+      "x_frames": 0.11,
+      "total_air_proxy_um_p95": 0.47
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.027,
+      "total_at_install_tie_um_per_K": -0.054,
+      "x_frames": 0.18,
+      "total_air_proxy_um_p95": 0.77
+     }
+    },
+    "Ti-6Al-7Nb": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0054,
+      "total_at_install_tie_um_per_K": -0.0324,
+      "x_frames": 0.108,
+      "total_air_proxy_um_p95": 0.46
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.014,
+      "total_at_install_tie_um_per_K": -0.041,
+      "x_frames": 0.137,
+      "total_air_proxy_um_p95": 0.58
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0118,
+      "total_at_install_tie_um_per_K": -0.0388,
+      "x_frames": 0.129,
+      "total_air_proxy_um_p95": 0.55
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.054,
+      "total_at_install_tie_um_per_K": -0.081,
+      "x_frames": 0.27,
+      "total_air_proxy_um_p95": 1.15
+     }
+    },
+    "CP-Ti-Gr4": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0027,
+      "total_at_install_tie_um_per_K": -0.0297,
+      "x_frames": 0.099,
+      "total_air_proxy_um_p95": 0.42
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.007,
+      "total_at_install_tie_um_per_K": -0.034,
+      "x_frames": 0.113,
+      "total_air_proxy_um_p95": 0.48
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0059,
+      "total_at_install_tie_um_per_K": -0.0329,
+      "x_frames": 0.11,
+      "total_air_proxy_um_p95": 0.47
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.027,
+      "total_at_install_tie_um_per_K": -0.054,
+      "x_frames": 0.18,
+      "total_air_proxy_um_p95": 0.77
+     }
+    },
+    "beta-Ti-13Nb-13Zr": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.027,
+      "x_frames": 0.09,
+      "total_air_proxy_um_p95": 0.38
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.027,
+      "x_frames": 0.09,
+      "total_air_proxy_um_p95": 0.38
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.027,
+      "x_frames": 0.09,
+      "total_air_proxy_um_p95": 0.38
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.027,
+      "x_frames": 0.09,
+      "total_air_proxy_um_p95": 0.38
+     }
+    },
+    "Ta": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0311,
+      "total_at_install_tie_um_per_K": -0.0581,
+      "x_frames": 0.194,
+      "total_air_proxy_um_p95": 0.82
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0805,
+      "total_at_install_tie_um_per_K": -0.1075,
+      "x_frames": 0.358,
+      "total_air_proxy_um_p95": 1.53
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0679,
+      "total_at_install_tie_um_per_K": -0.0949,
+      "x_frames": 0.316,
+      "total_air_proxy_um_p95": 1.35
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.3105,
+      "total_at_install_tie_um_per_K": -0.3375,
+      "x_frames": 1.125,
+      "total_air_proxy_um_p95": 4.79
+     }
+    },
+    "Ti-15Zr": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0041,
+      "total_at_install_tie_um_per_K": -0.0311,
+      "x_frames": 0.104,
+      "total_air_proxy_um_p95": 0.44
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0105,
+      "total_at_install_tie_um_per_K": -0.0375,
+      "x_frames": 0.125,
+      "total_air_proxy_um_p95": 0.53
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0089,
+      "total_at_install_tie_um_per_K": -0.0359,
+      "x_frames": 0.12,
+      "total_air_proxy_um_p95": 0.51
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.0405,
+      "total_at_install_tie_um_per_K": -0.0675,
+      "x_frames": 0.225,
+      "total_air_proxy_um_p95": 0.96
+     }
+    },
+    "SS302": {
+     "install_min": {
+      "above_bark_um_per_K": 0.1145,
+      "total_at_install_tie_um_per_K": 0.0875,
+      "x_frames": 0.292,
+      "total_air_proxy_um_p95": 1.24
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.2968,
+      "total_at_install_tie_um_per_K": 0.2698,
+      "x_frames": 0.899,
+      "total_air_proxy_um_p95": 3.83
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.2502,
+      "total_at_install_tie_um_per_K": 0.2232,
+      "x_frames": 0.744,
+      "total_air_proxy_um_p95": 3.17
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 1.1448,
+      "total_at_install_tie_um_per_K": 1.1178,
+      "x_frames": 3.726,
+      "total_air_proxy_um_p95": 15.87
+     }
+    },
+    "steel_mild": {
+     "install_min": {
+      "above_bark_um_per_K": 0.044,
+      "total_at_install_tie_um_per_K": 0.017,
+      "x_frames": 0.057,
+      "total_air_proxy_um_p95": 0.24
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.1141,
+      "total_at_install_tie_um_per_K": 0.0871,
+      "x_frames": 0.29,
+      "total_air_proxy_um_p95": 1.24
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0962,
+      "total_at_install_tie_um_per_K": 0.0692,
+      "x_frames": 0.231,
+      "total_air_proxy_um_p95": 0.98
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.4401,
+      "total_at_install_tie_um_per_K": 0.4131,
+      "x_frames": 1.377,
+      "total_air_proxy_um_p95": 5.87
+     }
+    },
+    "matched_to_wood": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0121,
+      "total_at_install_tie_um_per_K": -0.0391,
+      "x_frames": 0.13,
+      "total_air_proxy_um_p95": 0.56
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0315,
+      "total_at_install_tie_um_per_K": -0.0585,
+      "x_frames": 0.195,
+      "total_air_proxy_um_p95": 0.83
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0265,
+      "total_at_install_tie_um_per_K": -0.0535,
+      "x_frames": 0.178,
+      "total_air_proxy_um_p95": 0.76
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.1215,
+      "total_at_install_tie_um_per_K": -0.1485,
+      "x_frames": 0.495,
+      "total_air_proxy_um_p95": 2.11
+     }
+    }
+   },
+   "scale_mismatch_allowed_ppm_K_at_install_tie": {
+    "install_min": 20.222,
+    "install_max": 7.8,
+    "install_min_plus_life_travel_slow": 9.254,
+    "install_max_plus_life_travel_fast": 2.022
+   },
+   "life_drift": {
+    "scale_matched_to_rod_or_clamp_keeping_h_c": {
+     "um_per_K_per_year_at_rate_ends": [
+      0.0007,
+      0.0045
+     ],
+     "years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends": [
+      "beyond the axis",
+      "beyond the axis"
+     ]
+    },
+    "fixed_clamp_um_per_K_per_year_at_rate_ends_by_scale": {
+     "Ti-6Al-4V": [
+      0.0006,
+      0.0035
+     ],
+     "Ti-6Al-7Nb": [
+      0.0004,
+      0.0025
+     ],
+     "CP-Ti-Gr4": [
+      0.0006,
+      0.0035
+     ],
+     "beta-Ti-13Nb-13Zr": [
+      0.0007,
+      0.0045
+     ],
+     "Ta": [
+      0.0011,
+      0.007
+     ],
+     "Ti-15Zr": [
+      0.0005,
+      0.003
+     ],
+     "SS302": [
+      0.0075,
+      0.0469
+     ],
+     "steel_mild": [
+      0.0033,
+      0.0208
+     ],
+     "matched_to_wood": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "Ta": {
+   "alpha_ppm_K": 6.5,
+   "alpha_source": "lib ALLOY_PROPERTIES alpha_1K — lib cites no source for it",
+   "alpha_w_minus_alpha_rod_ppm_K": 1.4,
+   "sign": "positive on the one α_w reading (Δα +1.40 ppm/K); it flips if α_w < 6.5 ppm/K — conditional (one α_w reading; lib's α cites no source)",
+   "crossing_below_live_bark_mm": {
+    "A_scale_matched_to_rod": "beyond the axis",
+    "B_scale_matched_to_wood_on_the_rods_own_dead_bark": {
+     "install_min": "beyond the axis",
+     "install_max": "beyond the axis"
+    },
+    "B_for_comparison_with_114_anchor_on_its_dead_bark": {
+     "thin_contact_78": "beyond the axis",
+     "thick_side_78": "beyond the axis"
+    }
+   },
+   "depths": {
+    "5": {
+     "A_in_wood_um_per_K": 0.007,
+     "x_frames": 0.023,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -53.5,
+      66.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.07,
+      "diurnal_growing_p95": 0.1,
+      "seasonal_unfrozen_p5_p95": 0.15
+     }
+    },
+    "10": {
+     "A_in_wood_um_per_K": 0.014,
+     "x_frames": 0.047,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -23.5,
+      36.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.14,
+      "diurnal_growing_p95": 0.2,
+      "seasonal_unfrozen_p5_p95": 0.31
+     }
+    },
+    "20": {
+     "A_in_wood_um_per_K": 0.028,
+     "x_frames": 0.093,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -8.5,
+      21.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.27,
+      "diurnal_growing_p95": 0.4,
+      "seasonal_unfrozen_p5_p95": 0.62
+     }
+    },
+    "30": {
+     "A_in_wood_um_per_K": 0.042,
+     "x_frames": 0.14,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -3.5,
+      16.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.41,
+      "diurnal_growing_p95": 0.6,
+      "seasonal_unfrozen_p5_p95": 0.93
+     }
+    },
+    "50": {
+     "A_in_wood_um_per_K": 0.07,
+     "x_frames": 0.233,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      0.5,
+      12.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.69,
+      "diurnal_growing_p95": 0.99,
+      "seasonal_unfrozen_p5_p95": 1.55
+     }
+    },
+    "100": {
+     "A_in_wood_um_per_K": 0.14,
+     "x_frames": 0.467,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      3.5,
+      9.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 1.37,
+      "diurnal_growing_p95": 1.99,
+      "seasonal_unfrozen_p5_p95": 3.09
+     }
+    }
+   },
+   "above_bark_at_install_tie_30mm": {
+    "Ti-6Al-4V": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0284,
+      "total_at_install_tie_um_per_K": 0.0704,
+      "x_frames": 0.235,
+      "total_air_proxy_um_p95": 1.0
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0735,
+      "total_at_install_tie_um_per_K": 0.1155,
+      "x_frames": 0.385,
+      "total_air_proxy_um_p95": 1.64
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.062,
+      "total_at_install_tie_um_per_K": 0.104,
+      "x_frames": 0.347,
+      "total_air_proxy_um_p95": 1.48
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.2835,
+      "total_at_install_tie_um_per_K": 0.3255,
+      "x_frames": 1.085,
+      "total_air_proxy_um_p95": 4.62
+     }
+    },
+    "Ti-6Al-7Nb": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0256,
+      "total_at_install_tie_um_per_K": 0.0677,
+      "x_frames": 0.226,
+      "total_air_proxy_um_p95": 0.96
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0665,
+      "total_at_install_tie_um_per_K": 0.1085,
+      "x_frames": 0.362,
+      "total_air_proxy_um_p95": 1.54
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.056,
+      "total_at_install_tie_um_per_K": 0.0981,
+      "x_frames": 0.327,
+      "total_air_proxy_um_p95": 1.39
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.2565,
+      "total_at_install_tie_um_per_K": 0.2985,
+      "x_frames": 0.995,
+      "total_air_proxy_um_p95": 4.24
+     }
+    },
+    "CP-Ti-Gr4": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0284,
+      "total_at_install_tie_um_per_K": 0.0704,
+      "x_frames": 0.235,
+      "total_air_proxy_um_p95": 1.0
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0735,
+      "total_at_install_tie_um_per_K": 0.1155,
+      "x_frames": 0.385,
+      "total_air_proxy_um_p95": 1.64
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.062,
+      "total_at_install_tie_um_per_K": 0.104,
+      "x_frames": 0.347,
+      "total_air_proxy_um_p95": 1.48
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.2835,
+      "total_at_install_tie_um_per_K": 0.3255,
+      "x_frames": 1.085,
+      "total_air_proxy_um_p95": 4.62
+     }
+    },
+    "beta-Ti-13Nb-13Zr": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0311,
+      "total_at_install_tie_um_per_K": 0.0731,
+      "x_frames": 0.244,
+      "total_air_proxy_um_p95": 1.04
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0805,
+      "total_at_install_tie_um_per_K": 0.1225,
+      "x_frames": 0.408,
+      "total_air_proxy_um_p95": 1.74
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0679,
+      "total_at_install_tie_um_per_K": 0.1099,
+      "x_frames": 0.366,
+      "total_air_proxy_um_p95": 1.56
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.3105,
+      "total_at_install_tie_um_per_K": 0.3525,
+      "x_frames": 1.175,
+      "total_air_proxy_um_p95": 5.01
+     }
+    },
+    "Ta": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": 0.042,
+      "x_frames": 0.14,
+      "total_air_proxy_um_p95": 0.6
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": 0.042,
+      "x_frames": 0.14,
+      "total_air_proxy_um_p95": 0.6
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": 0.042,
+      "x_frames": 0.14,
+      "total_air_proxy_um_p95": 0.6
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": 0.042,
+      "x_frames": 0.14,
+      "total_air_proxy_um_p95": 0.6
+     }
+    },
+    "Ti-15Zr": {
+     "install_min": {
+      "above_bark_um_per_K": 0.027,
+      "total_at_install_tie_um_per_K": 0.069,
+      "x_frames": 0.23,
+      "total_air_proxy_um_p95": 0.98
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.07,
+      "total_at_install_tie_um_per_K": 0.112,
+      "x_frames": 0.373,
+      "total_air_proxy_um_p95": 1.59
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.059,
+      "total_at_install_tie_um_per_K": 0.101,
+      "x_frames": 0.337,
+      "total_air_proxy_um_p95": 1.43
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.27,
+      "total_at_install_tie_um_per_K": 0.312,
+      "x_frames": 1.04,
+      "total_air_proxy_um_p95": 4.43
+     }
+    },
+    "SS302": {
+     "install_min": {
+      "above_bark_um_per_K": 0.1455,
+      "total_at_install_tie_um_per_K": 0.1875,
+      "x_frames": 0.625,
+      "total_air_proxy_um_p95": 2.66
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.3773,
+      "total_at_install_tie_um_per_K": 0.4193,
+      "x_frames": 1.398,
+      "total_air_proxy_um_p95": 5.95
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.318,
+      "total_at_install_tie_um_per_K": 0.36,
+      "x_frames": 1.2,
+      "total_air_proxy_um_p95": 5.11
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 1.4553,
+      "total_at_install_tie_um_per_K": 1.4973,
+      "x_frames": 4.991,
+      "total_air_proxy_um_p95": 21.26
+     }
+    },
+    "steel_mild": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0751,
+      "total_at_install_tie_um_per_K": 0.1171,
+      "x_frames": 0.39,
+      "total_air_proxy_um_p95": 1.66
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.1946,
+      "total_at_install_tie_um_per_K": 0.2366,
+      "x_frames": 0.789,
+      "total_air_proxy_um_p95": 3.36
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.164,
+      "total_at_install_tie_um_per_K": 0.206,
+      "x_frames": 0.687,
+      "total_air_proxy_um_p95": 2.93
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.7506,
+      "total_at_install_tie_um_per_K": 0.7926,
+      "x_frames": 2.642,
+      "total_air_proxy_um_p95": 11.25
+     }
+    },
+    "matched_to_wood": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0189,
+      "total_at_install_tie_um_per_K": 0.0609,
+      "x_frames": 0.203,
+      "total_air_proxy_um_p95": 0.86
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.049,
+      "total_at_install_tie_um_per_K": 0.091,
+      "x_frames": 0.303,
+      "total_air_proxy_um_p95": 1.29
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0413,
+      "total_at_install_tie_um_per_K": 0.0833,
+      "x_frames": 0.278,
+      "total_air_proxy_um_p95": 1.18
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.189,
+      "total_at_install_tie_um_per_K": 0.231,
+      "x_frames": 0.77,
+      "total_air_proxy_um_p95": 3.28
+     }
+    }
+   },
+   "scale_mismatch_allowed_ppm_K_at_install_tie": {
+    "install_min": 19.111,
+    "install_max": 7.371,
+    "install_min_plus_life_travel_slow": 8.746,
+    "install_max_plus_life_travel_fast": 1.911
+   },
+   "life_drift": {
+    "scale_matched_to_rod_or_clamp_keeping_h_c": {
+     "um_per_K_per_year_at_rate_ends": [
+      0.0011,
+      0.007
+     ],
+     "years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends": [
+      "beyond the axis",
+      "beyond the axis"
+     ]
+    },
+    "fixed_clamp_um_per_K_per_year_at_rate_ends_by_scale": {
+     "Ti-6Al-4V": [
+      0.0006,
+      0.0035
+     ],
+     "Ti-6Al-7Nb": [
+      0.0004,
+      0.0025
+     ],
+     "CP-Ti-Gr4": [
+      0.0006,
+      0.0035
+     ],
+     "beta-Ti-13Nb-13Zr": [
+      0.0007,
+      0.0045
+     ],
+     "Ta": [
+      0.0011,
+      0.007
+     ],
+     "Ti-15Zr": [
+      0.0005,
+      0.003
+     ],
+     "SS302": [
+      0.0075,
+      0.0469
+     ],
+     "steel_mild": [
+      0.0033,
+      0.0208
+     ],
+     "matched_to_wood": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "Ti-15Zr": {
+   "alpha_ppm_K": 8.5,
+   "alpha_source": "lib ALLOY_PROPERTIES alpha_1K — lib cites no source for it",
+   "alpha_w_minus_alpha_rod_ppm_K": -0.6,
+   "sign": "negative on the one α_w reading (Δα -0.60 ppm/K); it flips if α_w > 8.5 ppm/K — conditional (one α_w reading; lib's α cites no source)",
+   "crossing_below_live_bark_mm": {
+    "A_scale_matched_to_rod": "beyond the axis",
+    "B_scale_matched_to_wood_on_the_rods_own_dead_bark": {
+     "install_min": "beyond the axis",
+     "install_max": "beyond the axis"
+    },
+    "B_for_comparison_with_114_anchor_on_its_dead_bark": {
+     "thin_contact_78": "beyond the axis",
+     "thick_side_78": "beyond the axis"
+    }
+   },
+   "depths": {
+    "5": {
+     "A_in_wood_um_per_K": -0.003,
+     "x_frames": 0.01,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -51.5,
+      68.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.03,
+      "diurnal_growing_p95": 0.04,
+      "seasonal_unfrozen_p5_p95": 0.07
+     }
+    },
+    "10": {
+     "A_in_wood_um_per_K": -0.006,
+     "x_frames": 0.02,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -21.5,
+      38.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.06,
+      "diurnal_growing_p95": 0.09,
+      "seasonal_unfrozen_p5_p95": 0.13
+     }
+    },
+    "20": {
+     "A_in_wood_um_per_K": -0.012,
+     "x_frames": 0.04,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -6.5,
+      23.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.12,
+      "diurnal_growing_p95": 0.17,
+      "seasonal_unfrozen_p5_p95": 0.27
+     }
+    },
+    "30": {
+     "A_in_wood_um_per_K": -0.018,
+     "x_frames": 0.06,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -1.5,
+      18.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.18,
+      "diurnal_growing_p95": 0.26,
+      "seasonal_unfrozen_p5_p95": 0.4
+     }
+    },
+    "50": {
+     "A_in_wood_um_per_K": -0.03,
+     "x_frames": 0.1,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      2.5,
+      14.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.29,
+      "diurnal_growing_p95": 0.43,
+      "seasonal_unfrozen_p5_p95": 0.66
+     }
+    },
+    "100": {
+     "A_in_wood_um_per_K": -0.06,
+     "x_frames": 0.2,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      5.5,
+      11.5
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.59,
+      "diurnal_growing_p95": 0.85,
+      "seasonal_unfrozen_p5_p95": 1.33
+     }
+    }
+   },
+   "above_bark_at_install_tie_30mm": {
+    "Ti-6Al-4V": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0014,
+      "total_at_install_tie_um_per_K": -0.0166,
+      "x_frames": 0.055,
+      "total_air_proxy_um_p95": 0.24
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0035,
+      "total_at_install_tie_um_per_K": -0.0145,
+      "x_frames": 0.048,
+      "total_air_proxy_um_p95": 0.21
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.003,
+      "total_at_install_tie_um_per_K": -0.015,
+      "x_frames": 0.05,
+      "total_air_proxy_um_p95": 0.21
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0135,
+      "total_at_install_tie_um_per_K": -0.0045,
+      "x_frames": 0.015,
+      "total_air_proxy_um_p95": 0.06
+     }
+    },
+    "Ti-6Al-7Nb": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0014,
+      "total_at_install_tie_um_per_K": -0.0193,
+      "x_frames": 0.064,
+      "total_air_proxy_um_p95": 0.27
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.0035,
+      "total_at_install_tie_um_per_K": -0.0215,
+      "x_frames": 0.072,
+      "total_air_proxy_um_p95": 0.31
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.003,
+      "total_at_install_tie_um_per_K": -0.021,
+      "x_frames": 0.07,
+      "total_air_proxy_um_p95": 0.3
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.0135,
+      "total_at_install_tie_um_per_K": -0.0315,
+      "x_frames": 0.105,
+      "total_air_proxy_um_p95": 0.45
+     }
+    },
+    "CP-Ti-Gr4": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0014,
+      "total_at_install_tie_um_per_K": -0.0166,
+      "x_frames": 0.055,
+      "total_air_proxy_um_p95": 0.24
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0035,
+      "total_at_install_tie_um_per_K": -0.0145,
+      "x_frames": 0.048,
+      "total_air_proxy_um_p95": 0.21
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.003,
+      "total_at_install_tie_um_per_K": -0.015,
+      "x_frames": 0.05,
+      "total_air_proxy_um_p95": 0.21
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0135,
+      "total_at_install_tie_um_per_K": -0.0045,
+      "x_frames": 0.015,
+      "total_air_proxy_um_p95": 0.06
+     }
+    },
+    "beta-Ti-13Nb-13Zr": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0041,
+      "total_at_install_tie_um_per_K": -0.0139,
+      "x_frames": 0.046,
+      "total_air_proxy_um_p95": 0.2
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0105,
+      "total_at_install_tie_um_per_K": -0.0075,
+      "x_frames": 0.025,
+      "total_air_proxy_um_p95": 0.11
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0089,
+      "total_at_install_tie_um_per_K": -0.0091,
+      "x_frames": 0.03,
+      "total_air_proxy_um_p95": 0.13
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0405,
+      "total_at_install_tie_um_per_K": 0.0225,
+      "x_frames": 0.075,
+      "total_air_proxy_um_p95": 0.32
+     }
+    },
+    "Ta": {
+     "install_min": {
+      "above_bark_um_per_K": -0.027,
+      "total_at_install_tie_um_per_K": -0.045,
+      "x_frames": 0.15,
+      "total_air_proxy_um_p95": 0.64
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.07,
+      "total_at_install_tie_um_per_K": -0.088,
+      "x_frames": 0.293,
+      "total_air_proxy_um_p95": 1.25
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.059,
+      "total_at_install_tie_um_per_K": -0.077,
+      "x_frames": 0.257,
+      "total_air_proxy_um_p95": 1.09
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.27,
+      "total_at_install_tie_um_per_K": -0.288,
+      "x_frames": 0.96,
+      "total_air_proxy_um_p95": 4.09
+     }
+    },
+    "Ti-15Zr": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.018,
+      "x_frames": 0.06,
+      "total_air_proxy_um_p95": 0.26
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.018,
+      "x_frames": 0.06,
+      "total_air_proxy_um_p95": 0.26
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.018,
+      "x_frames": 0.06,
+      "total_air_proxy_um_p95": 0.26
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.018,
+      "x_frames": 0.06,
+      "total_air_proxy_um_p95": 0.26
+     }
+    },
+    "SS302": {
+     "install_min": {
+      "above_bark_um_per_K": 0.1185,
+      "total_at_install_tie_um_per_K": 0.1005,
+      "x_frames": 0.335,
+      "total_air_proxy_um_p95": 1.43
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.3073,
+      "total_at_install_tie_um_per_K": 0.2893,
+      "x_frames": 0.964,
+      "total_air_proxy_um_p95": 4.11
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.259,
+      "total_at_install_tie_um_per_K": 0.241,
+      "x_frames": 0.803,
+      "total_air_proxy_um_p95": 3.42
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 1.1853,
+      "total_at_install_tie_um_per_K": 1.1673,
+      "x_frames": 3.891,
+      "total_air_proxy_um_p95": 16.58
+     }
+    },
+    "steel_mild": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0481,
+      "total_at_install_tie_um_per_K": 0.0301,
+      "x_frames": 0.1,
+      "total_air_proxy_um_p95": 0.43
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.1246,
+      "total_at_install_tie_um_per_K": 0.1066,
+      "x_frames": 0.355,
+      "total_air_proxy_um_p95": 1.51
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.105,
+      "total_at_install_tie_um_per_K": 0.087,
+      "x_frames": 0.29,
+      "total_air_proxy_um_p95": 1.24
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.4806,
+      "total_at_install_tie_um_per_K": 0.4626,
+      "x_frames": 1.542,
+      "total_air_proxy_um_p95": 6.57
+     }
+    },
+    "matched_to_wood": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0081,
+      "total_at_install_tie_um_per_K": -0.0261,
+      "x_frames": 0.087,
+      "total_air_proxy_um_p95": 0.37
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.021,
+      "total_at_install_tie_um_per_K": -0.039,
+      "x_frames": 0.13,
+      "total_air_proxy_um_p95": 0.55
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0177,
+      "total_at_install_tie_um_per_K": -0.0357,
+      "x_frames": 0.119,
+      "total_air_proxy_um_p95": 0.51
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.081,
+      "total_at_install_tie_um_per_K": -0.099,
+      "x_frames": 0.33,
+      "total_air_proxy_um_p95": 1.41
+     }
+    }
+   },
+   "scale_mismatch_allowed_ppm_K_at_install_tie": {
+    "install_min": 20.889,
+    "install_max": 8.057,
+    "install_min_plus_life_travel_slow": 9.559,
+    "install_max_plus_life_travel_fast": 2.089
+   },
+   "life_drift": {
+    "scale_matched_to_rod_or_clamp_keeping_h_c": {
+     "um_per_K_per_year_at_rate_ends": [
+      0.0005,
+      0.003
+     ],
+     "years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends": [
+      "beyond the axis",
+      "beyond the axis"
+     ]
+    },
+    "fixed_clamp_um_per_K_per_year_at_rate_ends_by_scale": {
+     "Ti-6Al-4V": [
+      0.0006,
+      0.0035
+     ],
+     "Ti-6Al-7Nb": [
+      0.0004,
+      0.0025
+     ],
+     "CP-Ti-Gr4": [
+      0.0006,
+      0.0035
+     ],
+     "beta-Ti-13Nb-13Zr": [
+      0.0007,
+      0.0045
+     ],
+     "Ta": [
+      0.0011,
+      0.007
+     ],
+     "Ti-15Zr": [
+      0.0005,
+      0.003
+     ],
+     "SS302": [
+      0.0075,
+      0.0469
+     ],
+     "steel_mild": [
+      0.0033,
+      0.0208
+     ],
+     "matched_to_wood": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "SS302": {
+   "alpha_ppm_K": 17.28,
+   "alpha_source": "lib ALPHA_SS302_1K — Parker Table 2-5, «Stainless Steel, Type 302»",
+   "alpha_w_minus_alpha_rod_ppm_K": -9.38,
+   "sign": "negative on the one α_w reading (Δα -9.38 ppm/K); it flips if α_w > 17.28 ppm/K — conditional (one α_w reading; α from the Parker table)",
+   "crossing_below_live_bark_mm": {
+    "A_scale_matched_to_rod": 31.98,
+    "B_scale_matched_to_wood_on_the_rods_own_dead_bark": {
+     "install_min": 18.48,
+     "install_max": "over the frames at any tie"
+    },
+    "B_for_comparison_with_114_anchor_on_its_dead_bark": {
+     "thin_contact_78": 23.66,
+     "thick_side_78": 10.98
+    }
+   },
+   "depths": {
+    "5": {
+     "A_in_wood_um_per_K": -0.0469,
+     "x_frames": 0.156,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -42.72,
+      77.28
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.46,
+      "diurnal_growing_p95": 0.67,
+      "seasonal_unfrozen_p5_p95": 1.04
+     }
+    },
+    "10": {
+     "A_in_wood_um_per_K": -0.0938,
+     "x_frames": 0.313,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -12.72,
+      47.28
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.92,
+      "diurnal_growing_p95": 1.33,
+      "seasonal_unfrozen_p5_p95": 2.07
+     }
+    },
+    "20": {
+     "A_in_wood_um_per_K": -0.1876,
+     "x_frames": 0.625,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      2.28,
+      32.28
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 1.84,
+      "diurnal_growing_p95": 2.66,
+      "seasonal_unfrozen_p5_p95": 4.15
+     }
+    },
+    "30": {
+     "A_in_wood_um_per_K": -0.2814,
+     "x_frames": 0.938,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      7.28,
+      27.28
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 2.76,
+      "diurnal_growing_p95": 4.0,
+      "seasonal_unfrozen_p5_p95": 6.22
+     }
+    },
+    "50": {
+     "A_in_wood_um_per_K": -0.469,
+     "x_frames": 1.563,
+     "under_frames": false,
+     "alpha_w_window_ppm_K": [
+      11.28,
+      23.28
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 4.6,
+      "diurnal_growing_p95": 6.66,
+      "seasonal_unfrozen_p5_p95": 10.36
+     }
+    },
+    "100": {
+     "A_in_wood_um_per_K": -0.938,
+     "x_frames": 3.127,
+     "under_frames": false,
+     "alpha_w_window_ppm_K": [
+      14.28,
+      20.28
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 9.19,
+      "diurnal_growing_p95": 13.32,
+      "seasonal_unfrozen_p5_p95": 20.73
+     }
+    }
+   },
+   "above_bark_at_install_tie_30mm": {
+    "Ti-6Al-4V": {
+     "install_min": {
+      "above_bark_um_per_K": -0.1172,
+      "total_at_install_tie_um_per_K": -0.3986,
+      "x_frames": 1.329,
+      "total_air_proxy_um_p95": 5.66
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.3038,
+      "total_at_install_tie_um_per_K": -0.5852,
+      "x_frames": 1.951,
+      "total_air_proxy_um_p95": 8.31
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.2561,
+      "total_at_install_tie_um_per_K": -0.5375,
+      "x_frames": 1.792,
+      "total_air_proxy_um_p95": 7.63
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -1.1718,
+      "total_at_install_tie_um_per_K": -1.4532,
+      "x_frames": 4.844,
+      "total_air_proxy_um_p95": 20.64
+     }
+    },
+    "Ti-6Al-7Nb": {
+     "install_min": {
+      "above_bark_um_per_K": -0.1199,
+      "total_at_install_tie_um_per_K": -0.4013,
+      "x_frames": 1.338,
+      "total_air_proxy_um_p95": 5.7
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.3108,
+      "total_at_install_tie_um_per_K": -0.5922,
+      "x_frames": 1.974,
+      "total_air_proxy_um_p95": 8.41
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.262,
+      "total_at_install_tie_um_per_K": -0.5434,
+      "x_frames": 1.811,
+      "total_air_proxy_um_p95": 7.72
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -1.1988,
+      "total_at_install_tie_um_per_K": -1.4802,
+      "x_frames": 4.934,
+      "total_air_proxy_um_p95": 21.02
+     }
+    },
+    "CP-Ti-Gr4": {
+     "install_min": {
+      "above_bark_um_per_K": -0.1172,
+      "total_at_install_tie_um_per_K": -0.3986,
+      "x_frames": 1.329,
+      "total_air_proxy_um_p95": 5.66
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.3038,
+      "total_at_install_tie_um_per_K": -0.5852,
+      "x_frames": 1.951,
+      "total_air_proxy_um_p95": 8.31
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.2561,
+      "total_at_install_tie_um_per_K": -0.5375,
+      "x_frames": 1.792,
+      "total_air_proxy_um_p95": 7.63
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -1.1718,
+      "total_at_install_tie_um_per_K": -1.4532,
+      "x_frames": 4.844,
+      "total_air_proxy_um_p95": 20.64
+     }
+    },
+    "beta-Ti-13Nb-13Zr": {
+     "install_min": {
+      "above_bark_um_per_K": -0.1145,
+      "total_at_install_tie_um_per_K": -0.3959,
+      "x_frames": 1.32,
+      "total_air_proxy_um_p95": 5.62
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.2968,
+      "total_at_install_tie_um_per_K": -0.5782,
+      "x_frames": 1.927,
+      "total_air_proxy_um_p95": 8.21
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.2502,
+      "total_at_install_tie_um_per_K": -0.5316,
+      "x_frames": 1.772,
+      "total_air_proxy_um_p95": 7.55
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -1.1448,
+      "total_at_install_tie_um_per_K": -1.4262,
+      "x_frames": 4.754,
+      "total_air_proxy_um_p95": 20.25
+     }
+    },
+    "Ta": {
+     "install_min": {
+      "above_bark_um_per_K": -0.1455,
+      "total_at_install_tie_um_per_K": -0.4269,
+      "x_frames": 1.423,
+      "total_air_proxy_um_p95": 6.06
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.3773,
+      "total_at_install_tie_um_per_K": -0.6587,
+      "x_frames": 2.196,
+      "total_air_proxy_um_p95": 9.35
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.318,
+      "total_at_install_tie_um_per_K": -0.5994,
+      "x_frames": 1.998,
+      "total_air_proxy_um_p95": 8.51
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -1.4553,
+      "total_at_install_tie_um_per_K": -1.7367,
+      "x_frames": 5.789,
+      "total_air_proxy_um_p95": 24.66
+     }
+    },
+    "Ti-15Zr": {
+     "install_min": {
+      "above_bark_um_per_K": -0.1185,
+      "total_at_install_tie_um_per_K": -0.3999,
+      "x_frames": 1.333,
+      "total_air_proxy_um_p95": 5.68
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.3073,
+      "total_at_install_tie_um_per_K": -0.5887,
+      "x_frames": 1.962,
+      "total_air_proxy_um_p95": 8.36
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.259,
+      "total_at_install_tie_um_per_K": -0.5404,
+      "x_frames": 1.801,
+      "total_air_proxy_um_p95": 7.67
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -1.1853,
+      "total_at_install_tie_um_per_K": -1.4667,
+      "x_frames": 4.889,
+      "total_air_proxy_um_p95": 20.83
+     }
+    },
+    "SS302": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.2814,
+      "x_frames": 0.938,
+      "total_air_proxy_um_p95": 4.0
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.2814,
+      "x_frames": 0.938,
+      "total_air_proxy_um_p95": 4.0
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.2814,
+      "x_frames": 0.938,
+      "total_air_proxy_um_p95": 4.0
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.2814,
+      "x_frames": 0.938,
+      "total_air_proxy_um_p95": 4.0
+     }
+    },
+    "steel_mild": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0705,
+      "total_at_install_tie_um_per_K": -0.3519,
+      "x_frames": 1.173,
+      "total_air_proxy_um_p95": 5.0
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.1827,
+      "total_at_install_tie_um_per_K": -0.4641,
+      "x_frames": 1.547,
+      "total_air_proxy_um_p95": 6.59
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.154,
+      "total_at_install_tie_um_per_K": -0.4354,
+      "x_frames": 1.451,
+      "total_air_proxy_um_p95": 6.18
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.7047,
+      "total_at_install_tie_um_per_K": -0.9861,
+      "x_frames": 3.287,
+      "total_air_proxy_um_p95": 14.0
+     }
+    },
+    "matched_to_wood": {
+     "install_min": {
+      "above_bark_um_per_K": -0.1266,
+      "total_at_install_tie_um_per_K": -0.408,
+      "x_frames": 1.36,
+      "total_air_proxy_um_p95": 5.79
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.3283,
+      "total_at_install_tie_um_per_K": -0.6097,
+      "x_frames": 2.032,
+      "total_air_proxy_um_p95": 8.66
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.2767,
+      "total_at_install_tie_um_per_K": -0.5581,
+      "x_frames": 1.86,
+      "total_air_proxy_um_p95": 7.93
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -1.2663,
+      "total_at_install_tie_um_per_K": -1.5477,
+      "x_frames": 5.159,
+      "total_air_proxy_um_p95": 21.98
+     }
+    }
+   },
+   "scale_mismatch_allowed_ppm_K_at_install_tie": {
+    "install_min": 1.378,
+    "install_max": 0.531,
+    "install_min_plus_life_travel_slow": 0.631,
+    "install_max_plus_life_travel_fast": 0.138
+   },
+   "life_drift": {
+    "scale_matched_to_rod_or_clamp_keeping_h_c": {
+     "um_per_K_per_year_at_rate_ends": [
+      0.0075,
+      0.0469
+     ],
+     "years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends": [
+      2.5,
+      0.4
+     ]
+    },
+    "fixed_clamp_um_per_K_per_year_at_rate_ends_by_scale": {
+     "Ti-6Al-4V": [
+      0.0006,
+      0.0035
+     ],
+     "Ti-6Al-7Nb": [
+      0.0004,
+      0.0025
+     ],
+     "CP-Ti-Gr4": [
+      0.0006,
+      0.0035
+     ],
+     "beta-Ti-13Nb-13Zr": [
+      0.0007,
+      0.0045
+     ],
+     "Ta": [
+      0.0011,
+      0.007
+     ],
+     "Ti-15Zr": [
+      0.0005,
+      0.003
+     ],
+     "SS302": [
+      0.0075,
+      0.0469
+     ],
+     "steel_mild": [
+      0.0033,
+      0.0208
+     ],
+     "matched_to_wood": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "steel_mild": {
+   "alpha_ppm_K": 12.06,
+   "alpha_source": "lib ALPHA_STEEL_MILD_1K — Parker Table 2-5, «Steel, Mild»",
+   "alpha_w_minus_alpha_rod_ppm_K": -4.16,
+   "sign": "negative on the one α_w reading (Δα -4.16 ppm/K); it flips if α_w > 12.06 ppm/K — conditional (one α_w reading; α from the Parker table)",
+   "crossing_below_live_bark_mm": {
+    "A_scale_matched_to_rod": 72.12,
+    "B_scale_matched_to_wood_on_the_rods_own_dead_bark": {
+     "install_min": 58.62,
+     "install_max": 37.12
+    },
+    "B_for_comparison_with_114_anchor_on_its_dead_bark": {
+     "thin_contact_78": 63.79,
+     "thick_side_78": 51.12
+    }
+   },
+   "depths": {
+    "5": {
+     "A_in_wood_um_per_K": -0.0208,
+     "x_frames": 0.069,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -47.94,
+      72.06
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.2,
+      "diurnal_growing_p95": 0.3,
+      "seasonal_unfrozen_p5_p95": 0.46
+     }
+    },
+    "10": {
+     "A_in_wood_um_per_K": -0.0416,
+     "x_frames": 0.139,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -17.94,
+      42.06
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.41,
+      "diurnal_growing_p95": 0.59,
+      "seasonal_unfrozen_p5_p95": 0.92
+     }
+    },
+    "20": {
+     "A_in_wood_um_per_K": -0.0832,
+     "x_frames": 0.277,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      -2.94,
+      27.06
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 0.82,
+      "diurnal_growing_p95": 1.18,
+      "seasonal_unfrozen_p5_p95": 1.84
+     }
+    },
+    "30": {
+     "A_in_wood_um_per_K": -0.1248,
+     "x_frames": 0.416,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      2.06,
+      22.06
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 1.22,
+      "diurnal_growing_p95": 1.77,
+      "seasonal_unfrozen_p5_p95": 2.76
+     }
+    },
+    "50": {
+     "A_in_wood_um_per_K": -0.208,
+     "x_frames": 0.693,
+     "under_frames": true,
+     "alpha_w_window_ppm_K": [
+      6.06,
+      18.06
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 2.04,
+      "diurnal_growing_p95": 2.95,
+      "seasonal_unfrozen_p5_p95": 4.6
+     }
+    },
+    "100": {
+     "A_in_wood_um_per_K": -0.416,
+     "x_frames": 1.387,
+     "under_frames": false,
+     "alpha_w_window_ppm_K": [
+      9.06,
+      15.06
+     ],
+     "air_proxy_um": {
+      "diurnal_growing_p50": 4.08,
+      "diurnal_growing_p95": 5.91,
+      "seasonal_unfrozen_p5_p95": 9.19
+     }
+    }
+   },
+   "above_bark_at_install_tie_30mm": {
+    "Ti-6Al-4V": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0467,
+      "total_at_install_tie_um_per_K": -0.1715,
+      "x_frames": 0.572,
+      "total_air_proxy_um_p95": 2.44
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.1211,
+      "total_at_install_tie_um_per_K": -0.2459,
+      "x_frames": 0.82,
+      "total_air_proxy_um_p95": 3.49
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.1021,
+      "total_at_install_tie_um_per_K": -0.2269,
+      "x_frames": 0.756,
+      "total_air_proxy_um_p95": 3.22
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.4671,
+      "total_at_install_tie_um_per_K": -0.5919,
+      "x_frames": 1.973,
+      "total_air_proxy_um_p95": 8.4
+     }
+    },
+    "Ti-6Al-7Nb": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0494,
+      "total_at_install_tie_um_per_K": -0.1742,
+      "x_frames": 0.581,
+      "total_air_proxy_um_p95": 2.47
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.1281,
+      "total_at_install_tie_um_per_K": -0.2529,
+      "x_frames": 0.843,
+      "total_air_proxy_um_p95": 3.59
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.108,
+      "total_at_install_tie_um_per_K": -0.2328,
+      "x_frames": 0.776,
+      "total_air_proxy_um_p95": 3.31
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.4941,
+      "total_at_install_tie_um_per_K": -0.6189,
+      "x_frames": 2.063,
+      "total_air_proxy_um_p95": 8.79
+     }
+    },
+    "CP-Ti-Gr4": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0467,
+      "total_at_install_tie_um_per_K": -0.1715,
+      "x_frames": 0.572,
+      "total_air_proxy_um_p95": 2.44
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.1211,
+      "total_at_install_tie_um_per_K": -0.2459,
+      "x_frames": 0.82,
+      "total_air_proxy_um_p95": 3.49
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.1021,
+      "total_at_install_tie_um_per_K": -0.2269,
+      "x_frames": 0.756,
+      "total_air_proxy_um_p95": 3.22
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.4671,
+      "total_at_install_tie_um_per_K": -0.5919,
+      "x_frames": 1.973,
+      "total_air_proxy_um_p95": 8.4
+     }
+    },
+    "beta-Ti-13Nb-13Zr": {
+     "install_min": {
+      "above_bark_um_per_K": -0.044,
+      "total_at_install_tie_um_per_K": -0.1688,
+      "x_frames": 0.563,
+      "total_air_proxy_um_p95": 2.4
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.1141,
+      "total_at_install_tie_um_per_K": -0.2389,
+      "x_frames": 0.796,
+      "total_air_proxy_um_p95": 3.39
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.0962,
+      "total_at_install_tie_um_per_K": -0.221,
+      "x_frames": 0.737,
+      "total_air_proxy_um_p95": 3.14
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.4401,
+      "total_at_install_tie_um_per_K": -0.5649,
+      "x_frames": 1.883,
+      "total_air_proxy_um_p95": 8.02
+     }
+    },
+    "Ta": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0751,
+      "total_at_install_tie_um_per_K": -0.1999,
+      "x_frames": 0.666,
+      "total_air_proxy_um_p95": 2.84
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.1946,
+      "total_at_install_tie_um_per_K": -0.3194,
+      "x_frames": 1.065,
+      "total_air_proxy_um_p95": 4.54
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.164,
+      "total_at_install_tie_um_per_K": -0.2888,
+      "x_frames": 0.963,
+      "total_air_proxy_um_p95": 4.1
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.7506,
+      "total_at_install_tie_um_per_K": -0.8754,
+      "x_frames": 2.918,
+      "total_air_proxy_um_p95": 12.43
+     }
+    },
+    "Ti-15Zr": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0481,
+      "total_at_install_tie_um_per_K": -0.1729,
+      "x_frames": 0.576,
+      "total_air_proxy_um_p95": 2.45
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.1246,
+      "total_at_install_tie_um_per_K": -0.2494,
+      "x_frames": 0.831,
+      "total_air_proxy_um_p95": 3.54
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.105,
+      "total_at_install_tie_um_per_K": -0.2298,
+      "x_frames": 0.766,
+      "total_air_proxy_um_p95": 3.26
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.4806,
+      "total_at_install_tie_um_per_K": -0.6054,
+      "x_frames": 2.018,
+      "total_air_proxy_um_p95": 8.6
+     }
+    },
+    "SS302": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0705,
+      "total_at_install_tie_um_per_K": -0.0543,
+      "x_frames": 0.181,
+      "total_air_proxy_um_p95": 0.77
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.1827,
+      "total_at_install_tie_um_per_K": 0.0579,
+      "x_frames": 0.193,
+      "total_air_proxy_um_p95": 0.82
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.154,
+      "total_at_install_tie_um_per_K": 0.0292,
+      "x_frames": 0.097,
+      "total_air_proxy_um_p95": 0.41
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.7047,
+      "total_at_install_tie_um_per_K": 0.5799,
+      "x_frames": 1.933,
+      "total_air_proxy_um_p95": 8.23
+     }
+    },
+    "steel_mild": {
+     "install_min": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.1248,
+      "x_frames": 0.416,
+      "total_air_proxy_um_p95": 1.77
+     },
+     "install_max": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.1248,
+      "x_frames": 0.416,
+      "total_air_proxy_um_p95": 1.77
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.1248,
+      "x_frames": 0.416,
+      "total_air_proxy_um_p95": 1.77
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": 0.0,
+      "total_at_install_tie_um_per_K": -0.1248,
+      "x_frames": 0.416,
+      "total_air_proxy_um_p95": 1.77
+     }
+    },
+    "matched_to_wood": {
+     "install_min": {
+      "above_bark_um_per_K": -0.0562,
+      "total_at_install_tie_um_per_K": -0.181,
+      "x_frames": 0.603,
+      "total_air_proxy_um_p95": 2.57
+     },
+     "install_max": {
+      "above_bark_um_per_K": -0.1456,
+      "total_at_install_tie_um_per_K": -0.2704,
+      "x_frames": 0.901,
+      "total_air_proxy_um_p95": 3.84
+     },
+     "install_min_plus_life_travel_slow": {
+      "above_bark_um_per_K": -0.1227,
+      "total_at_install_tie_um_per_K": -0.2475,
+      "x_frames": 0.825,
+      "total_air_proxy_um_p95": 3.51
+     },
+     "install_max_plus_life_travel_fast": {
+      "above_bark_um_per_K": -0.5616,
+      "total_at_install_tie_um_per_K": -0.6864,
+      "x_frames": 2.288,
+      "total_air_proxy_um_p95": 9.75
+     }
+    }
+   },
+   "scale_mismatch_allowed_ppm_K_at_install_tie": {
+    "install_min": 12.978,
+    "install_max": 5.006,
+    "install_min_plus_life_travel_slow": 5.939,
+    "install_max_plus_life_travel_fast": 1.298
+   },
+   "life_drift": {
+    "scale_matched_to_rod_or_clamp_keeping_h_c": {
+     "um_per_K_per_year_at_rate_ends": [
+      0.0033,
+      0.0208
+     ],
+     "years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends": [
+      52.6,
+      8.4
+     ]
+    },
+    "fixed_clamp_um_per_K_per_year_at_rate_ends_by_scale": {
+     "Ti-6Al-4V": [
+      0.0006,
+      0.0035
+     ],
+     "Ti-6Al-7Nb": [
+      0.0004,
+      0.0025
+     ],
+     "CP-Ti-Gr4": [
+      0.0006,
+      0.0035
+     ],
+     "beta-Ti-13Nb-13Zr": [
+      0.0007,
+      0.0045
+     ],
+     "Ta": [
+      0.0011,
+      0.007
+     ],
+     "Ti-15Zr": [
+      0.0005,
+      0.003
+     ],
+     "SS302": [
+      0.0075,
+      0.0469
+     ],
+     "steel_mild": [
+      0.0033,
+      0.0208
+     ],
+     "matched_to_wood": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  }
+ },
+ "anchor_114": {
+  "frames_crossing_from_seat_mm": {
+   "flange_on_bark:bonded": 7.67,
+   "flange_on_bark:shoulder": 7.67,
+   "zone3_fit:bonded": 21.01,
+   "zone3_fit:shoulder": 21.01
+  },
+  "crossing_below_live_bark_mm": {
+   "flange_on_bark:bonded": {
+    "thin_contact_78": -0.652,
+    "thick_side_78": -13.327
+   },
+   "flange_on_bark:shoulder": {
+    "thin_contact_78": -0.652,
+    "thick_side_78": -13.327
+   },
+   "zone3_fit:bonded": {
+    "thin_contact_78": 12.683,
+    "thick_side_78": 0.008
+   },
+   "zone3_fit:shoulder": {
+    "thin_contact_78": 12.683,
+    "thick_side_78": 0.008
+   }
+  },
+  "x_frames_at_deepest_named_tie": {
+   "flange_on_bark:bonded": 4.4,
+   "flange_on_bark:shoulder": 6.6,
+   "zone3_fit:bonded": 2.6,
+   "zone3_fit:shoulder": 4.9
+  },
+  "peek_share_of_deepest_tie_term": {
+   "flange_on_bark:bonded": 0.958,
+   "flange_on_bark:shoulder": 0.986,
+   "zone3_fit:bonded": 0.898,
+   "zone3_fit:shoulder": 0.963
+  },
+  "dead_bark_under_flange_mm_114": {
+   "thin_contact_78": 8.325,
+   "thick_side_78": 21.0
+  }
+ },
+ "bark_bearing": {
+  "rod": "no flange face on the bark; the hole's grip on the rod (friction, healing, callus) is the same mechanism with another stiffness — unpriced, and it may grow with healing (CANNOT 6)",
+  "anchor_114_premise_b_fraction_lost_air_dry_bark": [
+   0.0021,
+   0.4246
+  ],
+  "anchor_114_premise_b_fraction_lost_rigid_bark": 1.0,
+  "anchor_114_premise_a": "a rising bark can lift the flange off the sleeve — no reference (114's reading)"
+ },
+ "headline": {
+  "ti_in_wood_max_um_per_K_at_100mm": 0.09,
+  "ti_alpha_w_window_intersection_at_100mm_ppm_K": [
+   5.8,
+   11.4
+  ],
+  "ta_in_wood_um_per_K_at_100mm": 0.14,
+  "anchor_x_frames_at_deepest_named_tie": [
+   2.6,
+   6.6
+  ],
+  "anchor_peek_share_pct": [
+   90,
+   99
+  ],
+  "ti_scale_mismatch_allowed_ppm_K_install": [
+   7.8,
+   20.2
+  ],
+  "ti_scale_mismatch_allowed_ppm_K_life": 2.0,
+  "ti_ss302_scale_above_bark_um_per_K_install": [
+   0.114,
+   0.311
+  ],
+  "ti_ss302_scale_above_bark_um_per_K_life_max": 1.199,
+  "ss302_crossing_A_mm": 32,
+  "ss302_window_at_30mm_ppm_K": [
+   7.28,
+   27.28
+  ],
+  "ss302_crossing_B_own_bark_dbh_min_thin_mm": 18,
+  "ss302_B_own_bark_dbh_max_thick_over_at_any_tie": true,
+  "mild_steel_crossing_A_mm": 72,
+  "ti_drift_A_max_um_per_K_per_year": 0.0045,
+  "ss302_crossing_B_114_dead_bark_mm": [
+   24,
+   11
+  ],
+  "anchor_crossing_below_live_bark_a": [
+   "-0.7",
+   "-13.3"
+  ],
+  "anchor_crossing_below_live_bark_b": [
+   "12.7",
+   "≈ 0"
+  ],
+  "unfrozen_days_share_114": 0.72
+ },
+ "frame_term": "(α_s − α_frame)·(h − h_c) — nulled: a frame matched to the scale; isothermal only (CANNOT 3)",
+ "controls": {
+  "4_alpha_w_103_equals_114_input": true,
+  "1_anchor_rows_reproduced": {
+   "rows": 4,
+   "points": 48,
+   "max_abs_diff_um_per_K": 0.0,
+   "sections_equal_114_cache": true
+  },
+  "3_datum_shift_reproduces_114_live_bark_crossings_max_miss_mm": 0.003,
+  "2_integrator_at_our_crossing_max_miss_um_per_K": 5.551115123125783e-17,
+  "2_114_frames_crossing_returns_none_where_alpha_below_wood": [
+   "Ta"
+  ],
+  "5_mapping_onto_114_artefact_max_miss_um_per_K": 0.0
+ },
+ "not_computed": [
+  "α_w's spread and depth profile; the rod's wound",
+  "the live phloem's own α",
+  "frozen days (not a CTE; the share is an air criterion)",
+  "a non-uniform ΔT above vs in the wood",
+  "whether the frames' 0.3 µm/K includes their own in-wood loop; the instrument's other terms",
+  "the tie's effective depth and creep; callus",
+  "the hole's grip on the rod",
+  "bending, frame stiffness, lateral offset, corrosion in sap, other stainless grades",
+  "the capsule's mount and the head–capsule link"
+ ],
+ "verdict": "(1) Rod vs anchor, in the wood (convention A — the scale of the rod's alloy; one green-xylem α reading, 7.9 ppm/K; lib's titanium α values cite no source): on that one reading a titanium-alloy rod's term stays at or under 0.09 µm/K over the install-day axis 0–100 mm, and it does not cross the frames' 0.3 µm/K as long as α_w lies within 5.8–11.4 ppm/K (the alloys' windows intersected at 100 mm); tantalum, the opposite sign, reaches 0.14 µm/K there. The anchor (114) reaches ×2.6–×6.6 the frames at its deepest named tie, the PEEK sleeve carrying 90–99 % of it. (2) Above the bark the rod between the live bark and its clamp faces the scale, (α_s − α_rod)·h_c: with the in-wood term of a chosen 30 mm tie, a titanium rod stays under the frames for any scale within 7.8–20.2 ppm/K of the rod at install heights (h_c 13.5–35 mm, the ridge bark the clamp clears over DBH 38–60) and within 2.0 ppm/K at 135 mm (a fixed clamp set to clear twenty years of fast growth — a choice); a stainless-302 scale on a titanium rod costs 0.114–0.311 µm/K above the bark at install heights and up to 1.199 at 135 mm — for a steel or stainless scale this term dominates; a scale, probe and frame of the rod's own alloy cost nothing, isothermally. (3) A stainless rod is not supported: under convention A it reaches the frames near 32 mm (its α_w window at 30 mm, 7.28–27.28 ppm/K, ends just under the one reading); under convention B (the scale matched to the wood, the clamp at the dead bark's surface) near 18 mm on the thinnest bark (DBH 38) and over the frames at any tie on the thickest (DBH 60); mild steel under A near 72 mm. (4) Over the life the tie deepens at 0.8–5 mm/yr: under convention A, or with a clamp that keeps its height, the drift is |α_w − α_rod|·rate (titanium at most 0.0045 µm/K per year); with a fixed clamp it is |α_w − α_s|·rate — zero for a wood-matched scale. (5) For comparison with 114 on its datum and convention (B, 114's dead bark under the flange): stainless crosses near 24 / 11 mm below the live bark, the anchor at -0.7 / -13.3 mm (premise a — inside the dead bark) and 12.7 / ≈ 0 mm (premise b). (6) Not computed: the hole's grip on the rod, so no rod-vs-anchor bearing comparison; a non-uniform ΔT; frozen days (114's unfrozen share 0.72, an air criterion); whether the frames' 0.3 µm/K includes their own in-wood rod loop (commercial frames sit on rods); and the instrument's other terms — 0.3 µm/K is its whole budget."
+}

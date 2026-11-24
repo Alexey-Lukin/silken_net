@@ -250,6 +250,12 @@ Anchor mechanics (CPU):
      (ALPHA_PEEK_1K · E_CYCLE · ETA_BUCK_ACTIVE) · 81 (capsule_cold_edge_sky.json — the sky-cooled cold edge, the magnet's
      cold end) · the radome and cathode-flange CEMs → 114 (dendrometer_support_budget.json — a point dendrometer on the
      anchor); a re-run of 78, 81, 103 or 110, a change to 71's loader, those lib constants or either CEM re-runs 114
+  114 (importlib: FRAME_UM_PER_K · anchor_sections · anchor_term_um_per_k · artefact_um_per_k · RADIAL_RATE_MM_PER_YR · LIFE_YR ·
+     frames_crossing_mm — a control only, it finds a crossing only where α > α_w; dendrometer_support_budget.json — the anchor
+     rows it reproduces, the temperature spans, the bearing share, the dead bark under the flange) · 103 (anchor_wood_share.json — the green
+     xylem's α) · lib ALLOY_PROPERTIES · ALPHA_SS302_1K · ALPHA_STEEL_MILD_1K · ALPHA_PEEK_1K · BARK_SINGLE_RIDGE_MM_BY_DBH_CM ·
+     LIVE_PHLOEM_MM_* · DBH_MIN_CM · DBH_MAX_CM (the clamp heights) → 130 (thin_rod_dendrometer_support.json — a thin rod as the dendrometer's support,
+     in place of the anchor); a re-run of 103 or 114, or a change to those lib constants, re-runs 130
   110 (importlib: thresholds · lanes_of · floor_sig · CORNERS · BISECT_HI_CM2, and through it 79 — sun, faces, weather,
      snow, sky, ground reflection, vapour pressure, WIND_K, AZIMUTHS_DEG — and 71 — convection, geometry;
      winter_pv_autonomy.json — the autonomy days, `necessary_a_eff_cm2` for control 1, `record.hours`) → 115

@@ -7313,3 +7313,161 @@ def test_liner_wall_axial_stress_invariants():
     c = d["controls"]
     assert c["forces_vs_102_grid_max_miss_N"] <= 1e-9 and c["preload_rebuilt_vs_102_max_miss_N"] <= 1e-9
     assert c["preload_rebuilt_vs_102_thermal_rows_max_miss_N"] <= 0.005 + 1e-9 and c["threshold_landing_max_miss_MPa"] <= 1e-6
+
+
+def test_thin_rod_dendrometer_support_is_self_consistent():
+    """130 (HW.54 · DOC-T.131, the thin support's count) — the cache's derived fields against the fields they derive from,
+    its inputs against 114's cache and lib, its anchor block against 114's CURRENT cache, its headline against the
+    fields, and the verdict against the headline WITH the convention words each figure belongs to.
+
+    CAN catch: an in-wood A, window, air proxy, above-bark term, total, allowed mismatch or drift off its formula · a
+    crossing printed under the wrong convention or past the axis · convention B on the wrong dead bark · a fixed-clamp drift
+    that is not |α_w − α_s|·rate · inputs (rate, life travel, h_c, dead bark) that drifted from 114 or lib · an anchor block
+    off 114's cache · a headline figure off the fields · a verdict figure detached from its convention word.
+    CANNOT catch: a wrong α_w or α_rod (shared by every field); the verdict's prose between the pinned figures.
+    """
+    import importlib.util as ilu
+    spec = ilu.spec_from_file_location("lc130", REPO / "tools/in_silico/lib/constants.py")
+    lc = ilu.module_from_spec(spec)
+    spec.loader.exec_module(lc)
+    d = json.loads((CACHE / "mechanical/thin_rod_dendrometer_support.json").read_text())
+    z114 = json.loads((CACHE / "mechanical/dendrometer_support_budget.json").read_text())
+    inp, h = d["inputs"], d["headline"]
+    aw, frame, axis, tie = (inp["alpha_xylem_green_ppm_K"], inp["frame_sensitivity_um_per_K"], inp["axis_mm"],
+                            inp["install_tie_mm"])
+    assert aw == z114["inputs"]["alpha_xylem_green_ppm_K"] and frame == z114["inputs"]["frame_sensitivity_um_per_K"]
+    assert inp["radial_rate_mm_per_yr"] == z114["inputs"]["radial_rate_mm_per_yr"]
+    assert inp["life_travel_mm"] == pytest.approx([r * inp["life_yr"] for r in inp["radial_rate_mm_per_yr"]])
+    for dbh in (lc.DBH_MIN_CM, lc.DBH_MAX_CM):
+        ridge = lc.BARK_SINGLE_RIDGE_MM_BY_DBH_CM[int(dbh)]
+        assert inp["dead_bark_mm_by_dbh"][f"dbh{int(dbh)}"] == pytest.approx(
+            [ridge[0] - lc.LIVE_PHLOEM_MM_THIN_END, ridge[1] - lc.LIVE_PHLOEM_MM_THICK_END_READING])
+    hc = inp["h_c_named_mm"]
+    lo = min(v[0] for v in inp["dead_bark_mm_by_dbh"].values())
+    hi = max(v[1] for v in inp["dead_bark_mm_by_dbh"].values())
+    assert hc == pytest.approx({"install_min": lo, "install_max": hi,
+                                "install_min_plus_life_travel_slow": lo + inp["life_travel_mm"][0],
+                                "install_max_plus_life_travel_fast": hi + inp["life_travel_mm"][1]})
+    zt = z114["inputs"]["dead_bark_under_flange_78_probe_proxy_mm"]
+
+    def on_axis(z):
+        return "beyond the axis" if z > axis else pytest.approx(z, abs=0.006)
+
+    for mat, r in d["rods"].items():
+        da = aw - r["alpha_ppm_K"]
+        z_star = frame / (abs(da) * 1e-3)
+        assert r["alpha_w_minus_alpha_rod_ppm_K"] == pytest.approx(da, abs=6e-4), mat
+        assert r["sign"].startswith("negative" if da < 0 else "positive"), mat
+        assert ("Parker" in r["sign"]) == (mat in ("SS302", "steel_mild")), mat
+        cr = r["crossing_below_live_bark_mm"]
+        assert cr["A_scale_matched_to_rod"] == on_axis(z_star), mat
+        for side, t in zt.items():
+            assert cr["B_for_comparison_with_114_anchor_on_its_dead_bark"][side] == on_axis(z_star - t), (mat, side)
+        for hn in ("install_min", "install_max"):
+            zb = z_star - hc[hn]
+            want = "over the frames at any tie" if zb < 0 else on_axis(zb)
+            assert cr["B_scale_matched_to_wood_on_the_rods_own_dead_bark"][hn] == want, (mat, hn)
+        for z, cell in r["depths"].items():
+            a = da * float(z) * 1e-3
+            assert cell["A_in_wood_um_per_K"] == pytest.approx(a, abs=6e-5), (mat, z)
+            assert cell["x_frames"] == pytest.approx(abs(a) / frame, abs=6e-4), (mat, z)
+            assert cell["under_frames"] == (abs(a) < frame), (mat, z)
+            half = frame / (float(z) * 1e-3)
+            assert cell["alpha_w_window_ppm_K"] == pytest.approx([r["alpha_ppm_K"] - half, r["alpha_ppm_K"] + half], abs=0.006)
+            for k, dt in inp["air_proxy_spans_K"].items():
+                assert cell["air_proxy_um"][k] == pytest.approx(abs(cell["A_in_wood_um_per_K"]) * dt, abs=0.006), (mat, z, k)
+        a30 = da * tie * 1e-3
+        p95 = inp["air_proxy_spans_K"]["diurnal_growing_p95"]
+        for sname, a_s in inp["scale_alphas_ppm_K"].items():
+            for hname, hcv in hc.items():
+                c = r["above_bark_at_install_tie_30mm"][sname][hname]
+                ab = (a_s - r["alpha_ppm_K"]) * hcv * 1e-3
+                assert c["above_bark_um_per_K"] == pytest.approx(ab, abs=6e-4), (mat, sname, hname)
+                assert c["total_at_install_tie_um_per_K"] == pytest.approx(a30 + ab, abs=6e-4), (mat, sname, hname)
+                assert c["x_frames"] == pytest.approx(abs(a30 + ab) / frame, abs=3e-3), (mat, sname, hname)
+                assert c["total_air_proxy_um_p95"] == pytest.approx(abs(a30 + ab) * p95, abs=0.02), (mat, sname, hname)
+        for hname, hcv in hc.items():
+            assert r["scale_mismatch_allowed_ppm_K_at_install_tie"][hname] == pytest.approx(
+                (frame - abs(a30)) / (hcv * 1e-3), abs=0.006), (mat, hname)
+        ldA = r["life_drift"]["scale_matched_to_rod_or_clamp_keeping_h_c"]
+        fixed = r["life_drift"]["fixed_clamp_um_per_K_per_year_at_rate_ends_by_scale"]
+        for i, rate in enumerate(inp["radial_rate_mm_per_yr"]):
+            assert ldA["um_per_K_per_year_at_rate_ends"][i] == pytest.approx(abs(da) * rate * 1e-3, abs=6e-5), mat
+            yrs = "beyond the axis" if z_star > axis else pytest.approx(max(0.0, (z_star - tie) / rate), abs=0.06)
+            assert ldA["years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends"][i] == yrs, (mat, rate)
+            for sname, a_s in inp["scale_alphas_ppm_K"].items():
+                assert fixed[sname][i] == pytest.approx(abs(aw - a_s) * rate * 1e-3, abs=6e-5), (mat, sname)
+        assert fixed["matched_to_wood"] == [0.0, 0.0], mat
+    an = d["anchor_114"]
+    assert an["frames_crossing_from_seat_mm"] == {k: r["frames_crossing_depth_mm"] for k, r in z114["support"].items()}
+    assert an["crossing_below_live_bark_mm"] == {k: r["crossing_minus_live_bark_depth_mm"] for k, r in z114["support"].items()}
+    assert an["x_frames_at_deepest_named_tie"] == {
+        k: max(r["points"].values(), key=lambda p: p["z_f_mm"])["x_frames"] for k, r in z114["support"].items()}
+    for k, r in z114["support"].items():
+        deep = max(p["z_f_mm"] for p in r["points"].values())
+        segs = [(aw - al) * (min(b, deep) - a) for a, b, al in r["sections_mm_alpha_ppm_K"] if min(b, deep) > a]
+        peek = [(aw - al) * (min(b, deep) - a) for a, b, al in r["sections_mm_alpha_ppm_K"]
+                if min(b, deep) > a and al == z114["inputs"]["alpha_peek_ppm_K"]]
+        assert an["peek_share_of_deepest_tie_term"][k] == pytest.approx(sum(peek) / sum(segs), abs=6e-4), k
+    bb = d["bark_bearing"]
+    assert bb["anchor_114_premise_b_fraction_lost_air_dry_bark"] == z114["bark_bearing"]["fraction_lost_U_at_air_dry_bark_readings"]
+    assert bb["anchor_114_premise_b_fraction_lost_rigid_bark"] == z114["bark_bearing"]["fraction_lost_U_rigid_bark"]
+    # the headline against the fields (each figure rounded once in the script, so a tolerance, not an equality)
+    rods = d["rods"]
+    ti = [m for m in rods if m.startswith(("Ti", "CP-Ti", "beta-Ti"))]
+    for m in ti:
+        assert rods[m]["crossing_below_live_bark_mm"]["A_scale_matched_to_rod"] == "beyond the axis"
+        assert all(v == "beyond the axis" for v in rods[m]["crossing_below_live_bark_mm"]["B_scale_matched_to_wood_on_the_rods_own_dead_bark"].values())
+        assert all(v == "beyond the axis" for v in rods[m]["life_drift"]["scale_matched_to_rod_or_clamp_keeping_h_c"]["years_from_the_chosen_30mm_tie_to_crossing_at_rate_ends"])
+    assert h["ti_in_wood_max_um_per_K_at_100mm"] == pytest.approx(max(abs(rods[m]["depths"]["100"]["A_in_wood_um_per_K"]) for m in ti), abs=6e-4)
+    w = [max(rods[m]["depths"]["100"]["alpha_w_window_ppm_K"][0] for m in ti), min(rods[m]["depths"]["100"]["alpha_w_window_ppm_K"][1] for m in ti)]
+    assert h["ti_alpha_w_window_intersection_at_100mm_ppm_K"] == pytest.approx(w, abs=0.06)
+    assert h["anchor_x_frames_at_deepest_named_tie"] == [min(an["x_frames_at_deepest_named_tie"].values()), max(an["x_frames_at_deepest_named_tie"].values())]
+    ps = an["peek_share_of_deepest_tie_term"].values()
+    assert h["anchor_peek_share_pct"] == [round(100 * min(ps)), round(100 * max(ps))]
+    life = "install_max_plus_life_travel_fast"
+    assert h["ti_scale_mismatch_allowed_ppm_K_install"] == pytest.approx(
+        [min(rods[m]["scale_mismatch_allowed_ppm_K_at_install_tie"]["install_max"] for m in ti),
+         min(rods[m]["scale_mismatch_allowed_ppm_K_at_install_tie"]["install_min"] for m in ti)], abs=0.06)
+    assert h["ta_in_wood_um_per_K_at_100mm"] == pytest.approx(rods["Ta"]["depths"]["100"]["A_in_wood_um_per_K"], abs=6e-4)
+    assert h["ti_drift_A_max_um_per_K_per_year"] == pytest.approx(max(
+        rods[m]["life_drift"]["scale_matched_to_rod_or_clamp_keeping_h_c"]["um_per_K_per_year_at_rate_ends"][1] for m in ti), abs=6e-5)
+    assert h["unfrozen_days_share_114"] == round(z114["temperature"]["unfrozen_days_share"], 2)
+    for k, pr in (("anchor_crossing_below_live_bark_a", "flange_on_bark:bonded"), ("anchor_crossing_below_live_bark_b", "zone3_fit:bonded")):
+        for side, txt in zip(("thin_contact_78", "thick_side_78"), h[k], strict=True):
+            x = an["crossing_below_live_bark_mm"][pr][side]
+            assert txt == ("≈ 0" if abs(x) < 0.01 else f"{x:.1f}"), (k, side)
+    assert h["ti_scale_mismatch_allowed_ppm_K_life"] == pytest.approx(min(rods[m]["scale_mismatch_allowed_ppm_K_at_install_tie"][life] for m in ti), abs=0.06)
+    ss_cells = [rods[m]["above_bark_at_install_tie_30mm"]["SS302"] for m in ti]
+    assert h["ti_ss302_scale_above_bark_um_per_K_install"] == pytest.approx(
+        [min(abs(c["install_min"]["above_bark_um_per_K"]) for c in ss_cells), max(abs(c["install_max"]["above_bark_um_per_K"]) for c in ss_cells)], abs=6e-4)
+    assert h["ti_ss302_scale_above_bark_um_per_K_life_max"] == pytest.approx(max(abs(c[life]["above_bark_um_per_K"]) for c in ss_cells), abs=6e-4)
+    ss = rods["SS302"]["crossing_below_live_bark_mm"]
+    assert h["ss302_crossing_A_mm"] == round(ss["A_scale_matched_to_rod"])
+    assert h["ss302_crossing_B_own_bark_dbh_min_thin_mm"] == round(ss["B_scale_matched_to_wood_on_the_rods_own_dead_bark"]["install_min"])
+    assert ss["B_scale_matched_to_wood_on_the_rods_own_dead_bark"]["install_max"] == "over the frames at any tie"
+    assert h["ss302_window_at_30mm_ppm_K"] == rods["SS302"]["depths"]["30"]["alpha_w_window_ppm_K"]
+    assert h["mild_steel_crossing_A_mm"] == round(rods["steel_mild"]["crossing_below_live_bark_mm"]["A_scale_matched_to_rod"])
+    b114 = ss["B_for_comparison_with_114_anchor_on_its_dead_bark"]
+    assert h["ss302_crossing_B_114_dead_bark_mm"] == [round(b114["thin_contact_78"]), round(b114["thick_side_78"])]
+    # the verdict against the headline, each figure with the convention words it belongs to
+    v = d["verdict"]
+    for phrase in (
+        "(convention A — the scale of the rod's alloy",
+        f"on that one reading a titanium-alloy rod's term stays at or under {h['ti_in_wood_max_um_per_K_at_100mm']} µm/K over the install-day axis",
+        f"does not cross the frames' 0.3 µm/K as long as α_w lies within {h['ti_alpha_w_window_intersection_at_100mm_ppm_K'][0]}–{h['ti_alpha_w_window_intersection_at_100mm_ppm_K'][1]} ppm/K",
+        f"×{h['anchor_x_frames_at_deepest_named_tie'][0]}–×{h['anchor_x_frames_at_deepest_named_tie'][1]} the frames at its deepest named tie",
+        f"carrying {h['anchor_peek_share_pct'][0]}–{h['anchor_peek_share_pct'][1]} %",
+        f"within {h['ti_scale_mismatch_allowed_ppm_K_life']} ppm/K at {hc[life]:g} mm (a fixed clamp",
+        f"a stainless-302 scale on a titanium rod costs {h['ti_ss302_scale_above_bark_um_per_K_install'][0]}–{h['ti_ss302_scale_above_bark_um_per_K_install'][1]} µm/K",
+        f"up to {h['ti_ss302_scale_above_bark_um_per_K_life_max']} at {hc[life]:g} mm",
+        f"under convention A it reaches the frames near {h['ss302_crossing_A_mm']} mm",
+        f"under convention B (the scale matched to the wood, the clamp at the dead bark's surface) near {h['ss302_crossing_B_own_bark_dbh_min_thin_mm']} mm on the thinnest bark",
+        "over the frames at any tie on the thickest",
+        f"mild steel under A near {h['mild_steel_crossing_A_mm']} mm",
+        "with a fixed clamp it is |α_w − α_s|·rate — zero for a wood-matched scale",
+        f"(B, 114's dead bark under the flange): stainless crosses near {h['ss302_crossing_B_114_dead_bark_mm'][0]} / {h['ss302_crossing_B_114_dead_bark_mm'][1]} mm",
+        "so no rod-vs-anchor bearing comparison",
+        "includes their own in-wood rod loop",
+    ):
+        assert phrase in v, phrase

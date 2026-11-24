@@ -7011,6 +7011,80 @@ CHECKS += [
 ]
 
 
+# ── HW.54 · DOC-T.131 a thin rod as the dendrometer's support (130, 2026-11-24) ⟷ SUMMARY §«Can a Thin Rod in the Wood
+# Support the Point Dendrometer Instead of the Anchor?». The prose quotes 130's `headline` (each figure rounded once in the
+# script) and both tables are rendered from the cache at its own precision, so every pin is EXACT.
+THIN = "mechanical/thin_rod_dendrometer_support.json"
+_THIN_RODS = ("Ti-6Al-4V", "Ti-6Al-7Nb", "CP-Ti-Gr4", "beta-Ti-13Nb-13Zr", "Ta", "Ti-15Zr", "SS302", "steel_mild")
+_THIN_SCALES = ("Ti-6Al-4V", "matched_to_wood", "Ta", "steel_mild", "SS302")
+_THIN_HC = ("install_min", "install_max", "install_min_plus_life_travel_slow", "install_max_plus_life_travel_fast")
+_SIGNED = r"[+\-\d.]+"
+CHECKS += [
+    *[(f"thin rod {m} in-wood at {z} mm → 130", SUMMARY,
+       rf"(?m)^\| {re.escape(m)} \([\d.]+\) \| " + (rf"{N} ⊥ {_SIGNED} \|" if z == "30" else rf"{_SIGNED} ⊥ {N} \|"),
+       THIN, lambda d, m=m, z=z: d["rods"][m]["depths"][z]["A_in_wood_um_per_K"], 0.0)
+      for m in _THIN_RODS for z in ("30", "100")],
+    *[(f"thin rod {m} crossing (A) → 130", SUMMARY,
+       rf"(?m)^\| {re.escape(m)} \([\d.]+\) \| {_SIGNED} ⊥ {_SIGNED} \| {N} \|",
+       THIN, lambda d, m=m: d["rods"][m]["crossing_below_live_bark_mm"]["A_scale_matched_to_rod"], 0.0)
+      for m in ("SS302", "steel_mild")],
+    *[(f"thin rod Ti-6Al-4V × {sc} scale at {hc} → 130", SUMMARY,
+       rf"(?m)^\| {re.escape(sc)} \| " + r"×[\d.]+ \| " * i + rf"×{N} \|",
+       THIN, lambda d, sc=sc, hc=hc: d["rods"]["Ti-6Al-4V"]["above_bark_at_install_tie_30mm"][sc][hc]["x_frames"], 0.0)
+      for sc in _THIN_SCALES for i, hc in enumerate(_THIN_HC)],
+    *[(f"thin rod headline {lbl} → 130", SUMMARY, pat, THIN, lambda d, f=f: f(d["headline"]), 0.0)
+      for lbl, pat, f in (
+        ("ti in-wood max", rf"stays at or under \*\*{N} µm/K\*\* over the whole axis",
+         lambda h: h["ti_in_wood_max_um_per_K_at_100mm"]),
+        ("window low", rf"within \*\*{N}–[\d.]+ ppm/K\*\* \(the alloys' windows",
+         lambda h: h["ti_alpha_w_window_intersection_at_100mm_ppm_K"][0]),
+        ("window high", rf"within \*\*[\d.]+–{N} ppm/K\*\* \(the alloys' windows",
+         lambda h: h["ti_alpha_w_window_intersection_at_100mm_ppm_K"][1]),
+        ("anchor ×frames low", rf"reaches \*\*×{N}–×[\d.]+\*\* the frames", lambda h: h["anchor_x_frames_at_deepest_named_tie"][0]),
+        ("anchor ×frames high", rf"reaches \*\*×[\d.]+–×{N}\*\* the frames", lambda h: h["anchor_x_frames_at_deepest_named_tie"][1]),
+        ("PEEK share low", rf"PEEK sleeve carrying \*\*{N}–[\d.]+ %\*\*", lambda h: h["anchor_peek_share_pct"][0]),
+        ("PEEK share high", rf"PEEK sleeve carrying \*\*[\d.]+–{N} %\*\*", lambda h: h["anchor_peek_share_pct"][1]),
+        ("mismatch install low", rf"for any scale within \*\*{N}–[\d.]+ ppm/K\*\*",
+         lambda h: h["ti_scale_mismatch_allowed_ppm_K_install"][0]),
+        ("mismatch install high", rf"for any scale within \*\*[\d.]+–{N} ppm/K\*\*",
+         lambda h: h["ti_scale_mismatch_allowed_ppm_K_install"][1]),
+        ("mismatch life", rf"and within \*\*{N} ppm/K\*\* at", lambda h: h["ti_scale_mismatch_allowed_ppm_K_life"]),
+        ("SS302 scale install low", rf"costs \*\*{N}–[\d.]+ µm/K\*\* above the bark",
+         lambda h: h["ti_ss302_scale_above_bark_um_per_K_install"][0]),
+        ("SS302 scale install high", rf"costs \*\*[\d.]+–{N} µm/K\*\* above the bark",
+         lambda h: h["ti_ss302_scale_above_bark_um_per_K_install"][1]),
+        ("SS302 scale life", rf"and up to \*\*{N}\*\* at", lambda h: h["ti_ss302_scale_above_bark_um_per_K_life_max"]),
+        ("SS302 crossing A", rf"reaches the frames near \*\*{N} mm\*\*", lambda h: h["ss302_crossing_A_mm"]),
+        ("SS302 crossing B own bark", rf"under \(B\) near \*\*{N} mm\*\* on the thinnest bark",
+         lambda h: h["ss302_crossing_B_own_bark_dbh_min_thin_mm"]),
+      )],
+    *[(f"thin rod canon {lbl} → 130", "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md", pat, THIN, lambda d, f=f: f(d), 0.0)
+      for lbl, pat, f in (
+        ("ti in-wood max", rf"титановий стрижень тримається не вище {N} мкм/К на всій осі", lambda d: d["headline"]["ti_in_wood_max_um_per_K_at_100mm"]),
+        ("window low", rf"джерела не має\) і рам 0\.3 мкм/К не перетинає, доки α ксилеми лежить у {N}–[\d.]+ ppm/K", lambda d: d["headline"]["ti_alpha_w_window_intersection_at_100mm_ppm_K"][0]),
+        ("window high", rf"джерела не має\) і рам 0\.3 мкм/К не перетинає, доки α ксилеми лежить у [\d.]+–{N} ppm/K", lambda d: d["headline"]["ti_alpha_w_window_intersection_at_100mm_ppm_K"][1]),
+        ("anchor ×frames low", rf"на найглибшій точці дає ×{N}…×[\d.]+ рам, і", lambda d: d["headline"]["anchor_x_frames_at_deepest_named_tie"][0]),
+        ("anchor ×frames high", rf"на найглибшій точці дає ×[\d.]+…×{N} рам, і", lambda d: d["headline"]["anchor_x_frames_at_deepest_named_tie"][1]),
+        ("PEEK share low", rf"і {N}–[\d.]+ % цього члена", lambda d: d["headline"]["anchor_peek_share_pct"][0]),
+        ("PEEK share high", rf"і [\d.]+–{N} % цього члена", lambda d: d["headline"]["anchor_peek_share_pct"][1]),
+        ("fixed-clamp height", rf"і {N} мм для фіксованого затискача",
+         lambda d: d["inputs"]["h_c_named_mm"]["install_max_plus_life_travel_fast"]),
+        ("mismatch life", rf"в межах {N} ppm/K від нього на", lambda d: d["headline"]["ti_scale_mismatch_allowed_ppm_K_life"]),
+        ("mismatch install low", rf"в межах {N}–[\d.]+ ppm/K від нього на висотах монтажу",
+         lambda d: d["headline"]["ti_scale_mismatch_allowed_ppm_K_install"][0]),
+        ("mismatch install high", rf"в межах [\d.]+–{N} ppm/K від нього на висотах монтажу",
+         lambda d: d["headline"]["ti_scale_mismatch_allowed_ppm_K_install"][1]),
+        ("SS302 crossing B own bark", rf"зі шкалою під деревину — біля {N} мм на найтоншій корі",
+         lambda d: d["headline"]["ss302_crossing_B_own_bark_dbh_min_thin_mm"]),
+        ("SS302 scale low", rf"коштує {N}–[\d.]+ мкм/К уже на висотах монтажу",
+         lambda d: d["headline"]["ti_ss302_scale_above_bark_um_per_K_install"][0]),
+        ("SS302 scale high", rf"коштує [\d.]+–{N} мкм/К уже на висотах монтажу",
+         lambda d: d["headline"]["ti_ss302_scale_above_bark_um_per_K_install"][1]),
+        ("SS302 crossing A", rf"перетин біля {N} мм", lambda d: d["headline"]["ss302_crossing_A_mm"]),
+      )],
+]
+
+
 # ── the same leg, 2026-11-10: the sensor's linear range caps the period, and the scale's thickness is a knob (114
 # `within_sensor_linear_range` · `scale_thickness_knob`) ⟷ SUMMARY (the paragraph and table under the scale table) and
 # 01_03 §4 ⊕ (в), «Клас магніту». The table is rendered from the cache at its own precision, so every cell is EXACT.
