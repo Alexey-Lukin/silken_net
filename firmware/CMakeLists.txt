@@ -275,7 +275,10 @@ if(CMAKE_CROSSCOMPILING)
       # HW.32: BME280 у CCM-образі — шина I2C2 і ключ живлення (гейт; лінкує лише _gated)
       ${WL_HAL_SRC}/stm32wlxx_hal_i2c.c
       ${WL_HAL_SRC}/stm32wlxx_hal_i2c_ex.c
-      ${WL_HAL_SRC}/stm32wlxx_hal_gpio.c)
+      ${WL_HAL_SRC}/stm32wlxx_hal_gpio.c
+      # FW.70: консоль логера П3 — USART2 у вікні на старті (обидва образи mini)
+      ${WL_HAL_SRC}/stm32wlxx_hal_uart.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_uart_ex.c)
     # Близнюк soldier_lora_e5_gated — той самий образ із набором SILKEN_GATED_DEFS: hal_check_ccm
     # гейтовані гілки лише КОМПІЛЮЄ, а посилання без дефініції (ARCH.26) бачить тільки лінк, тож
     # кожна гілка, яку відкриє фліп (CCM, Standby, MPU, CAD/TDMA, ratchet, mesh), лінкується вже
@@ -295,7 +298,8 @@ if(CMAKE_CROSSCOMPILING)
       target_compile_definitions(${_img} PRIVATE
         STM32WLE5xx USE_HAL_DRIVER
         MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
-        CCM_SELFTEST BME280_SELFTEST)
+        CCM_SELFTEST BME280_SELFTEST
+        FW70_LOGGER_ENABLED=1)   # образ mini — носій логера П3 (журнал 104-121, консоль; MPU-розкладка логера — коли MPU увімкнено)
       target_compile_options(${_img} PRIVATE -Os
         $<$<COMPILE_LANGUAGE:C>:-Wall -Wextra>)
       target_link_libraries(${_img} PRIVATE silken_attest ${SILKEN_MRUBY_ARM_LIB} m)

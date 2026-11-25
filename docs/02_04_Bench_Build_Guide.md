@@ -212,7 +212,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 
 ### 3.3 Compute
 1. BQ25570 `VOUT` (3V3) → LoRa-E5 `3V3`; GND спільний.
-2. **Checkpoint:** LoRa-E5 стартує (світлодіод `PB5`, активний низьким); самотест читається по SWD (RUNBOOK §2.1) — UART-виводу прошивка Солдата сьогодні не має.
+2. **Checkpoint:** LoRa-E5 стартує (світлодіод `PB5`, активний низьким); самотест читається по SWD (RUNBOOK §2.1); USART2 говорить лише у вікні консолі логера на старті (FW.70 — [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), і POST вона не друкує.
 
 ### 3.4 Sense (BME280 @ TPS22860)
 1. TPS22860: `VIN`←3V3, `VBIAS`←3V3 (живлення самого ключа; `VIN` ≤ `VBIAS` — SLVSD04), `GND`, `VOUT`→BME280 `VDD`, `ON`←`PB10` (J1-11; ⚖️ делеговано 2026-11-09 — [`00_07`](00_07_Action_Plan_Tracker) HW.32) + 1 МΩ від `ON` до GND (power-gate; pull-down — ⚖️ 2026-11-08, [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM)).

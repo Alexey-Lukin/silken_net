@@ -8,8 +8,8 @@ FAIL однозначно вказує на HAL/кремній.
 
 Шлях звіту — той, що має прошивка: POST у `firmware/soldier/main.c`
 (`#if defined(CCM_SELFTEST)`) кладе результат у два глобали,
-`g_ccm_selftest_failed` і `g_sym_selftest_failed`, а UART-виводу Солдат не має
-зовсім.
+`g_ccm_selftest_failed` і `g_sym_selftest_failed`, а через UART POST не друкується
+(консоль логера FW.70 у вікні на старті його не несе).
 
     02_selftest_attest.py --plan                       # кроки дня
     02_selftest_attest.py --elf soldier.elf [--sn SN]  # прочитати глобали через SWD

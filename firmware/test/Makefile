@@ -295,7 +295,7 @@ $(BINDIR)/test_voc_maxhold: test_voc_maxhold.c ../common/voc_maxhold.h ../common
 	$(CC) $(CFLAGS) -I../common -o $@ test_voc_maxhold.c
 
 # [FW.52-г] OTA contract blob writer — RAM-мок + magic-LAST power-cut safety.
-$(BINDIR)/test_logger_journal: test_logger_journal.c ../common/logger_journal.h
+$(BINDIR)/test_logger_journal: test_logger_journal.c ../common/logger_journal.h ../common/logger_console.h ../common/wall_time.h
 	$(CC) $(CFLAGS) -o $@ test_logger_journal.c
 
 $(BINDIR)/test_flash_ota: test_flash_ota.c ../common/flash_ota.c ../common/flash_ota.h ../common/flash_kv.h

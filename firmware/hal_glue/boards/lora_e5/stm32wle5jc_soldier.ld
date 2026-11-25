@@ -6,10 +6,12 @@
  * firmware/extern/cmsis-device-wl/LICENSE.md): ті самі імена символів, яких чекає
  * вендорний startup_stm32wle5xx.s (_sidata · _sdata · _edata · _sbss · _ebss · _estack).
  * Змінено три речі:
- *  · FLASH — лише сторінки 0..121 (0x08000000..0x0803CFFF, 244 КБ). Сторінки 122..127 —
- *    дані вузла: журнал Flash-KV, ідентичність, кластер (KPUB/KEYB), контракт OTA
- *    (docs/03_01 §2.3, «Розміщення»). Образ, що виріс би туди, стер би їх першою ж
- *    прошивкою; так лінкер упаде раніше.
+ *  · FLASH — лише сторінки 0..103 (0x08000000..0x08033FFF, 208 КБ). Сторінки 104..121 —
+ *    журнал логера П3 (FW.70, LOGGER_JOURNAL_* у soldier/main.c), 122..127 — дані вузла:
+ *    журнал Flash-KV, ідентичність, кластер (KPUB/KEYB), контракт OTA (docs/03_01 §2.3,
+ *    «Розміщення»). Образ, що виріс би туди, стер би їх першою ж прошивкою; так лінкер
+ *    упаде раніше. Межу звіряють обабіч: ASSERT нижче — проти тієї самої адреси, що й
+ *    _Static_assert біля LOGGER_JOURNAL_BASE_ADDR.
  *  · RAM — SRAM1 + SRAM2 суцільно (64 КБ), як у карти FW.55 (firmware/sim/wle5_bench):
  *    купа (newlib _sbrk, soldier_lora_e5.c) росте від `end` до стек-резерву.
  *  · .noinit — RAM, якої startup не чіпає (поза `_sbss…_ebss` і без LMA): там маркер
@@ -25,13 +27,19 @@ __stack_reserve__ = 12288;
 
 MEMORY
 {
-  FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 244K
+  FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 208K
   RAM   (rw)  : ORIGIN = 0x20000000, LENGTH = 64K   /* коду в RAM немає — без x (лише атрибут
                                                        лінкера; виконання з SRAM на кремнії знімає
                                                        MPU — SEC.21) */
 }
 
 _estack = ORIGIN(RAM) + LENGTH(RAM);
+
+/* [FW.70] Кінець образу = початок журналу логера (сторінка 104). Розширити FLASH — означає
+ * спершу зсунути журнал (LOGGER_JOURNAL_* у soldier/main.c, MPU-розкладка логера,
+ * docs/03_01 §2.3), інакше прошивка образу стерла б зимову історію. */
+ASSERT(ORIGIN(FLASH) + LENGTH(FLASH) == 0x08034000,
+       "FLASH image region must end at the FW.70 logger journal (page 104, 0x08034000)")
 
 SECTIONS
 {

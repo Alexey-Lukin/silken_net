@@ -3677,6 +3677,33 @@ TEST(test_sec21_mpu_code_pages_not_writable) {
     ASSERT_EQ(Mpu_Flash_Addr_Writable(0x08000000u + 121u * SEC21_MPU_FLASH_PAGE_SIZE), 0);
 }
 
+TEST(test_fw70_mpu_logger_layout_golden) {
+    /* [FW.70] Образ логера: регіон #1 — 64K @0x08030000, SRD=0x03; #0 і #2 ті самі, що у вузла. */
+    MpuRegionWord node[3], logr[3];
+    Mpu_Build_Region_Table(node);
+    Mpu_Build_Region_Table_For(logr, 1);
+    ASSERT_EQ(logr[1].rbar, 0x08030000u | 0x10u | 1u);
+    ASSERT_EQ(logr[1].rasr, 0x1302031Fu); /* RW+XN 64K, SRD=0x03 (size=15) */
+    ASSERT_EQ(logr[0].rbar, node[0].rbar); ASSERT_EQ(logr[0].rasr, node[0].rasr);
+    ASSERT_EQ(logr[2].rbar, node[2].rbar); ASSERT_EQ(logr[2].rasr, node[2].rasr);
+    ASSERT_EQ(SEC21_MPU_LOGGER_TAIL_BASE & ((1u << SEC21_MPU_LOGGER_TAIL_LOG2) - 1u), 0u);
+}
+
+TEST(test_fw70_mpu_writable_pages_are_exactly_each_layouts_data) {
+    /* Кожна з 128 сторінок, обидва краї: логер — рівно 104-127 (журнал + хвіст вузла),
+     * вузол — рівно 122-127; жодна сторінка коду жодної розкладки не стає записуваною. */
+    for (uint32_t page = 0; page < 128u; page++) {
+        uint32_t addr = 0x08000000u + page * SEC21_MPU_FLASH_PAGE_SIZE;
+        uint32_t last = addr + SEC21_MPU_FLASH_PAGE_SIZE - 1u;
+        int logger = page >= SEC21_MPU_LOGGER_FIRST_RW_PAGE;
+        int node   = page >= SEC21_MPU_FLASH_TAIL_FIRST_RW_PAGE;
+        ASSERT_EQ(Mpu_Flash_Addr_Writable_For(addr, 1), logger);
+        ASSERT_EQ(Mpu_Flash_Addr_Writable_For(last, 1), logger);
+        ASSERT_EQ(Mpu_Flash_Addr_Writable_For(addr, 0), node);
+        ASSERT_EQ(Mpu_Flash_Addr_Writable_For(last, 0), node);
+    }
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * [ARCH.21] Brownout PVD save Lorenz state
  * ════════════════════════════════════════════════════════════════════
@@ -5456,6 +5483,8 @@ int main(void)
     RUN(test_sec21_mpu_tail_base_aligned_to_size);
     RUN(test_sec21_mpu_flash_tail_pages_writable);
     RUN(test_sec21_mpu_code_pages_not_writable);
+    RUN(test_fw70_mpu_logger_layout_golden);
+    RUN(test_fw70_mpu_writable_pages_are_exactly_each_layouts_data);
     RUN(test_sec21_devevt_wire_layout);
     RUN(test_sec21_devevt_recognizer);
     RUN(test_sec21_devenv_header_golden);

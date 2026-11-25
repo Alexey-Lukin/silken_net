@@ -25,7 +25,12 @@
  *  · радіо — заглушка: radio.c без radio_conf.h не компілюється (board-freeze), а зрізам
  *    без радіо воно не потрібне. Send віддає OK, решта нічого не робить;
  *  · GPIO не налаштовано: цикл до сну пінів не торкається — окрім BME280: ключ на PB10 і
- *    I2C2 (HW.32, нижче) для CCM-кадру й бенч-POST BME280_SELFTEST (RUNBOOK 2.2б).
+ *    I2C2 (HW.32, нижче) для CCM-кадру й бенч-POST BME280_SELFTEST (RUNBOOK 2.2б) — і
+ *    консолі логера: USART2 на PA2/PA3 лише у вікні на старті (FW.70, нижче).
+ *
+ * ⊕ [FW.70 ⚖️ 2026-11-25] Образ — носій логера П3: журнал на сторінках 104-121 (тому FLASH
+ * лінкер-карти кінчається перед сторінкою 104), консоль UART на старті, MPU-розкладка
+ * логера (діє, коли MPU увімкнено — SEC.21; прошиваний образ сьогодні без MPU). Цикл запису на період WUT і драйвер датчика — окремі ноги 00_07 FW.70.
  */
 /* [HW.32] Ключ живлення BME280 на стенді — PB10 (D10, J1-11): вільний на mini, суто цифровий
  * і не JTAG-пін, тож після скиду це вхід без підтяжки, і pull-down 1 МΩ макетки тримає ключ
@@ -123,6 +128,26 @@ static void MX_I2C_Sense_Init(void)
 }
 #endif
 
+#if FW70_LOGGER_ENABLED
+/* [FW.70] Консоль логера — USART2 на PA2 (TX2, J1-13) · PA3 (RX2, J1-14), 115200 8N1 — той самий
+ * канал FT232RL, що в docs/03_01 («Канал 2»). Вікно — на старті (Logger_Boot, main.c). */
+static int MX_Console_Uart_Init(void)
+{
+    huart_console.Instance                    = USART2;
+    huart_console.Init.BaudRate               = 115200;
+    huart_console.Init.WordLength             = UART_WORDLENGTH_8B;
+    huart_console.Init.StopBits               = UART_STOPBITS_1;
+    huart_console.Init.Parity                 = UART_PARITY_NONE;
+    huart_console.Init.Mode                   = UART_MODE_TX_RX;
+    huart_console.Init.HwFlowCtl              = UART_HWCONTROL_NONE;
+    huart_console.Init.OverSampling           = UART_OVERSAMPLING_16;
+    huart_console.Init.OneBitSampling         = UART_ONE_BIT_SAMPLE_DISABLE;
+    huart_console.Init.ClockPrescaler         = UART_PRESCALER_DIV1;
+    huart_console.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+    return HAL_UART_Init(&huart_console) == HAL_OK;
+}
+#endif
+
 static void MX_IWDG_Init(void)
 {
     hiwdg.Instance       = IWDG;
@@ -190,6 +215,33 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *h)
     HAL_GPIO_Init(GPIOB, &g);   // PB15 — SCL
     HAL_GPIO_Init(GPIOA, &g);   // PA15 — SDA (після скиду JTDI; AF4 знімає з нього JTAG)
     __HAL_RCC_I2C2_CLK_ENABLE();
+}
+#endif
+
+#if FW70_LOGGER_ENABLED
+void HAL_UART_MspInit(UART_HandleTypeDef *h)
+{
+    GPIO_InitTypeDef g = {0};
+    RCC_PeriphCLKInitTypeDef clk = {0};
+    if (h->Instance != USART2) return;
+    clk.PeriphClockSelection = RCC_PERIPHCLK_USART2;
+    clk.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;   // 48 МГц — скидне джерело, назване явно
+    (void)HAL_RCCEx_PeriphCLKConfig(&clk);
+    __HAL_RCC_USART2_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    g.Pin       = GPIO_PIN_2 | GPIO_PIN_3;
+    g.Mode      = GPIO_MODE_AF_PP;
+    g.Pull      = GPIO_PULLUP;      // без адаптера RX висить угору, а не ловить шум
+    g.Speed     = GPIO_SPEED_FREQ_LOW;
+    g.Alternate = GPIO_AF7_USART2;
+    HAL_GPIO_Init(GPIOA, &g);
+}
+
+void HAL_UART_MspDeInit(UART_HandleTypeDef *h)
+{
+    if (h->Instance != USART2) return;
+    __HAL_RCC_USART2_CLK_DISABLE();
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2 | GPIO_PIN_3);   // назад в аналог — найменший витік у сні
 }
 #endif
 

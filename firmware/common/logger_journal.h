@@ -58,10 +58,25 @@
  *     ціла, але знос цієї сторінки росте (10 тис. циклів — ≈ 4 доби петлі на 33 с), і
  *     глю HAL проходить стенд (програмування + перечитування) до поля;
  *   · журнал закритий або в паузі → поточний вимір не тримається в RAM, а губиться;
+ *   · якір BOOT заряджають на старті, а пишуть перед першим записом старту (LogJ_Arm_Boot):
+ *     петлі скидів, що до запису не доходить, журнал не бачить зовсім, а петля, що доходить
+ *     до виміру, пише dw на кожен старт (половина пари гине з RAM) — стільки стартів, скільки
+ *     dw у кільці, затирають історію, і проти цього журнал беззбройний;
  *   · період WUT ≠ каденс більш ніж на чверть → кожне пробудження пише якір розриву й
  *     закриту половину: ≈ 4× місця, і гарантія 180 діб падає до ≈ 45 — період WUT
  *     дорівнює каденсу журналу за побудовою інтеграції;
- *   · ECCD-читання частково запрограмованого dw — bench (як у flash_kv).
+ *   · ECCD-читання частково запрограмованого dw — bench (як у flash_kv). NMI-обробника в
+ *     образі немає (вендорний Default_Handler — петля), тож dw, обірваний скидом посеред
+ *     програмування, зациклив би старт на монтуванні ДО вікна консолі — і дамп теж: лік —
+ *     NMI, що гасить ECCD і повертає «нечитабельно» (00_07 FW.70);
+ *   · кожен писач календаря кличе LogJ_Settle_Boot ДО запису й LogJ_Anchor(TIME_SET) після:
+ *     інакше якір BOOT ляже з новим часом і старим прапорцем, а прапорець «час виставлено»
+ *     не стане 1 до наступного якоря. Консоль (logger_console.h) робить обидва кроки сама,
+ *     застосування маяка (Silken_Beacon_Receive) — ні: образ із радіо й журналом мусить додати;
+ *   · сигнатури формату немає: регіон на першому монтуванні мусить бути стертим, інакше
+ *     чужий dw із ніблем типу заголовка став би сторінкою, а з ніблем DATA — виміром у
+ *     дампі. На mini це дає mass-erase першої прошивки (вихід із RDP-L1, 02_04); прошивка
+ *     образу регіону не торкається — журнал переживає перепрошивку.
  *
  * One-Home: прошивка й host-тести компілюють цей самий код; залізо — лише LogJOps.
  * Канон: 00_07 FW.70 · 01_03 §4 ⊕ «П3 — склад пілота» · 03_01 §12.4.
@@ -131,6 +146,9 @@ typedef struct {
     uint32_t       write_fail;
     uint8_t        hold;        /* скільки викликів запису ще чекати до спроби відкриття */
     uint8_t        hold_len;    /* довжина наступної паузи; 0 = серії провалів немає */
+    uint8_t        boot_pend;   /* 1 = якір BOOT чекає першого запису цього старту */
+    uint8_t        boot_cause;  /* його код скиду (reset_cause.h) */
+    uint8_t        boot_tv;     /* його прапорець «час виставлено» — як був на старті */
 } LogJ;
 
 /* ── кодування ─────────────────────────────────────────────────────── */
@@ -296,12 +314,10 @@ static inline int LogJ_Mount(LogJ *j, const LogJOps *ops, void *io,
     return 1;
 }
 
-/* Якір відновлення: після кожного скиду (reason BOOT + код скиду) і після виставлення часу
- * (reason TIME_SET). Очікувана половина пари спершу пишеться з закритою B. */
-static inline int LogJ_Anchor(LogJ *j, uint32_t now_s, uint8_t time_valid,
+/* Тіло якоря відновлення (без зарядженого BOOT — його бере LogJ_Anchor). */
+static inline int logj_anchor(LogJ *j, uint32_t now_s, uint8_t time_valid,
                               uint8_t reason, uint8_t reset_cause)
 {
-    if (!j->n_pages) return 0;
     int ok = logj_flush(j);
     j->flags = time_valid ? LOGJ_FLAG_TIME_VALID : 0u;
     j->cad   = j->cfg_cad;
@@ -328,12 +344,50 @@ static inline int LogJ_Anchor(LogJ *j, uint32_t now_s, uint8_t time_valid,
     return ok;
 }
 
+/* Зарядити якір BOOT на старті (після LogJ_Mount): код скиду й «час виставлено», як вони
+ * є на старті. Пишеться він НЕ тут, а перед першим записом цього старту — виміром чи
+ * якорем: петля скидів, що до запису не доходить, журналу не торкається. Якір на кожному
+ * старті коштував би dw за скид, і петля затерла б кільце за години — а свідок росту весна. */
+static inline void LogJ_Arm_Boot(LogJ *j, uint8_t reset_cause, uint8_t time_valid)
+{
+    if (!j->n_pages) return;
+    j->boot_pend  = 1;
+    j->boot_cause = reset_cause;
+    j->boot_tv    = time_valid ? 1u : 0u;
+}
+
+/* Записати заряджений якір BOOT, якщо він є. Одна спроба: провал губить лише тег причини,
+ * а прапорець часу старту не ляже пізніше поверх новішого якоря. Виставлення часу кличе це
+ * ДО запису календаря, щоб якір ніс старий час. 1 = нічого не чекало або записано. */
+static inline int LogJ_Settle_Boot(LogJ *j, uint32_t now_s)
+{
+    if (!j->n_pages) return 0;
+    if (!j->boot_pend) return 1;
+    j->boot_pend = 0;
+    return logj_anchor(j, now_s, j->boot_tv, LOGJ_REASON_BOOT, j->boot_cause);
+}
+
+/* Якір відновлення: виставлення часу (reason TIME_SET), розрив (GAP) — і BOOT, хоча на
+ * старті його заряджають (LogJ_Arm_Boot), а не пишуть. Заряджений BOOT лягає першим.
+ * Очікувана половина пари спершу пишеться з закритою B. */
+static inline int LogJ_Anchor(LogJ *j, uint32_t now_s, uint8_t time_valid,
+                              uint8_t reason, uint8_t reset_cause)
+{
+    if (!j->n_pages) return 0;
+    int ok = LogJ_Settle_Boot(j, now_s);
+    return logj_anchor(j, now_s, time_valid, reason, reset_cause) & ok;
+}
+
 /* Один вимір на пробудженні. now_s — секунди RTC. reading = LOGJ_READING_NONE, коли
  * поміряти не вдалося (рядок «NA»). */
 static inline int LogJ_Record(LogJ *j, uint32_t now_s, uint16_t reading, int8_t temp)
 {
     if (!j->n_pages) return 0;
     int ok = 1;
+    if (j->boot_pend) {
+        ok = LogJ_Settle_Boot(j, now_s);
+        if (!j->open) return 0;   /* відкрити не вдалось — друга спроба в тому ж виклику зʼїла б паузу */
+    }
     if (!j->open || !j->cad) {
         ok &= LogJ_Anchor(j, now_s, (uint8_t)(j->flags & LOGJ_FLAG_TIME_VALID), LOGJ_REASON_GAP, 0u);
         if (!j->open) return 0;

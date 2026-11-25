@@ -4,7 +4,9 @@
  *
  * RAM-мок N сторінок × 256 dw + fault-injection program/erase. Доводить: стерте ⊥
  * валідне; пара в одному dw; явний слот (пропуск не зсуває міток); розриви → якір;
- * кільце губить НАЙСТАРІШЕ; монтування після скиду; 180 діб на 18 сторінках без втрат.
+ * кільце губить НАЙСТАРІШЕ; монтування після скиду; 180 діб на 18 сторінках без втрат;
+ * якір BOOT лягає перед першим записом старту, і петля скидів без запису Flash не торкається;
+ * консоль (logger_console.h): виставлення часу судить перечитування, дамп = стан + записи.
  *
  * Build: make -C firmware/test logger_journal
  */
@@ -14,6 +16,7 @@
 #include <stdint.h>
 
 #include "../common/logger_journal.h"
+#include "../common/logger_console.h"
 
 static int tests_passed = 0;
 static int tests_failed = 0;
@@ -682,6 +685,269 @@ TEST(test_pilot_season_180_days_on_18_pages)
     ASSERT_EQ(M.reprogram_errors, 0);
 }
 
+/* ── якір BOOT: заряджають на старті, пишуть перед першим записом старту ── */
+/* Коди скиду — reset_cause.h: 1 power-on · 2 NRST · 3 software · 4 IWDG · 6 HardFault. */
+
+static int erases_total(void)
+{
+    int n = 0;
+    for (unsigned p = 0; p < MAX_PG; p++) n += M.erases[p];
+    return n;
+}
+
+/* Теги якорів відновлення в порядку дампу (тег = (причина<<8) | код скиду). */
+static int resume_tags(const LogJ *j, uint16_t *tags, uint8_t *tv, int cap)
+{
+    LogJIter it; LogJRec r; int n = 0;
+    LogJ_Iter_Begin(&it, j);
+    while (LogJ_Iter_Next(&it, &r))
+        if (r.kind == LOGJ_REC_ANCHOR && r.type == LOGJ_TYPE_RESUME && n < cap) {
+            tags[n] = r.tag; tv[n] = r.time_valid; n++;
+        }
+    return n;
+}
+
+TEST(test_reset_loop_without_a_write_never_touches_flash)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Arm_Boot(&j, 1, 1);
+    for (int i = 0; i < 3; i++) LogJ_Record(&j, T0 + (uint32_t)i * CAD_S, (uint16_t)i, 0);
+    int programs = M.programs, erases = erases_total();
+    for (int boot = 0; boot < 10000; boot++) {            /* скид за скидом — до першого запису */
+        LogJ k;
+        ASSERT_EQ(LogJ_Mount(&k, &OPS, NULL, PG_DWS, 4, CAD), 1);
+        LogJ_Arm_Boot(&k, 3, 1);
+    }
+    ASSERT_EQ(M.programs, programs);
+    ASSERT_EQ(erases_total(), erases);
+}
+
+TEST(test_boot_anchor_lands_before_first_measurement_with_reset_code)
+{
+    mock_init();
+    LogJ j; ASSERT_EQ(LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD), 0);
+    LogJ_Arm_Boot(&j, 6, 1);
+    ASSERT_EQ(M.programs, 0);                             /* зарядити ≠ записати */
+    LogJ_Record(&j, T0, 10, 2);
+    LogJ_Record(&j, T0 + CAD_S, 11, 3);
+    char all[256] = "", b[LOGJ_FORMAT_CAP];
+    LogJIter it; LogJRec r;
+    LogJ_Iter_Begin(&it, &j);
+    while (LogJ_Iter_Next(&it, &r)) { LogJ_Format(b, sizeof b, &r); strcat(all, b); }
+    ASSERT_STR(all, "#P,0,1764000000,1,30\n#R,0,6,1764000000,1,30\n"
+                    "1764000000,1,10,1.0\n1764001800,1,11,1.5\n");
+}
+
+TEST(test_boot_anchor_after_reset_carries_its_code_mid_page)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Arm_Boot(&j, 1, 1);
+    for (int i = 0; i < 4; i++) LogJ_Record(&j, T0 + (uint32_t)i * CAD_S, (uint16_t)i, 0);
+    LogJ k; ASSERT_EQ(LogJ_Mount(&k, &OPS, NULL, PG_DWS, 4, CAD), 1);
+    LogJ_Arm_Boot(&k, 4, 1);
+    uint32_t t = T0 + 10u * CAD_S;
+    LogJ_Record(&k, t, 100, 0);
+    LogJ_Record(&k, t + CAD_S, 101, 0);
+    uint16_t tags[8]; uint8_t tv[8];
+    ASSERT_EQ(resume_tags(&k, tags, tv, 8), 2);
+    ASSERT_EQ(tags[0], (LOGJ_REASON_BOOT << 8) | 1);
+    ASSERT_EQ(tags[1], (LOGJ_REASON_BOOT << 8) | 4);
+    dump(&k);
+    ASSERT_EQ(D.n, 4 + 2);
+    ASSERT_EQ(D.t[4], t); ASSERT_EQ(D.r[5], 101);
+    ASSERT_EQ(M.reprogram_errors, 0);
+}
+
+TEST(test_anchor_puts_armed_boot_first_and_keeps_the_newer_validity)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Arm_Boot(&j, 2, 0);                              /* NRST, годинник ще не виставлено */
+    ASSERT_TRUE(LogJ_Anchor(&j, T0, 1, LOGJ_REASON_TIME_SET, 0));
+    LogJ_Record(&j, T0 + CAD_S, 5, 0);
+    LogJ_Record(&j, T0 + 2u * CAD_S, 6, 0);
+    uint16_t tags[8]; uint8_t tv[8];
+    ASSERT_EQ(resume_tags(&j, tags, tv, 8), 2);
+    ASSERT_EQ(tags[0], (LOGJ_REASON_BOOT << 8) | 2);     ASSERT_EQ(tv[0], 0);
+    ASSERT_EQ(tags[1], LOGJ_REASON_TIME_SET << 8);         ASSERT_EQ(tv[1], 1);
+    LogJIter it; LogJRec r; int meas = 0, valid = 0;
+    LogJ_Iter_Begin(&it, &j);
+    while (LogJ_Iter_Next(&it, &r))
+        if (r.kind == LOGJ_REC_MEAS) { meas++; valid += r.time_valid; }
+    ASSERT_EQ(meas, 2); ASSERT_EQ(valid, 2);
+}
+
+TEST(test_boot_anchor_gets_one_attempt_and_never_lands_late)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Arm_Boot(&j, 3, 0);
+    M.fail_program_at = 0;                                /* перший заголовок не ліг → пауза */
+    ASSERT_EQ(LogJ_Record(&j, T0, 1, 0), 0);
+    ASSERT_EQ(j.boot_pend, 0);
+    ASSERT_EQ(M.erases[0], 1);
+    ASSERT_EQ(LogJ_Record(&j, T0 + CAD_S, 1, 0), 0);      /* пауза тримає: тієї ж сторінки не стирає */
+    ASSERT_EQ(M.erases[0], 1);
+    for (int i = 2; i < 6; i++) LogJ_Record(&j, T0 + (uint32_t)i * CAD_S, (uint16_t)i, 0);
+    uint16_t tags[8]; uint8_t tv[8];
+    int n = resume_tags(&j, tags, tv, 8);
+    ASSERT_TRUE(n >= 1);
+    for (int i = 0; i < n; i++) ASSERT_TRUE((tags[i] >> 8) != LOGJ_REASON_BOOT);
+    dump(&j);
+    ASSERT_EQ(D.n, 4);                                    /* (2,3) · (4,5); 0 і 1 — у паузі */
+    ASSERT_EQ(D.r[0], 2);
+}
+
+TEST(test_unmounted_journal_ignores_boot_arming)
+{
+    mock_init();
+    LogJ j; ASSERT_EQ(LogJ_Mount(&j, &OPS, NULL, PG_DWS, 1, CAD), -1);
+    LogJ_Arm_Boot(&j, 1, 1);
+    ASSERT_EQ(j.boot_pend, 0);
+    ASSERT_EQ(LogJ_Settle_Boot(&j, T0), 0);
+    ASSERT_EQ(M.programs, 0);
+}
+
+/* ── консоль: шов LogCOps на моці годинника й виводу ───────────────── */
+#define CLK_2000 946684800u   /* календар RTC після втрати живлення — 2000-01-01 */
+
+static uint32_t CLK;
+static int      CLK_FOLLOWS_SET;
+static uint32_t CLK_SET_OFFSET;
+static char     OUT[16384];
+static size_t   OUTN;
+static uint32_t c_now(void *io) { (void)io; return CLK; }
+static void     c_set(void *io, uint32_t t) { (void)io; if (CLK_FOLLOWS_SET) CLK = t + CLK_SET_OFFSET; }
+static void     c_emit(void *io, const char *s, size_t n)
+{
+    (void)io;
+    if (OUTN + n < sizeof OUT) { memcpy(OUT + OUTN, s, n); OUTN += n; OUT[OUTN] = '\0'; }
+}
+static const LogCOps COPS = { c_now, c_set, c_emit };
+
+static void console_init(uint32_t clk, int follows, uint32_t offset)
+{
+    CLK = clk; CLK_FOLLOWS_SET = follows; CLK_SET_OFFSET = offset; OUTN = 0; OUT[0] = '\0';
+}
+/* Згодувати байти; повертає, скільки разів консоль попросила закрити вікно. */
+static int feed(LogJ *j, const char *s)
+{
+    LogCLine l = {0}; int quits = 0;
+    for (; *s; s++)
+        if (LogC_Feed(&l, *s)) quits += (LogC_Exec(j, &COPS, NULL, &l) == LOGC_QUIT);
+    return quits;
+}
+
+TEST(test_console_crlf_and_blank_lines_frame_one_command)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    console_init(T0, 1, 0);
+    ASSERT_EQ(feed(&j, "S\r\n\r\n\nq\n"), 1);
+    ASSERT_STR(OUT, "#S,1764000000,1,1,0,65535,0,0,0\nOK,Q\n");
+}
+
+TEST(test_console_time_set_writes_boot_then_time_anchor)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    console_init(CLK_2000 + 77u, 1, 0);
+    LogJ_Arm_Boot(&j, 1, 0);
+    feed(&j, "T1764000000\n");
+    ASSERT_STR(OUT, "OK,T,1764000000,1\n");
+    console_init(CLK, 1, 0);
+    feed(&j, "D\n");
+    ASSERT_STR(OUT, "#S,1764000000,1,1,1,0,3,0,0\n"
+                    "#P,0,946684877,0,30\n#R,0,1,946684877,0,30\n#R,1,0,1764000000,1,30\n#E,3\n");
+}
+
+TEST(test_console_time_set_is_judged_by_the_reread)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    console_init(CLK_2000, 0, 0);                         /* запис календаря не ліг */
+    feed(&j, "T1764000000\n");
+    ASSERT_STR(OUT, "ERR,T,946684800\n");
+    console_init(CLK_2000, 1, LOGC_SET_SLACK_S + 1u);     /* перечитування втекло вперед */
+    feed(&j, "T1764000000\n");
+    ASSERT_STR(OUT, "ERR,T,1764000003\n");
+    ASSERT_EQ(M.programs, 0);                             /* нічого не заряджено — нічого не записано */
+    console_init(CLK_2000, 1, LOGC_SET_SLACK_S);          /* межа допуску — ще правда */
+    feed(&j, "T1764000000\n");
+    ASSERT_STR(OUT, "OK,T,1764000002,1\n");
+}
+
+TEST(test_console_malformed_lines_answer_question_mark_and_write_nothing)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    console_init(T0, 1, 0);
+    LogJ_Arm_Boot(&j, 1, 1);
+    feed(&j, "T\nT17640x0000\nT99999999999\nT4294967296\nT1599999999\nT4102444800\n"
+             "DD\nX\nT 1764000000\n0123456789012345678\n");
+    ASSERT_STR(OUT, "?\n?\n?\n?\n?\n?\n?\n?\n?\n?\n");
+    ASSERT_EQ(M.programs, 0);
+    ASSERT_EQ(j.boot_pend, 1);                            /* жоден рядок не писав — якір чекає */
+}
+
+TEST(test_console_dump_is_status_then_every_record_then_count)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Arm_Boot(&j, 1, 1);
+    for (int i = 0; i < 5; i++) LogJ_Record(&j, T0 + (uint32_t)i * CAD_S, (uint16_t)(100 + i), 0);
+    char want[1024] = "#S,1764009000,1,1,1,0,4,0,0\n", b[LOGJ_FORMAT_CAP];
+    LogJIter it; LogJRec r; int rows = 0;
+    LogJ_Iter_Begin(&it, &j);
+    while (LogJ_Iter_Next(&it, &r)) { LogJ_Format(b, sizeof b, &r); strcat(want, b); rows++; }
+    ASSERT_EQ(rows, 6);                                   /* #P · #R · (0,1) · (2,3); вимір 4 у RAM */
+    strcat(want, "#E,6\n");
+    console_init(T0 + 5u * CAD_S, 1, 0);
+    feed(&j, "d\n");
+    ASSERT_STR(OUT, want);
+}
+
+TEST(test_console_status_reports_the_pause_after_a_program_failure)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    M.fail_program_at = 0;
+    LogJ_Arm_Boot(&j, 1, 1);
+    LogJ_Record(&j, T0, 1, 0);
+    ASSERT_TRUE(LogJ_Holding(&j));
+    console_init(T0, 1, 0);
+    feed(&j, "S\n");
+    ASSERT_STR(OUT, "#S,1764000000,1,1,0,65535,0,1,1\n");
+}
+
+TEST(test_console_on_unmounted_journal_still_sets_the_clock)
+{
+    mock_init();
+    LogJ j; ASSERT_EQ(LogJ_Mount(&j, &OPS, NULL, PG_DWS, 1, CAD), -1);
+    console_init(CLK_2000, 1, 0);
+    feed(&j, "T1764000000\nD\n");
+    ASSERT_STR(OUT, "OK,T,1764000000,0\n#S,1764000000,1,0,0,0,0,0,0\n#E,0\n");
+    ASSERT_EQ(M.programs, 0);
+}
+
+TEST(test_console_without_calendar_right_refuses_time_and_writes_nothing)
+{
+    /* Образ mini: set_time = NULL — календар Солдата є базою delta_t (SEC.42). */
+    static const LogCOps RO = { c_now, NULL, c_emit };
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Arm_Boot(&j, 2, 0);
+    console_init(CLK_2000 + 5u, 1, 0);
+    LogCLine l = {0};
+    for (const char *p = "T1764000000\n"; *p; p++) if (LogC_Feed(&l, *p)) LogC_Exec(&j, &RO, NULL, &l);
+    ASSERT_STR(OUT, "ERR,T,946684805\n");
+    ASSERT_EQ(CLK, CLK_2000 + 5u);
+    ASSERT_EQ(M.programs, 0);
+    ASSERT_EQ(j.boot_pend, 1);                            /* відмова — не запис: якір чекає далі */
+}
+
 int main(void)
 {
     printf("\n[FW.70] logger_journal — сторінковий журнал логера П3\n");
@@ -719,6 +985,21 @@ int main(void)
     RUN(test_invalid_config_is_refused);
     RUN(test_period_drift_reanchors_and_bounds_label_error);
     RUN(test_pilot_season_180_days_on_18_pages);
+    RUN(test_reset_loop_without_a_write_never_touches_flash);
+    RUN(test_boot_anchor_lands_before_first_measurement_with_reset_code);
+    RUN(test_boot_anchor_after_reset_carries_its_code_mid_page);
+    RUN(test_anchor_puts_armed_boot_first_and_keeps_the_newer_validity);
+    RUN(test_boot_anchor_gets_one_attempt_and_never_lands_late);
+    RUN(test_unmounted_journal_ignores_boot_arming);
+    printf("\n[FW.70] logger_console — консоль логера П3\n");
+    RUN(test_console_crlf_and_blank_lines_frame_one_command);
+    RUN(test_console_time_set_writes_boot_then_time_anchor);
+    RUN(test_console_time_set_is_judged_by_the_reread);
+    RUN(test_console_malformed_lines_answer_question_mark_and_write_nothing);
+    RUN(test_console_dump_is_status_then_every_record_then_count);
+    RUN(test_console_status_reports_the_pause_after_a_program_failure);
+    RUN(test_console_on_unmounted_journal_still_sets_the_clock);
+    RUN(test_console_without_calendar_right_refuses_time_and_writes_nothing);
     printf("\n  %d passed, %d failed\n\n", tests_passed, tests_failed);
     return tests_failed ? 1 : 0;
 }

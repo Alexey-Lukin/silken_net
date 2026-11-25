@@ -16,6 +16,12 @@
  *   #2  SRAM 64K  RW+XN — NX-stack/heap/data цілком (чесно за будь-якого
  *       майбутнього .ld: стек всередині 64K)
  * Периферія/System — фонова мапа (PRIVDEFENA=1, код повністю privileged).
+ * ⊕ [FW.70] Образ логера П3 на mini — друга розкладка регіону #1, лише для нього: журнал
+ *   займає сторінки 104-121 (03_01 §2.3), тож вікно — 64K @0x08030000 (субрегіон = 8K =
+ *   4 сторінки), SRD=0b00000011 → сторінки 96-103 провалюються в RO-#0, записувані рівно
+ *   104-127. Плата вузла лишається на 122-127: там сторінки 104-121 можуть бути кодом, і
+ *   RW+XN на них зробив би код невиконуваним. Вибір — аргумент Mpu_*_For, не макрос
+ *   усередині заголовка: host-тест судить обидві розкладки в одному TU.
  * HFNMIENA=0: у HardFault/NMI MPU не діє — canary-handler пише TAMP без trap'а.
  *
  * One-Home: тут ЛИШЕ pure-математика слів RBAR/RASR (ARMv7-M PMSA, дзеркало
@@ -66,6 +72,11 @@
 #define SEC21_MPU_SRAM_LOG2     16u   /* 64K */
 #define SEC21_MPU_FLASH_TAIL_FIRST_RW_PAGE 122u
 #define SEC21_MPU_FLASH_PAGE_SIZE          2048u
+/* [FW.70] Розкладка образу логера (mini) — регіон #1 ширший; решта таблиці та сама. */
+#define SEC21_MPU_LOGGER_TAIL_BASE         0x08030000u
+#define SEC21_MPU_LOGGER_TAIL_LOG2         16u   /* 64K-вікно; subregion = 8K = 4 сторінки */
+#define SEC21_MPU_LOGGER_TAIL_SRD          0x03u /* сторінки 96-103 → назад у RO-#0 */
+#define SEC21_MPU_LOGGER_FIRST_RW_PAGE     104u
 
 /* RBAR: базова адреса (вирівняна на розмір) | VALID | номер регіону. */
 static inline uint32_t Mpu_Rbar(uint32_t base, uint32_t region)
@@ -87,27 +98,49 @@ typedef struct {
     uint32_t rasr;
 } MpuRegionWord;
 
+/* Регіон #1 обраної розкладки: logger = 0 — плата вузла, 1 — образ логера (FW.70). */
+static inline void mpu_tail(int logger, uint32_t *base, uint32_t *log2, uint32_t *srd)
+{
+    *base = logger ? SEC21_MPU_LOGGER_TAIL_BASE : SEC21_MPU_TAIL_BASE;
+    *log2 = logger ? SEC21_MPU_LOGGER_TAIL_LOG2 : SEC21_MPU_TAIL_LOG2;
+    *srd  = logger ? SEC21_MPU_LOGGER_TAIL_SRD  : SEC21_MPU_TAIL_SRD;
+}
+
 /* Таблиця трьох регіонів — єдине джерело для Apply обох прошивок. */
+static inline void Mpu_Build_Region_Table_For(MpuRegionWord out[3], int logger)
+{
+    uint32_t base, log2, srd;
+    mpu_tail(logger, &base, &log2, &srd);
+    out[0].rbar = Mpu_Rbar(SEC21_MPU_FLASH_BASE, 0u);
+    out[0].rasr = Mpu_Rasr(0u, MPU_AP_RO,      0u,  SEC21_MPU_FLASH_LOG2);
+    out[1].rbar = Mpu_Rbar(base, 1u);
+    out[1].rasr = Mpu_Rasr(1u, MPU_AP_PRIV_RW, srd, log2);
+    out[2].rbar = Mpu_Rbar(SEC21_MPU_SRAM_BASE, 2u);
+    out[2].rasr = Mpu_Rasr(1u, MPU_AP_PRIV_RW, 0u,  SEC21_MPU_SRAM_LOG2);
+}
+
 static inline void Mpu_Build_Region_Table(MpuRegionWord out[3])
 {
-    out[0].rbar = Mpu_Rbar(SEC21_MPU_FLASH_BASE, 0u);
-    out[0].rasr = Mpu_Rasr(0u, MPU_AP_RO,      0u,                 SEC21_MPU_FLASH_LOG2);
-    out[1].rbar = Mpu_Rbar(SEC21_MPU_TAIL_BASE, 1u);
-    out[1].rasr = Mpu_Rasr(1u, MPU_AP_PRIV_RW, SEC21_MPU_TAIL_SRD, SEC21_MPU_TAIL_LOG2);
-    out[2].rbar = Mpu_Rbar(SEC21_MPU_SRAM_BASE, 2u);
-    out[2].rasr = Mpu_Rasr(1u, MPU_AP_PRIV_RW, 0u,                 SEC21_MPU_SRAM_LOG2);
+    Mpu_Build_Region_Table_For(out, 0);
 }
 
 /* 1 = Flash-адреса CPU-writable під цією розкладкою (живий subregion
- * TAIL-вікна). Host-тест жене крізь неї ВСІ сторінки: 122-127 мусять бути
- * writable (Flash-KV/ключі/contract/UID), 0-121 — ні. */
+ * TAIL-вікна). Host-тест жене крізь неї ВСІ сторінки: у вузла 122-127 мусять бути
+ * writable (Flash-KV/ключі/contract/UID), 0-121 — ні; у логера — 104-127 і 0-103. */
+static inline int Mpu_Flash_Addr_Writable_For(uint32_t addr, int logger)
+{
+    uint32_t base, log2, srd;
+    mpu_tail(logger, &base, &log2, &srd);
+    uint32_t tail_size = 1u << log2;
+    if (addr < base || addr >= base + tail_size)
+        return 0;
+    uint32_t subregion = (addr - base) / (tail_size / 8u);
+    return !((srd >> subregion) & 1u);
+}
+
 static inline int Mpu_Flash_Addr_Writable(uint32_t addr)
 {
-    uint32_t tail_size = 1u << SEC21_MPU_TAIL_LOG2;
-    if (addr < SEC21_MPU_TAIL_BASE || addr >= SEC21_MPU_TAIL_BASE + tail_size)
-        return 0;
-    uint32_t subregion = (addr - SEC21_MPU_TAIL_BASE) / (tail_size / 8u);
-    return !((SEC21_MPU_TAIL_SRD >> subregion) & 1u);
+    return Mpu_Flash_Addr_Writable_For(addr, 0);
 }
 
 #endif /* SILKEN_MPU_REGIONS_H */

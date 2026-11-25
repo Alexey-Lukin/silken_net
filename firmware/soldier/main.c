@@ -1368,6 +1368,124 @@ void Write_OTA_Contract_To_Flash(const uint8_t *data, uint16_t size)
     Flash_Write_Contract(&g_ota_flash_ops, (void *)0, data, size);
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// [FW.70] ЛОГЕР П3 — журнал у внутрішній Flash mini + консоль UART
+// ════════════════════════════════════════════════════════════════════════
+// Журнал і консоль — чисті заголовки (host-тест `make -C firmware/test logger_journal`); тут
+// лише руки: Flash-опси журналу, консоль на USART2 і крок старту в main(). Гейт вмикають
+// образи mini (firmware/CMakeLists.txt); плата вузла журналу не несе — там сторінки 104-121
+// можуть бути кодом. Цикл запису на період WUT — окрема нога FW.70.
+#ifndef FW70_LOGGER_ENABLED
+#define FW70_LOGGER_ENABLED 0
+#endif
+#if FW70_LOGGER_ENABLED
+#include "../common/logger_journal.h"
+#include "../common/logger_console.h"
+// Розміщення (03_01 §2.3): 18 сторінок під Flash-KV — 104-121. Ту саму межу тримають лінкер-
+// карта mini (образ кінчається перед 0x08034000: LENGTH і ASSERT) і MPU-розкладка логера
+// (записувані рівно 104-127; діє, коли MPU увімкнено — SEC.21, сьогодні лише gated-близнюк) —
+// обидві звіряються з цими числами нижче.
+#define LOGGER_JOURNAL_PAGES      18u
+#define LOGGER_JOURNAL_FIRST_PAGE (FLASH_KV_FIRST_PAGE - LOGGER_JOURNAL_PAGES)
+#define LOGGER_JOURNAL_BASE_ADDR  (FLASH_BASE + LOGGER_JOURNAL_FIRST_PAGE * FLASH_PAGE_SIZE)
+#define LOGGER_JOURNAL_PAGE_DWS   (FLASH_PAGE_SIZE / 8u)
+#define LOGGER_CADENCE_MIN        30u      // каденс пілота — 01_03 §4 ⊕ «П3 — склад пілота»
+#define LOGGER_CONSOLE_IDLE_MS    5000u    // вікно на старті, якщо ніхто нічого не шле
+#define LOGGER_CONSOLE_ACTIVE_MS  60000u   // після кожного байта — стільки ще слухати
+#define LOGGER_CONSOLE_MAX_MS     600000u  // і не довше за це загалом: потік байтів не тримає логер
+#define LOGGER_UART_TX_TIMEOUT_MS 100u
+_Static_assert(LOGGER_JOURNAL_FIRST_PAGE == SEC21_MPU_LOGGER_FIRST_RW_PAGE,
+               "[FW.70] журнал мусить починатись там, де MPU образу логера відкриває запис");
+_Static_assert(LOGGER_JOURNAL_BASE_ADDR == 0x08034000UL,
+               "[FW.70] журнал зсунувся — зсунь і кінець образу в stm32wle5jc_soldier.ld (LENGTH + ASSERT)");
+
+// Застарілий прапорець помилки у FLASH->SR (з будь-якого джерела поза цією операцією) HAL
+// читає як провал НАСТУПНОЇ операції й не виконує її (FLASH_WaitForLastOperation на вході):
+// журналові це коштувало б сторінку ємності на стиранні чи дірку на записі за кожним таким
+// стартом — тож прапорці гасяться перед кожною операцією. Межі — захист сусіда згори (Flash-KV).
+static uint64_t Logger_ReadDw(void *io, uint32_t byte_off)
+{
+    (void)io;
+    return *(const volatile uint64_t *)(LOGGER_JOURNAL_BASE_ADDR + byte_off);
+}
+
+static int Logger_ProgramDw(void *io, uint32_t byte_off, uint64_t v)
+{
+    (void)io;
+    if (byte_off >= LOGGER_JOURNAL_PAGES * FLASH_PAGE_SIZE) return 0;
+    HAL_FLASH_Unlock();
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_SR_ERRORS);
+    HAL_StatusTypeDef st = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,
+                                             LOGGER_JOURNAL_BASE_ADDR + byte_off, v);
+    HAL_FLASH_Lock();
+    return st == HAL_OK;
+}
+
+static int Logger_ErasePage(void *io, uint8_t page)
+{
+    (void)io;
+    if (page >= LOGGER_JOURNAL_PAGES) return 0;
+    FLASH_EraseInitTypeDef ei = { .TypeErase = FLASH_TYPEERASE_PAGES,
+                                  .Page = LOGGER_JOURNAL_FIRST_PAGE + page, .NbPages = 1 };
+    uint32_t page_err = 0;
+    HAL_FLASH_Unlock();
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_SR_ERRORS);
+    HAL_StatusTypeDef st = HAL_FLASHEx_Erase(&ei, &page_err);
+    HAL_FLASH_Lock();
+    return (st == HAL_OK && page_err == 0xFFFFFFFFu) ? 1 : 0;
+}
+
+static const LogJOps logger_journal_ops = { Logger_ReadDw, Logger_ProgramDw, Logger_ErasePage };
+static LogJ logger_journal;   // RAM-стан журналу — 03_01 §2.3.1 ⊕ «Логер П3»
+
+// Консоль — USART2 (mini: PA2 TX2 · PA3 RX2, 115200 8N1); тіло ініції дає glue плати.
+// 1 = готово. Без Error_Handler: крок стоїть до ключів, і скид на відмові UART дав би петлю,
+// а журнал мусить писати й без консолі.
+static int MX_Console_Uart_Init(void);
+UART_HandleTypeDef huart_console;
+
+static uint32_t Logger_Con_Now(void *io) { (void)io; return Wall_Seconds_Now(); }
+static void Logger_Con_Emit(void *io, const char *s, size_t n)
+{
+    (void)io;
+    HAL_IWDG_Refresh(&hiwdg);   // дамп кільця на 115200 — ≈ 20 с, а пес чекає ≈ 32 с
+    (void)HAL_UART_Transmit(&huart_console, (const uint8_t *)s, (uint16_t)n, LOGGER_UART_TX_TIMEOUT_MS);
+}
+// Запис календаря консоллю свідомо НЕ підʼєднано (set_time = NULL → T відповідає ERR): календар —
+// база delta_t, і крок годинника повз Silken_Beacon_Commit дав би вигаданий delta_t, а консоль
+// стоїть ще до відновлення бази з DR1 (гейт — tools/firmware/check_sec42_calendar.py). Як писати
+// його разом із базою — нога 00_07 FW.70 «виставлення часу консоллю».
+static const LogCOps logger_console_ops = { Logger_Con_Now, NULL, Logger_Con_Emit };
+
+// Крок старту логера — ДО ключів: плата без конвеєра (сторінка ключа порожня) скидається в
+// Load_AES_Key, і крок після нього не настав би ніколи. Якір BOOT лише заряджається (ляже
+// перед першим записом старту), тож петля скидів без запису журналу не торкається. Вікно
+// консолі — лише на справжньому старті: пробудження зі Standby теж скид, але не подія, а
+// логера під Standby немає (половина пари живе в RAM — firmware #22; образ mini спить у STOP2).
+static void Logger_Boot(uint8_t from_standby, uint8_t reset_cause)
+{
+    (void)LogJ_Mount(&logger_journal, &logger_journal_ops, NULL,
+                     LOGGER_JOURNAL_PAGE_DWS, LOGGER_JOURNAL_PAGES, LOGGER_CADENCE_MIN);
+    if (from_standby) return;
+    LogJ_Arm_Boot(&logger_journal, reset_cause, Silken_Wall_Is_Utc(Wall_Seconds_Now()));
+
+    if (!MX_Console_Uart_Init()) { (void)HAL_UART_DeInit(&huart_console); return; }
+    LogC_Status(&logger_journal, &logger_console_ops, NULL);   // банер: вікно відкрито
+    LogCLine line = {0};
+    const uint32_t opened = HAL_GetTick();
+    uint32_t deadline = opened + LOGGER_CONSOLE_IDLE_MS;
+    while ((int32_t)(HAL_GetTick() - deadline) < 0 && HAL_GetTick() - opened < LOGGER_CONSOLE_MAX_MS) {
+        HAL_IWDG_Refresh(&hiwdg);
+        uint8_t c;
+        if (HAL_UART_Receive(&huart_console, &c, 1u, 50u) != HAL_OK) continue;
+        deadline = HAL_GetTick() + LOGGER_CONSOLE_ACTIVE_MS;
+        if (LogC_Feed(&line, (char)c) &&
+            LogC_Exec(&logger_journal, &logger_console_ops, NULL, &line) == LOGC_QUIT) break;
+    }
+    (void)HAL_UART_DeInit(&huart_console);   // консоль живе лише у вікні
+}
+#endif // FW70_LOGGER_ENABLED
+
 // [FW.46 Шлях A] Прототипи radio-колбеків для events-реєстрації в main():
 // тіла живуть унизу файла (ISR-зона), Semtech-драйвер кличе їх через таблицю.
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
@@ -1386,7 +1504,7 @@ void OnCadDone(bool channelActivityDetected);  // ARCH.26 L3 — гейт дзе
 static void Silken_Mpu_Apply(void)
 {
     MpuRegionWord regions[3];
-    Mpu_Build_Region_Table(regions);
+    Mpu_Build_Region_Table_For(regions, FW70_LOGGER_ENABLED); // [FW.70] у логера записуваний і журнал
     MPU->CTRL = 0u; // програмуємо з вимкненим MPU
     for (uint32_t i = 0; i < 3u; i++) {
         MPU->RBAR = regions[i].rbar; // VALID-біт несе номер регіону
@@ -1598,6 +1716,12 @@ int main(void)
   // лік — CRYP_DATATYPE_8B. Після POST відновлюємо бойовий ECB-контекст.
   g_sym_selftest_failed = Sym_Run_Self_Test(&hcryp, NULL);
   MX_CRYP_Init();
+#endif
+
+#if FW70_LOGGER_ENABLED
+  // [FW.70] Журнал і вікно консолі — ДО ключів (чому — шапка Logger_Boot). Код скиду — той
+  // самий декодер, що й у кадрі: на справжньому старті Silken_Reset_Cause_Resolve віддає його.
+  Logger_Boot(boot_from_standby, Silken_Reset_Cause_Decode(boot_rcc_csr, boot_fault_marker));
 #endif
 
   Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
