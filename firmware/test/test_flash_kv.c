@@ -4,7 +4,8 @@
  *
  * RAM-мок двох 2КБ-сторінок + fault-injection (program/erase «помирає»
  * після N операцій = power-cut). Доводить інваріанти I1-I3 (flash_kv.c):
- * атомарний елемент, FINI-останнім, стара сторінка живе до FINI нової.
+ * елемент в одному dw (порваний відкидається), FINI-останнім, стара сторінка
+ * живе до FINI нової.
  *
  * Build: make -C firmware/test flash_kv
  */
@@ -256,8 +257,8 @@ TEST(test_powercut_after_fini_before_erase) {
 TEST(test_torn_record_skipped_scan_continues) {
     fresh_mount();
     ASSERT_TRUE(FlashKv_Put32(&kv, 0x11, 1u));
-    /* Сміття поза API (бітфліп/обірване програмування без ECC-атомарності
-     * у моку): валідний запис ПІСЛЯ сміття все одно читається */
+    /* Сміття поза API (бітфліп чи порваний dw з узгодженим ECC): валідний
+     * запис ПІСЛЯ сміття все одно читається */
     flash.mem[0][3] = 0x1234567890ABCDEFull;
     ASSERT_TRUE(FlashKv_Put32(&kv, 0x12, 2u)); /* піде у dw4? ні — кур'єр... */
     FlashKv kv2;
@@ -281,6 +282,42 @@ TEST(test_powercut_during_put_record_invisible) {
     uint32_t v = 0;
     ASSERT_TRUE(FlashKv_Get32(&kv2, 0x21, &v));
     ASSERT_EQ(v, 1u); /* попереднє покоління значення живе */
+}
+
+/* [FW.70 · ARCH.28] Скид посеред програмування лишає dw, що на WL читається з ECC double
+ * error і NMI; глю віддає його як 0 (common/flash_eccd.h). Нуль — ні запис, ні стерте. */
+TEST(test_unreadable_record_skipped_cursor_moves_past) {
+    fresh_mount();
+    ASSERT_TRUE(FlashKv_Put32(&kv, 0x11, 1u));
+    uint16_t torn = kv.write_idx;
+    flash.mem[0][torn] = 0;                    /* обірваний Put32 */
+    FlashKv kv2;
+    ASSERT_TRUE(FlashKv_Mount(&kv2, &mock_ops, &flash, MOCK_PAGE_DWS));
+    ASSERT_EQ(kv2.write_idx, torn + 1u);       /* курсор за нечитабельним, не на ньому */
+    uint32_t v = 0;
+    ASSERT_TRUE(FlashKv_Get32(&kv2, 0x11, &v));
+    ASSERT_EQ(v, 1u);
+    ASSERT_TRUE(FlashKv_Put32(&kv2, 0x12, 2u));
+    ASSERT_EQ(flash.mem[0][torn], 0u);         /* поверх нечитабельного не писано */
+    ASSERT_TRUE(FlashKv_Get32(&kv2, 0x12, &v));
+    ASSERT_EQ(v, 2u);
+}
+
+TEST(test_unreadable_compact_fini_page_not_authoritative) {
+    fresh_mount();
+    ASSERT_TRUE(FlashKv_Put32(&kv, 0x11, 7u));
+    flash.die_after_programs = 2;              /* компакт: заголовок і запис, FINI — ні */
+    ASSERT_FALSE(FlashKv_Compact(&kv));
+    flash.die_after_programs = -1;
+    flash.mem[1][1] = 0;                       /* FINI обірвано посеред програмування */
+    int e1 = flash.erase_count[1];
+    FlashKv kv2;
+    ASSERT_TRUE(FlashKv_Mount(&kv2, &mock_ops, &flash, MOCK_PAGE_DWS));
+    ASSERT_EQ(kv2.active, 0);
+    ASSERT_EQ(flash.erase_count[1], e1 + 1);   /* недобудову з нечитабельним FINI прибрано */
+    uint32_t v = 0;
+    ASSERT_TRUE(FlashKv_Get32(&kv2, 0x11, &v));
+    ASSERT_EQ(v, 7u);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -423,8 +460,8 @@ TEST(test_fw2_hiwater_survives_remount_and_compact) {
  * 7. [FW.20-S2 4/5] Журнал поколінь маяка (beacon_dedup.h, ключ 0x20)
  *
  * Anti-storm повного mesh-relay: ≤1 ретрансляція на покоління (unix_ts/900)
- * на Провідника. Один атомарний dw [gen:24|window:8] — порваної пари
- * gen↔window не існує конструкцією. Тут — persistence-банк; relay-сценарії
+ * на Провідника. Один dw [gen:24|window:8] — пара gen↔window не розходиться
+ * між двома записами конструкцією. Тут — persistence-банк; relay-сценарії
  * (auth=0 / пінг-понг / DUPLICATE) — test_soldier_logic.c.
  * ════════════════════════════════════════════════════════════════════ */
 #include "../common/beacon_dedup.h"
@@ -697,6 +734,8 @@ int main(void)
     RUN(test_powercut_after_fini_before_erase);
     RUN(test_torn_record_skipped_scan_continues);
     RUN(test_powercut_during_put_record_invisible);
+    RUN(test_unreadable_record_skipped_cursor_moves_past);
+    RUN(test_unreadable_compact_fini_page_not_authoritative);
 
     printf("\n— Wear —\n");
     RUN(test_wear_one_erase_per_compact_per_page);

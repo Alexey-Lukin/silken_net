@@ -21,6 +21,9 @@
 // [FW.61] Шов базлайну модуляції у драйвер (потребує radio.h; pure-половина
 // профілю — ../common/lora_phy.h, її включає й cad_sniff.h без драйвера).
 #include "../common/lora_phy_apply.h"
+// [FW.70 · ARCH.28] NMI на ECC double error внутрішньої Flash + перевірене читання dw
+// (HAL-половина; визначає вектор NMI_Handler — тому лише тут, один раз).
+#include "../common/flash_eccd.h"
 // [HRNG-IV] Pure, host-testable CoAP-batch fallback-IV derivation (coap_fallback_iv)
 #include "coap_iv.h"
 // [FW.53] CRC16-CCITT One-Home — перевірка CoAP-OTA чанків від Rails
@@ -820,7 +823,7 @@ static RadioEvents_t radio_events;
 static uint64_t Queen_KvReadDw(void *io, uint32_t byte_off)
 {
     (void)io;
-    return *(const uint64_t *)(FLASH_KV_BASE_ADDR + byte_off);
+    return Silken_Flash_Read_Dw(FLASH_KV_BASE_ADDR + byte_off); // ECCD → 0 (flash_eccd.h)
 }
 
 static int Queen_KvProgramDw(void *io, uint32_t byte_off, uint64_t v)
@@ -890,7 +893,7 @@ static int Queen_OtaSha_Hal_Program(void *io, uint32_t byte_off, uint64_t v)
 static uint64_t Queen_OtaSha_Hal_Read(void *io, uint32_t byte_off)
 {
     (void)io;
-    return *(const volatile uint64_t *)(QUEEN_OTA_SHA_BASE_ADDR + byte_off);
+    return Silken_Flash_Read_Dw(QUEEN_OTA_SHA_BASE_ADDR + byte_off); // ECCD → 0: магія 0 → fail-closed (flash_eccd.h)
 }
 
 static const FlashKvOps queen_ota_sha_ops = {

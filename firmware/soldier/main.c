@@ -68,6 +68,9 @@ _Static_assert(ADC_TS_CAL1_TEMP_C == TEMPSENSOR_CAL1_TEMP && ADC_TS_CAL2_TEMP_C 
 // [FW.61] Шов базлайну модуляції у драйвер (потребує radio.h — тому тут,
 // а не поруч із pure-заголовками вище; сам lora_phy.h лишається pure).
 #include "../common/lora_phy_apply.h"
+// [FW.70 · ARCH.28] NMI на ECC double error внутрішньої Flash + перевірене читання dw
+// (HAL-половина; визначає вектор NMI_Handler — тому лише тут, один раз).
+#include "../common/flash_eccd.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -622,7 +625,7 @@ static BeaconDedup beacon_dedup; // RAM-кеш журналу; істина — 
 static uint64_t Soldier_KvReadDw(void *io, uint32_t byte_off)
 {
     (void)io;
-    return *(const uint64_t *)(FLASH_KV_BASE_ADDR + byte_off);
+    return Silken_Flash_Read_Dw(FLASH_KV_BASE_ADDR + byte_off); // ECCD → 0 (flash_eccd.h)
 }
 
 static int Soldier_KvProgramDw(void *io, uint32_t byte_off, uint64_t v)
@@ -1355,7 +1358,7 @@ static int Ota_Hal_Program(void *io, uint32_t byte_off, uint64_t v)
 static uint64_t Ota_Hal_Read(void *io, uint32_t byte_off)
 {
     (void)io;
-    return *(const volatile uint64_t *)(MRUBY_CONTRACT_FLASH_ADDR + byte_off);
+    return Silken_Flash_Read_Dw(MRUBY_CONTRACT_FLASH_ADDR + byte_off); // ECCD → 0 (flash_eccd.h)
 }
 
 static const FlashKvOps g_ota_flash_ops = { Ota_Hal_Read, Ota_Hal_Program, Ota_Hal_Erase };
@@ -1406,7 +1409,7 @@ _Static_assert(LOGGER_JOURNAL_BASE_ADDR == 0x08034000UL,
 static uint64_t Logger_ReadDw(void *io, uint32_t byte_off)
 {
     (void)io;
-    return *(const volatile uint64_t *)(LOGGER_JOURNAL_BASE_ADDR + byte_off);
+    return Silken_Flash_Read_Dw(LOGGER_JOURNAL_BASE_ADDR + byte_off); // ECCD → 0 = «#X» у дампі (flash_eccd.h)
 }
 
 static int Logger_ProgramDw(void *io, uint32_t byte_off, uint64_t v)
@@ -1554,8 +1557,10 @@ static uint8_t soldier_reset_cause = SILKEN_RESET_UNKNOWN;
 
 // Справжній HardFault замість вендорного Default_Handler: той крутить вічний цикл, і через
 // ≈ 32 с вузол кусав пес — тобто HardFault читався б як IWDG, «завис головний цикл», а це вже
-// підміна причини, не її відсутність. (MemManage під SEC21_MPU_ENABLED і NMI досі падають у
-// Default_Handler — тіло MemManage є board-freeze-рішенням SEC.21, не цього зрізу.) Тіло мінімальне: стек у fault-контексті може бути
+// підміна причини, не її відсутність. (MemManage під SEC21_MPU_ENABLED досі падає в
+// Default_Handler — тіло MemManage є board-freeze-рішенням SEC.21, не цього зрізу; NMI має власний
+// обробник у common/flash_eccd.h: ECC double error Flash — повернення, решта джерел — та сама
+// петля до пса.) Тіло мінімальне: стек у fault-контексті може бути
 // зіпсований, тож один запис у RAM і скид.
 __attribute__((noreturn)) void HardFault_Handler(void)
 {
@@ -1960,8 +1965,10 @@ int main(void)
   Lora_Phy_Apply_Rx(LORA_PHY_RX_CONTINUOUS_SOLDIER);
 
   // 5. Вибір контракту: Перевіряємо, чи є в Flash-пам'яті оновлений код
-  const uint32_t* flash_check = (const uint32_t*)MRUBY_CONTRACT_FLASH_ADDR;
-  if (*flash_check == 0x45544952) { // "RITE" у little-endian (ознака mruby байткоду)
+  // Магію читає перевірене читання (flash_eccd.h): нечитабельний dw0 — 0, тобто вбудований контракт.
+  const int contract_rite =
+      (uint32_t)Silken_Flash_Read_Dw(MRUBY_CONTRACT_FLASH_ADDR) == 0x45544952u; // "RITE" у little-endian (ознака mruby байткоду)
+  if (contract_rite) {
       current_contract_bytecode = (uint8_t*)MRUBY_CONTRACT_FLASH_ADDR;
   } else {
       current_contract_bytecode = (uint8_t*)SOLDIER_EMBEDDED_CONTRACT;
@@ -1973,7 +1980,7 @@ int main(void)
   fw_contract_report = Fw_Report_Compose(
       soldier_kv_mounted,
       soldier_kv_mounted ? Ota_Version_Load(&soldier_kv) : 0u,
-      *flash_check == 0x45544952u,
+      contract_rite,
       FIRMWARE_VERSION_ID);
 
   // =========================================================================

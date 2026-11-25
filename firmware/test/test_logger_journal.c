@@ -309,6 +309,58 @@ TEST(test_mount_skips_hole_left_by_failed_program)
     ASSERT_EQ(D.t[0], T0 + 2 * CAD_S); ASSERT_EQ(D.r[1], 4);
 }
 
+/* [FW.70] Скид посеред програмування лишає dw, що на WL читається з ECC double error і NMI;
+ * глю віддає його як LOGJ_UNREADABLE_DW (common/flash_eccd.h). Двійник дірки від відмови. */
+TEST(test_unreadable_dw_is_corrupt_in_dump_and_never_reprogrammed)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1);
+    for (int i = 0; i < 4; i++) LogJ_Record(&j, T0 + (uint32_t)i * CAD_S, (uint16_t)i, 0);
+    M.mem[0][j.widx] = LOGJ_UNREADABLE_DW;                    /* скид посеред наступної пари */
+    LogJ k;
+    ASSERT_EQ(LogJ_Mount(&k, &OPS, NULL, PG_DWS, 4, CAD), 1);
+    ASSERT_EQ(k.widx, j.widx + 1);                            /* за нечитабельним, не на ньому */
+    uint32_t t = T0 + 6u * CAD_S;
+    LogJ_Arm_Boot(&k, 4, 1);
+    LogJ_Record(&k, t, 100, 0);
+    LogJ_Record(&k, t + CAD_S, 101, 0);
+    ASSERT_EQ(M.reprogram_errors, 0);
+    dump(&k);
+    ASSERT_EQ(D.corrupt, 1);
+    ASSERT_EQ(D.n, 4 + 2);
+    ASSERT_EQ(D.r[3], 3); ASSERT_EQ(D.t[4], t); ASSERT_EQ(D.r[5], 101);
+    LogJIter it; LogJRec r; char line[LOGJ_FORMAT_CAP];
+    LogJ_Iter_Begin(&it, &k);
+    while (LogJ_Iter_Next(&it, &r) && r.kind != LOGJ_REC_CORRUPT) { }
+    ASSERT_EQ(r.kind, LOGJ_REC_CORRUPT);
+    ASSERT_TRUE(LogJ_Format(line, sizeof line, &r) > 0);
+    ASSERT_STR(line, "#X,0000000000000000\n");
+}
+
+/* Сторінку стерто під відкриття, а скид обірвав програмування її заголовка: такий заголовок
+ * не стає сторінкою, а наступне відкриття стирає її знову, не пише поверх. Поточна сторінка —
+ * на межі seq (0xFFFF): справжній наступний заголовок мав би seq 0, тобто стоїть там само, де
+ * нуль від глю, і лише тут журнал, що прийняв би 0 за заголовок, взяв би рядок за найновішу. */
+TEST(test_unreadable_page_header_is_not_mounted_and_is_erased_before_reuse)
+{
+    mock_init();
+    M.mem[0][0] = LogJ_Pack_Anchor(LOGJ_TYPE_PAGE, LOGJ_FLAG_TIME_VALID, CAD, 0xFFFFu, T0);
+    LogJ j;
+    ASSERT_EQ(LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD), 1);
+    for (uint32_t i = 0; j.widx < PG_DWS; i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    M.mem[1][0] = LOGJ_UNREADABLE_DW;
+    LogJ k;
+    ASSERT_EQ(LogJ_Mount(&k, &OPS, NULL, PG_DWS, 4, CAD), 1);
+    ASSERT_EQ(k.cur, 0); ASSERT_EQ(k.seq, 0xFFFF); ASSERT_EQ(k.widx, PG_DWS);
+    int e1 = M.erases[1];
+    ASSERT_TRUE(LogJ_Anchor(&k, T0 + 600u * CAD_S, 1, LOGJ_REASON_BOOT, 4));
+    ASSERT_EQ(M.erases[1], e1 + 1);
+    ASSERT_EQ(LogJ_Type(M.mem[1][0]), LOGJ_TYPE_PAGE);
+    ASSERT_EQ((uint16_t)(M.mem[1][0] >> 32), 0);              /* 0xFFFF + 1 */
+    ASSERT_EQ(M.reprogram_errors, 0);
+}
+
 TEST(test_erase_failure_moves_to_next_page)
 {
     mock_init();
@@ -964,6 +1016,8 @@ int main(void)
     RUN(test_mount_after_reset_resumes_mid_page);
     RUN(test_mount_recovers_last_slot_so_replay_is_a_gap);
     RUN(test_mount_skips_hole_left_by_failed_program);
+    RUN(test_unreadable_dw_is_corrupt_in_dump_and_never_reprogrammed);
+    RUN(test_unreadable_page_header_is_not_mounted_and_is_erased_before_reuse);
     RUN(test_erase_failure_moves_to_next_page);
     RUN(test_time_set_anchor_marks_validity);
     RUN(test_format_lines);

@@ -172,6 +172,20 @@ TEST(test_powercut_midbody_no_magic) {
     ASSERT_FALSE(Ota_Sha_Verify(&sha_ops, &flash, kBytecodeA, sizeof kBytecodeA));
 }
 
+/* [FW.70] Обірваний dw на WL може дати ECC double error — перевірене читання глю віддає
+ * його як 0 (common/flash_eccd.h). Нечитабельний dw запису — fail-closed, не «збіглося»:
+ * dw0 тримають і магія, і перші байти хеша; dw тіла при цілій магії — лише хеш. */
+TEST(test_unreadable_dw_fails_closed) {
+    mock_init(&flash);
+    ASSERT_TRUE(Ota_Sha_Persist(&sha_ops, &flash, kBytecodeA, sizeof kBytecodeA));
+    flash.mem[2] = 0;
+    ASSERT_FALSE(Ota_Sha_Verify(&sha_ops, &flash, kBytecodeA, sizeof kBytecodeA));
+    mock_init(&flash);
+    ASSERT_TRUE(Ota_Sha_Persist(&sha_ops, &flash, kBytecodeA, sizeof kBytecodeA));
+    flash.mem[0] = 0;
+    ASSERT_FALSE(Ota_Sha_Verify(&sha_ops, &flash, kBytecodeA, sizeof kBytecodeA));
+}
+
 TEST(test_powercut_first_program_no_magic) {
     mock_init(&flash);
     flash.die_after_programs = 0;               /* перший program (dw1) падає */
@@ -215,6 +229,7 @@ int main(void) {
     printf("\n— Power-cut (magic-LAST safety) —\n");
     RUN(test_magic_written_last);
     RUN(test_powercut_midbody_no_magic);
+    RUN(test_unreadable_dw_fails_closed);
     RUN(test_powercut_first_program_no_magic);
     RUN(test_erase_failure_aborts);
     printf("\n— Валідація входу —\n");

@@ -10,10 +10,11 @@
  * був порожнім hal_mock-стабом).
  *
  * Power-cut safety: magic-doubleword (несе "RITE" у `data[0..3]`) програмиться
- * ОСТАННІМ. Перерваний запис → dw[0] лишається стертим (0xFF…) → boot не бачить
- * RITE → fallback на вбудований контракт ери (`ccm_bytecode` · `lorenz_bytecode`, FW.66 S4) (безпечно). Запис, що дійшов до
- * magic → повний (безпечно). Як у flash_kv: dw-програмування атомарне щодо ECC,
- * тож «порваного» dw не існує — або записаний, або стертий 0xFF.
+ * ОСТАННІМ. Перерваний запис лишає dw[0] стертим, порваним чи нечитабельним
+ * (ECC double error → NMI, common/flash_eccd.h) → повного RITE boot не бачить →
+ * fallback на вбудований контракт ери (`ccm_bytecode` · `lorenz_bytecode`, FW.66 S4)
+ * (безпечно). Повний magic стоїть лише над цілим тілом — тобто запис, що дійшов
+ * до magic, повний (безпечно).
  *
  * One-Home: firmware і host-тести компілюють цей самий код; залізні примітиви
  * ізольовано у `FlashKvOps` (host = RAM + fault-injection, MCU = HAL_FLASH при

@@ -12,7 +12,8 @@ int Flash_Write_Contract(const FlashKvOps *ops, void *io, const uint8_t *data, u
     uint16_t n_dw = (uint16_t)((size + 7u) / 8u);  /* округлення вгору до doubleword */
 
     /* Тіло (dw[1..n-1]) — ПЕРШИМ; magic-dw (dw[0], несе RITE) — ОСТАННІМ.
-     * Перерваний тут запис лишає dw[0]=0xFF → boot не бачить magic → fallback. */
+     * Перерваний тут запис лишає dw[0] стертим, порваним чи нечитабельним →
+     * повного magic boot не бачить → fallback (порваний dw — flash_eccd.h). */
     for (uint16_t i = 1u; i < n_dw; i++) {
         uint64_t dw  = 0xFFFFFFFFFFFFFFFFull;        /* нероздані хвостові байти = 0xFF */
         uint32_t off = (uint32_t)i * 8u;
