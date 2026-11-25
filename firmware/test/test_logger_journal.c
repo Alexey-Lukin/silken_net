@@ -5,6 +5,8 @@
  * RAM-мок N сторінок × 256 dw + fault-injection program/erase. Доводить: стерте ⊥
  * валідне; пара в одному dw; явний слот (пропуск не зсуває міток); розриви → якір;
  * кільце губить НАЙСТАРІШЕ; монтування після скиду; 180 діб на 18 сторінках без втрат;
+ * заголовок сторінки з CRC-8 — напівстерта сторінка не монтується й не йде в дамп, брудна після
+ * стирання — мертва, серія мертвих стирань не обертає 8-бітний seq;
  * якір BOOT лягає перед першим записом старту, і петля скидів без запису Flash не торкається;
  * консоль (logger_console.h): виставлення часу судить перечитування, дамп = стан + записи.
  *
@@ -55,6 +57,8 @@ typedef struct {
     int      fail_program_at;   /* -1 = ніколи; інакше відмова, починаючи з цього номера програмування */
     int      fail_program_n;    /* скільки програмувань поспіль відмовляють (за замовчуванням 1) */
     int      fail_erase_page;   /* -1 = ніколи */
+    uint32_t fail_erase_mask;   /* біт p = відмовляє стирання сторінки p */
+    int      dirty_erase_page;  /* -1 = ніколи; інакше стирання «вдається», але лишає нестертий dw */
     int      reprogram_errors;  /* спроби програмувати НЕстертий dw (на WL — PROGERR) */
 } Mock;
 
@@ -65,6 +69,7 @@ static void mock_init(void)
     memset(M.mem, 0xFF, sizeof M.mem);
     memset(M.erases, 0, sizeof M.erases);
     M.programs = 0; M.fail_program_at = -1; M.fail_program_n = 1; M.fail_erase_page = -1; M.reprogram_errors = 0;
+    M.fail_erase_mask = 0; M.dirty_erase_page = -1;
 }
 static uint64_t m_read(void *io, uint32_t off)
 {
@@ -85,8 +90,9 @@ static int m_program(void *io, uint32_t off, uint64_t v)
 static int m_erase(void *io, uint8_t page)
 {
     (void)io;
-    if ((int)page == M.fail_erase_page) return 0;
+    if (((M.fail_erase_mask >> page) & 1u) || (int)page == M.fail_erase_page) return 0;
     memset(M.mem[page], 0xFF, sizeof M.mem[page]);
+    if ((int)page == M.dirty_erase_page) M.mem[page][PG_DWS / 2u] = 0xFFFFFFFF7FFFFFFFull; /* один біт не підвівся */
     M.erases[page]++;
     return 1;
 }
@@ -151,7 +157,8 @@ TEST(test_fresh_mount_is_empty_and_first_anchor_opens_page0)
     dump(&j); ASSERT_EQ(D.n + D.anchors, 0);
     ASSERT_TRUE(LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1));
     ASSERT_EQ(LogJ_Type(M.mem[0][0]), LOGJ_TYPE_PAGE);
-    ASSERT_EQ((uint16_t)(M.mem[0][0] >> 32), 0);              /* seq 0 */
+    ASSERT_TRUE(logj_page_ok(M.mem[0][0]));
+    ASSERT_EQ(logj_page_seq(M.mem[0][0]), 0);                 /* seq 0 */
     ASSERT_EQ(LogJ_Type(M.mem[0][1]), LOGJ_TYPE_RESUME);
     ASSERT_EQ((uint16_t)(M.mem[0][1] >> 32), (LOGJ_REASON_BOOT << 8) | 1);
     ASSERT_EQ((uint32_t)M.mem[0][1], T0);
@@ -229,7 +236,7 @@ TEST(test_page_rotation_keeps_time_continuous)
     int n = (int)(PG_DWS - 2u) * 2 + 6;                       /* переповнити сторінку 0 */
     for (int i = 0; i < n; i++) LogJ_Record(&j, T0 + (uint32_t)i * CAD_S, (uint16_t)i, 0);
     ASSERT_EQ(LogJ_Type(M.mem[1][0]), LOGJ_TYPE_PAGE);
-    ASSERT_EQ((uint16_t)(M.mem[1][0] >> 32), 1);              /* seq 1 */
+    ASSERT_EQ(logj_page_seq(M.mem[1][0]), 1);                 /* seq 1 */
     dump(&j);
     ASSERT_EQ(D.n, n);
     for (int i = 0; i < n; i++) { ASSERT_EQ(D.t[i], T0 + (uint32_t)i * CAD_S); ASSERT_EQ(D.r[i], i); }
@@ -340,24 +347,24 @@ TEST(test_unreadable_dw_is_corrupt_in_dump_and_never_reprogrammed)
 
 /* Сторінку стерто під відкриття, а скид обірвав програмування її заголовка: такий заголовок
  * не стає сторінкою, а наступне відкриття стирає її знову, не пише поверх. Поточна сторінка —
- * на межі seq (0xFFFF): справжній наступний заголовок мав би seq 0, тобто стоїть там само, де
+ * на межі seq (0xFF): справжній наступний заголовок мав би seq 0, тобто стоїть там само, де
  * нуль від глю, і лише тут журнал, що прийняв би 0 за заголовок, взяв би рядок за найновішу. */
 TEST(test_unreadable_page_header_is_not_mounted_and_is_erased_before_reuse)
 {
     mock_init();
-    M.mem[0][0] = LogJ_Pack_Anchor(LOGJ_TYPE_PAGE, LOGJ_FLAG_TIME_VALID, CAD, 0xFFFFu, T0);
+    M.mem[0][0] = LogJ_Pack_Page(LOGJ_FLAG_TIME_VALID, CAD, 0xFFu, T0);
     LogJ j;
     ASSERT_EQ(LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD), 1);
     for (uint32_t i = 0; j.widx < PG_DWS; i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
     M.mem[1][0] = LOGJ_UNREADABLE_DW;
     LogJ k;
     ASSERT_EQ(LogJ_Mount(&k, &OPS, NULL, PG_DWS, 4, CAD), 1);
-    ASSERT_EQ(k.cur, 0); ASSERT_EQ(k.seq, 0xFFFF); ASSERT_EQ(k.widx, PG_DWS);
+    ASSERT_EQ(k.cur, 0); ASSERT_EQ(k.seq, 0xFF); ASSERT_EQ(k.widx, PG_DWS);
     int e1 = M.erases[1];
     ASSERT_TRUE(LogJ_Anchor(&k, T0 + 600u * CAD_S, 1, LOGJ_REASON_BOOT, 4));
     ASSERT_EQ(M.erases[1], e1 + 1);
     ASSERT_EQ(LogJ_Type(M.mem[1][0]), LOGJ_TYPE_PAGE);
-    ASSERT_EQ((uint16_t)(M.mem[1][0] >> 32), 0);              /* 0xFFFF + 1 */
+    ASSERT_EQ(logj_page_seq(M.mem[1][0]), 0);                 /* 0xFF + 1 */
     ASSERT_EQ(M.reprogram_errors, 0);
 }
 
@@ -369,7 +376,7 @@ TEST(test_erase_failure_moves_to_next_page)
     ASSERT_TRUE(LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1)); /* мертва сторінка 0 — друга спроба */
     ASSERT_EQ(j.write_fail, 1);
     ASSERT_EQ(LogJ_Type(M.mem[1][0]), LOGJ_TYPE_PAGE);
-    ASSERT_EQ((uint16_t)(M.mem[1][0] >> 32), 1);              /* seq зрушив і на відмові */
+    ASSERT_EQ(logj_page_seq(M.mem[1][0]), 1);                 /* seq зрушив і на відмові */
     LogJ_Record(&j, T0 + CAD_S, 9, 0);
     LogJ_Record(&j, T0 + 2 * CAD_S, 10, 0);
     dump(&j);
@@ -599,12 +606,12 @@ TEST(test_mount_picks_newest_across_seq_wrap)
 {
     mock_init();
     LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
-    j.seq = 0xFFFCu;                                          /* наступне відкриття — seq 0xFFFD */
+    j.seq = 0xFCu;                                            /* наступне відкриття — seq 0xFD */
     LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1);
-    int n = (int)(PG_DWS - 1u) * 2 * 4;                       /* FFFE · FFFF · 0000 і знову стор. 0 = 0001 */
+    int n = (int)(PG_DWS - 1u) * 2 * 4;                       /* FE · FF · 00 і знову стор. 0 = 01 */
     for (int i = 0; i < n; i++) LogJ_Record(&j, T0 + (uint32_t)i * CAD_S, (uint16_t)i, 0);
-    ASSERT_EQ((uint16_t)(M.mem[3][0] >> 32), 0x0000);
-    ASSERT_EQ((uint16_t)(M.mem[0][0] >> 32), 0x0001);
+    ASSERT_EQ(logj_page_seq(M.mem[3][0]), 0x00);
+    ASSERT_EQ(logj_page_seq(M.mem[0][0]), 0x01);
     LogJ k;
     ASSERT_EQ(LogJ_Mount(&k, &OPS, NULL, PG_DWS, 4, CAD), 1);
     ASSERT_EQ(k.cur, 0); ASSERT_EQ(k.seq, 1);                 /* найновіша — НИЖЧА за номером */
@@ -612,6 +619,238 @@ TEST(test_mount_picks_newest_across_seq_wrap)
     for (int q = 1; q < D.n; q++) ASSERT_EQ(D.t[q], D.t[q - 1] + CAD_S);
     ASSERT_EQ(D.r[0], (int)(PG_DWS - 2u) * 2);                /* найстаріша вціліла — сторінка 1 */
     ASSERT_EQ(D.r[D.n - 1], n - 1);
+}
+
+/* Заголовок сторінки несе CRC-8: будь-яка зміна 1–3 біт — уже не заголовок (повний перебір,
+ * 4 × 43 744 варіанти). Золоте значення пінить кодування на Flash: журнал, записаний пілотом,
+ * мусить читатися наступною прошивкою. */
+TEST(test_page_header_crc_catches_every_1_to_3_bit_change)
+{
+    ASSERT_EQ(LogJ_Pack_Page(1u, 30u, 0x5Au, 1764000000u), 0x311E5A2969248100ll);
+    const uint64_t hs[4] = { LogJ_Pack_Page(1u, 30u, 0x5Au, 1764000000u),
+                             LogJ_Pack_Page(0u, 255u, 0xFFu, UINT32_MAX),
+                             LogJ_Pack_Page(0u, 0u, 0u, 0u),
+                             LogJ_Pack_Page(1u, 30u, 0u, 946684877u) };
+    for (int h = 0; h < 4; h++) {
+        ASSERT_TRUE(logj_page_ok(hs[h]));
+        for (int a = 0; a < 64; a++) {
+            uint64_t ea = 1ull << a;
+            ASSERT_TRUE(!logj_page_ok(hs[h] ^ ea));
+            for (int b = a + 1; b < 64; b++) {
+                uint64_t eb = ea | (1ull << b);
+                ASSERT_TRUE(!logj_page_ok(hs[h] ^ eb));
+                for (int c = b + 1; c < 64; c++) ASSERT_TRUE(!logj_page_ok(hs[h] ^ eb ^ (1ull << c)));
+            }
+        }
+    }
+    ASSERT_TRUE(!logj_page_ok(UINT64_MAX));                   /* стерте й нечитабельне — контракт */
+    ASSERT_TRUE(!logj_page_ok(LOGJ_UNREADABLE_DW));           /* валідатора; тут судить нібл типу */
+}
+
+/* Голова — сторінка 0 (seq 4), повна; наступне відкриття стирає найстарішу — сторінку 1 (seq 1),
+ * і живлення зникає посеред стирання. Дві форми напівстертого заголовка, обидві на моделі
+ * «стирання лише піднімає біти»: seq поповз у 5 = «найновіший + 1» — ланцюг seq не відрізнив би
+ * його від щойно відкритої сторінки — і в 3, seq живої сторінки 3, яку дамп тоді підмінив би
+ * сміттям. Монтування бере справжню голову, дамп сміття не несе, наступне відкриття стирає
+ * сторінку 1 знову. */
+TEST(test_torn_erase_header_is_not_a_page)
+{
+    static const uint64_t creep[2]  = { 0x04ull << 40, 0x02ull << 40 };
+    static const uint8_t  claims[2] = { 5u, 3u };
+    for (int v = 0; v < 2; v++) {
+        mock_init();
+        LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+        LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1);
+        uint32_t i = 0;
+        for (; i < 100000u && !(j.open && j.cur == 0 && j.seq == 4 && j.widx == PG_DWS); i++)
+            LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+        ASSERT_EQ(j.cur, 0); ASSERT_EQ(j.widx, PG_DWS);
+        uint64_t old = M.mem[1][0];
+        ASSERT_TRUE(logj_page_ok(old)); ASSERT_EQ(logj_page_seq(old), 1);
+        uint64_t torn = old | creep[v] | 0x00F00F00ull;           /* і секунди піднялись */
+        ASSERT_EQ(LogJ_Type(torn), LOGJ_TYPE_PAGE);
+        ASSERT_EQ(logj_page_seq(torn), claims[v]);
+        ASSERT_TRUE(!logj_page_ok(torn));
+        M.mem[1][0] = torn;
+        for (uint16_t d = 1; d < PG_DWS; d++)                     /* тіло — частково стерте */
+            M.mem[1][d] = (d % 3u == 0u) ? UINT64_MAX : (M.mem[1][d] | 0x0F0000F000F0000Full);
+
+        LogJ k;
+        ASSERT_EQ(LogJ_Mount(&k, &OPS, NULL, PG_DWS, 4, CAD), 1);
+        ASSERT_EQ(k.cur, 0); ASSERT_EQ(k.seq, 4); ASSERT_EQ(k.widx, PG_DWS);
+        dump(&k);
+        ASSERT_EQ(D.corrupt, 0);                                  /* сміття сторінки 1 у дамп не йде */
+        ASSERT_EQ(D.n, (int)(PG_DWS - 1u) * 2 * 3);               /* сторінки 2 · 3 · 0, кожна повна */
+        ASSERT_EQ(D.r[D.n - 1], (int)(i - 1u));
+        for (int q = 1; q < D.n; q++) ASSERT_EQ(D.t[q], D.t[q - 1] + CAD_S);
+
+        LogJ_Arm_Boot(&k, 4, 1);
+        LogJ_Record(&k, T0 + i * CAD_S, (uint16_t)i, 0); i++;
+        LogJ_Record(&k, T0 + i * CAD_S, (uint16_t)i, 0); i++;
+        ASSERT_TRUE(logj_page_ok(M.mem[1][0]));
+        ASSERT_EQ(logj_page_seq(M.mem[1][0]), 5);
+        ASSERT_EQ(M.reprogram_errors, 0);
+        dump(&k);
+        ASSERT_EQ(D.corrupt, 0);
+        ASSERT_EQ(D.r[D.n - 1], (int)(i - 1u));
+        for (int q = 1; q < D.n; q++) ASSERT_EQ(D.t[q], D.t[q - 1] + CAD_S);
+    }
+}
+
+/* Скид посеред програмування пари лишив DATA (нібл 0x1) недопрограмованим до ніблю заголовка
+ * 0x3. Без CRC монтування взяло б його за якір (секунди — показ виміру) і писало б якір розриву,
+ * а дамп датував би від нього все далі на сторінці; з CRC це «#X», а сітка тече далі. */
+TEST(test_torn_dw_with_page_nibble_is_corrupt_not_an_anchor)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1);
+    for (int i = 0; i < 4; i++) LogJ_Record(&j, T0 + (uint32_t)i * CAD_S, (uint16_t)i, 0);
+    uint64_t torn = LogJ_Pack_Data(2, 4, 0, 5, 0) | (0x2ull << 60);
+    ASSERT_EQ(LogJ_Type(torn), LOGJ_TYPE_PAGE);
+    ASSERT_TRUE(!logj_page_ok(torn));
+    M.mem[0][j.widx] = torn;
+    LogJ k;
+    ASSERT_EQ(LogJ_Mount(&k, &OPS, NULL, PG_DWS, 4, CAD), 1);
+    ASSERT_EQ(k.widx, j.widx + 1);
+    LogJ_Record(&k, T0 + 4u * CAD_S, 4, 0);                   /* та сама сітка, без якоря старту */
+    LogJ_Record(&k, T0 + 5u * CAD_S, 5, 0);
+    ASSERT_EQ(M.reprogram_errors, 0);
+    dump(&k);
+    ASSERT_EQ(D.corrupt, 1);
+    ASSERT_EQ(D.anchors, 2);                                  /* заголовок + BOOT; розриву немає */
+    ASSERT_EQ(D.n, 6);
+    for (int q = 1; q < D.n; q++) ASSERT_EQ(D.t[q], D.t[q - 1] + CAD_S);
+}
+
+/* Стирання повернуло успіх, а dw лишився нестертим (знос у петлі скидів): заголовок на таку
+ * сторінку не лягає — вона мертва, як за відмови стирання. */
+TEST(test_erase_that_leaves_a_dirty_dw_is_a_dead_page)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    M.dirty_erase_page = 0;
+    ASSERT_TRUE(LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1)); /* брудна сторінка 0 — друга спроба */
+    ASSERT_EQ(j.write_fail, 1);
+    ASSERT_EQ(M.mem[0][0], UINT64_MAX);                       /* заголовок на брудну не ліг */
+    ASSERT_TRUE(logj_page_ok(M.mem[1][0]));
+    ASSERT_EQ(logj_page_seq(M.mem[1][0]), 1);                 /* мертва сторінка зсунула seq */
+    LogJ_Record(&j, T0 + CAD_S, 9, 0);
+    LogJ_Record(&j, T0 + 2 * CAD_S, 10, 0);
+    ASSERT_EQ(M.reprogram_errors, 0);
+    dump(&j);
+    ASSERT_EQ(D.corrupt, 0); ASSERT_EQ(D.n, 2); ASSERT_EQ(D.r[1], 10);
+}
+
+/* Мертві всі сторінки, крім голови (0xFF — біля межі 8-бітного seq): без повернення розгортка
+ * дійшла б до самої голови, і щойно стирання там спрацює, кільце стерло б найновішу повну
+ * сторінку, а seq «голова + n» виніс би з вікна дампу неушкоджені сторінки. З поверненням голова
+ * не стирається ніколи, журнал стоїть на паузі, а щойно стирання відновиться — відкривається
+ * наступна за головою, і історія голови в дампі ціла. */
+TEST(test_dead_erase_streak_never_erases_the_head)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    j.seq = 0xFEu;                                            /* перше відкриття — seq 0xFF */
+    LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1);
+    uint32_t i = 0;
+    for (; j.widx < PG_DWS; i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    ASSERT_EQ(j.cur, 0); ASSERT_EQ(j.seq, 0xFF);
+    int e0 = M.erases[0];
+    M.fail_erase_mask = (1u << 1) | (1u << 2) | (1u << 3);   /* голова стирається, решта — ні */
+    int holding = 0;
+    for (int c = 0; c < 100; c++, i++) {
+        LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+        holding |= LogJ_Holding(&j);
+        ASSERT_EQ(M.erases[0], e0);                           /* голову не стерто */
+        ASSERT_TRUE((uint8_t)(j.seq - 0xFFu) <= 3u);          /* seq не відходить від голови далі n − 1 */
+    }
+    ASSERT_TRUE(holding);
+    ASSERT_TRUE(j.write_fail >= 3u);
+    for (int c = 0; c < 200 && !LogJ_Holding(&j); c++, i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    ASSERT_TRUE(LogJ_Holding(&j));
+    ASSERT_EQ(j.cur, 0); ASSERT_EQ(j.seq, 0xFF);              /* повернуто до голови */
+    M.fail_erase_mask = 0;                                    /* стирання відновилось */
+    for (int c = 0; c < 200 && !j.open; c++, i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    ASSERT_TRUE(j.open);
+    ASSERT_EQ(j.cur, 1); ASSERT_EQ(j.seq, 0x00);
+    ASSERT_EQ(M.erases[0], e0);
+    LogJ k;
+    ASSERT_EQ(LogJ_Mount(&k, &OPS, NULL, PG_DWS, 4, CAD), 1);
+    ASSERT_EQ(k.cur, 1); ASSERT_EQ(k.seq, 0x00);              /* найновіша — через межу 0xFF → 0x00 */
+    dump(&k);
+    ASSERT_EQ(D.r[0], 0);                                     /* історія голови в дампі ціла */
+    ASSERT_TRUE(D.n >= (int)(PG_DWS - 2u) * 2);
+}
+
+/* Серія мертвих стирань скидається вдалим відкриттям: інакше дві короткі серії в різні дні
+ * склались би в «мертві всі, крім голови», і журнал став би на паузу при живій наступній сторінці. */
+TEST(test_dead_run_resets_after_a_successful_open)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1);
+    uint32_t i = 0;
+    for (; j.widx < PG_DWS; i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    M.fail_erase_mask = (1u << 1) | (1u << 2);               /* перша серія: дві мертві */
+    for (int c = 0; c < 10 && !(j.open && j.cur == 3); c++, i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    ASSERT_TRUE(j.open); ASSERT_EQ(j.cur, 3); ASSERT_EQ(j.seq, 3);
+    M.fail_erase_mask = 0;
+    for (; j.widx < PG_DWS; i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    M.fail_erase_mask = 1u << 0;                              /* друга серія: одна мертва */
+    uint32_t c0 = i;
+    do { LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0); i++; } while (!(j.open && j.cur != 3) && i < c0 + 6u);
+    ASSERT_TRUE(j.open);
+    ASSERT_EQ(j.cur, 1);
+    ASSERT_TRUE(!LogJ_Holding(&j));
+}
+
+/* Провал заголовка посеред серії не скидає її: курсор і seq вертаються на попередню мертву
+ * сторінку разом із лічильником, тож повернення й далі знаходить саму голову. Якби провал
+ * заголовка обнуляв серію, розгортка дорахувала б лише дві мертві з трьох і стерла б голову. */
+TEST(test_header_failure_mid_streak_still_rewinds_to_the_head)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1);
+    uint32_t i = 0;
+    for (; j.widx < PG_DWS; i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    int e0 = M.erases[0];
+    M.fail_erase_mask = 1u << 1;                              /* сторінка 1 мертва */
+    M.fail_program_at = M.programs;                           /* заголовок сторінки 2 не ляже */
+    for (int c = 0; c < 6 && !LogJ_Holding(&j); c++, i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    ASSERT_TRUE(LogJ_Holding(&j));
+    ASSERT_EQ(j.cur, 1);                                      /* повернуто на мертву, не на голову */
+    M.fail_program_at = -1;
+    M.fail_erase_mask = (1u << 1) | (1u << 2) | (1u << 3);
+    int rewound = 0;
+    for (int c = 0; c < 300 && !rewound; c++, i++) {
+        LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+        ASSERT_EQ(M.erases[0], e0);                           /* голову не стерто */
+        rewound = (j.cur == 0 && LogJ_Holding(&j));
+    }
+    ASSERT_TRUE(rewound);
+    ASSERT_EQ(j.seq, 0);
+}
+
+/* Порожній журнал, мертві всі сторінки: голови немає, і повернення стає на сторінку n − 1 із
+ * seq 255; щойно стирання відновиться, перше відкриття — сторінка 0, seq 0. */
+TEST(test_empty_journal_streak_rewinds_and_opens_page_0)
+{
+    mock_init();
+    LogJ j; ASSERT_EQ(LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD), 0);
+    M.fail_erase_mask = 0xFu;
+    ASSERT_TRUE(!LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1));
+    uint32_t i = 1;
+    for (int c = 0; c < 200 && !LogJ_Holding(&j); c++, i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    ASSERT_TRUE(LogJ_Holding(&j));
+    ASSERT_EQ(j.cur, 3); ASSERT_EQ(j.seq, 255);
+    M.fail_erase_mask = 0;
+    for (int c = 0; c < 200 && !j.open; c++, i++) LogJ_Record(&j, T0 + i * CAD_S, (uint16_t)i, 0);
+    ASSERT_TRUE(j.open);
+    ASSERT_EQ(j.cur, 0); ASSERT_EQ(j.seq, 0);
+    ASSERT_TRUE(logj_page_ok(M.mem[0][0]));
+    ASSERT_EQ(M.reprogram_errors, 0);
 }
 
 TEST(test_mount_with_full_open_page_rotates_cleanly)
@@ -650,7 +889,7 @@ TEST(test_slots_use_anchor_cadence_not_config)
 TEST(test_corrupt_zero_cadence_anchor_does_not_divide)
 {
     mock_init();
-    M.mem[0][0] = LogJ_Pack_Anchor(LOGJ_TYPE_PAGE, 1, 0, 0, T0);
+    M.mem[0][0] = LogJ_Pack_Page(1, 0, 0, T0);
     M.mem[0][1] = LogJ_Pack_Data(1, 1, 0, 2, 0);
     LogJ j;
     ASSERT_EQ(LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD), 1);
@@ -664,6 +903,7 @@ TEST(test_corrupt_zero_cadence_anchor_does_not_divide)
 TEST(test_invalid_config_is_refused)
 {
     LogJ j;
+    ASSERT_EQ(LogJ_Mount(&j, &OPS, NULL, PG_DWS, LOGJ_PAGES_MAX + 1u, CAD), -1); /* 8-бітний seq */
     ASSERT_EQ(LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, 0), -1);
     ASSERT_EQ(LogJ_Record(&j, T0, 1, 0), 0);
     ASSERT_EQ(LogJ_Anchor(&j, T0, 1, LOGJ_REASON_BOOT, 1), 0);
@@ -898,7 +1138,7 @@ TEST(test_console_crlf_and_blank_lines_frame_one_command)
     LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
     console_init(T0, 1, 0);
     ASSERT_EQ(feed(&j, "S\r\n\r\n\nq\n"), 1);
-    ASSERT_STR(OUT, "#S,1764000000,1,1,0,65535,0,0,0\nOK,Q\n");
+    ASSERT_STR(OUT, "#S,1764000000,1,1,0,255,0,0,0\nOK,Q\n");
 }
 
 TEST(test_console_time_set_writes_boot_then_time_anchor)
@@ -971,7 +1211,7 @@ TEST(test_console_status_reports_the_pause_after_a_program_failure)
     ASSERT_TRUE(LogJ_Holding(&j));
     console_init(T0, 1, 0);
     feed(&j, "S\n");
-    ASSERT_STR(OUT, "#S,1764000000,1,1,0,65535,0,1,1\n");
+    ASSERT_STR(OUT, "#S,1764000000,1,1,0,255,0,1,1\n");
 }
 
 TEST(test_console_on_unmounted_journal_still_sets_the_clock)
@@ -1033,6 +1273,14 @@ int main(void)
     RUN(test_header_failure_on_last_attempt_leaves_page_closed);
     RUN(test_stale_page_after_erase_failure_is_not_dumped);
     RUN(test_mount_picks_newest_across_seq_wrap);
+    RUN(test_page_header_crc_catches_every_1_to_3_bit_change);
+    RUN(test_torn_erase_header_is_not_a_page);
+    RUN(test_torn_dw_with_page_nibble_is_corrupt_not_an_anchor);
+    RUN(test_erase_that_leaves_a_dirty_dw_is_a_dead_page);
+    RUN(test_dead_erase_streak_never_erases_the_head);
+    RUN(test_dead_run_resets_after_a_successful_open);
+    RUN(test_header_failure_mid_streak_still_rewinds_to_the_head);
+    RUN(test_empty_journal_streak_rewinds_and_opens_page_0);
     RUN(test_mount_with_full_open_page_rotates_cleanly);
     RUN(test_slots_use_anchor_cadence_not_config);
     RUN(test_corrupt_zero_cadence_anchor_does_not_divide);
