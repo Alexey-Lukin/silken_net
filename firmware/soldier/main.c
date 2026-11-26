@@ -1243,9 +1243,15 @@ static void MX_RTC_Init(void);
 static void MX_SUBGHZ_Init(void);
 static void MX_CRYP_Init(void); // Ініціалізація шифрування
 
-// [HW.32] Руки BME280 потрібні двом: CCM-кадру (байт vpd_index) і бенч-POST `BME280_SELFTEST`
-// (образи mini). Один вираз на всі сайти — декларації тут, init у main(), тіла в glue плати.
-#if FW2_CCM_ENABLED || defined(BME280_SELFTEST)
+// [HW.32] Руки BME280 потрібні трьом: CCM-кадру (байт vpd_index), бенч-POST `BME280_SELFTEST`
+// (образ-самотест mini) і логеру П3 (температура біля рами, FW.70) — логер вмикає їх сам, бо образ без
+// бенч-POST-ів (лік від тісноти Flash, 03_01 §12.4) інакше мовчки лишився б без температури.
+// Один вираз на всі сайти — декларації тут, init у main(), тіла в glue плати. Дефолт гейта логера
+// стоїть ТУТ, над виразом, що його читає: стань він нижче, увімкнений на місці логер зламав би збірку.
+#ifndef FW70_LOGGER_ENABLED
+#define FW70_LOGGER_ENABLED 0
+#endif
+#if FW2_CCM_ENABLED || defined(BME280_SELFTEST) || FW70_LOGGER_ENABLED
 #define BME280_GLUE_ENABLED 1
 #else
 #define BME280_GLUE_ENABLED 0
@@ -1376,14 +1382,15 @@ void Write_OTA_Contract_To_Flash(const uint8_t *data, uint16_t size)
 // ════════════════════════════════════════════════════════════════════════
 // Журнал і консоль — чисті заголовки (host-тест `make -C firmware/test logger_journal`); тут
 // лише руки: Flash-опси журналу, консоль на USART2 і крок старту в main(). Гейт вмикають
-// образи mini (firmware/CMakeLists.txt); плата вузла журналу не несе — там сторінки 104-121
-// можуть бути кодом. Цикл запису на період WUT — окрема нога FW.70.
-#ifndef FW70_LOGGER_ENABLED
-#define FW70_LOGGER_ENABLED 0
-#endif
+// образ логера mini і його гейтований близнюк (firmware/CMakeLists.txt); плата вузла журналу не несе — там сторінки 104-121
+// можуть бути кодом. Цикл запису на період WUT — окрема нога FW.70. Дефолт гейта — над виразом
+// гейта BME280 (вище), бо той його читає.
 #if FW70_LOGGER_ENABLED
 #include "../common/logger_journal.h"
 #include "../common/logger_console.h"
+#include "../common/pot_dendro.h"
+_Static_assert(POT_DENDRO_NONE == LOGJ_READING_NONE && POT_DENDRO_FULL < LOGJ_READING_CLOSED,
+               "[FW.70] показ датчика мусить лягати в шкалу журналу, не торкаючись сентинелів");
 // Розміщення (03_01 §2.3): 18 сторінок під Flash-KV — 104-121. Ту саму межу тримають лінкер-
 // карта mini (образ кінчається перед 0x08034000: LENGTH і ASSERT) і MPU-розкладка логера
 // (записувані рівно 104-127; діє, коли MPU увімкнено — SEC.21, сьогодні лише gated-близнюк) —
@@ -1454,11 +1461,66 @@ static void Logger_Con_Emit(void *io, const char *s, size_t n)
     HAL_IWDG_Refresh(&hiwdg);   // дамп кільця на 115200 — ≈ 20 с, а пес чекає ≈ 32 с
     (void)HAL_UART_Transmit(&huart_console, (const uint8_t *)s, (uint16_t)n, LOGGER_UART_TX_TIMEOUT_MS);
 }
+// Датчик дендрометра пілота (pot_dendro.h): пін збудження й два канали АЦП дає glue плати —
+// POT_EXC_* · POT_WIPER_ADC_CHANNEL · POT_EXC_ADC_CHANNEL, ДО #include цього файлу; init — MX_Pot_Init.
+static void MX_Pot_Init(void);
+
+// Сума n вибірок одного каналу: канал — на ранг 1 явно (як Soldier_Adc_Read нижче), АЦП лишається
+// ввімкненим між вибірками (повторний HAL_ADC_Start лише ставить ADSTART) і вимикається в кінці —
+// тож наступне читання циклу застає ту саму базову конфігурацію MX_ADC_Init (гоча firmware #1).
+static int Logger_Adc_Sum(uint32_t channel, uint16_t n, uint32_t *sum)
+{
+    ADC_ChannelConfTypeDef ch = {0};
+    ch.Channel      = channel;
+    ch.Rank         = ADC_REGULAR_RANK_1;
+    ch.SamplingTime = ADC_SAMPLINGTIME_COMMON_1;
+    if (HAL_ADC_ConfigChannel(&hadc, &ch) != HAL_OK) return 0;
+    uint32_t s = 0;
+    int ok = 1;
+    for (uint16_t i = 0; i < n && ok; i++) {
+        ok = HAL_ADC_Start(&hadc) == HAL_OK && HAL_ADC_PollForConversion(&hadc, 10) == HAL_OK;
+        if (ok) s += HAL_ADC_GetValue(&hadc);
+    }
+    HAL_ADC_Stop(&hadc);
+    if (ok) *sum = s;   /* на відмові — нічого: часткова сума виглядала б виміром (контракт PotDendroOps) */
+    return ok;
+}
+
+static void Pot_Hal_Power(void *io, int on)
+{
+    (void)io;
+    HAL_GPIO_WritePin(POT_EXC_GPIO_Port, POT_EXC_Pin, on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+static void Pot_Hal_Delay(void *io, uint32_t ms) { (void)io; HAL_Delay(ms); }
+static int Pot_Hal_Sum(void *io, uint8_t ch, uint16_t n, uint32_t *sum)
+{
+    (void)io;
+    return Logger_Adc_Sum(ch == POT_CH_WIPER ? POT_WIPER_ADC_CHANNEL : POT_EXC_ADC_CHANNEL, n, sum);
+}
+static const PotDendroOps logger_pot_ops = { Pot_Hal_Power, Pot_Hal_Delay, Pot_Hal_Sum };
+
+// Один вимір логера: датчик дендрометра й температура біля рами. Сьогодні його кличе лише консоль
+// (M — рядок для домашнього стенда, журналу не торкається); цикл на період WUT (нога 00_07 FW.70)
+// покладе reading і LogJ_Temp_From_Centi(t_centi) у LogJ_Record.
+static void Logger_Measure(void *io, LogCMeas *m)
+{
+    (void)io;
+    PotDendroReading pr;
+    PotDendro_Sense(&logger_pot_ops, NULL, &pr);
+    m->reading   = pr.reading;
+    m->rc        = (int16_t)pr.rc;
+    m->raw_exc   = pr.exc_sum;
+    m->raw_wiper = pr.wiper_sum;
+    Bme280_Reading br;
+    Bme280_Sense(&g_bme280_ops, &hi2c_sense, Bme280_Hal_Power, &br);
+    m->t_centi = (br.rc == BME280_OK) ? br.t_centi : LOGC_T_NONE;
+}
+
 // Запис календаря консоллю свідомо НЕ підʼєднано (set_time = NULL → T відповідає ERR): календар —
 // база delta_t, і крок годинника повз Silken_Beacon_Commit дав би вигаданий delta_t, а консоль
 // стоїть ще до відновлення бази з DR1 (гейт — tools/firmware/check_sec42_calendar.py). Як писати
 // його разом із базою — нога 00_07 FW.70 «виставлення часу консоллю».
-static const LogCOps logger_console_ops = { Logger_Con_Now, NULL, Logger_Con_Emit };
+static const LogCOps logger_console_ops = { Logger_Con_Now, NULL, Logger_Con_Emit, Logger_Measure };
 
 // Крок старту логера — ДО ключів: плата без конвеєра (сторінка ключа порожня) скидається в
 // Load_AES_Key, і крок після нього не настав би ніколи. Якір BOOT лише заряджається (ляже
@@ -1472,6 +1534,9 @@ static void Logger_Boot(uint8_t from_standby, uint8_t reset_cause)
     if (from_standby) return;
     LogJ_Arm_Boot(&logger_journal, reset_cause, Silken_Wall_Is_Utc(Wall_Seconds_Now()));
 
+    // M міряє у вікні — ще ДО калібрування АЦП циклу (воно стоїть після ключів), тож калібруємо тут;
+    // повторне калібрування циклу нешкідливе (HAL сам вимикає АЦП перед ним).
+    (void)HAL_ADCEx_Calibration_Start(&hadc);
     if (!MX_Console_Uart_Init()) { (void)HAL_UART_DeInit(&huart_console); return; }
     LogC_Status(&logger_journal, &logger_console_ops, NULL);   // банер: вікно відкрито
     LogCLine line = {0};
@@ -1673,6 +1738,9 @@ int main(void)
   MX_SUBGHZ_Init();
 #if BME280_GLUE_ENABLED
   MX_I2C_Sense_Init(); // [HW.32] шина BME280 і ключ його живлення — у нулі до першого заміру
+#endif
+#if FW70_LOGGER_ENABLED
+  MX_Pot_Init();       // [FW.70] ключ збудження датчика — у нулі, входи АЦП — аналогові
 #endif
 #if defined(BME280_SELFTEST)
   // [HW.32] POST — до завантаження ключів, як і POST CCM нижче: на порожній сторінці ключа

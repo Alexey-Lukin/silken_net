@@ -271,7 +271,7 @@ if(CMAKE_CROSSCOMPILING)
       ${WL_HAL_SRC}/stm32wlxx_hal_flash.c
       ${WL_HAL_SRC}/stm32wlxx_hal_flash_ex.c
       ${WL_HAL_SRC}/stm32wlxx_hal_dma.c
-      # I2C — шина BME280 (HW.32; лінкують образи, де істинний вираз BME280_GLUE_ENABLED у main.c); GPIO — ключ BME280 і піни консолі логера
+      # I2C — шина BME280 (HW.32; лінкують образи, де істинний вираз BME280_GLUE_ENABLED у main.c); GPIO — ключ BME280, піни консолі й датчика дендрометра логера
       ${WL_HAL_SRC}/stm32wlxx_hal_i2c.c
       ${WL_HAL_SRC}/stm32wlxx_hal_i2c_ex.c
       ${WL_HAL_SRC}/stm32wlxx_hal_gpio.c

@@ -34,9 +34,9 @@ MONOCYPHER_SRC = ../extern/monocypher/src
 MONOCYPHER_C   = $(MONOCYPHER_SRC)/monocypher.c $(MONOCYPHER_SRC)/optional/monocypher-ed25519.c
 MONOCYPHER_INC = -I$(MONOCYPHER_SRC) -I$(MONOCYPHER_SRC)/optional
 
-.PHONY: all queen soldier ota_seal bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota logger_journal ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
+.PHONY: all queen soldier ota_seal bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota logger_journal pot_dendro ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
 
-all: queen soldier ota_seal bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota logger_journal ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty standby_wake
+all: queen soldier ota_seal bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota logger_journal pot_dendro ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty standby_wake
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -118,6 +118,9 @@ flash_ota: $(BINDIR)/test_flash_ota
 # [FW.70] сторінковий журнал логера П3 (внутрішня Flash mini; pure, ops-шов)
 logger_journal: $(BINDIR)/test_logger_journal
 	@./$(BINDIR)/test_logger_journal
+
+pot_dendro: $(BINDIR)/test_pot_dendro
+	@./$(BINDIR)/test_pot_dendro
 
 ota_sha_guard: $(BINDIR)/test_ota_sha_guard
 	@./$(BINDIR)/test_ota_sha_guard
@@ -298,6 +301,9 @@ $(BINDIR)/test_voc_maxhold: test_voc_maxhold.c ../common/voc_maxhold.h ../common
 $(BINDIR)/test_logger_journal: test_logger_journal.c ../common/logger_journal.h ../common/logger_console.h ../common/wall_time.h
 	$(CC) $(CFLAGS) -o $@ test_logger_journal.c
 
+$(BINDIR)/test_pot_dendro: test_pot_dendro.c ../common/pot_dendro.h ../common/logger_journal.h
+	$(CC) $(CFLAGS) -o $@ test_pot_dendro.c
+
 $(BINDIR)/test_flash_ota: test_flash_ota.c ../common/flash_ota.c ../common/flash_ota.h ../common/flash_kv.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_ota.c ../common/flash_ota.c
 
@@ -401,7 +407,7 @@ clean:
 	      $(BINDIR)/test_queen_rx_route $(BINDIR)/test_helium_sos \
 	      $(BINDIR)/test_soft_timer $(BINDIR)/test_helium_mac_smoke \
 	      $(BINDIR)/test_at_engine $(BINDIR)/test_uart_rx_ring \
-	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota $(BINDIR)/test_logger_journal \
+	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota $(BINDIR)/test_logger_journal $(BINDIR)/test_pot_dendro \
 	      $(BINDIR)/test_ota_sha_guard $(BINDIR)/test_pull_mac \
 	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_soldier_cmd_queue \
 	      $(BINDIR)/test_bme280 $(BINDIR)/test_voc_maxhold $(BINDIR)/test_ds18b20 $(BINDIR)/test_audio_model \
