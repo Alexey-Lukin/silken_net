@@ -239,8 +239,7 @@ if(CMAKE_CROSSCOMPILING)
     # лінкують, тож посилання без дефініції (клас link-бомби ARCH.26) бачить лише цей
     # таргет. Рукописна плата hal_glue/boards/lora_e5/ (тіла MX_* і MSP, заглушка
     # радіо, newlib _sbrk) + вендорний startup і system + модулі WL-HAL, яких торкається
-    # цикл. Збірка — з CCM_SELFTEST і BME280_SELFTEST: перший зріз на кремнії — самотест
-    # CCM/sym і замір BME280 (RUNBOOK 2.1–2.2б). Межі зрізу (MSI без LSE, RTC на LSI, без WUT, радіо-заглушка) —
+    # цикл. Образів три — спільне в foreach нижче, різниця — набір дефайнів після нього. Межі зрізу (MSI без LSE, RTC на LSI, без WUT, радіо-заглушка) —
     # шапка soldier_lora_e5.c і docs/03_01 §12.4. ⚠️ Локально на darwin-тулчейні лінк
     # просить libssp (скіл firmware #7 (4)); CI-тулчейн її має.
     if(NOT DEFINED SILKEN_MRUBY_ARM_LIB)
@@ -272,18 +271,26 @@ if(CMAKE_CROSSCOMPILING)
       ${WL_HAL_SRC}/stm32wlxx_hal_flash.c
       ${WL_HAL_SRC}/stm32wlxx_hal_flash_ex.c
       ${WL_HAL_SRC}/stm32wlxx_hal_dma.c
-      # HW.32: BME280 у CCM-образі — шина I2C2 і ключ живлення (гейт; лінкує лише _gated)
+      # I2C — шина BME280 (HW.32; лінкують образи, де істинний вираз BME280_GLUE_ENABLED у main.c); GPIO — ключ BME280 і піни консолі логера
       ${WL_HAL_SRC}/stm32wlxx_hal_i2c.c
       ${WL_HAL_SRC}/stm32wlxx_hal_i2c_ex.c
       ${WL_HAL_SRC}/stm32wlxx_hal_gpio.c
-      # FW.70: консоль логера П3 — USART2 у вікні на старті (обидва образи mini)
+      # FW.70: консоль логера П3 — USART2 у вікні на старті (образ логера і його гейтований близнюк)
       ${WL_HAL_SRC}/stm32wlxx_hal_uart.c
       ${WL_HAL_SRC}/stm32wlxx_hal_uart_ex.c)
-    # Близнюк soldier_lora_e5_gated — той самий образ із набором SILKEN_GATED_DEFS: hal_check_ccm
-    # гейтовані гілки лише КОМПІЛЮЄ, а посилання без дефініції (ARCH.26) бачить тільки лінк, тож
-    # кожна гілка, яку відкриє фліп (CCM, Standby, MPU, CAD/TDMA, ratchet, mesh), лінкується вже
-    # сьогодні. Це доказ лінку, не образ для прошивки: радіо — та сама заглушка, що й у базі.
-    foreach(_img soldier_lora_e5 soldier_lora_e5_gated)
+    # [FW.70 ⚖️ founder 2026-11-26 «Розділити образи»] Три образи з одного SOLDIER_LORA_E5_SRC,
+    # різниця — лише набір дефайнів після циклу:
+    #  · soldier_lora_e5 — логер пілота П3 (журнал 104-121, консоль), той, що їде на дерево: бенч-
+    #    POST-ів у ньому немає, бо запас FLASH під журналом був мізерний (636 Б на CI до розділу), а
+    #    міряти його треба тулчейном CI (docs/03_01 §12.4);
+    #  · soldier_lora_e5_selftest — образ-самотест RUNBOOK 2.1 · 2.2 · 2.2б: POST CCM/sym і BME280, без логера;
+    #  · soldier_lora_e5_gated — логер із набором SILKEN_GATED_DEFS: hal_check_ccm гейтовані гілки
+    #    лише КОМПІЛЮЄ, а посилання без дефініції (ARCH.26) бачить тільки лінк, тож кожна гілка, яку
+    #    відкриє фліп (CCM, Standby, MPU, CAD/TDMA, ratchet, mesh), лінкується вже сьогодні. Доказ
+    #    лінку, не образ для прошивки: радіо — та сама заглушка. Пару «POST + гейти» не лінкує ніхто —
+    #    свідомо: гейтованих гілок POST не має.
+    # Лінкер-карта одна на всі три (FLASH 208 КБ під журналом), тож переповнення будь-якого валить лінк.
+    foreach(_img soldier_lora_e5 soldier_lora_e5_selftest soldier_lora_e5_gated)
       add_executable(${_img} ${SOLDIER_LORA_E5_SRC})
       target_include_directories(${_img} PRIVATE
         hal_glue common
@@ -297,9 +304,7 @@ if(CMAKE_CROSSCOMPILING)
         ${SILKEN_EXTERN}/monocypher/src/optional)
       target_compile_definitions(${_img} PRIVATE
         STM32WLE5xx USE_HAL_DRIVER
-        MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
-        CCM_SELFTEST BME280_SELFTEST
-        FW70_LOGGER_ENABLED=1)   # образ mini — носій логера П3 (журнал 104-121, консоль; MPU-розкладка логера — коли MPU увімкнено)
+        MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING)
       target_compile_options(${_img} PRIVATE -Os
         $<$<COMPILE_LANGUAGE:C>:-Wall -Wextra>)
       target_link_libraries(${_img} PRIVATE silken_attest ${SILKEN_MRUBY_ARM_LIB} m)
@@ -312,7 +317,10 @@ if(CMAKE_CROSSCOMPILING)
         SUFFIX ".elf"
         LINK_DEPENDS "${LORA_E5_DIR}/stm32wle5jc_soldier.ld")
     endforeach()
-    target_compile_definitions(soldier_lora_e5_gated PRIVATE ${SILKEN_GATED_DEFS})
+    # Логер — носій П3 (журнал 104-121, консоль; MPU-розкладка логера — коли MPU увімкнено).
+    target_compile_definitions(soldier_lora_e5 PRIVATE FW70_LOGGER_ENABLED=1)
+    target_compile_definitions(soldier_lora_e5_selftest PRIVATE CCM_SELFTEST BME280_SELFTEST)
+    target_compile_definitions(soldier_lora_e5_gated PRIVATE FW70_LOGGER_ENABLED=1 ${SILKEN_GATED_DEFS})
     # Вендорні TU (HAL, startup, system) — не наш код: їхні попередження не чистимо.
     set_source_files_properties(
       ${SILKEN_EXTERN}/cmsis-device-wl/Source/Templates/system_stm32wlxx.c

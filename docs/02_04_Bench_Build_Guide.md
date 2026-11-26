@@ -80,7 +80,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 - **Гібрид живлення:** front-end — еквівалент EBFC (джерело Тевеніна `V_OC` + `R_int`,
   §3.1), згодом реальний EBFC напряму в BQ25570 (гейт `V_OC` — §6 крок 4); решта вузла — production-компоненти
   на **готовому модулі Seeed LoRa-E5 mini** (STM32WLE5JC + SX1262). Кремній уже в модулі,
-  тож crypto-selftest та I2C bring-up **досяжні на макетці, щойно є образ з HAL для mini** (§4; образ для LoRa-E5 mini — рукописний `hal_glue/boards/lora_e5/`, ⚖️ делеговано 2026-10-06 ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), — ✅ є з 2026-10-09: таргет `soldier_lora_e5` (crypto-selftest; I²C-зрізу в ньому немає), [`00_07`](00_07_Action_Plan_Tracker) FW.46; `ccm_selftest` ганяється в `.elf` з HAL, RUNBOOK §2.1; parity-dump і SWD-кроки образу не чекають).
+  тож crypto-selftest та I2C bring-up **досяжні на макетці, щойно є образ з HAL для mini** (§4; образ для LoRa-E5 mini — рукописний `hal_glue/boards/lora_e5/`, ⚖️ делеговано 2026-10-06 ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), — ✅ є з 2026-10-09: crypto-selftest, з 2026-11-09 ще й POST BME280 по I²C — з 2026-11-26 це окремий таргет `soldier_lora_e5_selftest`, а `soldier_lora_e5` — логер пілота без POST-ів ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), [`00_07`](00_07_Action_Plan_Tracker) FW.46; `ccm_selftest` ганяється в `.elf` з HAL, RUNBOOK §2.1; parity-dump і SWD-кроки образу не чекають).
 - **🔵 Золоте правило — Спільна Земля.** Усі `−` (GND) плат, батарейки, іоністора — в
   **єдину синю шину** вздовж краю макетки. Без спільної землі логічні рівні = хаос.
 - **🔴 Дві залізні пере-умови ПЕРЕД живленням:** (1) **антена 868 МГц на місці** (SX1262
@@ -217,7 +217,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 ### 3.4 Sense (BME280 @ TPS22860)
 1. TPS22860: `VIN`←3V3, `VBIAS`←3V3 (живлення самого ключа; `VIN` ≤ `VBIAS` — SLVSD04), `GND`, `VOUT`→BME280 `VDD`, `ON`←`PB10` (J1-11; ⚖️ делеговано 2026-11-09 — [`00_07`](00_07_Action_Plan_Tracker) HW.32) + 1 МΩ від `ON` до GND (power-gate; pull-down — ⚖️ 2026-11-08, [`02_01 §3.1`](02_01_Hardware_Architecture_and_BOM)).
 2. BME280: `SCL`→`PB15` (J1-23), `SDA`→`PA15` (J1-22) — I2C2 mini, спільна шина; підтяжки 4.7 кΩ — на платі mini (R15/R16).
-3. **Checkpoint:** POST `BME280_SELFTEST` бенч-образу (`02_selftest_attest.py --bme`, RUNBOOK 2.2б) дає `rc 0` і t°/RH/тиск ≈ кімнатного еталона; `rc −1` — шина, ключ або адреса (0x76 при SDO→GND / 0x77 при SDO→VDD), `rc −2` — не BME280.
+3. **Checkpoint:** POST `BME280_SELFTEST` бенч-образу `soldier_lora_e5_selftest` (`02_selftest_attest.py --bme`, RUNBOOK 2.2б) дає `rc 0` і t°/RH/тиск ≈ кімнатного еталона; `rc −1` — шина, ключ або адреса (0x76 при SDO→GND / 0x77 при SDO→VDD), `rc −2` — не BME280.
 4. Деталі VPD/DCI-guard → [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM); firmware `bme280.h` і HAL-глю образу mini (I2C2 і ключ `PB10` — CCM-кадр і бенч-POST `BME280_SELFTEST`, [`03_01`](03_01_Firmware_Lifecycle_and_DMA), BME280; адреса — `BME280_I2C_ADDR_7BIT`, дефолт 0x76, тож breakout із SDO на VDDIO просить 0x77), а на стенді — живе читання, §4. ⚠️ **Гейт TPS22860 — лише на VDD, VDDIO лишити на постійній 3V3** (датащит Bosch BME280 §3.2: піни в «1» при вимкненому VDDIO можуть незворотно пошкодити чіп через ESD-діоди, і шина спільна з SE051C2); breakout, де VDD і VDDIO з'єднані, під гейт не ставити.
 
 ### 3.5 Security (SE051C2)
@@ -242,7 +242,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 > (µА-профілі, crypto-KAT, timing) — **дім `firmware/scripts/bench/RUNBOOK.md`**, НЕ дублюється тут.
 > **Bench-carrier — LoRa-E5 mini (⚖️ founder 2026-07-03, [`00_07`](00_07_Action_Plan_Tracker) FW.46):** носій radio-free зрізів до board-freeze — без нашого образу: parity FW.7/19 (голий RM0461, `sim/wle5_bench`; Gate L FW.31 споживача не має з 2026-10-10) · option-bytes + RDP-L1 · factory-provisioning по SWD; з образом для mini: CCM/sym selftest · Flash-KV · LSE/WUT; DMA-вуха — кремній Королеви (RUNBOOK 5.4), на mini потребували б її образу, якого дерево не будує; money-path e2e (CCM/OTA/ratchet) — за SubGHz-віхою, mini його не прискорює. ⊕ ⚖️ 2026-11-25 ([`00_07`](00_07_Action_Plan_Tracker) FW.70; присуд — [`01_03 §4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) ⊕ «П3 — пілот цієї зими»): перелік зрізів розширено логером П3 на дереві на сезон — сенсор · LSE/WUT · запис у Flash; radio-free лишається, речення про money-path e2e не переглянуто.
 > Оскільки LoRa-E5 = готовий STM32WLE5, RUNBOOK-сеанси §1-4 (прошивка+option-bytes · crypto · живлення · час/RTC) досяжні
-> на макетці, щойно є образ для mini (рукописний `hal_glue/boards/lora_e5/` — ⚖️ делеговано 2026-10-06, [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA); ✅ є з 2026-10-09, таргет `soldier_lora_e5`;
+> на макетці, щойно є образ для mini (рукописний `hal_glue/boards/lora_e5/` — ⚖️ делеговано 2026-10-06, [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA); ✅ є з 2026-10-09, таргет `soldier_lora_e5` (з 2026-11-26 — три образи: логер, самотест і гейтований близнюк);
 > нога [`00_07`](00_07_Action_Plan_Tracker) FW.46; кремнієва нога parity-dump `sim/wle5_bench` — голий RM0461, без цього образу);
 > §5 (модем SIM7070G) — Queen-only, тут недосяжний.
 

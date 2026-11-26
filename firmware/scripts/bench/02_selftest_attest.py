@@ -20,7 +20,7 @@ FAIL однозначно вказує на HAL/кремній.
 0 = PASS, N > 0 = N KAT-векторів упало. Збірку без -DCCM_SELFTEST видає відсутність
 символу в .elf, не значення.
 
-POST BME280 (`#if defined(BME280_SELFTEST)`, образи mini несуть його разом із CCM_SELFTEST)
+POST BME280 (`#if defined(BME280_SELFTEST)`, образ-самотест mini несе його разом із CCM_SELFTEST)
 кличе той самий `Bme280_Sense`, що й кадр, і кладе п'ять слів: `g_bme280_post_rc` (1 = POST
 не біг, 0 = OK, < 0 — код першого кроку, що впав, `bme280.h`) і значення. PASS тут — лише
 «значення в паспортному діапазоні»; правдивість судить кімнатний еталон поруч.
@@ -40,11 +40,14 @@ import sys
 
 PLAN = """\
 — план крипто-атестації —
-1. Бенч-збірка .elf Солдата з -DCCM_SELFTEST: на LoRa-E5 mini — таргет soldier_lora_e5,
-   кроки збірки — RUNBOOK 2.1 (повний .elf плати вузла — board-freeze, 00_07 FW.46).
+1. Бенч-збірка .elf Солдата з -DCCM_SELFTEST: на LoRa-E5 mini — таргет soldier_lora_e5_selftest
+   (не логер soldier_lora_e5 — у ньому POST-ів немає, FW.70), кроки збірки — RUNBOOK 2.1
+   (повний .elf плати вузла — board-freeze, 00_07 FW.46).
 2. firmware/scripts/bench/00_flash.sh --elf soldier.elf --execute
 3. Дати платі завантажитись: POST іде в main() до головного циклу.
-4. 02_selftest_attest.py --elf soldier.elf  → читання обох глобалів через SWD
+4. 02_selftest_attest.py --elf soldier.elf  — ТОЙ САМИЙ .elf, що щойно прошито: скрипт не звіряє
+   образ на платі з --elf, тож за адресами самотесту на прошитому логері прочитав би чужу SRAM
+   → читання обох глобалів через SWD
    (mode=UR — ядро стає на векторі скиду до startup, SRAM зберігає результат POST;
    HOTPLUG до сплячого в STOP2 Солдата не достукається) → вердикт.
 5. PASS → фліп FW2_CCM_ENABLED (firmware) + TELEMETRY_CCM_ENABLED (backend) за
@@ -147,7 +150,9 @@ def main() -> int:
     for name in names:
         addr = symbol_address(nm_out, name)
         if addr is None:
-            print(f"❌ {name} немає в {args.elf} — збірка без {flag}")
+            print(f"❌ {name} немає в {args.elf} — збірка без {flag}; на LoRa-E5 mini POST несе "
+                  "лише образ-самотест soldier_lora_e5_selftest, а логер soldier_lora_e5 — ні "
+                  f"(RUNBOOK {'2.2б' if args.bme else '2.1'})")
             return 3
         run = subprocess.run([PROGRAMMER, *connect, "-r32", f"0x{addr:08X}", "4"],
                              capture_output=True, text=True)
