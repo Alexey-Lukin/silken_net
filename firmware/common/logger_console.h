@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * logger_console.h — [FW.70] консоль логера П3 через UART: виставити час удома, зчитати
- * журнал біля дерева. Чиста логіка (рядок → команда → відповідь); залізо — LogCOps:
- * годинник, запис календаря, вивід рядка. Прошивка й host-тести компілюють цей самий код.
+ * журнал біля дерева, поміряти датчик на стенді. Чиста логіка (рядок → команда → відповідь);
+ * залізо — LogCOps: годинник, запис календаря, вивід рядка, вимір. Прошивка й host-тести
+ * компілюють цей самий код.
  *
  * Коли консоль слухає — справа інтеграції (soldier/main.c): вікно на справжньому старті,
  * тож біля дерева її відкриває кнопка RST mini. Скид коштує ≤ один вимір (половина пари
@@ -19,6 +20,10 @@
  *                   базою (SEC.42, firmware/common/wall_time.h `Silken_Beacon_Commit`).
  *   D               рядок стану, усі записи журналу (LogJ_Format), «#E,<рядків>».
  *   S               рядок стану.
+ *   M               один вимір датчика й температури — «#M,<секунди>,<показ|NA>,<код датчика>,
+ *                   <сума збудження>,<сума повзунка>,<°C×100|NA>» (поля сум — pot_dendro.h).
+ *                   Журналу НЕ торкається: це рядок для стенда (00_07 HW.54, домашній стенд KTR),
+ *                   а не запис ряду. Без measure (NULL) — «ERR,M».
  *   Q               закрити вікно — «OK,Q».
  *   інше            «?».
  * Рядок стану: «#S,<секунди>,<годинник UTC 0|1>,<змонтовано 0|1>,<сторінка відкрита 0|1>,
@@ -48,11 +53,24 @@
 #define LOGC_CONTINUE 0
 #define LOGC_QUIT     1
 
+#define LOGC_T_NONE  INT32_MIN         /* температури немає — «NA» */
+#define LOGC_M_CAP   64u               /* «#M,…» за крайніх значень усіх полів — 61 Б разом із '\n' */
+
+/* Вимір для M; заповнює образ (soldier/main.c): датчик дендрометра й температура біля рами. */
+typedef struct {
+    uint16_t reading;    /* показ у шкалі журналу; LOGJ_READING_NONE — не поміряно */
+    int16_t  rc;         /* код датчика, 0 — гаразд */
+    uint32_t raw_exc;    /* сирі суми АЦП — для стенда */
+    uint32_t raw_wiper;
+    int32_t  t_centi;    /* °C × 100; LOGC_T_NONE — немає */
+} LogCMeas;
+
 typedef struct {
     uint32_t (*now)(void *io);                        /* секунди календаря */
     void     (*set_time)(void *io, uint32_t unix_s);  /* запис календаря; результат судить now().
                                                          NULL — образ не довіряє консолі календаря */
     void     (*emit)(void *io, const char *s, size_t n);
+    void     (*measure)(void *io, LogCMeas *m);       /* NULL — образ без датчика: «ERR,M» */
 } LogCOps;
 
 typedef struct {
@@ -152,6 +170,36 @@ static inline void logc_set_time(LogJ *j, const LogCOps *ops, void *io, uint32_t
     ops->emit(io, o, n);
 }
 
+static inline size_t logc_i32(char *o, int32_t v)
+{
+    if (v >= 0) return logj_u32(o, (uint32_t)v);
+    o[0] = '-';
+    return 1u + logj_u32(o + 1, 0u - (uint32_t)v);
+}
+
+/* Рядок «#M,…» (формат — шапка). Журналу не торкається. */
+static inline void logc_measure(const LogCOps *ops, void *io)
+{
+    if (!ops->measure) { ops->emit(io, "ERR,M\n", 6u); return; }
+    LogCMeas m = { LOGJ_READING_NONE, 0, 0u, 0u, LOGC_T_NONE };
+    ops->measure(io, &m);
+    char o[LOGC_M_CAP];
+    size_t n = 0;
+    o[n++] = '#'; o[n++] = 'M'; o[n++] = ',';
+    n += logj_u32(o + n, ops->now(io));
+    o[n++] = ',';
+    if (m.reading == LOGJ_READING_NONE) { o[n++] = 'N'; o[n++] = 'A'; }
+    else n += logj_u32(o + n, m.reading);
+    o[n++] = ','; n += logc_i32(o + n, m.rc);
+    o[n++] = ','; n += logj_u32(o + n, m.raw_exc);
+    o[n++] = ','; n += logj_u32(o + n, m.raw_wiper);
+    o[n++] = ',';
+    if (m.t_centi == LOGC_T_NONE) { o[n++] = 'N'; o[n++] = 'A'; }
+    else n += logc_i32(o + n, m.t_centi);
+    o[n++] = '\n';
+    ops->emit(io, o, n);
+}
+
 /* Виконати завершений рядок і звільнити його. LOGC_QUIT — закрити вікно. */
 static inline int LogC_Exec(LogJ *j, const LogCOps *ops, void *io, LogCLine *l)
 {
@@ -165,6 +213,8 @@ static inline int LogC_Exec(LogJ *j, const LogCOps *ops, void *io, LogCLine *l)
         (void)LogC_Dump(j, ops, io);
     } else if (c == 'S' && l->buf[1] == '\0') {
         LogC_Status(j, ops, io);
+    } else if (c == 'M' && l->buf[1] == '\0') {
+        logc_measure(ops, io);
     } else if (c == 'Q' && l->buf[1] == '\0') {
         ops->emit(io, "OK,Q\n", 5u);
         act = LOGC_QUIT;

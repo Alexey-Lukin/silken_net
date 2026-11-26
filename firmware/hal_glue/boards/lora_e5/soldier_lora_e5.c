@@ -25,18 +25,34 @@
  *  · радіо — заглушка: radio.c без radio_conf.h не компілюється (board-freeze), а зрізам
  *    без радіо воно не потрібне. Send віддає OK, решта нічого не робить;
  *  · GPIO не налаштовано: цикл до сну пінів не торкається — окрім BME280: ключ на PB10 і
- *    I2C2 (HW.32, нижче) для CCM-кадру й бенч-POST BME280_SELFTEST (RUNBOOK 2.2б) — і
- *    консолі логера: USART2 на PA2/PA3 лише у вікні на старті (FW.70, нижче).
+ *    I2C2 (HW.32, нижче) для CCM-кадру, бенч-POST BME280_SELFTEST (RUNBOOK 2.2б) і логера; і ще
+ *    два споживачі логера (FW.70, нижче): консоль USART2 на PA2/PA3 лише у вікні на старті та
+ *    датчик дендрометра — ключ збудження PA0 і входи АЦП PB3/PB4.
  *
  * ⊕ [FW.70 ⚖️ 2026-11-25] Образ — носій логера П3: журнал на сторінках 104-121 (тому FLASH
  * лінкер-карти кінчається перед сторінкою 104), консоль UART на старті, MPU-розкладка
- * логера (діє, коли MPU увімкнено — SEC.21; прошиваний образ сьогодні без MPU). Цикл запису на період WUT і драйвер датчика — окремі ноги 00_07 FW.70.
+ * логера (діє, коли MPU увімкнено — SEC.21; прошиваний образ сьогодні без MPU), драйвер датчика
+ * дендрометра з виміром у консолі (M). Цикл запису на період WUT — окрема нога 00_07 FW.70.
  */
 /* [HW.32] Ключ живлення BME280 на стенді — PB10 (D10, J1-11): вільний на mini, суто цифровий
  * і не JTAG-пін, тож після скиду це вхід без підтяжки, і pull-down 1 МΩ макетки тримає ключ
  * вимкненим (гоча firmware #16 (d); ⚖️ делеговано — 00_07 HW.32). Мусить стояти ДО main.c. */
 #define BME280_PWR_GPIO_Port GPIOB
 #define BME280_PWR_Pin       GPIO_PIN_10
+/* [FW.70] Датчик дендрометра пілота (клас KTR-10, common/pot_dendro.h). Збудження — PA0 (D0, J1-17):
+ * не JTAG, тож після скиду пін високоімпедансний і доріжка не живиться до першого виміру (гоча
+ * firmware #16 (d)). Повзунок — PB3 (A3, J1-20) = ADC_IN2, верх доріжки — PB4 (A4, J1-21) = ADC_IN3:
+ * канали — пін-бюджет docs/03_01 (DS13105, ряд «АЦП-входи»; той самий кристал, тож і в JC), а
+ * pinctrl STM32WLE5JC у Zephyr hal_stm32 каже те саме; PA0 і PA9 в АЦП не заведені. PB3/PB4 — JTAG-піни
+ * з власним станом після скиду (чий напрям підтяжки — RM0461, в дереві його немає): до MX_Pot_Init,
+ * мілісекунди старту, скидова підтяжка, якщо вона є, може живити доріжку — струм, не вимір.
+ * Мусить стояти ДО main.c. */
+#define POT_EXC_GPIO_Port     GPIOA
+#define POT_EXC_Pin           GPIO_PIN_0
+#define POT_ADC_GPIO_Port     GPIOB
+#define POT_ADC_Pins          (GPIO_PIN_3 | GPIO_PIN_4)
+#define POT_WIPER_ADC_CHANNEL ADC_CHANNEL_2
+#define POT_EXC_ADC_CHANNEL   ADC_CHANNEL_3
 #include "../../../soldier/main.c"
 #include <errno.h>
 
@@ -145,6 +161,26 @@ static int MX_Console_Uart_Init(void)
     huart_console.Init.ClockPrescaler         = UART_PRESCALER_DIV1;
     huart_console.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
     return HAL_UART_Init(&huart_console) == HAL_OK;
+}
+
+/* [FW.70] Датчик дендрометра (піни — блок POT_* угорі): ключ збудження в нулі (рівень спершу, вихід
+ * потім — доріжка ані миті не живиться без запиту). Входи повзунка й верху доріжки — через
+ * HAL_GPIO_DeInit, а не HAL_GPIO_Init в аналоговому режимі: Init у цьому режимі PUPDR не пише
+ * (вендорний stm32wlxx_hal_gpio.c), тож скидова підтяжка JTAG-піна лишилась би записаною, а чи діє
+ * вона в аналоговому режимі — RM0461, якого в дереві немає; діяла б — ключ у нулі тягнув би її струм
+ * цілу зиму. DeInit ставить аналоговий режим і гасить PUPDR явно — питання знято кодом. */
+static void MX_Pot_Init(void)
+{
+    GPIO_InitTypeDef g = {0};
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    HAL_GPIO_WritePin(POT_EXC_GPIO_Port, POT_EXC_Pin, GPIO_PIN_RESET);
+    g.Pin   = POT_EXC_Pin;
+    g.Mode  = GPIO_MODE_OUTPUT_PP;
+    g.Pull  = GPIO_NOPULL;
+    g.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(POT_EXC_GPIO_Port, &g);
+    HAL_GPIO_DeInit(POT_ADC_GPIO_Port, POT_ADC_Pins);
 }
 #endif
 
