@@ -1117,7 +1117,7 @@ static void     c_emit(void *io, const char *s, size_t n)
     (void)io;
     if (OUTN + n < sizeof OUT) { memcpy(OUT + OUTN, s, n); OUTN += n; OUT[OUTN] = '\0'; }
 }
-static const LogCOps COPS = { c_now, c_set, c_emit, NULL };
+static const LogCOps COPS = { c_now, c_set, c_emit };
 
 static void console_init(uint32_t clk, int follows, uint32_t offset)
 {
@@ -1227,7 +1227,7 @@ TEST(test_console_on_unmounted_journal_still_sets_the_clock)
 TEST(test_console_without_calendar_right_refuses_time_and_writes_nothing)
 {
     /* Образ mini: set_time = NULL — календар Солдата є базою delta_t (SEC.42). */
-    static const LogCOps RO = { c_now, NULL, c_emit, NULL };
+    static const LogCOps RO = { c_now, NULL, c_emit };
     mock_init();
     LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
     LogJ_Arm_Boot(&j, 2, 0);
@@ -1238,57 +1238,6 @@ TEST(test_console_without_calendar_right_refuses_time_and_writes_nothing)
     ASSERT_EQ(CLK, CLK_2000 + 5u);
     ASSERT_EQ(M.programs, 0);
     ASSERT_EQ(j.boot_pend, 1);                            /* відмова — не запис: якір чекає далі */
-}
-
-/* M — вимір датчика для стенда (шов measure). */
-static LogCMeas MEAS;
-static void c_meas(void *io, LogCMeas *m) { (void)io; *m = MEAS; }
-static const LogCOps MOPS = { c_now, NULL, c_emit, c_meas };
-static void feed_ops(LogJ *j, const LogCOps *ops, const char *s)
-{
-    LogCLine l = {0};
-    for (; *s; s++) if (LogC_Feed(&l, *s)) LogC_Exec(j, ops, NULL, &l);
-}
-
-TEST(test_console_measure_prints_one_line_and_never_touches_the_journal)
-{
-    mock_init();
-    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
-    LogJ_Arm_Boot(&j, 1, 0);
-    console_init(CLK_2000 + 9u, 1, 0);
-    MEAS = (LogCMeas){ 19656, 0, 1024000u, 307200u, -1825 };
-    feed_ops(&j, &MOPS, "M\nm\n");
-    ASSERT_STR(OUT, "#M,946684809,19656,0,1024000,307200,-1825\n"
-                    "#M,946684809,19656,0,1024000,307200,-1825\n");
-    ASSERT_EQ(M.programs, 0);
-    ASSERT_EQ(M.erases[0] + M.erases[1] + M.erases[2] + M.erases[3], 0);
-    ASSERT_EQ(j.boot_pend, 1);                            /* вимір для стенда — не запис ряду */
-}
-
-TEST(test_console_measure_failure_prints_NA_and_the_code)
-{
-    mock_init();
-    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
-    console_init(T0, 1, 0);
-    MEAS = (LogCMeas){ LOGJ_READING_NONE, -2, 512000u, 0u, LOGC_T_NONE };
-    feed_ops(&j, &MOPS, "M\n");
-    ASSERT_STR(OUT, "#M,1764000000,NA,-2,512000,0,NA\n");
-    console_init(T0, 1, 0);                               /* крайні значення всіх полів — у буфер */
-    MEAS = (LogCMeas){ 65520, INT16_MIN, UINT32_MAX, UINT32_MAX, INT32_MIN + 1 };
-    feed_ops(&j, &MOPS, "M\n");
-    ASSERT_STR(OUT, "#M,1764000000,65520,-32768,4294967295,4294967295,-2147483647\n");
-    ASSERT_EQ(strlen(OUT), 61u);                          /* найдовший можливий рядок … */
-    ASSERT_TRUE(strlen(OUT) <= LOGC_M_CAP);               /* … вміщається в буфер консолі */
-}
-
-TEST(test_console_without_sensor_refuses_measure)
-{
-    mock_init();
-    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
-    console_init(T0, 1, 0);
-    feed(&j, "M\nMM\nM1\n");
-    ASSERT_STR(OUT, "ERR,M\n?\n?\n");
-    ASSERT_EQ(M.programs, 0);
 }
 
 int main(void)
@@ -1353,9 +1302,6 @@ int main(void)
     RUN(test_console_status_reports_the_pause_after_a_program_failure);
     RUN(test_console_on_unmounted_journal_still_sets_the_clock);
     RUN(test_console_without_calendar_right_refuses_time_and_writes_nothing);
-    RUN(test_console_measure_prints_one_line_and_never_touches_the_journal);
-    RUN(test_console_measure_failure_prints_NA_and_the_code);
-    RUN(test_console_without_sensor_refuses_measure);
     printf("\n  %d passed, %d failed\n\n", tests_passed, tests_failed);
     return tests_failed ? 1 : 0;
 }
