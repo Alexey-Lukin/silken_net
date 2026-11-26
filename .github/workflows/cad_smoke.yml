@@ -48,7 +48,7 @@ jobs:
       pcb: ${{ steps.filter.outputs.pcb }}
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -82,7 +82,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
       - name: Checkout (with LEAP submodules)
@@ -104,7 +104,7 @@ jobs:
         # рішення про допустимий дрейф SDK, не побічний ефект цього піну.
         # ⚠️ Бампера немає (Dependabot не читає global.json) — підняття ручне,
         # скіл `dependency-update`.
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: tools/cad/global.json
       - name: Verdict boundary — setup complete
@@ -146,7 +146,7 @@ jobs:
         # рішення про допустимий дрейф SDK, не побічний ефект цього піну.
         # ⚠️ Бампера немає (Dependabot не читає global.json) — підняття ручне,
         # скіл `dependency-update`.
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: tools/cad/global.json
       - name: Verdict boundary — setup complete
@@ -215,7 +215,7 @@ jobs:
       KICAD_IMAGE: kicad/kicad:10.0.6@sha256:18693567392b80da435f9fa952ce3a3e534c66eb5a6033f5b9c80aa3b19dd3ec
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -255,7 +255,7 @@ jobs:
       actions: read
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
       # [OPS.23] `changes` carries no `if:`, so `success` is its ONLY legal result,
