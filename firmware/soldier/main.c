@@ -1518,8 +1518,8 @@ static void Logger_Measure(void *io, LogCMeas *m)
 
 // Запис календаря консоллю свідомо НЕ підʼєднано (set_time = NULL → T відповідає ERR): календар —
 // база delta_t, і крок годинника повз Silken_Beacon_Commit дав би вигаданий delta_t, а консоль
-// стоїть ще до відновлення бази з DR1 (гейт — tools/firmware/check_sec42_calendar.py). Як писати
-// його разом із базою — нога 00_07 FW.70 «виставлення часу консоллю».
+// стоїть ще до відновлення бази з DR1 (гейт — tools/firmware/check_sec42_calendar.py). Логер його
+// не пише: UTC журналу дають якорі зчитування (⚖️ 03_01 §12.4, firmware/scripts/bench/08_logger_readout.py).
 static const LogCOps logger_console_ops = { Logger_Con_Now, NULL, Logger_Con_Emit, Logger_Measure };
 
 // Крок старту логера — ДО ключів: плата без конвеєра (сторінка ключа порожня) скидається в
