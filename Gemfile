@@ -70,6 +70,10 @@ group :development, :test do
   # others fails the build. `health` свідомо НЕ ганяємо: його unused-половина
   # хибно спрацьовує на динамічних лукапах (navigation.items.*, filter_*).
   gem "i18n-tasks", require: false
+  # OpenStruct у спеках і Lookbook-превʼю. Ruby 4.0 його не вантажить (bundled-гем),
+  # а oj з 3.17.8 перестав робити `require "ostruct"` за нас — без цього рядка
+  # приклад зелений лише тоді, коли раніший за сідом приклад підтягнув константу.
+  gem "ostruct"
   gem "pg_query"
   gem "prosopite"
   gem "rspec-rails"

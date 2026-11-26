@@ -90,7 +90,7 @@ lv:
       load_more: Ielādēt vairāk // %{remaining} atlikušas →
       page_of: Lapa %{page} no %{total}
       photo_count:
-        one: 1 fotogrāfija
+        one: "%{count} fotogrāfija"
         other: "%{count} fotogrāfijas"
     show:
       cost:

@@ -94,7 +94,7 @@ uk:
       photo_count:
         few: "%{count} фото"
         many: "%{count} фото"
-        one: 1 фото
+        one: "%{count} фото"
         other: "%{count} фото"
     show:
       cost:

@@ -92,7 +92,7 @@ lt:
       page_of: Puslapis %{page} iš %{total}
       photo_count:
         few: "%{count} nuotraukos"
-        one: 1 nuotrauka
+        one: "%{count} nuotrauka"
         other: "%{count} nuotraukų"
     show:
       cost:
