@@ -19,6 +19,7 @@
 
 #include "../common/logger_journal.h"
 #include "../common/logger_console.h"
+#include "../common/logger_cycle.h"
 
 static int tests_passed = 0;
 static int tests_failed = 0;
@@ -1291,6 +1292,97 @@ TEST(test_console_without_sensor_refuses_measure)
     ASSERT_EQ(M.programs, 0);
 }
 
+/* ── розклад власного циклу (logger_cycle.h): тік WUT → вимір за сіткою каденсу ── */
+#define TICK  LOGCY_TICK_MAX_S
+_Static_assert(CAD_S % LOGCY_TICK_MAX_S == 0u, "тік має ділити каденс — інакше вимір запізнюється змінно");
+
+TEST(test_cycle_measures_on_entry_then_on_every_cadence_mark)
+{
+    LogCy c; LogCy_Init(&c, CAD_S);
+    int due = 0;
+    for (uint32_t t = T0; t < T0 + 86400u; t += TICK)
+        if (LogCy_Due(&c, t)) { ASSERT_EQ((t - T0) % CAD_S, 0); due++; }
+    ASSERT_EQ(due, 48);
+}
+
+TEST(test_cycle_lost_ticks_keep_the_count_and_lateness_under_the_gap)
+{
+    LogCy c; LogCy_Init(&c, CAD_S);
+    int due = 0, k = 0;
+    for (uint32_t t = T0; t < T0 + 86400u; t += TICK, k++) {
+        if (k % 7 == 3 || k % 7 == 4) continue;               /* два тіки поспіль загублено */
+        if (LogCy_Due(&c, t)) { ASSERT_TRUE((t - T0) % CAD_S < 3u * TICK); due++; }
+    }
+    ASSERT_EQ(due, 48);
+}
+
+TEST(test_cycle_long_gap_measures_once_then_returns_to_the_old_grid)
+{
+    LogCy c; LogCy_Init(&c, CAD_S);
+    ASSERT_EQ(LogCy_Due(&c, T0), 1);
+    ASSERT_EQ(LogCy_Due(&c, T0 + 10000u), 1);               /* тіки губились ≈ 2.8 год */
+    ASSERT_EQ(LogCy_Due(&c, T0 + 10025u), 0);               /* пропущених не наздоганяє */
+    ASSERT_EQ(LogCy_Due(&c, T0 + 10775u), 0);
+    ASSERT_EQ(LogCy_Due(&c, T0 + 10800u), 1);               /* 6 × каденс — стара сітка */
+}
+
+TEST(test_cycle_clock_back_past_the_previous_mark_restarts_the_grid_from_now)
+{
+    LogCy c; LogCy_Init(&c, CAD_S);
+    ASSERT_EQ(LogCy_Due(&c, T0), 1);
+    ASSERT_EQ(LogCy_Due(&c, T0), 0);                         /* та сама секунда — вимір не дублюється */
+    ASSERT_EQ(LogCy_Due(&c, T0 - 5000u), 1);               /* мітка була на 6800 с попереду */
+    ASSERT_EQ(LogCy_Due(&c, T0 - 5000u + CAD_S - TICK), 0);
+    ASSERT_EQ(LogCy_Due(&c, T0 - 5000u + CAD_S), 1);
+}
+
+/* Контракт сіток: Init рано (до вікна консолі), перший тік пізніше — сітка циклу народжується з
+ * першого Due, тож секунда виміру = секунда в журналі, а не тихий зсув на весь сезон. */
+TEST(test_cycle_grid_is_born_at_the_first_due_not_at_init)
+{
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 4, CAD);
+    LogJ_Arm_Boot(&j, 1, 0);
+    LogCy c; LogCy_Init(&c, CAD_S);                           /* Init о T0, вікно консолі — 300 с */
+    uint32_t first = T0 + 300u;
+    int n = 0;
+    for (uint32_t t = first; n < 4; t += TICK)
+        if (LogCy_Due(&c, t)) { ASSERT_EQ(t, first + (uint32_t)n * CAD_S); LogJ_Record(&j, t, (uint16_t)n, 0); n++; }
+    dump(&j);
+    ASSERT_EQ(D.n, 4);
+    for (int i = 0; i < 4; i++) ASSERT_EQ(D.t[i], first + (uint32_t)i * CAD_S);
+}
+
+TEST(test_cycle_zero_cadence_never_measures)
+{
+    LogCy c; LogCy_Init(&c, 0u);
+    ASSERT_EQ(LogCy_Due(&c, T0), 0);
+    ASSERT_EQ(LogCy_Due(&c, T0 + 86400u), 0);
+}
+
+/* Головне твердження розкладу — на справжньому журналі: сезон тіків по 25 с, частина тіків
+ * загублена, а сітка журналу точна до секунди і якоря розриву не пишеться жодного разу. */
+TEST(test_cycle_season_on_ticks_keeps_the_journal_grid_without_a_gap_anchor)
+{
+    const uint32_t t0 = 946684800u + 1234u;                  /* календар без виставлення — 2000 рік */
+    mock_init();
+    LogJ j; LogJ_Mount(&j, &OPS, NULL, PG_DWS, 18, CAD);
+    LogJ_Arm_Boot(&j, 1, 0);
+    LogCy c; LogCy_Init(&c, CAD_S);
+    int n = 0, k = 0;
+    for (uint32_t t = t0; n < 180 * 48; t += TICK, k++) {
+        if (k % 13 == 5) continue;                            /* тік загублено */
+        if (LogCy_Due(&c, t)) { LogJ_Record(&j, t, (uint16_t)(n & 0x7FFF), (int8_t)(n % 60 - 30)); n++; }
+    }
+    dump(&j);
+    ASSERT_EQ(D.n, 180 * 48);
+    for (int i = 0; i < D.n; i++) ASSERT_EQ(D.t[i], t0 + (uint32_t)i * CAD_S);
+    uint16_t tags[8]; uint8_t tv[8];
+    ASSERT_EQ(resume_tags(&j, tags, tv, 8), 1);               /* лише BOOT */
+    ASSERT_EQ(tags[0] >> 8, LOGJ_REASON_BOOT);
+    ASSERT_EQ(M.reprogram_errors, 0);
+}
+
 int main(void)
 {
     printf("\n[FW.70] logger_journal — сторінковий журнал логера П3\n");
@@ -1356,6 +1448,13 @@ int main(void)
     RUN(test_console_measure_prints_one_line_and_never_touches_the_journal);
     RUN(test_console_measure_failure_prints_NA_and_the_code);
     RUN(test_console_without_sensor_refuses_measure);
+    RUN(test_cycle_measures_on_entry_then_on_every_cadence_mark);
+    RUN(test_cycle_lost_ticks_keep_the_count_and_lateness_under_the_gap);
+    RUN(test_cycle_long_gap_measures_once_then_returns_to_the_old_grid);
+    RUN(test_cycle_clock_back_past_the_previous_mark_restarts_the_grid_from_now);
+    RUN(test_cycle_grid_is_born_at_the_first_due_not_at_init);
+    RUN(test_cycle_zero_cadence_never_measures);
+    RUN(test_cycle_season_on_ticks_keeps_the_journal_grid_without_a_gap_anchor);
     printf("\n  %d passed, %d failed\n\n", tests_passed, tests_failed);
     return tests_failed ? 1 : 0;
 }
