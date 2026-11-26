@@ -69,7 +69,7 @@
   repaired»** — and only the second reading lets a security rebuild land the day it ships, which is
   the whole point of pinning by digest rather than by tag.
   🔴 **A hand-pinned vendored BINARY has no bumper and may have no `.sha256` sidecar** — every
-  hand-pinned binary, today medusa, aderyn and actionlint. (a) **Do not assume a sidecar exists**; the
+  hand-pinned binary, today medusa and actionlint (aderyn left this class on 2026-11-26: upstream retired it and withdrew the binaries, so it is now built from the release source archive with the archive's SHA-256 pinned in the step — `solidity_audit.yml`). (a) **Do not assume a sidecar exists**; the
   single reproducible source may be the release object itself. **Verify the verification with a POSITIVE
   CONTROL**: recompute the hash of the version you already trust and check it reproduces the committed
   pin, before trusting the number you computed for the new one. (b) **Dependabot cannot see a URL/`ver=`
@@ -145,7 +145,7 @@
   caps `crytic-compile<0.4.0`). **The release-age quarantine has a structural blind spot here:** it
   guards `Gemfile`/`package.json`/conda, but never sees an action's image contents — a day-old
   package walked straight into the money-path gate. Prefer the shape already used elsewhere in this
-  repo: `pip install --require-hashes -r requirements-*.txt` (halmos, medusa) or curl+sha256 (aderyn · hevm · bitwuzla).
+  repo: `pip install --require-hashes -r requirements-*.txt` (halmos, medusa) or curl+sha256 (hevm · bitwuzla; aderyn — the source archive, sha256-pinned, then `cargo build --locked`).
 16. 🔴 **Identical failure on N INDEPENDENT PRs ⇒ the root is in the BASE, not in the PRs** (2026-07-30).
   Four Dependabot PRs (aws-sdk-s3, httpx, csv, simplecov) all red on `scan_ruby`; I opened their
   diffs first and that cost the most time of the sweep. The cause was one: `main` carried

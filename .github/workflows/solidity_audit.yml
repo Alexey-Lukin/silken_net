@@ -476,7 +476,7 @@ jobs:
     if: ${{ needs.changes.outputs.sol == 'true' || github.event_name == 'workflow_dispatch' }}
     name: Aderyn Static Analysis
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25 # cold cache: toolchain install + cargo build (3m45s on an M-series laptop, 2026-11-26)
     permissions:
       contents: read
       security-events: write # upload-sarif → GitHub Security tab
@@ -497,16 +497,35 @@ jobs:
       - name: Install contract dependencies
         run: npm ci
 
-      - name: Install Aderyn (release binary + sha256 verify)
+      # [transitional] Upstream RETIRED Aderyn on 2026-11-17: release binaries, npm, Homebrew and
+      # the installer were withdrawn; only source archives + checksum records remain. ⚖️ founder
+      # 2026-11-26: build v0.6.8 from the release source archive — the detector set is FROZEN,
+      # no upstream fixes ever. The source SHA-256 is pinned HERE, not read from the release, so a
+      # re-packed archive reds the gate (verified 2026-11-26: = the release's own .sha256 and
+      # sha256.sum). Built in $RUNNER_TEMP — never under contracts/, where `aderyn .` would ingest
+      # the tool's own .sol fixtures. Retire trigger → docs/00_07 OPS.22.
+      - name: Cache Aderyn build (keyed by the pinned source SHA-256)
+        id: aderyn-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/aderyn-bin
+          key: aderyn-src-2d4afdb52bae30f8488e5d9470a281d284c0b286455b61b474e6c2e7dafe343a-${{ runner.os }}-${{ runner.arch }}
+      - name: Build Aderyn from the release source archive (sha256-pinned)
+        if: steps.aderyn-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
         run: |
           ver=aderyn-v0.6.8
-          asset=aderyn-x86_64-unknown-linux-gnu.tar.xz
-          base=https://github.com/Cyfrin/aderyn/releases/download/$ver
-          curl -sSfL "$base/$asset" -o aderyn.tar.xz
-          curl -sSfL "$base/$asset.sha256" -o aderyn.sha256
-          echo "$(awk '{print $1}' aderyn.sha256)  aderyn.tar.xz" | sha256sum -c -
-          tar -xf aderyn.tar.xz
-          sudo mv aderyn-x86_64-unknown-linux-gnu/aderyn /usr/local/bin/aderyn
+          sha=2d4afdb52bae30f8488e5d9470a281d284c0b286455b61b474e6c2e7dafe343a
+          curl -sSfL "https://github.com/Cyfrin/aderyn/releases/download/$ver/source.tar.gz" -o aderyn-src.tar.gz
+          echo "$sha  aderyn-src.tar.gz" | sha256sum -c -
+          mkdir -p aderyn-src && tar -xzf aderyn-src.tar.gz -C aderyn-src --strip-components=1
+          cd aderyn-src
+          rustup toolchain install   # the archive pins its own toolchain in rust-toolchain.toml
+          cargo build --release --locked -p aderyn
+          mkdir -p ~/.local/aderyn-bin && cp target/release/aderyn ~/.local/aderyn-bin/aderyn
+      - name: Install Aderyn
+        run: |
+          sudo install -m 0755 ~/.local/aderyn-bin/aderyn /usr/local/bin/aderyn
           aderyn --version
       - name: Verdict boundary — setup complete
         run: echo "setup complete — every step below carries the verdict (OPS.47)"
