@@ -187,6 +187,7 @@ the pre-split order, append-only since — cite `dependency-update #N`.
 64. A Dependabot dismissal does not survive a RE-ISSUED advisory — GitHub withdraws the old alert and opens the same GHSA under a new number, so key a WATCH by GHSA + manifest, never by alert number
 65. Блок `overrides` у `subgraph/package.json` тримає свої ПІДСТАВИ тут, бо JSON коментарів не має — без них наступний свіп зніме його як «зайві піни»
 66. A gem that stops `require`-ing a library FOR you is masked by EXAMPLE ORDER — the full suite stays green, the isolated consumer goes red
+67. The local suite never EAGER-loads, so a bump that breaks code reached only by eager load is green locally and red on CI
 
 <!-- /DEPUPDATE-GOTCHAS-INDEX -->
 
