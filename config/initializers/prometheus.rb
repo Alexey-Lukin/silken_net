@@ -235,8 +235,8 @@ module SilkenNet
     # ⚖️ [E.64, founder 2026-10-05/06] Кадр телеметрії, чиї зважені бали перевищили відро
     # ліміту зарахування дерева (`Wallet#credit_telemetry!`: ставка частки MAX_SUPPLY,
     # 30 діб відра) і зарахувались частково. Чесне дерево сюди доходить і на частому
-    # каденсі (бали кадру — функція періоду пробудження; межа — 01_03 §4, ⊕ Б4); на рідшому алерт
-    # `sn-alert-credit-cap-hit` кличе на витягнутий ключ або баг перерахунку.
+    # каденсі (бали кадру — функція періоду пробудження; межа — 01_03 §4, ⊕ Б4); на рідшому, з бэклогом
+    # у межах відра, алерт `sn-alert-credit-cap-hit` кличе на витягнутий ключ або баг перерахунку.
     TELEMETRY_CREDIT_CAPPED_TOTAL = REGISTRY.counter(
       :silkennet_telemetry_credit_capped_total,
       docstring: "E.64: telemetry frames whose weighted growth points exceeded the tree's credit allowance " \

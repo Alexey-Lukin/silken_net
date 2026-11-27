@@ -4,15 +4,13 @@
 # [SILENCE-1] Dead-man switch Солдата: Rails сам детектить аномальну тишу вузла,
 # не чекаючи, доки замовкне ВЕСЬ кластер (DailyHealthRouter#blackout? бачить лише
 # cluster-wide зникнення → вкрадене/мертве дерево мінтило б, доки сусіди цокочуть).
-# Per-Soldier дзеркало GatewayStalenessSweepWorker [ARCH.54 Шар 0] — з двома
-# свідомими відмінностями (канон 06_08 §1.3):
+# Per-Soldier дзеркало GatewayStalenessSweepWorker [ARCH.54 Шар 0] — відмінності
+# (канон 06_08 §1.3):
 #
-#   1. Поріг НЕ виводиться з конфіга: Soldier спить між energy-sufficient циклами
-#      (за задумом S2; доки гейта немає — між пробудженнями, 03_01 §1.10),
-#      delta_t навмисно варіативний (менша потужність комірки → повільніший заряд →
-#      довша тиша; чия це вада — дерева, анода чи погоди — тиша не каже, 01_03 §4)
-#      → SystemParameter :tree_silence_threshold_hours, 24h [transitional]
-#      до bench-калібрування (00_07 SILENCE-1 / E.63).
+#   1. Поріг — SystemParameter :tree_silence_threshold_hours, 24h [transitional] до
+#      періоду WUT: на первинному елементі енергогейта немає, delta_t = період
+#      пробудження, тож поріг деривується з каденсу, як у Королеви (06_08 §1.3;
+#      01_03 §4, ⊕ Б4; 00_07 FW.49 · SILENCE-1).
 #   2. Носій = per-tree :field_audit, НЕ новий alert-тип: новий critical-тип
 #      потрапив би у critical_unmaintained? (BlockchainBurningService, blacklist-
 #      предикат) за замовчуванням → тиша накручувала б penalty оператору, проти

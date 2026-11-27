@@ -103,7 +103,7 @@ class Tree < ApplicationRecord
   # внутрішній, 1.95 В, і є аварійним стопом кремнію, до якого шлях не доходить —
   # buck закривається на 1.4 В вище (`02_03 §4.В`, HW.7 2026-09-09).
 
-  # Дефолтний поріг тиші — ОДИН дім на скоуп і предикат [transitional до bench,
+  # Дефолтний поріг тиші — ОДИН дім на скоуп і предикат [transitional до періоду WUT (00_07 FW.49),
   # рантайм веде `TreeStalenessSweepWorker` через SystemParameter].
   SILENCE_THRESHOLD = 24.hours
 
@@ -169,8 +169,8 @@ class Tree < ApplicationRecord
   # beginless range робить SQL-відкидання NULL семантикою, не випадковістю), dormant
   # (свідомо приспане) і removed/deceased (легітимно мовчазні — інакше sweeper ганяв би
   # Field Audit на кладовище). Рантайм-поріг веде TreeStalenessSweepWorker через
-  # SystemParameter; дефолт 24h [transitional] до bench-калібрування (00_07 SILENCE-1:
-  # delta_t навмисно варіативний, поріг НЕ виводиться з конфіга). Стеля: індексу на
+  # SystemParameter; дефолт 24h [transitional] до періоду WUT, з якого
+  # поріг деривується (00_07 FW.49 · SILENCE-1; 06_08 §1.3). Стеля: індексу на
   # last_seen_at нема — на тисячах рядків seq-scan дешевий, scale → індекс.
   scope :silent, ->(threshold = SILENCE_THRESHOLD) { active.where(last_seen_at: ...threshold.ago) }
   # [FW.17] SQL-двійник `#fresh_signal?` — та сама межа (`>=`) і той самий NULL (ненароджений

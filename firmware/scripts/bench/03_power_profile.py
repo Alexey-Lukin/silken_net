@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """03_power_profile.py — [bench] PPK2 power-профілі: floor сну / E_cycle / Vcap recharge.
 
-Артефакти CSV → bench_artifacts/: пряме паливо для E.63 (медіана перезаряду →
-шкала delta_t: каденс · поріг тиші · зонд комірки; калібрування DELTA_T_FAST_S/DELTA_T_SLOW_S — лише передумовою мінту до свідка, 03_04 §4.3) і FW.54 (300 нА floor —
+Артефакти CSV → bench_artifacts/: E_cycle — строк елемента для періоду WUT і ціни heartbeat
+(00_07 FW.49) та ΔE_cycle ер (FW.66); recharge за первинним елементом не міряємо (RUNBOOK 3.3) і FW.54 (300 нА floor —
 NB: роздільність PPK2 ~100 нА → 300 нА підтверджувати JS220/SMU).
 ⚠️ 300 нА — клас Standby, не STOP2: відвантажена прошивка спить у STOP2, і паспорт (DS13105 Rev 12)
 дає там 1.07 µA typ при 3 В і 25 °C — такий floor НЕ дефект прошивки (00_07 FW.54, RUNBOOK 3.1).
