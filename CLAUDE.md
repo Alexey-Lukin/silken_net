@@ -83,7 +83,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 
 | Напрямок | Режим · ключ (CCM-ера) |
 |----------|------------------------|
-| Soldier → Queen: телеметрія/panic | AES-**128**-ECB [transitional] → AES-128-CCM [FW.2, bench- і ⛔ ARCH.8-gated] · **session KEYL per-device** |
+| Soldier → Queen: телеметрія/panic | AES-**128**-ECB [transitional] → AES-128-CCM [FW.2, bench-gated] · **session KEYL per-device** |
 | Soldier ↔ Queen: control-plane (downlink OTA/beacon + uplink 0x55/0x56) | AES-128-ECB · **cluster KEYB** (Queen'ин єдиний LoRa-ключ = KEYB-значення) |
 | Rails → Soldier: адресні команди `0x9E` (з 2026-09-29; `0x9A` (FW.66) і `0x9D` (HW.30) — RETIRED) | AES-128-CCM · **session KEYL цілі** наскрізь, Королева сліпа; анти-повтор — DLFC (`03_05 §2.5`) |
 | Queen → Rails (CoAP) / downlink | AES-256-CBC (HRNG IV) · KEYC per-gateway; poll-запит і poll-відповідь — HMAC-теги з підключів KEYC (SEC.38 · FW.60, `03_05 §6`) |
