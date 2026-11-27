@@ -170,7 +170,7 @@ class Tree < ApplicationRecord
   # (свідомо приспане) і removed/deceased (легітимно мовчазні — інакше sweeper ганяв би
   # Field Audit на кладовище). Рантайм-поріг веде TreeStalenessSweepWorker через
   # SystemParameter; дефолт 24h [transitional] до періоду WUT, з якого
-  # поріг деривується (00_07 FW.49 · SILENCE-1; 06_08 §1.3). Стеля: індексу на
+  # поріг деривуватиметься (00_07 FW.49 · SILENCE-1; 06_08 §1.3). Стеля: індексу на
   # last_seen_at нема — на тисячах рядків seq-scan дешевий, scale → індекс.
   scope :silent, ->(threshold = SILENCE_THRESHOLD) { active.where(last_seen_at: ...threshold.ago) }
   # [FW.17] SQL-двійник `#fresh_signal?` — та сама межа (`>=`) і той самий NULL (ненароджений

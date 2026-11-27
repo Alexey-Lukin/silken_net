@@ -9,7 +9,7 @@
 #
 #   1. Поріг — SystemParameter :tree_silence_threshold_hours, 24h [transitional] до
 #      періоду WUT: на первинному елементі енергогейта немає, delta_t = період
-#      пробудження, тож поріг деривується з каденсу, як у Королеви (06_08 §1.3;
+#      пробудження, тож поріг деривуватиметься з каденсу (06_08 §1.3;
 #      01_03 §4, ⊕ Б4; 00_07 FW.49 · SILENCE-1).
 #   2. Носій = per-tree :field_audit, НЕ новий alert-тип: новий critical-тип
 #      потрапив би у critical_unmaintained? (BlockchainBurningService, blacklist-
@@ -18,7 +18,7 @@
 #      людське рішення, removed/deceased ЗАПУСКАЮТЬ slashing — «слухай, не карай».
 #
 # Симетрія: вузол знову в ефірі → машинний resolve! (user: nil → resolved_by NULL,
-# дискримінатор gap-E) — транзієнтна тиша (дощ → повільний заряд) не жене лісника.
+# дискримінатор gap-E) — транзієнтна тиша не жене лісника.
 class TreeStalenessSweepWorker
   include Sidekiq::Job
   # alerts(2): народжує life-safety сигнали EWS (той самий ярус, що Queen-sweeper);
