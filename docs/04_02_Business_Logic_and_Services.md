@@ -945,7 +945,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Тригер** | Sidekiq-cron — **[SILENCE-1]** dead-man switch Солдата ([`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)) |
 | **Вхід** | — |
 | **Сервіси** | Немає — `Tree.silent(threshold)` + `EwsAlert.escalate_field_audit!(tree:)` |
-| **Side Effects** | Аномальна тиша (active-дерево мовчить довше `SystemParameter :tree_silence_threshold_hours`; дефолт = `Tree::SILENCE_THRESHOLD` [transitional] до bench E.63 — [ARCH.99] дав числу один дім на воркер, скоуп і в'ю) → per-tree критичний `EwsAlert(:field_audit)` — свідомо НЕ новий alert-тип (blacklist-предикат `critical_unmaintained?` — [`05_05`](05_05_Slashing_and_Risk_Policy)); статус дерева НЕ чіпає (removed/deceased запускають slashing, dormant = людське рішення). Повернення в ефір → машинний `resolve!` (resolved_by NULL, gap-E). Метрики: `tree_silence_total`, `trees_silent`. |
+| **Side Effects** | Аномальна тиша (active-дерево мовчить довше `SystemParameter :tree_silence_threshold_hours`; дефолт = `Tree::SILENCE_THRESHOLD` [transitional] до періоду WUT ([`00_07`](00_07_Action_Plan_Tracker) FW.49; за Б3 поріг деривується з каденсу — [`01_03 §4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) ⊕ Б4) — [ARCH.99] дав числу один дім на воркер, скоуп і в'ю) → per-tree критичний `EwsAlert(:field_audit)` — свідомо НЕ новий alert-тип (blacklist-предикат `critical_unmaintained?` — [`05_05`](05_05_Slashing_and_Risk_Policy)); статус дерева НЕ чіпає (removed/deceased запускають slashing, dormant = людське рішення). Повернення в ефір → машинний `resolve!` (resolved_by NULL, gap-E). Метрики: `tree_silence_total`, `trees_silent`. |
 
 #### `HeliumSosWorker`
 
