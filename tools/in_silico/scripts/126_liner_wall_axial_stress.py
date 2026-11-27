@@ -111,11 +111,6 @@ from lib.constants import (
 from lib.mechanics import bonded_fit_section
 from lib.utils import banner
 
-SI_DESCRIPTION = ("First-order check of the axial stress in the thin PEEK liner wall of the anchor's bus wire: its mean "
-                  "and amplitude per bond state of the anchor in the wood and per wire alloy, from the shear-lag model's "
-                  "root force, against PEEK fatigue readings and against its strength and creep at two warm-edge "
-                  "temperatures, with the load shares at which each failure axis switches on; no solve")
-
 MECH = CACHE_DIR / "mechanical"
 OUT = MECH / "liner_wall_axial_stress.json"
 

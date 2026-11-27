@@ -127,10 +127,6 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import CACHE_DIR, SIGMA_YIELD_PEEK_PA
 from lib.utils import banner
 
-SI_DESCRIPTION = ("A countersunk exit of the bus rod's channel: the clearance a PEEK ring's bore needs so the rod never "
-                  "bears on it, the floor of the exit-edge radius under an axis offset, and what the countersink's depth "
-                  "costs the rod's root cycle.")  # its row in the paper SI (72): English, no repo jargon
-
 
 def _load(name: str, file: str):
     spec = importlib.util.spec_from_file_location(name, HERE / file)

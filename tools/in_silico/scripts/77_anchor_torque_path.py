@@ -104,8 +104,6 @@ from lib.constants import (
 from lib.mechanics import thermal_interference, thick_wall_hoop
 from lib.utils import banner
 
-SI_DESCRIPTION = "Torque path onto the anchor's own axis under stem torsion, and the press-fit friction that carries it (by inversion)."  # its row in the paper SI (72): English, no repo jargon
-
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT = OUT_DIR / "anchor_torque_path.json"
 CEM = REPO_ROOT / "tools" / "cad" / "cem"

@@ -71,8 +71,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, ALPHA_PEEK_1K, CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = "Running clearance of the bayonet collar in the radome's socket band across the capsule temperature envelope, as a function of the manufacturing route, and the board ceiling each route leaves."  # its row in the paper SI (72): English, no repo jargon
-
 OUT = CACHE_DIR / "mechanical" / "collar_running_clearance.json"
 CACHE_73 = CACHE_DIR / "mechanical" / "collar_wall_inversion.json"
 CACHE_52 = CACHE_DIR / "mechanical" / "z_stack_tolerance.json"

@@ -115,12 +115,6 @@ from lib.constants import (
 from lib.mechanics import bonded_fit_section
 from lib.utils import banner
 
-SI_DESCRIPTION = ("The share of a living stem's radial shift that the wood imposes on the anchor, per bond state of the "
-                  "anode and the sleeve, from the stiffness of the bark bearing, the anode's bond in the xylem, a tie "
-                  "of the sleeve at the cambium and the PEEK sleeve, with the bark-bearing stiffness at which the share "
-                  "reaches each seam requirement and each contact-pad conclusion flips, at both ends of the anode-bond "
-                  "bracket, for the flange located by the bark and by a rigid Zone-3 fit; no solve")
-
 MECH = CACHE_DIR / "mechanical"
 THERM = CACHE_DIR / "thermal"
 OUT = MECH / "anchor_wood_share.json"

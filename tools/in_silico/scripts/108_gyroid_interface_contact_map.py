@@ -133,16 +133,6 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Where the perfectly bonded interface between a titanium gyroid lattice and the wood of a living stem "
-                  "could stand instead as a contact pressed by a growth pressure and held by friction: on the bonded "
-                  "orthotropic Eshelby solution the interface traction is exact, so it is split into its normal and "
-                  "shear parts, and the friction it needs, the sectors where it opens and the growth pressure needed "
-                  "to keep it closed (a lower bound on a smooth envelope, a demand elsewhere) are computed over every modelled cell of both wood groups, dry Scots pine and "
-                  "green Pinaceae, against two named readings of root growth pressure at the stem strain of one "
-                  "measured sway day; the direction of the homogenised verdict holds only for a smooth contact on the "
-                  "lattice's envelope; the projection is checked against the closed-form solution for an isotropic "
-                  "circular inclusion, no finite elements")
-
 MECH = CACHE_DIR / "mechanical"
 SRC106 = MECH / "gyroid_wood_strain_share.json"
 SRC105 = MECH / "printed_part_sway_stress.json"

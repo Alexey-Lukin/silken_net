@@ -87,10 +87,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Two reanalyses of the 10 m wind against one synoptic station's daily mean and daily maximum wind, "
-                  "with the gap conditioned on the station, on the reanalysis and on neither, and the strong-wind "
-                  "hours of nineteen winter seasons read from both reanalyses.")
-
 DATA_DIR = REPO_ROOT / "tools/in_silico/data/station_cherkasy"
 ERA5_HOURLY = REPO_ROOT / "tools/in_silico/data/era5_cherkasy/hourly_1991_2020.csv.gz"
 POWER_62 = REPO_ROOT / "tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.json"

@@ -109,8 +109,6 @@ from pathlib import Path
 import numpy as np
 from scipy.linalg import expm
 
-SI_DESCRIPTION = "Contact of the bus rod's PEEK liner with the Ti channel at its exit, as an elastic-layer contact problem coupled to the rod's bending."  # its row in the paper SI (72): English, no repo jargon
-
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 

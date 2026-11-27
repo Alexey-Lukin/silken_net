@@ -127,15 +127,6 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = ("The share of a living stem's in-plane bending strain that a bonded titanium gyroid lattice takes, "
-                  "from an orthotropic Eshelby solution for a circular cylinder on the measured elastic constants of "
-                  "Scots pine sapwood at four moisture levels below fibre saturation and, as a separate group, of green "
-                  "sets of four other Pinaceae, with the lattice's cubic constants read from two voxel "
-                  "finite-element cases and its shear modulus both swept up to the Voigt bound and read, as three named readings, "
-                  "from a periodic voxel case of the infinite lattice; the install "
-                  "angle and three readings of the pore filling are swept as well; closed forms checked against three "
-                  "independent solutions, no finite elements")
-
 MECH = CACHE_DIR / "mechanical"
 FEA = REPO_ROOT / "tools/cad/cache/fea/anchor_zone1_pine.json"
 PERIODIC = REPO_ROOT / "tools/cad/cache/fea/periodic_homogenization.network.w100.c1.json"

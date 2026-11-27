@@ -80,9 +80,6 @@ from lib.constants import (
 )
 from lib.utils import banner
 
-SI_DESCRIPTION = ("How heat and cold change how hard the spring contacts press on the anchor — over a season and over "
-                  "a day — and whether the assembly's tolerance budget still leaves room for it.")
-
 ZSTACK52 = CACHE_DIR / "mechanical" / "z_stack_tolerance.json"
 CLEAR82 = CACHE_DIR / "mechanical" / "collar_running_clearance.json"
 CAPSULE71 = CACHE_DIR / "thermal" / "capsule_envelope.json"

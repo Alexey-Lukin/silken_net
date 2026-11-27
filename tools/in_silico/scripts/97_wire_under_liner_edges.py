@@ -78,10 +78,6 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, CACHE_DIR, E_PEEK_PA, NU_PEEK
 from lib.utils import banner
 
-SI_DESCRIPTION = ("The bus wire under the liner's edges: the mouth and exit contact pressure carried through the PEEK layer onto "
-                  "the Ti surface (layer on an elastic half-space), added to the wire's nominal bending along the drag cycle, "
-                  "and the weld knockdown below which the welded root stays the critical section")
-
 _spec = importlib.util.spec_from_file_location("liner92", HERE / "92_liner_mouth_contact.py")
 m92 = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(m92)

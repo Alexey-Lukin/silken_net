@@ -103,8 +103,6 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, CACHE_DIR, SIGMA_YIELD_PEEK_PA
 from lib.utils import banner
 
-SI_DESCRIPTION = "Contact of the bus rod's PEEK liner with the Ti channel at its mouth under an offset of the channel axis, two patches coupled through the rod's bending."  # its row in the paper SI (72): English, no repo jargon
-
 _spec = importlib.util.spec_from_file_location("liner91", HERE / "91_liner_exit_contact.py")
 m91 = importlib.util.module_from_spec(_spec)
 sys.modules["liner91"] = m91

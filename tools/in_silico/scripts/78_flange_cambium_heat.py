@@ -61,8 +61,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import BARK_DEAD_RIDGE_DBH38_MM, CACHE_DIR, INSTALL_ANGLE_DEG, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = "Cambium temperature under the anchor's titanium flange over thirty years of hourly weather, against bark without it (1D upper bound)."  # its row in the paper SI (72): English, no repo jargon
-
 OUT_DIR = CACHE_DIR / "thermal"
 OUT = OUT_DIR / "flange_cambium_heat.json"
 FLANGE_CEM = REPO_ROOT / "tools/cad/cem/cathode_flange.json"

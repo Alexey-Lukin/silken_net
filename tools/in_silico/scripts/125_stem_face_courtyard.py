@@ -114,12 +114,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import KINETICS_DIR
 from lib.utils import banner
 
-SI_DESCRIPTION = ("A light logger on a pine stem's face in a courtyard open to one side: the share of an open face's "
-                  "winter beam, sky-diffuse and ground-reflected light that reaches the face past a two-storey building "
-                  "on three sides, under two sky products; the building's share given a level horizon inside the "
-                  "opening, a bracket on a plan read by eye that includes the trunk's position, and the hours the sun "
-                  "is first seen from the trunk.")
-
 HERE = Path(__file__).resolve().parent
 OUT = KINETICS_DIR / "stem_face_courtyard.json"
 MONTHS = (12, 1, 2)

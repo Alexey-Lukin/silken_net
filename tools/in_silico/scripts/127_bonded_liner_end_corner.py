@@ -138,13 +138,6 @@ from lib.constants import (
 )
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Stress concentration in the titanium bus wire at the end of a thin PEEK liner: a semi-analytical "
-                  "axisymmetric finite-element model (Fourier modes 0 and 1) of the wire and the layer stopping with a "
-                  "square end, in frictionless contact, with a friction-capped interfacial shear, or bonded, under "
-                  "bending, the bore's interference and the thermal mismatch with the axial misfit locked at named "
-                  "temperatures, against the two-wedge Williams singularity order of the bonded corner; the end's fatigue "
-                  "safety factor against the wire's modelled sections, per distance from the corner")
-
 MECH = CACHE_DIR / "mechanical"
 OUT = MECH / "bonded_liner_end_corner.json"
 SRC_97 = MECH / "wire_under_liner_edges.json"

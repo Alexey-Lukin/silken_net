@@ -89,12 +89,6 @@ from lib.constants import (
 from lib.mechanics import bonded_fit_section
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Prices of the remedies for the anchor's centre contact pad leaving the pogo pins' working window with "
-                  "temperature: for each — a shorter or lower-expansion polymer run, a longer pin stroke, a smaller "
-                  "stack-up residual — the micrometres it gains or removes against the window margin on both spans, with "
-                  "the stem's sway on the seasonal position and without it, and the load it leaves on the bus wire's weld "
-                  "seam, on the wire–liner shear-lag closed form; no solve")
-
 MECH = CACHE_DIR / "mechanical"
 OUT = MECH / "pad_travel_remedies.json"
 PARTS = ("window_floor", "ratified_nominal", "window_ceiling")

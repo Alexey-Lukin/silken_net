@@ -166,13 +166,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = ("What a tree stem's outward growth passes on a sensor capsule fixed to older wood, in order: the years "
-                  "at which the rising surface reaches the vent hole, the antenna plane and the dome's top, the far field "
-                  "of a line source once it lies under the surface of a layered lossy stem (by reciprocity from the "
-                  "plane-wave interior field, checked against the source's own boundary-value problem), the share of an "
-                  "isotropic field a disc keeps at the bottom of a straight-walled pit, and the allowance that keeps the "
-                  "lowest opening clear, as a flange thickness and as a raised stack.")
-
 HERE = Path(__file__).resolve().parent
 CEM_DIR = REPO_ROOT / "tools/cad/cem"
 OUT = CACHE_DIR / "radio" / "bark_overgrowth_consumers.json"

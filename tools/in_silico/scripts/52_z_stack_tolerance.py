@@ -54,8 +54,6 @@ from lib.constants import (
 )
 from lib.utils import banner  # import-safe now (openmm is lazy in pick_platform)
 
-SI_DESCRIPTION = "Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs)."  # its row in the paper SI (72): English, no repo jargon
-
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

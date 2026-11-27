@@ -51,8 +51,6 @@ import sys
 from itertools import pairwise
 from pathlib import Path
 
-SI_DESCRIPTION = "What a channel-to-root misalignment costs the bus root with a Soderberg mean-stress correction."
-
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 

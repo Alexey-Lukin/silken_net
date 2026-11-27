@@ -149,16 +149,6 @@ from lib.constants import (
 )
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Cyclic stress from stem sway in the titanium parts of the anchor, path by path: an energy lower "
-                  "bound on the ligament stress of a gyroid lattice bonded to the wood, given as the stem surface strain "
-                  "above which it alone reaches the endurance limit, per candidate alloy, and beside it a reading of the "
-                  "ligament peak under a uniaxial macro stress from a periodic finite-element case of the infinite "
-                  "lattice, which is not a bound; the axial force the wood "
-                  "imposes through the anode bond; and the nominal stress in the solid shanks, barbs and the flange disc "
-                  "(an annular Kirchhoff plate on the bark), with the stress-concentration factor and the static mean at "
-                  "which each reaches the safety-factor line; closed forms over cached finite-element results, no "
-                  "solve here")
-
 MECH = CACHE_DIR / "mechanical"
 CEM = REPO_ROOT / "tools/cad/cem"
 FEA_DIR = REPO_ROOT / "tools/cad/cache/fea"

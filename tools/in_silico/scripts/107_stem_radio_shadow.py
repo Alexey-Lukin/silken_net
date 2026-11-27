@@ -156,13 +156,6 @@ from lib.constants import (
 )
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Radio shadow of a tree stem at 868 MHz: the exact two-dimensional cylindrical-wave solution for a "
-                  "line source beside a layered lossy circular stem (heartwood, sapwood, bark), giving the azimuthal "
-                  "field against the same source in free space at equal current (the horizontal-plane cut of a short "
-                  "dipole or loop along an infinite stem) and at equal input power (a two-dimensional indicator of the "
-                  "near-field loss), for both polarizations as a bracket of readings, with free-space, lossless, "
-                  "energy-balance and truncation controls")
-
 CEM_DIR = REPO_ROOT / "tools/cad/cem"
 OUT_DIR = CACHE_DIR / "radio"
 OUT = OUT_DIR / "stem_radio_shadow.json"

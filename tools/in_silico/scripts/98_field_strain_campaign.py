@@ -88,8 +88,6 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import CACHE_DIR
 from lib.utils import banner
 
-SI_DESCRIPTION = ("How long a field campaign of stem-strain sensors must run to collect strong-wind hours, replayed over 30 "
-                  "years of hourly reanalysis wind at the site for each start month, and how many battery trips that costs.")  # its row in the paper SI (72)
 OUT_JSON = CACHE_DIR / "mechanical" / "field_strain_campaign.json"
 
 BEAUFORT_MS = {"beaufort_4": 5.5, "beaufort_5": 8.0}     # WMO anchors as script 62 uses them — a proxy, not a criterion

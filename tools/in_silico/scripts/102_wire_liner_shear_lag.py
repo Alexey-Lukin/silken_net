@@ -92,12 +92,6 @@ from lib.constants import (
 from lib.mechanics import bonded_fit_section
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Shear-lag model of the anchor's bus wire in its press-fitted PEEK liner with Coulomb slip: the axial "
-                  "load at the weld root and the travel of the centre contact pad against the flange when trunk bending "
-                  "or temperature shifts the flange against the anode, as a function of the share of the shift the wood "
-                  "imposes, per tolerance part and friction coefficient, with the seam requirement it implies and an "
-                  "independent finite-element check; no solve")
-
 MECH = CACHE_DIR / "mechanical"
 THERM = CACHE_DIR / "thermal"
 OUT = MECH / "wire_liner_shear_lag.json"

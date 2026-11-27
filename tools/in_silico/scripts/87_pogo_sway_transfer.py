@@ -112,10 +112,6 @@ def _load(name: str, file: str):
 s52 = _load("zstack52", "52_z_stack_tolerance.py")
 s55 = _load("bus55", "55_bus_mechanical.py")
 
-SI_DESCRIPTION = ("How trunk sway reaches the spring contact pins of the sensor capsule: a rim-friction condition, the "
-                  "inertia of the board stack and a Poisson term at the centre pad, from published stem-tilt data of a "
-                  "Scots pine.")
-
 RADOME_CEM = REPO_ROOT / "tools/cad/cem/radome.json"
 ZSTACK52 = CACHE_DIR / "mechanical" / "z_stack_tolerance.json"
 TORQUE77 = CACHE_DIR / "mechanical" / "anchor_torque_path.json"

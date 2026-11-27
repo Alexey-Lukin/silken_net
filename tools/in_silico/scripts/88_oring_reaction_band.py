@@ -67,10 +67,6 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import CACHE_DIR, GENEROUS_ORING_BOUND_N
 from lib.utils import banner
 
-SI_DESCRIPTION = ("The force an O-ring pushes back with when it is squeezed, from a seal maker's published chart, over "
-                  "the range of squeeze our tolerances allow, and what that force means for the bayonet lock and for "
-                  "the capsule staying put.")
-
 ZSTACK52 = CACHE_DIR / "mechanical" / "z_stack_tolerance.json"
 COLLAR73 = CACHE_DIR / "mechanical" / "collar_wall_inversion.json"
 SWAY87 = CACHE_DIR / "mechanical" / "pogo_sway_transfer.json"

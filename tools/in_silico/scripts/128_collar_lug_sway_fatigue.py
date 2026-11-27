@@ -119,12 +119,6 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Cyclic stress from stem sway at the bayonet collar and the lug root of the Zone 3 flange: the "
-                  "collar as a short cylinder whose foot the bending disc turns (on the disc model and bearing forces "
-                  "of script 105, with the O-ring groove and a compliant root as named plate readings), the lug's "
-                  "sway force ceiling, and two named readings of the clamp's eccentric bending of the wall under a "
-                  "lug; closed forms with finite-difference, piecewise closed-form and limit controls.")
-
 MECH = CACHE_DIR / "mechanical"
 CEM = REPO_ROOT / "tools/cad/cem"
 OUT = MECH / "collar_lug_sway_fatigue.json"

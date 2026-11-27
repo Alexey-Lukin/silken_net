@@ -103,8 +103,6 @@ from lib.constants import (
 from lib.mechanics import thick_wall_hoop
 from lib.utils import banner
 
-SI_DESCRIPTION = "Mechanical check of the central bus rod: buckling and sway fatigue."  # its row in the paper SI (72): English, no repo jargon
-
 
 def _bracket(lo: float, hi: float) -> str:
     """A root-stress bracket printed OUTWARD — the lower end DOWN to 0.01, the upper end UP to 0.1 MPa — so the printed

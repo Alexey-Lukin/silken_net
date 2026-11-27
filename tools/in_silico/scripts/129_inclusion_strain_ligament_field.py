@@ -62,11 +62,6 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import ALLOY_BASELINE, CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = ("The gyroid lattice's ligament stress field under the inclusion's own multiaxial strain in the wood (an "
-                  "Eshelby inclusion per wood reading, alloy and pore fill), read from periodic voxel finite-element "
-                  "solutions superposed under each strain, and the stem surface strain above which the ligament peak "
-                  "reaches the endurance line — beside the uniaxial-stress reading of script 105.")
-
 MECH = CACHE_DIR / "mechanical"
 FEA_DIR = REPO_ROOT / "tools/cad/cache/fea"
 STRAIN_FIELDS = FEA_DIR / "periodic_strain_fields.network.w100.c1.json"

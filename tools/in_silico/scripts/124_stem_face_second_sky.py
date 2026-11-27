@@ -127,11 +127,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = ("A light logger on a pine stem's south face under a second sky: the face lit by a satellite-based "
-                  "surface-irradiance product and judged against reanalysis irradiance — the false light dips, the "
-                  "rejections of snow- and hoarfrost-cover models and the seasonal ratio that the disagreement of the "
-                  "two sky estimates alone produces, over 19 winters.")
-
 HERE = Path(__file__).resolve().parent
 OUT = KINETICS_DIR / "stem_face_second_sky.json"
 P118 = KINETICS_DIR / "stem_face_cover_power.json"

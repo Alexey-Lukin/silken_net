@@ -78,9 +78,6 @@ from lib.constants import (
 )
 from lib.utils import banner
 
-SI_DESCRIPTION = ("How much the bayonet's grip spreads with its fit tolerance and with heat and cold, and how thick the "
-                  "titanium collar must then be — as a function of how stiff the clamp is, which is still unmeasured.")
-
 ZSTACK52 = CACHE_DIR / "mechanical" / "z_stack_tolerance.json"
 COLLAR73 = CACHE_DIR / "mechanical" / "collar_wall_inversion.json"
 CLEAR82 = CACHE_DIR / "mechanical" / "collar_running_clearance.json"

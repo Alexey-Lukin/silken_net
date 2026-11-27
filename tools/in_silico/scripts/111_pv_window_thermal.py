@@ -76,8 +76,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = "Capsule and cambium temperature with a dark photovoltaic window in the radome's crown, per window area, the rest of the dome at the specified finish (upper bound)."  # its row in the paper SI (72): English, no repo jargon
-
 OUT_DIR = CACHE_DIR / "thermal"
 OUT = OUT_DIR / "pv_window_thermal.json"
 PV_CACHE = CACHE_DIR / "kinetics" / "winter_pv_autonomy.json"

@@ -79,12 +79,6 @@ from lib.constants import (
 )
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Torsion budget of the anchor's welded bus wire: the elastic twist angle and torque to first surface "
-                  "yield over the run from the weld root to the pad plane, per candidate alloy, under two yield criteria "
-                  "and two readings of the twisted run, set against the torque at which the press-fitted PEEK liner — "
-                  "the only in-tree holder of the wire's top — yields in torsion or its grip slips, the wire yield below "
-                  "which that order flips, and the stem-torsion rotation at the sleeve's bark end; no solve")
-
 MECH = CACHE_DIR / "mechanical"
 OUT = MECH / "bus_torsion_budget.json"
 READINGS = {"von_mises": 1.0 / math.sqrt(3.0), "tresca": 0.5}   # τ_y / σ_y
