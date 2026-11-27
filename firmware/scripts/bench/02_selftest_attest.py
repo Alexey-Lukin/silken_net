@@ -51,7 +51,7 @@ PLAN = """\
    (mode=UR — ядро стає на векторі скиду до startup, SRAM зберігає результат POST;
    HOTPLUG до сплячого в STOP2 Солдата не достукається) → вердикт.
 5. PASS → фліп FW2_CCM_ENABLED (firmware) + TELEMETRY_CCM_ENABLED (backend) за
-   чеклистом 03_05 «FW.2 flip-checklist» — разом з e2e-днем CCM (RUNBOOK 2.1b); енергетичного гейта ARCH.8 на фліпі більше немає (03_05 (ґ) ⊕).
+   чеклистом 03_05 «FW.2 flip-checklist» — разом з e2e-днем CCM і повтором SEC.40 (RUNBOOK 2.1b); енергетичний гейт ARCH.8 фліп не тримає (03_05 (ґ) ⊕ 2026-11-27).
 6. BME280 (HW.32, RUNBOOK 2.2б): той самий образ, `--bme --elf soldier.elf` → t° · тиск · RH
    поруч із кімнатним термометром і барометром; settle після сну цей POST не міряє.
 """
