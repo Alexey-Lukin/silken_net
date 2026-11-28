@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.11.1](https://github.com/Alexey-Lukin/silken_net/compare/v0.11.0...v0.11.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* **DOC-T.131 · Б4 П1:** адверсар застосування — ⛔ у процитованій формі, «удруге» знято, межа відра — лише в домі присуду ([94cb022](https://github.com/Alexey-Lukin/silken_net/commit/94cb022f95fc637528b472565084aea910418580))
+* **DOC-T.131 · Б4 П2:** адверсар — поріг тиші «до bench-калібрування E.63» → «до періоду WUT» у домі (06_08 §1.3) і коді; інструменти стенда; самосуперечність ноги SILENCE-1 ([379be14](https://github.com/Alexey-Lukin/silken_net/commit/379be14727b72c574e3a53006edf04e68bb68f5b))
+* **DOC-T.131 · Б4:** адверсар — переказ механізму й ціни ери прибрано на користь вказівників; машинне позначено; зворотний вказівник SILENCE-1 → Б4 ([91a0b7a](https://github.com/Alexey-Lukin/silken_net/commit/91a0b7a3959216ef941659059516646d844b7f3c))
+* **DOC-T.131 · Б4:** адверсар раунду 4 — «як у Королеви» знято, майбутній час порогу, ⊕ у скілах — Б4 (не Б3), без «every frame» ([e8d130c](https://github.com/Alexey-Lukin/silken_net/commit/e8d130c80e635cdfe0ff10f91857a5c8724dd412))
+* **firmware #9 · CLAUDE.md §6 · HW.9 · листи HW.37:** адверсар коміту В — логер платить PVD лише за присудом, не за кодом сьогодні; рядок vcap — з умовою хімії ([34a54c9](https://github.com/Alexey-Lukin/silken_net/commit/34a54c900506a63fa619915d8e6dee6e6200262d))
+* **FW.50 · 03_01 §1.4 · §1.8а · 02_04:** адверсар звуження — «живий канал» не перевизначено, вказівники під дільник = стан до звуження; висновки машини позначено ([46df135](https://github.com/Alexey-Lukin/silken_net/commit/46df13565f29d072a45bf9c8c632e441a30c88d3))
+* **HW.12 · 01_03 §4 · DOC-T.131:** адверсар архіву — дослівний «Архів + поділ» у канон, адреси переведено, пропущені носії й квантори ([6838d47](https://github.com/Alexey-Lukin/silken_net/commit/6838d47bf12d689da96be19ecd6dffddce2500aa))
+* **HW.12 · 01_03 §4:** адверсар раунду 2 — «П3» → «Архів + поділ», E.63 без живого замовлення, «там же» чесно, оплачене одним реченням ([c098167](https://github.com/Alexey-Lukin/silken_net/commit/c098167436d51a8f8fc34481eefff15283142163))
+* **HW.37:** адверсар поділу — модальність замість остаточності (мФ-клас · гібрид 🌿), бездомні факти вендорів, носії холодного краю, «П3» у ⛔-головах ([462f88e](https://github.com/Alexey-Lukin/silken_net/commit/462f88eebf1ab476924a9399191af515d43a70c2))
+* **HW.37:** адверсар раунду 2 — «лише» знято (повернення: мФ-клас стенда HW.54 або гібрид 🌿), переказ технолога — лише входи розводки, кеші й вказівники аркуша радома ([0567400](https://github.com/Alexey-Lukin/silken_net/commit/05674000ff5c3e470a58745bf3b80848d67ba53c))
+* **HW.44 · FW.50 · 00_03 §3.5:** адверсар архіву — нога «кінець життя елемента» з умовами й поданням, пересторога RTC дослівно, без хибного GP 0 ([e24bda1](https://github.com/Alexey-Lukin/silken_net/commit/e24bda146c0075c189122010d86b35eb66a786f5))
+* **HW.44 · FW.50 · 00_03 §3.5:** адверсар раунду 2 — нога «кінець життя» з межами замість тверджень; рятувальник не «зупиняє» провал ([90304c2](https://github.com/Alexey-Lukin/silken_net/commit/90304c2b33c40bf0268846c29ce968ffb4f3e452))
+* **HW.7 · DOC-T.131:** адверсар архіву — ⛔ лише на мету під вузол, метод стенда ⏸; пастка перепайки CJMCU-2557 переселена; P-нога без голого «П3» ([a26b798](https://github.com/Alexey-Lukin/silken_net/commit/a26b7986806498673c681ce93fd5aa460adb6d0d))
+
+
+### Reverts
+
+* **deps:** prism 2.1.0 → 1.9.0 — refract 1.1.0 (під phlex) звертається до Prism::MissingNode, знятого в prism 2.0; бут з eager load падав, `CI · Code` на main червоний ([af1b3b4](https://github.com/Alexey-Lukin/silken_net/commit/af1b3b442440a073eee187b8ec672dca1005fa47))
+* **FW.70:** драйвер датчика пілота переповнив FLASH образу mini на тулчейні CI на 204 Б — CI · Code червоний ([bb8d861](https://github.com/Alexey-Lukin/silken_net/commit/bb8d861f861a9a56a654c6f208197255cc52462b))
+
 ## [0.11.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.10.0...v0.11.0) (2026-11-26)
 
 
