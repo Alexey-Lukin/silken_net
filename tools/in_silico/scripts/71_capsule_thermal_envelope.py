@@ -56,7 +56,8 @@ construction as `51`'s Arrhenius-effective field temperature, with the vendor's 
 Life at T_eff comes from `51`'s own kernel and readings (`readings_years`, both datasheet Life rows), imported, never re-implemented.
 
 THIRD OUTPUT — cold hours below the EDLC operating floor (air; the lump tracks air at night in this model,
-and real sky cooling would make the capsule COLDER — so the count is a LOWER bound for the capsule).
+and real sky cooling would make the capsule COLDER — so the count is a LOWER bound for the capsule; ERA5's air
+itself runs warm on cold nights against the Cherkasy station — `121`, 02_03 §12.1).
 
     ~/miniforge3/envs/silken_md/bin/python tools/in_silico/scripts/71_capsule_thermal_envelope.py
 """
@@ -83,8 +84,6 @@ from lib.constants import (
     VBAT_OV_RATIFIED_V,
 )
 from lib.utils import banner
-
-SI_DESCRIPTION = "Thermal envelope of the sensor capsule under its PEEK radome, against the operating rating of its EDLC."  # its row in the paper SI (72): English, no repo jargon
 
 OUT_DIR = CACHE_DIR / "thermal"
 DATA_FILE = REPO_ROOT / "tools/in_silico/data/era5_cherkasy/hourly_1991_2020.csv.gz"

@@ -160,12 +160,6 @@ from lib.constants import (
 )
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Whether a small photovoltaic cell on the sensor capsule could keep its supercapacitor from running "
-                  "empty through the worst winter stretch of thirty years of hourly weather: per power demand, the "
-                  "effective aperture below which it could not, with the inputs the specifications bound read at "
-                  "their favourable and adverse ends, on a model that leaves out snow on the dome, the cell's "
-                  "temperature and the canopy's winter optics")  # its row in the paper SI (72): English, no repo jargon
-
 OUT = KINETICS_DIR / "winter_pv_autonomy.json"
 SCRIPTS = Path(__file__).resolve().parent
 
@@ -192,7 +186,8 @@ SOURCES = {
                      "&angle=90&aspect=0&outputformat=json (collected by the desk pass, re-queried by its verifier)",
     "dec_ghi_nasa_power": "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=ALLSKY_SFC_SW_DWN,"
                           "ALLSKY_SFC_SW_DIFF,CLRSKY_SFC_SW_DWN&community=RE&longitude=32.06&latitude=49.44&format=JSON "
-                          "(as collected by the desk pass, not re-read)",
+                          "(collected by the desk pass; the number reproduced 2026-11-13 from POWER's daily series 2001–2020 — "
+                          "the handoff corpus, 2026-11-13_power_survey)",
     "desk_worst_7d": "the desk pass of 2026-10-26 over the same ERA5 file (its script was not committed; provenance — "
                      "the handoff corpus named in 01_03 §4 ⊕, r3b_winter_power)",
 }

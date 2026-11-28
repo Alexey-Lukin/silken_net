@@ -60,8 +60,10 @@ CAN show: hours and calendar days per 30 years with the isolated capsule below t
 below the capsule requirement (−40 °C), the longest spell below the floor, the coldest capsule hour and the air at
 it — per sky end, sun end and wind; the sunshine share and the wind on the cold days, against the whole winter.
 CANNOT show: the temperature INSIDE the capsule (one lump, no internal resistance — a thermocouple under the radome
-is the 👤 leg of HW.37); real cloud cover; snow or rime on the radome; the EDLC's behaviour below its floor (only
-the vendor can say — node_edlc_rfq Part B); ERA5 smoothing of station extremes (it moves the cold edge DOWN).
+is an input of 00_07 DOC-T.131,
+the leg «Б2 — подання»); real cloud cover; snow or rime on the radome; the EDLC's behaviour below its floor (only
+the vendor can say — node_edlc_rfq Part B); ERA5 smoothing of station extremes (it moves the cold edge DOWN;
+against the Cherkasy station that holds in the count of cold days, not in the lowest value — `121`, 02_03 §12.1).
 
 Run:  python tools/in_silico/scripts/81_capsule_cold_edge_sky.py      # seconds (30 years hourly, 12 runs)
 """
@@ -77,8 +79,6 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, EDLC_OPERATING_MIN_C, REPO_ROOT
 from lib.utils import banner
-
-SI_DESCRIPTION = "Cold edge of the sensor capsule's thermal envelope with clear-sky and overcast long-wave exchange, over thirty years of hourly weather, against the operating floor of its supercapacitor."  # its row in the paper SI (72): English, no repo jargon
 
 OUT_DIR = CACHE_DIR / "thermal"
 OUT = OUT_DIR / "capsule_cold_edge_sky.json"
@@ -324,12 +324,14 @@ def main() -> int:
         "verdict": verdict,
         "ceilings": [
             "isolated lump — no heat from the bark through the flange: colder than the capsule tied to the flange",
-            "clear sky every hour at the clear end; real cloud cover is not in the tree",
+            "clear sky every hour at the clear end; real cloud cover is not used here (ERA5 cover — `79`'s cloud "
+            "regimes; a satellite-derived sky — `120`)",
             "no sun all day with a clear sky is below any real winter day — the model's lower bound, as in 79",
             "steady per hour — the capsule's heat capacity is not modelled; it averages past hours, so the minima here "
             "are not shallower than with it, while the hour count and the spell are not bounded the same way",
-            "one isothermal lump — the temperature INSIDE the capsule is the thermocouple leg of HW.37",
-            "ERA5 smooths station extremes — the true cold edge sits lower by an unknown margin",
+            "one isothermal lump — the temperature INSIDE the capsule is the thermocouple of 00_07 DOC-T.131, the leg «Б2 — подання»",
+            "ERA5 smooths station extremes — the true cold edge sits lower by an unknown margin ("
+            "against the Cherkasy station that holds in the count of cold days, not in the lowest value — `121`, 02_03 §12.1)",
             "no snow or rime on the radome",
         ],
     }

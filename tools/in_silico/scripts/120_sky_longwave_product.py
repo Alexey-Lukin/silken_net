@@ -38,8 +38,8 @@ disagree, so none is picked — in-silico §When Modifying #11):
     diffuse sun): the one reading in which sky and air come from one source. The product's dew point enters part B
     in no reading — the sky is the product's flux.
 On frost hours ERA5's air is warmer than the product's, so «flux» leaves the sky colder against the air than
-«emissivity» does, and «air» moves the air itself. Which air is nearer the site is not settled here (00_07 HW.37 holds
-the station comparison); the three readings are the bracket. Each sky defines its OWN frost days — the bark's daily
+«emissivity» does, and «air» moves the air itself. Which air is nearer the site is not settled here (the station
+comparison is `121`); the three readings are the bracket. Each sky defines its OWN frost days — the bark's daily
 minimum under that sky is below 0 °C, as in `79` — so the day sets differ between all five skies.
 The product's sky enters `79.simulate` UNTOUCHED: the model's sky input is (T_air, T_dew, cloud), and with cloud 0 the
 «linear» kind — the carrier used here — reduces to ε(T_air, T_dew)·σT⁴ with no black-body cap (B82 would keep one). An
@@ -92,11 +92,6 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, REPO_ROOT
 from lib.utils import banner
-
-SI_DESCRIPTION = ("Which cloudy-sky long-wave form a winter sky follows: two textbook forms and a clear-sky formula set "
-                  "against a satellite-derived hourly surface flux product over twenty winters, and the cambium "
-                  "temperature under a titanium flange against bare bark recomputed under that product's sky in three "
-                  "named readings.")
 
 SCRIPTS = Path(__file__).resolve().parent
 OUT = CACHE_DIR / "thermal" / "sky_longwave_product.json"

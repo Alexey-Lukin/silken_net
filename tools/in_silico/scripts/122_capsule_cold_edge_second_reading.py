@@ -89,7 +89,7 @@ air at it, hours and days below the EDLC floor, the longest spell, hours below t
 every daily minimum before the hourly record for a sweep of dew-point depressions; on the days that fall below the
 requirement — the sky emissivity the crossing needs against the formula's and the product's, the wind the daily file
 carries, the station's row.
-CANNOT show: which air reading is right for the plot (the capsule logger's first winter is the judge — HW.37); the
+CANNOT show: which air reading is right for the plot (the capsule logger's first winter is the judge — 00_07 DOC-T.131, the leg «Б2 — подання»); the
 product's sky before 2001; the wind at MERRA-2's coldest hour (the daily file carries a mean; ERA5's hourly wind for
 those days is in the tree and not read here); the share k of the wind that reaches the trunk; sunlit runs on MERRA-2; the
 temperature inside the capsule; the EDLC's or the seal's behaviour at these temperatures.
@@ -111,10 +111,6 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, EDLC_OPERATING_MIN_C, REPO_ROOT
 from lib.utils import banner
-
-SI_DESCRIPTION = ("Cold edge of the sensor capsule (isolated lump, no sun, still air) on a second reanalysis reading "
-                  "of the air under three readings of the sky, hourly over twenty years, and at every daily "
-                  "minimum of the ten years before them, against the capsule's temperature requirement.")
 
 SCRIPTS = Path(__file__).resolve().parent
 THERMAL = CACHE_DIR / "thermal"

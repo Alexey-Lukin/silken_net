@@ -79,11 +79,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = ("Whether a reanalysis runs warm on cold nights: daily minimum air temperature of two reanalyses "
-                  "against two non-overlapping records of one synoptic station, with the gap conditioned on the "
-                  "station, on the reanalysis and on neither, and the cold edge of twenty-nine seasons read from "
-                  "both reanalyses.")
-
 DATA_DIR = REPO_ROOT / "tools/in_silico/data/station_cherkasy"
 ERA5_DIR = REPO_ROOT / "tools/in_silico/data/era5_cherkasy"
 MERRA2_HOURLY = REPO_ROOT / "tools/in_silico/data/power_cherkasy_longwave/hourly_2001_2020.csv.gz"

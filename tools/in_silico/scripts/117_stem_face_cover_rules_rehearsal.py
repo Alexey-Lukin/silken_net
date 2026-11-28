@@ -12,7 +12,7 @@ record the season will be read against, how many days a version of the rules can
 ⚠️ Judgeability is a NECESSARY property, not an acceptance test. A first rewrite (2026-11-10, below as the DRAFT) judged
 every day of the median winter and was still rejected by its adversary: its base fell back across diffuse classes and
 manufactured dips on a cover-free face, its episode count did not move with cover, and its frost rule was narrower than
-`115`'s own frost (the provenance and the requirements for the next rewrite — the leg in `00_07` HW.54). The acceptance
+`115`'s own frost (the provenance and the requirements for the next rewrite — the sheet's §6). The acceptance
 test a rewrite needs is a PERFECT-LOGGER rehearsal — the modelled face under each `115` reading's cover and under none,
 the rules asked to keep the truth and reject the rest. ⊕ 2026-11-15: the rules rewritten that day (the sheet's §6,
 «Правила розбору, переписані до даних — 2026-11-15») are rehearsed here that way — the block THE RULES REWRITTEN below;
@@ -45,6 +45,7 @@ MODEL. Per calendar day (the data's fixed clock) of December–February, 29 full
   intermediate ground (biased up by the light snow reflects).
   THE RULES REWRITTEN (2026-11-15), on a PERFECT logger — the south face `118` reads (dni·gc[180] + ½dif + ½refl at both
     of `79`'s reflection ends), lit by ERA5, under a TRUTH's cover from `115`'s `cover_readings` on the season's record
+    (`115` takes its long-wave sky from `79`; `79`'s two cloud forms against a satellite-derived sky — `120`)
     (CERRA held flat), no noise, no yard, the analyst on the truth's air (ERA5's — the rule of two airs needs a second
     air, so its numbers stay `124`'s):
     ⚠️ The truth and the readings come out of ONE model on ONE sky and ONE air, so what this block shows is that the rules
@@ -122,12 +123,6 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
-
-SI_DESCRIPTION = ("A rehearsal, on thirty winters of hourly reanalysis weather, of the rules a single light logger on a pine "
-                  "stem's face will be read by: how many winter days the rules as first written, and a rejected draft "
-                  "rewrite, can judge against a base of cover-free days, how many overcast hours on bare ground a winter "
-                  "offers at most, and the rewritten rules on a perfect logger under each snow- and hoarfrost-cover model "
-                  "and under none, with and without a day noise.")
 
 HERE = Path(__file__).resolve().parent
 OUT = KINETICS_DIR / "stem_face_cover_rules_rehearsal.json"
@@ -604,7 +599,7 @@ def main() -> int:
             "fallback_days": int(col("draft_fallback_days").sum()),
             "rejected_because": "judgeability does not discriminate: the class fallback manufactures dips on a cover-free face, "
                                 "the episode count does not move with cover, the frost rule is narrower than 115's frost "
-                                "(adversary 2026-11-10; requirements for the next rewrite — 00_07 HW.54)"},
+                                "(adversary 2026-11-10; requirements for the next rewrite — the stem-face sheet's §6)"},
         "overcast_hours_upper_bound": {
             "bare_median_winter": float(np.median(bare_h)), "bare_winters_with_none": int(np.sum(bare_h == 0)),
             "bare_winters_under": {str(n): int(np.sum(bare_h < n)) for n in OVERCAST_HOURS_PRINTED},

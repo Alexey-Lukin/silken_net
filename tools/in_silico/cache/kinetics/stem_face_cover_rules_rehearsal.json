@@ -89,7 +89,7 @@
       "judged_share_median_winter": 1.0,
       "judged_share_min_winter": 0.8556,
       "fallback_days": 517,
-      "rejected_because": "judgeability does not discriminate: the class fallback manufactures dips on a cover-free face, the episode count does not move with cover, the frost rule is narrower than 115's frost (adversary 2026-11-10; requirements for the next rewrite — 00_07 HW.54)"
+      "rejected_because": "judgeability does not discriminate: the class fallback manufactures dips on a cover-free face, the episode count does not move with cover, the frost rule is narrower than 115's frost (adversary 2026-11-10; requirements for the next rewrite — the stem-face sheet's §6)"
     },
     "overcast_hours_upper_bound": {
       "bare_median_winter": 40.0,

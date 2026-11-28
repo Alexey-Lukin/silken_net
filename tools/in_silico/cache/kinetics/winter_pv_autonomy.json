@@ -129,7 +129,7 @@
     "sources": {
       "canopy_t": "Sonohat G., Balandier P., Ruchaud F. (2004) Ann. For. Sci. 61(7):629-641, doi:10.1051/forest:2004061 — Scots pine stand transmittance of global radiation 0.15-0.81, 70 % of the data 0.21-0.55; horizontal solarimeters, growing season",
       "dec_ghi_pvgis": "https://re.jrc.ec.europa.eu/api/v5_3/MRcalc?lat=49.44&lon=32.06&horirrad=1&d2g=1&selectrad=1&angle=90&aspect=0&outputformat=json (collected by the desk pass, re-queried by its verifier)",
-      "dec_ghi_nasa_power": "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=ALLSKY_SFC_SW_DWN,ALLSKY_SFC_SW_DIFF,CLRSKY_SFC_SW_DWN&community=RE&longitude=32.06&latitude=49.44&format=JSON (as collected by the desk pass, not re-read)",
+      "dec_ghi_nasa_power": "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=ALLSKY_SFC_SW_DWN,ALLSKY_SFC_SW_DIFF,CLRSKY_SFC_SW_DWN&community=RE&longitude=32.06&latitude=49.44&format=JSON (collected by the desk pass; the number reproduced 2026-11-13 from POWER's daily series 2001–2020 — the handoff corpus, 2026-11-13_power_survey)",
       "desk_worst_7d": "the desk pass of 2026-10-26 over the same ERA5 file (its script was not committed; provenance — the handoff corpus named in 01_03 §4 ⊕, r3b_winter_power)"
     }
   },

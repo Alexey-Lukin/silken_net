@@ -247,11 +247,11 @@
   "verdict": "With the night sky the isolated capsule spends between 57 h on 7 days (overcast sky every hour, diffuse sun, still air) and 565 h on 63 days (clear sky every hour, no sun, still air) in 30 years below the EDLC floor −25 °C, against the air's 64 h on 9 days — up to ×8.8; the longest spell below the floor is 106 h and the coldest capsule hour −33.5 °C; no run crosses the capsule requirement −40 °C. A real winter lies between the edges. On the winter days the air falls below the floor, ERA5's own daylight sky is sunny for 0.84 of its hours against 0.32 for every winter day (direct normal irradiance ≥ 120 W/m², the WMO threshold; the day's sky as the night's proxy), so near the floor the site leans to the clear end; its 10-m wind in the hours below the floor has a median of 3.3 m/s against 3.5 m/s for every winter hour.",
   "ceilings": [
     "isolated lump — no heat from the bark through the flange: colder than the capsule tied to the flange",
-    "clear sky every hour at the clear end; real cloud cover is not in the tree",
+    "clear sky every hour at the clear end; real cloud cover is not used here (ERA5 cover — `79`'s cloud regimes; a satellite-derived sky — `120`)",
     "no sun all day with a clear sky is below any real winter day — the model's lower bound, as in 79",
     "steady per hour — the capsule's heat capacity is not modelled; it averages past hours, so the minima here are not shallower than with it, while the hour count and the spell are not bounded the same way",
-    "one isothermal lump — the temperature INSIDE the capsule is the thermocouple leg of HW.37",
-    "ERA5 smooths station extremes — the true cold edge sits lower by an unknown margin",
+    "one isothermal lump — the temperature INSIDE the capsule is the thermocouple of 00_07 DOC-T.131, the leg «Б2 — подання»",
+    "ERA5 smooths station extremes — the true cold edge sits lower by an unknown margin (against the Cherkasy station that holds in the count of cold days, not in the lowest value — `121`, 02_03 §12.1)",
     "no snow or rime on the radome"
   ]
 }
